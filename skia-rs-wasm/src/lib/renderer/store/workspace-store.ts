@@ -8,8 +8,9 @@ import { create } from 'zustand'
 import type { WasmModule } from '../wasm-types'
 import type { Viewport } from '../viewport'
 import { Renderer } from '../index'
-import type { PenpotNode, PenpotPage, Selrect } from 'penpot-exporter'
-import type { ResizeHandlePosition, SelectionRectResult, WorkerClient } from '../types'
+import type { PenpotNode, PenpotPage, Selrect } from 'penpot-exporter/lib'
+import type { ResizeHandlePosition, SelectionRectResult } from '../types'
+import type { WorkerClient } from '../../worker/types'
 import { getSelectionBounds, type Rect } from '../selection-bounds'
 
 /** Implemented by DocumentModel; used so the store and page-crud can call methods without importing the class. */

@@ -3,7 +3,7 @@
  * Uses camelCase for all property names.
  */
 
-import type { PenpotNode } from 'penpot-exporter'
+import type { PenpotNode } from 'penpot-exporter/lib'
 
 /** Operations for mod-obj changes */
 export interface AssignOperation {

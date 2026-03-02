@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, Selrect } from 'penpot-exporter'
+import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType } from 'penpot-exporter/lib'
 import { createNode } from './node-factory'
 import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Preset } from './presets'
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from '../lib/renderer/api/constants'
@@ -7,7 +7,8 @@ import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
 import { useWorkspaceDevStore } from '../lib/renderer/store/workspace-dev-store'
 import { addNode, updateNode, deleteNode, setDocument, createNewDocument } from '../lib/renderer/store/page-crud'
 import './DevToolbar.css'
-import type { ShapeType } from '@skia-rs-wasm/common'
+import type { ShapeType } from '../lib/renderer/types'
+import { isFrameShape } from '../lib/worker/geometry/shapes'
 
 function isImageColor(img: ImageColor | PartialImageColor): img is ImageColor {
   return 'width' in img && 'height' in img
@@ -74,7 +75,7 @@ export function DevToolbar() {
   const [advConstraintsV, setAdvConstraintsV] = useState<ConstraintV | undefined>(undefined)
   const [advClipContent, setAdvClipContent] = useState(false)
   const [advMaskedGroup, setAdvMaskedGroup] = useState(false)
-  const [advGrowType, setAdvGrowType] = useState<'auto' | 'fixed' | 'fill' | undefined>(undefined)
+  const [advGrowType, setAdvGrowType] = useState<GrowType | undefined>(undefined)
 
   // Collapsible sections state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -105,17 +106,19 @@ export function DevToolbar() {
         setAdvShadows(node.shadow ?? [])
         setAdvBlur(node.blur)
         setAdvOpacity(node.opacity ?? 1)
-        setAdvBlendMode(node['blend-mode'] ?? 'normal')
+        setAdvBlendMode(node.blendMode ?? 'normal')
         setAdvHidden(node.hidden ?? false)
         setAdvR1(node.r1 ?? 0)
         setAdvR2(node.r2 ?? 0)
         setAdvR3(node.r3 ?? 0)
         setAdvR4(node.r4 ?? 0)
-        setAdvConstraintsH(node['constraints-h'])
-        setAdvConstraintsV(node['constraints-v'])
-        setAdvClipContent(node['clip-content'] ?? false)
-        setAdvMaskedGroup(node.maskedGroup ?? false)
-        setAdvGrowType(node['grow-type'])
+        setAdvConstraintsH(node.constraintsH)
+        setAdvConstraintsV(node.constraintsV)
+        if (isFrameShape(node)) {
+          setAdvClipContent(node.showContent ?? false)
+          setAdvMaskedGroup(node.maskedGroup ?? false)
+          setAdvGrowType(node.growType)
+        }
       }
     } else if (isCreatingNew) {
       // Reset to defaults for new node
@@ -229,26 +232,7 @@ export function DevToolbar() {
       console.error('Failed to create node:', error)
       alert(`Failed to create node: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-  }, [
-    isPageReady,
-    selectedType,
-    x,
-    y,
-    width,
-    height,
-    fillColor,
-    fillOpacity,
-    fillGradient,
-    strokeColor,
-    strokeWidth,
-    borderRadius,
-    textContent,
-    radius,
-    shadows,
-    blur,
-    opacity,
-    addNode,
-  ])
+  }, [isPageReady, selectedType, x, y, width, height, fillColor, fillOpacity, fillGradient, strokeColor, strokeWidth, borderRadius, textContent, radius, shadows, blur, opacity])
 
   const handleRemoveNode = useCallback(
     (nodeId: string) => {
@@ -258,7 +242,7 @@ export function DevToolbar() {
       }
       deleteNode(nodeId)
     },
-    [deleteNode]
+    []
   )
 
   const handleExport = useCallback(() => {
@@ -377,36 +361,7 @@ export function DevToolbar() {
       }
       updateNode(selectedNodeId, updates)
     }
-  }, [
-    isPageReady,
-    isCreatingNew,
-    selectedNodeId,
-    selectedType,
-    advX,
-    advY,
-    advWidth,
-    advHeight,
-    advRotation,
-    advTransform,
-    advFills,
-    advStrokes,
-    advShadows,
-    advBlur,
-    advOpacity,
-    advBlendMode,
-    advHidden,
-    advR1,
-    advR2,
-    advR3,
-    advR4,
-    advConstraintsH,
-    advConstraintsV,
-    advClipContent,
-    advMaskedGroup,
-    advGrowType,
-    addNode,
-    updateNode,
-  ])
+  }, [isPageReady, isCreatingNew, selectedNodeId, selectedType, advX, advY, advWidth, advHeight, advRotation, advTransform, advFills, advStrokes, advShadows, advBlur, advOpacity, advBlendMode, advHidden, advR1, advR2, advR3, advR4, advConstraintsH, advConstraintsV, advClipContent, advMaskedGroup, advGrowType])
 
   // Fill management
   const addFill = useCallback(() => {

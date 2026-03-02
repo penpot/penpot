@@ -5,7 +5,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createElement } from 'react'
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode } from 'penpot-exporter'
+import type { PenpotNode } from 'penpot-exporter/lib'
 import { ObjectSvg } from './svg-components'
 
 /**
@@ -13,7 +13,7 @@ import { ObjectSvg } from './svg-components'
  * Replicates ClojureScript get-static-markup behavior
  */
 export function getStaticMarkup(shape: PenpotNode): string {
-  if (shape.type !== 'svg-raw') {
+  if ((shape as { type: string }).type !== 'svg-raw') {
     // For non-svg-raw shapes, return minimal wrapper
     return `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="none"></svg>`
   }

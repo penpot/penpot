@@ -5,7 +5,7 @@
  */
 
 import { create } from 'zustand'
-import type { PenpotNode } from 'penpot-exporter'
+import type { PenpotNode } from 'penpot-exporter/lib'
 
 export interface WorkspaceDevState {
   currentPageNodes: PenpotNode[]

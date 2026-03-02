@@ -7,7 +7,7 @@ import type {
   BoolType,
   ShapeType,
 } from '../types'
-import { uuidToU32Tuple } from '@skia-rs-wasm/common'
+import { uuidToU32Tuple } from '../types'
 import {
   allocBytes,
   freeBytes,
@@ -27,7 +27,7 @@ import {
 } from './serializers'
 import { checkContext } from './context'
 import { UUID_U8_SIZE } from './constants'
-import type { BlendMode, Blur, ConstraintH, ConstraintV, Matrix, Selrect } from 'penpot-exporter'
+import type { BlendMode, Blur, ConstraintH, ConstraintV, Matrix, Selrect } from 'penpot-exporter/lib'
 
 /**
  * Set active shape

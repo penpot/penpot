@@ -3,8 +3,8 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { Shadow } from 'penpot-exporter'
-import { colorToU32ARGB } from '@skia-rs-wasm/common'
+import type { Shadow } from 'penpot-exporter/lib'
+import { colorToU32ARGB } from '../types'
 import { translateShadowStyle } from './serializers'
 import { checkContext } from './context'
 

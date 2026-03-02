@@ -1,56 +1,180 @@
 /**
- * Re-export shared types from common.
- * Import exporter types from penpot-exporter.
+ * Renderer-specific types. Point re-exported from common; worker types from worker.
  */
 
-export type {
-  ResizeHandlePosition,
-  ShapeType,
-  BoolType,
-  SelectionRectResult,
-  PathContent,
-  SvgContent,
-  Viewport,
-  RendererOptions,
-  Point,
-  ViewportOptions,
-  ViewBox,
-  PendingImageCallback,
-  SetObjectResult,
-  ResolveFontUrlCallback,
-  FontInfo,
-  FontData,
-  ViewportPanModifier,
-  ShortcutsConfig,
-  CanvasWrapperProps,
-  WorkerConfig,
-  WorkerTextRectDimensions,
-  WorkerConfigurePayload,
-  WorkerIndexInitializePayload,
-  WorkerIndexUpdatePayload,
-  WorkerUpdateTextRectPayload,
-  IndexedPage,
-  QueryParams,
-  SelectionIndex,
-  WorkerState,
-  WorkerMessage,
-  SerializedMessage,
-  Line,
-  WorkerSendPayload,
-  WorkerResponse,
-  WorkerClient,
-  InitializationState,
-} from '@skia-rs-wasm/common'
+import type { CSSProperties } from 'react'
+import type { Matrix } from 'penpot-exporter/lib'
 
+export type { Point } from '@skia-rs-wasm/common'
+
+/** Resize handle position (matches frontend handler keywords) */
+export type ResizeHandlePosition =
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+
+/** Shape type values supported by the WASM renderer */
+export type ShapeType =
+  | 'rect'
+  | 'path'
+  | 'text'
+  | 'frame'
+  | 'group'
+  | 'bool'
+  | 'circle'
+  | 'svg-raw'
+  | 'image'
+
+/** Boolean operation type (matches exporter BoolOperations string union) */
+export type BoolType = 'union' | 'difference' | 'intersection' | 'exclude'
+
+/**
+ * Selection rectangle result from WASM
+ */
+export interface SelectionRectResult {
+  width: number
+  height: number
+  center: { x: number; y: number }
+  transform: Matrix
+}
+
+export interface PathContent {
+  [key: string]: unknown
+}
+
+/**
+ * SVG content structure - can be a tree or a string (leaf node)
+ */
+export type SvgContent =
+  | {
+      tag: string
+      attrs?: Record<string, unknown>
+      content?: SvgContent[]
+    }
+  | string
+
+export interface Viewport {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface RendererOptions {
+  dpr?: number
+  debug?: boolean
+  background?: string
+}
+
+export interface ViewportOptions {
+  zoom?: number
+  panX?: number
+  panY?: number
+  minZoom?: number
+  maxZoom?: number
+}
+
+export interface ViewBox {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface PendingImageCallback {
+  key: string
+  thumbnail: boolean
+  callback: () => Promise<boolean>
+}
+
+export interface SetObjectResult {
+  thumbnails: PendingImageCallback[]
+  full: PendingImageCallback[]
+}
+
+export type ResolveFontUrlCallback = (
+  fontId: string,
+  fontVariantId?: string,
+  fontWeight?: number,
+  fontStyle?: string
+) => string
+
+export interface FontInfo {
+  fontId: string
+  fontVariantId?: string
+  fontWeight?: number
+  fontStyle?: string
+  isEmoji?: boolean
+  isFallback?: boolean
+}
+
+export interface FontData {
+  wasmId: string
+  fontId: string
+  fontVariantId: string
+  style: number
+  styleName: string
+  weight: number
+}
+
+/**
+ * Modifier key for triggering pan with left mouse button.
+ * Use null to disable modifier-triggered pan.
+ */
+export type ViewportPanModifier = 'shift' | 'alt' | 'ctrl' | 'meta' | null
+
+/**
+ * Full viewport shortcuts config (KeyboardEvent.code strings and mouse options).
+ * All fields are required in the resolved config; use Partial for overrides.
+ */
+export interface ShortcutsConfig {
+  panLeft: string
+  panRight: string
+  panUp: string
+  panDown: string
+  panStep: number
+  zoomInKeys: string[]
+  zoomOutKeys: string[]
+  zoomInFactor: number
+  zoomOutFactor: number
+  resetKeys: string[]
+  panMouseButton: number
+  panWithModifier: ViewportPanModifier
+  wheelZoomEnabled: boolean
+  wheelScalePerPixel: number
+}
+
+export interface CanvasWrapperProps {
+  className?: string
+  /** Style applied to the container div that wraps the canvas and overlay. */
+  containerStyle?: CSSProperties
+  /** Class name applied to the container div that wraps the canvas and overlay. */
+  containerClassName?: string
+  rendererOptions?: RendererOptions
+  onError?: (error: Error) => void
+  /** Initial viewport shortcuts (merged with defaults). Applied on mount when provided. */
+  shortcuts?: Partial<ShortcutsConfig>
+}
+
+export type InitializationState = 'idle' | 'loading' | 'ready' | 'error'
+
+// Re-export conversions and verification from common and local verification
 export {
   ZERO_UUID,
   makeSelrect,
-  flattenPageToIndexed,
   uuidToU32,
   uuidToU32Tuple,
   hexToU32ARGB,
   colorToU32ARGB,
   u32ToUUID,
+} from '@skia-rs-wasm/common'
+
+export {
   isSvgContentTree,
   isSvgContentString,
   isSvgContent,
@@ -58,4 +182,4 @@ export {
   isLinearGradient,
   isRadialGradient,
   isImageFill,
-} from '@skia-rs-wasm/common'
+} from './verification'

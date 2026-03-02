@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import { uuidToU32Tuple } from '@skia-rs-wasm/common'
+import { uuidToU32Tuple } from '../types'
 import { freeBytes, offset8To32 } from '../utils'
 import { checkContext } from './context'
 import { requestRender } from './rendering'

@@ -3,9 +3,9 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode, Fill, TextContent } from 'penpot-exporter'
-import type { PendingImageCallback, ResolveFontUrlCallback, FontInfo, FontData } from '@skia-rs-wasm/common'
-import { uuidToU32Tuple, uuidToU32 } from '@skia-rs-wasm/common'
+import type { PenpotNode, Fill, TextContent, Paragraph, TextNode } from 'penpot-exporter/lib'
+import type { PendingImageCallback, ResolveFontUrlCallback, FontInfo, FontData } from '../types'
+import { uuidToU32Tuple, uuidToU32 } from '../types'
 import {
   freeBytes,
   offset8To32,
@@ -103,8 +103,14 @@ function serializeFontWeight(weight?: number | string): number {
 /**
  * Serializes font-size to f32
  */
-function serializeFontSize(size?: number): number {
-  return size ?? 14
+function serializeFontSize(size?: number | string): number {
+  if (!size) return 14
+  if (typeof size === 'number') return size
+  if (typeof size === 'string') {
+    const num = parseFloat(size)
+    if (!isNaN(num)) return num
+  }
+  return 14
 }
 
 /**
@@ -128,8 +134,14 @@ function serializeLineHeight(height?: number | string, paragraphLineHeight?: num
 /**
  * Serializes letter-spacing to f32
  */
-function serializeLetterSpacing(spacing?: number): number {
-  return spacing ?? 0.0
+function serializeLetterSpacing(spacing?: number | string): number {
+  if (!spacing) return 0.0
+  if (typeof spacing === 'number') return spacing
+  if (typeof spacing === 'string') {
+    const num = parseFloat(spacing)
+    if (!isNaN(num)) return num
+  }
+  return 0.0
 }
 
 /**
@@ -352,7 +364,7 @@ function writeSpanFills(offset: number, dataView: DataView, fills: Fill[]): numb
  * Writes paragraph attributes to heap (12 bytes)
  * Returns next offset
  */
-function writeParagraph(offset: number, dataView: DataView, paragraph: any): number {
+function writeParagraph(offset: number, dataView: DataView, paragraph: Paragraph): number {
   const textAlign = translateTextAlign(paragraph.textAlign)
   const textDirection = translateTextDirection(paragraph.textDirection)
   const textDecoration = translateTextDecoration(paragraph.textDecoration)
@@ -374,7 +386,7 @@ function writeParagraph(offset: number, dataView: DataView, paragraph: any): num
  * Writes span attributes and fills to heap
  * Returns next offset
  */
-function writeSpans(offset: number, dataView: DataView, spans: any[], paragraph: any): number {
+function writeSpans(offset: number, dataView: DataView, spans: TextNode[], paragraph: Paragraph): number {
   const paragraphFontSize = paragraph.fontSize ?? 14
   const paragraphFontWeight = serializeFontWeight(paragraph.fontWeight)
   const paragraphLineHeight = serializeLineHeight(paragraph.lineHeight)
@@ -483,7 +495,7 @@ function writeShapeText(module: WasmModule, content: TextContent): void {
   }
   
   // Collect all text from spans
-  const text = spans.map((span: any) => span.text || '').join('')
+  const text = spans.map((span: TextNode) => span.text || '').join('')
   const textBuffer = encodeText(text)
   const textSize = textBuffer.length
   
@@ -596,7 +608,7 @@ export function getTextDimensions(module: WasmModule, id?: string): {
 /**
  * Gets fill images from a text leaf/spans
  */
-function getFillImages(leaf: any): Fill[] {
+function getFillImages(leaf: TextNode): Fill[] {
   if (!leaf || !leaf.fills) {
     return []
   }
@@ -770,7 +782,7 @@ export function fontsFromTextContent(
       continue
     }
 
-    const text = paragraph.children.map((span: any) => span.text ?? '').join('')
+    const text = paragraph.children.map((span: TextNode) => span.text ?? '').join('')
 
     if (text) {
       if (!hasEmoji) {

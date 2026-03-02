@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import { uuidToU32Tuple } from '@skia-rs-wasm/common'
+import { uuidToU32Tuple } from '../types'
 import { checkContext, getContextInitialized, getContextLost, getPendingRender, setPendingRender } from './context'
 
 /**

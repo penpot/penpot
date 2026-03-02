@@ -6,13 +6,14 @@
 import { useWorkspaceStore } from './workspace-store'
 import { DocumentModel } from './document-model'
 import { commitPageUpdate } from './commit'
-import type { PenpotDocument, PenpotNode, PenpotPage } from 'penpot-exporter'
+import type { PenpotDocument, PenpotNode, PenpotPage } from 'penpot-exporter/lib'
 import { makeSelrect } from '../../worker/types'
 
 export function createNewDocument(): PenpotDocument {
   const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
   const rootFrame: PenpotNode = {
     id: ROOT_UUID,
+    name: 'Root',
     type: 'frame',
     x: 0,
     y: 0,
@@ -81,10 +82,11 @@ export function applyMoveDeltaToPage(
     const childList = (node as { children?: PenpotNode[] }).children
     const updatedChildren = childList?.length ? childList.map(applyToNode) : undefined
     if (!selectedIds.has(node.id)) {
-      return updatedChildren ? { ...node, children: updatedChildren } : { ...node }
+      return (updatedChildren ? { ...node, children: updatedChildren } : { ...node }) as PenpotNode
     }
-    const x = (node.x ?? 0) + delta.x
-    const y = (node.y ?? 0) + delta.y
+    const nodeGeom = node as { x?: number; y?: number }
+    const x = (nodeGeom.x ?? 0) + delta.x
+    const y = (nodeGeom.y ?? 0) + delta.y
     const sr = node.selrect as {
       x?: number
       y?: number
@@ -117,7 +119,7 @@ export function applyMoveDeltaToPage(
       ...(selrect && { selrect }),
       ...(points && { points }),
       ...(updatedChildren && { children: updatedChildren }),
-    }
+    } as PenpotNode
   }
   const children = (page.children ?? []).map(applyToNode)
   return { ...page, children }
@@ -199,15 +201,16 @@ export function applyResizeTransformToNode(
 
   const points = [newNw, newNe, newSe, newSw]
 
+  const nodeGeom = node as { x?: number; y?: number; width?: number; height?: number }
   const updates: Partial<PenpotNode> = {
     selrect,
     points,
     transform: newTransform as PenpotNode['transform'],
   }
-  if (typeof node.x === 'number') updates.x = newX
-  if (typeof node.y === 'number') updates.y = newY
-  if (typeof (node as { width?: number }).width === 'number') (updates as { width?: number }).width = newWidth
-  if (typeof (node as { height?: number }).height === 'number') (updates as { height?: number }).height = newHeight
+  if (typeof nodeGeom.x === 'number') (updates as { x?: number }).x = newX
+  if (typeof nodeGeom.y === 'number') (updates as { y?: number }).y = newY
+  if (typeof nodeGeom.width === 'number') (updates as { width?: number }).width = newWidth
+  if (typeof nodeGeom.height === 'number') (updates as { height?: number }).height = newHeight
   return updates
 }
 

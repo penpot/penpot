@@ -2,8 +2,8 @@
  * Helper utilities for shape operations and index generation
  */
 
-import type { PenpotNode } from 'penpot-exporter'
-import type { IndexedShape } from '@skia-rs-wasm/common'
+import type { PenpotNode } from 'penpot-exporter/lib'
+import type { IndexedShape } from './types'
 import { ZERO_UUID } from '@skia-rs-wasm/common'
 import {
   isFrameShape,
@@ -84,7 +84,7 @@ function generateIndexRecursive(
   index[shapeId] = new Set(parents)
   const newParents = [shapeId, ...parents]
 
-  const children = shape.shapes || []
+  const children = 'shapes' in shape ? (shape.shapes ?? []) : []
   for (const childId of children) {
     index = generateIndexRecursive(index, objects, childId, newParents)
   }
@@ -132,7 +132,7 @@ export function createClipIndex(
     }
 
     // Masked groups
-    if (shape.maskedGroup && shape.shapes && shape.shapes.length > 0) {
+    if (shape.maskedGroup && 'shapes' in shape && shape.shapes && shape.shapes.length > 0) {
       const firstChild = objects[shape.shapes[0]]
       if (firstChild) {
         result.push(firstChild)
@@ -166,7 +166,7 @@ export function createClipIndex(
 
 export function getChildrenIds(objects: Record<string, PenpotNode>, shapeId: string): string[] {
   const shape = objects[shapeId]
-  if (!shape || !shape.shapes) {
+  if (!shape || !('shapes' in shape) || !shape.shapes) {
     return []
   }
 
@@ -178,7 +178,7 @@ export function getChildrenIds(objects: Record<string, PenpotNode>, shapeId: str
     result.push(id)
 
     const child = objects[id]
-    if (child && child.shapes) {
+    if (child && 'shapes' in child && child.shapes) {
       stack.push(...child.shapes)
     }
   }

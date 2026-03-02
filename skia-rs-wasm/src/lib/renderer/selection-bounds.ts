@@ -2,7 +2,7 @@
  * Selection bounds: union of selected nodes' selrects for overlay drawing.
  */
 
-import type { PenpotNode } from 'penpot-exporter'
+import type { PenpotNode } from 'penpot-exporter/lib'
 
 export interface Rect {
   x: number

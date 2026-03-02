@@ -5,8 +5,8 @@
 
 import type { WasmModule } from './wasm-types'
 import type { RendererOptions, SelectionRectResult } from './types'
-import type { PenpotNode, PenpotPage } from 'penpot-exporter'
-import type { Matrix } from 'penpot-exporter'
+import type { PenpotNode, PenpotPage } from 'penpot-exporter/lib'
+import type { Matrix } from 'penpot-exporter/lib'
 import { getDPR } from './utils'
 import { Viewport } from './viewport'
 import {
@@ -290,52 +290,3 @@ export class Renderer {
     return getContextInitialized()
   }
 }
-
-
-// Export canvas wrapper and worker utilities
-export { CanvasWrapper } from './canvas-wrapper'
-export { WorkerClient } from '../worker-client'
-export { createWorker } from '../worker-factory'
-export type {
-  CanvasWrapperProps,
-  InitializationState,
-  ResizeHandlePosition,
-  SelectionRectResult,
-  ShortcutsConfig,
-  ViewportPanModifier,
-} from './types'
-
-// Export Zustand store
-export { useWorkspaceStore, type IDocumentModel } from './store/workspace-store'
-export { useWorkspaceDevStore } from './store/workspace-dev-store'
-export {
-  useViewportShortcutsStore,
-  DEFAULT_SHORTCUTS as DEFAULT_VIEWPORT_SHORTCUTS,
-  getViewportShortcuts,
-  getModifierKeys,
-} from './store/shortcuts-store'
-export { setDocument, addPage, updatePage, deletePage, addNode, updateNode, deleteNode, createNewDocument } from './store/page-crud'
-export { commitPageUpdate, type PageCommitPayload } from './store/commit'
-
-// Export renderer client lifecycle
-export { initRendererClient, cleanupRendererClient, RendererClientManager } from './renderer-init'
-
-// Export hooks
-export { useStreams } from './hooks/use-streams'
-export { useSelection } from './hooks/use-selection'
-export { useMove } from './hooks/use-move'
-export { useResize } from './hooks/use-resize'
-export { useRotate } from './hooks/use-rotate'
-export { useViewportShortcuts } from './hooks/use-viewport-shortcuts'
-
-// Export handlers
-export { handleAreaSelection } from './handlers/selection'
-export { startMoveSelected } from './handlers/move'
-export { startResizeSelected } from './handlers/resize'
-export { startRotateSelected } from './handlers/rotate'
-
-// Export streams
-export { mousePosition$, mousePositionShift$, mousePositionAlt$, mousePositionMod$, keyboardSpace$ } from './streams'
-export { askWorker$, askWorkerBuffered$ } from './streams/worker-streams'
-export { dragStopper } from './streams/drag-stopper'
-

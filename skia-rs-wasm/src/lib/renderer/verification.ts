@@ -1,8 +1,8 @@
 /**
- * Type guards and verification helpers.
+ * Type guards and verification helpers for the renderer.
  */
 
-import type { Fill, Gradient, ImageColor } from 'penpot-exporter'
+import type { Fill, Gradient, ImageColor } from 'penpot-exporter/lib'
 import type { SvgContent } from './types'
 
 export function isSvgContentTree(

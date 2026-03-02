@@ -4,7 +4,7 @@ import {
   buildAddObjChange,
   buildModObjChange,
 } from './node-change-to-changes'
-import type { PenpotNode } from 'penpot-exporter'
+import type { PenpotNode } from 'penpot-exporter/lib'
 
 describe('node-change-to-changes', () => {
   describe('buildDelObjChange', () => {

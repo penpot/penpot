@@ -3,9 +3,15 @@
  * Translated from frontend/src/app/worker/index.cljs
  */
 
-import type { WorkerState, IndexedPage, QueryParams, WorkerMessage, SerializedMessage } from './types'
-import type { WorkerUpdateTextRectPayload } from '../renderer/types'
-import type { PenpotNode, Point, Matrix, PenpotPage } from 'penpot-exporter'
+import type {
+  WorkerState,
+  IndexedPage,
+  QueryParams,
+  WorkerMessage,
+  SerializedMessage,
+  WorkerUpdateTextRectPayload,
+} from './types'
+import type { Point, Matrix, PenpotPage } from 'penpot-exporter/lib'
 import type { Change } from '@skia-rs-wasm/common'
 import { flattenPageToIndexed } from './types'
 import { processChanges } from './process-changes'

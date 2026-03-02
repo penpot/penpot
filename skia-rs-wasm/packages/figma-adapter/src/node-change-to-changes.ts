@@ -2,8 +2,8 @@
  * Helpers for translating Figma NodeChangeEvent into Change[].
  */
 
-import type { Change, AddObjChange, ModObjChange, DelObjChange } from '@skia-rs-wasm/common'
-import type { PenpotNode } from 'penpot-exporter'
+import type { Change, AddObjChange, ModObjChange, DelObjChange } from 'skia-rs-wasm/common'
+import type { PenpotNode } from 'penpot-exporter/lib'
 
 /**
  * Walk up from node to find the nearest frame/section ancestor (for frameId).

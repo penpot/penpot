@@ -3,9 +3,9 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { Stroke } from 'penpot-exporter'
-import type { PendingImageCallback } from '@skia-rs-wasm/common'
-import { uuidToU32Tuple } from '@skia-rs-wasm/common'
+import type { ImageColor, Stroke } from 'penpot-exporter/lib'
+import type { PendingImageCallback } from '../types'
+import { uuidToU32Tuple } from '../types'
 import { allocBytes, freeBytes } from '../utils'
 import {
   translateStrokeStyle,
@@ -71,10 +71,12 @@ export function setShapeStrokes(
       }
       module._add_shape_stroke_fill()
     } else if (image) {
-      writeImageFill(fillOffset, dataView, image, opacity)
-      module._add_shape_stroke_fill()
+      if ('width' in image && 'height' in image) {
+        writeImageFill(fillOffset, dataView, image as ImageColor, opacity)
+        module._add_shape_stroke_fill()
+      }
 
-      if (image.id) {
+      if ('id' in image && image.id) {
         const imageId = image.id
         const [a, b, c, d] = uuidToU32Tuple(imageId)
         const cached = module._is_image_cached(a, b, c, d, thumbnail)

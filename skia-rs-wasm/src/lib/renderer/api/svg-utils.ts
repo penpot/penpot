@@ -2,9 +2,9 @@
  * SVG utility functions for rendering
  */
 
-import type { SvgContent } from '@skia-rs-wasm/common'
-import type { Transform } from 'penpot-exporter'
-import { isSvgContentTree } from '@skia-rs-wasm/common'
+import type { SvgContent } from '../types'
+import type { Matrix } from 'penpot-exporter/lib'
+import { isSvgContentTree } from '../types'
 
 /**
  * SVG tag names (from ClojureScript common/src/app/common/svg.cljc)
@@ -88,7 +88,7 @@ function generateUUID(): string {
 /**
  * Format transform matrix to CSS matrix() string
  */
-export function formatMatrix(matrix: Transform, precision: number = 2): string {
+export function formatMatrix(matrix: Matrix, precision: number = 2): string {
   const { a, b, c, d, e, f } = matrix
   return `matrix(${toFixed(a, precision)}, ${toFixed(b, precision)}, ${toFixed(c, precision)}, ${toFixed(d, precision)}, ${toFixed(e, precision)}, ${toFixed(f, precision)})`
 }
@@ -98,7 +98,7 @@ export function formatMatrix(matrix: Transform, precision: number = 2): string {
  * Handles shape transforms (including flip-x, flip-y)
  */
 export function formatTransform(
-  shape: { transform?: Transform; flipX?: boolean; flipY?: boolean },
+  shape: { transform?: Matrix; flipX?: boolean; flipY?: boolean },
   params?: { noFlip?: boolean }
 ): string {
   const { transform, flipX, flipY } = shape
@@ -153,7 +153,7 @@ export function isGraphicElement(tag: string): boolean {
 export function svgTransformMatrix(shape: {
   svgViewbox?: { x: number; y: number; width: number; height: number }
   selrect?: { x: number; y: number; width: number; height: number }
-  transform?: Transform
+  transform?: Matrix
   type?: string
 }): string {
   if (shape.svgViewbox && shape.selrect) {

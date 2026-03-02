@@ -3,8 +3,8 @@
  * Translation functions for converting TypeScript enums to WASM enum values
  */
 
-import type { ShapeType, BoolType } from '@skia-rs-wasm/common'
-import type { BlendMode, ConstraintH, ConstraintV } from 'penpot-exporter'
+import type { ShapeType, BoolType } from '../types'
+import type { BlendMode, ConstraintH, ConstraintV } from 'penpot-exporter/lib'
 
 // Enum mappings from shared.js
 const RawShapeType: Record<string, number> = {
