@@ -745,16 +745,17 @@ impl RenderState {
                     s.canvas().concat(transform);
                 });
 
+                // Hard clip edge (antialias = false) to avoid alpha seam when clipping
+                // semi-transparent content larger than the frame.
                 if let Some(corners) = corners {
                     let rrect = RRect::new_rect_radii(*bounds, corners);
                     self.surfaces.apply_mut(surface_ids, |s| {
-                        s.canvas()
-                            .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+                        s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, false);
                     });
                 } else {
                     self.surfaces.apply_mut(surface_ids, |s| {
                         s.canvas()
-                            .clip_rect(*bounds, skia::ClipOp::Intersect, antialias);
+                            .clip_rect(*bounds, skia::ClipOp::Intersect, false);
                     });
                 }
 
