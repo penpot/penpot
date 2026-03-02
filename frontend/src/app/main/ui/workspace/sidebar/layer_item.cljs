@@ -423,8 +423,9 @@
         on-tab-press
         (mf/use-fn
          (mf/deps id objects)
-         (fn [shift?]
-           (let [shape     (get objects id)
+         (fn [event]
+           (let [shift?    (kbd/shift? event)
+                 shape     (get objects id)
                  parent    (get objects (:parent-id shape))
                  siblings  (:shapes parent)
                  pos       (d/index-of siblings id)]
@@ -435,7 +436,7 @@
                                  (get siblings (inc pos))
                                  (get siblings (dec pos)))]
                  (when (some? target-id)
-                   (st/emit! (dw/start-rename-shape target-id)))))))))]
+                   (st/emit! (dw/start-rename-shape target-id))))))))]
 
     (mf/with-effect [is-selected selected]
       (let [single? (= (count selected) 1)
