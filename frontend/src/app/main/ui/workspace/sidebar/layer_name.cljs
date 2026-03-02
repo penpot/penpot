@@ -29,12 +29,6 @@
   (let [edition*         (mf/use-state false)
         edition?         (deref edition*)
 
-        ;; Mutable ref to track editing state inside mf/use-fn callbacks.
-        ;; mf/use-state wraps React useState, so @edition* inside memoized
-        ;; callbacks captures a stale State object. A ref is a stable mutable
-        ;; container that always reflects the latest value.
-        editing-ref      (mf/use-ref false)
-
         local-ref        (mf/use-ref)
         ref              (d/nilv ref local-ref)
 
@@ -59,19 +53,17 @@
            (when (and (not is-blocked)
                       (not disabled-double-click))
              (on-start-edit)
-             (mf/set-ref-val! editing-ref true)
              (reset! edition* true)
              (st/emit! (dw/start-rename-shape shape-id)))))
 
         accept-edit
         (mf/use-fn
-         (mf/deps shape-id on-stop-edit component-id variant-id variant-name variant-properties)
+         (mf/deps edition? shape-id on-stop-edit component-id variant-id variant-name variant-properties)
          (fn []
-           (when (mf/ref-val editing-ref)
+           (when edition?
              (let [name-input (mf/ref-val ref)
                    name       (str/trim (dom/get-value name-input))]
                (on-stop-edit)
-               (mf/set-ref-val! editing-ref false)
                (reset! edition* false)
                (st/emit! (dw/rename-shape-or-variant shape-id name))))))
 
@@ -80,29 +72,26 @@
          (mf/deps shape-id on-stop-edit)
          (fn []
            (on-stop-edit)
-           (mf/set-ref-val! editing-ref false)
            (reset! edition* false)
            (st/emit! (dw/end-rename-shape shape-id nil))))
 
         on-key-down
         (mf/use-fn
-         (mf/deps accept-edit cancel-edit on-tab-press shape-id on-stop-edit)
+         (mf/deps edition? accept-edit cancel-edit on-tab-press shape-id on-stop-edit)
          (fn [event]
            (when (kbd/enter? event) (accept-edit))
            (when (kbd/esc? event) (cancel-edit))
            (when (kbd/tab? event)
              (dom/prevent-default event)
              (dom/stop-propagation event)
-             (when (mf/ref-val editing-ref)
-               (let [shift?    (kbd/shift? event)
-                     name-input (mf/ref-val ref)
+             (when edition?
+               (let [name-input (mf/ref-val ref)
                      name       (str/trim (dom/get-value name-input))]
                  (on-stop-edit)
-                 (mf/set-ref-val! editing-ref false)
                  (reset! edition* false)
                  (st/emit! (dw/end-rename-shape shape-id name))
                  (when (fn? on-tab-press)
-                   (on-tab-press shift?)))))))
+                   (on-tab-press event)))))))
 
         parent-size
         (dm/str (- parent-size space-for-icons) "px")]
