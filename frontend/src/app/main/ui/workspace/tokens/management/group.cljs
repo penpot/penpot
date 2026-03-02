@@ -140,10 +140,11 @@
              (if (and not-editing? (seq selected-shapes) (not= (:type token) :number))
                (st/emit! (dwta/toggle-token {:token token
                                              :shape-ids selected-ids}))
-               (st/emit! (ntf/show {:content (tr "workspace.tokens.error-text-edition")
-                                    :type :toast
-                                    :level :warning
-                                    :timeout 3000}))))))]
+               (when (seq selected-shapes)
+                 (st/emit! (ntf/show {:content (tr "workspace.tokens.error-text-edition")
+                                      :type :toast
+                                      :level :warning
+                                      :timeout 3000})))))))]
 
     [:div {:class (stl/css :token-section-wrapper)
            :data-testid (dm/str "section-" (name type))}
