@@ -42,19 +42,73 @@ desc: Learn how to create, manage and apply Penpot Design Tokens using W3C DTCG 
 <p>If the value of the referenced token changes, this will also change the value of the tokens where it is referenced.</p>
 <p class="advice">References to existing tokens are case sensitive.</p>
 
-<h2 id="design-tokens-equations">Using equations</h2>
-<p>Token types with numerical values also accept mathematical equations. If, for example, you create a <strong>spacing.small</strong> token with the value of <strong>2</strong>, and you then want to create a <strong>spacing.medium</strong> token that is twice as large, you could do so by writing <code class="language-js">{spacing.small} * 2</code> in its value. As a result, <strong>spacing.medium</strong> would have a value of <strong>4</strong>.</p>
-<p>Say you have a <strong>spacing.scale</strong> token with a value of <strong>2</strong>. You could also use this token in the equation to calculate the value of <strong>spacing.medium</strong> by writing <code class="language-js">{spacing.small} * {spacing.scale}</code> in its value.</p>
+<h2 id="design-tokens-equations">Using math in token values</h2>
+<p>Token types with numerical values accept mathematical equations to calculate their values. This allows you to create dynamic relationships between tokens and build flexible design systems.</p>
+<p>For example, if you create a <strong>spacing.small</strong> token with the value of <strong>2</strong>, and you want to create a <strong>spacing.medium</strong> token that is twice as large, you can write <code class="language-js">{spacing.small} * 2</code> in its value. As a result, <strong>spacing.medium</strong> would have a value of <strong>4</strong>.</p>
+<p>You can also reference other tokens in your equations. Say you have a <strong>spacing.scale</strong> token with a value of <strong>2</strong>. You could use this token in the equation to calculate the value of <strong>spacing.medium</strong> by writing <code class="language-js">{spacing.small} * {spacing.scale}</code> in its value.</p>
 <figure>
   <img src="/img/design-tokens/04-tokens-math.webp" alt="Tokens math" />
 </figure>
-<p>Mathematical equations can be performed using:</p>
+
+<h3 id="design-tokens-math-operators">Basic operators</h3>
+<p>Mathematical equations can be performed using these basic operators:</p>
 <ul>
-    <li><code class="language-js">+</code> for addition.</li>
-    <li><code class="language-js">-</code> for subtraction.</li>
-    <li><code class="language-js">*</code> for multiplication.</li>
-    <li><code class="language-js">/</code> for division.</li>
+    <li><code class="language-js">+</code> for addition</li>
+    <li><code class="language-js">-</code> for subtraction</li>
+    <li><code class="language-js">*</code> for multiplication</li>
+    <li><code class="language-js">/</code> for division</li>
+    <li><code class="language-js">%</code> for modulo (remainder)</li>
+    <li><code class="language-js">^</code> for exponentiation</li>
 </ul>
+
+<h3 id="design-tokens-math-functions">Math functions</h3>
+<p>In addition to basic operators, you can use various math functions in your token values:</p>
+<ul>
+    <li><code class="language-js">abs(x)</code> - absolute value</li>
+    <li><code class="language-js">ceil(x)</code> - round up to nearest integer</li>
+    <li><code class="language-js">floor(x)</code> - round down to nearest integer</li>
+    <li><code class="language-js">round(x)</code> - round to nearest integer</li>
+    <li><code class="language-js">max(x, y, ...)</code> - maximum value</li>
+    <li><code class="language-js">min(x, y, ...)</code> - minimum value</li>
+    <li><code class="language-js">sqrt(x)</code> - square root</li>
+    <li><code class="language-js">pow(x, y)</code> - x raised to the power of y</li>
+    <li><code class="language-js">log(x)</code> - natural logarithm</li>
+    <li><code class="language-js">exp(x)</code> - e raised to the power of x</li>
+    <li><code class="language-js">sin(x)</code> - sine</li>
+    <li><code class="language-js">cos(x)</code> - cosine</li>
+    <li><code class="language-js">tan(x)</code> - tangent</li>
+    <li><code class="language-js">asin(x)</code> - arcsine</li>
+    <li><code class="language-js">acos(x)</code> - arccosine</li>
+    <li><code class="language-js">atan(x)</code> - arctangent</li>
+    <li><code class="language-js">atan2(y, x)</code> - arctangent of y/x</li>
+</ul>
+
+<h3 id="design-tokens-math-syntax">Syntax and best practices</h3>
+<p>When writing math equations in token values, keep these guidelines in mind:</p>
+<ul>
+    <li>Simple equations can be written with or without brackets. For example, <code class="language-js">8 * 8</code> and <code class="language-js">(8 * 8)</code> both resolve to <code class="language-js">64</code>.</li>
+    <li>Complex formulas require spaces between operators to ensure tokens are transformed correctly. For example, use <code class="language-js">8 * 8</code> instead of <code class="language-js">8*8</code>.</li>
+    <li>Reference tokens using curly braces: <code class="language-js">{token.name}</code>.</li>
+    <li>You can combine hard-coded values with token references: <code class="language-js">{spacing.base} * 1.5</code>.</li>
+</ul>
+
+<h3 id="design-tokens-math-examples">Practical examples</h3>
+<p>Here are some common use cases for math in token values:</p>
+
+<h4>Round to the nearest whole number</h4>
+<p>When using multipliers that result in decimals, you can use the <code class="language-js">round()</code> function to get whole numbers. For example, if <strong>sizing.sm</strong> has a value of <strong>2</strong>:</p>
+<pre><code class="language-js">round({sizing.sm} * 1.33)</code></pre>
+<p>This calculates <code class="language-js">2 * 1.33 = 2.66</code>, which rounds to <strong>3</strong>.</p>
+
+<h4>Create a percentage from a unitless number</h4>
+<p>You can convert unitless numbers to percentages. For example, a Number token called <strong>lineHeights.heading.relaxed</strong> with a value of <strong>1.5</strong> can be written in a Line Height token as:</p>
+<pre><code class="language-js">{lineHeights.heading.relaxed} * 100%</code></pre>
+<p>This calculates a resolved value of <strong>150%</strong>.</p>
+
+<h4>Calculate maximum or minimum values</h4>
+<p>Use <code class="language-js">max()</code> or <code class="language-js">min()</code> to ensure values stay within bounds. For example:</p>
+<pre><code class="language-js">max({spacing.base}, 8)</code></pre>
+<p>This ensures the spacing is at least 8, even if the base token is smaller.</p>
 
 <h2 id="design-tokens-edit">Editing a token</h2>
 <p>Tokens can be edited by right-clicking the token and selecting <strong>Edit token</strong>. This will allow you to change the tokens name, value and description. Once the changes are made, click <strong>Save</strong>.</p>
