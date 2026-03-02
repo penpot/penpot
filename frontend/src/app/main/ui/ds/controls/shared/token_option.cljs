@@ -54,7 +54,7 @@
                    :trigger-ref element-ref
                    :id (dm/str id "-name")
                    :class (stl/css :option-text)}
-      ;;  Add ellipsis
+      ;; Add ellipsis
       [:span {:aria-labelledby (dm/str id "-name")
               :ref element-ref}
        name]]

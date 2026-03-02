@@ -127,6 +127,7 @@
                     :size "small"}]]
       [:> tooltip* {:content name-tooltip-content
                     :id id
+                    :aria-label (str (tr "workspace.tokens.token-name") ": " applied-token-name)
                     :trigger-ref token-name-ref
                     :class (stl/css :token-tooltip)}
        [:div {:class (stl/css :token-name)

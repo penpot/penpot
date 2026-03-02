@@ -151,7 +151,7 @@
 
 (mf/defc tooltip*
   {::mf/schema schema:tooltip}
-  [{:keys [class id children content placement offset delay trigger-ref] :rest props}]
+  [{:keys [class id children content placement offset delay trigger-ref aria-label] :rest props}]
   (let [internal-id
         (mf/use-id)
         internal-trigger-ref (mf/use-ref nil)
@@ -161,6 +161,9 @@
 
         id
         (d/nilv id internal-id)
+
+        tooltip-id
+        (mf/use-id)
 
         placement*
         (mf/use-state #(d/nilv placement "top"))
@@ -179,26 +182,30 @@
         visible (deref visible*)
 
         on-show
-        (fn [_]
-          (let [trigger-el (mf/ref-val trigger-ref)]
-            (clear-schedule schedule-ref)
-            (add-schedule schedule-ref (d/nilv delay 300)
-                          (fn []
-                            (when-let [active @active-tooltip]
-                              (when (not= (:id active) id)
-                                (when-let [tooltip-el (dom/get-element (:id active))]
-                                  (dom/set-css-property! tooltip-el "display" "none"))
-                                (reset! active-tooltip nil)))
-
-                            (reset! active-tooltip {:id id :trigger trigger-el})
-                            (reset! visible* true)))))
+        (mf/use-fn
+         (mf/deps tooltip-id delay)
+         (fn [_]
+           (let [trigger-el (mf/ref-val trigger-ref)]
+             (clear-schedule schedule-ref)
+             (add-schedule schedule-ref (d/nilv delay 300)
+                           (fn []
+                             (prn tooltip-id)
+                             (when-let [active @active-tooltip]
+                               (when (not= (:id active) tooltip-id)
+                                 (when-let [tooltip-el (dom/get-element (:id active))]
+                                   (dom/set-css-property! tooltip-el "display" "none"))
+                                 (reset! active-tooltip nil)))
+                             (reset! active-tooltip {:id tooltip-id :trigger trigger-el})
+                             (reset! visible* true))))))
 
         on-hide
-        (fn []
-          (clear-schedule schedule-ref)
-          (reset! visible* false)
-          (when (= (:id @active-tooltip) id)
-            (reset! active-tooltip nil)))
+        (mf/use-fn
+         (mf/deps tooltip-id)
+         (fn []
+           (clear-schedule schedule-ref)
+           (reset! visible* false)
+           (when (= (:id @active-tooltip) tooltip-id)
+             (reset! active-tooltip nil))))
 
         handle-key-down
         (mf/use-fn
@@ -219,6 +226,10 @@
          :tooltip-bottom-left (identical? placement "bottom-left")
          :tooltip-top-left (identical? placement "top-left"))
 
+        content
+        (if (fn? content)
+          (content)
+          content)
         props
         (mf/spread-props props
                          {:on-mouse-enter on-show
@@ -227,12 +238,11 @@
                           :on-blur on-hide
                           :ref internal-trigger-ref
                           :on-key-down handle-key-down
+                          :id id
                           :class [class (stl/css :tooltip-trigger)]
-                          :aria-describedby id})
-        content
-        (if (fn? content)
-          (content)
-          content)]
+                          :aria-label (if (string? content)
+                                        content
+                                        aria-label)})]
 
     (mf/use-effect
      (mf/deps visible placement offset)
@@ -267,8 +277,8 @@
        (mf/portal
         (mf/html
          [:div {:class (stl/css :tooltip)
-                :id id
                 :role "tooltip"
+                :id tooltip-id
                 :ref tooltip-ref}
           [:div {:class tooltip-class}
            [:div {:class (stl/css :tooltip-content)} content]
