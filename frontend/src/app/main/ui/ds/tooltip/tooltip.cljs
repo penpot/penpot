@@ -6,7 +6,6 @@
 
 (ns app.main.ui.ds.tooltip.tooltip
   (:require-macros
-   [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
@@ -15,9 +14,9 @@
    [app.util.timers :as ts]
    [rumext.v2 :as mf]))
 
-(def ^:private ^:const arrow-height 12)
-(def ^:private ^:const half-arrow-height (/ arrow-height 2))
 (def ^:private ^:const overlay-offset 32)
+
+(defonce active-tooltip (atom nil))
 
 (defn- clear-schedule
   [ref]
@@ -28,20 +27,6 @@
 (defn- add-schedule
   [ref delay f]
   (mf/set-ref-val! ref (ts/schedule delay f)))
-
-(defn- show-popover
-  [node]
-  (when (.-isConnected ^js node)
-    (.showPopover ^js node)))
-
-(defn- hide-popover
-  [node]
-  (when (and (some? node)
-             (fn? (.-hidePopover node)))
-    (dom/unset-css-property! node "block-size")
-    (dom/unset-css-property! node "inset-block-start")
-    (dom/unset-css-property! node "inset-inline-start")
-    (.hidePopover ^js node)))
 
 (defn- calculate-placement-bounding-rect
   "Given a placement, calcultates the bounding rect for it taking in
@@ -72,18 +57,18 @@
        :height tooltip-height}
 
       "left"
-      {:top (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2))
-       :left (- trigger-left tooltip-width arrow-height)
+      {:top (- (+ trigger-top (/ trigger-height 2)) (/ tooltip-height 2))
+       :left (- trigger-left tooltip-width)
        :right (+ (- trigger-left tooltip-width) tooltip-width)
-       :bottom (+ (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2)) tooltip-height)
+       :bottom (+ (- (+ trigger-top (/ trigger-height 2)) (/ tooltip-height 2)) tooltip-height)
        :width tooltip-width
        :height tooltip-height}
 
       "right"
-      {:top (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2))
+      {:top (- (+ trigger-top (/ trigger-height 2)) (/ tooltip-height 2))
        :left (+ trigger-right offset)
        :right (+ trigger-right offset tooltip-width)
-       :bottom (+ (- (+ trigger-top (/ trigger-height 2) half-arrow-height) (/ tooltip-height 2)) tooltip-height)
+       :bottom (+ (- (+ trigger-top (/ trigger-height 2)) (/ tooltip-height 2)) tooltip-height)
        :width tooltip-width
        :height tooltip-height}
 
@@ -153,22 +138,6 @@
           (recur (rest placements))
           #js [placement placement-brect])))))
 
-(defn- update-tooltip-position
-  "Update the tooltip position having in account the current window
-  size, placement. It calculates the appropriate placement and updates
-  the dom with the result."
-  [tooltip placement origin-brect offset]
-  (show-popover tooltip)
-  (let [tooltip-brect (dom/get-bounding-rect tooltip)
-        tooltip-brect (assoc tooltip-brect :height (:height tooltip-brect) :width (:width tooltip-brect))
-        window-size   (dom/get-window-size)]
-    (when-let [[placement placement-rect] (find-matching-placement placement tooltip-brect origin-brect window-size offset)]
-      (let [height (:height placement-rect)]
-        (dom/set-css-property! tooltip "block-size" (dm/str height "px"))
-        (dom/set-css-property! tooltip "inset-block-start" (dm/str (:top placement-rect) "px"))
-        (dom/set-css-property! tooltip "inset-inline-start" (dm/str (:left placement-rect) "px")))
-      placement)))
-
 (def ^:private schema:tooltip
   [:map
    [:class {:optional true} [:maybe :string]]
@@ -176,15 +145,19 @@
    [:offset {:optional true} :int]
    [:delay {:optional true} :int]
    [:content [:or fn? :string map?]]
+   [:trigger-ref {:optional true} [:maybe :any]]
    [:placement {:optional true}
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]])
 
 (mf/defc tooltip*
   {::mf/schema schema:tooltip}
-  [{:keys [class id children content placement offset delay] :rest props}]
+  [{:keys [class id children content placement offset delay trigger-ref] :rest props}]
   (let [internal-id
         (mf/use-id)
-        trigger-ref (mf/use-ref nil)
+        internal-trigger-ref (mf/use-ref nil)
+        trigger-ref (or trigger-ref internal-trigger-ref)
+
+        tooltip-ref (mf/use-ref nil)
 
         id
         (d/nilv id internal-id)
@@ -201,35 +174,31 @@
         schedule-ref
         (mf/use-ref nil)
 
+        visible*
+        (mf/use-state false)
+        visible (deref visible*)
+
         on-show
-        (mf/use-fn
-         (mf/deps id placement offset)
-         (fn [event]
+        (fn [_]
+          (let [trigger-el (mf/ref-val trigger-ref)]
+            (clear-schedule schedule-ref)
+            (add-schedule schedule-ref (d/nilv delay 300)
+                          (fn []
+                            (when-let [active @active-tooltip]
+                              (when (not= (:id active) id)
+                                (when-let [tooltip-el (dom/get-element (:id active))]
+                                  (dom/set-css-property! tooltip-el "display" "none"))
+                                (reset! active-tooltip nil)))
 
-           (let [current (dom/get-current-target event)
-                 related (dom/get-related-target event)
-                 is-node? (fn [node] (and node (.-nodeType node)))]
-             (when-not (and related (is-node? related) (.contains current related))
-               (clear-schedule schedule-ref)
-               (when-let [tooltip (dom/get-element id)]
-                 (let [origin-brect
-                       (dom/get-bounding-rect (mf/ref-val trigger-ref))
-
-                       update-position
-                       (fn []
-                         (let [new-placement (update-tooltip-position tooltip placement origin-brect offset)]
-                           (when (not= new-placement placement)
-                             (reset! placement* new-placement))))]
-
-                   (add-schedule schedule-ref delay update-position)))))))
+                            (reset! active-tooltip {:id id :trigger trigger-el})
+                            (reset! visible* true)))))
 
         on-hide
-        (mf/use-fn
-         (mf/deps id)
-         (fn []
-           (when-let [tooltip (dom/get-element id)]
-             (clear-schedule schedule-ref)
-             (hide-popover tooltip))))
+        (fn []
+          (clear-schedule schedule-ref)
+          (reset! visible* false)
+          (when (= (:id @active-tooltip) id)
+            (reset! active-tooltip nil)))
 
         handle-key-down
         (mf/use-fn
@@ -256,8 +225,8 @@
                           :on-mouse-leave on-hide
                           :on-focus on-show
                           :on-blur on-hide
+                          :ref internal-trigger-ref
                           :on-key-down handle-key-down
-                          :ref trigger-ref
                           :class [class (stl/css :tooltip-trigger)]
                           :aria-describedby id})
         content
@@ -265,13 +234,44 @@
           (content)
           content)]
 
+    (mf/use-effect
+     (mf/deps visible placement offset)
+     (fn []
+       (when visible
+         (let [trigger-el (mf/ref-val trigger-ref)
+               tooltip-el (mf/ref-val tooltip-ref)]
+           (when (and trigger-el tooltip-el)
+             (js/requestAnimationFrame
+              (fn []
+                (let [origin-brect (dom/get-bounding-rect trigger-el)
+                      tooltip-brect (dom/get-bounding-rect tooltip-el)
+                      window-size (dom/get-window-size)]
+                  (when-let [[new-placement placement-rect]
+                             (find-matching-placement
+                              placement
+                              tooltip-brect
+                              origin-brect
+                              window-size
+                              offset)]
+                    (dom/set-css-property! tooltip-el "inset-block-start"
+                                           (str (:top placement-rect) "px"))
+                    (dom/set-css-property! tooltip-el "inset-inline-start"
+                                           (str (:left placement-rect) "px"))
+
+                    (when (not= new-placement placement)
+                      (reset! placement* new-placement)))))))))))
+
     [:> :div props
      children
-     [:div {:class (stl/css :tooltip)
-            :id id
-            :popover "auto"
-            :role "tooltip"}
-      [:div {:class tooltip-class}
-       [:div {:class (stl/css :tooltip-content)} content]
-       [:div {:class (stl/css :tooltip-arrow)
-              :id "tooltip-arrow"}]]]]))
+     (when visible
+       (mf/portal
+        (mf/html
+         [:div {:class (stl/css :tooltip)
+                :id id
+                :role "tooltip"
+                :ref tooltip-ref}
+          [:div {:class tooltip-class}
+           [:div {:class (stl/css :tooltip-content)} content]
+           [:div {:class (stl/css :tooltip-arrow)
+                  :id "tooltip-arrow"}]]])
+        (.-body js/document)))]))

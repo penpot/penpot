@@ -94,6 +94,7 @@
         not-active (or (empty? active-tokens)
                        (nil? token))
         id (dm/str (:id token) "-name")
+        token-name-ref (mf/use-ref nil)
         swatch-tooltip-content (cond
                                  not-active
                                  (tr "ds.inputs.token-field.no-active-token-option")
@@ -126,8 +127,10 @@
                     :size "small"}]]
       [:> tooltip* {:content name-tooltip-content
                     :id id
+                    :trigger-ref token-name-ref
                     :class (stl/css :token-tooltip)}
        [:div {:class (stl/css :token-name)
+              :ref token-name-ref
               :aria-labelledby id}
         (or token-name applied-token-name)]]
       [:div {:class (stl/css :token-actions)}
