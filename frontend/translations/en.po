@@ -8503,6 +8503,10 @@ msgstr "Invalid value: Units are not allowed."
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name"
 
+#: src/app/main/data/workspace/tokens/application.cljs
+msgid "workspace.tokens.error-text-edition"
+msgstr "Tokens can't be applied while editing text. Select the text layer instead."
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Assets"

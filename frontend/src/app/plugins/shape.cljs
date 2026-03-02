@@ -962,9 +962,10 @@
                  :else
                  (let [child-id     (obj/get child "$id")
                        is-reversed? (ctl/flex-layout? shape)
-                       index        (if (and (natural-child-ordering? plugin-id) is-reversed?)
-                                      0
-                                      (count (:shapes shape)))]
+                       index
+                       (if (or (not (natural-child-ordering? plugin-id)) is-reversed?)
+                         0
+                         (count (:shapes shape)))]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
 
            :insertChild
@@ -987,7 +988,7 @@
                  (let [child-id (obj/get child "$id")
                        is-reversed? (ctl/flex-layout? shape)
                        index
-                       (if (and (natural-child-ordering? plugin-id) is-reversed?)
+                       (if (or (not (natural-child-ordering? plugin-id)) is-reversed?)
                          (- (count (:shapes shape)) index)
                          index)]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))

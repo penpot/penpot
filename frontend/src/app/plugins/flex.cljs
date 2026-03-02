@@ -10,12 +10,12 @@
    [app.common.schema :as sm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.shape-layout :as dwsl]
-   [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
+   [app.plugins.flags :refer [natural-child-ordering?]]
    [app.plugins.register :as r]
    [app.plugins.utils :as u]
-   [app.util.object :as obj]
-   [potok.v2.core :as ptk]))
+   [app.util.object :as obj]))
 
 ;; Define in `app.plugins.shape` we do this way to prevent circular dependency
 (def shape-proxy? nil)
@@ -259,9 +259,13 @@
         (u/display-not-valid :appendChild child)
 
         :else
-        (let [child-id (obj/get child "$id")]
-          (st/emit! (dwt/move-shapes-to-frame #{child-id} id nil nil)
-                    (ptk/data-event :layout/update {:ids [id]})))))
+        (let [child-id (obj/get child "$id")
+              shape (u/locate-shape file-id page-id id)
+              index
+              (if (and (natural-child-ordering? plugin-id) (not (ctl/reverse? shape)))
+                0
+                (count (:shapes shape)))]
+          (st/emit! (dwsh/relocate-shapes #{child-id} id index)))))
 
     :horizontalSizing
     {:this true

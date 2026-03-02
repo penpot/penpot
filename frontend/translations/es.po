@@ -8369,6 +8369,10 @@ msgstr ""
 "Cambiar el nombre de este token romperá cualquier referencia a su nombre "
 "anterior."
 
+#: src/app/main/data/workspace/tokens/application.cljs
+msgid "workspace.tokens.error-text-edition"
+msgstr "No se pueden aplicar tokens mientras se edita texto. Seleccione la capa de texto en su lugar."
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Recursos"
