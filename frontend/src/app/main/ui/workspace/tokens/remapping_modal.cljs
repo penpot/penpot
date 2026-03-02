@@ -20,27 +20,41 @@
     [app.util.keyboard :as kbd]
     [rumext.v2 :as mf]))
 
-(defn hide-remapping-modal
+(defn- hide-remapping-modal
   "Hide the token remapping confirmation modal"
   []
   (st/emit! (modal/hide)))
 
+;;  TODO: Uncomment when modal components support schema validation
+
+;; (def ^:private schema:remap-data
+;;   [:map
+;;    [:old-name :string]
+;;    [:new-name :string]
+;;    [:type [:enum "token" "node"]]])
+
+;; (def ^:private schema:token-remapping-modal
+;;   [:map
+;;    [:remap-data [:maybe schema:remap-data]]
+;;    [:on-remap {:optional true} [:maybe fn?]]
+;;    [:on-rename {:optional true} [:maybe fn?]]])
+
 ;; Remapping Modal Component
 (mf/defc token-remapping-modal
   {::mf/register modal/components
-   ::mf/register-as :tokens/remapping-confirmation}
-  [{:keys [old-token-name new-token-name on-remap on-rename]}]
-  (let [remap-modal  (get @st/state :remap-modal)
+   ::mf/register-as :tokens/remapping-confirmation
+   ;;  TODO: Uncomment when modal components support schema validation
+   ;;  ::mf/schema schema:token-remapping-modal
+   }
+  [{:keys [remap-data on-remap on-rename]}]
+  (let [old-name (:old-name remap-data)
+        new-name (:new-name remap-data)
 
         ;; Remap logic on confirm
         confirm-remap
         (mf/use-fn
-         (mf/deps on-remap remap-modal)
+         (mf/deps on-remap old-name new-name)
          (fn []
-           ;; Call shared remapping logic
-           (let [old-token-name (:old-token-name remap-modal)
-                 new-token-name (:new-token-name remap-modal)]
-             (st/emit! [:tokens/remap-tokens old-token-name new-token-name]))
            (when (fn? on-remap)
              (on-remap))))
 
@@ -83,9 +97,13 @@
                      :id "modal-title"
                      :typography "headline-large"
                      :class (stl/css :modal-title)}
-        (tr "workspace.tokens.remap-token-references-title" old-token-name new-token-name)]]
+        (if (= (:type remap-data) "token")
+          (tr "workspace.tokens.remap-token-references-title" old-name new-name)
+          (tr "workspace.tokens.remap-node-references-title" old-name new-name))]]
       [:div {:class (stl/css :modal-content)}
-       [:> text* {:as "p" :typography t/body-medium} (tr "workspace.tokens.remap-warning-effects")]
+       (if (= (:type remap-data) "token")
+         [:> text* {:as "p" :typography t/body-medium} (tr "workspace.tokens.remap-token-warning-effects")]
+         [:> text* {:as "p" :typography t/body-medium} (tr "workspace.tokens.remap-node-warning-effects")])
        [:> text* {:as "p" :typography t/body-medium} (tr "workspace.tokens.remap-warning-time")]]
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}

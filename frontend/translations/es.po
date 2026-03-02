@@ -8144,11 +8144,13 @@ msgstr "Actualizar tokens"
 msgid "workspace.tokens.remap-token-references-title"
 msgstr "¿Actualizar todas las referencias de `%s` a `%s`?"
 
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-node-references-title"
+msgstr "¿Renombrar `%s` to `%s` y remapear todos los tokens de este grupo?"
+
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
 msgid "workspace.tokens.remap-warning-effects"
-msgstr ""
-"Esta acción actualizará todas las capas y referencias que usen el token "
-"antiguo"
+msgstr "Esta acción actualizará todas las capas y referencias que usen el token antiguo"
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
 msgid "workspace.tokens.remap-warning-time"
@@ -8372,6 +8374,14 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/application.cljs
 msgid "workspace.tokens.error-text-edition"
 msgstr "No se pueden aplicar tokens mientras se edita texto. Seleccione la capa de texto en su lugar."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group"
+msgstr "Renombrar grupo de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr "Tus tokens serán automáticamente renombrados a %s.(sufijo).(token)"
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
