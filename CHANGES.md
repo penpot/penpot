@@ -16,6 +16,7 @@
 - Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
 - Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
 - Import Tokens from linked library [Github #8391](https://github.com/penpot/penpot/pull/8391)
+- Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
 
 ### :bug: Bugs fixed
 
