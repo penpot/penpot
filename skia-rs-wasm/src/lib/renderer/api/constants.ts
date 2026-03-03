@@ -1,15 +1,15 @@
 /**
  * Constants for the WASM Render API.
- * Fill type guards and ZERO_UUID re-exported from renderer types for api convenience.
+ * ZERO_UUID from renderer types; fill type guards from verification for api convenience.
  */
 
+export { ZERO_UUID } from '../types'
 export {
-  ZERO_UUID,
   isColorFill,
   isLinearGradient,
   isRadialGradient,
   isImageFill,
-} from '../types'
+} from '../verification'
 
 // Constants
 export const UUID_U8_SIZE = 16

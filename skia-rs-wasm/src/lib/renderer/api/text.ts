@@ -546,7 +546,7 @@ export function setShapeTextContent(
 ): PendingImageCallback[] {
   // Note: resolveImageUrl is kept for API compatibility but not used in this function
   // Image loading for text is handled separately via setShapeTextImages
-  checkContext(module)
+  checkContext()
   module._clear_shape_text()
 
   if (content?.verticalAlign) {
@@ -586,7 +586,7 @@ export function getTextDimensions(module: WasmModule, id?: string): {
   height: number
   'max-width': number
 } {
-  checkContext(module)
+  checkContext()
   if (id) {
     moduleUseShape(module, id)
   }
@@ -651,7 +651,7 @@ export function setShapeTextImages(
   thumbnail: boolean = false,
   resolveImageUrl?: (imageId: string, thumbnail: boolean) => string
 ): PendingImageCallback[] {
-  checkContext(module)
+  checkContext()
   const pending: PendingImageCallback[] = []
 
   if (!content || !content.children) {
@@ -812,7 +812,7 @@ export function fontsFromTextContent(
  * Updates text layouts for text shapes
  */
 export function updateTextLayouts(module: WasmModule, shapes: PenpotNode[]): void {
-  checkContext(module)
+  checkContext()
   
   for (const shape of shapes) {
     if (shape.type === 'text' && shape.id) {
@@ -831,7 +831,7 @@ export function updateTextRect(
   id: string,
   onUpdate?: (id: string, dimensions: ReturnType<typeof getTextDimensions>) => void
 ): void {
-  checkContext(module)
+  checkContext()
   
   const dimensions = getTextDimensions(module, id)
   
@@ -859,7 +859,7 @@ export interface PositionDataEntry {
  * Calculates position data for text shapes
  */
 export function calculatePositionData(module: WasmModule, shape: PenpotNode): PositionDataEntry[] {
-  checkContext(module)
+  checkContext()
   
   if (shape.type !== 'text' || !shape.id) {
     return []

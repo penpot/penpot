@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode, GridCell } from 'penpot-exporter/lib'
+import type { PenpotNode, GridCell, LayoutAttributes, LayoutChildAttributes } from 'penpot-exporter/lib'
 import {
   allocBytes,
   freeBytes,
@@ -27,11 +27,14 @@ import {
 import { checkContext } from './context'
 import { UUID_U8_SIZE, ZERO_UUID } from './constants'
 
+/** Shape with optional layout attributes (frame/flex/grid). */
+type ShapeWithLayout = PenpotNode & Partial<LayoutAttributes>
+
 /**
  * Set flex layout
  */
-export function setFlexLayout(module: WasmModule, shape: any): void {
-  checkContext(module)
+export function setFlexLayout(module: WasmModule, shape: ShapeWithLayout): void {
+  checkContext()
   const dir = translateLayoutFlexDir(shape.layoutFlexDir || 'row')
   const gap = shape.layoutGap || {}
   const rowGap = gap.rowGap ?? 0
@@ -68,8 +71,8 @@ export function setFlexLayout(module: WasmModule, shape: any): void {
 /**
  * Set grid layout data
  */
-export function setGridLayoutData(module: WasmModule, shape: any): void {
-  checkContext(module)
+export function setGridLayoutData(module: WasmModule, shape: ShapeWithLayout): void {
+  checkContext()
   const dir = translateLayoutGridDir(shape.layoutGridDir || 'row')
   const gap = shape.layoutGap || {}
   const rowGap = gap.rowGap ?? 0
@@ -104,8 +107,8 @@ export function setGridLayoutData(module: WasmModule, shape: any): void {
 /**
  * Set grid layout rows
  */
-export function setGridLayoutRows(module: WasmModule, entries: Array<{ type: string; value: number }>): void {
-  checkContext(module)
+export function setGridLayoutRows(module: WasmModule, entries: Array<{ type: string; value?: number }>): void {
+  checkContext()
   const GRID_LAYOUT_ROW_U8_SIZE = 8
   const size = getAllocSize(entries.length, GRID_LAYOUT_ROW_U8_SIZE)
   const offset = allocBytes(module, size)
@@ -117,7 +120,7 @@ export function setGridLayoutRows(module: WasmModule, entries: Array<{ type: str
     heapU8[currentOffset] = translateGridTrackType(entry.type)
     // Padding (3 bytes)
     currentOffset += 4
-    heapF32[currentOffset / 4] = entry.value
+    heapF32[currentOffset / 4] = entry.value ?? 0
     currentOffset += 4
   }
 
@@ -128,8 +131,8 @@ export function setGridLayoutRows(module: WasmModule, entries: Array<{ type: str
 /**
  * Set grid layout columns
  */
-export function setGridLayoutColumns(module: WasmModule, entries: Array<{ type: string; value: number }>): void {
-  checkContext(module)
+export function setGridLayoutColumns(module: WasmModule, entries: Array<{ type: string; value?: number }>): void {
+  checkContext()
   const GRID_LAYOUT_COLUMN_U8_SIZE = 8
   const size = getAllocSize(entries.length, GRID_LAYOUT_COLUMN_U8_SIZE)
   const offset = allocBytes(module, size)
@@ -141,7 +144,7 @@ export function setGridLayoutColumns(module: WasmModule, entries: Array<{ type: 
     heapU8[currentOffset] = translateGridTrackType(entry.type)
     // Padding (3 bytes)
     currentOffset += 4
-    heapF32[currentOffset / 4] = entry.value
+    heapF32[currentOffset / 4] = entry.value ?? 0
     currentOffset += 4
   }
 
@@ -156,7 +159,7 @@ export function setGridLayoutCells(
   module: WasmModule,
   cells: GridCell[]
 ): void {
-  checkContext(module)
+  checkContext()
   const GRID_LAYOUT_CELL_U8_SIZE = 36
   const size = getAllocSize(cells.length, GRID_LAYOUT_CELL_U8_SIZE)
   const offset = allocBytes(module, size)
@@ -190,8 +193,8 @@ export function setGridLayoutCells(
 /**
  * Set grid layout (complete)
  */
-export function setGridLayout(module: WasmModule, shape: any): void {
-  checkContext(module)
+export function setGridLayout(module: WasmModule, shape: ShapeWithLayout): void {
+  checkContext()
   setGridLayoutData(module, shape)
   if (shape.layoutGridRows?.length) {
     setGridLayoutRows(module, shape.layoutGridRows)
@@ -204,11 +207,14 @@ export function setGridLayout(module: WasmModule, shape: any): void {
   }
 }
 
+/** Shape with optional layout child attributes (margin, sizing, etc.). */
+type ShapeWithLayoutChild = PenpotNode & Partial<LayoutChildAttributes>
+
 /**
  * Set layout data
  */
-export function setLayoutData(module: WasmModule, shape: any): void {
-  checkContext(module)
+export function setLayoutData(module: WasmModule, shape: ShapeWithLayoutChild): void {
+  checkContext()
   const margins = shape.layoutItemMargin || {}
   const marginTop = margins.m1 ?? 0
   const marginRight = margins.m2 ?? 0
@@ -256,7 +262,7 @@ export function setLayoutData(module: WasmModule, shape: any): void {
  * Clear layout
  */
 export function clearLayout(module: WasmModule): void {
-  checkContext(module)
+  checkContext()
   module._clear_shape_layout()
 }
 

@@ -31,7 +31,7 @@ export function setShapeStrokes(
   thumbnail: boolean = false,
   resolveImageUrl?: (imageId: string, thumbnail: boolean) => string
 ): PendingImageCallback[] {
-  checkContext(module)
+  checkContext()
   const pending: PendingImageCallback[] = []
 
   module._clear_shape_strokes()

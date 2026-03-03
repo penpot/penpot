@@ -33,7 +33,7 @@ import type { BlendMode, Blur, ConstraintH, ConstraintV, Matrix, Selrect } from 
  * Set active shape
  */
 export function moduleUseShape(module: WasmModule, id: string): void {
-  checkContext(module)
+  checkContext()
   const [a, b, c, d] = uuidToU32Tuple(id)
   module._use_shape(a, b, c, d)
 }
@@ -42,7 +42,7 @@ export function moduleUseShape(module: WasmModule, id: string): void {
  * Set parent ID
  */
 export function setParentId(module: WasmModule, id: string | null | undefined): void {
-  checkContext(module)
+  checkContext()
   // Handle null/undefined by using zero UUID (all zeros)
   const [a, b, c, d] = uuidToU32Tuple(id || null)
   module._set_parent(a, b, c, d)
@@ -52,7 +52,7 @@ export function setParentId(module: WasmModule, id: string | null | undefined): 
  * Set shape type
  */
 export function setShapeType(module: WasmModule, type: ShapeType): void {
-  checkContext(module)
+  checkContext()
   module._set_shape_type(translateShapeType(type))
 }
 
@@ -60,7 +60,7 @@ export function setShapeType(module: WasmModule, type: ShapeType): void {
  * Set shape clip content
  */
 export function setShapeClipContent(module: WasmModule, clipContent: boolean): void {
-  checkContext(module)
+  checkContext()
   module._set_shape_clip_content(clipContent ? 1 : 0)
 }
 
@@ -68,7 +68,7 @@ export function setShapeClipContent(module: WasmModule, clipContent: boolean): v
  * Set masked group
  */
 export function setMasked(module: WasmModule, masked: boolean): void {
-  checkContext(module)
+  checkContext()
   module._set_shape_masked_group(masked ? 1 : 0)
 }
 
@@ -76,7 +76,7 @@ export function setMasked(module: WasmModule, masked: boolean): void {
  * Set shape selection rectangle
  */
 export function setShapeSelrect(module: WasmModule, selrect: Selrect): void {
-  checkContext(module)
+  checkContext()
   module._set_shape_selrect(selrect.x1, selrect.y1, selrect.x2, selrect.y2)
 }
 
@@ -84,7 +84,7 @@ export function setShapeSelrect(module: WasmModule, selrect: Selrect): void {
  * Set shape transform matrix
  */
 export function setShapeTransform(module: WasmModule, transform: Matrix | undefined): void {
-  checkContext(module)
+  checkContext()
   if (transform) {
     module._set_shape_transform(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f)
   }
@@ -94,7 +94,7 @@ export function setShapeTransform(module: WasmModule, transform: Matrix | undefi
  * Set shape rotation
  */
 export function setShapeRotation(module: WasmModule, rotation: number | undefined): void {
-  checkContext(module)
+  checkContext()
   if (rotation !== undefined) {
     module._set_shape_rotation(rotation)
   }
@@ -104,7 +104,7 @@ export function setShapeRotation(module: WasmModule, rotation: number | undefine
  * Set shape opacity
  */
 export function setShapeOpacity(module: WasmModule, opacity: number | undefined): void {
-  checkContext(module)
+  checkContext()
   module._set_shape_opacity(opacity ?? 1)
 }
 
@@ -112,7 +112,7 @@ export function setShapeOpacity(module: WasmModule, opacity: number | undefined)
  * Set shape hidden state
  */
 export function setShapeHidden(module: WasmModule, hidden: boolean): void {
-  checkContext(module)
+  checkContext()
   module._set_shape_hidden(hidden ? 1 : 0)
 }
 
@@ -120,7 +120,7 @@ export function setShapeHidden(module: WasmModule, hidden: boolean): void {
  * Set shape blend mode
  */
 export function setShapeBlendMode(module: WasmModule, blendMode: BlendMode | undefined): void {
-  checkContext(module)
+  checkContext()
   if (blendMode) {
     module._set_shape_blend_mode(translateBlendMode(blendMode))
   }
@@ -130,7 +130,7 @@ export function setShapeBlendMode(module: WasmModule, blendMode: BlendMode | und
  * Set shape vertical align
  */
 export function setShapeVerticalAlign(module: WasmModule, verticalAlign: string | undefined): void {
-  checkContext(module)
+  checkContext()
   module._set_shape_vertical_align(translateVerticalAlign(verticalAlign))
 }
 
@@ -138,7 +138,7 @@ export function setShapeVerticalAlign(module: WasmModule, verticalAlign: string 
  * Set shape children
  */
 export function setShapeChildren(module: WasmModule, children: string[]): void {
-  checkContext(module)
+  checkContext()
   const filtered = children.filter((id) => id != null)
   const count = filtered.length
 
@@ -189,7 +189,7 @@ export function setShapeChildren(module: WasmModule, children: string[]): void {
  * Set shape corners (border radius)
  */
 export function setShapeCorners(module: WasmModule, corners: [number?, number?, number?, number?]): void {
-  checkContext(module)
+  checkContext()
   const [r1 = 0, r2 = 0, r3 = 0, r4 = 0] = corners
   module._set_shape_corners(r1, r2, r3, r4)
 }
@@ -198,7 +198,7 @@ export function setShapeCorners(module: WasmModule, corners: [number?, number?, 
  * Set shape blur
  */
 export function setShapeBlur(module: WasmModule, blur: Blur | null | undefined): void {
-  checkContext(module)
+  checkContext()
   if (blur) {
     module._set_shape_blur(translateBlurType(blur.type), blur.hidden ? 1 : 0, blur.value)
   } else {
@@ -210,7 +210,7 @@ export function setShapeBlur(module: WasmModule, blur: Blur | null | undefined):
  * Set shape bool type
  */
 export function setShapeBoolType(module: WasmModule, boolType: BoolType | undefined): void {
-  checkContext(module)
+  checkContext()
   if (boolType) {
     module._set_shape_bool_type(translateBoolType(boolType))
   }
@@ -220,7 +220,7 @@ export function setShapeBoolType(module: WasmModule, boolType: BoolType | undefi
  * Set shape grow type
  */
 export function setShapeGrowType(module: WasmModule, growType: string | undefined): void {
-  checkContext(module)
+  checkContext()
   module._set_shape_grow_type(translateGrowType(growType))
 }
 
@@ -232,7 +232,7 @@ export function setShapeConstraints(
   constraintH: ConstraintH | undefined,
   constraintV: ConstraintV | undefined
 ): void {
-  checkContext(module)
+  checkContext()
   module._clear_shape_constraints()
   if (constraintH) {
     module._set_shape_constraint_h(translateConstraintH(constraintH))

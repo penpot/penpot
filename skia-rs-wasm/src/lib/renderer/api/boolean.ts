@@ -83,7 +83,7 @@ export function calculateBool(
   shape: { boolType: BoolType; shapes: string[] },
   objects: Record<string, PenpotNode>
 ): PathContent | null {
-  checkContext(module)
+  checkContext()
 
   // Start temp objects
   module._start_temp_objects()
@@ -133,7 +133,7 @@ export function calculateBool(
  * Convert shape to path
  */
 export function shapeToPath(module: WasmModule, id: string): PathContent {
-  checkContext(module)
+  checkContext()
   moduleUseShape(module, id)
   const offset = offset8To32(module._current_to_path())
   const heap = module.HEAPU32

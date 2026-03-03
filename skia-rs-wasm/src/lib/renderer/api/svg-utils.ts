@@ -4,7 +4,7 @@
 
 import type { SvgContent } from '../types'
 import type { Matrix } from 'penpot-exporter/lib'
-import { isSvgContentTree } from '../types'
+import { isSvgContentTree } from '../verification'
 
 /**
  * SVG tag names (from ClojureScript common/src/app/common/svg.cljc)

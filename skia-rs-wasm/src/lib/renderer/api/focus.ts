@@ -18,7 +18,7 @@ import { requestRender } from './rendering'
  * Set focus mode
  */
 export function setFocusMode(module: WasmModule, entries: string[]): void {
-  checkContext(module)
+  checkContext()
   if (entries.length === 0) {
     return
   }
@@ -41,7 +41,7 @@ export function setFocusMode(module: WasmModule, entries: string[]): void {
  * Clear focus mode
  */
 export function clearFocusMode(module: WasmModule): void {
-  checkContext(module)
+  checkContext()
   module._clear_focus_mode()
   requestRender(module, 'clear-focus-mode')
 }

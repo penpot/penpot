@@ -5,6 +5,7 @@
 import type { PenpotNode, PenpotPage, Selrect } from 'penpot-exporter/lib'
 import type { Change } from '@skia-rs-wasm/common'
 import type { Point } from '@skia-rs-wasm/common'
+import type { Quadtree } from './quadtree'
 
 /** Worker configuration (keys logged only; shape extensible). */
 export type WorkerConfig = Record<string, unknown>
@@ -15,6 +16,13 @@ export interface WorkerTextRectDimensions {
   y?: number
   width?: number
   height?: number
+}
+
+/** In-memory text rect cache value (dimensions plus optional layout data). */
+export type WorkerTextRectCacheValue = WorkerTextRectDimensions & {
+  positionData?: unknown
+  points?: unknown
+  selrect?: unknown
 }
 
 /** Payload for configure command. */
@@ -69,7 +77,7 @@ export interface QueryParams {
 }
 
 export interface SelectionIndex {
-  index: any // Quadtree
+  index: Quadtree
   bounds: Selrect
   parentsIndex: Record<string, Set<string>>
   clipIndex: Record<string, PenpotNode[]>
@@ -78,21 +86,21 @@ export interface SelectionIndex {
 export interface WorkerState {
   pagesIndex: Record<string, IndexedPage>
   selection: Record<string, SelectionIndex>
-  textRect?: Record<string, Record<string, any>>
+  textRect?: Record<string, Record<string, WorkerTextRectCacheValue>>
 }
 
 /** Request/response correlation ID. Client generates unique values: client_${Date.now()}_${counter} */
 export interface WorkerMessage {
   cmd: string
   replyTo: string
-  payload?: any
+  payload?: unknown
   buffer?: boolean
 }
 
 export interface SerializedMessage {
   cmd: string
   replyTo: string
-  payload?: any
+  payload?: unknown
   buffer?: boolean
 }
 

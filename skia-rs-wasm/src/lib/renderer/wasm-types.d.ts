@@ -3,6 +3,11 @@
  * Based on Emscripten-generated WASM module interface
  */
 
+export interface WasmModuleOptions {
+  locateFile?: (path: string, prefix: string) => string
+  [key: string]: unknown
+}
+
 export interface WasmModule {
   // Memory heaps
   readonly HEAP8: Int8Array

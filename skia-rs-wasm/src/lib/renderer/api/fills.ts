@@ -292,7 +292,7 @@ export function setShapeFills(
   thumbnail: boolean = false,
   resolveImageUrl?: (imageId: string, thumbnail: boolean) => string
 ): PendingImageCallback[] {
-  checkContext(module)
+  checkContext()
   const pending: PendingImageCallback[] = []
 
   if (fills.length === 0) {

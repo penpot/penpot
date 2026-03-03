@@ -26,7 +26,7 @@ import { requestRender } from './rendering'
  * Set modifiers
  */
 export function setModifiers(module: WasmModule, modifiers: Array<[string, Matrix]>, skipRender = false): void {
-  checkContext(module)
+  checkContext()
   if (modifiers.length === 0) {
     return
   }
@@ -56,7 +56,7 @@ export function propagateModifiers(
   entries: Array<[string, Matrix]>,
   pixelPrecision: number
 ): Array<{ id: string; transform: Matrix }> {
-  checkContext(module)
+  checkContext()
   if (entries.length === 0) {
     return []
   }
@@ -111,7 +111,7 @@ export function propagateModifiers(
  * Clean modifiers
  */
 export function cleanModifiers(module: WasmModule): void {
-  checkContext(module)
+  checkContext()
   module._clean_modifiers()
 }
 
@@ -128,7 +128,7 @@ export function setStructureModifiers(
     value: number
   }>
 ): void {
-  checkContext(module)
+  checkContext()
   if (entries.length === 0) {
     return
   }

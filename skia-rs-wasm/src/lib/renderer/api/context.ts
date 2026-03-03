@@ -2,8 +2,6 @@
  * Context state management and utility functions
  */
 
-import type { WasmModule } from '../wasm-types'
-
 // Internal state for render management
 let pendingRender = false
 let contextInitialized = false
@@ -60,7 +58,7 @@ export function getContextLost(): boolean {
 /**
  * Checks if context is ready for operations
  */
-export function checkContext(_module: WasmModule): void {
+export function checkContext(): void {
   if (!contextInitialized || contextLost) {
     throw new Error('WASM context not initialized or lost')
   }

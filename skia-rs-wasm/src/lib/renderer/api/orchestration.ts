@@ -4,8 +4,8 @@
 
 import type { WasmModule } from '../wasm-types'
 import type { PendingImageCallback, SetObjectResult } from '../types'
-import type { BoolType, ShapeType } from '../types'
-import type { PenpotNode } from 'penpot-exporter/lib'
+import type { BoolType, ShapeType, PathContent } from '../types'
+import type { PenpotNode, TextContent } from 'penpot-exporter/lib'
 import { checkContext } from './context'
 import { requestRender } from './rendering'
 import { renderFinish } from './viewport'
@@ -48,10 +48,10 @@ import {
 /**
  * Ensures text content is valid, falling back to default if needed
  */
-function ensureTextContent(content: any): any {
-  // TODO: Implement default text content fallback
-  return content || {
-    'vertical-align': 'top',
+function ensureTextContent(content: TextContent | null | undefined): TextContent {
+  return content ?? {
+    type: 'root',
+    verticalAlign: 'top',
     children: []
   }
 }
@@ -65,7 +65,7 @@ export function setObject(
   shape: PenpotNode,
   resolveImageUrl?: (imageId: string, thumbnail: boolean) => string
 ): SetObjectResult {
-  checkContext(module)
+  checkContext()
   
   const id = shape.id
   const type = shape.type
@@ -83,7 +83,7 @@ export function setObject(
   const blendMode = shape.blendMode
   const opacity = shape.opacity
   const hidden = shape.hidden
-  const content = type === 'text' ? ensureTextContent((shape as { content?: unknown }).content) : (shape as { content?: unknown }).content
+  const content = type === 'text' ? ensureTextContent((shape as { content?: TextContent }).content) : (shape as { content?: unknown }).content
   const boolType: BoolType | undefined = type === 'bool' ? (shape as { boolType: BoolType }).boolType : undefined
   const growType = shape.growType
   const blur = shape.blur
@@ -122,7 +122,7 @@ export function setObject(
     setShapeBoolType(module, boolType)
   }
   if (content && (type === 'path' || type === 'bool')) {
-    setShapePathContent(module, content)
+    setShapePathContent(module, content as PathContent)
   }
   if (svgAttrs) {
     setShapeSvgAttrs(module, svgAttrs)
@@ -152,9 +152,10 @@ export function setObject(
 
   // Text content and images - always call for text type
   if (type === 'text') {
-    pendingThumbnails.push(...setShapeTextContent(module, id, content, resolveImageUrl))
-    pendingThumbnails.push(...setShapeTextImages(module, id, content, true, resolveImageUrl))
-    pendingFull.push(...setShapeTextImages(module, id, content, false, resolveImageUrl))
+    const textContent = content as TextContent
+    pendingThumbnails.push(...setShapeTextContent(module, id, textContent, resolveImageUrl))
+    pendingThumbnails.push(...setShapeTextImages(module, id, textContent, true, resolveImageUrl))
+    pendingFull.push(...setShapeTextImages(module, id, textContent, false, resolveImageUrl))
   }
 
   // Fills and strokes
@@ -241,7 +242,7 @@ export async function setObjects(
   renderCallback?: () => void,
   resolveImageUrl?: (imageId: string, thumbnail: boolean) => string
 ): Promise<void> {
-  checkContext(module)
+  checkContext()
   
   const shapes = Object.values(objects)
   const thumbnails: PendingImageCallback[] = []

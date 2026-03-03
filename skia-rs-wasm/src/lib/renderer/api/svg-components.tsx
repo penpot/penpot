@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useMemo } from 'react'
 import type { Matrix, PenpotNode } from 'penpot-exporter/lib'
 import type { SvgContent } from '../types'
-import { isSvgContentTree, isSvgContentString, isSvgContent } from '../types'
+import { isSvgContentTree, isSvgContentString, isSvgContent } from '../verification'
 import { generateIdMapping, formatTransform, isSvgTag, isGraphicElement, svgTransformMatrix } from './svg-utils'
 import { addFillProps } from './svg-attrs'
 
@@ -24,6 +24,9 @@ const RenderIdContext = createContext<string>('')
  * Context for current SVG root ID
  */
 const CurrentSvgRootIdContext = createContext<string>('')
+
+/** Stable default for ID mapping when context is null (avoids new Map() on every render). */
+const EMPTY_ID_MAP = new Map<string, string>()
 
 /**
  * SvgRoot component - handles root <svg> element
@@ -83,19 +86,17 @@ interface SvgElementProps {
 }
 
 export function SvgElement({ shape, children }: SvgElementProps): React.ReactElement {
-  const idsMapping = useContext(SvgIdsContext) || new Map()
-  const renderId = useContext(RenderIdContext) || ''
+  const idsMapping = useContext(SvgIdsContext) ?? EMPTY_ID_MAP
+  const renderId = useContext(RenderIdContext) ?? ''
 
   const content = (shape as { content?: unknown }).content as SvgContent | Record<string, unknown> | undefined
-  if (!isSvgContent(content) || !isSvgContentTree(content)) {
-    return <>{children}</>
-  }
+  const hasValidContent = isSvgContent(content) && isSvgContentTree(content)
+  const tag = hasValidContent ? (content as { tag: string }).tag : ''
 
-  const tag = content.tag
-  const attrs = content.attrs || {}
-
-  // Apply ID remapping
+  // Apply ID remapping (attrs derived inside useMemo to avoid new {} reference every render)
   const updatedAttrs = useMemo(() => {
+    if (!hasValidContent) return {}
+    const attrs = (content as { attrs?: Record<string, unknown> }).attrs ?? {}
     let updated = { ...attrs }
     const elementId = updated.id
     if (elementId && typeof elementId === 'string' && idsMapping.has(elementId)) {
@@ -113,7 +114,7 @@ export function SvgElement({ shape, children }: SvgElementProps): React.ReactEle
     }
 
     return updated
-  }, [attrs, idsMapping])
+  }, [content, idsMapping, hasValidContent])
 
   // Handle transforms for graphic elements
   const finalAttrs = useMemo(() => {
@@ -157,6 +158,10 @@ export function SvgElement({ shape, children }: SvgElementProps): React.ReactEle
     return addFillProps(finalAttrs, shape, renderId)
   }, [finalAttrs, shape, renderId])
 
+  if (!hasValidContent) {
+    return <>{children}</>
+  }
+
   // Convert kebab-case to camelCase for React props
   const reactProps: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(props)) {
@@ -176,6 +181,7 @@ interface SvgRawShapeProps {
 }
 
 export function SvgRawShape({ shape, children: childShapes }: SvgRawShapeProps): React.ReactElement | string | null {
+  const currentSvgRootId = useContext(CurrentSvgRootIdContext) ?? ''
   const content = (shape as { content?: unknown }).content as SvgContent | Record<string, unknown> | undefined
 
   if (!content) {
@@ -198,7 +204,6 @@ export function SvgRawShape({ shape, children: childShapes }: SvgRawShapeProps):
   }
 
   const tag = content.tag
-  const currentSvgRootId = useContext(CurrentSvgRootIdContext) || ''
 
   // Handle style tag
   if (tag === 'style') {

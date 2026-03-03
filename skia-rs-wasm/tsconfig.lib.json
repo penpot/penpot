@@ -24,7 +24,9 @@
     "baseUrl": ".",
     "paths": {
       "@skia-rs-wasm/common": ["./src/lib/common"],
-      "@skia-rs-wasm/common/*": ["./src/lib/common/*"]
+      "@skia-rs-wasm/common/*": ["./src/lib/common/*"],
+      "@ui/*": ["./packages/penpot-exporter-figma-plugin/ui-src/*"],
+      "@plugin/*": ["./packages/penpot-exporter-figma-plugin/plugin-src/*"]
     }
   },
   "include": ["src/index.ts", "src/lib/**/*"]
