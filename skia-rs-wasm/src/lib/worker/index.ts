@@ -51,7 +51,7 @@ registerHandler('index/clear', () => {
 
 registerHandler('index/initialize', (message: WorkerMessage) => {
   console.log('index/initialize', message)
-  const page = message.payload?.page as PenpotPage | undefined
+  const page = (message.payload as { page?: PenpotPage } | undefined)?.page
   if (!page) {
     return null
   }
@@ -77,9 +77,10 @@ registerHandler('index/initialize', (message: WorkerMessage) => {
 })
 
 registerHandler('index/update', (message: WorkerMessage) => {
-  const pageId = message.payload?.pageId as string | undefined
-  const changes = message.payload?.changes as Change[] | undefined
-  const newPage = message.payload?.page as PenpotPage | undefined
+  const payload = message.payload as { pageId?: string; changes?: Change[]; page?: PenpotPage } | undefined
+  const pageId = payload?.pageId
+  const changes = payload?.changes
+  const newPage = payload?.page
 
   if (!pageId) {
     return null

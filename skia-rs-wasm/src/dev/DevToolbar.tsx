@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType } from 'penpot-exporter/lib'
+import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType, ShapeGeomAttributes } from 'penpot-exporter/lib'
 import { createNode } from './node-factory'
 import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Preset } from './presets'
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from '../lib/renderer/api/constants'
@@ -180,7 +180,17 @@ export function DevToolbar() {
   const handleAddNode = useCallback(() => {
     if (!isPageReady) return
 
-    const options: any = {
+    const options: Partial<ShapeGeomAttributes> & {
+      opacity?: number
+      radius?: number
+      fillColor?: string
+      fillOpacity?: number
+      strokeColor?: string
+      strokeWidth?: number
+      borderRadius?: number
+      text?: string
+      [key: string]: unknown
+    } = {
       x,
       y,
       width,

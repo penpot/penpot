@@ -12,7 +12,7 @@ import { checkContext } from './context'
  * Set shape shadows
  */
 export function setShapeShadows(module: WasmModule, shadows: Shadow[]): void {
-  checkContext(module)
+  checkContext()
   module._clear_shape_shadows()
 
   for (const shadow of shadows) {

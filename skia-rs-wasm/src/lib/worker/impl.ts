@@ -5,7 +5,7 @@
 
 import type { WorkerMessage } from './types'
 
-export type Handler = (message: WorkerMessage) => any
+export type Handler = (message: WorkerMessage) => unknown
 
 const handlers = new Map<string, Handler>()
 
@@ -13,8 +13,8 @@ export function registerHandler(cmd: string, handler: Handler): void {
   handlers.set(cmd, handler)
 }
 
-export function handler(message: WorkerMessage): any {
-  const cmd = message.cmd || (message.payload?.cmd as string) || ''
+export function handler(message: WorkerMessage): unknown {
+  const cmd = message.cmd || (typeof message.payload === 'object' && message.payload !== null && 'cmd' in message.payload ? String((message.payload as Record<string, unknown>).cmd) : '') || ''
 
   const handlerFn = handlers.get(cmd)
   if (handlerFn) {
@@ -29,7 +29,7 @@ export function handler(message: WorkerMessage): any {
 registerHandler('echo', (message) => message)
 
 registerHandler('configure', (message) => {
-  const config = message.payload?.config
+  const config = typeof message.payload === 'object' && message.payload !== null && 'config' in message.payload ? (message.payload as Record<string, unknown>).config : undefined
   if (config) {
     console.info('Configure worker:', Object.keys(config))
     // Configuration would be stored here

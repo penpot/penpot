@@ -35,7 +35,7 @@ let storedOnContextLost: ((event: Event) => void) | null = null
  * Set canvas background color
  */
 export function setCanvasBackground(module: WasmModule, background: string): void {
-  checkContext(module)
+  checkContext()
   const rgba = hexToU32ARGB(background, 1)
   module._set_canvas_background(rgba)
   requestRender(module, 'set-canvas-background')
@@ -351,7 +351,7 @@ export function clearCanvasPixels(module: WasmModule, canvas: HTMLCanvasElement)
  * Get selection rectangle
  */
 export function getSelectionRect(module: WasmModule, entries: string[]): SelectionRectResult | null {
-  checkContext(module)
+  checkContext()
   if (entries.length === 0) {
     return null
   }
@@ -396,7 +396,7 @@ export function getSelectionRect(module: WasmModule, entries: string[]): Selecti
  * Intersect position in shape
  */
 export function intersectPositionInShape(module: WasmModule, id: string, position: { x: number; y: number }): boolean {
-  checkContext(module)
+  checkContext()
   const [a, b, c, d] = uuidToU32Tuple(id)
   const result = module._intersect_position_in_shape(a, b, c, d, position.x, position.y)
   return result === 1

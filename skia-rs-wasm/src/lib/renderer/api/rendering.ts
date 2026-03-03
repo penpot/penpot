@@ -10,7 +10,7 @@ import { checkContext, getContextInitialized, getContextLost, getPendingRender, 
  * Renders with timestamp
  */
 export function render(module: WasmModule, timestamp: number): void {
-  checkContext(module)
+  checkContext()
   module._render(timestamp)
 }
 
@@ -18,7 +18,7 @@ export function render(module: WasmModule, timestamp: number): void {
  * Synchronous render
  */
 export function renderSync(module: WasmModule): void {
-  checkContext(module)
+  checkContext()
   module._render_sync()
 }
 
@@ -26,7 +26,7 @@ export function renderSync(module: WasmModule): void {
  * Render specific shape synchronously
  */
 export function renderSyncShape(module: WasmModule, id: string): void {
-  checkContext(module)
+  checkContext()
   const [a, b, c, d] = uuidToU32Tuple(id)
   module._render_sync_shape(a, b, c, d)
 }

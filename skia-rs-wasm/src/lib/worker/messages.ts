@@ -6,8 +6,8 @@
 import type { WorkerMessage, SerializedMessage } from './types'
 
 export function encode(message: WorkerMessage): SerializedMessage {
-  const cmd = message.cmd || message.payload?.cmd || ''
-  const cmdName = typeof cmd === 'string' ? cmd : cmd
+  const cmd = message.cmd || (typeof message.payload === 'object' && message.payload !== null && 'cmd' in message.payload ? (message.payload as Record<string, unknown>).cmd : '') || ''
+  const cmdName = typeof cmd === 'string' ? cmd : ''
 
   return {
     cmd: cmdName,

@@ -527,7 +527,7 @@ export function createNode(
     width?: number
     height?: number
     parentId?: string
-    [key: string]: any
+    [key: string]: unknown
   } = {}
 ): PenpotNode {
   switch (type) {

@@ -7,7 +7,7 @@ import type { WasmModule } from '../../src/lib/renderer/wasm-types'
 
 export interface WasmModuleOptions {
   locateFile?: (path: string, prefix: string) => string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**

@@ -199,9 +199,9 @@ type TypedArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array
  * Simple debounce utility
  */
 
-export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
+export function debounce<P extends unknown[]>(fn: (...args: P) => void, delay: number): (...args: P) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
-  return ((...args: Parameters<T>) => {
+  return ((...args: P) => {
     if (timeoutId) {
       clearTimeout(timeoutId)
     }
@@ -209,17 +209,17 @@ export function debounce<T extends (...args: any[]) => void>(fn: T, delay: numbe
       fn(...args)
       timeoutId = null
     }, delay)
-  }) as T
+  })
 }
 /**
  * Simple throttle utility
  */
 
-export function throttle<T extends (...args: any[]) => void>(fn: T, delay: number): T {
+export function throttle<P extends unknown[]>(fn: (...args: P) => void, delay: number): (...args: P) => void {
   let lastExecTime = 0
   let timeoutId: ReturnType<typeof setTimeout> | null = null
 
-  return ((...args: Parameters<T>) => {
+  return ((...args: P) => {
     const currentTime = Date.now()
 
     if (currentTime - lastExecTime >= delay) {
@@ -239,6 +239,6 @@ export function throttle<T extends (...args: any[]) => void>(fn: T, delay: numbe
         }, remainingTime)
       }
     }
-  }) as T
+  })
 }
 

@@ -222,8 +222,7 @@ export function startResizeSelected(
           const updates = node ? applyResizeTransformToNode(node, M) : null
           if (node && updates) payloadsById[id] = updates
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updatedChildren = (page.children ?? []).map((n: any) =>
+        const updatedChildren = (page.children ?? []).map((n: PenpotNode) =>
           n.id && payloadsById[n.id] ? { ...n, ...payloadsById[n.id] } : n
         )
         updatePage({ ...page, pageId, children: updatedChildren as unknown as PenpotNode[] })
@@ -266,8 +265,7 @@ export function startResizeSelected(
         clearResizeState()
         return
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updatedChildren = (page.children ?? []).map((n: any) =>
+      const updatedChildren = (page.children ?? []).map((n: PenpotNode) =>
         n.id === selectedId ? { ...n, ...updates } : n
       )
       updatePage({ ...page, pageId, children: updatedChildren as unknown as PenpotNode[] })

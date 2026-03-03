@@ -15,6 +15,13 @@ import type {
 import type { Change } from '@skia-rs-wasm/common'
 import { encode, decode } from './worker/messages'
 
+/** Raw message shape from worker (event.data); error messages may have error instead of encoded payload. */
+interface RawWorkerMessage {
+  cmd?: string
+  replyTo?: string
+  error?: unknown
+}
+
 /**
  * Worker client that provides promise-based communication
  */
@@ -113,12 +120,13 @@ export class WorkerClient implements WorkerClientInterface {
       // Decode the message from worker (worker sends encoded messages)
       // Error messages might be sent directly without encoding, so handle both cases
       let decoded: WorkerMessage
-      let rawData = event.data as any
+      const rawData = event.data as RawWorkerMessage
 
       // Check if this is an error message sent directly (not encoded)
       if (rawData.cmd === 'error' && rawData.error !== undefined) {
         // Error message sent directly without encoding
-        const errorMessage = rawData.error?.message || rawData.error || 'Worker error'
+        const err = rawData.error
+        const errorMessage = err instanceof Error ? err.message : String(err)
         const replyTo = rawData.replyTo
         if (replyTo) {
           const pending = this.pendingRequests.get(replyTo)
@@ -223,19 +231,19 @@ export class WorkerClient implements WorkerClientInterface {
       colno: event.colno,
       type: event.type,
       target: event.target,
-      workerScriptURL: eventTarget && 'scriptURL' in eventTarget ? (eventTarget as any).scriptURL : undefined,
-      workerName: eventTarget && 'name' in eventTarget ? (eventTarget as any).name : undefined,
+      workerScriptURL: eventTarget && 'scriptURL' in eventTarget ? (eventTarget as Worker & { scriptURL?: string }).scriptURL : undefined,
+      workerName: eventTarget && 'name' in eventTarget ? (eventTarget as Worker & { name?: string }).name : undefined,
     })
     
     // Also log all enumerable properties of the event to catch anything we missed
     console.error('All event properties:', Object.keys(event).reduce((acc, key) => {
       try {
-        acc[key] = (event as any)[key]
+        acc[key] = (event as unknown as Record<string, unknown>)[key]
       } catch (e) {
         acc[key] = '[unable to access]'
       }
       return acc
-    }, {} as Record<string, any>))
+    }, {} as Record<string, unknown>))
     
     // Reject all pending requests with a descriptive error
     const errorForRejection = errorParts.length > 0

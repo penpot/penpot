@@ -44,7 +44,7 @@ export function setViewBox(
   zoom: number,
   vbox: { x: number; y: number }
 ): void {
-  checkContext(module)
+  checkContext()
   const isPan = Math.abs(prevZoom - zoom) < 0.001
 
   module._set_view_start()
@@ -78,7 +78,7 @@ export async function initializeViewport(
   background: string,
   callback?: () => void
 ): Promise<void> {
-  checkContext(module)
+  checkContext()
   const rgba = hexToU32ARGB(background, 1)
 
   module._set_canvas_background(rgba)
@@ -99,7 +99,7 @@ export async function initializeViewport(
  * Resize viewbox
  */
 export function resizeViewbox(module: WasmModule, width: number, height: number): void {
-  checkContext(module)
+  checkContext()
   module._resize_viewbox(width, height)
 }
 

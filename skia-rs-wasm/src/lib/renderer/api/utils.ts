@@ -4,7 +4,7 @@
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createElement } from 'react'
-import type { WasmModule } from '../wasm-types'
+import type { WasmModule, WasmModuleOptions } from '../wasm-types'
 import type { PenpotNode } from 'penpot-exporter/lib'
 import { ObjectSvg } from './svg-components'
 
@@ -27,11 +27,11 @@ export function getStaticMarkup(shape: PenpotNode): string {
  * Note: This is a simplified version. Full implementation may be in Renderer class
  */
 export async function initWasmModule(
-  moduleFactory: (options?: any) => Promise<WasmModule>,
+  moduleFactory: (options?: WasmModuleOptions) => Promise<WasmModule>,
   wasmPath?: string
 ): Promise<WasmModule | null> {
   try {
-    const options: any = {}
+    const options: WasmModuleOptions = {}
     if (wasmPath) {
       options.locateFile = (path: string) => {
         if (path.endsWith('.wasm')) {

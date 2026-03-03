@@ -43,7 +43,15 @@ export interface SelectionRectResult {
   transform: Matrix
 }
 
+/** Path segment types for pathFromBytes deserialization (WASM path format). */
+export type PathSegment =
+  | { type: 'move-to'; x: number; y: number }
+  | { type: 'line-to'; x: number; y: number }
+  | { type: 'curve-to'; x: number; y: number; c1x: number; c1y: number; c2x: number; c2y: number }
+  | { type: 'close-path' }
+
 export interface PathContent {
+  segments?: PathSegment[]
   [key: string]: unknown
 }
 
@@ -163,7 +171,7 @@ export interface CanvasWrapperProps {
 
 export type InitializationState = 'idle' | 'loading' | 'ready' | 'error'
 
-// Re-export conversions and verification from common and local verification
+// Re-export conversions from common
 export {
   ZERO_UUID,
   makeSelrect,
@@ -173,13 +181,3 @@ export {
   colorToU32ARGB,
   u32ToUUID,
 } from '@skia-rs-wasm/common'
-
-export {
-  isSvgContentTree,
-  isSvgContentString,
-  isSvgContent,
-  isColorFill,
-  isLinearGradient,
-  isRadialGradient,
-  isImageFill,
-} from './verification'

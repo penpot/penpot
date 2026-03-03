@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PathContent } from '../types'
+import type { PathContent, PathSegment } from '../types'
 import { checkContext } from './context'
 import { MAX_BUFFER_CHUNK_SIZE } from './constants'
 import { allocBytes, freeBytes, offset8To32 } from '../utils'
@@ -51,7 +51,7 @@ function serializePathContent(content: PathContent): Uint8Array {
  * Uploads path content in chunks to WASM
  */
 export function setShapePathContent(module: WasmModule, content: PathContent): void {
-  checkContext(module)
+  checkContext()
   
   // Serialize path content to bytes
   const buffer = serializePathContent(content)
@@ -114,7 +114,7 @@ export function pathFromBytes(
   baseOffset: number
 ): PathContent {
   const segmentCount = data.length / SEGMENT_U32_SIZE
-  const segments: any[] = []
+  const segments: PathSegment[] = []
 
   // Get the underlying ArrayBuffer to read u16 command type
   const buffer = data.buffer

@@ -29,6 +29,13 @@ function dtsBundlePlugin(): Plugin {
 }
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@plugin': resolve(__dirname, '../penpot-exporter-figma-plugin/plugin-src'),
+      '@ui': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src'),
+      '@common': resolve(__dirname, '../penpot-exporter-figma-plugin/common'),
+    },
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -43,6 +50,7 @@ export default defineConfig({
         'skia-rs-wasm/common',
         'penpot-exporter',
         'penpot-exporter/lib',
+        'penpot-exporter/plugin',
       ],
     },
   },

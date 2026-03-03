@@ -34,7 +34,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "penpot-exporter": "workspace:*",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rxjs": "^7.8.2",
@@ -46,6 +45,7 @@
     }
   },
   "devDependencies": {
+    "penpot-exporter": "workspace:*",
     "@eslint/js": "^9.39.1",
     "@penpot/plugin-types": "^1.4.2",
     "@types/node": "^24.10.1",
