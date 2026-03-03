@@ -11,6 +11,15 @@ import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
 import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
 import { ExportShapeTool } from "./tools/ExportShapeTool";
 import { ImportImageTool } from "./tools/ImportImageTool";
+import {
+    ListDesignTokensTool,
+    CreateTokenSetTool,
+    CreateTokenThemeTool,
+    CreateTokenTool,
+    UpdateTokenTool,
+    UpdateTokenSetTool,
+    UpdateTokenThemeTool,
+} from "./tools/DesignTokensTools";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 
@@ -143,6 +152,13 @@ export class PenpotMcpServer {
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),
             new ExportShapeTool(this),
+            new ListDesignTokensTool(this),
+            new CreateTokenSetTool(this),
+            new CreateTokenThemeTool(this),
+            new CreateTokenTool(this),
+            new UpdateTokenTool(this),
+            new UpdateTokenSetTool(this),
+            new UpdateTokenThemeTool(this),
         ];
         if (this.isFileSystemAccessEnabled()) {
             toolInstances.push(new ImportImageTool(this));
