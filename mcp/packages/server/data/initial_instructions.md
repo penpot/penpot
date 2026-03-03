@@ -96,7 +96,7 @@ Use the `export_shape` and `import_image` tools to export and import images.
 Boards can have layout systems that automatically control the positioning and spacing of their children:
 
   * If a board has a layout system, then child positions are controlled by the layout system.
-    For every child, key properties of the child within the layout are stored in `child.layoutChild: LayoutChildProperties`:
+    After adding a shape to the layout as a child, key properties of the child within the layout are controlled in `child.layoutChild: LayoutChildProperties`:
     - `absolute: boolean` - if true, child position is not controlled by layout system. x/y will set *relative* position within parent!
     - margins (`topMargin`, `rightMargin`, `bottomMargin`, `leftMargin` or combined `verticalMargin`, `horizontalMargin`)
     - sizing (`verticalSizing`, `horizontalSizing`: "fill" | "auto" | "fix")
