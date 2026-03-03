@@ -53,6 +53,8 @@ pub struct NodeRenderState {
     visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
     mask: bool,
+    // True when this container was flattened (enter/exit skipped).
+    flattened: bool,
 }
 
 /// Get simplified children of a container, flattening nested flattened containers
@@ -1462,6 +1464,7 @@ impl RenderState {
                         clip_bounds: None,
                         visited_mask: true,
                         mask: false,
+                        flattened: false,
                     });
                     if let Some(&mask_id) = element.mask_id() {
                         self.pending_nodes.push(NodeRenderState {
@@ -1470,6 +1473,7 @@ impl RenderState {
                             clip_bounds: None,
                             visited_mask: false,
                             mask: true,
+                            flattened: false,
                         });
                     }
                 }
@@ -1999,8 +2003,7 @@ impl RenderState {
             }
 
             if visited_children {
-                // Skip render_shape_exit for flattened containers
-                if !element.can_flatten() {
+                if !node_render_state.flattened {
                     self.render_shape_exit(element, visited_mask, clip_bounds);
                 }
                 continue;
@@ -2149,6 +2152,7 @@ impl RenderState {
                 clip_bounds: clip_bounds.clone(),
                 visited_mask: false,
                 mask,
+                flattened: can_flatten,
             });
 
             if element.is_recursive() {
@@ -2195,6 +2199,7 @@ impl RenderState {
                         clip_bounds: children_clip_bounds.clone(),
                         visited_mask: false,
                         mask: false,
+                        flattened: false,
                     });
                 }
             }
@@ -2309,6 +2314,7 @@ impl RenderState {
                                 clip_bounds: None,
                                 visited_mask: false,
                                 mask: false,
+                                flattened: false,
                             }
                         }));
                     }
