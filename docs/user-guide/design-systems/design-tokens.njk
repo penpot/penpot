@@ -690,6 +690,50 @@ ExtraBold Italic
   <figcaption>Exporting tokens as a single file.</figcaption>
 </figure>
 
+<h2 id="design-tokens-groups">Token groups</h2>
+<p>Token names are rarely short and simple. They often contain multiple sections that represent token type, state, property, variant, and more. To help manage this complexity, Penpot automatically organizes tokens into groups based on the structure of their names.</p>
+
+<h3 id="design-tokens-groups-structure">How token groups work</h3>
+<p>When Penpot encounters a dot (<code class="language-js">.</code>) in a token name, it breaks down the name and structures it as nested groups. For example, a token named <code class="language-js">button.primary.default.background-color</code> is organized into groups like this:</p>
+<ul>
+  <li><strong>button</strong> (group)</li>
+  <li>→ <strong>primary</strong> (group)</li>
+  <li>→ → <strong>default</strong> (group)</li>
+  <li>→ → → <strong>background-color</strong> (token)</li>
+</ul>
+<p>If you have another token like <code class="language-js">button.primary.hover.background-color</code>, it shares the same group structure (<code class="language-js">button.primary</code>) and appears nested within those groups.</p>
+<p>This structure matches how tokens are organized in JSON format. When you export tokens, a token like <code class="language-js">button.primary.default.background-color</code> is structured like this:</p>
+<pre class="language-json"><code class="language-json">{
+  "button": {
+    "primary": {
+      "default": {
+        "background-color": {
+          "$value": "#f00",
+          "$type": "color"
+        }
+      }
+    }
+  }
+}</code></pre>
+
+<h3 id="design-tokens-groups-visual">Visual appearance</h3>
+<p>In the Tokens panel, token groups appear as nested, collapsible folders. Only the last segment of the token name (the actual token) appears as a pill. The segments before it appear as group folders that you can expand or collapse.</p>
+<p>When you create a new token, Penpot automatically unfolds the required path so you can see your newly created token. If you manually unfold a group path, it stays open even when you navigate to other areas of the app (this state resets if you reload the page).</p>
+<figure>
+  <img src="/img/design-tokens/40-tokens-groups.webp" alt="Design Tokens Grouping" />
+</figure>
+
+<h3 id="design-tokens-groups-actions">Working with token groups</h3>
+<p>Token pills keep the same actions as before: you can delete, edit, and duplicate tokens from the context menu. When editing a token name, you'll see the full token path including all group segments.</p>
+
+<h4>Moving tokens between groups</h4>
+<p>When you edit a token name and change the group segments, the token moves to its new group automatically. If the new group doesn't exist, Penpot creates it. If the group already exists, the token is moved there.</p>
+<p>For example, if you rename <code class="language-js">color.background.secondary</code> to <code class="language-js">c.bg.sec</code>, the token moves from the <code class="language-js">color.background</code> group to a new <code class="language-js">c.bg</code> group.</p>
+
+<h4>Deleting token groups</h4>
+<p>When you delete a token, if it's the last token in its group, the empty group is automatically removed as well. You can also delete entire token groups directly, which removes all tokens within that group.</p>
+<p class="advice">Deleting a token group removes all tokens it contains. Make sure you want to delete all tokens in a group before removing it.</p>
+
 <!-- Leaving this section as a comment as the feature will be released very soon
 <h2 id="design-tokens-settings">Tokens settings</h2>
 
