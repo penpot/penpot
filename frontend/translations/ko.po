@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-03-02 18:09+0000\n"
+"PO-Revision-Date: 2026-03-03 19:09+0000\n"
 "Last-Translator: deveronica <deveronica42@gmail.com>\n"
 "Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
 "ko/>\n"
@@ -26,11 +26,11 @@ msgstr "이메일에 포함된 링크를 클릭하여 계정을 인증하고 Pen
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
-msgstr "비밀번호 확인하기"
+msgstr "비밀번호 확인"
 
 #: src/app/main/ui/auth/register.cljs:227
 msgid "auth.create-demo-account"
-msgstr "데모 계정 만들기"
+msgstr "데모 계정 생성"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 #, unused
@@ -40,12 +40,12 @@ msgstr "체험해 보고 싶으신가요?"
 #: src/app/main/ui/auth/login.cljs:42
 msgid "auth.demo-warning"
 msgstr ""
-"이것은 데모 서비스입니다. 절대 실제 작업에 사용하지 마세요. 프로젝트는 "
+"이것은 데모 서비스이며, 절대 실제 작업에 사용하지 마십시오. 프로젝트는 "
 "주기적으로 삭제됩니다."
 
 #: src/app/main/ui/auth/login.cljs:198, src/app/main/ui/viewer/login.cljs:86
 msgid "auth.forgot-password"
-msgstr "비밀번호를 잊어버리셨나요?"
+msgstr "비밀번호를 잊으셨나요?"
 
 #: src/app/main/ui/auth/register.cljs:160, src/app/main/ui/auth/register.cljs:328
 msgid "auth.fullname"
@@ -66,7 +66,7 @@ msgstr "로그인"
 
 #: src/app/main/ui/auth/login.cljs:274
 msgid "auth.login-tagline"
-msgstr "펜팟은 디자인과 코딩의 협업을 위한 무료 오픈소스 디자인 도구입니다"
+msgstr "Penpot은 디자인과 코드 협업을 위한 무료 오픈소스 디자인 도구입니다"
 
 #: src/app/main/ui/auth/login.cljs:231
 msgid "auth.login-with-github-submit"
@@ -98,15 +98,15 @@ msgstr "비밀번호가 성공적으로 변경되었습니다"
 
 #: src/app/main/ui/auth/recovery_request.cljs:50
 msgid "auth.notifications.profile-not-verified"
-msgstr "프로필이 검증되지 않았어요. 계속 하려면 검증절차를 완료해주세요."
+msgstr "프로필이 인증되지 않았습니다. 계속하기 전에 프로필을 인증하세요."
 
 #: src/app/main/ui/auth/recovery_request.cljs:33
 msgid "auth.notifications.recovery-token-sent"
-msgstr "비밀번호 복구를 위한 링크를 메일함으로 보냈어요."
+msgstr "비밀번호 복구 링크가 메일함으로 전송되었습니다."
 
 #: src/app/main/ui/auth/verify_token.cljs:49
 msgid "auth.notifications.team-invitation-accepted"
-msgstr "팀에 성공적으로 합류했어요"
+msgstr "팀에 성공적으로 참가했습니다"
 
 #: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
@@ -114,19 +114,19 @@ msgstr "비밀번호"
 
 #: src/app/main/ui/auth/register.cljs:173
 msgid "auth.password-length-hint"
-msgstr "최소 8개의 문자"
+msgstr "최소 8자 이상"
 
 #: src/app/main/ui/auth/register.cljs:261
 msgid "auth.privacy-policy"
-msgstr "개인 정보 정책"
+msgstr "개인정보 처리방침"
 
 #: src/app/main/ui/auth/recovery_request.cljs:82
 msgid "auth.recovery-request-submit"
-msgstr "비밀번호 복구하기"
+msgstr "비밀번호 복구"
 
 #: src/app/main/ui/auth/recovery_request.cljs:95
 msgid "auth.recovery-request-subtitle"
-msgstr "이용지침을 메일로 전달해드릴거에요"
+msgstr "안내 사항이 담긴 이메일을 보내드리겠습니다"
 
 #: src/app/main/ui/auth/recovery_request.cljs:94
 msgid "auth.recovery-request-title"
@@ -134,58 +134,61 @@ msgstr "비밀번호를 잊으셨나요?"
 
 #: src/app/main/ui/auth/recovery.cljs:71
 msgid "auth.recovery-submit"
-msgstr "비밀번호를 바꾸세요"
+msgstr "비밀번호 변경"
 
 #: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:144, src/app/main/ui/viewer/login.cljs:89
 msgid "auth.register"
-msgstr "아직 계정이 없으신가요?"
+msgstr "계정이 없으신가요?"
 
 #: src/app/main/ui/auth/register.cljs:351
 msgid "auth.register-account-tagline"
-msgstr "대시보드와 이메일 에서 당신을 어떻게 호칭할지 저희에게 알려주세요."
+msgstr "대시보드와 이메일에 표시될 이름을 입력해주세요."
 
 #: src/app/main/ui/auth/register.cljs:350
+#, fuzzy
 msgid "auth.register-account-title"
 msgstr "당신의 이름"
 
 #: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:148, src/app/main/ui/viewer/login.cljs:93
 msgid "auth.register-submit"
-msgstr "계정을 생성하세요"
+msgstr "계정 생성"
 
 #: src/app/main/ui/auth/register.cljs:124
 #, unused
 msgid "auth.register-tagline"
-msgstr "펜팟 무료 계정과 함께라면, 무제한으로 팀을 만들고 다른 디자이너 및 개발자와 원하는 만큼 프로젝트에서 협업할 수 있습니다. "
+msgstr ""
+"무료 Penpot 계정으로 팀을 무제한 생성하고, 원하는 만큼 많은 프로젝트에서 "
+"다른 디자이너 및 개발자와 협업할 수 있습니다. "
 
 #: src/app/main/ui/auth/register.cljs:206
 msgid "auth.register-title"
-msgstr "계정을 생성하세요"
+msgstr "계정 생성"
 
 #: src/app/main/ui/auth.cljs
 #, unused
 msgid "auth.sidebar-tagline"
-msgstr "디자인과 프로토타이핑을 위한 오픈소스 솔루션."
+msgstr "디자인 및 프로토타이핑을 위한 오픈소스 솔루션."
 
 #: src/app/main/ui/auth/register.cljs:51
 #, markdown
 msgid "auth.terms-and-privacy-agreement"
-msgstr "[서비스 약관](%s) 및 [개인정보 처리방침](%s)에 동의합니다."
+msgstr "[서비스 이용약관](%s) 및 [개인정보 처리방침](%s)에 동의합니다."
 
 #: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:979, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
-msgstr "서비스 정책"
+msgstr "서비스 이용약관"
 
 #, unused
 msgid "auth.terms-privacy-agreement"
-msgstr "새로운 계정을 생성하시면, 사용자는 펜팟의 서비스 정책과 개인 정보 정책에 동의하는 것으로 간주됩니다."
+msgstr "새 계정을 만들면 당사의 이용약관 및 개인정보 처리방침에 동의하게 됩니다."
 
 #: src/app/main/ui/auth/register.cljs:239
 msgid "auth.verification-email-sent"
-msgstr "검증 메일을 ~에 보냈어요"
+msgstr "다음 이메일로 인증 메일을 보냈습니다:"
 
 #: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:167
 msgid "auth.work-email"
-msgstr "작업용 이메일"
+msgstr "업무 이메일"
 
 #: src/app/main/ui/onboarding/questions.cljs
 #, unused
@@ -194,7 +197,7 @@ msgstr "...브랜딩, 일러스트레이션, 마케팅 자료 등."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
 msgid "color-row.token-color-row.deleted-token"
-msgstr "이 토큰은 존재하지 않거나 삭제되었습니다."
+msgstr "해당 token이 존재하지 않거나 삭제되었습니다."
 
 #: src/app/main/ui/comments.cljs:530
 msgid "comments.mentions.not-found"
@@ -202,15 +205,15 @@ msgstr "@%s 사용자를 찾을 수 없습니다"
 
 #: src/app/main/ui/workspace/libraries.cljs:323
 msgid "common.publish"
-msgstr "발행하기"
+msgstr "게시하기"
 
 #: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.all-users"
-msgstr "모든 펜팟 유저들"
+msgstr "모든 Penpot 사용자"
 
 #: src/app/main/ui/viewer/share_link.cljs:204
 msgid "common.share-link.confirm-deletion-link-description"
-msgstr "정말로 링크를 제거하고 싶으세요? 제거하시면, 더이상 아무도 이용할 수 없어요"
+msgstr "이 링크를 삭제하시겠습니까? 삭제하면 더 이상 누구도 접근할 수 없습니다"
 
 #: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
 msgid "common.share-link.current-tag"
@@ -218,60 +221,60 @@ msgstr "(현재)"
 
 #: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:216
 msgid "common.share-link.destroy-link"
-msgstr "링크 제거하기"
+msgstr "링크 삭제"
 
 #: src/app/main/ui/viewer/share_link.cljs:221
 msgid "common.share-link.get-link"
-msgstr "링크 얻기"
+msgstr "링크 가져오기"
 
 #: src/app/main/ui/viewer/share_link.cljs:142
 msgid "common.share-link.link-copied-success"
-msgstr "링크를 성공적으로 복사했어요"
+msgstr "링크가 성공적으로 복사되었습니다"
 
 #: src/app/main/ui/viewer/share_link.cljs:231
 msgid "common.share-link.manage-ops"
-msgstr "권한을 관리하세요"
+msgstr "권한 관리"
 
 #: src/app/main/ui/viewer/share_link.cljs:277
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
-msgstr[0] "%s 페이지가 공유되었습니다"
+msgstr[0] "%s개의 페이지가 공유되었습니다"
 
 #: src/app/main/ui/viewer/share_link.cljs:298
 msgid "common.share-link.permissions-can-comment"
-msgstr "코멘트를 달 수 있어요"
+msgstr "댓글 작성 가능"
 
 #: src/app/main/ui/viewer/share_link.cljs:309
 msgid "common.share-link.permissions-can-inspect"
-msgstr "코드를 검사할 수 있어요"
+msgstr "코드 검사 가능"
 
 #: src/app/main/ui/viewer/share_link.cljs:199
 msgid "common.share-link.permissions-hint"
-msgstr "링크를 가진 누구나 접근할 수 있어요"
+msgstr "링크가 있는 누구나 접근 가능합니다"
 
 #: src/app/main/ui/viewer/share_link.cljs:241
 msgid "common.share-link.permissions-pages"
-msgstr "페이지가 공유됐어요"
+msgstr "공유된 페이지"
 
 #: src/app/main/ui/viewer/share_link.cljs:189
 msgid "common.share-link.placeholder"
-msgstr "공유할 수 있는 링크는 여기 나타날거에요"
+msgstr "공유 가능한 링크가 여기에 표시됩니다"
 
 #: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:314
 msgid "common.share-link.team-members"
-msgstr "오직 팀원들을 위해"
+msgstr "팀 구성원만"
 
 #: src/app/main/ui/viewer/share_link.cljs:176
 msgid "common.share-link.title"
-msgstr "프로토타입을 공유해요"
+msgstr "프로토타입 공유"
 
 #: src/app/main/ui/viewer/share_link.cljs:269
 msgid "common.share-link.view-all"
-msgstr "모두 선택해요"
+msgstr "모두 선택"
 
 #: src/app/main/ui/workspace/libraries.cljs:320
 msgid "common.unpublish"
-msgstr "발행취소하기"
+msgstr "게시 취소"
 
 #: src/app/main/ui/dashboard/projects.cljs:93
 msgid "dasboard.team-hero.management"
@@ -279,36 +282,38 @@ msgstr "팀 관리"
 
 #: src/app/main/ui/dashboard/projects.cljs:92
 msgid "dasboard.team-hero.text"
-msgstr "펜팟은 팀을 위한 도구입니다. 팀원들을 초대하여 프로젝트 및 파일 단위로 협업하십시오"
+msgstr ""
+"Penpot은 팀을 위한 도구입니다. 프로젝트와 파일에서 함께 작업할 수 있도록 "
+"구성원을 초대하세요"
 
 #: src/app/main/ui/dashboard/projects.cljs:90
 msgid "dasboard.team-hero.title"
-msgstr "팀을 이뤄요!"
+msgstr "팀을 구성하세요!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.tutorial-hero.info"
-msgstr "본 실습용 튜토리얼을 통해 펜팟의 기본 기능에 대하여 재미있게 학습하십시오."
+msgstr "Penpot의 기본 기능을 실습 튜토리얼로 재미있게 배워보세요."
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.tutorial-hero.start"
-msgstr "튜토리얼을 시작하세요"
+msgstr "튜토리얼 시작"
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.tutorial-hero.title"
-msgstr "실습용 튜토리얼"
+msgstr "실습 튜토리얼"
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.walkthrough-hero.info"
-msgstr "펜팟을 둘러보고 주요 기능에 대한 정보를 습득하십시오."
+msgstr "Penpot을 둘러보고 주요 기능을 살펴보세요."
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.walkthrough-hero.start"
-msgstr "투어를 시작해요"
+msgstr "투어 시작"
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
@@ -317,7 +322,7 @@ msgstr "인터페이스 둘러보기"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:208
 msgid "dashboard-restore-file-confirmation.description"
-msgstr "%s 파일을 복원하려 합니다."
+msgstr "%s 파일이 복원됩니다."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:207
 msgid "dashboard-restore-file-confirmation.title"
@@ -325,23 +330,23 @@ msgstr "파일 복원"
 
 #: src/app/main/ui/settings/access_tokens.cljs:103
 msgid "dashboard.access-tokens.copied-success"
-msgstr "복사된 토큰"
+msgstr "토큰 복사됨"
 
 #: src/app/main/ui/settings/access_tokens.cljs:189
 msgid "dashboard.access-tokens.create"
-msgstr "새로운 토큰 생성하기"
+msgstr "새로운 토큰 생성"
 
 #: src/app/main/ui/settings/access_tokens.cljs:64
 msgid "dashboard.access-tokens.create.success"
-msgstr "엑세스 토큰이 성공적으로 생성되었습니다."
+msgstr "액세스 토큰이 성공적으로 생성되었습니다."
 
 #: src/app/main/ui/settings/access_tokens.cljs:286
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "\"새로운 토큰 생성하기\" 버튼을 눌러 토큰을 생성하십시오."
+msgstr "\"새로운 토큰 생성\" 버튼을 눌러 토큰을 생성하세요."
 
 #: src/app/main/ui/settings/access_tokens.cljs:285
 msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "현재 가지고 있는 토큰이 없습니다."
+msgstr "아직 생성된 토큰이 없습니다."
 
 #: src/app/main/ui/settings/access_tokens.cljs:135
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -361,37 +366,37 @@ msgstr "90일"
 
 #: src/app/main/ui/settings/access_tokens.cljs:131
 msgid "dashboard.access-tokens.expiration-never"
-msgstr "기한 없음"
+msgstr "만료 없음"
 
 #: src/app/main/ui/settings/access_tokens.cljs:268
 msgid "dashboard.access-tokens.expired-on"
-msgstr "%s에 만료되었습니다"
+msgstr "%s에 만료됨"
 
 #: src/app/main/ui/settings/access_tokens.cljs:269
 msgid "dashboard.access-tokens.expires-on"
-msgstr "%s에 만료됩니다"
+msgstr "%s에 만료 예정"
 
 #: src/app/main/ui/settings/access_tokens.cljs:267
 msgid "dashboard.access-tokens.no-expiration"
-msgstr "만료 기한 없음"
+msgstr "만료일 없음"
 
 #: src/app/main/ui/settings/access_tokens.cljs:184
 msgid "dashboard.access-tokens.personal"
-msgstr "개인용 엑세스 토큰"
+msgstr "개인용 액세스 토큰"
 
 #: src/app/main/ui/settings/access_tokens.cljs:185
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
-"개인용 엑세스 토큰은 펜팟의 로그인/암호 인증 시스템의 대안으로 사용되며, 어플리케이션의 펜팟 내부 API 엑세스를 위해 사용될 수 "
-"있습니다"
+"개인용 엑세스 토큰은 로그인/비밀번호 기반 인증을 대신할 수 있는 인증 "
+"수단이고, 이를 통해 애플리케이션이 내부 Penpot API에 접근할 수 있습니다"
 
 #: src/app/main/ui/settings/access_tokens.cljs:142
 msgid "dashboard.access-tokens.token-will-expire"
-msgstr "토큰은 %s에 만료 예정입니다"
+msgstr "해당 토큰은 %s에 만료됩니다"
 
 #: src/app/main/ui/settings/access_tokens.cljs:143
 msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "토큰의 만료 기한이 없습니다"
+msgstr "해당 토큰은 만료일이 없습니다"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
@@ -399,11 +404,11 @@ msgstr "파일 추가"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
-msgstr "공유 라이브러리로 추가하기"
+msgstr "공유 라이브러리로 추가"
 
 #: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.change-email"
-msgstr "이메일을 변경해요"
+msgstr "이메일 변경"
 
 #: src/app/main/ui/dashboard/deleted.cljs:313
 msgid "dashboard.clear-trash-button"
@@ -415,7 +420,7 @@ msgstr "(복사)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
-msgstr "새 팀을 생성해요"
+msgstr "새 팀 생성"
 
 #: src/app/main/ui/workspace/main_menu.cljs:661
 msgid "dashboard.create-version-menu"
@@ -423,7 +428,7 @@ msgstr "이 버전 고정"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:638
 msgid "dashboard.default-team-name"
-msgstr "당신의 펜팟"
+msgstr "내 Penpot"
 
 #: src/app/main/ui/dashboard/deleted.cljs:262
 msgid "dashboard.delete-all-forever-confirmation.description"
@@ -435,50 +440,50 @@ msgstr "%s 파일을 영구적으로 삭제하시겠습니까? 이 작업은 되
 
 #: src/app/main/data/dashboard.cljs:778
 msgid "dashboard.delete-files-success-notification"
-msgstr "%s 파일이 성공적으로 삭제되었습니다."
+msgstr "%s개 파일이 성공적으로 삭제되었습니다."
 
 #: src/app/main/ui/dashboard/deleted.cljs:51, src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:261, src/app/main/ui/dashboard/deleted.cljs:263, src/app/main/ui/dashboard/file_menu.cljs:220, src/app/main/ui/dashboard/file_menu.cljs:222
 msgid "dashboard.delete-forever-confirmation.title"
-msgstr "영구적으로 삭제"
+msgstr "영구 삭제"
 
 #: src/app/main/ui/dashboard/deleted.cljs:85
 msgid "dashboard.delete-project-button"
-msgstr "프로젝트 제거"
+msgstr "프로젝트 삭제"
 
 #: src/app/main/ui/dashboard/deleted.cljs:52
 msgid "dashboard.delete-project-forever-confirmation.description"
 msgstr ""
-"%s 프로젝트를 영구적으로 삭제하시겠습니까? 이 프로젝트와 안에 포함된 모든 파일이 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 "
-"없습니다."
+"%s 프로젝트를 영구적으로 삭제하시겠습니까? 해당 프로젝트와 그 안에 포함된 "
+"모든 파일이 함께 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
 
 #: src/app/main/data/dashboard.cljs:777, src/app/main/data/dashboard.cljs:811
 msgid "dashboard.delete-success-notification"
-msgstr "%s가 영구적으로 삭제되었습니다."
+msgstr "%s가 성공적으로 삭제되었습니다."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:495
 msgid "dashboard.delete-team"
-msgstr "팀을 해체해요"
+msgstr "팀 삭제"
 
 #: src/app/main/ui/dashboard/deleted.cljs:327
 msgid "dashboard.deleted.empty-state-description"
-msgstr "휴지통이 비어 있습니다. 삭제된 파일과 프로젝트가 여기에 표시됩니다."
+msgstr "휴지통이 비어있습니다. 삭제된 파일 및 프로젝트가 여기에 표시됩니다."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:690
 msgid "dashboard.download-binary-file"
-msgstr "펜팟 파일(.penpot)을 다운로드해요"
+msgstr "Penpot 파일(.penpot) 다운로드"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:712
 #, unused
 msgid "dashboard.download-standard-file"
-msgstr "표준 파일(.svg + .json)을 다운로드해요"
+msgstr "표준 파일(.svg + .json) 다운로드"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
-msgstr "복제해요"
+msgstr "복제"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:271
 msgid "dashboard.duplicate-multi"
-msgstr "%파일을 복제해요"
+msgstr "%s개 파일 복제"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:111
 msgid "dashboard.empty-placeholder-libraries-title"
@@ -486,19 +491,19 @@ msgstr "아직 라이브러리가 없습니다."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:280
 msgid "dashboard.export-binary-multi"
-msgstr "%s 펜팟 파일 (.penpot) 다운로드 하기"
+msgstr "%s 펜팟 파일 (.penpot) 다운로드"
 
 #: src/app/main/ui/workspace/main_menu.cljs:698
 msgid "dashboard.export-frames"
-msgstr "대지를 PDF로 내보내요"
+msgstr "보드를 PDF로 내보내기"
 
 #: src/app/main/ui/exports/assets.cljs:201
 msgid "dashboard.export-frames.title"
-msgstr "PDF로 내보내요"
+msgstr "PDF로 내보내기"
 
 #: src/app/main/ui/workspace/main_menu.cljs:679
 msgid "dashboard.export-shapes"
-msgstr "내보내요"
+msgstr "내보내기"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:858
 msgid "dashboard.no-projects-placeholder"
@@ -1043,3 +1048,217 @@ msgstr "그룹"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:123
 msgid "shortcuts.h-distribute"
 msgstr "가로로 분배하기"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"사용 가능한 색상 token이 없습니다. 활성 세트/테마를 확인하거나 새로운 "
+"token을 추가하세요."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:347
+msgid "dashboard.create-new-org"
+msgstr "새 조직 만들기"
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "%s에 삭제될 예정"
+
+#: src/app/main/ui/dashboard/files.cljs:203, src/app/main/ui/dashboard/projects.cljs:290
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "프로젝트 구성원이 초안을 생성하면 이곳에 표시됩니다."
+
+#: src/app/main/ui/dashboard/files.cljs:198, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "아직 초안이 없습니다."
+
+#: src/app/main/ui/dashboard/deleted.cljs:176, src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:291
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "프로젝트 구성원이 파일을 생성하면 이곳에 표시됩니다."
+
+#: src/app/main/ui/dashboard/deleted.cljs:173, src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "아직 파일이 없습니다."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:118
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"프로젝트에 추가된 라이브러리가 여기에 표시됩니다. 파일을 공유해보거나, "
+"[Libraries & templates](https://penpot.app/libraries-templates)에서 "
+"추가해보세요."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"프로젝트에 추가된 라이브러리가 여기에 표시됩니다. 파일을 공유하거나 <a "
+"href=\"https://penpot.app/libraries-templates\" target=\"_blank\">라이브러리 "
+"및 템플릿</a>에서 추가해 보세요."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:114
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "프로젝트에 추가된 라이브러리가 여기에 표시됩니다."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:59
+msgid "dashboard.empty-project.add-library"
+msgstr "라이브러리 또는 템플릿 추가"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43, src/app/main/ui/dashboard/placeholder.cljs:134
+msgid "dashboard.empty-project.create"
+msgstr "새 파일 생성"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:61
+msgid "dashboard.empty-project.explore"
+msgstr "몇 가지를 둘러보고 추가해보세요"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:57
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Libraries and Templates로 이동"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:49, src/app/main/ui/dashboard/placeholder.cljs:51
+msgid "dashboard.empty-project.import"
+msgstr "파일 가져오기"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:53
+msgid "dashboard.empty-project.import-penpot"
+msgstr ".penpot 파일 가져오기"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.start"
+msgstr "놀라운 것들을 만들기 시작하세요"
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "%s 파일 삭제 중 오류가 발생했습니다."
+
+#: src/app/main/data/dashboard.cljs:781
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "파일을 삭제하는 중 오류가 발생했습니다."
+
+#: src/app/main/data/dashboard.cljs:814
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "%s 프로젝트를 삭제하는 중 오류가 발생했습니다."
+
+#: src/app/main/data/dashboard.cljs:909, src/app/main/ui/dashboard/file_menu.cljs:201
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "%s 파일을 복원하는 중 오류가 발생했습니다."
+
+#: src/app/main/data/dashboard.cljs:910
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "파일을 복원하는 중 오류가 발생했습니다."
+
+#: src/app/main/data/dashboard.cljs:942
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "%s 프로젝트와 해당 파일을 복원하는 중 오류가 발생했습니다."
+
+#, unused
+msgid "dashboard.export-multi"
+msgstr "Penpot 파일 %s개 내보내기"
+
+#: src/app/main/ui/exports/assets.cljs:108
+msgid "dashboard.export-multiple.selected"
+msgstr "전체 %s개 중 %s개 요소가 선택됨"
+
+#: src/app/main/ui/exports/assets.cljs:179
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"오른쪽 사이드바 하단의 디자인 속성에서 요소에 내보내기 설정을 추가할 수 "
+"있습니다."
+
+#: src/app/main/ui/exports/assets.cljs:183
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Penpot에서 내보내기 설정 방법."
+
+#: src/app/main/ui/exports/assets.cljs:178
+msgid "dashboard.export-shapes.no-elements"
+msgstr "내보내기 설정이 지정된 요소가 없습니다."
+
+#: src/app/main/ui/exports/assets.cljs:189
+msgid "dashboard.export-shapes.title"
+msgstr "선택 항목 내보내기"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:262
+#, unused
+msgid "dashboard.export-standard-multi"
+msgstr "표준 파일 %s개(.svg + .json) 다운로드"
+
+#: src/app/main/ui/exports/files.cljs:155
+#, unused
+msgid "dashboard.export.explain"
+msgstr ""
+"다운로드하려는 파일 중 하나 이상이 공유 라이브러리를 사용하고 있습니다. 해당 "
+"라이브러리의 에셋을 어떻게 처리하시겠습니까?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:266
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "파일 삭제"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:263
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "파일 복원"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "누락된 글꼴"
+
+#: src/app/main/ui/dashboard/fonts.cljs:218
+msgid "dashboard.fonts.dismiss-all"
+msgstr "모두 닫기"
+
+#: src/app/main/ui/dashboard/fonts.cljs:455
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "업로드한 사용자 지정 글꼴이 이곳에 표시됩니다."
+
+#: src/app/main/ui/dashboard/fonts.cljs:458
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "아직 사용자 지정 폰트가 없습니다."
+
+#: src/app/main/ui/dashboard/fonts.cljs:459
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr "프로젝트 구성원이 사용자 지정 폰트를 업로드하면 이곳에 표시됩니다."
+
+#: src/app/main/ui/dashboard/fonts.cljs:206
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "글꼴 %s개 추가됨"
+
+#: src/app/main/ui/dashboard/fonts.cljs:181
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"여기에 업로드한 웹 폰트는 이 팀의 파일에서 텍스트 속성의 글꼴 목록에 "
+"추가됩니다. 같은 글꼴 패밀리 이름을 가진 폰트는 **하나의 글꼴 패밀리**로 "
+"묶입니다. 업로드 가능한 형식은 **TTF, OTF, WOFF**이며, 이 중 하나만 있으면 "
+"됩니다."
+
+#: src/app/main/ui/dashboard/fonts.cljs:194
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Penpot에서 사용 권한이 있는 글꼴만 업로드해야 합니다. 자세한 내용은 "
+"[Penpot's Terms of Service](%s)의 콘텐츠 권리 섹션을 확인하세요. 또한 [font "
+"licensing](https://www.typography.com/faq)에 대해서도 참고할 수 있습니다."
+
+#: src/app/main/ui/dashboard/fonts.cljs:214
+msgid "dashboard.fonts.upload-all"
+msgstr "모두 업로드"
+
+#: src/app/main/ui/dashboard/fonts.cljs:199
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"서로 다른 운영체제에서의 세로 메트릭(vertical metrics)과 관련하여, 업로드한 "
+"폰트에 문제가 있을 가능성이 감지되었습니다. 확인을 위해 세로 메트릭 [검사 "
+"서비스](https://vertical-metrics.netlify.app/)를 사용할 수 있습니다. 또한 웹 "
+"폰트를 생성하고 오류를 수정하려면 Transfonter(https://transfonter.org/) "
+"사용을 권장합니다. "
+
+#: src/app/main/ui/dashboard/import.cljs:464, src/app/main/ui/dashboard/project_menu.cljs:109
+msgid "dashboard.import"
+msgstr "Penpot 파일 가져오기"
+
+#: src/app/main/ui/dashboard/import.cljs:293, src/app/worker/import.cljs:121, src/app/worker/import.cljs:124
+msgid "dashboard.import.analyze-error"
+msgstr "이런! 이 파일을 가져올 수 없습니다"
