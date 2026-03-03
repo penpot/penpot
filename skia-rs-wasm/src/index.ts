@@ -43,18 +43,16 @@ export {
   isWebGL2Supported,
 } from './lib/renderer/utils'
 
-// Re-export serializers for advanced usage
+// Page/document update API (page-crud and commit)
 export {
-  translateShapeType,
-  translateBlendMode,
-  translateConstraintH,
-  translateConstraintV,
-  translateBoolType,
-  translateStrokeStyle,
-  translateStrokeCap,
-  translateShadowStyle,
-  translateBlurType,
-  translateVerticalAlign,
-  translateGrowType,
-} from './lib/renderer/api/serializers'
+  createNewDocument,
+  setDocument,
+  setActivePage,
+  addPage,
+  updatePage,
+  deletePage,
+  addNode,
+  updateNode,
+  deleteNode,
+} from './lib/page-crud'
 

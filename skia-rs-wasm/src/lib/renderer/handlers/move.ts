@@ -10,9 +10,67 @@ import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
-import { updatePage, applyMoveDeltaToPage } from '../store/page-crud'
+import { updatePage } from '../../page-crud'
 import type { Point } from '../types'
-import type { Matrix } from 'penpot-exporter/lib'
+import type { Matrix, PenpotNode, PenpotPage } from 'penpot-exporter/lib'
+import { isComponentInstance, isFrameShape, isGroupShape } from 'src/lib/worker/geometry/shapes'
+
+/**
+ * Deep-clone the page tree and apply move delta to every node whose id is in selectedIds.
+ * Preserves tree structure; only x, y, selrect, and points are updated for selected nodes.
+ */
+function applyMoveDeltaToPage(
+  page: PenpotPage,
+  selectedIds: Set<string>,
+  delta: { x: number; y: number }
+): PenpotPage {
+  function applyToNode(node: PenpotNode): PenpotNode {
+    if (!isComponentInstance(node) && !isGroupShape(node) && !isFrameShape(node)) {
+      return node
+    }
+    const updatedChildren = node.children?.map(applyToNode)
+    if (!selectedIds.has(node.id)) {
+      return (updatedChildren ? { ...node, children: updatedChildren } : { ...node }) as PenpotNode
+    }
+    const x = (node.x ?? 0) + delta.x
+    const y = (node.y ?? 0) + delta.y
+    const sr = node.selrect as {
+      x?: number
+      y?: number
+      width?: number
+      height?: number
+      x1?: number
+      y1?: number
+      x2?: number
+      y2?: number
+    } | undefined
+    const selrect = sr
+      ? {
+          ...sr,
+          ...(typeof sr.x === 'number' && { x: sr.x + delta.x }),
+          ...(typeof sr.y === 'number' && { y: sr.y + delta.y }),
+          ...(typeof sr.x1 === 'number' && { x1: sr.x1 + delta.x }),
+          ...(typeof sr.y1 === 'number' && { y1: sr.y1 + delta.y }),
+          ...(typeof sr.x2 === 'number' && { x2: sr.x2 + delta.x }),
+          ...(typeof sr.y2 === 'number' && { y2: sr.y2 + delta.y }),
+        }
+      : undefined
+    const points = node.points?.map((p) => ({
+      x: p.x + delta.x,
+      y: p.y + delta.y,
+    }))
+    return {
+      ...node,
+      x,
+      y,
+      ...(selrect && { selrect }),
+      ...(points && { points }),
+      ...(updatedChildren && { children: updatedChildren }),
+    } as PenpotNode
+  }
+  const children = (page.children ?? []).map(applyToNode)
+  return { ...page, children }
+}
 
 function translateMatrix(dx: number, dy: number): Matrix {
   return { a: 1, b: 0, c: 0, d: 1, e: dx, f: dy }
@@ -112,3 +170,5 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
 
   return merge(moveStream, commitOnRelease) as Observable<void>
 }
+
+
