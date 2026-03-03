@@ -132,7 +132,7 @@ Boards can have layout systems that automatically control the positioning and sp
       Check with: `if (board.grid) { ... }`
     - Properties: `rows`, `columns`, `rowGap`, `columnGap`
     - Children are positioned via 1-based row/column indices
-        - Add to grid via `board.flex.appendChild(shape, row, column)`
+        - Add to grid via `board.grid.appendChild(shape, row, column)`
         - Modify grid positioning after the fact via `shape.layoutCell: LayoutCellProperties`
 
   * When working with boards:
