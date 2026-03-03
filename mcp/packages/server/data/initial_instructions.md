@@ -82,6 +82,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
 
 Cloning: Use `shape.clone(): Shape` to create an exact duplicate (including all properties and children) of a shape; same position as original.
 
+Annotations: Don't add text elements to the design that just repeat a shape's name. In the Penpot UI, the name is displayed anyway.
+
 # Images
 
 The `Image` type is a legacy type. Images are now typically embedded in a `Fill`, with `fillImage` set to an
