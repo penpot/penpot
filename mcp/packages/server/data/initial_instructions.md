@@ -96,7 +96,7 @@ Boards can have layout systems that automatically control the positioning and sp
     After adding a shape to the layout as a child, key properties of the child within the layout are controlled in `child.layoutChild: LayoutChildProperties`:
     - `absolute: boolean` - if true, child position is not controlled by layout system. x/y will set *relative* position within parent!
     - margins (`topMargin`, `rightMargin`, `bottomMargin`, `leftMargin` or combined `verticalMargin`, `horizontalMargin`)
-    - sizing (`verticalSizing`, `horizontalSizing`: "fill" | "auto" | "fix")
+    - sizing (`verticalSizing`, `horizontalSizing`: "fix" | "auto" | "fill") - controls child resizing depending on the layout's sizing mode (see below)
     - min/max sizes (`minWidth`, `maxWidth`, `minHeight`, `maxHeight`)
     - `zIndex: number` (higher numbers on top)
 
@@ -106,7 +106,6 @@ Boards can have layout systems that automatically control the positioning and sp
        - Padding: `topPadding`, `rightPadding`, `bottomPadding`, `leftPadding`, or combined `verticalPadding`, `horizontalPadding`
        - To modify spacing: adjust `rowGap` and `columnGap` properties, not individual child positions.
          Optionally, adjust individual child margins via `child.layoutChild`.
-       - Sizing: `verticalSizing` and `horizontalSizing` are NOT functional. You need to size manually for the time being.
     - When a board has flex layout, child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
       appending or inserting children automatically positions them according to the layout rules.
     - CRITICAL: The FlexLayout method `board.flex.appendChild` is BROKEN. To append children to a flex layout board such that
@@ -125,6 +124,11 @@ Boards can have layout systems that automatically control the positioning and sp
     - Children are positioned via 1-based row/column indices
         - Add to grid via `board.grid.appendChild(shape, row, column)`
         - Modify grid positioning after the fact via `shape.layoutCell: LayoutCellProperties`
+
+  * Auto-sizing: both types of layouts have properties `verticalSizing`, `horizontalSizing`: "fix" | "auto" | "fill"
+    - `fix` (default): no resizing (size determined by shape's own width/height)
+    - `auto`: size determined by content (container will resize depending on children's dimensions)
+    - `fill`: resize children to fill the container's size (child resizing is controlled by each child's `layoutChild` properties)
 
   * When working with boards:
     - ALWAYS check if the board has a layout system before attempting to reposition children
