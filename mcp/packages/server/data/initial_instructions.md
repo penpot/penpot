@@ -129,7 +129,7 @@ Boards can have layout systems that automatically control the positioning and sp
 
   * Auto-sizing: both types of layouts have properties `verticalSizing`, `horizontalSizing`: "fix" | "auto" | "fill"
     - `fix` (default): no resizing (size determined by shape's own width/height)
-    - `auto`: size determined by content (container will resize depending on children's dimensions)
+    - `auto`: size determined by content (container will resize depending on children's dimensions); ALWAYS set this if you want the container size to adapt to contents/margins/spacings!
     - `fill`: resize children to fill the container's size (child resizing is controlled by each child's `layoutChild` properties)
 
   * When working with boards:
