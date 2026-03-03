@@ -45,6 +45,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
   * `name` - Shape name
   * `fills: Fill[]`, `strokes: Stroke[]`, `shadows: Shadow[]` - Styling properties
     - Setting fills: `shape.fills = [{ fillColor: "#FF0000", fillOpacity: 1 }]`; no fill (transparent): `shape.fills = []`; 
+    - Reusing objects in another shape: `targetShape.fills = sourceShape.fills` or more granular `targetShape.fills = [{ fillOpacity: 1, fillImage: sourceShape.fills[0].fillImage }]`
+      The objects are not shared references; you can modify properties of the fills in the target shape without affecting the source shape.
     - Colors: Use hex strings with caps only (e.g. '#FF5533')
     - IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them!  
   * `borderRadius` - Uniform border radius for all corners
