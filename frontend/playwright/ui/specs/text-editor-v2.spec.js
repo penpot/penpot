@@ -10,7 +10,7 @@ test.beforeEach(async ({ page, context }) => {
 });
 
 test.afterEach(async ({ context }) => {
-  context.clearPermissions();
+  await context.clearPermissions();
 });
 
 test("Create a new text shape", async ({ page }) => {
@@ -27,7 +27,7 @@ test("Create a new text shape", async ({ page }) => {
   await workspace.waitForSelectedShapeName(initialText);
 });
 
-test("Create a new text shape from pasting text", async ({ page, context }) => {
+test("Create a new text shape from pasting text", async ({ page }) => {
   const textToPaste = "Lorem ipsum";
   const workspace = new WasmWorkspacePage(page, {
     textEditor: true,
@@ -49,7 +49,6 @@ test("Create a new text shape from pasting text", async ({ page, context }) => {
 
 test("Create a new text shape from pasting text using context menu", async ({
   page,
-  context,
 }) => {
   const textToPaste = "Lorem ipsum";
   const workspace = new WasmWorkspacePage(page, {
@@ -121,7 +120,6 @@ test.skip("Update an already created text shape by inserting text in between", a
 
 test("Update a new text shape appending text by pasting text", async ({
   page,
-  context,
 }) => {
   const textToPaste = " dolor sit amet";
   const workspace = new WasmWorkspacePage(page, {
@@ -143,7 +141,6 @@ test("Update a new text shape appending text by pasting text", async ({
 
 test.skip("Update a new text shape prepending text by pasting text", async ({
   page,
-  context,
 }) => {
   const textToPaste = "Dolor sit amet ";
   const workspace = new WasmWorkspacePage(page, {
