@@ -61,7 +61,10 @@ desc: Learn how to create, manage and apply Penpot Design Tokens using W3C DTCG 
 <figure>
   <img src="/img/design-tokens/05-tokens-edit.webp" alt="Tokens edit" />
 </figure>
-<p class="advice">Renaming tokens will break any references to their old names. If a token is already applied somewhere, you'll need to reapply it after renaming. This can lead to extra work, so rename with caution. We're actively working on a solution to handle this automatically, ensuring renamed tokens stay linked to their properties without additional effort.</p>
+<p class="advice">When you rename a token that has references (like aliases, math operations, or applied tokens), Penpot will prompt you to remap those references to the new name. If you choose to remap, all references will be updated automatically, including token aliases, design tab inputs, tooltips, and any elements where the token is applied. If the file is a library, remapping will also update references in files that use that library. You can also choose not to remap if you prefer to keep the old references, though this will break the connections.</p>
+<figure>
+  <img src="/img/design-tokens/39-tokens-remap.webp" alt="Tokens remap" />
+</figure>
 
 <h2 id="design-tokens-duplicate">Duplicating a token</h2>
 <p>Tokens can be duplicated by right-clicking the token you wish to duplicate and selecting <strong>Duplicate token</strong>. This will create a copy of the selected token within the same set, with <code class="language-js">-copy</code> added to its name.</p>
