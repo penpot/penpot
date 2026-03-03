@@ -16,13 +16,21 @@
   [id]
   (when wasm/context-initialized?
     (let [buffer (uuid/get-u32 id)]
-      (h/call wasm/internal-module "_text_editor_start"
-              (aget buffer 0)
-              (aget buffer 1)
-              (aget buffer 2)
-              (aget buffer 3)))))
+      (when-not (h/call wasm/internal-module "_text_editor_start"
+                        (aget buffer 0)
+                        (aget buffer 1)
+                        (aget buffer 2)
+                        (aget buffer 3))
+        (throw (js/Error. "TextEditor initialization failed"))))))
+
+(defn text-editor-set-cursor-from-offset
+  "Sets caret position from shape relative coordinates"
+  [x y]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_set_cursor_from_offset" x y)))
 
 (defn text-editor-set-cursor-from-point
+  "Sets caret position from screen (canvas) coordinates"
   [x y]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_set_cursor_from_point" x y)))
@@ -95,7 +103,8 @@
 (defn text-editor-stop
   []
   (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_stop")))
+    (when-not (h/call wasm/internal-module "_text_editor_stop")
+      (throw (js/Error. "TextEditor finalization failed")))))
 
 (defn text-editor-is-active?
   ([id]
@@ -160,6 +169,7 @@
         (finally
           (mem/free))))))
 
+;; This is used as a intermediate cache between Clojure global state and WASM state.
 (def ^:private shape-text-contents (atom {}))
 
 (defn- merge-exported-texts-into-content
