@@ -9,8 +9,9 @@ import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
-import { updatePage, applyResizeTransformToNode } from '../store/page-crud'
+import { updatePage } from '../../page-crud'
 import type { Point } from '../types'
+import { makeSelrect } from '../types'
 import type { Matrix, PenpotNode } from 'penpot-exporter/lib'
 import type { ResizeHandlePosition } from '../types'
 
@@ -88,6 +89,95 @@ function noZero(v: number, min: number): number {
   return v
 }
 
+/**
+ * Apply a 2D affine transform matrix to a shape's geometry.
+ * Transforms selrect corners (or points), returns new selrect and optional x, y, width, height, points.
+ * Used to commit resize.
+ */
+function applyResizeTransformToNode(
+  node: PenpotNode,
+  matrix: { a: number; b: number; c: number; d: number; e: number; f: number }
+): Partial<PenpotNode> | null {
+  const sr = node.selrect
+  if (!sr) return null
+  const x = sr.x ?? 0
+  const y = sr.y ?? 0
+  const w = sr.width ?? 0
+  const h = sr.height ?? 0
+  if (w <= 0 || h <= 0) return null
+
+  const { a: ma, b: mb, c: mc, d: md, e: me, f: mf } = matrix
+  const T = (node as { transform?: { a: number; b: number; c: number; d: number } }).transform
+
+  // Shape center in world space
+  const cx = x + w / 2
+  const cy = y + h / 2
+
+  // Compute world-space corners by applying the shape's own transform (T)
+  // around the selrect center, matching WASM's calculate_bounds(true) logic.
+  const worldCorner = (dx: number, dy: number): { x: number; y: number } => {
+    if (!T) return { x: cx + dx, y: cy + dy }
+    return {
+      x: cx + T.a * dx + T.c * dy,
+      y: cy + T.b * dx + T.d * dy,
+    }
+  }
+
+  const wNw = worldCorner(-w / 2, -h / 2)
+  const wNe = worldCorner(w / 2, -h / 2)
+  const wSe = worldCorner(w / 2, h / 2)
+  const wSw = worldCorner(-w / 2, h / 2)
+
+  // Apply resize matrix M to each world corner
+  const applyM = (p: { x: number; y: number }): { x: number; y: number } => ({
+    x: ma * p.x + mc * p.y + me,
+    y: mb * p.x + md * p.y + mf,
+  })
+
+  const newNw = applyM(wNw)
+  const newNe = applyM(wNe)
+  const newSe = applyM(wSe)
+  const newSw = applyM(wSw)
+
+  // New center = M applied to old center
+  const newCx = ma * cx + mc * cy + me
+  const newCy = mb * cx + md * cy + mf
+
+  // New physical dimensions (distances between corners)
+  const newWidth = Math.sqrt((newNe.x - newNw.x) ** 2 + (newNe.y - newNw.y) ** 2)
+  const newHeight = Math.sqrt((newSw.x - newNw.x) ** 2 + (newSw.y - newNw.y) ** 2)
+
+  if (newWidth <= 0 || newHeight <= 0) return null
+
+  // New selrect: centered at newCenter, axis-aligned with new dimensions
+  // (matching Penpot convention: selrect is in the shape's local/unrotated frame)
+  const newX = newCx - newWidth / 2
+  const newY = newCy - newHeight / 2
+  const selrect = makeSelrect(newX, newY, newWidth, newHeight)
+
+  // New transform: derived from nw→ne and nw→sw directions of the transformed bounds,
+  // exactly matching WASM's Bounds::transform_matrix() logic.
+  const hvx = (newNe.x - newNw.x) / newWidth
+  const hvy = (newNe.y - newNw.y) / newWidth
+  const vvx = (newSw.x - newNw.x) / newHeight
+  const vvy = (newSw.y - newNw.y) / newHeight
+  const newTransform = { a: hvx, b: hvy, c: vvx, d: vvy, e: 0, f: 0 }
+
+  const points = [newNw, newNe, newSe, newSw]
+
+  const nodeGeom = node as { x?: number; y?: number; width?: number; height?: number }
+  const updates: Partial<PenpotNode> = {
+    selrect,
+    points,
+    transform: newTransform as PenpotNode['transform'],
+  }
+  if (typeof nodeGeom.x === 'number') (updates as { x?: number }).x = newX
+  if (typeof nodeGeom.y === 'number') (updates as { y?: number }).y = newY
+  if (typeof nodeGeom.width === 'number') (updates as { width?: number }).width = newWidth
+  if (typeof nodeGeom.height === 'number') (updates as { height?: number }).height = newHeight
+  return updates
+}
+
 export function startResizeSelected(
   initialPosition: Point,
   handle: ResizeHandlePosition
@@ -108,9 +198,9 @@ export function startResizeSelected(
   const singleNode = selectedIds.size === 1 ? (selectedNodes?.[0] ?? null) : null
   const nodeSr = singleNode ? singleNode.selrect : null
 
-  const T = (singleNode as { transform?: Matrix } | undefined)?.transform ?? IDENTITY_MATRIX
+  const T = singleNode?.transform ?? IDENTITY_MATRIX
   const Tinv =
-    (singleNode as { transformInverse?: Matrix } | undefined)?.transformInverse ??
+    singleNode?.transformInverse ??
     invertMatrix(T) ??
     IDENTITY_MATRIX
 

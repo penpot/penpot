@@ -5,7 +5,7 @@ import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Pres
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from '../lib/renderer/api/constants'
 import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
 import { useWorkspaceDevStore } from '../lib/renderer/store/workspace-dev-store'
-import { addNode, updateNode, deleteNode, setDocument, createNewDocument } from '../lib/renderer/store/page-crud'
+import { addNode, updateNode, deleteNode, setDocument, createNewDocument } from '../lib/page-crud'
 import './DevToolbar.css'
 import type { ShapeType } from '../lib/renderer/types'
 import { isFrameShape } from '../lib/worker/geometry/shapes'
@@ -286,7 +286,7 @@ export function DevToolbar() {
       reader.readAsText(file)
     }
     input.click()
-  }, [nodes])
+  }, [])
 
   // Advanced tab handlers
   const handleUpdateNode = useCallback(() => {

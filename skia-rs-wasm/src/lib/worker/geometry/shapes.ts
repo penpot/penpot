@@ -14,6 +14,9 @@ import type {
   GroupShape,
   ImageShape,
   SvgRawShape,
+  RectShape,
+  ComponentInstance,
+  ComponentShape,
 } from 'penpot-exporter/lib'
 import { pointsToRect, rectToCenter, joinRects } from './rect'
 import { ZERO_UUID } from '../types'
@@ -104,6 +107,14 @@ export function isSvgRawShape(shape: PenpotNode | null | undefined): shape is Sv
   return shape != null && shape.type === 'svg-raw'
 }
 
+export function isComponentInstance(shape: PenpotNode | null | undefined): shape is ComponentInstance {
+  return shape != null && shape.type === 'instance'
+}
+
+export function isComponentShape(shape: PenpotNode | null | undefined): shape is ComponentShape {
+  return shape != null && shape.type === 'component'
+}
+
 export function hasShapes(node: PenpotNode): node is PenpotNode & { shapes: string[] } {
   return 'shapes' in node && Array.isArray((node as { shapes?: unknown }).shapes)
 }
@@ -115,6 +126,10 @@ export function isRootFrame(shape: PenpotNode | null | undefined): boolean {
     shape.id !== ZERO_UUID &&
     shape.frameId === ZERO_UUID
   )
+}
+
+export function isRectShape(shape: PenpotNode | null | undefined): shape is RectShape {
+  return shape != null && shape.type === 'rect'
 }
 
 export function isDirectChildOfRoot(shape: PenpotNode | null | undefined): boolean {
