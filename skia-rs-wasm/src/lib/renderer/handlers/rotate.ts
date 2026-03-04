@@ -10,10 +10,9 @@ import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
-import { updatePage } from '../../page-crud'
-import { makeSelrect } from '../types'
+import { applyModifiersAndCommit } from '../../page-crud'
 import type { Point } from '../types'
-import type { Matrix, PenpotNode } from 'penpot-exporter/lib'
+import type { Matrix } from 'penpot-exporter/lib'
 
 function screenToWorld(
   sx: number,
@@ -42,25 +41,6 @@ function rotationMatrix(cx: number, cy: number, angleDeg: number): Matrix {
     d: cos,
     e: cx * (1 - cos) + cy * sin,
     f: cy * (1 - cos) - cx * sin,
-  }
-}
-
-/** Rotate point (px, py) around (cx, cy) by angleDeg; returns new point. */
-function rotatePointAround(
-  px: number,
-  py: number,
-  cx: number,
-  cy: number,
-  angleDeg: number
-): { x: number; y: number } {
-  const theta = (angleDeg * Math.PI) / 180
-  const cos = Math.cos(theta)
-  const sin = Math.sin(theta)
-  const dx = px - cx
-  const dy = py - cy
-  return {
-    x: cx + dx * cos - dy * sin,
-    y: cy + dx * sin + dy * cos,
   }
 }
 
@@ -145,92 +125,11 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
         return
       }
       const deltaDeg = latestDeltaDegRef.current
-      const store = useWorkspaceStore.getState()
-      const nodes = store.selectedNodes ?? []
-      const pageId = store.pageId
-      const documentModel = store.documentModel
-      if (!pageId || !documentModel) {
-        const storeEarly = useWorkspaceStore.getState()
-        storeEarly.setRotationCorner(null)
-        storeEarly.setIsRotating(false)
-        return
-      }
-      const page = documentModel.getPage(pageId)
-      if (!page) {
-        const storeNoPage = useWorkspaceStore.getState()
-        storeNoPage.setRotationCorner(null)
-        storeNoPage.setIsRotating(false)
-        return
-      }
-
-      const payloadsById: Record<string, Partial<PenpotNode>> = {}
-      const theta = (deltaDeg * Math.PI) / 180
-      const cosD = Math.cos(theta)
-      const sinD = Math.sin(theta)
-      for (const id of ids) {
-        const node = nodes.find((n) => n.id === id)
-        if (!node) continue
-        const hasPosition =
-          typeof (node as { x?: number }).x === 'number' && typeof (node as { y?: number }).y === 'number'
-        const sr = node.selrect
-        const nx = (sr as { x?: number })?.x ?? (node as { x?: number }).x ?? 0
-        const ny = (sr as { y?: number })?.y ?? (node as { y?: number }).y ?? 0
-        const nw = (sr as { width?: number })?.width ?? (node as { width?: number }).width ?? 0
-        const nh = (sr as { height?: number })?.height ?? (node as { height?: number }).height ?? 0
-        const nodeCx = nx + nw / 2
-        const nodeCy = ny + nh / 2
-        const rotated = rotatePointAround(nodeCx, nodeCy, cx, cy, deltaDeg)
-        const newX = rotated.x - nw / 2
-        const newY = rotated.y - nh / 2
-        // Compose rotation delta with existing transform to correctly handle non-pure-rotation
-        // transforms (e.g. after a resize). Using T' = R(delta) * T avoids the bug where
-        // rotationMatrixOrigin(startRot + delta) overwrites a shear/scale transform with a pure rotation.
-        const T = (node as { transform?: { a: number; b: number; c: number; d: number } }).transform ?? { a: 1, b: 0, c: 0, d: 1 }
-        const newTransform: Matrix = {
-          a: cosD * T.a - sinD * T.b,
-          b: sinD * T.a + cosD * T.b,
-          c: cosD * T.c - sinD * T.d,
-          d: sinD * T.c + cosD * T.d,
-          e: 0,
-          f: 0,
-        }
-        const finalRotation = Math.atan2(newTransform.b, newTransform.a) * (180 / Math.PI)
-        const centerX = newX + nw / 2
-        const centerY = newY + nh / 2
-        const localCorners: Point[] = [
-          { x: -nw / 2, y: -nh / 2 },
-          { x: nw / 2, y: -nh / 2 },
-          { x: nw / 2, y: nh / 2 },
-          { x: -nw / 2, y: nh / 2 },
-        ]
-        const points: Point[] = localCorners.map((p) => ({
-          x: centerX + newTransform.a * p.x + newTransform.c * p.y,
-          y: centerY + newTransform.b * p.x + newTransform.d * p.y,
-        }))
-        const payload: Partial<PenpotNode> = {
-          rotation: finalRotation,
-          transform: newTransform,
-          selrect: makeSelrect(newX, newY, nw, nh),
-          points,
-        }
-        if (hasPosition) (payload as Record<string, unknown>).x = newX
-        if (hasPosition) (payload as Record<string, unknown>).y = newY
-        payloadsById[id] = payload
-      }
-
-      const updatedChildren = (page.children ?? []).map((n: PenpotNode) =>
-        n.id && payloadsById[n.id] ? { ...n, ...payloadsById[n.id] } : n
-      ) as PenpotNode[]
-      const updatedPage = { ...page, pageId, children: updatedChildren }
-
-      updatePage(updatedPage as Parameters<typeof updatePage>[0])
-        .then(async () => {
+      const matrix = rotationMatrix(cx, cy, deltaDeg)
+      const entries: Array<[string, Matrix]> = ids.map((id) => [id, matrix])
+      applyModifiersAndCommit(entries)
+        .then(() => {
           const storeAfter = useWorkspaceStore.getState()
-          const updatedNodes = storeAfter.selectedNodes ?? []
-          for (const id of ids) {
-            const node = updatedNodes.find((n) => n.id === id)
-            if (node) await renderer.updateShape(node)
-          }
           renderer.cleanModifiers()
           storeAfter.refreshWasmSelectionRect()
           requestAnimationFrame(() => renderer.requestRenderFrame())

@@ -71,6 +71,10 @@ export class DocumentModel {
     }
   }
 
+  getNode(id: string): PenpotNode | undefined {
+    return this.currentPageNodesMap[id]
+  }
+
   getSelectedNodes(selectedIds: Set<string>): PenpotNode[] {
     const result: PenpotNode[] = []
     for (const id of selectedIds) {
@@ -209,27 +213,40 @@ export class DocumentModel {
   }
 
   async updateNode(nodeId: string, updates: Partial<PenpotNode>): Promise<void> {
+    await this.applyNodeUpdates({ [nodeId]: updates })
+  }
+
+  private applyUpdatesToTree(nodes: PenpotNode[], updates: Record<string, Partial<PenpotNode>>): PenpotNode[] {
+    return nodes.map((node) => {
+      const nodeUpdates = node.id ? updates[node.id] : undefined
+      const merged = nodeUpdates ? ({ ...node, ...nodeUpdates } as PenpotNode) : node
+      const childList = (merged as { children?: PenpotNode[] }).children
+      if (childList?.length) {
+        (merged as { children?: PenpotNode[] }).children = this.applyUpdatesToTree(childList, updates)
+      }
+      return merged
+    })
+  }
+
+  async applyNodeUpdates(updates: Record<string, Partial<PenpotNode>>): Promise<void> {
+    if (Object.keys(updates).length === 0) return
     const state = useWorkspaceStore.getState()
     const pageId = state.pageId
     const page = pageId ? this.pageMap.get(pageId) : undefined
     if (!pageId || !page) return
-    const children = (page.children ?? []).map((n: PenpotNode) =>
-      n.id === nodeId ? ({ ...n, ...updates } as PenpotNode) : n
-    )
-    const operations = Object.entries(updates).map(([attr, val]) => ({
-      type: 'set' as const,
-      attr,
-      val,
-    }))
-    const modChange: ModObjChange = {
-      type: 'mod-obj',
-      id: nodeId,
-      operations,
+    const updatedPage: PenpotPage = {
+      ...page,
+      children: this.applyUpdatesToTree(page.children ?? [], updates),
     }
+    const changes: ModObjChange[] = Object.entries(updates).map(([id, partial]) => ({
+      type: 'mod-obj' as const,
+      id,
+      operations: Object.entries(partial).map(([attr, val]) => ({ type: 'set' as const, attr, val })),
+    }))
     await commitPageUpdateWithChanges({
       pageId,
-      updatedPage: { ...page, children },
-      changes: [modChange],
+      updatedPage,
+      changes,
     })
   }
 

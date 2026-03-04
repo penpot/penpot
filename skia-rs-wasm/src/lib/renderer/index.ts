@@ -22,7 +22,7 @@ import { getContextInitialized } from './api/context'
 import { processObject } from './api/orchestration'
 import { requestRender, renderSync } from './api/rendering'
 import { moduleUseShape, setShapeChildren } from './api/shape'
-import { setModifiers, cleanModifiers as cleanModifiersApi } from './api/modifiers'
+import { setModifiers, cleanModifiers as cleanModifiersApi, propagateModifiers } from './api/modifiers'
 
 function defaultOptions(options?: RendererOptions): Required<RendererOptions> {
   return {
@@ -247,12 +247,15 @@ export class Renderer {
 
   /**
    * Set modifiers and render synchronously in the same frame.
-   * Avoids the 1-frame desync between overlay and canvas that occurs when
-   * setMoveModifiers defers rendering via requestAnimationFrame.
+   * Propagates to children in WASM first so the whole subtree moves together; then sets the propagated result.
    */
   setMoveModifiersAndRender(entries: Array<[string, Matrix]>): void {
     if (!getContextInitialized() || !this.module) return
-    setModifiers(this.module, entries, true)
+    if (entries.length === 0) return
+    const propagated = propagateModifiers(this.module, entries, 0)
+    if (propagated.length === 0) return
+    const toSet = propagated.map((p) => [p.id, p.transform] as [string, Matrix])
+    setModifiers(this.module, toSet, true)
     renderSync(this.module)
   }
 
