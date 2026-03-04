@@ -12,6 +12,7 @@
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
@@ -44,6 +45,19 @@
       AND tpr.is_owner IS TRUE
       AND t.is_default IS FALSE
       AND t.deleted_at IS NULL;")
+
+;; ---- API: get-penpot-version
+
+(def ^:private schema:get-penpot-version-result
+  [:map [:version ::sm/text]])
+
+(sv/defmethod ::get-penpot-version
+  "Get the current Penpot version"
+  {::doc/added "2.14"
+   ::sm/params [:map]
+   ::sm/result schema:get-penpot-version-result}
+  [_cfg _params]
+  {:version cf/version})
 
 (def ^:private schema:get-teams-result
   [:vector schema:team])
