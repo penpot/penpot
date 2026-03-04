@@ -7,6 +7,8 @@ export interface ResizeHandlesProps {
   zoom: number
   /** When set, resize cursor is rotated by this angle so it aligns with the handle. */
   rotationDeg?: number
+  /** When true (transform has reflection), cursor gets per-handle ±90° correction. */
+  halfFlip?: boolean
   /** When set (e.g. during resize drag), use this cursor on all handles so it stays consistent. */
   overrideCursor?: string | null
   onResizeHandlePointerDown: (e: React.PointerEvent, position: ResizeHandlePosition) => void
@@ -16,6 +18,7 @@ export function ResizeHandles({
   effectiveBounds,
   zoom,
   rotationDeg,
+  halfFlip,
   overrideCursor,
   onResizeHandlePointerDown,
 }: ResizeHandlesProps) {
@@ -54,7 +57,7 @@ export function ResizeHandles({
           fill="transparent"
           style={{
             pointerEvents: 'auto',
-            cursor: overrideCursor ?? getResizeCursor(position, rotationDeg),
+            cursor: overrideCursor ?? getResizeCursor(position, rotationDeg, halfFlip),
           }}
           onPointerDown={(e) => onResizeHandlePointerDown(e, position)}
         />
@@ -71,7 +74,7 @@ export function ResizeHandles({
           strokeWidth={1 / zoom}
           style={{
             pointerEvents: 'auto',
-            cursor: overrideCursor ?? getResizeCursor(position, rotationDeg),
+            cursor: overrideCursor ?? getResizeCursor(position, rotationDeg, halfFlip),
           }}
           onPointerDown={(e) => onResizeHandlePointerDown(e, position)}
         />

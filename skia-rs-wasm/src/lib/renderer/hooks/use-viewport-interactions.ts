@@ -10,7 +10,7 @@ import { useViewportShortcutsStore } from '../store/shortcuts-store'
 import type { ViewportPanModifier, SelectionRectResult } from '../types'
 import { mousePosition$ } from '../streams'
 import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
-import { getResizeCursor, matrixToRotationDeg } from '../../components/selection-overlay/constants'
+import { getResizeCursor, matrixHasHalfFlip, matrixToRotationDeg } from '../../components/selection-overlay/constants'
 
 function hasPanModifier(e: MouseEvent, mod: ViewportPanModifier): boolean {
   if (mod === null) return false
@@ -186,7 +186,8 @@ export function useViewportInteractions({
       const { isResizing, resizeHandle, wasmSelectionRect } = store
       if (isResizing && resizeHandle) {
         const rotation = wasmSelectionRect != null ? matrixToRotationDeg(wasmSelectionRect.transform) : undefined
-        canvasElement.style.cursor = getResizeCursor(resizeHandle, rotation)
+        const halfFlip = wasmSelectionRect != null ? matrixHasHalfFlip(wasmSelectionRect.transform) : false
+        canvasElement.style.cursor = getResizeCursor(resizeHandle, rotation, halfFlip)
       } else if (e.target === canvasElement) {
         canvasElement.style.cursor = hasPanModifier(e, shortcuts.panWithModifier) ? 'grab' : 'default'
       }
