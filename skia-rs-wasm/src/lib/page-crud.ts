@@ -5,8 +5,7 @@
 
 import { useWorkspaceStore } from './renderer/store/workspace-store'
 import { DocumentModel } from './renderer/store/document-model'
-import { commitPageUpdate } from './renderer/store/commit'
-import type { IndexedPage, IndexedNode } from './worker/types'
+import type { IndexedPage } from './worker/types'
 import { flattenPageToIndexed } from './worker/types'
 import type { PenpotDocument, PenpotNode, PenpotPage, Change } from 'penpot-exporter/lib'
 
@@ -62,35 +61,9 @@ export async function addPage(page: IndexedPage | PenpotPage): Promise<void> {
   await model.addPage(indexed)
 }
 
-export async function updatePage(page: IndexedPage): Promise<void> {
-  const pageId = page.id
-  if (!pageId) return
-  await commitPageUpdate({ pageId, updatedPage: page })
-}
-
 export async function deletePage(pageId: string): Promise<void> {
   const model = useWorkspaceStore.getState().documentModel
   if (model) await model.deletePage(pageId)
-}
-
-export async function addNode(node: IndexedNode): Promise<void> {
-  const model = useWorkspaceStore.getState().documentModel
-  if (model) await model.addNode(node)
-}
-
-export async function updateNode(nodeId: string, updates: Partial<IndexedNode>): Promise<void> {
-  const model = useWorkspaceStore.getState().documentModel
-  if (model) await model.updateNode(nodeId, updates)
-}
-
-export async function applyNodeUpdates(updates: Record<string, Partial<IndexedNode>>): Promise<void> {
-  const model = useWorkspaceStore.getState().documentModel
-  if (model) await model.applyNodeUpdates(updates)
-}
-
-export async function deleteNode(nodeId: string): Promise<void> {
-  const model = useWorkspaceStore.getState().documentModel
-  if (model) await model.deleteNode(nodeId)
 }
 
 export async function applyChanges(

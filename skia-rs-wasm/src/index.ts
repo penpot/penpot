@@ -49,7 +49,6 @@ export {
   setDocument,
   setActivePage,
   addPage,
-  updatePage,
   deletePage,
   applyChanges,
 } from './lib/page-crud'

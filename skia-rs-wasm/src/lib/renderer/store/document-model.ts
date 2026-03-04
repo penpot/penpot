@@ -5,18 +5,16 @@
  * Implements IDocumentModel for use by the workspace store.
  */
 
-import type { PenpotDocument, PenpotNode } from 'penpot-exporter/lib'
-import type { Change, AddObjChange, ModObjChange, DelObjChange } from 'penpot-exporter/lib'
+import type { PenpotDocument } from 'penpot-exporter/lib'
+import type { Change } from 'penpot-exporter/lib'
 import type { IndexedPage, IndexedNode } from '../../worker/types'
 import { flattenPageToIndexed, unflattenIndexedPageToPage } from '../../worker/types'
 import { processChanges } from '../../worker/process-changes'
-import { useWorkspaceStore } from './workspace-store'
+import { useWorkspaceStore, type IDocumentModel } from './workspace-store'
 import { useWorkspaceDevStore } from './workspace-dev-store'
 import { Viewport } from '../viewport'
 import { commitPageUpdateWithChanges } from './commit'
 import { enrichPageWithPositionData } from './enrich-position-data'
-import { ZERO_UUID } from '@skia-rs-wasm/common'
-
 type DocumentMeta = Omit<PenpotDocument, 'children'>
 
 function buildPageMap(children: PenpotDocument['children']): Map<string, IndexedPage> {
@@ -50,7 +48,7 @@ function orderedNodeIdsFromPage(page: IndexedPage): string[] {
   return ids
 }
 
-export class DocumentModel {
+export class DocumentModel implements IDocumentModel {
   private documentMeta: DocumentMeta | null = null
   private pageMap: Map<string, IndexedPage> = new Map()
   private currentPageId: string | null = null
@@ -205,72 +203,6 @@ export class DocumentModel {
     } else {
       state.setPageId(nextPageId)
     }
-  }
-
-  async addNode(node: IndexedNode | PenpotNode): Promise<void> {
-    const state = useWorkspaceStore.getState()
-    const pageId = state.pageId
-    const page = pageId ? this.pageMap.get(pageId) : undefined
-    if (!pageId || !page) return
-    const root = Object.values(page.objects).find((o) => o.parentId == null)
-    const rootId = root?.id ?? ZERO_UUID
-    const index = root?.shapes?.length ?? 0
-    const addChange: AddObjChange = {
-      type: 'add-obj',
-      id: node.id,
-      obj: node,
-      frameId: rootId,
-      parentId: rootId,
-      index,
-      ...(pageId != null ? { pageId } : {}),
-    }
-    const updatedPage = processChanges(page, [addChange])
-    await commitPageUpdateWithChanges({
-      pageId,
-      updatedPage,
-      changes: [addChange],
-    })
-  }
-
-  async updateNode(nodeId: string, updates: Partial<IndexedNode>): Promise<void> {
-    await this.applyNodeUpdates({ [nodeId]: updates })
-  }
-
-  async applyNodeUpdates(updates: Record<string, Partial<IndexedNode>>): Promise<void> {
-    if (Object.keys(updates).length === 0) return
-    const state = useWorkspaceStore.getState()
-    const pageId = state.pageId
-    const page = pageId ? this.pageMap.get(pageId) : undefined
-    if (!pageId || !page) return
-    const changes: ModObjChange[] = Object.entries(updates).map(([id, partial]) => ({
-      type: 'mod-obj' as const,
-      id,
-      operations: Object.entries(partial).map(([attr, val]) => ({ type: 'set' as const, attr, val })),
-    }))
-    const updatedPage = processChanges(page, changes)
-    await commitPageUpdateWithChanges({
-      pageId,
-      updatedPage,
-      changes,
-    })
-  }
-
-  async deleteNode(nodeId: string): Promise<void> {
-    const state = useWorkspaceStore.getState()
-    const pageId = state.pageId
-    const page = pageId ? this.pageMap.get(pageId) : undefined
-    if (!pageId || !page) return
-    const delChange: DelObjChange = {
-      type: 'del-obj',
-      id: nodeId,
-      ...(pageId != null ? { pageId } : {}),
-    }
-    const updatedPage = processChanges(page, [delChange])
-    await commitPageUpdateWithChanges({
-      pageId,
-      updatedPage,
-      changes: [delChange],
-    })
   }
 
   async applyChanges(changes: Change[], options?: { pageId?: string }): Promise<void> {
