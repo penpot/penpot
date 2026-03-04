@@ -282,3 +282,5 @@ you may set the following environment variables to configure the two servers
 * The [contribution guidelines for Penpot](../CONTRIBUTING.md) apply
 * Auto-formatting: Use `pnpm run fmt`
 * Generating API type data: See [types-generator/README.md](types-generator/README.md)
+* Packaging and publishing:
+  - Create npm package: `bash scripts/pack` (sets version and then calls `npm pack`)

@@ -43,10 +43,21 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
 
 **Other Writable Properties**:
   * `name` - Shape name
-  * `fills`, `strokes` - Styling properties
-    IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them, e.g.
-    `shape.fills = [{ fillColor: "#FF0000", fillOpacity: 1 }]` to set a single red fill.
-  * `rotation`, `opacity`, `blocked`, `hidden`, `visible`
+  * `fills: Fill[]`, `strokes: Stroke[]`, `shadows: Shadow[]` - Styling properties
+    - Setting fills: `shape.fills = [{ fillColor: "#FF0000", fillOpacity: 1 }]`; no fill (transparent): `shape.fills = []`; 
+    - Reusing objects in another shape: `targetShape.fills = sourceShape.fills` or more granular `targetShape.fills = [{ fillOpacity: 1, fillImage: sourceShape.fills[0].fillImage }]`
+      The objects are not shared references; you can modify properties of the fills in the target shape without affecting the source shape.
+    - Colors: Use hex strings with caps only (e.g. '#FF5533')
+    - IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them!  
+  * `borderRadius` - Uniform border radius for all corners
+  * `borderRadiusTopLeft`, `borderRadiusTopRight`, `borderRadiusBottomRight`, `borderRadiusBottomLeft` - Individual corner radii.
+  * `blur: Blur` - Blur properties
+  * `blendMode` - Blend mode (e.g. `"normal"`, `"multiply"`, `"overlay"`, etc.)
+  * `rotation` (deg), `opacity`, `blocked`, `hidden`, `visible`
+  * `proportionLock` - Whether width and height are locked to the same ratio
+  * `constraintsHorizontal` - Horizontal resize constraint (`"left"`, `"right"`, `"center"`, `"leftright"`, `"scale"`)
+  * `constraintsVertical` - Vertical resize constraint (`"top"`, `"bottom"`, `"center"`, `"topbottom"`, `"scale"`)
+  * `flipX`, `flipY` - Horizontal/vertical flip
 
 **Z-Order**:
   * The z-order of shapes is determined by the order in the `children` array of the parent shape.
@@ -74,6 +85,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
 
 Cloning: Use `shape.clone(): Shape` to create an exact duplicate (including all properties and children) of a shape; same position as original.
 
+Annotations: Don't add text elements to the design that just repeat a shape's name. In the Penpot UI, the name is displayed anyway.
+
 # Images
 
 The `Image` type is a legacy type. Images are now typically embedded in a `Fill`, with `fillImage` set to an
@@ -85,7 +98,7 @@ Use the `export_shape` and `import_image` tools to export and import images.
 Boards can have layout systems that automatically control the positioning and spacing of their children:
 
   * If a board has a layout system, then child positions are controlled by the layout system.
-    For every child, key properties of the child within the layout are stored in `child.layoutChild: LayoutChildProperties`:
+    After adding a shape to the layout as a child, key properties of the child within the layout are controlled in `child.layoutChild: LayoutChildProperties`:
     - `absolute: boolean` - if true, child position is not controlled by layout system. x/y will set *relative* position within parent!
     - margins (`topMargin`, `rightMargin`, `bottomMargin`, `leftMargin` or combined `verticalMargin`, `horizontalMargin`)
     - sizing (`verticalSizing`, `horizontalSizing`: "fill" | "auto" | "fix")
@@ -121,7 +134,7 @@ Boards can have layout systems that automatically control the positioning and sp
       Check with: `if (board.grid) { ... }`
     - Properties: `rows`, `columns`, `rowGap`, `columnGap`
     - Children are positioned via 1-based row/column indices
-        - Add to grid via `board.flex.appendChild(shape, row, column)`
+        - Add to grid via `board.grid.appendChild(shape, row, column)`
         - Modify grid positioning after the fact via `shape.layoutCell: LayoutCellProperties`
 
   * When working with boards:
@@ -228,30 +241,75 @@ Each `Library` object has:
   * `colors: LibraryColor[]` - Array of colors
   * `typographies: LibraryTypography[]` - Array of typographies
 
+## Colors and Typographies
+
+Adding a color:
+```
+const newColor: LibraryColor = penpot.library.local.createColor();
+newColor.name = 'Brand Primary';
+newColor.color = '#0066FF';
+```
+
+Adding a typography:
+```
+const newTypo: LibraryTypography = penpot.library.local.createTypography();
+newTypo.name = 'Heading Large';
+// Set typography properties...
+```
+
+## Components
+
 Using library components:
   * find a component in the library by name:
-      const component: LibraryComponent = library.components.find(comp => comp.name.includes('Button'));
+    `const component: LibraryComponent = library.components.find(comp => comp.name.includes('Button'));`
   * create a new instance of the component on the current page:
-      const instance: Shape = component.instance();
+    `const instance: Shape = component.instance();`
     This returns a `Shape` (often a `Board` containing child elements).
     After instantiation, modify the instance's properties as desired.
   * get the reference to the main component shape:
-      const mainShape: Shape = component.mainInstance();
+    `const mainShape: Shape = component.mainInstance();`
 
-Adding assets to a library:
-  * const newColor: LibraryColor = penpot.library.local.createColor();
-    newColor.name = 'Brand Primary';
-    newColor.color = '#0066FF';
-  * const newTypo: LibraryTypography = penpot.library.local.createTypography();
-    newTypo.name = 'Heading Large';
-    // Set typography properties...
-  * const shapes: Shape[] = [shape1, shape2]; // shapes to include
-    const newComponent: LibraryComponent = penpot.library.local.createComponent(shapes);
-    newComponent.name = 'My Button';
+Adding a component to a library:
+```
+const shapes: Shape[] = [shape1, shape2]; // shapes to include
+const newComponent: LibraryComponent = penpot.library.local.createComponent(shapes);
+newComponent.name = 'My Button';
+```
 
 Detaching:
   * When creating new design elements based on a component instance/copy, use `shape.detach()` to break the link to the main component, allowing independent modification.
   * Without detaching, some manipulations will have no effect; e.g. child/descendant removal will not work.
+
+### Variants
+
+Variants are a system for grouping related component versions along named property axes (e.g. Type, Style), powering a structured swap UI for designers using component instances.
+
+* `VariantContainer` (extends `Board`): The board that physically groups all variant components together. 
+  - check with `isVariantContainer()`
+  - property `variants: Variants`.
+* `Variants`: Defines the combinations of property values for which component variants can exist and manages the concrete component variants. 
+  - `properties: string[]` (ordered list of property names); `addProperty()`, `renameProperty(pos, name)`, `currentValues(property)`
+  - `variantComponents(): LibraryVariantComponent[]` 
+* `LibraryVariantComponent` (extends `LibraryComponent`): full library component with metadata, for which `isVariant()` returns true.
+  - `variantProps: { [property: string]: string }` (this component's value for each property)
+  - `variantError` (non-null if e.g. two variants share the same combination of property values)
+  - `setVariantProperty(pos, value)`
+
+Properties are often addressed positionally: `pos` parameter in various methods = index in `Variants.properties`.
+
+**Creating a variant group**:
+- `component.transformInVariant(): null`: Converts a standard component into a variant group, creating a `VariantContainer` and a second duplicate variant. 
+  Both start with a default property `Property 1` with values `Value 1` / `Value 2`; there is no name-based auto-parsing.
+- `board.combineAsVariants(ids: string[]): null`: Combines the board (a main component instance) with other main components (referenced via IDs) into a new variant group. 
+  All components end up inside a single new `VariantContainer` on the canvas.
+- In both cases, look for the created `VariantContainer` on the page, and then edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
+
+**Adding a variant to an existing group**:
+Use `variantContainer.appendChild(mainInstance)` to move a component's main instance into the container, then set its position manually and assign property values via `setVariantProperty`.
+
+**Using Variants**:
+- `compInstance.switchVariant(pos, value)`: On a component instance, switches to the nearest variant that has the given value at property position `pos`, keeping all other property values the same.
+- To instantiate a specific variant, find the right `LibraryVariantComponent` by checking `variantProps`, then call `.instance()`.
 
 # Design Tokens
 
@@ -313,7 +371,7 @@ Applying tokens:
      - The actual shape properties that the tokens control will reflect the token's resolved value.
 
 Removing tokens:
-  Simply set the respective property directly - token binding is automatically removed, e.g.
+  Simply set the respective property directly - token binding is automatically removed, e.g.  
   shape.fills = [{ fillColor: "#000000", fillOpacity: 1 }]; // Removes fill token
 
 # Visual Inspection of Designs
