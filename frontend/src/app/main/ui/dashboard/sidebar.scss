@@ -111,6 +111,22 @@
   overflow: hidden;
 }
 
+// SIDEBAR ORG SWITCH
+.sidebar-org-switch {
+  width: 100%;
+  margin: 0;
+}
+
+.org-switch-content {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.current-org {
+  padding: 0 var(--sp-s) 0 var(--sp-l);
+}
+
 // This icon still use the old svg
 .penpot-icon {
   @include deprecated.flexCenter;
@@ -527,7 +543,6 @@
   max-height: calc(2 * var(--sp-xxxl));
   justify-content: space-between;
   padding: var(--sp-xs) var(--sp-l) var(--sp-xs) var(--sp-s);
-  // border-block-end: $b-1 solid var(--color-background-quaternary);
 }
 
 .nitrate-orgs-empty {

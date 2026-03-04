@@ -304,7 +304,12 @@
          (fn []
            (if (dm/get-in profile [:props :nitrate-license :valid])
              (dnt/go-to-nitrate-cc)
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
+
+        on-go-to-cc-click
+        (mf/use-fn
+         (fn []
+           (dnt/go-to-nitrate-cc)))]
 
     [:> dropdown-menu* props
 
@@ -349,7 +354,15 @@
        [:> dropdown-menu-item* {:on-click    on-create-org-click
                                 :class       (stl/css :team-dropdown-item :action)}
         [:span {:class (stl/css :icon-wrapper)} add-icon]
-        [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-org")]])]))
+        [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-org-menu")]])
+
+     (when allow-create-org
+       [:hr {:role "separator" :class (stl/css :team-separator)}]
+       [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
+                                :class       (stl/css :team-dropdown-item :action)}
+
+        [:span {:class (stl/css :icon-wrapper)} [:> icon* {:icon-id i/open-link}]]
+        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]])]))
 
 (mf/defc team-options-dropdown*
   {::mf/private true}
@@ -560,9 +573,9 @@
                     :class (stl/css :nitrate-create-org)
                     :on-click on-create-org-click} (tr "dashboard.create-new-org")]]
 
-      [:div {:class (stl/css :sidebar-team-switch)}
-       [:div {:class (stl/css :switch-content)}
-        [:button {:class (stl/css :current-team)
+      [:div {:class (stl/css :sidebar-team-switch :sidebar-org-switch)}
+       [:div {:class (stl/css :switch-content :org-switch-content)}
+        [:button {:class (stl/css :current-team :current-org)
                   :on-click on-show-teams-click
                   :on-key-down on-show-teams-keydown}
 
