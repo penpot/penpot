@@ -1,4 +1,5 @@
-import type { Matrix, PenpotNode } from '@ui/types';
+import type { Matrix } from '@ui/types';
+import type { ModObjChange } from 'penpot-exporter/lib';
 import { propagateModifiers } from '../api/modifiers';
 import { applyTransformToNode } from '../geom/apply-transform-to-node';
 import { useWorkspaceStore } from '../store/workspace-store';
@@ -13,13 +14,21 @@ export async function applyModifiersAndCommit(
   const module = renderer?.getModule?.();
   if (!module || !documentModel) return;
   const result = propagateModifiers(module, entries, options?.pixelPrecision ?? 0);
-  const updates: Record<string, Partial<PenpotNode>> = {};
+  const changes: ModObjChange[] = [];
   for (const { id, transform } of result) {
     const node = documentModel.getNode(id);
     if (node) {
       const partial = applyTransformToNode(node, transform);
-      if (partial) updates[id] = partial;
+      if (partial) {
+        changes.push({
+          type: 'mod-obj',
+          id,
+          operations: [{ type: 'assign', value: partial as Record<string, unknown> }],
+        });
+      }
     }
   }
-  if (Object.keys(updates).length > 0) await documentModel.applyNodeUpdates(updates);
+  if (changes.length > 0) {
+    await documentModel.applyChanges(changes, state.pageId != null ? { pageId: state.pageId } : undefined);
+  }
 }

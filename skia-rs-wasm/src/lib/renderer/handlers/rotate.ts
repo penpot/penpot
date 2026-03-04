@@ -10,7 +10,7 @@ import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
-import { applyModifiersAndCommit } from 'src/lib/renderer/handlers/utils'
+import { applyModifiersAndCommit } from './utils'
 import type { Point } from '../types'
 import type { Matrix } from 'penpot-exporter/lib'
 

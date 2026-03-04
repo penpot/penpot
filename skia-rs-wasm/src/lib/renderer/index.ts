@@ -5,7 +5,8 @@
 
 import type { WasmModule } from './wasm-types'
 import type { RendererOptions, SelectionRectResult } from './types'
-import type { PenpotNode, PenpotPage } from 'penpot-exporter/lib'
+import type { PenpotNode } from 'penpot-exporter/lib'
+import type { IndexedPage } from '../worker/types'
 import type { Matrix } from 'penpot-exporter/lib'
 import { getDPR } from './utils'
 import { Viewport } from './viewport'
@@ -104,7 +105,7 @@ export class Renderer {
   /**
    * Initializes or re-initializes the context and loads the given page (first load or page change).
    */
-  async initPage(page: PenpotPage): Promise<void> {
+  async initPage(indexedPage: IndexedPage): Promise<void> {
     if (!this.module || !this.canvas) {
       throw new Error('Renderer not built. Use Renderer.builder() first.')
     }
@@ -125,12 +126,10 @@ export class Renderer {
     const canvasHeight = this.canvas.clientHeight || this.canvas.height
     resizeViewbox(this.module, canvasWidth, canvasHeight)
 
-    const background = page.background ?? this.options.background ?? '#FFFFFF'
+    const background = indexedPage.background ?? this.options.background ?? '#FFFFFF'
     setCanvasBackground(this.module, background)
 
-    const baseObjects: Record<string, PenpotNode> = Object.fromEntries(
-      (page.children ?? []).map((n: PenpotNode) => [n.id, n])
-    )
+    const baseObjects = indexedPage.objects
     await initializeViewport(
       this.module,
       baseObjects,

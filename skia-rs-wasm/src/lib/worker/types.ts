@@ -2,7 +2,7 @@
  * Worker-specific types. Shared types (Point, Line, Change) come from common.
  */
 
-import type { PenpotNode, PenpotPage, Selrect } from 'penpot-exporter/lib'
+import type { PenpotNode, Selrect } from 'penpot-exporter/lib'
 import type { Change } from 'penpot-exporter/lib'
 import type { Point } from '@skia-rs-wasm/common'
 import type { Quadtree } from './quadtree'
@@ -32,13 +32,13 @@ export interface WorkerConfigurePayload {
 
 /** Payload for index/initialize command. */
 export interface WorkerIndexInitializePayload {
-  page: PenpotPage
+  page: IndexedPage
 }
 
 /** Payload for index/update command (full page replacement). */
 export interface WorkerIndexUpdatePayload {
   pageId: string
-  page: PenpotPage
+  page: IndexedPage
 }
 
 /** Payload for index/update command (incremental changes). */
@@ -59,9 +59,14 @@ export type IndexedShape = PenpotNode & {
   shapes?: string[]
 }
 
-/** Internal indexed page (flat objects map) used for selection/index state */
+/** Alias for IndexedShape; canonical node type in indexed page model. */
+export type IndexedNode = IndexedShape
+
+/** Internal indexed page (flat objects map) used for selection/index state. Carries page metadata like PenpotPage. */
 export interface IndexedPage {
   id: string
+  name?: string
+  background?: string
   objects: Record<string, IndexedShape>
 }
 
@@ -122,12 +127,12 @@ export type WorkerResponse = null | string[]
 export interface WorkerClient {
   sendMessage(cmd: string, payload?: WorkerSendPayload): Promise<WorkerResponse>
   configure(config: WorkerConfig): Promise<void>
-  addPage(page: PenpotPage): Promise<void>
-  updatePage(pageId: string, page: PenpotPage): Promise<void>
+  addPage(page: IndexedPage): Promise<void>
+  updatePage(pageId: string, page: IndexedPage): Promise<void>
   updatePageWithChanges(pageId: string, changes: Change[]): Promise<void>
   onMessage(callback: (message: WorkerMessage) => void): () => void
   destroy(): void
 }
 
-export { flattenPageToIndexed } from './flatten'
+export { flattenPageToIndexed, unflattenIndexedPageToPage } from './flatten'
 export { ZERO_UUID, makeSelrect } from '@skia-rs-wasm/common'

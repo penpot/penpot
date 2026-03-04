@@ -51,10 +51,6 @@ export {
   addPage,
   updatePage,
   deletePage,
-  addNode,
-  updateNode,
-  applyNodeUpdates,
-  applyModifiersAndCommit,
-  deleteNode,
+  applyChanges,
 } from './lib/page-crud'
 

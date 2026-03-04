@@ -2,9 +2,7 @@
  * Worker client for typed, promise-based communication with the worker
  */
 
-import type { PenpotPage } from 'penpot-exporter/lib'
 import type { Change } from 'penpot-exporter/lib'
-import { ensurePageShapePoints } from './renderer/store/ensure-shape-points'
 import type {
   WorkerMessage,
   SerializedMessage,
@@ -92,17 +90,18 @@ export class WorkerClient implements WorkerClientInterface {
   /**
    * Add a single page to the worker index
    */
-  async addPage(page: PenpotPage): Promise<void> {
-    const normalized = ensurePageShapePoints(page)
-    await this.sendMessage('index/initialize', { page: normalized })
+  async addPage(page: Parameters<WorkerClientInterface['addPage']>[0]): Promise<void> {
+    await this.sendMessage('index/initialize', { page })
   }
 
   /**
    * Update an existing page in the worker index (full page replacement)
    */
-  async updatePage(pageId: string, page: PenpotPage): Promise<void> {
-    const normalized = ensurePageShapePoints(page)
-    await this.sendMessage('index/update', { pageId, page: normalized })
+  async updatePage(
+    pageId: string,
+    page: Parameters<WorkerClientInterface['updatePage']>[1]
+  ): Promise<void> {
+    await this.sendMessage('index/update', { pageId, page })
   }
 
   /**
