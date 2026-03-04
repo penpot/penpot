@@ -50,12 +50,12 @@ export function colorToU32ARGB(color: { color: string; opacity?: number }): numb
 }
 
 /**
- * Converts a Uint32Array (4 u32 values) back to UUID string format
+ * Converts a Uint32Array (4 u32 values) back to UUID string format (8-4-4-4-12).
  */
 export function u32ToUUID(buffer: Uint32Array | [number, number, number, number]): string {
   const arr = Array.isArray(buffer) ? buffer : Array.from(buffer)
   const parts = arr.map(val => val.toString(16).padStart(8, '0'))
-  return `${parts[0]}${parts[1].slice(0, 4)}-${parts[1].slice(4)}-${parts[2].slice(0, 4)}-${parts[2].slice(4)}${parts[3].slice(0, 4)}-${parts[3].slice(4)}`
+  return `${parts[0]}-${parts[1].slice(0, 4)}-${parts[1].slice(4)}-${parts[2].slice(0, 4)}-${parts[2].slice(4)}${parts[3]}`
 }
 
 /** Build a full Selrect from origin and size */

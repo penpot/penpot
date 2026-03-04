@@ -15,6 +15,7 @@ import { getSelectionBounds, type Rect } from '../selection-bounds'
 
 /** Implemented by DocumentModel; used so the store and page-crud can call methods without importing the class. */
 export interface IDocumentModel {
+  getNode(id: string): PenpotNode | undefined
   getSelectedNodes(selectedIds: Set<string>): PenpotNode[]
   getPage(id: string): PenpotPage | undefined
   setPage(pageId: string, updatedPage: PenpotPage): void
@@ -23,6 +24,7 @@ export interface IDocumentModel {
   deletePage(pageId: string): Promise<void>
   addNode(node: PenpotNode): Promise<void>
   updateNode(nodeId: string, updates: Partial<PenpotNode>): Promise<void>
+  applyNodeUpdates(updates: Record<string, Partial<PenpotNode>>): Promise<void>
   deleteNode(nodeId: string): Promise<void>
 }
 
