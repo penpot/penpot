@@ -66,7 +66,7 @@ fn render_selection(
     }
 
     let mut paint = Paint::default();
-    paint.set_blend_mode(BlendMode::Multiply);
+    paint.set_blend_mode(BlendMode::default());
     paint.set_color(editor_state.theme.selection_color);
     paint.set_anti_alias(true);
 
