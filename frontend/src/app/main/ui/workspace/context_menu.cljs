@@ -806,13 +806,13 @@
 
         do-merge-cells
         (mf/use-fn
-         (mf/deps grid cells)
+         (mf/deps grid-id cells)
          (fn []
            (st/emit! (dwsl/merge-cells grid-id (map :id cells)))))
 
         do-create-board
         (mf/use-fn
-         (mf/deps grid cells)
+         (mf/deps grid-id cells)
          (fn []
            (st/emit! (dwsl/create-cell-board grid-id (map :id cells)))))
 
