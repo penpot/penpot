@@ -497,7 +497,31 @@ pub extern "C" fn text_editor_move_cursor(direction: CursorDirection, extend_sel
 
         let current = state.text_editor_state.selection.focus;
 
-        let new_cursor = match direction {
+        // Get the text direction of the span at the current cursor position
+        let span_text_direction = if current.paragraph < paragraphs.len() {
+            get_span_text_direction_at_offset(&paragraphs[current.paragraph], current.offset)
+        } else {
+            skia_safe::textlayout::TextDirection::LTR
+        };
+
+        // For horizontal navigation, swap Backward/Forward when in RTL text
+        let adjusted_direction = match direction {
+            CursorDirection::Backward | CursorDirection::Forward => {
+                if span_text_direction == skia_safe::textlayout::TextDirection::RTL {
+                    // Swap directions for RTL
+                    match direction {
+                        CursorDirection::Backward => CursorDirection::Forward,
+                        CursorDirection::Forward => CursorDirection::Backward,
+                        _ => direction,
+                    }
+                } else {
+                    direction
+                }
+            }
+            _ => direction,
+        };
+
+        let new_cursor = match adjusted_direction {
             CursorDirection::Backward => move_cursor_backward(&current, paragraphs),
             CursorDirection::Forward => move_cursor_forward(&current, paragraphs),
             CursorDirection::LineBefore => {
@@ -1067,6 +1091,20 @@ fn find_span_at_offset(para: &Paragraph, char_offset: usize) -> Option<(usize, u
         return Some((last_idx, last_len));
     }
     None
+}
+
+/// Get the text direction of the span at a given offset in a paragraph.
+fn get_span_text_direction_at_offset(
+    para: &Paragraph,
+    char_offset: usize,
+) -> skia_safe::textlayout::TextDirection {
+    if let Some((span_idx, _)) = find_span_at_offset(para, char_offset) {
+        if let Some(span) = para.children().get(span_idx) {
+            return span.text_direction;
+        }
+    }
+    // Fallback to paragraph's text direction
+    para.text_direction()
 }
 
 /// Insert text at a cursor position. Returns the new character offset after insertion.
