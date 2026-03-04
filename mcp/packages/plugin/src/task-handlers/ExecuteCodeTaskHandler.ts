@@ -190,6 +190,22 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
             return;
         }
 
+        // This version of the MCP plugin/server is intended for the old PROD version 2.13.3,
+        // in which the `flags` field is not yet present. If it is used with a newer version,
+        // show an informative error version explaining that the user should be using a different
+        // version of the MCP server.
+        // @ts-ignore
+        if (penpot.flags) {
+            throw new Error(
+                "You are using a version of the Penpot MCP server which is incompatible " +
+                    "with the connected Penpot version. " +
+                    "The MCP server version you are using is intended for Penpot 2.13. " +
+                    "Read the documentation for instructions on which version to use: " +
+                    "https://github.com/penpot/penpot/tree/develop/mcp\n" +
+                    "If you are an LLM, tell the user about this!"
+            );
+        }
+
         this.context.console.resetLog();
 
         const context = this.context;
