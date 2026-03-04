@@ -282,9 +282,7 @@ pub extern "C" fn text_editor_insert_text() {
 
         let cursor = state.text_editor_state.selection.focus;
 
-        if let Some(new_offset) = insert_text_at_cursor(text_content, &cursor, &text) {
-            let new_cursor =
-                TextPositionWithAffinity::new_without_affinity(cursor.paragraph, new_offset);
+        if let Some(new_cursor) = insert_text_with_newlines(text_content, &cursor, &text) {
             state.text_editor_state.selection.set_caret(new_cursor);
         }
 
@@ -751,12 +749,10 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
                     char_pos += span_len;
                 }
             }
-            if !para_text.is_empty() {
-                if !result.is_empty() {
-                    result.push('\n');
-                }
-                result.push_str(&para_text);
+            if para_idx > start.paragraph {
+                result.push('\n');
             }
+            result.push_str(&para_text);
         }
         let mut bytes = result.into_bytes();
         bytes.push(0);
@@ -1051,6 +1047,45 @@ fn find_span_at_offset(para: &Paragraph, char_offset: usize) -> Option<(usize, u
         return Some((last_idx, last_len));
     }
     None
+}
+
+/// Insert text at a cursor position, splitting on newlines into multiple paragraphs.
+/// Returns the final cursor position after insertion.
+fn insert_text_with_newlines(
+    text_content: &mut TextContent,
+    cursor: &TextPositionWithAffinity,
+    text: &str,
+) -> Option<TextPositionWithAffinity> {
+    let normalized = text.replace("\r\n", "\n").replace('\r', "\n");
+    let lines: Vec<&str> = normalized.split('\n').collect();
+    if lines.is_empty() {
+        return None;
+    }
+
+    let mut current_cursor = *cursor;
+
+    if let Some(new_offset) = insert_text_at_cursor(text_content, &current_cursor, lines[0]) {
+        current_cursor =
+            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph, new_offset);
+    } else {
+        return None;
+    }
+
+    for line in lines.iter().skip(1) {
+        if !split_paragraph_at_cursor(text_content, &current_cursor) {
+            break;
+        }
+        current_cursor =
+            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph + 1, 0);
+        if let Some(new_offset) = insert_text_at_cursor(text_content, &current_cursor, line) {
+            current_cursor = TextPositionWithAffinity::new_without_affinity(
+                current_cursor.paragraph,
+                new_offset,
+            );
+        }
+    }
+
+    Some(current_cursor)
 }
 
 /// Insert text at a cursor position. Returns the new character offset after insertion.
