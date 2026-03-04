@@ -93,12 +93,12 @@ export function DevToolbar() {
   // Load node data when selection changes
   useEffect(() => {
     if (selectedNodeId && !isCreatingNew) {
-      const node = nodes.find((n) => n.id === selectedNodeId)
+      const node = nodes.find((n) => n.id === selectedNodeId) as PenpotNode | undefined
       if (node) {
-        setAdvX(node.x ?? 0)
-        setAdvY(node.y ?? 0)
-        setAdvWidth(node.width ?? 100)
-        setAdvHeight(node.height ?? 100)
+        setAdvX((node as { x?: number }).x ?? 0)
+        setAdvY((node as { y?: number }).y ?? 0)
+        setAdvWidth((node as { width?: number }).width ?? 100)
+        setAdvHeight((node as { height?: number }).height ?? 100)
         setAdvRotation(node.rotation ?? 0)
         setAdvTransform(node.transform ?? { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 })
         setAdvFills(node.fills ?? [])
@@ -295,8 +295,9 @@ export function DevToolbar() {
     if (isCreatingNew) {
       // Create new node
       const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
-      const newNode: PenpotNode = {
+      const newNode = {
         id: crypto.randomUUID(),
+        name: 'Shape',
         type: selectedType,
         x: advX,
         y: advY,
@@ -331,7 +332,7 @@ export function DevToolbar() {
         showContent: advClipContent === false ? false : undefined,
         maskedGroup: advMaskedGroup || undefined,
         growType: advGrowType,
-      }
+      } as PenpotNode
       addNode(newNode)
     } else if (selectedNodeId) {
       // Update existing node
@@ -1601,7 +1602,7 @@ export function DevToolbar() {
                       <label>Grow Type:</label>
                       <select
                         value={advGrowType ?? ''}
-                        onChange={(e) => setAdvGrowType(e.target.value === '' ? undefined : e.target.value as 'auto' | 'fixed' | 'fill')}
+                        onChange={(e) => setAdvGrowType(e.target.value === '' ? undefined : (e.target.value as GrowType))}
                       >
                         <option value="">None</option>
                         <option value="auto">Auto</option>

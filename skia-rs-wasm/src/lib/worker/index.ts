@@ -11,9 +11,8 @@ import type {
   SerializedMessage,
   WorkerUpdateTextRectPayload,
 } from './types'
-import type { Point, Matrix, PenpotPage } from 'penpot-exporter/lib'
+import type { Point, Matrix } from 'penpot-exporter/lib'
 import type { Change } from 'penpot-exporter/lib'
-import { flattenPageToIndexed } from './types'
 import { processChanges } from './process-changes'
 import { handler, registerHandler } from './impl'
 import { encode, decode } from './messages'
@@ -51,19 +50,15 @@ registerHandler('index/clear', () => {
 
 registerHandler('index/initialize', (message: WorkerMessage) => {
   console.log('index/initialize', message)
-  const page = (message.payload as { page?: PenpotPage } | undefined)?.page
-  if (!page) {
+  const indexed = (message.payload as { page?: IndexedPage } | undefined)?.page
+  if (!indexed) {
     return null
   }
 
   const startTime = performance.now()
 
   try {
-    const indexed = flattenPageToIndexed(page)
-    // Update pages index
     state.pagesIndex[indexed.id] = indexed
-
-    // Update selection index
     state.selection = selection.addPage(state.selection, indexed)
 
     const elapsed = performance.now() - startTime
@@ -77,7 +72,7 @@ registerHandler('index/initialize', (message: WorkerMessage) => {
 })
 
 registerHandler('index/update', (message: WorkerMessage) => {
-  const payload = message.payload as { pageId?: string; changes?: Change[]; page?: PenpotPage } | undefined
+  const payload = message.payload as { pageId?: string; changes?: Change[]; page?: IndexedPage } | undefined
   const pageId = payload?.pageId
   const changes = payload?.changes
   const newPage = payload?.page
@@ -101,7 +96,7 @@ registerHandler('index/update', (message: WorkerMessage) => {
       state.pagesIndex[pageId] = indexedNew
       state.selection = selection.updatePage(state.selection, oldPage, indexedNew)
     } else if (newPage) {
-      indexedNew = flattenPageToIndexed(newPage)
+      indexedNew = newPage
       state.pagesIndex[pageId] = indexedNew
       state.selection = selection.updatePage(state.selection, oldPage, indexedNew)
     } else {

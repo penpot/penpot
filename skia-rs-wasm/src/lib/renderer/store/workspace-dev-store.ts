@@ -5,19 +5,19 @@
  */
 
 import { create } from 'zustand'
-import type { PenpotNode } from 'penpot-exporter/lib'
+import type { IndexedNode } from '../../worker/types'
 
 export interface WorkspaceDevState {
-  currentPageNodes: PenpotNode[]
-  currentPageNodesMap: Record<string, PenpotNode>
+  currentPageNodes: IndexedNode[]
+  currentPageNodesMap: Record<string, IndexedNode>
   setCurrentPageData: (payload: {
-    currentPageNodes: PenpotNode[]
-    currentPageNodesMap: Record<string, PenpotNode>
+    currentPageNodes: IndexedNode[]
+    currentPageNodesMap: Record<string, IndexedNode>
   }) => void
 }
 
-const EMPTY_NODES: PenpotNode[] = []
-const EMPTY_MAP: Record<string, PenpotNode> = Object.freeze({})
+const EMPTY_NODES: IndexedNode[] = []
+const EMPTY_MAP: Record<string, IndexedNode> = Object.freeze({})
 
 export const useWorkspaceDevStore = create<WorkspaceDevState>()((set) => ({
   currentPageNodes: EMPTY_NODES,

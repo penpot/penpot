@@ -8,30 +8,31 @@ import { create } from 'zustand'
 import type { WasmModule } from '../wasm-types'
 import type { Viewport } from '../viewport'
 import { Renderer } from '../index'
-import type { PenpotNode, PenpotPage, Selrect } from 'penpot-exporter/lib'
+import type { PenpotNode, Selrect, Change } from 'penpot-exporter/lib'
 import type { ResizeHandlePosition, SelectionRectResult } from '../types'
 import type { WorkerClient } from '../../worker/types'
+import type { IndexedPage, IndexedNode } from '../../worker/types'
 import { getSelectionBounds, type Rect } from '../selection-bounds'
 
 /** Implemented by DocumentModel; used so the store and page-crud can call methods without importing the class. */
 export interface IDocumentModel {
-  getNode(id: string): PenpotNode | undefined
-  getSelectedNodes(selectedIds: Set<string>): PenpotNode[]
-  getPage(id: string): PenpotPage | undefined
-  setPage(pageId: string, updatedPage: PenpotPage): void
+  getNode(id: string): IndexedNode | undefined
+  getSelectedNodes(selectedIds: Set<string>): IndexedNode[]
+  getPage(id: string): IndexedPage | undefined
   setActivePage(pageId: string): Promise<void>
-  addPage(page: PenpotPage): Promise<void>
+  addPage(page: IndexedPage): Promise<void>
   deletePage(pageId: string): Promise<void>
-  addNode(node: PenpotNode): Promise<void>
-  updateNode(nodeId: string, updates: Partial<PenpotNode>): Promise<void>
-  applyNodeUpdates(updates: Record<string, Partial<PenpotNode>>): Promise<void>
+  addNode(node: IndexedNode | PenpotNode): Promise<void>
+  updateNode(nodeId: string, updates: Partial<IndexedNode>): Promise<void>
+  applyNodeUpdates(updates: Record<string, Partial<IndexedNode>>): Promise<void>
   deleteNode(nodeId: string): Promise<void>
+  applyChanges(changes: Change[], options?: { pageId?: string }): Promise<void>
 }
 
 export interface WorkspaceState {
   // State
   documentModel: IDocumentModel | null
-  selectedNodes: PenpotNode[]
+  selectedNodes: IndexedNode[]
   pageId: string | null
   selectedIds: Set<string>
   /** Union of selected nodes' selrects; set when selection changes. */
@@ -64,7 +65,7 @@ export interface WorkspaceState {
 
   // Actions
   setDocumentModel: (model: IDocumentModel | null) => void
-  setSelectedNodes: (nodes: PenpotNode[]) => void
+  setSelectedNodes: (nodes: IndexedNode[]) => void
   setPageId: (id: string | null) => void
   setSelectedIds: (ids: Set<string>) => void
   setSelectionRect: (rect: Selrect | null) => void
@@ -90,7 +91,7 @@ export interface WorkspaceState {
   setWasmModuleError: (error: Error | null) => void
 }
 
-const EMPTY_NODES: PenpotNode[] = []
+const EMPTY_NODES: IndexedNode[] = []
 
 export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   documentModel: null,

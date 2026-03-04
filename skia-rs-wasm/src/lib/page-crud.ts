@@ -6,7 +6,9 @@
 import { useWorkspaceStore } from './renderer/store/workspace-store'
 import { DocumentModel } from './renderer/store/document-model'
 import { commitPageUpdate } from './renderer/store/commit'
-import type { PenpotDocument, PenpotNode, PenpotPage } from 'penpot-exporter/lib'
+import type { IndexedPage, IndexedNode } from './worker/types'
+import { flattenPageToIndexed } from './worker/types'
+import type { PenpotDocument, PenpotNode, PenpotPage, Change } from 'penpot-exporter/lib'
 
 export function createNewDocument(): PenpotDocument {
   const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
@@ -52,15 +54,18 @@ export async function setActivePage(pageId: string): Promise<void> {
   if (model) await model.setActivePage(pageId)
 }
 
-export async function addPage(page: PenpotPage): Promise<void> {
+export async function addPage(page: IndexedPage | PenpotPage): Promise<void> {
   const model = useWorkspaceStore.getState().documentModel
-  if (model) await model.addPage(page)
+  if (!model) return
+  const indexed: IndexedPage =
+    'objects' in page && page.objects ? (page as IndexedPage) : flattenPageToIndexed(page as PenpotPage)
+  await model.addPage(indexed)
 }
 
-export async function updatePage(page: PenpotPage & { pageId: string }): Promise<void> {
-  const { pageId, ...pageData } = page
-  const updatedPage = { ...pageData, id: pageId } as PenpotPage
-  await commitPageUpdate({ pageId, updatedPage })
+export async function updatePage(page: IndexedPage): Promise<void> {
+  const pageId = page.id
+  if (!pageId) return
+  await commitPageUpdate({ pageId, updatedPage: page })
 }
 
 export async function deletePage(pageId: string): Promise<void> {
@@ -68,17 +73,17 @@ export async function deletePage(pageId: string): Promise<void> {
   if (model) await model.deletePage(pageId)
 }
 
-export async function addNode(node: PenpotNode): Promise<void> {
+export async function addNode(node: IndexedNode): Promise<void> {
   const model = useWorkspaceStore.getState().documentModel
   if (model) await model.addNode(node)
 }
 
-export async function updateNode(nodeId: string, updates: Partial<PenpotNode>): Promise<void> {
+export async function updateNode(nodeId: string, updates: Partial<IndexedNode>): Promise<void> {
   const model = useWorkspaceStore.getState().documentModel
   if (model) await model.updateNode(nodeId, updates)
 }
 
-export async function applyNodeUpdates(updates: Record<string, Partial<PenpotNode>>): Promise<void> {
+export async function applyNodeUpdates(updates: Record<string, Partial<IndexedNode>>): Promise<void> {
   const model = useWorkspaceStore.getState().documentModel
   if (model) await model.applyNodeUpdates(updates)
 }
@@ -86,4 +91,12 @@ export async function applyNodeUpdates(updates: Record<string, Partial<PenpotNod
 export async function deleteNode(nodeId: string): Promise<void> {
   const model = useWorkspaceStore.getState().documentModel
   if (model) await model.deleteNode(nodeId)
+}
+
+export async function applyChanges(
+  changes: Change[],
+  options?: { pageId?: string }
+): Promise<void> {
+  const model = useWorkspaceStore.getState().documentModel
+  if (model) await model.applyChanges(changes, options)
 }

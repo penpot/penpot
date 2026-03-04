@@ -248,7 +248,7 @@ export function useViewportInteractions({
 
     // End selection. isMoving and isResizing are cleared by their handlers after commit (so overlay uses updated bounds
     // and a quick second resize sees the latest node). Do not clear isRotating here: the rotate handler clears it after
-    // updateNode resolves; clearing here would dispose the subscription before commitOnRelease runs.
+    // applyChanges resolves; clearing here would dispose the subscription before commitOnRelease runs.
     setIsSelecting(false)
   }, [canvasRef, viewport, renderer, setIsSelecting, onViewportUpdate])
 

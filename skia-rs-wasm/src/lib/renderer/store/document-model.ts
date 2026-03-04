@@ -1,84 +1,93 @@
 /**
- * DocumentModel holds document meta, pageMap, and current page derived data.
+ * DocumentModel holds document meta, pageMap, and current page id.
+ * All node/page data lives in pageMap (IndexedPage); lookups use pageMap.get(pageId)?.objects[nodeId].
  * Pushes selectedNodes to workspace store and currentPageNodes/currentPageNodesMap to dev store.
  * Implements IDocumentModel for use by the workspace store.
  */
 
-import type { PenpotDocument, PenpotNode, PenpotPage } from 'penpot-exporter/lib'
-import type { AddObjChange, ModObjChange, DelObjChange } from 'penpot-exporter/lib'
-import { ZERO_UUID } from '@skia-rs-wasm/common'
+import type { PenpotDocument, PenpotNode } from 'penpot-exporter/lib'
+import type { Change, AddObjChange, ModObjChange, DelObjChange } from 'penpot-exporter/lib'
+import type { IndexedPage, IndexedNode } from '../../worker/types'
+import { flattenPageToIndexed, unflattenIndexedPageToPage } from '../../worker/types'
+import { processChanges } from '../../worker/process-changes'
 import { useWorkspaceStore } from './workspace-store'
 import { useWorkspaceDevStore } from './workspace-dev-store'
 import { Viewport } from '../viewport'
 import { commitPageUpdateWithChanges } from './commit'
 import { enrichPageWithPositionData } from './enrich-position-data'
-
-const EMPTY_NODES: PenpotNode[] = []
-const EMPTY_MAP: Record<string, PenpotNode> = {}
+import { ZERO_UUID } from '@skia-rs-wasm/common'
 
 type DocumentMeta = Omit<PenpotDocument, 'children'>
-type CurrentPageNodes = NonNullable<PenpotPage['children']>
 
-function buildPageMap(children: PenpotPage[] | undefined): Map<string, PenpotPage> {
-  const map = new Map<string, PenpotPage>()
+function buildPageMap(children: PenpotDocument['children']): Map<string, IndexedPage> {
+  const map = new Map<string, IndexedPage>()
   if (!children?.length) return map
   for (const page of children) {
     const key = page.id ?? crypto.randomUUID()
-    map.set(key, { ...page, id: page.id ?? key })
+    const indexed = flattenPageToIndexed({ ...page, id: page.id ?? key })
+    map.set(key, indexed)
   }
   return map
 }
 
-function flattenPageNodes(page: PenpotPage | null | undefined): Record<string, PenpotNode> {
-  const acc: Record<string, PenpotNode> = {}
-  if (!page?.children?.length) return acc
-  function walk(nodes: PenpotNode[]): void {
-    for (const node of nodes) {
-      acc[node.id] = node
-      const childList = (node as { children?: PenpotNode[] }).children
-      if (childList?.length) walk(childList)
+/** Ordered list of node ids for current page (root first, then depth-first). Used for dev store. */
+function orderedNodeIdsFromPage(page: IndexedPage): string[] {
+  const ids: string[] = []
+  const root = Object.values(page.objects).find((o) => o.parentId == null)
+  if (!root) return ids
+  ids.push(root.id)
+  function walk(shapeIds: string[] | undefined) {
+    if (!shapeIds?.length) return
+    for (const id of shapeIds) {
+      const obj = page.objects[id]
+      if (obj) {
+        ids.push(id)
+        walk(obj.shapes)
+      }
     }
   }
-  walk(page.children)
-  return acc
+  walk(root.shapes)
+  return ids
 }
 
 export class DocumentModel {
   private documentMeta: DocumentMeta | null = null
-  private pageMap: Map<string, PenpotPage> = new Map()
+  private pageMap: Map<string, IndexedPage> = new Map()
   private currentPageId: string | null = null
-  private currentPageNodes: CurrentPageNodes = EMPTY_NODES
-  private currentPageNodesMap: Record<string, PenpotNode> = EMPTY_MAP
 
   getDocument(): PenpotDocument | null {
     if (!this.documentMeta) return null
     return {
       ...this.documentMeta,
-      children: Array.from(this.pageMap.values()),
+      children: Array.from(this.pageMap.values()).map(unflattenIndexedPageToPage),
     }
   }
 
-  getPage(id: string): PenpotPage | undefined {
+  getPage(id: string): IndexedPage | undefined {
     return this.pageMap.get(id)
   }
 
-  setPage(pageId: string, updatedPage: PenpotPage): void {
+  /**
+   * Internal: used only by commit to write updated page into the model.
+   * Not on IDocumentModel.
+   */
+  applyPageUpdate(pageId: string, updatedPage: IndexedPage): void {
     this.pageMap.set(pageId, updatedPage)
     if (this.currentPageId === pageId) {
-      this.currentPageNodes = updatedPage.children ?? EMPTY_NODES
-      this.currentPageNodesMap = flattenPageNodes(updatedPage)
       this.pushToStores()
     }
   }
 
-  getNode(id: string): PenpotNode | undefined {
-    return this.currentPageNodesMap[id]
+  getNode(id: string): IndexedNode | undefined {
+    return this.pageMap.get(this.currentPageId ?? '')?.objects[id]
   }
 
-  getSelectedNodes(selectedIds: Set<string>): PenpotNode[] {
-    const result: PenpotNode[] = []
+  getSelectedNodes(selectedIds: Set<string>): IndexedNode[] {
+    const objects = this.pageMap.get(this.currentPageId ?? '')?.objects
+    if (!objects) return []
+    const result: IndexedNode[] = []
     for (const id of selectedIds) {
-      const node = this.currentPageNodesMap[id]
+      const node = objects[id]
       if (node) result.push(node)
     }
     return result
@@ -87,10 +96,18 @@ export class DocumentModel {
   private pushToStores(): void {
     const workspace = useWorkspaceStore.getState()
     const dev = useWorkspaceDevStore.getState()
-    dev.setCurrentPageData({
-      currentPageNodes: this.currentPageNodes,
-      currentPageNodesMap: this.currentPageNodesMap,
-    })
+    const currentPage = this.currentPageId ? this.pageMap.get(this.currentPageId) : undefined
+    if (currentPage) {
+      const orderedIds = orderedNodeIdsFromPage(currentPage)
+      const currentPageNodes = orderedIds.map((id) => currentPage.objects[id]).filter(Boolean)
+      const currentPageNodesMap = currentPage.objects
+      dev.setCurrentPageData({
+        currentPageNodes,
+        currentPageNodesMap,
+      })
+    } else {
+      dev.setCurrentPageData({ currentPageNodes: [], currentPageNodesMap: {} })
+    }
     const selectedNodes = this.getSelectedNodes(workspace.selectedIds)
     workspace.setSelectedNodes(selectedNodes)
   }
@@ -101,10 +118,7 @@ export class DocumentModel {
     this.pageMap = buildPageMap(children)
     const firstPageId =
       children?.[0]?.id ?? (this.pageMap.size ? this.pageMap.keys().next().value ?? null : null)
-    const firstPage = firstPageId ? this.pageMap.get(firstPageId) : undefined
     this.currentPageId = firstPageId
-    this.currentPageNodes = firstPage?.children ?? EMPTY_NODES
-    this.currentPageNodesMap = firstPage ? flattenPageNodes(firstPage) : EMPTY_MAP
 
     useWorkspaceStore.setState({ documentModel: this, pageId: firstPageId })
     this.pushToStores()
@@ -119,8 +133,11 @@ export class DocumentModel {
         await state.renderer.initPage(page)
         state.setViewport(new Viewport())
         if (state.wasmModule && state.workerClient) {
-          const enrichedPage = enrichPageWithPositionData(state.wasmModule, page)
-          await state.workerClient.updatePage(firstPageId, enrichedPage)
+          const penpotPage = unflattenIndexedPageToPage(page)
+          const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
+          const enrichedIndexed = flattenPageToIndexed(enrichedPenpot)
+          this.pageMap.set(firstPageId, enrichedIndexed)
+          await state.workerClient.updatePage(firstPageId, enrichedIndexed)
         }
       }
     }
@@ -133,21 +150,21 @@ export class DocumentModel {
     if (!state.workerClient || !state.renderer) return
 
     this.currentPageId = pageId
-    this.currentPageNodes = page.children ?? EMPTY_NODES
-    this.currentPageNodesMap = flattenPageNodes(page)
-
     state.setPageId(pageId)
     this.pushToStores()
 
     await state.renderer.initPage(page)
     state.setViewport(new Viewport())
     if (state.wasmModule && state.workerClient) {
-      const enrichedPage = enrichPageWithPositionData(state.wasmModule, page)
-      await state.workerClient.updatePage(pageId, enrichedPage)
+      const penpotPage = unflattenIndexedPageToPage(page)
+      const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
+      const enrichedIndexed = flattenPageToIndexed(enrichedPenpot)
+      this.pageMap.set(pageId, enrichedIndexed)
+      await state.workerClient.updatePage(pageId, enrichedIndexed)
     }
   }
 
-  async addPage(page: PenpotPage): Promise<void> {
+  async addPage(page: IndexedPage): Promise<void> {
     if (!this.documentMeta) return
     const state = useWorkspaceStore.getState()
     const key = page.id ?? crypto.randomUUID()
@@ -172,16 +189,17 @@ export class DocumentModel {
     if (this.currentPageId === pageId && nextPageId) {
       this.currentPageId = nextPageId
       const page = this.pageMap.get(nextPageId)
-      this.currentPageNodes = page?.children ?? EMPTY_NODES
-      this.currentPageNodesMap = page ? flattenPageNodes(page) : EMPTY_MAP
       state.setPageId(nextPageId)
       this.pushToStores()
       if (state.renderer?.isInitialized() && page) {
         await state.renderer.initPage(page)
         state.setViewport(new Viewport())
         if (state.wasmModule && state.workerClient) {
-          const enrichedPage = enrichPageWithPositionData(state.wasmModule, page)
-          await state.workerClient.updatePage(nextPageId, enrichedPage)
+          const penpotPage = unflattenIndexedPageToPage(page)
+          const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
+          const enrichedIndexed = flattenPageToIndexed(enrichedPenpot)
+          this.pageMap.set(nextPageId, enrichedIndexed)
+          await state.workerClient.updatePage(nextPageId, enrichedIndexed)
         }
       }
     } else {
@@ -189,60 +207,47 @@ export class DocumentModel {
     }
   }
 
-  async addNode(node: PenpotNode): Promise<void> {
+  async addNode(node: IndexedNode | PenpotNode): Promise<void> {
     const state = useWorkspaceStore.getState()
     const pageId = state.pageId
     const page = pageId ? this.pageMap.get(pageId) : undefined
     if (!pageId || !page) return
-    const children = [...(page.children ?? []), node]
-    const rootFrame = page.children?.[0]
-    const rootId = rootFrame?.id ?? ZERO_UUID
+    const root = Object.values(page.objects).find((o) => o.parentId == null)
+    const rootId = root?.id ?? ZERO_UUID
+    const index = root?.shapes?.length ?? 0
     const addChange: AddObjChange = {
       type: 'add-obj',
       id: node.id,
       obj: node,
       frameId: rootId,
       parentId: rootId,
-      index: page.children?.length ?? 0,
+      index,
+      ...(pageId != null ? { pageId } : {}),
     }
+    const updatedPage = processChanges(page, [addChange])
     await commitPageUpdateWithChanges({
       pageId,
-      updatedPage: { ...page, children },
+      updatedPage,
       changes: [addChange],
     })
   }
 
-  async updateNode(nodeId: string, updates: Partial<PenpotNode>): Promise<void> {
+  async updateNode(nodeId: string, updates: Partial<IndexedNode>): Promise<void> {
     await this.applyNodeUpdates({ [nodeId]: updates })
   }
 
-  private applyUpdatesToTree(nodes: PenpotNode[], updates: Record<string, Partial<PenpotNode>>): PenpotNode[] {
-    return nodes.map((node) => {
-      const nodeUpdates = node.id ? updates[node.id] : undefined
-      const merged = nodeUpdates ? ({ ...node, ...nodeUpdates } as PenpotNode) : node
-      const childList = (merged as { children?: PenpotNode[] }).children
-      if (childList?.length) {
-        (merged as { children?: PenpotNode[] }).children = this.applyUpdatesToTree(childList, updates)
-      }
-      return merged
-    })
-  }
-
-  async applyNodeUpdates(updates: Record<string, Partial<PenpotNode>>): Promise<void> {
+  async applyNodeUpdates(updates: Record<string, Partial<IndexedNode>>): Promise<void> {
     if (Object.keys(updates).length === 0) return
     const state = useWorkspaceStore.getState()
     const pageId = state.pageId
     const page = pageId ? this.pageMap.get(pageId) : undefined
     if (!pageId || !page) return
-    const updatedPage: PenpotPage = {
-      ...page,
-      children: this.applyUpdatesToTree(page.children ?? [], updates),
-    }
     const changes: ModObjChange[] = Object.entries(updates).map(([id, partial]) => ({
       type: 'mod-obj' as const,
       id,
       operations: Object.entries(partial).map(([attr, val]) => ({ type: 'set' as const, attr, val })),
     }))
+    const updatedPage = processChanges(page, changes)
     await commitPageUpdateWithChanges({
       pageId,
       updatedPage,
@@ -255,15 +260,30 @@ export class DocumentModel {
     const pageId = state.pageId
     const page = pageId ? this.pageMap.get(pageId) : undefined
     if (!pageId || !page) return
-    const children = (page.children ?? []).filter((n: PenpotNode) => n.id !== nodeId)
     const delChange: DelObjChange = {
       type: 'del-obj',
       id: nodeId,
+      ...(pageId != null ? { pageId } : {}),
     }
+    const updatedPage = processChanges(page, [delChange])
     await commitPageUpdateWithChanges({
       pageId,
-      updatedPage: { ...page, children },
+      updatedPage,
       changes: [delChange],
+    })
+  }
+
+  async applyChanges(changes: Change[], options?: { pageId?: string }): Promise<void> {
+    if (changes.length === 0) return
+    const state = useWorkspaceStore.getState()
+    const pageId = options?.pageId ?? changes[0]?.pageId ?? state.pageId
+    const page = pageId ? this.pageMap.get(pageId) : undefined
+    if (!pageId || !page) return
+    const updatedPage = processChanges(page, changes)
+    await commitPageUpdateWithChanges({
+      pageId,
+      updatedPage,
+      changes,
     })
   }
 }
