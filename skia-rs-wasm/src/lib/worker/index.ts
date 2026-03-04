@@ -12,7 +12,7 @@ import type {
   WorkerUpdateTextRectPayload,
 } from './types'
 import type { Point, Matrix, PenpotPage } from 'penpot-exporter/lib'
-import type { Change } from '@skia-rs-wasm/common'
+import type { Change } from 'penpot-exporter/lib'
 import { flattenPageToIndexed } from './types'
 import { processChanges } from './process-changes'
 import { handler, registerHandler } from './impl'

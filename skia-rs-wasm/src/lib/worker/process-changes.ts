@@ -15,7 +15,7 @@ import type {
   Operation,
   AssignOperation,
   SetOperation,
-} from '@skia-rs-wasm/common'
+} from 'penpot-exporter/lib'
 import type { PenpotNode } from 'penpot-exporter/lib'
 import { isFrameShape } from './geometry/shapes'
 import { assignHierarchy, ensureShapes } from './helpers'

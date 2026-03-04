@@ -6,10 +6,7 @@
 import { useWorkspaceStore } from './renderer/store/workspace-store'
 import { DocumentModel } from './renderer/store/document-model'
 import { commitPageUpdate } from './renderer/store/commit'
-import { propagateModifiers } from './renderer/api/modifiers'
-import { applyTransformToNode } from './renderer/geom/apply-transform-to-node'
 import type { PenpotDocument, PenpotNode, PenpotPage } from 'penpot-exporter/lib'
-import type { Matrix } from 'penpot-exporter/lib'
 
 export function createNewDocument(): PenpotDocument {
   const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
@@ -84,26 +81,6 @@ export async function updateNode(nodeId: string, updates: Partial<PenpotNode>): 
 export async function applyNodeUpdates(updates: Record<string, Partial<PenpotNode>>): Promise<void> {
   const model = useWorkspaceStore.getState().documentModel
   if (model) await model.applyNodeUpdates(updates)
-}
-
-export async function applyModifiersAndCommit(
-  entries: Array<[string, Matrix]>,
-  options?: { pixelPrecision?: number }
-): Promise<void> {
-  const state = useWorkspaceStore.getState()
-  const { renderer, documentModel } = state
-  const module = renderer?.getModule?.()
-  if (!module || !documentModel) return
-  const result = propagateModifiers(module, entries, options?.pixelPrecision ?? 0)
-  const updates: Record<string, Partial<PenpotNode>> = {}
-  for (const { id, transform } of result) {
-    const node = documentModel.getNode(id)
-    if (node) {
-      const partial = applyTransformToNode(node, transform)
-      if (partial) updates[id] = partial
-    }
-  }
-  if (Object.keys(updates).length > 0) await documentModel.applyNodeUpdates(updates)
 }
 
 export async function deleteNode(nodeId: string): Promise<void> {
