@@ -1,5 +1,4 @@
-import type { Change } from 'skia-rs-wasm/common'
-import type { PenpotPage } from 'penpot-exporter/lib'
+import type { Change, PenpotPage } from 'penpot-exporter/lib'
 import {
   transformSceneNode,
   SUPPORTED_SCENE_NODE_TYPES,

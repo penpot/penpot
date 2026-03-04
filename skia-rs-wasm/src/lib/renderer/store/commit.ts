@@ -3,7 +3,7 @@
  */
 
 import type { PenpotNode, PenpotPage } from 'penpot-exporter/lib'
-import type { Change } from '@skia-rs-wasm/common'
+import type { Change } from 'penpot-exporter/lib'
 import { useWorkspaceStore } from './workspace-store'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'

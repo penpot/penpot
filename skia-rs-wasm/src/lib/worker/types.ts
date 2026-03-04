@@ -3,7 +3,7 @@
  */
 
 import type { PenpotNode, PenpotPage, Selrect } from 'penpot-exporter/lib'
-import type { Change } from '@skia-rs-wasm/common'
+import type { Change } from 'penpot-exporter/lib'
 import type { Point } from '@skia-rs-wasm/common'
 import type { Quadtree } from './quadtree'
 

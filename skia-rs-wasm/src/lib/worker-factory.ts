@@ -12,26 +12,21 @@ import worker from './worker/index.ts?worker'
  * @returns Promise that resolves to object with worker instance and cleanup function
  */
 export async function createWorker( onWorkerReady?: (client: WorkerClient) => void): Promise<{ workerClient: WorkerClient; cleanup: () => void }> {
-  try {
-    
-    // Create worker instance
-    const workerInstance = new worker()
-    // Cleanup function to terminate worker
-    const workerCleanup = () => {
-      workerInstance.terminate()
-    }
-    const client = new WorkerClient(workerInstance, workerCleanup)
-    
-    if (onWorkerReady) {
-      onWorkerReady(client)
-    }
-
-    const cleanup = () => {
-      client.destroy()
-    }
-    
-    return { workerClient: client, cleanup }
-  } catch (error) {
-    throw error
+  // Create worker instance
+  const workerInstance = new worker()
+  // Cleanup function to terminate worker
+  const workerCleanup = () => {
+    workerInstance.terminate()
   }
+  const client = new WorkerClient(workerInstance, workerCleanup)
+  
+  if (onWorkerReady) {
+    onWorkerReady(client)
+  }
+
+  const cleanup = () => {
+    client.destroy()
+  }
+  
+  return { workerClient: client, cleanup }
 }

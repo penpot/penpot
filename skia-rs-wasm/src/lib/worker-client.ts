@@ -3,6 +3,7 @@
  */
 
 import type { PenpotPage } from 'penpot-exporter/lib'
+import type { Change } from 'penpot-exporter/lib'
 import { ensurePageShapePoints } from './renderer/store/ensure-shape-points'
 import type {
   WorkerMessage,
@@ -12,7 +13,6 @@ import type {
   WorkerResponse,
   WorkerSendPayload,
 } from './worker/types'
-import type { Change } from '@skia-rs-wasm/common'
 import { encode, decode } from './worker/messages'
 
 /** Raw message shape from worker (event.data); error messages may have error instead of encoded payload. */
@@ -119,7 +119,6 @@ export class WorkerClient implements WorkerClientInterface {
     try {
       // Decode the message from worker (worker sends encoded messages)
       // Error messages might be sent directly without encoding, so handle both cases
-      let decoded: WorkerMessage
       const rawData = event.data as RawWorkerMessage
 
       // Check if this is an error message sent directly (not encoded)
@@ -144,7 +143,7 @@ export class WorkerClient implements WorkerClientInterface {
       }
       
       // Decode the message (worker sends encoded SerializedMessage)
-      decoded = decode(rawData as SerializedMessage)
+      const decoded = decode(rawData as SerializedMessage)
       
       // Check if this is a response to a pending request
       if (decoded.replyTo) {
@@ -240,7 +239,7 @@ export class WorkerClient implements WorkerClientInterface {
       try {
         acc[key] = (event as unknown as Record<string, unknown>)[key]
       } catch (e) {
-        acc[key] = '[unable to access]'
+        acc[key] = `${key}: [unable to access] - ${e}`
       }
       return acc
     }, {} as Record<string, unknown>))

@@ -2,7 +2,7 @@
  * Helpers for translating Figma NodeChangeEvent into Change[].
  */
 
-import type { Change, AddObjChange, ModObjChange, DelObjChange } from 'skia-rs-wasm/common'
+import type { Change, AddObjChange, ModObjChange, DelObjChange } from 'penpot-exporter/lib'
 import type { PenpotNode } from 'penpot-exporter/lib'
 
 /**

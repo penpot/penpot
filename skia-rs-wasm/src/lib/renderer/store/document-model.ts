@@ -5,7 +5,7 @@
  */
 
 import type { PenpotDocument, PenpotNode, PenpotPage } from 'penpot-exporter/lib'
-import type { AddObjChange, ModObjChange, DelObjChange } from '@skia-rs-wasm/common'
+import type { AddObjChange, ModObjChange, DelObjChange } from 'penpot-exporter/lib'
 import { ZERO_UUID } from '@skia-rs-wasm/common'
 import { useWorkspaceStore } from './workspace-store'
 import { useWorkspaceDevStore } from './workspace-dev-store'
