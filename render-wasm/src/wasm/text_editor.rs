@@ -1,3 +1,6 @@
+use macros::{wasm_error, ToJs};
+
+use crate::error::Error;
 use crate::math::{Matrix, Point, Rect};
 use crate::mem;
 use crate::shapes::{Paragraph, Shape, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
@@ -5,7 +8,6 @@ use crate::state::TextSelection;
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::{with_state, with_state_mut, STATE};
-use macros::ToJs;
 
 #[derive(PartialEq, ToJs)]
 #[repr(u8)]
@@ -247,29 +249,29 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
 // TEXT OPERATIONS
 // ============================================================================
 
+// FIXME: Review if all the return Ok(()) should be Err instead.
 #[no_mangle]
-pub extern "C" fn text_editor_insert_text() {
+#[wasm_error]
+pub extern "C" fn text_editor_insert_text() -> Result<()> {
     let bytes = crate::mem::bytes();
-    let text = match String::from_utf8(bytes) {
-        Ok(s) => s,
-        Err(_) => return,
-    };
+    let text = String::from_utf8(bytes)
+        .map_err(|_| Error::RecoverableError("Invalid UTF-8 string".to_string()))?;
 
     with_state_mut!(state, {
         if !state.text_editor_state.is_active {
-            return;
+            return Ok(());
         }
 
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
-            return;
+            return Ok(());
         };
 
         let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return;
+            return Ok(());
         };
 
         let Type::Text(text_content) = &mut shape.shape_type else {
-            return;
+            return Ok(());
         };
 
         let selection = state.text_editor_state.selection;
@@ -302,7 +304,8 @@ pub extern "C" fn text_editor_insert_text() {
         state.render_state.mark_touched(shape_id);
     });
 
-    crate::mem::free_bytes();
+    crate::mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]
