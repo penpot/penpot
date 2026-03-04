@@ -111,6 +111,21 @@
                (let [text (text-editor/text-editor-export-selection)]
                  (.setData (.-clipboardData event) "text/plain" text))))))
 
+        on-cut
+        (mf/use-fn
+         (fn [^js event]
+           (when (text-editor/text-editor-is-active?)
+             (dom/prevent-default event)
+             (when (text-editor/text-editor-get-selection)
+               (let [text (text-editor/text-editor-export-selection)]
+                 (.setData (.-clipboardData event) "text/plain" (or text ""))
+                 (when (and text (seq text))
+                   (text-editor/text-editor-delete-backward)
+                   (sync-wasm-text-editor-content!)
+                   (wasm.api/request-render "text-cut"))))
+             (when-let [node (mf/ref-val contenteditable-ref)]
+               (set! (.-textContent node) "")))))
+
         on-key-down
         (mf/use-fn
          (fn [^js event]
@@ -303,6 +318,7 @@
          :on-input on-input
          :on-paste on-paste
          :on-copy on-copy
+         :on-cut on-cut
          :on-focus on-focus
          :on-blur on-blur
          ;; FIXME on-click
