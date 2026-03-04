@@ -8,6 +8,7 @@
   "A i18n foundation."
   (:require
    [app.common.data :as d]
+   [app.common.i18n]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.config :as cf]
@@ -30,6 +31,7 @@
    {:label "Dutch (community)" :value "nl"}
    {:label "Euskera (community)" :value "eu"}
    {:label "Français (community)" :value "fr"}
+   {:label "Français - Canada (community)" :value "fr_CA"}
    {:label "Gallego (Community)" :value "gl"}
    {:label "Hausa (Community)" :value "ha"}
    {:label "Hrvatski (Community)" :value "hr"}
@@ -210,3 +212,7 @@
            (fn [_ _ pv cv]
              (when (not= pv cv)
                (ct/set-default-locale cv))))
+
+;; We set the real translation function in the common i18n namespace,
+;; so that when common code calls (tr ...) it uses this function.
+(set! app.common.i18n/tr tr)

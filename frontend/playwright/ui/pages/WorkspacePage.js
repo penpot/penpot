@@ -35,45 +35,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     }
 
     async waitForEditor() {
-      return this.page.waitForSelector('[data-itype="editor"]');
-    }
-
-    async waitForRoot() {
-      return this.page.waitForSelector('[data-itype="root"]');
-    }
-
-    async waitForParagraph(nth) {
-      if (!nth) {
-        return this.page.waitForSelector('[data-itype="paragraph"]');
-      }
-      return this.page.waitForSelector(
-        `[data-itype="paragraph"]:nth-child(${nth})`,
-      );
-    }
-
-    async waitForParagraphStyle(nth, styleName) {
-      const paragraph = await this.waitForParagraph(nth);
-      return this.waitForStyle(paragraph, styleName);
-    }
-
-    async waitForTextSpan(nth = 0) {
-      if (!nth) {
-        return this.page.waitForSelector('[data-itype="span"]');
-      }
-      return this.page.waitForSelector(
-        `[data-itype="span"]:nth-child(${nth})`,
-      );
-    }
-
-    async waitForTextSpanContent(nth = 0) {
-      const textSpan = await this.waitForTextSpan(nth);
-      const textContent = await textSpan.textContent();
-      return textContent;
-    }
-
-    async waitForTextSpanStyle(nth, styleName) {
-      const textSpan = await this.waitForTextSpan(nth);
-      return this.waitForStyle(textSpan, styleName);
+      const typographyInput =
+        this.workspacePage.rightSidebar.getByLabel("Font Size");
+      await expect(typographyInput).toBeVisible();
     }
 
     async startEditing() {
@@ -81,24 +45,27 @@ export class WorkspacePage extends BaseWebSocketPage {
       return this.waitForEditor();
     }
 
-    stopEditing() {
-      return this.page.keyboard.press("Escape");
+    async stopEditing() {
+      await this.page.keyboard.press("Escape");
     }
 
     async moveToLeft(amount = 0) {
       for (let i = 0; i < amount; i++) {
         await this.page.keyboard.press("ArrowLeft");
       }
+      await this.waitForIdle();
     }
 
     async moveToRight(amount = 0) {
       for (let i = 0; i < amount; i++) {
         await this.page.keyboard.press("ArrowRight");
       }
+      await this.waitForIdle();
     }
 
     async moveFromStart(offset = 0) {
-      await this.page.keyboard.press("ArrowLeft");
+      await this.page.keyboard.press("Home");
+      await this.waitForIdle();
       await this.moveToRight(offset);
     }
 
@@ -125,7 +92,7 @@ export class WorkspacePage extends BaseWebSocketPage {
       await expect(locator).toBeVisible();
       await locator.focus();
       await locator.fill(`${newValue}`);
-      await locator.blur();
+      await this.page.keyboard.press("Enter");
     }
 
     changeFontSize(newValue) {
@@ -139,6 +106,10 @@ export class WorkspacePage extends BaseWebSocketPage {
     changeLetterSpacing(newValue) {
       return this.changeNumericInput(this.letterSpacing, newValue);
     }
+
+    async waitForIdle() {
+      await this.page.evaluate(() => new Promise((resolve) => globalThis.requestIdleCallback(resolve)));
+    }
   };
 
   /**
@@ -148,9 +119,9 @@ export class WorkspacePage extends BaseWebSocketPage {
    * @returns
    */
   static async init(page) {
-    await BaseWebSocketPage.initWebSockets(page);
+    await super.init(page);
 
-    await BaseWebSocketPage.mockRPCs(page, {
+    await super.mockRPCs(page, {
       "get-profile": "logged-in-user/get-profile-logged-in.json",
       "get-team-users?file-id=*":
         "logged-in-user/get-team-users-single-user.json",
@@ -198,10 +169,10 @@ export class WorkspacePage extends BaseWebSocketPage {
       `[id="shape-00000000-0000-0000-0000-000000000000"]`,
     );
     this.toolbarOptions = page.getByTestId("toolbar-options");
-    this.rectShapeButton = page.getByTestId("toolbar-options").getByRole("button", { name: "Rectangle" });
-    this.ellipseShapeButton = page.getByTestId("toolbar-options").getByRole("button", { name: "Ellipse" });
-    this.moveButton = page.getByTestId("toolbar-options").getByRole("button", { name: "Move" });
-    this.boardButton = page.getByTestId("toolbar-options").getByRole("button", { name: "Board" });
+    this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
+    this.ellipseShapeButton = page.getByRole("button", { name: "Ellipse (E)" });
+    this.moveButton = page.getByRole("button", { name: "Move (V)" });
+    this.boardButton = page.getByRole("button", { name: "Board (B)" });
     this.toggleToolbarButton = page.getByRole("button", {
       name: "Toggle toolbar",
     });
@@ -317,7 +288,6 @@ export class WorkspacePage extends BaseWebSocketPage {
         body,
       }),
     );
-    // await this.mockRPC(/get\-file\?/, jsonFile);
   }
 
   async mockGetAsset(regex, asset) {
@@ -338,9 +308,18 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async clickWithDragViewportAt(x, y, width, height) {
     await this.page.waitForTimeout(100);
-    await this.viewport.hover({ position: { x, y } });
+    const box = await this.viewport.boundingBox();
+    if (!box) throw new Error('Viewport not visible');
+
+    const startX = box.x + x;
+    const startY = box.y + y;
+    const endX = startX + width;
+    const endY = startY + height;
+
+    await this.page.mouse.move(startX, startY);
     await this.page.mouse.down();
-    await this.viewport.hover({ position: { x: x + width, y: y + height } });
+    // Use steps so mouseup is properly processed (see Playwright issue #20254)
+    await this.page.mouse.move(endX, endY, { steps: 10 });
     await this.page.mouse.up();
   }
 
@@ -382,10 +361,12 @@ export class WorkspacePage extends BaseWebSocketPage {
     const timeToWait = options?.timeToWait ?? 100;
     await this.page.keyboard.press("T");
     await this.page.waitForTimeout(timeToWait);
+
+    const layersCountBefore = await this.layers.getByTestId("layer-row").count();
     await this.clickAndMove(x1, y1, x2, y2);
-    await expect(this.page.getByTestId("text-editor")).toBeVisible();
 
     if (initialText) {
+      await this.waitForSelectedShapeName("Text");
       await this.page.keyboard.type(initialText);
     }
   }
@@ -423,6 +404,8 @@ export class WorkspacePage extends BaseWebSocketPage {
       return content !== "";
     }, { timeout: 1000 });
 
+    await this.page.waitForTimeout(3000);
+
   }
 
   /**
@@ -436,7 +419,8 @@ export class WorkspacePage extends BaseWebSocketPage {
       await this.viewport.click({ button: "right" });
       return this.page.getByText("Paste", { exact: true }).click();
     }
-    return this.page.keyboard.press("ControlOrMeta+V");
+    await this.page.keyboard.press("ControlOrMeta+V");
+    await this.page.waitForTimeout(3000);
   }
 
   async panOnViewportAt(x, y, width, height) {
@@ -485,10 +469,23 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async expectSelectedLayer(name) {
     await expect(
-      this.layers
-        .getByTestId("layer-row")
-        .filter({ has: this.page.getByText(name) }),
-    ).toHaveClass(/selected/);
+      this.layers.getByRole("checkbox", { name, checked: true }),
+    ).toBeVisible();
+  }
+
+  async getSelectedShapeName() {
+    const selectedLayer = this.layers
+      .getByRole("checkbox", { checked: true })
+      .first();
+    await selectedLayer.waitFor({ state: "visible" });
+    return (await selectedLayer.innerText()).trim();
+  }
+
+  async waitForSelectedShapeName(expectedName) {
+    const selectedLayer = this.layers
+      .getByRole("checkbox", { checked: true })
+      .first();
+    await expect(selectedLayer).toHaveText(expectedName);
   }
 
   async expectHiddenToolbarOptions() {

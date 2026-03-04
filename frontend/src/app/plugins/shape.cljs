@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.json :as json]
    [app.common.path-names :as cpn]
    [app.common.record :as crc]
    [app.common.schema :as sm]
@@ -46,13 +47,13 @@
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.plugins.flags :refer [natural-child-ordering?]]
    [app.plugins.flex :as flex]
    [app.plugins.format :as format]
    [app.plugins.grid :as grid]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
-   [app.plugins.state :refer [natural-child-ordering?]]
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
    [app.util.http :as http]
@@ -173,6 +174,10 @@
 
 (defn shape-proxy? [p]
   (obj/type-of? p "ShapeProxy"))
+
+;; Cannot use token/token-proxy? here because of circular dependency in applyToShapes in token proxy
+(defn token-proxy? [t]
+  (obj/type-of? t "TokenProxy"))
 
 (defn shape-proxy
   ([plugin-id id]
@@ -955,9 +960,12 @@
                  (u/display-not-valid :appendChild "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (let [child-id (obj/get child "$id")
+                 (let [child-id     (obj/get child "$id")
                        is-reversed? (ctl/flex-layout? shape)
-                       index (if (and (natural-child-ordering? plugin-id) is-reversed?) 0 (count (:shapes shape)))]
+                       index
+                       (if (or (not (natural-child-ordering? plugin-id)) is-reversed?)
+                         0
+                         (count (:shapes shape)))]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
 
            :insertChild
@@ -980,7 +988,7 @@
                  (let [child-id (obj/get child "$id")
                        is-reversed? (ctl/flex-layout? shape)
                        index
-                       (if (and (natural-child-ordering? plugin-id) is-reversed?)
+                       (if (or (not (natural-child-ordering? plugin-id)) is-reversed?)
                          (- (count (:shapes shape)) index)
                          index)]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
@@ -1295,21 +1303,25 @@
                         (get :applied-tokens))]
                 (reduce
                  (fn [acc [prop name]]
-                   (obj/set! acc (d/name prop) name))
+                   (obj/set! acc (json/write-camel-key prop) name))
                  #js {}
                  tokens)))}
 
            :applyToken
-           (fn [token attrs]
-             (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
-                   kw-attrs (into #{} (map keyword attrs))]
-               (if (some #(not (cto/token-attr? %)) kw-attrs)
-                 (u/display-not-valid :applyToken attrs)
-                 (st/emit!
-                  (dwta/toggle-token {:token token
-                                      :attrs kw-attrs
-                                      :shape-ids [id]
-                                      :expand-with-children false})))))
+           {:enumerable false
+            :schema [:tuple
+                     [:fn token-proxy?]
+                     [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
+            :fn (fn [token attrs]
+                  (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
+                        kw-attrs (into #{} (map keyword attrs))]
+                    (if (some #(not (cto/token-attr? %)) kw-attrs)
+                      (u/display-not-valid :applyToken attrs)
+                      (st/emit!
+                       (dwta/toggle-token {:token token
+                                           :attrs kw-attrs
+                                           :shape-ids [id]
+                                           :expand-with-children false})))))}
 
            :isVariantHead
            (fn []

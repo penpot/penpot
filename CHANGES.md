@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.14.0 (Unreleased)
+## 2.15.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
@@ -10,6 +10,28 @@
 
 ### :sparkles: New features & Enhancements
 
+- Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
+- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112), [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
+- Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
+- Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
+- Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
+- Import Tokens from linked library [Github #8391](https://github.com/penpot/penpot/pull/8391)
+- Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
+
+### :bug: Bugs fixed
+
+- Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
+- Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
+
+
+## 2.14.0 (Unreleased)
+
+### :boom: Breaking changes & Deprecations
+- Deprecate `PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE` in favour of `PENPOT_HTTP_SERVER_MAX_BODY_SIZE`.
+
+### :sparkles: New features & Enhancements
+
+- Access to design tokens in Penpot Plugins [Taiga #8990](https://tree.taiga.io/project/penpot/us/8990)
 - Remap references when renaming tokens [Taiga #10202](https://tree.taiga.io/project/penpot/us/10202)
 - Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
 - Improve usability of lock and hide buttons in the layer panel. [Taiga #12916](https://tree.taiga.io/project/penpot/issue/12916)
@@ -33,6 +55,29 @@
 - Fix boolean operators in menu for boards [Taiga #13174](https://tree.taiga.io/project/penpot/issue/13174)
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
+- Fix unable to finish the create account form using keyboard [Taiga #11333](https://tree.taiga.io/project/penpot/issue/11333)
+- Fix 45 rotated board titles rendered incorrectly [Taiga #13306](https://tree.taiga.io/project/penpot/issue/13306)
+- Fix cannot apply second token after creation while shape is selected [Taiga #13513](https://tree.taiga.io/project/penpot/issue/13513)
+
+## 2.13.3
+
+### :bug: Bugs fixed
+
+- Revert yetti (http server) update, because that caused a regression on multipart uploads
+
+## 2.13.2
+
+### :bug: Bugs fixed
+
+- Fix modifying shapes by apply negative tokens to border radius [Taiga #13317](https://tree.taiga.io/project/penpot/issue/13317)
+- Fix arbitrary file read security issue on create-font-variant rpc method (https://github.com/penpot/penpot/security/advisories/GHSA-xp3f-g8rq-9px2)
+
+
+## 2.13.1
+
+### :bug: Bugs fixed
+
+- Fix PDF Exporter outputs empty page when board has A4 format [Taiga #13181](https://tree.taiga.io/project/penpot/issue/13181)
 
 ## 2.13.0
 

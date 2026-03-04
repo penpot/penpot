@@ -101,7 +101,6 @@ impl TextPaths {
         if let Some((text_blob_path, text_blob_bounds)) =
             Self::get_text_blob_path(span_text, font, blob_offset_x, blob_offset_y)
         {
-            let mut text_path = text_blob_path.clone();
             let text_width = font.measure_text(span_text, None).0;
 
             let decoration = style_metric.text_style.decoration();
@@ -111,16 +110,20 @@ impl TextPaths {
             let blob_top = blob_offset_y;
             let blob_height = text_blob_bounds.height();
 
-            if let Some(decoration_rect) = self.calculate_text_decoration_rect(
-                decoration.ty,
-                font_metrics,
-                blob_left,
-                blob_top,
-                text_width,
-                blob_height,
-            ) {
-                text_path.add_rect(decoration_rect, None);
-            }
+            let text_path = {
+                let mut pb = skia::PathBuilder::new_path(&text_blob_path);
+                if let Some(decoration_rect) = self.calculate_text_decoration_rect(
+                    decoration.ty,
+                    font_metrics,
+                    blob_left,
+                    blob_top,
+                    text_width,
+                    blob_height,
+                ) {
+                    pb.add_rect(decoration_rect, None, None);
+                }
+                pb.detach()
+            };
 
             let mut paint = style_metric.text_style.foreground();
             paint.set_anti_alias(antialias);

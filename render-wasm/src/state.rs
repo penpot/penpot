@@ -157,6 +157,10 @@ impl State {
                     self.render_state.tiles.remove_shape_at(tile, shape.id);
                 }
             }
+
+            if let Some(shape_to_delete) = self.shapes.get_mut(&id) {
+                shape_to_delete.set_deleted(true);
+            }
         }
     }
 

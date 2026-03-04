@@ -51,10 +51,10 @@ impl Gradient {
             rect.left + self.end.0 * rect.width(),
             rect.top + self.end.1 * rect.height(),
         );
-        skia::shader::Shader::linear_gradient(
+        skia::gradient_shader::linear(
             (start, end),
             self.colors.as_slice(),
-            self.offsets.as_slice(),
+            Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
             None,
@@ -83,11 +83,11 @@ impl Gradient {
         transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
         transform.pre_translate((-center.x, -center.y));
 
-        skia::shader::Shader::radial_gradient(
+        skia::gradient_shader::radial(
             center,
             distance,
             self.colors.as_slice(),
-            self.offsets.as_slice(),
+            Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
             Some(&transform),
@@ -241,10 +241,14 @@ pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
 
         if let Some(shader) = shader {
             combined_shader = match combined_shader {
+                // Use SrcOver and treat the newly encountered fill as the source (top),
+                // overlaying it over the previously composed shader (destination/bottom).
+                // This avoids edge bleed from underlying fills when anti-aliasing causes
+                // fractional coverage at shape boundaries.
                 Some(existing_shader) => Some(skia::shaders::blend(
-                    skia::Blender::mode(skia::BlendMode::DstOver),
-                    existing_shader,
+                    skia::Blender::mode(skia::BlendMode::SrcOver),
                     shader,
+                    existing_shader,
                 )),
                 None => Some(shader),
             };

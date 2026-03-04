@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
@@ -75,7 +76,11 @@
         is-type-unfolded (contains? (set unfolded-token-paths) (name type))
 
         editing-ref  (mf/deref refs/workspace-editor-state)
-        not-editing? (empty? editing-ref)
+        edition      (mf/deref refs/selected-edition)
+        objects      (mf/deref refs/workspace-page-objects)
+        not-editing? (and (empty? editing-ref)
+                          (not (and (some? edition)
+                                    (= :text (:type (get objects edition))))))
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)
@@ -132,13 +137,17 @@
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps not-editing? selected-ids)
+         (mf/deps not-editing? selected-ids tokens-lib)
          (fn [event token]
            (let [token (ctob/get-token tokens-lib selected-token-set-id (:id token))]
              (dom/stop-propagation event)
-             (when (and not-editing? (seq selected-shapes) (not= (:type token) :number))
+             (if (and not-editing? (seq selected-shapes) (not= (:type token) :number))
                (st/emit! (dwta/toggle-token {:token token
-                                             :shape-ids selected-ids}))))))]
+                                             :shape-ids selected-ids}))
+               (st/emit! (ntf/show {:content (tr "workspace.tokens.error-text-edition")
+                                    :type :toast
+                                    :level :warning
+                                    :timeout 3000}))))))]
 
     [:div {:class (stl/css :token-section-wrapper)
            :data-testid (dm/str "section-" (name type))}

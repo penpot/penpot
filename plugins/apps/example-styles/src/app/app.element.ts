@@ -25,7 +25,8 @@ export class AppElement extends HTMLElement {
       el.remove();
     });
 
-    (window as any).hljs.highlightAll();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).hljs?.highlightAll();
   }
 
   getIndentationSize(str: string) {

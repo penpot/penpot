@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+#
+# Derives a valid npm semver version from the Git tag produced by
+# `git describe` and writes it into the root package.json.
+#
+# Examples of the conversion:
+#   2.14.0                     ->  2.14.0
+#   2.14.0-RC1                 ->  2.14.0-rc.1
+#   2.14.0-RC1-140-g9f2ca9965  ->  2.14.0-rc.1.140
+#   2.14.0-140-g9f2ca9965      ->  2.14.1-dev.140
+#
+# The last case (commits after a release tag) bumps the patch level so
+# the resulting semver sorts higher than the release.
+
+set -euo pipefail
+
+raw=$(git describe --tags --match "*.*.*")
+
+# Parse: <major>.<minor>.<patch>[-<label><n>][-<commits>-g<hash>]
+if [[ "$raw" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(-([A-Za-z]+)([0-9]*))?(-([0-9]+)-g[0-9a-f]+)?$ ]]; then
+    base="${BASH_REMATCH[1]}"
+    label="${BASH_REMATCH[3]}"        # e.g. RC
+    label_num="${BASH_REMATCH[4]}"    # e.g. 1
+    commits="${BASH_REMATCH[6]}"      # e.g. 140
+
+    # build dot-separated pre-release identifiers
+    pre=""
+    if [[ -n "$label" ]]; then
+        pre="${label,,}"  # use lower-case label
+        [[ -n "$label_num" ]] && pre="${pre}.${label_num}"
+    elif [[ -n "$commits" ]]; then
+        # commits after a release tag: bump patch, mark as dev
+        IFS='.' read -r major minor patch <<< "$base"
+        base="${major}.${minor}.$((patch + 1))"
+        pre="dev"
+    fi
+    [[ -n "$commits" && -n "$pre" ]] && pre="${pre}.${commits}"
+
+    if [[ -n "$pre" ]]; then
+        version="${base}-${pre}"
+    else
+        version="$base"
+    fi
+else
+    echo "ERROR: Cannot parse version from git describe output: $raw" >&2
+    exit 1
+fi
+
+cd "$(dirname "$0")/.."
+npm pkg set "version=${version}"
+echo "$version"

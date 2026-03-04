@@ -73,9 +73,13 @@
                                      (if (nil? result)
                                        204
                                        200))
-                         headers (cond-> (::http/headers mdata {})
-                                   (yres/stream-body? result)
+
+                         headers (::http/headers mdata {})
+                         headers (cond-> headers
+                                   (and (yres/stream-body? result)
+                                        (not (contains? headers "content-type")))
                                    (assoc "content-type" "application/octet-stream"))]
+
                      {::yres/status  status
                       ::yres/headers headers
                       ::yres/body    result}))]
@@ -90,7 +94,7 @@
   [methods]
   (let [methods (update-vals methods peek)]
     (fn [{:keys [params path-params method] :as request}]
-      (let [handler-name (:type path-params)
+      (let [handler-name (:method-name path-params)
             etag         (yreq/get-header request "if-none-match")
 
             key-id       (get request ::http/auth-key-id)
@@ -227,8 +231,8 @@
     (wrap-authentication cfg $ mdata)))
 
 (defn- process-method
-  [cfg module wrap-fn [f mdata]]
-  (l/trc :hint "add method" :module module :name (::sv/name mdata))
+  [cfg wrap-fn [f mdata]]
+  (l/trc :hint "add method" :module (::module cfg) :type (::type cfg) :name (::sv/name mdata))
   (let [f (wrap-fn cfg f mdata)
         k (keyword (::sv/name mdata))]
     [k [mdata (partial f cfg)]]))
@@ -239,7 +243,7 @@
 
 (defn- resolve-methods
   [cfg]
-  (let [cfg (assoc cfg ::type "command" ::metrics-id :rpc-command-timing)]
+  (let [cfg (assoc cfg ::module "main" ::type "command" ::metrics-id :rpc-main-timing)]
     (->> (sv/scan-ns
           'app.rpc.commands.access-token
           'app.rpc.commands.audit
@@ -258,6 +262,7 @@
           'app.rpc.commands.ldap
           'app.rpc.commands.management
           'app.rpc.commands.media
+          'app.rpc.commands.nitrate
           'app.rpc.commands.profile
           'app.rpc.commands.projects
           'app.rpc.commands.search
@@ -266,7 +271,7 @@
           'app.rpc.commands.verify-token
           'app.rpc.commands.viewer
           'app.rpc.commands.webhooks)
-         (map (partial process-method cfg "rpc" wrap))
+         (map (partial process-method cfg wrap))
          (into {}))))
 
 (def ^:private schema:methods-params
@@ -298,13 +303,13 @@
 
 (defn- resolve-management-methods
   [cfg]
-  (let [cfg  (assoc cfg ::type "management" ::metrics-id :rpc-management-timing)
+  (let [cfg  (assoc cfg ::module "management" ::type "command" ::metrics-id :rpc-management-timing)
         mods (cond->> (list 'app.rpc.management.exporter)
                (contains? cf/flags :nitrate)
                (cons 'app.rpc.management.nitrate))]
 
     (->> (apply sv/scan-ns mods)
-         (map (partial process-method cfg "management" wrap-management))
+         (map (partial process-method cfg wrap-management))
          (into {}))))
 
 (def ^:private schema:management-methods-params
@@ -359,7 +364,7 @@
   (let [public-uri (cf/get :public-uri)]
     ["/api"
      ["/management"
-      ["/methods/:type"
+      ["/methods/:method-name"
        {:middleware [[mw/shared-key-auth shared-keys]
                      [session/authz cfg]]
         :handler (make-rpc-handler management-methods)}]
@@ -370,7 +375,7 @@
                   :description "MANAGEMENT API")]
 
      ["/main"
-      ["/methods/:type"
+      ["/methods/:method-name"
        {:middleware [[mw/cors]
                      [sec/client-header-check]
                      [session/authz cfg]
@@ -388,7 +393,7 @@
      ["/openapi" {:handler (redirect (u/join public-uri "/api/main/doc/openapi"))}]
      ["/openapi.join" {:handler (redirect (u/join public-uri "/api/main/doc/openapi.json"))}]
 
-     ["/rpc/command/:type"
+     ["/rpc/command/:method-name"
       {:middleware [[mw/cors]
                     [sec/client-header-check]
                     [session/authz cfg]

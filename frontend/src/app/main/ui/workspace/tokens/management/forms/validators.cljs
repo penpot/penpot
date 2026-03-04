@@ -1,13 +1,13 @@
 (ns app.main.ui.workspace.tokens.management.forms.validators
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.errors :as wte]
-   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -29,7 +29,8 @@
                 ;; When creating a new token we dont have a name yet or invalid name,
                 ;; but we still want to resolve the value to show in the form.
                 ;; So we use a temporary token name that hopefully doesn't clash with any of the users token names
-                (not (sm/valid? cto/token-name-ref (:name token))) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
+                (not (sm/valid? cto/schema:token-name (:name token)))
+                (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
         tokens' (cond-> tokens
                   ;; Remove previous token when renaming a token
                   (not= (:name token) (:name prev-token))
@@ -37,14 +38,20 @@
 
                   :always
                   (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-    (->> tokens'
-         (sd/resolve-tokens-interactive)
+
+    (->> (if (contains? cf/flags :tokenscript)
+           (rx/of (ts/resolve-tokens tokens'))
+           (sd/resolve-tokens-interactive tokens'))
          (rx/mapcat
           (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
+            (let [resolved-token (cond-> (get resolved-tokens (:name token))
+                                   (contains? cf/flags :tokenscript)
+                                   (update :resolved-value ts/tokenscript-symbols->penpot-unit))]
               (cond
-                resolved-value (rx/of resolved-token)
-                :else (rx/throw {:errors (or (seq errors)
+                (:resolved-value resolved-token)
+                (rx/of resolved-token)
+
+                :else (rx/throw {:errors (or (seq (:errors resolved-token))
                                              [(wte/get-error-code :error/unknown-error)])}))))))))
 
 (defn- validate-token-with [token validators]
@@ -89,23 +96,3 @@
   [token-name token-vals]
   (when (some #(cto/token-value-self-reference? token-name %) token-vals)
     (wte/get-error-code :error.token/direct-self-reference)))
-
-
-
-;; This is used in plugins
-
-(defn- make-token-name-schema
-  "Generate a dynamic schema validation to check if a token path derived
-  from the name already exists at `tokens-tree`."
-  [tokens-tree]
-  [:and
-   [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-   (sm/update-properties cto/token-name-ref assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
-   [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-    #(not (cft/token-name-path-exists? % tokens-tree))]])
-
-(defn validate-token-name
-  [tokens-tree name]
-  (let [schema    (make-token-name-schema tokens-tree)
-        explainer (sm/explainer schema)]
-    (-> name explainer sm/simplify not-empty)))

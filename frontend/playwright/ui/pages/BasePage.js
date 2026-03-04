@@ -1,4 +1,8 @@
 export class BasePage {
+  static async init(page) {
+    await BasePage.mockConfigFlags(page, []);
+  }
+
   /**
    * Mocks multiple RPC calls in a single call.
    *
@@ -22,7 +26,7 @@ export class BasePage {
    * @param {*} options
    * @returns {Promise<void>}
    */
-  static async mockRPC(page, path, jsonFilename, options) {
+  static async mockRPC(page, path, jsonFilename = "", options = {}) {
     if (!page) {
       throw new TypeError("Invalid page argument. Must be a Playwright page.");
     }
@@ -41,7 +45,7 @@ export class BasePage {
     return page.route(url, (route) =>
       route.fulfill({
         ...interceptConfig,
-        path: `playwright/data/${jsonFilename}`,
+        path: jsonFilename ? `playwright/data/${jsonFilename}` : undefined,
       }),
     );
   }

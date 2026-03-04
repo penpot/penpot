@@ -5,48 +5,94 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .modal-overlay {
   @extend .modal-overlay-base;
+  z-index: var(--z-index-notifications);
 }
 
-.modal-container {
+.modal-dialog {
   @extend .modal-container-base;
+  max-block-size: initial;
+  min-inline-size: px2rem(648);
 }
 
-.modal-header {
-  margin-bottom: deprecated.$s-24;
-}
-
-.modal-title {
-  @include deprecated.uppercaseTitleTipography;
-  color: var(--modal-title-foreground-color);
-}
-
-.modal-close-btn {
+.close-btn {
   @extend .modal-close-btn-base;
 }
 
-.modal-content {
-  margin-bottom: deprecated.$s-24;
+.modal-title {
+  @include t.use-typography("title-large");
+  margin-block-end: var(--sp-xxxl);
+  color: var(--modal-title-foreground-color);
+  display: flex;
+  gap: var(--sp-m);
 }
 
-.nitrate-form {
-  min-width: deprecated.$s-400;
+.modal-text-large {
+  @include t.use-typography("body-large");
 }
 
-.action-buttons {
-  @extend .modal-action-btns;
+.modal-text-medium {
+  @include t.use-typography("body-medium");
 }
 
-.cancel-button {
-  @extend .modal-cancel-btn;
+.modal-text-small {
+  @include t.use-typography("body-small");
 }
 
-.accept-btn {
-  @extend .modal-accept-btn;
+.modal-info {
+  margin-block-start: var(--sp-s);
+  width: 40%;
+}
 
-  &.danger {
-    @extend .modal-danger-btn;
+.modal-content,
+.modal-end {
+  color: var(--color-foreground-secondary);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-success-content {
+  display: flex;
+  gap: $sz-40;
+}
+
+.modal-start {
+  display: flex;
+  justify-content: center;
+  max-inline-size: $sz-224;
+
+  svg {
+    inline-size: 100%;
+    block-size: auto;
   }
+
+  @media (max-inline-size: 992px) {
+    display: none;
+  }
+}
+
+.radio-btns {
+  label {
+    @include t.use-typography("body-large");
+    padding: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-l) 0 0 0;
+  gap: 0;
+}
+
+.contact {
+  margin-block-start: $sz-96;
+  color: var(--color-foreground-primary);
 }

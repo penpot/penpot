@@ -240,3 +240,17 @@ export const RawGrowType = {
   "auto-height": 2,
 };
 
+export const CursorDirection = {
+  "backward": 0,
+  "forward": 1,
+  "line-before": 2,
+  "line-after": 3,
+  "line-start": 4,
+  "line-end": 5,
+};
+
+export const RawTransformEntryKind = {
+  "parent": 0,
+  "child": 1,
+};
+

@@ -73,9 +73,10 @@ http {
 
     server {
         listen 8080 default_server;
+        listen [::]:8080 default_server;
         server_name _;
 
-        client_max_body_size $PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE;
+        client_max_body_size $PENPOT_HTTP_SERVER_MAX_BODY_SIZE;
         charset utf-8;
 
         etag off;
@@ -127,6 +128,11 @@ http {
         location /api {
             proxy_pass $PENPOT_BACKEND_URI/api;
             proxy_buffering off;
+        }
+
+        location /plugins {
+            alias /var/www/app/plugins;
+            proxy_http_version 1.1;
         }
 
         location /readyz {

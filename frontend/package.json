@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
-  "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264",
+  "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8",
   "browserslist": [
     "defaults"
   ],
@@ -40,17 +40,20 @@
     "watch:app:libs": "node ./scripts/build-libs.js --watch",
     "watch:app:main": "clojure -M:dev:shadow-cljs watch main worker storybook",
     "clear:shadow-cache": "rm -rf .shadow-cljs",
+    "clear:wasm": "cargo clean --manifest-path ../render-wasm/Cargo.toml",
     "watch": "exit 0",
-    "watch:app": "pnpm run clear:shadow-cache && pnpm run build:wasm && concurrently --kill-others-on-fail \"pnpm run watch:app:assets\" \"pnpm run watch:app:main\" \"pnpm run watch:app:libs\"",
-    "watch:storybook": "pnpm run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 6006 --no-open\" \"node ./scripts/watch-storybook.js\""
+    "watch:app": "pnpm run clear:shadow-cache && pnpm run clear:wasm && pnpm run build:wasm && concurrently --kill-others-on-fail \"pnpm run watch:app:assets\" \"pnpm run watch:app:main\" \"pnpm run watch:app:libs\"",
+    "watch:storybook": "pnpm run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 6006 --no-open\" \"node ./scripts/watch-storybook.js\"",
+    "postinstall": "(cd ../plugins/libs/plugins-runtime; pnpm install; pnpm run build)"
   },
   "devDependencies": {
     "@penpot/draft-js": "workspace:./packages/draft-js",
     "@penpot/mousetrap": "workspace:./packages/mousetrap",
-    "@penpot/tokenscript": "workspace:./packages/tokenscript",
-    "@penpot/plugins-runtime": "1.4.2",
+    "@penpot/plugins-runtime": "link:../plugins/dist/plugins-runtime",
     "@penpot/svgo": "penpot/svgo#v3.2",
     "@penpot/text-editor": "workspace:./text-editor",
+    "@penpot/tokenscript": "workspace:./packages/tokenscript",
+    "@penpot/ui": "workspace:./packages/ui",
     "@playwright/test": "1.58.0",
     "@storybook/addon-docs": "10.1.11",
     "@storybook/addon-themes": "10.1.11",
@@ -102,6 +105,7 @@
     "sass": "^1.89.0",
     "sass-embedded": "^1.89.0",
     "sax": "^1.4.1",
+    "scheduler": "^0.27.0",
     "source-map-support": "^0.5.21",
     "storybook": "10.1.11",
     "style-dictionary": "5.0.0-rc.1",

@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes.text :as gst]
    [app.common.record :as crc]
    [app.common.schema :as sm]
    [app.common.types.shape :as cts]
@@ -651,4 +652,7 @@
           (u/display-not-valid :verticalAlign "Plugin doesn't have 'content:write' permission")
 
           :else
-          (st/emit! (dwt/update-attrs id {:vertical-align value})))))}))
+          (st/emit! (dwt/update-attrs id {:vertical-align value})))))}
+
+   {:name "textBounds"
+    :get #(-> % u/proxy->shape gst/shape->bounds format/format-geom-rect)}))

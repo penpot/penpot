@@ -13,8 +13,10 @@
    [app.common.types.color :as cl]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.refs :as refs]
    [app.main.ui.ds.controls.input :as ds]
@@ -70,11 +72,15 @@
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
 
-    (->> tokens
-         (sd/resolve-tokens-interactive)
+    (->> (if (contains? cf/flags :tokenscript)
+           (rx/of (ts/resolve-tokens tokens))
+           (sd/resolve-tokens-interactive tokens))
          (rx/mapcat
           (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
+            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                  resolved-value (if (contains? cf/flags :tokenscript)
+                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                   resolved-value)]
               (if resolved-value
                 (rx/of {:value resolved-value})
                 (rx/of {:error (first errors)}))))))))
@@ -155,7 +161,6 @@
 
         color-resolved
         (get-in @form [:data :color-result] "")
-
 
         valid-color (or (tinycolor/valid-color value)
                         (tinycolor/valid-color color-resolved))

@@ -96,14 +96,14 @@
         id (dm/str (:id token) "-name")
         swatch-tooltip-content (cond
                                  not-active
-                                 (tr "ds.inputs.token-field.no-active-token-option")
+                                 (tr "ds.inputs.token-field.no-active-token-option" token-name)
                                  has-errors
                                  (tr "color-row.token-color-row.deleted-token")
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
         name-tooltip-content (cond
                                not-active
-                               (tr "ds.inputs.token-field.no-active-token-option")
+                               (tr "ds.inputs.token-field.no-active-token-option" token-name)
                                has-errors
                                (tr "color-row.token-color-row.deleted-token")
                                :else

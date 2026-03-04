@@ -8,9 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
-   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.helpers :as dh]
@@ -36,17 +35,10 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn- token-value-error-fn
-  [{:keys [value]}]
-  (when (or (str/empty? value)
-            (str/blank? value))
-    (tr "workspace.tokens.empty-input")))
-
-
 (defn get-value-for-validator
-  [active-tab value value-subfield form-type]
+  [active-tab value value-subfield value-type]
 
-  (case form-type
+  (case value-type
     :indexed
     (if (= active-tab :reference)
       (:reference value)
@@ -59,29 +51,6 @@
 
     value))
 
-(defn- default-make-schema
-  [tokens-tree _]
-  (sm/schema
-   [:and
-    [:map
-     [:name
-      [:and
-       [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-       (sm/update-properties cto/token-name-ref assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
-       [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (cft/token-name-path-exists? % tokens-tree))]]]
-
-     [:value [::sm/text {:error/fn token-value-error-fn}]]
-
-     [:description {:optional true}
-      [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]]]
-
-    [:fn {:error/field :value
-          :error/fn #(tr "workspace.tokens.self-reference")}
-     (fn [{:keys [name value]}]
-       (when (and name value)
-         (nil? (cto/token-value-self-reference? name value))))]]))
-
 (mf/defc form*
   [{:keys [token
            validator
@@ -93,15 +62,16 @@
            make-schema
            input-component
            initial
-           type
+           value-type
            value-subfield
            input-value-placeholder] :as props}]
 
-  (let [make-schema     (or make-schema default-make-schema)
+  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema % token-type)
+                                             (sm/dissoc-key :id)))
         input-component (or input-component token.controls/input*)
         validate-token  (or validator default-validate-token)
 
-        active-tab*     (mf/use-state #(if (cft/is-reference? token) :reference :composite))
+        active-tab*     (mf/use-state #(if (cfo/is-reference? token) :reference :composite))
         active-tab      (deref active-tab*)
 
         token
@@ -132,9 +102,10 @@
           (make-schema tokens-tree-in-selected-set active-tab))
 
         initial
-        (mf/with-memo [token]
+        (mf/with-memo [token initial]
           (or initial
-              {:name (:name token "")
+              {:type token-type
+               :name (:name token "")
                :value (:value token "")
                :description (:description token "")}))
 
@@ -207,13 +178,13 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-token token tokens token-type value-subfield type active-tab on-remap-token on-rename-token is-create)
+         (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
                  path (str (d/name token-type) "." name)
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
-                 value-for-validation (get-value-for-validator active-tab value value-subfield type)]
+                 value-for-validation (get-value-for-validator active-tab value value-subfield value-type)]
              (->> (validate-token {:token-value value-for-validation
                                    :token-name name
                                    :token-description description
@@ -274,7 +245,7 @@
                            :auto-focus true}]]
 
       [:div {:class (stl/css :input-row)}
-       (case type
+       (case value-type
          :indexed
          [:> input-component
           {:token          token

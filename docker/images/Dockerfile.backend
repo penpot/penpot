@@ -68,7 +68,7 @@ RUN set -eux; \
        --no-header-files \
        --no-man-pages \
        --strip-debug \
-       --add-modules java.base,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported \
+       --add-modules java.base,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported,jdk.jfr,jdk.jcmd \
        --output /opt/jre;
 
 FROM ubuntu:24.04 AS image
@@ -125,7 +125,7 @@ RUN set -ex; \
 
 COPY --from=build /opt/jre /opt/jre
 COPY --from=build /opt/node /opt/node
-COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
 
 ARG BUNDLE_PATH="./bundle-backend/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/backend/

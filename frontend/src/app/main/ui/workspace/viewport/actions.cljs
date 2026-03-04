@@ -19,10 +19,13 @@
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.sidebar.assets.components :as wsac]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
+   [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.wasm :as wasm.wasm]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.dom.normalize-wheel :as nw]
@@ -46,41 +49,42 @@
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
             node-editing? grid-editing? drawing-path? create-comment? @z? @space?
             panning read-only?)
-   (fn [bevent]
+   (fn [event]
      ;; We need to handle editor related stuff here because
      ;; handling on editor dom node does not works properly.
-     (let [target  (dom/get-target bevent)
+     (let [target  (dom/get-target event)
            editor  (txu/closest-text-editor-content target)]
        ;; Capture mouse pointer to detect the movements even if cursor
        ;; leaves the viewport or the browser itself
        ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
        (if editor
-         (.setPointerCapture editor (.-pointerId bevent))
-         (.setPointerCapture target (.-pointerId bevent))))
+         (.setPointerCapture editor (.-pointerId event))
+         (.setPointerCapture target (.-pointerId event))))
 
-     (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
-               (dom/class? (dom/get-target bevent) "viewport-selrect")
-               (dom/child? (dom/get-target bevent) (dom/query ".grid-layout-editor")))
+     (when (or (dom/class? (dom/get-target event) "viewport-controls")
+               (dom/class? (dom/get-target event) "viewport-selrect")
+               (dom/child? (dom/get-target event) (dom/query ".grid-layout-editor")))
 
-       (dom/stop-propagation bevent)
+       (dom/stop-propagation event)
 
        (when-not @z?
-         (let [event  (dom/event->native-event bevent)
-               ctrl?  (kbd/ctrl? event)
-               meta?  (kbd/meta? event)
-               shift? (kbd/shift? event)
-               alt?   (kbd/alt? event)
-               mod?   (kbd/mod? event)
+         (let [native-event  (dom/event->native-event event)
+               ctrl?  (kbd/ctrl? native-event)
+               meta?  (kbd/meta? native-event)
+               shift? (kbd/shift? native-event)
+               alt?   (kbd/alt? native-event)
+               mod?   (kbd/mod? native-event)
+               off-pt (dom/get-offset-position native-event)
 
-               left-click?   (and (not panning) (dom/left-mouse? bevent))
-               middle-click? (and (not panning) (dom/middle-mouse? bevent))]
+               left-click?   (and (not panning) (dom/left-mouse? event))
+               middle-click? (and (not panning) (dom/middle-mouse? event))]
 
            (cond
              (or middle-click? (and left-click? @space?))
              (do
-               (dom/prevent-default bevent)
+               (dom/prevent-default event)
                (if mod?
-                 (let [raw-pt   (dom/get-client-position event)
+                 (let [raw-pt   (dom/get-client-position native-event)
                        pt       (uwvv/point->viewport raw-pt)]
                    (st/emit! (dw/start-zooming pt)))
                  (st/emit! (dw/start-panning))))
@@ -90,8 +94,23 @@
                (st/emit! (mse/->MouseEvent :down ctrl? shift? alt? meta?)
                          ::dwsp/interrupt)
 
+               (when (wasm.api/text-editor-is-active?)
+                 (wasm.api/text-editor-pointer-down (.-x off-pt) (.-y off-pt)))
+
                (when (and (not= edition id) (or text-editing? grid-editing?))
-                 (st/emit! (dw/clear-edition-mode)))
+                 (st/emit! (dw/clear-edition-mode))
+                 ;; FIXME: I think this is not completely correct because this
+                 ;; is going to happen even when clicking or selecting text.
+                 ;; Sync and stop WASM text editor when exiting edit mode
+                 #_(when (and text-editing?
+                              (features/active-feature? @st/state "render-wasm/v1")
+                              wasm.wasm/context-initialized?)
+                     (when-let [{:keys [shape-id content]} (wasm.api/text-editor-sync-content)]
+                       (st/emit! (dwt/v2-update-text-shape-content
+                                  shape-id content
+                                  :update-name? true
+                                  :finalize? true)))
+                     (wasm.api/text-editor-stop)))
 
                (when (and (not text-editing?)
                           (not blocked)
@@ -173,16 +192,34 @@
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
              hovering? (some? @hover)
+             native-event (dom/event->native-event event)
+             off-pt (dom/get-offset-position native-event)
              raw-pt (dom/get-client-position event)
              pt     (uwvv/point->viewport raw-pt)]
          (st/emit! (mse/->MouseEvent :click ctrl? shift? alt? meta?))
 
+         ;; FIXME: Maybe we can transform this into a cond instead
+         ;; of multiple (when)s.
          (when (and hovering?
                     (not @space?)
                     (not edition)
                     (not drawing-path?)
                     (not drawing-tool))
            (st/emit! (dw/select-shape (:id @hover) shift?)))
+
+         ;; FIXME: Maybe we can move into a function of the kind
+         ;; "text-editor-on-click"
+         ;; If clicking on a text shape and wasm render is enabled, forward cursor position
+         (when (and hovering?
+                    (not @space?)
+                    edition  ;; Only when already in edit mode
+                    (not drawing-path?)
+                    (not drawing-tool))
+           (let [hover-shape @hover]
+             (when (and (= :text (:type hover-shape))
+                        (features/active-feature? @st/state "text-editor-wasm/v1")
+                        wasm.wasm/context-initialized?)
+               (wasm.api/text-editor-set-cursor-from-point (.-x off-pt) (.-y off-pt)))))
 
          (when (and @z?
                     (not @space?)
@@ -223,8 +260,21 @@
             (when (and (not drawing-path?) shape)
               (cond
                 (and editable? (not= id edition) (not read-only?))
-                (st/emit! (dw/select-shape id)
-                          (dw/start-editing-selected))
+                (do
+                  (st/emit! (dw/select-shape id)
+                            (dw/start-editing-selected))
+                  ;; If using wasm text-editor, notify WASM to start editing this shape
+                  ;; and set cursor position from the double-click location
+                  (when (and (= type :text)
+                             (features/active-feature? @st/state "text-editor-wasm/v1")
+                             wasm.wasm/context-initialized?)
+                    (wasm.api/text-editor-start id)))
+
+                (and editable? (= id edition) (not read-only?)
+                     (= type :text)
+                     (features/active-feature? @st/state "text-editor-wasm/v1")
+                     wasm.wasm/context-initialized?)
+                (wasm.api/text-editor-select-all)
 
                 (some? selected-shape)
                 (do
@@ -275,20 +325,24 @@
        ;; Release pointer on mouse up
        (.releasePointerCapture target (.-pointerId event)))
 
-     (let [event (dom/event->native-event event)
-           ctrl? (kbd/ctrl? event)
-           shift? (kbd/shift? event)
-           alt? (kbd/alt? event)
-           meta? (kbd/meta? event)
+     (let [native-event (dom/event->native-event event)
+           off-pt (dom/get-offset-position native-event)
+           ctrl? (kbd/ctrl? native-event)
+           shift? (kbd/shift? native-event)
+           alt? (kbd/alt? native-event)
+           meta? (kbd/meta? native-event)
 
-           left-click? (= 1 (.-which event))
-           middle-click? (= 2 (.-which event))]
+           left-click? (= 1 (.-which native-event))
+           middle-click? (= 2 (.-which native-event))]
 
        (when left-click?
-         (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?)))
+         (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?))
+
+         (when (wasm.api/text-editor-is-active?)
+           (wasm.api/text-editor-pointer-up (.-x off-pt) (.-y off-pt))))
 
        (when middle-click?
-         (dom/prevent-default event)
+         (dom/prevent-default native-event)
 
          ;; We store this so in Firefox the middle button won't do a paste of the content
          (mf/set-ref-val! disable-paste-ref true)
@@ -346,7 +400,9 @@
   (let [last-position (mf/use-var nil)]
     (mf/use-fn
      (fn [event]
-       (let [raw-pt   (dom/get-client-position event)
+       (let [native-event (unchecked-get event "nativeEvent")
+             off-pt   (dom/get-offset-position native-event)
+             raw-pt   (dom/get-client-position event)
              pt       (uwvv/point->viewport raw-pt)
 
              ;; We calculate the delta because Safari's MouseEvent.movementX/Y drop
@@ -354,6 +410,12 @@
              delta (if @last-position
                      (gpt/subtract raw-pt @last-position)
                      (gpt/point 0 0))]
+
+         ;; IMPORTANT! This function, right now it's called on EVERY pointermove. I think
+         ;; in the future (when we handle the UI in the render) should be better to
+         ;; have a "wasm.api/pointer-move" function that works as an entry point for
+         ;; all the pointer-move events.
+         (wasm.api/text-editor-pointer-move (.-x off-pt) (.-y off-pt))
 
          (rx/push! move-stream pt)
          (reset! last-position raw-pt)

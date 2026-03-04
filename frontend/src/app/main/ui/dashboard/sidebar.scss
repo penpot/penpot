@@ -40,6 +40,11 @@
   overflow-y: auto;
 }
 
+.sidebar-content-nitrate {
+  padding: var(--sp-m) 0 0 0;
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+}
+
 .separator {
   height: var(--sp-xxs);
   width: 94%;
@@ -513,4 +518,45 @@
 .power-up {
   @include t.use-typography("body-small");
   color: var(--color-accent-tertiary);
+}
+
+.nitrate-orgs-container {
+  align-items: center;
+  display: flex;
+  height: calc(2 * var(--sp-xxxl));
+  max-height: calc(2 * var(--sp-xxxl));
+  justify-content: space-between;
+  padding: var(--sp-xs) var(--sp-l) var(--sp-xs) var(--sp-s);
+  // border-block-end: $b-1 solid var(--color-background-quaternary);
+}
+
+.nitrate-orgs-empty {
+  @include t.use-typography("body-medium");
+  color: var(--color-foreground-primary);
+  width: 100%;
+  margin: var(--sp-xs) 0 var(--sp-xs) var(--sp-l);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.nitrate-create-org {
+  margin-inline-start: auto;
+  text-transform: uppercase;
+}
+
+.nitrate-penpot-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
+  background-color: var(--color-foreground-primary);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xxl);
+    height: var(--sp-xxl);
+  }
 }

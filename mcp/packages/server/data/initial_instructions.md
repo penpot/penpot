@@ -1,0 +1,384 @@
+You have access to Penpot tools in order to interact with a Penpot design project directly.
+As a precondition, the user must connect the Penpot design project to the MCP server using the Penpot MCP Plugin.
+
+# Executing Code
+
+One of your key tools is the `execute_code` tool, which allows you to run JavaScript code using the Penpot Plugin API
+directly in the connected project.
+
+VERY IMPORTANT: When writing code, NEVER LOG INFORMATION YOU ARE ALSO RETURNING. It would duplicate the information you receive!
+
+To execute code correctly, you need to understand the Penpot Plugin API. You can retrieve API documentation via
+the `penpot_api_info` tool.
+
+This is the full list of types/interfaces in the Penpot API: $api_types
+
+You use the `storage` object extensively to store data and utility functions you define across tool calls.
+This allows you to inspect intermediate results while still being able to build on them in subsequent code executions.
+
+# The Structure of Penpot Designs
+
+A Penpot design ultimately consists of shapes.
+The type `Shape` is a union type, which encompasses both containers and low-level shapes.
+Shapes in a Penpot design are organized hierarchically.
+At the top level, a design project contains one or more `Page` objects.
+Each `Page` contains a tree of elements. For a given instance `page`, its root shape is `page.root`.
+A Page is frequently structured into boards. A `Board` is a high-level grouping element.
+A `Group` is a more low-level grouping element used to organize low-level shapes into a logical unit.
+Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`, `Boolean`, and `SvgRaw`.
+`ShapeBase` is a base type most shapes build upon.
+
+# Core Shape Properties and Methods
+
+**Type**:
+    Any given shape contains information on the concrete type via its `type` field.
+
+**Position and Dimensions**:
+  * The location properties `x` and `y` refer to the top left corner of a shape's bounding box in the absolute (Page) coordinate system.
+    These are writable - set them directly to position shapes.
+  * `parentX` and `parentY` (as well as `boardX` and `boardY`) are READ-ONLY computed properties showing position relative to parent/board.
+    To position relative to parent, use `penpotUtils.setParentXY(shape, parentX, parentY)` or manually set `shape.x = parent.x + parentX`.
+  * `width` and `height` are READ-ONLY. Use `resize(width, height)` method to change dimensions.
+  * `bounds` is READ-ONLY (members: x, y, width, height). To modify the bounding box, change `x`, `y` or apply `resize()`. 
+
+**Other Writable Properties**:
+  * `name` - Shape name
+  * `fills: Fill[]`, `strokes: Stroke[]`, `shadows: Shadow[]` - Styling properties
+    - Setting fills: `shape.fills = [{ fillColor: "#FF0000", fillOpacity: 1 }]`; no fill (transparent): `shape.fills = []`; 
+    - Colors: Use hex strings with caps only (e.g. '#FF5533')
+    - IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them!  
+  * `borderRadius` - Uniform border radius for all corners
+  * `borderRadiusTopLeft`, `borderRadiusTopRight`, `borderRadiusBottomRight`, `borderRadiusBottomLeft` - Individual corner radii.
+  * `blur: Blur` - Blur properties
+  * `blendMode` - Blend mode (e.g. `"normal"`, `"multiply"`, `"overlay"`, etc.)
+  * `rotation` (deg), `opacity`, `blocked`, `hidden`, `visible`
+  * `proportionLock` - Whether width and height are locked to the same ratio
+  * `constraintsHorizontal` - Horizontal resize constraint (`"left"`, `"right"`, `"center"`, `"leftright"`, `"scale"`)
+  * `constraintsVertical` - Vertical resize constraint (`"top"`, `"bottom"`, `"center"`, `"topbottom"`, `"scale"`)
+  * `flipX`, `flipY` - Horizontal/vertical flip
+
+**Z-Order**:
+  * The z-order of shapes is determined by the order in the `children` array of the parent shape.
+    Therefore, when creating shapes that should be on top of each other, add them to the parent in the correct order
+    (i.e. add background shapes first, then foreground shapes later).
+  * To modify z-order after creation, use these methods: `bringToFront()`, `sendToBack()`, `bringForward()`, `sendBackward()`,
+    and, for precise control, `setParentIndex(index)` (0-based).
+
+**Modification Methods**:
+  * `resize(width, height)` - Change dimensions (required for width/height since they're read-only)
+  * `rotate(angle, center?)` - Rotate shape
+  * `remove()` - Permanently destroy the shape (use only for deletion, NOT for reparenting).
+    Exception: When the shape is a descendant of a board that is a component (asset), the shape will not be removed but instead be made invisible.
+
+**Hierarchical Structure**:
+  * `parent` - The parent shape (null for root shapes)
+    Note: Hierarchical nesting does not necessarily imply visual containment
+  * To add children to a parent shape (e.g. a `Board`): `parent.appendChild(shape)` or `parent.insertChild(index, shape)` 
+  * Reparenting: `newParent.appendChild(shape)` or `newParent.insertChild(index, shape)` will move a shape to new parent
+    - Automatically removes the shape from its old parent
+    - Absolute x/y positions are preserved (use `penpotUtils.setParentXY` to adjust relative position)
+
+Cloning: Use `shape.clone(): Shape` to create an exact duplicate (including all properties and children) of a shape; same position as original.
+
+# Images
+
+The `Image` type is a legacy type. Images are now typically embedded in a `Fill`, with `fillImage` set to an
+`ImageData` object, i.e. the `fills` property of of a shape (e.g. a `Rectangle`) will contain a fill where `fillImage` is set.
+Use the `export_shape` and `import_image` tools to export and import images.
+
+# Layout Systems
+
+Boards can have layout systems that automatically control the positioning and spacing of their children:
+
+  * If a board has a layout system, then child positions are controlled by the layout system.
+    For every child, key properties of the child within the layout are stored in `child.layoutChild: LayoutChildProperties`:
+    - `absolute: boolean` - if true, child position is not controlled by layout system. x/y will set *relative* position within parent!
+    - margins (`topMargin`, `rightMargin`, `bottomMargin`, `leftMargin` or combined `verticalMargin`, `horizontalMargin`)
+    - sizing (`verticalSizing`, `horizontalSizing`: "fill" | "auto" | "fix")
+    - min/max sizes (`minWidth`, `maxWidth`, `minHeight`, `maxHeight`)
+    - `zIndex: number` (higher numbers on top)
+
+  * **Flex Layout**: A flexbox-style layout system
+    - Properties: `dir`, `rowGap`, `columnGap`, `alignItems`, `justifyContent`;
+       - `dir`: "row" | "column" | "row-reverse" | "column-reverse"
+       - Padding: `topPadding`, `rightPadding`, `bottomPadding`, `leftPadding`, or combined `verticalPadding`, `horizontalPadding`
+       - To modify spacing: adjust `rowGap` and `columnGap` properties, not individual child positions.
+         Optionally, adjust individual child margins via `child.layoutChild`.
+       - Sizing: `verticalSizing` and `horizontalSizing` are NOT functional. You need to size manually for the time being.
+    - When a board has flex layout, child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
+      appending or inserting children automatically positions them according to the layout rules.
+    - CRITICAL: The FlexLayout method `board.flex.appendChild` is BROKEN. To append children to a flex layout board such that
+      they appear visually at the end, ALWAYS use the Board's method `board.appendChild(shape)`. So call it in the order of visual appearance.
+      To insert at a specific index, use `board.insertChild(index, shape)`.
+    - Add to a board with `board.addFlexLayout(): FlexLayout`; instance then accessible via `board.flex`.
+      IMPORTANT: When adding a flex layout to a container that already has children,
+      use `penpotUtils.addFlexLayout(container, dir)` instead! This preserves the existing visual order of children.
+      Otherwise, children will be arbitrarily reordered when the children order suddenly determines the display order.
+    - Check with: `if (board.flex) { ... }`
+
+  * **Grid Layout**: A CSS grid-style layout system
+    - Add to a board with `board.addGridLayout(): GridLayout`; instance then accessibly via `board.grid`;
+      Check with: `if (board.grid) { ... }`
+    - Properties: `rows`, `columns`, `rowGap`, `columnGap`
+    - Children are positioned via 1-based row/column indices
+        - Add to grid via `board.flex.appendChild(shape, row, column)`
+        - Modify grid positioning after the fact via `shape.layoutCell: LayoutCellProperties`
+
+  * When working with boards:
+    - ALWAYS check if the board has a layout system before attempting to reposition children
+    - Modify layout properties (gaps, padding) instead of trying to set child x/y positions directly
+    - Layout systems override manual positioning of children
+
+# Text Elements
+
+The rendered content of a `Text` element is given by the `characters` property.
+
+To change the size of the text, change the `fontSize` property; applying `resize()` does NOT change the font size,
+it only changes the formal bounding box; if the text does not fit it, it will overflow; use `textBounds` for the actual bounding box of the rendered text.
+The bounding box is sized automatically as long as the `growType` property is set to "auto-width" or "auto-height".
+`resize` always sets `growType` to "fixed", so ALWAYS set it back to "auto-*" if you want automatic sizing!
+The auto-sizing is not immediate; sleep for a short time (100ms) if you want to read the updated bounding box.
+
+# The `penpot` and `penpotUtils` Objects, Exploring Designs
+
+A key object to use in your code is the `penpot` object (which is of type `Penpot`):
+  * `penpot.selection` provides the list of shapes the user has selected in the Penpot UI.
+     If it is unclear which elements to work on, you can ask the user to select them for you.
+     ALWAYS immediately copy the selected shape(s) into `storage`! Do not assume that the selection remains unchanged.
+  * `penpot.root` provides the root shape of the currently active page.
+  * Generation of CSS content for elements via `penpot.generateStyle`
+  * Generation of HTML/SVG content for elements via `penpot.generateMarkup`
+
+For example, to generate CSS for the currently selected elements, you can execute this:
+    return penpot.generateStyle(penpot.selection, { type: "css", withChildren: true });
+
+CRITICAL: The `penpotUtils` object provides essential utilities - USE THESE INSTEAD OF WRITING YOUR OWN:
+  * getPages(): { id: string; name: string }[]
+  * getPageById(id: string): Page | null
+  * getPageByName(name: string): Page | null
+  * shapeStructure(shape: Shape, maxDepth: number | undefined = undefined): { id, name, type, children?, layout? }
+    Generates an overview structure of the given shape.
+    - children: recursive, limited by maxDepth
+    - layout: present if shape has flex/grid layout, contains { type: "flex" | "grid", ... }
+  * findShapeById(id: string): Shape | null
+  * findShape(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape | null
+    If no root is provided, search globally (in all pages).
+  * findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape[]
+  * isContainedIn(shape: Shape, container: Shape): boolean
+    Returns true iff shape is fully within the container's geometric bounds.
+    Note that a shape's bounds may not always reflect its actual visual content - descendants can overflow; check using analyzeDescendants (see below).
+  * setParentXY(shape: Shape, parentX: number, parentY: number): void
+    Sets shape position relative to its parent (since parentX/parentY are read-only)
+  * analyzeDescendants<T>(root: Shape, evaluator: (root: Shape, descendant: Shape) => T | null | undefined, maxDepth?: number): Array<{ shape: Shape, result: T }>
+    General-purpose utility for analyzing/validating descendants
+    Calls evaluator on each descendant; collects non-null/undefined results
+    Powerful pattern: evaluator can return corrector functions or diagnostic data
+  * Further functions for specific tasks (described in the sections below)
+
+General pointers for working with Penpot designs:
+  * Prefer `penpotUtils` helper functions — avoid reimplementing shape searching.
+  * To get an overview of a single page, use `penpotUtils.shapeStructure(page.root, 3)`.
+    Note that `penpot.root` refers to the current page only. When working across pages, first determine the relevant page(s).
+  * Use `penpotUtils.findShapes()` or `penpotUtils.findShape()` with predicates to locate elements efficiently.
+
+Common tasks - Quick Reference (ALWAYS use penpotUtils for these):
+  * Find all images:
+      const images = penpotUtils.findShapes(
+        shape => shape.type === 'image' || shape.fills?.some(fill => fill.fillImage),
+        penpot.root
+      );
+  * Find text elements:
+      const texts = penpotUtils.findShapes(shape => shape.type === 'text', penpot.root);
+  * Find (the first) shape with a given name:
+      const shape = penpotUtils.findShape(shape => shape.name === 'MyShape');
+  * Get structure of current selection:
+      const structure = penpotUtils.shapeStructure(penpot.selection[0]);
+  * Find shapes in current selection/board:
+      const shapes = penpotUtils.findShapes(predicate, penpot.selection[0] || penpot.root);
+  * Validate/analyze descendants (returning corrector functions):
+      const fixes = penpotUtils.analyzeDescendants(board, (root, shape) => {
+        const xMod = shape.parentX % 4;
+        if (xMod !== 0) {
+          return () => penpotUtils.setParentXY(shape, Math.round(shape.parentX / 4) * 4, shape.parentY);
+        }
+      });
+      fixes.forEach(f => f.result()); // Apply all fixes
+  * Find containment violations:
+      const violations = penpotUtils.analyzeDescendants(board, (root, shape) => {
+        return !penpotUtils.isContainedIn(shape, root) ? 'outside-bounds' : null;
+      });
+      Always validate against the root container that is supposed to contain the shapes.
+
+# Asset Libraries
+
+Libraries in Penpot are collections of reusable design assets (components, colors, and typographies) that can be shared across files.
+They enable design systems and consistent styling across projects.
+Each Penpot file has its own local library and can connect to external shared libraries.
+
+Accessing libraries: via `penpot.library` (type: `LibraryContext`):
+  * `penpot.library.local` (type: `Library`) - The current file's own library
+  * `penpot.library.connected` (type: `Library[]`) - Array of already-connected external libraries
+  * `penpot.library.availableLibraries()` (returns: `Promise<LibrarySummary[]>`) - Libraries available to connect
+  * `penpot.library.connectLibrary(libraryId: string)` (returns: `Promise<Library>`) - Connect a new library
+
+Each `Library` object has:
+  * `id: string`
+  * `name: string`
+  * `components: LibraryComponent[]` - Array of components
+  * `colors: LibraryColor[]` - Array of colors
+  * `typographies: LibraryTypography[]` - Array of typographies
+
+## Colors and Typographies
+
+Adding a color:
+```
+const newColor: LibraryColor = penpot.library.local.createColor();
+newColor.name = 'Brand Primary';
+newColor.color = '#0066FF';
+```
+
+Adding a typography:
+```
+const newTypo: LibraryTypography = penpot.library.local.createTypography();
+newTypo.name = 'Heading Large';
+// Set typography properties...
+```
+
+## Components
+
+Using library components:
+  * find a component in the library by name:
+    `const component: LibraryComponent = library.components.find(comp => comp.name.includes('Button'));`
+  * create a new instance of the component on the current page:
+    `const instance: Shape = component.instance();`
+    This returns a `Shape` (often a `Board` containing child elements).
+    After instantiation, modify the instance's properties as desired.
+  * get the reference to the main component shape:
+    `const mainShape: Shape = component.mainInstance();`
+
+Adding a component to a library:
+```
+const shapes: Shape[] = [shape1, shape2]; // shapes to include
+const newComponent: LibraryComponent = penpot.library.local.createComponent(shapes);
+newComponent.name = 'My Button';
+```
+
+Detaching:
+  * When creating new design elements based on a component instance/copy, use `shape.detach()` to break the link to the main component, allowing independent modification.
+  * Without detaching, some manipulations will have no effect; e.g. child/descendant removal will not work.
+
+### Variants
+
+Variants are a system for grouping related component versions along named property axes (e.g. Type, Style), powering a structured swap UI for designers using component instances.
+
+* `VariantContainer` (extends `Board`): The board that physically groups all variant components together. 
+  - check with `isVariantContainer()`
+  - property `variants: Variants`.
+* `Variants`: Defines the combinations of property values for which component variants can exist and manages the concrete component variants. 
+  - `properties: string[]` (ordered list of property names); `addProperty()`, `renameProperty(pos, name)`, `currentValues(property)`
+  - `variantComponents(): LibraryVariantComponent[]` 
+* `LibraryVariantComponent` (extends `LibraryComponent`): full library component with metadata, for which `isVariant()` returns true.
+  - `variantProps: { [property: string]: string }` (this component's value for each property)
+  - `variantError` (non-null if e.g. two variants share the same combination of property values)
+  - `setVariantProperty(pos, value)`
+
+Properties are often addressed positionally: `pos` parameter in various methods = index in `Variants.properties`.
+
+**Creating a variant group**:
+- `component.transformInVariant(): null`: Converts a standard component into a variant group, creating a `VariantContainer` and a second duplicate variant. 
+  Both start with a default property `Property 1` with values `Value 1` / `Value 2`; there is no name-based auto-parsing.
+- `board.combineAsVariants(ids: string[]): null`: Combines the board (a main component instance) with other main components (referenced via IDs) into a new variant group. 
+  All components end up inside a single new `VariantContainer` on the canvas.
+- In both cases, look for the created `VariantContainer` on the page, and then edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
+
+**Adding a variant to an existing group**:
+Use `variantContainer.appendChild(mainInstance)` to move a component's main instance into the container, then set its position manually and assign property values via `setVariantProperty`.
+
+**Using Variants**:
+- `compInstance.switchVariant(pos, value)`: On a component instance, switches to the nearest variant that has the given value at property position `pos`, keeping all other property values the same.
+- To instantiate a specific variant, find the right `LibraryVariantComponent` by checking `variantProps`, then call `.instance()`.
+
+# Design Tokens
+
+Design tokens are reusable design values (colors, dimensions, typography, etc.) for consistent styling.
+
+The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
+  * `sets: TokenSet[]` - Token collections (order matters for precedence)
+  * `themes: TokenTheme[]` - Presets that activate specific sets
+  * `addSet(name: string): TokenSet` - Create new set
+  * `addTheme(group: string, name: string): TokenTheme` - Create new theme
+
+`TokenSet` contains tokens with unique names:
+  * `active: boolean` - Only active sets affect shapes; use `set.toggleActive()` to change: `if (!set.active) set.toggleActive();`
+  * `tokens: Token[]` - All tokens in set
+  * `addToken(type: TokenType, name: string, value: TokenValueString): Token` - Creates a token, adding it to the set.
+     - `TokenType`: "color" | "dimension" | "spacing" | "typography" | "shadow" | "opacity" | "borderRadius" | "borderWidth" | "fontWeights" | "fontSizes" | "fontFamilies" | "letterSpacing" | "textDecoration" | "textCase"
+     - `value`: depends on the type of token (inspect `Token` and related types)
+     - Examples:
+       const token = set.addToken("color", "color.primary", "#0066FF"); // direct value
+       const token2 = set.addToken("color", "color.accent", "{color.primary}"); // reference to another token
+
+`Token`: union type encompassing various token types, with common properties:
+  * `name: string` - Token name (typically structured, e.g. "color.base.white")
+  * `value` - Raw value (direct value or reference to another token like "{color.primary}")
+  * `resolvedValue` - Computed final value (follows references)
+  * `type: TokenType`
+
+Discovering tokens:
+  * `penpotUtils.tokenOverview()`: Maps from token set name to a mapping from token type to list of token names
+  * `penpotUtils.findTokenByName(name: string): Token | null`: Finds the first applicable token matching the given name
+  * `penpotUtils.findTokensByName(name: string): Token[]`: Finds all tokens that match the given name across all token sets
+  * `penpotUtils.getTokenSet(token: Token): TokenSet | null`: Gets the token set that contains the given token
+
+Applying tokens:
+  * `shape.applyToken(token, properties: undefined | TokenProperty[])` - Apply a token to a shape for one or more properties
+    (if properties is undefined, use a default property based on the token type - not usually recommended).
+    `TokenProperty` is a union type; possible values are:
+    - "all": applies the token to all properties it can control
+    - TokenBorderRadiusProps: "r1", "r2", "r3", "r4"
+    - TokenShadowProps: "shadow"
+    - TokenColorProps: "fill", "strokeColor"
+    - TokenDimensionProps: "x", "y", "strokeWidth"
+    - TokenFontFamiliesProps: "fontFamilies"
+    - TokenFontSizesProps: "fontSize"
+    - TokenFontWeightProps: "fontWeight"
+    - TokenLetterSpacingProps: "letterSpacing"
+    - TokenNumberProps: "rotation"
+    - TokenOpacityProps: "opacity"
+    - TokenSizingProps: "width", "height", "layoutItemMinW", "layoutItemMaxW", "layoutItemMinH", "layoutItemMaxH"
+    - TokenSpacingProps: "rowGap", "columnGap", "p1", "p2", "p3", "p4", "m1", "m2", "m3", "m4"
+    - TokenBorderWidthProps: "strokeWidth"
+    - TokenTextCaseProps: "textCase"
+    - TokenTextDecorationProps: "textDecoration"
+    - TokenTypographyProps: "typography"
+  * `token.applyToShapes(shapes, properties)` - Apply from token
+  * Application is **asynchronous** (wait for ~100ms to see the effects)
+  * After application:
+     - `shape.tokens` returns a mapping `{ propertyName: "token.name" }` from `TokenProperty` to token name
+     - The actual shape properties that the tokens control will reflect the token's resolved value.
+
+Removing tokens:
+  Simply set the respective property directly - token binding is automatically removed, e.g.  
+  shape.fills = [{ fillColor: "#000000", fillOpacity: 1 }]; // Removes fill token
+
+# Visual Inspection of Designs
+
+For many tasks, it can be critical to visually inspect the design. Remember to use the `export_shape` tool for this purpose!
+
+# Creating and Translating Designs
+
+* When transferring styles from a Penpot design to code, make sure that you strictly adhere to the design.
+  NEVER make assumptions about missing values and don't get overly creative (e.g. don't pick your own colours and stick to
+  non-creative defaults such as white/black if you are lacking information).
+
+# Revising Designs
+
+* Before applying design changes, ask: "Would a designer consider this appropriate?"
+* When dealing with containment issues, ask: Is the parent too small OR is the child too large?
+  Container sizes are usually intentional, check content first.
+* Check for reasonable font sizes and typefaces
+* The use of flex layouts is encouraged for cases where elements are arranged in rows or columns with consistent spacing/positioning.
+  Consider converting boards to flex layout when appropriate.
+
+--
+You have hereby read the 'Penpot High-Level Overview' and need not use a tool to read it again.

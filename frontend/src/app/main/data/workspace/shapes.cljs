@@ -197,11 +197,12 @@
              objects       (:objects page)
 
              undo-id (or (:undo-id options) (js/Symbol))
-             [all-parents changes] (-> (pcb/empty-changes it (:id page))
-                                       (cls/generate-delete-shapes fdata page objects ids
-                                                                   {:ignore-touched (:allow-altering-copies options)
-                                                                    :undo-group (:undo-group options)
-                                                                    :undo-id undo-id}))]
+             [all-parents changes]
+             (-> (pcb/empty-changes it (:id page))
+                 (cls/generate-delete-shapes fdata page objects ids
+                                             {:ignore-touched (:allow-altering-copies options)
+                                              :undo-group (:undo-group options)
+                                              :undo-id undo-id}))]
 
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dc/detach-comment-thread ids)

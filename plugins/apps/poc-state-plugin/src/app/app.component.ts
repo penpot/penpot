@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Component, effect, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import type { Shape } from '@penpot/plugin-types';

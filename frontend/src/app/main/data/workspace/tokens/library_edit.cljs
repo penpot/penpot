@@ -195,27 +195,30 @@
 
 (defn create-token-set
   [token-set]
+  (assert (ctob/token-set? token-set) "a token set is required") ;; TODO should check token-set-schema?
   (ptk/reify ::create-token-set
-    ptk/UpdateEvent
-    (update [_ state]
-      ;; Clear possible local state
-      (update state :workspace-tokens dissoc :token-set-new-path))
-
     ptk/WatchEvent
     (watch [it state _]
-      (let [data       (dsh/lookup-file-data state)
-            tokens-lib (get data :tokens-lib)
-            token-set  (ctob/rename token-set (ctob/normalize-set-name (ctob/get-name token-set)))]
-        (if (and tokens-lib (ctob/get-set-by-name tokens-lib (ctob/get-name token-set)))
-          (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
-                            :type :toast
-                            :level :error
-                            :timeout 9000}))
-          (let [changes (-> (pcb/empty-changes it)
-                            (pcb/with-library-data data)
-                            (pcb/set-token-set (ctob/get-id token-set) token-set))]
-            (rx/of (set-selected-token-set-id (ctob/get-id token-set))
-                   (dch/commit-changes changes))))))))
+      (let [data    (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/set-token-set (ctob/get-id token-set) token-set))]
+        (rx/of (set-selected-token-set-id (ctob/get-id token-set))
+               (dch/commit-changes changes))))))
+
+(defn rename-token-set
+  [token-set new-name]
+  (assert (ctob/token-set? token-set) "a token set is required") ;; TODO should check token-set-schema after renaming?
+  (assert (string? new-name) "a new name is required") ;; TODO should assert normalized-set-name?
+  (ptk/reify ::update-token-set
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/rename-token-set (ctob/get-id token-set) new-name))]
+        (rx/of (set-selected-token-set-id (ctob/get-id token-set))
+               (dch/commit-changes changes))))))
 
 (defn rename-token-set-group
   [set-group-path set-group-fname]
@@ -226,26 +229,6 @@
                         (pcb/rename-token-set-group set-group-path set-group-fname))]
         (rx/of
          (dch/commit-changes changes))))))
-
-(defn update-token-set
-  [token-set name]
-  (ptk/reify ::update-token-set
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [data       (dsh/lookup-file-data state)
-            name       (ctob/normalize-set-name name (ctob/get-name token-set))
-            tokens-lib (get data :tokens-lib)]
-
-        (if (ctob/get-set-by-name tokens-lib name)
-          (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
-                            :type :toast
-                            :level :error
-                            :timeout 9000}))
-          (let [changes (-> (pcb/empty-changes it)
-                            (pcb/with-library-data data)
-                            (pcb/rename-token-set (ctob/get-id token-set) name))]
-            (rx/of (set-selected-token-set-id (ctob/get-id token-set))
-                   (dch/commit-changes changes))))))))
 
 (defn duplicate-token-set
   [id]
@@ -522,7 +505,7 @@
                                            (ctob/get-id token-set)
                                            token-id)]
             (let [tokens (vals (ctob/get-tokens tokens-lib (ctob/get-id token-set)))
-                  unames (map :name tokens)
+                  unames (map :name tokens)     ;; TODO: add function duplicate-token in tokens-lib
                   suffix (tr "workspace.tokens.duplicate-suffix")
                   copy-name (cfh/generate-unique-name (:name token) unames :suffix suffix)
                   new-token (-> token

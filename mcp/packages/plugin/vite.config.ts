@@ -1,14 +1,14 @@
 import { defineConfig } from "vite";
 import livePreview from "vite-live-preview";
 
-// Debug: Log the environment variables
-console.log("MULTI_USER_MODE env:", process.env.MULTI_USER_MODE);
-console.log("Will define IS_MULTI_USER_MODE as:", JSON.stringify(process.env.MULTI_USER_MODE === "true"));
+let WS_URI = process.env.WS_URI || "http://localhost:4402";
+let MULTI_USER_MODE = process.env.MULTI_USER_MODE === "true";
 
-let WS_URI = "http://localhost:4402";
+console.log("Will define IS_MULTI_USER_MODE as:", JSON.stringify(MULTI_USER_MODE));
 console.log("Will define PENPOT_MCP_WEBSOCKET_URL as:", JSON.stringify(WS_URI));
 
 export default defineConfig({
+    base: "./",
     plugins: [
         livePreview({
             reload: true,

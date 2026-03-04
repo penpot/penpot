@@ -598,3 +598,10 @@
   (case axis
     :y "horizontal"
     :x "vertical"))
+
+(defn format-geom-rect
+  [{:keys [x y width height]}]
+  #js {:x x
+       :y y
+       :width width
+       :height height})

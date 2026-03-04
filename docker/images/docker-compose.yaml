@@ -30,11 +30,9 @@ x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
 
 x-body-size: &penpot-http-body-size
-  # Max body size (30MiB); Used for plain requests, should never be
-  # greater than multi-part size
-  PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 31457280
-
-  # Max multipart body size (350MiB)
+  # Max body size
+  PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 367001600
+  # Deprecation warning: this variable is deprecated. Use PENPOT_HTTP_SERVER_MAX_BODY (defaults to 367001600)
   PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: 367001600
 
 ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
@@ -197,13 +195,6 @@ services:
 
       ## Valkey (or previously Redis) is used for the websockets notifications.
       PENPOT_REDIS_URI: redis://penpot-valkey/0
-
-  penpot-mcp:
-    image: penpotapp/mcp:${PENPOT_VERSION:-latest}
-    restart: always
-
-    networks:
-      - penpot
 
   penpot-postgres:
     image: "postgres:15"

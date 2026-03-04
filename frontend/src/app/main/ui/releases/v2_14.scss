@@ -1,0 +1,102 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  display: grid;
+  grid-template-columns: deprecated.$s-324 1fr;
+  height: deprecated.$s-500;
+  width: deprecated.$s-888;
+  border-radius: deprecated.$br-8;
+  background-color: var(--modal-background-color);
+  border: deprecated.$s-2 solid var(--modal-border-color);
+}
+
+.start-image {
+  width: deprecated.$s-324;
+  border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
+}
+
+.modal-content {
+  padding: deprecated.$s-40;
+  display: grid;
+  grid-template-rows: auto 1fr deprecated.$s-32;
+  gap: deprecated.$s-24;
+
+  a {
+    color: var(--button-primary-background-color-rest);
+  }
+}
+
+.modal-header {
+  display: grid;
+  gap: deprecated.$s-8;
+}
+
+.version-tag {
+  @include deprecated.flexCenter;
+  @include deprecated.headlineSmallTypography;
+  height: deprecated.$s-32;
+  width: deprecated.$s-96;
+  background-color: var(--communication-tag-background-color);
+  color: var(--communication-tag-foreground-color);
+  border-radius: deprecated.$br-8;
+}
+
+.modal-title {
+  @include deprecated.headlineLargeTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.features-block {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-16;
+  width: deprecated.$s-440;
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-8;
+}
+
+.feature-title {
+  @include deprecated.bodyLargeTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.feature-content {
+  @include deprecated.bodyMediumTypography;
+  margin: 0;
+  color: var(--modal-text-foreground-color);
+}
+
+.feature-list {
+  @include deprecated.bodyMediumTypography;
+  color: var(--modal-text-foreground-color);
+  list-style: disc;
+  display: grid;
+  gap: deprecated.$s-8;
+}
+
+.navigation {
+  width: 100%;
+  display: grid;
+  grid-template-areas: "bullets button";
+}
+
+.next-btn {
+  @extend .button-primary;
+  width: deprecated.$s-100;
+  justify-self: flex-end;
+  grid-area: button;
+}

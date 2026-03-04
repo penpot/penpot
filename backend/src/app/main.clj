@@ -226,11 +226,10 @@
    ::http/server
    {::http/port                    (cf/get :http-server-port)
     ::http/host                    (cf/get :http-server-host)
-    ::http/router                  (ig/ref ::http/router)
     ::http/io-threads              (cf/get :http-server-io-threads)
     ::http/max-worker-threads      (cf/get :http-server-max-worker-threads)
     ::http/max-body-size           (cf/get :http-server-max-body-size)
-    ::http/max-multipart-body-size (cf/get :http-server-max-multipart-body-size)
+    ::http/router                  (ig/ref ::http/router)
     ::mtx/metrics                  (ig/ref ::mtx/metrics)}
 
    ::ldap/provider
@@ -275,7 +274,8 @@
     ::email/whitelist    (ig/ref ::email/whitelist)}
 
    ::mgmt/routes
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool            (ig/ref ::db/pool)
+    ::setup/props        (ig/ref ::setup/props)}
 
    :app.http/router
    {::session/manager    (ig/ref ::session/manager)
@@ -316,7 +316,13 @@
     ::climit/enabled     (contains? cf/flags :rpc-climit)}
 
    :app.rpc/rlimit
-   {::wrk/executor (ig/ref ::wrk/netty-executor)}
+   {::wrk/executor (ig/ref ::wrk/netty-executor)
+
+    :app.loggers.mattermost/reporter
+    (ig/ref :app.loggers.mattermost/reporter)
+
+    :app.loggers.database/reporter
+    (ig/ref :app.loggers.database/reporter)}
 
    :app.rpc/methods
    {::http.client/client (ig/ref ::http.client/client)

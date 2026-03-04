@@ -40,7 +40,7 @@
   (let [set-active? (some? id)
         content     (if set-active?
                       label
-                      (tr "ds.inputs.token-field.no-active-token-option"))
+                      (tr "ds.inputs.token-field.no-active-token-option" label))
         default-id  (mf/use-id)
         id          (d/nilv id default-id)
 

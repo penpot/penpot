@@ -29,40 +29,28 @@ impl Default for Path {
     }
 }
 
-fn to_verb(v: u8) -> skia::path::Verb {
-    match v {
-        0 => skia::path::Verb::Move,
-        1 => skia::path::Verb::Line,
-        2 => skia::path::Verb::Quad,
-        3 => skia::path::Verb::Conic,
-        4 => skia::path::Verb::Cubic,
-        5 => skia::path::Verb::Close,
-        _ => skia::path::Verb::Done,
-    }
-}
-
 impl Path {
     pub fn new(segments: Vec<Segment>) -> Self {
-        let mut skia_path = skia::Path::new();
+        let mut pb = skia::PathBuilder::new();
         let mut start = None;
 
         for segment in segments.iter() {
             let destination = match *segment {
                 Segment::MoveTo(xy) => {
                     start = Some(xy);
-                    skia_path.move_to(xy);
+                    pb.move_to(xy);
                     None
                 }
                 Segment::LineTo(xy) => {
-                    skia_path.line_to(xy);
+                    pb.line_to(xy);
                     Some(xy)
                 }
                 Segment::CurveTo((c1, c2, xy)) => {
-                    skia_path.cubic_to(c1, c2, xy);
+                    pb.cubic_to(c1, c2, xy);
                     Some(xy)
                 }
                 Segment::Close => {
-                    skia_path.close();
+                    pb.close();
                     None
                 }
             };
@@ -71,11 +59,12 @@ impl Path {
                 if math::is_close_to(destination.0, start.0)
                     && math::is_close_to(destination.1, start.1)
                 {
-                    skia_path.close();
+                    pb.close();
                 }
             }
         }
 
+        let skia_path = pb.detach();
         let open = subpaths::is_open_path(&segments);
 
         Self {
@@ -86,38 +75,31 @@ impl Path {
     }
 
     pub fn from_skia_path(path: skia::Path) -> Self {
-        let nv = path.count_verbs();
-        let mut verbs = vec![0; nv];
-        path.get_verbs(&mut verbs);
-
-        let np = path.count_points();
-        let mut points = Vec::with_capacity(np);
-        points.resize(np, skia::Point::default());
-        path.get_points(&mut points);
+        let verbs = path.verbs();
+        let points = path.points();
 
         let mut segments = Vec::new();
 
         let mut current_point = 0;
         for verb in verbs {
-            let verb = to_verb(verb);
             match verb {
-                skia::path::Verb::Move => {
+                skia::PathVerb::Move => {
                     let p = points[current_point];
                     segments.push(Segment::MoveTo((p.x, p.y)));
                     current_point += 1;
                 }
-                skia::path::Verb::Line => {
+                skia::PathVerb::Line => {
                     let p = points[current_point];
                     segments.push(Segment::LineTo((p.x, p.y)));
                     current_point += 1;
                 }
-                skia::path::Verb::Quad => {
+                skia::PathVerb::Quad => {
                     let p1 = points[current_point];
                     let p2 = points[current_point + 1];
                     segments.push(Segment::CurveTo(((p1.x, p1.y), (p1.x, p1.y), (p2.x, p2.y))));
                     current_point += 2;
                 }
-                skia::path::Verb::Conic => {
+                skia::PathVerb::Conic => {
                     // TODO: There is no way currently to access the conic weight
                     // to transform this correctly
                     let p1 = points[current_point];
@@ -125,17 +107,14 @@ impl Path {
                     segments.push(Segment::CurveTo(((p1.x, p1.y), (p1.x, p1.y), (p2.x, p2.y))));
                     current_point += 2;
                 }
-                skia::path::Verb::Cubic => {
+                skia::PathVerb::Cubic => {
                     let p1 = points[current_point];
                     let p2 = points[current_point + 1];
                     let p3 = points[current_point + 2];
                     segments.push(Segment::CurveTo(((p1.x, p1.y), (p2.x, p2.y), (p3.x, p3.y))));
                     current_point += 3;
                 }
-                skia::path::Verb::Close => {
-                    segments.push(Segment::Close);
-                }
-                skia::path::Verb::Done => {
+                skia::PathVerb::Close => {
                     segments.push(Segment::Close);
                 }
             }
@@ -184,7 +163,7 @@ impl Path {
             _ => {}
         });
 
-        self.skia_path.transform(mtx);
+        self.skia_path = self.skia_path.make_transform(mtx);
     }
 
     pub fn segments(&self) -> &Vec<Segment> {

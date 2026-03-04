@@ -15,6 +15,7 @@ pnpm run build;
 
 cp pnpm-lock.yaml target/;
 cp package.json target/;
+touch target/pnpm-workspace.yaml;
 
 cat <<EOF | tee target/setup
 #/usr/bin/env bash
@@ -22,7 +23,7 @@ set -e;
 corepack enable;
 corepack install;
 pnpm install
-pnpx playwright install chromium;
+pnpm exec playwright install chromium;
 EOF
 
 chmod +x target/setup;

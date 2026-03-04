@@ -642,13 +642,15 @@ export class SelectionController extends EventTarget {
     } else {
       this.#anchorNode = anchorNode;
       this.#anchorOffset = anchorOffset;
-      if (anchorNode === focusNode) {
-        this.#focusNode = this.#anchorNode;
-        this.#focusOffset = this.#anchorOffset;
+      this.#focusNode = focusNode;
+      this.#focusOffset = focusOffset;
+      // setPosition() collapses the selection to a single caret. We must only use it
+      // when anchorOffset === focusOffset. When both points are in the same node but
+      // offsets differ (e.g. selecting "hola" in "hola adios"), we need setBaseAndExtent()
+      // to preserve the range so we don't incorrectly collapse ranges and lose the selection.
+      if (anchorNode === focusNode && anchorOffset === focusOffset) {
         this.#selection.setPosition(anchorNode, anchorOffset);
       } else {
-        this.#focusNode = focusNode;
-        this.#focusOffset = focusOffset;
         this.#selection.setBaseAndExtent(
           anchorNode,
           anchorOffset,
@@ -1956,12 +1958,15 @@ export class SelectionController extends EventTarget {
         this.startOffset === this.endOffset &&
         this.endOffset === endNode.nodeValue?.length
       ) {
+        const paragraph = this.startParagraph;
+        setParagraphStyles(paragraph, newStyles);
         const newTextSpan = createVoidTextSpan(newStyles);
         this.endTextSpan.after(newTextSpan);
         this.setSelection(newTextSpan.firstChild, 0, newTextSpan.firstChild, 0);
       }
       // The styles are applied to the paragraph
-      else {
+      else
+      {
         const paragraph = this.startParagraph;
         setParagraphStyles(paragraph, newStyles);
         // Apply styles to child text spans.
@@ -1969,11 +1974,9 @@ export class SelectionController extends EventTarget {
           setTextSpanStyles(textSpan, newStyles);
         }
       }
-      return this.#notifyStyleChange();
-
-      // If the startContainer and endContainer are different
-      // then we need to iterate through those nodes to apply
-      // the styles.
+    // If the startContainer and endContainer are different
+    // then we need to iterate through those nodes to apply
+    // the styles.
     } else if (startNode !== endNode) {
       const safeGuard = new SafeGuard("applyStylesTo");
       safeGuard.start();
@@ -2022,12 +2025,12 @@ export class SelectionController extends EventTarget {
         }
 
         // We've reached the final node so we can return safely.
-        if (this.#textNodeIterator.currentNode === expectedEndNode) return;
+        if (this.#textNodeIterator.currentNode === expectedEndNode)
+          break;
 
         this.#textNodeIterator.nextNode();
       } while (this.#textNodeIterator.currentNode);
     }
-
     return this.#notifyStyleChange();
   }
 

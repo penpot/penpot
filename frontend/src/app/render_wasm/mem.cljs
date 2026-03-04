@@ -61,6 +61,29 @@
   []
   (h/call wasm/internal-module "_free_bytes"))
 
+(defn read-string
+  "Read a UTF-8 string from WASM memory given a byte pointer/offset.
+   Uses Emscripten's UTF8ToString to decode the string."
+  [ptr]
+  (h/call wasm/internal-module "UTF8ToString" ptr))
+
+(defn read-null-terminated-string
+  "Read a null-terminated UTF-8 string from WASM memory.
+   Manually reads bytes until null terminator and decodes using TextDecoder."
+  [ptr]
+  (when (and ptr (not (zero? ptr)))
+    (let [heap (get-heap-u8)
+          ;; Find the null terminator
+          end-idx (loop [idx ptr]
+                    (if (zero? (aget heap idx))
+                      idx
+                      (recur (inc idx))))
+          ;; Extract the bytes (excluding null terminator)
+          bytes (.slice heap ptr end-idx)
+          ;; Decode using TextDecoder
+          decoder (js/TextDecoder. "utf-8")]
+      (.decode decoder bytes))))
+
 (defn slice
   "Returns a copy of a portion of a typed array into a new typed array
   object selected from start to end."

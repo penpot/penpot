@@ -54,6 +54,7 @@
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.text-editor-input :refer [text-editor-input]]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
@@ -72,7 +73,7 @@
         objects)))
 
 (mf/defc viewport*
-  [{:keys [selected wglobal wlocal layout file page palete-size]}]
+  [{:keys [selected wglobal wlocal layout file page palete-size file-version-id]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
@@ -140,6 +141,7 @@
 
         canvas-ref        (mf/use-ref nil)
         text-editor-ref   (mf/use-ref nil)
+        last-file-version-id-ref (mf/use-ref nil)
 
         ;; STATE REFS
         disable-paste-ref (mf/use-ref false)
@@ -222,8 +224,9 @@
         show-gradient-handlers?  (= (count selected) 1)
         show-grids?              (contains? layout :display-guides)
 
-        show-frame-outline?      (= transform :move)
+        show-frame-outline?      (and (= transform :move) (not panning))
         show-outlines?           (and (nil? transform)
+                                      (not panning)
                                       (not edition)
                                       (not drawing-obj)
                                       (not (#{:comments :path :curve} drawing-tool)))
@@ -343,11 +346,18 @@
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render "with-effect")))
 
-    (mf/with-effect [@canvas-init? zoom vbox background]
-      (when (and @canvas-init? (not @initialized?))
-        (wasm.api/clear-canvas-pixels)
-        (wasm.api/initialize-viewport base-objects zoom vbox background)
-        (reset! initialized? true)))
+    (mf/with-effect [@canvas-init? file-version-id zoom vbox background]
+      (when @canvas-init?
+        (if (not @initialized?)
+          (do
+            (wasm.api/clear-canvas-pixels)
+            (wasm.api/initialize-viewport base-objects zoom vbox background)
+            (reset! initialized? true)
+            (mf/set-ref-val! last-file-version-id-ref file-version-id))
+          (when (and (some? file-version-id)
+                     (not= file-version-id (mf/ref-val last-file-version-id-ref)))
+            (wasm.api/initialize-viewport base-objects zoom vbox background)
+            (mf/set-ref-val! last-file-version-id-ref file-version-id)))))
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)
@@ -407,7 +417,14 @@
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
-                                               :canvas-ref canvas-ref}])]
+                                               :canvas-ref canvas-ref}])
+
+      ;; WASM text editor contenteditable (must be outside SVG to work)
+      (when (and show-text-editor?
+                 (features/active-feature? @st/state "text-editor-wasm/v1"))
+        [:& text-editor-input {:shape editing-shape
+                               :zoom zoom
+                               :vbox vbox}])]
 
      [:canvas {:id "render"
                :data-testid "canvas-wasm-shapes"
@@ -452,7 +469,10 @@
                 :height (max 0 (- (:height vbox) rule-area-size))}]]]
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
-       (when show-text-editor?
+       ;; Text editor handling:
+       ;; - When text-editor-wasm/v1 is active, contenteditable is rendered in viewport-overlays (HTML DOM)
+       (when (and show-text-editor?
+                  (not (features/active-feature? @st/state "text-editor-wasm/v1")))
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
                                       :canvas-ref canvas-ref
@@ -542,7 +562,7 @@
            :shift? @shift?}])
 
        [:> widgets/frame-titles*
-        {:objects (with-meta objects-modified nil)
+        {:objects objects-modified
          :selected selected
          :zoom zoom
          :is-show-artboard-names show-artboard-names?

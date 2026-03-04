@@ -477,30 +477,32 @@ pub fn debug_render_bool_paths(
                 paint.set_alpha_f(1.0);
                 paint.set_style(skia::PaintStyle::Stroke);
 
-                let mut path = skia::Path::default();
-                path.move_to((b.1.start.x as f32, b.1.start.y as f32));
-
-                match b.1.handles {
-                    BezierHandles::Linear => {
-                        path.line_to((b.1.end.x as f32, b.1.end.y as f32));
+                let path = {
+                    let mut pb = skia::PathBuilder::new();
+                    pb.move_to((b.1.start.x as f32, b.1.start.y as f32));
+                    match b.1.handles {
+                        BezierHandles::Linear => {
+                            pb.line_to((b.1.end.x as f32, b.1.end.y as f32));
+                        }
+                        BezierHandles::Quadratic { handle } => {
+                            pb.quad_to(
+                                (handle.x as f32, handle.y as f32),
+                                (b.1.end.x as f32, b.1.end.y as f32),
+                            );
+                        }
+                        BezierHandles::Cubic {
+                            handle_start,
+                            handle_end,
+                        } => {
+                            pb.cubic_to(
+                                (handle_start.x as f32, handle_start.y as f32),
+                                (handle_end.x as f32, handle_end.y as f32),
+                                (b.1.end.x as f32, b.1.end.y as f32),
+                            );
+                        }
                     }
-                    BezierHandles::Quadratic { handle } => {
-                        path.quad_to(
-                            (handle.x as f32, handle.y as f32),
-                            (b.1.end.x as f32, b.1.end.y as f32),
-                        );
-                    }
-                    BezierHandles::Cubic {
-                        handle_start,
-                        handle_end,
-                    } => {
-                        path.cubic_to(
-                            (handle_start.x as f32, handle_start.y as f32),
-                            (handle_end.x as f32, handle_end.y as f32),
-                            (b.1.end.x as f32, b.1.end.y as f32),
-                        );
-                    }
-                }
+                    pb.detach()
+                };
                 canvas.draw_path(&path, &paint);
 
                 let mut v1 = b.1.normal(TValue::Parametric(1.0));

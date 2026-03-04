@@ -35,8 +35,7 @@
    javax.xml.parsers.SAXParserFactory
    org.apache.commons.io.IOUtils
    org.im4java.core.ConvertCmd
-   org.im4java.core.IMOperation
-   org.im4java.core.Info))
+   org.im4java.core.IMOperation))
 
 (def default-max-file-size
   (* 1024 1024 10)) ; 10 MiB
@@ -55,7 +54,7 @@
    [:path ::fs/path]
    [:mtype {:optional true} ::sm/text]])
 
-(def ^:private check-input
+(def check-input
   (sm/check-fn schema:input))
 
 (defn validate-media-type!
@@ -224,17 +223,18 @@
   ;; If we are processing an animated gif we use the first frame with -scene 0
   (let [dim-result (sh/sh "identify" "-format" "%w %h\n" path)
         orient-result (sh/sh "identify" "-format" "%[EXIF:Orientation]\n" path)]
-    (if (and (= 0 (:exit dim-result))
-             (= 0 (:exit orient-result)))
+    (when (= 0 (:exit dim-result))
       (let [[w h] (-> (:out dim-result)
                       str/trim
                       (clojure.string/split #"\s+")
                       (->> (mapv #(Integer/parseInt %))))
-            orientation (-> orient-result :out str/trim)]
-        (case orientation
-          ("6" "8") {:width h :height w} ; Rotated 90 or 270 degrees
-          {:width w :height h}))         ; Normal or unknown orientation
-      nil)))
+            orientation-exit (:exit orient-result)
+            orientation      (-> orient-result :out str/trim)]
+        (if (= 0 orientation-exit)
+          (case orientation
+            ("6" "8") {:width h :height w} ; Rotated 90 or 270 degrees
+            {:width w :height h})          ; Normal or unknown orientation
+          {:width w :height h})))))        ; If orientation can't be read, use dimensions as-is
 
 (defmethod process :info
   [{:keys [input] :as params}]
@@ -247,26 +247,37 @@
                     :hint "uploaded svg does not provides dimensions"))
         (merge input info {:ts (ct/now) :size (fs/size path)}))
 
-      (let [instance (Info. (str path))
-            mtype'   (.getProperty instance "Mime type")]
+      (let [path-str      (str path)
+            identify-res  (sh/sh "identify" "-format" "image/%[magick]\n" path-str)
+            ;; identify prints one line per frame (animated GIFs, etc.); we take the first one
+            mtype'        (if (zero? (:exit identify-res))
+                            (-> identify-res
+                                :out
+                                str/trim
+                                (str/split #"\s+" 2)
+                                first
+                                str/lower)
+                            (ex/raise :type :validation
+                                      :code :invalid-image
+                                      :hint "invalid image"))
+            {:keys [width height]}
+            (or (get-dimensions-with-orientation path-str)
+                (do
+                  (l/warn "Failed to read image dimensions with orientation" {:path path})
+                  (ex/raise :type :validation
+                            :code :invalid-image
+                            :hint "invalid image")))]
         (when (and (string? mtype)
-                   (not= mtype mtype'))
+                   (not= (str/lower mtype) mtype'))
           (ex/raise :type :validation
                     :code :media-type-mismatch
                     :hint (str "Seems like you are uploading a file whose content does not match the extension."
                                "Expected: " mtype ". Got: " mtype')))
-        (let [{:keys [width height]}
-              (or (get-dimensions-with-orientation (str path))
-                  (do
-                    (l/warn "Failed to read image dimensions with orientation; falling back to im4java"
-                            {:path path})
-                    {:width  (.getPageWidth instance)
-                     :height (.getPageHeight instance)}))]
-          (assoc input
-                 :width  width
-                 :height height
-                 :size (fs/size path)
-                 :ts (ct/now)))))))
+        (assoc input
+               :width  width
+               :height height
+               :size (fs/size path)
+               :ts (ct/now))))))
 
 (defmethod process-error org.im4java.core.InfoException
   [error]
@@ -370,6 +381,22 @@
               (when (zero? (:exit res))
                 (:out res))))
 
+          (woff2->sfnt [data]
+            ;; woff2_decompress outputs to same directory with .ttf extension
+            (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix ".woff2")
+                  foutput (fs/path (str/replace (str finput) #"\.woff2$" ".ttf"))]
+              (try
+                (io/write* finput data)
+                (let [res (sh/sh "woff2_decompress" (str finput))]
+                  (if (zero? (:exit res))
+                    foutput
+                    (do
+                      (when (fs/exists? foutput)
+                        (fs/delete foutput))
+                      nil)))
+                (finally
+                  (fs/delete finput)))))
+
           ;; Documented here:
           ;; https://docs.microsoft.com/en-us/typography/opentype/spec/otff#table-directory
           (get-sfnt-type [data]
@@ -419,4 +446,27 @@
 
               (= stype :ttf)
               (-> (assoc "font/otf" (ttf->otf sfnt))
-                  (assoc "font/ttf" sfnt)))))))))
+                  (assoc "font/ttf" sfnt)))))
+
+        (contains? current "font/woff2")
+        (let [data    (get input "font/woff2")
+              foutput (woff2->sfnt data)]
+          (when-not foutput
+            (ex/raise :type :validation
+                      :code :invalid-woff2-file
+                      :hint "invalid woff2 file"))
+          (try
+            (let [sfnt  (io/read* foutput)
+                  type (get-sfnt-type sfnt)]
+              (cond-> input
+                (= type :otf)
+                (-> (assoc "font/otf" sfnt)
+                    (assoc "font/ttf" (otf->ttf sfnt))
+                    (update "font/woff" gen-if-nil #(ttf-or-otf->woff sfnt)))
+
+                (= type :ttf)
+                (-> (assoc "font/ttf" sfnt)
+                    (assoc "font/otf" (ttf->otf sfnt))
+                    (update "font/woff" gen-if-nil #(ttf-or-otf->woff sfnt)))))
+            (finally
+              (fs/delete foutput))))))))

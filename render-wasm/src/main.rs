@@ -301,11 +301,7 @@ pub extern "C" fn set_view_end() {
         #[cfg(feature = "profile-macros")]
         {
             let total_time = performance::get_time() - unsafe { VIEW_INTERACTION_START };
-            performance::console_log!(
-                "[PERF] view_interaction (zoom_changed={}): {}ms",
-                zoom_changed,
-                total_time
-            );
+            performance::console_log!("[PERF] view_interaction: {}ms", total_time);
         }
     });
 }
@@ -416,6 +412,9 @@ fn set_children_set(entries: Vec<Uuid>) {
 
         for id in entries {
             state.touch_shape(id);
+            if let Some(children_shape) = state.shapes.get_mut(&id) {
+                children_shape.set_deleted(false);
+            }
         }
     });
 
@@ -699,21 +698,6 @@ pub extern "C" fn clean_modifiers() {
     with_state_mut!(state, {
         state.shapes.clean_all();
     });
-}
-
-#[no_mangle]
-pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::try_from(data).unwrap())
-        .collect();
-
-    with_state!(state, {
-        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
-        mem::write_vec(result)
-    })
 }
 
 #[no_mangle]

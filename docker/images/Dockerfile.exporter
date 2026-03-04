@@ -5,7 +5,8 @@ ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     NODE_VERSION=v22.22.0 \
     DEBIAN_FRONTEND=noninteractive \
-    PATH=/opt/node/bin:/opt/imagick/bin:$PATH
+    PATH=/opt/node/bin:/opt/imagick/bin:$PATH \
+    PLAYWRIGHT_BROWSERS_PATH=/opt/penpot/browsers
 
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
@@ -107,7 +108,7 @@ RUN set -eux; \
 
 ARG BUNDLE_PATH="./bundle-exporter/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
-COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
 
 WORKDIR /opt/penpot/exporter
 USER penpot:penpot
