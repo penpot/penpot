@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType, ShapeGeomAttributes } from 'penpot-exporter/lib'
+import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType, ShapeGeomAttributes, ModObjChange, AddObjChange, DelObjChange } from 'penpot-exporter/lib'
 import { createNode } from './node-factory'
 import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Preset } from './presets'
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from '../lib/renderer/api/constants'
 import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
 import { useWorkspaceDevStore } from '../lib/renderer/store/workspace-dev-store'
-import { addNode, updateNode, deleteNode, setDocument, createNewDocument } from '../lib/page-crud'
+import { applyChanges, setDocument, createNewDocument } from '../lib/page-crud'
 import './DevToolbar.css'
 import type { ShapeType } from '../lib/renderer/types'
 import { isFrameShape } from '../lib/worker/geometry/shapes'
@@ -18,6 +18,7 @@ type Tab = 'add' | 'nodes' | 'advanced'
 
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 600
+const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 
 export function DevToolbar() {
   const nodes = useWorkspaceDevStore((state) => state.currentPageNodes)
@@ -237,7 +238,23 @@ export function DevToolbar() {
         newNode.blur = blur
       }
 
-      addNode(newNode)
+      const state = useWorkspaceStore.getState()
+      const pageId = state.pageId
+      const page = pageId ? state.documentModel?.getPage(pageId) : undefined
+      if (pageId && page) {
+        const root = Object.values(page.objects).find((o) => o.parentId == null)
+        const rootId = root?.id ?? ROOT_UUID
+        const addChange: AddObjChange = {
+          type: 'add-obj',
+          id: newNode.id,
+          obj: newNode,
+          frameId: rootId,
+          parentId: rootId,
+          index: root?.shapes?.length ?? 0,
+          ...(pageId ? { pageId } : {}),
+        }
+        applyChanges([addChange])
+      }
     } catch (error) {
       console.error('Failed to create node:', error)
       alert(`Failed to create node: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -246,11 +263,14 @@ export function DevToolbar() {
 
   const handleRemoveNode = useCallback(
     (nodeId: string) => {
-      if (nodeId === '00000000-0000-0000-0000-000000000000') {
+      if (nodeId === ROOT_UUID) {
         alert('Cannot remove root frame')
         return
       }
-      deleteNode(nodeId)
+      const delChange: DelObjChange = { type: 'del-obj', id: nodeId }
+      const pageId = useWorkspaceStore.getState().pageId
+      if (pageId) (delChange as { pageId?: string }).pageId = pageId
+      applyChanges([delChange])
     },
     []
   )
@@ -293,8 +313,7 @@ export function DevToolbar() {
     if (!isPageReady) return
 
     if (isCreatingNew) {
-      // Create new node
-      const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
+      // Create new node via applyChanges
       const newNode = {
         id: crypto.randomUUID(),
         name: 'Shape',
@@ -333,9 +352,25 @@ export function DevToolbar() {
         maskedGroup: advMaskedGroup || undefined,
         growType: advGrowType,
       } as PenpotNode
-      addNode(newNode)
+      const state = useWorkspaceStore.getState()
+      const pageId = state.pageId
+      const page = pageId ? state.documentModel?.getPage(pageId) : undefined
+      if (pageId && page) {
+        const root = Object.values(page.objects).find((o) => o.parentId == null)
+        const rootId = root?.id ?? ROOT_UUID
+        const addChange: AddObjChange = {
+          type: 'add-obj',
+          id: newNode.id,
+          obj: newNode,
+          frameId: rootId,
+          parentId: rootId,
+          index: root?.shapes?.length ?? 0,
+          ...(pageId ? { pageId } : {}),
+        }
+        applyChanges([addChange])
+      }
     } else if (selectedNodeId) {
-      // Update existing node
+      // Update existing node via Changes
       const updates: Partial<PenpotNode> = {
         x: advX,
         y: advY,
@@ -370,7 +405,13 @@ export function DevToolbar() {
         maskedGroup: advMaskedGroup || undefined,
         growType: advGrowType,
       }
-      updateNode(selectedNodeId, updates)
+      const operations = Object.entries(updates)
+        .filter(([, val]) => val !== undefined)
+        .map(([attr, val]) => ({ type: 'set' as const, attr, val }))
+      if (operations.length > 0) {
+        const change: ModObjChange = { type: 'mod-obj', id: selectedNodeId, operations }
+        applyChanges([change])
+      }
     }
   }, [isPageReady, isCreatingNew, selectedNodeId, selectedType, advX, advY, advWidth, advHeight, advRotation, advTransform, advFills, advStrokes, advShadows, advBlur, advOpacity, advBlendMode, advHidden, advR1, advR2, advR3, advR4, advConstraintsH, advConstraintsV, advClipContent, advMaskedGroup, advGrowType])
 

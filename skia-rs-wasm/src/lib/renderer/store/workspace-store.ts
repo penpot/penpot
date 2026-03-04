@@ -8,7 +8,7 @@ import { create } from 'zustand'
 import type { WasmModule } from '../wasm-types'
 import type { Viewport } from '../viewport'
 import { Renderer } from '../index'
-import type { PenpotNode, Selrect, Change } from 'penpot-exporter/lib'
+import type { Selrect, Change } from 'penpot-exporter/lib'
 import type { ResizeHandlePosition, SelectionRectResult } from '../types'
 import type { WorkerClient } from '../../worker/types'
 import type { IndexedPage, IndexedNode } from '../../worker/types'
@@ -22,10 +22,6 @@ export interface IDocumentModel {
   setActivePage(pageId: string): Promise<void>
   addPage(page: IndexedPage): Promise<void>
   deletePage(pageId: string): Promise<void>
-  addNode(node: IndexedNode | PenpotNode): Promise<void>
-  updateNode(nodeId: string, updates: Partial<IndexedNode>): Promise<void>
-  applyNodeUpdates(updates: Record<string, Partial<IndexedNode>>): Promise<void>
-  deleteNode(nodeId: string): Promise<void>
   applyChanges(changes: Change[], options?: { pageId?: string }): Promise<void>
 }
 
