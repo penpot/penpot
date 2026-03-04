@@ -701,12 +701,12 @@ impl TextContent {
     pub fn set_layout_from_result(
         &mut self,
         result: TextContentLayoutResult,
-        default_height: f32,
         default_width: f32,
+        default_height: f32,
     ) {
         self.layout.set(result.0, result.1);
         self.size
-            .copy_finite_size(result.2, default_height, default_width);
+            .copy_finite_size(result.2, default_width, default_height);
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {

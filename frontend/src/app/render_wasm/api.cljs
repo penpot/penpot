@@ -930,6 +930,7 @@
          x (aget heapf32 (+ offset 3))
          y (aget heapf32 (+ offset 4))]
      (mem/free)
+     #_{:x x :y y :width (mth/ceil width) :height height :max-width (mth/ceil max-width)}
      {:x x :y y :width width :height height :max-width max-width})))
 
 (defn intersect-position-in-shape

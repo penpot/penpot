@@ -173,6 +173,7 @@ fn propagate_transform(
     bounds: &mut HashMap<Uuid, Bounds>,
     modifiers: &mut HashMap<Uuid, Matrix>,
 ) {
+    println!("propagate_transform");
     let Some(shape) = state.shapes.get(&entry.id) else {
         return;
     };
