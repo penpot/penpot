@@ -7,7 +7,7 @@ use crate::state::TextSelection;
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::{with_state, with_state_mut, STATE};
-use skia_safe::Color;
+use skia_safe::{textlayout::TextDirection, Color};
 
 #[derive(PartialEq, ToJs)]
 #[repr(u8)]
@@ -527,7 +527,25 @@ pub extern "C" fn text_editor_move_cursor(direction: CursorDirection, extend_sel
 
         let current = state.text_editor_state.selection.focus;
 
-        let new_cursor = match direction {
+        // Get the text direction of the span at the current cursor position
+        let span_text_direction = if current.paragraph < paragraphs.len() {
+            get_span_text_direction_at_offset(&paragraphs[current.paragraph], current.offset)
+        } else {
+            TextDirection::LTR
+        };
+
+        // For horizontal navigation, swap Backward/Forward when in RTL text
+        let adjusted_direction = if span_text_direction == TextDirection::RTL {
+            match direction {
+                CursorDirection::Backward => CursorDirection::Forward,
+                CursorDirection::Forward => CursorDirection::Backward,
+                other => other,
+            }
+        } else {
+            direction
+        };
+
+        let new_cursor = match adjusted_direction {
             CursorDirection::Backward => move_cursor_backward(&current, paragraphs),
             CursorDirection::Forward => move_cursor_forward(&current, paragraphs),
             CursorDirection::LineBefore => {
@@ -1134,6 +1152,20 @@ fn insert_text_with_newlines(
     }
 
     Some(current_cursor)
+}
+
+/// Get the text direction of the span at a given offset in a paragraph.
+fn get_span_text_direction_at_offset(
+    para: &Paragraph,
+    char_offset: usize,
+) -> skia_safe::textlayout::TextDirection {
+    if let Some((span_idx, _)) = find_span_at_offset(para, char_offset) {
+        if let Some(span) = para.children().get(span_idx) {
+            return span.text_direction;
+        }
+    }
+    // Fallback to paragraph's text direction
+    para.text_direction()
 }
 
 /// Insert text at a cursor position. Returns the new character offset after insertion.
