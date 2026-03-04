@@ -8,7 +8,7 @@ import { useCallback } from 'react'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
 import { mousePosition$ } from '../../renderer/streams'
 import type { ResizeHandlePosition } from '../../renderer/types'
-import { HANDLE_SIZE_WORLD, getResizeCursor, getRotationCursor, matrixToRotationDeg } from './constants'
+import { HANDLE_SIZE_WORLD, getResizeCursor, getRotationCursor, matrixHasHalfFlip, matrixToRotationDeg } from './constants'
 import { SelectionRect } from './SelectionRect'
 import { ResizeHandles } from './ResizeHandles'
 import { MoveHitArea } from './MoveHitArea'
@@ -136,11 +136,12 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       ? `translate(${wasmSelectionRect.center.x},${wasmSelectionRect.center.y}) matrix(${wasmSelectionRect.transform.a},${wasmSelectionRect.transform.b},${wasmSelectionRect.transform.c},${wasmSelectionRect.transform.d},0,0)`
       : ''
   const rotationDeg = wasmSelectionRect != null ? matrixToRotationDeg(wasmSelectionRect.transform) : undefined
+  const halfFlip = wasmSelectionRect != null ? matrixHasHalfFlip(wasmSelectionRect.transform) : false
   const overrideCursor =
     isResizing && resizeHandle
-      ? getResizeCursor(resizeHandle, rotationDeg)
+      ? getResizeCursor(resizeHandle, rotationDeg, halfFlip)
       : isRotating && rotationCorner
-        ? getRotationCursor(rotationCorner, rotationDeg)
+        ? getRotationCursor(rotationCorner, rotationDeg, halfFlip)
         : null
 
   return (
@@ -167,6 +168,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
                 effectiveBounds={rect}
                 zoom={zoom}
                 rotationDeg={rotationDeg}
+                halfFlip={halfFlip}
                 overrideCursor={overrideCursor}
                 onResizeHandlePointerDown={onResizeHandlePointerDown}
               />
@@ -180,6 +182,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
                 bounds={rect}
                 zoom={zoom}
                 rotationDeg={rotationDeg}
+                halfFlip={halfFlip}
                 overrideCursor={overrideCursor}
                 onPointerDown={onRotationPointerDown}
               />

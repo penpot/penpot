@@ -8,6 +8,29 @@ export function matrixToRotationDeg(transform: Matrix): number {
   return (Math.atan2(transform.b, transform.a) * 180) / Math.PI
 }
 
+/**
+ * True when the transform has negative determinant (reflection / half-flip).
+ * Matches frontend half-flip: flip on exactly one axis; cursor needs per-handle ±90° correction.
+ */
+export function matrixHasHalfFlip(transform: Matrix): boolean {
+  return transform.a * transform.d - transform.b * transform.c < 0
+}
+
+/**
+ * Effective rotation in degrees for cursor at the given handle when selection may be half-flipped.
+ * Frontend: half-flip → top-left/bottom-right use rotation-90, top-right/bottom-left use rotation+90.
+ */
+function getEffectiveCursorRotationDeg(
+  position: ResizeHandlePosition,
+  rotationDeg: number,
+  halfFlip: boolean
+): number {
+  if (!halfFlip) return rotationDeg
+  if (position === 'top-left' || position === 'bottom-right') return rotationDeg - 90
+  if (position === 'top-right' || position === 'bottom-left') return rotationDeg + 90
+  return rotationDeg
+}
+
 export const SELECTION_STROKE = 'var(--color-accent-tertiary, #0d7377)'
 export const SELECTION_STROKE_WIDTH = 1
 export const HANDLE_FILL = 'var(--app-white, #fff)'
@@ -69,13 +92,16 @@ function buildRotatedResizeCursorDataUrl(angleDeg: number): string {
 /**
  * Resize cursor for the given handle. Always returns a data URL of the
  * horizontal double-arrow SVG rotated by the handle's effective angle.
+ * When halfFlip is true (transform has reflection), applies per-handle ±90° correction.
  */
 export function getResizeCursor(
   position: ResizeHandlePosition,
-  rotationDeg?: number
+  rotationDeg?: number,
+  halfFlip?: boolean
 ): string {
   const baseAngle = HANDLE_BASE_ANGLE[position] ?? 135
-  const effectiveAngle = ((baseAngle + (rotationDeg ?? 0)) % 360 + 360) % 360
+  const effectiveRotation = getEffectiveCursorRotationDeg(position, rotationDeg ?? 0, halfFlip ?? false)
+  const effectiveAngle = ((baseAngle + effectiveRotation) % 360 + 360) % 360
   return buildRotatedResizeCursorDataUrl(effectiveAngle)
 }
 
@@ -106,10 +132,12 @@ function rotationCursorIndexForAngle(angleDeg: number): number {
  */
 export function getRotationCursor(
   position: ResizeHandlePosition,
-  rotationDeg?: number
+  rotationDeg?: number,
+  halfFlip?: boolean
 ): string {
   const baseAngle = HANDLE_BASE_ANGLE[position] ?? 135
+  const effectiveRotation = getEffectiveCursorRotationDeg(position, rotationDeg ?? 0, halfFlip ?? false)
   const effectiveAngle =
-    (baseAngle + (rotationDeg ?? 0) + ROTATION_CURSOR_ANGLE_OFFSET_DEG + 360) % 360
+    (baseAngle + effectiveRotation + ROTATION_CURSOR_ANGLE_OFFSET_DEG + 360) % 360
   return ROTATION_CURSOR_CACHE[rotationCursorIndexForAngle(effectiveAngle)]
 }
