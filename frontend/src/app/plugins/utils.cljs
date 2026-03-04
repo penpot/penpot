@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.json :as json]
    [app.common.schema :as sm]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
@@ -259,3 +260,8 @@
     (println (sm/humanize-explain explain))
     (js/console.log (ex-data cause)))
   (js/console.log (.-stack cause)))
+
+(defn is-main-component-proxy?
+  [p]
+  (when-let [shape (proxy->shape p)]
+    (ctk/main-instance? shape)))

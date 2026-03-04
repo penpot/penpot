@@ -1351,16 +1351,22 @@
 
            :combineAsVariants
            (fn [ids]
-             (if (or (not (seq ids)) (not (every? uuid/parse* ids)))
+             (cond
+               (or (not (seq ids)) (not (every? uuid/parse* ids)))
                (u/display-not-valid :ids ids)
+
+               :else
                (let [shape     (u/locate-shape file-id page-id id)
                      component (u/locate-library-component file-id (:component-id shape))
                      ids (->> ids
                               (map uuid/uuid)
                               (into #{id}))]
-                 (when  (and component (not (ctk/is-variant? component)))
-                   (st/emit!
-                    (dwv/combine-as-variants ids {:trigger "plugin:combine-as-variants"})))))))
+                 (when (and component (not (ctk/is-variant? component)))
+                   (let [variant-id (uuid/next)]
+                     (st/emit! (dwv/combine-as-variants
+                                ids
+                                {:trigger "plugin:combine-as-variants" :variant-id variant-id}))
+                     (variant-proxy plugin-id file-id variant-id)))))))
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
