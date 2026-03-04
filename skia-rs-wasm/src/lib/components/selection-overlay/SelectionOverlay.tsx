@@ -4,16 +4,18 @@
  */
 
 import type { RefObject } from 'react'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
 import { mousePosition$ } from '../../renderer/streams'
 import type { ResizeHandlePosition } from '../../renderer/types'
 import { HANDLE_SIZE_WORLD, getResizeCursor, getRotationCursor, matrixHasHalfFlip, matrixToRotationDeg } from './constants'
 import { SelectionRect } from './SelectionRect'
 import { ResizeHandles } from './ResizeHandles'
+import { CornerHandles } from './CornerHandles'
 import { MoveHitArea } from './MoveHitArea'
 import { RotationHitArea } from './RotationHitArea'
 import { AreaMarquee } from './AreaMarquee'
+import { getSelectionWorldCorners } from './world-corners'
 
 export interface SelectionOverlayProps {
   canvasSize: { width: number; height: number }
@@ -144,6 +146,11 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
         ? getRotationCursor(rotationCorner, rotationDeg, halfFlip)
         : null
 
+  const worldCorners = useMemo(
+    () => (wasmSelectionRect != null ? getSelectionWorldCorners(wasmSelectionRect) : null),
+    [wasmSelectionRect]
+  )
+
   return (
     <svg
       key={`selection-overlay-${viewportVersion}`}
@@ -160,35 +167,48 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       preserveAspectRatio="xMidYMid meet"
     >
       {showSelectionRect && rect != null && (
-        <g transform={transformStr}>
-          <SelectionRect bounds={rect} skipTransform />
-          {showHandles && (
-            <>
-              <ResizeHandles
-                effectiveBounds={rect}
-                zoom={zoom}
-                rotationDeg={rotationDeg}
-                halfFlip={halfFlip}
-                overrideCursor={overrideCursor}
-                onResizeHandlePointerDown={onResizeHandlePointerDown}
-              />
-              <MoveHitArea
-                bounds={rect}
-                hitSize={hitSize}
-                overrideCursor={overrideCursor}
-                onPointerDown={onSelectionRectPointerDown}
-              />
-              <RotationHitArea
-                bounds={rect}
-                zoom={zoom}
-                rotationDeg={rotationDeg}
-                halfFlip={halfFlip}
-                overrideCursor={overrideCursor}
-                onPointerDown={onRotationPointerDown}
-              />
-            </>
+        <>
+          <g transform={transformStr}>
+            <SelectionRect bounds={rect} skipTransform />
+            {showHandles && (
+              <>
+                <MoveHitArea
+                  bounds={rect}
+                  hitSize={hitSize}
+                  overrideCursor={overrideCursor}
+                  onPointerDown={onSelectionRectPointerDown}
+                />
+                <ResizeHandles
+                  effectiveBounds={rect}
+                  zoom={zoom}
+                  skipCorners
+                  rotationDeg={rotationDeg}
+                  halfFlip={halfFlip}
+                  overrideCursor={overrideCursor}
+                  onResizeHandlePointerDown={onResizeHandlePointerDown}
+                />
+                <RotationHitArea
+                  bounds={rect}
+                  zoom={zoom}
+                  rotationDeg={rotationDeg}
+                  halfFlip={halfFlip}
+                  overrideCursor={overrideCursor}
+                  onPointerDown={onRotationPointerDown}
+                />
+              </>
+            )}
+          </g>
+          {showHandles && worldCorners != null && (
+            <CornerHandles
+              worldCorners={worldCorners}
+              zoom={zoom}
+              rotationDeg={rotationDeg}
+              halfFlip={halfFlip}
+              overrideCursor={overrideCursor}
+              onResizeHandlePointerDown={onResizeHandlePointerDown}
+            />
           )}
-        </g>
+        </>
       )}
       {showAreaMarquee && areaMarqueeWorld && (
         <AreaMarquee world={areaMarqueeWorld} zoom={zoom} />
