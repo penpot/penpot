@@ -58,7 +58,8 @@
            is-filtered is-expanded dnd-over dnd-over-top dnd-over-bot hide-toggle
            ;; Callbacks
            on-select-shape on-context-menu on-pointer-enter on-pointer-leave on-zoom-to-selected
-           on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking]}]
+           on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking
+           on-tab-press]}]
 
   (let [id                    (:id item)
         name                  (:name item)
@@ -164,7 +165,8 @@
                         :variant-properties variant-properties
                         :variant-error variant-error
                         :component-id component-id
-                        :is-hidden hidden?}]]
+                        :is-hidden hidden?
+                        :on-tab-press on-tab-press}]]
       (when (not ^boolean is-read-only)
         [:div {:class (stl/css-case
                        :element-actions true
@@ -416,7 +418,25 @@
          ;; We don't want to change the structure of component copies
          :draggable? (and ^boolean is-sortable
                           ^boolean (not is-read-only)
-                          ^boolean (not (ctn/has-any-copy-parent? objects item))))]
+                          ^boolean (not (ctn/has-any-copy-parent? objects item))))
+
+        on-tab-press
+        (mf/use-fn
+         (mf/deps id objects)
+         (fn [event]
+           (let [shift?    (kbd/shift? event)
+                 shape     (get objects id)
+                 parent    (get objects (:parent-id shape))
+                 siblings  (:shapes parent)
+                 pos       (d/index-of siblings id)]
+             (when (some? pos)
+               (let [;; Layers render in reverse: Tab (visually down) = dec index,
+                     ;; Shift+Tab (visually up) = inc index
+                     target-id (if shift?
+                                 (get siblings (inc pos))
+                                 (get siblings (dec pos)))]
+                 (when (some? target-id)
+                   (st/emit! (dw/start-rename-shape target-id))))))))]
 
     (mf/with-effect [is-selected selected]
       (let [single? (= (count selected) 1)
@@ -531,6 +551,7 @@
       :on-disable-drag disable-drag
       :on-toggle-visibility toggle-visibility
       :on-toggle-blocking toggle-blocking
+      :on-tab-press on-tab-press
       :style style}
 
      (when (and ^boolean render-children

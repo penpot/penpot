@@ -24,8 +24,8 @@
   [{:keys [shape-id rename-id shape-name is-shape-touched disabled-double-click
            on-start-edit on-stop-edit depth parent-size is-selected
            type-comp type-frame component-id is-hidden is-blocked
-           variant-id variant-name variant-properties variant-error ref]}]
-
+           variant-id variant-name variant-properties variant-error
+           on-tab-press ref]}]
   (let [edition*         (mf/use-state false)
         edition?         (deref edition*)
 
@@ -58,13 +58,14 @@
 
         accept-edit
         (mf/use-fn
-         (mf/deps shape-id on-stop-edit component-id variant-id variant-name variant-properties)
+         (mf/deps edition? shape-id on-stop-edit component-id variant-id variant-name variant-properties)
          (fn []
-           (let [name-input     (mf/ref-val ref)
-                 name           (str/trim (dom/get-value name-input))]
-             (on-stop-edit)
-             (reset! edition* false)
-             (st/emit! (dw/rename-shape-or-variant shape-id name)))))
+           (when edition?
+             (let [name-input (mf/ref-val ref)
+                   name       (str/trim (dom/get-value name-input))]
+               (on-stop-edit)
+               (reset! edition* false)
+               (st/emit! (dw/rename-shape-or-variant shape-id name))))))
 
         cancel-edit
         (mf/use-fn
@@ -76,10 +77,21 @@
 
         on-key-down
         (mf/use-fn
-         (mf/deps accept-edit cancel-edit)
+         (mf/deps edition? accept-edit cancel-edit on-tab-press shape-id on-stop-edit)
          (fn [event]
            (when (kbd/enter? event) (accept-edit))
-           (when (kbd/esc? event) (cancel-edit))))
+           (when (kbd/esc? event) (cancel-edit))
+           (when (kbd/tab? event)
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (when edition?
+               (let [name-input (mf/ref-val ref)
+                     name       (str/trim (dom/get-value name-input))]
+                 (on-stop-edit)
+                 (reset! edition* false)
+                 (st/emit! (dw/end-rename-shape shape-id name))
+                 (when (fn? on-tab-press)
+                   (on-tab-press event)))))))
 
         parent-size
         (dm/str (- parent-size space-for-icons) "px")]

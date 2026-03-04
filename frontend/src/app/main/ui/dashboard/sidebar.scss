@@ -534,7 +534,7 @@
   @include t.use-typography("body-medium");
   color: var(--color-foreground-primary);
   width: 100%;
-  margin: var(--sp-xs) var(--sp-l);
+  margin: var(--sp-xs) 0 var(--sp-xs) var(--sp-l);
   display: flex;
   align-items: center;
   gap: var(--sp-s);
