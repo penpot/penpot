@@ -1,7 +1,5 @@
 import "./style.css";
 
-const KEEP_ALIVE_TIME = 30000; // 30 seconds
-
 // get the current theme from the URL
 const searchParams = new URLSearchParams(window.location.search);
 document.body.dataset.theme = searchParams.get("theme") ?? "light";
@@ -76,7 +74,8 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         ws.onmessage = (event) => {
             try {
                 if (event.data === "keep-alive") {
-                    // Keep alive response, ignore it
+                    // Keep alive response, answer and return
+                    ws?.send("keep-alive");
                     return;
                 }
                 console.log("Received from MCP server:", event.data);
@@ -88,11 +87,8 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
             }
         };
 
-        const interval = setInterval(() => ws?.send("keep-alive"), KEEP_ALIVE_TIME);
-
         ws.onclose = (event: CloseEvent) => {
             console.log("Disconnected from MCP server");
-            clearInterval(interval);
             const message = event.reason || undefined;
             updateConnectionStatus("disconnected", "Disconnected", false, message);
             ws = null;
