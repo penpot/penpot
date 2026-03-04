@@ -11,14 +11,19 @@ export interface RotationHitAreaProps {
   bounds: { x: number; y: number; width: number; height: number }
   zoom: number
   rotationDeg?: number
-  /** When true (transform has reflection), cursor gets per-handle ±90° correction. */
   halfFlip?: boolean
-  /** When set (e.g. during rotation drag), use this cursor on all corners so it stays consistent. */
   overrideCursor?: string | null
   onPointerDown: (e: React.PointerEvent, position: ResizeHandlePosition) => void
 }
 
-export function RotationHitArea({ bounds, zoom, rotationDeg, halfFlip, overrideCursor, onPointerDown }: RotationHitAreaProps) {
+export function RotationHitArea({
+  bounds,
+  zoom,
+  rotationDeg,
+  halfFlip,
+  overrideCursor,
+  onPointerDown,
+}: RotationHitAreaProps) {
   const size = ROTATION_HANDLE_SIZE_WORLD / zoom
 
   const handleRects = useMemo(() => {

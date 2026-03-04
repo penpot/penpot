@@ -5,11 +5,10 @@ import { HANDLE_FILL, HANDLE_STROKE, HANDLE_SIZE_WORLD, getResizeCursor } from '
 export interface ResizeHandlesProps {
   effectiveBounds: { x: number; y: number; width: number; height: number }
   zoom: number
-  /** When set, resize cursor is rotated by this angle so it aligns with the handle. */
+  /** When true, only draw edge handles (corners drawn separately in world space). */
+  skipCorners?: boolean
   rotationDeg?: number
-  /** When true (transform has reflection), cursor gets per-handle ±90° correction. */
   halfFlip?: boolean
-  /** When set (e.g. during resize drag), use this cursor on all handles so it stays consistent. */
   overrideCursor?: string | null
   onResizeHandlePointerDown: (e: React.PointerEvent, position: ResizeHandlePosition) => void
 }
@@ -17,6 +16,7 @@ export interface ResizeHandlesProps {
 export function ResizeHandles({
   effectiveBounds,
   zoom,
+  skipCorners = false,
   rotationDeg,
   halfFlip,
   overrideCursor,
@@ -36,6 +36,7 @@ export function ResizeHandles({
   }, [effectiveBounds, hitSize])
 
   const cornerHandleRects = useMemo(() => {
+    if (skipCorners) return []
     const { x, y, width, height } = effectiveBounds
     return [
       { position: 'top-left' as const, cx: x, cy: y },
@@ -43,7 +44,7 @@ export function ResizeHandles({
       { position: 'bottom-right' as const, cx: x + width, cy: y + height },
       { position: 'bottom-left' as const, cx: x, cy: y + height },
     ]
-  }, [effectiveBounds])
+  }, [effectiveBounds, skipCorners])
 
   return (
     <>
