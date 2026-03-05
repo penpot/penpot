@@ -27,6 +27,8 @@ export function CanvasWrapper({
   containerClassName,
   rendererOptions,
   shortcuts: initialViewportShortcuts,
+  wasmPath = '/wasm/render-wasm.js',
+  workerScriptUrl,
 }: CanvasWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -48,10 +50,10 @@ export function CanvasWrapper({
   const { workerClient, wasmModule, renderer } = useWorkspaceStore()
 
   useEffect(() => {
-    initWasmModule('/wasm/render-wasm.js').catch((error) => {
+    initWasmModule(wasmPath).catch((error) => {
       console.error('Failed to load WASM module:', error)
     })
-    initWorker().then(() => {
+    initWorker(workerScriptUrl).then(() => {
       console.log('Worker initialized')
     }).catch((error) => {
       console.error('Failed to initialize worker:', error)
@@ -61,7 +63,7 @@ export function CanvasWrapper({
       console.log('Cleaning up worker')
       cleanupWorker()
     }
-  }, [])
+  }, [wasmPath, workerScriptUrl])
 
   useEffect(() => {
     if (!workerClient || !canvasRef.current || !wasmModule) {

@@ -12,7 +12,7 @@ export class WorkerClientManager {
   private isInitializing = false
   private initPromise: Promise<WorkerClient> | null = null
 
-  async init(): Promise<WorkerClient> {
+  async init(workerScriptUrl?: string): Promise<WorkerClient> {
     const { workerClient } = useWorkspaceStore.getState()
 
     if (workerClient) {
@@ -26,7 +26,7 @@ export class WorkerClientManager {
     this.abortController = new AbortController()
     const signal = this.abortController.signal
     this.isInitializing = true
-    this.initPromise = this.doInit(signal)
+    this.initPromise = this.doInit(signal, workerScriptUrl)
 
     try {
       const client = await this.initPromise
@@ -42,8 +42,8 @@ export class WorkerClientManager {
     }
   }
 
-  private async doInit(signal: AbortSignal): Promise<WorkerClient> {
-    const { workerClient } = await createWorker()
+  private async doInit(signal: AbortSignal, workerScriptUrl?: string): Promise<WorkerClient> {
+    const { workerClient } = await createWorker(workerScriptUrl)
 
     if (signal.aborted) {
       workerClient.destroy()
@@ -74,8 +74,11 @@ export class WorkerClientManager {
 
 const workerClientManager = new WorkerClientManager()
 
-export function initWorker(): Promise<WorkerClient> {
-  return workerClientManager.init()
+/**
+ * Initialize the worker. When workerScriptUrl is provided (e.g. Figma plugin), uses that script; otherwise uses the bundled worker.
+ */
+export function initWorker(workerScriptUrl?: string): Promise<WorkerClient> {
+  return workerClientManager.init(workerScriptUrl)
 }
 
 /**

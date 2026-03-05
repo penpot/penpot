@@ -1,4 +1,4 @@
-import type { Change, PenpotPage } from 'penpot-exporter/lib'
+import type { Change } from 'penpot-exporter/lib'
 import {
   transformSceneNode,
   SUPPORTED_SCENE_NODE_TYPES,
@@ -17,16 +17,8 @@ import {
  * Consumed by plugin UIs such as figma_plugin_fe to drive the canvas.
  */
 
-/**
- * Converts a full Figma PageNode snapshot into a PenpotPage.
- * Stub: returns a minimal placeholder until translation is implemented.
- */
-export function translatePage(_figmaPage: PageNode): PenpotPage {
-  return {
-    name: '',
-    children: [],
-  }
-}
+/** Re-export full-page translation from penpot-exporter (runs in plugin main thread). */
+export { translatePage } from 'penpot-exporter/plugin'
 
 /**
  * Converts a Figma document change event into incremental Change[] for the worker.
