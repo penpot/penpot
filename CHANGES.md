@@ -10,6 +10,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add MCP tools to create, list, and update design tokens (sets, themes, tokens)
 - Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
 - Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112), [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)

@@ -14,7 +14,9 @@
     "start:dev": "node --import ts-node/register src/index.ts",
     "start:dev:multi-user": "node --loader ts-node/esm src/index.ts --multi-user",
     "types:check": "tsc --noEmit",
-    "clean": "rm -rf dist/"
+    "clean": "rm -rf dist/",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "mcp",
@@ -46,7 +48,8 @@
     "@types/ws": "^8.5.10",
     "esbuild": "^0.25.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
   },
   "ts-node": {
     "esm": true
