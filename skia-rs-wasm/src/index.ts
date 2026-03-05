@@ -7,9 +7,11 @@
 
 export { Renderer } from './lib/renderer/index'
 export { Viewport } from './lib/renderer/viewport'
+export { CanvasWrapper } from './lib/renderer/canvas-wrapper'
 export type {
   ShapeType,
   RendererOptions,
+  CanvasWrapperProps,
 } from './lib/renderer/types'
 
 export type { WasmModule, WasmModuleFactory } from './lib/renderer/wasm-types'
@@ -52,4 +54,8 @@ export {
   deletePage,
   applyChanges,
 } from './lib/page-crud'
+
+// Workspace store (for plugin UI viewport sync, etc.)
+export { useWorkspaceStore } from './lib/renderer/store/workspace-store'
+export type { WorkspaceState } from './lib/renderer/store/workspace-store'
 

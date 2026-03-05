@@ -167,6 +167,10 @@ export interface CanvasWrapperProps {
   onError?: (error: Error) => void
   /** Initial viewport shortcuts (merged with defaults). Applied on mount when provided. */
   shortcuts?: Partial<ShortcutsConfig>
+  /** Optional path to render-wasm.js (e.g. when used in Figma plugin). Defaults to '/wasm/render-wasm.js'. */
+  wasmPath?: string
+  /** Optional URL to worker script (e.g. when used in Figma plugin). When not set, uses bundled worker. */
+  workerScriptUrl?: string
 }
 
 export type InitializationState = 'idle' | 'loading' | 'ready' | 'error'
