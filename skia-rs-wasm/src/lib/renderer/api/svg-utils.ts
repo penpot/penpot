@@ -3,7 +3,7 @@
  */
 
 import type { SvgContent } from '../types'
-import type { Matrix } from 'penpot-exporter/lib'
+import type { Matrix } from 'penpot-exporter/types'
 import { isSvgContentTree } from '../verification'
 
 /**

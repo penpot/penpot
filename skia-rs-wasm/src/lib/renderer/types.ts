@@ -3,7 +3,7 @@
  */
 
 import type { CSSProperties } from 'react'
-import type { Matrix } from 'penpot-exporter/lib'
+import type { Matrix } from 'penpot-exporter/types'
 
 export type { Point } from '@skia-rs-wasm/common'
 

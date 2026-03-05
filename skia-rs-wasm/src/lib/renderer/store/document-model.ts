@@ -5,8 +5,8 @@
  * Implements IDocumentModel for use by the workspace store.
  */
 
-import type { PenpotDocument } from 'penpot-exporter/lib'
-import type { Change } from 'penpot-exporter/lib'
+import type { PenpotDocument } from 'penpot-exporter/types'
+import type { Change } from 'penpot-exporter/types'
 import type { IndexedPage, IndexedNode } from '../../worker/types'
 import { flattenPageToIndexed, unflattenIndexedPageToPage } from '../../worker/types'
 import { processChanges } from '../../worker/process-changes'

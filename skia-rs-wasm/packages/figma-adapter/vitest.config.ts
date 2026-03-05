@@ -18,7 +18,7 @@ export default defineConfig({
     deps: {
       optimizer: {
         ssr: {
-          include: ['penpot-exporter/plugin', 'penpot-exporter/lib'],
+          include: ['penpot-exporter/transformers', 'penpot-exporter/types'],
           enabled: true,
         },
       },

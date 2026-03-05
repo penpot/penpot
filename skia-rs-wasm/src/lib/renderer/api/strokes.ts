@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { ImageColor, Stroke } from 'penpot-exporter/lib'
+import type { ImageColor, Stroke } from 'penpot-exporter/types'
 import type { PendingImageCallback } from '../types'
 import { uuidToU32Tuple } from '../types'
 import { allocBytes, freeBytes } from '../utils'

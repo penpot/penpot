@@ -27,7 +27,7 @@ import {
 } from './serializers'
 import { checkContext } from './context'
 import { UUID_U8_SIZE } from './constants'
-import type { BlendMode, Blur, ConstraintH, ConstraintV, Matrix, Selrect } from 'penpot-exporter/lib'
+import type { BlendMode, Blur, ConstraintH, ConstraintV, Matrix, Selrect } from 'penpot-exporter/types'
 
 /**
  * Set active shape

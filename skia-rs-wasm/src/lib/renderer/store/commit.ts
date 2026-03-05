@@ -3,7 +3,7 @@
  */
 
 import type { IndexedPage, IndexedNode } from '../../worker/types'
-import type { Change } from 'penpot-exporter/lib'
+import type { Change } from 'penpot-exporter/types'
 import { useWorkspaceStore } from './workspace-store'
 import type { DocumentModel } from './document-model'
 

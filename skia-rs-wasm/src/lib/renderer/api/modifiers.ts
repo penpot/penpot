@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { Matrix } from 'penpot-exporter/lib'
+import type { Matrix } from 'penpot-exporter/types'
 import { u32ToUUID } from '../types'
 import {
   allocBytes,

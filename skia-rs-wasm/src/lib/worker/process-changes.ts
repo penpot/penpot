@@ -15,8 +15,8 @@ import type {
   Operation,
   AssignOperation,
   SetOperation,
-} from 'penpot-exporter/lib'
-import type { PenpotNode } from 'penpot-exporter/lib'
+} from 'penpot-exporter/types'
+import type { PenpotNode } from 'penpot-exporter/types'
 import { isFrameShape } from './geometry/shapes'
 import { assignHierarchy, ensureShapes } from './helpers'
 
@@ -87,7 +87,7 @@ function processOperation(shape: IndexedShape, op: Operation): IndexedShape {
         return rest as IndexedShape
       }
       const touchedSet = Array.isArray(touched) ? new Set(touched) : touched
-      return { ...shape, touched: Array.from(touchedSet) as import('penpot-exporter/lib').SyncGroups[] }
+      return { ...shape, touched: Array.from(touchedSet) as import('penpot-exporter/types').SyncGroups[] }
     }
     case 'set-remote-synced': {
       const remoteSynced = (op as { remoteSynced?: boolean | null }).remoteSynced

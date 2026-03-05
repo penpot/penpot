@@ -1,9 +1,9 @@
-import type { Change } from 'penpot-exporter/lib'
+import type { Change } from 'penpot-exporter/types'
 import {
   transformSceneNode,
   SUPPORTED_SCENE_NODE_TYPES,
   transformId,
-} from 'penpot-exporter/plugin'
+} from 'penpot-exporter/transformers'
 import {
   getFrameNode,
   buildDelObjChange,
@@ -18,7 +18,7 @@ import {
  */
 
 /** Re-export full-page translation from penpot-exporter (runs in plugin main thread). */
-export { translatePage } from 'penpot-exporter/plugin'
+export { translatePage } from 'penpot-exporter/transformers'
 
 /**
  * Converts a Figma document change event into incremental Change[] for the worker.
@@ -35,7 +35,7 @@ export interface TranslateNodeChangeOptions {
 /**
  * Converts a Figma NodeChangeEvent (nodechange) into incremental Change[] for the worker.
  * Runs in plugin context (requires SceneNode). Skips node types not supported by
- * transformSceneNode in penpot-exporter/plugin, and shape types that the wasm cannot draw.
+ * transformSceneNode in penpot-exporter/transformers, and shape types that the wasm cannot draw.
  */
 export async function translateNodeChange(
   event: NodeChangeEvent,

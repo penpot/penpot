@@ -4,8 +4,8 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode, PenpotPage } from 'penpot-exporter/lib'
-import type { PositionDataEntry } from 'penpot-exporter/lib'
+import type { PenpotNode, PenpotPage } from 'penpot-exporter/types'
+import type { PositionDataEntry } from 'penpot-exporter/types'
 import { calculatePositionData } from '../api/text'
 
 function mapToCamelCase(

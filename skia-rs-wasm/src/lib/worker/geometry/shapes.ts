@@ -17,7 +17,7 @@ import type {
   RectShape,
   ComponentInstance,
   ComponentShape,
-} from 'penpot-exporter/lib'
+} from 'penpot-exporter/types'
 import { pointsToRect, rectToCenter, joinRects } from './rect'
 import { ZERO_UUID } from '../types'
 

@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { ShapeAttributes } from 'penpot-exporter/lib'
+import type { ShapeAttributes } from 'penpot-exporter/types'
 import { translateFillRule, translateStrokeLinecap, translateStrokeLinejoin } from './serializers'
 import { checkContext } from './context'
 

@@ -7,7 +7,7 @@ import { useWorkspaceStore } from './renderer/store/workspace-store'
 import { DocumentModel } from './renderer/store/document-model'
 import type { IndexedPage } from './worker/types'
 import { flattenPageToIndexed } from './worker/types'
-import type { PenpotDocument, PenpotNode, PenpotPage, Change } from 'penpot-exporter/lib'
+import type { PenpotDocument, PenpotNode, PenpotPage, Change } from 'penpot-exporter/types'
 
 export function createNewDocument(): PenpotDocument {
   const ROOT_UUID = '00000000-0000-0000-0000-000000000000'

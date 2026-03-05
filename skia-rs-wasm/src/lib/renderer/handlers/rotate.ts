@@ -12,7 +12,7 @@ import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { applyModifiersAndCommit } from './utils'
 import type { Point } from '../types'
-import type { Matrix } from 'penpot-exporter/lib'
+import type { Matrix } from 'penpot-exporter/types'
 
 function screenToWorld(
   sx: number,

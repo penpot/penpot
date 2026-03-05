@@ -1,6 +1,6 @@
 /**
  * Shared types, conversions for renderer and worker.
- * Change types live in penpot-exporter/lib.
+ * Change types live in penpot-exporter/types.
  * Verification helpers moved to renderer (SvgContent/fill guards).
  */
 

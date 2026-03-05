@@ -4,7 +4,7 @@
  */
 
 import type { ShapeType, BoolType } from '../types'
-import type { BlendMode, ConstraintH, ConstraintV } from 'penpot-exporter/lib'
+import type { BlendMode, ConstraintH, ConstraintV } from 'penpot-exporter/types'
 
 // Enum mappings from shared.js
 const RawShapeType: Record<string, number> = {

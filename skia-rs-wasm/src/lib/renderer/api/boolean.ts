@@ -4,7 +4,7 @@
 
 import type { WasmModule } from '../wasm-types'
 import type { BoolType, PathContent } from '../types'
-import type { PenpotNode } from 'penpot-exporter/lib'
+import type { PenpotNode } from 'penpot-exporter/types'
 import {
   allocBytes,
   freeBytes,

@@ -10,7 +10,7 @@ import type {
   PathShape,
   TextShape,
   Matrix,
-} from 'penpot-exporter/lib'
+} from 'penpot-exporter/types'
 import type { Line } from '../types'
 import { makeSelrect } from '@skia-rs-wasm/common'
 import { rectToPoints } from './rect'

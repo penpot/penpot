@@ -11,8 +11,8 @@ import type {
   SerializedMessage,
   WorkerUpdateTextRectPayload,
 } from './types'
-import type { Point, Matrix } from 'penpot-exporter/lib'
-import type { Change } from 'penpot-exporter/lib'
+import type { Point, Matrix } from 'penpot-exporter/types'
+import type { Change } from 'penpot-exporter/types'
 import { processChanges } from './process-changes'
 import { handler, registerHandler } from './impl'
 import { encode, decode } from './messages'
