@@ -3,8 +3,8 @@
  * so the worker can assume shape.points and not recompute from selrect+transform.
  */
 
-import type { PenpotNode, PenpotPage, Point, Selrect } from 'penpot-exporter/lib'
-import type { Matrix } from 'penpot-exporter/lib'
+import type { PenpotNode, PenpotPage, Point, Selrect } from 'penpot-exporter/types'
+import type { Matrix } from 'penpot-exporter/types'
 
 const EPSILON = 1e-10
 

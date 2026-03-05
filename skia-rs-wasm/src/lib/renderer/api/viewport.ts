@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode } from 'penpot-exporter/lib'
+import type { PenpotNode } from 'penpot-exporter/types'
 import { hexToU32ARGB } from '../types'
 import { checkContext, getContextInitialized, getContextLost } from './context'
 import { throttle } from '../utils'

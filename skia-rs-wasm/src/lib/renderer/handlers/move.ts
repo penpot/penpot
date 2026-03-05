@@ -12,7 +12,7 @@ import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
 import { applyModifiersAndCommit } from './utils'
 import type { Point } from '../types'
-import type { Matrix } from 'penpot-exporter/lib'
+import type { Matrix } from 'penpot-exporter/types'
 
 function translateMatrix(dx: number, dy: number): Matrix {
   return { a: 1, b: 0, c: 0, d: 1, e: dx, f: dy }

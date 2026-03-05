@@ -2,7 +2,7 @@
  * Point utilities
  */
 
-import type { Point } from 'penpot-exporter/lib'
+import type { Point } from 'penpot-exporter/types'
 
 export function point(x: number, y: number): Point {
   return { x, y }

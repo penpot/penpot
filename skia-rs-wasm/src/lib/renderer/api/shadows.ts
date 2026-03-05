@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { Shadow } from 'penpot-exporter/lib'
+import type { Shadow } from 'penpot-exporter/types'
 import { colorToU32ARGB } from '../types'
 import { translateShadowStyle } from './serializers'
 import { checkContext } from './context'

@@ -5,9 +5,9 @@
 
 import type { WasmModule } from './wasm-types'
 import type { RendererOptions, SelectionRectResult } from './types'
-import type { PenpotNode } from 'penpot-exporter/lib'
+import type { PenpotNode } from 'penpot-exporter/types'
 import type { IndexedPage } from '../worker/types'
-import type { Matrix } from 'penpot-exporter/lib'
+import type { Matrix } from 'penpot-exporter/types'
 import { getDPR } from './utils'
 import { Viewport } from './viewport'
 import {

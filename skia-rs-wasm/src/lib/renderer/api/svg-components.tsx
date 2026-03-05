@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useMemo } from 'react'
-import type { Matrix, PenpotNode } from 'penpot-exporter/lib'
+import type { Matrix, PenpotNode } from 'penpot-exporter/types'
 import type { SvgContent } from '../types'
 import { isSvgContentTree, isSvgContentString, isSvgContent } from '../verification'
 import { generateIdMapping, formatTransform, isSvgTag, isGraphicElement, svgTransformMatrix } from './svg-utils'

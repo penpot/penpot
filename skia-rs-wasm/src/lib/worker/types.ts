@@ -2,8 +2,8 @@
  * Worker-specific types. Shared types (Point, Line, Change) come from common.
  */
 
-import type { PenpotNode, Selrect } from 'penpot-exporter/lib'
-import type { Change } from 'penpot-exporter/lib'
+import type { PenpotNode, Selrect } from 'penpot-exporter/types'
+import type { Change } from 'penpot-exporter/types'
 import type { Point } from '@skia-rs-wasm/common'
 import type { Quadtree } from './quadtree'
 

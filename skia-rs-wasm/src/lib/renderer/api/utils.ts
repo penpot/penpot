@@ -5,7 +5,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createElement } from 'react'
 import type { WasmModule, WasmModuleOptions } from '../wasm-types'
-import type { PenpotNode } from 'penpot-exporter/lib'
+import type { PenpotNode } from 'penpot-exporter/types'
 import { ObjectSvg } from './svg-components'
 
 /**

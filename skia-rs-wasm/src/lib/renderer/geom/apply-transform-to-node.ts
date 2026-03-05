@@ -3,7 +3,7 @@
  * Used for move, resize, and rotate commit (propagated result from WASM).
  */
 
-import type { Matrix, PenpotNode } from 'penpot-exporter/lib'
+import type { Matrix, PenpotNode } from 'penpot-exporter/types'
 import { makeSelrect } from '../types'
 
 export function applyTransformToNode(

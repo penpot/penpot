@@ -3,7 +3,7 @@
  * Unflatten reconstructs PenpotPage from IndexedPage for getDocument/export.
  */
 
-import type { PenpotNode, PenpotPage } from 'penpot-exporter/lib'
+import type { PenpotNode, PenpotPage } from 'penpot-exporter/types'
 import { ZERO_UUID } from '@skia-rs-wasm/common'
 import type { IndexedPage, IndexedShape } from './types'
 

@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode, Fill, TextContent, Paragraph, TextNode } from 'penpot-exporter/lib'
+import type { PenpotNode, Fill, TextContent, Paragraph, TextNode } from 'penpot-exporter/types'
 import type { PendingImageCallback, ResolveFontUrlCallback, FontInfo, FontData } from '../types'
 import { uuidToU32Tuple, uuidToU32 } from '../types'
 import {

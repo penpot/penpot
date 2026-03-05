@@ -5,7 +5,7 @@
 import type { WasmModule } from '../wasm-types'
 import type { PendingImageCallback, SetObjectResult } from '../types'
 import type { BoolType, ShapeType, PathContent } from '../types'
-import type { PenpotNode, TextContent } from 'penpot-exporter/lib'
+import type { PenpotNode, TextContent } from 'penpot-exporter/types'
 import { checkContext } from './context'
 import { requestRender } from './rendering'
 import { renderFinish } from './viewport'

@@ -4,8 +4,8 @@
  */
 
 import type { ShapeType } from '../lib/renderer/types'
-import type { PenpotNode, Selrect } from 'penpot-exporter/lib'
-import type { Fill, Stroke } from 'penpot-exporter/lib'
+import type { PenpotNode, Selrect } from 'penpot-exporter/types'
+import type { Fill, Stroke } from 'penpot-exporter/types'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 

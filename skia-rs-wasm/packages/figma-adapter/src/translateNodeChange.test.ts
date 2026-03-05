@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { translateNodeChange } from './index'
-import { SUPPORTED_SCENE_NODE_TYPES } from 'penpot-exporter/plugin'
+import { SUPPORTED_SCENE_NODE_TYPES } from 'penpot-exporter/transformers'
 
 const mockTransformSceneNode = vi.fn()
 const mockTransformId = vi.fn((n: { id: string }) => `penpot-${n.id}`)
 
-vi.mock('penpot-exporter/plugin', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('penpot-exporter/plugin')>()
+vi.mock('penpot-exporter/transformers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('penpot-exporter/transformers')>()
   return {
     ...actual,
     transformSceneNode: (...args: unknown[]) => mockTransformSceneNode(...args),

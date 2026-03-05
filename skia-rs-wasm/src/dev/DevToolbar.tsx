@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType, ShapeGeomAttributes, ModObjChange, AddObjChange, DelObjChange } from 'penpot-exporter/lib'
+import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType, ShapeGeomAttributes, ModObjChange, AddObjChange, DelObjChange } from 'penpot-exporter/types'
 import { createNode } from './node-factory'
 import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Preset } from './presets'
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from '../lib/renderer/api/constants'

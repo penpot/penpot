@@ -5,7 +5,7 @@
 
 import type { SelectionIndex, IndexedPage, QueryParams } from './types'
 import type { IndexedShape } from './types'
-import type { PenpotNode, Selrect } from 'penpot-exporter/lib'
+import type { PenpotNode, Selrect } from 'penpot-exporter/types'
 import { ZERO_UUID, makeSelrect } from './types'
 import * as quadtree from './quadtree'
 import { pointsToRect, makeRect, containsRect } from './geometry/rect'

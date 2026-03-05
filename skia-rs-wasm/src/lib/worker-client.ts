@@ -2,7 +2,7 @@
  * Worker client for typed, promise-based communication with the worker
  */
 
-import type { Change } from 'penpot-exporter/lib'
+import type { Change } from 'penpot-exporter/types'
 import type {
   WorkerMessage,
   SerializedMessage,
