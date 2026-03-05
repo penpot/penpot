@@ -338,6 +338,12 @@
   background-color: var(--input-background-color);
   border: $s-1 solid var(--input-border-color);
   color: var(--input-foreground-color);
+  &:not(:focus-within) {
+    cursor: ew-resize;
+    input {
+      cursor: ew-resize;
+    }
+  }
   span,
   label {
     @extend .input-label;
