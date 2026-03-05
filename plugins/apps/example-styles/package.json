@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:watch": "vite build --watch --mode development",
-    "preview": "vite preview",
+    "watch": "vite build --watch --mode development",
+    "init": "concurrently --kill-others --names build,serve \"pnpm run watch\" \"pnpm run serve\"",
+    "serve": "vite preview",
     "lint": "eslint ."
   }
 }
