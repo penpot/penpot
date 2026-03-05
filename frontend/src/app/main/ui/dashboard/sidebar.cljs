@@ -1009,7 +1009,8 @@
 
 (mf/defc profile-section*
   [{:keys [profile team]}]
-  (let [show-profile-menu* (mf/use-state false)
+  (let [teams            (mf/deref refs/teams)
+        show-profile-menu* (mf/use-state false)
         show-profile-menu? (deref show-profile-menu*)
         sub-menu*      (mf/use-state false)
         sub-menu       (deref sub-menu*)
@@ -1086,8 +1087,7 @@
 
     [:*
      (if (contains? cf/flags :nitrate)
-       (when-not (dm/get-in profile [:props :nitrate-license :valid])
-         [:> nitrate-sidebar* {:profile profile}])
+       [:> nitrate-sidebar* {:profile profile :teams teams}]
        (when (contains? cf/flags :subscriptions)
          (if (show-subscription-dashboard-banner? profile)
            [:> dashboard-cta* {:profile profile}]

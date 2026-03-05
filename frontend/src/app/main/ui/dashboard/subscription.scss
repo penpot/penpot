@@ -224,6 +224,7 @@
 .nitrate-info {
   @include t.use-typography("body-medium");
   color: var(--color-foreground-secondary);
+  margin-block: var(--sp-s) var(--sp-xxl);
 }
 
 .nitrate-content {

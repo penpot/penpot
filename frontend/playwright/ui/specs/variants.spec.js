@@ -11,7 +11,7 @@ test.beforeEach(async ({ page, context }) => {
 });
 
 test.afterEach(async ({ context }) => {
-  context.clearPermissions();
+  await context.clearPermissions();
 });
 
 const setupVariantsFile = async (workspacePage) => {
@@ -176,7 +176,7 @@ test("User duplicates a variant container", async ({ page }) => {
   await validateVariant(variant_duplicate);
 });
 
-test("User copy paste a variant container", async ({ page, context }) => {
+test("User copy paste a variant container", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   // Access to the read/write clipboard necesary for this functionality
   await setupVariantsFileWithVariant(workspacePage);

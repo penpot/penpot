@@ -2,6 +2,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.uri :as u]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -35,5 +36,7 @@
                   callback (assoc :callback callback))
          href   (dm/str "/control-center/licenses/start?" (u/map->query-string params))]
      (st/emit! (rt/nav-raw :href href)))))
+
+(def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
 
 
