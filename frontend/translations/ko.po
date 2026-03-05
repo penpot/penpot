@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-03-04 20:10+0000\n"
+"PO-Revision-Date: 2026-03-05 21:13+0000\n"
 "Last-Translator: deveronica <deveronica42@gmail.com>\n"
 "Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
 "ko/>\n"
@@ -145,7 +145,6 @@ msgid "auth.register-account-tagline"
 msgstr "대시보드와 이메일에 표시될 이름을 입력해주세요."
 
 #: src/app/main/ui/auth/register.cljs:350
-#, fuzzy
 msgid "auth.register-account-title"
 msgstr "당신의 이름"
 
@@ -334,7 +333,7 @@ msgstr "토큰 복사됨"
 
 #: src/app/main/ui/settings/access_tokens.cljs:189
 msgid "dashboard.access-tokens.create"
-msgstr "새로운 토큰 생성"
+msgstr "새 토큰 생성"
 
 #: src/app/main/ui/settings/access_tokens.cljs:64
 msgid "dashboard.access-tokens.create.success"
@@ -342,7 +341,7 @@ msgstr "액세스 토큰이 성공적으로 생성되었습니다."
 
 #: src/app/main/ui/settings/access_tokens.cljs:286
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "\"새로운 토큰 생성\" 버튼을 눌러 토큰을 생성하세요."
+msgstr "\"새 토큰 생성\" 버튼을 눌러 토큰을 생성하세요."
 
 #: src/app/main/ui/settings/access_tokens.cljs:285
 msgid "dashboard.access-tokens.empty.no-access-tokens"
@@ -491,7 +490,7 @@ msgstr "아직 라이브러리가 없습니다."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:280
 msgid "dashboard.export-binary-multi"
-msgstr "%s 펜팟 파일 (.penpot) 다운로드"
+msgstr "%s Penpot 파일 (.penpot) 다운로드"
 
 #: src/app/main/ui/workspace/main_menu.cljs:698
 msgid "dashboard.export-frames"
@@ -507,7 +506,7 @@ msgstr "내보내기"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:858
 msgid "dashboard.no-projects-placeholder"
-msgstr "고정된 프로젝트가 여기에 표시됩니다."
+msgstr "고정된 프로젝트가 여기에 표시됩니다"
 
 #: src/app/main/ui/dashboard/deleted.cljs:62, src/app/main/ui/dashboard/projects.cljs:57
 msgid "dashboard.projects-title"
@@ -527,7 +526,7 @@ msgstr "검색…"
 
 #: src/app/main/ui/dashboard/search.cljs:72
 msgid "dashboard.searching-for"
-msgstr "\"%s\" 찾는 중…"
+msgstr "\"%s\" 검색 중…"
 
 #: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"
@@ -665,7 +664,7 @@ msgstr "타이포그래피"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:308
 msgid "inspect.attributes.typography.font-family"
-msgstr "글꼴 패밀리"
+msgstr "글꼴 모음"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:326, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:332
 msgid "inspect.attributes.typography.font-size"
@@ -722,7 +721,7 @@ msgstr "마스크"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:150
 msgid "inspect.tabs.code.selected.path"
-msgstr "패스"
+msgstr "경로"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:151
 msgid "inspect.tabs.code.selected.rect"
@@ -867,7 +866,7 @@ msgstr "내보내기"
 
 #: src/app/main/ui/dashboard/fonts.cljs:432
 msgid "labels.font-family"
-msgstr "글꼴 패밀리"
+msgstr "글꼴 모음"
 
 #, unused
 msgid "labels.font-providers"
@@ -1023,11 +1022,11 @@ msgstr "프로필이 성공적으로 저장되었습니다!"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:115
 msgid "shortcuts.flip-horizontal"
-msgstr "가로로 뒤집기"
+msgstr "좌우 반전"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:116
 msgid "shortcuts.flip-vertical"
-msgstr "세로로 뒤집기"
+msgstr "상하 반전"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:119
 msgid "shortcuts.go-to-drafts"
@@ -1035,29 +1034,29 @@ msgstr "초안으로 가기"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:120
 msgid "shortcuts.go-to-libs"
-msgstr "공유된 라이브러리로 가기"
+msgstr "공유 라이브러리로 이동"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:121
 msgid "shortcuts.go-to-search"
-msgstr "찾기"
+msgstr "검색"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:122
 msgid "shortcuts.group"
-msgstr "그룹"
+msgstr "그룹화"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:123
 msgid "shortcuts.h-distribute"
-msgstr "가로로 분배하기"
+msgstr "수평 간격 동일하게"
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
 msgid "color-token.empty-state"
 msgstr ""
-"사용 가능한 색상 token이 없습니다. 활성 세트/테마를 확인하거나 새로운 "
-"token을 추가하세요."
+"사용 가능한 색상 token이 없습니다. 활성 세트/테마를 확인하거나 새 token을 "
+"추가하세요."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
 msgid "dashboard.create-new-org"
-msgstr "새 조직 만들기"
+msgstr "새 조직 생성"
 
 #: src/app/main/ui/dashboard/grid.cljs:248
 msgid "dashboard.deleted.will-be-deleted-at"
@@ -1229,9 +1228,8 @@ msgstr[0] "글꼴 %s개 추가됨"
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "여기에 업로드하는 모든 웹 글꼴은 이 팀의 파일 텍스트 속성에서 사용할 수 있는 "
-"폰트 패밀리 목록에 추가됩니다. 동일한 폰트 패밀리 이름을 가진 "
-"폰트들은**하나의 글꼴 패밀리**로 그룹화됩니다. 지원 형식: **TTF, OTF, WOFF** "
-"(하나만 필요)."
+"글꼴 모음 목록에 추가됩니다. 동일한 글꼴 모음 이름을 가진 글꼴들은**하나의 "
+"글꼴 모음**으로 그룹화됩니다. 지원 형식: **TTF, OTF, WOFF** (하나만 필요)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:194
 #, markdown
@@ -1420,7 +1418,7 @@ msgstr "새 프로젝트"
 
 #: src/app/main/ui/dashboard/search.cljs:77
 msgid "dashboard.no-matches-for"
-msgstr "\"%s\"에 대한 검색 결과가 없습니다."
+msgstr "\"%s\"에 대한 검색 결과가 없습니다"
 
 #: src/app/main/ui/dashboard/comments.cljs:91
 msgid "dashboard.notifications"
@@ -2665,7 +2663,7 @@ msgstr "다음"
 
 #: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:162
 msgid "labels.no-comments-available"
-msgstr "모든 알림을 확인했습니다! 새로운 댓글 알림이 여기에 표시됩니다."
+msgstr "모든 알림을 확인했습니다! 새 댓글 알림이 여기에 표시됩니다."
 
 #: src/app/main/ui/dashboard/team.cljs:737
 msgid "labels.no-invitations"
@@ -3442,12 +3440,12 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs:378
 msgid "modals.promote-owner-confirm.message"
 msgstr ""
-"귀하는 현재 이 팀의 소유자입니다. 정말 %s님을 팀의 새로운 소유자로 "
+"귀하는 현재 이 팀의 소유자입니다. 정말 %s님을 팀의 새 소유자로 "
 "지정하시겠습니까?"
 
 #: src/app/main/ui/dashboard/team.cljs:377
 msgid "modals.promote-owner-confirm.title"
-msgstr "새로운 팀 소유자"
+msgstr "새 팀 소유자"
 
 #: src/app/main/ui/workspace/libraries.cljs:286
 msgid "modals.publish-empty-library.accept"
@@ -3637,7 +3635,7 @@ msgstr "초대가 성공적으로 삭제되었습니다"
 
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
-msgstr "초대장이 성공적으로 전송되었습니다"
+msgstr "초대가 성공적으로 전송되었습니다"
 
 #: src/app/main/ui/dashboard/team.cljs:635
 msgid "notifications.invitation-link-copied"
@@ -3699,7 +3697,7 @@ msgstr ""
 
 #: src/app/main/ui/auth/register.cljs:35, src/app/main/ui/onboarding/newsletter.cljs:76
 msgid "onboarding-v2.newsletter.updates"
-msgstr ".제품 업데이트 소식 받기 (새로운 기능, 릴리즈, 수정 사항 등)."
+msgstr ".제품 업데이트 소식 받기 (새 기능, 릴리즈, 수정 사항 등)."
 
 #, unused
 msgid "onboarding-v2.welcome.desc1"
@@ -3744,7 +3742,7 @@ msgstr "팀 생성 및 초대"
 
 #, unused
 msgid "onboarding.choice.team-up.create-team-and-send-invites"
-msgstr "팀 생성 및 초대장 전송"
+msgstr "팀 생성 및 초대 전송"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:219
 msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
@@ -3871,7 +3869,7 @@ msgstr "오늘 Penpot을 방문하신 이유는 무엇인가요?"
 msgid "onboarding.questions.step1.subtitle"
 msgstr ""
 "Penpot이 사용자분께 더 잘 맞도록 도와드리기 위해 정보를 조금만 알려주세요. "
-"답변해주신 내용은 새로운 기능의 우선순위를 정하고 시작 가이드를 제공하는 데 "
+"답변해주신 내용은 새 기능의 우선순위를 정하고 시작 가이드를 제공하는 데 "
 "도움이 됩니다."
 
 #: src/app/main/ui/onboarding/questions.cljs:110
@@ -4052,15 +4050,15 @@ msgstr "레이어 수정"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:64
 msgid "shortcut-subsection.navigation-dashboard"
-msgstr "탐색"
+msgstr "내비게이션"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:65
 msgid "shortcut-subsection.navigation-viewer"
-msgstr "탐색"
+msgstr "내비게이션"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:66
 msgid "shortcut-subsection.navigation-workspace"
-msgstr "탐색"
+msgstr "내비게이션"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:67
 msgid "shortcut-subsection.panels"
@@ -4068,7 +4066,7 @@ msgstr "패널"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:68
 msgid "shortcut-subsection.path-editor"
-msgstr "패스"
+msgstr "경로"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:69
 msgid "shortcut-subsection.shape"
@@ -4193,7 +4191,7 @@ msgstr "컴포넌트 / 베리언트 생성"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:98
 msgid "shortcuts.create-new-project"
-msgstr "새로 만들기"
+msgstr "새로 생성"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:99
 msgid "shortcuts.cut"
@@ -4229,11 +4227,11 @@ msgstr "보드"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:107
 msgid "shortcuts.draw-nodes"
-msgstr "패스 그리기"
+msgstr "경로 그리기"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:108
 msgid "shortcuts.draw-path"
-msgstr "패스"
+msgstr "경로"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:109
 msgid "shortcuts.draw-rect"
@@ -4258,3 +4256,4403 @@ msgstr "도형 내보내기"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:114
 msgid "shortcuts.fit-all"
 msgstr "전체 맞춤"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:117
+msgid "shortcuts.font-size-dec"
+msgstr "글꼴 크기 감소"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:118
+msgid "shortcuts.font-size-inc"
+msgstr "글꼴 크기 증가"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:124
+msgid "shortcuts.hide-ui"
+msgstr "UI 표시/숨기기"
+
+#: src/app/main/ui/viewer/header.cljs:88, src/app/main/ui/workspace/right_header.cljs:87, src/app/main/ui/workspace/sidebar/shortcuts.cljs:125
+msgid "shortcuts.increase-zoom"
+msgstr "확대"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:126
+msgid "shortcuts.insert-image"
+msgstr "이미지 삽입"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
+msgid "shortcuts.italic"
+msgstr "기울임꼴 표시/해제"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
+msgid "shortcuts.join-nodes"
+msgstr "노드 연결"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
+msgid "shortcuts.line-through"
+msgstr "취소선 표시/해제"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
+msgid "shortcuts.make-corner"
+msgstr "직각 노드로 변경"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
+msgid "shortcuts.make-curve"
+msgstr "곡선 노드로 변경"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
+msgid "shortcuts.mask"
+msgstr "마스크"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:133
+msgid "shortcuts.merge-nodes"
+msgstr "노드 병합"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:134
+msgid "shortcuts.move"
+msgstr "이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:135
+msgid "shortcuts.move-fast-down"
+msgstr "아래로 크게 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:136
+msgid "shortcuts.move-fast-left"
+msgstr "왼쪽으로 크게 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:137
+msgid "shortcuts.move-fast-right"
+msgstr "오른쪽으로 크게 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:138
+msgid "shortcuts.move-fast-up"
+msgstr "위로 크게 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+msgid "shortcuts.move-nodes"
+msgstr "노드 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:140
+msgid "shortcuts.move-unit-down"
+msgstr "아래로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:141
+msgid "shortcuts.move-unit-left"
+msgstr "왼쪽으로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:142
+msgid "shortcuts.move-unit-right"
+msgstr "오른쪽으로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:143
+msgid "shortcuts.move-unit-up"
+msgstr "위로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:144
+msgid "shortcuts.next-frame"
+msgstr "다음 보드"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:509
+msgid "shortcuts.not-found"
+msgstr "단축키를 찾을 수 없습니다"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:145
+msgid "shortcuts.opacity-0"
+msgstr "불투명도 100% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:146
+msgid "shortcuts.opacity-1"
+msgstr "불투명도 10% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:147
+msgid "shortcuts.opacity-2"
+msgstr "불투명도 20% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:148
+msgid "shortcuts.opacity-3"
+msgstr "불투명도 30% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:149
+msgid "shortcuts.opacity-4"
+msgstr "불투명도 40% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:150
+msgid "shortcuts.opacity-5"
+msgstr "불투명도 50% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:151
+msgid "shortcuts.opacity-6"
+msgstr "불투명도 60% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:152
+msgid "shortcuts.opacity-7"
+msgstr "불투명도 70% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:153
+msgid "shortcuts.opacity-8"
+msgstr "불투명도 80% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+msgid "shortcuts.opacity-9"
+msgstr "불투명도 90% 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:155
+msgid "shortcuts.open-color-picker"
+msgstr "색상 선택기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:156
+msgid "shortcuts.open-comments"
+msgstr "뷰어 댓글 섹션으로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+msgid "shortcuts.open-dashboard"
+msgstr "대시보드로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:158
+msgid "shortcuts.open-inspect"
+msgstr "뷰어 검사 섹션으로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:159
+msgid "shortcuts.open-interactions"
+msgstr "뷰어 인터랙션 섹션으로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:160
+msgid "shortcuts.open-viewer"
+msgstr "뷰어 인터랙션 섹션으로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:161
+msgid "shortcuts.open-workspace"
+msgstr "워크스페이스로 이동"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:255
+msgid "shortcuts.or"
+msgstr " 또는 "
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:162
+msgid "shortcuts.paste"
+msgstr "붙여넣기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+#, unused
+msgid "shortcuts.paste-props"
+msgstr "속성 붙여넣기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+#, unused
+msgid "shortcuts.plugins"
+msgstr "플러그인 관리자"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:163
+msgid "shortcuts.prev-frame"
+msgstr "이전 보드"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:164
+msgid "shortcuts.redo"
+msgstr "다시 실행"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:165
+msgid "shortcuts.rename"
+msgstr "이름 바꾸기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:166
+msgid "shortcuts.reset-zoom"
+msgstr "확대/축소 초기화"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.scale"
+msgstr "스케일"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:168
+msgid "shortcuts.search-placeholder"
+msgstr "단축키 검색"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:169
+msgid "shortcuts.select-all"
+msgstr "전체 선택"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:170
+msgid "shortcuts.select-next"
+msgstr "다음 레이어 선택"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:171
+msgid "shortcuts.select-parent-layer"
+msgstr "상위 레이어 선택"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:172
+msgid "shortcuts.select-prev"
+msgstr "이전 레이어 선택"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:173
+msgid "shortcuts.separate-nodes"
+msgstr "노드 분리"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:174
+msgid "shortcuts.show-pixel-grid"
+msgstr "픽셀 그리드 표시/숨기기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:175
+msgid "shortcuts.show-shortcuts"
+msgstr "단축키 표시/숨기기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:176
+msgid "shortcuts.snap-nodes"
+msgstr "노드에 스냅"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:177
+msgid "shortcuts.snap-pixel-grid"
+msgstr "픽셀 그리드에 스냅"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:178
+msgid "shortcuts.start-editing"
+msgstr "편집 시작"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:179
+msgid "shortcuts.start-measure"
+msgstr "측정 시작"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:180
+msgid "shortcuts.stop-measure"
+msgstr "측정 중지"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
+msgid "shortcuts.thumbnail-set"
+msgstr "썸네일 설정"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:498
+msgid "shortcuts.title"
+msgstr "키보드 단축키"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
+msgid "shortcuts.toggle-alignment"
+msgstr "동적 정렬 전환"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
+msgid "shortcuts.toggle-assets"
+msgstr "에셋 전환"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
+msgid "shortcuts.toggle-colorpalette"
+msgstr "색상 선택자 켜기/끄기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
+msgid "shortcuts.toggle-focus-mode"
+msgstr "포커스 모드 켜기/끄기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
+msgid "shortcuts.toggle-fullscreen"
+msgstr "전체 화면 켜기/끄기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
+msgid "shortcuts.toggle-guides"
+msgstr "가이드 표시 / 숨기기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:188
+msgid "shortcuts.toggle-history"
+msgstr "히스토리 패널 전환"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:189
+msgid "shortcuts.toggle-layers"
+msgstr "레이어 패널 전환"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:190
+msgid "shortcuts.toggle-layout-flex"
+msgstr "플렉스 레이아웃 추가 / 제거"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:191
+msgid "shortcuts.toggle-layout-grid"
+msgstr "그리드 레이아웃 추가 / 제거"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:192
+msgid "shortcuts.toggle-lock"
+msgstr "잠금 / 잠금 해제"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:193
+msgid "shortcuts.toggle-lock-size"
+msgstr "비율 잠금"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:194
+msgid "shortcuts.toggle-rulers"
+msgstr "눈금자 표시 / 숨기기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:195
+msgid "shortcuts.toggle-snap-guides"
+msgstr "가이드에 스냅"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:196
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "눈금자 가이드에 스냅"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:197
+msgid "shortcuts.toggle-textpalette"
+msgstr "텍스트 팔레트 전환"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:198
+msgid "shortcuts.toggle-theme"
+msgstr "테마 변경"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:199
+msgid "shortcuts.toggle-visibility"
+msgstr "표시 / 숨기기"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:200
+msgid "shortcuts.toggle-zoom-style"
+msgstr "확대/축소 스타일 전환"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:201
+msgid "shortcuts.underline"
+msgstr "밑줄 전환"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:202
+msgid "shortcuts.undo"
+msgstr "실행 취소"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:203
+msgid "shortcuts.ungroup"
+msgstr "그룹 해제"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:204
+msgid "shortcuts.unmask"
+msgstr "마스크 해제"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:205
+msgid "shortcuts.v-distribute"
+msgstr "세로로 균등 배분"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:206
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "줌 렌즈 축소"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:207
+msgid "shortcuts.zoom-lense-increase"
+msgstr "줌 렌즈 확대"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:208
+msgid "shortcuts.zoom-selected"
+msgstr "선택 항목에 맞추기"
+
+#: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/dashboard/subscription.cljs:162
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "엔터프라이즈 플랜"
+
+#: src/app/main/ui/dashboard/subscription.cljs:109
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "엔터프라이즈 플랜 (체험판)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:84
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "업그레이드!"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "팀을 위한 추가 저장 공간, 파일 복구 등의 기능을 이용해 보세요."
+
+#: src/app/main/ui/dashboard/subscription.cljs:82
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "프로페셔널 플랜"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+#, unused
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "구독하기"
+
+#: src/app/main/ui/dashboard/subscription.cljs:94
+#, markdown
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr ""
+"체험판은 만족스러우신가요? 모든 기능을 무제한으로 사용해 보세요. "
+"[구독하기|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:93
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "무제한 플랜 (체험판)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:100, src/app/main/ui/dashboard/subscription.cljs:161
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "무제한 플랜"
+
+#: src/app/main/ui/dashboard/subscription.cljs:101
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"모든 팀에 대해 고정된 가격으로 무제한 저장 공간, 확장된 파일 복구 기능 및 "
+"무제한 편집자 권한을 누리세요. [엔터프라이즈 플랜 살펴보기.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:70
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "자세히 보기"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr "추가 편집자 시트, 저장 공간, 자동 저장 버전 및 파일 백업 등."
+
+#: src/app/main/ui/dashboard/subscription.cljs:81, src/app/main/ui/dashboard/subscription.cljs:92, src/app/main/ui/dashboard/subscription.cljs:99, src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/dashboard/subscription.cljs:113
+msgid "subscription.dashboard.power-up.your-subscription"
+msgstr "현재 구독:"
+
+#: src/app/main/ui/dashboard/subscription.cljs:196
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"소유하신 팀 전체에 %s명의 편집자가 있으며, 프로페셔널 플랜은 최대 8명까지 "
+"지원합니다."
+
+#: src/app/main/ui/dashboard/subscription.cljs:204
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"더 많은 편집자 시트와 저장 공간, 파일 복구 기능을 위해 무제한 또는 "
+"엔터프라이즈 플랜으로 업그레이드해 주세요. [지금 구독하기.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:137
+msgid "subscription.dashboard.team-plan"
+msgstr "팀 플랜"
+
+#: src/app/main/ui/dashboard/subscription.cljs:199
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"팀이 계속 성장하고 있네요! 무제한 플랜은 최대 %s명의 편집자를 지원하지만, "
+"현재 %s명이 소속되어 있습니다."
+
+#: src/app/main/ui/dashboard/subscription.cljs:207
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"현재 편집자 수에 맞춰 플랜을 업그레이드해 주세요. [지금 "
+"구독하기.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:184
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"소유한 팀 전체에 추가된 새로운 편집자만 향후 요금에 합산됩니다. 25명 이상의 "
+"편집자에 대해서는 월 $175의 고정 요금이 적용됩니다."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1073
+msgid "subscription.dashboard.upgrade-plan.power-up"
+msgstr "업그레이드"
+
+#: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
+msgid "subscription.labels"
+msgstr "구독"
+
+#: src/app/main/ui/settings/subscription.cljs:484, src/app/main/ui/settings/subscription.cljs:508
+msgid "subscription.settings.add-payment-to-continue"
+msgstr "체험판 종료 후에도 계속 이용하시려면 결제 수단을 추가해 주세요"
+
+#: src/app/main/ui/settings/subscription.cljs:478, src/app/main/ui/settings/subscription.cljs:554
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "프로페셔널 플랜의 모든 혜택 및:"
+
+#: src/app/main/ui/settings/subscription.cljs:490, src/app/main/ui/settings/subscription.cljs:502, src/app/main/ui/settings/subscription.cljs:512, src/app/main/ui/settings/subscription.cljs:570
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "무제한 플랜의 모든 혜택 및:"
+
+#: src/app/main/ui/settings/subscription.cljs:53
+msgid "subscription.settings.editors"
+msgstr "(x %s명 편집자)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:145, src/app/main/ui/settings/subscription.cljs:104, src/app/main/ui/settings/subscription.cljs:457, src/app/main/ui/settings/subscription.cljs:510, src/app/main/ui/settings/subscription.cljs:566
+msgid "subscription.settings.enterprise"
+msgstr "엔터프라이즈"
+
+#: src/app/main/ui/settings/subscription.cljs:100, src/app/main/ui/settings/subscription.cljs:456, src/app/main/ui/settings/subscription.cljs:500
+msgid "subscription.settings.enterprise-trial"
+msgstr "엔터프라이즈 (체험판)"
+
+#: src/app/main/ui/settings/subscription.cljs:504, src/app/main/ui/settings/subscription.cljs:514, src/app/main/ui/settings/subscription.cljs:572
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90일 자동 저장 버전 및 파일 복구"
+
+#: src/app/main/ui/settings/subscription.cljs:505, src/app/main/ui/settings/subscription.cljs:515, src/app/main/ui/settings/subscription.cljs:573
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "월 정액제"
+
+#: src/app/main/ui/settings/subscription.cljs:503, src/app/main/ui/settings/subscription.cljs:513, src/app/main/ui/settings/subscription.cljs:571
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "무제한 저장 공간"
+
+#: src/app/main/ui/dashboard/subscription.cljs:150, src/app/main/ui/settings/subscription.cljs:482, src/app/main/ui/settings/subscription.cljs:494, src/app/main/ui/settings/subscription.cljs:506, src/app/main/ui/settings/subscription.cljs:516
+msgid "subscription.settings.manage-your-subscription"
+msgstr "나의 구독 관리"
+
+#: src/app/main/ui/settings/subscription.cljs:298
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "결제 수단 추가"
+
+#: src/app/main/ui/settings/subscription.cljs:285
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"결제 정보를 지금 추가하면 체험판 종료 후에도 구독이 끊김 없이 유지되며 "
+"당사의 오픈소스 프로젝트를 후원하실 수 있습니다. 지금은 요금이 청구되지 "
+"않습니다."
+
+#: src/app/main/ui/settings/subscription.cljs:293
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "지금은 건너뛰고 체험판 시작"
+
+#: src/app/main/ui/settings/subscription.cljs:203
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "체험판을 더 원활하게 시작할 수 있도록 도와주세요"
+
+#: src/app/main/ui/settings/subscription.cljs:209
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "현재 팀 전체에서 편집할 수 있는 사람이 %s명 있습니다."
+
+#: src/app/main/ui/settings/subscription.cljs:230
+msgid "subscription.settings.management.dialog.downgrade"
+msgstr ""
+"알림: 하위 플랜으로 변경하면 저장 공간이 줄어들고 백업 및 버전 히스토리 보존 "
+"기간이 단축됩니다."
+
+#: src/app/main/ui/settings/subscription.cljs:211
+msgid "subscription.settings.management.dialog.editors"
+msgstr "편집자"
+
+#: src/app/main/ui/settings/subscription.cljs:218
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr "(소유자, 관리자, 편집자 포함. 뷰어는 편집자에 포함되지 않음)"
+
+#: src/app/main/ui/settings/subscription.cljs:263
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"현재 인원보다 적은 편집자 수를 설정할 수 없습니다. 실제 편집을 하지 않는 "
+"사용자는 팀 설정에서 역할(편집자/관리자에서 뷰어로)을 변경해 주세요."
+
+#: src/app/main/ui/settings/subscription.cljs:259
+msgid "subscription.settings.management.dialog.payment-explanation"
+msgstr "체험판 종료 후 청구됩니다. 지금은 신용카드가 필요하지 않습니다."
+
+#: src/app/main/ui/settings/subscription.cljs:252, src/app/main/ui/settings/subscription.cljs:256
+#, markdown
+msgid "subscription.settings.management.dialog.price-month"
+msgstr "**$%s**/월"
+
+#: src/app/main/ui/settings/subscription.cljs:204
+msgid "subscription.settings.management.dialog.title"
+msgstr "내 팀에 %s 적용"
+
+#: src/app/main/ui/settings/subscription.cljs:266
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr ""
+"팁: 향후 초대를 고려하여 지금 시트 수를 늘려두실 수 있습니다. 팀 전체 "
+"편집자가 25명 이상이면 월 $175의 고정 요금이 적용됩니다."
+
+#: src/app/main/ui/settings/subscription.cljs:533
+msgid "subscription.settings.member-since"
+msgstr "Penpot 가입일: %s"
+
+#: src/app/main/ui/settings/subscription.cljs:546, src/app/main/ui/settings/subscription.cljs:560, src/app/main/ui/settings/subscription.cljs:576
+msgid "subscription.settings.more-information"
+msgstr "자세한 정보"
+
+#: src/app/main/ui/settings/subscription.cljs:536
+msgid "subscription.settings.other-plans"
+msgstr "다른 Penpot 플랜"
+
+#: src/app/main/ui/settings/subscription.cljs:540, src/app/main/ui/settings/subscription.cljs:553
+msgid "subscription.settings.price-editor-month"
+msgstr "편집자당 월 비용"
+
+#: src/app/main/ui/settings/subscription.cljs:569
+msgid "subscription.settings.price-organization-month"
+msgstr "조직/월"
+
+#: src/app/main/ui/dashboard/subscription.cljs:140, src/app/main/ui/settings/subscription.cljs:102, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:538
+msgid "subscription.settings.professional"
+msgstr "프로페셔널"
+
+#: src/app/main/ui/settings/subscription.cljs:471, src/app/main/ui/settings/subscription.cljs:542
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr "7일 자동 저장 버전 및 파일 복구"
+
+#: src/app/main/ui/settings/subscription.cljs:470, src/app/main/ui/settings/subscription.cljs:541
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10GB 저장 공간"
+
+#: src/app/main/ui/settings/subscription.cljs:472, src/app/main/ui/settings/subscription.cljs:543
+msgid "subscription.settings.professional.teams-editors-benefit"
+msgstr "무제한 팀 생성. 소유한 팀 전체 합산 최대 8명의 편집자."
+
+#: src/app/main/ui/settings/subscription.cljs:50
+msgid "subscription.settings.recommended"
+msgstr "추천"
+
+#: src/app/main/ui/settings/subscription.cljs:466
+msgid "subscription.settings.section-plan"
+msgstr "내 구독 정보"
+
+#: src/app/main/ui/settings/subscription.cljs:313
+msgid "subscription.settings.start-trial"
+msgstr "무료 체험판 시작"
+
+#: src/app/main/ui/settings/subscription.cljs:278, src/app/main/ui/settings/subscription.cljs:544, src/app/main/ui/settings/subscription.cljs:558, src/app/main/ui/settings/subscription.cljs:574
+msgid "subscription.settings.subscribe"
+msgstr "구독하기"
+
+#: src/app/main/ui/settings/subscription.cljs:345
+msgid "subscription.settings.success.dialog.description"
+msgstr "계정 상세 정보의 '구독' 페이지에서 언제든지 구독 내용을 수정하실 수 있습니다."
+
+#: src/app/main/ui/settings/subscription.cljs:343
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "Penpot %s 플랜을 선택해주셔서 감사합니다!"
+
+#: src/app/main/ui/settings/subscription.cljs:347
+msgid "subscription.settings.sucess.dialog.footer"
+msgstr "플랜을 즐기세요!"
+
+#: src/app/main/ui/settings/subscription.cljs:340
+msgid "subscription.settings.sucess.dialog.title"
+msgstr "%s이(가) 되셨습니다!"
+
+#: src/app/main/ui/settings/subscription.cljs:526
+msgid "subscription.settings.support-us-since"
+msgstr "이 플랜으로 저희를 지원해주신 날짜: %s"
+
+#: src/app/main/ui/settings/subscription.cljs:558, src/app/main/ui/settings/subscription.cljs:574
+msgid "subscription.settings.try-it-free"
+msgstr "14일 무료 체험"
+
+#: src/app/main/ui/dashboard/subscription.cljs:143, src/app/main/ui/settings/subscription.cljs:103, src/app/main/ui/settings/subscription.cljs:454, src/app/main/ui/settings/subscription.cljs:488, src/app/main/ui/settings/subscription.cljs:550
+msgid "subscription.settings.unlimited"
+msgstr "무제한"
+
+#: src/app/main/ui/dashboard/subscription.cljs:142, src/app/main/ui/settings/subscription.cljs:99, src/app/main/ui/settings/subscription.cljs:453, src/app/main/ui/settings/subscription.cljs:476
+msgid "subscription.settings.unlimited-trial"
+msgstr "무제한 (체험판)"
+
+#: src/app/main/ui/settings/subscription.cljs:480, src/app/main/ui/settings/subscription.cljs:492, src/app/main/ui/settings/subscription.cljs:556
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr "30일 자동 저장 버전 및 파일 복구"
+
+#: src/app/main/ui/settings/subscription.cljs:481, src/app/main/ui/settings/subscription.cljs:493, src/app/main/ui/settings/subscription.cljs:557
+msgid "subscription.settings.unlimited.bill"
+msgstr "월 최대 $175 정액 청구"
+
+#: src/app/main/ui/settings/subscription.cljs:479, src/app/main/ui/settings/subscription.cljs:491, src/app/main/ui/settings/subscription.cljs:555
+msgid "subscription.settings.unlimited.storage-benefit"
+msgstr "25GB 저장 공간"
+
+#: src/app/main/ui/dashboard/subscription.cljs:175, src/app/main/ui/workspace/main_menu.cljs:945
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "플랜 업그레이드"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:57
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr "이 한도를 늘리려면 [%s](mailto)로 문의하세요"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:59
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr "이 한도를 늘리려면 팀 소유자에게 문의하세요: [mailto:%s](%s)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:58
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr "이 한도를 늘리려면 [플랜을 업그레이드하세요|target:self](%s)"
+
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "초대 %s개 선택됨"
+
+#: src/app/main/ui/dashboard/files.cljs:181
+msgid "title.dashboard.files"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs:46
+msgid "title.dashboard.font-providers"
+msgstr "글꼴 제공자 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs:45
+msgid "title.dashboard.fonts"
+msgstr "글꼴 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/projects.cljs:357
+msgid "title.dashboard.projects"
+msgstr "프로젝트 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/search.cljs:50
+msgid "title.dashboard.search"
+msgstr "검색 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/libraries.cljs:58
+msgid "title.dashboard.shared-libraries"
+msgstr "공유 라이브러리 - %s - Penpot"
+
+#: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+msgid "title.default"
+msgstr "Penpot - 팀을 위한 자유로운 디자인"
+
+#: src/app/main/ui/settings/access_tokens.cljs:278
+msgid "title.settings.access-tokens"
+msgstr "프로필 - 액세스 토큰"
+
+#: src/app/main/ui/settings/feedback.cljs:161
+msgid "title.settings.feedback"
+msgstr "의견 보내기 - Penpot"
+
+#: src/app/main/ui/settings/notifications.cljs:45
+msgid "title.settings.notifications"
+msgstr "알림 - Penpot"
+
+#: src/app/main/ui/settings/options.cljs:83
+msgid "title.settings.options"
+msgstr "설정 - Penpot"
+
+#: src/app/main/ui/settings/password.cljs:105
+msgid "title.settings.password"
+msgstr "비밀번호 - Penpot"
+
+#: src/app/main/ui/settings/profile.cljs:124
+msgid "title.settings.profile"
+msgstr "프로필 - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:981
+msgid "title.team-invitations"
+msgstr "초대 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:535
+msgid "title.team-members"
+msgstr "구성원 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:1296
+msgid "title.team-settings"
+msgstr "설정 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:1249
+msgid "title.team-webhooks"
+msgstr "웹훅 - %s - Penpot"
+
+#: src/app/main/ui/viewer.cljs:423
+msgid "title.viewer"
+msgstr "%s - 보기 모드 - Penpot"
+
+#: src/app/main/ui/workspace.cljs:237
+msgid "title.workspace"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui.cljs:138
+#, unused
+msgid "viewer.breaking-change.description"
+msgstr ""
+"공유 링크가 더 이상 유효하지 않습니다. 새 링크를 만들거나 소유자에게 "
+"요청하세요."
+
+#: src/app/main/ui.cljs:137
+#, unused
+msgid "viewer.breaking-change.message"
+msgstr "죄송합니다!"
+
+#: src/app/main/ui/viewer.cljs:573
+msgid "viewer.empty-state"
+msgstr "페이지에 보드가 없습니다."
+
+#: src/app/main/ui/viewer.cljs:578
+msgid "viewer.frame-not-found"
+msgstr "보드를 찾을 수 없습니다."
+
+#: src/app/main/ui/viewer/header.cljs:336
+msgid "viewer.header.comments-section"
+msgstr "댓글 (%s)"
+
+#: src/app/main/ui/viewer/interactions.cljs:298
+msgid "viewer.header.dont-show-interactions"
+msgstr "인터랙션 숨기기"
+
+#: src/app/main/ui/viewer/header.cljs:187
+msgid "viewer.header.edit-in-workspace"
+msgstr "워크스페이스에서 편집"
+
+#: src/app/main/ui/viewer/header.cljs:193
+msgid "viewer.header.fullscreen"
+msgstr "전체 화면"
+
+#: src/app/main/ui/viewer/header.cljs:346
+msgid "viewer.header.inspect-section"
+msgstr "검사 (%s)"
+
+#: src/app/main/ui/viewer/interactions.cljs:288
+msgid "viewer.header.interactions"
+msgstr "인터랙션"
+
+#: src/app/main/ui/viewer/header.cljs:327
+msgid "viewer.header.interactions-section"
+msgstr "인터랙션 (%s)"
+
+#: src/app/main/ui/viewer/share_link.cljs:193
+msgid "viewer.header.share.copy-link"
+msgstr "링크 복사"
+
+#: src/app/main/ui/viewer/interactions.cljs:306
+msgid "viewer.header.show-interactions"
+msgstr "인터랙션 표시"
+
+#: src/app/main/ui/viewer/interactions.cljs:317
+msgid "viewer.header.show-interactions-on-click"
+msgstr "클릭 시 인터랙션 표시"
+
+#: src/app/main/ui/viewer/header.cljs:233
+msgid "viewer.header.sitemap"
+msgstr "사이트맵"
+
+#: src/app/main/ui/dashboard/team.cljs:1203
+msgid "webhooks.last-delivery.success"
+msgstr "마지막 전송이 성공했습니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:55
+msgid "workspace.align.hcenter"
+msgstr "가로 가운데 정렬 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:69
+msgid "workspace.align.hdistribute"
+msgstr "가로 간격 균등 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:48
+msgid "workspace.align.hleft"
+msgstr "왼쪽 정렬 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:62
+msgid "workspace.align.hright"
+msgstr "오른쪽 정렬 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
+msgid "workspace.align.vbottom"
+msgstr "아래쪽 정렬 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:84
+msgid "workspace.align.vcenter"
+msgstr "세로 가운데 정렬 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:98
+msgid "workspace.align.vdistribute"
+msgstr "세로 간격 균등 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:77
+msgid "workspace.align.vtop"
+msgstr "위쪽 정렬 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:172
+msgid "workspace.assets.add-library"
+msgstr "라이브러리 추가"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.assets"
+msgstr "에셋"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:152
+msgid "workspace.assets.box-filter-all"
+msgstr "모든 에셋"
+
+#: src/app/main/ui/dashboard/grid.cljs:161, src/app/main/ui/dashboard/grid.cljs:193, src/app/main/ui/workspace/sidebar/assets/colors.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:158
+msgid "workspace.assets.colors"
+msgstr "색상"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:497
+msgid "workspace.assets.colors.add-color"
+msgstr "색상 추가"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:81
+msgid "workspace.assets.component-group-options"
+msgstr "컴포넌트 그룹 옵션"
+
+#: src/app/main/ui/dashboard/grid.cljs:157, src/app/main/ui/dashboard/grid.cljs:172, src/app/main/ui/workspace/sidebar/assets/components.cljs:559, src/app/main/ui/workspace/sidebar/assets.cljs:155
+msgid "workspace.assets.components"
+msgstr "컴포넌트"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:580
+msgid "workspace.assets.components.add-component"
+msgstr "컴포넌트 추가"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:177, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:602
+msgid "workspace.assets.components.num-variants"
+msgstr "%s개 베리언트"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:141
+msgid "workspace.assets.create-group"
+msgstr "그룹 생성"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:152
+msgid "workspace.assets.create-group-hint"
+msgstr "항목 이름이 \"그룹 이름 / 항목 이름\" 형식으로 자동으로 지정됩니다"
+
+#: src/app/main/ui/workspace/context_menu.cljs:684, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:640, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
+msgid "workspace.assets.delete"
+msgstr "삭제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:689
+msgid "workspace.assets.duplicate"
+msgstr "복제"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:619
+msgid "workspace.assets.duplicate-main"
+msgstr "메인 복제"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:438
+msgid "workspace.assets.edit"
+msgstr "편집"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:186
+msgid "workspace.assets.filter"
+msgstr "필터"
+
+#: src/app/main/ui/workspace/sidebar/assets/graphics.cljs:386, src/app/main/ui/workspace/sidebar/assets.cljs:152
+#, unused
+msgid "workspace.assets.graphics"
+msgstr "그래픽"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:189, src/app/main/ui/workspace/sidebar/assets/components.cljs:575, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:806
+msgid "workspace.assets.grid-view"
+msgstr "그리드 보기"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:624, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:447
+msgid "workspace.assets.group"
+msgstr "그룹"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:151
+msgid "workspace.assets.group-name"
+msgstr "그룹 이름"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:190, src/app/main/ui/workspace/sidebar/assets/components.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:802
+msgid "workspace.assets.list-view"
+msgstr "목록 보기"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:686
+msgid "workspace.assets.local-library"
+msgstr "로컬 라이브러리"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:176
+msgid "workspace.assets.manage-library"
+msgstr "라이브러리 관리"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:307
+msgid "workspace.assets.not-found"
+msgstr "에셋을 찾을 수 없습니다"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:113
+msgid "workspace.assets.open-library"
+msgstr "라이브러리 파일 열기"
+
+#: src/app/main/ui/workspace/context_menu.cljs:687, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:615, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
+msgid "workspace.assets.rename"
+msgstr "이름 바꾸기"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:142
+msgid "workspace.assets.rename-group"
+msgstr "그룹 이름 바꾸기"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:181
+msgid "workspace.assets.search"
+msgstr "에셋 검색"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s개 항목 선택됨"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.shared-library"
+msgstr "공유 라이브러리"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:229
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "컴포넌트 %s개"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:201
+msgid "workspace.assets.sort"
+msgstr "정렬"
+
+#: src/app/main/ui/dashboard/grid.cljs:165, src/app/main/ui/dashboard/grid.cljs:220, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:161
+msgid "workspace.assets.typography"
+msgstr "타이포그래피"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:404
+msgid "workspace.assets.typography.add-typography"
+msgstr "타이포그래피 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
+msgid "workspace.assets.typography.font-id"
+msgstr "글꼴"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:528
+msgid "workspace.assets.typography.font-size"
+msgstr "크기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:524
+msgid "workspace.assets.typography.font-style"
+msgstr "글꼴 스타일"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:546
+msgid "workspace.assets.typography.go-to-edit"
+msgstr "스타일 라이브러리 파일로 이동하여 편집"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:536
+msgid "workspace.assets.typography.letter-spacing"
+msgstr "자간"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:532
+msgid "workspace.assets.typography.line-height"
+msgstr "행간"
+
+#: src/app/main/ui/dashboard/grid.cljs:230, src/app/main/ui/workspace/libraries.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:487, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:512, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:619, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:639
+msgid "workspace.assets.typography.sample"
+msgstr "가나다"
+
+#, unused
+msgid "workspace.assets.typography.text-styles"
+msgstr "텍스트 스타일"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
+msgid "workspace.assets.typography.text-transform"
+msgstr "텍스트 변환"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:70
+msgid "workspace.assets.ungroup"
+msgstr "그룹 해제"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:428, src/app/main/ui/workspace/colorpicker.cljs:441
+msgid "workspace.colorpicker.color-tokens"
+msgstr "색상 token"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:434
+msgid "workspace.colorpicker.get-color"
+msgstr "색상 가져오기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
+msgid "workspace.component.swap.loop-error"
+msgstr "컴포넌트는 자기 자신 안에 중첩될 수 없습니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:505
+msgid "workspace.component.switch.loop-error-multi"
+msgstr ""
+"일부 복사본을 전환할 수 없습니다. 컴포넌트는 자기 자신 안에 중첩될 수 "
+"없습니다."
+
+#: src/app/main/ui/workspace/context_menu.cljs:796
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "영역 생성"
+
+#: src/app/main/ui/workspace/context_menu.cljs:799
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "보드 생성"
+
+#: src/app/main/ui/workspace/context_menu.cljs:791
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "셀 병합"
+
+#: src/app/main/ui/workspace/context_menu.cljs:754
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "오른쪽에 열 1개 추가"
+
+#: src/app/main/ui/workspace/context_menu.cljs:753
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "왼쪽에 열 1개 추가"
+
+#: src/app/main/ui/workspace/context_menu.cljs:755
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "열 삭제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:756
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "열 및 도형 삭제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:752
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "열 복제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:761
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "아래에 행 1개 추가"
+
+#: src/app/main/ui/workspace/context_menu.cljs:760
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "위에 행 1개 추가"
+
+#: src/app/main/ui/workspace/context_menu.cljs:762
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "행 삭제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:763
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "행 및 도형 삭제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:759
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "행 복제"
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "디버깅 도구"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:512
+msgid "workspace.focus.focus-mode"
+msgstr "포커스 모드"
+
+#: src/app/main/ui/workspace/context_menu.cljs:396, src/app/main/ui/workspace/context_menu.cljs:711
+msgid "workspace.focus.focus-off"
+msgstr "포커스 해제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:395
+msgid "workspace.focus.focus-on"
+msgstr "포커스 설정"
+
+#, unused
+msgid "workspace.focus.selection"
+msgstr "선택"
+
+#: src/app/util/color.cljs:34
+msgid "workspace.gradients.linear"
+msgstr "선형 그래디언트"
+
+#: src/app/util/color.cljs:35
+msgid "workspace.gradients.radial"
+msgstr "방사형 그래디언트"
+
+#: src/app/main/ui/workspace/main_menu.cljs:274
+msgid "workspace.header.menu.disable-dynamic-alignment"
+msgstr "동적 정렬 비활성화"
+
+#: src/app/main/ui/workspace/main_menu.cljs:228
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "비율 유지 크기 조정 비활성화"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "텍스트 크기 조정 비활성화"
+
+#: src/app/main/ui/workspace/main_menu.cljs:259
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "가이드 스냅 비활성화"
+
+#: src/app/main/ui/workspace/main_menu.cljs:289
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "픽셀 스냅 비활성화"
+
+#: src/app/main/ui/workspace/main_menu.cljs:243
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "눈금자 가이드 스냅 비활성화"
+
+#: src/app/main/ui/workspace/main_menu.cljs:275
+msgid "workspace.header.menu.enable-dynamic-alignment"
+msgstr "동적 정렬 활성화"
+
+#: src/app/main/ui/workspace/main_menu.cljs:229
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "비율 크기 조절 활성화"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "텍스트 크기 조절 활성화"
+
+#: src/app/main/ui/workspace/main_menu.cljs:260
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "가이드에 스냅"
+
+#: src/app/main/ui/workspace/main_menu.cljs:290
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "픽셀 스냅 활성화"
+
+#: src/app/main/ui/workspace/main_menu.cljs:244
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "눈금자 가이드에 스냅"
+
+#: src/app/main/ui/workspace/main_menu.cljs:422
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "보드 이름 숨기기"
+
+#: src/app/main/ui/workspace/main_menu.cljs:376
+msgid "workspace.header.menu.hide-guides"
+msgstr "가이드 숨기기"
+
+#: src/app/main/ui/workspace/main_menu.cljs:393
+msgid "workspace.header.menu.hide-palette"
+msgstr "색상 팔레트 숨기기"
+
+#: src/app/main/ui/workspace/main_menu.cljs:434
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "픽셀 그리드 숨기기"
+
+#: src/app/main/ui/workspace/main_menu.cljs:360
+msgid "workspace.header.menu.hide-rules"
+msgstr "눈금자 숨기기"
+
+#: src/app/main/ui/workspace/main_menu.cljs:407
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "글꼴 팔레트 숨기기"
+
+#: src/app/main/ui/workspace/main_menu.cljs:884
+msgid "workspace.header.menu.option.edit"
+msgstr "편집"
+
+#: src/app/main/ui/workspace/main_menu.cljs:873
+msgid "workspace.header.menu.option.file"
+msgstr "파일"
+
+#: src/app/main/ui/workspace/main_menu.cljs:930
+msgid "workspace.header.menu.option.help-info"
+msgstr "도움말 및 정보"
+
+#: src/app/main/ui/workspace/main_menu.cljs:916
+#, unused
+msgid "workspace.header.menu.option.power-up"
+msgstr "플랜 업그레이드"
+
+#: src/app/main/ui/workspace/main_menu.cljs:906
+msgid "workspace.header.menu.option.preferences"
+msgstr "환경 설정"
+
+#: src/app/main/ui/workspace/main_menu.cljs:895
+msgid "workspace.header.menu.option.view"
+msgstr "보기"
+
+#: src/app/main/ui/workspace/main_menu.cljs:506
+msgid "workspace.header.menu.redo"
+msgstr "다시 실행"
+
+#: src/app/main/ui/workspace/main_menu.cljs:477
+msgid "workspace.header.menu.select-all"
+msgstr "모두 선택"
+
+#: src/app/main/ui/workspace/main_menu.cljs:423
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "보드 이름 표시"
+
+#: src/app/main/ui/workspace/main_menu.cljs:377
+msgid "workspace.header.menu.show-guides"
+msgstr "가이드 표시"
+
+#: src/app/main/ui/workspace/main_menu.cljs:394
+msgid "workspace.header.menu.show-palette"
+msgstr "색상 팔레트 표시"
+
+#: src/app/main/ui/workspace/main_menu.cljs:435
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "픽셀 그리드 표시"
+
+#: src/app/main/ui/workspace/main_menu.cljs:361
+msgid "workspace.header.menu.show-rules"
+msgstr "눈금자 표시"
+
+#: src/app/main/ui/workspace/main_menu.cljs:408
+msgid "workspace.header.menu.show-textpalette"
+msgstr "글꼴 팔레트 표시"
+
+#: src/app/main/ui/workspace/main_menu.cljs:316
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "다크 테마로 전환"
+
+#: src/app/main/ui/workspace/main_menu.cljs:314, src/app/main/ui/workspace/main_menu.cljs:317
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "라이트 테마로 전환"
+
+#: src/app/main/ui/workspace/main_menu.cljs:315
+msgid "workspace.header.menu.toggle-system-theme"
+msgstr "시스템 테마로 전환"
+
+#: src/app/main/ui/workspace/main_menu.cljs:492
+msgid "workspace.header.menu.undo"
+msgstr "실행 취소"
+
+#: src/app/main/ui/viewer/header.cljs:93, src/app/main/ui/workspace/right_header.cljs:92
+msgid "workspace.header.reset-zoom"
+msgstr "초기화"
+
+#: src/app/main/ui/workspace/left_header.cljs:128
+msgid "workspace.header.save-error"
+msgstr "저장 오류"
+
+#: src/app/main/ui/workspace/left_header.cljs:127
+msgid "workspace.header.saved"
+msgstr "저장됨"
+
+#: src/app/main/ui/workspace/left_header.cljs:125, src/app/main/ui/workspace/left_header.cljs:126
+msgid "workspace.header.saving"
+msgstr "저장 중"
+
+#: src/app/main/ui/workspace/right_header.cljs:232
+msgid "workspace.header.share"
+msgstr "공유"
+
+#: src/app/main/ui/workspace/right_header.cljs:48, src/app/main/ui/workspace/right_header.cljs:53
+#, unused
+msgid "workspace.header.unsaved"
+msgstr "저장하지 않은 변경 사항"
+
+#: src/app/main/ui/workspace/right_header.cljs:237
+msgid "workspace.header.viewer"
+msgstr "보기 모드 (%s)"
+
+#: src/app/main/ui/viewer/header.cljs:74, src/app/main/ui/workspace/right_header.cljs:74
+msgid "workspace.header.zoom"
+msgstr "확대/축소"
+
+#: src/app/main/ui/viewer/header.cljs:104
+msgid "workspace.header.zoom-fill"
+msgstr "채우기 - 채우기 맞춤"
+
+#: src/app/main/ui/viewer/header.cljs:97
+msgid "workspace.header.zoom-fit"
+msgstr "맞추기 - 화면에 맞게 축소"
+
+#: src/app/main/ui/workspace/right_header.cljs:96
+msgid "workspace.header.zoom-fit-all"
+msgstr "전체 맞추기"
+
+#: src/app/main/ui/viewer/header.cljs:111
+msgid "workspace.header.zoom-full-screen"
+msgstr "전체 화면"
+
+#: src/app/main/ui/workspace/right_header.cljs:104
+msgid "workspace.header.zoom-selected"
+msgstr "선택 항목에 맞추기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
+msgid "workspace.layout-grid.editor.margin.expand"
+msgstr "4면 여백 옵션 표시"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:859
+msgid "workspace.layout-grid.editor.options.edit-grid"
+msgstr "그리드 편집"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1539
+msgid "workspace.layout-grid.editor.options.exit"
+msgstr "종료"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:584, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:593, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:599
+msgid "workspace.layout-grid.editor.padding.bottom"
+msgstr "아래쪽 패딩"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:669
+msgid "workspace.layout-grid.editor.padding.expand"
+msgstr "4면 패딩 옵션 보기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:416, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:427, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:433
+msgid "workspace.layout-grid.editor.padding.horizontal"
+msgstr "가로 패딩"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:618, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:633
+msgid "workspace.layout-grid.editor.padding.left"
+msgstr "왼쪽 패딩"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:551, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:560, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:566
+msgid "workspace.layout-grid.editor.padding.right"
+msgstr "오른쪽 패딩"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:517, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:526, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:532
+msgid "workspace.layout-grid.editor.padding.top"
+msgstr "위쪽 패딩"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:380, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:391, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:397
+msgid "workspace.layout-grid.editor.padding.vertical"
+msgstr "세로 패딩"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:62
+msgid "workspace.layout-grid.editor.title"
+msgstr "그리드 편집 중"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:70
+msgid "workspace.layout-grid.editor.top-bar.done"
+msgstr "완료"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:66
+msgid "workspace.layout-grid.editor.top-bar.locate"
+msgstr "위치 찾기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1565
+msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
+msgstr "그리드 레이아웃 위치 찾기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
+msgid "workspace.layout-item.fit-content-horizontal"
+msgstr "콘텐츠에 맞춤 (가로)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
+msgid "workspace.layout-item.fit-content-vertical"
+msgstr "콘텐츠에 맞춤 (세로)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
+msgid "workspace.layout-item.fix-height"
+msgstr "높이 고정"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
+msgid "workspace.layout-item.fix-width"
+msgstr "너비 고정"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
+msgid "workspace.layout-item.height-100"
+msgstr "높이 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
+msgid "workspace.layout-item.width-100"
+msgstr "너비 100%"
+
+#: src/app/main/ui/workspace/libraries.cljs
+#, unused
+msgid "workspace.libraries.add"
+msgstr "추가"
+
+#: src/app/main/ui/workspace/libraries.cljs:100, src/app/main/ui/workspace/libraries.cljs:126
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "색상 %s개"
+
+#: src/app/main/ui/workspace/color_palette.cljs:147
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "라이브러리에 아직 색상 스타일이 없습니다"
+
+#: src/app/main/ui/workspace/text_palette.cljs:161
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "라이브러리에 아직 타이포그래피 스타일이 없습니다"
+
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:88, src/app/main/ui/workspace/colorpicker/libraries.cljs:48, src/app/main/ui/workspace/text_palette_ctx_menu.cljs:49
+msgid "workspace.libraries.colors.file-library"
+msgstr "파일 라이브러리"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+#, unused
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:111, src/app/main/ui/workspace/colorpicker/libraries.cljs:47
+msgid "workspace.libraries.colors.recent-colors"
+msgstr "최근 색상"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+#, unused
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "RGB 보색"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:355
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:555
+msgid "workspace.libraries.colors.save-color"
+msgstr "색상 스타일 저장"
+
+#: src/app/main/ui/workspace/libraries.cljs:94, src/app/main/ui/workspace/libraries.cljs:118
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "컴포넌트 %s개"
+
+#: src/app/main/ui/workspace/libraries.cljs:338
+msgid "workspace.libraries.connected-to"
+msgstr "연결됨:"
+
+#: src/app/main/ui/workspace/libraries.cljs:392
+msgid "workspace.libraries.empty.add-some"
+msgstr "또는 다음 중 하나를 추가해 보세요:"
+
+#: src/app/main/ui/workspace/libraries.cljs:386
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "팀에 공유 라이브러리가 없습니다. 여기서 찾아보세요"
+
+#: src/app/main/ui/workspace/libraries.cljs:390
+msgid "workspace.libraries.empty.some-templates"
+msgstr "일부 템플릿 보기"
+
+#: src/app/main/ui/workspace/libraries.cljs:313
+msgid "workspace.libraries.file-library"
+msgstr "파일 라이브러리"
+
+#: src/app/main/ui/workspace/libraries.cljs:97, src/app/main/ui/workspace/libraries.cljs:122
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "그래픽 %s개"
+
+#: src/app/main/ui/workspace/libraries.cljs:307
+msgid "workspace.libraries.in-this-file"
+msgstr "이 파일의 라이브러리"
+
+#: src/app/main/ui/workspace/libraries.cljs:628, src/app/main/ui/workspace/libraries.cljs:648
+msgid "workspace.libraries.libraries"
+msgstr "라이브러리"
+
+#: src/app/main/ui/workspace/libraries.cljs
+#, unused
+msgid "workspace.libraries.library"
+msgstr "라이브러리"
+
+#: src/app/main/ui/workspace/libraries.cljs:487
+msgid "workspace.libraries.library-updates"
+msgstr "라이브러리 업데이트"
+
+#: src/app/main/ui/workspace/libraries.cljs:381
+msgid "workspace.libraries.loading"
+msgstr "로딩 중…"
+
+#: src/app/main/ui/workspace/libraries.cljs:387
+#, unused
+msgid "workspace.libraries.more-templates"
+msgstr "더 많은 템플릿을 찾아보세요 "
+
+#: src/app/main/ui/workspace/libraries.cljs:485
+msgid "workspace.libraries.no-libraries-need-sync"
+msgstr "업데이트가 필요한 공유 라이브러리가 없습니다"
+
+#: src/app/main/ui/workspace/libraries.cljs:399
+msgid "workspace.libraries.no-matches-for"
+msgstr "\"%s\"에 대한 검색 결과가 없습니다"
+
+#: src/app/main/ui/workspace/libraries.cljs:356
+msgid "workspace.libraries.search-shared-libraries"
+msgstr "공유 라이브러리 검색"
+
+#: src/app/main/ui/workspace/libraries.cljs:352
+msgid "workspace.libraries.shared-libraries"
+msgstr "공유 라이브러리"
+
+#: src/app/main/ui/workspace/libraries.cljs:372
+msgid "workspace.libraries.shared-library-btn"
+msgstr "라이브러리 연결"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.multiple-typography"
+msgstr "여러 타이포그래피"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-typography-tooltip"
+msgstr "모든 타이포그래피 연결 해제"
+
+#: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:130
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "타이포그래피 %s개"
+
+#: src/app/main/ui/workspace/libraries.cljs:343
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "라이브러리 연결 해제"
+
+#: src/app/main/ui/workspace/libraries.cljs:507
+msgid "workspace.libraries.update"
+msgstr "업데이트"
+
+#: src/app/main/ui/workspace/libraries.cljs:583
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "모든 변경 사항 보기"
+
+#: src/app/main/ui/workspace/libraries.cljs:630
+msgid "workspace.libraries.updates"
+msgstr "업데이트"
+
+#: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:67, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:72
+msgid "workspace.notification-pill.detail"
+msgstr "세부정보"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
+msgid "workspace.options.add-interaction"
+msgstr "+ 버튼을 클릭하여 인터랙션을 추가하세요."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:96
+msgid "workspace.options.blur-options.add-blur"
+msgstr "블러 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:119
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "블러 제거"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.title"
+msgstr "블러"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.title.group"
+msgstr "그룹 블러"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:90
+msgid "workspace.options.blur-options.title.multiple"
+msgstr "선택 블러"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:115
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "블러 전환"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
+msgid "workspace.options.canvas-background"
+msgstr "캔버스 배경"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
+msgid "workspace.options.clip-content"
+msgstr "콘텐츠 클리핑"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1027, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1033, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1282
+msgid "workspace.options.component"
+msgstr "컴포넌트"
+
+#: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:194
+msgid "workspace.options.component.annotation"
+msgstr "주석"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1041
+msgid "workspace.options.component.copy"
+msgstr "복사"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:187
+msgid "workspace.options.component.create-annotation"
+msgstr "주석 만들기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:186
+msgid "workspace.options.component.edit-annotation"
+msgstr "주석 편집"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1040, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1286
+msgid "workspace.options.component.main"
+msgstr "메인"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:781
+msgid "workspace.options.component.swap"
+msgstr "컴포넌트 교체"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:820
+msgid "workspace.options.component.swap.empty"
+msgstr "이 라이브러리에 에셋이 아직 없습니다"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1066
+msgid "workspace.options.component.unlinked"
+msgstr "연결 해제됨"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:570
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "충돌하는 베리언트 위치 찾기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:567
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"이 컴포넌트에 충돌하는 베리언트가 있습니다. 각 베리언트가 고유한 속성 조합을 "
+"갖도록 하세요."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1341
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "중복된 베리언트 위치 찾기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1338
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "일부 베리언트의 속성과 값이 동일합니다"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:267
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr ""
+"이 베리언트들은 속성과 값이 동일합니다. 각각 고유하게 식별될 수 있도록 값을 "
+"조정하세요."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:264
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr ""
+"이 베리언트는 다른 베리언트와 속성 및 값이 동일합니다. 고유하게 식별될 수 "
+"있도록 값을 조정하세요."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:270
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr ""
+"일부 베리언트의 속성과 값이 동일합니다. 각각 고유하게 식별될 수 있도록 값을 "
+"조정하세요."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:557
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"이 컴포넌트에 이름이 유효하지 않은 베리언트가 있습니다. 올바른 형식을 "
+"따르세요."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1331
+msgid "workspace.options.component.variant.malformed.group.locate"
+msgstr "유효하지 않은 베리언트 위치 찾기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1328
+msgid "workspace.options.component.variant.malformed.group.title"
+msgstr "일부 베리언트의 이름이 유효하지 않습니다"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:560
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "유효하지 않은 베리언트 위치 찾기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:251
+msgid "workspace.options.component.variant.malformed.single.all"
+msgstr "이 베리언트들의 이름이 유효하지 않습니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:248
+msgid "workspace.options.component.variant.malformed.single.one"
+msgstr "이 베리언트의 이름이 유효하지 않습니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:254
+msgid "workspace.options.component.variant.malformed.single.some"
+msgstr "일부 베리언트의 이름이 유효하지 않습니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:433
+msgid "workspace.options.component.variant.malformed.structure.example"
+msgstr "[속성]=[값], [속성]=[값]"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:431
+msgid "workspace.options.component.variant.malformed.structure.title"
+msgstr "다음 구조를 사용해 보세요:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:54
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"베리언트 간 전환 시 변경 사항을 유지하려면, Penpot은 다음 조건을 만족하는 "
+"레이어를 연결합니다:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:91
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"이 중 하나를 변경(예: 레이어 이름 바꾸기 또는 그룹화)하면 연결이 끊어지지만 "
+"변경을 되돌리면 복원됩니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:67
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "같은 이름을 사용합니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "같은 유형을 사용합니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr "직사각형, 타원, 경로 및 불린 연산 항목들은 동일한 유형으로 간주됩니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "계층 수준이 동일합니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "그룹, 보드, 레이아웃은 동일한 것으로 간주됩니다."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1045, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1289, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:47
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "베리언트 연결 방식"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:164
+msgid "workspace.options.constraints"
+msgstr "제약 조건"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
+msgid "workspace.options.constraints.bottom"
+msgstr "아래쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
+msgid "workspace.options.constraints.center"
+msgstr "중앙"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:224
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "스크롤 시 고정"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
+msgid "workspace.options.constraints.left"
+msgstr "왼쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141
+msgid "workspace.options.constraints.leftright"
+msgstr "좌우"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:140
+msgid "workspace.options.constraints.right"
+msgstr "오른쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:143, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:154
+msgid "workspace.options.constraints.scale"
+msgstr "크기 조절"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
+msgid "workspace.options.constraints.top"
+msgstr "위쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
+msgid "workspace.options.constraints.topbottom"
+msgstr "위아래"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs:197
+msgid "workspace.options.design"
+msgstr "디자인"
+
+#: src/app/main/ui/inspect/exports.cljs:140
+msgid "workspace.options.export"
+msgstr "내보내기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#, unused
+msgid "workspace.options.export-multiple"
+msgstr "선택 영역 내보내기"
+
+#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "요소 %s개 내보내기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:214
+msgid "workspace.options.export.add-export"
+msgstr "내보내기 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:226, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:261
+msgid "workspace.options.export.remove-export"
+msgstr "내보내기 제거"
+
+#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:255
+msgid "workspace.options.export.suffix"
+msgstr "접미사"
+
+#: src/app/main/ui/exports/assets.cljs:250
+msgid "workspace.options.exporting-complete"
+msgstr "내보내기 완료"
+
+#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:251, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:272
+msgid "workspace.options.exporting-object"
+msgstr "내보내는 중…"
+
+#: src/app/main/ui/exports/assets.cljs:249
+msgid "workspace.options.exporting-object-error"
+msgstr "내보내기 실패"
+
+#: src/app/main/ui/exports/assets.cljs:252
+msgid "workspace.options.exporting-object-slow"
+msgstr "내보내기가 예상보다 느립니다"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:236
+msgid "workspace.options.fill"
+msgstr "채우기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:208
+msgid "workspace.options.fill.add-fill"
+msgstr "채우기 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223
+msgid "workspace.options.fill.remove-fill"
+msgstr "채우기 제거"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:405
+msgid "workspace.options.fit-content"
+msgstr "콘텐츠에 맞게 보드 크기 조절"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:704
+msgid "workspace.options.flows.add-flow-start"
+msgstr "플로우 시작 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:700
+msgid "workspace.options.flows.flow"
+msgstr "플로우"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:164
+msgid "workspace.options.flows.flow-start"
+msgstr "플로우 시작"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:672
+msgid "workspace.options.flows.flow-starts"
+msgstr "플로우 시작"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:155
+#, unused
+msgid "workspace.options.flows.remove-flow"
+msgstr "플로우 제거"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:32
+msgid "workspace.options.grid.auto"
+msgstr "자동"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:163
+msgid "workspace.options.grid.column"
+msgstr "열"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.grid-title"
+msgstr "그리드"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:204, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:247
+msgid "workspace.options.grid.params.color"
+msgstr "색상"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.columns"
+msgstr "열"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:270
+msgid "workspace.options.grid.params.gutter"
+msgstr "거터"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:257
+msgid "workspace.options.grid.params.height"
+msgstr "높이"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:281
+msgid "workspace.options.grid.params.margin"
+msgstr "마진"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.rows"
+msgstr "행"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:226, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:302
+msgid "workspace.options.grid.params.set-default"
+msgstr "기본값으로 설정"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.size"
+msgstr "크기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.type"
+msgstr "유형"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:241
+msgid "workspace.options.grid.params.type.bottom"
+msgstr "아래쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:239
+msgid "workspace.options.grid.params.type.center"
+msgstr "중앙"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:238
+msgid "workspace.options.grid.params.type.left"
+msgstr "왼쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:242
+msgid "workspace.options.grid.params.type.right"
+msgstr "오른쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
+msgid "workspace.options.grid.params.type.stretch"
+msgstr "늘이기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
+msgid "workspace.options.grid.params.type.top"
+msgstr "위쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:300
+msgid "workspace.options.grid.params.use-default"
+msgstr "기본값 사용"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:258
+msgid "workspace.options.grid.params.width"
+msgstr "너비"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:164
+msgid "workspace.options.grid.row"
+msgstr "행"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:162
+msgid "workspace.options.grid.square"
+msgstr "사각형"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:106
+msgid "workspace.options.group-fill"
+msgstr "그룹 채우기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:45
+msgid "workspace.options.group-stroke"
+msgstr "그룹 선"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:332
+msgid "workspace.options.guides.add-guide"
+msgstr "가이드 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:191
+msgid "workspace.options.guides.remove-guide"
+msgstr "가이드 제거"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:329
+msgid "workspace.options.guides.title"
+msgstr "가이드"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.toggle-guide"
+msgstr "가이드 전환"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:454
+msgid "workspace.options.height"
+msgstr "높이"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs:201
+msgid "workspace.options.inspect"
+msgstr "검사"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:438
+msgid "workspace.options.interaction-action"
+msgstr "동작"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:43, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:344
+msgid "workspace.options.interaction-after-delay"
+msgstr "지연 후"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:578
+msgid "workspace.options.interaction-animation"
+msgstr "애니메이션"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr "아래"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "들어오기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "왼쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "나가기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "오른쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
+msgid "workspace.options.interaction-animation-direction-up"
+msgstr "위로"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "디졸브"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:382
+msgid "workspace.options.interaction-animation-none"
+msgstr "없음"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:389
+msgid "workspace.options.interaction-animation-push"
+msgstr "밀기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:384
+msgid "workspace.options.interaction-animation-slide"
+msgstr "슬라이드"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:368
+msgid "workspace.options.interaction-auto"
+msgstr "자동"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:568
+msgid "workspace.options.interaction-background"
+msgstr "배경 오버레이 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:561
+msgid "workspace.options.interaction-close-outside"
+msgstr "외부 클릭 시 닫기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:349
+msgid "workspace.options.interaction-close-overlay"
+msgstr "오버레이 닫기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:58
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "오버레이 닫기: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:426
+msgid "workspace.options.interaction-delay"
+msgstr "지연"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:449
+msgid "workspace.options.interaction-destination"
+msgstr "목적지"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:628
+msgid "workspace.options.interaction-duration"
+msgstr "지속 시간"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:641
+msgid "workspace.options.interaction-easing"
+msgstr "이징"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:393
+msgid "workspace.options.interaction-easing-ease"
+msgstr "기본(ease)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:394
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "감가속(In)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:396
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "감가감속(In-Out)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:395
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "가감속(Out)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:392
+msgid "workspace.options.interaction-easing-linear"
+msgstr "선형(Linear)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interaction-in"
+msgstr "들어오기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:341
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "마우스 진입 시"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:42, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:342
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "마우스 이탈 시"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:632
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:346
+msgid "workspace.options.interaction-navigate-to"
+msgstr "이동"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:52
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "이동: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:57, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:357
+msgid "workspace.options.interaction-none"
+msgstr "(설정 안 함)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:654
+msgid "workspace.options.interaction-offset-effect"
+msgstr "오프셋 효과"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:37, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:337
+msgid "workspace.options.interaction-on-click"
+msgstr "클릭 시"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:347
+msgid "workspace.options.interaction-open-overlay"
+msgstr "오버레이 열기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:54
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "오버레이 열기: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:61, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:351
+msgid "workspace.options.interaction-open-url"
+msgstr "URL 열기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interaction-out"
+msgstr "나가기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:380, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:554
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "아래 가운데"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:378, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:538
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "아래 왼쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:379, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:546
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "아래 오른쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:374, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:506
+msgid "workspace.options.interaction-pos-center"
+msgstr "중앙"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:373
+msgid "workspace.options.interaction-pos-manual"
+msgstr "수동"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:377, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:530
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "위 가운데"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:375, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:514
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "위 왼쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:376, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:522
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "위 오른쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:492
+msgid "workspace.options.interaction-position"
+msgstr "위 오른쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:460
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "스크롤 위치 유지"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:60, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:350
+msgid "workspace.options.interaction-prev-screen"
+msgstr "이전 화면"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:482
+msgid "workspace.options.interaction-relative-to"
+msgstr "기준:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:59, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:356, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:370, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:371
+msgid "workspace.options.interaction-self"
+msgstr "자기 자신"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:348
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "오버레이 전환"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:56
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "오버레이 전환: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:415
+msgid "workspace.options.interaction-trigger"
+msgstr "트리거"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:469
+msgid "workspace.options.interaction-url"
+msgstr "URL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:339
+msgid "workspace.options.interaction-while-hovering"
+msgstr "호버 시"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:340
+msgid "workspace.options.interaction-while-pressing"
+msgstr "누르는 동안"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:743
+msgid "workspace.options.interactions"
+msgstr "인터랙션"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:746
+msgid "workspace.options.interactions.add-interaction"
+msgstr "인터랙션 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "인터랙션 제거"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:197
+msgid "workspace.options.layer-options.blend-mode.color"
+msgstr "색상"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:186
+msgid "workspace.options.layer-options.blend-mode.color-burn"
+msgstr "색상 번"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:189
+msgid "workspace.options.layer-options.blend-mode.color-dodge"
+msgstr "색상 닷지"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:184
+msgid "workspace.options.layer-options.blend-mode.darken"
+msgstr "어둡게"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:193
+msgid "workspace.options.layer-options.blend-mode.difference"
+msgstr "차이"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:194
+msgid "workspace.options.layer-options.blend-mode.exclusion"
+msgstr "제외"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:192
+msgid "workspace.options.layer-options.blend-mode.hard-light"
+msgstr "하드 라이트"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:195
+msgid "workspace.options.layer-options.blend-mode.hue"
+msgstr "색조"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:187
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "밝게"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:198
+msgid "workspace.options.layer-options.blend-mode.luminosity"
+msgstr "광도"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:185
+msgid "workspace.options.layer-options.blend-mode.multiply"
+msgstr "곱하기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:183
+msgid "workspace.options.layer-options.blend-mode.normal"
+msgstr "보통"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:190
+msgid "workspace.options.layer-options.blend-mode.overlay"
+msgstr "오버레이"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:196
+msgid "workspace.options.layer-options.blend-mode.saturation"
+msgstr "채도"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:188
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "스크린"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191
+msgid "workspace.options.layer-options.blend-mode.soft-light"
+msgstr "소프트 라이트"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
+msgid "workspace.options.layer-options.title"
+msgstr "레이어"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
+msgid "workspace.options.layer-options.title.group"
+msgstr "레이어 그룹 만들기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
+msgid "workspace.options.layer-options.title.multiple"
+msgstr "선택된 레이어"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:255, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:261
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "레이어 표시 전환"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "고급 옵션"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:686, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:693
+msgid "workspace.options.layout-item.layout-item-max-h"
+msgstr "최대 높이"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:624, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:631
+msgid "workspace.options.layout-item.layout-item-max-w"
+msgstr "최대 너비"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:655, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:663
+msgid "workspace.options.layout-item.layout-item-min-h"
+msgstr "최소 높이"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:591, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:600
+msgid "workspace.options.layout-item.layout-item-min-w"
+msgstr "최소 너비"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-max-h"
+msgstr "최대 높이"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-max-w"
+msgstr "최대 너비"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-min-h"
+msgstr "최소 높이"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-min-w"
+msgstr "최소 너비"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.bottom"
+msgstr "아래쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.column"
+msgstr "열"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "열 반전"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.row"
+msgstr "행"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "행 반전"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.gap"
+msgstr "간격"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.left"
+msgstr "왼쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout.margin"
+msgstr "마진"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout.margin-all"
+msgstr "전체"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout.margin-simple"
+msgstr "단일 마진"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.packed"
+msgstr "촘촘히 배치"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.padding"
+msgstr "패딩"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.padding-all"
+msgstr "전체"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.padding-simple"
+msgstr "단일 패딩"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.right"
+msgstr "오른쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.space-around"
+msgstr "여백 포함 배분"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.space-between"
+msgstr "균등 배분"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.top"
+msgstr "위쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:241
+msgid "workspace.options.more-colors"
+msgstr "색상 더보기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:223
+msgid "workspace.options.more-lib-colors"
+msgstr "라이브러리 색상 더보기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:265
+msgid "workspace.options.more-token-colors"
+msgstr "색상 token 더보기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
+msgid "workspace.options.opacity"
+msgstr "불투명도"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
+msgid "workspace.options.orientation.horizontal"
+msgstr "가로"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
+msgid "workspace.options.orientation.vertical"
+msgstr "세로"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#, unused
+msgid "workspace.options.position"
+msgstr "위치"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs:199
+msgid "workspace.options.prototype"
+msgstr "프로토타입"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:182, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:206
+msgid "workspace.options.radius"
+msgstr "반지름"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:271, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:323
+msgid "workspace.options.radius-bottom-left"
+msgstr "왼쪽 아래"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:290, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:331
+msgid "workspace.options.radius-bottom-right"
+msgstr "오른쪽 아래"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:234, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:307
+msgid "workspace.options.radius-top-left"
+msgstr "왼쪽 위"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:253, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:315
+msgid "workspace.options.radius-top-right"
+msgstr "오른쪽 위"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:340
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "개별 반경 통합"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
+msgid "workspace.options.radius.show-single-corners"
+msgstr "개별 반경 표시"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:191
+msgid "workspace.options.recent-fonts"
+msgstr "최근"
+
+#: src/app/main/ui/exports/assets.cljs:298
+msgid "workspace.options.retry"
+msgstr "다시 시도"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:536, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:544
+msgid "workspace.options.rotation"
+msgstr "회전"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:188
+msgid "workspace.options.search-font"
+msgstr "글꼴 검색"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
+msgid "workspace.options.select-a-shape"
+msgstr "도형, 보드 또는 그룹을 선택하여 다른 보드로 연결하세요."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:201
+msgid "workspace.options.selection-color"
+msgstr "선택 색상"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:105
+msgid "workspace.options.selection-fill"
+msgstr "선택 채우기"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:44
+msgid "workspace.options.selection-stroke"
+msgstr "선택 선"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:144
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "그림자 추가"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:181, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:183
+msgid "workspace.options.shadow-options.blur"
+msgstr "블러"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:211
+msgid "workspace.options.shadow-options.color"
+msgstr "그림자 색상"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:122
+msgid "workspace.options.shadow-options.drop-shadow"
+msgstr "그림자 효과"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:123
+msgid "workspace.options.shadow-options.inner-shadow"
+msgstr "내부 그림자"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:172
+msgid "workspace.options.shadow-options.offsetx"
+msgstr "X"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:201
+msgid "workspace.options.shadow-options.offsety"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:157, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:161
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "그림자 제거"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:191, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:193
+msgid "workspace.options.shadow-options.spread"
+msgstr "확산"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:139
+msgid "workspace.options.shadow-options.title"
+msgstr "그림자"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:138
+msgid "workspace.options.shadow-options.title.group"
+msgstr "그룹 그림자"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:137
+msgid "workspace.options.shadow-options.title.multiple"
+msgstr "선택 영역 그림자"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:157
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "그림자 전환"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:258
+msgid "workspace.options.show-fill-on-export"
+msgstr "내보내기에 표시"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:574
+msgid "workspace.options.show-in-viewer"
+msgstr "보기 모드에서 표시"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:168
+msgid "workspace.options.size"
+msgstr "크기"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:71, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:364
+msgid "workspace.options.size-presets"
+msgstr "크기 프리셋"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:469
+msgid "workspace.options.size.lock"
+msgstr "비율 잠금"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:469
+msgid "workspace.options.size.unlock"
+msgstr "비율 잠금 해제"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:44
+#, unused
+msgid "workspace.options.stroke"
+msgstr "선"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "원형 마커"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:175
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "원"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "다이아몬드 마커"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:176
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "다이아몬드"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "선 화살표"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:172
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "화살표"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:170
+msgid "workspace.options.stroke-cap.none"
+msgstr "없음"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:178
+msgid "workspace.options.stroke-cap.round"
+msgstr "둥근"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:179
+msgid "workspace.options.stroke-cap.square"
+msgstr "사각형"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "사각형 마커"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:174
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "직사각형"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, unused
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "삼각형 화살표"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:173
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "삼각형"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:210
+msgid "workspace.options.stroke-color"
+msgstr "선 색상"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:225, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:230
+msgid "workspace.options.stroke-width"
+msgstr "선 두께"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:189
+msgid "workspace.options.stroke.add-stroke"
+msgstr "선 색상 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:111
+msgid "workspace.options.stroke.center"
+msgstr "중앙"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:139
+msgid "workspace.options.stroke.dashed"
+msgstr "점선"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:138
+msgid "workspace.options.stroke.dotted"
+msgstr "점선"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:112
+msgid "workspace.options.stroke.inner"
+msgstr "안쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:140
+msgid "workspace.options.stroke.mixed"
+msgstr "혼합"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:113
+msgid "workspace.options.stroke.outer"
+msgstr "바깥쪽"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:202
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "선 제거"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:137
+msgid "workspace.options.stroke.solid"
+msgstr "단색"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:127
+msgid "workspace.options.text-options.align-bottom"
+msgstr "아래쪽 정렬"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:123
+msgid "workspace.options.text-options.align-middle"
+msgstr "중간 정렬"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:119
+msgid "workspace.options.text-options.align-top"
+msgstr "위쪽 정렬"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:92
+msgid "workspace.options.text-options.direction-ltr"
+msgstr "LTR"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:96
+msgid "workspace.options.text-options.direction-rtl"
+msgstr "RTL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:165
+msgid "workspace.options.text-options.grow-auto-height"
+msgstr "자동 높이"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:161
+msgid "workspace.options.text-options.grow-auto-width"
+msgstr "자동 너비"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:157
+msgid "workspace.options.text-options.grow-fixed"
+msgstr "고정됨"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400
+msgid "workspace.options.text-options.letter-spacing"
+msgstr "자간"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:381
+msgid "workspace.options.text-options.line-height"
+msgstr "줄 높이"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
+msgid "workspace.options.text-options.lowercase"
+msgstr "소문자"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
+msgid "workspace.options.text-options.none"
+msgstr "없음"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:192
+msgid "workspace.options.text-options.strikethrough"
+msgstr "취소선 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:61
+msgid "workspace.options.text-options.text-align-center"
+msgstr "중앙 정렬"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:69
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "양쪽 정렬"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:57
+msgid "workspace.options.text-options.text-align-left"
+msgstr "왼쪽 정렬"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:65
+msgid "workspace.options.text-options.text-align-right"
+msgstr "오른쪽 정렬"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:205
+msgid "workspace.options.text-options.title"
+msgstr "텍스트"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:204
+msgid "workspace.options.text-options.title-group"
+msgstr "그룹 텍스트"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:203
+msgid "workspace.options.text-options.title-selection"
+msgstr "그룹 텍스트"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
+msgid "workspace.options.text-options.titlecase"
+msgstr "단어 첫 글자 대문자"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:188
+msgid "workspace.options.text-options.underline"
+msgstr "밑줄 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
+msgid "workspace.options.text-options.uppercase"
+msgstr "대문자"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
+msgid "workspace.options.use-play-button"
+msgstr "헤더의 재생 버튼을 클릭해 프로토타입 보기를 실행하세요."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:420, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:442
+msgid "workspace.options.width"
+msgstr "너비"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:482, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:505
+msgid "workspace.options.x"
+msgstr "X축"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:495, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:516
+msgid "workspace.options.y"
+msgstr "Y축"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:140
+msgid "workspace.path.actions.add-node"
+msgstr "노드 추가 (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:148
+msgid "workspace.path.actions.delete-node"
+msgstr "노드 삭제 (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:123
+msgid "workspace.path.actions.draw-nodes"
+msgstr "노드 그리기 (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:166
+msgid "workspace.path.actions.join-nodes"
+msgstr "노드 연결 (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:184
+msgid "workspace.path.actions.make-corner"
+msgstr "직선으로 변환 (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:192
+msgid "workspace.path.actions.make-curve"
+msgstr "곡선으로 변환 (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:158
+msgid "workspace.path.actions.merge-nodes"
+msgstr "노드 병합 (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:131
+msgid "workspace.path.actions.move-nodes"
+msgstr "노드 이동 (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:174
+msgid "workspace.path.actions.separate-nodes"
+msgstr "노드 분리 (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:203
+msgid "workspace.path.actions.snap-nodes"
+msgstr "노드 스냅 (%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:85
+msgid "workspace.plugins.button-open"
+msgstr "열기"
+
+#: src/app/main/ui/workspace/plugins.cljs:199
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "[더 많은 플러그인](%s) 찾아보기"
+
+#: src/app/main/ui/workspace/plugins.cljs:206
+msgid "workspace.plugins.empty-plugins"
+msgstr "아직 설치된 플러그인이 없습니다"
+
+#: src/app/main/ui/workspace/plugins.cljs:193
+msgid "workspace.plugins.error.manifest"
+msgstr "플러그인 매니페스트가 올바르지 않습니다."
+
+#: src/app/main/data/plugins.cljs:105, src/app/main/ui/workspace/main_menu.cljs:766, src/app/main/ui/workspace/plugins.cljs:84
+msgid "workspace.plugins.error.need-editor"
+msgstr "이 플러그인을 사용하려면 편집자여야 합니다"
+
+#: src/app/main/ui/workspace/plugins.cljs:189
+msgid "workspace.plugins.error.url"
+msgstr "플러그인이 존재하지 않거나 URL이 올바르지 않습니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:185
+msgid "workspace.plugins.install"
+msgstr "설치"
+
+#: src/app/main/ui/workspace/plugins.cljs:215
+msgid "workspace.plugins.installed-plugins"
+msgstr "설치된 플러그인"
+
+#: src/app/main/ui/workspace/main_menu.cljs:721
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "플러그인 관리자"
+
+#: src/app/main/ui/workspace/main_menu.cljs:918
+msgid "workspace.plugins.menu.title"
+msgstr "플러그인"
+
+#: src/app/main/ui/workspace/plugins.cljs:376
+msgid "workspace.plugins.permissions-update.title"
+msgstr "이 플러그인 업데이트"
+
+#: src/app/main/ui/workspace/plugins.cljs:380
+msgid "workspace.plugins.permissions-update.warning"
+msgstr ""
+"마지막으로 열었던 이후 플러그인이 수정되었습니다. 이제 다음에도 접근하려 "
+"합니다:"
+
+#: src/app/main/ui/workspace/plugins.cljs:280
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "파일 다운로드 시작."
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "브라우저에 데이터를 저장합니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:273
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "댓글과 답글을 읽습니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:267
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "댓글을 읽고 수정하며 귀하의 이름으로 답글을 답니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:240
+msgid "workspace.plugins.permissions.content-read"
+msgstr "사용자가 접근할 수 있는 파일의 내용을 읽습니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:234
+msgid "workspace.plugins.permissions.content-write"
+msgstr "사용자가 접근할 수 있는 파일의 내용을 읽고 수정합니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:327
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr ""
+"이 플러그인은 외부 개발자가 만들었습니다. 접근 권한을 부여하기 전에 신뢰할 "
+"수 있는지 확인하세요. 개인정보 보호 및 보안이 중요합니다. 문의 사항은 "
+"지원팀에 연락하세요."
+
+#: src/app/main/ui/workspace/plugins.cljs:260
+msgid "workspace.plugins.permissions.library-read"
+msgstr "라이브러리와 에셋을 읽습니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:254
+msgid "workspace.plugins.permissions.library-write"
+msgstr "라이브러리와 에셋을 읽고 수정합니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:320
+msgid "workspace.plugins.permissions.title"
+msgstr "'%s' 플러그인이 다음에 접근하려 합니다:"
+
+#: src/app/main/ui/workspace/plugins.cljs:247
+msgid "workspace.plugins.permissions.user-read"
+msgstr "현재 사용자의 프로필 정보를 읽습니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:211
+msgid "workspace.plugins.plugin-list-link"
+msgstr "플러그인 목록"
+
+#: src/app/main/ui/workspace/plugins.cljs:88
+msgid "workspace.plugins.remove-plugin"
+msgstr "플러그인 제거"
+
+#: src/app/main/ui/workspace/plugins.cljs:180
+msgid "workspace.plugins.search-placeholder"
+msgstr "플러그인 URL로 검색"
+
+#, unused
+msgid "workspace.plugins.success"
+msgstr "플러그인이 올바르게 로드되었습니다."
+
+#: src/app/main/ui/workspace/plugins.cljs:174
+msgid "workspace.plugins.title"
+msgstr "플러그인"
+
+#: src/app/main/ui/workspace/plugins.cljs:440
+msgid "workspace.plugins.try-out.cancel"
+msgstr "나중에"
+
+#: src/app/main/ui/workspace/plugins.cljs:433
+msgid "workspace.plugins.try-out.message"
+msgstr ""
+"살펴보시겠습니까? 현재 팀의 새 초안에서 열립니다. (그렇지 않으면 언제든지 "
+"파일의 설치된 플러그인에서 찾을 수 있습니다.)"
+
+#: src/app/main/ui/workspace/plugins.cljs:429
+msgid "workspace.plugins.try-out.title"
+msgstr "'%s' 플러그인이 설치되었습니다!"
+
+#: src/app/main/ui/workspace/plugins.cljs:446
+msgid "workspace.plugins.try-out.try"
+msgstr "플러그인 사용해보기"
+
+#: src/app/main/ui/workspace/context_menu.cljs:559
+msgid "workspace.shape.menu.add-flex"
+msgstr "플렉스 레이아웃 추가"
+
+#: src/app/main/ui/workspace/context_menu.cljs:563
+msgid "workspace.shape.menu.add-grid"
+msgstr "그리드 레이아웃 추가"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1248, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1272
+msgid "workspace.shape.menu.add-layout"
+msgstr "레이아웃 추가"
+
+#: src/app/main/ui/workspace/context_menu.cljs:612, src/app/main/ui/workspace/sidebar/assets/common.cljs:508, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1051, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1219, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1293
+msgid "workspace.shape.menu.add-variant"
+msgstr "베리언트 생성"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:512, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1073, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1221, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1307
+msgid "workspace.shape.menu.add-variant-property"
+msgstr "새 속성 추가"
+
+#: src/app/main/ui/workspace/context_menu.cljs:282
+msgid "workspace.shape.menu.back"
+msgstr "맨 뒤로"
+
+#: src/app/main/ui/workspace/context_menu.cljs:279
+msgid "workspace.shape.menu.backward"
+msgstr "뒤로"
+
+#: src/app/main/ui/workspace/context_menu.cljs:619, src/app/main/ui/workspace/sidebar/assets/components.cljs:633, src/app/main/ui/workspace/sidebar/assets/groups.cljs:75, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1106
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "베리언트로 결합"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:635
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "컴포넌트가 같은 페이지에 있어야 합니다"
+
+#: src/app/main/ui/workspace/context_menu.cljs:200
+msgid "workspace.shape.menu.copy"
+msgstr "복사"
+
+#: src/app/main/ui/workspace/context_menu.cljs:218
+msgid "workspace.shape.menu.copy-css"
+msgstr "CSS로 복사"
+
+#: src/app/main/ui/workspace/context_menu.cljs:220
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "CSS로 복사 (중첩된 레이어 포함)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:203
+msgid "workspace.shape.menu.copy-link"
+msgstr "링크 복사"
+
+#: src/app/main/ui/workspace/context_menu.cljs:216
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "다른 형식으로 복사/붙여넣기."
+
+#: src/app/main/ui/workspace/context_menu.cljs:230
+msgid "workspace.shape.menu.copy-props"
+msgstr "속성 복사"
+
+#: src/app/main/ui/workspace/context_menu.cljs:222
+msgid "workspace.shape.menu.copy-svg"
+msgstr "SVG로 복사"
+
+#: src/app/main/ui/workspace/context_menu.cljs:227
+msgid "workspace.shape.menu.copy-text"
+msgstr "텍스트로 복사"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:484
+msgid "workspace.shape.menu.create-annotation"
+msgstr "주석 추가"
+
+#: src/app/main/ui/workspace/context_menu.cljs:382
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "선택 항목을 보드로"
+
+#: src/app/main/ui/workspace/context_menu.cljs:592
+msgid "workspace.shape.menu.create-component"
+msgstr "컴포넌트 생성"
+
+#: src/app/main/ui/workspace/context_menu.cljs:596
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "여러 컴포넌트 생성"
+
+#: src/app/main/ui/workspace/context_menu.cljs:206
+msgid "workspace.shape.menu.cut"
+msgstr "잘라내기"
+
+#: src/app/main/ui/workspace/context_menu.cljs:629, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1001, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1290
+msgid "workspace.shape.menu.delete"
+msgstr "삭제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:506
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "플로우 시작 삭제"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:489
+msgid "workspace.shape.menu.detach-instance"
+msgstr "인스턴스 분리"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "인스턴스 모두 분리"
+
+#: src/app/main/ui/workspace/context_menu.cljs:447, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:88
+msgid "workspace.shape.menu.difference"
+msgstr "차이"
+
+#: src/app/main/ui/workspace/context_menu.cljs:212
+msgid "workspace.shape.menu.duplicate"
+msgstr "복제복제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:432
+msgid "workspace.shape.menu.edit"
+msgstr "편집"
+
+#: src/app/main/ui/workspace/context_menu.cljs:453, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:98
+msgid "workspace.shape.menu.exclude"
+msgstr "제외"
+
+#: src/app/main/ui/workspace/context_menu.cljs:437, src/app/main/ui/workspace/context_menu.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:104
+msgid "workspace.shape.menu.flatten"
+msgstr "병합"
+
+#: src/app/main/ui/workspace/context_menu.cljs:299
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "좌우 반전"
+
+#: src/app/main/ui/workspace/context_menu.cljs:295
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "상하 반전"
+
+#: src/app/main/ui/workspace/context_menu.cljs:508
+msgid "workspace.shape.menu.flow-start"
+msgstr "플로우 시작"
+
+#: src/app/main/ui/workspace/context_menu.cljs:273
+msgid "workspace.shape.menu.forward"
+msgstr "앞으로"
+
+#: src/app/main/ui/workspace/context_menu.cljs:276
+msgid "workspace.shape.menu.front"
+msgstr "맨 앞으로"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "workspace.shape.menu.go-main"
+msgstr "메인 컴포넌트 파일로 이동"
+
+#: src/app/main/ui/workspace/context_menu.cljs:368
+msgid "workspace.shape.menu.group"
+msgstr "그룹"
+
+#: src/app/main/ui/workspace/context_menu.cljs:477, src/app/main/ui/workspace/sidebar/layer_item.cljs:172
+msgid "workspace.shape.menu.hide"
+msgstr "숨기기"
+
+#: src/app/main/ui/workspace/context_menu.cljs:706, src/app/main/ui/workspace/main_menu.cljs:448
+msgid "workspace.shape.menu.hide-ui"
+msgstr "UI 표시/숨기기"
+
+#: src/app/main/ui/workspace/context_menu.cljs:450, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:93
+msgid "workspace.shape.menu.intersection"
+msgstr "교차"
+
+#: src/app/main/ui/workspace/context_menu.cljs:485, src/app/main/ui/workspace/sidebar/layer_item.cljs:180, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:268
+msgid "workspace.shape.menu.lock"
+msgstr "잠금"
+
+#: src/app/main/ui/workspace/context_menu.cljs:373
+msgid "workspace.shape.menu.mask"
+msgstr "마스크"
+
+#: src/app/main/ui/workspace/context_menu.cljs:209, src/app/main/ui/workspace/context_menu.cljs:703
+msgid "workspace.shape.menu.paste"
+msgstr "붙여넣기"
+
+#: src/app/main/ui/workspace/context_menu.cljs:234
+msgid "workspace.shape.menu.paste-props"
+msgstr "속성 붙여넣기"
+
+#: src/app/main/ui/workspace/context_menu.cljs:443
+msgid "workspace.shape.menu.path"
+msgstr "경로"
+
+#: src/app/main/ui/workspace/context_menu.cljs:549
+msgid "workspace.shape.menu.remove-flex"
+msgstr "플렉스 레이아웃 제거"
+
+#: src/app/main/ui/workspace/context_menu.cljs:552
+msgid "workspace.shape.menu.remove-grid"
+msgstr "그리드 레이아웃 제거"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1266
+msgid "workspace.shape.menu.remove-layout"
+msgstr "레이아웃 제거"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1157
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "속성 제거"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1156
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "베리언트는 최소한 하나의 속성을 가져야 합니다"
+
+#: src/app/main/ui/workspace/context_menu.cljs:329
+msgid "workspace.shape.menu.rename"
+msgstr "이름 바꾸기"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:493
+msgid "workspace.shape.menu.reset-overrides"
+msgstr "오버라이드 초기화"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:499
+msgid "workspace.shape.menu.restore-main"
+msgstr "메인 컴포넌트 복원"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:498
+msgid "workspace.shape.menu.restore-variant"
+msgstr "베리언트 복원"
+
+#: src/app/main/ui/workspace/context_menu.cljs:263
+msgid "workspace.shape.menu.select-layer"
+msgstr "레이어 선택"
+
+#: src/app/main/ui/workspace/context_menu.cljs:474, src/app/main/ui/workspace/sidebar/layer_item.cljs:171
+msgid "workspace.shape.menu.show"
+msgstr "표시"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:481, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1217
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "에셋 패널에 표시"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:502, src/app/main/ui/workspace/sidebar/assets/components.cljs:629
+msgid "workspace.shape.menu.show-main"
+msgstr "메인 컴포넌트 표시"
+
+#: src/app/main/ui/workspace/context_menu.cljs:314
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "썸네일 제거"
+
+#: src/app/main/ui/workspace/context_menu.cljs:316
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "썸네일로 설정"
+
+#: src/app/main/ui/workspace/context_menu.cljs:436
+#, unused
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "경로로 변환"
+
+#: src/app/main/ui/workspace/context_menu.cljs:364
+msgid "workspace.shape.menu.ungroup"
+msgstr "그룹 해제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:444, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:83
+msgid "workspace.shape.menu.union"
+msgstr "합집합"
+
+#: src/app/main/ui/workspace/context_menu.cljs:482, src/app/main/ui/workspace/sidebar/layer_item.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:274
+msgid "workspace.shape.menu.unlock"
+msgstr "잠금 해제"
+
+#: src/app/main/ui/workspace/context_menu.cljs:378
+msgid "workspace.shape.menu.unmask"
+msgstr "마스크 해제"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "메인 컴포넌트 업데이트"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:505
+msgid "workspace.shape.menu.update-main"
+msgstr "메인 컴포넌트 업데이트"
+
+#: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:62
+msgid "workspace.sidebar.collapse"
+msgstr "사이드바 접기"
+
+#: src/app/main/ui/workspace/sidebar.cljs:73, src/app/main/ui/workspace/sidebar.cljs:77
+msgid "workspace.sidebar.expand"
+msgstr "사이드바 펼치기"
+
+#: src/app/main/ui/workspace/right_header.cljs:226
+msgid "workspace.sidebar.history"
+msgstr "히스토리"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:509, src/app/main/ui/workspace/sidebar.cljs:154, src/app/main/ui/workspace/sidebar.cljs:157, src/app/main/ui/workspace/sidebar.cljs:164
+msgid "workspace.sidebar.layers"
+msgstr "레이어"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:374
+msgid "workspace.sidebar.layers.components"
+msgstr "컴포넌트"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:297
+msgid "workspace.sidebar.layers.filter"
+msgstr "필터"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:338
+msgid "workspace.sidebar.layers.frames"
+msgstr "보드"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:350
+msgid "workspace.sidebar.layers.groups"
+msgstr "그룹"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:398
+msgid "workspace.sidebar.layers.images"
+msgstr "이미지"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:362
+msgid "workspace.sidebar.layers.masks"
+msgstr "마스크"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:293
+msgid "workspace.sidebar.layers.search"
+msgstr "레이어 검색"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
+msgid "workspace.sidebar.layers.shapes"
+msgstr "도형"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:386
+msgid "workspace.sidebar.layers.texts"
+msgstr "텍스트"
+
+#: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "가져온 SVG 속성"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:264
+msgid "workspace.sidebar.sitemap"
+msgstr "페이지"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:274
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "페이지 추가"
+
+#: src/app/main/ui/workspace/left_header.cljs:98
+msgid "workspace.sitemap"
+msgstr "사이트맵"
+
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:86
+msgid "workspace.tokens.active-themes"
+msgstr "활성 테마 %s개"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+#, unused
+msgid "workspace.tokens.add set"
+msgstr "세트 추가"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:151, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:347
+msgid "workspace.tokens.add-new-theme"
+msgstr "새 테마 추가"
+
+#: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:62
+msgid "workspace.tokens.add-set-to-group"
+msgstr "이 그룹에 세트 추가"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:196, src/app/main/ui/workspace/tokens/management/group.cljs:156
+msgid "workspace.tokens.add-token"
+msgstr "token 추가: %s"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:137
+msgid "workspace.tokens.applied-to"
+msgstr "적용됨"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:330
+msgid "workspace.tokens.axis"
+msgstr "축"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:356
+msgid "workspace.tokens.back-to-themes"
+msgstr "테마 목록으로"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:89
+msgid "workspace.tokens.base-font-size"
+msgstr "기본 글꼴 크기"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:43
+msgid "workspace.tokens.base-font-size.error"
+msgstr "기본 글꼴 크기는 픽셀 또는 단위가 없는 값이어야 합니다."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:127
+#, unused
+msgid "workspace.tokens.choose-file"
+msgstr "파일 선택"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+#, unused
+msgid "workspace.tokens.choose-folder"
+msgstr "폴더 선택"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:299, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:130
+msgid "workspace.tokens.color"
+msgstr "색상"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"행간은 글꼴 크기에 따라 달라집니다. 확인된 값을 얻으려면 글꼴 크기를 "
+"추가하세요."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:57
+msgid "workspace.tokens.create-new-theme"
+msgstr "첫 번째 테마를 만들어 보세요."
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:96, src/app/main/ui/workspace/tokens/themes.cljs:44
+msgid "workspace.tokens.create-one"
+msgstr "하나 생성하기."
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:235
+msgid "workspace.tokens.create-token"
+msgstr "새 %s token 생성"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:353
+msgid "workspace.tokens.delete"
+msgstr "token 삭제"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:140
+msgid "workspace.tokens.delete-theme-title"
+msgstr "테마 삭제"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:350
+msgid "workspace.tokens.duplicate"
+msgstr "token 복제"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
+msgid "workspace.tokens.duplicate-suffix"
+msgstr "복사"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
+msgid "workspace.tokens.edit"
+msgstr "token 편집"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:346
+msgid "workspace.tokens.edit-theme-title"
+msgstr "테마 편집"
+
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:74
+msgid "workspace.tokens.edit-themes"
+msgstr "테마 편집"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:234
+msgid "workspace.tokens.edit-token"
+msgstr "%s token 편집"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:41
+msgid "workspace.tokens.empty-input"
+msgstr "token 값은 비워둘 수 없습니다"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
+msgid "workspace.tokens.enter-token-name"
+msgstr "%s token 이름 입력"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:15
+msgid "workspace.tokens.error-parse"
+msgstr "가져오기 오류: JSON을 구문 분석할 수 없습니다."
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:49
+msgid "workspace.tokens.export"
+msgstr "내보내기"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:125
+msgid "workspace.tokens.export-tokens"
+msgstr "token 내보내기"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:118
+msgid "workspace.tokens.export.multiple-files"
+msgstr "여러 파일"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:38
+msgid "workspace.tokens.export.no-tokens-themes-sets"
+msgstr "내보낼 token, 테마 또는 세트가 없습니다."
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:35
+msgid "workspace.tokens.export.preview"
+msgstr "미리보기:"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:116
+msgid "workspace.tokens.export.single-file"
+msgstr "단일 파일"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:129
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "글꼴 크기 또는 {alias} 입력"
+
+#: src/app/main/data/workspace/tokens/application.cljs:325
+msgid "workspace.tokens.font-variant-not-found"
+msgstr "글꼴 굵기/스타일 설정 오류. 현재 글꼴에 이 스타일이 없습니다"
+
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:42, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:137
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "글꼴 굵기(300, Bold Italic 등) 또는 {alias} 입력"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:240
+msgid "workspace.tokens.gaps"
+msgstr "간격"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.generic-error"
+msgstr "오류: "
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:93
+msgid "workspace.tokens.group-name"
+msgstr "그룹 이름"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+#, unused
+msgid "workspace.tokens.grouping-set-alert"
+msgstr "token 세트 그룹화는 아직 지원되지 않습니다."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:233
+msgid "workspace.tokens.import-button-prefix"
+msgstr "%s 가져오기"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
+msgid "workspace.tokens.import-error"
+msgstr "가져오기 오류:"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:273
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "폴더"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:271
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "단일 JSON 파일"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:272
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ZIP 파일"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:241
+msgid "workspace.tokens.import-multiple-files"
+msgstr "여러 파일의 경우 파일 이름/경로가 세트 이름입니다."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:240
+msgid "workspace.tokens.import-single-file"
+msgstr "단일 JSON 파일에서 최상위 키는 token 세트 이름이어야 합니다."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:237
+msgid "workspace.tokens.import-tokens"
+msgstr "token 가져오기"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+#, unused
+msgid "workspace.tokens.import-tooltip"
+msgstr "JSON 파일을 가져오면 현재 token, 세트 및 테마가 모두 교체됩니다"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:247
+msgid "workspace.tokens.import-warning"
+msgstr "token을 가져오면 현재 token, 세트 및 테마가 모두 덮어써집니다."
+
+#: src/app/main/ui/workspace/tokens/management.cljs:78
+msgid "workspace.tokens.inactive-set"
+msgstr "비활성"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:70
+msgid "workspace.tokens.inactive-set-description"
+msgstr ""
+"이 세트가 활성화되지 않았습니다. 테마를 변경하거나 이 세트를 활성화하여 변경 "
+"사항을 확인하세요"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:240, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:195
+msgid "workspace.tokens.individual-tokens"
+msgstr "개별 token 사용"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "workspace.tokens.invalid-color"
+msgstr "유효하지 않은 색상 값: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr "잘못된 token 값: 글꼴 모음 token만 참조할 수 있습니다"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"유효하지 않은 글꼴 굵기 값입니다. 숫자 값(100~950) 또는 표준 이름(thin, "
+"light, regular, bold 등)을 사용하세요. 필요하면 뒤에 'Italic'을 붙일 수 "
+"있습니다"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json"
+msgstr "가져오기 오류: JSON 내 token 데이터가 유효하지 않습니다."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:27
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "가져오기 오류: JSON 내 token 이름이 유효하지 않습니다."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:28
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"\"%s\"은(는) 유효한 token 이름이 아닙니다.\n"
+"token 이름은 .으로 구분된 문자와 숫자만 포함할 수 있으며 $ 기호로 시작할 수 "
+"없습니다."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:105
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr "유효하지 않은 그림자 유형: '내부 그림자' 또는 '그림자 효과'만 가능합니다"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:81
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr "잘못된 token 값: none, Uppercase, Lowercase, Capitalize만 가능합니다"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:85
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr "잘못된 token 값: none, underline, strike-through만 가능합니다"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:117
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "잘못된 값: 복합 그림자 token을 참조해야 합니다."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:97
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "잘못된 값: 복합 타이포그래피 token을 참조해야 합니다."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
+msgid "workspace.tokens.invalid-value"
+msgstr "잘못된 token 값: %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
+msgid "workspace.tokens.label.group"
+msgstr "그룹"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:207
+msgid "workspace.tokens.label.group-placeholder"
+msgstr "그룹 추가 (예: 모드)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:214
+msgid "workspace.tokens.label.theme"
+msgstr "테마"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:215
+msgid "workspace.tokens.label.theme-placeholder"
+msgstr "테마 추가 (예: 라이트)"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:153
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "자간 또는 {alias} 입력"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:145
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "행간(배수, px, %) 또는 {alias} 입력"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:232
+msgid "workspace.tokens.margins"
+msgstr "마진"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:268
+msgid "workspace.tokens.max-size"
+msgstr "최대 크기"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:262
+msgid "workspace.tokens.min-size"
+msgstr "최소 크기"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:303
+msgid "workspace.tokens.missing-reference"
+msgstr "누락된 참조"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:57
+msgid "workspace.tokens.missing-references"
+msgstr "누락된 token 참조: "
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
+msgid "workspace.tokens.more-options"
+msgstr "우클릭으로 옵션 보기"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:135
+msgid "workspace.tokens.no-active-sets"
+msgstr "활성 세트 없음"
+
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:91
+msgid "workspace.tokens.no-active-theme"
+msgstr "활성 테마 없음"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:72
+msgid "workspace.tokens.no-permisions-set"
+msgstr "세트를 활성화 / 비활성화하려면 편집자여야 합니다"
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:54
+msgid "workspace.tokens.no-permission-themes"
+msgstr "테마를 사용하려면 편집자여야 합니다"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:87
+#, unused
+msgid "workspace.tokens.no-references-found"
+msgstr "참조 없음"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+#, unused
+msgid "workspace.tokens.no-remap-needed"
+msgstr "이 token은 현재 디자인에서 사용되지 않으므로 재매핑이 필요 없습니다."
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:485
+msgid "workspace.tokens.no-sets-create"
+msgstr "아직 정의된 세트가 없습니다. 먼저 하나를 만드세요."
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:93, src/app/main/ui/workspace/tokens/sets/lists.cljs:99
+msgid "workspace.tokens.no-sets-yet"
+msgstr "아직 세트가 없습니다."
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:40
+msgid "workspace.tokens.no-themes"
+msgstr "테마가 없습니다."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:53
+msgid "workspace.tokens.no-themes-currently"
+msgstr "현재 테마가 없습니다."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr "이 파일에서 token, 세트 또는 테마를 찾을 수 없습니다."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
+msgid "workspace.tokens.not-remap"
+msgstr "재매핑 안 함"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
+msgid "workspace.tokens.num-active-sets"
+msgstr "활성 세트 %s개"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:53
+msgid "workspace.tokens.number-too-large"
+msgstr "잘못된 token 값. 확인된 값이 너무 큽니다: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
+msgid "workspace.tokens.opacity-range"
+msgstr "불투명도는 0~100% 또는 0~1 사이의 값이어야 합니다(예: 50% 또는 0.5)."
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
+msgid "workspace.tokens.original-value"
+msgstr "원래 값: %s"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:216
+msgid "workspace.tokens.paddings"
+msgstr "패딩"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:292
+msgid "workspace.tokens.radius"
+msgstr "반지름"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:129
+msgid "workspace.tokens.ref-not-valid"
+msgstr "참조가 유효하지 않거나 활성 세트에 없습니다"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:178
+msgid "workspace.tokens.reference-composite"
+msgstr "타이포그래피 token 별칭 입력"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:204
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "그림자 token 별칭 입력"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.reference-error"
+msgstr "참조 오류: "
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:99
+msgid "workspace.tokens.remap"
+msgstr "토큰 재매핑"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "`%s`을 사용하는 모든 토큰을 `%s`로 재매핑하시겠습니까?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
+msgid "workspace.tokens.remap-warning-effects"
+msgstr "이 작업은 이전 token 이름을 사용하는 모든 레이어와 참조를 변경합니다."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+msgid "workspace.tokens.remap-warning-time"
+msgstr "이 작업은 시간이 조금 걸릴 수 있습니다."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
+#, unused
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "token 참조 재매핑 중..."
+
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:285, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:459, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:311, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:251, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:364, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:465, src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
+msgid "workspace.tokens.resolved-value"
+msgstr "확인된 값: %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:251
+msgid "workspace.tokens.save-theme"
+msgstr "테마 저장"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:204, src/app/main/ui/workspace/tokens/sets/lists.cljs:309
+msgid "workspace.tokens.select-set"
+msgstr "세트 선택."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
+msgid "workspace.tokens.self-reference"
+msgstr "token이 자기 자신을 참조하고 있습니다"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
+msgid "workspace.tokens.set-edit-placeholder"
+msgstr "이름 입력 (그룹화하려면 '/' 사용)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:361
+msgid "workspace.tokens.set-selection-theme"
+msgstr "이 테마에 포함할 token 세트를 정의하세요:"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+#, unused
+msgid "workspace.tokens.set.not-active"
+msgstr "token 세트가 활성화되지 않았습니다"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:129
+msgid "workspace.tokens.sets-hint"
+msgstr "테마 편집 및 세트 관리"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:91
+msgid "workspace.tokens.setting-description"
+msgstr "여기서 1rem의 값을 정의하는 기본 글꼴 크기를 설정할 수 있습니다:"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:84
+msgid "workspace.tokens.settings"
+msgstr "token 설정"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:232
+msgid "workspace.tokens.shadow-add-shadow"
+msgstr "그림자 추가"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:161, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:162, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:165
+msgid "workspace.tokens.shadow-blur"
+msgstr "블러"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:109
+msgid "workspace.tokens.shadow-blur-range"
+msgstr "그림자 블러는 0 이상이어야 합니다."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
+#, unused
+msgid "workspace.tokens.shadow-color"
+msgstr "색상"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:114
+msgid "workspace.tokens.shadow-inset"
+msgstr "내부"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:123
+msgid "workspace.tokens.shadow-remove-shadow"
+msgstr "그림자 제거"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:173, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:174, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:177
+msgid "workspace.tokens.shadow-spread"
+msgstr "확산"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:113
+msgid "workspace.tokens.shadow-spread-range"
+msgstr "그림자 확산은 0 이상이어야 합니다."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
+#, unused
+msgid "workspace.tokens.shadow-title"
+msgstr "그림자"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:281
+msgid "workspace.tokens.shadow-token-blur-value-error"
+msgstr "블러 값은 음수일 수 없습니다"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:287
+#, unused
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "확산 값은 음수일 수 없습니다"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:139, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:141
+msgid "workspace.tokens.shadow-x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:150, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:152
+msgid "workspace.tokens.shadow-y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:256
+msgid "workspace.tokens.size"
+msgstr "크기"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "선 두께는 0 이상이어야 합니다."
+
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:40, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "없음 | 대문자 | 소문자 | 각 단어 첫 글자 대문자 또는 {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:41, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:169
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "없음 | 밑줄 | 취소선 또는 {alias}"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
+#, unused
+msgid "workspace.tokens.theme-name"
+msgstr "테마 %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:51
+#, unused
+msgid "workspace.tokens.theme-name-already-exists"
+msgstr "이미 같은 이름의 테마가 있습니다"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+#, unused
+msgid "workspace.tokens.theme.disable"
+msgstr "비활성화"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+#, unused
+msgid "workspace.tokens.theme.enable"
+msgstr "활성화"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:85
+msgid "workspace.tokens.themes-description"
+msgstr ""
+"여기서 테마를 관리하고, 활성화 / 비활성화하고, 활성 세트를 설정할 수 "
+"있습니다."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:49, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:83
+msgid "workspace.tokens.themes-list"
+msgstr "테마 목록"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:275, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276
+msgid "workspace.tokens.token-description"
+msgstr "설명"
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:122, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:246
+msgid "workspace.tokens.token-font-family-select"
+msgstr "글꼴 모음 선택"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:121
+msgid "workspace.tokens.token-font-family-value"
+msgstr "글꼴 모음"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:120
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "글꼴 모음 또는 쉼표(,)로 구분된 글꼴 목록"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:112, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:240
+msgid "workspace.tokens.token-name"
+msgstr "이름"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "해당 경로에 이미 token이 있습니다: %s"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "이름은 최소 1자 이상이어야 합니다"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:267, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:222
+msgid "workspace.tokens.token-name-validation-error"
+msgstr ""
+" 은(는) 유효한 token 이름이 아닙니다.\n"
+"token 이름은 .으로 구분된 문자와 숫자만 포함할 수 있으며 $ 기호로 시작할 수 "
+"없습니다."
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+#, unused
+msgid "workspace.tokens.token-not-resolved"
+msgstr "이름으로 참조 token을 확인할 수 없습니다: %s"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:267
+msgid "workspace.tokens.token-value"
+msgstr "값"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:266, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
+msgid "workspace.tokens.token-value-enter"
+msgstr "값 또는 {alias}를 사용한 별칭을 입력하세요"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:67
+msgid "workspace.tokens.tokens-section-title"
+msgstr "token -  %s"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:122
+msgid "workspace.tokens.tools"
+msgstr "도구"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:46
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "가져오기가 성공적으로 완료되었습니다. 일부 token이 포함되지 않았습니다."
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:48
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "유형 '%s'가 지원되지 않습니다 (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
+msgid "workspace.tokens.use-reference"
+msgstr "참조 사용"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:132
+msgid "workspace.tokens.value-not-valid"
+msgstr "값이 유효하지 않습니다"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "잘못된 값: %가 허용되지 않습니다."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65
+msgid "workspace.tokens.value-with-units"
+msgstr "잘못된 값: 단위가 허용되지 않습니다."
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+#, unused
+msgid "workspace.tokens.warning-name-change"
+msgstr "이 token의 이름을 바꾸면 기존 이름에 대한 참조가 끊어집니다"
+
+#: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
+msgid "workspace.toolbar.assets"
+msgstr "에셋"
+
+#: src/app/main/ui/workspace/palette.cljs:184
+msgid "workspace.toolbar.color-palette"
+msgstr "색상 팔레트 (%s)"
+
+#: src/app/main/ui/workspace/right_header.cljs:217
+msgid "workspace.toolbar.comments"
+msgstr "댓글 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:195
+msgid "workspace.toolbar.curve"
+msgstr "곡선 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "디버깅 도구"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:172
+msgid "workspace.toolbar.ellipse"
+msgstr "타원 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:130
+msgid "workspace.toolbar.frame"
+msgstr "보드 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:129
+msgid "workspace.toolbar.frame-first-time"
+msgstr "보드를 만듭니다. 클릭하고 드래그하여 크기를 정의합니다. (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:60
+msgid "workspace.toolbar.image"
+msgstr "이미지 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:143
+msgid "workspace.toolbar.move"
+msgstr "이동 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:205
+msgid "workspace.toolbar.path"
+msgstr "경로 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:216
+msgid "workspace.toolbar.plugins"
+msgstr "플러그인 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:162
+msgid "workspace.toolbar.rect"
+msgstr "직사각형 (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+#, unused
+msgid "workspace.toolbar.shortcuts"
+msgstr "단축키 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:182
+msgid "workspace.toolbar.text"
+msgstr "텍스트 (%s)"
+
+#: src/app/main/ui/workspace/palette.cljs:190
+msgid "workspace.toolbar.text-palette"
+msgstr "타이포그래피 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:235, src/app/main/ui/workspace/top_toolbar.cljs:236
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "도구 모음 켜기/끄기"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:41
+msgid "workspace.top-bar.read-only.done"
+msgstr "완료"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:37
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**코드 검사 중** (보기 전용)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:333
+msgid "workspace.undo.empty"
+msgstr "아직 기록 변경사항이 없습니다"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:147
+msgid "workspace.undo.entry.delete"
+msgstr "삭제됨 %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:146
+msgid "workspace.undo.entry.modify"
+msgstr "수정됨 %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:148
+msgid "workspace.undo.entry.move"
+msgstr "객체 이동됨"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:111
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "원"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:112
+msgid "workspace.undo.entry.multiple.color"
+msgstr "색상 에셋"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:113
+msgid "workspace.undo.entry.multiple.component"
+msgstr "컴포넌트"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:114
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "곡선"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:115
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "보드"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:116
+msgid "workspace.undo.entry.multiple.group"
+msgstr "그룹"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:117
+msgid "workspace.undo.entry.multiple.media"
+msgstr "그래픽 에셋"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:118
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "객체"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:119
+msgid "workspace.undo.entry.multiple.page"
+msgstr "페이지"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:120
+msgid "workspace.undo.entry.multiple.path"
+msgstr "경로"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:121
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "직사각형"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:122
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "도형"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:123
+msgid "workspace.undo.entry.multiple.text"
+msgstr "텍스트"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:124
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "타이포그래피 에셋"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:145
+msgid "workspace.undo.entry.new"
+msgstr "새 %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:125
+msgid "workspace.undo.entry.single.circle"
+msgstr "원"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:126
+msgid "workspace.undo.entry.single.color"
+msgstr "색상 에셋"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:127
+msgid "workspace.undo.entry.single.component"
+msgstr "컴포넌트"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:128
+msgid "workspace.undo.entry.single.curve"
+msgstr "곡선"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:129
+msgid "workspace.undo.entry.single.frame"
+msgstr "보드"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:130
+msgid "workspace.undo.entry.single.group"
+msgstr "그룹"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:131
+msgid "workspace.undo.entry.single.image"
+msgstr "이미지"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:132
+msgid "workspace.undo.entry.single.media"
+msgstr "그래픽 에셋"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:133
+msgid "workspace.undo.entry.single.multiple"
+msgstr "객체"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:134
+msgid "workspace.undo.entry.single.page"
+msgstr "페이지"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:135
+msgid "workspace.undo.entry.single.path"
+msgstr "경로"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:136
+msgid "workspace.undo.entry.single.rect"
+msgstr "직사각형"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:137
+msgid "workspace.undo.entry.single.shape"
+msgstr "도형"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:138
+msgid "workspace.undo.entry.single.text"
+msgstr "텍스트"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:139
+msgid "workspace.undo.entry.single.typography"
+msgstr "타이포그래피 에셋"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:149
+msgid "workspace.undo.entry.unknown"
+msgstr "%s에 대한 작업"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:335
+#, unused
+msgid "workspace.undo.title"
+msgstr "히스토리"
+
+#: src/app/main/data/workspace/libraries.cljs:1247, src/app/main/ui/workspace/sidebar/versions.cljs:85
+msgid "workspace.updates.dismiss"
+msgstr "해제"
+
+#: src/app/main/data/workspace/libraries.cljs:1245
+msgid "workspace.updates.more-info"
+msgstr "자세히"
+
+#: src/app/main/data/workspace/libraries.cljs:1243
+msgid "workspace.updates.there-are-updates"
+msgstr "공유 라이브러리에 업데이트가 있습니다"
+
+#: src/app/main/data/workspace/libraries.cljs:1249
+msgid "workspace.updates.update"
+msgstr "업데이트"
+
+#: src/app/main/ui/ds/product/milestone_group.cljs:73
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s 자동 저장 버전"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:260
+msgid "workspace.versions.autosaved.version"
+msgstr "자동 저장됨 %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:278
+msgid "workspace.versions.button.pin"
+msgstr "버전 고정"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:273
+msgid "workspace.versions.button.restore"
+msgstr "버전 복원"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:396, src/app/main/ui/workspace/sidebar/versions.cljs:398
+msgid "workspace.versions.button.save"
+msgstr "버전 저장"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:405
+msgid "workspace.versions.empty"
+msgstr "아직 버전이 없습니다"
+
+#: src/app/main/ui/ds/product/milestone_group.cljs:67
+msgid "workspace.versions.expand-snapshot"
+msgstr "스냅샷 확장"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:369
+msgid "workspace.versions.filter.all"
+msgstr "모든 버전"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:383
+msgid "workspace.versions.filter.label"
+msgstr "버전 필터"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:370
+msgid "workspace.versions.filter.mine"
+msgstr "내 버전"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:374
+msgid "workspace.versions.filter.user"
+msgstr "%s의 버전"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:391
+msgid "workspace.versions.loading"
+msgstr "로드 중..."
+
+#, unused
+msgid "workspace.versions.locked-by-other"
+msgstr "이 버전은 %s에 의해 잠겨있으며 수정할 수 없습니다"
+
+#, unused
+msgid "workspace.versions.locked-by-you"
+msgstr "이 버전은 당신에 의해 잠겨있습니다"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:83
+msgid "workspace.versions.restore-warning"
+msgstr "이 버전을 복원하시겠습니까?"
+
+#, unused
+msgid "workspace.versions.snapshot-menu"
+msgstr "스냅샷 메뉴 열기"
+
+#: src/app/main/ui/workspace/sidebar.cljs:257
+msgid "workspace.versions.tab.actions"
+msgstr "동작"
+
+#: src/app/main/ui/workspace/sidebar.cljs:255
+msgid "workspace.versions.tab.history"
+msgstr "히스토리"
+
+#, unused
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "잠긴 버전 - 생성자만 수정할 수 있습니다"
+
+#: src/app/main/ui/ds/product/milestone.cljs:84, src/app/main/ui/ds/product/milestone_group.cljs:86
+msgid "workspace.versions.version-menu"
+msgstr "버전 메뉴 열기"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:60
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr "이 제한을 늘리고 싶으시면, [support@penpot.app](%s)으로 문의하세요"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:431
+msgid "workspace.versions.warning.text"
+msgstr "자동 저장 버전은 %s일 동안 유지됩니다."
+
+#, unused
+msgid "workspace.viewport.click-to-close-path"
+msgstr "경로를 닫으려면 클릭하세요"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.active-sets"
+msgstr "활성 세트"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.active-themes"
+msgstr "활성 테마"
+
+#: src/app/main/ui/dashboard/subscription.cljs:180
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "무제한 플랜 이용 중 사람 초대하기"
