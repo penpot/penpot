@@ -5682,6 +5682,18 @@ msgstr "Ocultar reglas"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Ocultar paleta de textos"
 
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Conectar"
+
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Desconectar"
+
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Gestionar (estado: habilitado)"
+
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Gestionar (estado: deshabilitado)"
+
 #: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "Editar"
@@ -5693,6 +5705,9 @@ msgstr "Archivo"
 #: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "Ayuda e información"
+
+msgid "workspace.header.menu.option.mcp"
+msgstr "Servidor MCP"
 
 #: src/app/main/ui/workspace/main_menu.cljs:906
 msgid "workspace.header.menu.option.preferences"
