@@ -69,7 +69,7 @@
 /frontend/test-results/
 /other/
 /scripts/
-/telemetry/
+/nexus/
 /tmp/
 /vendor/**/target
 /vendor/svgclean/bundle*.js
