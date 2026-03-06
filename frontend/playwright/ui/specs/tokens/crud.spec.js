@@ -30,6 +30,89 @@ test.describe("Tokens - creation", () => {
     });
   });
 
+  test("User creates border radius token with combobox", async ({ page }) => {
+    const invalidValueError = "Invalid token value";
+    const emptyNameError = "Name should be at least 1 character";
+    const selfReferenceError = "Token has self reference";
+    const missingReferenceError = "Missing token references";
+
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupEmptyTokensFileRender(page , {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    // Open modal
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const addTokenButton = tokensTabPanel.getByRole("button", {
+      name: `Add Token: Border Radius`,
+    });
+
+    await addTokenButton.click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    // Placeholder checks
+    await expect(
+      tokensUpdateCreateModal.getByPlaceholder(
+        "Enter border radius token name",
+      ),
+    ).toBeVisible();
+    await expect(
+      tokensUpdateCreateModal.getByPlaceholder(
+        "Enter a value or alias with {alias}",
+      ),
+    ).toBeVisible();
+
+    // Elements
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByRole("combobox", {
+      name: "Value",
+    });
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    // Create first token
+    await nameField.fill("my-token");
+    await valueField.fill("1 + 2");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 3"),
+    ).toBeVisible();
+
+    await expect(submitButton).toBeEnabled();
+
+    await submitButton.click();
+
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
+    ).toBeEnabled();
+
+    // Create second token referencing the first one using the combobox options
+    await addTokenButton.click();
+
+    await nameField.fill("my-token-2");
+    const toggleDropdownButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Open token list",
+    });
+    await toggleDropdownButton.click();
+    const option = page.getByRole("option", { name: "my-token" });
+    await expect(option).toBeVisible();
+    await option.click();
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 3"),
+    ).toBeVisible();
+
+    await valueField.pressSequentially(" + 2");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 5"),
+    ).toBeVisible();
+    await valueField.pressSequentially(" + {");
+    await option.click();
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 8"),
+    ).toBeVisible();
+  });
+
   test("User creates dimensions token", async ({ page }) => {
     await testTokenCreationFlow(page, {
       tokenLabel: "Dimensions",
