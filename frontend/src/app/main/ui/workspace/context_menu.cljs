@@ -778,6 +778,7 @@
   [{:keys [mdata]}]
   (let [{:keys [grid cells]} mdata
 
+        grid-id (:id grid)
         single? (= (count cells) 1)
 
         can-merge?
@@ -785,17 +786,53 @@
          (mf/deps cells)
          #(ctl/valid-area-cells? cells))
 
+        can-copy-rows?
+        (mf/use-memo
+         (mf/deps grid cells)
+         #(dwsl/complete-rows? grid cells))
+
+        can-copy-columns?
+        (mf/use-memo
+         (mf/deps grid cells)
+         #(dwsl/complete-columns? grid cells))
+
+        grid-edition-ref
+        (mf/use-memo
+         (mf/deps grid-id)
+         #(refs/workspace-grid-edition-id grid-id))
+
+        grid-edition (mf/deref grid-edition-ref)
+        has-copied-tracks? (some? (:copied-tracks grid-edition))
+
         do-merge-cells
         (mf/use-fn
-         (mf/deps grid cells)
+         (mf/deps grid-id cells)
          (fn []
-           (st/emit! (dwsl/merge-cells (:id grid) (map :id cells)))))
+           (st/emit! (dwsl/merge-cells grid-id (map :id cells)))))
 
         do-create-board
         (mf/use-fn
-         (mf/deps grid cells)
+         (mf/deps grid-id cells)
          (fn []
-           (st/emit! (dwsl/create-cell-board (:id grid) (map :id cells)))))]
+           (st/emit! (dwsl/create-cell-board grid-id (map :id cells)))))
+
+        do-copy-rows
+        (mf/use-fn
+         (mf/deps grid-id)
+         (fn []
+           (st/emit! (dwsl/copy-grid-tracks grid-id :row))))
+
+        do-copy-columns
+        (mf/use-fn
+         (mf/deps grid-id)
+         (fn []
+           (st/emit! (dwsl/copy-grid-tracks grid-id :column))))
+
+        do-paste-tracks
+        (mf/use-fn
+         (mf/deps grid-id)
+         (fn []
+           (st/emit! (dwsl/paste-grid-tracks grid-id))))]
     [:*
      (when (not single?)
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.merge")
@@ -808,7 +845,19 @@
 
      [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.create-board")
                       :on-click do-create-board
-                      :disabled (and (not single?) (not can-merge?))}]]))
+                      :disabled (and (not single?) (not can-merge?))}]
+
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.copy-rows")
+                      :on-click do-copy-rows
+                      :disabled (not can-copy-rows?)}]
+
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.copy-columns")
+                      :on-click do-copy-columns
+                      :disabled (not can-copy-columns?)}]
+
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.paste-tracks")
+                      :on-click do-paste-tracks
+                      :disabled (not has-copied-tracks?)}]]))
 
 
 ;; FIXME: optimize because it is rendered always

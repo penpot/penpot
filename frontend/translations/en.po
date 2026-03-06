@@ -5573,6 +5573,15 @@ msgstr "Create board"
 msgid "workspace.context-menu.grid-cells.merge"
 msgstr "Merge cells"
 
+msgid "workspace.context-menu.grid-cells.copy-rows"
+msgstr "Copy rows"
+
+msgid "workspace.context-menu.grid-cells.copy-columns"
+msgstr "Copy columns"
+
+msgid "workspace.context-menu.grid-cells.paste-tracks"
+msgstr "Paste"
+
 #: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Add 1 column to the right"
