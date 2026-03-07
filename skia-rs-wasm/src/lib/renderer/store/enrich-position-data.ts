@@ -56,10 +56,9 @@ export function enrichPageWithPositionData(
   module: WasmModule,
   page: PenpotPage
 ): PenpotPage {
-  const children = page.children
-  if (!children?.length) return page
+  if (!page.children?.length) return page
   return {
     ...page,
-    children: children.map((node) => enrichNode(module, node)),
+    children: page.children.map((node: PenpotNode) => enrichNode(module, node)),
   }
 }

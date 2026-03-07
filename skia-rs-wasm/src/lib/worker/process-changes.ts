@@ -18,7 +18,7 @@ import type {
 } from 'penpot-exporter/types'
 import type { PenpotNode } from 'penpot-exporter/types'
 import { isFrameShape } from './geometry/shapes'
-import { assignHierarchy, ensureShapes } from './helpers'
+import { assignHierarchy, ensureShapes, isIndexedShape } from './helpers'
 
 /** Normalize shapes to array (Penpot sends single id or array) */
 function normalizeShapes(shapes: unknown): string[] {
@@ -191,7 +191,11 @@ function processMovObjects(data: IndexedPage, change: MovObjectsChange): Indexed
     return data
   }
 
-  const frameId = isFrameShape(parent) ? parent.id : parent.frameId ?? ZERO_UUID
+  const frameId = !isIndexedShape(parent)
+    ? ZERO_UUID
+    : isFrameShape(parent)
+      ? parent.id
+      : (parent as IndexedShape).frameId ?? ZERO_UUID
 
   const insertIndex =
     afterShape != null
@@ -233,10 +237,11 @@ function processMovObjects(data: IndexedPage, change: MovObjectsChange): Indexed
 
   const updateFrameIdRec = (objs: Record<string, IndexedShape>, fid: string, sid: string): void => {
     const s = objs[sid]
-    if (s) {
+    if (isIndexedShape(s)) {
       objs[sid] = { ...s, frameId: fid }
-      if (s.shapes && !isFrameShape(s)) {
-        for (const cid of s.shapes) {
+      const sShapes = (s as IndexedShape).shapes
+      if (sShapes && !isFrameShape(s)) {
+        for (const cid of sShapes) {
           updateFrameIdRec(objs, fid, cid)
         }
       }
@@ -245,9 +250,12 @@ function processMovObjects(data: IndexedPage, change: MovObjectsChange): Indexed
 
   for (const shapeId of shapeIds) {
     const shape = objects[shapeId]
-    if (shape && !isFrameShape(shape) && shape.shapes) {
-      for (const cid of shape.shapes) {
-        updateFrameIdRec(objects, frameId, cid)
+    if (isIndexedShape(shape) && !isFrameShape(shape)) {
+      const shapeShapes = (shape as IndexedShape).shapes
+      if (shapeShapes) {
+        for (const cid of shapeShapes) {
+          updateFrameIdRec(objects, frameId, cid)
+        }
       }
     }
   }

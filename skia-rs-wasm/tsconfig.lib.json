@@ -1,11 +1,18 @@
 {
   "compilerOptions": {
+    "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo",
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
@@ -23,11 +30,16 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@skia-rs-wasm/common": ["./src/lib/common"],
-      "@skia-rs-wasm/common/*": ["./src/lib/common/*"],
-      "@ui/*": ["./packages/penpot-exporter-figma-plugin/ui-src/*"],
-      "@plugin/*": ["./packages/penpot-exporter-figma-plugin/plugin-src/*"]
+      "@skia-rs-wasm/common": [
+        "./src/lib/common"
+      ],
+      "@skia-rs-wasm/common/*": [
+        "./src/lib/common/*"
+      ]
     }
   },
-  "include": ["src/index.ts", "src/lib/**/*"]
+  "include": [
+    "src/index.ts",
+    "src/lib/**/*"
+  ]
 }

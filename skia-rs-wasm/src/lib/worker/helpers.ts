@@ -10,6 +10,13 @@ import {
   isBoolShape,
 } from './geometry/shapes'
 
+/** Type guard: in the worker, shapes from objects are always IndexedShape. */
+export function isIndexedShape(
+  shape: PenpotNode | null | undefined
+): shape is IndexedShape {
+  return shape != null
+}
+
 /**
  * Assign hierarchy fields (id, parentId, frameId) to the shape. Uses camelCase.
  */

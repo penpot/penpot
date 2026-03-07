@@ -1,14 +1,41 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import { resolve, dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import fs from 'fs'
+import { rollup } from 'rollup'
+import dts from 'rollup-plugin-dts'
 
 // ESM doesn't have __dirname, so we create it
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+function dtsBundlePlugin(): Plugin {
+  return {
+    name: 'dts-bundle',
+    apply: 'build',
+    async closeBundle() {
+      const bundle = await rollup({
+        input: resolve(__dirname, 'src/index.ts'),
+        plugins: [
+          dts({
+            tsconfig: resolve(__dirname, 'tsconfig.lib.json'),
+          }),
+        ],
+      })
+      await bundle.write({
+        file: resolve(__dirname, 'dist/index.d.ts'),
+        format: 'es',
+      })
+      await bundle.close()
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    'process.env.NODE_ENV': '"production"',
+  },
   resolve: {
     alias: {
       '@skia-rs-wasm/common': resolve(__dirname, 'src/lib/common'),
@@ -24,7 +51,7 @@ export default defineConfig({
       fileName: (format) => `renderer.${format === 'es' ? 'es' : 'cjs'}.js`,
     },
     rollupOptions: {
-      external: [],
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'zustand'],
       output: {
         assetFileNames: (assetInfo) => {
           if (assetInfo.name?.endsWith('.wasm')) {
@@ -38,6 +65,7 @@ export default defineConfig({
     sourcemap: true,
   },
   plugins: [
+    dtsBundlePlugin(),
     {
       name: 'wasm-content-type-plugin',
       configureServer(server) {

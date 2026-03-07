@@ -6,19 +6,19 @@
 import type { Selrect } from 'penpot-exporter/types'
 import { makeSelrect } from './types'
 
-export interface QuadtreeNode {
+export interface QuadtreeNode<T = unknown> {
   id: string
   bounds: Selrect
-  data: unknown
+  data: T
 }
 
-export class Quadtree {
+export class Quadtree<T = unknown> {
   maxObjects: number
   maxLevels: number
   level: number
   bounds: Selrect
-  objects: QuadtreeNode[]
-  indexes: Quadtree[]
+  objects: QuadtreeNode<T>[]
+  indexes: Quadtree<T>[]
 
   constructor(bounds: Selrect, maxObjects: number = 10, maxLevels: number = 4, level: number = 0) {
     this.maxObjects = maxObjects
@@ -37,7 +37,7 @@ export class Quadtree {
     const y = this.bounds.y
 
     // top-right quad
-    this.indexes[0] = new Quadtree(
+    this.indexes[0] = new Quadtree<T>(
       makeSelrect(x + subWidth, y, subWidth, subHeight),
       this.maxObjects,
       this.maxLevels,
@@ -45,7 +45,7 @@ export class Quadtree {
     )
 
     // top-left quad
-    this.indexes[1] = new Quadtree(
+    this.indexes[1] = new Quadtree<T>(
       makeSelrect(x, y, subWidth, subHeight),
       this.maxObjects,
       this.maxLevels,
@@ -53,7 +53,7 @@ export class Quadtree {
     )
 
     // bottom-left quad
-    this.indexes[2] = new Quadtree(
+    this.indexes[2] = new Quadtree<T>(
       makeSelrect(x, y + subHeight, subWidth, subHeight),
       this.maxObjects,
       this.maxLevels,
@@ -61,7 +61,7 @@ export class Quadtree {
     )
 
     // bottom-right quad
-    this.indexes[3] = new Quadtree(
+    this.indexes[3] = new Quadtree<T>(
       makeSelrect(x + subWidth, y + subHeight, subWidth, subHeight),
       this.maxObjects,
       this.maxLevels,
@@ -69,7 +69,7 @@ export class Quadtree {
     )
   }
 
-  *getIndexes(rect: Selrect): Generator<Quadtree> {
+  *getIndexes(rect: Selrect): Generator<Quadtree<T>> {
     const verticalMidpoint = this.bounds.x + this.bounds.width / 2
     const horizontalMidpoint = this.bounds.y + this.bounds.height / 2
 
@@ -99,7 +99,7 @@ export class Quadtree {
     }
   }
 
-  insert(node: QuadtreeNode): void {
+  insert(node: QuadtreeNode<T>): void {
     // If we have subindexes, call insert on matching subindexes
     if (this.indexes.length > 0) {
       for (const index of this.getIndexes(node.bounds)) {
@@ -140,7 +140,7 @@ export class Quadtree {
     }
   }
 
-  *search(rect: Selrect): Generator<QuadtreeNode> {
+  *search(rect: Selrect): Generator<QuadtreeNode<T>> {
     if (this.indexes.length === 0) {
       yield* this.objects
     } else {
@@ -155,33 +155,36 @@ export class Quadtree {
     this.indexes = []
   }
 
-  getObjects(): QuadtreeNode[] {
+  getObjects(): QuadtreeNode<T>[] {
     return this.objects
   }
 }
 
 // Helper functions matching the original API
-export function create(bounds: Selrect): Quadtree {
-  return new Quadtree(bounds, 10, 4, 0)
+export function create<T = unknown>(bounds: Selrect): Quadtree<T> {
+  return new Quadtree<T>(bounds, 10, 4, 0)
 }
 
-export function insert(
-  index: Quadtree,
+export function insert<T>(
+  index: Quadtree<T>,
   id: string,
   bounds: Selrect,
-  data: unknown
-): Quadtree {
-  const node: QuadtreeNode = { id, bounds, data }
+  data: T
+): Quadtree<T> {
+  const node: QuadtreeNode<T> = { id, bounds, data }
   index.insert(node)
   return index
 }
 
-export function clear(index: Quadtree): Quadtree {
+export function clear<T>(index: Quadtree<T>): Quadtree<T> {
   index.clear()
   return index
 }
 
-export function* search(index: Quadtree, rect: Selrect): Generator<QuadtreeNode> {
+export function* search<T>(
+  index: Quadtree<T>,
+  rect: Selrect
+): Generator<QuadtreeNode<T>> {
   const tmp = new Set<string>()
   for (const item of index.search(rect)) {
     if (!tmp.has(item.id)) {
@@ -191,8 +194,8 @@ export function* search(index: Quadtree, rect: Selrect): Generator<QuadtreeNode>
   }
 }
 
-export function remove(index: Quadtree, id: string): Quadtree {
-  const result = create(index.bounds)
+export function remove<T>(index: Quadtree<T>, id: string): Quadtree<T> {
+  const result = create<T>(index.bounds)
 
   for (const node of index.objects) {
     if (node.id !== id) {
@@ -203,8 +206,8 @@ export function remove(index: Quadtree, id: string): Quadtree {
   return result
 }
 
-export function removeAll(index: Quadtree, ids: Set<string>): Quadtree {
-  const result = create(index.bounds)
+export function removeAll<T>(index: Quadtree<T>, ids: Set<string>): Quadtree<T> {
+  const result = create<T>(index.bounds)
 
   for (const node of search(index, index.bounds)) {
     if (!ids.has(node.id)) {

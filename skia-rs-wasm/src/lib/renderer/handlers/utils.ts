@@ -1,5 +1,4 @@
-import type { Matrix } from '@ui/types';
-import type { ModObjChange } from 'penpot-exporter/types';
+import type { Matrix, ModObjChange } from 'penpot-exporter/types';
 import { propagateModifiers } from '../api/modifiers';
 import { applyTransformToNode } from '../geom/apply-transform-to-node';
 import { useWorkspaceStore } from '../store/workspace-store';

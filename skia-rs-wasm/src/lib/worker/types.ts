@@ -59,6 +59,13 @@ export type IndexedShape = PenpotNode & {
   shapes?: string[]
 }
 
+/** Shape payload stored in selection quadtree (IndexedShape + frame, clipParents, parents). */
+export type SelectionIndexShape = IndexedShape & {
+  frame?: PenpotNode
+  clipParents: PenpotNode[]
+  parents: string[]
+}
+
 /** Alias for IndexedShape; canonical node type in indexed page model. */
 export type IndexedNode = IndexedShape
 
@@ -82,7 +89,7 @@ export interface QueryParams {
 }
 
 export interface SelectionIndex {
-  index: Quadtree
+  index: Quadtree<SelectionIndexShape>
   bounds: Selrect
   parentsIndex: Record<string, Set<string>>
   clipIndex: Record<string, PenpotNode[]>
