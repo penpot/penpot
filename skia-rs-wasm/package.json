@@ -24,20 +24,21 @@
     "README.md"
   ],
   "peerDependencies": {
-    "penpot-exporter": "^0.20.0"
+    "penpot-exporter": "^0.20.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "zustand": "^4.0.0 || ^5.0.0"
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsc -p tsconfig.lib.json",
-    "build:lib": "vite build && tsc -p tsconfig.lib.json",
+    "build": "vite build",
+    "build:lib": "vite build",
+    "build:worker": "vite build --config vite.worker.config.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "rxjs": "^7.8.2",
-    "zustand": "^5.0.10"
+    "rxjs": "^7.8.2"
   },
   "pnpm": {
     "overrides": {
@@ -46,6 +47,11 @@
   },
   "devDependencies": {
     "penpot-exporter": "workspace:*",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "zustand": "^5.0.10",
+    "rollup": "^4.0.0",
+    "rollup-plugin-dts": "^6.3.0",
     "@eslint/js": "^9.39.1",
     "@penpot/plugin-types": "^1.4.2",
     "@types/node": "^24.10.1",

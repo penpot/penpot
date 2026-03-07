@@ -31,8 +31,6 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@ui": ["./packages/penpot-exporter-figma-plugin/ui-src"],
-      "@ui/*": ["./packages/penpot-exporter-figma-plugin/ui-src/*"],
       "@skia-rs-wasm/common": ["./src/lib/common"],
       "@skia-rs-wasm/common/*": ["./src/lib/common/*"],
       "@penpot-exporter/transformers": ["./packages/penpot-exporter-figma-plugin/plugin-src/transformers"],
@@ -44,5 +42,7 @@
     "src",
     "dev/node-factory.ts",
     "public/wasm"
-  ]
+  ],
+  "exclude": ["src/lib"],
+  "references": [{ "path": "./tsconfig.lib.json" }]
 }

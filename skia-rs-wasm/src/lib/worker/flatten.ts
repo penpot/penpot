@@ -48,7 +48,10 @@ export function flattenPageToIndexed(page: PenpotPage): IndexedPage {
     }
   }
 
-  const rootChildIds = children.slice(1).map(n => n.id).filter((id): id is string => id != null)
+  const rootChildIds = children
+    .slice(1)
+    .map((n: PenpotNode) => n.id)
+    .filter((id: string | undefined): id is string => id != null)
   const rootIndexed: IndexedShape = {
     ...rootFrame,
     parentId: undefined,
@@ -106,13 +109,17 @@ export function unflattenIndexedPageToPage(indexed: IndexedPage): PenpotPage {
 
   function toNode(shape: IndexedShape): PenpotNode {
     const { shapes, ...rest } = shape
-    const children: PenpotNode[] = shapes?.map((id) => toNode(objects[id]!)).filter(Boolean) ?? []
+    const children: PenpotNode[] =
+      shapes?.map((id: string) => toNode(objects[id]!)).filter(Boolean) ?? []
     return { ...rest, children: children.length > 0 ? children : undefined } as PenpotNode
   }
 
   const { shapes: _rootShapes, ...rootRest } = root
   const rootNode = { ...rootRest, children: [] } as PenpotNode
-  const siblingNodes = (root.shapes ?? []).map((id) => objects[id]).filter(Boolean).map(toNode)
+  const siblingNodes = (root.shapes ?? [])
+    .map((id: string) => objects[id])
+    .filter(Boolean)
+    .map(toNode)
   return {
     id: indexed.id,
     name: indexed.name ?? 'Page',

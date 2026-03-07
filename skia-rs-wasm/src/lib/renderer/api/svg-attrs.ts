@@ -3,7 +3,7 @@
  * Handles fill props, transforms, and other SVG attributes
  */
 
-import type { PenpotNode } from 'penpot-exporter/types'
+import type { PenpotNode, Fill } from 'penpot-exporter/types'
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from './constants'
 
 /**
@@ -26,9 +26,9 @@ export function addFillProps(
   const style = { ...(props.style || {}), ...svgStyles }
 
   // Determine if URL fill is needed (multiple fills, gradients, or images)
-  const hasImageFill = shapeFills.some((fill) => isImageFill(fill))
+  const hasImageFill = shapeFills.some((fill: Fill) => isImageFill(fill))
   const hasGradientFill = shapeFills.some(
-    (fill) => isLinearGradient(fill) || isRadialGradient(fill)
+    (fill: Fill) => isLinearGradient(fill) || isRadialGradient(fill)
   )
   const urlFillNeeded =
     hasImageFill ||

@@ -3,7 +3,7 @@
  * Translated from frontend/src/app/worker/selection.cljs
  */
 
-import type { SelectionIndex, IndexedPage, QueryParams } from './types'
+import type { SelectionIndex, IndexedPage, QueryParams, SelectionIndexShape } from './types'
 import type { IndexedShape } from './types'
 import type { PenpotNode, Selrect } from 'penpot-exporter/types'
 import { ZERO_UUID, makeSelrect } from './types'
@@ -18,7 +18,12 @@ import {
   getImmediateChildren,
 } from './geometry/shapes'
 import { overlaps } from './geometry/intersect'
-import { generateChildAllParentsIndex, createClipIndex, getChildrenIds } from './helpers'
+import {
+  generateChildAllParentsIndex,
+  createClipIndex,
+  getChildrenIds,
+  isIndexedShape,
+} from './helpers'
 
 const PADDING_PERCENT = 0.1
 
@@ -51,9 +56,9 @@ function indexShape(
   objects: Record<string, PenpotNode>,
   parentsIndex: Record<string, Set<string>>,
   clipIndex: Record<string, PenpotNode[]>,
-  index: quadtree.Quadtree,
+  index: quadtree.Quadtree<SelectionIndexShape>,
   shape: PenpotNode
-): quadtree.Quadtree {
+): quadtree.Quadtree<SelectionIndexShape> {
   const bounds = shapeToBounds(shape)
   if (!bounds) {
     return index
@@ -73,7 +78,7 @@ function indexShape(
     frame = objects[frameId]
   }
 
-  const shapeData = {
+  const shapeData: SelectionIndexShape = {
     ...shape,
     frame,
     clipParents,
@@ -112,7 +117,7 @@ function createIndex(objects: Record<string, PenpotNode>): SelectionIndex {
   if (!bounds) {
     // Fallback bounds
     const defaultBounds = makeRect(0, 0, 10000, 10000)
-    const index = quadtree.create(defaultBounds)
+    const index = quadtree.create<SelectionIndexShape>(defaultBounds)
     return {
       index,
       bounds: defaultBounds,
@@ -122,7 +127,7 @@ function createIndex(objects: Record<string, PenpotNode>): SelectionIndex {
   }
 
   const paddedBounds = addPaddingBounds(bounds)
-  let index = quadtree.create(paddedBounds)
+  let index = quadtree.create<SelectionIndexShape>(paddedBounds)
 
   // Index all shapes except root
   for (const [id, shape] of Object.entries(objects)) {
@@ -235,7 +240,7 @@ function queryIndex(
 
   // Search quadtree
   for (const node of quadtree.search(index, rect)) {
-    const shape = node.data as IndexedShape
+    const shape = node.data
     if (!shape) {
       continue
     }
@@ -245,7 +250,7 @@ function queryIndex(
       continue
     }
 
-    if (!isFrameShape(shape) && shape.blocked) {
+    if (isIndexedShape(shape) && !isFrameShape(shape) && (shape as IndexedShape).blocked) {
       continue
     }
 

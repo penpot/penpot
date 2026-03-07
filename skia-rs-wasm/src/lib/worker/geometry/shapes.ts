@@ -150,6 +150,9 @@ export function getImmediateChildren(
 
   return shape.shapes
     .map((id: string) => objects[id])
-    .filter((child): child is PenpotNode => child != null && !child.hidden && !child.blocked)
+    .filter(
+      (child: PenpotNode | undefined): child is PenpotNode =>
+        child != null && !child.hidden && !child.blocked
+    )
 }
 
