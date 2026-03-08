@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-03-02 18:09+0000\n"
+"PO-Revision-Date: 2026-03-09 20:09+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -5433,7 +5433,7 @@ msgstr "Деякі з цих варіантів мають помилкові і
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:433
 msgid "workspace.options.component.variant.malformed.structure.example"
-msgstr "[property] =  [value], [property] = [value]"
+msgstr "[property] = [value], [property] = [value]"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:431
 msgid "workspace.options.component.variant.malformed.structure.title"
@@ -6491,7 +6491,7 @@ msgstr "Підкреслення (%s)"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
 msgid "workspace.options.text-options.uppercase"
-msgstr "ВЕРХНІЙ РЕГІСТР"
+msgstr "Верхній Регістр"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
@@ -8743,9 +8743,8 @@ msgid "workspace.tokens.shadow-x"
 msgstr "Х"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:150, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:152
-#, fuzzy
 msgid "workspace.tokens.shadow-y"
-msgstr "У"
+msgstr ""
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:40, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
 msgid "workspace.tokens.text-case-value-enter"
