@@ -120,10 +120,10 @@
   (let [features (-> (cfeat/get-enabled-features cf/flags)
                      (set/difference cfeat/frontend-only-features)
                      (set/difference cfeat/no-team-inheritable-features))
-        ;; TODO Choose a better name and manage a default-in-org setting
         params   {:profile-id profile-id
+                  :name "Default"
                   :features features
-                  :name "NitrateDefault"}
+                  :is-default true}
         team     (db/tx-run! cfg teams/create-team params)]
     (select-keys team [:id])))
 
