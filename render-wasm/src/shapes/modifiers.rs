@@ -428,16 +428,22 @@ pub fn propagate_modifiers(
             db.cmp(&da)
         });
 
-        // This temporary bounds is necesary so the layouts can be calculated
+        // Filter out already-reflowed shapes before cloning bounds
+        let reflow_ids: Vec<Uuid> = layout_reflows_vec
+            .iter()
+            .filter(|id| !reflown.contains(id))
+            .copied()
+            .collect();
+
+        // This temporary bounds is necessary so the layouts can be calculated
         // correctly but will be discarded before the next iteration for the
         // bounds to be calculated properly with the modifiers.
-        let mut bounds_temp = bounds.clone();
-
-        for id in &layout_reflows_vec {
-            if reflown.contains(id) {
-                continue;
+        // Only clone when there are actually shapes to reflow.
+        if !reflow_ids.is_empty() {
+            let mut bounds_temp = bounds.clone();
+            for id in &reflow_ids {
+                reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp);
             }
-            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp);
         }
         layout_reflows = HashSet::new();
     }

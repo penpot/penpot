@@ -1260,8 +1260,6 @@ impl RenderState {
         let current_fast_mode = self.options.is_fast_mode();
         self.options.set_fast_mode(true);
 
-        // Skip tile rebuilding during preview - we'll do it at the end
-        // Just rebuild tiles for touched shapes and render synchronously
         self.rebuild_touched_tiles(tree);
 
         // Use the sync render path
@@ -2195,26 +2193,41 @@ impl RenderState {
                     element.children_ids_iter(false).copied().collect()
                 };
 
-                // Z-index ordering
-                // For reverse flex layouts with custom z-indexes, we reverse the base order
-                // so that visual stacking matches visual position
+                // Z-index ordering for layout children.
+                // Only sort when at least one child has a non-default z-index
+                // or absolute positioning, to avoid unnecessary work.
                 let children_ids = if element.has_layout() {
                     let mut ids = children_ids;
-                    let has_z_index = ids
-                        .iter()
-                        .any(|id| tree.get(id).map(|s| s.has_z_index()).unwrap_or(false));
+                    let mut has_z_index = false;
+                    let mut has_absolute = false;
+                    for id in ids.iter() {
+                        if let Some(s) = tree.get(id) {
+                            if s.has_z_index() {
+                                has_z_index = true;
+                            }
+                            if s.is_absolute() {
+                                has_absolute = true;
+                            }
+                            if has_z_index && has_absolute {
+                                break;
+                            }
+                        }
+                    }
                     if element.is_flex_reverse() && has_z_index {
                         ids.reverse();
                     }
                     // Sort by z_index descending (higher z renders on top).
                     // When z_index is equal, absolute children go above
                     // non-absolute children
-                    ids.sort_by_key(|id| {
-                        let s = tree.get(id);
-                        let z = s.map(|s| s.z_index()).unwrap_or(0);
-                        let abs = s.map(|s| s.is_absolute()).unwrap_or(false);
-                        (std::cmp::Reverse(z), !abs)
-                    });
+                    // Only sort if there's something to sort by
+                    if has_z_index || has_absolute {
+                        ids.sort_by_key(|id| {
+                            let s = tree.get(id);
+                            let z = s.map(|s| s.z_index()).unwrap_or(0);
+                            let abs = s.map(|s| s.is_absolute()).unwrap_or(false);
+                            (std::cmp::Reverse(z), !abs)
+                        });
+                    }
                     ids
                 } else {
                     children_ids
@@ -2383,7 +2396,8 @@ impl RenderState {
     pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
         let scale = self.get_scale();
         let tile_size = tiles::get_tile_size(scale);
-        let interest_rect = &self.tile_viewbox.interest_rect;
+        // Copy interest_rect to avoid holding an immutable borrow on self
+        let interest_rect = self.tile_viewbox.interest_rect;
 
         // Fast path: check selrect against interest area before computing full extrect.
         // For clipping shapes, selrect IS the bounds (children can't extend beyond),
