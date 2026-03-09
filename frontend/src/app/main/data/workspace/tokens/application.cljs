@@ -741,8 +741,16 @@
                     shapes)
               shapes)
 
-            {:keys [attributes all-attributes on-update-shape]}
+            {:keys [attributes all-attributes on-update-shape on-update-shape-per-attr]}
             (get token-properties (:type token))
+
+            on-update-shape
+            (or (when (seq attrs)
+                  (some (fn [[attr-set update-fn]]
+                          (when (set/subset? attrs attr-set)
+                            update-fn))
+                        on-update-shape-per-attr))
+                on-update-shape)
 
             unapply-tokens?
             (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
@@ -928,6 +936,8 @@
     :attributes ctt/rotation-keys
     :all-attributes ctt/number-keys
     :on-update-shape update-rotation
+    :on-update-shape-per-attr {ctt/rotation-keys  update-rotation
+                               ctt/line-height-keys update-line-height}
     :modal {:key :tokens/number
             :fields [{:label "Number"
                       :key :number}]}}
