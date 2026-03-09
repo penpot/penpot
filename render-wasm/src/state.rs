@@ -211,6 +211,15 @@ impl State {
         self.render_state.rebuild_tiles_shallow(&self.shapes);
     }
 
+    pub fn start_tile_rebuild(&mut self) {
+        self.render_state.start_tile_rebuild(&self.shapes);
+    }
+
+    pub fn process_tile_rebuild_step(&mut self, timestamp: i32) -> bool {
+        self.render_state
+            .process_tile_rebuild_step(&self.shapes, timestamp)
+    }
+
     pub fn rebuild_tiles(&mut self) {
         self.render_state.rebuild_tiles_from(&self.shapes, None);
     }

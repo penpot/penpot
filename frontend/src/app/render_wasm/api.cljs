@@ -946,15 +946,26 @@
                 (:y position))]
     (= result 1)))
 
+(defn- tile-rebuild-loop
+  "Process tile rebuild in chunks via requestAnimationFrame, then render."
+  []
+  (js/requestAnimationFrame
+   (fn [ts]
+     (when wasm/context-initialized?
+       (let [has-more (h/call wasm/internal-module "_tile_rebuild_step" ts)]
+         (if (pos? has-more)
+           (tile-rebuild-loop)
+           (render ts)))))))
+
 (def render-finish
-  (letfn [(do-render [ts]
+  (letfn [(do-render [_ts]
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when wasm/context-initialized?
               (perf/begin-measure "render-finish")
-              (h/call wasm/internal-module "_set_view_end")
-              (render ts)
-              (perf/end-measure "render-finish")))]
+              (h/call wasm/internal-module "_set_view_end_async")
+              (perf/end-measure "render-finish")
+              (tile-rebuild-loop)))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan

@@ -346,6 +346,50 @@ pub extern "C" fn set_view_end() -> Result<()> {
     Ok(())
 }
 
+/// Like set_view_end but uses chunked tile rebuild to avoid blocking
+/// the main thread. Prepares the view state and starts the async
+/// tile rebuild process. Call `tile_rebuild_step` in a rAF loop after this.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_view_end_async() -> Result<()> {
+    with_state_mut!(state, {
+        performance::begin_measure!("set_view_end_async");
+        state.render_state.options.set_fast_mode(false);
+        state.render_state.cancel_animation_frame();
+
+        let scale = state.render_state.get_scale();
+        state
+            .render_state
+            .tile_viewbox
+            .update(state.render_state.viewbox, scale);
+
+        if state.render_state.options.is_profile_rebuild_tiles() {
+            // Profile mode still uses sync rebuild
+            state.rebuild_tiles();
+        } else {
+            state.start_tile_rebuild();
+        }
+
+        state.render_state.sync_cached_viewbox();
+        performance::end_measure!("set_view_end_async");
+    });
+    Ok(())
+}
+
+/// Process a chunk of the tile rebuild. Returns 1 if more work remains, 0 if done.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn tile_rebuild_step(timestamp: i32) -> Result<i32> {
+    let result = with_state_mut!(state, {
+        if state.process_tile_rebuild_step(timestamp) {
+            1
+        } else {
+            0
+        }
+    });
+    Ok(result)
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn clear_focus_mode() -> Result<()> {
