@@ -72,7 +72,6 @@
         (when-let [file-id (or (:file-id data) file-id)]
           (println "File ID: " (str file-id)))
         (println "Version: " (:full cf/version))
-        (println "URI:     " (str cf/public-uri))
         (println "HREF:    " (rt/get-current-href))
         (println)
 
@@ -88,24 +87,36 @@
       (.error js/console "error on generating report" cause)
       nil)))
 
-(defn- show-not-blocking-error
-  "Show a non user blocking error notification"
-  [cause]
-  (let [data (ex-data cause)
-        hint (or (some-> (:hint data) ex/first-line)
-                 (ex-message cause))]
-
+(defn submit-report
+  "Report the error report to the audit log subsystem"
+  [& {:keys [event-name report hint] :or {event-name "unhandled-exception"}}]
+  (when (and (not (str/empty? hint))
+             (string? report)
+             (string? event-name))
     (st/emit!
-     (ev/event {::ev/name "unhandled-exception"
+     (ev/event {::ev/name event-name
                 :hint hint
                 :href (rt/get-current-href)
-                :type (get data :type :unknown)
-                :report (generate-report cause)})
+                :report report}))))
 
-     (ntf/show {:content (tr "errors.unexpected-exception" hint)
-                :type :toast
-                :level :error
-                :timeout 3000}))))
+(defn flash
+  "Show error notification banner and emit error report"
+  [& {:keys [type hint cause] :or {type :handled}}]
+  (when (ex/exception? cause)
+    (when-let [event-name (case type
+                            :handled "handled-exception"
+                            :unhandled "unhandled-exception"
+                            :silent nil)]
+      (let [report (generate-report cause)]
+        (submit-report :event-name event-name
+                       :report report
+                       :hint (ex/get-hint cause)))))
+
+  (st/emit!
+   (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
+              :type :toast
+              :level :error
+              :timeout 5000})))
 
 (defmethod ptk/handle-error :default
   [error]
@@ -114,7 +125,7 @@
     (ptk/handle-error (assoc error :type :assertion))
     (when-let [cause (::instance error)]
       (ex/print-throwable cause :prefix "Unexpected Error")
-      (show-not-blocking-error cause))))
+      (flash :cause cause :type :unhandled))))
 
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
@@ -203,7 +214,7 @@
 (defmethod ptk/handle-error :assertion
   [error]
   (when-let [cause (::instance error)]
-    (show-not-blocking-error cause)
+    (flash :cause cause :type :handled)
     (ex/print-throwable cause :prefix "Assertion Error")))
 
 ;; ;; All the errors that happens on worker are handled here.
@@ -307,7 +318,7 @@
     :else
     (when-let [cause (::instance error)]
       (ex/print-throwable cause :prefix "Restriction Error")
-      (show-not-blocking-error cause))))
+      (flash :cause cause :type :unhandled))))
 
 ;; This happens when the backed server fails to process the
 ;; request. This can be caused by an internal assertion or any other
@@ -333,14 +344,14 @@
               (set! last-exception cause)
               (when-not (is-ignorable-exception? cause)
                 (ex/print-throwable cause :prefix "Uncaught Exception")
-                (ts/schedule #(show-not-blocking-error cause)))))
+                (ts/schedule #(flash :cause cause :type :unhandled)))))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "reason")]
               (set! last-exception cause)
               (ex/print-throwable cause :prefix "Uncaught Rejection")
-              (ts/schedule #(show-not-blocking-error cause))))]
+              (ts/schedule #(flash :cause cause :type :unhandled))))]
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)

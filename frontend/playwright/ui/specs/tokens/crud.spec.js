@@ -1024,7 +1024,7 @@ test.describe("Tokens - creation", () => {
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.fill("typography.empty");
 
-    const valueField = tokensUpdateCreateModal.getByLabel("Font Size");
+    const valueField = tokensUpdateCreateModal.getByRole("textbox", {name: "Font Size"});
 
     // Insert a value and then delete it
     await valueField.fill("1");
@@ -1716,12 +1716,12 @@ test.describe("Tokens tab - edition", () => {
 
     // Fill font-family to verify to verify that input value doesn't get split into list of characters
     const fontFamilyField = tokensUpdateCreateModal
-      .getByLabel("Font family")
+      .getByRole("textbox", { name: "Font family" })
       .first();
     await fontFamilyField.fill("OneWord");
 
     // Invalidate incorrect values for font size
-    const fontSizeField = tokensUpdateCreateModal.getByLabel(/Font Size/i);
+    const fontSizeField = tokensUpdateCreateModal.getByRole("textbox", { name: "Font Size" });
     await fontSizeField.fill("invalid");
     await expect(
       tokensUpdateCreateModal.getByText(/Invalid token value:/),
@@ -1736,13 +1736,13 @@ test.describe("Tokens tab - edition", () => {
     await fontSizeField.fill("16");
     await expect(saveButton).toBeEnabled();
 
-    const fontWeightField = tokensUpdateCreateModal.getByLabel(/Font Weight/i);
+    const fontWeightField = tokensUpdateCreateModal.getByRole("textbox", { name: "Font Weight" });
     const letterSpacingField =
-      tokensUpdateCreateModal.getByLabel(/Letter Spacing/i);
-    const lineHeightField = tokensUpdateCreateModal.getByLabel(/Line Height/i);
-    const textCaseField = tokensUpdateCreateModal.getByLabel(/Text Case/i);
+      tokensUpdateCreateModal.getByRole("textbox", { name: "Letter Spacing" });
+    const lineHeightField = tokensUpdateCreateModal.getByRole("textbox", { name: "Line Height" });
+    const textCaseField = tokensUpdateCreateModal.getByRole("textbox", { name: "Text Case" });
     const textDecorationField =
-      tokensUpdateCreateModal.getByLabel(/Text Decoration/i);
+      tokensUpdateCreateModal.getByRole("textbox", { name: "Text Decoration" });
 
     // Capture all values before switching tabs
     const originalValues = {
@@ -1800,6 +1800,7 @@ test.describe("Tokens tab - edition", () => {
     const colorToken = tokensSidebar.getByRole("button", {
       name: "100",
     });
+
     await expect(colorToken).toBeVisible();
     await colorToken.click({ button: "right" });
 

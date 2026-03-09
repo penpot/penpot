@@ -33,6 +33,8 @@
   (let [variant
         (d/nilv variant "primary")
 
+        button-ref (mf/use-ref nil)
+
         tooltip-id
         (mf/use-id)
 
@@ -47,10 +49,12 @@
         props
         (mf/spread-props props
                          {:class [class button-class]
+                          :ref button-ref
                           :aria-labelledby tooltip-id})]
 
     [:> tooltip* {:content aria-label
                   :class tooltip-class
+                  :trigger-ref button-ref
                   :placement tooltip-placement
                   :id tooltip-id}
      [:> :button props
