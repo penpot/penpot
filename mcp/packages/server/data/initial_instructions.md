@@ -110,8 +110,7 @@ Boards can have layout systems that automatically control the positioning and sp
          Optionally, adjust individual child margins via `child.layoutChild`.
     - When a board has flex layout, child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
       appending or inserting children automatically positions them according to the layout rules.
-    - CRITICAL: The FlexLayout method `board.flex.appendChild` is BROKEN. To append children to a flex layout board such that
-      they appear visually at the end, ALWAYS use the Board's method `board.appendChild(shape)`. So call it in the order of visual appearance.
+    - To append children to a flex layout board such that they appear visually at the end, use the Board's method `board.appendChild(shape)`, i.e. call it in the order of visual appearance.
       To insert at a specific index, use `board.insertChild(index, shape)`.
     - Add to a board with `board.addFlexLayout(): FlexLayout`; instance then accessible via `board.flex`.
       IMPORTANT: When adding a flex layout to a container that already has children,
