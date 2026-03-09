@@ -25,28 +25,28 @@
 
 (defn text-editor-set-cursor-from-offset
   "Sets caret position from shape relative coordinates"
-  [x y]
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_set_cursor_from_offset" x y)))
 
 (defn text-editor-set-cursor-from-point
   "Sets caret position from screen (canvas) coordinates"
-  [x y]
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_set_cursor_from_point" x y)))
 
 (defn text-editor-pointer-down
-  [x y]
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_pointer_down" x y)))
 
 (defn text-editor-pointer-move
-  [x y]
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_pointer_move" x y)))
 
 (defn text-editor-pointer-up
-  [x y]
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_pointer_up" x y)))
 
@@ -99,6 +99,11 @@
   []
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_select_all")))
+
+(defn text-editor-select-word-boundary
+  [{:keys [x y]}]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_select_word_boundary" x y)))
 
 (defn text-editor-stop
   []

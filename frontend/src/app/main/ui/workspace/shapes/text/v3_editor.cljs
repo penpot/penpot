@@ -235,28 +235,35 @@
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-pointer-down (.-x off-pt) (.-y off-pt)))))
+             (wasm.api/text-editor-pointer-down off-pt))))
 
         on-pointer-move
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-pointer-move (.-x off-pt) (.-y off-pt)))))
+             (wasm.api/text-editor-pointer-move off-pt))))
 
         on-pointer-up
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-pointer-up (.-x off-pt) (.-y off-pt)))))
+             (wasm.api/text-editor-pointer-up off-pt))))
 
         on-click
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-set-cursor-from-offset (.-x off-pt) (.-y off-pt)))))
+             (wasm.api/text-editor-set-cursor-from-offset off-pt))))
+
+        on-double-click
+        (mf/use-fn
+         (fn [^js event]
+           (let [native-event (dom/event->native-event event)
+                 off-pt (dom/get-offset-position native-event)]
+             (wasm.api/text-editor-select-word-boundary off-pt))))
 
         on-focus
         (mf/use-fn
@@ -303,6 +310,7 @@
 
      [:foreignObject {:x x :y y :width width :height height}
       [:div {:on-click on-click
+             :on-double-click on-double-click
              :on-pointer-down on-pointer-down
              :on-pointer-move on-pointer-move
              :on-pointer-up on-pointer-up

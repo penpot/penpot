@@ -93,6 +93,7 @@
 (def text-editor-pointer-up text-editor/text-editor-pointer-up)
 (def text-editor-is-active? text-editor/text-editor-is-active?)
 (def text-editor-select-all text-editor/text-editor-select-all)
+(def text-editor-select-word-boundary text-editor/text-editor-select-word-boundary)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
 
 (def dpr

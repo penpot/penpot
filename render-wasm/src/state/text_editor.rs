@@ -199,6 +199,80 @@ impl TextEditorState {
         true
     }
 
+    pub fn select_word_boundary(
+        &mut self,
+        content: &TextContent,
+        position: &TextPositionWithAffinity,
+    ) {
+        fn is_word_char(c: char) -> bool {
+            c.is_alphanumeric() || c == '_'
+        }
+
+        self.is_pointer_selection_active = false;
+
+        let paragraphs = content.paragraphs();
+        if paragraphs.is_empty() || position.paragraph >= paragraphs.len() {
+            return;
+        }
+
+        let paragraph = &paragraphs[position.paragraph];
+        let paragraph_text: String = paragraph
+            .children()
+            .iter()
+            .map(|span| span.text.as_str())
+            .collect();
+
+        let chars: Vec<char> = paragraph_text.chars().collect();
+        if chars.is_empty() {
+            self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+                position.paragraph,
+                0,
+            ));
+            self.reset_blink();
+            self.push_event(TextEditorEvent::SelectionChanged);
+            return;
+        }
+
+        let mut offset = position.offset.min(chars.len());
+
+        if offset == chars.len() {
+            offset = offset.saturating_sub(1);
+        } else if !is_word_char(chars[offset]) && offset > 0 && is_word_char(chars[offset - 1]) {
+            offset -= 1;
+        }
+
+        if !is_word_char(chars[offset]) {
+            self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+                position.paragraph,
+                position.offset.min(chars.len()),
+            ));
+            self.reset_blink();
+            self.push_event(TextEditorEvent::SelectionChanged);
+            return;
+        }
+
+        let mut start = offset;
+        while start > 0 && is_word_char(chars[start - 1]) {
+            start -= 1;
+        }
+
+        let mut end = offset + 1;
+        while end < chars.len() && is_word_char(chars[end]) {
+            end += 1;
+        }
+
+        self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+            position.paragraph,
+            start,
+        ));
+        self.extend_selection_from_position(&TextPositionWithAffinity::new_without_affinity(
+            position.paragraph,
+            end,
+        ));
+        self.reset_blink();
+        self.push_event(TextEditorEvent::SelectionChanged);
+    }
+
     pub fn set_caret_from_position(&mut self, position: &TextPositionWithAffinity) {
         self.selection.set_caret(*position);
         self.push_event(TextEditorEvent::SelectionChanged);

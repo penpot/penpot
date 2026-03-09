@@ -123,6 +123,34 @@ pub extern "C" fn text_editor_select_all() -> bool {
 }
 
 #[no_mangle]
+pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
+    with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return;
+        }
+
+        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+            return;
+        };
+
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+
+        let Type::Text(text_content) = &shape.shape_type else {
+            return;
+        };
+
+        let point = Point::new(x, y);
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+            state
+                .text_editor_state
+                .select_word_boundary(text_content, &position);
+        }
+    })
+}
+
+#[no_mangle]
 pub extern "C" fn text_editor_poll_event() -> u8 {
     with_state_mut!(state, { state.text_editor_state.poll_event() as u8 })
 }
