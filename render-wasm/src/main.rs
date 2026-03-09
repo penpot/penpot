@@ -155,6 +155,19 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
     Ok(())
 }
 
+/// Sets only the background color without rebuilding tiles.
+/// Used during initialization when the shape pool is empty.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_canvas_background_color(raw_color: u32) -> Result<()> {
+    with_state_mut!(state, {
+        let color = skia::Color::new(raw_color);
+        state.set_background_color(color);
+    });
+
+    Ok(())
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render(_: i32) -> Result<()> {

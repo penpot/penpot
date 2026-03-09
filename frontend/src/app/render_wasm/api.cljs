@@ -74,9 +74,9 @@
 (def ^:const THROTTLE_DELAY_MS 10)
 
 ;; Number of shapes to process before yielding to browser
-(def ^:const SHAPES_CHUNK_SIZE 100)
+(def ^:const SHAPES_CHUNK_SIZE 500)
 ;; Threshold below which we use synchronous processing (no chunking overhead)
-(def ^:const ASYNC_THRESHOLD 100)
+(def ^:const ASYNC_THRESHOLD 500)
 
 ;; Re-export public WebGL functions
 (def capture-canvas-pixels webgl/capture-canvas-pixels)
@@ -104,11 +104,11 @@
 
 (defn- yield-to-browser
   "Returns a promise that resolves after yielding to the browser's event loop.
-   Uses requestAnimationFrame for smooth visual updates during loading."
+   Uses setTimeout(0) for minimal latency between chunks."
   []
   (p/create
    (fn [resolve _reject]
-     (js/requestAnimationFrame (fn [_] (resolve nil))))))
+     (js/setTimeout (fn [] (resolve nil)) 0))))
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
@@ -1014,6 +1014,8 @@
   (or content (tc/v2-default-text-content)))
 
 (defn set-object
+  "Fully load a shape into WASM: base props, children, effects, type-specific,
+   layout, fills, strokes, text. Returns pending image download operations."
   [shape]
   (perf/begin-measure "set-object")
   (let [shape        (svg-filters/apply-svg-derived shape)
@@ -1025,7 +1027,6 @@
         fills        (get shape :fills)
         strokes      (if (= type :group)
                        [] (get shape :strokes))
-        children     (get shape :shapes)
         content      (let [content (get shape :content)]
                        (if (= type :text)
                          (ensure-text-content content)
@@ -1036,11 +1037,13 @@
         svg-attrs    (get shape :svg-attrs)
         shadows      (get shape :shadow)]
 
-    (shapes/set-shape-base-props shape)
+    ;; Base props + children in a single WASM call
+    (shapes/set-shape-base-props shape true)
 
-    ;; Remaining properties that need separate calls (variable-length or conditional)
-    (set-shape-children children)
-    (set-shape-blur blur)
+    ;; Batched blur + shadows in a single WASM call
+    (shapes/set-shape-effects blur shadows)
+
+    ;; Type-specific properties
     (when (= type :group)
       (set-masked (boolean masked)))
     (when (= type :bool)
@@ -1053,12 +1056,17 @@
       (set-shape-svg-attrs svg-attrs))
     (when (and (some? content) (= type :svg-raw))
       (set-shape-svg-raw-content (get-static-markup shape)))
-    (set-shape-shadows shadows)
     (when (= type :text)
       (set-shape-grow-type grow-type))
 
-    (set-shape-layout shape)
-    (set-layout-data shape)
+    ;; Only call layout WASM functions for shapes that are layout containers
+    ;; or children of layouts. Shapes without layout properties (pure rects,
+    ;; circles, text, paths) skip these calls entirely.
+    (when (or (ctl/any-layout? shape)
+              (some? (get shape :layout-item-h-sizing))
+              (some? (get shape :layout-item-v-sizing)))
+      (set-shape-layout shape)
+      (set-layout-data shape))
 
     (let [pending_thumbnails (into [] (concat
                                        (set-shape-text-content id content)
@@ -1070,6 +1078,79 @@
                                  (set-shape-fills id fills false)
                                  (set-shape-strokes id strokes false)))]
       (perf/end-measure "set-object")
+      {:thumbnails pending_thumbnails
+       :full pending_full})))
+
+(defn set-object-skeleton
+  "Skeleton load: only base props + children (tree structure).
+   Used for non-visible shapes during initial load. Returns nil."
+  [shape]
+  (shapes/set-shape-base-props shape true)
+  nil)
+
+(defn complete-object
+  "Complete a skeleton-loaded shape with remaining properties.
+   Assumes base-props+children were already set via set-object-skeleton.
+   Returns pending image download operations."
+  [shape]
+  (let [shape        (svg-filters/apply-svg-derived shape)
+        id           (dm/get-prop shape :id)
+        type         (dm/get-prop shape :type)
+
+        masked       (get shape :masked-group)
+
+        fills        (get shape :fills)
+        strokes      (if (= type :group)
+                       [] (get shape :strokes))
+        content      (let [content (get shape :content)]
+                       (if (= type :text)
+                         (ensure-text-content content)
+                         content))
+        bool-type    (get shape :bool-type)
+        grow-type    (get shape :grow-type)
+        blur         (get shape :blur)
+        svg-attrs    (get shape :svg-attrs)
+        shadows      (get shape :shadow)]
+
+    ;; Select this shape as current in WASM
+    (use-shape id)
+
+    ;; Effects
+    (shapes/set-shape-effects blur shadows)
+
+    ;; Type-specific
+    (when (= type :group)
+      (set-masked (boolean masked)))
+    (when (= type :bool)
+      (set-shape-bool-type bool-type))
+    (when (and (some? content)
+               (or (= type :path)
+                   (= type :bool)))
+      (set-shape-path-content content))
+    (when (some? svg-attrs)
+      (set-shape-svg-attrs svg-attrs))
+    (when (and (some? content) (= type :svg-raw))
+      (set-shape-svg-raw-content (get-static-markup shape)))
+    (when (= type :text)
+      (set-shape-grow-type grow-type))
+
+    ;; Layout
+    (when (or (ctl/any-layout? shape)
+              (some? (get shape :layout-item-h-sizing))
+              (some? (get shape :layout-item-v-sizing)))
+      (set-shape-layout shape)
+      (set-layout-data shape))
+
+    ;; Pending image operations
+    (let [pending_thumbnails (into [] (concat
+                                       (set-shape-text-content id content)
+                                       (set-shape-text-images id content true)
+                                       (set-shape-fills id fills true)
+                                       (set-shape-strokes id strokes true)))
+          pending_full (into [] (concat
+                                 (set-shape-text-images id content false)
+                                 (set-shape-fills id fills false)
+                                 (set-shape-strokes id strokes false)))]
       {:thumbnails pending_thumbnails
        :full pending_full})))
 
@@ -1133,50 +1214,147 @@
          :full f-acc
          :next-index end-index}))))
 
-(defn- set-objects-async
-  "Asynchronously process shapes in chunks, yielding to the browser between chunks.
-   Returns a promise that resolves when all shapes are processed.
+(defn- process-skeleton-chunk
+  "Skeleton-load a chunk of shapes (base props + children only).
+   Returns next-index."
+  [shapes start-index chunk-size]
+  (let [total (count shapes)
+        end-index (min total (+ start-index chunk-size))]
+    (loop [index start-index]
+      (if (< index end-index)
+        (do (set-object-skeleton (nth shapes index))
+            (recur (inc index)))
+        end-index))))
 
-   Renders a preview only periodically during loading to show progress,
-   then does a full tile-based render at the end."
-  [shapes render-callback]
-  (let [total-shapes (count shapes)
-        total-chunks (mth/ceil (/ total-shapes SHAPES_CHUNK_SIZE))
-        ;; Render at 25%, 50%, 75% of loading
-        render-at-chunks (set [(mth/floor (* total-chunks 0.25))
-                               (mth/floor (* total-chunks 0.5))
-                               (mth/floor (* total-chunks 0.75))])]
+(defn- complete-shapes-chunk
+  "Complete a chunk of skeleton-loaded shapes with full properties.
+   Returns {:thumbnails [...] :full [...] :next-index n}"
+  [shapes start-index chunk-size thumbnails-acc full-acc]
+  (let [total (count shapes)
+        end-index (min total (+ start-index chunk-size))]
+    (loop [index start-index
+           t-acc thumbnails-acc
+           f-acc full-acc]
+      (if (< index end-index)
+        (let [shape (nth shapes index)
+              {:keys [thumbnails full]} (complete-object shape)]
+          (recur (inc index)
+                 (into t-acc thumbnails)
+                 (into f-acc full)))
+        {:thumbnails t-acc
+         :full f-acc
+         :next-index end-index}))))
+
+(defn- set-objects-async
+  "Two-phase async loading for optimal time-to-first-content:
+
+   Phase 1: Load visible shapes fully + non-visible as skeletons (tree structure).
+            Preview after visible shapes, then skeleton the rest quickly.
+   Phase 2: After first render, complete non-visible shapes in the background."
+  [shapes render-callback visible-count]
+  (let [total-shapes   (count shapes)
+        has-split?     (and (pos? visible-count) (< visible-count total-shapes))
+        visible-shapes (when has-split? (subvec shapes 0 visible-count))
+        remaining      (when has-split? (subvec shapes visible-count))
+
+        ;; Chunk counts for visible phase
+        visible-chunks (if has-split?
+                         (mth/ceil (/ visible-count SHAPES_CHUNK_SIZE))
+                         0)
+        total-chunks   (mth/ceil (/ total-shapes SHAPES_CHUNK_SIZE))
+
+        ;; Preview milestones: after visible boundary + 33%/66% of total
+        render-at-chunks (if has-split?
+                           (into #{visible-chunks}
+                                 [(mth/floor (* total-chunks 0.33))
+                                  (mth/floor (* total-chunks 0.66))])
+                           (set [(mth/floor (* total-chunks 0.33))
+                                 (mth/floor (* total-chunks 0.66))]))]
     (p/create
      (fn [resolve _reject]
-       (letfn [(process-next-chunk [index thumbnails-acc full-acc chunk-count]
-                 (if (< index total-shapes)
-                   ;; Process one chunk
+       (letfn [;; Phase 1a: Load visible shapes fully in chunks
+               (load-visible [index thumbnails-acc full-acc chunk-count]
+                 (if (< index visible-count)
                    (let [{:keys [thumbnails full next-index]}
-                         (process-shapes-chunk shapes index SHAPES_CHUNK_SIZE
+                         (process-shapes-chunk visible-shapes index SHAPES_CHUNK_SIZE
                                                thumbnails-acc full-acc)
                          new-chunk-count (inc chunk-count)]
-                     ;; Only render at specific progress milestones
                      (when (contains? render-at-chunks new-chunk-count)
                        (render-preview!))
-
-                     ;; Yield to browser, then continue with next chunk
                      (-> (yield-to-browser)
-                         (p/then (fn [_]
-                                   (process-next-chunk next-index thumbnails full new-chunk-count)))))
-                   ;; All chunks done - finalize
-                   (do
-                     (perf/end-measure "set-objects")
-                     (process-pending shapes thumbnails-acc full-acc noop-fn
+                         (p/then #(load-visible next-index thumbnails full new-chunk-count))))
+                   ;; Visible done → skeleton-load remaining
+                   (load-skeletons 0 thumbnails-acc full-acc chunk-count)))
+
+               ;; Phase 1b: Skeleton-load non-visible shapes (fast — base props + children only)
+               (load-skeletons [index thumbnails-acc full-acc chunk-count]
+                 (let [remaining-count (count remaining)]
+                   (if (< index remaining-count)
+                     (let [next-index (process-skeleton-chunk remaining index SHAPES_CHUNK_SIZE)
+                           new-chunk-count (inc chunk-count)]
+                       (when (contains? render-at-chunks new-chunk-count)
+                         (render-preview!))
+                       (-> (yield-to-browser)
+                           (p/then #(load-skeletons next-index thumbnails-acc full-acc new-chunk-count))))
+                     ;; All shapes have structure → first render with visible data
+                     (finalize-phase1 thumbnails-acc full-acc))))
+
+               ;; Finalize phase 1: process visible pending, warm cache, render
+               (finalize-phase1 [thumbnails-acc full-acc]
+                 (perf/end-measure "set-objects")
+                 (process-pending visible-shapes thumbnails-acc full-acc noop-fn
+                                  (fn []
+                                    (end-shapes-loading!)
+                                    (h/call wasm/internal-module "_warm_extrect_cache")
+                                    (if render-callback
+                                      (render-callback)
+                                      (render-finish))
+                                    (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
+                                    ;; Phase 2: complete non-visible shapes in background
+                                    (complete-remaining 0 [] [])
+                                    (resolve nil))))
+
+               ;; Phase 2: Complete non-visible shapes with full properties
+               (complete-remaining [index thumbnails-acc full-acc]
+                 (let [remaining-count (count remaining)]
+                   (if (< index remaining-count)
+                     (let [{:keys [thumbnails full next-index]}
+                           (complete-shapes-chunk remaining index SHAPES_CHUNK_SIZE
+                                                  thumbnails-acc full-acc)]
+                       (-> (yield-to-browser)
+                           (p/then #(complete-remaining next-index thumbnails full))))
+                     ;; All completed → process remaining pending + re-render
+                     (process-pending remaining thumbnails-acc full-acc noop-fn
                                       (fn []
-                                        (end-shapes-loading!)
-                                        ;; Pre-compute extrect cache bottom-up before first tile rebuild
                                         (h/call wasm/internal-module "_warm_extrect_cache")
-                                        (if render-callback
-                                          (render-callback)
-                                          (render-finish))
-                                        (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
-                                        (resolve nil))))))]
-         (process-next-chunk 0 [] [] 0))))))
+                                        (render-finish))))))]
+
+         ;; Start the loading pipeline
+         (if has-split?
+           (load-visible 0 [] [] 0)
+           ;; No split: fall back to original single-phase loading
+           (letfn [(process-all [index thumbnails-acc full-acc chunk-count]
+                     (if (< index total-shapes)
+                       (let [{:keys [thumbnails full next-index]}
+                             (process-shapes-chunk shapes index SHAPES_CHUNK_SIZE
+                                                   thumbnails-acc full-acc)
+                             new-chunk-count (inc chunk-count)]
+                         (when (contains? render-at-chunks new-chunk-count)
+                           (render-preview!))
+                         (-> (yield-to-browser)
+                             (p/then #(process-all next-index thumbnails full new-chunk-count))))
+                       (do
+                         (perf/end-measure "set-objects")
+                         (process-pending shapes thumbnails-acc full-acc noop-fn
+                                          (fn []
+                                            (end-shapes-loading!)
+                                            (h/call wasm/internal-module "_warm_extrect_cache")
+                                            (if render-callback
+                                              (render-callback)
+                                              (render-finish))
+                                            (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
+                                            (resolve nil))))))]
+             (process-all 0 [] [] 0))))))))
 
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."
@@ -1230,23 +1408,76 @@
             (keep #(get objects %))
             all-ordered-ids))))
 
+(defn- partition-visible-first
+  "Reorders shapes so viewport-visible shapes (and their ancestors) come first.
+   Maintains tree order within each group to preserve parent-before-child invariant.
+   Returns [reordered-shapes visible-count]."
+  [shapes objects vbox]
+  (let [vx1 (:x vbox)
+        vy1 (:y vbox)
+        vx2 (+ vx1 (:width vbox))
+        vy2 (+ vy1 (:height vbox))
+
+        ;; Find shapes whose selrect intersects viewport
+        visible-ids
+        (persistent!
+         (reduce (fn [acc shape]
+                   (let [selrect (get shape :selrect)]
+                     (if (and selrect
+                              (let [sx1 (dm/get-prop selrect :x1)
+                                    sy1 (dm/get-prop selrect :y1)
+                                    sx2 (dm/get-prop selrect :x2)
+                                    sy2 (dm/get-prop selrect :y2)]
+                                (not (or (> sx1 vx2) (< sx2 vx1)
+                                         (> sy1 vy2) (< sy2 vy1)))))
+                       (conj! acc (dm/get-prop shape :id))
+                       acc)))
+                 (transient #{})
+                 shapes))
+
+        ;; Walk up ancestors for each visible shape to ensure parents load first
+        priority-ids
+        (loop [queue (seq visible-ids)
+               result visible-ids]
+          (if-not queue
+            result
+            (let [id (first queue)
+                  parent-id (get (get objects id) :parent-id)]
+              (if (and parent-id
+                       (not (contains? result parent-id)))
+                (recur (cons parent-id (next queue))
+                       (conj result parent-id))
+                (recur (next queue) result)))))
+
+        ;; Partition maintaining original (tree) order
+        visible (filterv #(contains? priority-ids (dm/get-prop % :id)) shapes)
+        remaining (filterv #(not (contains? priority-ids (dm/get-prop % :id))) shapes)]
+    [(into visible remaining) (count visible)]))
+
 (defn set-objects
   "Set all shape objects for rendering.
 
    Shapes are processed in tree order (parents before children)
-   to maintain proper shape reference consistency in WASM."
+   to maintain proper shape reference consistency in WASM.
+   When vbox is provided, viewport-visible shapes are loaded first
+   for faster first meaningful render."
   ([objects]
-   (set-objects objects nil))
+   (set-objects objects nil nil))
   ([objects render-callback]
+   (set-objects objects render-callback nil))
+  ([objects render-callback vbox]
    (perf/begin-measure "set-objects")
    (let [shapes (shapes-in-tree-order objects)
+         [shapes visible-count] (if (some? vbox)
+                                  (partition-visible-first shapes objects vbox)
+                                  [shapes 0])
          total-shapes (count shapes)]
      (if (< total-shapes ASYNC_THRESHOLD)
        (set-objects-sync shapes render-callback)
        (do
          (begin-shapes-loading!)
          (try
-           (-> (set-objects-async shapes render-callback)
+           (-> (set-objects-async shapes render-callback visible-count)
                (p/catch (fn [error]
                           (end-shapes-loading!)
                           (js/console.error "Async WASM shape loading failed" error))))
@@ -1390,10 +1621,12 @@
    (let [rgba         (sr-clr/hex->u32argb background 1)
          shapes       (into [] (vals base-objects))
          total-shapes (count shapes)]
-     (h/call wasm/internal-module "_set_canvas_background" rgba)
+     ;; Only set the color — skip rebuild_tiles_shallow since pool is empty.
+     ;; The full tile rebuild happens after shapes are loaded via render-finish.
+     (h/call wasm/internal-module "_set_canvas_background_color" rgba)
      (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
      (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
-     (set-objects base-objects callback))))
+     (set-objects base-objects callback vbox))))
 
 (def ^:private default-context-options
   #js {:antialias false

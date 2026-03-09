@@ -120,6 +120,51 @@ pub extern "C" fn set_shape_base_props() {
     let parent_id = raw.parent_id();
     let shape_type = RawShapeType::from(raw.shape_type);
 
+    // Parse children UUIDs if present after the base props.
+    // Layout: [104 bytes base props] [4 bytes child_count (u32 LE)] [16 bytes per child UUID]
+    let children = if bytes.len() >= RAW_BASE_PROPS_SIZE + 4 {
+        let remaining = &bytes[RAW_BASE_PROPS_SIZE..];
+        let child_count =
+            u32::from_le_bytes([remaining[0], remaining[1], remaining[2], remaining[3]]) as usize;
+
+        let children_data = &remaining[4..];
+        let mut children = Vec::with_capacity(child_count);
+        for i in 0..child_count {
+            let off = i * 16;
+            if off + 16 <= children_data.len() {
+                children.push(uuid_from_u32_quartet(
+                    u32::from_le_bytes([
+                        children_data[off],
+                        children_data[off + 1],
+                        children_data[off + 2],
+                        children_data[off + 3],
+                    ]),
+                    u32::from_le_bytes([
+                        children_data[off + 4],
+                        children_data[off + 5],
+                        children_data[off + 6],
+                        children_data[off + 7],
+                    ]),
+                    u32::from_le_bytes([
+                        children_data[off + 8],
+                        children_data[off + 9],
+                        children_data[off + 10],
+                        children_data[off + 11],
+                    ]),
+                    u32::from_le_bytes([
+                        children_data[off + 12],
+                        children_data[off + 13],
+                        children_data[off + 14],
+                        children_data[off + 15],
+                    ]),
+                ));
+            }
+        }
+        Some(children)
+    } else {
+        None
+    };
+
     with_state_mut!(state, {
         state.use_shape(id);
         state.set_parent_for_current_shape(parent_id);
@@ -149,6 +194,13 @@ pub extern "C" fn set_shape_base_props() {
                 raw.selrect_y2,
             );
             shape.set_corners((raw.corner_r1, raw.corner_r2, raw.corner_r3, raw.corner_r4));
+
+            // Set children directly when provided in the buffer.
+            // During initial loading, children shapes don't exist yet, so
+            // we skip the diff/touch/delete logic of set_children_set.
+            if let Some(children) = children {
+                shape.children = children;
+            }
         }
     });
 }
