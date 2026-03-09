@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
+   [app.main.data.modal :as modal]
    [app.main.data.team :as dtm]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
@@ -153,6 +154,8 @@
         props   (get profile :props)
         section (get data :name)
         team    (mf/deref refs/team)
+        params-release-notes
+        (-> route :params :query :release-notes)
 
 
         show-question-modal?
@@ -178,6 +181,13 @@
              (:onboarding-viewed props)
              (not= (:release-notes-viewed props) (:main cf/version))
              (not= "0.0" (:main cf/version)))]
+
+    (mf/with-effect [section params-release-notes]
+      (when (= params-release-notes "show")
+        (let [query-params  (-> route :params :query)
+              updated-params (dissoc query-params :release-notes)]
+          (st/emit! (modal/show {:type :release-notes :version (:main cf/version)}))
+          (st/emit! (rt/nav section updated-params {::rt/replace true})))))
 
     [:& (mf/provider ctx/current-route) {:value route}
      (case section
