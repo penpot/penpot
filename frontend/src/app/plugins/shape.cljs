@@ -961,9 +961,9 @@
 
                  :else
                  (let [child-id     (obj/get child "$id")
-                       is-reversed? (ctl/flex-layout? shape)
+                       is-flex?     (ctl/flex-layout? shape)
                        index
-                       (if (or (not (natural-child-ordering? plugin-id)) is-reversed?)
+                       (if (and (natural-child-ordering? plugin-id) is-flex?)
                          0
                          (count (:shapes shape)))]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
@@ -985,10 +985,10 @@
                  (u/display-not-valid :insertChild "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (let [child-id (obj/get child "$id")
-                       is-reversed? (ctl/flex-layout? shape)
+                 (let [child-id  (obj/get child "$id")
+                       is-flex?  (ctl/flex-layout? shape)
                        index
-                       (if (or (not (natural-child-ordering? plugin-id)) is-reversed?)
+                       (if (and (natural-child-ordering? plugin-id) is-flex?)
                          (- (count (:shapes shape)) index)
                          index)]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
