@@ -164,15 +164,24 @@ fn draw_stroke_on_path(
     blur: Option<&ImageFilter>,
     antialias: bool,
 ) {
-    let skia_path = path
-        .to_skia_path()
-        .make_transform(path_transform.unwrap_or(&Matrix::default()));
-
     let is_open = path.is_open();
 
     let mut draw_paint = paint.clone();
     let filter = compose_filters(blur, shadow);
     draw_paint.set_image_filter(filter);
+
+    // Move path_transform from the path geometry to the canvas so the
+    // stroke width is not distorted by non-uniform shape scaling.
+    // The path coordinates are already in world space, so we draw the
+    // raw path on a canvas where the shape transform has been undone:
+    //   canvas * path_transform = View × parents (no shape scale/rotation)
+    // This matches the SVG renderer, which bakes the transform into path
+    // coordinates and never sets a transform attribute on the element.
+    let save_count = canvas.save();
+    if let Some(pt) = path_transform {
+        canvas.concat(pt);
+    }
+    let skia_path = path.to_skia_path();
 
     match stroke.render_kind(is_open) {
         StrokeKind::Inner => {
@@ -187,6 +196,8 @@ fn draw_stroke_on_path(
     }
 
     handle_stroke_caps(&skia_path, stroke, canvas, is_open, paint, blur, antialias);
+
+    canvas.restore_to_count(save_count);
 }
 
 fn handle_stroke_cap(
