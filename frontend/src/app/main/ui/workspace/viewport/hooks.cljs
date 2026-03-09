@@ -219,6 +219,10 @@
 
                 (->> move-stream
                      (rx/tap #(reset! last-point-ref %))
+                     ;; Throttle hover queries to avoid flooding the worker
+                     ;; and reduce sync WASM calls (intersect-position-in-shape)
+                     ;; when the main thread is busy with rendering.
+                     (rx/throttle 16)
                      ;; When transforming shapes we stop querying the worker
                      (rx/merge-map query-point)))
 
