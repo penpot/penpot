@@ -127,6 +127,13 @@
     (ex/print-throwable cause :prefix "WASM critical error"))
   (st/emit! (rt/assign-exception error)))
 
+(defmethod ptk/handle-error :wasm-exception
+  [error]
+  (when-let [cause (::instance error)]
+    (let [prefix (or (:prefix error) "Exception")]
+      (ex/print-throwable cause :prefix prefix)))
+  (st/emit! (rt/assign-exception error)))
+
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
 ;; for show the error page. Otherwise this explicitly clears all
@@ -343,7 +350,7 @@
               (set! last-exception cause)
               (let [data (ex-data cause)
                     type (get data :type)]
-                (if (#{:wasm-critical :wasm-non-blocking} type)
+                (if (#{:wasm-critical :wasm-non-blocking :wasm-exception} type)
                   (on-error cause)
                   (when-not (is-ignorable-exception? cause)
                     (ex/print-throwable cause :prefix "Uncaught Exception")

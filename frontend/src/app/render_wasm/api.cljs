@@ -1421,7 +1421,9 @@
   (dom/prevent-default event)
   (reset! wasm/context-lost? true)
   (log/warn :hint "WebGL context lost")
-  (ex/raise :type :webgl-context-lost
+  (ex/raise :type :wasm-exception
+            :exception-type :webgl-context-lost
+            :prefix "WebGL context lost"
             :hint "WebGL context lost"))
 
 (defn init-canvas-context
