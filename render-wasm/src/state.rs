@@ -101,6 +101,16 @@ impl State {
             .start_render_loop(Some(id), &self.shapes, timestamp, true)
     }
 
+    pub fn render_shape_pixels(
+        &mut self,
+        id: &Uuid,
+        scale: f32,
+        timestamp: i32,
+    ) -> Result<(Vec<u8>, i32, i32)> {
+        self.render_state
+            .render_shape_pixels(id, &self.shapes, scale, timestamp)
+    }
+
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<()> {
         // If zoom changed (e.g. interrupted zoom render followed by pan), the
         // tile index may be stale for the new viewport position. Rebuild the
