@@ -201,10 +201,9 @@ impl State {
         // asuming the parent is updating its children list via set_children() calls.
         // Calling add_child here would create duplicates.
 
-        // Invalidate parent's extrect so it gets recalculated to include the new child
-        if let Some(parent) = self.shapes.get_mut(&id) {
-            parent.invalidate_extrect();
-        }
+        // Invalidate parent's extrect (and ancestors) so it gets recalculated
+        // to include the new child
+        self.shapes.invalidate_extrect_with_ancestors(&id);
     }
 
     pub fn rebuild_tiles_shallow(&mut self) {
@@ -275,13 +274,19 @@ impl State {
         self.shapes.set_modifiers(modifiers);
     }
 
+    pub fn warm_extrect_cache(&self) {
+        self.shapes.warm_extrect_cache();
+    }
+
     pub fn touch_current(&mut self) {
         if let Some(current_id) = self.current_id {
             self.render_state.mark_touched(current_id);
+            self.shapes.invalidate_extrect_with_ancestors(&current_id);
         }
     }
 
     pub fn touch_shape(&mut self, id: Uuid) {
         self.render_state.mark_touched(id);
+        self.shapes.invalidate_extrect_with_ancestors(&id);
     }
 }

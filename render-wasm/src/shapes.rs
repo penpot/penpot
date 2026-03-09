@@ -193,7 +193,7 @@ pub struct Shape {
     pub shadows: Vec<Shadow>,
     pub layout_item: Option<LayoutItem>,
     pub bounds: OnceCell<math::Bounds>,
-    pub extrect_cache: RefCell<Option<(math::Rect, u32)>>,
+    pub extrect_cache: RefCell<Option<math::Rect>>,
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
     deleted: bool,
@@ -762,6 +762,12 @@ impl Shape {
     }
 
     pub fn visually_insignificant(&self, scale: f32, shapes_pool: ShapesPoolRef) -> bool {
+        // Fast path: if selrect is large enough, shape is definitely visible
+        if self.selrect.width() * scale >= MIN_VISIBLE_SIZE
+            || self.selrect.height() * scale >= MIN_VISIBLE_SIZE
+        {
+            return false;
+        }
         let extrect = self.extrect(shapes_pool, scale);
         extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
@@ -1013,17 +1019,13 @@ impl Shape {
     }
 
     pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
-        let scale_key = (scale * 1000.0).round() as u32;
-
-        if let Some((cached_extrect, cached_scale)) = *self.extrect_cache.borrow() {
-            if cached_scale == scale_key {
-                return cached_extrect;
-            }
+        if let Some(cached_extrect) = *self.extrect_cache.borrow() {
+            return cached_extrect;
         }
 
         let extrect = self.calculate_extrect_uncached(shapes_pool, scale);
 
-        *self.extrect_cache.borrow_mut() = Some((extrect, scale_key));
+        *self.extrect_cache.borrow_mut() = Some(extrect);
         extrect
     }
 

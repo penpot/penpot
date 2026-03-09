@@ -1169,6 +1169,8 @@
                      (process-pending shapes thumbnails-acc full-acc noop-fn
                                       (fn []
                                         (end-shapes-loading!)
+                                        ;; Pre-compute extrect cache bottom-up before first tile rebuild
+                                        (h/call wasm/internal-module "_warm_extrect_cache")
                                         (if render-callback
                                           (render-callback)
                                           (render-finish))
@@ -1192,6 +1194,8 @@
     (perf/end-measure "set-objects")
     (process-pending shapes thumbnails full noop-fn
                      (fn []
+                       ;; Pre-compute extrect cache bottom-up before first tile rebuild
+                       (h/call wasm/internal-module "_warm_extrect_cache")
                        (if render-callback
                          (render-callback)
                          (render-finish))

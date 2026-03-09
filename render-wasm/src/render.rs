@@ -40,6 +40,10 @@ const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
+// Tile margin for non-clipping shapes in the selrect early-out check.
+// Non-clipping frames/groups can have children extending beyond their selrect.
+// 10 tiles = 5120px at 1x zoom — generous enough for most overflow scenarios.
+const NON_CLIP_TILE_MARGIN: i32 = 10;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
@@ -2378,10 +2382,31 @@ impl RenderState {
      */
     pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
         let scale = self.get_scale();
-        let extrect = self.get_cached_extrect(shape, tree, scale);
         let tile_size = tiles::get_tile_size(scale);
-        let shape_tiles = tiles::get_tiles_for_rect(extrect, tile_size);
         let interest_rect = &self.tile_viewbox.interest_rect;
+
+        // Fast path: check selrect against interest area before computing full extrect.
+        // For clipping shapes, selrect IS the bounds (children can't extend beyond),
+        // so we can use exact selrect check with no margin.
+        // For non-clipping shapes, children may extend beyond selrect, so we add a
+        // generous margin. If the selrect is far outside the interest area (beyond the
+        // margin), the shape and its children are almost certainly off-screen.
+        let selrect_tiles = tiles::get_tiles_for_rect(shape.selrect, tile_size);
+        let margin = if shape.clip_content {
+            0
+        } else {
+            NON_CLIP_TILE_MARGIN
+        };
+        if selrect_tiles.x1() > interest_rect.x2() + margin
+            || selrect_tiles.x2() < interest_rect.x1() - margin
+            || selrect_tiles.y1() > interest_rect.y2() + margin
+            || selrect_tiles.y2() < interest_rect.y1() - margin
+        {
+            return TileRect(0, 0, -1, -1);
+        }
+
+        let extrect = self.get_cached_extrect(shape, tree, scale);
+        let shape_tiles = tiles::get_tiles_for_rect(extrect, tile_size);
         // Calculate the intersection of shape_tiles with interest_rect
         // This returns only the tiles that are both in the shape and in the interest area
         let intersection_x1 = shape_tiles.x1().max(interest_rect.x1());
@@ -2598,6 +2623,7 @@ impl RenderState {
         false
     }
 
+    #[allow(dead_code)]
     pub fn is_tile_rebuild_in_progress(&self) -> bool {
         self.tile_rebuild_in_progress
     }

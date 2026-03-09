@@ -346,6 +346,20 @@ pub extern "C" fn set_view_end() -> Result<()> {
     Ok(())
 }
 
+/// Pre-compute and cache extrect (extended rectangle) for all shapes
+/// by walking the tree bottom-up. This avoids expensive recursive
+/// extrect calculations during the first tile rebuild after loading.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn warm_extrect_cache() -> Result<()> {
+    with_state!(state, {
+        performance::begin_measure!("warm_extrect_cache");
+        state.warm_extrect_cache();
+        performance::end_measure!("warm_extrect_cache");
+    });
+    Ok(())
+}
+
 /// Like set_view_end but uses chunked tile rebuild to avoid blocking
 /// the main thread. Prepares the view state and starts the async
 /// tile rebuild process. Call `tile_rebuild_step` in a rAF loop after this.

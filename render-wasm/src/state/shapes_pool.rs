@@ -211,6 +211,97 @@ impl ShapesPoolImpl {
         self.modified_shape_cache.clear()
     }
 
+    /// Warm the extrect cache for all shapes by walking the tree bottom-up
+    /// (post-order DFS). This ensures that when a parent's extrect is computed,
+    /// all children already have cached values, avoiding deep recursive traversals.
+    /// Should be called after all shapes are loaded to pre-populate the cache
+    /// before the first tile rebuild.
+    pub fn warm_extrect_cache(&self) {
+        // Post-order DFS: visit children before parents so child caches
+        // are populated before parent tries to read them.
+        let mut stack: Vec<(Uuid, bool)> = vec![(Uuid::nil(), false)];
+
+        while let Some((id, children_visited)) = stack.pop() {
+            if let Some(shape) = self.get(&id) {
+                if shape.deleted() {
+                    continue;
+                }
+                if children_visited {
+                    // Children have been visited; now compute this shape's extrect
+                    if !id.is_nil() {
+                        // calculate_extrect will cache the result
+                        let _ = shape.calculate_extrect(self, 1.0);
+                    }
+                } else {
+                    // First visit: push self again (marked as children_visited),
+                    // then push children so they get processed first
+                    stack.push((id, true));
+                    for child_id in shape.children.iter() {
+                        stack.push((*child_id, false));
+                    }
+                }
+            }
+        }
+    }
+
+    /// Update the extrect cache for a shape and its ancestors after a shape changes.
+    ///
+    /// The changed shape's cache is invalidated and recomputed. Then, instead of
+    /// invalidating all ancestor caches (forcing expensive O(subtree) recomputation),
+    /// we **expand** each ancestor's cached extrect to include the child's new extrect.
+    ///
+    /// This is conservative — ancestor extrects may be slightly larger than the true
+    /// minimum, but this is always correct for tile assignment (shapes won't be missed).
+    /// The cache is "tightened" on the next full recomputation (e.g., via warm_extrect_cache).
+    pub fn invalidate_extrect_with_ancestors(&mut self, id: &Uuid) {
+        // First, invalidate the changed shape's own cache so it gets recomputed
+        if let Some(idx) = self.uuid_to_idx.get(id).copied() {
+            self.shapes[idx].invalidate_extrect();
+        } else {
+            return;
+        }
+
+        // Compute the changed shape's new extrect.
+        // Reborrow &mut self as &self for the immutable calculate_extrect call.
+        let child_extrect = {
+            let pool: &ShapesPoolImpl = self;
+            let idx = pool.uuid_to_idx[id];
+            let shape = &pool.shapes[idx];
+            shape.calculate_extrect(pool, 1.0)
+        };
+
+        // Walk up ancestors and expand their cached extrects
+        let parent_id = {
+            let idx = self.uuid_to_idx[id];
+            self.shapes[idx].parent_id
+        };
+        let mut current_id = parent_id;
+        while let Some(cid) = current_id {
+            if cid.is_nil() {
+                break;
+            }
+            if let Some(idx) = self.uuid_to_idx.get(&cid).copied() {
+                let shape = &self.shapes[idx];
+                let mut cache = shape.extrect_cache.borrow_mut();
+                match cache.as_mut() {
+                    Some(cached_rect) => {
+                        // Expand the cached extrect to include the child's new extrect
+                        cached_rect.join(child_extrect);
+                    }
+                    None => {
+                        // No cache yet — nothing to expand, stop walking
+                        // (ancestors above also won't have useful caches)
+                        break;
+                    }
+                }
+                drop(cache);
+                current_id = self.shapes[idx].parent_id;
+            } else {
+                break;
+            }
+        }
+    }
+
     pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
         // Convert HashMap<Uuid, V> to HashMap<usize, V> using indices
         // Initialize the cache cells for affected shapes
