@@ -20,9 +20,8 @@
     "date-fns": "^4.1.0"
   },
   "scripts": {
-    "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
+    "lint:clj": "cljfmt check --parallel=false src/ test/ && clj-kondo --parallel=true --lint src/",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
-    "lint:clj": "clj-kondo --parallel=true --lint src/",
     "lint": "pnpm run lint:clj",
     "watch:test": "concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests/ --exec 'node target/tests/test.js'\"",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
