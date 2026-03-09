@@ -279,7 +279,7 @@
                      (ev/event {::ev/name "enable-mcp"
                                 ::ev/origin "integrations"
                                 :source "key-creation"}))
-           (mbc/emit! :mcp-enabled-change true)
+           (mbc/emit! :mcp-enabled-change-status true)
            (reset! created? true)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -320,7 +320,7 @@
                      (du/update-profile-props {:mcp-enabled true})
                      (ev/event {::ev/name "regenerate-mcp-key"
                                 ::ev/origin "integrations"}))
-           (mbc/emit! :mcp-enabled-change true)
+           (mbc/emit! :mcp-enabled-change-status true)
            (reset! created? true)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -431,7 +431,7 @@
                      (ev/event {::ev/name (if (true? value) "enable-mcp" "disable-mcp")
                                 ::ev/origin "integrations"
                                 :source "toggle"}))
-           (mbc/emit! :mcp-enabled-change value)))
+           (mbc/emit! :mcp-enabled-change-status value)))
 
         handle-generate-mcp-key
         (mf/use-fn
@@ -449,7 +449,7 @@
                  mdata  {:on-success #(st/emit! (du/fetch-access-tokens))}]
              (st/emit! (du/delete-access-token (with-meta params mdata))
                        (du/update-profile-props {:mcp-enabled false}))
-             (mbc/emit! :mcp-enabled-change false))))
+             (mbc/emit! :mcp-enabled-change-status false))))
 
         on-copy-to-clipboard
         (mf/use-fn

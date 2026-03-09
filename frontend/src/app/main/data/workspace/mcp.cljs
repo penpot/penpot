@@ -9,6 +9,7 @@
    [app.common.logging :as log]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.main.broadcast :as mbc]
    [app.main.data.plugins :as dp]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -33,6 +34,21 @@
 (defn finalize-workspace?
   [event]
   (= (ptk/type event) :app.main.data.workspace/finalize-workspace))
+
+(defn disconnect-mcp
+  []
+  (st/emit! (ptk/data-event ::disconnect)))
+
+(defn connect-mcp
+  []
+  (ptk/reify ::connect-mcp
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (mbc/emit! :mcp-enabled-change-connection false)
+      (->> stream
+           (rx/filter (ptk/type? ::disconnect))
+           (rx/take 1)
+           (rx/map #(ptk/data-event ::connect))))))
 
 (defn update-mcp-status
   [value]
@@ -93,14 +109,6 @@
                                (rx/filter (ptk/type? event))
                                (rx/take-until stopper)
                                (rx/subs! #(cb))))))}}))))))
-
-(defn disconnect-mcp
-  []
-  (st/emit! (ptk/data-event ::disconnect)))
-
-(defn connect-mcp
-  []
-  (st/emit! (ptk/data-event ::connect)))
 
 (defn init-mcp-connection
   []
