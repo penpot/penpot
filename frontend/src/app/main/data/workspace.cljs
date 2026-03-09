@@ -373,7 +373,15 @@
 
                (when (contains? cf/flags :mcp)
                  (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp-enabled-change))
+                      (rx/filter (mbc/type? :mcp-enabled-change-connection))
+                      (rx/map deref)
+                      (rx/mapcat (fn [value]
+                                   (rx/of (mcp/update-mcp-connection value)
+                                          (mcp/disconnect-mcp))))))
+
+               (when (contains? cf/flags :mcp)
+                 (->> mbc/stream
+                      (rx/filter (mbc/type? :mcp-enabled-change-status))
                       (rx/map deref)
                       (rx/map mcp/update-mcp-status)))
 
