@@ -116,6 +116,17 @@
       (ex/print-throwable cause :prefix "Unexpected Error")
       (show-not-blocking-error cause))))
 
+(defmethod ptk/handle-error :wasm-non-blocking
+  [error]
+  (when-let [cause (::instance error)]
+    (show-not-blocking-error cause)))
+
+(defmethod ptk/handle-error :wasm-critical
+  [error]
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause :prefix "WASM critical error"))
+  (st/emit! (rt/assign-exception error)))
+
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
 ;; for show the error page. Otherwise this explicitly clears all
@@ -327,20 +338,24 @@
                   (str/starts-with? message "invalid props on component")
                   (str/starts-with? message "Unexpected token "))))
 
+          (handle-uncaught [cause]
+            (when cause
+              (set! last-exception cause)
+              (let [data (ex-data cause)
+                    type (get data :type)]
+                (if (#{:wasm-critical :wasm-non-blocking} type)
+                  (on-error cause)
+                  (when-not (is-ignorable-exception? cause)
+                    (ex/print-throwable cause :prefix "Uncaught Exception")
+                    (ts/schedule #(show-not-blocking-error cause)))))))
+
           (on-unhandled-error [event]
             (.preventDefault ^js event)
-            (when-let [cause (unchecked-get event "error")]
-              (set! last-exception cause)
-              (when-not (is-ignorable-exception? cause)
-                (ex/print-throwable cause :prefix "Uncaught Exception")
-                (ts/schedule #(show-not-blocking-error cause)))))
+            (handle-uncaught (unchecked-get event "error")))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
-            (when-let [cause (unchecked-get event "reason")]
-              (set! last-exception cause)
-              (ex/print-throwable cause :prefix "Uncaught Rejection")
-              (ts/schedule #(show-not-blocking-error cause))))]
+            (handle-uncaught (unchecked-get event "reason")))]
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)
