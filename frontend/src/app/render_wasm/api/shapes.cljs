@@ -17,6 +17,7 @@
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.serializers :as sr]
+   [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.wasm :as wasm]))
 
 ;; Binary layout constants matching Rust implementation:
@@ -76,7 +77,7 @@
     [0.0 0.0 0.0 0.0]))
 
 (defn set-shape-base-props
-  "Set all base shape properties in a single WASM call.
+  "Set all base shape properties (and optionally children) in a single WASM call.
 
    This replaces the following individual calls:
    - use-shape
@@ -91,103 +92,206 @@
    - set-shape-selrect
    - set-shape-corners
    - set-shape-constraints (clear + h + v)
+   - set-shape-children (when include-children? is true)
 
    Returns nil."
-  [shape]
+  ([shape] (set-shape-base-props shape false))
+  ([shape include-children?]
+   (when wasm/context-initialized?
+     (let [id           (dm/get-prop shape :id)
+           parent-id    (get shape :parent-id)
+           shape-type   (dm/get-prop shape :type)
+
+           clip-content (if (= shape-type :frame)
+                          (not (get shape :show-content))
+                          false)
+           hidden       (get shape :hidden false)
+
+           flags        (cond-> 0
+                          clip-content (bit-or FLAG-CLIP-CONTENT)
+                          hidden       (bit-or FLAG-HIDDEN))
+
+           blend-mode   (sr/translate-blend-mode (get shape :blend-mode))
+           constraint-h (let [c (get shape :constraints-h)]
+                          (if (some? c)
+                            (sr/translate-constraint-h c)
+                            CONSTRAINT-NONE))
+           constraint-v (let [c (get shape :constraints-v)]
+                          (if (some? c)
+                            (sr/translate-constraint-v c)
+                            CONSTRAINT-NONE))
+
+           opacity      (d/nilv (get shape :opacity) 1.0)
+           rotation     (d/nilv (get shape :rotation) 0.0)
+
+           ;; Transform matrix
+           [ta tb tc td te tf] (serialize-transform (get shape :transform))
+
+           ;; Selrect
+           selrect (get shape :selrect)
+           [sx1 sy1 sx2 sy2] (serialize-selrect selrect)
+
+           ;; Corners
+           r1 (d/nilv (get shape :r1) 0.0)
+           r2 (d/nilv (get shape :r2) 0.0)
+           r3 (d/nilv (get shape :r3) 0.0)
+           r4 (d/nilv (get shape :r4) 0.0)
+
+           ;; Children (when batched)
+           children     (when include-children?
+                          (into [] (filter uuid?) (get shape :shapes)))
+           child-count  (if include-children? (count children) 0)
+
+           ;; Total buffer: 104 base + (4 child_count + 16*N child UUIDs) when batched
+           total-size   (if include-children?
+                          (+ BASE-PROPS-SIZE 4 (* child-count 16))
+                          BASE-PROPS-SIZE)
+
+           ;; Allocate buffer and get DataView
+           offset (mem/alloc total-size)
+           heap   (mem/get-heap-u8)
+           dview  (js/DataView. (.-buffer heap))]
+
+       ;; Write id (offset 0, 16 bytes)
+       (write-uuid-to-heap dview offset id)
+
+       ;; Write parent_id (offset 16, 16 bytes)
+       (write-uuid-to-heap dview (+ offset 16) (d/nilv parent-id uuid/zero))
+
+       ;; Write shape_type (offset 32, 1 byte)
+       (.setUint8 dview (+ offset 32) (sr/translate-shape-type shape-type))
+
+       ;; Write flags (offset 33, 1 byte)
+       (.setUint8 dview (+ offset 33) flags)
+
+       ;; Write blend_mode (offset 34, 1 byte)
+       (.setUint8 dview (+ offset 34) blend-mode)
+
+       ;; Write constraint_h (offset 35, 1 byte)
+       (.setUint8 dview (+ offset 35) constraint-h)
+
+       ;; Write constraint_v (offset 36, 1 byte)
+       (.setUint8 dview (+ offset 36) constraint-v)
+
+       ;; Padding at offset 37-39 (already zero from alloc)
+
+       ;; Write opacity (offset 40, f32)
+       (.setFloat32 dview (+ offset 40) opacity true)
+
+       ;; Write rotation (offset 44, f32)
+       (.setFloat32 dview (+ offset 44) rotation true)
+
+       ;; Write transform matrix (offset 48, 6 × f32)
+       (.setFloat32 dview (+ offset 48) ta true)
+       (.setFloat32 dview (+ offset 52) tb true)
+       (.setFloat32 dview (+ offset 56) tc true)
+       (.setFloat32 dview (+ offset 60) td true)
+       (.setFloat32 dview (+ offset 64) te true)
+       (.setFloat32 dview (+ offset 68) tf true)
+
+       ;; Write selrect (offset 72, 4 × f32)
+       (.setFloat32 dview (+ offset 72) sx1 true)
+       (.setFloat32 dview (+ offset 76) sy1 true)
+       (.setFloat32 dview (+ offset 80) sx2 true)
+       (.setFloat32 dview (+ offset 84) sy2 true)
+
+       ;; Write corners (offset 88, 4 × f32)
+       (.setFloat32 dview (+ offset 88) r1 true)
+       (.setFloat32 dview (+ offset 92) r2 true)
+       (.setFloat32 dview (+ offset 96) r3 true)
+       (.setFloat32 dview (+ offset 100) r4 true)
+
+       ;; Write children (offset 104+) when batched
+       (when include-children?
+         (.setUint32 dview (+ offset 104) child-count true)
+         (loop [i 0
+                cs (seq children)]
+           (when cs
+             (write-uuid-to-heap dview (+ offset 108 (* i 16)) (first cs))
+             (recur (inc i) (next cs)))))
+
+       (h/call wasm/internal-module "_set_shape_base_props")
+
+       nil))))
+
+;; Binary layout for batched blur + shadows:
+;;
+;; Header (12 bytes):
+;; | Offset | Size | Field         | Type       |
+;; |--------|------|---------------|------------|
+;; | 0      | 1    | blur_present  | u8         |
+;; | 1      | 1    | blur_type     | u8         |
+;; | 2      | 1    | blur_hidden   | u8         |
+;; | 3      | 1    | padding       | -          |
+;; | 4      | 4    | blur_value    | f32 LE     |
+;; | 8      | 4    | shadow_count  | u32 LE     |
+;;
+;; Per shadow (24 bytes each):
+;; | Offset | Size | Field    | Type       |
+;; |--------|------|----------|------------|
+;; | 0      | 4    | color    | u32 LE     |
+;; | 4      | 4    | blur     | f32 LE     |
+;; | 8      | 4    | spread   | f32 LE     |
+;; | 12     | 4    | offset_x | f32 LE     |
+;; | 16     | 4    | offset_y | f32 LE     |
+;; | 20     | 1    | style    | u8         |
+;; | 21     | 1    | hidden   | u8         |
+;; | 22     | 2    | padding  | -          |
+
+(def ^:const EFFECTS-HEADER-SIZE 12)
+(def ^:const SHADOW-ENTRY-SIZE 24)
+
+(defn set-shape-effects
+  "Set blur and shadows in a single WASM call.
+
+   Replaces:
+   - set-shape-blur / clear-shape-blur
+   - clear-shape-shadows + N × add-shape-shadow
+
+   Returns nil."
+  [blur shadows]
   (when wasm/context-initialized?
-    (let [id           (dm/get-prop shape :id)
-          parent-id    (get shape :parent-id)
-          shape-type   (dm/get-prop shape :type)
+    (let [shadow-count (count shadows)
+          total-size   (+ EFFECTS-HEADER-SIZE (* shadow-count SHADOW-ENTRY-SIZE))
+          offset       (mem/alloc total-size)
+          heap         (mem/get-heap-u8)
+          dview        (js/DataView. (.-buffer heap))]
 
-          clip-content (if (= shape-type :frame)
-                         (not (get shape :show-content))
-                         false)
-          hidden       (get shape :hidden false)
+      ;; Write blur header
+      (if (some? blur)
+        (let [type   (-> blur :type sr/translate-blur-type)
+              hidden (if (:hidden blur) 1 0)
+              value  (:value blur)]
+          (.setUint8 dview offset 1)          ;; blur_present
+          (.setUint8 dview (+ offset 1) type) ;; blur_type
+          (.setUint8 dview (+ offset 2) hidden) ;; blur_hidden
+          (.setFloat32 dview (+ offset 4) value true)) ;; blur_value
+        (do
+          (.setUint8 dview offset 0)          ;; blur_present = 0
+          (.setUint8 dview (+ offset 1) 0)
+          (.setUint8 dview (+ offset 2) 0)
+          (.setFloat32 dview (+ offset 4) 0.0 true)))
 
-          flags        (cond-> 0
-                         clip-content (bit-or FLAG-CLIP-CONTENT)
-                         hidden       (bit-or FLAG-HIDDEN))
+      ;; Write shadow count
+      (.setUint32 dview (+ offset 8) shadow-count true)
 
-          blend-mode   (sr/translate-blend-mode (get shape :blend-mode))
-          constraint-h (let [c (get shape :constraints-h)]
-                         (if (some? c)
-                           (sr/translate-constraint-h c)
-                           CONSTRAINT-NONE))
-          constraint-v (let [c (get shape :constraints-v)]
-                         (if (some? c)
-                           (sr/translate-constraint-v c)
-                           CONSTRAINT-NONE))
+      ;; Write shadow entries
+      (loop [i 0
+             shadows-seq (seq shadows)]
+        (when shadows-seq
+          (let [shadow       (first shadows-seq)
+                entry-offset (+ offset EFFECTS-HEADER-SIZE (* i SHADOW-ENTRY-SIZE))
+                color        (get shadow :color)
+                rgba         (sr-clr/hex->u32argb (get color :color)
+                                                  (get color :opacity))]
+            (.setUint32 dview entry-offset rgba true)
+            (.setFloat32 dview (+ entry-offset 4) (get shadow :blur) true)
+            (.setFloat32 dview (+ entry-offset 8) (get shadow :spread) true)
+            (.setFloat32 dview (+ entry-offset 12) (get shadow :offset-x) true)
+            (.setFloat32 dview (+ entry-offset 16) (get shadow :offset-y) true)
+            (.setUint8 dview (+ entry-offset 20) (sr/translate-shadow-style (get shadow :style)))
+            (.setUint8 dview (+ entry-offset 21) (if (get shadow :hidden) 1 0))
+            (recur (inc i) (next shadows-seq)))))
 
-          opacity      (d/nilv (get shape :opacity) 1.0)
-          rotation     (d/nilv (get shape :rotation) 0.0)
-
-          ;; Transform matrix
-          [ta tb tc td te tf] (serialize-transform (get shape :transform))
-
-          ;; Selrect
-          selrect (get shape :selrect)
-          [sx1 sy1 sx2 sy2] (serialize-selrect selrect)
-
-          ;; Corners
-          r1 (d/nilv (get shape :r1) 0.0)
-          r2 (d/nilv (get shape :r2) 0.0)
-          r3 (d/nilv (get shape :r3) 0.0)
-          r4 (d/nilv (get shape :r4) 0.0)
-
-          ;; Allocate buffer and get DataView
-          offset (mem/alloc BASE-PROPS-SIZE)
-          heap   (mem/get-heap-u8)
-          dview  (js/DataView. (.-buffer heap))]
-
-      ;; Write id (offset 0, 16 bytes)
-      (write-uuid-to-heap dview offset id)
-
-      ;; Write parent_id (offset 16, 16 bytes)
-      (write-uuid-to-heap dview (+ offset 16) (d/nilv parent-id uuid/zero))
-
-      ;; Write shape_type (offset 32, 1 byte)
-      (.setUint8 dview (+ offset 32) (sr/translate-shape-type shape-type))
-
-      ;; Write flags (offset 33, 1 byte)
-      (.setUint8 dview (+ offset 33) flags)
-
-      ;; Write blend_mode (offset 34, 1 byte)
-      (.setUint8 dview (+ offset 34) blend-mode)
-
-      ;; Write constraint_h (offset 35, 1 byte)
-      (.setUint8 dview (+ offset 35) constraint-h)
-
-      ;; Write constraint_v (offset 36, 1 byte)
-      (.setUint8 dview (+ offset 36) constraint-v)
-
-      ;; Padding at offset 37-39 (already zero from alloc)
-
-      ;; Write opacity (offset 40, f32)
-      (.setFloat32 dview (+ offset 40) opacity true)
-
-      ;; Write rotation (offset 44, f32)
-      (.setFloat32 dview (+ offset 44) rotation true)
-
-      ;; Write transform matrix (offset 48, 6 × f32)
-      (.setFloat32 dview (+ offset 48) ta true)
-      (.setFloat32 dview (+ offset 52) tb true)
-      (.setFloat32 dview (+ offset 56) tc true)
-      (.setFloat32 dview (+ offset 60) td true)
-      (.setFloat32 dview (+ offset 64) te true)
-      (.setFloat32 dview (+ offset 68) tf true)
-
-      ;; Write selrect (offset 72, 4 × f32)
-      (.setFloat32 dview (+ offset 72) sx1 true)
-      (.setFloat32 dview (+ offset 76) sy1 true)
-      (.setFloat32 dview (+ offset 80) sx2 true)
-      (.setFloat32 dview (+ offset 84) sy2 true)
-
-      ;; Write corners (offset 88, 4 × f32)
-      (.setFloat32 dview (+ offset 88) r1 true)
-      (.setFloat32 dview (+ offset 92) r2 true)
-      (.setFloat32 dview (+ offset 96) r3 true)
-      (.setFloat32 dview (+ offset 100) r4 true)
-
-      (h/call wasm/internal-module "_set_shape_base_props")
-
+      (h/call wasm/internal-module "_set_shape_effects")
       nil)))

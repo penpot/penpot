@@ -1,4 +1,5 @@
 mod base_props;
+mod effect_props;
 
 use macros::ToJs;
 
