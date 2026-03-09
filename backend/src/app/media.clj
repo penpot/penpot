@@ -298,11 +298,17 @@
 (defn download-image
   "Download an image from the provided URI and return the media input object"
   [{:keys [::http/client]} uri]
-  (letfn [(parse-and-validate [{:keys [headers] :as response}]
+  (letfn [(parse-and-validate [{:keys [headers status] :as response}]
             (let [size     (some-> (get headers "content-length") d/parse-integer)
                   mtype    (get headers "content-type")
                   format   (cm/mtype->format mtype)
                   max-size (cf/get :media-max-file-size default-max-file-size)]
+
+              (when-not (and (>= status 200) (< status 300))
+                (ex/raise :type :validation
+                          :code :unable-to-download-from-url
+                          :hint "the url returned a non-success http status"
+                          :http-status status))
 
               (when-not size
                 (ex/raise :type :validation
