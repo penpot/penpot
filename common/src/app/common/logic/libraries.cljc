@@ -332,7 +332,7 @@
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> promote to root")
                                            (assoc % :component-root true)))
 
-        :always
+        (some? (ctk/get-swap-slot shape))
         ; First level subinstances of a detached component can't have swap-slot
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> remove swap-slot")
                                            (ctk/remove-swap-slot %)))
@@ -363,7 +363,7 @@
                       (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
                         (cond-> changes
                           (some? (:shape-ref ref-shape))
-                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (advanced)")
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (advanced to " (:shape-ref ref-shape) ")"))
                                                                 (assoc % :shape-ref (:shape-ref ref-shape))))
 
                           ;; When advancing level, the normal touched groups (not swap slots) of the
@@ -373,6 +373,8 @@
                           (pcb/update-shapes
                            [(:id shape)]
                            #(do (log/trace :msg "       (merge touched)")
+                                (log/trace :msg (str "       (ref-shape: " (:id ref-shape) ")"))
+                                (log/trace :msg (str "       (ref touched: " (:touched ref-shape) ")"))
                                 (assoc % :touched
                                        (clojure.set/union (:touched shape)
                                                           (ctk/normal-touched-groups ref-shape)))))
@@ -382,7 +384,7 @@
                           (and (some? (ctk/get-swap-slot ref-shape))
                                (nil? (ctk/get-swap-slot shape))
                                (not= (:id shape) shape-id))
-                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (got swap-slot)")
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (got swap-slot " (ctk/get-swap-slot ref-shape) ")"))
                                                                 (ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))
 
                           ;; If we can't get the ref-shape (e.g. it's in an external library not linked),
