@@ -35,6 +35,7 @@
 /notes
 /playground/
 /backend/*.md
+!/backend/AGENTS.md
 /backend/*.sql
 /backend/*.txt
 /backend/assets/

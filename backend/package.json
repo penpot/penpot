@@ -19,8 +19,7 @@
     "ws": "^8.17.0"
   },
   "scripts": {
-    "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
-    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
-    "lint:clj": "clj-kondo --parallel --lint src/"
+    "lint:clj": "cljfmt check --parallel=false src/ test/ && clj-kondo --parallel --lint src/",
+    "fmt:clj": "cljfmt fix --parallel=true src/ test/"
   }
 }
