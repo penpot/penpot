@@ -36,6 +36,11 @@
   [size i]
   (and (< i size) (>= i 0)))
 
+(defn int-in-range?
+  "Check if an integer val is in the range [start, end)."
+  [val start end]
+  (and (>= val start) (< val end)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Commonly used transducers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

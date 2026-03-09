@@ -223,10 +223,6 @@
 ;; GITHUB AUTH PROVIDER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- int-in-range?
-  [val start end]
-  (and (<= start val) (< val end)))
-
 (defn- lookup-github-email
   [cfg tdata props]
   (or (some-> props :github/email)
@@ -237,7 +233,7 @@
 
             {:keys [status body]} (http/req! cfg params)]
 
-        (when-not (int-in-range? status 200 300)
+        (when-not (d/int-in-range? status 200 300)
           (ex/raise :type :internal
                     :code :unable-to-retrieve-github-emails
                     :hint "unable to retrieve github emails"
@@ -513,7 +509,7 @@
            :status (:status response)
            :body   (:body response))
 
-    (when-not (int-in-range? (:status response) 200 300)
+    (when-not (d/int-in-range? (:status response) 200 300)
       (ex/raise :type :internal
                 :code :unable-to-retrieve-user-info
                 :hint "unable to retrieve user info"

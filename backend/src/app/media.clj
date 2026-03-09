@@ -304,7 +304,7 @@
                   format   (cm/mtype->format mtype)
                   max-size (cf/get :media-max-file-size default-max-file-size)]
 
-              (when-not (and (>= status 200) (< status 300))
+              (when-not (d/int-in-range? status 200 300)
                 (ex/raise :type :validation
                           :code :unable-to-download-from-url
                           :hint "the url returned a non-success http status"
