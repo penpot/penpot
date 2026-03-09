@@ -946,15 +946,32 @@
                 (:y position))]
     (= result 1)))
 
+(defn- tile-rebuild-loop
+  "Process tile rebuild in chunks via requestAnimationFrame, rendering
+   on each frame so partial results are visible. The generation counter
+   ensures stale loops (from a previous zoom/pan) stop immediately."
+  [generation]
+  (js/requestAnimationFrame
+   (fn [ts]
+     (when wasm/context-initialized?
+       (let [has-more (h/call wasm/internal-module "_tile_rebuild_step" ts generation)]
+         (render ts)
+         (when (pos? has-more)
+           (tile-rebuild-loop generation)))))))
+
 (def render-finish
-  (letfn [(do-render [ts]
+  (letfn [(do-render [_ts]
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when wasm/context-initialized?
               (perf/begin-measure "render-finish")
-              (h/call wasm/internal-module "_set_view_end")
-              (render ts)
-              (perf/end-measure "render-finish")))]
+              (let [generation (h/call wasm/internal-module "_set_view_end")]
+                (perf/end-measure "render-finish")
+                (if (pos? generation)
+                  ;; Async rebuild started — drive it with rAF loop
+                  (tile-rebuild-loop generation)
+                  ;; Profile mode did sync rebuild — just render once
+                  (render (js/performance.now))))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan

@@ -300,6 +300,11 @@ pub(crate) struct RenderState {
     pub ignore_nested_blurs: bool,
     /// Preview render mode - when true, uses simplified rendering for progressive loading
     pub preview_mode: bool,
+    /// State for chunked tile rebuild across animation frames
+    tile_rebuild_pending_nodes: Vec<Uuid>,
+    tile_rebuild_zoom_changed: bool,
+    /// Generation counter to detect stale rebuild loops after re-entrant zoom/pan
+    tile_rebuild_generation: u32,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -372,6 +377,9 @@ impl RenderState {
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
             preview_mode: false,
+            tile_rebuild_pending_nodes: vec![],
+            tile_rebuild_zoom_changed: false,
+            tile_rebuild_generation: 0,
         }
     }
 
@@ -2514,17 +2522,14 @@ impl RenderState {
         // because tiles are rendered at specific zoom levels
         let zoom_changed = self.zoom_changed();
 
-        let mut tiles_to_invalidate = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
                     if zoom_changed {
-                        // Zoom changed: use full update that tracks all affected tiles
-                        tiles_to_invalidate.extend(self.update_shape_tiles(shape, tree));
+                        let _ = self.update_shape_tiles(shape, tree);
                     } else {
-                        // Pan only: use incremental update that preserves valid cached tiles
-                        self.update_shape_tiles_incremental(shape, tree);
+                        let _ = self.update_shape_tiles_incremental(shape, tree);
                     }
                 } else {
                     // We only need to rebuild tiles from the first level.
@@ -2539,6 +2544,72 @@ impl RenderState {
         self.surfaces.remove_cached_tiles(self.background_color);
 
         performance::end_measure!("rebuild_tiles_shallow");
+    }
+
+    /// Initialize a chunked tile rebuild that can be spread across multiple
+    /// animation frames to avoid blocking the main thread.
+    /// Returns the generation counter so the caller can detect stale loops.
+    pub fn start_tile_rebuild(&mut self, tree: ShapesPoolRef) -> u32 {
+        self.tile_rebuild_zoom_changed = self.zoom_changed();
+        self.tile_rebuild_generation = self.tile_rebuild_generation.wrapping_add(1);
+        // Skip 0 — the CLJS caller uses 0 to mean "sync rebuild, no loop needed"
+        if self.tile_rebuild_generation == 0 {
+            self.tile_rebuild_generation = 1;
+        }
+
+        // Collect top-level shape ids (children of the root node)
+        let mut nodes = Vec::new();
+        if let Some(root) = tree.get(&Uuid::nil()) {
+            for child_id in root.children_ids_iter(false) {
+                nodes.push(*child_id);
+            }
+        }
+
+        self.tile_rebuild_pending_nodes = nodes;
+        self.tile_rebuild_generation
+    }
+
+    /// Process a batch of shapes for tile rebuild within a time budget.
+    /// Returns true if there is more work remaining. Returns false if done
+    /// or if `generation` doesn't match (stale loop from a previous rebuild).
+    pub fn process_tile_rebuild_step(
+        &mut self,
+        tree: ShapesPoolRef,
+        timestamp: i32,
+        generation: u32,
+    ) -> bool {
+        if generation != self.tile_rebuild_generation {
+            return false;
+        }
+
+        performance::begin_measure!("process_tile_rebuild_step");
+
+        let mut iteration = 0i32;
+        while let Some(shape_id) = self.tile_rebuild_pending_nodes.pop() {
+            if let Some(shape) = tree.get(&shape_id) {
+                if self.tile_rebuild_zoom_changed {
+                    // Return value intentionally discarded — invalidation happens
+                    // in bulk via remove_cached_tiles once all shapes are processed.
+                    let _ = self.update_shape_tiles(shape, tree);
+                } else {
+                    let _ = self.update_shape_tiles_incremental(shape, tree);
+                }
+            }
+
+            iteration += 1;
+            if iteration % NODE_BATCH_THRESHOLD == 0
+                && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
+            {
+                performance::end_measure!("process_tile_rebuild_step");
+                return true;
+            }
+        }
+
+        // All shapes processed — finalize
+        self.surfaces.remove_cached_tiles(self.background_color);
+
+        performance::end_measure!("process_tile_rebuild_step");
+        false
     }
 
     pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {

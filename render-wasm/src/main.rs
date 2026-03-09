@@ -305,45 +305,55 @@ pub extern "C" fn set_view_start() -> Result<()> {
     Ok(())
 }
 
+/// Uses chunked tile rebuild to avoid blocking
+/// the main thread. Prepares the view state and starts the async
+/// tile rebuild process. Call `tile_rebuild_step` in a rAF loop after this.
+///
+/// Returns a generation counter (> 0) when async rebuild was started,
+/// or 0 when profile mode used sync rebuild (no loop needed).
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn set_view_end() -> Result<()> {
-    with_state_mut!(state, {
-        let _end_start = performance::begin_timed_log!("set_view_end");
+pub extern "C" fn set_view_end() -> Result<i32> {
+    let generation = with_state_mut!(state, {
         performance::begin_measure!("set_view_end");
         state.render_state.options.set_fast_mode(false);
         state.render_state.cancel_animation_frame();
 
-        // Update tile_viewbox first so that get_tiles_for_shape uses the correct interest area
-        // This is critical because we limit tiles to the interest area for optimization
         let scale = state.render_state.get_scale();
         state
             .render_state
             .tile_viewbox
             .update(state.render_state.viewbox, scale);
 
-        // We rebuild the tile index on both pan and zoom because `get_tiles_for_shape`
-        // clips each shape to the current `TileViewbox::interest_rect` (viewport-dependent).
-        let _rebuild_start = performance::begin_timed_log!("rebuild_tiles");
-        performance::begin_measure!("set_view_end::rebuild_tiles");
-        if state.render_state.options.is_profile_rebuild_tiles() {
+        let gen = if state.render_state.options.is_profile_rebuild_tiles() {
+            // Profile mode uses sync rebuild — no async loop needed
             state.rebuild_tiles();
+            0i32
         } else {
-            state.rebuild_tiles_shallow();
-        }
-        performance::end_measure!("set_view_end::rebuild_tiles");
-        performance::end_timed_log!("rebuild_tiles", _rebuild_start);
+            state.start_tile_rebuild() as i32
+        };
 
         state.render_state.sync_cached_viewbox();
         performance::end_measure!("set_view_end");
-        performance::end_timed_log!("set_view_end", _end_start);
-        #[cfg(feature = "profile-macros")]
-        {
-            let total_time = performance::get_time() - unsafe { VIEW_INTERACTION_START };
-            performance::console_log!("[PERF] view_interaction: {}ms", total_time);
+        gen
+    });
+    Ok(generation)
+}
+
+/// Process a chunk of the tile rebuild. Returns 1 if more work remains, 0 if done.
+/// `generation` must match the value returned by `set_view_end`; stale
+/// loops from a previous rebuild are stopped immediately.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn tile_rebuild_step(timestamp: i32, generation: i32) -> Result<i32> {
+    let result = with_state_mut!(state, {
+        if state.process_tile_rebuild_step(timestamp, generation as u32) {
+            1
+        } else {
+            0
         }
     });
-    Ok(())
+    Ok(result)
 }
 
 #[no_mangle]
