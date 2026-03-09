@@ -2180,13 +2180,13 @@ impl RenderState {
                         ids.reverse();
                     }
                     // Sort by z_index descending (higher z renders on top).
-                    // When z_index is equal, absolute children go behind
-                    // non-absolute children (false < true).
+                    // When z_index is equal, absolute children go above
+                    // non-absolute children
                     ids.sort_by_key(|id| {
                         let s = tree.get(id);
                         let z = s.map(|s| s.z_index()).unwrap_or(0);
                         let abs = s.map(|s| s.is_absolute()).unwrap_or(false);
-                        (std::cmp::Reverse(z), abs)
+                        (std::cmp::Reverse(z), !abs)
                     });
                     ids
                 } else {
