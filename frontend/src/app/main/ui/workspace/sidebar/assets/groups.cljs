@@ -51,7 +51,6 @@
               :on-context-menu on-context-menu}
         [:> title-bar* {:collapsable    true
                         :collapsed      (not is-group-open)
-                        :all-clickable  true
                         :on-collapsed   on-fold-group
                         :title          (mf/html [:* (when-not (empty? other-path)
                                                        [:span {:class (stl/css :pre-path)
