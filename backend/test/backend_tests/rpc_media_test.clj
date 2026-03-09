@@ -248,6 +248,28 @@
       (t/is (uuid? (:thumbnail-id result))))))
 
 
+(t/deftest media-object-from-url-command-when-url-is-unreachable
+  (let [prof   (th/create-profile* 1)
+        proj   (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        ;; Use a URL that is guaranteed to be unreachable from the backend
+        url    "http://192.0.2.1/image.png"
+        params {::th/type :create-file-media-object-from-url
+                ::rpc/profile-id (:id prof)
+                :file-id    (:id file)
+                :is-local   true
+                :url        url}
+        out    (th/command! params)]
+
+    (let [error      (:error out)
+          error-data (ex-data error)]
+      (t/is (th/ex-info? error))
+      (t/is (= :validation (:type error-data)))
+      (t/is (= :unable-to-access-to-url (:code error-data))))))
+
 (t/deftest media-object-upload-command-when-file-is-deleted
   (let [prof   (th/create-profile* 1)
         proj   (th/create-project* 1 {:profile-id (:id prof)

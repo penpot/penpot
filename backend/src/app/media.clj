@@ -30,7 +30,12 @@
    [datoteka.io :as io])
   (:import
    clojure.lang.XMLHandler
+   java.io.IOException
    java.io.InputStream
+   java.net.ConnectException
+   java.net.UnknownHostException
+   java.net.http.HttpConnectTimeoutException
+   java.net.http.HttpTimeoutException
    javax.xml.XMLConstants
    javax.xml.parsers.SAXParserFactory
    org.apache.commons.io.IOUtils
@@ -318,9 +323,37 @@
 
               {:size size :mtype mtype :format format}))]
 
-    (let [{:keys [body] :as response} (http/req! client
-                                                 {:method :get :uri uri}
-                                                 {:response-type :input-stream})
+    (let [{:keys [body] :as response}
+          (try
+            (http/req! client
+                       {:method :get :uri uri}
+                       {:response-type :input-stream})
+            (catch ConnectException cause
+              (ex/raise :type :validation
+                        :code :unable-to-access-to-url
+                        :hint "the url is unreachable or the connection was refused"
+                        :cause cause))
+            (catch UnknownHostException cause
+              (ex/raise :type :validation
+                        :code :unable-to-access-to-url
+                        :hint "the url host cannot be resolved"
+                        :cause cause))
+            (catch HttpConnectTimeoutException cause
+              (ex/raise :type :validation
+                        :code :unable-to-access-to-url
+                        :hint "the url connection timed out"
+                        :cause cause))
+            (catch HttpTimeoutException cause
+              (ex/raise :type :validation
+                        :code :unable-to-access-to-url
+                        :hint "the url request timed out"
+                        :cause cause))
+            (catch IOException cause
+              (ex/raise :type :validation
+                        :code :unable-to-access-to-url
+                        :hint "an I/O error occurred while downloading the url"
+                        :cause cause)))
+
           {:keys [size mtype]} (parse-and-validate response)
           path    (tmp/tempfile :prefix "penpot.media.download.")
           written (io/write* path body :size size)]
