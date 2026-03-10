@@ -41,8 +41,8 @@ fn draw_stroke_on_rect(
         }
     };
 
-    // By default just draw the rect. Only dotted inner/outer strokes need
-    // clipping to prevent the dotted pattern from appearing in wrong areas.
+    // Dotted inner/outer strokes need clipping to prevent the dotted
+    // pattern from appearing in wrong areas.
     if let Some(clip_op) = stroke.clip_op() {
         // Use a neutral layer (no extra paint) so opacity and filters
         // come solely from the stroke paint. This avoids applying
@@ -59,6 +59,35 @@ fn draw_stroke_on_rect(
             }
         }
         draw_stroke();
+        canvas.restore();
+    } else if stroke.kind == StrokeKind::Inner
+        && (stroke.width >= rect.width() || stroke.width >= rect.height())
+    {
+        // When the inner stroke width exceeds a shape dimension, the inset
+        // rect goes negative and the stroke overflows outside the shape.
+        // Fall back to the same approach as the SVG renderer: draw with
+        // doubled width centered on the original shape and clip to it.
+        canvas.save();
+        match corners {
+            Some(radii) => {
+                let rrect = RRect::new_rect_radii(*rect, radii);
+                canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+            }
+            None => {
+                canvas.clip_rect(*rect, skia::ClipOp::Intersect, antialias);
+            }
+        }
+        let mut inner_paint = paint.clone();
+        inner_paint.set_stroke_width(stroke.width * 2.0);
+        match corners {
+            Some(radii) => {
+                let rrect = RRect::new_rect_radii(*rect, radii);
+                canvas.draw_rrect(rrect, &inner_paint);
+            }
+            None => {
+                canvas.draw_rect(*rect, &inner_paint);
+            }
+        }
         canvas.restore();
     } else {
         draw_stroke();
@@ -83,8 +112,8 @@ fn draw_stroke_on_circle(
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
-    // By default just draw the circle. Only dotted inner/outer strokes need
-    // clipping to prevent the dotted pattern from appearing in wrong areas.
+    // Dotted inner/outer strokes need clipping to prevent the dotted
+    // pattern from appearing in wrong areas.
     if let Some(clip_op) = stroke.clip_op() {
         // Use a neutral layer (no extra paint) so opacity and filters
         // come solely from the stroke paint. This avoids applying
@@ -98,6 +127,24 @@ fn draw_stroke_on_circle(
         };
         canvas.clip_path(&clip_path, clip_op, antialias);
         canvas.draw_oval(stroke_rect, &paint);
+        canvas.restore();
+    } else if stroke.kind == StrokeKind::Inner
+        && (stroke.width >= rect.width() || stroke.width >= rect.height())
+    {
+        // When the inner stroke width exceeds a shape dimension, the inset
+        // rect goes negative and the stroke overflows outside the shape.
+        // Fall back to the same approach as the SVG renderer: draw with
+        // doubled width centered on the original shape and clip to it.
+        canvas.save();
+        let clip_path = {
+            let mut pb = skia::PathBuilder::new();
+            pb.add_oval(rect, None, None);
+            pb.detach()
+        };
+        canvas.clip_path(&clip_path, skia::ClipOp::Intersect, antialias);
+        let mut inner_paint = paint.clone();
+        inner_paint.set_stroke_width(stroke.width * 2.0);
+        canvas.draw_oval(*rect, &inner_paint);
         canvas.restore();
     } else {
         canvas.draw_oval(stroke_rect, &paint);
