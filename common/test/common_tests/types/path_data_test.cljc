@@ -270,6 +270,15 @@
     (t/is (= result1 result2))
     (t/is (= result2 result3))))
 
+(t/deftest path-get-points-nil-safe
+  (t/testing "path/get-points returns nil for nil content without throwing"
+    (t/is (nil? (path/get-points nil))))
+  (t/testing "path/get-points returns correct points for valid content"
+    (let [content (path/content sample-content)
+          points  (path/get-points content)]
+      (t/is (some? points))
+      (t/is (= 3 (count points))))))
+
 (defn calculate-extremities
   "Calculate extremities for the provided content.
   A legacy implementation used mainly as reference for testing"
