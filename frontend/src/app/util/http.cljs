@@ -104,10 +104,17 @@
               (.next ^js subscriber response)
               (.complete ^js subscriber)))
            (p/catch
-            (fn [err]
+            (fn [cause]
               (vreset! abortable? false)
               (when-not @unsubscribed?
-                (.error ^js subscriber err))))
+                (let [error (ex-info (ex-message cause)
+                                     {:type :internal
+                                      :code :unable-to-fetch
+                                      :hint "unable to perform fetch operation"
+                                      :uri uri
+                                      :headers headers}
+                                     cause)]
+                  (.error ^js subscriber error)))))
            (p/finally
              (fn []
                (let [{:keys [count average] :or {count 0 average 0}} (get @network-averages (:path uri))
