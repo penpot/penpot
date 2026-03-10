@@ -456,6 +456,34 @@
          (rx/of (dch/commit-changes changes)
                 (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type})))))))
 
+(defn bulk-update-tokens
+  [set-id token-ids type old-path new-path]
+  (dm/assert! (uuid? set-id))
+  (dm/assert! (every? uuid? token-ids))
+  (ptk/reify ::bulk-update-tokens
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [token-set (if set-id
+                        (lookup-token-set state set-id)
+                        (lookup-token-set state))
+            data    (dsh/lookup-file-data state)
+            changes (reduce (fn [changes token-id]
+                              (let [token     (-> (get-tokens-lib state)
+                                                  (ctob/get-token (ctob/get-id token-set) token-id))
+                                    new-name (str/replace (:name token) old-path new-path)
+                                    token'    (->> (merge token {:name new-name})
+                                                   (into {})
+                                                   (ctob/make-token))]
+                                (pcb/set-token changes (ctob/get-id token-set) token-id token')))
+                            (-> (pcb/empty-changes it)
+                                (pcb/with-library-data data))
+
+                            token-ids)]
+        (toggle-token-path (str (name type) "." old-path))
+        (toggle-token-path (str (name type) "." new-path))
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens" :type type}))))))
+
 (defn delete-token
   [set-id token-id]
   (dm/assert! (uuid? set-id))

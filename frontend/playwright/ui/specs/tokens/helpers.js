@@ -161,6 +161,7 @@ const setupTokensFileRender = async (page, options = {}) => {
     workspacePage,
     tokensUpdateCreateModal: workspacePage.tokensUpdateCreateModal,
     tokenThemeUpdateCreateModal: workspacePage.tokenThemeUpdateCreateModal,
+    tokensRenameNodeModal: workspacePage.tokensRenameNodeModal,
     tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
     tokenSetItems: workspacePage.tokenSetItems,
     tokenSetGroupItems: workspacePage.tokenSetGroupItems,

@@ -8280,11 +8280,19 @@ msgstr "Remap tokens"
 msgid "workspace.tokens.remap-token-references-title"
 msgstr "Remap all tokens that use `%s` to `%s`?"
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
-msgid "workspace.tokens.remap-warning-effects"
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-node-references-title"
+msgstr "Rename `%s` to `%s` and remap all tokens in this group?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-token-warning-effects"
 msgstr "This will change all layers and references that use the old token name."
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-node-warning-effects"
+msgstr "This will update all tokens and references that use the old tokens name."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
 msgid "workspace.tokens.remap-warning-time"
 msgstr "This action could take a while."
 
@@ -8525,6 +8533,14 @@ msgstr "Renaming this token will break any reference to its old name"
 #: src/app/main/data/workspace/tokens/application.cljs
 msgid "workspace.tokens.error-text-edition"
 msgstr "Tokens can't be applied while editing text. Select the text layer instead."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group"
+msgstr "Rename Tokens Group"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr "Your tokens will automatically be renamed to %s.(suffix).(tokenName)"
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"

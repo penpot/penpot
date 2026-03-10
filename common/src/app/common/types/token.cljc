@@ -135,6 +135,9 @@
 (def token-name-validation-regex
   #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$")
 
+(def token-node-name-validation-regex
+  #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$")
+
 (def schema:token-name
   "A token name can contains letters, numbers, underscores the character $ and dots, but
    not start with $ or end with a dot. The $ character does not have any special meaning,
@@ -151,6 +154,14 @@
   [:re {:title "TokenRef"
         :gen/gen sg/text}
    token-ref-validation-regex])
+
+(def schema:token-node-name
+  "A token node name can contains letters, numbers, underscores and the character $, but
+   not start with $ or a dot, or end with a dot. The $ character does not have any special meaning,
+   but dots separate token groups (e.g. color.primary.background)."
+  [:re {:title "TokenNodeName"
+        :gen/gen sg/text}
+   token-node-name-validation-regex])
 
 (def schema:token-type
   [::sm/one-of {:decode/json (fn [type]
