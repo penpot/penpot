@@ -140,6 +140,38 @@ pub enum Fill {
 }
 
 impl Fill {
+    pub fn opacity(&self) -> f32 {
+        match self {
+            Fill::Solid(SolidColor(color)) => color.a() as f32 / 255.0,
+            Fill::LinearGradient(g) => g.opacity as f32 / 255.0,
+            Fill::RadialGradient(g) => g.opacity as f32 / 255.0,
+            Fill::Image(i) => i.opacity as f32 / 255.0,
+        }
+    }
+
+    pub fn with_full_opacity(&self) -> Fill {
+        match self {
+            Fill::Solid(SolidColor(color)) => Fill::Solid(SolidColor(skia::Color::from_argb(
+                255,
+                color.r(),
+                color.g(),
+                color.b(),
+            ))),
+            Fill::LinearGradient(g) => Fill::LinearGradient(Gradient {
+                opacity: 255,
+                ..g.clone()
+            }),
+            Fill::RadialGradient(g) => Fill::RadialGradient(Gradient {
+                opacity: 255,
+                ..g.clone()
+            }),
+            Fill::Image(i) => Fill::Image(ImageFill {
+                opacity: 255,
+                ..i.clone()
+            }),
+        }
+    }
+
     pub fn to_paint(&self, rect: &Rect, anti_alias: bool) -> skia::Paint {
         match self {
             Self::Solid(SolidColor(color)) => {
