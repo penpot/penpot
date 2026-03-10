@@ -485,6 +485,34 @@ test("No white seam at intersections of overlapping shapes with inner strokes", 
   });
 });
 
+test("Correct stroke closing at self-intersection of overlapping shapes with outer strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-outer-stroke-overlap-seam.json");
+
+  await workspace.goToWorkspace({
+    id: "aaa00001-0001-0001-8007-000000000001",
+    pageId: "aaa00001-0001-0001-8007-000000000002",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.viewport.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("f");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  await workspace.hideUI();
+
+  // Stricter comparison: white seam artifacts are very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});
+
 test("BUG 13551 - Blurs affecting other elements", async ({
   page,
 }) => {

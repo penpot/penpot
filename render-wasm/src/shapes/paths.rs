@@ -32,33 +32,24 @@ impl Default for Path {
 impl Path {
     pub fn new(segments: Vec<Segment>) -> Self {
         let mut pb = skia::PathBuilder::new();
-        let mut start = None;
 
+        // Don't auto-close the Skia path when start ≈ end.
+        // SVG treats these as open paths (caps apply at endpoints).
+        // Auto-closing changes stroke behavior from caps to joins,
+        // producing artifacts at self-intersection points.
+        // Only explicit Segment::Close should close the Skia path.
         for segment in segments.iter() {
-            let destination = match *segment {
+            match *segment {
                 Segment::MoveTo(xy) => {
-                    start = Some(xy);
                     pb.move_to(xy);
-                    None
                 }
                 Segment::LineTo(xy) => {
                     pb.line_to(xy);
-                    Some(xy)
                 }
                 Segment::CurveTo((c1, c2, xy)) => {
                     pb.cubic_to(c1, c2, xy);
-                    Some(xy)
                 }
                 Segment::Close => {
-                    pb.close();
-                    None
-                }
-            };
-
-            if let (Some(start), Some(destination)) = (start, destination) {
-                if math::is_close_to(destination.0, start.0)
-                    && math::is_close_to(destination.1, start.1)
-                {
                     pb.close();
                 }
             }
