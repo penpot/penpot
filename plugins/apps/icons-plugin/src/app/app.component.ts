@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FeatherIconNames, icons } from 'feather-icons';
-import { SafeHtmlPipe } from './pipes/safe-html.pipe';
 import { IconButtonComponent } from './components/icon-button/icon-button.component';
 import { IconSearchComponent } from './components/icon-search/icon-search.component';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -10,12 +9,7 @@ import { PluginMessageEvent } from '../model';
 
 @Component({
   selector: 'app-root',
-  imports: [
-    RouterModule,
-    SafeHtmlPipe,
-    IconButtonComponent,
-    IconSearchComponent,
-  ],
+  imports: [RouterModule, IconButtonComponent, IconSearchComponent],
   styleUrl: './app.component.css',
   template: `<div class="icons-plugin">
     <div class="icons-search">

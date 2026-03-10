@@ -430,8 +430,8 @@
          (assoc :frame-id frame-id)
          (assoc :svg-viewbox vbox)
          (assoc :svg-attrs props)
-        ;; We need to ensure fills are empty on import process
-        ;; because setup-shape assings one by default.
+         ;; We need to ensure fills are empty on import process
+         ;; because setup-shape assings one by default.
          (assoc :fills [])
          (merge radius-attrs)))))
 

@@ -51,7 +51,7 @@
 
                 (or (> (:width srect) width)
                     (> (:height srect) height))
-                (let [srect (gal/adjust-to-viewport size srect {:padding 40})
+                (let [srect (gal/adjust-to-viewport size srect {:padding 40 :min-zoom 0.01})
                       zoom  (/ (:width size) (:width srect))]
 
                   (-> local

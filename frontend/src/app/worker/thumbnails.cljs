@@ -179,6 +179,7 @@
 
                       (->> (render-canvas-blob canvas width height bgcolor)
                            (p/fnly (fn [data cause]
+                                     (wasm.api/clear-canvas)
                                      (if cause
                                        (rx/error! subs cause)
                                        (rx/push! subs

@@ -86,7 +86,7 @@
 (t/deftest shared-key-auth
   (let [handler (#'app.http.middleware/wrap-shared-key-auth
                  (fn [req] {::yres/status 200})
-                 "secret-key")]
+                 {:test1 "secret-key"})]
 
     (let [response (handler (->DummyRequest {} {}))]
       (t/is (= 403 (::yres/status response))))
@@ -95,6 +95,9 @@
       (t/is (= 403 (::yres/status response))))
 
     (let [response (handler (->DummyRequest {"x-shared-key" "secret-key"} {}))]
+      (t/is (= 403 (::yres/status response))))
+
+    (let [response (handler (->DummyRequest {"x-shared-key" "test1 secret-key"} {}))]
       (t/is (= 200 (::yres/status response))))))
 
 (t/deftest access-token-authz

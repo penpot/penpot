@@ -267,7 +267,7 @@
         page'   (thf/current-page file')
         objects' (:objects page')]
 
-     ;; ==== Check
+    ;; ==== Check
     (thf/validate-file! file')
     (t/is (= (count (:components data)) 2))
     (t/is (= (count (:components data')) 4))

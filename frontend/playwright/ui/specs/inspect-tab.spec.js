@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 const flags = ["enable-inspect-styles"];
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
 });
 
 const setupFile = async (workspacePage) => {
@@ -90,7 +90,7 @@ const copyPropertyFromPropertyRow = async (panel, property) => {
 
 /**
  * Returns the style panel by its title
- * @param {WorkspacePage} workspacePage - The workspace page instance
+ * @param {WasmWorkspacePage} workspacePage - The workspace page instance
  * @param {string} title - The title of the panel to retrieve
  */
 const getPanelByTitle = async (workspacePage, title) => {
@@ -103,7 +103,7 @@ const getPanelByTitle = async (workspacePage, title) => {
 
 /**
  * Selects a layer in the layers panel
- * @param {WorkspacePage} workspacePage - The workspace page instance
+ * @param {WasmWorkspacePage} workspacePage - The workspace page instance
  * @param {string} layerName - The name of the layer to select
  * @param {string} parentLayerName - The name of the parent layer to expand (optional)
  */
@@ -118,7 +118,7 @@ const selectLayer = async (workspacePage, layerName, parentLayerName) => {
 
 /**
  * Opens the Inspect tab
- * @param {WorkspacePage} workspacePage - The workspace page instance
+ * @param {WasmWorkspacePage} workspacePage - The workspace page instance
  */
 
 const openInspectTab = async (workspacePage) => {
@@ -133,7 +133,7 @@ const openInspectTab = async (workspacePage) => {
 /**
  * @typedef {'hex' | 'rgba' | 'hsla'} ColorSpace
  *
- * @param {WorkspacePage} workspacePage - The workspace page instance
+ * @param {WasmWorkspacePage} workspacePage - The workspace page instance
  * @param {ColorSpace} colorSpace - The color space to select
  */
 const selectColorSpace = async (workspacePage, colorSpace) => {
@@ -148,7 +148,7 @@ const selectColorSpace = async (workspacePage, colorSpace) => {
 
 test.describe("Inspect tab - Styles", () => {
   test.skip("Open Inspect tab", async ({ page }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await setupFile(workspacePage);
 
     await selectLayer(workspacePage, shapeToLayerName.flex);
@@ -162,7 +162,7 @@ test.describe("Inspect tab - Styles", () => {
   });
   test.describe("Inspect tab - Flex", () => {
     test("Shape Layout Flex ", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.flex);
@@ -178,7 +178,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape Layout Flex Element", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(
@@ -199,7 +199,7 @@ test.describe("Inspect tab - Styles", () => {
   });
 
   test("Shape Layout Grid", async ({ page }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await setupFile(workspacePage);
 
     await selectLayer(workspacePage, shapeToLayerName.grid);
@@ -216,7 +216,7 @@ test.describe("Inspect tab - Styles", () => {
 
   test.describe("Inspect tab - Shadow", () => {
     test("Shape Shadow - Single shadow", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.shadow);
@@ -232,7 +232,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape Shadow - Multiple shadow", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.shadowMultiple);
@@ -249,7 +249,7 @@ test.describe("Inspect tab - Styles", () => {
 
     // FIXME: flaky/random (depends on trace ?)
     test.skip("Shape Shadow - Composite shadow", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.shadowComposite);
@@ -278,7 +278,7 @@ test.describe("Inspect tab - Styles", () => {
   });
 
   test("Shape - Blur", async ({ page }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await setupFile(workspacePage);
 
     await selectLayer(workspacePage, shapeToLayerName.blur);
@@ -295,7 +295,7 @@ test.describe("Inspect tab - Styles", () => {
 
   test.describe("Inspect tab - Border radius", () => {
     test("Shape - Border radius - individual", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(
@@ -325,7 +325,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Border radius - multiple", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(
@@ -365,7 +365,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Border radius - token", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(
@@ -399,7 +399,7 @@ test.describe("Inspect tab - Styles", () => {
 
   test.describe("Inspect tab - Fill", () => {
     test("Shape - Fill - Solid", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.fill.solid);
@@ -416,7 +416,7 @@ test.describe("Inspect tab - Styles", () => {
     test("Change color space and ensure fill and shorthand changes", async ({
       page,
     }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.fill.solid);
@@ -454,7 +454,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Fill - Gradient", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.fill.gradient);
@@ -469,7 +469,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Fill - Image", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.fill.image);
@@ -489,7 +489,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Fill - Multiple", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.fill.multiple);
@@ -509,7 +509,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Fill - Token", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.fill.token);
@@ -532,7 +532,7 @@ test.describe("Inspect tab - Styles", () => {
 
   test.describe("Inspect tab - Stroke", () => {
     test("Shape - Stroke - Solid", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.stroke.solid);
@@ -547,7 +547,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Stroke - Gradient", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.stroke.gradient);
@@ -562,7 +562,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Stroke - Image", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.stroke.image);
@@ -582,7 +582,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Stroke - Multiple", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.stroke.multiple);
@@ -602,7 +602,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Shape - Stroke - Token", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.stroke.token);
@@ -625,7 +625,7 @@ test.describe("Inspect tab - Styles", () => {
 
   test.describe("Inspect tab - Typography", () => {
     test("Text - simple", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.text.simple);
@@ -643,7 +643,7 @@ test.describe("Inspect tab - Styles", () => {
     });
 
     test("Text - token", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.text.token);
@@ -679,7 +679,7 @@ test.describe("Inspect tab - Styles", () => {
       await expect(textPreview).toBeVisible();
     });
     test("Text - composite token", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.text.compositeToken);
@@ -705,7 +705,7 @@ test.describe("Inspect tab - Styles", () => {
 
   test.describe("Copy properties", () => {
     test("Copy single property", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.flex);
@@ -722,7 +722,7 @@ test.describe("Inspect tab - Styles", () => {
       expect(shorthand).toBe("display: flex;");
     });
     test("Copy shorthand - multiple properties", async ({ page }) => {
-      const workspacePage = new WorkspacePage(page);
+      const workspacePage = new WasmWorkspacePage(page);
       await setupFile(workspacePage);
 
       await selectLayer(workspacePage, shapeToLayerName.shadow);

@@ -10,6 +10,7 @@
   (:refer-clojure :exclude [set! new get merge clone contains? array? into-array reify class])
   #?(:cljs (:require-macros [app.util.object]))
   (:require
+   [app.common.data :as d]
    [app.common.json :as json]
    [app.common.schema :as sm]
    [clojure.core :as c]
@@ -106,6 +107,11 @@
           (identical? (.getPrototypeOf js/Object o)
                       (.-prototype js/Object)))))
 
+#?(:cljs
+   (defn stringify
+     [obj]
+     (js/JSON.stringify obj)))
+
 ;; EXPERIMENTAL: unsafe, does not checks and not validates the input,
 ;; should be improved over time, for now it works for define a class
 ;; extending js/Error that is more than enought for a first, quick and
@@ -151,6 +157,7 @@
 
            this-sym   (with-meta (gensym (str rsym "-this-")) {:tag 'js})
            target-sym (with-meta (gensym (str rsym "-target-")) {:tag 'js})
+           cause-sym  (gensym "cause-")
 
            make-sym
            (fn [pname prefix]
@@ -163,14 +170,31 @@
            bindings
            (->> properties
                 (mapcat (fn [params]
-                          (let [pname    (c/get params :name)
-                                get-expr (c/get params :get)
-                                set-expr (c/get params :set)
-                                fn-expr  (c/get params :fn)
-                                schema-n (c/get params :schema)
-                                wrap     (c/get params :wrap)
-                                schema-1 (c/get params :schema-1)
-                                this?    (c/get params :this false)
+                          (let [pname         (c/get params :name)
+                                get-expr      (c/get params :get)
+                                set-expr      (c/get params :set)
+                                fn-expr       (c/get params :fn)
+                                schema-n      (c/get params :schema)
+                                wrap          (c/get params :wrap)
+                                schema-1      (c/get params :schema-1)
+                                this?         (c/get params :this false)
+                                on-error      (c/get params :on-error)
+
+                                decode-expr
+                                (c/get params :decode/fn)
+
+                                decode-options
+                                (c/get params :decode/options)
+
+                                decode-options
+                                (if (and decode-expr decode-options)
+                                  (do
+                                    (println "WARN: decode/fn and decode/options are excluding, ignoring decode/options")
+                                    nil)
+                                  decode-options)
+
+                                decode-expr
+                                (or decode-expr 'app.common.json/->clj)
 
                                 fn-sym
                                 (-> (gensym (str "internal-fn-" (str/slug pname) "-"))
@@ -180,9 +204,29 @@
                                 (-> (gensym (str "coercer-fn-" (str/slug pname) "-"))
                                     (with-meta {:tag 'function}))
 
+                                decode-sym
+                                (-> (gensym (str "decode-fn-" (str/slug pname) "-"))
+                                    (with-meta {:tag 'function}))
+
+                                schema-sym
+                                (-> (gensym (str "schema-" (str/slug pname) "-"))
+                                    (with-meta {:tag 'function}))
+
                                 wrap-sym
                                 (-> (gensym (str "wrap-fn-" (str/slug pname) "-"))
-                                    (with-meta {:tag 'function}))]
+                                    (with-meta {:tag 'function}))
+
+                                val-sym
+                                (gensym (str "val-" (str/slug pname) "-"))
+
+                                wrap-error-handling
+                                (if on-error
+                                  (fn [expr]
+                                    `(try
+                                       ~expr
+                                       (catch :default ~cause-sym
+                                         (~on-error ~cause-sym))))
+                                  identity)]
 
                             (concat
                              (when wrap
@@ -194,51 +238,110 @@
                                   `(fn []
                                      (let [~this-sym (~'js* "this")
                                            ~fn-sym ~get-expr]
-                                       (.call ~fn-sym ~this-sym ~this-sym)))
-                                  get-expr)])
+                                       ~(wrap-error-handling
+                                         `(.call ~fn-sym ~this-sym ~this-sym))))
+                                  `(fn []
+                                     (let [~this-sym (~'js* "this")
+                                           ~fn-sym ~get-expr]
+                                       ~(wrap-error-handling
+                                         `(.call ~fn-sym ~this-sym)))))])
 
                              (when set-expr
-                               [(make-sym pname "set-fn")
-                                (if this?
-                                  `(fn [v#]
-                                     (let [~this-sym (~'js* "this")
-                                           ~fn-sym ~set-expr]
-                                       (.call ~fn-sym ~this-sym ~this-sym v#)))
-                                  set-expr)])
+                               [schema-sym  schema-n
+
+                                coercer-sym `(if (and (some? ~schema-sym)
+                                                      (not (fn? ~schema-sym)))
+                                               (sm/coercer ~schema-sym)
+                                               nil)
+
+                                decode-sym decode-expr
+
+                                (make-sym pname "set-fn")
+                                `(fn [~val-sym]
+                                   ~(wrap-error-handling
+                                     `(let [~this-sym (~'js* "this")
+                                            ~fn-sym   ~set-expr
+
+                                            ;; We only emit schema and coercer bindings if
+                                            ;; schema-n is provided
+                                            ~@(if (some? schema-n)
+                                                [schema-sym
+                                                 `(if (fn? ~schema-sym)
+                                                    (~schema-sym ~val-sym)
+                                                    ~schema-sym)
+
+                                                 coercer-sym
+                                                 `(if (nil? ~coercer-sym)
+                                                    (sm/coercer ~schema-sym)
+                                                    ~coercer-sym)
+
+                                                 val-sym
+                                                 (if (not= decode-expr 'app.common.json/->clj)
+                                                   `(~decode-sym ~val-sym)
+                                                   `(~decode-sym ~val-sym ~decode-options))
+
+                                                 val-sym
+                                                 `(~coercer-sym ~val-sym)]
+                                                [])]
+
+                                        ~(if this?
+                                           `(.call ~fn-sym ~this-sym ~this-sym ~val-sym)
+                                           `(.call ~fn-sym ~this-sym ~val-sym)))))])
 
                              (when fn-expr
-                               (concat
-                                (when schema-1
-                                  [coercer-sym `(sm/coercer ~schema-1)])
-                                (when schema-n
-                                  [coercer-sym `(sm/coercer ~schema-n)])
+                               [schema-sym  (or schema-n schema-1)
+                                coercer-sym `(if (and (some? ~schema-sym)
+                                                      (not (fn? ~schema-sym)))
+                                               (sm/coercer ~schema-sym)
+                                               nil)
+                                decode-sym decode-expr
 
-                                [(make-sym pname "get-fn")
-                                 `(fn []
-                                    (let [~this-sym (~'js* "this")
-                                          ~fn-sym   ~fn-expr
-                                          ~fn-sym   ~(if this?
-                                                       `(.bind ~fn-sym ~this-sym ~this-sym)
-                                                       `(.bind ~fn-sym ~this-sym))
+                                (make-sym pname "get-fn")
+                                `(fn []
+                                   (let [~this-sym (~'js* "this")
+                                         ~fn-sym   ~(if (and (list? fn-expr)
+                                                             (= 'fn (first fn-expr)))
+                                                      (let [[sa sb & sother] fn-expr]
+                                                        `(~sa ~sb ~(wrap-error-handling `(do ~@sother))))
+                                                      fn-expr)
 
-                                          ~@(if schema-1
-                                              [fn-sym `(fn* [param#]
-                                                            (let [param# (json/->clj param#)
-                                                                  param# (~coercer-sym param#)]
-                                                              (~fn-sym param#)))]
-                                              [])
-                                          ~@(if schema-n
-                                              [fn-sym `(fn* []
-                                                            (let [params# (into-array (cljs.core/js-arguments))
-                                                                  params# (mfu/bean params#)
-                                                                  params# (~coercer-sym params#)]
-                                                              (apply ~fn-sym params#)))]
-                                              [])
-                                          ~@(if wrap
-                                              [fn-sym `(~wrap-sym ~fn-sym)]
-                                              [])]
+                                         ~fn-sym   ~(if this?
+                                                      `(.bind ~fn-sym ~this-sym ~this-sym)
+                                                      `(.bind ~fn-sym ~this-sym))
 
-                                      ~fn-sym))])))))))]
+                                         ;; We only emit schema and coercer bindings if
+                                         ;; schema-n or schema-1 is provided
+                                         ~@(if (or schema-n schema-1)
+                                             [fn-sym `(fn* [~@(if schema-1 [val-sym] [])]
+                                                           ~(wrap-error-handling
+                                                             `(let [~@(if schema-n
+                                                                        [val-sym `(into-array (cljs.core/js-arguments))]
+                                                                        [])
+                                                                    ~val-sym
+                                                                    ~(if (not= decode-expr 'app.common.json/->clj)
+                                                                       `(~decode-sym ~val-sym)
+                                                                       `(~decode-sym ~val-sym ~decode-options))
+
+                                                                    ~schema-sym
+                                                                    (if (fn? ~schema-sym)
+                                                                      (~schema-sym ~val-sym)
+                                                                      ~schema-sym)
+
+                                                                    ~coercer-sym
+                                                                    (if (nil? ~coercer-sym)
+                                                                      (sm/coercer ~schema-sym)
+                                                                      ~coercer-sym)
+
+                                                                    ~val-sym
+                                                                    (~coercer-sym ~val-sym)]
+
+                                                                ~(if schema-1
+                                                                   `(~fn-sym ~val-sym)
+                                                                   `(apply ~fn-sym ~val-sym)))))]
+                                             [])]
+                                     ~(if wrap
+                                        `(~wrap-sym ~fn-sym)
+                                        fn-sym)))]))))))]
 
        `(let [~target-sym ~rsym
               ~@bindings]
@@ -307,12 +410,16 @@
         (let [definition (first params)]
           (if (some? definition)
             (let [definition (if (map? definition)
-                               (c/merge {:wrap (:wrap tmeta)} definition)
+                               (c/merge {:wrap (:wrap tmeta)
+                                         :on-error (:on-error tmeta)}
+                                        definition)
                                (-> {:enumerable false}
                                    (c/merge (meta definition))
                                    (assoc :wrap (:wrap tmeta))
+                                   (assoc :on-error (:on-error tmeta))
                                    (assoc :fn definition)
-                                   (dissoc :get :set)))
+                                   (dissoc :get :set :line :column)
+                                   (d/without-nils)))
                   definition (assoc definition :name (name ckey))]
 
               (recur (rest params)

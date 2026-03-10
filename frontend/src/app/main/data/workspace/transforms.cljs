@@ -406,13 +406,13 @@
                        (ctm/change-property :grow-type new-grow-type)))
                    modifiers)))
 
-             modif-tree
-             (-> (dwm/build-modif-tree ids objects get-modifier)
-                 (gm/set-objects-modifiers objects))]
+             modif-tree (dwm/build-modif-tree ids objects get-modifier)]
 
          (if (features/active-feature? state "render-wasm/v1")
-           (rx/of (dwm/apply-wasm-modifiers modif-tree {:ignore-snap-pixel true}))
-           (rx/of (dwm/apply-modifiers* objects modif-tree nil options))))))))
+           (rx/of (dwm/apply-wasm-modifiers modif-tree (assoc options :ignore-snap-pixel true)))
+
+           (let [modif-tree (gm/set-objects-modifiers modif-tree objects)]
+             (rx/of (dwm/apply-modifiers* objects modif-tree nil options)))))))))
 
 (defn change-orientation
   "Change orientation of shapes, from the sidebar options form.
@@ -621,7 +621,7 @@
       (->> stream
            (rx/filter (ptk/type? ::dws/duplicate-selected))
            (rx/take 1)
-           (rx/map #(start-move from-position))))))
+           (rx/map #(start-move from-position nil true))))))
 
 (defn get-drop-cell
   [target-frame objects position]
@@ -641,8 +641,9 @@
         (dom/set-property! node "transform" (gmt/translate-matrix move-vector))))))
 
 (defn start-move
-  ([from-position] (start-move from-position nil))
-  ([from-position ids]
+  ([from-position] (start-move from-position nil false))
+  ([from-position ids] (start-move from-position ids false))
+  ([from-position ids from-duplicate?]
    (ptk/reify ::start-move
      ptk/UpdateEvent
      (update [_ state]
@@ -750,38 +751,47 @@
                       (rx/share))]
 
              (if (features/active-feature? state "render-wasm/v1")
-               (rx/merge
-                (->> modifiers-stream
-                     (rx/map
-                      (fn [[modifiers snap-ignore-axis]]
-                        (dwm/set-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
+               (let [duplicate-stopper
+                     (->> ms/mouse-position-alt
+                          (rx/mapcat
+                           (fn [alt?]
+                             (if (and alt? (not from-duplicate?))
+                               (rx/of true)
+                               (rx/empty)))))]
+                 (rx/merge
+                  (->> modifiers-stream
+                       (rx/take-until duplicate-stopper)
+                       (rx/map
+                        (fn [[modifiers snap-ignore-axis]]
+                          (dwm/set-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
 
-                (->> move-stream
-                     (rx/with-latest-from ms/mouse-position-alt)
-                     (rx/filter (fn [[_ alt?]] alt?))
-                     (rx/take 1)
-                     (rx/mapcat
-                      (fn [[_ alt?]]
-                        (if (and (not duplicate-move-started?) alt?)
-                          (rx/of (start-move-duplicate from-position)
-                                 (dws/duplicate-selected false true))
-                          (rx/empty)))))
+                  (->> move-stream
+                       (rx/with-latest-from ms/mouse-position-alt)
+                       (rx/filter (fn [[_ alt?]] alt?))
+                       (rx/take 1)
+                       (rx/mapcat
+                        (fn [[_ alt?]]
+                          (if (and (not from-duplicate?) alt?)
+                            (rx/of (start-move-duplicate from-position)
+                                   (dws/duplicate-selected false true))
+                            (rx/empty)))))
 
-                ;; Last event will write the modifiers creating the changes
-                (->> move-stream
-                     (rx/last)
-                     (rx/with-latest-from modifiers-stream)
-                     (rx/mapcat
-                      (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
-                        (let [undo-id (js/Symbol)]
-                          (rx/of
-                           (dwu/start-undo-transaction undo-id)
-                           (dwm/apply-wasm-modifiers modifiers
-                                                     :snap-ignore-axis snap-ignore-axis
-                                                     :undo-transation? false)
-                           (move-shapes-to-frame ids target-frame drop-index drop-cell)
-                           (finish-transform)
-                           (dwu/commit-undo-transaction undo-id)))))))
+                  ;; Last event will write the modifiers creating the changes
+                  (->> move-stream
+                       (rx/last)
+                       (rx/take-until duplicate-stopper)
+                       (rx/with-latest-from modifiers-stream)
+                       (rx/mapcat
+                        (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
+                          (let [undo-id (js/Symbol)]
+                            (rx/of
+                             (dwu/start-undo-transaction undo-id)
+                             (dwm/apply-wasm-modifiers modifiers
+                                                       :snap-ignore-axis snap-ignore-axis
+                                                       :undo-transation? false)
+                             (move-shapes-to-frame ids target-frame drop-index drop-cell)
+                             (finish-transform)
+                             (dwu/commit-undo-transaction undo-id))))))))
 
                (rx/merge
                 (->> modifiers-stream
@@ -1050,6 +1060,20 @@
                                         :ignore-touched (:ignore-touched options)
                                         :ignore-snap-pixel true}))))))))
 
+(defn update-positions
+  "Move multiple shapes to a new position."
+  ([ids position] (update-positions ids position nil))
+  ([ids position options]
+   (assert (every? uuid? ids)
+           "expected valid coll of uuids")
+   (assert (map? position) "expected a valid map for `position`")
+   (ptk/reify ::update-positions
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (->> ids
+            (map (fn [id] (update-position id position options)))
+            (rx/from))))))
+
 (defn position-shapes
   [shapes]
   (ptk/reify ::position-shapes
@@ -1121,15 +1145,15 @@
                          :cell cell))
 
             add-component-to-variant? (and
-                                        ;; Any of the shapes is a head
+                                       ;; Any of the shapes is a head
                                        (some (comp ctk/instance-head? objects) ids)
                                        ;; Any ancestor of the destination parent is a variant
                                        (->> (cfh/get-parents-with-self objects frame-id)
                                             (some ctk/is-variant?)))
             add-new-variant? (and
-                             ;; The parent is a variant container
+                              ;; The parent is a variant container
                               (-> frame-id objects ctk/is-variant-container?)
-                             ;; Any of the shapes is a main instance
+                              ;; Any of the shapes is a main instance
                               (some (comp ctk/main-instance? objects) ids))]
 
         (rx/concat
@@ -1149,7 +1173,8 @@
          (when add-component-to-variant?
            (rx/of (ev/event {::ev/name "add-component-to-variant"})))
          (when add-new-variant?
-           (rx/of (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-to-frame"}))))))))
+           (rx/of (ev/event {::ev/name "add-new-variant"
+                             ::ev/origin "workspace:move-shapes-to-frame"}))))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
@@ -1237,7 +1262,6 @@
                           (some? new-modif)
                           (assoc (:id frame) {:modifiers new-modif})))))
                   {}))]
-
         (if (features/active-feature? state "render-wasm/v1")
           (rx/of (dwm/apply-wasm-modifiers modifiers {:undo-group undo-group}))
           (rx/of (dwm/apply-modifiers {:modifiers modifiers :undo-group undo-group})))))))

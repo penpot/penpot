@@ -104,15 +104,15 @@
                   variant         (or (.getEnglishName ^js font "preferredSubfamily")
                                       (.getEnglishName ^js font "fontSubfamily"))
 
-                 ;; Vertical metrics determine the baseline in a text and the space between lines of
-                 ;; text. For historical reasons, there are three pairs of ascender/descender
-                 ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
-                 ;; system and application a different set will be used to render text on the
-                 ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
-                 ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
-                 ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
-                 ;; table. On Windows, all browsers use the usWin metrics, but respect the
-                 ;; useTypoMetrics setting and if set will use the OS/2 values.
+                  ;; Vertical metrics determine the baseline in a text and the space between lines of
+                  ;; text. For historical reasons, there are three pairs of ascender/descender
+                  ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
+                  ;; system and application a different set will be used to render text on the
+                  ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
+                  ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
+                  ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
+                  ;; table. On Windows, all browsers use the usWin metrics, but respect the
+                  ;; useTypoMetrics setting and if set will use the OS/2 values.
 
                   hhea-ascender   (abs (-> ^js font .-tables .-hhea .-ascender))
                   hhea-descender  (abs (-> ^js font .-tables .-hhea .-descender))

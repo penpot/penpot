@@ -19,7 +19,6 @@
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
-   [app.setup.clock :as clock]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -842,7 +841,7 @@
         out      (th/command! data)
         error    (:error out)]
 
-      ;; (th/print-result! out)
+    ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
@@ -864,9 +863,55 @@
         out      (th/command! data)
         error    (:error out)]
 
-      ;; (th/print-result! out)
+    ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest permissions-checks-unlink-library
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})]
+
+
+    (let [data     {::th/type :unlink-file-from-library
+                    ::rpc/profile-id (:id profile2)
+                    :file-id (:id file2)
+                    :library-id (:id file1)}
+
+          out      (th/command! data)
+          error    (:error out)]
+
+      ;; (th/print-result! out)
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :not-found)))))
+
+
+(t/deftest permissions-checks-update-file-library-status
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})]
+
+
+    (let [data     {::th/type :update-file-library-sync-status
+                    ::rpc/profile-id (:id profile2)
+                    :file-id (:id file2)
+                    :library-id (:id file1)}
+
+          out      (th/command! data)
+          error    (:error out)]
+
+      ;; (th/print-result! out)
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :not-found)))))
+
 
 (t/deftest deletion
   (let [profile1 (th/create-profile* 1)
@@ -922,7 +967,7 @@
       (t/is (= 0 (:processed result))))
 
     ;; run permanent deletion
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [result (th/run-task! :objects-gc {})]
         (t/is (= 3 (:processed result)))))
 
@@ -1262,7 +1307,7 @@
       (t/is (= 1 (count rows)))
       (t/is (every? #(some? (:data %)) rows)))
 
-      ;; Mark the file ellegible again for GC
+    ;; Mark the file ellegible again for GC
     (th/db-update! :file
                    {:has-media-trimmed false}
                    {:id (:id file)})
@@ -1319,7 +1364,7 @@
                        {:file-id (:id file)
                         :type "fragment"}
                        {:order-by [:created-at]})]
-        ;; (pp/pprint rows)
+      ;; (pp/pprint rows)
       (t/is (= 2 (count rows)))
       (t/is (nil? (:data row1)))
       (t/is (= "storage" (:backend row1)))
@@ -1875,7 +1920,7 @@
         file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
-    (binding [ct/*clock* (clock/fixed now)]
+    (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
@@ -1937,7 +1982,7 @@
         file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
-    (binding [ct/*clock* (clock/fixed now)]
+    (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
@@ -2000,7 +2045,7 @@
         team-id (:default-team-id profile)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
-    (binding [ct/*clock* (clock/fixed now)]
+    (binding [ct/*clock* (ct/fixed-clock now)]
       (let [project (th/create-project* 1 {:profile-id (:id profile)
                                            :team-id team-id})
             file    (th/create-file* 1 {:profile-id (:id profile)

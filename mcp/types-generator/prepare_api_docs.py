@@ -80,6 +80,25 @@ class PenpotAPIContentMarkdownConverter(MarkdownConverter):
             # return as code block
             return f"\n```\n{soup.get_text()}\n```\n\n"
 
+        # check for <ul> tag with a single <li>: move the <li> content a <div> and process it as normal,
+        # to avoid single list items with superfluous bullet points and indentations.
+        # This happens frequently, especially in new versions of the docs generator, e.g. for methods:
+        #   <ul class="tsd-signatures tsd-is-inherited">
+        #     <li class="tsd-is-inherited">
+        #       <div class="tsd-signature tsd-anchor-link" id="remove-1">...</div>
+        #     </li>
+        #   </ul>
+        if node.name == "ul" and "class" in node.attrs and "tsd-signatures" in node.attrs["class"]:
+            soup_ul = soup.find("ul")
+            if soup_ul is not None:
+                li_children = soup_ul.find_all("li", recursive=False)
+                if len(li_children) == 1:
+                    # create a new div with the content of the single li
+                    new_div = soup.new_tag("div")
+                    for child in list(li_children[0].contents):
+                        new_div.append(child)
+                    return self.process_tag(new_div, parent_tags=parent_tags)
+
         # other cases: use the default processing
         return super().process_tag(node, parent_tags=parent_tags)
 
@@ -135,7 +154,7 @@ class YamlConverter:
 
 
 class PenpotAPIDocsProcessor:
-    def __init__(self, url=None):
+    def __init__(self, url: str):
         self.md_converter = PenpotAPIContentMarkdownConverter()
         self.base_url = url
         self.types: dict[str, TypeInfo] = {}
@@ -157,7 +176,7 @@ class PenpotAPIDocsProcessor:
                 type_name = href.split("/")[-1].replace(".html", "")
                 log.info("Processing page: %s", type_name)
                 type_info = self.process_page(href, type_name)
-                print(f"Adding '{type_name}' with {type_info}")
+                log.info(f"Adding '{type_name}' with {type_info}")
                 self.types[type_name] = type_info
 
         # add type reference information
@@ -201,11 +220,21 @@ class PenpotAPIDocsProcessor:
                     members_in_group = {}
                     members[members_type] = members_in_group
                     for member_tag in el.find_all(attrs={"class": "tsd-member"}):
+                        # determine member name
+                        member_name = None
                         member_anchor = member_tag.find("a", attrs={"class": "tsd-anchor"}, recursive=False)
-                        member_name = member_anchor.attrs["id"]
-                        member_heading = member_tag.find("h3")
+                        if member_anchor is not None:
+                            member_name = member_anchor.attrs["id"]
+                        else:
+                            member_h3 = member_tag.find("h3", recursive=False)
+                            if member_h3 is not None:
+                                h3_span = member_h3.find("span", recursive=False)
+                                if h3_span is not None:
+                                    member_name = h3_span.get_text().strip()
+                        assert member_name is not None, f"Could not determine member name for\n{member_tag}"
                         # extract tsd-tag info (e.g., "Readonly") from the heading and reinsert it into the signature,
                         # where we want to see it. The heading is removed, as it is redundant.
+                        member_heading = member_tag.find("h3")
                         if member_heading:
                             tags_in_heading = member_heading.find_all(attrs={"class": "tsd-tag"})
                             if tags_in_heading:
@@ -237,25 +266,29 @@ class PenpotAPIDocsProcessor:
         )
 
 
-DEFAULT_API_DOCS_URL = "http://localhost:9090"
+LOCAL_API_DOCS_URL = "http://localhost:9090"
+PROD_API_DOCS_URL = "https://doc.plugins.penpot.app"
+DEFAULT_API_DOCS_URL = LOCAL_API_DOCS_URL
+
 
 def main():
     target_dir = Path(__file__).parent.parent / "packages" / "server" / "data"
     url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_API_DOCS_URL
 
-    print("Fetching plugin data from: {}".format(url))
+    log.info("Fetching plugin data from: {}".format(url))
     PenpotAPIDocsProcessor(url).run(target_dir=str(target_dir))
 
 
-def debug_type_conversion(rel_url: str):
+def debug_type_conversion(rel_url: str, base_url: str):
     """
     This function is for debugging purposes only.
     It processes a single type page and prints the converted markdown to the console.
 
+    :param base_url: base URL of the API docs (e.g., "http://localhost:9090")
     :param rel_url: relative URL of the type page (e.g., "interfaces/ShapeBase")
     """
-    type_name = rel_url.split("/")[-1]
-    processor = PenpotAPIDocsProcessor()
+    type_name = rel_url.split("/")[-1].replace(".html", "")
+    processor = PenpotAPIDocsProcessor(url=base_url)
     type_info = processor.process_page(rel_url, type_name)
     print(f"--- overview ---\n{type_info.overview}\n")
     for member_type, members in type_info.members.items():
@@ -265,5 +298,5 @@ def debug_type_conversion(rel_url: str):
 
 
 if __name__ == '__main__':
-    # debug_type_conversion("interfaces/LayoutChildProperties")
+    # debug_type_conversion("interfaces/Path.html", LOCAL_API_DOCS_URL)
     logging.run_main(main)

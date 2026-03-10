@@ -315,7 +315,8 @@
     gap: deprecated.$s-4;
     max-height: deprecated.$s-136;
     padding: deprecated.$s-4 0;
-    overflow-y: scroll;
+    overflow-y: auto;
+
     .selected-item {
       .around {
         @include deprecated.flexRow;

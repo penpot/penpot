@@ -29,6 +29,7 @@ describe('Plugins', () => {
 
   it('create grid layout', async () => {
     const agent = await Agent();
+
     const result = await agent.runCode(grid.toString(), {
       screenshot: 'create-gridlayout',
     });
@@ -83,9 +84,9 @@ describe('Plugins', () => {
 
   it('comments', async () => {
     const agent = await Agent();
+    console.log(comments.toString());
     const result = await agent.runCode(comments.toString(), {
       screenshot: 'create-comments',
-      avoidSavedStatus: true,
     });
     expect(result).toMatchSnapshot();
   });

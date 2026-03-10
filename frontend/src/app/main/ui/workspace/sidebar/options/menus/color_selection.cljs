@@ -66,7 +66,7 @@
   (let [data           (into [] (remove nil?) (dwc/extract-all-colors shapes file-id libraries))
         groups         (d/group-by :attrs #(dissoc % :attrs) data)
 
-         ;; Unique color attribute maps
+        ;; Unique color attribute maps
         all-colors (distinct (mapv :attrs data))
 
         ;; Split into: library colors, token colors, and plain colors
@@ -151,9 +151,9 @@
         on-detach-token
         (mf/use-fn
          (mf/deps token-colors groups)
-         (fn [token]
+         (fn [token-name]
            (let [prev-colors (mf/ref-val prev-colors-ref)
-                 token-color (some #(when (= (:token-name %) (:name token)) %) token-colors)
+                 token-color (some #(when (= (:token-name %) token-name) %) token-colors)
 
                  [color-operations _] (retrieve-color-operations groups token-color prev-colors)]
              (doseq [op color-operations]
@@ -165,8 +165,8 @@
                                (d/without-nils))]
                  (mf/set-ref-val! prev-colors-ref
                                   (conj prev-colors color))
-                 (st/emit! (dwta/unapply-token {:attributes attr
-                                                :token token
+                 (st/emit! (dwta/unapply-token {:token-name token-name
+                                                :attributes attr
                                                 :shape-ids [(:shape-id op)]})))))))
 
         select-only

@@ -44,12 +44,15 @@
            (on-token-pill-click event token)))
         id-tooltip  (mf/use-id)
         resolved    (:resolved-value token)
-        color-value (dwta/value->color resolved)]
+        color-value (dwta/value->color resolved)
+        item-ref (mf/use-ref nil)]
     [:> tooltip* {:id id-tooltip
                   :style {:width "100%"}
+                  :trigger-ref item-ref
                   :content (:name token)}
      [:button {:class (stl/css-case :color-token-item true
                                     :color-token-selected selected)
+               :ref item-ref
                :aria-labelledby id-tooltip
                :on-click on-click}
       [:> swatch* {:background color-value
@@ -152,7 +155,6 @@
                        (when path-set
                          (ptk/data-event :expand-token-sets {:paths path-set}))
                        (dwtl/set-selected-token-set-id id)
-                       (dwtl/set-token-type-section-open :color true)
                        (let [{:keys [modal title]} (get dwta/token-properties :color)
                              window-size (dom/get-window-size)
                              left-sidebar (dom/get-element "left-sidebar-aside")

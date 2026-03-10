@@ -22,7 +22,7 @@ describe("Style", () => {
       "font-size": "32px",
       display: "none",
     });
-    expect(element.style.display).toBe("none");
+    expect(element.style.display).toBe("");
     expect(element.style.fontSize).toBe("");
     expect(element.style.textDecoration).toBe("");
   });
@@ -32,13 +32,13 @@ describe("Style", () => {
     setStyles(a, [["display"]], {
       display: "none",
     });
-    expect(a.style.display).toBe("none");
+    expect(a.style.display).toBe("");
     expect(a.style.fontSize).toBe("");
     expect(a.style.textDecoration).toBe("");
 
     const b = document.createElement("div");
     setStyles(b, [["display"]], a.style);
-    expect(b.style.display).toBe("none");
+    expect(b.style.display).toBe("");
     expect(b.style.fontSize).toBe("");
     expect(b.style.textDecoration).toBe("");
   });

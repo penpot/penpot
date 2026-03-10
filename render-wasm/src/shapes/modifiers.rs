@@ -188,10 +188,20 @@ fn propagate_transform(
         || !is_close_to(shape_bounds_before.height(), shape_bounds_after.height())
     {
         if let Type::Text(text_content) = &mut shape.shape_type.clone() {
+            let resized_selrect = math::Rect::from_xywh(
+                shape.selrect.left(),
+                shape.selrect.top(),
+                shape_bounds_after.width(),
+                shape_bounds_after.height(),
+            );
             match text_content.grow_type() {
                 GrowType::AutoHeight => {
-                    if text_content.needs_update_layout() {
-                        text_content.update_layout(shape.selrect);
+                    // For auto-height, always update layout when width changes
+                    // because the new width affects how text wraps
+                    let width_changed =
+                        !is_close_to(shape_bounds_before.width(), shape_bounds_after.width());
+                    if width_changed || text_content.needs_update_layout() {
+                        text_content.update_layout(resized_selrect);
                     }
                     let height = text_content.size.height;
                     let resize_transform = math::resize_matrix(
@@ -204,8 +214,12 @@ fn propagate_transform(
                     transform.post_concat(&resize_transform);
                 }
                 GrowType::AutoWidth => {
-                    if text_content.needs_update_layout() {
-                        text_content.update_layout(shape.selrect);
+                    // For auto-width, always update layout when height changes
+                    // because the new height affects how text flows
+                    let height_changed =
+                        !is_close_to(shape_bounds_before.height(), shape_bounds_after.height());
+                    if height_changed || text_content.needs_update_layout() {
+                        text_content.update_layout(resized_selrect);
                     }
                     let width = text_content.width();
                     let height = text_content.size.height;
@@ -250,7 +264,7 @@ fn propagate_transform(
 
     // If this is a layout and we're only moving don't need to reflow
     if shape.has_layout() && is_resize {
-        entries.push_back(Modifier::reflow(shape.id));
+        entries.push_back(Modifier::reflow(shape.id, false));
     }
 
     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
@@ -258,7 +272,7 @@ fn propagate_transform(
         // if the current transformation is not a move propagation.
         // If it's a move propagation we don't need to reflow, the parent is already changed.
         if (parent.has_layout() || parent.is_group_like()) && (is_resize || !is_propagate) {
-            entries.push_back(Modifier::reflow(parent.id));
+            entries.push_back(Modifier::reflow(parent.id, false));
         }
     }
 }
@@ -268,7 +282,7 @@ fn propagate_reflow(
     state: &State,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
-    layout_reflows: &mut Vec<Uuid>,
+    layout_reflows: &mut HashSet<Uuid>,
     reflown: &mut HashSet<Uuid>,
     modifiers: &HashMap<Uuid, Matrix>,
 ) {
@@ -298,7 +312,7 @@ fn propagate_reflow(
             }
 
             if !skip_reflow {
-                layout_reflows.push(*id);
+                layout_reflows.insert(*id);
             }
         }
         Type::Group(Group { masked: true }) => {
@@ -326,7 +340,7 @@ fn propagate_reflow(
 
     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
         if parent.has_layout() || parent.is_group_like() {
-            entries.push_back(Modifier::reflow(parent.id));
+            entries.push_back(Modifier::reflow(parent.id, false));
         }
     }
 }
@@ -368,19 +382,20 @@ pub fn propagate_modifiers(
     let mut entries: VecDeque<_> = modifiers
         .iter()
         .map(|entry| {
-            // If we receibe a identity matrix we force a reflow
+            // If we receive a identity matrix we force a reflow
             if math::identitish(&entry.transform) {
-                Modifier::Reflow(entry.id)
+                Modifier::Reflow(entry.id, false)
             } else {
                 Modifier::Transform(*entry)
             }
         })
         .collect();
 
+    let shapes = &state.shapes;
     let mut modifiers = HashMap::<Uuid, Matrix>::new();
     let mut bounds = HashMap::<Uuid, Bounds>::new();
     let mut reflown = HashSet::<Uuid>::new();
-    let mut layout_reflows = Vec::<Uuid>::new();
+    let mut layout_reflows = HashSet::<Uuid>::new();
 
     // We first propagate the transforms to the children and then after
     // recalculate the layouts. The layout can create further transforms that
@@ -398,27 +413,43 @@ pub fn propagate_modifiers(
                     &mut bounds,
                     &mut modifiers,
                 ),
-                Modifier::Reflow(id) => propagate_reflow(
-                    &id,
-                    state,
-                    &mut entries,
-                    &mut bounds,
-                    &mut layout_reflows,
-                    &mut reflown,
-                    &modifiers,
-                ),
+                Modifier::Reflow(id, force_reflow) => {
+                    if force_reflow {
+                        reflown.remove(&id);
+                    }
+
+                    propagate_reflow(
+                        &id,
+                        state,
+                        &mut entries,
+                        &mut bounds,
+                        &mut layout_reflows,
+                        &mut reflown,
+                        &modifiers,
+                    )
+                }
             }
         }
+        // We sort the reflows so they are processed deepest-first in the
+        // tree structure. This way we can be sure that the children layouts
+        // are already reflowed before their parents.
+        let mut layout_reflows_vec: Vec<Uuid> =
+            std::mem::take(&mut layout_reflows).into_iter().collect();
+        layout_reflows_vec.sort_unstable_by(|id_a, id_b| {
+            let da = shapes.get_depth(id_a);
+            let db = shapes.get_depth(id_b);
+            db.cmp(&da)
+        });
 
-        for id in layout_reflows.iter() {
+        for id in &layout_reflows_vec {
             if reflown.contains(id) {
                 continue;
             }
             reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds);
         }
-        layout_reflows = Vec::new();
     }
 
+    #[allow(dead_code)]
     modifiers
         .iter()
         .map(|(key, val)| TransformEntry::from_input(*key, *val))

@@ -13,14 +13,15 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]))
 
-;; WARNING: options are not deleted when changing event or action type, so it can be
-;;          restored if the user changes it back later.
+;; WARNING: options are not deleted when changing event or action
+;; type, so it can be restored if the user changes it back later.
 ;;
-;;          But that means that an interaction may have for example a delay or
-;;          destination, even if its type does not require it (but a previous type did).
+;; But that means that an interaction may have for example a delay or
+;; destination, even if its type does not require it (but a previous
+;; type did).
 ;;
-;;          So make sure to use has-delay/has-destination... functions, or similar,
-;;          before reading them.
+;; So make sure to use has-delay/has-destination... functions, or
+;; similar, before reading them.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -452,16 +453,15 @@
     (gpt/point 0 0)))
 
 (defn calc-overlay-position
-  [interaction         ;; interaction data
-   shape               ;; Shape with the interaction
-   objects             ;; the objects tree
-   relative-to-shape   ;; the interaction position is realtive to this
-                       ;; sape
-   base-frame          ;; the base frame of the current interaction
-   dest-frame          ;; the frame to display with this interaction
-   frame-offset]       ;; if this interaction starts in a frame opened
-                       ;; on another interaction, this is the position
-                       ;; of that frame
+  [interaction         ; interaction data
+   shape               ; Shape with the interaction
+   objects             ; the objects tree
+   relative-to-shape   ; the interaction position is realtive to this shape
+   base-frame          ; the base frame of the current interaction
+   dest-frame          ; the frame to display with this interaction
+   frame-offset]       ; if this interaction starts in a frame opened
+                       ; on another interaction, this is the position
+                       ; of that frame
   (assert (check-interaction interaction))
   (assert (has-overlay-opts interaction)
           "expected compatible interaction map")

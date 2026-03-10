@@ -85,15 +85,16 @@
         (mf/use-fn
          (mf/deps detach-token token applied-token-name)
          (fn []
-           (let [token (or token applied-token-name)]
-             (detach-token token))))
+           (let [token-name (or (:name token) applied-token-name)]
+             (detach-token token-name))))
 
         has-errors (some? (:errors token))
         token-name (:name token)
         resolved (:resolved-value token)
-        not-active (and (empty? active-tokens)
-                        (nil? token))
+        not-active (or (empty? active-tokens)
+                       (nil? token))
         id (dm/str (:id token) "-name")
+        token-name-ref (mf/use-ref nil)
         swatch-tooltip-content (cond
                                  not-active
                                  (tr "ds.inputs.token-field.no-active-token-option")
@@ -126,8 +127,11 @@
                     :size "small"}]]
       [:> tooltip* {:content name-tooltip-content
                     :id id
+                    :aria-label (str (tr "workspace.tokens.token-name") ": " applied-token-name)
+                    :trigger-ref token-name-ref
                     :class (stl/css :token-tooltip)}
        [:div {:class (stl/css :token-name)
+              :ref token-name-ref
               :aria-labelledby id}
         (or token-name applied-token-name)]]
       [:div {:class (stl/css :token-actions)}
@@ -147,11 +151,7 @@
            on-change on-reorder on-detach on-open on-close on-remove origin on-detach-token
            disable-drag on-focus on-blur select-only select-on-focus on-token-change applied-token]}]
 
-  (let [;; TODO: Remove this workaround fixing `get-attrs*` fn on sidebar/options/shapes/multiple.cljs
-        applied-token (if (= :multiple applied-token)
-                        nil
-                        applied-token)
-        token-color      (contains? cfg/flags :token-color)
+  (let [token-color      (contains? cfg/flags :token-color)
         libraries        (mf/deref refs/files)
 
         color-without-hash (mf/use-memo
@@ -313,7 +313,7 @@
 
         on-remove'
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index on-remove)
          (fn [_]
            (when on-remove
              (on-remove index))))
@@ -348,7 +348,6 @@
     (mf/with-effect [color prev-color disable-picker]
       (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
-
     [:div {:class [class row-class]}
      ;; Drag handler
      (when (some? on-reorder)

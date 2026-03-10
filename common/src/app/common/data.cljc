@@ -760,6 +760,21 @@
        default
        v))))
 
+(defn percent?
+  [v]
+  (str/numeric? (str/rtrim v "%")))
+
+(defn parse-percent
+  ([v]
+   (parse-percent v nil))
+  ([v default]
+   (if (str/ends-with? v "%")
+     (let [v (impl-parse-double (str/trim v "%"))]
+       (if (or (nil? v) (nan? v))
+         default
+         (/ v 100)))
+     (parse-double v default))))
+
 (defn parse-uuid
   [v]
   (try
@@ -1092,9 +1107,9 @@
   (if (number? num)
     (try
       (let [num-str (mth/to-fixed num precision)
-               ;; Remove all trailing zeros after the comma 100.00000
+            ;; Remove all trailing zeros after the comma 100.00000
             num-str (str/replace num-str trail-zeros-regex-1 "")]
-           ;; Remove trailing zeros after a decimal number: 0.001|00|
+        ;; Remove trailing zeros after a decimal number: 0.001|00|
         (if-let [m (re-find trail-zeros-regex-2 num-str)]
           (str/replace num-str (first m) (second m))
           num-str))

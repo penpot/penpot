@@ -9,15 +9,16 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.schema :as sm]
+   [app.config :as cf]
    [app.main.data.auth :as da]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.worker]
-   [app.util.globals :as glob]
+   [app.util.globals :as g]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
@@ -29,43 +30,8 @@
 ;; Will contain the latest error report assigned
 (def last-report nil)
 
-(defn- print-data!
-  [data]
-  (-> data
-      (dissoc ::sm/explain)
-      (dissoc :explain)
-      (dissoc ::trace)
-      (dissoc ::instance)
-      (pp/pprint {:width 70})))
-
-(defn- print-explain!
-  [data]
-  (when-let [{:keys [errors] :as explain} (::sm/explain data)]
-    (let [errors (mapv #(update % :schema sm/form) errors)]
-      (pp/pprint errors {:width 100 :level 15 :length 20})))
-
-  (when-let [explain (:explain data)]
-    (js/console.log explain)))
-
-(defn- print-trace!
-  [data]
-  (some-> data ::trace js/console.log))
-
-(defn- print-group!
-  [message f]
-  (try
-    (js/console.group message)
-    (f)
-    (catch :default _ nil)
-    (finally
-      (js/console.groupEnd message))))
-
-(defn print-cause!
-  [message cause]
-  (print-group! message (fn []
-                          (print-data! cause)
-                          (print-explain! cause)
-                          (print-trace! cause))))
+;; Will contain last uncaught exception
+(def last-exception nil)
 
 (defn exception->error-data
   [cause]
@@ -74,18 +40,6 @@
         (assoc :hint (or (:hint data) (ex-message cause)))
         (assoc ::instance cause)
         (assoc ::trace (.-stack cause)))))
-
-(defn print-error!
-  [cause]
-  (cond
-    (map? cause)
-    (print-cause! (:hint cause "Unexpected Error") cause)
-
-    (ex/error? cause)
-    (print-cause! (ex-message cause) (ex-data cause))
-
-    :else
-    (print-cause! (ex-message cause) (exception->error-data cause))))
 
 (defn on-error
   "A general purpose error handler."
@@ -101,13 +55,77 @@
 ;; Set the main potok error handler
 (reset! st/on-error on-error)
 
+(defn generate-report
+  [cause]
+  (try
+    (let [team-id    (:current-team-id @st/state)
+          file-id    (:current-file-id @st/state)
+          profile-id (:profile-id @st/state)
+          data       (ex-data cause)]
+
+      (with-out-str
+        (println "Context:")
+        (println "--------------------")
+        (println "Hint:    " (or (:hint data) (ex-message cause) "--"))
+        (println "Prof ID: " (str (or profile-id "--")))
+        (println "Team ID: " (str (or team-id "--")))
+        (when-let [file-id (or (:file-id data) file-id)]
+          (println "File ID: " (str file-id)))
+        (println "Version: " (:full cf/version))
+        (println "HREF:    " (rt/get-current-href))
+        (println)
+
+        (println
+         (ex/format-throwable cause))
+        (println)
+
+        (println "Last events:")
+        (println "--------------------")
+        (pp/pprint @st/last-events {:length 200})
+        (println)))
+    (catch :default cause
+      (.error js/console "error on generating report" cause)
+      nil)))
+
+(defn submit-report
+  "Report the error report to the audit log subsystem"
+  [& {:keys [event-name report hint] :or {event-name "unhandled-exception"}}]
+  (when (and (not (str/empty? hint))
+             (string? report)
+             (string? event-name))
+    (st/emit!
+     (ev/event {::ev/name event-name
+                :hint hint
+                :href (rt/get-current-href)
+                :report report}))))
+
+(defn flash
+  "Show error notification banner and emit error report"
+  [& {:keys [type hint cause] :or {type :handled}}]
+  (when (ex/exception? cause)
+    (when-let [event-name (case type
+                            :handled "handled-exception"
+                            :unhandled "unhandled-exception"
+                            :silent nil)]
+      (let [report (generate-report cause)]
+        (submit-report :event-name event-name
+                       :report report
+                       :hint (ex/get-hint cause)))))
+
+  (st/emit!
+   (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
+              :type :toast
+              :level :error
+              :timeout 5000})))
+
 (defmethod ptk/handle-error :default
   [error]
-  (st/async-emit! (rt/assign-exception error))
-  (print-group! "Unhandled Error"
-                (fn []
-                  (print-trace! error)
-                  (print-data! error))))
+  (if (and (string? (:hint error))
+           (str/starts-with? (:hint error) "Assert failed:"))
+    (ptk/handle-error (assoc error :type :assertion))
+    (when-let [cause (::instance error)]
+      (ex/print-throwable cause :prefix "Unexpected Error")
+      (flash :cause cause :type :unhandled))))
 
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
@@ -139,10 +157,10 @@
 
 (defmethod ptk/handle-error :validation
   [{:keys [code] :as error}]
-  (print-group! "Validation Error"
-                (fn []
-                  (print-data! error)
-                  (print-explain! error)))
+
+  (when-let [instance (get error ::instance)]
+    (ex/print-throwable instance :prefix "Validation Error"))
+
   (cond
     (= code :invalid-paste-data)
     (let [message (tr "errors.paste-data-validation")]
@@ -190,23 +208,14 @@
     :else
     (st/async-emit! (rt/assign-exception error))))
 
-
 ;; This is a pure frontend error that can be caused by an active
 ;; assertion (assertion that is preserved on production builds). From
 ;; the user perspective this should be treated as internal error.
 (defmethod ptk/handle-error :assertion
   [error]
-  (ts/schedule
-   #(st/emit! (ntf/show {:content (tr "errors.internal-assertion-error")
-                         :type :toast
-                         :level :error
-                         :timeout 3000})))
-
-  (print-group! "Internal Assertion Error"
-                (fn []
-                  (print-trace! error)
-                  (print-data! error)
-                  (print-explain! error))))
+  (when-let [cause (::instance error)]
+    (flash :cause cause :type :handled)
+    (ex/print-throwable cause :prefix "Assertion Error")))
 
 ;; ;; All the errors that happens on worker are handled here.
 (defmethod ptk/handle-error :worker-error
@@ -218,9 +227,8 @@
                 :level :error
                 :timeout 3000})))
 
-  (print-group! "Internal Worker Error"
-                (fn []
-                  (print-data! error))))
+  (some-> (::instance error)
+          (ex/print-throwable :prefix "Web Worker Error")))
 
 ;; Error on parsing an SVG
 (defmethod ptk/handle-error :svg-parser
@@ -249,11 +257,9 @@
 
 (defmethod ptk/handle-error ::exceptional-state
   [error]
-  (when-let [cause (::instance error)]
-    (js/console.log (.-stack cause)))
-
-  (ts/schedule
-   #(st/emit! (rt/assign-exception error))))
+  (when-let [instance (get error ::instance)]
+    (ex/print-throwable instance :prefix "Exceptional State"))
+  (ts/schedule #(st/emit! (rt/assign-exception error))))
 
 (defn- redirect-to-dashboard
   []
@@ -261,7 +267,7 @@
         project-id (:current-project-id @st/state)]
     (if (and project-id team-id)
       (st/emit! (rt/nav :dashboard-files {:team-id team-id :project-id project-id}))
-      (set! (.-href glob/location) ""))))
+      (set! (.-href g/location) ""))))
 
 (defmethod ptk/handle-error :restriction
   [{:keys [code] :as error}]
@@ -309,9 +315,10 @@
                                           :text (tr "errors.deprecated.contact.text")
                                           :after (tr "errors.deprecated.contact.after")
                                           :on-click #(st/emit! (rt/nav :settings-feedback))}}))
-
     :else
-    (print-cause! "Restriction Error" error)))
+    (when-let [cause (::instance error)]
+      (ex/print-throwable cause :prefix "Restriction Error")
+      (flash :cause cause :type :unhandled))))
 
 ;; This happens when the backed server fails to process the
 ;; request. This can be caused by an internal assertion or any other
@@ -319,25 +326,9 @@
 
 (defmethod ptk/handle-error :server-error
   [error]
-  (st/async-emit! (rt/assign-exception error))
-  (print-group! "Server Error"
-                (fn []
-                  (print-data! (dissoc error :data))
-
-                  (when-let [werror (:data error)]
-                    (cond
-                      (= :assertion (:type werror))
-                      (print-group! "Assertion Error"
-                                    (fn []
-                                      (print-data! werror)
-                                      (print-explain! werror)))
-
-                      :else
-                      (print-group! "Unexpected"
-                                    (fn []
-                                      (print-data! werror)
-                                      (print-explain! werror))))))))
-
+  (when-let [instance (get error ::instance)]
+    (ex/print-throwable instance :prefix "Server Error"))
+  (st/async-emit! (rt/assign-exception error)))
 
 (defonce uncaught-error-handler
   (letfn [(is-ignorable-exception? [cause]
@@ -349,10 +340,22 @@
 
           (on-unhandled-error [event]
             (.preventDefault ^js event)
-            (when-let [error (unchecked-get event "error")]
-              (when-not (is-ignorable-exception? error)
-                (on-error error))))]
+            (when-let [cause (unchecked-get event "error")]
+              (set! last-exception cause)
+              (when-not (is-ignorable-exception? cause)
+                (ex/print-throwable cause :prefix "Uncaught Exception")
+                (ts/schedule #(flash :cause cause :type :unhandled)))))
 
-    (.addEventListener glob/window "error" on-unhandled-error)
+          (on-unhandled-rejection [event]
+            (.preventDefault ^js event)
+            (when-let [cause (unchecked-get event "reason")]
+              (set! last-exception cause)
+              (ex/print-throwable cause :prefix "Uncaught Rejection")
+              (ts/schedule #(flash :cause cause :type :unhandled))))]
+
+    (.addEventListener g/window "error" on-unhandled-error)
+    (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)
     (fn []
-      (.removeEventListener glob/window "error" on-unhandled-error))))
+      (.removeEventListener g/window "error" on-unhandled-error)
+      (.removeEventListener g/window "unhandledrejection" on-unhandled-rejection))))
+

@@ -13,7 +13,7 @@ export VERSION_TAG="${VERSION}-${BUILD_TS}";
 export NODE_ENV=production;
 
 corepack enable;
-corepack install || exit 1;
-yarn install || exit 1;
+corepack install;
+pnpm install;
 
-yarn run build:storybook || exit 1;
+pnpm run build:storybook;

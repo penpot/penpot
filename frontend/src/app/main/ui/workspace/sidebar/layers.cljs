@@ -522,8 +522,7 @@
          [:& filters-tree {:objects filtered-objects
                            :key (dm/str (:id page))
                            :parent-size size-parent}]
-         [:div {:ref lazy-load-ref
-                :style {:min-height 16}}]]
+         [:div {:ref lazy-load-ref}]]
         [:div {:on-scroll on-scroll
                :class (stl/css :tool-window-content)
                :data-scroll-container true

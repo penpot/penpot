@@ -129,8 +129,36 @@ export function createParagraph(textSpans, styles, attrs) {
  * @param {Object.<string, *>} styles
  * @returns {HTMLDivElement}
  */
-export function createEmptyParagraph(styles) {
-  return createParagraph([createEmptyTextSpan(styles)], styles);
+export function createEmptyParagraph(styles, attrs) {
+  return createParagraph([createEmptyTextSpan(styles)], styles, attrs);
+}
+
+/**
+ * Creates a new paragraph with text.
+ *
+ * @param {Array<string>|string} text
+ * @param {Object.<string, *>|CSSStyleDeclaration} styles
+ * @param {Object.<string, *>} attrs
+ * @returns {HTMLDivElement}
+ */
+export function createParagraphWith(text, styles, attrs) {
+  if (typeof text === "string") {
+    if (text === "" || text === "\n") {
+      return createEmptyParagraph(styles, attrs);
+    }
+    return createParagraph([
+      createTextSpan(new Text(text))
+    ], styles, attrs);
+  } else if (Array.isArray(text)) {
+    return createParagraph(
+      text.map((text) => {
+        if (text === "" || text === "\n") return createEmptyTextSpan(styles);
+        return createTextSpan(new Text(text), styles);
+      })
+    , styles, attrs);
+  } else {
+    throw new TypeError("Invalid text, it should be an array of strings or a string");
+  }
 }
 
 /**

@@ -1,11 +1,41 @@
 # CHANGELOG
 
-## 2.13.4
+## 2.14.0 (Unreleased)
+
+### :boom: Breaking changes & Deprecations
+
+- Deprecate `PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE` in favour of `PENPOT_HTTP_SERVER_MAX_BODY_SIZE`.
+
+### :sparkles: New features & Enhancements
+
+- Access to design tokens in Penpot Plugins [Taiga #8990](https://tree.taiga.io/project/penpot/us/8990)
+- Remap references when renaming tokens [Taiga #10202](https://tree.taiga.io/project/penpot/us/10202)
+- Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
+- Improve usability of lock and hide buttons in the layer panel. [Taiga #12916](https://tree.taiga.io/project/penpot/issue/12916)
+- Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
+- Remove tokens path node and bulk remove tokens [Taiga #13007](https://tree.taiga.io/project/penpot/us/13007)
+- Replace themes management modal radio buttons for switches [Taiga #9215](https://tree.taiga.io/project/penpot/us/9215)
 
 ### :bug: Bugs fixed
 
+- Remove whitespaces from asset export filename [Github #8133](https://github.com/penpot/penpot/pull/8133)
+- Fix prototype connections lost when switching between variants [Taiga #12812](https://tree.taiga.io/project/penpot/issue/12812)
+- Fix wrong image in the onboarding invitation block [Taiga #13040](https://tree.taiga.io/project/penpot/issue/13040)
+- Fix wrong register image [Taiga #12955](https://tree.taiga.io/project/penpot/task/12955)
+- Fix error message on components doesn't close automatically [Taiga #12012](https://tree.taiga.io/project/penpot/issue/12012)
+- Fix incorrect handling of input values on layout gap and padding inputs [Github #8113](https://github.com/penpot/penpot/issues/8113)
+- Fix incorrect default option on tokens import dialog [Github #8051](https://github.com/penpot/penpot/pull/8051)
+- Fix unhandled exception tokens creation dialog [Github #8110](https://github.com/penpot/penpot/issues/8110)
+- Fix displaying a hidden user avatar when there is only one more [Taiga #13058](https://tree.taiga.io/project/penpot/issue/13058)
+- Fix unhandled exception on open-new-window helper [Github #7787](https://github.com/penpot/penpot/issues/7787)
+- Fix exception on uploading large fonts [Github #8135](https://github.com/penpot/penpot/pull/8135)
+- Fix boolean operators in menu for boards [Taiga #13174](https://tree.taiga.io/project/penpot/issue/13174)
+- Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
+- Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
+- Fix cannot apply second token after creation while shape is selected [Taiga #13513](https://tree.taiga.io/project/penpot/issue/13513)
+- Fix error activating a set with invalid shadow token applied [Taiga #13528](https://tree.taiga.io/project/penpot/issue/13528)
+- Fix component "broken" after variant switch [Taiga #12984](https://tree.taiga.io/project/penpot/issue/12984)
 - Fix incorrect query for file versions [Github #8463](https://github.com/penpot/penpot/pull/8463)
-
 
 ## 2.13.3
 
@@ -13,13 +43,12 @@
 
 - Revert yetti (http server) update, because that caused a regression on multipart uploads
 
-
 ## 2.13.2
 
 ### :bug: Bugs fixed
 
+- Fix modifying shapes by apply negative tokens to border radius [Taiga #13317](https://tree.taiga.io/project/penpot/issue/13317)
 - Fix arbitrary file read security issue on create-font-variant rpc method (https://github.com/penpot/penpot/security/advisories/GHSA-xp3f-g8rq-9px2)
-
 
 ## 2.13.1
 
@@ -46,12 +75,14 @@
 - Fix wrong board size presets in Android [Taiga #12339](https://tree.taiga.io/project/penpot/issue/12339)
 - Fix problem with grid layout components and auto sizing [Github #7797](https://github.com/penpot/penpot/issues/7797)
 - Fix some alignments on inspect tab [Taiga #12915](https://tree.taiga.io/project/penpot/issue/12915)
+- Fix problem with text editor maintaining previous styles [Taiga #12835](https://tree.taiga.io/project/penpot/issue/12835)
 - Fix color assets from shared libraries not appearing as assets in Selected colors panel [Taiga #12957](https://tree.taiga.io/project/penpot/issue/12957)
 - Fix CSS generated box-shadow property [Taiga #12997](https://tree.taiga.io/project/penpot/issue/12997)
 - Fix inner shadow selector on shadow token [Taiga #12951](https://tree.taiga.io/project/penpot/issue/12951)
 - Fix missing text color token from selected shapes in selected colors list [Taiga #12956](https://tree.taiga.io/project/penpot/issue/12956)
 - Fix dropdown option width in Guides columns dropdown [Taiga #12959](https://tree.taiga.io/project/penpot/issue/12959)
 - Fix typos on download modal [Taiga #12865](https://tree.taiga.io/project/penpot/issue/12865)
+- Fix problem with text editor maintaining previous styles [Taiga #12835](https://tree.taiga.io/project/penpot/issue/12835)
 - Fix unhandled exception tokens creation dialog [Github #8110](https://github.com/penpot/penpot/issues/8110)
 - Fix allow negative spread values on shadow token creation [Taiga #13167](https://tree.taiga.io/project/penpot/issue/13167)
 - Fix spanish translations on import export token modal [Taiga #13171](https://tree.taiga.io/project/penpot/issue/13171)
@@ -73,7 +104,6 @@
 - Fix problem with style in fonts input [Taiga #12935](https://tree.taiga.io/project/penpot/issue/12935)
 - Fix problem with path editor and right click [Github #7917](https://github.com/penpot/penpot/issues/7917)
 
-
 ## 2.12.0
 
 ### :boom: Breaking changes & Deprecations
@@ -84,7 +114,6 @@ The backend RPC API URLS are changed from `/api/rpc/command/<name>` to
 `/api/main/methods/<name>`. The previous PATH is preserved for backward
 compatibility; however, if you are a user of this API, it is strongly
 recommended that you adapt your code to use the new PATH.
-
 
 #### Updated SSO Callback URL
 
@@ -117,7 +146,6 @@ result in authentication failures after upgrading.
 This update standardizes all authentication flows under the single URL
 and makis it more modular, enabling the ability to configure SSO auth
 provider dinamically.
-
 
 #### Changes on default docker compose
 
@@ -182,7 +210,6 @@ example. It's still usable as before, we just removed the example.
 
 - Deprecated configuration variables with the prefix `PENPOT_ASSETS_*`, and will be
   removed in future versions:
-
   - The `PENPOT_ASSETS_STORAGE_BACKEND` becomes `PENPOT_OBJECTS_STORAGE_BACKEND` and its
     values passes from (`assets-fs` or `assets-s3`) to (`fs` or `s3`)
   - The `PENPOT_STORAGE_ASSETS_FS_DIRECTORY` becomes `PENPOT_OBJECTS_STORAGE_FS_DIRECTORY`

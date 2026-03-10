@@ -305,7 +305,7 @@
   (l/derived #(dsh/lookup-shape % page-id shape-id) st/state =))
 
 (def workspace-page-objects
-  (l/derived dsh/lookup-page-objects st/state))
+  (l/derived dsh/lookup-page-objects st/state identical?))
 
 (def workspace-read-only?
   (l/derived :read-only? workspace-global))
@@ -480,11 +480,11 @@
 (def workspace-token-sets-tree
   (l/derived (d/nilf ctob/get-set-tree) tokens-lib))
 
-(def workspace-all-tokens-map
-  (l/derived (d/nilf ctob/get-all-tokens) tokens-lib))
-
 (def workspace-active-theme-paths
   (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
+
+(def workspace-all-tokens-map
+  (l/derived (d/nilf ctob/get-all-tokens-map) tokens-lib))
 
 (defn token-sets-at-path-all-active
   [group-path]

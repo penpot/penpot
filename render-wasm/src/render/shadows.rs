@@ -40,7 +40,7 @@ pub fn render_stroke_inner_shadows(
     if !shape.has_fills() {
         for shadow in shape.inner_shadows_visible() {
             let filter = shadow.get_inner_shadow_filter();
-            strokes::render(
+            strokes::render_single(
                 render_state,
                 shape,
                 stroke,
@@ -135,7 +135,7 @@ pub fn render_text_shadows(
 
     let canvas = render_state
         .surfaces
-        .canvas(surface_id.unwrap_or(SurfaceId::TextDropShadows));
+        .canvas_and_mark_dirty(surface_id.unwrap_or(SurfaceId::TextDropShadows));
 
     for shadow in shadows {
         let shadow_layer = SaveLayerRec::default().paint(shadow);

@@ -1,0 +1,26 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+  
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as PanelTitle from "./panel_title.stories";
+
+<Meta title="Product/PanelTitle" />
+
+# PanelTitle
+
+The `panel-title*` is used as a header for some sidebar sections.
+
+<Canvas of={PanelTitle.Default} />
+
+## Technical notes
+
+The only mandatory parameter is `text`. Usually you'll want to pass a function property `on-close` that will be called when the user clicks on the close button on the right.
+
+```clj
+[:> panel-title* {:class class
+                  :text text
+                  :on-close on-close}]
+```

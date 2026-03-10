@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.token :as tk]
    [app.config :as cf]
    [app.main.data.event :as-alias ev]
    [app.main.data.workspace :as udw]
@@ -26,13 +25,12 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
-   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -46,44 +44,6 @@
     :row-reverse    i/row-reverse
     :column         i/column
     :column-reverse i/column-reverse))
-
-
-(mf/defc numeric-input-wrapper*
-  {::mf/private true}
-  [{:keys [values name applied-tokens align on-detach] :rest props}]
-  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
-        input-type (cond
-                     (some #{:p2 :p4} [name])
-                     :horizontal-padding
-
-                     (some #{:p1 :p3} [name])
-                     :vertical-padding
-                     :else
-                     name)
-
-        tokens (mf/with-memo [tokens input-type]
-                 (delay
-                   (-> (deref tokens)
-                       (select-keys (get tk/tokens-by-input input-type))
-                       (not-empty))))
-        on-detach-attr
-        (mf/use-fn
-         (mf/deps on-detach name)
-         #(on-detach % name))
-
-        props  (mf/spread-props props
-                                {:placeholder (if (or (= :multiple (:applied-tokens values))
-                                                      (= :multiple (get values name))
-                                                      (nil? (get values name)))
-                                                (tr "settings.multiple")
-                                                "--")
-                                 :class (stl/css :numeric-input-measures)
-                                 :applied-token (get applied-tokens name)
-                                 :tokens tokens
-                                 :align align
-                                 :on-detach on-detach-attr
-                                 :value (get values name)})]
-    [:> numeric-input* props]))
 
 ;; FLEX COMPONENTS
 
@@ -378,18 +338,18 @@
            (if (or (string? value) (number? value))
              (on-change :simple attr value event)
              (do
-               (let [resolved-value (:resolved-value (first value))
-                     updated-attr (if (= :p1 attr) #{:p1 :p3} #{:p2 :p4})]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs updated-attr
-                                               :shape-ids ids}))
-                 (on-change :simple attr resolved-value event))))))
+               (st/emit!
+                (dwta/toggle-token {:token     (first value)
+                                    :attrs     (if (= :p1 attr)
+                                                 #{:p1 :p3}
+                                                 #{:p2 :p4})
+                                    :shape-ids ids}))))))
 
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -424,20 +384,26 @@
          :on-focus on-focus-p1
          :icon i/padding-top-bottom
          :min 0
-         :name :p1
-         :property (tr "workspace.layout_grid.editor.padding.vertical")
+         :attr :p1
+         :input-type :vertical-padding
+         :property (tr "workspace.layout-grid.editor.padding.vertical")
          :nillable true
-         :applied-tokens {:p1 applied-to-p1}
-         :values {:p1 p1}}]
+         :placeholder (if (or (= :multiple applied-to-p1)
+                              (= :multiple p1)
+                              (nil? p1))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p1
+         :value p1}]
 
        [:div {:class (stl/css :padding-simple)
-              :title (tr "workspace.layout_grid.editor.padding.vertical")}
+              :title (tr "workspace.layout-grid.editor.padding.vertical")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-top-bottom]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder (tr "settings.multiple")
-          :aria-label (tr "workspace.layout_grid.editor.padding.vertical")
+          :aria-label (tr "workspace.layout-grid.editor.padding.vertical")
           :on-change on-p1-change
           :on-focus on-focus-p1
           :on-blur on-padding-blur
@@ -453,21 +419,27 @@
          :on-focus on-focus-p2
          :icon i/padding-left-right
          :min 0
-         :name :p2
+         :attr :p2
+         :input-type :horizontal-padding
          :align :right
-         :property (tr "workspace.layout_grid.editor.padding.horizontal")
+         :property (tr "workspace.layout-grid.editor.padding.horizontal")
          :nillable true
-         :applied-tokens {:p2 applied-to-p2}
-         :values {:p2 p2}}]
+         :applied-token applied-to-p2
+         :placeholder (if (or (= :multiple applied-to-p2)
+                              (= :multiple p2)
+                              (nil? p2))
+                        (tr "settings.multiple")
+                        "--")
+         :value p2}]
 
        [:div {:class (stl/css :padding-simple)
-              :title (tr "workspace.layout_grid.editor.padding.horizontal")}
+              :title (tr "workspace.layout-grid.editor.padding.horizontal")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-left-right]
         [:> deprecated-input/numeric-input*
          {:className (stl/css :numeric-input)
           :placeholder (tr "settings.multiple")
-          :aria-label (tr "workspace.layout_grid.editor.padding.horizontal")
+          :aria-label (tr "workspace.layout-grid.editor.padding.horizontal")
           :on-change on-p2-change
           :on-focus on-focus-p2
           :on-blur on-padding-blur
@@ -485,6 +457,11 @@
         p3 (:p3 value)
         p4 (:p4 value)
 
+        applied-to-p1 (:p1 applied-tokens)
+        applied-to-p2 (:p2 applied-tokens)
+        applied-to-p3 (:p3 applied-tokens)
+        applied-to-p4 (:p4 applied-tokens)
+
         on-change'
         (mf/use-fn
          (mf/deps on-change ids)
@@ -492,11 +469,9 @@
            (if (or (string? value) (number? value))
              (on-change :multiple attr value event)
              (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (on-change :multiple attr resolved-value event))))))
+               (st/emit! (dwta/toggle-token {:token (first value)
+                                             :attrs #{attr}
+                                             :shape-ids ids}))))))
 
         on-focus
         (mf/use-fn
@@ -509,7 +484,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+           (st/emit! (dwta/unapply-token {:token-name token
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -546,19 +521,24 @@
          :on-focus on-focus-p1
          :icon i/padding-top
          :min 0
-         :name :p1
-         :property (tr "workspace.layout_grid.editor.padding.top")
-         :applied-tokens applied-tokens
-         :values value}]
+         :attr :p1
+         :input-type :vertical-padding
+         :property (tr "workspace.layout-grid.editor.padding.top")
+         :placeholder (if (or (= :multiple applied-to-p1)
+                              (= :multiple p1))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p1
+         :value p1}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.top")}
+              :title (tr "workspace.layout-grid.editor.padding.top")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-top]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.top")
+          :aria-label (tr "workspace.layout-grid.editor.padding.top")
           :data-attr "p1"
           :on-change on-p1-change
           :on-focus on-focus-p1
@@ -574,20 +554,25 @@
          :on-focus on-focus-p2
          :icon i/padding-right
          :min 0
-         :name :p2
+         :attr :p2
+         :input-type :horizontal-padding
          :align :right
-         :property (tr "workspace.layout_grid.editor.padding.right")
-         :applied-tokens applied-tokens
-         :values value}]
+         :property (tr "workspace.layout-grid.editor.padding.right")
+         :placeholder (if (or (= :multiple applied-to-p2)
+                              (= :multiple p2))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p2
+         :value p2}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.right")}
+              :title (tr "workspace.layout-grid.editor.padding.right")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-right]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.right")
+          :aria-label (tr "workspace.layout-grid.editor.padding.right")
           :data-attr "p2"
           :on-change on-p2-change
           :on-focus on-focus-p2
@@ -603,19 +588,24 @@
          :on-focus on-focus-p3
          :icon i/padding-bottom
          :min 0
-         :name :p3
-         :property (tr "workspace.layout_grid.editor.padding.bottom")
-         :applied-tokens applied-tokens
-         :values value}]
+         :attr :p3
+         :input-type :vertical-padding
+         :property (tr "workspace.layout-grid.editor.padding.bottom")
+         :placeholder (if (or (= :multiple applied-to-p3)
+                              (= :multiple p3))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p3
+         :value p3}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.bottom")}
+              :title (tr "workspace.layout-grid.editor.padding.bottom")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-bottom]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.bottom")
+          :aria-label (tr "workspace.layout-grid.editor.padding.bottom")
           :data-attr "p3"
           :on-change on-p3-change
           :on-focus on-focus-p3
@@ -632,19 +622,24 @@
          :icon i/padding-left
          :min 0
          :align :right
-         :name :p4
-         :property (tr "workspace.layout_grid.editor.padding.left")
-         :applied-tokens applied-tokens
-         :values value}]
+         :attr :p4
+         :input-type :horizontal-padding
+         :property (tr "workspace.layout-grid.editor.padding.left")
+         :placeholder (if (or (= :multiple applied-to-p4)
+                              (= :multiple p4))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p4
+         :value p4}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.left")}
+              :title (tr "workspace.layout-grid.editor.padding.left")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-left]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.left")
+          :aria-label (tr "workspace.layout-grid.editor.padding.left")
           :data-attr "p4"
           :on-change on-p4-change
           :on-focus on-focus-p4
@@ -682,8 +677,8 @@
      [:button {:class (stl/css-case
                        :padding-toggle true
                        :selected (= type :multiple))
-               :title (tr "workspace.layout_grid.editor.padding.expand")
-               :aria-label (tr "workspace.layout_grid.editor.padding.expand")
+               :title (tr "workspace.layout-grid.editor.padding.expand")
+               :aria-label (tr "workspace.layout-grid.editor.padding.expand")
                :data-type (d/name type)
                :on-click on-type-change'}
       deprecated-icon/padding-extended]]))
@@ -727,17 +722,18 @@
            (if (or (string? value) (number? value))
              (on-change (= "nowrap" wrap-type) attr value event)
              (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (on-change (= "nowrap" wrap-type) attr resolved-value event))))))
+               (st/emit!
+                (dwta/toggle-token {:token     (first value)
+                                    :attrs     (if (= "nowrap" wrap-type)
+                                                 #{:row-gap :colum-gap}
+                                                 #{attr})
+                                    :shape-ids ids}))))))
 
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
          (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+           (st/emit! (dwta/unapply-token {:token-name token
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -769,11 +765,16 @@
          :icon i/gap-vertical
          :nillable true
          :min 0
-         :name :row-gap
-         :applied-tokens applied-tokens
+         :attr :row-gap
          :property "Row gap"
          :values {:row-gap (:row-gap value)}
-         :disabled row-gap-disabled?}]
+         :disabled row-gap-disabled?
+         :placeholder (if (or (= :multiple (:row-gap applied-tokens))
+                              (= :multiple (:row-gap value)))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token (:row-gap applied-tokens)
+         :value (:row-gap value)}]
 
        [:div {:class (stl/css-case
                       :row-gap true
@@ -803,11 +804,15 @@
          :icon i/gap-horizontal
          :nillable true
          :min 0
-         :name :column-gap
+         :attr :column-gap
          :align :right
-         :applied-tokens applied-tokens
          :property "Column gap"
-         :values {:column-gap (:column-gap value)}
+         :placeholder (if (or (= :multiple (:column-gap applied-tokens))
+                              (= :multiple (:column-gap value)))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token (:column-gap applied-tokens)
+         :value (:column-gap value)
          :disabled col-gap-disabled?}]
 
        [:div {:class (stl/css-case
@@ -865,7 +870,7 @@
      {:class (stl/css :edit-mode-btn)
       :alt  "Grid edit mode"
       :on-click toggle-edit-mode}
-     (tr "workspace.layout_grid.editor.options.edit-grid")]))
+     (tr "workspace.layout-grid.editor.options.edit-grid")]))
 
 (mf/defc align-grid-row
   {::mf/props :obj
@@ -1551,7 +1556,7 @@
                         :icon i/help}]
       [:button {:class (stl/css :exit-btn)
                 :on-click #(st/emit! (udw/clear-edition-mode))}
-       (tr "workspace.layout_grid.editor.options.exit")]]
+       (tr "workspace.layout-grid.editor.options.exit")]]
 
      [:div {:class (stl/css :row :first-row)}
       [:div {:class (stl/css :direction-edit)}
@@ -1577,7 +1582,7 @@
 
       [:> icon-button* {:variant "ghost"
                         :class (stl/css :locate-button)
-                        :aria-label (tr "workspace.layout_grid.editor.top-bar.locate.tooltip")
+                        :aria-label (tr "workspace.layout-grid.editor.top-bar.locate.tooltip")
                         :on-click handle-locate-grid
                         :icon i/locate}]]
 

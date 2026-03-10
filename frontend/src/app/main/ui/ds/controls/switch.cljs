@@ -67,6 +67,11 @@
                                 :on-key-down handle-keydown
                                 :disabled disabled?})]
 
+    (mf/use-effect
+     (mf/deps default-checked)
+     (fn []
+       (reset! checked* default-checked)))
+
     [:> :div props
      [:div {:id id
             :class (stl/css :switch-track)}

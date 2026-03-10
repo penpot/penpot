@@ -51,10 +51,6 @@
   padding: var(--sp-xxl) var(--sp-xxl) var(--sp-s) var(--sp-xxl);
   position: sticky;
   top: 0;
-
-  // We need to use the the deprecated z-index so it won't clash with the dashboard
-  // onboarding modals
-  z-index: deprecated.$z-index-3;
 }
 
 .nav-inside {

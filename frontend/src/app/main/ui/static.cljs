@@ -9,13 +9,12 @@
   (:require
    ["rxjs" :as rxjs]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
-   [app.main.data.event :as ev]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -36,7 +35,6 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; FIXME: this is a workaround until we export this class on beicon library
@@ -308,6 +306,16 @@
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
 
+(mf/defc webgl-context-lost*
+  []
+  (let [on-reload (mf/use-fn #(js/location.reload))]
+    [:> error-container* {}
+     [:div {:class (stl/css :main-message)} (tr "errors.webgl-context-lost.main-message")]
+     [:div {:class (stl/css :desc-message)} (tr "errors.webgl-context-lost.desc-message")]
+     [:div {:class (stl/css :buttons-container)}
+      [:> button* {:variant "primary" :on-click on-reload}
+       (tr "labels.reload-page")]]]))
+
 (defn- generate-report
   [data]
   (try
@@ -439,22 +447,22 @@
 
 (mf/defc exception-section*
   {::mf/private true}
-  [{:keys [data route] :as props}]
+  [{:keys [data] :as props}]
   (let [type   (get data :type)
-        report (mf/with-memo [data]
-                 (generate-report data))
+        cause  (get data ::errors/instance)
+
+        report (mf/with-memo [cause]
+                 (when (ex/exception? cause)
+                   (errors/generate-report cause)))
+
         props  (mf/spread-props props {:report report})]
 
-    (mf/with-effect [data route report]
-      (let [params (:query-params route)
-            params (u/map->query-string params)]
-        (st/emit! (ptk/data-event ::ev/event
-                                  {::ev/name "exception-page"
-                                   :type (get data :type :unknown)
-                                   :hint (get data :hint)
-                                   :path (get route :path)
-                                   :report report
-                                   :params params}))))
+    (mf/with-effect [report type cause]
+      (when (and (ex/exception? cause)
+                 (not (contains? #{:not-found :authentication} type)))
+        (errors/submit-report :event-name "exception-page"
+                              :report report
+                              :hint (ex/get-hint cause))))
 
     (case type
       :not-found
@@ -468,6 +476,9 @@
 
       :service-unavailable
       [:> service-unavailable*]
+
+      :webgl-context-lost
+      [:> webgl-context-lost*]
 
       [:> internal-error* props])))
 

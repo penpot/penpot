@@ -15,6 +15,7 @@
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -29,6 +30,7 @@
                                                                    typography-entry]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.text.content :as content]
    [app.util.text.ui :as txu]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
@@ -127,18 +129,24 @@
   [{:keys [ids values on-blur] :as props}]
   (let [grow-type (:grow-type values)
 
+        editor-instance (mf/deref refs/workspace-editor)
+
         handle-change-grow
         (mf/use-fn
-         (mf/deps ids on-blur)
+         (mf/deps ids on-blur editor-instance)
          (fn [value]
+           (on-blur)
            (let [uid (js/Symbol)
-                 grow-type (keyword value)]
-             (st/emit!
-              (dwu/start-undo-transaction uid)
-              (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
+                 grow-type (keyword value)
+                 content (when editor-instance
+                           (content/dom->cljs (dwt/get-editor-root editor-instance)))]
+             (st/emit! (dwu/start-undo-transaction uid))
+             (when (some? content)
+               (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))
+             (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
 
              (when (features/active-feature? @st/state "render-wasm/v1")
-               (st/emit! (dwt/resize-wasm-text-all ids)))
+               (st/emit! (dwwt/resize-wasm-text-all ids)))
              ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
              (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
            (when (some? on-blur) (on-blur))))]

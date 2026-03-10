@@ -26,7 +26,7 @@
   [:map
    [:id {:optional true} :string]
    [:resolved-value {:optional true}
-    [:or :int :string]]
+    [:or :int :string :float]]
    [:name {:optional true} :string]
    [:icon {:optional true} schema:icon-list]
    [:label {:optional true} :string]

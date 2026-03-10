@@ -13,7 +13,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.token :as tk]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.interactions :as dwi]
@@ -27,12 +26,11 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :as set]
@@ -90,32 +88,6 @@
                  :else
                  shape)]
     (select-keys shape measure-attrs)))
-
-(mf/defc numeric-input-wrapper*
-  {::mf/private true}
-  [{:keys [values name applied-tokens align on-detach] :rest props}]
-  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
-        tokens (mf/with-memo [tokens name]
-                 (delay
-                   (-> (deref tokens)
-                       (select-keys (get tk/tokens-by-input name))
-                       (not-empty))))
-        on-detach-attr
-        (mf/use-fn
-         (mf/deps on-detach name)
-         #(on-detach % name))
-
-        props  (mf/spread-props props
-                                {:placeholder (if (or (= :multiple (:applied-tokens values))
-                                                      (= :multiple (get values name)))
-                                                (tr "settings.multiple") "--")
-                                 :class (stl/css :numeric-input-measures)
-                                 :applied-token (get applied-tokens name)
-                                 :tokens (if (delay? tokens) @tokens tokens)
-                                 :align align
-                                 :on-detach on-detach-attr
-                                 :value (get values name)})]
-    [:> numeric-input* props]))
 
 (def ^:private xf:map-type (map :type))
 (def ^:private xf:mapcat-type-to-options (mapcat type->options))
@@ -290,28 +262,17 @@
            (st/emit! (udw/change-orientation ids (keyword orientation)))))
 
         ;; SIZE AND PROPORTION LOCK
-        do-size-change
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [value attr]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                     (udw/update-dimensions ids attr value))))
-
         on-size-change
         (mf/use-fn
          (mf/deps ids shapes)
          (fn [value attr]
            (if (or (string? value) (number? value))
-             (do
-               (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (run! #(do-size-change value attr) shapes))
-             (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                           (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (run! #(do-size-change resolved-value attr) shapes))))))
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (udw/update-dimensions ids attr value))
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (dwta/toggle-token {:token (first value)
+                                           :attrs #{attr}
+                                           :shape-ids ids})))))
 
         on-proportion-lock-change
         (mf/use-fn
@@ -321,11 +282,6 @@
              (run! #(st/emit! (udw/set-shape-proportion-lock % new-lock)) ids))))
 
         ;; POSITION
-        do-position-change
-        (mf/use-fn
-         (fn [shape' value attr]
-           (st/emit! (udw/update-position (:id shape') {attr value}))))
-
         on-position-change
         (mf/use-fn
          (mf/deps ids)
@@ -333,21 +289,11 @@
            (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (run! #(do-position-change %1 value attr) shapes))
-             (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                           (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (run! #(do-position-change %1 resolved-value attr) shapes))))))
-
-        ;; ROTATION
-        do-rotation-change
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [value]
-           (st/emit! (udw/increase-rotation ids value))))
+               (st/emit! (udw/update-positions ids {attr value})))
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (dwta/toggle-token {:token (first value)
+                                           :attrs #{attr}
+                                           :shape-ids ids})))))
 
         on-rotation-change
         (mf/use-fn
@@ -356,14 +302,11 @@
            (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (run! #(do-rotation-change value) shapes))
-             (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                           (dwta/toggle-token {:token (first value)
-                                               :attrs #{:rotation}
-                                               :shape-ids ids}))
-                 (run! #(do-rotation-change resolved-value) shapes))))))
+               (st/emit! (udw/increase-rotation ids value)))
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (dwta/toggle-token {:token (first value)
+                                           :attrs #{:rotation}
+                                           :shape-ids ids})))))
 
         on-width-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :width))
@@ -382,8 +325,8 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -416,7 +359,8 @@
          (fn []
            (st/emit! (dwt/selected-fit-content))))]
 
-    [:div {:class (stl/css :element-set)}
+    [:section {:class (stl/css :element-set)
+               :aria-label "shape-measures-section"}
      (when (and (options :presets)
                 (or (nil? all-types) (= (count all-types) 1)))
        [:div {:class (stl/css :presets)}
@@ -477,10 +421,13 @@
              :on-detach on-detach-token
              :icon i/character-w
              :min 0.01
-             :name :width
+             :attr :width
              :property (tr "workspace.options.width")
-             :applied-tokens applied-tokens
-             :values values}]
+             :applied-token (get applied-tokens :width)
+             :placeholder (if (or (= :multiple (get applied-tokens :width))
+                                  (= :multiple (get values :width)))
+                            (tr "settings.multiple") "--")
+             :value (get values :width)}]
 
            [:> numeric-input-wrapper*
             {:disabled disabled-height-sizing?
@@ -488,11 +435,11 @@
              :on-detach on-detach-token
              :min 0.01
              :icon i/character-h
-             :name :height
+             :attr :height
              :align :right
              :property (tr "workspace.options.height")
-             :applied-tokens applied-tokens
-             :values values}]]
+             :applied-token (get applied-tokens :height)
+             :value (get values :height)}]]
 
           [:*
            [:div {:class (stl/css-case :width true
@@ -536,20 +483,26 @@
              :on-change on-pos-x-change
              :on-detach on-detach-token
              :icon i/character-x
-             :name :x
+             :attr :x
              :property (tr "workspace.options.x")
-             :applied-tokens applied-tokens
-             :values values}]
+             :applied-token (get applied-tokens :x)
+             :placeholder (if (or (= :multiple (get applied-tokens :x))
+                                  (= :multiple (get values :x)))
+                            (tr "settings.multiple") "--")
+             :value (get values :x)}]
            [:> numeric-input-wrapper*
             {:disabled disabled-position?
              :on-change on-pos-y-change
              :on-detach on-detach-token
              :icon i/character-y
-             :name :y
+             :attr :y
              :align :right
              :property (tr "workspace.options.y")
-             :applied-tokens applied-tokens
-             :values values}]]
+             :applied-token (get applied-tokens :y)
+             :placeholder (if (or (= :multiple (get applied-tokens :y))
+                                  (= :multiple (get values :y)))
+                            (tr "settings.multiple") "--")
+             :value (get values :y)}]]
 
           [:*
            [:div {:class (stl/css-case :x-position true
@@ -584,13 +537,17 @@
               :icon i/rotation
               :min -359
               :max 359
-              :name :rotation
+              :attr :rotation
               :property (tr "workspace.options.rotation")
-              :applied-tokens applied-tokens
-              :values values}]
+              :applied-token (get applied-tokens :rotation)
+              :placeholder (if (or (= :multiple (get applied-tokens :rotation))
+                                   (= :multiple (get values :rotation)))
+                             (tr "settings.multiple") "--")
+              :value (get values :rotation)}]
 
             [:div {:class (stl/css :rotation)
-                   :title (tr "workspace.options.rotation")}
+                   :title (tr "workspace.options.rotation")
+                   :data-testid "rotation"}
              [:span {:class (stl/css :icon)}  deprecated-icon/rotation]
              [:> deprecated-input/numeric-input*
               {:no-validate true
@@ -601,13 +558,13 @@
                :on-change on-rotation-change
                :class (stl/css :numeric-input)
                :value (:rotation values)}]]))
+
         (when (options :radius)
           [:> border-radius-menu* {:class (stl/css :border-radius)
                                    :ids ids
                                    :values values
-                                   :applied-tokens applied-tokens
-                                   :shapes shapes
-                                   :shape shape}])])
+                                   :applied-tokens applied-tokens}])])
+
      (when (or (options :clip-content) (options :show-in-viewer))
        [:div {:class (stl/css :clip-show)}
         (when (options :clip-content)

@@ -39,7 +39,7 @@
                                        (ctob/make-token {:name "borderRadius.largeFn"
                                                          :value "{borderRadius.sm} * 200000000"
                                                          :type :border-radius}))
-                       (ctob/get-all-tokens))]
+                       (ctob/get-all-tokens-map))]
         (-> (sd/resolve-tokens tokens)
             (rx/sub!
              (fn [resolved-tokens]

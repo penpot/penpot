@@ -226,11 +226,10 @@
    ::http/server
    {::http/port                    (cf/get :http-server-port)
     ::http/host                    (cf/get :http-server-host)
-    ::http/router                  (ig/ref ::http/router)
     ::http/io-threads              (cf/get :http-server-io-threads)
     ::http/max-worker-threads      (cf/get :http-server-max-worker-threads)
     ::http/max-body-size           (cf/get :http-server-max-body-size)
-    ::http/max-multipart-body-size (cf/get :http-server-max-multipart-body-size)
+    ::http/router                  (ig/ref ::http/router)
     ::mtx/metrics                  (ig/ref ::mtx/metrics)}
 
    ::ldap/provider
@@ -317,12 +316,19 @@
     ::climit/enabled     (contains? cf/flags :rpc-climit)}
 
    :app.rpc/rlimit
-   {::wrk/executor (ig/ref ::wrk/netty-executor)}
+   {::wrk/executor (ig/ref ::wrk/netty-executor)
+
+    :app.loggers.mattermost/reporter
+    (ig/ref :app.loggers.mattermost/reporter)
+
+    :app.loggers.database/reporter
+    (ig/ref :app.loggers.database/reporter)}
 
    :app.rpc/methods
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
+    :app.nitrate/client (ig/ref :app.nitrate/client)
     ::wrk/executor       (ig/ref ::wrk/netty-executor)
     ::session/manager    (ig/ref ::session/manager)
     ::ldap/provider      (ig/ref ::ldap/provider)
@@ -337,7 +343,17 @@
     ::setup/props        (ig/ref ::setup/props)
 
     ::email/blacklist    (ig/ref ::email/blacklist)
-    ::email/whitelist    (ig/ref ::email/whitelist)}
+    ::email/whitelist    (ig/ref ::email/whitelist)
+
+    :app.loggers.database/reporter
+    (ig/ref :app.loggers.database/reporter)
+
+    :app.loggers.mattermost/reporter
+    (ig/ref :app.loggers.mattermost/reporter)}
+
+   :app.nitrate/client
+   {::http.client/client (ig/ref ::http.client/client)
+    ::setup/shared-keys  (ig/ref ::setup/shared-keys)}
 
    :app.rpc/management-methods
    {::http.client/client (ig/ref ::http.client/client)
@@ -348,17 +364,19 @@
     ::sto/storage        (ig/ref ::sto/storage)
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
+    :app.nitrate/client (ig/ref :app.nitrate/client)
     ::rds/client         (ig/ref ::rds/client)
     ::setup/props        (ig/ref ::setup/props)}
 
    ::rpc/routes
-   {::rpc/methods        (ig/ref :app.rpc/methods)
+   {::rpc/methods            (ig/ref :app.rpc/methods)
     ::rpc/management-methods (ig/ref :app.rpc/management-methods)
 
     ;; FIXME: revisit if db/pool is necessary here
     ::db/pool                (ig/ref ::db/pool)
     ::session/manager        (ig/ref ::session/manager)
-    ::setup/props            (ig/ref ::setup/props)}
+    ::setup/props            (ig/ref ::setup/props)
+    ::setup/shared-keys      (ig/ref ::setup/shared-keys)}
 
    ::wrk/registry
    {::mtx/metrics (ig/ref ::mtx/metrics)
@@ -445,6 +463,11 @@
     ;; NOTE: this dependency is only necessary for proper initialization ordering, props
     ;; module requires the migrations to run before initialize.
     ::migrations (ig/ref :app.migrations/migrations)}
+
+   ::setup/shared-keys
+   {::setup/props (ig/ref ::setup/props)
+    :nitrate (cf/get :nitrate-shared-key)
+    :exporter (cf/get :exporter-shared-key)}
 
    ::setup/clock
    {}

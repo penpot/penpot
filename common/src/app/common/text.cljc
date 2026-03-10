@@ -222,7 +222,7 @@
               :else
               (cons [node-style (dm/str head-text "" (:text node))] (rest acc)))
 
-               ;; We add an end-of-line when finish a paragraph
+            ;; We add an end-of-line when finish a paragraph
             new-acc
             (if (= (:type node) "paragraph")
               (let [[hs ht] (first new-acc)]

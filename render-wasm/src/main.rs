@@ -23,7 +23,7 @@ use std::collections::HashMap;
 use utils::uuid_from_u32_quartet;
 use uuid::Uuid;
 
-pub(crate) static mut STATE: Option<Box<State<'static>>> = None;
+pub(crate) static mut STATE: Option<Box<State>> = None;
 
 #[macro_export]
 macro_rules! with_state_mut {
@@ -192,6 +192,20 @@ pub extern "C" fn render_from_cache(_: i32) {
 }
 
 #[no_mangle]
+pub extern "C" fn set_preview_mode(enabled: bool) {
+    with_state_mut!(state, {
+        state.render_state.set_preview_mode(enabled);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn render_preview() {
+    with_state_mut!(state, {
+        state.render_preview(performance::get_time());
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn process_animation_frame(timestamp: i32) {
     let result = std::panic::catch_unwind(|| {
         with_state_mut!(state, {
@@ -261,39 +275,33 @@ pub extern "C" fn set_view_end() {
         state.render_state.options.set_fast_mode(false);
         state.render_state.cancel_animation_frame();
 
-        let zoom_changed = state.render_state.zoom_changed();
-        // Only rebuild tile indices when zoom has changed.
-        // During pan-only operations, shapes stay in the same tiles
-        // because tile_size = 1/scale * TILE_SIZE (depends only on zoom).
-        if zoom_changed {
-            let _rebuild_start = performance::begin_timed_log!("rebuild_tiles");
-            performance::begin_measure!("set_view_end::rebuild_tiles");
-            if state.render_state.options.is_profile_rebuild_tiles() {
-                state.rebuild_tiles();
-            } else {
-                state.rebuild_tiles_shallow();
-            }
-            performance::end_measure!("set_view_end::rebuild_tiles");
-            performance::end_timed_log!("rebuild_tiles", _rebuild_start);
+        // Update tile_viewbox first so that get_tiles_for_shape uses the correct interest area
+        // This is critical because we limit tiles to the interest area for optimization
+        let scale = state.render_state.get_scale();
+        state
+            .render_state
+            .tile_viewbox
+            .update(state.render_state.viewbox, scale);
+
+        // We rebuild the tile index on both pan and zoom because `get_tiles_for_shape`
+        // clips each shape to the current `TileViewbox::interest_rect` (viewport-dependent).
+        let _rebuild_start = performance::begin_timed_log!("rebuild_tiles");
+        performance::begin_measure!("set_view_end::rebuild_tiles");
+        if state.render_state.options.is_profile_rebuild_tiles() {
+            state.rebuild_tiles();
         } else {
-            // During pan, we only clear the tile index without
-            // invalidating cached textures, which is more efficient.
-            let _clear_start = performance::begin_timed_log!("clear_tile_index");
-            performance::begin_measure!("set_view_end::clear_tile_index");
-            state.clear_tile_index();
-            performance::end_measure!("set_view_end::clear_tile_index");
-            performance::end_timed_log!("clear_tile_index", _clear_start);
+            state.rebuild_tiles_shallow();
         }
+        performance::end_measure!("set_view_end::rebuild_tiles");
+        performance::end_timed_log!("rebuild_tiles", _rebuild_start);
+
+        state.render_state.sync_cached_viewbox();
         performance::end_measure!("set_view_end");
         performance::end_timed_log!("set_view_end", _end_start);
         #[cfg(feature = "profile-macros")]
         {
             let total_time = performance::get_time() - unsafe { VIEW_INTERACTION_START };
-            performance::console_log!(
-                "[PERF] view_interaction (zoom_changed={}): {}ms",
-                zoom_changed,
-                total_time
-            );
+            performance::console_log!("[PERF] view_interaction: {}ms", total_time);
         }
     });
 }
@@ -331,6 +339,14 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
         state.use_shape(id);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn touch_shape(a: u32, b: u32, c: u32, d: u32) {
+    with_state_mut!(state, {
+        let shape_id = uuid_from_u32_quartet(a, b, c, d);
+        state.touch_shape(shape_id);
     });
 }
 
@@ -679,21 +695,6 @@ pub extern "C" fn clean_modifiers() {
     with_state_mut!(state, {
         state.shapes.clean_all();
     });
-}
-
-#[no_mangle]
-pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::try_from(data).unwrap())
-        .collect();
-
-    with_state!(state, {
-        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
-        mem::write_vec(result)
-    })
 }
 
 #[no_mangle]

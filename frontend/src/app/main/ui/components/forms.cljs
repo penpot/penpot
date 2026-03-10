@@ -198,7 +198,7 @@
                   :valid     (and touched? (not error))
                   :invalid   (and touched? error)
                   :disabled  disabled)
-                  ;; :empty     (str/empty? value)
+        ;; :empty     (str/empty? value)
 
 
         on-focus  #(reset! focus? true)

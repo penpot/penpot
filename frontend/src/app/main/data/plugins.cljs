@@ -14,6 +14,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.store :as st]
+   [app.plugins.flags :as pflag]
    [app.plugins.register :as preg]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -54,7 +55,9 @@
 (defn- load-plugin!
   [{:keys [plugin-id name description host code icon permissions]}]
   (try
-    (st/emit! (save-current-plugin plugin-id))
+    (st/emit! (pflag/clear plugin-id)
+              (save-current-plugin plugin-id))
+
     (.ɵloadPlugin
      ^js ug/global
      #js {:pluginId plugin-id
@@ -156,8 +159,8 @@
 (defn- update-plugin-permissions-peek
   [{:keys [plugin-id url]}]
   (when url
-      ;; If the saved manifest has a URL we fetch the manifest to check
-      ;; for updates
+    ;; If the saved manifest has a URL we fetch the manifest to check
+    ;; for updates
     (->> (fetch-manifest url)
          (rx/subs!
           (fn [new-manifest]

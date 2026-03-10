@@ -677,7 +677,7 @@ The Storybook is available at the <code class="language-bash">/storybook</code> 
 
 #### Local development
 
-Use <code class="language-bash">yarn watch:storybook</code> to develop the Design System components with the help of Storybook.
+Use <code class="language-bash">pnpm run watch:storybook</code> to develop the Design System components with the help of Storybook.
 
 > **⚠️ WARNING**: Do stop any existing Shadow CLJS and asset compilation jobs (like the ones running at tabs <code class="language-bash">0</code> and <code class="language-bash">1</code> in the devenv tmux), because <code class="language-bash">watch:storybook</code> will spawn their own.
 

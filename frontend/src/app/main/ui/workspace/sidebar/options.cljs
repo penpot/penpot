@@ -116,13 +116,29 @@
         (->> (dm/get-in grid-edition [edition :selected])
              (map #(dm/get-in objects [edition :layout-grid-cells %])))
 
-        shapes-with-children
-        (mf/with-memo [selected objects shapes]
-          (let [xform    (comp (remove nil?)
-                               (mapcat #(cfh/get-children-ids objects %)))
-                selected (into selected xform selected)]
-            (sequence (keep (d/getf objects)) selected)))
+        shapes-with-children*
+        (mf/use-state nil)
 
+        _ (mf/use-effect
+           (mf/deps selected objects shapes)
+           (fn []
+             (reset! shapes-with-children* nil)
+             (let [result
+                   (loop [queue   (into #queue [] selected)
+                          visited selected]
+                     (if-let [id (peek queue)]
+                       (let [shape    (get objects id)
+                             children (:shapes shape)]
+                         (if (seq children)
+                           (let [new-children (remove visited children)]
+                             (recur (into (pop queue) new-children)
+                                    (into visited new-children)))
+                           (recur (pop queue) visited)))
+                       (sequence (keep (d/getf objects)) visited)))]
+               (reset! shapes-with-children* result))))
+
+        shapes-with-children
+        (deref shapes-with-children*)
 
         total-selected
         (count selected)]

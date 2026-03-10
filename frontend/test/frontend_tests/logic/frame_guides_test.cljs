@@ -33,7 +33,7 @@
                  :id (uuid/next)
                  :position 0}
 
-         ;; ==== Action
+          ;; ==== Action
           events
           [(dw/update-guides guide)
            (dw/update-position (:id frame1) {:x 100})]]

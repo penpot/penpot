@@ -18,13 +18,13 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [expand-fn (fn [expanded]
-                        (merge expanded
-                               (->> ids
-                                    (map #(cfh/get-parent-ids objects %))
-                                    flatten
-                                    (remove #(= % uuid/zero))
-                                    (map (fn [id] {id true}))
-                                    (into {}))))]
+                        (let [parents-seqs (map (fn [x] (cfh/get-parent-ids objects x)) ids)
+                              flat-parents (apply concat parents-seqs)
+                              non-root-parents (remove #(= % uuid/zero) flat-parents)
+                              distinct-parents (into #{} non-root-parents)]
+                          (merge expanded
+                                 (into {}
+                                       (map (fn [id] {id true}) distinct-parents)))))]
         (update-in state [:workspace-local :expanded] expand-fn)))))
 
 

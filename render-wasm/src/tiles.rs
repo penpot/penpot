@@ -209,16 +209,19 @@ impl PendingTiles {
         }
     }
 
-    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces) {
-        self.list.clear();
-
-        let columns = tile_viewbox.interest_rect.width();
-        let rows = tile_viewbox.interest_rect.height();
-
+    // Generate tiles in spiral order from center
+    fn generate_spiral(rect: &TileRect) -> Vec<Tile> {
+        let columns = rect.width();
+        let rows = rect.height();
         let total = columns * rows;
 
-        let mut cx = tile_viewbox.interest_rect.center_x();
-        let mut cy = tile_viewbox.interest_rect.center_y();
+        if total <= 0 {
+            return Vec::new();
+        }
+
+        let mut result = Vec::with_capacity(total as usize);
+        let mut cx = rect.center_x();
+        let mut cy = rect.center_y();
 
         let ratio = (columns as f32 / rows as f32).ceil() as i32;
 
@@ -228,7 +231,7 @@ impl PendingTiles {
         let mut direction = 0;
         let mut current = 0;
 
-        self.list.push(Tile(cx, cy));
+        result.push(Tile(cx, cy));
         while current < total {
             match direction {
                 0 => cx += 1,
@@ -238,7 +241,7 @@ impl PendingTiles {
                 _ => unreachable!("Invalid direction"),
             }
 
-            self.list.push(Tile(cx, cy));
+            result.push(Tile(cx, cy));
 
             direction_current += 1;
             let direction_total = if direction % 2 == 0 {
@@ -258,18 +261,44 @@ impl PendingTiles {
             }
             current += 1;
         }
-        self.list.reverse();
+        result.reverse();
+        result
+    }
 
-        // Create a new list where the cached tiles go first
-        let iter1 = self
-            .list
-            .iter()
-            .filter(|t| surfaces.has_cached_tile_surface(**t));
-        let iter2 = self
-            .list
-            .iter()
-            .filter(|t| !surfaces.has_cached_tile_surface(**t));
-        self.list = iter1.chain(iter2).copied().collect();
+    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces) {
+        self.list.clear();
+
+        // Generate spiral for the interest area (viewport + margin)
+        let spiral = Self::generate_spiral(&tile_viewbox.interest_rect);
+
+        // Partition tiles into 4 priority groups (highest priority = processed last due to pop()):
+        // 1. visible + cached (fastest - just blit from cache)
+        // 2. visible + uncached (user sees these, render next)
+        // 3. interest + cached (pre-rendered area, blit from cache)
+        // 4. interest + uncached (lowest priority - background pre-render)
+        let mut visible_cached = Vec::new();
+        let mut visible_uncached = Vec::new();
+        let mut interest_cached = Vec::new();
+        let mut interest_uncached = Vec::new();
+
+        for tile in spiral {
+            let is_visible = tile_viewbox.visible_rect.contains(&tile);
+            let is_cached = surfaces.has_cached_tile_surface(tile);
+
+            match (is_visible, is_cached) {
+                (true, true) => visible_cached.push(tile),
+                (true, false) => visible_uncached.push(tile),
+                (false, true) => interest_cached.push(tile),
+                (false, false) => interest_uncached.push(tile),
+            }
+        }
+
+        // Build final list with lowest priority first (they get popped last)
+        // Order: interest_uncached, interest_cached, visible_uncached, visible_cached
+        self.list.extend(interest_uncached);
+        self.list.extend(interest_cached);
+        self.list.extend(visible_uncached);
+        self.list.extend(visible_cached);
     }
 
     pub fn pop(&mut self) -> Option<Tile> {

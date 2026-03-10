@@ -3,7 +3,7 @@ use crate::{with_current_shape_mut, STATE};
 use macros::ToJs;
 
 mod align;
-mod constraints;
+pub mod constraints;
 mod flex;
 mod grid;
 
@@ -67,6 +67,7 @@ pub extern "C" fn set_layout_data(
         let min_h = if has_min_h { Some(min_h) } else { None };
         let max_w = if has_max_w { Some(max_w) } else { None };
         let min_w = if has_min_w { Some(min_w) } else { None };
+        let z_index = if z_index != 0 { Some(z_index) } else { None };
 
         let raw_align_self = align::RawAlignSelf::from(align_self);
 

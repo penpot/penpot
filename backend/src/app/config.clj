@@ -98,10 +98,11 @@
     [:http-server-port {:optional true} ::sm/int]
     [:http-server-host {:optional true} :string]
     [:http-server-max-body-size {:optional true} ::sm/int]
-    [:http-server-max-multipart-body-size {:optional true} ::sm/int]
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
+    [:exporter-shared-key {:optional true} :string]
+    [:nitrate-shared-key {:optional true} :string]
     [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
@@ -224,6 +225,8 @@
 
     [:netty-io-threads {:optional true} ::sm/int]
     [:executor-threads {:optional true} ::sm/int]
+
+    [:nitrate-backend-uri {:optional true} ::sm/uri]
 
     ;; DEPRECATED
     [:assets-storage-backend {:optional true} :keyword]

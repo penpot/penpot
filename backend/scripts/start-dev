@@ -3,6 +3,10 @@
 SCRIPT_DIR=$(dirname $0);
 source $SCRIPT_DIR/_env;
 
+if [ -f $SCRIPT_DIR/_env.local ]; then
+    source $SCRIPT_DIR/_env.local;
+fi
+
 # Initialize MINIO config
 setup_minio;
 

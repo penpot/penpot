@@ -10,6 +10,7 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.math :as mth]
@@ -21,14 +22,15 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.render-wasm :as drw]
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
    [app.main.worker :as mw]
    [app.render-wasm.api.fonts :as f]
+   [app.render-wasm.api.shapes :as shapes]
    [app.render-wasm.api.texts :as t]
+   [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.deserializers :as dr]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
@@ -37,7 +39,7 @@
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.svg-filters :as svg-filters]
-   ;; FIXME: rename; confunsing name
+   [app.render-wasm.text-editor :as text-editor]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -49,15 +51,18 @@
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
-
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
 
 (def ^:const UUID-U8-SIZE 16)
 (def ^:const UUID-U32-SIZE (/ UUID-U8-SIZE 4))
 
+;; FIXME: Migrate this as we adjust the DTO structure in wasm
 (def ^:const MODIFIER-U8-SIZE 40)
 (def ^:const MODIFIER-U32-SIZE (/ MODIFIER-U8-SIZE 4))
 (def ^:const MODIFIER-TRANSFORM-U8-OFFSET-SIZE 16)
+(def ^:const INPUT-MODIFIER-U8-SIZE 44)
+(def ^:const INPUT-MODIFIER-U32-SIZE (/ INPUT-MODIFIER-U8-SIZE 4))
+
 
 (def ^:const GRID-LAYOUT-ROW-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
@@ -68,11 +73,36 @@
 (def ^:const DEBOUNCE_DELAY_MS 100)
 (def ^:const THROTTLE_DELAY_MS 10)
 
+;; Number of shapes to process before yielding to browser
+(def ^:const SHAPES_CHUNK_SIZE 100)
+;; Threshold below which we use synchronous processing (no chunking overhead)
+(def ^:const ASYNC_THRESHOLD 100)
+
+;; Re-export public WebGL functions
+(def capture-canvas-pixels webgl/capture-canvas-pixels)
+(def restore-previous-canvas-pixels webgl/restore-previous-canvas-pixels)
+(def clear-canvas-pixels webgl/clear-canvas-pixels)
+
+;; Re-export public text editor functions
+(def text-editor-start text-editor/text-editor-start)
+(def text-editor-stop text-editor/text-editor-stop)
+(def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
+(def text-editor-is-active? text-editor/text-editor-is-active?)
+(def text-editor-sync-content text-editor/text-editor-sync-content)
+
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
 
 (def noop-fn
   (constantly nil))
+
+(defn- yield-to-browser
+  "Returns a promise that resolves after yielding to the browser's event loop.
+   Uses requestAnimationFrame for smooth visual updates during loading."
+  []
+  (p/create
+   (fn [resolve _reject]
+     (js/requestAnimationFrame (fn [_] (resolve nil))))))
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
@@ -95,11 +125,36 @@
    (mf/element object-svg #js {:shape shape})
    (rds/renderToStaticMarkup)))
 
+;; forward declare helpers so render can call them
+(declare request-render)
+(declare set-shape-vertical-align fonts-from-text-content)
+
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render" timestamp)
+
+    ;; Update text editor blink (so cursor toggles) using the same timestamp
+    (try
+      (when wasm/context-initialized?
+        (text-editor/text-editor-update-blink timestamp)
+        ;; Render text editor overlay on top of main canvas (only if feature enabled)
+        ;; Determine if text-editor-wasm feature is active without requiring
+        ;; app.main.features to avoid circular dependency: check runtime and
+        ;; persisted feature sets in the store state.
+        (let [runtime-features (get @st/state :features-runtime)
+              enabled-features (get @st/state :features)]
+          (when (or (contains? runtime-features "text-editor-wasm/v1")
+                    (contains? enabled-features "text-editor-wasm/v1"))
+            (text-editor/text-editor-render-overlay)))
+        ;; Poll for editor events; if any event occurs, trigger a re-render
+        (let [ev (text-editor/text-editor-poll-event)]
+          (when (and ev (not= ev 0))
+            (request-render "text-editor-event"))))
+      (catch :default e
+        (js/console.error "text-editor overlay/update failed:" e)))
+
     (set! wasm/internal-frame-id nil)
     (ug/dispatch! (ug/event "penpot:wasm:render"))))
 
@@ -120,36 +175,58 @@
               (aget buffer 3))
       (set! wasm/internal-frame-id nil))))
 
+(defn render-preview!
+  "Render a lightweight preview without tile caching.
+   Used during progressive loading for fast feedback."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_render_preview")))
+
 
 (defonce pending-render (atom false))
+(defonce shapes-loading? (atom false))
+(defonce deferred-render? (atom false))
+
+(defn- register-deferred-render!
+  []
+  (reset! deferred-render? true))
 
 (defn request-render
   [_requester]
-  (when (and wasm/context-initialized? (not @pending-render) (not @wasm/context-lost?))
-    (reset! pending-render true)
-    (js/requestAnimationFrame
-     (fn [ts]
-       (reset! pending-render false)
-       (render ts)))))
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (if @shapes-loading?
+      (register-deferred-render!)
+      (when-not @pending-render
+        (reset! pending-render true)
+        (let [frame-id
+              (js/requestAnimationFrame
+               (fn [ts]
+                 (reset! pending-render false)
+                 (set! wasm/internal-frame-id nil)
+                 (render ts)))]
+          (set! wasm/internal-frame-id frame-id))))))
+
+(defn- begin-shapes-loading!
+  []
+  (reset! shapes-loading? true)
+  (let [frame-id wasm/internal-frame-id
+        was-pending @pending-render]
+    (when frame-id
+      (js/cancelAnimationFrame frame-id)
+      (set! wasm/internal-frame-id nil))
+    (reset! pending-render false)
+    (reset! deferred-render? was-pending)))
+
+(defn- end-shapes-loading!
+  []
+  (let [was-loading (compare-and-set! shapes-loading? true false)]
+    (reset! deferred-render? false)
+    ;; Always trigger a render after loading completes
+    ;; This ensures shapes are displayed even if no deferred render was requested
+    (when was-loading
+      (request-render "set-objects:flush"))))
 
 (declare get-text-dimensions)
-
-(defn update-text-rect!
-  [id]
-  (when wasm/context-initialized?
-    (mw/emit!
-     {:cmd :index/update-text-rect
-      :page-id (:current-page-id @st/state)
-      :shape-id id
-      :dimensions (get-text-dimensions id)})))
-
-
-(defn- ensure-text-content
-  "Guarantee that the shape always sends a valid text tree to WASM. When the
-  content is nil (freshly created text) we fall back to
-  tc/default-text-content so the renderer receives typography information."
-  [content]
-  (or content (tc/v2-default-text-content)))
 
 (defn use-shape
   [id]
@@ -160,6 +237,47 @@
               (aget buffer 1)
               (aget buffer 2)
               (aget buffer 3)))))
+
+(defn set-shape-text-content
+  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
+  [shape-id content]
+
+  ;; Cache content for text editor sync
+  (text-editor/cache-shape-text-content! shape-id content)
+
+  (h/call wasm/internal-module "_clear_shape_text")
+
+  (set-shape-vertical-align (get content :vertical-align))
+
+  (let [fonts         (f/get-content-fonts content)
+        fallback-fonts (fonts-from-text-content content true)
+        all-fonts (concat fonts fallback-fonts)
+        result (f/store-fonts all-fonts)]
+    (f/load-fallback-fonts-for-editor! fallback-fonts)
+    (h/call wasm/internal-module "_update_shape_text_layout")
+    result))
+
+(defn apply-style-to-selection
+  "Apply style attrs to the currently selected text spans.
+   Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving."
+  [attrs]
+  (text-editor/apply-style-to-selection attrs use-shape set-shape-text-content))
+
+(defn update-text-rect!
+  [id]
+  (when wasm/context-initialized?
+    (mw/emit!
+     {:cmd :index/update-text-rect
+      :page-id (:current-page-id @st/state)
+      :shape-id id
+      :dimensions (get-text-dimensions id)})))
+
+(defn- ensure-text-content
+  "Guarantee that the shape always sends a valid text tree to WASM. When the
+  content is nil (freshly created text) we fall back to
+  tc/default-text-content so the renderer receives typography information."
+  [content]
+  (or content (tc/v2-default-text-content)))
 
 (defn set-parent-id
   [id]
@@ -279,30 +397,6 @@
   [string]
   (+ (count string) 1))
 
-(defn- create-webgl-texture-from-image
-  "Creates a WebGL texture from an HTMLImageElement or ImageBitmap and returns the texture object"
-  [gl image-element]
-  (let [texture (.createTexture ^js gl)]
-    (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) texture)
-    (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_WRAP_S ^js gl) (.-CLAMP_TO_EDGE ^js gl))
-    (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_WRAP_T ^js gl) (.-CLAMP_TO_EDGE ^js gl))
-    (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_MIN_FILTER ^js gl) (.-LINEAR ^js gl))
-    (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_MAG_FILTER ^js gl) (.-LINEAR ^js gl))
-    (.texImage2D ^js gl (.-TEXTURE_2D ^js gl) 0 (.-RGBA ^js gl) (.-RGBA ^js gl) (.-UNSIGNED_BYTE ^js gl) image-element)
-    (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) nil)
-    texture))
-
-(defn- get-webgl-context
-  "Gets the WebGL context from the WASM module"
-  []
-  (when wasm/context-initialized?
-    (let [gl-obj (unchecked-get wasm/internal-module "GL")]
-      (when gl-obj
-        ;; Get the current WebGL context from Emscripten
-        ;; The GL object has a currentContext property that contains the context handle
-        (let [current-ctx (.-currentContext ^js gl-obj)]
-          (when current-ctx
-            (.-GLctx ^js current-ctx)))))))
 
 (defn- get-texture-id-for-gl-object
   "Registers a WebGL texture with Emscripten's GL object system and returns its ID"
@@ -332,8 +426,8 @@
        (->> (retrieve-image url)
             (rx/map
              (fn [img]
-               (when-let [gl (get-webgl-context)]
-                 (let [texture (create-webgl-texture-from-image gl img)
+               (when-let [gl (webgl/get-webgl-context)]
+                 (let [texture (webgl/create-webgl-texture-from-image gl img)
                        texture-id (get-texture-id-for-gl-object texture)
                        width  (.-width ^js img)
                        height (.-height ^js img)
@@ -828,22 +922,6 @@
 
           (if fallback-fonts-only? updated-fonts fallback-fonts))))))
 
-(defn set-shape-text-content
-  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
-  [shape-id content]
-
-  (h/call wasm/internal-module "_clear_shape_text")
-
-  (set-shape-vertical-align (get content :vertical-align))
-
-  (let [fonts         (f/get-content-fonts content)
-        fallback-fonts (fonts-from-text-content content true)
-        all-fonts (concat fonts fallback-fonts)
-        result (f/store-fonts shape-id all-fonts)]
-    (f/load-fallback-fonts-for-editor! fallback-fonts)
-    (h/call wasm/internal-module "_update_shape_text_layout")
-    result))
-
 (defn set-shape-grow-type
   [grow-type]
   (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
@@ -880,17 +958,23 @@
 
 (def render-finish
   (letfn [(do-render [ts]
-            (perf/begin-measure "render-finish")
-            (h/call wasm/internal-module "_set_view_end")
-            (render ts)
-            (perf/end-measure "render-finish"))]
+            ;; Check if context is still initialized before executing
+            ;; to prevent errors when navigating quickly
+            (when wasm/context-initialized?
+              (perf/begin-measure "render-finish")
+              (h/call wasm/internal-module "_set_view_end")
+              (render ts)
+              (perf/end-measure "render-finish")))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan
   (letfn [(do-render-pan [ts]
-            (perf/begin-measure "render-pan")
-            (render ts)
-            (perf/end-measure "render-pan"))]
+            ;; Check if context is still initialized before executing
+            ;; to prevent errors when navigating quickly
+            (when wasm/context-initialized?
+              (perf/begin-measure "render-pan")
+              (render ts)
+              (perf/end-measure "render-pan")))]
     (fns/throttle do-render-pan THROTTLE_DELAY_MS)))
 
 (defn set-view-box
@@ -919,24 +1003,12 @@
         id           (dm/get-prop shape :id)
         type         (dm/get-prop shape :type)
 
-        parent-id    (get shape :parent-id)
         masked       (get shape :masked-group)
-        selrect      (get shape :selrect)
-        constraint-h (get shape :constraints-h)
-        constraint-v (get shape :constraints-v)
-        clip-content (if (= type :frame)
-                       (not (get shape :show-content))
-                       false)
-        rotation     (get shape :rotation)
-        transform    (get shape :transform)
 
         fills        (get shape :fills)
         strokes      (if (= type :group)
                        [] (get shape :strokes))
         children     (get shape :shapes)
-        blend-mode   (get shape :blend-mode)
-        opacity      (get shape :opacity)
-        hidden       (get shape :hidden)
         content      (let [content (get shape :content)]
                        (if (= type :text)
                          (ensure-text-content content)
@@ -945,22 +1017,12 @@
         grow-type    (get shape :grow-type)
         blur         (get shape :blur)
         svg-attrs    (get shape :svg-attrs)
-        shadows      (get shape :shadow)
-        corners      (map #(get shape %) [:r1 :r2 :r3 :r4])]
+        shadows      (get shape :shadow)]
 
-    (use-shape id)
-    (set-parent-id parent-id)
-    (set-shape-type type)
-    (set-shape-clip-content clip-content)
-    (set-shape-constraints constraint-h constraint-v)
+    (shapes/set-shape-base-props shape)
 
-    (set-shape-rotation rotation)
-    (set-shape-transform transform)
-    (set-shape-blend-mode blend-mode)
-    (set-shape-opacity opacity)
-    (set-shape-hidden hidden)
+    ;; Remaining properties that need separate calls (variable-length or conditional)
     (set-shape-children children)
-    (set-shape-corners corners)
     (set-shape-blur blur)
     (when (= type :group)
       (set-masked (boolean masked)))
@@ -979,7 +1041,7 @@
       (set-shape-grow-type grow-type))
 
     (set-shape-layout shape)
-    (set-shape-selrect selrect)
+    (set-layout-data shape)
 
     (let [pending_thumbnails (into [] (concat
                                        (set-shape-text-content id content)
@@ -1035,29 +1097,143 @@
   (let [{:keys [thumbnails full]} (set-object shape)]
     (process-pending [shape] thumbnails full noop-fn)))
 
+(defn- process-shapes-chunk
+  "Process a chunk of shapes synchronously, returning accumulated pending operations.
+   Returns {:thumbnails [...] :full [...] :next-index n}"
+  [shapes start-index chunk-size thumbnails-acc full-acc]
+  (let [total (count shapes)
+        end-index (min total (+ start-index chunk-size))]
+    (loop [index start-index
+           t-acc thumbnails-acc
+           f-acc full-acc]
+      (if (< index end-index)
+        (let [shape (nth shapes index)
+              {:keys [thumbnails full]} (set-object shape)]
+          (recur (inc index)
+                 (into t-acc thumbnails)
+                 (into f-acc full)))
+        {:thumbnails t-acc
+         :full f-acc
+         :next-index end-index}))))
+
+(defn- set-objects-async
+  "Asynchronously process shapes in chunks, yielding to the browser between chunks.
+   Returns a promise that resolves when all shapes are processed.
+
+   Renders a preview only periodically during loading to show progress,
+   then does a full tile-based render at the end."
+  [shapes render-callback]
+  (let [total-shapes (count shapes)
+        total-chunks (mth/ceil (/ total-shapes SHAPES_CHUNK_SIZE))
+        ;; Render at 25%, 50%, 75% of loading
+        render-at-chunks (set [(mth/floor (* total-chunks 0.25))
+                               (mth/floor (* total-chunks 0.5))
+                               (mth/floor (* total-chunks 0.75))])]
+    (p/create
+     (fn [resolve _reject]
+       (letfn [(process-next-chunk [index thumbnails-acc full-acc chunk-count]
+                 (if (< index total-shapes)
+                   ;; Process one chunk
+                   (let [{:keys [thumbnails full next-index]}
+                         (process-shapes-chunk shapes index SHAPES_CHUNK_SIZE
+                                               thumbnails-acc full-acc)
+                         new-chunk-count (inc chunk-count)]
+                     ;; Only render at specific progress milestones
+                     (when (contains? render-at-chunks new-chunk-count)
+                       (render-preview!))
+
+                     ;; Yield to browser, then continue with next chunk
+                     (-> (yield-to-browser)
+                         (p/then (fn [_]
+                                   (process-next-chunk next-index thumbnails full new-chunk-count)))))
+                   ;; All chunks done - finalize
+                   (do
+                     (perf/end-measure "set-objects")
+                     (process-pending shapes thumbnails-acc full-acc noop-fn
+                                      (fn []
+                                        (end-shapes-loading!)
+                                        (if render-callback
+                                          (render-callback)
+                                          (render-finish))
+                                        (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
+                                        (resolve nil))))))]
+         (process-next-chunk 0 [] [] 0))))))
+
+(defn- set-objects-sync
+  "Synchronously process all shapes (for small shape counts)."
+  [shapes render-callback]
+  (let [total-shapes (count shapes)
+        {:keys [thumbnails full]}
+        (loop [index 0 thumbnails-acc [] full-acc []]
+          (if (< index total-shapes)
+            (let [shape (nth shapes index)
+                  {:keys [thumbnails full]} (set-object shape)]
+              (recur (inc index)
+                     (into thumbnails-acc thumbnails)
+                     (into full-acc full)))
+            {:thumbnails thumbnails-acc :full full-acc}))]
+    (perf/end-measure "set-objects")
+    (process-pending shapes thumbnails full noop-fn
+                     (fn []
+                       (if render-callback
+                         (render-callback)
+                         (render-finish))
+                       (ug/dispatch! (ug/event "penpot:wasm:set-objects"))))))
+
+(defn- shapes-in-tree-order
+  "Returns shapes sorted in tree order (parents before children).
+   This ensures parent shapes are processed before their children,
+   maintaining proper shape reference consistency in WASM."
+  [objects]
+  ;; Get IDs in tree order starting from root (uuid/zero)
+  ;; If root doesn't exist (e.g., filtered thumbnail data), fall back to
+  ;; finding top-level shapes (those without a parent in objects) and
+  ;; traversing from there.
+  (if (contains? objects uuid/zero)
+    ;; Normal case: traverse from root
+    (let [ordered-ids (cfh/get-children-ids-with-self objects uuid/zero)]
+      (into []
+            (keep #(get objects %))
+            ordered-ids))
+    ;; Fallback for filtered data (thumbnails): find top-level shapes and traverse
+    (let [;; Find shapes whose parent is not in the objects map (top-level in this subset)
+          top-level-ids (->> (vals objects)
+                             (filter (fn [shape]
+                                       (not (contains? objects (:parent-id shape)))))
+                             (map :id))
+          ;; Get all children in order for each top-level shape
+          all-ordered-ids (into []
+                                (mapcat #(cfh/get-children-ids-with-self objects %))
+                                top-level-ids)]
+      (into []
+            (keep #(get objects %))
+            all-ordered-ids))))
+
 (defn set-objects
+  "Set all shape objects for rendering.
+
+   Shapes are processed in tree order (parents before children)
+   to maintain proper shape reference consistency in WASM."
   ([objects]
    (set-objects objects nil))
   ([objects render-callback]
    (perf/begin-measure "set-objects")
-   (let [shapes        (into [] (vals objects))
-         total-shapes  (count shapes)
-         ;; Collect pending operations - set-object returns {:thumbnails [...] :full [...]}
-         {:keys [thumbnails full]}
-         (loop [index 0 thumbnails-acc [] full-acc []]
-           (if (< index total-shapes)
-             (let [shape    (nth shapes index)
-                   {:keys [thumbnails full]} (set-object shape)]
-               (recur (inc index)
-                      (into thumbnails-acc thumbnails)
-                      (into full-acc full)))
-             {:thumbnails thumbnails-acc :full full-acc}))]
-     (perf/end-measure "set-objects")
-     (process-pending shapes thumbnails full noop-fn
-                      (fn []
-                        (when render-callback (render-callback))
-                        (render-finish)
-                        (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
+   (let [shapes (shapes-in-tree-order objects)
+         total-shapes (count shapes)]
+     (if (< total-shapes ASYNC_THRESHOLD)
+       (set-objects-sync shapes render-callback)
+       (do
+         (begin-shapes-loading!)
+         (try
+           (-> (set-objects-async shapes render-callback)
+               (p/catch (fn [error]
+                          (end-shapes-loading!)
+                          (js/console.error "Async WASM shape loading failed" error))))
+           (catch :default error
+             (end-shapes-loading!)
+             (js/console.error "Async WASM shape loading failed" error)
+             (throw error)))
+         nil)))))
 
 (defn clear-focus-mode
   []
@@ -1105,13 +1281,16 @@
   (when-not ^boolean (empty? entries)
     (let [heapf32 (mem/get-heap-f32)
           heapu32 (mem/get-heap-u32)
-          size    (mem/get-alloc-size entries MODIFIER-U8-SIZE)
+          size    (mem/get-alloc-size entries INPUT-MODIFIER-U8-SIZE)
           offset  (mem/alloc->offset-32 size)]
 
-      (reduce (fn [offset [id transform]]
-                (-> offset
-                    (mem.h32/write-uuid heapu32 id)
-                    (mem.h32/write-matrix heapf32 transform)))
+      (reduce (fn [offset [id data]]
+                (let [transform (:transform data)
+                      kind (:kind data)]
+                  (-> offset
+                      (mem.h32/write-uuid heapu32 id)
+                      (mem.h32/write-matrix heapf32 transform)
+                      (mem.h32/write-u32 heapu32 (sr/translate-transform-entry-kind kind)))))
               offset
               entries)
 
@@ -1236,7 +1415,8 @@
   (dom/prevent-default event)
   (reset! wasm/context-lost? true)
   (log/warn :hint "WebGL context lost")
-  (st/emit! (drw/context-lost)))
+  (ex/raise :type :webgl-context-lost
+            :hint "WebGL context lost"))
 
 (defn init-canvas-context
   [canvas]
@@ -1275,6 +1455,16 @@
   []
   (when wasm/context-initialized?
     (try
+      ;; Cancel any pending animation frame to prevent race conditions
+      (when wasm/internal-frame-id
+        (js/cancelAnimationFrame wasm/internal-frame-id)
+        (set! wasm/internal-frame-id nil))
+
+      ;; Reset render flags to prevent new renders from being scheduled
+      (reset! pending-render false)
+      (reset! shapes-loading? false)
+      (reset! deferred-render? false)
+
       ;; TODO: perform corresponding cleaning
       (set! wasm/context-initialized? false)
       (h/call wasm/internal-module "_clean_up")
@@ -1383,8 +1573,9 @@
         all-children
         (->> ids
              (mapcat #(cfh/get-children-with-self objects %)))]
+
     (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
-    (run! (partial set-object objects) all-children)
+    (run! set-object all-children)
 
     (let [content (-> (calculate-bool* bool-type ids)
                       (path.impl/path-data))]
@@ -1416,36 +1607,51 @@
               (persistent! result)))
 
           result
-          (->> result
-               (mapv
-                (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
-                  (let [content (:content shape)
-                        element (-> content :children
-                                    (get 0) :children ;; paragraph-set
-                                    (get paragraph) :children ;; paragraph
-                                    (get span))
-                        text (subs (:text element) start-pos end-pos)]
+          (into []
+                (keep
+                 (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
+                   (let [content (:content shape)
+                         element (-> content :children
+                                     (get 0) :children ;; paragraph-set
+                                     (get paragraph) :children ;; paragraph
+                                     (get span))
+                         element-text (:text element)]
 
-                    (d/patch-object
-                     txt/default-text-attrs
-                     (d/without-nils
-                      {:x x
-                       :y (+ y height)
-                       :width width
-                       :height height
-                       :direction       (dr/translate-direction direction)
-                       :font-family     (get element :font-family)
-                       :font-size       (get element :font-size)
-                       :font-weight     (get element :font-weight)
-                       :text-transform  (get element :text-transform)
-                       :text-decoration (get element :text-decoration)
-                       :letter-spacing  (get element :letter-spacing)
-                       :font-style      (get element :font-style)
-                       :fills           (get element :fills)
-                       :text            text}))))))]
+                     ;; Add comprehensive nil-safety checks
+                     (when (and element
+                                element-text
+                                (>= start-pos 0)
+                                (<= end-pos (count element-text))
+                                (<= start-pos end-pos))
+                       (let [text (subs element-text start-pos end-pos)]
+                         (d/patch-object
+                          txt/default-text-attrs
+                          (d/without-nils
+                           {:x x
+                            :y (+ y height)
+                            :width width
+                            :height height
+                            :direction       (dr/translate-direction direction)
+                            :font-family     (get element :font-family)
+                            :font-size       (get element :font-size)
+                            :font-weight     (get element :font-weight)
+                            :text-transform  (get element :text-transform)
+                            :text-decoration (get element :text-decoration)
+                            :letter-spacing  (get element :letter-spacing)
+                            :font-style      (get element :font-style)
+                            :fills           (get element :fills)
+                            :text            text})))))))
+                result)]
       (mem/free)
 
       result)))
+
+(defn apply-canvas-blur
+  []
+  (when wasm/canvas (dom/set-style! wasm/canvas "filter" "blur(4px)"))
+  (let [controls-to-blur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
+    (run! #(dom/set-style! % "filter" "blur(4px)") controls-to-blur)))
+
 
 (defn init-wasm-module
   [module]
@@ -1468,3 +1674,5 @@
                 (js/console.error cause)
                 (p/resolved false)))))
       (p/resolved false))))
+
+

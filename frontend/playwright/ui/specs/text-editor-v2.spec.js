@@ -5,7 +5,7 @@ import { WorkspacePage } from "../pages/WorkspacePage";
 const timeToWait = 100;
 
 test.beforeEach(async ({ page, context }) => {
-  await Clipboard.enable(context, Clipboard.Permission.ONLY_WRITE);
+  await Clipboard.enable(context, Clipboard.Permission.ALL);
 
   await WorkspacePage.init(page);
   await WorkspacePage.mockConfigFlags(page, ["enable-feature-text-editor-v2"]);

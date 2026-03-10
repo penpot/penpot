@@ -152,7 +152,7 @@
                 :on-click on-select-draw-mode}
        pentool-icon]
 
-       ;; Edit mode
+      ;; Edit mode
       [:button {:class (stl/css-case :is-toggled (= edit-mode :move)
                                      :topbar-btn true)
                 :title (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))

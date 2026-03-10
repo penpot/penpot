@@ -8,10 +8,11 @@
   (:require
    [app.common.json :as json]
    [app.common.path-names :as cpn]
-
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.notifications :as ntf]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
@@ -74,15 +75,18 @@
   (when unknown-tokens
     (st/emit! (show-unknown-types-warning unknown-tokens)))
   (try
-    (->> (ctob/get-all-tokens tokens-lib)
-         (sd/resolve-tokens-with-verbose-errors)
-         (rx/map (fn [_]
-                   tokens-lib))
-         (rx/catch (fn [sd-error]
-                     (let [reference-errors (extract-reference-errors sd-error)]
-                       (if reference-errors
-                         (rx/of tokens-lib)
-                         (throw (wte/error-ex-info :error.import/style-dictionary-unknown-error sd-error sd-error)))))))
+    (let [tokens-tree     (ctob/get-all-tokens-map tokens-lib)
+          resolved-tokens (if (contains? cf/flags :tokenscript)
+                            (rx/of (ts/resolve-tokens tokens-tree))
+                            (sd/resolve-tokens-with-verbose-errors tokens-tree))]
+      (->> resolved-tokens
+           (rx/map (fn [_]
+                     tokens-lib))
+           (rx/catch (fn [sd-error]
+                       (let [reference-errors (extract-reference-errors sd-error)]
+                         (if reference-errors
+                           (rx/of tokens-lib)
+                           (throw (wte/error-ex-info :error.import/style-dictionary-unknown-error sd-error sd-error))))))))
     (catch js/Error e
       (throw (wte/error-ex-info :error.import/style-dictionary-unknown-error "" e)))))
 

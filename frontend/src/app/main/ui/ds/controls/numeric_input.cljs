@@ -18,7 +18,6 @@
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.token-field :refer [token-field*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
-   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -183,11 +182,13 @@
   [:map
    [:id {:optional true} :string]
    [:class {:optional true} :string]
+   [:inner-class {:optional true} :string]
    [:value {:optional true} [:maybe [:or
                                      :int
                                      :float
                                      :string
                                      [:= :multiple]]]]
+   [:text-icon {:optional true} :string]
    [:default {:optional true} [:maybe :string]]
    [:placeholder {:optional true} :string]
    [:icon {:optional true} [:maybe schema:icon]]
@@ -209,12 +210,14 @@
 
 (mf/defc numeric-input*
   {::mf/schema schema:numeric-input}
-  [{:keys [id class value default placeholder icon disabled
+  [{:keys [id class value default placeholder
+           icon disabled inner-class
            min max max-length step
            is-selected-on-focus nillable
            tokens applied-token empty-to-end
            on-change on-blur on-focus on-detach
-           property align ref]
+           property align ref name
+           text-icon]
     :rest props}]
 
   (let [;; NOTE: we use mfu/bean here for transparently handle
@@ -560,18 +563,17 @@
         (mf/use-fn
          (mf/deps on-detach tokens disabled token-applied)
          (fn [event]
-           (let [token (get-token-op tokens token-applied)]
-             (when-not disabled
-               (dom/prevent-default event)
-               (dom/stop-propagation event)
-               (reset! token-applied* nil)
-               (reset! selected-id* nil)
-               (reset! focused-id* nil)
-               (when on-detach
-                 (on-detach token))
-               (ts/schedule-on-idle
-                (fn []
-                  (dom/focus! (mf/ref-val ref))))))))
+           (when-not disabled
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (reset! token-applied* nil)
+             (reset! selected-id* nil)
+             (reset! focused-id* nil)
+             (when on-detach
+               (on-detach token-applied))
+             (ts/schedule-on-idle
+              (fn []
+                (dom/focus! (mf/ref-val ref)))))))
 
         on-token-key-down
         (mf/use-fn
@@ -624,6 +626,7 @@
         (mf/spread-props props {:ref ref
                                 :type "text"
                                 :id id
+                                :class inner-class
                                 :placeholder (if is-multiple?
                                                (tr "labels.mixed-values")
                                                placeholder)
@@ -634,18 +637,17 @@
                                 :on-change store-raw-value
                                 :variant "comfortable"
                                 :disabled disabled
-                                :slot-start (when icon
-                                              (mf/html [:> tooltip*
-                                                        {:content property
-                                                         :id property}
-                                                        [:> icon* {:icon-id icon
-                                                                   :size "s"
-                                                                   :aria-labelledby property
-                                                                   :class (stl/css :icon)}]]))
+                                :icon icon
+                                :aria-label property
+                                :slot-start (when text-icon
+                                              (mf/html
+                                               [:div {:class (stl/css :text-icon)}
+                                                text-icon]))
                                 :slot-end (when-not disabled
                                             (when (some? tokens)
-                                              (mf/html [:> icon-button* {:variant "action"
+                                              (mf/html [:> icon-button* {:variant "ghost"
                                                                          :icon i/tokens
+                                                                         :tooltip-class (stl/css :button-tooltip)
                                                                          :class (stl/css :invisible-button)
                                                                          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                                                                          :ref open-dropdown-ref
@@ -659,7 +661,10 @@
                 label       (get token :name)
                 token-value (or (get token :resolved-value)
                                 (or (mf/ref-val last-value*)
-                                    (fmt/format-number value)))]
+                                    (fmt/format-number value)))
+                token-value (if (and (some? id) (= name :opacity))
+                              (* 100 token-value)
+                              token-value)]
             (mf/spread-props props
                              {:id id
                               :label label
@@ -669,14 +674,20 @@
                               :on-token-key-down on-token-key-down
                               :disabled disabled
                               :on-blur on-blur
-                              :slot-start (when icon
-                                            (mf/html [:> tooltip*
-                                                      {:content property
-                                                       :id property}
-                                                      [:> icon* {:icon-id icon
-                                                                 :size "s"
-                                                                 :aria-labelledby property
-                                                                 :class (stl/css :icon)}]]))
+                              :class inner-class
+                              :property property
+                              :slot-start (when (or icon text-icon)
+                                            (mf/html
+                                             (cond
+                                               icon
+                                               [:> icon*
+                                                {:icon-id icon
+                                                 :size "s"
+                                                 :class (stl/css :icon)}]
+
+                                               text-icon
+                                               [:div {:class (stl/css :text-icon)}
+                                                text-icon])))
                               :token-wrapper-ref token-wrapper-ref
                               :token-detach-btn-ref token-detach-btn-ref
                               :detach-token detach-token})))]
@@ -711,7 +722,7 @@
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
 
-    [:div {:class (dm/str class " " (stl/css :input-wrapper))
+    [:div {:class [class (stl/css :input-wrapper)]
            :ref wrapper-ref}
 
      (if (and (some? token-applied)

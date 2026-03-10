@@ -19,8 +19,10 @@
 
 (def ^:private schema:token-field
   [:map
+   [:class {:optional true} [:maybe :string]]
    [:id {:optional true} [:maybe :string]]
    [:label {:optional true} [:maybe :string]]
+   [:property {:optional true} [:maybe :string]]
    [:value :any]
    [:disabled {:optional true} :boolean]
    [:slot-start {:optional true} [:maybe some?]]
@@ -32,15 +34,16 @@
 
 (mf/defc token-field*
   {::mf/schema schema:token-field}
-  [{:keys [id label value slot-start disabled
+  [{:keys [id label value slot-start disabled class
            on-click on-token-key-down on-blur detach-token
-           token-wrapper-ref token-detach-btn-ref on-focus]}]
+           token-wrapper-ref token-detach-btn-ref on-focus property]}]
   (let [set-active? (some? id)
         content     (if set-active?
                       label
                       (tr "ds.inputs.token-field.no-active-token-option"))
         default-id  (mf/use-id)
         id          (d/nilv id default-id)
+        pill-ref    (mf/use-ref nil)
 
         focus-wrapper
         (mf/use-fn
@@ -48,41 +51,46 @@
          (fn [event]
            (when-not ^boolean disabled
              (dom/prevent-default event)
-             (dom/focus! (mf/ref-val token-wrapper-ref)))))
+             (dom/focus! (mf/ref-val token-wrapper-ref)))))]
+    [:> tooltip* {:content property
+                  :class (stl/css :token-field-wrapper)
+                  :trigger-ref token-wrapper-ref
+                  :id (dm/str default-id "-input")}
+     [:div {:class [class (stl/css-case :token-field true
+                                        :with-icon (some? slot-start)
+                                        :token-field-disabled disabled)]
+            :on-click focus-wrapper
+            :disabled disabled
+            :on-key-down on-token-key-down
+            :ref token-wrapper-ref
+            :on-blur on-blur
+            :on-focus on-focus
+            :aria-labelledby (dm/str default-id "-input")
+            :tab-index (if disabled -1 0)}
 
-        class
-        (stl/css-case :token-field true
-                      :with-icon (some? slot-start)
-                      :token-field-disabled disabled)]
+      (when (some? slot-start) slot-start)
 
-    [:div {:class class
-           :on-click focus-wrapper
-           :disabled disabled
-           :on-key-down on-token-key-down
-           :ref token-wrapper-ref
-           :on-blur on-blur
-           :on-focus on-focus
-           :tab-index (if disabled -1 0)}
+      [:div  {:class (stl/css :content-wrapper)}
+       [:> tooltip* {:content content
+                     :trigger-ref pill-ref
+                     :id (dm/str id "-pill")}
+        [:button {:on-click on-click
+                  :ref pill-ref
+                  :class (stl/css-case :pill true
+                                       :no-set-pill (not set-active?)
+                                       :pill-disabled disabled)
+                  :disabled disabled
+                  :aria-labelledby (dm/str id "-pill")
+                  :on-key-down on-token-key-down}
+         value
+         (when-not set-active?
+           [:div {:class (stl/css :pill-dot)}])]]]
 
-     (when (some? slot-start) slot-start)
-
-     [:> tooltip* {:content content
-                   :id (dm/str id "-pill")}
-      [:button {:on-click on-click
-                :class (stl/css-case :pill true
-                                     :no-set-pill (not set-active?)
-                                     :pill-disabled disabled)
-                :disabled disabled
-                :aria-labelledby (dm/str id "-pill")
-                :on-key-down on-token-key-down}
-       value
-       (when-not set-active?
-         [:div {:class (stl/css :pill-dot)}])]]
-
-     (when-not ^boolean disabled
-       [:> icon-button* {:variant "action"
-                         :class (stl/css :invisible-button)
-                         :icon i/broken-link
-                         :ref token-detach-btn-ref
-                         :aria-label (tr "ds.inputs.token-field.detach-token")
-                         :on-click detach-token}])]))
+      (when-not ^boolean disabled
+        [:> icon-button* {:variant "ghost"
+                          :class (stl/css :invisible-button)
+                          :tooltip-class (stl/css :button-tooltip)
+                          :icon i/broken-link
+                          :ref token-detach-btn-ref
+                          :aria-label (tr "ds.inputs.token-field.detach-token")
+                          :on-click detach-token}])]]))

@@ -22,7 +22,7 @@
   (let [profile       (assoc profile :color color)
         full-name     (:fullname profile)]
     [:li {:class (stl/css :session-icon)
-          :style {:z-index (dm/str (+ 1 (* -1 index)))
+          :style {:z-index (dm/str (+ 2 (* -1 index)))
                   :background-color color}
           :title full-name}
      [:img {:alt full-name
@@ -37,9 +37,11 @@
 
         sessions     (vals presence)
         num-sessions (count sessions)
+        max-avatar-count 3
+        avatar-count (if (= num-sessions max-avatar-count) max-avatar-count (- max-avatar-count 1))
 
         open*        (mf/use-state false)
-        open?        (and ^boolean (deref open*) (> num-sessions 2))
+        open?        (and ^boolean (deref open*) (> num-sessions max-avatar-count))
         on-open
         (mf/use-fn
          (fn []
@@ -67,10 +69,10 @@
      [:button {:class (stl/css-case :active-users true)
                :on-click on-open}
       [:ul {:class (stl/css :active-users-list) :data-testid "active-users-list"}
-       (when (> num-sessions 2)
-         [:span {:class (stl/css :users-num)} (dm/str "+" (- num-sessions 2))])
+       (when (> num-sessions max-avatar-count)
+         [:li {:class (stl/css :users-num)} (dm/str "+" (+ 1 (- num-sessions max-avatar-count)))])
 
-       (for [[index session] (d/enumerate (take 2 sessions))]
+       (for [[index session] (d/enumerate (take avatar-count sessions))]
          [:& session-widget
           {:color (:color session)
            :index index
