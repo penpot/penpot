@@ -41,6 +41,7 @@
 - Fix crash in select component when options vector is empty [Github #8578](https://github.com/penpot/penpot/pull/8578)
 - Fix scroll on colorpicker [Taiga #13623](https://tree.taiga.io/project/penpot/issue/13623)
 - Fix crash when pasting non-map transit clipboard data [Github #8580](https://github.com/penpot/penpot/pull/8580)
+- Fix `penpot.openPage()` plugin API not navigating in the same tab; change default to same-tab navigation and allow passing a UUID string instead of a Page object [Github #8520](https://github.com/penpot/penpot/issues/8520)
 
 ## 2.13.3
 
