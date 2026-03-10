@@ -265,7 +265,39 @@
               (if (and (natural-child-ordering? plugin-id) (not (ctl/reverse? shape)))
                 0
                 (count (:shapes shape)))]
-          (st/emit! (dwsh/relocate-shapes #{child-id} id index)))))))
+          (st/emit! (dwsh/relocate-shapes #{child-id} id index)))))
+
+    :horizontalSizing
+    {:this true
+     :get #(-> % u/proxy->shape :layout-item-h-sizing (d/nilv :fix) d/name)
+     :set
+     (fn [_ value]
+       (let [value (keyword value)]
+         (cond
+           (not (contains? ctl/item-h-sizing-types value))
+           (u/display-not-valid :horizontalSizing value)
+
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :horizontalSizing "Plugin doesn't have 'content:write' permission")
+
+           :else
+           (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
+
+    :verticalSizing
+    {:this true
+     :get #(-> % u/proxy->shape :layout-item-v-sizing (d/nilv :fix) d/name)
+     :set
+     (fn [_ value]
+       (let [value (keyword value)]
+         (cond
+           (not (contains? ctl/item-v-sizing-types value))
+           (u/display-not-valid :verticalSizing value)
+
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :verticalSizing "Plugin doesn't have 'content:write' permission")
+
+           :else
+           (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}))
 
 (defn layout-child-proxy? [p]
   (obj/type-of? p "LayoutChildProxy"))
