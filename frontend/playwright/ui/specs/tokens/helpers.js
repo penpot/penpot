@@ -288,7 +288,7 @@ const testTokenCreationFlow = async (
   await submitButton.click();
 
   await expect(
-    tokensTabPanel.getByRole("button", { name: "my-token" }),
+    tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
   ).toBeEnabled();
 
   //
@@ -308,7 +308,7 @@ const testTokenCreationFlow = async (
   await submitButton.click();
 
   await expect(
-    tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+    tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
   ).toBeEnabled();
 };
 
@@ -344,7 +344,7 @@ const unfoldTokenTree = async (tokensTabPanel, type, tokenName) => {
   }
 
   await expect(
-    typeParentWrapper.getByRole("button", {
+    typeParentWrapper.getByRole("checkbox", {
       name: tokenLeafName,
     }),
   ).toBeEnabled();

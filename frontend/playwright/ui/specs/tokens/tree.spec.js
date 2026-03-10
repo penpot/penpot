@@ -22,7 +22,7 @@ test.describe("Tokens - node tree", () => {
 
     await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
 
-    const colorToken = tokensSidebar.getByRole("button", {
+    const colorToken = tokensSidebar.getByRole("checkbox", {
       name: "100",
     });
     await expect(colorToken).toBeVisible();
