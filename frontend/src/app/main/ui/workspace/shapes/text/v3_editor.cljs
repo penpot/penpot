@@ -286,7 +286,12 @@
      (mf/deps contenteditable-ref)
      (fn []
        (when-let [node (mf/ref-val contenteditable-ref)]
-         (.focus node))))
+         (.focus node))
+       ;; Explicitly call on-blur here instead of relying on browser blur events,
+       ;; because in Firefox blur is not reliably fired when leaving the text editor
+       ;; by clicking elsewhere. The component does unmount when the shape is
+       ;; deselected, so we can safely call the blur handler here to finalize the editor.
+       on-blur))
 
     (mf/use-effect
      (fn []
