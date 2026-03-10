@@ -476,3 +476,18 @@ test("BUG 13551 - Blurs affecting other elements", async ({
     threshold: 0.1,
   });
 });
+
+test("BUG 13610 - Huge inner strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-huge-inner-strokes.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-b11dd34fe190",
+    pageId: "effcbebc-b8c8-802f-8007-b11dd34fe191",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
