@@ -25,6 +25,7 @@ export const RawBlendMode = {
 
 export const RawBlurType = {
   "layer-blur": 0,
+  "background-blur": 1,
 };
 
 export const RawFillData = {

@@ -1,6 +1,7 @@
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BlurType {
     LayerBlur,
+    BackgroundBlur,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

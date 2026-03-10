@@ -280,6 +280,9 @@ pub(crate) struct RenderState {
     pub current_tile: Option<tiles::Tile>,
     pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
+    // render_area expanded by surface margins — used for visibility checks so that
+    // shapes in the margin zone are rendered (needed for background blur sampling).
+    pub render_area_with_margins: Rect,
     pub tile_viewbox: tiles::TileViewbox,
     pub tiles: tiles::TileHashMap,
     pub pending_tiles: PendingTiles,
@@ -357,6 +360,7 @@ impl RenderState {
             current_tile: None,
             sampling_options,
             render_area: Rect::new_empty(),
+            render_area_with_margins: Rect::new_empty(),
             tiles,
             tile_viewbox: tiles::TileViewbox::new_with_interest(
                 viewbox,
@@ -782,6 +786,27 @@ impl RenderState {
 
         // We don't want to change the value in the global state
         let mut shape: Cow<Shape> = Cow::Borrowed(shape);
+
+        // Extract background blur before layer blur combining (it's a local effect, not inherited)
+        let background_blur_sigma: Option<f32> = if !fast_mode
+            && apply_to_current_surface
+            && fills_surface_id == SurfaceId::Fills
+            && !matches!(shape.shape_type, Type::Text(_))
+            && !matches!(shape.shape_type, Type::SVGRaw(_))
+        {
+            if let Some(blur) = shape
+                .blur
+                .filter(|b| !b.hidden && b.blur_type == BlurType::BackgroundBlur)
+            {
+                shape.to_mut().set_blur(None);
+                Some(blur.value)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         let frame_has_blur = Self::frame_clip_layer_blur(&shape).is_some();
         let shape_has_blur = shape.blur.is_some();
 
@@ -1161,6 +1186,82 @@ impl RenderState {
             debug::render_debug_shape(self, Some(shape_selrect_bounds), None);
         }
 
+        // Background blur: snapshot Current (which has all previously rendered shapes),
+        // draw it back blurred and clipped to this shape's path using Src blend mode
+        // to replace (not overlay) the content. Equivalent to CSS backdrop-filter: blur().
+        if let Some(sigma) = background_blur_sigma {
+            let scale = self.get_scale();
+            let scaled_sigma = sigma * scale;
+            // Cap sigma so the blur kernel (≈3σ) stays within the tile margin.
+            // This prevents visible seams at tile boundaries when zoomed in.
+            let margin = self.surfaces.margins().width as f32;
+            let max_sigma = margin / 3.0;
+            let capped_sigma = scaled_sigma.min(max_sigma);
+            if let Some(blur_filter) = skia::image_filters::blur(
+                (capped_sigma, capped_sigma),
+                skia::TileMode::Clamp,
+                None,
+                None,
+            ) {
+                let snapshot = self.surfaces.snapshot(SurfaceId::Current);
+                let translation = self
+                    .surfaces
+                    .get_render_context_translation(self.render_area, scale);
+
+                let canvas = self.surfaces.canvas(SurfaceId::Current);
+                canvas.save();
+
+                // Current has no render context transform (identity canvas).
+                // Apply scale + translate + shape transform so the clip maps
+                // from shape-local coords to device pixels correctly.
+                canvas.scale((scale, scale));
+                canvas.translate(translation);
+                canvas.concat(&matrix);
+
+                // Clip to shape's path based on shape type
+                match &shape.shape_type {
+                    Type::Rect(data) if data.corners.is_some() => {
+                        let rrect =
+                            RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                        canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
+                    }
+                    Type::Frame(data) if data.corners.is_some() => {
+                        let rrect =
+                            RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                        canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
+                    }
+                    Type::Rect(_) | Type::Frame(_) => {
+                        canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
+                    }
+                    Type::Circle => {
+                        let mut pb = skia::PathBuilder::new();
+                        pb.add_oval(shape.selrect, None, None);
+                        canvas.clip_path(&pb.detach(), skia::ClipOp::Intersect, true);
+                    }
+                    _ => {
+                        if let Some(path) = shape.get_skia_path() {
+                            canvas.clip_path(&path, skia::ClipOp::Intersect, true);
+                        } else {
+                            canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
+                        }
+                    }
+                }
+
+                // Reset matrix so snapshot draws pixel-for-pixel on the surface.
+                // Clips survive reset_matrix (stored in device coords).
+                canvas.reset_matrix();
+
+                // Use Src blend to replace content within the clip with the
+                // blurred version (not SrcOver which would double-render).
+                let mut paint = skia::Paint::default();
+                paint.set_image_filter(blur_filter);
+                paint.set_blend_mode(skia::BlendMode::Src);
+                canvas.draw_image(&snapshot, (0, 0), Some(&paint));
+
+                canvas.restore();
+            }
+        }
+
         if apply_to_current_surface {
             self.apply_drawing_to_render_canvas(Some(&shape));
         }
@@ -1175,9 +1276,18 @@ impl RenderState {
 
     pub fn update_render_context(&mut self, tile: tiles::Tile) {
         self.current_tile = Some(tile);
-        self.render_area = tiles::get_tile_rect(tile, self.get_scale());
-        self.surfaces
-            .update_render_context(self.render_area, self.get_scale());
+        let scale = self.get_scale();
+        self.render_area = tiles::get_tile_rect(tile, scale);
+        let margins = self.surfaces.margins();
+        let margin_w = margins.width as f32 / scale;
+        let margin_h = margins.height as f32 / scale;
+        self.render_area_with_margins = skia::Rect::from_ltrb(
+            self.render_area.left - margin_w,
+            self.render_area.top - margin_h,
+            self.render_area.right + margin_w,
+            self.render_area.bottom + margin_h,
+        );
+        self.surfaces.update_render_context(self.render_area, scale);
     }
 
     pub fn cancel_animation_frame(&mut self) {
@@ -1677,7 +1787,7 @@ impl RenderState {
         // Account for the shadow offset so the temporary surface fully contains the shifted blur.
         bounds.offset(world_offset);
         // Early cull if the shadow bounds are outside the render area.
-        if !bounds.intersects(self.render_area) {
+        if !bounds.intersects(self.render_area_with_margins) {
             return;
         }
 
@@ -2047,11 +2157,11 @@ impl RenderState {
                 let is_visible = if is_container || has_effects {
                     let element_extrect =
                         extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
-                    element_extrect.intersects(self.render_area)
+                    element_extrect.intersects(self.render_area_with_margins)
                         && !transformed_element.visually_insignificant(scale, tree)
                 } else {
                     let selrect = transformed_element.selrect();
-                    selrect.intersects(self.render_area)
+                    selrect.intersects(self.render_area_with_margins)
                         && !transformed_element.visually_insignificant(scale, tree)
                 };
 
@@ -2316,10 +2426,22 @@ impl RenderState {
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
+                        // Check if any shape on this tile has a background blur.
+                        // If so, we need ALL root shapes rendered (not just those
+                        // assigned to this tile) because the blur snapshots Current
+                        // which must contain the shapes behind it.
+                        let tile_has_bg_blur = ids.iter().any(|id| {
+                            tree.get(id).is_some_and(|s| {
+                                s.blur.is_some_and(|b| {
+                                    !b.hidden && b.blur_type == BlurType::BackgroundBlur
+                                })
+                            })
+                        });
+
                         // We only need first level shapes, in the same order as the parent node
                         let mut valid_ids = Vec::with_capacity(ids.len());
                         for root_id in root_ids.iter() {
-                            if ids.contains(root_id) {
+                            if tile_has_bg_blur || ids.contains(root_id) {
                                 valid_ids.push(*root_id);
                             }
                         }

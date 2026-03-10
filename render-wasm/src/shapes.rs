@@ -1242,6 +1242,7 @@ impl Shape {
                     None,
                     None,
                 ),
+                BlurType::BackgroundBlur => None,
             })
     }
 
@@ -1253,6 +1254,7 @@ impl Shape {
                 BlurType::LayerBlur => {
                     skia::MaskFilter::blur(skia::BlurStyle::Normal, blur.value * scale, Some(true))
                 }
+                BlurType::BackgroundBlur => None,
             })
     }
 

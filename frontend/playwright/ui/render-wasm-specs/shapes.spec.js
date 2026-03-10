@@ -489,5 +489,22 @@ test("BUG 13610 - Huge inner strokes", async ({
     pageId: "effcbebc-b8c8-802f-8007-b11dd34fe191",
   });
   await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders background blur on shapes overlapping other shapes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-background-blur.json");
+
+  await workspace.goToWorkspace({
+    id: "93bfc923-66b2-813c-8007-b2725507ba08",
+    pageId: "93bfc923-66b2-813c-8007-b2725507ba09",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
   await expect(workspace.canvas).toHaveScreenshot();
 });
