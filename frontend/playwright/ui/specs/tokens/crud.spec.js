@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
-import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import {
   setupEmptyTokensFileRender,
   setupTokensFileRender,
@@ -11,7 +10,9 @@ import {
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
-  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
+  await WasmWorkspacePage.mockConfigFlags(page, [
+    "enable-feature-design-tokens-v1",
+  ]);
 });
 
 test.describe("Tokens - creation", () => {
@@ -600,8 +601,7 @@ test.describe("Tokens - creation", () => {
     const selfReferenceError = "Token has self reference";
     const missingReferenceError = "Missing token references";
 
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFileRender(page);
+    const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -716,7 +716,7 @@ test.describe("Tokens - creation", () => {
     const selfReferenceError = "Token has self reference";
     const missingReferenceError = "Missing token references";
 
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+    const { tokensUpdateCreateModal } =
       await setupEmptyTokensFileRender(page);
 
     // Open modal
@@ -830,7 +830,7 @@ test.describe("Tokens - creation", () => {
   test("User creates shadow token", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
 
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+    const { tokensUpdateCreateModal } =
       await setupEmptyTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     // Open modal
@@ -1011,7 +1011,7 @@ test.describe("Tokens - creation", () => {
   test("User can't submit empty typography token or reference", async ({
     page,
   }) => {
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+    const { tokensUpdateCreateModal } =
       await setupTypographyTokensFileRender(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1046,7 +1046,7 @@ test.describe("Tokens - creation", () => {
   test("User creates shadow token with negative spread", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
 
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+    const { tokensUpdateCreateModal } =
       await setupEmptyTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     // Open modal
@@ -1231,8 +1231,7 @@ test.describe("Tokens - creation", () => {
 
   test("User creates typography token", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFileRender(page);
+    const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1478,7 +1477,7 @@ test.describe("Tokens - creation", () => {
   });
 
   test("User adds typography token with reference", async ({ page }) => {
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+    const { tokensUpdateCreateModal, tokensSidebar } =
       await setupTypographyTokensFileRender(page);
 
     const newTokenTitle = "NewReference";
@@ -1528,7 +1527,7 @@ test.describe("Tokens - creation", () => {
   });
 
   test("User creates grouped color token", async ({ page }) => {
-    const { workspacePage, tokensUpdateCreateModal, tokensSidebar } =
+    const { tokensUpdateCreateModal, tokensSidebar } =
       await setupEmptyTokensFileRender(page);
 
     await tokensSidebar
@@ -1671,7 +1670,7 @@ test.describe("Tokens tab - edition", () => {
   test("User edits typography token and all fields are valid", async ({
     page,
   }) => {
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+    const { tokensUpdateCreateModal, tokensSidebar } =
       await setupTypographyTokensFileRender(page);
 
     await tokensSidebar

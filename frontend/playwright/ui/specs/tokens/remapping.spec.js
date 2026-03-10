@@ -11,7 +11,6 @@ test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.mockConfigFlags(page, [
     "enable-feature-design-tokens-v1",
   ]);
-  await WasmWorkspacePage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 const createToken = async (page, type, name, textFieldName, value) => {
@@ -247,10 +246,7 @@ test.describe("Remapping Tokens", () => {
     test("User renames typography token with alias references", async ({
       page,
     }) => {
-      const {
-        tokensSidebar,
-        tokenContextMenuForToken,
-      } = await setupTypographyTokensFileRender(page);
+      const { tokensSidebar } = await setupTypographyTokensFileRender(page);
 
       // Create base typography token
       await createToken(page, "Typography", "base-text", "Font size", "16");

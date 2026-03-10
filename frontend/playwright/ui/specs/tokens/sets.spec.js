@@ -1,11 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import { setupEmptyTokensFileRender, setupTokensFileRender } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-  await WasmWorkspacePage.init(page);  
-  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
+  await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, [
+    "enable-feature-design-tokens-v1",
+  ]);
 });
 
 test.describe("Tokens: Sets Tab", () => {
@@ -17,11 +18,11 @@ test.describe("Tokens: Sets Tab", () => {
   };
 
   const createSet = async (sidebar, setName, finalKey = "Enter") => {
-    const tokensTabButton = sidebar
+    sidebar
       .getByRole("button", { name: "Add set" })
       .click();
 
-    await changeSetInput(sidebar, setName, (finalKey = "Enter"));
+    await changeSetInput(sidebar, setName, finalKey);
   };
 
   const assertEmptySetsList = async (el) => {
@@ -44,7 +45,7 @@ test.describe("Tokens: Sets Tab", () => {
     const { tokenThemesSetsSidebar, tokenContextMenuForSet } =
       await setupEmptyTokensFileRender(page);
 
-    const tokensTabButton = tokenThemesSetsSidebar
+    tokenThemesSetsSidebar
       .getByRole("button", { name: "Add set" })
       .click();
 
@@ -138,10 +139,10 @@ test.describe("Tokens: Sets Tab", () => {
   test("User can create & edit sets and set groups with an identical name", async ({
     page,
   }) => {
-    const { tokenThemesSetsSidebar, tokenContextMenuForSet } =
+    const { tokenThemesSetsSidebar } =
       await setupEmptyTokensFileRender(page);
 
-    const tokensTabButton = tokenThemesSetsSidebar
+    tokenThemesSetsSidebar
       .getByRole("button", { name: "Add set" })
       .click();
 
@@ -218,7 +219,7 @@ test.describe("Tokens: Sets Tab", () => {
   });
 
   test("Display active set and verify if is enabled", async ({ page }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenSetItems } =
+    const { tokenThemesSetsSidebar, tokensSidebar } =
       await setupTokensFileRender(page);
 
     // Create set

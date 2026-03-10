@@ -11,10 +11,6 @@ const setupEmptyTokensFile = async (page, options = {}) => {
   }
 
   await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC(
-    "get-team?id=*",
-    "workspace/get-team-tokens.json",
-  );
 
   await workspacePage.mockRPC(
     "update-file?id=*",
@@ -50,10 +46,6 @@ const setupEmptyTokensFileRender = async (page, options = {}) => {
   }
 
   await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC(
-    "get-team?id=*",
-    "workspace/get-team-tokens.json",
-  );
 
   await workspacePage.mockRPC(
     "update-file?id=*",
@@ -93,10 +85,7 @@ const setupTokensFile = async (page, options = {}) => {
   }
 
   await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC(
-    "get-team?id=*",
-    "workspace/get-team-tokens.json",
-  );
+
   await workspacePage.mockRPC(/get\-file\?/, file);
   await workspacePage.mockRPC(/get\-file\-fragment\?/, fileFragment);
   await workspacePage.mockRPC(
@@ -138,10 +127,7 @@ const setupTokensFileRender = async (page, options = {}) => {
   }
 
   await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC(
-    "get-team?id=*",
-    "workspace/get-team-tokens.json",
-  );
+
   await workspacePage.mockRPC(/get\-file\?/, file);
   await workspacePage.mockRPC(/get\-file\-fragment\?/, fileFragment);
   await workspacePage.mockRPC(
@@ -206,8 +192,7 @@ const testTokenCreationFlow = async (
   const selfReferenceError = "Token has self reference";
   const missingReferenceError = "Missing token references";
 
-  const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-    await setupEmptyTokensFileRender(page);
+  const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
 
   // Open modal
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
