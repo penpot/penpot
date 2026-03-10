@@ -21,6 +21,7 @@
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
+   [frontend-tests.util-text-from-dom-test]
    [frontend-tests.worker-snap-test]))
 
 (enable-console-print!)
@@ -52,5 +53,6 @@
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
+   'frontend-tests.util-text-from-dom-test
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.worker-snap-test))

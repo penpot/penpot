@@ -38,21 +38,23 @@
 
 (defn get-attrs-from-styles
   [element attrs defaults]
-  (let [attrs (or attrs [])
-        value-empty? (fn [v]
-                       (or (nil? v)
-                           (and (string? v) (empty? v))
-                           (and (coll? v) (empty? v))))]
-    (reduce (fn [acc key]
-              (let [style (.-style element)
-                    value (if (contains? styles/mapping key)
-                            (let [style-name (styles/get-style-name-as-css-variable key)
-                                  [_ style-decode] (get styles/mapping key)]
-                              (style-decode (.getPropertyValue style style-name)))
-                            (let [style-name (styles/get-style-name key)]
-                              (styles/normalize-attr-value key (.getPropertyValue style style-name))))]
-                (assoc acc key (if (value-empty? value) (get defaults key) value))))
-            {} attrs)))
+  (if (nil? element)
+    (or defaults {})
+    (let [attrs (or attrs [])
+          value-empty? (fn [v]
+                         (or (nil? v)
+                             (and (string? v) (empty? v))
+                             (and (coll? v) (empty? v))))]
+      (reduce (fn [acc key]
+                (let [style (.-style element)
+                      value (if (contains? styles/mapping key)
+                              (let [style-name (styles/get-style-name-as-css-variable key)
+                                    [_ style-decode] (get styles/mapping key)]
+                                (style-decode (.getPropertyValue style style-name)))
+                              (let [style-name (styles/get-style-name key)]
+                                (styles/normalize-attr-value key (.getPropertyValue style style-name))))]
+                  (assoc acc key (if (value-empty? value) (get defaults key) value))))
+              {} attrs))))
 
 (defn get-text-span-styles
   [element]
