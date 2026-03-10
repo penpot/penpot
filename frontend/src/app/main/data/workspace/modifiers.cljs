@@ -675,6 +675,13 @@
       (let [structure-entries (parse-structure-modifiers modif-tree)]
         (wasm.api/set-structure-modifiers structure-entries))
 
+      ;; Apply property changes (e.g. grow-type) to WASM shapes before
+      ;; propagating geometry, so propagate_modifiers sees the updated state.
+      (doseq [[id {:keys [property value]}] (extract-property-changes modif-tree)]
+        (when (= property :grow-type)
+          (wasm.api/use-shape id)
+          (wasm.api/set-shape-grow-type value)))
+
       (let [objects          (dsh/lookup-page-objects state)
 
             geometry-entries
