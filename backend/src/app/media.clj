@@ -293,11 +293,16 @@
 (defn download-image
   "Download an image from the provided URI and return the media input object"
   [{:keys [::http/client]} uri]
-  (letfn [(parse-and-validate [{:keys [headers] :as response}]
+  (letfn [(parse-and-validate [{:keys [status headers] :as response}]
             (let [size     (some-> (get headers "content-length") d/parse-integer)
                   mtype    (get headers "content-type")
                   format   (cm/mtype->format mtype)
                   max-size (cf/get :media-max-file-size default-max-file-size)]
+
+              (when-not (<= 200 status 299)
+                (ex/raise :type :validation
+                          :code :unable-to-download-image
+                          :hint (str/ffmt "unable to download image from '%': unexpected status code %" uri status)))
 
               (when-not size
                 (ex/raise :type :validation
@@ -318,9 +323,32 @@
 
               {:size size :mtype mtype :format format}))]
 
-    (let [{:keys [body] :as response} (http/req! client
-                                                 {:method :get :uri uri}
-                                                 {:response-type :input-stream})
+    (let [{:keys [body] :as response}
+          (try
+            (http/req! client
+                       {:method :get :uri uri}
+                       {:response-type :input-stream})
+            (catch java.net.ConnectException cause
+              (ex/raise :type :validation
+                        :code :unable-to-download-image
+                        :hint (str/ffmt "unable to download image from '%': connection refused or host unreachable" uri)
+                        :cause cause))
+            (catch java.net.http.HttpConnectTimeoutException cause
+              (ex/raise :type :validation
+                        :code :unable-to-download-image
+                        :hint (str/ffmt "unable to download image from '%': connection timeout" uri)
+                        :cause cause))
+            (catch java.net.http.HttpTimeoutException cause
+              (ex/raise :type :validation
+                        :code :unable-to-download-image
+                        :hint (str/ffmt "unable to download image from '%': request timeout" uri)
+                        :cause cause))
+            (catch java.io.IOException cause
+              (ex/raise :type :validation
+                        :code :unable-to-download-image
+                        :hint (str/ffmt "unable to download image from '%': I/O error" uri)
+                        :cause cause)))
+
           {:keys [size mtype]} (parse-and-validate response)
           path    (tmp/tempfile :prefix "penpot.media.download.")
           written (io/write* path body :size size)]
