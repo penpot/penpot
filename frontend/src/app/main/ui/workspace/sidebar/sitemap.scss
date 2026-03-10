@@ -130,6 +130,17 @@
       border: deprecated.$s-1 solid var(--input-border-color-focus);
       color: var(--layer-row-foreground-color);
     }
+    &.separator-body {
+      height: auto;
+      min-height: deprecated.$s-32;
+      padding: 0;
+    }
+    .page-separator {
+      width: 100%;
+      height: deprecated.$s-1;
+      margin: deprecated.$s-8;
+      background-color: var(--color-background-quaternary);
+    }
   }
   &:active,
   &.on-drag {
@@ -212,6 +223,16 @@
       }
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-hidden);
+      }
+    }
+  }
+  &.separator {
+    &:hover,
+    &.hover {
+      .element-list-body {
+        color: var(--layer-row-foreground-color);
+        background-color: transparent;
+        box-shadow: none;
       }
     }
   }

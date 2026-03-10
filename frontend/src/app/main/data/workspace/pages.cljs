@@ -328,11 +328,24 @@
   (ptk/reify ::rename-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [page    (dsh/lookup-page state id)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-page page)
-                        (pcb/mod-page page {:name name}))]
-        (rx/of (dch/commit-changes changes))))))
+      (let [page             (dsh/lookup-page state id)
+            changes          (-> (pcb/empty-changes it)
+                                 (pcb/with-page page)
+                                 (pcb/mod-page page {:name name}))
+            pages            (-> (dsh/lookup-file-data state) :pages)
+            index            (d/index-of pages id)
+            prev-id          (when (and (some? index) (pos? index))
+                               (nth pages (dec index) nil))
+            next-id          (when (some? index)
+                               (nth pages (inc index) nil))
+            fallback-page-id (or prev-id next-id)
+            separator?       (= "---" (str/trim name))]
+        (rx/concat
+         (rx/of (dch/commit-changes changes))
+         (when (and separator?
+                    (= id (:current-page-id state))
+                    (some? fallback-page-id))
+           (rx/of (dcm/go-to-workspace :page-id fallback-page-id))))))))
 
 (defn- delete-page-components
   [changes page]
