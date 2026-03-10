@@ -30,6 +30,15 @@ const exclusiveTypes = [
  * @property {boolean} [allowHTMLPaste]
  */
 
+const looksLikeJSON = (str) => {
+  if (typeof str !== 'string') return false;
+  const trimmed = str.trim();
+  return (
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']'))
+  );
+};
+
 /**
  *
  * @param {string} text
@@ -39,13 +48,14 @@ const exclusiveTypes = [
  */
 function parseText(text, options) {
   options = options || {};
+
   const decodeTransit = options["decodeTransit"];
-  if (decodeTransit) {
+  if (decodeTransit && looksLikeJSON(text)) {
     try {
       decodeTransit(text);
       return new Blob([text], { type: "application/transit+json" });
     } catch (_error) {
-      // NOOP
+      return new Blob([text], { type: "text/plain" });
     }
   }
 
