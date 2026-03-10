@@ -24,3 +24,21 @@
   (t/is (false? (sm/validate cto/schema:token-name "Hey Foo.Bar")))
   (t/is (false? (sm/validate cto/schema:token-name "Hey😈Foo.Bar")))
   (t/is (false? (sm/validate cto/schema:token-name "Hey%Foo.Bar"))))
+
+
+(t/deftest token-value-with-refs
+  (t/testing "empty value"
+    (t/is (= (cto/insert-ref "" 0 "token1")
+             {:result "{token1}" :position 8})))
+  (t/testing "value without references"
+    (t/is (= (cto/insert-ref "ABC" 0 "token1")
+             {:result "{token1}ABC" :position 8}))
+    (t/is (= (cto/insert-ref "23 + " 5 "token1")
+             {:result "23 + {token1}" :position 13}))
+    (t/is (= (cto/insert-ref "23 + " 5 "token1")
+             {:result "23 + {token1}" :position 13})))
+  (t/testing "value with closed references"
+    (t/is (= (cto/insert-ref "{token2}" 8 "token1")
+             {:result "{token2}{token1}" :position 16}))
+    (t/is (= (cto/insert-ref "{token2}" 6 "token1")
+             {:result "{token1}" :position 8}))))

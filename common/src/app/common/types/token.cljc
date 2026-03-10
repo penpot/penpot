@@ -607,7 +607,8 @@
    "400" #{"book" "normal" "buch" "regular"},
    "500" #{"kräftig" "medium" "kraeftig"},
    "600" #{"demi-bold" "halbfett" "demibold" "demi bold" "semibold" "semi bold" "semi-bold"},
-   "700" #{"dreiviertelfett" "bold"},
+   "700" #{"dreivi
+            ertelfett" "bold"},
    "800" #{"extrabold" "fett" "extra-bold" "ultrabold" "ultra-bold" "extra bold" "ultra bold"},
    "900" #{"heavy" "black" "extrafett"},
    "950" #{"extra-black" "extra black" "ultra-black" "ultra black"}})
@@ -637,3 +638,42 @@
     (when (font-weight-values weight)
       (cond-> {:weight weight}
         italic? (assoc :style "italic")))))
+
+(defn inside-ref?
+  [value position]
+  (let [left-part (str/slice value 0 position)
+        last-index-open (str/last-index-of left-part "{")
+        last-index-close (str/last-index-of left-part "}")]
+    (cond
+      (and (nil? last-index-open) (nil? last-index-close)) false
+      (and (nil? last-index-open) (some? last-index-close)) false
+      (and (some? last-index-open) (nil? last-index-close)) true
+      :else
+      (< last-index-close last-index-open))))
+
+(defn start-ref-position
+  [value position]
+  (let [left-part (str/slice value 0 position)
+        last-index-open (str/last-index-of left-part "{")]
+    last-index-open))
+
+(defn end-ref-position
+  [value position]
+  (let [right-part (str/slice value position)
+        next-index-close (str/index-of right-part "}")]
+    (if (some? next-index-close)
+      (+ position next-index-close 1)
+      position)))
+
+(defn insert-ref
+  [value position name]
+  (let [reference (str "{" name "}")]
+    (if (inside-ref? value position)
+      (let [first-part (str/slice value 0 (start-ref-position value position))
+            second-part (str/slice value (end-ref-position value position))]
+        {:result (str first-part reference second-part)
+         :position (+ (count first-part) (count reference))})
+      (let [first-part (str/slice value 0 position)
+            second-part (str/slice value position)]
+        {:result (str first-part reference second-part)
+         :position (+ position (count reference))}))))
