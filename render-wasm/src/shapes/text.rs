@@ -522,10 +522,12 @@ impl TextContent {
                         }
                     }
 
+                    let layout_offset = position_with_affinity.position as usize;
+                    let logical_offset = paragraph.layout_to_logical_offset(layout_offset);
                     return Some(TextPositionWithAffinity::new(
                         position_with_affinity,
                         paragraph_index,
-                        position_with_affinity.position as usize,
+                        logical_offset,
                     ));
                 }
             }
@@ -995,6 +997,49 @@ impl Paragraph {
         self.children
             .iter_mut()
             .for_each(|l| l.scale_content(value));
+    }
+
+    /// Convert a logical character offset (based on original span text)
+    /// to a layout offset (as used by Skia). `apply_text_transform` inserts
+    /// a zero-width space after each '/', so the layout text is longer.
+    pub fn logical_to_layout_offset(&self, logical_offset: usize) -> usize {
+        let mut pos = 0;
+        let mut extra = 0;
+        for span in self.children() {
+            for ch in span.text.chars() {
+                if pos >= logical_offset {
+                    return logical_offset + extra;
+                }
+                if ch == '/' {
+                    extra += 1;
+                }
+                pos += 1;
+            }
+        }
+        logical_offset + extra
+    }
+
+    /// Convert a layout character offset (from Skia, which includes
+    /// zero-width spaces after '/') back to a logical offset.
+    pub fn layout_to_logical_offset(&self, layout_offset: usize) -> usize {
+        let mut logical_pos = 0;
+        let mut layout_pos = 0;
+        for span in self.children() {
+            for ch in span.text.chars() {
+                if layout_pos >= layout_offset {
+                    return logical_pos;
+                }
+                logical_pos += 1;
+                layout_pos += 1;
+                if ch == '/' {
+                    layout_pos += 1;
+                    if layout_pos > layout_offset {
+                        return logical_pos;
+                    }
+                }
+            }
+        }
+        logical_pos
     }
 }
 

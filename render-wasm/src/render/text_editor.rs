@@ -123,6 +123,9 @@ fn calculate_cursor_rect(
                 .map(|span| span.text.chars().count())
                 .sum();
 
+            let layout_char_pos = para.logical_to_layout_offset(char_pos);
+            let layout_para_count = para.logical_to_layout_offset(para_char_count);
+
             let (cursor_x, cursor_height) = if para_char_count == 0 {
                 // Empty paragraph - use default height
                 (0.0, laid_out_para.height())
@@ -139,7 +142,7 @@ fn calculate_cursor_rect(
                 }
             } else if char_pos >= para_char_count {
                 let rects = laid_out_para.get_rects_for_range(
-                    para_char_count.saturating_sub(1)..para_char_count,
+                    layout_para_count.saturating_sub(1)..layout_para_count,
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -150,7 +153,7 @@ fn calculate_cursor_rect(
                 }
             } else {
                 let rects = laid_out_para.get_rects_for_range(
-                    char_pos..char_pos + 1,
+                    layout_char_pos..layout_char_pos + 1,
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -221,9 +224,11 @@ fn calculate_selection_rects(
         };
 
         if range_start < range_end {
+            let layout_range_start = para.logical_to_layout_offset(range_start);
+            let layout_range_end = para.logical_to_layout_offset(range_end);
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let text_boxes = laid_out_para.get_rects_for_range(
-                range_start..range_end,
+                layout_range_start..layout_range_end,
                 RectHeightStyle::Max,
                 RectWidthStyle::Tight,
             );

@@ -851,7 +851,8 @@ fn get_cursor_rect(
     let mut y_offset = valign_offset;
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
-            let char_pos = cursor.offset;
+            let para = &paragraphs[idx];
+            let char_pos = para.logical_to_layout_offset(cursor.offset);
 
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let rects = laid_out_para.get_rects_for_range(
@@ -938,9 +939,11 @@ fn get_selection_rects(
         };
 
         if range_start < range_end {
+            let layout_range_start = para.logical_to_layout_offset(range_start);
+            let layout_range_end = para.logical_to_layout_offset(range_end);
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let text_boxes = laid_out_para.get_rects_for_range(
-                range_start..range_end,
+                layout_range_start..layout_range_end,
                 RectHeightStyle::Tight,
                 RectWidthStyle::Tight,
             );
