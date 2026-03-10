@@ -39,4 +39,11 @@
 
 (def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
 
+(defn is-valid-license?
+  [profile]
+  (and (contains? cf/flags :nitrate)
+       ;; Possible values: "active" "canceled" "incomplete" "incomplete_expired" "past_due" "paused" "trialing" "unpaid"
+       (contains? #{"active" "past_due" "trialing"}
+                  (dm/get-in profile [:subscription :status]))))
+
 
