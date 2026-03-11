@@ -275,13 +275,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/item-h-sizing-types value))
-           (u/display-not-valid :horizontalPadding value)
+           (u/display-not-valid :horizontalSizing value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :horizontalPadding "Plugin doesn't have 'content:write' permission")
+           (u/display-not-valid :horizontalSizing "Plugin doesn't have 'content:write' permission")
 
            :else
-           (st/emit! (dwsl/update-layout-child #{id} {:layout-item-h-sizing value})))))}
+           (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
 
     :verticalSizing
     {:this true
@@ -297,7 +297,7 @@
            (u/display-not-valid :verticalSizing "Plugin doesn't have 'content:write' permission")
 
            :else
-           (st/emit! (dwsl/update-layout-child #{id} {:layout-item-v-sizing value})))))}))
+           (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}))
 
 (defn layout-child-proxy? [p]
   (obj/type-of? p "LayoutChildProxy"))

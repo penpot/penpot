@@ -358,6 +358,11 @@ export function createApi(
       checkPermission('content:write');
       return plugin.context.flatten(shapes);
     },
+
+    createVariantFromComponents(shapes: Board[]): VariantContainer {
+      checkPermission('content:write');
+      return plugin.context.createVariantFromComponents(shapes);
+    },
   };
 
   return {

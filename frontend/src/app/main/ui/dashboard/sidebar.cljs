@@ -302,7 +302,7 @@
         on-create-org-click
         (mf/use-fn
          (fn []
-           (if (dm/get-in profile [:props :nitrate-license :valid])
+           (if (dnt/is-valid-license? profile)
              (dnt/go-to-nitrate-cc)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
 
@@ -547,7 +547,7 @@
         on-create-org-click
         (mf/use-fn
          (fn []
-           (if (dm/get-in profile [:props :nitrate-license :valid])
+           (if (dnt/is-valid-license? profile)
              (dnt/go-to-nitrate-cc)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if empty?

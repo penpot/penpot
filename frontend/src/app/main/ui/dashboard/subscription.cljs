@@ -120,10 +120,7 @@
 (mf/defc nitrate-sidebar*
   {::mf/props :obj}
   [{:keys [profile teams]}]
-  (let [nitrate-license (dm/get-in profile [:props :nitrate-license])
-        nitrate? (and (contains? cf/flags :nitrate)
-                      (:valid nitrate-license))
-
+  (let [nitrate? (dnt/is-valid-license? profile)
         orgs (mf/with-memo [teams]
                (let [orgs (->> teams
                                vals

@@ -3,6 +3,8 @@
   (:require
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.http.client :as http]
    [app.rpc :as-alias rpc]
@@ -83,9 +85,73 @@
    [:id ::sm/text]
    [:name ::sm/text]])
 
-(def ^:private schema:user
-  [:map
-   [:valid ::sm/boolean]])
+;; TODO Unify with schemas on backend/src/app/http/management.clj
+(def ^:private schema:timestamp
+  (sm/type-schema
+   {:type ::timestamp
+    :pred ct/inst?
+    :type-properties
+    {:title "inst"
+     :description "The same as :app.common.time/inst but encodes to epoch"
+     :error/message "should be an instant"
+     :gen/gen (->> (sg/small-int)
+                   (sg/fmap (fn [v] (ct/inst v))))
+     :decode/string ct/inst
+     :encode/string inst-ms
+     :decode/json ct/inst
+     :encode/json inst-ms}}))
+
+(def ^:private schema:subscription
+  [:map {:title "Subscription"}
+   [:id ::sm/text]
+   [:customer-id ::sm/text]
+   [:type [:enum
+           "unlimited"
+           "professional"
+           "enterprise"
+           "nitrate"]]
+   [:status [:enum
+             "active"
+             "canceled"
+             "incomplete"
+             "incomplete_expired"
+             "past_due"
+             "paused"
+             "trialing"
+             "unpaid"]]
+
+   [:billing-period [:enum
+                     "month"
+                     "day"
+                     "week"
+                     "year"]]
+   [:quantity :int]
+   [:description [:maybe ::sm/text]]
+   [:created-at schema:timestamp]
+   [:start-date [:maybe schema:timestamp]]
+   [:ended-at [:maybe schema:timestamp]]
+   [:trial-end [:maybe schema:timestamp]]
+   [:trial-start [:maybe schema:timestamp]]
+   [:cancel-at [:maybe schema:timestamp]]
+   [:canceled-at [:maybe schema:timestamp]]
+   [:current-period-end [:maybe schema:timestamp]]
+   [:current-period-start [:maybe schema:timestamp]]
+   [:cancel-at-period-end :boolean]
+
+   [:cancellation-details
+    [:map {:title "CancellationDetails"}
+     [:comment [:maybe ::sm/text]]
+     [:reason [:maybe ::sm/text]]
+     [:feedback [:maybe
+                 [:enum
+                  "customer_service"
+                  "low_quality"
+                  "missing_feature"
+                  "other"
+                  "switched_service"
+                  "too_complex"
+                  "too_expensive"
+                  "unused"]]]]]])
 
 (def ^:private schema:connectivity
   [:map
@@ -96,10 +162,10 @@
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get (str baseuri "/api/teams/" (str team-id)) schema:organization params)))
 
-(defn- is-valid-user
+(defn- get-subscription
   [cfg {:keys [profile-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get (str baseuri "/api/users/" (str profile-id)) schema:user params)))
+    (request-to-nitrate cfg :get (str baseuri "/api/subscriptions/" (str profile-id)) schema:subscription params)))
 
 (defn- get-connectivity
   [cfg params]
@@ -113,9 +179,9 @@
 (defmethod ig/init-key ::client
   [_ cfg]
   (when (contains? cf/flags :nitrate)
-    {:get-team-org (partial get-team-org cfg)
-     :is-valid-user (partial is-valid-user cfg)
-     :connectivity (partial get-connectivity cfg)}))
+    {:get-team-org     (partial get-team-org cfg)
+     :get-subscription (partial get-subscription cfg)
+     :connectivity     (partial get-connectivity cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILS
@@ -125,9 +191,8 @@
 (defn add-nitrate-licence-to-profile
   [cfg profile]
   (try
-    (let [nitrate-licence (call cfg :is-valid-user {:profile-id (:id profile)})]
-      (assoc-in profile [:props :nitrate-license]
-                (select-keys nitrate-licence [:valid :created-at])))
+    (let [subscription (call cfg :get-subscription {:profile-id (:id profile)})]
+      (assoc profile :subscription subscription))
     (catch Throwable cause
       (l/error :hint "failed to get nitrate licence"
                :profile-id (:id profile)

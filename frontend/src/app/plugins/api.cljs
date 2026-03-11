@@ -14,6 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
+   [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
@@ -26,6 +27,7 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
    [app.main.fonts :refer [fetch-font-css]]
@@ -608,4 +610,35 @@
 
         :else
         (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dw/convert-selected-to-path ids)))))))
+          (st/emit! (dw/convert-selected-to-path ids)))))
+
+    :createVariantFromComponents
+    (fn [shapes]
+      (cond
+        (or (not (seq shapes))
+            (not (every? u/is-main-component-proxy? shapes)))
+        (u/display-not-valid :shapes shapes)
+
+        :else
+        (let [file-id (obj/get (first shapes) "$file")
+              page-id (obj/get (first shapes) "$page")
+              ids (->> shapes
+                       (map #(obj/get % "$id"))
+                       (into #{}))
+
+              ;; Check that every component is:
+              ;; - in the same page
+              ;; - not already a variant
+              valid?
+              (every?
+               (fn [id]
+                 (let [shape     (u/locate-shape file-id page-id id)
+                       component (u/locate-library-component file-id (:component-id shape))]
+                   (not (ctk/is-variant? component))))
+               ids)]
+          (when valid?
+            (let [variant-id (uuid/next)]
+              (st/emit! (dwv/combine-as-variants
+                         ids
+                         {:trigger "plugin:combine-as-variants" :variant-id variant-id}))
+              (library/variant-proxy plugin-id file-id variant-id))))))))

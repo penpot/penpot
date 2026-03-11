@@ -27,6 +27,7 @@
 ## 2.14.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
+
 - Deprecate `PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE` in favour of `PENPOT_HTTP_SERVER_MAX_BODY_SIZE`.
 
 ### :sparkles: New features & Enhancements
@@ -58,6 +59,8 @@
 - Fix unable to finish the create account form using keyboard [Taiga #11333](https://tree.taiga.io/project/penpot/issue/11333)
 - Fix 45 rotated board titles rendered incorrectly [Taiga #13306](https://tree.taiga.io/project/penpot/issue/13306)
 - Fix cannot apply second token after creation while shape is selected [Taiga #13513](https://tree.taiga.io/project/penpot/issue/13513)
+- Fix error activating a set with invalid shadow token applied [Taiga #13528](https://tree.taiga.io/project/penpot/issue/13528)
+- Fix component "broken" after variant switch [Taiga #12984](https://tree.taiga.io/project/penpot/issue/12984)
 
 ## 2.13.3
 
@@ -71,7 +74,6 @@
 
 - Fix modifying shapes by apply negative tokens to border radius [Taiga #13317](https://tree.taiga.io/project/penpot/issue/13317)
 - Fix arbitrary file read security issue on create-font-variant rpc method (https://github.com/penpot/penpot/security/advisories/GHSA-xp3f-g8rq-9px2)
-
 
 ## 2.13.1
 
