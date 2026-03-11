@@ -243,11 +243,17 @@ export interface Board extends ShapeBase {
 
   /**
    * The horizontal sizing behavior of the board.
+   * It can be one of the following values:
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'auto': The container fits the content.
    */
   horizontalSizing?: 'auto' | 'fix';
 
   /**
    * The vertical sizing behavior of the board.
+   * It can be one of the following values:
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'auto': The container fits the content.
    */
   verticalSizing?: 'auto' | 'fix';
 
@@ -738,19 +744,19 @@ export interface CommonLayout {
   /**
    * The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
    * It can be one of the following values:
-   * - 'fit-content': The container fits the content.
-   * - 'fill': The container fills the available space.
-   * - 'auto': The container size is determined automatically.
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fill': The container fills the available space. Only can be set if it's inside another layout.
+   * - 'auto': The container fits the content.
    */
-  horizontalSizing: 'fit-content' | 'fill' | 'auto';
+  horizontalSizing: 'fix' | 'fill' | 'auto';
   /**
    * The `verticalSizing` property specifies the vertical sizing behavior of the container.
    * It can be one of the following values:
-   * - 'fit-content': The container fits the content.
-   * - 'fill': The container fills the available space.
-   * - 'auto': The container size is determined automatically.
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fill': The container fills the available space. Only can be set if it's inside another layout.
+   * - 'auto': The container fits the content.
    */
-  verticalSizing: 'fit-content' | 'fill' | 'auto';
+  verticalSizing: 'fix' | 'fill' | 'auto';
 
   /**
    * The `remove` method removes the layout.

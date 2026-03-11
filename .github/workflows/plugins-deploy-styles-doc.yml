@@ -102,6 +102,23 @@ jobs:
         run: |
           sed -i "s/WORKER_URI/${{ env.WORKER_URI }}/g" wrangler-penpot-plugins-styles-doc.toml
 
+      - name: Add noindex header and robots.txt files for non-production environments
+        if: ${{ steps.vars.outputs.gh_ref != 'main' }}
+        working-directory: plugins
+        shell: bash
+        run: |
+          ASSETS_DIR="dist/apps/example-styles"
+
+          cat > "${ASSETS_DIR}/_headers" << 'EOF'
+          /*
+            X-Robots-Tag: noindex, nofollow
+          EOF
+
+          cat > "${ASSETS_DIR}/robots.txt" << 'EOF'
+          User-agent: *
+          Disallow: /
+          EOF
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
