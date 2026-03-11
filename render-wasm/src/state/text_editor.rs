@@ -204,10 +204,6 @@ impl TextEditorState {
         content: &TextContent,
         position: &TextPositionWithAffinity,
     ) {
-        fn is_word_char(c: char) -> bool {
-            c.is_alphanumeric() || c == '_'
-        }
-
         self.is_pointer_selection_active = false;
 
         let paragraphs = content.paragraphs();
@@ -319,4 +315,8 @@ impl TextEditorState {
     pub fn has_pending_events(&self) -> bool {
         !self.pending_events.is_empty()
     }
+}
+
+fn is_word_char(c: char) -> bool {
+    c.is_alphanumeric() || c == '_'
 }
