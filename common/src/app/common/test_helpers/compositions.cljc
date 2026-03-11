@@ -278,11 +278,14 @@
 
 (defn swap-component
   "Swap the specified shape by the component specified by component-tag"
-  [file shape component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label]}]
+  [file shape component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label library]}]
   (let [page    (if page-label
                   (thf/get-page file page-label)
                   (thf/current-page file))
-        libraries {(:id  file) file}
+        libraries (cond-> {(:id file) file}
+                    (some? library)
+                    (assoc (:id library) library))
+        library   (or library file)
 
         orig-shapes (when keep-touched? (cfh/get-children-with-self (:objects page) (:id shape)))
 
@@ -290,10 +293,10 @@
         (cll/generate-component-swap (pcb/empty-changes)
                                      (:objects page)
                                      shape
-                                     (:data file)
+                                     (:data library)
                                      page
                                      libraries
-                                     (->  (thc/get-component file component-tag)
+                                     (->  (thc/get-component library component-tag)
                                           :id)
                                      0
                                      nil
@@ -314,10 +317,14 @@
           (thf/validate-file!))
       file')))
 
-(defn swap-component-in-shape [file shape-tag component-tag & {:keys [page-label propagate-fn]}]
-  (swap-component file (ths/get-shape file shape-tag :page-label page-label) component-tag :page-label page-label :propagate-fn propagate-fn))
+(defn swap-component-in-shape [file shape-tag component-tag & {:keys [page-label propagate-fn library]}]
+  (swap-component file (ths/get-shape file shape-tag :page-label page-label)
+                  component-tag
+                  :page-label page-label
+                  :propagate-fn propagate-fn
+                  :library library))
 
-(defn swap-component-in-first-child [file shape-tag component-tag & {:keys [page-label propagate-fn]}]
+(defn swap-component-in-first-child [file shape-tag component-tag & {:keys [page-label propagate-fn library]}]
   (let [first-child-id (->> (ths/get-shape file shape-tag :page-label page-label)
                             :shapes
                             first)]
@@ -325,7 +332,8 @@
                     (ths/get-shape-by-id file first-child-id :page-label page-label)
                     component-tag
                     :page-label page-label
-                    :propagate-fn propagate-fn)))
+                    :propagate-fn propagate-fn
+                    :library library)))
 
 (defn update-color
   "Update the first fill color for the shape identified by shape-tag"

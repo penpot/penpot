@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
+   [app.common.files.comp-processors :as cfcp]
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
@@ -1842,52 +1843,11 @@
 (defmethod migrate-data "0020-fix-missing-swap-slots"
   [data _]
   (let [file      {:id (:id data) :data data}
-        libraries (when (:libs data)
-                    (deref (:libs data)))]
-
-    (letfn [(update-shape-recursive
-              [container shape-id root?]
-              #_(when root?
-                  (prn "Checking container:" (:id container)))
-              (if (:objects container)
-                (let [shape (ctsht/get-shape container shape-id)]
-                  (if (and (ctk/instance-head? shape) (ctk/in-component-copy? shape))
-                    (let [ref-shape (ctf/find-ref-shape file container libraries shape :include-deleted? true :with-context? true)
-                          container (:container (meta ref-shape))]
-                      (if (some? ref-shape)
-                        (compare-slots container container shape ref-shape)
-                        container))
-                    (reduce (fn [container child-id]
-                              (update-shape-recursive container child-id false))
-                            container
-                            (:shapes shape))))
-              container))
-
-            (compare-slots
-              [container-copy container-main shape-copy shape-main]
-              (prn "comparing shape:" (:id shape-copy) " with ref:" (:id shape-main))
-              (if (and (not= (:shape-ref shape-copy) (:id shape-main))
-                       (nil? (ctk/get-swap-slot shape-copy)))
-                (let [new-slot (or (ctk/get-swap-slot shape-main) (:id shape-main))]
-                  (prn "Fixing swap slot for shape:" (:id shape-copy) " to " new-slot)
-                  container-copy)
-                (if (nil? (ctk/get-swap-slot shape-copy))
-                  (let [children-id-pairs (d/zip-all (:shapes shape-copy) (:shapes shape-main))]
-                    (reduce (fn [container [child-copy-id child-main-id]]
-                              (let [child-copy (ctsht/get-shape container-copy child-copy-id)
-                                    child-main (ctsht/get-shape container-main child-main-id)]
-                                (if (and (some? child-copy) (some? child-main))
-                                  (compare-slots container container-main child-copy child-main)
-                                  container-copy)))
-                            container-copy
-                            children-id-pairs))
-                  container-copy)))]
-
-      (prn "start migration" (:id data))
-      (-> data
-          (update :pages-index d/update-vals #(update-shape-recursive % uuid/zero true))
-          (d/update-when :components d/update-vals #(update-shape-recursive % (:main-instance-id %) true))
-          (d/tap-r (fn [_] (prn "end migration")))))))
+        libraries (if (:libs data)
+                    (deref (:libs data))
+                    {})]
+    (-> (cfcp/fix-missing-swap-slots file libraries)
+        :data)))
 
 (def available-migrations
   (into (d/ordered-set)
