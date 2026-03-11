@@ -293,6 +293,133 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
 // TEXT OPERATIONS
 // ============================================================================
 
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn text_editor_composition_start() -> Result<()> {
+    with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return Ok(());
+        }
+        state.text_editor_state.composition.start();
+    });
+
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn text_editor_composition_end() -> Result<()> {
+    let bytes = crate::mem::bytes();
+    let text = match String::from_utf8(bytes) {
+        Ok(text) => text,
+        Err(_) => return Ok(()),
+    };
+
+    with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return Ok(());
+        }
+
+        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+            return Ok(());
+        };
+
+        let Some(shape) = state.shapes.get_mut(&shape_id) else {
+            return Ok(());
+        };
+
+        let Type::Text(text_content) = &mut shape.shape_type else {
+            return Ok(());
+        };
+
+        state.text_editor_state.composition.update(&text);
+
+        let selection = state
+            .text_editor_state
+            .composition
+            .get_selection(&state.text_editor_state.selection);
+        delete_selection_range(text_content, &selection);
+
+        let cursor = state.text_editor_state.selection.focus;
+        if let Some(new_cursor) = insert_text_with_newlines(text_content, &cursor, &text) {
+            state.text_editor_state.selection.set_caret(new_cursor);
+        }
+
+        text_content.layout.paragraphs.clear();
+        text_content.layout.paragraph_builders.clear();
+
+        state.text_editor_state.reset_blink();
+        state
+            .text_editor_state
+            .push_event(crate::state::TextEditorEvent::ContentChanged);
+        state
+            .text_editor_state
+            .push_event(crate::state::TextEditorEvent::NeedsLayout);
+
+        state.render_state.mark_touched(shape_id);
+
+        state.text_editor_state.composition.end();
+    });
+
+    crate::mem::free_bytes()?;
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn text_editor_composition_update() -> Result<()> {
+    let bytes = crate::mem::bytes();
+    let text = match String::from_utf8(bytes) {
+        Ok(text) => text,
+        Err(_) => return Ok(()),
+    };
+
+    with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return Ok(());
+        }
+
+        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+            return Ok(());
+        };
+
+        let Some(shape) = state.shapes.get_mut(&shape_id) else {
+            return Ok(());
+        };
+
+        let Type::Text(text_content) = &mut shape.shape_type else {
+            return Ok(());
+        };
+
+        state.text_editor_state.composition.update(&text);
+
+        let selection = state
+            .text_editor_state
+            .composition
+            .get_selection(&state.text_editor_state.selection);
+        delete_selection_range(text_content, &selection);
+
+        let cursor = state.text_editor_state.selection.focus;
+        insert_text_with_newlines(text_content, &cursor, &text);
+
+        text_content.layout.paragraphs.clear();
+        text_content.layout.paragraph_builders.clear();
+
+        state.text_editor_state.reset_blink();
+        state
+            .text_editor_state
+            .push_event(crate::state::TextEditorEvent::ContentChanged);
+        state
+            .text_editor_state
+            .push_event(crate::state::TextEditorEvent::NeedsLayout);
+
+        state.render_state.mark_touched(shape_id);
+    });
+
+    crate::mem::free_bytes()?;
+    Ok(())
+}
+
 // FIXME: Review if all the return Ok(()) should be Err instead.
 #[no_mangle]
 #[wasm_error]
