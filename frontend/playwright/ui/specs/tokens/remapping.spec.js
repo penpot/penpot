@@ -11,7 +11,6 @@ test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.mockConfigFlags(page, [
     "enable-feature-design-tokens-v1",
   ]);
-  await WasmWorkspacePage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 const createToken = async (page, type, name, textFieldName, value) => {
@@ -46,7 +45,7 @@ const renameToken = async (page, oldName, newName) => {
   const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
     await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
-  const baseToken = tokensSidebar.getByRole("button", {
+  const baseToken = tokensSidebar.getByRole("checkbox", {
     name: oldName,
   });
   await baseToken.click({ button: "right" });
@@ -131,10 +130,10 @@ test.describe("Remapping Tokens", () => {
 
       // Verify token was renamed
       await expect(
-        tokensSidebar.getByRole("button", { name: "foundation-shadow" }),
+        tokensSidebar.getByRole("checkbox", { name: "foundation-shadow" }),
       ).toBeVisible();
       await expect(
-        tokensSidebar.getByRole("button", { name: "derived-shadow" }),
+        tokensSidebar.getByRole("checkbox", { name: "derived-shadow" }),
       ).toBeVisible();
     });
 
@@ -167,13 +166,13 @@ test.describe("Remapping Tokens", () => {
         .click();
 
       await page.getByRole("tab", { name: "Tokens" }).click();
-      const cardShadowToken = tokensSidebar.getByRole("button", {
+      const cardShadowToken = tokensSidebar.getByRole("checkbox", {
         name: "card-shadow",
       });
       await cardShadowToken.click();
 
       // Rename and update value of base token
-      const primaryToken = tokensSidebar.getByRole("button", {
+      const primaryToken = tokensSidebar.getByRole("checkbox", {
         name: "primary-shadow",
       });
       await primaryToken.click({ button: "right" });
@@ -205,12 +204,12 @@ test.describe("Remapping Tokens", () => {
 
       // Verify base token was renamed
       await expect(
-        tokensSidebar.getByRole("button", { name: "main-shadow" }),
+        tokensSidebar.getByRole("checkbox", { name: "main-shadow" }),
       ).toBeVisible();
 
       // Verify referenced token still exists
       await expect(
-        tokensSidebar.getByRole("button", { name: "card-shadow" }),
+        tokensSidebar.getByRole("checkbox", { name: "card-shadow" }),
       ).toBeVisible();
 
       // Verify the shape still has the token applied with the NEW name
@@ -247,13 +246,7 @@ test.describe("Remapping Tokens", () => {
     test("User renames typography token with alias references", async ({
       page,
     }) => {
-      const {
-        tokensUpdateCreateModal,
-        tokensSidebar,
-        tokenContextMenuForToken,
-      } = await setupTypographyTokensFileRender(page);
-
-      const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+      const { tokensSidebar } = await setupTypographyTokensFileRender(page);
 
       // Create base typography token
       await createToken(page, "Typography", "base-text", "Font size", "16");
@@ -280,10 +273,10 @@ test.describe("Remapping Tokens", () => {
 
       // Verify token was renamed
       await expect(
-        tokensSidebar.getByRole("button", { name: "default-text" }),
+        tokensSidebar.getByRole("checkbox", { name: "default-text" }),
       ).toBeVisible();
       await expect(
-        tokensSidebar.getByRole("button", { name: "body-text" }),
+        tokensSidebar.getByRole("checkbox", { name: "body-text" }),
       ).toBeVisible();
     });
 
@@ -336,13 +329,13 @@ test.describe("Remapping Tokens", () => {
         .click();
 
       await page.getByRole("tab", { name: "Tokens" }).click();
-      const paragraphToken = tokensSidebar.getByRole("button", {
+      const paragraphToken = tokensSidebar.getByRole("checkbox", {
         name: "paragraph-style",
       });
       await paragraphToken.click();
 
       // Rename and update value of base token
-      const bodyToken = tokensSidebar.getByRole("button", {
+      const bodyToken = tokensSidebar.getByRole("checkbox", {
         name: "body-style",
       });
       await bodyToken.click({ button: "right" });
@@ -374,12 +367,12 @@ test.describe("Remapping Tokens", () => {
 
       // Verify base token was renamed
       await expect(
-        tokensSidebar.getByRole("button", { name: "text-base" }),
+        tokensSidebar.getByRole("checkbox", { name: "text-base" }),
       ).toBeVisible();
 
       // Verify referenced token still exists
       await expect(
-        tokensSidebar.getByRole("button", { name: "paragraph-style" }),
+        tokensSidebar.getByRole("checkbox", { name: "paragraph-style" }),
       ).toBeVisible();
 
       // Verify the text shape still has the token applied with NEW name and value
@@ -431,10 +424,10 @@ test.describe("Remapping Tokens", () => {
 
       // Verify token was renamed
       await expect(
-        tokensSidebar.getByRole("button", { name: "primary-radius" }),
+        tokensSidebar.getByRole("checkbox", { name: "primary-radius" }),
       ).toBeVisible();
       await expect(
-        tokensSidebar.getByRole("button", { name: "card-radius" }),
+        tokensSidebar.getByRole("checkbox", { name: "card-radius" }),
       ).toBeVisible();
     });
 
@@ -460,7 +453,7 @@ test.describe("Remapping Tokens", () => {
       );
 
       // Rename and update value of base token
-      const radiusToken = tokensSidebar.getByRole("button", {
+      const radiusToken = tokensSidebar.getByRole("checkbox", {
         name: "radius-sm",
       });
       await radiusToken.click({ button: "right" });
@@ -490,17 +483,17 @@ test.describe("Remapping Tokens", () => {
 
       // Verify base token was renamed
       await expect(
-        tokensSidebar.getByRole("button", { name: "radius-base" }),
+        tokensSidebar.getByRole("checkbox", { name: "radius-base" }),
       ).toBeVisible();
 
       // Verify referenced token still exists
       await expect(
-        tokensSidebar.getByRole("button", { name: "button-radius" }),
+        tokensSidebar.getByRole("checkbox", { name: "button-radius" }),
       ).toBeVisible();
 
       // Verify the referenced token now points to the renamed token
       // by opening it and checking the reference
-      const buttonRadiusToken = tokensSidebar.getByRole("button", {
+      const buttonRadiusToken = tokensSidebar.getByRole("checkbox", {
         name: "button-radius",
       });
       await buttonRadiusToken.click({ button: "right" });
@@ -543,13 +536,11 @@ test.describe("Remapping Tokens", () => {
 
       // Verify token was renamed
       await expect(
-        tokensSidebar.getByRole("button", {
+        tokensSidebar.getByRole("checkbox", {
           name: "foundation-shadow",
         }),
       ).toBeVisible();
-      await expect(
-        tokensSidebar.locator('[aria-label="Missing reference"]'),
-      ).toBeVisible();
+      await expect(tokensSidebar.getByLabel("Missing reference")).toBeVisible();
     });
 
     test("Cancel process - no changes applied", async ({ page }) => {
@@ -582,10 +573,10 @@ test.describe("Remapping Tokens", () => {
 
       // Verify original token name still exists
       await expect(
-        tokensSidebar.getByRole("button", { name: "base-shadow" }),
+        tokensSidebar.getByRole("checkbox", { name: "base-shadow" }),
       ).toBeVisible();
       await expect(
-        tokensSidebar.getByRole("button", { name: "derived-shadow" }),
+        tokensSidebar.getByRole("checkbox", { name: "derived-shadow" }),
       ).toBeVisible();
     });
   });
