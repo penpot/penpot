@@ -192,7 +192,7 @@
    (assert (uuid? id))
 
    (let [data (u/locate-shape file-id page-id id)]
-     (-> (obj/reify {:name "ShapeProxy"}
+     (-> (obj/reify {:name "ShapeProxy" :on-error u/handle-error}
            :$plugin {:enumerable false :get (fn [] plugin-id)}
            :$id {:enumerable false :get (fn [] id)}
            :$file {:enumerable false :get (fn [] file-id)}

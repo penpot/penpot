@@ -792,7 +792,8 @@
             unapply-tokens?
             (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
 
-            shape-ids (map :id shapes)]
+            shape-ids
+            (map :id shapes)]
 
         (if unapply-tokens?
           (rx/of
