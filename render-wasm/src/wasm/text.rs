@@ -308,7 +308,6 @@ pub extern "C" fn set_shape_text_content() -> crate::error::Result<()> {
 #[no_mangle]
 pub extern "C" fn set_shape_grow_type(grow_type: u8) {
     let grow_type = RawGrowType::from(grow_type);
-
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(text_content) = &mut shape.shape_type {
             text_content.set_grow_type(GrowType::from(grow_type));

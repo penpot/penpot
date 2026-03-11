@@ -334,8 +334,6 @@
          :on-cut on-cut
          :on-focus on-focus
          :on-blur on-blur
-         ;; FIXME on-click
-         ;; :on-click on-click
          :id "text-editor-wasm-input"
          :class (dm/str (cur/get-dynamic "text" (:rotation shape))
                         " "
