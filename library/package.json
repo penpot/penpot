@@ -26,8 +26,9 @@
     "clear:shadow-cache": "rm -rf .shadow-cljs",
     "build": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs release library",
     "build:bundle": "./scripts/build",
-    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
-    "lint:clj": "cljfmt check --parallel=false src/ test/ && clj-kondo --parallel --lint src/",
+    "fmt": "cljfmt fix --parallel=true src/ test/",
+    "check-fmt": "cljfmt check --parallel=true src/ test/",
+    "lint": "clj-kondo --parallel --lint src/",
     "test": "node --test",
     "watch:test": "node --test --watch",
     "watch": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch library"

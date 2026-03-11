@@ -34,7 +34,8 @@
     "watch": "pnpm run watch:app",
     "build:app": "clojure -M:dev:shadow-cljs release main",
     "build": "pnpm run clear:shadow-cache && pnpm run build:app",
-    "fmt:clj": "cljfmt fix --parallel=true src/",
-    "lint:clj": "cljfmt check --parallel src/ && clj-kondo --parallel --lint src/"
+    "fmt": "cljfmt fix --parallel=true src/",
+    "check-fmt": "cljfmt check --parallel=true src/",
+    "lint": "clj-kondo --parallel --lint src/"
   }
 }

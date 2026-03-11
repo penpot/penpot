@@ -19,7 +19,9 @@
     "ws": "^8.17.0"
   },
   "scripts": {
-    "lint:clj": "cljfmt check --parallel=false src/ test/ && clj-kondo --parallel --lint src/",
-    "fmt:clj": "cljfmt fix --parallel=true src/ test/"
+    "lint": "clj-kondo --parallel --lint ../common/src src/",
+    "check-fmt": "cljfmt check --parallel=true src/ test/",
+    "fmt": "cljfmt fix --parallel=true src/ test/",
+    "test": "clojure -M:dev:test"
   }
 }
