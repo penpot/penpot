@@ -189,7 +189,6 @@
              (clear-schedule schedule-ref)
              (add-schedule schedule-ref (d/nilv delay 300)
                            (fn []
-                             (prn tooltip-id)
                              (when-let [active @active-tooltip]
                                (when (not= (:id active) tooltip-id)
                                  (when-let [tooltip-el (dom/get-element (:id active))]
