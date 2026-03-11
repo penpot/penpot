@@ -28,9 +28,47 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check clojure code format
+      - name: Lint Common
+        working-directory: ./common
         run: |
-          ./scripts/lint
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run lint:clj
+
+      - name: Lint Frontend
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run lint:clj
+          pnpm run lint:js
+          pnpm run lint:scss
+
+      - name: Lint Backend
+        working-directory: ./backend
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run lint:clj
+
+      - name: Lint Exporter
+        working-directory: ./exporter
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run lint:clj
+
+      - name: Lint Library
+        working-directory: ./library
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run lint:clj
 
   test-common:
     name: "Common Tests"
