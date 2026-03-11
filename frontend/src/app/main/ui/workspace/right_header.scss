@@ -29,6 +29,7 @@
 
 .zoom-widget {
   @include deprecated.buttonStyle;
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -39,6 +40,7 @@
 
   .label {
     @include deprecated.bodySmallTypography;
+
     height: 100%;
     padding: deprecated.$s-8 0;
     color: var(--button-tertiary-foreground-color-rest);
@@ -59,6 +61,7 @@
 
 .dropdown {
   @extend .menu-dropdown;
+
   right: deprecated.$s-2;
   top: calc(deprecated.$s-2 + deprecated.$s-48);
   width: deprecated.$s-272;
@@ -77,6 +80,7 @@
 
 .zoom-text {
   @include deprecated.flexCenter;
+
   height: 100%;
   min-width: deprecated.$s-48;
   padding: 0;
@@ -85,7 +89,8 @@
 }
 
 .reset-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   color: var(--button-tertiary-foreground-color-hover);
   height: deprecated.$s-28;
   border-radius: deprecated.$br-8;
@@ -114,7 +119,8 @@
 }
 
 .comments-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   border-radius: deprecated.$br-8;
   margin: 0;
   height: deprecated.$s-28;
@@ -122,7 +128,8 @@
   border: none;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
     height: deprecated.$s-16;
     width: deprecated.$s-16;
@@ -143,7 +150,8 @@
 }
 
 .history-button {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   border-radius: deprecated.$br-8;
   margin: 0;
   height: deprecated.$s-28;
@@ -151,7 +159,8 @@
   border: none;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
     height: deprecated.$s-16;
     width: deprecated.$s-16;
@@ -173,19 +182,22 @@
 
 .persistence-status-widget {
   @include deprecated.flexCenter;
+
   width: deprecated.$s-28;
   height: deprecated.$s-28;
 }
 
 .status-icon {
   @include deprecated.flexCenter;
+
   width: deprecated.$s-24;
   height: deprecated.$s-24;
   margin: 0;
   border-radius: deprecated.$br-circle;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--status-widget-icon-foreground-color);
   }
 }
@@ -213,7 +225,8 @@
 
 .share-btn,
 .viewer-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   border-radius: deprecated.$br-8;
   margin: 0;
   width: deprecated.$s-28;
@@ -221,7 +234,8 @@
   border: none;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     height: deprecated.$s-16;
     width: deprecated.$s-16;
     stroke: var(--icon-foreground);

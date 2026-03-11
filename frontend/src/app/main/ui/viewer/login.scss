@@ -7,11 +7,12 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   width: deprecated.$s-368;
 }
 
@@ -21,16 +22,18 @@
 
 .modal-title {
   @include deprecated.uppercaseTitleTipography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include deprecated.flexColumn;
   @include deprecated.bodySmallTypography;
+
   gap: deprecated.$s-24;
   max-height: deprecated.$s-400;
   overflow: hidden auto;
@@ -66,7 +69,8 @@
   }
 
   a {
-    @extend .button-secondary;
+    @extend %button-secondary;
+
     height: deprecated.$s-40;
     text-transform: uppercase;
     font-size: deprecated.$fs-11;

@@ -37,20 +37,15 @@
 .icon-button-action {
   --button-bg-color: transparent;
   --button-fg-color: var(--color-foreground-secondary);
-
   --button-hover-bg-color: transparent;
   --button-hover-fg-color: var(--color-accent-primary);
-
   --button-active-bg-color: var(--color-background-quaternary);
-
   --button-disabled-bg-color: transparent;
   --button-disabled-fg-color: var(--color-accent-primary-muted);
-
   --button-focus-bg-color: transparent;
   --button-focus-fg-color: var(--color-accent-primary);
   --button-focus-inner-ring-color: transparent;
   --button-focus-outer-ring-color: var(--color-accent-primary);
-
   --button-width: #{$sz-24};
   --button-height: #{$sz-24};
 }

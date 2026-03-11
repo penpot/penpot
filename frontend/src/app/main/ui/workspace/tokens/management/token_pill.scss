@@ -10,8 +10,7 @@
 
 .token-pill {
   @include use-typography("code-font");
-  border: none;
-  background: none;
+
   cursor: pointer;
   display: grid;
   grid-template-columns: auto 1fr;
@@ -33,6 +32,7 @@
 
 .name-wrapper {
   @include use-typography("code-font");
+
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -49,6 +49,7 @@
 
 .first-name-wrapper {
   @include use-typography("code-font");
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -57,6 +58,7 @@
 
 .last-name-wrapper {
   @include use-typography("code-font");
+
   flex-shrink: 0;
 }
 
@@ -70,6 +72,7 @@
   --token-pill-border: var(--color-background-tertiary);
   --token-pill-outline: none;
   --token-pill-accent: var(--color-background-quaternary);
+
   &:hover {
     --token-pill-background: var(--color-token-background);
     --token-pill-foreground: var(--color-foreground-primary);
@@ -81,6 +84,7 @@
   &:focus-visible {
     --token-pill-outline: var(--color-background-primary);
     --token-pill-border: var(--color-accent-primary);
+
     outline-offset: -3px;
   }
 }
@@ -124,11 +128,13 @@
     --token-pill-background: var(--color-background-tertiary);
     --token-pill-accent: var(--color-foreground-error);
   }
+
   &:hover {
     --token-pill-foreground: var(--color-foreground-primary);
     --token-pill-outline: none;
     --token-pill-border: var(--color-foreground-error);
   }
+
   &:focus-visible {
     --token-pill-foreground: var(--color-foreground-error);
     --token-pill-border: var(--color-accent-primary);
@@ -138,6 +144,7 @@
 
 .token-pill-invalid-applied {
   --token-pill-border: var(--color-foreground-error);
+
   &:hover,
   &:focus-visible {
     --token-pill-border: var(--color-foreground-error);
@@ -177,6 +184,7 @@
   --token-pill-border: var(--color-accent-error);
   --token-pill-foreground: var(--color-foreground-error);
   --token-pill-accent: var(--color-foreground-error);
+
   &:hover,
   &:focus-visible {
     --token-pill-border: var(--color-accent-error);

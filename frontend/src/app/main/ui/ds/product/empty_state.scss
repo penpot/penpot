@@ -31,6 +31,7 @@
 
 .text {
   @include t.use-typography("body-small");
+
   text-align: center;
   color: var(--color-foreground-secondary);
 }

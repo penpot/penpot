@@ -16,6 +16,7 @@
 
 .annotation-content {
   @include deprecated.bodySmallTypography;
+
   color: var(--entry-foreground-color);
 }
 

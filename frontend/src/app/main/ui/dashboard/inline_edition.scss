@@ -34,7 +34,6 @@ input.element-title {
 .close {
   cursor: pointer;
   position: absolute;
-
   top: deprecated.$s-1;
   right: calc(-1 * deprecated.$s-8);
 
@@ -45,6 +44,7 @@ input.element-title {
     width: deprecated.$s-16;
     margin: 0;
   }
+
   &:hover {
     svg {
       fill: var(--element-foreground-warning);

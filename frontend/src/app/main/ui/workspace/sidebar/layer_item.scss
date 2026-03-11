@@ -13,8 +13,8 @@
   --layer-background-color: var(--color-background-primary);
   --layer-foreground-color: inherit;
   --shadow-color: transparent;
-  box-shadow: px2rem(16) px2rem(0) px2rem(0) px2rem(0) var(--shadow-color);
 
+  box-shadow: px2rem(16) px2rem(0) px2rem(0) px2rem(0) var(--shadow-color);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -30,6 +30,7 @@
     --context-hover-color: var(--layer-row-foreground-color-hover);
     --context-hover-opacity: 1;
     --layer-foreground-color: var(--layer-row-foreground-color-hover);
+
     &.hidden {
       opacity: 1;
     }
@@ -59,9 +60,11 @@
   &.dnd-over-bot {
     border-block-end: $b-2 solid var(--color-accent-primary);
   }
+
   &.dnd-over-top {
     border-block-start: $b-2 solid var(--color-accent-primary);
   }
+
   &.dnd-over {
     border: $b-2 solid var(--color-accent-primary);
   }
@@ -73,9 +76,11 @@
     --layer-background-color: var(--color-background-quaternary);
     --shadow-color: var(--color-background-quaternary);
   }
+
   .layer-row.type-comp & {
     --layer-foreground-color: var(--color-accent-secondary);
   }
+
   .layer-row.selected & {
     --layer-background-color: transparent;
     --layer-foreground-color: var(--color-accent-primary);
@@ -91,6 +96,7 @@
   inline-size: calc(100% - (var(--depth) * var(--layer-indentation-size)));
   cursor: pointer;
   min-inline-size: px2rem(140);
+
   &.filtered {
     inline-size: calc(100% - $sz-12);
   }
@@ -106,6 +112,7 @@
   &.selected {
     display: flex;
   }
+
   .layer-row.highlight &,
   .layer-row:hover & {
     display: flex;
@@ -130,21 +137,27 @@
   inline-size: $sz-24;
   padding-inline-start: var(--sp-xs);
   color: var(--color-foreground-secondary);
+
   .layer-row.selected & {
     color: var(--color-accent-primary);
   }
+
   .layer-row.type-comp & {
     color: var(--color-accent-secondary);
   }
+
   .inverse & {
     transform: rotate(-90deg);
   }
+
   .layer-row.hidden & {
     opacity: 0.7;
   }
+
   .layer-row.highlight &,
   .layer-row:hover & {
     opacity: 1;
+
     svg {
       stroke: var(--color-accent-primary);
     }
@@ -162,14 +175,17 @@
   .layer-row.hidden & {
     opacity: 0.1;
   }
+
   .layer-row.type-comp & {
     background-color: var(--color-accent-secondary);
   }
+
   .layer-row.highlight &,
   .layer-row:hover & {
     opacity: 0.4;
     background-color: var(--color-accent-primary);
   }
+
   .layer-row.selected & {
     background-color: var(--color-accent-primary);
   }
@@ -200,12 +216,15 @@
     .layer-row.hidden & {
       opacity: 0.7;
     }
+
     .layer-row.selected & {
       stroke: var(--color-accent-primary);
     }
+
     .layer-row.type-comp & {
       stroke: var(--color-accent-secondary);
     }
+
     .layer-row.highlight &,
     .layer-row:hover & {
       opacity: 1;
@@ -216,6 +235,7 @@
   .layer-row.selected & {
     background-color: var(--color-background-quaternary);
   }
+
   &.inverse svg {
     transform: rotate(90deg);
   }
@@ -224,9 +244,9 @@
 .toggle-element,
 .block-element {
   --layer-row-action-btn-background: none;
+
   border: none;
   cursor: pointer;
-  display: flex;
   justify-content: center;
   align-items: center;
   block-size: 100%;
@@ -235,6 +255,7 @@
   display: none;
   background: var(--layer-row-action-btn-background);
   padding-inline-end: px2rem(6);
+
   svg {
     display: flex;
     justify-content: center;
@@ -249,6 +270,7 @@
     .layer-row.hidden & {
       opacity: 0.7;
     }
+
     .type-comp & {
       stroke: var(--color-accent-secondary);
     }
@@ -257,6 +279,7 @@
   .element-actions.selected & {
     display: flex;
     opacity: 0;
+
     &.selected {
       opacity: 1;
     }
@@ -269,15 +292,20 @@
   .layer-row.highlight &,
   .layer-row:hover & {
     display: flex;
+
     --layer-row-action-btn-background: var(--color-background-secondary);
+
     svg {
       opacity: 1;
       stroke: var(--color-accent-primary);
     }
   }
+
   .layer-row.selected & {
     display: flex;
+
     --layer-row-action-btn-background: var(--color-background-quaternary);
+
     svg {
       stroke: var(--color-accent-primary);
     }
@@ -295,13 +323,16 @@
   block-size: $sz-16;
   min-inline-size: calc(var(--depth) * var(--layer-indentation-size));
 }
+
 .filtered {
   min-inline-size: $sz-12;
 }
+
 .lazy-load-sentinel {
   min-height: 1px;
   pointer-events: none;
 }
+
 .lazy-load-sentinel {
   min-height: 1px;
   pointer-events: none;

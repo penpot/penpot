@@ -8,14 +8,16 @@
 
 // EXPORT MODAL
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
+
   &.transparent {
     background-color: transparent;
   }
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   max-height: calc(10 * deprecated.$s-80);
 }
 
@@ -25,74 +27,94 @@
 
 .modal-title {
   @include deprecated.headlineMediumTypography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include deprecated.bodySmallTypography;
+
   margin-bottom: deprecated.$s-24;
+
   .modal-link {
     @include deprecated.bodyLargeTypography;
+
     text-decoration: none;
     cursor: pointer;
     color: var(--modal-link-foreground-color);
   }
+
   .selection-header {
     @include deprecated.flexRow;
+
     height: deprecated.$s-32;
     margin-bottom: deprecated.$s-4;
+
     .selection-btn {
       @include deprecated.buttonStyle;
       @extend .input-checkbox;
       @include deprecated.flexCenter;
+
       height: deprecated.$s-24;
       width: deprecated.$s-24;
       padding: 0;
       margin-left: deprecated.$s-16;
+
       span {
         @extend .checkbox-icon;
       }
     }
+
     .selection-title {
       @include deprecated.bodyLargeTypography;
+
       color: var(--modal-text-foreground-color);
     }
   }
+
   .selection-wrapper {
     position: relative;
     width: 100%;
     height: fit-content;
   }
+
   .selection-shadow {
     width: 100%;
     height: 100%;
-    &:after {
+
+    &::after {
       position: absolute;
       bottom: 0;
       left: 0;
       width: 100%;
       height: 50px;
-      background: linear-gradient(to top, rgba(24, 24, 26, 1) 0%, rgba(24, 24, 26, 0) 100%);
+      background: linear-gradient(to top, rgb(24 24 26 / 100%) 0%, rgb(24 24 26 / 0%) 100%);
       content: "";
       pointer-events: none;
     }
   }
+
   .selection-list {
     @include deprecated.flexColumn;
+
     max-height: deprecated.$s-400;
     overflow-y: auto;
     padding-bottom: deprecated.$s-12;
+
     .selection-row {
       @include deprecated.flexRow;
+
       background-color: var(--entry-background-color);
       min-height: deprecated.$s-40;
       border-radius: deprecated.$br-8;
+
       .selection-btn {
         @include deprecated.buttonStyle;
+
         display: grid;
         grid-template-columns: min-content auto 1fr auto auto;
         align-items: center;
@@ -100,45 +122,57 @@
         height: 10%;
         gap: deprecated.$s-8;
         padding: 0 deprecated.$s-16;
+
         .checkbox-wrapper {
           @extend .input-checkbox;
           @include deprecated.flexCenter;
+
           height: deprecated.$s-24;
           width: deprecated.$s-24;
           padding: 0;
+
           .checkobox-tick {
             @extend .checkbox-icon;
           }
         }
+
         .selection-name {
           @include deprecated.bodyLargeTypography;
           @include deprecated.textEllipsis;
+
           flex-grow: 1;
           color: var(--modal-text-foreground-color);
           text-align: start;
         }
+
         .selection-scale {
           @include deprecated.bodyLargeTypography;
           @include deprecated.textEllipsis;
+
           min-width: deprecated.$s-108;
           padding: deprecated.$s-12;
           color: var(--modal-text-foreground-color);
         }
+
         .selection-extension {
           @include deprecated.bodyLargeTypography;
           @include deprecated.textEllipsis;
+
           min-width: deprecated.$s-72;
           padding: deprecated.$s-12;
           color: var(--modal-text-foreground-color);
         }
       }
+
       .image-wrapper {
         @include deprecated.flexCenter;
+
         min-height: deprecated.$s-32;
         min-width: deprecated.$s-32;
         background-color: var(--app-white);
         border-radius: deprecated.$br-6;
         margin: auto 0;
+
         img,
         svg {
           object-fit: contain;
@@ -152,11 +186,14 @@
 .action-buttons {
   @extend .modal-action-btns;
 }
+
 .cancel-button {
   @extend .modal-cancel-btn;
 }
+
 .accept-btn {
   @extend .modal-accept-btn;
+
   &.danger {
     @extend .modal-danger-btn;
   }
@@ -166,21 +203,27 @@
 .modal-subtitle,
 .modal-msg {
   @include deprecated.bodyLargeTypography;
+
   color: var(--modal-text-foreground-color);
 }
 
 .export-option {
   @extend .input-checkbox;
+
   width: 100%;
   align-items: flex-start;
+
   label {
     align-items: flex-start;
+
     .modal-subtitle {
       @include deprecated.bodyLargeTypography;
+
       color: var(--modal-title-foreground-color);
       padding: 0.25rem 0;
     }
   }
+
   span {
     margin-top: deprecated.$s-8;
   }
@@ -197,35 +240,43 @@
 
     .file-icon {
       @include deprecated.flexCenter;
+
       height: deprecated.$s-16;
       width: deprecated.$s-16;
 
       svg {
-        @extend .button-icon-small;
+        @extend %button-icon-small;
+
         stroke: var(--input-foreground);
       }
     }
+
     .file-name-label {
       @include deprecated.bodyLargeTypography;
       @include deprecated.textEllipsis;
     }
   }
+
   &.loading {
     .file-name {
       color: var(--modal-text-foreground-color);
     }
   }
+
   &.error {
     .file-name {
       color: var(--modal-text-foreground-color);
+
       .file-icon svg {
         stroke: var(--modal-text-foreground-color);
       }
     }
   }
+
   &.success {
     .file-name {
       color: var(--modal-text-foreground-color);
+
       .file-icon svg {
         stroke: var(--modal-text-foreground-color);
       }

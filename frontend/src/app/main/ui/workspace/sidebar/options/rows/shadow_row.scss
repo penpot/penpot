@@ -80,8 +80,9 @@
 .shadow-advanced-spread,
 .shadow-advanced-offset-y {
   // TODO remove this input by changing the input to DS component
-  @extend .input-element;
+  @extend %input-element;
   @include t.use-typography("body-small");
+
   .shadow-advanced-label {
     padding-inline-start: var(--sp-s);
     inline-size: px2rem(60);

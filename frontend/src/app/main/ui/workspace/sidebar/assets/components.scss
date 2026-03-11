@@ -20,6 +20,7 @@
   border-radius: $br-8;
   background-color: var(--color-canvas);
   overflow: hidden;
+
   &:hover {
     .component-item-grid-name {
       display: flex;
@@ -32,10 +33,7 @@
     &::before {
       content: " ";
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       border: calc($b-2 * 2) solid var(--color-background-primary);
       border-radius: $br-8;
     }
@@ -50,7 +48,6 @@
   left: var(--sp-xs);
   right: var(--sp-xs);
   bottom: var(--sp-xs);
-  padding: var(--sp-xxs) var(--sp-s);
   border-radius: $br-4;
   background-color: var(--color-background-primary);
   color: var(--color-foreground-primary);
