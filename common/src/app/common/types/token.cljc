@@ -7,6 +7,7 @@
 (ns app.common.types.token
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
@@ -607,8 +608,7 @@
    "400" #{"book" "normal" "buch" "regular"},
    "500" #{"kräftig" "medium" "kraeftig"},
    "600" #{"demi-bold" "halbfett" "demibold" "demi bold" "semibold" "semi bold" "semi-bold"},
-   "700" #{"dreivi
-            ertelfett" "bold"},
+   "700" #{"dreiviertelfett" "bold"},
    "800" #{"extrabold" "fett" "extra-bold" "ultrabold" "ultra-bold" "extra bold" "ultra bold"},
    "900" #{"heavy" "black" "extrafett"},
    "950" #{"extra-black" "extra black" "ultra-black" "ultra black"}})
@@ -642,7 +642,7 @@
 
 ;;;;;; Combobox token parsing
 
-(defn inside-ref?
+(defn- inside-ref?
   "Returns true if `position` in `value` is inside an open reference block (i.e. after a `{`
    that has no matching `}` to its left).
    A reference block is considered open when the last `{` appears after the last `}`,
@@ -683,7 +683,7 @@
          sort
          last)))
 
-(defn inside-closed-ref?
+(defn- inside-closed-ref?
   "Returns true if `position` falls inside a complete (closed) reference block,
      i.e. there is a `{` to the left and a `}` to the right with no spaces between
      either delimiter and the position.
@@ -691,15 +691,17 @@
   [value position]
   (let [left              (str/slice value 0 position)
         right             (str/slice value position)
+
         open-pos          (d/nth-last-index-of left "{" 1)
         close-pos         (d/nth-index-of right "}" 1)
         last-space-left   (d/nth-last-index-of left " " 1)
         first-space-right (d/nth-index-of right " " 1)]
+
     (boolean
-     (and open-pos
-          close-pos
-          (or (nil? last-space-left)   (> open-pos last-space-left))
-          (or (nil? first-space-right) (< close-pos first-space-right))))))
+     (and (number? open-pos)
+          (number? close-pos)
+          (or (nil? last-space-left)   (> (dm/number open-pos) (dm/number last-space-left)))
+          (or (nil? first-space-right) (< (dm/number close-pos) (dm/number first-space-right)))))))
 
 (defn- build-result
   "Builds the result map for `insert-ref` by replacing the substring of `value`
@@ -727,13 +729,16 @@
      :value  — the resulting string after insertion
      :cursor — the index immediately after the inserted reference"
   [value position name]
-  (cond
-    (inside-ref? value position)
+  (if (inside-ref? value position)
     (if (inside-closed-ref? value position)
-      (let [open-pos  (d/nth-last-index-of (str/slice value 0 position) "{" 1)
-            close-pos (+ position (d/nth-index-of (str/slice value position) "}" 1) 1)]
+      (let [open-pos  (-> (str/slice value 0 position)
+                          (d/nth-last-index-of  "{" 1))
+            close-pos (-> (str/slice value position)
+                          (d/nth-index-of "}" 1))
+            close-pos (if (number? close-pos)
+                        (+ position close-pos 1)
+                        position)]
         (build-result value open-pos close-pos name))
-      (build-result value (start-ref-position value position) position name))
 
-    :else
+      (build-result value (start-ref-position value position) position name))
     (build-result value position position name)))
