@@ -162,7 +162,7 @@
                  (= key "Backspace")
                  (do
                    (dom/prevent-default event)
-                   (text-editor/text-editor-delete-backward)
+                   (text-editor/text-editor-delete-backward ctrl?)
                    (sync-wasm-text-editor-content!)
                    (wasm.api/request-render "text-delete-backward"))
 
@@ -170,7 +170,7 @@
                  (= key "Delete")
                  (do
                    (dom/prevent-default event)
-                   (text-editor/text-editor-delete-forward)
+                   (text-editor/text-editor-delete-forward ctrl?)
                    (sync-wasm-text-editor-content!)
                    (wasm.api/request-render "text-delete-forward"))
 
@@ -178,37 +178,37 @@
                  (= key "ArrowLeft")
                  (do
                    (dom/prevent-default event)
-                   (text-editor/text-editor-move-cursor 0 shift?)
+                   (text-editor/text-editor-move-cursor 0 ctrl? shift?)
                    (wasm.api/request-render "text-cursor-move"))
 
                  (= key "ArrowRight")
                  (do
                    (dom/prevent-default event)
-                   (text-editor/text-editor-move-cursor 1 shift?)
+                   (text-editor/text-editor-move-cursor 1 ctrl? shift?)
                    (wasm.api/request-render "text-cursor-move"))
 
                  (= key "ArrowUp")
                  (do
                    (dom/prevent-default event)
-                   (text-editor/text-editor-move-cursor 2 shift?)
+                   (text-editor/text-editor-move-cursor 2 ctrl? shift?)
                    (wasm.api/request-render "text-cursor-move"))
 
                  (= key "ArrowDown")
                  (do
                    (dom/prevent-default event)
-                   (text-editor/text-editor-move-cursor 3 shift?)
+                   (text-editor/text-editor-move-cursor 3 ctrl? shift?)
                    (wasm.api/request-render "text-cursor-move"))
 
                  (= key "Home")
                  (do
                    (dom/prevent-default event)
-                   (text-editor/text-editor-move-cursor 4 shift?)
+                   (text-editor/text-editor-move-cursor 4 ctrl? shift?)
                    (wasm.api/request-render "text-cursor-move"))
 
                  (= key "End")
                  (do
                    (dom/prevent-default event)
-                   (text-editor/text-editor-move-cursor 5 shift?)
+                   (text-editor/text-editor-move-cursor 5 ctrl? shift?)
                    (wasm.api/request-render "text-cursor-move"))
 
                  ;; Let contenteditable handle text input via on-input
