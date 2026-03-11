@@ -69,31 +69,27 @@
     (t/is (= (cto/insert-ref "{tok {en2}" 6 "token1")
              {:value "{tok {token1}" :cursor 13}))
     (t/is (= (cto/insert-ref "{tok en2}" 5 "token1")
-             {:value "{tok {token1}en2}" :cursor 13}))))
+             {:value "{tok {token1}en2}" :cursor 13})))
 
-;; TODO: pasar a common data
-(t/deftest nth-last-index-of-test
-  (t/is (= (cto/nth-last-index-of "" "*" 1) nil))
-  (t/is (= (cto/nth-last-index-of "" "*" 2) nil))
-  (t/is (= (cto/nth-last-index-of "abc*" "*" 1) 3))
-  (t/is (= (cto/nth-last-index-of "abc*" "*" 2) nil))
-  (t/is (= (cto/nth-last-index-of "*abc[*" "*" 1) 5))
-  (t/is (= (cto/nth-last-index-of "abc*def*ghi" "*" 1) 7))
-  (t/is (= (cto/nth-last-index-of "abc*def*ghi" "*" 2) 3)))
-
-;; TODO: pasar a common data
-(t/deftest nth-index-of-test
-  (t/is (= (cto/nth-index-of "" "*" 1) nil))
-  (t/is (= (cto/nth-index-of "" "*" 2) nil))
-  (t/is (= (cto/nth-index-of "abc*" "*" 1) 3))
-  (t/is (= (cto/nth-index-of "abc*" "*" 2) nil))
-  (t/is (= (cto/nth-index-of "*abc[*" "*" 1) 0))
-  (t/is (= (cto/nth-index-of "abc*def*ghi" "*" 1) 3))
-  (t/is (= (cto/nth-index-of "abc*def*ghi" "*" 2) 7)))
+  (t/testing "edge cases"
+    (t/is (= (cto/insert-ref "" 0 "x")
+             {:value "{x}" :cursor 3}))
+    (t/is (= (cto/insert-ref "abc" 3 "x")
+             {:value "abc{x}" :cursor 6}))
+    (t/is (= (cto/insert-ref "{token2}" 0 "x")
+             {:value "{x}{token2}" :cursor 3}))
+    (t/is (= (cto/insert-ref "abc" 3 "")
+             {:value "abc{}" :cursor 5}))
+    (t/is (= (cto/insert-ref "{a} {b}" 4 "x")
+             {:value "{a} {x}{b}" :cursor 7}))))
 
 (t/deftest inside-ref
   (t/is (= (cto/inside-ref? ""  1) false))
   (t/is (= (cto/inside-ref? "AAA " 4) false))
+  (t/is (= (cto/inside-ref? "{abc" 0) false))
+  (t/is (= (cto/inside-ref? "{abc}" 5) false))
+  (t/is (= (cto/inside-ref? "{a}{b}" 6) false))
+  (t/is (= (cto/inside-ref? "{a{b" 4) true))
   (t/is (= (cto/inside-ref? "abc{" 4) true))
   (t/is (= (cto/inside-ref? "abc}" 4) false))
   (t/is (= (cto/inside-ref? "{abc[}" 1) true))
@@ -101,8 +97,12 @@
   (t/is (= (cto/inside-ref? "abc {def]ghi" 8) true)))
 
 (t/deftest inside-closed-ref
-  (t/is (= (cto/inside-closed-ref? ""  1) nil))
+  (t/is (= (cto/inside-closed-ref? ""  1) false))
   (t/is (= (cto/inside-closed-ref? "{abc}" 1) true))
   (t/is (= (cto/inside-closed-ref? "abc {def}ghi" 5) true))
   (t/is (= (cto/inside-closed-ref? "abc {def}ghi" 8) true))
-  (t/is (= (cto/inside-closed-ref? "abc {def}ghi" 10) nil)))
+  (t/is (= (cto/inside-closed-ref? "abc {def}ghi" 10) false))
+  (t/is (= (cto/inside-closed-ref? "{abc}" 0) false))
+  (t/is (= (cto/inside-closed-ref? "{abc}" 5) false))
+  (t/is (= (cto/inside-closed-ref? "{ab cd}" 3) false))
+  (t/is (= (cto/inside-closed-ref? "{a}{bc}" 5) true)))

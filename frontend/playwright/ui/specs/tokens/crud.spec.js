@@ -85,7 +85,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token" }),
+      tokensTabPanel.getByRole('checkbox', { name: 'my-token' }),
     ).toBeEnabled();
 
     // Create second token referencing the first one using the combobox options

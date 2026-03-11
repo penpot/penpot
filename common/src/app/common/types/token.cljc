@@ -640,47 +640,27 @@
         italic? (assoc :style "italic")))))
 
 
-;;;;;; combobox token parsing
+;;;;;; Combobox token parsing
 
 (defn inside-ref?
+  "Returns true if `position` in `value` is inside an open reference block (i.e. after a `{`
+   that has no matching `}` to its left).
+   A reference block is considered open when the last `{` appears after the last `}`,
+   or when there is a `{` but no `}` at all to the left of `position`."
   [value position]
-  (let [left-part (str/slice value 0 position)
-        last-index-open (str/last-index-of left-part "{")
-        last-index-close (str/last-index-of left-part "}")]
-    (cond
-      (and (nil? last-index-open) (nil? last-index-close)) false
-      (and (nil? last-index-open) (some? last-index-close)) false
-      (and (some? last-index-open) (nil? last-index-close)) true
-      :else
-      (< last-index-close last-index-open))))
+  (let [left        (str/slice value 0 position)
+        last-open   (str/last-index-of left "{")
+        last-close  (str/last-index-of left "}")]
+    (and (some? last-open)
+         (or (nil? last-close)
+             (< last-close last-open)))))
 
-(defn nth-last-index-of
-  [string char n]
-  (loop [string' string
-         count 1]
-    (let [index (str/last-index-of string' char)]
-      (cond
-        (nil? index) nil
-        (= count n) index
-        :else (recur (str/slice string' 0 index)
-                     (inc count))))))
-
-(defn nth-index-of
-  [string char n]
-  (loop [string' string
-         offset 0 
-         count 1]
-    (let [index (str/index-of string' char)]
-      (cond
-        (nil? index) nil
-        (= count n) (+ index offset)
-        :else (recur (str/slice string' (inc index))
-                     (+ offset index 1)
-                     (inc count))))))
-
-(defn block-open-start
+(defn- block-open-start
+  "Returns the index of the leftmost `{` in the run of consecutive `{` characters
+   that contains the last `{` before `position` in `value`.
+   Used to find where a reference block truly starts when multiple braces are stacked."
   [value position]
-  (let [left (str/slice value 0 position)
+  (let [left      (str/slice value 0 position)
         last-open (str/last-index-of left "{")]
     (loop [i last-open]
       (if (and i
@@ -689,64 +669,71 @@
         (recur (dec i))
         i))))
 
-(defn start-ref-position
+(defn- start-ref-position
+  "Returns the position where the current token (reference candidate) starts,
+   relative to `position` in `value`.
+   The start is determined by whichever comes last: the opening `{` of the current
+   reference block or the character after the last space before `position`."
   [value position]
-  (let [left-part (str/slice value 0 position)
-        open-pos (block-open-start value position)
-        space-pos (str/last-index-of left-part " ")
-        space-pos (when space-pos (+ 1 space-pos))
-        first-position (->> [open-pos space-pos]
-                            (remove nil?)
-                            (sort)
-                            (last))]
-    first-position))
-
-(defn start-ref-position-inside-ref
-  [value position]
-  (let [left-part (str/slice value 0 position)
-        last-index-open (nth-last-index-of left-part "{" 1)]
-    last-index-open))
-
-(defn end-ref-position-inside-ref
-  [value position]
-  (let [right-part (str/slice value position)
-        first-index-close (nth-index-of right-part "}" 1)]
-    first-index-close))
+  (let [left      (str/slice value 0 position)
+        open-pos  (block-open-start value position)
+        space-pos (some-> (str/last-index-of left " ") inc)]
+    (->> [open-pos space-pos]
+         (remove nil?)
+         sort
+         last)))
 
 (defn inside-closed-ref?
+  "Returns true if `position` falls inside a complete (closed) reference block,
+     i.e. there is a `{` to the left and a `}` to the right with no spaces between
+     either delimiter and the position.
+     Returns nil (falsy) when not inside a closed reference."
   [value position]
-  (let [left-part (str/slice value 0 position)
-        open-pos (nth-last-index-of left-part "{" 1)
-        spaces-pos-before (nth-last-index-of left-part " " 1)
-        right-part (str/slice value position)
-        close-pos (nth-index-of right-part "}" 1)
-        spaces-pos-after (nth-index-of right-part " " 1)
-        open-after-space?  (or (nil? spaces-pos-before)
-                               (> open-pos spaces-pos-before))
-        close-before-space? (or (nil? spaces-pos-after)
-                                (< close-pos spaces-pos-after))]
-    (and open-pos
-         close-pos
-         open-after-space?
-         close-before-space?)))
+  (let [left              (str/slice value 0 position)
+        right             (str/slice value position)
+        open-pos          (d/nth-last-index-of left "{" 1)
+        close-pos         (d/nth-index-of right "}" 1)
+        last-space-left   (d/nth-last-index-of left " " 1)
+        first-space-right (d/nth-index-of right " " 1)]
+    (boolean
+     (and open-pos
+          close-pos
+          (or (nil? last-space-left)   (> open-pos last-space-left))
+          (or (nil? first-space-right) (< close-pos first-space-right))))))
+
+(defn- build-result
+  "Builds the result map for `insert-ref` by replacing the substring of `value`
+   between `prefix-end` and `suffix-start` with a formatted reference `{name}`.
+   Returns a map with:
+     :value  — the updated string
+     :cursor — the index immediately after the inserted reference"
+  [value prefix-end suffix-start name]
+  (let [ref         (str "{" name "}")
+        first-part  (str/slice value 0 prefix-end)
+        second-part (str/slice value suffix-start)]
+    {:value  (str first-part ref second-part)
+     :cursor (+ (count first-part) (count ref))}))
 
 (defn insert-ref
+  "Inserts a reference `{name}` into `value` at `position`, respecting the context:
+
+   - Outside any reference block: inserts `{name}` at the cursor position.
+   - Inside an open reference block (no closing `}`): replaces from the block's
+     start up to the cursor with `{name}`.
+   - Inside a closed reference block (has both `{` and `}`): replaces the entire
+     existing reference with `{name}`.
+
+   Returns a map with:
+     :value  — the resulting string after insertion
+     :cursor — the index immediately after the inserted reference"
   [value position name]
-  (let [reference (str "{" name "}")]
-    (if (inside-ref? value position)
-      (if (inside-closed-ref? value position)
-        (let [first-part (str/slice value 0 (start-ref-position-inside-ref value position))
-              end-position (+ position (end-ref-position-inside-ref value position) 1)
-              second-part (str/slice value end-position)]
-          {:value (str first-part reference second-part)
-           :cursor (+ (count first-part) (count reference))})
+  (cond
+    (inside-ref? value position)
+    (if (inside-closed-ref? value position)
+      (let [open-pos  (d/nth-last-index-of (str/slice value 0 position) "{" 1)
+            close-pos (+ position (d/nth-index-of (str/slice value position) "}" 1) 1)]
+        (build-result value open-pos close-pos name))
+      (build-result value (start-ref-position value position) position name))
 
-        (let [first-part (str/slice value 0 (start-ref-position value position))
-              second-part (str/slice value position)]
-          {:value (str first-part reference second-part)
-           :cursor (+ (count first-part) (count reference))}))
-
-      (let [first-part (str/slice value 0 position)
-            second-part (str/slice value position)]
-        {:value (str first-part reference second-part)
-         :cursor (+ position (count reference))}))))
+    :else
+    (build-result value position position name)))

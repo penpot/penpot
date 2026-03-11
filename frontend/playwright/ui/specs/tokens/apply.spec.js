@@ -86,8 +86,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Change token from dropdown
     const brTokenOptionXl = borderRadiusSection
-      .getByRole("option", { name: "borderRadius.xl" })
-      .getByLabel("borderRadius.xl");
+      .getByRole("option", { name: "borderRadius.xl" });
     await expect(brTokenOptionXl).toBeVisible();
     await brTokenOptionXl.click();
 
