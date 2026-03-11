@@ -50,13 +50,33 @@ Follow the steps below to enable the integration.
 
 ### Prerequisites
 
-The project requires [Node.js](https://nodejs.org/) (tested with v22.x).  
-Following the installation of Node.js, the tools `corepack` and `npx`
-should be available in your terminal.
+The project requires [Node.js](https://nodejs.org/) (tested with v22.x).
+
+### 1. Starting the MCP Server and the Plugin Server
+
+#### Running a Released Version via npx
+
+The easiest way to launch the servers is to use `npx` to run the appropriate
+version that matches your Penpot version.
+
+* If you are using the latest Penpot release, e.g. as served on [design.penpot.app](https://design.penpot.app), run:
+  ```shell
+  npx -y @penpot/mcp@">=0"
+  ```
+* If you are participating in the MCP beta-test, which uses [test-mcp.penpot.dev](https://test-mcp.penpot.dev), run:
+  ```shell
+  npx -y @penpot/mcp@"*"
+  ```
+
+Once the servers are running, continue with step 2.
+
+#### Running the Source Version from the Repository
+
+The tools `corepack` and `npx` should be available in your terminal.
 
 On Windows, use the Git Bash terminal to ensure compatibility with the provided scripts.
 
-### 0. Clone the Appropriate Branch of the Repository 
+##### Clone the Appropriate Branch of the Repository 
 
 > [!IMPORTANT]
 > The branches are subject to change in the future.  
@@ -65,13 +85,13 @@ On Windows, use the Git Bash terminal to ensure compatibility with the provided 
 Clone the Penpot repository, using the proper branch depending on the
 version of Penpot you want to use the MCP server with.
 
-  * For released versions of Penpot, use the `mcp-prod` branch:
+  * For the current Penpot release 2.14, use the `mcp-prod-2.14.0` branch:
 
     ```shell
-    git clone https://github.com/penpot/penpot.git --branch mcp-prod --depth 1
+    git clone https://github.com/penpot/penpot.git --branch mcp-prod-2.14.0 --depth 1
     ```
 
-  * For the latest development version of Penpot, use the `develop` branch:
+  * For the latest development version of Penpot (including the MCP beta-test), use the `develop` branch:
 
     ```shell
     git clone https://github.com/penpot/penpot.git --branch develop --depth 1
@@ -83,7 +103,7 @@ Then change into the `mcp` directory:
 cd penpot/mcp
 ```
 
-### 1. Build & Launch the MCP Server and the Plugin Server
+##### Build & Launch the MCP Server and the Plugin Server
 
 If it's your first execution, install the required dependencies.
 (If you are using the Penpot devenv, this step is not necessary, as dependencies are already installed.)
