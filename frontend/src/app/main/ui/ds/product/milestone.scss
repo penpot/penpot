@@ -11,19 +11,12 @@
 .milestone {
   border: $b-1 solid var(--border-color, transparent);
   border-radius: $br-8;
-
   background: var(--color-background-primary);
-
   display: grid;
-  grid-template-areas:
-    "avatar name button"
-    "avatar content button";
-  grid-template-rows: auto 1fr;
-  grid-template-columns: calc(var(--sp-xxl) + var(--sp-l)) 1fr auto;
-
+  grid-template:
+    "avatar name button" auto "avatar content button" 1fr / calc(var(--sp-xxl) + var(--sp-l)) 1fr auto;
   padding: var(--sp-s) 0;
   align-items: center;
-
   column-gap: var(--sp-s);
 
   &.is-selected,
@@ -60,6 +53,7 @@
 
 .date {
   @include t.use-typography("body-small");
+
   grid-area: content;
   color: var(--color-foreground-secondary);
 }

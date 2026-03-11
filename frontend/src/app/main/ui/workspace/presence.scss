@@ -12,7 +12,6 @@
 .active-users-opened {
   background: none;
   cursor: pointer;
-
   display: flex;
   flex-direction: row-reverse;
   justify-content: flex-end;
@@ -33,6 +32,7 @@
 
 %user-icon {
   @include t.use-typography("body-small");
+
   display: grid;
   place-content: center;
   height: $sz-24;
@@ -48,6 +48,7 @@
 
 .users-num {
   @extend %user-icon;
+
   background-color: var(--user-count-background-color);
   color: var(--user-count-foreground-color);
   z-index: 3; // FIXME: this is hardcoded because of the way its component uses z-index from cljs
@@ -57,6 +58,7 @@
 
 .session-icon {
   @extend %user-icon;
+
   margin-inline-start: var(--user-list-inline-margin, calc(-1 * var(--sp-xs)));
 }
 

@@ -9,6 +9,7 @@
 // PROGRESS WIDGET
 .progress-widget {
   @include deprecated.flexCenter;
+
   width: deprecated.$s-28;
   height: deprecated.$s-28;
 }
@@ -19,6 +20,7 @@
   --export-modal-fg-color: var(--alert-text-foreground-color-default);
   --export-modal-icon-color: var(--alert-icon-foreground-color-default);
   --export-modal-border-color: var(--alert-border-color-default);
+
   position: absolute;
   right: deprecated.$s-16;
   top: deprecated.$s-48;
@@ -41,13 +43,15 @@
   --export-modal-fg-color: var(--alert-text-foreground-color-error);
   --export-modal-icon-color: var(--alert-icon-foreground-color-error);
   --export-modal-border-color: var(--alert-border-color-error);
+
   grid-template-areas: "icon text close";
   gap: deprecated.$s-8;
   padding-block: deprecated.$s-8;
 }
 
 .icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   grid-area: icon;
   align-self: center;
   margin-inline-start: deprecated.$s-8;
@@ -56,6 +60,7 @@
 
 .title {
   @include deprecated.bodyMediumTypography;
+
   display: grid;
   grid-template-columns: auto 1fr;
   gap: deprecated.$s-8;
@@ -68,6 +73,7 @@
 
 .progress {
   @include deprecated.bodyMediumTypography;
+
   padding-left: deprecated.$s-8;
   margin: 0;
   align-self: center;
@@ -77,6 +83,7 @@
 .retry-btn {
   @include deprecated.buttonStyle;
   @include deprecated.bodySmallTypography;
+
   display: inline;
   text-align: left;
   color: var(--modal-link-foreground-color);
@@ -86,12 +93,14 @@
 
 .progress-close-button {
   @include deprecated.buttonStyle;
+
   padding: 0;
   margin-inline-end: deprecated.$s-8;
 }
 
 .close-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--export-modal-icon-color);
 }
 

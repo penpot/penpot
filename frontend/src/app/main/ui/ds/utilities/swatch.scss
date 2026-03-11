@@ -11,7 +11,7 @@
 @property --solid-color-overlay {
   syntax: "<color>";
   inherits: false;
-  initial-value: rgba(0, 0, 0, 0);
+  initial-value: rgb(0 0 0 / 0%);
 }
 
 .swatch {
@@ -19,13 +19,13 @@
   --border-radius: #{$br-4};
   --border-color-active: var(--color-foreground-primary);
   --border-color-active-inset: var(--color-background-primary);
-
   --checkerboard-background: repeating-conic-gradient(lightgray 0% 25%, white 0% 50%);
   --checkerboard-size: 0.5rem 0.5rem;
 
   border: $b-1 solid var(--border-color);
   border-radius: var(--border-radius);
   overflow: hidden;
+
   &:focus-visible {
     --border-color: var(--color-accent-primary);
   }
@@ -80,6 +80,7 @@
 
   &:hover {
     --border-color: var(--color-accent-primary-muted);
+
     border-width: $b-2;
   }
 }
@@ -114,7 +115,6 @@
   /* solid‑colour overlay */
   /* checkerboard pattern */
     linear-gradient(var(--solid-color-overlay), var(--solid-color-overlay)), var(--checkerboard-background);
-
   background-size: cover, var(--checkerboard-size);
   background-position: center, center;
   background-repeat: no-repeat, repeat;

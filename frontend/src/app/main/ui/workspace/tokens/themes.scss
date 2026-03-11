@@ -29,6 +29,7 @@
 
 .create-theme-button {
   @include use-typography("body-small");
+
   background-color: transparent;
   border: none;
   appearance: none;

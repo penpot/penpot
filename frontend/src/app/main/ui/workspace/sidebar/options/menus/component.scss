@@ -14,6 +14,7 @@
 
 .annotation {
   @include t.use-typography("body-small");
+
   grid-column: span 8;
   color: var(--color-foreground-secondary);
   border-radius: $br-8;
@@ -123,7 +124,7 @@
   // easy way to plop the elements on top of each other and have them both sized based on the tallest one's height
   display: grid;
 
-  &:after {
+  &::after {
     // The space is needed to preventy jumpy behavior
     content: attr(data-replicated-value) " ";
     white-space: pre-wrap;
@@ -132,7 +133,6 @@
     /* Identical styling required!! */
     font: inherit;
     overflow-wrap: anywhere;
-
     padding: var(--sp-m);
 
     /* Place on top of each other */
@@ -143,20 +143,15 @@
 .annotation-textarea {
   background-color: var(--color-background-primary);
   color: var(--color-foreground-primary);
-  padding: var(--sp-m);
-
   border: none;
   overflow: hidden;
   outline: none;
-
   box-shadow: none;
-
   resize: none;
 
   /* Identical styling required!! */
   font: inherit;
   overflow-wrap: anywhere;
-
   padding: var(--sp-m);
 
   /* Place on top of each other */
@@ -165,6 +160,7 @@
 
 .annotation-counter {
   @include t.use-typography("body-small");
+
   text-align: right;
   color: var(--color-foreground-secondary);
   margin: 0 var(--sp-s) var(--sp-s) 0;
@@ -181,6 +177,7 @@
   --swap-item-thumbnail-background-color: var(--color-canvas);
 
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   padding: px2rem(1) var(--sp-m) px2rem(1) px2rem(1);
@@ -257,6 +254,7 @@
 
   .swap-item-name {
     @include t.use-typography("body-small");
+
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -295,10 +293,8 @@
     &::before {
       content: " ";
       position: absolute;
-      inset-inline-start: 0;
-      inset-inline-end: 0;
-      inset-block-start: 0;
-      inset-block-end: 0;
+      inset-inline: 0;
+      inset-block: 0;
       border: calc($b-2 * 2) solid var(--swap-item-border-inner-color-selected);
       border-radius: $br-8;
     }
@@ -334,6 +330,7 @@
 
 .swap-group {
   @include t.use-typography("body-small");
+
   cursor: pointer;
   display: grid;
   grid-template-columns: 1fr var(--sp-m);
@@ -365,6 +362,7 @@
 
 .swap-title {
   @include t.use-typography("headline-small");
+
   display: flex;
   align-items: center;
   block-size: $sz-32;
@@ -397,6 +395,7 @@
 
 .swap-library-name {
   @include t.use-typography("body-small");
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -419,6 +418,7 @@
 
 .swap-library-back-name {
   @include t.use-typography("body-small");
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -429,6 +429,7 @@
 
 .swap-library-empty {
   @include t.use-typography("body-small");
+
   margin: 0 var(--sp-xs) 0 var(--sp-s);
   color: var(--color-foreground-secondary);
 }
@@ -457,6 +458,7 @@
 
 .component-title-swap {
   @include t.use-typography("headline-small");
+
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -482,6 +484,7 @@
 
 .component-title-bar-type {
   @include t.use-typography("body-small");
+
   block-size: 100%;
   display: flex;
   align-items: center;
@@ -498,8 +501,7 @@
   display: flex;
   flex-direction: column;
   row-gap: var(--sp-m);
-  padding-block-start: var(--sp-xs);
-  padding-block-end: var(--sp-s);
+  padding-block: var(--sp-xs) var(--sp-s);
 }
 
 .component-pill {
@@ -562,6 +564,7 @@
 
 .pill-btn-text {
   @include t.use-typography("body-small");
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -572,6 +575,7 @@
 
 .pill-btn-subtext {
   @include t.use-typography("body-small");
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -587,19 +591,21 @@
 }
 
 .pill-actions-btn {
-  @extend .button-secondary;
+  @extend %button-secondary;
+
   cursor: unset;
   block-size: 100%;
   inline-size: 100%;
   border-radius: 0 $br-8 $br-8 0;
 
   &.selected {
-    @extend .button-icon-selected;
+    @extend %button-icon-selected;
   }
 }
 
 .pill-actions-dropdown {
-  @extend .dropdown-wrapper;
+  @extend %dropdown-wrapper;
+
   inline-size: $sz-252;
   inset-inline-end: 0;
   inset-inline-start: unset;
@@ -610,12 +616,11 @@
 }
 
 .pill-actions-dropdown-item {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
 }
 
 .variant-property-list {
   grid-column: span 8;
-
   display: grid;
   flex-direction: column;
   gap: var(--sp-xs);
@@ -672,6 +677,7 @@
 
 .variant-property-name {
   @include t.use-typography("body-small");
+
   margin-inline-start: var(--sp-s);
   color: var(--color-foreground-secondary);
   display: block;
@@ -682,8 +688,8 @@
 
 .variant-warning {
   @include t.use-typography("body-small");
-  grid-column: span 8;
 
+  grid-column: span 8;
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
   padding: var(--sp-m);
@@ -702,6 +708,7 @@
 
 .variant-warning-button {
   @include t.use-typography("body-small");
+
   cursor: pointer;
   background-color: transparent;
   border: none;

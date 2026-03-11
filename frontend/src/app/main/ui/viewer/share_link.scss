@@ -16,7 +16,8 @@
 }
 
 .share-link-dialog {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   min-height: unset;
 }
 
@@ -26,21 +27,24 @@
 
 .share-link-title {
   @include deprecated.uppercaseTitleTipography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-button {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include deprecated.bodySmallTypography;
   @include deprecated.flexColumn;
+
   gap: deprecated.$s-24;
 }
 
 .share-link-section {
   @include deprecated.flexColumn;
+
   gap: deprecated.$s-8;
 }
 
@@ -55,6 +59,7 @@
 
 .custon-input-wrapper {
   @include deprecated.flexRow;
+
   border-radius: deprecated.$br-8;
   height: deprecated.$s-32;
   width: 100%;
@@ -62,12 +67,14 @@
 }
 
 .input-text {
-  @extend .input-element;
+  @extend %input-element;
   @include deprecated.bodySmallTypography;
+
   color: var(--input-foreground-color-active);
   padding-left: deprecated.$s-8;
   margin: 0;
   flex-grow: 1;
+
   &:focus {
     outline: none;
     border: deprecated.$s-1 solid var(--input-border-color-active);
@@ -75,25 +82,30 @@
 }
 
 .copy-button {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include deprecated.flexRow;
+
   gap: deprecated.$s-8;
   height: deprecated.$s-32;
   width: deprecated.$s-28;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground-hover);
   }
 }
 
 .description {
   @include deprecated.bodySmallTypography;
+
   color: var(--modal-text-foreground-color);
   margin-bottom: deprecated.$s-24;
 }
 
 .actions {
   @include deprecated.flexRow;
+
   justify-content: flex-end;
 }
 
@@ -111,12 +123,14 @@
 
 .permissions-section {
   @include deprecated.flexColumn;
+
   gap: deprecated.$s-8;
 }
 
 .manage-permissions {
   @include deprecated.buttonStyle;
   @include deprecated.uppercaseTitleTipography;
+
   color: var(--menu-foreground-color-rest);
   height: deprecated.$s-32;
   display: flex;
@@ -126,11 +140,15 @@
 
 .icon {
   @include deprecated.flexCenter;
+
   margin-right: deprecated.$s-6;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
   }
+
   &.rotated {
     transform: rotate(90deg);
   }
@@ -162,39 +180,51 @@
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }
+
 .select-all-row {
   @include deprecated.flexRow;
+
   justify-content: space-between;
   height: deprecated.$s-32;
   border-bottom: deprecated.$s-1 solid var(--input-border-color-disabled);
 }
+
 .select-all-label {
   color: var(--input-foreground-color-active);
 }
+
 .pages-selection {
   margin: 0;
+
   li {
     border-bottom: deprecated.$s-1 solid var(--input-border-color-disabled);
   }
+
   li:last-child {
     border-bottom: none;
   }
 }
+
 .count-pages,
 .current-tag {
   @include deprecated.bodySmallTypography;
+
   color: var(--input-foreground-color);
 }
 
 .checkbox-wrapper {
   @extend .input-checkbox;
+
   height: deprecated.$s-32;
   padding: 0;
+
   span.checked {
     background-color: var(--input-checkbox-background-color-active);
     border: deprecated.$s-1 solid var(--input-checkbox-background-color-active);
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--input-checkbox-foreground-color-active);
     }
   }

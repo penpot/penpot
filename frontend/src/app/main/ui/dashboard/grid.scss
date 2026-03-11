@@ -8,15 +8,13 @@
 
 // TODO: Legacy sass variables. We should remove them in favor of DS tokens.
 $bp-max-1366: "(max-width: 1366px)";
-
 $thumbnail-default-width: deprecated.$s-252; // Default width
 $thumbnail-default-height: deprecated.$s-168; // Default width
 
 .dashboard-grid {
   font-size: deprecated.$fs-14;
   height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding: 0 deprecated.$s-16;
 }
 
@@ -42,6 +40,7 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
     width: 100%;
     font-weight: deprecated.$fw400;
   }
+
   button {
     background-color: transparent;
     border: none;
@@ -126,9 +125,11 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
       width: 100%;
       white-space: nowrap;
       max-width: deprecated.$s-260;
+
       &::first-letter {
         text-transform: capitalize;
       }
+
       @media #{$bp-max-1366} {
         max-width: deprecated.$s-232;
       }
@@ -198,9 +199,11 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
   &:focus,
   &:focus-within {
     background-color: var(--color-background-tertiary);
+
     .project-th-actions {
       opacity: 1;
     }
+
     a {
       text-decoration: none;
     }
@@ -243,6 +246,7 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
   margin-right: 0;
   margin-top: deprecated.$s-20;
   width: 100%;
+
   --menu-icon-color: var(--button-tertiary-foreground-color-rest);
 
   &:hover,

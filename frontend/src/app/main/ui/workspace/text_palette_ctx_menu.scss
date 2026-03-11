@@ -31,39 +31,52 @@
     &:last-child {
       margin-bottom: 0;
     }
+
     .library-name {
       @include deprecated.bodySmallTypography;
+
       color: var(--context-menu-foreground-color);
       display: grid;
       grid-template-columns: 1fr deprecated.$s-24;
       max-width: deprecated.$s-400;
+
       .lib-name {
         @include deprecated.textEllipsis;
+
         max-width: deprecated.$s-380;
       }
+
       .lib-num {
         margin-left: deprecated.$s-4;
       }
     }
+
     .icon-wrapper {
       margin-left: deprecated.$s-4;
+
       @include deprecated.flexCenter;
+
       svg {
         @include deprecated.flexCenter;
-        @extend .button-icon-small;
+        @extend %button-icon-small;
+
         stroke: var(--icon-foreground);
       }
     }
+
     &.selected,
     &:hover {
       .icon-wrapper {
         @include deprecated.flexCenter;
+
         svg {
           @include deprecated.flexCenter;
-          @extend .button-icon-small;
+          @extend %button-icon-small;
+
           stroke: var(--context-menu-foreground-color-selected);
         }
       }
+
       .library-name {
         color: var(--context-menu-foreground-color-selected);
       }

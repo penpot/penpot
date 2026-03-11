@@ -6,14 +6,14 @@
 
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as t;
-
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   --modal-title-foreground-color: var(--color-foreground-primary);
   --modal-text-foreground-color: var(--color-foreground-secondary);
 
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
+
   display: flex;
   justify-content: center;
   align-items: center;
@@ -32,7 +32,8 @@
 }
 
 .modal-dialog {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   inline-size: 100%;
   max-inline-size: 32rem;
   max-block-size: unset;
@@ -49,12 +50,14 @@
 
 .modal-title {
   @include t.use-typography("headline-medium");
+
   color: var(--modal-title-foreground-color);
   word-break: break-word;
 }
 
 .modal-content {
   @include t.use-typography("body-large");
+
   color: var(--modal-text-foreground-color);
 }
 
@@ -65,11 +68,13 @@
 
 .action-buttons {
   @extend .modal-action-btns;
+
   gap: var(--sp-s);
 }
 
 .modal-scd-msg,
 .modal-msg {
   @include t.use-typography("body-large");
+
   color: var(--modal-text-foreground-color);
 }

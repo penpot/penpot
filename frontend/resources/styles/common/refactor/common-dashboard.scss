@@ -145,7 +145,7 @@
 }
 
 .btn-secondary {
-  @extend .button-secondary;
+  @extend %button-secondary;
   color: var(--color-foreground-primary);
   font-size: $fs-12;
   text-transform: uppercase;

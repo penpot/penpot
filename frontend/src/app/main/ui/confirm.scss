@@ -7,14 +7,16 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
+
   &.transparent {
     background-color: transparent;
   }
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxl);
@@ -22,6 +24,7 @@
 
 .modal-title {
   @include deprecated.headlineMediumTypography;
+
   color: var(--modal-title-foreground-color);
 }
 
@@ -41,11 +44,13 @@
 
 .modal-component-icon {
   @include deprecated.flexCenter;
+
   color: var(--color-foreground-secondary);
 }
 
 .modal-component-name {
   @include deprecated.bodyLargeTypography;
+
   color: var(--color-foreground-secondary);
 }
 
@@ -57,5 +62,6 @@
 .modal-subtitle,
 .modal-msg {
   @include deprecated.bodyLargeTypography;
+
   color: var(--modal-text-foreground-color);
 }

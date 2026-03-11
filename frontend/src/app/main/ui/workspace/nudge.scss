@@ -7,11 +7,12 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   min-width: deprecated.$s-408;
 }
 
@@ -21,22 +22,28 @@
 
 .modal-title {
   @include deprecated.headlineMediumTypography;
+
   color: var(--modal-title-foreground-color);
 }
+
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include deprecated.flexColumn;
+
   gap: deprecated.$s-24;
+
   @include deprecated.bodyLargeTypography;
+
   margin-bottom: deprecated.$s-24;
 }
 
 .input-wrapper {
   @extend .input-with-label;
   @include deprecated.bodySmallTypography;
+
   label {
     text-transform: none;
   }
@@ -44,6 +51,7 @@
 
 .modal-msg {
   @include deprecated.bodyLargeTypography;
+
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }

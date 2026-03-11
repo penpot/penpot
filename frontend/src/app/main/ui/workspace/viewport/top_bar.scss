@@ -10,6 +10,7 @@
 .viewport-actions-path {
   pointer-events: none;
   position: absolute;
+
   --actions-toolbar-position-y: #{deprecated.$s-28};
   --actions-toolbar-offset-y: #{deprecated.$s-6};
 
@@ -24,6 +25,7 @@
 
 .viewport-actions-container {
   @include deprecated.flexRow;
+
   background: var(--panel-background-color);
   border-radius: deprecated.$br-12;
   box-shadow: 0 0 deprecated.$s-12 0 var(--menu-shadow-color);
@@ -46,6 +48,7 @@
 
 .done-btn {
   @extend .button-primary;
+
   text-transform: uppercase;
   padding: deprecated.$s-8 deprecated.$s-20;
   font-size: deprecated.$fs-11;

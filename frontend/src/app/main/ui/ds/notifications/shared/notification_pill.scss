@@ -22,10 +22,8 @@
   border: $b-1 solid var(--notification-border-color);
   border-radius: $br-8;
   padding: var(--notification-padding);
-
   display: flex;
   gap: var(--sp-s);
-
   color: var(--notification-fg-color);
 
   // Targets the potential links included by the creator in the children props.

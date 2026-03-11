@@ -15,7 +15,6 @@
   @include deprecated.bodySmallTypography;
 
   color: var(--element-name-color);
-
   flex-grow: 1;
   block-size: 100%;
   align-content: center;
@@ -62,5 +61,6 @@
 
 .element-name-touched {
   --element-name-touched-color: var(--layer-row-component-foreground-color);
+
   color: var(--element-name-touched-color);
 }

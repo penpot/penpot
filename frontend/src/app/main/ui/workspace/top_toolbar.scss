@@ -27,6 +27,7 @@
 
   --toolbar-position-y: #{deprecated.$s-28};
   --toolbar-offset-y: 0px;
+
   top: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
 }
 
@@ -37,6 +38,7 @@
 
 .main-toolbar-hidden {
   --toolbar-offset-y: -#{deprecated.$s-4};
+
   height: deprecated.$s-16;
   z-index: deprecated.$z-index-1;
   border-radius: 0 0 deprecated.$s-8 deprecated.$s-8;
@@ -62,7 +64,8 @@
 }
 
 .main-toolbar-options-button {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: deprecated.$s-36;
   width: deprecated.$s-36;
   flex-shrink: 0;
@@ -70,18 +73,20 @@
   margin: 0 deprecated.$s-2;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--color-foreground-secondary);
   }
 
   &.selected {
-    @extend .button-icon-selected;
+    @extend %button-icon-selected;
   }
 }
 
 .toolbar-handler {
   @include deprecated.flexCenter;
   @include deprecated.buttonStyle;
+
   position: absolute;
   left: 0;
   bottom: 0;

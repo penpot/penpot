@@ -23,13 +23,15 @@
 
 .add-color-btn,
 .palette-btn {
-  @extend .button-secondary;
+  @extend %button-secondary;
+
   height: deprecated.$s-24;
   width: deprecated.$s-24;
   border-radius: deprecated.$br-circle;
   padding: 0;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
 }
 

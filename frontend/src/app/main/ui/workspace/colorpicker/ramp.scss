@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .value-saturation-selector {
-  background-color: rgba(var(--hue-rgb));
+  background-color: rgb(var(--hue-rgb));
   position: relative;
   height: deprecated.$s-140;
   width: 100%;
@@ -20,7 +20,7 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0));
+    background: linear-gradient(to right, #fff, rgb(255 255 255 / 0%));
   }
 
   &::after {
@@ -28,12 +28,13 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to top, #000, rgba(0, 0, 0, 0));
+    background: linear-gradient(to top, #000, rgb(0 0 0 / 0%));
   }
 }
 
 .handler {
   @extend .colorpicker-handler;
+
   height: deprecated.$s-16;
   width: deprecated.$s-16;
   border: deprecated.$s-2 solid var(--colorpicker-handlers-color);

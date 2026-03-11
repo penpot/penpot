@@ -10,18 +10,22 @@
   height: 100%;
   display: flex;
 }
+
 .left-arrow,
 .right-arrow {
   @include deprecated.buttonStyle;
   @include deprecated.flexCenter;
+
   position: relative;
   height: 100%;
   width: deprecated.$s-24;
   padding: 0;
   z-index: deprecated.$z-index-2;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
+
   &::after {
     content: "";
     position: absolute;
@@ -37,20 +41,24 @@
     );
     pointer-events: none;
   }
+
   &:hover {
     svg {
       stroke: var(--button-foreground-hover);
     }
   }
+
   &:disabled {
     svg {
       stroke: var(--button-foreground-color-disabled);
     }
+
     &::after {
       background-image: none;
     }
   }
 }
+
 .left-arrow {
   &::after {
     left: deprecated.$s-24;
@@ -60,6 +68,7 @@
       var(--palette-button-shadow-final) 100%
     );
   }
+
   &.disabled ::after {
     background-image: none;
   }
@@ -81,6 +90,7 @@
 
 .typography-item {
   @include deprecated.bodySmallTypography;
+
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -90,12 +100,14 @@
   padding: deprecated.$s-8;
   border-radius: deprecated.$br-8;
   background-color: var(--palette-text-background-color);
+
   &:first-child {
     margin-left: deprecated.$s-8;
   }
 
   .typography-name {
     @include deprecated.textEllipsis;
+
     height: deprecated.$s-16;
     width: deprecated.$s-120;
     color: var(--palette-text-color-selected);
@@ -103,6 +115,7 @@
 
   .typography-font {
     @include deprecated.textEllipsis;
+
     height: deprecated.$s-16;
     width: deprecated.$s-120;
     color: var(--palette-text-color);
@@ -110,6 +123,7 @@
 
   .typography-data {
     @include deprecated.textEllipsis;
+
     height: deprecated.$s-16;
     width: deprecated.$s-120;
     color: var(--palette-text-color);
@@ -119,16 +133,19 @@
     .typography-name {
       height: deprecated.$s-16;
     }
+
     .typography-data {
       display: none;
     }
   }
+
   &.small-item {
     .typography-data,
     .typography-font {
       display: none;
     }
   }
+
   &:hover {
     background-color: var(--palette-text-background-color-hover);
   }
@@ -136,5 +153,6 @@
 
 .text-palette-empty {
   @include deprecated.bodySmallTypography;
+
   color: var(--palette-text-color);
 }

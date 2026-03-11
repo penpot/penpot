@@ -8,6 +8,7 @@
 
 .dashboard-comments-section {
   @include deprecated.flexCenter;
+
   position: relative;
   border-radius: deprecated.$br-8;
 }
@@ -35,7 +36,8 @@
 }
 
 .comments-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
   height: deprecated.$s-24;
   width: deprecated.$s-24;
@@ -44,6 +46,7 @@
 
 .comment-button {
   position: relative;
+
   .unread {
     position: absolute;
     width: deprecated.$s-8;
@@ -57,12 +60,14 @@
 }
 
 .comments-icon-small {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--comment-icon-small-foreground-color);
 }
 
 .dropdown {
   @include deprecated.menuShadow;
+
   background-color: var(--color-background-tertiary);
   border-radius: deprecated.$br-8;
   border: deprecated.$s-1 solid transparent;
@@ -101,6 +106,7 @@
   &:hover {
     cursor: pointer;
   }
+
   &.mark-all-as-read-button {
     border-radius: deprecated.$s-8;
     border: deprecated.$s-1 solid;

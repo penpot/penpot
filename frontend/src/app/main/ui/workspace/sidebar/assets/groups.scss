@@ -40,17 +40,18 @@
 
 .path {
   @include deprecated.textEllipsis;
+
   margin-left: deprecated.$s-2;
   text-transform: initial;
   color: var(--title-foreground-color-hover);
 }
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
 }
 
 .modal-header {
@@ -59,21 +60,24 @@
 
 .modal-title {
   @include deprecated.uppercaseTitleTipography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include deprecated.bodySmallTypography;
+
   margin-bottom: deprecated.$s-24;
 }
 
 .input-wrapper {
   @extend .input-with-label;
   @include deprecated.bodySmallTypography;
+
   margin-bottom: deprecated.$s-8;
 }
 

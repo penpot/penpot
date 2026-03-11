@@ -10,6 +10,7 @@
 
 .attributes-block {
   --box-border-color: var(--color-background-primary);
+
   display: flex;
   flex-direction: column;
   border-block-end: $b-2 solid var(--box-border-color);
@@ -26,6 +27,7 @@
 
 .shadow-row {
   @extend .attr-row;
+
   block-size: $sz-36;
 }
 

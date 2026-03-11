@@ -22,6 +22,7 @@
   }
 
   @include use-typography("body-small");
+
   position: relative;
   display: grid;
   grid-template-rows: auto;
@@ -47,7 +48,6 @@
   block-size: $sz-32;
   inline-size: 100%;
   padding: var(--sp-s);
-  border: none;
   border-radius: $br-8;
   outline: $b-1 solid var(--select-outline-color);
   border: $b-1 solid var(--select-border-color);
@@ -91,6 +91,7 @@
 
 .header-label {
   @include use-typography("body-small");
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

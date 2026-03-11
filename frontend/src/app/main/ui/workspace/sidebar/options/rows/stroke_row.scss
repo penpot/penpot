@@ -12,7 +12,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
-
   position: relative;
 
   --reorder-left-position: calc(-1 * var(--sp-l));
@@ -32,15 +31,17 @@
 
 .stroke-options {
   @include sidebar.option-grid-structure;
+
   align-items: center;
 }
 
 .stroke-width-input {
   grid-column: span 2;
 
-  @extend .input-element;
+  @extend %input-element;
 
   @include t.use-typography("body-small");
+
   padding-inline-start: var(--sp-xs);
 }
 

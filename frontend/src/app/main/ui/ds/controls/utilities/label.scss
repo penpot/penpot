@@ -13,6 +13,7 @@
   --label-optional-color: var(--color-foreground-secondary);
 
   @include use-typography("body-small");
+
   color: var(--label-color);
   display: flex;
   gap: var(--sp-xs);

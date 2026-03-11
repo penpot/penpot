@@ -38,15 +38,18 @@ $assets-button-width: deprecated.$s-28;
 
   &.editing {
     border: deprecated.$s-1 solid var(--input-border-color-focus);
+
     input.element-name {
       @include deprecated.textEllipsis;
       @include deprecated.bodySmallTypography;
       @include deprecated.removeInputStyle;
+
       flex-grow: 1;
       margin: 0;
       color: var(--layer-row-foreground-color);
     }
   }
+
   &:hover {
     background-color: var(--assets-item-background-color-hover);
   }
@@ -54,6 +57,7 @@ $assets-button-width: deprecated.$s-28;
 
 .bullet-block {
   @include deprecated.flexCenter;
+
   height: 100%;
   justify-content: flex-start;
   margin-inline-end: deprecated.$s-4;
@@ -62,6 +66,7 @@ $assets-button-width: deprecated.$s-28;
 .name-block {
   @include deprecated.bodySmallTypography;
   @include deprecated.textEllipsis;
+
   margin: 0;
   color: var(--assets-item-name-foreground-color);
 }
@@ -77,6 +82,7 @@ $assets-button-width: deprecated.$s-28;
 
 .element-name {
   @include deprecated.textEllipsis;
+
   color: var(--color-foreground-primary);
 }
 

@@ -19,21 +19,23 @@
   flex-direction: column;
   height: px2rem(244);
   justify-content: flex-end;
-  margin-inline-start: px2rem(6);
-  margin-inline-end: px2rem(6);
+  margin-inline: px2rem(6);
   margin-block-end: px2rem(6);
   position: absolute;
   transition: bottom 300ms;
   width: calc(100% - $sz-12);
   pointer-events: none;
+
   &.collapsed {
     inset-block-end: calc(-1 * px2rem(228));
     background-color: transparent;
     transition: bottom 300ms;
+
     .title-btn {
       border-end-end-radius: $br-8;
       border-end-start-radius: $br-8;
     }
+
     .content,
     .content-description {
       visibility: hidden;
@@ -66,26 +68,24 @@
 
 .title-text {
   @include t.use-typography("body-large");
+
   display: inline-block;
   vertical-align: middle;
-  margin-inline-start: var(--sp-m);
-  margin-inline-end: var(--sp-s);
+  margin-inline: var(--sp-m) var(--sp-s);
   color: var(--color-foreground-primary);
 }
 
 .title-icon-container {
   display: inline-block;
   vertical-align: middle;
-  margin-inline-start: auto;
-  margin-inline-end: var(--sp-s);
+  margin-inline: auto var(--sp-s);
   color: var(--color-foreground-primary);
 }
 
 .title-icon {
   display: inline-block;
   vertical-align: middle;
-  margin-inline-start: auto;
-  margin-inline-end: var(--sp-s);
+  margin-inline: auto var(--sp-s);
   transform: rotate(90deg);
 }
 
@@ -127,6 +127,7 @@
   &:hover {
     border: $b-2 solid var(--color-background-tertiary);
     background-color: var(--color-accent-primary);
+
     .arrow-icon {
       stroke: var(--color-background-tertiary);
     }
@@ -146,9 +147,9 @@
 
 .content-description {
   @include t.use-typography("body-medium");
+
   color: var(--color-foreground-primary);
-  margin-block-end: calc(-1 * var(--sp-s));
-  margin-block-start: var(--sp-l);
+  margin-block: var(--sp-l) calc(-1 * var(--sp-s));
   margin-inline-start: var(--sp-l);
   visibility: visible;
 }
@@ -179,6 +180,7 @@
 
 .template-card {
   @include t.use-typography("body-large");
+
   display: inline-block;
   width: px2rem(256);
   cursor: pointer;
@@ -186,12 +188,15 @@
   padding: 0 var(--sp-xs) var(--sp-s) var(--sp-xs);
   border-radius: $br-8;
   border: $b-2 solid transparent;
+
   &:hover {
     text-decoration: none;
     border-color: var(--color-accent-primary);
+
     .download-icon {
       stroke: var(--color-accent-primary);
     }
+
     .card-text {
       color: var(--color-accent-primary);
     }
@@ -222,6 +227,7 @@
 
 .card-text {
   @include t.use-typography("body-large");
+
   white-space: nowrap;
   overflow: hidden;
   width: 90%;
@@ -249,11 +255,13 @@
 
 .template-link-title {
   @include t.use-typography("body-medium");
+
   color: var(--color-foreground-primary);
 }
 
 .template-link-text {
   @include t.use-typography("body-small");
+
   margin-block-start: var(--sp-s);
   color: var(--color-foreground-secondary);
 }

@@ -21,6 +21,7 @@
 
 .create-set-button {
   @include use-typography("body-small");
+
   background-color: transparent;
   border: none;
   appearance: none;
@@ -30,6 +31,7 @@
 
 .set-item-container {
   @include deprecated.bodySmallTypography;
+
   display: flex;
   align-items: center;
   width: 100%;
@@ -43,9 +45,11 @@
   &.dnd-over-bot {
     border-bottom: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
   }
+
   &.dnd-over-top {
     border-top: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
   }
+
   &.dnd-over {
     border: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
   }
@@ -65,6 +69,7 @@
 
 .set-name {
   @include deprecated.textEllipsis;
+
   flex-grow: 1;
   padding-left: deprecated.$s-2;
 }
@@ -112,7 +117,7 @@
 }
 
 .check-icon {
-  color: currentColor;
+  color: currentcolor;
 }
 
 .set-item-container:hover {
@@ -129,6 +134,7 @@
   padding: deprecated.$s-12;
   color: var(--color-foreground-secondary);
 }
+
 .selected-set {
   background-color: var(--layer-row-background-color-selected);
   color: var(--layer-row-foreground-color-selected);
@@ -138,8 +144,10 @@
 .collapsabled-icon {
   @include deprecated.buttonStyle;
   @include deprecated.flexCenter;
+
   height: deprecated.$s-24;
   border-radius: deprecated.$br-8;
+
   &:hover {
     color: var(--title-foreground-color-hover);
   }

@@ -12,10 +12,11 @@
   --token-options-fg-color: var(--color-foreground-primary);
   --token-options-bg-color: unset;
   --token-options-empty: var(--color-canvas);
+
   @include use-typography("body-small");
+
   display: grid;
-  align-items: center;
-  justify-items: start;
+  place-items: center start;
   grid-template-columns: 1fr auto;
   gap: $sz-6;
   width: 100%;
@@ -26,10 +27,10 @@
   outline-offset: calc(-1 * $b-1);
   background-color: var(--token-options-bg-color);
   color: var(--token-options-fg-color);
-  overflow: hidden;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
   &:hover,
   &[aria-selected="true"] {
     --token-options-bg-color: var(--color-background-quaternary);
@@ -51,11 +52,13 @@
 
 .option-current {
   --token-options-outline-color: var(--color-accent-primary);
+
   outline: $b-1 solid var(--token-options-outline-color);
 }
 
 .option-pill {
   @include use-typography("code-font");
+
   color: var(--color-foreground-secondary);
   background-color: var(--color-background-primary);
   border-radius: $br-6;

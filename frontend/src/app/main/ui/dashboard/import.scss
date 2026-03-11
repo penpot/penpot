@@ -7,11 +7,12 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   display: flex;
   flex-direction: column;
 }
@@ -22,18 +23,19 @@
 
 .modal-title {
   @include deprecated.uppercaseTitleTipography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include deprecated.bodySmallTypography;
+
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   display: grid;
   grid-template-columns: 1fr;
   gap: deprecated.$s-16;
@@ -48,8 +50,10 @@
 .cancel-button {
   @extend .modal-cancel-btn;
 }
+
 .accept-btn {
   @extend .modal-accept-btn;
+
   &.danger {
     @extend .modal-danger-btn;
   }
@@ -59,60 +63,81 @@
 .modal-subtitle,
 .modal-msg {
   @include deprecated.bodySmallTypography;
+
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }
 
 .file-entry {
   display: flex;
+
   .file-name {
     @include deprecated.flexRow;
+
     .file-icon {
       @include deprecated.flexCenter;
+
       height: deprecated.$s-24;
       width: deprecated.$s-16;
+
       svg {
-        @extend .button-icon;
+        @extend %button-icon;
+
         stroke: var(--icon-foreground);
       }
+
       &.icon-fill svg {
         fill: var(--icon-foreground);
       }
     }
+
     .file-name-edit {
-      @extend .input-element;
+      @extend %input-element;
       @include deprecated.bodySmallTypography;
+
       flex-grow: 1;
     }
+
     .file-name-label {
       @include deprecated.bodySmallTypography;
+
       display: flex;
       align-items: center;
       gap: deprecated.$s-12;
       flex-grow: 1;
+
       .icon {
         @include deprecated.flexCenter;
+
         height: deprecated.$s-16;
         width: deprecated.$s-16;
+
         svg {
-          @extend .button-icon-small;
+          @extend %button-icon-small;
+
           stroke: var(--icon-foreground);
         }
       }
     }
+
     .edit-entry-buttons {
       @include deprecated.flexRow;
+
       button {
-        @extend .button-tertiary;
+        @extend %button-tertiary;
+
         width: deprecated.$s-28;
         height: deprecated.$s-32;
+
         svg {
-          @extend .button-icon;
+          @extend %button-icon;
+
           stroke: var(--icon-foreground);
         }
       }
     }
   }
+
   .error-message,
   .progress-message {
     display: flex;
@@ -126,14 +151,19 @@
     align-items: center;
     gap: deprecated.$s-12;
     color: var(--modal-text-foreground-color);
+
     .linked-library-tag {
       @include deprecated.flexCenter;
+
       height: deprecated.$s-24;
       width: deprecated.$s-24;
+
       svg {
-        @extend .button-icon;
+        @extend %button-icon;
+
         stroke: var(--icon-foreground);
       }
+
       &.error {
         svg {
           stroke: var(--element-foreground-error);
@@ -147,45 +177,57 @@
       color: var(--modal-text-foreground-color);
     }
   }
+
   &.warning {
     .file-name {
       color: var(--element-foreground-warning);
+
       .file-icon svg {
         stroke: var(--element-foreground-warning);
       }
+
       .file-icon.icon-fill svg {
         fill: var(--element-foreground-warning);
       }
     }
   }
+
   &.success {
     .file-name {
       color: var(--modal-text-foreground-color);
+
       .file-icon svg {
         stroke: var(--modal-text-foreground-color);
       }
+
       .file-icon.icon-fill svg {
         fill: var(--modal-text-foreground-color);
       }
     }
   }
+
   &.error {
     .file-name {
       color: var(--modal-text-foreground-color);
+
       .file-icon svg {
         stroke: var(--modal-text-foreground-color);
       }
+
       .file-icon.icon-fill svg {
         fill: var(--modal-text-foreground-color);
       }
     }
   }
+
   &.editable {
     .file-name {
       color: var(--modal-text-foreground-color);
+
       .file-icon svg {
         stroke: var(--modal-text-foreground-color);
       }
+
       .file-icon.icon-fill svg {
         fill: var(--modal-text-foreground-color);
       }

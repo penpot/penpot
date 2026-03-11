@@ -8,6 +8,7 @@
 
 .sets-header-container {
   @include use-typography("headline-small");
+
   padding: var(--sp-s);
   color: var(--title-foreground-color);
   word-break: break-word;
@@ -24,6 +25,7 @@
 
 .sets-header-status {
   @include use-typography("body-small");
+
   text-transform: none;
   color: var(--color-foreground-secondary);
   display: flex;

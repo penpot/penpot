@@ -23,27 +23,32 @@
 }
 
 .add-export {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: deprecated.$s-32;
   width: deprecated.$s-28;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
   }
 }
 
 .element-set-content {
   @include deprecated.flexColumn;
+
   margin-bottom: deprecated.$s-4;
 }
 
 .multiple-exports {
   @include deprecated.flexRow;
+
   grid-column: 1 / span 9;
 }
 
 .label {
-  @extend .mixed-bar;
+  @extend %mixed-bar;
 }
 
 .actions {
@@ -54,12 +59,15 @@
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   column-gap: deprecated.$s-4;
+
   .action-btn {
-    @extend .button-tertiary;
+    @extend %button-tertiary;
+
     height: deprecated.$s-32;
     width: deprecated.$s-28;
+
     svg {
-      @extend .button-icon;
+      @extend %button-icon;
     }
   }
 }
@@ -84,6 +92,7 @@
 .size-select {
   grid-column: span 2;
   padding: 0;
+
   .dropdown-upwards {
     bottom: deprecated.$s-36;
     top: unset;
@@ -92,14 +101,16 @@
 }
 
 .suffix-input {
-  @extend .input-element;
+  @extend %input-element;
   @include deprecated.bodySmallTypography;
+
   grid-column: span 3;
 }
 
 .export-btn {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include deprecated.uppercaseTitleTipography;
+
   height: deprecated.$s-32;
   width: 100%;
 }

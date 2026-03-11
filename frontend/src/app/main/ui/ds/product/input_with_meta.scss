@@ -15,6 +15,7 @@
   --input-meta-background: var(--color-background-tertiary);
 
   @include t.use-typography("body-small");
+
   border-radius: $br-8;
   background-color: var(--input-meta-background);
   padding: var(--sp-s);
@@ -28,6 +29,7 @@
 
   &:hover {
     --input-meta-background: var(--color-background-quaternary);
+
     cursor: text;
   }
 }

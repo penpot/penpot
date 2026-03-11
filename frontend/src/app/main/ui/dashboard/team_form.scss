@@ -7,11 +7,11 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
 }
 
 .modal-header {
@@ -20,11 +20,12 @@
 
 .modal-title {
   @include deprecated.uppercaseTitleTipography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
@@ -38,10 +39,13 @@
 .group-name-input {
   @extend .input-element-label;
   @include deprecated.bodySmallTypography;
+
   margin-bottom: deprecated.$s-8;
+
   label {
     @include deprecated.flexColumn;
     @include deprecated.bodySmallTypography;
+
     align-items: flex-start;
     width: 100%;
     border: none;
@@ -61,8 +65,10 @@
 .cancel-button {
   @extend .modal-cancel-btn;
 }
+
 .accept-btn {
   @extend .modal-accept-btn;
+
   &.danger {
     @extend .modal-danger-btn;
   }

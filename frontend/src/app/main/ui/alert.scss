@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 
   &.transparent {
     background-color: transparent;
@@ -15,7 +15,7 @@
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
 }
 
 .modal-header {
@@ -24,15 +24,17 @@
 
 .modal-title {
   @include deprecated.headlineMediumTypography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include deprecated.bodyLargeTypography;
+
   margin-bottom: deprecated.$s-24;
 }
 
@@ -56,6 +58,7 @@
 .modal-subtitle,
 .modal-msg {
   @include deprecated.bodyLargeTypography;
+
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }
