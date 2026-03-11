@@ -130,12 +130,13 @@
 (defmethod ptk/handle-error :wasm-non-blocking
   [error]
   (when-let [cause (::instance error)]
-    (show-not-blocking-error cause)))
+    (flash :cause cause)))
 
 (defmethod ptk/handle-error :wasm-critical
   [error]
   (when-let [cause (::instance error)]
     (ex/print-throwable cause :prefix "WASM critical error"))
+
   (st/emit! (rt/assign-exception error)))
 
 (defmethod ptk/handle-error :wasm-exception
@@ -356,24 +357,18 @@
                   (str/starts-with? message "invalid props on component")
                   (str/starts-with? message "Unexpected token "))))
 
-          (handle-uncaught [cause]
-            (when cause
-              (set! last-exception cause)
-              (let [data (ex-data cause)
-                    type (get data :type)]
-                (if (#{:wasm-critical :wasm-non-blocking :wasm-exception} type)
-                  (on-error cause)
-                  (when-not (is-ignorable-exception? cause)
-                    (ex/print-throwable cause :prefix "Uncaught Exception")
-                    (ts/schedule #(show-not-blocking-error cause)))))))
-
           (on-unhandled-error [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
               (set! last-exception cause)
               (when-not (is-ignorable-exception? cause)
-                (ex/print-throwable cause :prefix "Uncaught Exception")
-                (ts/schedule #(flash :cause cause :type :unhandled)))))
+                (let [data (ex-data cause)
+                      type (get data :type)]
+                  (if (#{:wasm-critical :wasm-non-blocking :wasm-exception} type)
+                    (on-error cause)
+                    (do
+                      (ex/print-throwable cause :prefix "Uncaught Exception")
+                      (ts/schedule #(flash :cause cause :type :unhandled))))))))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
