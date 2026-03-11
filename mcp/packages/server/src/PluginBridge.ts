@@ -5,6 +5,8 @@ import { PluginTaskResponse, PluginTaskResult } from "@penpot/mcp-common";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 
+const KEEP_ALIVE_TIME = 30000; // 30 seconds
+
 interface ClientConnection {
     socket: WebSocket;
     userToken: string | null;
@@ -38,6 +40,8 @@ export class PluginBridge {
      * channel between the MCP mcpServer and Penpot plugin instances.
      */
     private setupWebSocketHandlers(): void {
+        let interval: NodeJS.Timeout | undefined;
+
         this.wsServer.on("connection", (ws: WebSocket, request: http.IncomingMessage) => {
             // extract userToken from query parameters
             const url = new URL(request.url!, `ws://${request.headers.host}`);
@@ -72,10 +76,6 @@ export class PluginBridge {
             ws.on("message", (data: Buffer) => {
                 this.logger.debug("Received WebSocket message: %s", data.toString());
                 try {
-                    if (data.toString() === "keep-alive") {
-                        ws.send("keep-alive");
-                        return;
-                    }
                     const response: PluginTaskResponse<any> = JSON.parse(data.toString());
                     this.handlePluginTaskResponse(response);
                 } catch (error) {
@@ -90,6 +90,9 @@ export class PluginBridge {
                 if (connection?.userToken) {
                     this.clientsByToken.delete(connection.userToken);
                 }
+                if (interval) {
+                    clearInterval(interval);
+                }
             });
 
             ws.on("error", (error) => {
@@ -99,7 +102,14 @@ export class PluginBridge {
                 if (connection?.userToken) {
                     this.clientsByToken.delete(connection.userToken);
                 }
+                if (interval) {
+                    clearInterval(interval);
+                }
             });
+
+            interval = setInterval(() => {
+                ws?.ping();
+            }, KEEP_ALIVE_TIME);
         });
 
         this.logger.info("WebSocket mcpServer started on port %d", this.port);
