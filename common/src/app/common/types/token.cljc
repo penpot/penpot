@@ -639,6 +639,9 @@
       (cond-> {:weight weight}
         italic? (assoc :style "italic")))))
 
+
+;;;;;; combobox token parsing
+
 (defn inside-ref?
   [value position]
   (let [left-part (str/slice value 0 position)
@@ -651,28 +654,87 @@
       :else
       (< last-index-close last-index-open))))
 
+(defn nth-last-index-of
+  [string char n]
+  (loop [string' string
+         count 1]
+    (let [index (str/last-index-of string' char)]
+      (cond
+        (nil? index) nil
+        (= count n) index
+        :else (recur (str/slice string' 0 index)
+                     (inc count))))))
+
+(defn nth-index-of
+  [string char n]
+  (loop [string' string
+         offset 0 
+         count 1]
+    (let [index (str/index-of string' char)]
+      (cond
+        (nil? index) nil
+        (= count n) (+ index offset)
+        :else (recur (str/slice string' (inc index))
+                     (+ offset index 1)
+                     (inc count))))))
+
 (defn start-ref-position
   [value position]
   (let [left-part (str/slice value 0 position)
-        last-index-open (str/last-index-of left-part "{")]
+        open-pos (str/last-index-of left-part "{")
+        space-pos (str/last-index-of left-part " ")
+        space-pos (when space-pos (+ 1 space-pos))
+        first-position (->> [open-pos space-pos]
+                            (remove nil?)
+                            (sort)
+                            (last))]
+    first-position))
+
+(defn start-ref-position-inside-ref
+  [value position]
+  (let [left-part (str/slice value 0 position)
+        last-index-open (nth-last-index-of left-part "{" 1)]
     last-index-open))
 
-(defn end-ref-position
+(defn end-ref-position-inside-ref
   [value position]
   (let [right-part (str/slice value position)
-        next-index-close (str/index-of right-part "}")]
-    (if (some? next-index-close)
-      (+ position next-index-close 1)
-      position)))
+        first-index-close (nth-index-of right-part "}" 1)]
+    first-index-close))
+
+(defn inside-closed-ref?
+  [value position]
+  (let [left-part (str/slice value 0 position)
+        open-pos (nth-last-index-of left-part "{" 1)
+        spaces-pos-before (nth-last-index-of left-part " " 1)
+        right-part (str/slice value position)
+        close-pos (nth-index-of right-part "}" 1)
+        spaces-pos-after (nth-index-of right-part " " 1)
+        open-after-space?  (or (nil? spaces-pos-before)
+                                (> open-pos spaces-pos-before))
+         close-before-space? (or (nil? spaces-pos-after)
+                                 (< close-pos spaces-pos-after))]
+        (and open-pos
+             close-pos
+             open-after-space?
+             close-before-space?)))
 
 (defn insert-ref
   [value position name]
   (let [reference (str "{" name "}")]
     (if (inside-ref? value position)
-      (let [first-part (str/slice value 0 (start-ref-position value position))
-            second-part (str/slice value (end-ref-position value position))]
-        {:result (str first-part reference second-part)
-         :position (+ (count first-part) (count reference))})
+      (if (inside-closed-ref? value position)
+        (let [first-part (str/slice value 0 (start-ref-position-inside-ref value position))
+              end-position (+ position (end-ref-position-inside-ref value position) 1)
+              second-part (str/slice value end-position)]
+          {:result (str first-part reference second-part)
+           :position (+ (count first-part) (count reference))})
+
+        (let [first-part (str/slice value 0 (start-ref-position value position))
+              second-part (str/slice value position)]
+          {:result (str first-part reference second-part)
+           :position (+ (count first-part) (count reference))}))
+
       (let [first-part (str/slice value 0 position)
             second-part (str/slice value position)]
         {:result (str first-part reference second-part)
