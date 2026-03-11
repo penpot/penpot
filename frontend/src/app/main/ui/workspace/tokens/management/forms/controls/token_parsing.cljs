@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.tokens.management.forms.controls.token-parsing
   (:require
+   [app.common.types.token :as cto]
    [app.main.ui.ds.controls.select :refer [get-option]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
@@ -21,50 +22,6 @@
        :end (or (str/index-of value "}" last-open) cursor)
        :partial (subs text-before (inc last-open))})))
 
-(defn find-active-token-range
-  "Returns {:start :end} for the token surrounding the cursor.
-   A token starts with '{', contains no spaces, and may be incomplete.
-   Returns nil if no valid token is active."
-  [value cursor]
-  (let [start (.lastIndexOf value "{" (dec cursor))]
-    (when (>= start 0)
-      (let [between (subs value (inc start) cursor)]
-        (when-not (re-find #"\s" between)
-          (let [after        (subs value (inc start))
-                close-index  (.indexOf after "}")
-                close-pos    (when (>= close-index 0)
-                               (+ (inc start) close-index))
-                space-index  (.indexOf after " ")
-                space-pos    (when (>= space-index 0)
-                               (+ (inc start) space-index))
-                open-index  (.indexOf after "{")
-                open-pos    (when (>= open-index 0)
-                              (+ (inc start) open-index))
-                candidates (->> [space-pos open-pos close-pos]
-                                (remove nil?)
-                                (sort))
-                end (or (first candidates) cursor)
-                inside-token? (and (>= cursor start) (< cursor end))]
-
-            {:start start
-             :end (if inside-token?
-                    (inc end)
-                    end)}))))))
-
-(defn replace-active-token
-  "Replaces the token at the cursor with `{new-name}`.
-   Returns {:value :cursor} with the updated value and new cursor position."
-  [value cursor new-name]
-  (let [new-token (str "{" new-name "}")]
-    (if-let [{:keys [start end]} (find-active-token-range value cursor)]
-      {:value (str (subs value 0 start)
-                   new-token
-                   (subs value end))
-       :cursor (+ start (count new-token))}
-      {:value (str (subs value 0 cursor)
-                   new-token
-                   (subs value cursor))
-       :cursor (+ cursor (count new-token))})))
 
 (defn active-token [value input-node]
   (let [cursor (dom/selection-start input-node)]
@@ -86,4 +43,4 @@
 
         option     (get-option options id)
         name       (:name option)]
-    (replace-active-token value cursor name)))
+    (cto/insert-ref value cursor name)))

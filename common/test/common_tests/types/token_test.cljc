@@ -29,45 +29,47 @@
 (t/deftest token-value-with-refs
   (t/testing "empty value"
     (t/is (= (cto/insert-ref "" 0 "token1")
-             {:result "{token1}" :position 8})))
+             {:value "{token1}" :cursor 8})))
 
   (t/testing "value without references"
     (t/is (= (cto/insert-ref "ABC" 0 "token1")
-             {:result "{token1}ABC" :position 8}))
+             {:value "{token1}ABC" :cursor 8}))
     (t/is (= (cto/insert-ref "23 + " 5 "token1")
-             {:result "23 + {token1}" :position 13}))
+             {:value "23 + {token1}" :cursor 13}))
     (t/is (= (cto/insert-ref "23 + " 5 "token1")
-             {:result "23 + {token1}" :position 13})))
+             {:value "23 + {token1}" :cursor 13})))
 
   (t/testing "value with closed references"
     (t/is (= (cto/insert-ref "{token2}" 8 "token1")
-             {:result "{token2}{token1}" :position 16}))
+             {:value "{token2}{token1}" :cursor 16}))
     (t/is (= (cto/insert-ref "{token2}" 6 "token1")
-             {:result "{token1}" :position 8}))
+             {:value "{token1}" :cursor 8}))
     (t/is (= (cto/insert-ref "{token2} + + {token3}" 10 "token1")
-             {:result "{token2} +{token1} + {token3}" :position 18}))
+             {:value "{token2} +{token1} + {token3}" :cursor 18}))
     (t/is (= (cto/insert-ref "{token2} + {token3}" 16 "token1")
-             {:result "{token2} + {token1}" :position 19})))
+             {:value "{token2} + {token1}" :cursor 19})))
 
   (t/testing "value with open references"
     (t/is (= (cto/insert-ref "{tok" 4 "token1")
-             {:result "{token1}" :position 8}))
+             {:value "{token1}" :cursor 8}))
     (t/is (= (cto/insert-ref "{tok" 2 "token1")
-             {:result "{token1}ok" :position 8}))
+             {:value "{token1}ok" :cursor 8}))
     (t/is (= (cto/insert-ref "{token2}{" 9 "token1")
-             {:result "{token2}{token1}" :position 16}))
+             {:value "{token2}{token1}" :cursor 16}))
     (t/is (= (cto/insert-ref "{token2{}" 8 "token1")
-             {:result "{token2{token1}" :position 15}))
+             {:value "{token2{token1}" :cursor 15}))
     (t/is (= (cto/insert-ref "{token2} + { + token3}" 12 "token1")
-             {:result "{token2} + {token1} + token3}" :position 19}))
+             {:value "{token2} + {token1} + token3}" :cursor 19}))
     (t/is (= (cto/insert-ref "{token2{}" 8 "token1")
-             {:result "{token2{token1}" :position 15})))
+             {:value "{token2{token1}" :cursor 15}))
+    (t/is (= (cto/insert-ref "{token2} + {{{{{{{{{{ + {token3}" 21 "token1")
+             {:value "{token2} + {token1} + {token3}" :cursor 19})))
 
   (t/testing "value with broken references"
     (t/is (= (cto/insert-ref "{tok {en2}" 6 "token1")
-             {:result "{tok {token1}" :position 13}))
+             {:value "{tok {token1}" :cursor 13}))
     (t/is (= (cto/insert-ref "{tok en2}" 5 "token1")
-             {:result "{tok {token1}en2}" :position 13}))))
+             {:value "{tok {token1}en2}" :cursor 13}))))
 
 ;; TODO: pasar a common data
 (t/deftest nth-last-index-of-test
@@ -88,3 +90,19 @@
   (t/is (= (cto/nth-index-of "*abc[*" "*" 1) 0))
   (t/is (= (cto/nth-index-of "abc*def*ghi" "*" 1) 3))
   (t/is (= (cto/nth-index-of "abc*def*ghi" "*" 2) 7)))
+
+(t/deftest inside-ref
+  (t/is (= (cto/inside-ref? ""  1) false))
+  (t/is (= (cto/inside-ref? "AAA " 4) false))
+  (t/is (= (cto/inside-ref? "abc{" 4) true))
+  (t/is (= (cto/inside-ref? "abc}" 4) false))
+  (t/is (= (cto/inside-ref? "{abc[}" 1) true))
+  (t/is (= (cto/inside-ref? "abc {def}ghi" 5) true))
+  (t/is (= (cto/inside-ref? "abc {def]ghi" 8) true)))
+
+(t/deftest inside-closed-ref
+  (t/is (= (cto/inside-closed-ref? ""  1) nil))
+  (t/is (= (cto/inside-closed-ref? "{abc}" 1) true))
+  (t/is (= (cto/inside-closed-ref? "abc {def}ghi" 5) true))
+  (t/is (= (cto/inside-closed-ref? "abc {def}ghi" 8) true))
+  (t/is (= (cto/inside-closed-ref? "abc {def}ghi" 10) nil)))

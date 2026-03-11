@@ -678,10 +678,21 @@
                      (+ offset index 1)
                      (inc count))))))
 
+(defn block-open-start
+  [value position]
+  (let [left (str/slice value 0 position)
+        last-open (str/last-index-of left "{")]
+    (loop [i last-open]
+      (if (and i
+               (> i 0)
+               (= (nth left (dec i)) \{))
+        (recur (dec i))
+        i))))
+
 (defn start-ref-position
   [value position]
   (let [left-part (str/slice value 0 position)
-        open-pos (str/last-index-of left-part "{")
+        open-pos (block-open-start value position)
         space-pos (str/last-index-of left-part " ")
         space-pos (when space-pos (+ 1 space-pos))
         first-position (->> [open-pos space-pos]
@@ -711,13 +722,13 @@
         close-pos (nth-index-of right-part "}" 1)
         spaces-pos-after (nth-index-of right-part " " 1)
         open-after-space?  (or (nil? spaces-pos-before)
-                                (> open-pos spaces-pos-before))
-         close-before-space? (or (nil? spaces-pos-after)
-                                 (< close-pos spaces-pos-after))]
-        (and open-pos
-             close-pos
-             open-after-space?
-             close-before-space?)))
+                               (> open-pos spaces-pos-before))
+        close-before-space? (or (nil? spaces-pos-after)
+                                (< close-pos spaces-pos-after))]
+    (and open-pos
+         close-pos
+         open-after-space?
+         close-before-space?)))
 
 (defn insert-ref
   [value position name]
@@ -727,15 +738,15 @@
         (let [first-part (str/slice value 0 (start-ref-position-inside-ref value position))
               end-position (+ position (end-ref-position-inside-ref value position) 1)
               second-part (str/slice value end-position)]
-          {:result (str first-part reference second-part)
-           :position (+ (count first-part) (count reference))})
+          {:value (str first-part reference second-part)
+           :cursor (+ (count first-part) (count reference))})
 
         (let [first-part (str/slice value 0 (start-ref-position value position))
               second-part (str/slice value position)]
-          {:result (str first-part reference second-part)
-           :position (+ (count first-part) (count reference))}))
+          {:value (str first-part reference second-part)
+           :cursor (+ (count first-part) (count reference))}))
 
       (let [first-part (str/slice value 0 position)
             second-part (str/slice value position)]
-        {:result (str first-part reference second-part)
-         :position (+ position (count reference))}))))
+        {:value (str first-part reference second-part)
+         :cursor (+ position (count reference))}))))
