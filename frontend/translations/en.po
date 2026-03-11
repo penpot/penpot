@@ -3824,6 +3824,15 @@ msgstr "Invitation sent successfully"
 msgid "notifications.invitation-link-copied"
 msgstr "Invitation link copied"
 
+msgid "notifications.mcp.active-tab-switching.text"
+msgstr "MCP is active in another tab. Switch here?"
+
+msgid "notifications.mcp.active-tab-switching.switch"
+msgstr "Switch"
+
+msgid "notifications.mcp.active-tab-switching.dismiss"
+msgstr "Dismiss"
+
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
 msgstr "You can't delete your profile. Reassign your teams before proceed."

@@ -3781,6 +3781,15 @@ msgstr "Invitación enviada con éxito"
 msgid "notifications.invitation-link-copied"
 msgstr "Enlace de invitacion copiado"
 
+msgid "notifications.mcp.active-tab-switching.text"
+msgstr "MCP está activo en otra pestaña. ¿Cambiar a esta?"
+
+msgid "notifications.mcp.active-tab-switching.switch"
+msgstr "Cambiar"
+
+msgid "notifications.mcp.active-tab-switching.dismiss"
+msgstr "Cancelar"
+
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
 msgstr "No puedes borrar tu perfil. Reasigna tus equipos antes de seguir."
