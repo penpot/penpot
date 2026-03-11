@@ -1,5 +1,7 @@
 use crate::mem;
+use macros::wasm_error;
 // use crate::mem::SerializableResult;
+use crate::error::Error;
 use crate::uuid::Uuid;
 use crate::with_state_mut;
 use crate::STATE;
@@ -65,7 +67,8 @@ impl TryFrom<Vec<u8>> for ShapeImageIds {
 }
 
 #[no_mangle]
-pub extern "C" fn store_image() {
+#[wasm_error]
+pub extern "C" fn store_image() -> crate::error::Result<()> {
     let bytes = mem::bytes();
     let ids = ShapeImageIds::try_from(bytes[0..IMAGE_IDS_SIZE].to_vec()).unwrap();
 
@@ -87,7 +90,8 @@ pub extern "C" fn store_image() {
         state.touch_shape(ids.shape_id);
     });
 
-    mem::free_bytes();
+    mem::free_bytes()?;
+    Ok(())
 }
 
 /// Stores an image from an existing WebGL texture, avoiding re-decoding
@@ -99,13 +103,17 @@ pub extern "C" fn store_image() {
 /// - bytes 40-43: width (i32)
 /// - bytes 44-47: height (i32)
 #[no_mangle]
-pub extern "C" fn store_image_from_texture() {
+#[wasm_error]
+pub extern "C" fn store_image_from_texture() -> crate::error::Result<()> {
     let bytes = mem::bytes();
 
     if bytes.len() < 48 {
+        // FIXME: Review if this should be an critical or a recoverable error.
         eprintln!("store_image_from_texture: insufficient data");
-        mem::free_bytes();
-        return;
+        mem::free_bytes()?;
+        return Err(Error::RecoverableError(
+            "store_image_from_texture: insufficient data".to_string(),
+        ));
     }
 
     let ids = ShapeImageIds::try_from(bytes[0..IMAGE_IDS_SIZE].to_vec()).unwrap();
@@ -139,5 +147,6 @@ pub extern "C" fn store_image_from_texture() {
         state.touch_shape(ids.shape_id);
     });
 
-    mem::free_bytes();
+    mem::free_bytes()?;
+    Ok(())
 }

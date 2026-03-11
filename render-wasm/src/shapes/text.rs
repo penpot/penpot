@@ -161,6 +161,13 @@ impl TextPositionWithAffinity {
             offset,
         }
     }
+
+    pub fn reset(&mut self) {
+        self.position_with_affinity.position = 0;
+        self.position_with_affinity.affinity = Affinity::Downstream;
+        self.paragraph = 0;
+        self.offset = 0;
+    }
 }
 
 #[derive(Debug)]
@@ -569,6 +576,7 @@ impl TextContent {
         for paragraph in self.paragraphs() {
             let paragraph_style = paragraph.paragraph_to_style();
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            let mut has_text = false;
             for span in paragraph.children() {
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
                 let text_style = span.to_style(
@@ -578,8 +586,14 @@ impl TextContent {
                     paragraph.line_height(),
                 );
                 let text: String = span.apply_text_transform();
+                if !text.is_empty() {
+                    has_text = true;
+                }
                 builder.push_style(&text_style);
                 builder.add_text(&text);
+            }
+            if !has_text {
+                builder.add_text(" ");
             }
             paragraph_group.push(vec![builder]);
         }

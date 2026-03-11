@@ -456,3 +456,38 @@ test("Check inner stroke artifacts", async ({
     threshold: 0.1,
   });
 });
+
+test("BUG 13551 - Blurs affecting other elements", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-blurs-affecting-other-elements.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-a7dc677169cd",
+    pageId: "a5508528-5928-8008-8007-a7de9feef61bd",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  // Stricter comparison: blur is very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});
+
+test("BUG 13610 - Huge inner strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-huge-inner-strokes.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-b11dd34fe190",
+    pageId: "effcbebc-b8c8-802f-8007-b11dd34fe191",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});

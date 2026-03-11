@@ -234,7 +234,7 @@
                 (dfn-format v "p")
 
                 :localized-date-time
-                (dfn-format v "PPPp")
+                (dfn-format v "PPP . p")
 
                 (if (string? fmt)
                   (dfn-format v fmt)
