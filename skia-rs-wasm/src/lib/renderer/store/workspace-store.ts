@@ -6,7 +6,7 @@
 
 import { create } from 'zustand'
 import type { WasmModule } from '../wasm-types'
-import type { Viewport } from '../viewport'
+import type { ViewportData } from '../viewport'
 import { Renderer } from '../index'
 import type { Selrect, Change } from 'penpot-exporter/types'
 import type { ResizeHandlePosition, SelectionRectResult } from '../types'
@@ -46,11 +46,11 @@ export interface WorkspaceState {
   /** When starting area selection with modifier: append (shift) or remove (shift+mod). */
   areaSelectionAppend: boolean
   areaSelectionRemove: boolean
-  viewport: Viewport | null
+  /** True while the user is actively panning (e.g. middle-drag); used to defer Figma viewport sync until pan end. */
+  isPanning: boolean
+  viewport: ViewportData | null
   /** Viewport used for hit-test; set one frame after apply so it matches the displayed frame. */
-  lastAppliedViewport: Viewport | null
-  /** Bumped on pan/zoom so UI that reads viewport re-renders (viewport is mutated in place). */
-  viewportVersion: number
+  lastAppliedViewport: ViewportData | null
   renderer: Renderer | null
   workerClient: WorkerClient | null
 
@@ -74,9 +74,9 @@ export interface WorkspaceState {
   setIsRotating: (is: boolean) => void
   setRotationCorner: (corner: ResizeHandlePosition | null) => void
   setAreaSelectionMode: (append: boolean, remove: boolean) => void
-  setViewport: (viewport: Viewport) => void
-  setLastAppliedViewport: (vp: Viewport | null) => void
-  bumpViewportVersion: () => void
+  setIsPanning: (value: boolean) => void
+  updateViewport: (data: ViewportData) => void
+  setLastAppliedViewport: (data: ViewportData | null) => void
   setRenderer: (renderer: Renderer) => void
   setWorkerClient: (client: WorkerClient | null) => void
   clearSelection: () => void
@@ -105,9 +105,9 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   rotationCorner: null as ResizeHandlePosition | null,
   areaSelectionAppend: false,
   areaSelectionRemove: false,
+  isPanning: false,
   viewport: null,
   lastAppliedViewport: null,
-  viewportVersion: 0,
   renderer: null,
   workerClient: null,
   wasmModule: null,
@@ -147,12 +147,9 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   setIsRotating: (is) => set({ isRotating: is }),
   setRotationCorner: (corner) => set({ rotationCorner: corner }),
   setAreaSelectionMode: (append, remove) => set({ areaSelectionAppend: append, areaSelectionRemove: remove }),
-  setViewport: (viewport) => set((s) => ({
-    viewport,
-    lastAppliedViewport: viewport && viewport !== s.viewport ? viewport.clone() : s.lastAppliedViewport,
-  })),
-  setLastAppliedViewport: (vp) => set({ lastAppliedViewport: vp }),
-  bumpViewportVersion: () => set((s) => ({ viewportVersion: s.viewportVersion + 1 })),
+  setIsPanning: (value) => set({ isPanning: value }),
+  updateViewport: (data) => set({ viewport: data, lastAppliedViewport: data }),
+  setLastAppliedViewport: (data) => set({ lastAppliedViewport: data }),
   setRenderer: (renderer) => set({ renderer, wasmSelectionRect: null }),
   setWorkerClient: (client) => set({ workerClient: client }),
   clearSelection: () => set({

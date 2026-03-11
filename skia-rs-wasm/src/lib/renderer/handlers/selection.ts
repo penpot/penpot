@@ -9,6 +9,7 @@ import { mousePosition$ } from '../streams'
 import { askWorker$ } from '../streams/worker-streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
+import { screenToWorld } from '../viewport'
 import { makeSelrect } from '../../worker/types'
 
 export function handleAreaSelection(
@@ -50,7 +51,7 @@ export function handleAreaSelection(
       // Convert to world coordinates and query worker
       const queryStream = selrectStream.pipe(
         map(rect => {
-          const worldRect = viewport.screenToWorld(rect.x, rect.y)
+          const worldRect = screenToWorld(viewport, rect.x, rect.y)
           return makeSelrect(
             worldRect.x,
             worldRect.y,

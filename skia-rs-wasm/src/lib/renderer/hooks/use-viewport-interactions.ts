@@ -7,6 +7,7 @@ import type { RefObject } from 'react'
 import { useEffect, useRef, useCallback } from 'react'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { useViewportShortcutsStore } from '../store/shortcuts-store'
+import { Viewport, screenToWorld } from '../viewport'
 import type { ViewportPanModifier, SelectionRectResult } from '../types'
 import { mousePosition$ } from '../streams'
 import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
@@ -54,7 +55,8 @@ function isPointInSelectionBounds(
 
 interface UseViewportInteractionsParams {
   canvasRef: RefObject<HTMLCanvasElement | null>
-  onViewportUpdate?: () => void
+  /** Called with the new Viewport instance after each pan/zoom; consumer should update store from it. */
+  onViewportUpdate?: (next: Viewport) => void
 }
 
 export function useViewportInteractions({
@@ -67,6 +69,7 @@ export function useViewportInteractions({
   const setIsSelecting = useWorkspaceStore((state) => state.setIsSelecting)
   const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
   const setSelectedIds = useWorkspaceStore((state) => state.setSelectedIds)
+  const setIsPanning = useWorkspaceStore((state) => state.setIsPanning)
   const shortcuts = useViewportShortcutsStore((state) => state.viewportShortcuts)
   // Refs for panning state
   const isPanningRef = useRef<boolean>(false)
@@ -92,9 +95,10 @@ export function useViewportInteractions({
     const absDelta = Math.abs(e.deltaY) + Math.abs(e.deltaX)
     const scale = 1 + scalePerPixel * absDelta
     const zoomFactor = e.deltaY < 0 ? scale : 1 / scale
-    viewport.zoomAt({ x, y }, zoomFactor)
-    renderer.applyViewport(viewport)
-    onViewportUpdate?.()
+    const next = Viewport.from(viewport)
+    next.zoomAt({ x, y }, zoomFactor)
+    renderer.applyViewport(next)
+    onViewportUpdate?.(next)
   }, [canvasRef, viewport, renderer, onViewportUpdate, shortcuts.wheelZoomEnabled, shortcuts.wheelScalePerPixel])
 
   // Handle mouse down
@@ -107,6 +111,7 @@ export function useViewportInteractions({
     if (panWithButton || panWithMod) {
       e.preventDefault()
       isPanningRef.current = true
+      setIsPanning(true)
       lastPanPosRef.current = { x: e.clientX, y: e.clientY }
       canvasElement.style.cursor = 'grabbing'
       return
@@ -163,7 +168,7 @@ export function useViewportInteractions({
               wasmSelectionRect != null &&
               viewportForHit != null
             ) {
-              const world = viewportForHit.screenToWorld(screenX, screenY)
+              const world = screenToWorld(viewportForHit, screenX, screenY)
               if (isPointInSelectionBounds(world, wasmSelectionRect)) {
                 setIsMoving(true)
                 return
@@ -174,7 +179,7 @@ export function useViewportInteractions({
         }
       )
     }
-  }, [canvasRef, setIsSelecting, setIsMoving, setSelectedIds, shortcuts.panMouseButton, shortcuts.panWithModifier])
+  }, [canvasRef, setIsSelecting, setIsMoving, setSelectedIds, setIsPanning, shortcuts.panMouseButton, shortcuts.panWithModifier])
 
   // Handle mouse move for panning and cursor (grab only when pan modifier held; resize cursor when resizing)
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -208,15 +213,16 @@ export function useViewportInteractions({
       // Schedule update on next animation frame if not already scheduled
       if (!pendingPanUpdateRef.current) {
         pendingPanUpdateRef.current = true
-        const vp = viewport
+        const vpData = viewport
         const rdr = renderer
         requestAnimationFrame(() => {
-          if (vp && rdr && isPanningRef.current) {
+          if (vpData && rdr && isPanningRef.current) {
             const { dx, dy } = pendingPanDeltaRef.current
             if (dx !== 0 || dy !== 0) {
-              vp.pan(dx, dy)
-              rdr.applyViewport(vp)
-              onViewportUpdate?.()
+              const next = Viewport.from(vpData)
+              next.pan(dx, dy)
+              rdr.applyViewport(next)
+              onViewportUpdate?.(next)
               pendingPanDeltaRef.current = { dx: 0, dy: 0 }
             }
           }
@@ -230,14 +236,16 @@ export function useViewportInteractions({
   const handleMouseUp = useCallback(() => {
     const canvas = canvasRef.current
     if (isPanningRef.current) {
+      setIsPanning(false)
       isPanningRef.current = false
       lastPanPosRef.current = null
       if (pendingPanDeltaRef.current.dx !== 0 || pendingPanDeltaRef.current.dy !== 0) {
         if (viewport && renderer) {
           const { dx, dy } = pendingPanDeltaRef.current
-          viewport.pan(dx, dy)
-          renderer.applyViewport(viewport)
-          onViewportUpdate?.()
+          const next = Viewport.from(viewport)
+          next.pan(dx, dy)
+          renderer.applyViewport(next)
+          onViewportUpdate?.(next)
           pendingPanDeltaRef.current = { dx: 0, dy: 0 }
         }
       }
@@ -250,7 +258,7 @@ export function useViewportInteractions({
     // and a quick second resize sees the latest node). Do not clear isRotating here: the rotate handler clears it after
     // applyChanges resolves; clearing here would dispose the subscription before commitOnRelease runs.
     setIsSelecting(false)
-  }, [canvasRef, viewport, renderer, setIsSelecting, onViewportUpdate])
+  }, [canvasRef, viewport, renderer, setIsSelecting, setIsPanning, onViewportUpdate])
 
   // Handle mouse enter: normal cursor unless pan modifier is held (updated in mousemove)
   const handleMouseEnter = useCallback(() => {
@@ -284,30 +292,34 @@ export function useViewportInteractions({
     const step = shortcuts.panStep
     if (e.code === shortcuts.panLeft) {
       e.preventDefault()
-      viewport.pan(step, 0)
-      renderer.applyViewport(viewport)
-      onViewportUpdate?.()
+      const next = Viewport.from(viewport)
+      next.pan(step, 0)
+      renderer.applyViewport(next)
+      onViewportUpdate?.(next)
       return
     }
     if (e.code === shortcuts.panRight) {
       e.preventDefault()
-      viewport.pan(-step, 0)
-      renderer.applyViewport(viewport)
-      onViewportUpdate?.()
+      const next = Viewport.from(viewport)
+      next.pan(-step, 0)
+      renderer.applyViewport(next)
+      onViewportUpdate?.(next)
       return
     }
     if (e.code === shortcuts.panUp) {
       e.preventDefault()
-      viewport.pan(0, step)
-      renderer.applyViewport(viewport)
-      onViewportUpdate?.()
+      const next = Viewport.from(viewport)
+      next.pan(0, step)
+      renderer.applyViewport(next)
+      onViewportUpdate?.(next)
       return
     }
     if (e.code === shortcuts.panDown) {
       e.preventDefault()
-      viewport.pan(0, -step)
-      renderer.applyViewport(viewport)
-      onViewportUpdate?.()
+      const next = Viewport.from(viewport)
+      next.pan(0, -step)
+      renderer.applyViewport(next)
+      onViewportUpdate?.(next)
       return
     }
 
@@ -315,9 +327,10 @@ export function useViewportInteractions({
       e.preventDefault()
       if (canvasElement) {
         const rect = canvasElement.getBoundingClientRect()
-        viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, shortcuts.zoomInFactor)
-        renderer.applyViewport(viewport)
-        onViewportUpdate?.()
+        const next = Viewport.from(viewport)
+        next.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, shortcuts.zoomInFactor)
+        renderer.applyViewport(next)
+        onViewportUpdate?.(next)
       }
       return
     }
@@ -325,18 +338,20 @@ export function useViewportInteractions({
       e.preventDefault()
       if (canvasElement) {
         const rect = canvasElement.getBoundingClientRect()
-        viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, shortcuts.zoomOutFactor)
-        renderer.applyViewport(viewport)
-        onViewportUpdate?.()
+        const next = Viewport.from(viewport)
+        next.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, shortcuts.zoomOutFactor)
+        renderer.applyViewport(next)
+        onViewportUpdate?.(next)
       }
       return
     }
 
     if (shortcuts.resetKeys.includes(e.code)) {
       e.preventDefault()
-      viewport.reset()
-      renderer.applyViewport(viewport)
-      onViewportUpdate?.()
+      const next = Viewport.from(viewport)
+      next.reset()
+      renderer.applyViewport(next)
+      onViewportUpdate?.(next)
     }
   }, [canvasRef, viewport, renderer, onViewportUpdate, shortcuts])
 

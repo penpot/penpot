@@ -5,6 +5,42 @@
 
 import type { Point, ViewportOptions, ViewBox } from './types'
 
+/** Plain viewport state stored in the workspace store (immutable data). */
+export interface ViewportData {
+  panX: number
+  panY: number
+  zoom: number
+}
+
+/**
+ * Convert screen coordinates to world coordinates.
+ * Visible top-left in world is (panX, panY), so world = (panX, panY) + screen/zoom.
+ */
+export function screenToWorld(
+  data: ViewportData,
+  screenX: number,
+  screenY: number
+): Point {
+  return {
+    x: data.panX + screenX / data.zoom,
+    y: data.panY + screenY / data.zoom,
+  }
+}
+
+/**
+ * Convert world coordinates to screen coordinates.
+ */
+export function worldToScreen(
+  data: ViewportData,
+  worldX: number,
+  worldY: number
+): Point {
+  return {
+    x: (worldX - data.panX) * data.zoom,
+    y: (worldY - data.panY) * data.zoom,
+  }
+}
+
 export class Viewport {
   private _zoom: number
   private _panX: number
@@ -21,6 +57,11 @@ export class Viewport {
 
     // Ensure initial zoom is within bounds
     this._zoom = Math.max(this.minZoom, Math.min(this.maxZoom, this._zoom))
+  }
+
+  /** Create a Viewport instance from plain data (for transient computation). */
+  static from(data: ViewportData): Viewport {
+    return new Viewport({ panX: data.panX, panY: data.panY, zoom: data.zoom })
   }
 
   /**

@@ -12,7 +12,6 @@ import { flattenPageToIndexed, unflattenIndexedPageToPage } from '../../worker/t
 import { processChanges } from '../../worker/process-changes'
 import { useWorkspaceStore, type IDocumentModel } from './workspace-store'
 import { useWorkspaceDevStore } from './workspace-dev-store'
-import { Viewport } from '../viewport'
 import { commitPageUpdateWithChanges } from './commit'
 import { enrichPageWithPositionData } from './enrich-position-data'
 type DocumentMeta = Omit<PenpotDocument, 'children'>
@@ -129,7 +128,7 @@ export class DocumentModel implements IDocumentModel {
       const page = this.pageMap.get(firstPageId)
       if (page) {
         await state.renderer.initPage(page)
-        state.setViewport(new Viewport())
+        state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
         if (state.wasmModule && state.workerClient) {
           const penpotPage = unflattenIndexedPageToPage(page)
           const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
@@ -152,7 +151,7 @@ export class DocumentModel implements IDocumentModel {
     this.pushToStores()
 
     await state.renderer.initPage(page)
-    state.setViewport(new Viewport())
+    state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
     if (state.wasmModule && state.workerClient) {
       const penpotPage = unflattenIndexedPageToPage(page)
       const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
@@ -191,7 +190,7 @@ export class DocumentModel implements IDocumentModel {
       this.pushToStores()
       if (state.renderer?.isInitialized() && page) {
         await state.renderer.initPage(page)
-        state.setViewport(new Viewport())
+        state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
         if (state.wasmModule && state.workerClient) {
           const penpotPage = unflattenIndexedPageToPage(page)
           const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)

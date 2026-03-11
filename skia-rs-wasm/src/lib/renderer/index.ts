@@ -85,19 +85,21 @@ export class Renderer {
 
   /**
    * Destroys only the WebGL context. Module and canvas are unchanged.
+   * @param releaseContext - If true, release the context so the browser frees GPU resources (final teardown).
+   *   If false, allow the same canvas to get a new context (re-init, e.g. new document).
    */
-  destroyContext(): void {
+  destroyContext(releaseContext?: boolean): void {
     if (!getContextInitialized()) {
       return
     }
-    clearCanvas(this.module, this.canvas)
+    clearCanvas(this.module, this.canvas, releaseContext ?? false)
   }
 
   /**
    * Destroys the WebGL context and resets viewport state. Does not null module or canvas.
    */
   destroy(): void {
-    this.destroyContext()
+    this.destroyContext(true)
     this.viewport = null
     this.prevZoom = 1
   }

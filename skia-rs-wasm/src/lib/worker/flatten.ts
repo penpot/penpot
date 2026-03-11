@@ -48,36 +48,48 @@ export function flattenPageToIndexed(page: PenpotPage): IndexedPage {
     }
   }
 
-  const rootChildIds = children
+  // Real Penpot pages have children[0].id === ZERO_UUID (the nil-UUID root frame).
+  // Figma-exported pages only contain top-level frames as direct children, with no nil-UUID wrapper.
+  // The WASM renderer requires tree.get(Uuid::nil()) to succeed, so inject a synthetic root when absent.
+  const hasNilRoot = rootFrame.id === ZERO_UUID
+  const effectiveChildren: PenpotNode[] = hasNilRoot
+    ? children
+    : [
+        { id: ZERO_UUID, type: 'frame', name: page.name ?? 'Page' } as unknown as PenpotNode,
+        ...children,
+      ]
+
+  const effectiveRoot = effectiveChildren[0]
+  const rootChildIds = effectiveChildren
     .slice(1)
     .map((n: PenpotNode) => n.id)
     .filter((id: string | undefined): id is string => id != null)
   const rootIndexed: IndexedShape = {
-    ...rootFrame,
+    ...effectiveRoot,
     parentId: undefined,
-    frameId: rootFrame.id,
+    frameId: effectiveRoot.id,
     shapes: rootChildIds.length > 0 ? rootChildIds : undefined,
   }
 
   const objects: Record<string, IndexedShape> = {
-    [rootFrame.id]: rootIndexed,
+    [effectiveRoot.id]: rootIndexed,
   }
 
-  for (let i = 1; i < children.length; i++) {
-    const node = children[i]
+  for (let i = 1; i < effectiveChildren.length; i++) {
+    const node = effectiveChildren[i]
     const childList = (node as { children?: PenpotNode[] }).children
     const childIds = childList?.map(c => c.id).filter((id): id is string => id != null) ?? []
 
     const indexed: IndexedShape = {
       ...node,
-      parentId: rootFrame.id,
-      frameId: rootFrame.id,
+      parentId: effectiveRoot.id,
+      frameId: effectiveRoot.id,
       shapes: childIds.length > 0 ? childIds : undefined,
     }
     objects[node.id] = indexed
 
     if (childList?.length) {
-      const resolvedFrameId = node.type === 'frame' ? node.id : rootFrame.id
+      const resolvedFrameId = node.type === 'frame' ? node.id : effectiveRoot.id
       const childResult = flattenChildrenRec(childList, node.id, resolvedFrameId)
       Object.assign(objects, childResult.objects)
     }

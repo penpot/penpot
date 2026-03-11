@@ -6,7 +6,9 @@
  */
 
 export { Renderer } from './lib/renderer/index'
-export { Viewport } from './lib/renderer/viewport'
+export { Viewport, screenToWorld, worldToScreen } from './lib/renderer/viewport'
+export type { ViewportData } from './lib/renderer/viewport'
+export { setPan, setZoom, zoomAt, resetViewport } from './lib/renderer/hooks/viewport-actions'
 export { CanvasWrapper } from './lib/renderer/canvas-wrapper'
 export type {
   ShapeType,

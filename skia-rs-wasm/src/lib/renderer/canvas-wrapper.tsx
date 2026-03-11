@@ -43,10 +43,6 @@ export function CanvasWrapper({
     }
   }, [initialViewportShortcuts, setViewportShortcuts])
 
-  useEffect(() => {
-    console.log('[MOVE_DEBUG] CanvasWrapper mounted - skia-rs-wasm move handler is active')
-    return () => console.log('[MOVE_DEBUG] CanvasWrapper unmounted')
-  }, [])
   const { workerClient, wasmModule, renderer } = useWorkspaceStore()
 
   useEffect(() => {
@@ -66,15 +62,14 @@ export function CanvasWrapper({
   }, [wasmPath, workerScriptUrl])
 
   useEffect(() => {
-    if (!workerClient || !canvasRef.current || !wasmModule) {
-      return
-    }
-    initRendererClient(canvasRef.current, rendererOptions).then(() => {
+    if (!workerClient || !wasmModule) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    initRendererClient(canvas, rendererOptions).then(() => {
       console.log('Renderer initialized')
     }).catch((error) => {
       console.error('Failed to initialize renderer:', error)
     })
-
     return () => {
       console.log('Cleaning up renderer client')
       cleanupRendererClient()
@@ -148,15 +143,12 @@ export function CanvasWrapper({
   useRotate()
   useViewportInteractions({
     canvasRef,
-    onViewportUpdate: () => {
-      const { viewport: vp, setViewport, bumpViewportVersion } = useWorkspaceStore.getState()
-      if (vp) setViewport(vp)
-      bumpViewportVersion()
-      if (vp) {
-        requestAnimationFrame(() => {
-          useWorkspaceStore.getState().setLastAppliedViewport(vp.clone())
-        })
-      }
+    onViewportUpdate: (next) => {
+      const data = { panX: next.panX, panY: next.panY, zoom: next.zoom }
+      useWorkspaceStore.getState().updateViewport(data)
+      requestAnimationFrame(() => {
+        useWorkspaceStore.getState().setLastAppliedViewport(data)
+      })
     },
   })
 

@@ -6,7 +6,7 @@
 import type { WorkerClient } from '../../worker/types'
 import type { IndexedPage } from '../../worker/types'
 import { makeSelrect } from '../../worker/types'
-import type { Viewport } from '../viewport'
+import { screenToWorld, type ViewportData } from '../viewport'
 
 const POINT_QUERY_SIZE_SCREEN = 5
 /** Minimum half-size in world units so hit-test has tolerance after zoom/pan. */
@@ -20,11 +20,11 @@ const MIN_HALF_WORLD = 12
 export async function queryNodesAtPoint(
   workerClient: WorkerClient,
   pageId: string,
-  viewport: Viewport,
+  viewport: ViewportData,
   screenX: number,
   screenY: number,
 ): Promise<string[]> {
-  const center = viewport.screenToWorld(screenX, screenY)
+  const center = screenToWorld(viewport, screenX, screenY)
   const half = Math.max(POINT_QUERY_SIZE_SCREEN / viewport.zoom, MIN_HALF_WORLD)
   const rect = makeSelrect(
     center.x - half,

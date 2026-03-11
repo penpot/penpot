@@ -31,14 +31,15 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:lib && npm run build:worker",
     "build:lib": "vite build",
     "build:worker": "vite build --config vite.worker.config.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "svg-path-parser": "^1.1.0"
   },
   "pnpm": {
     "overrides": {
@@ -64,6 +65,7 @@
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "@types/svg-path-parser": "^1.1.6"
   }
 }
