@@ -366,6 +366,19 @@
                   "This shape has children with the same swap slot"
                   shape file page)))
 
+(defn- check-required-swap-slot
+  "Validate that the shape has swap-slot if it's a subinstance head and the ref shape is not the
+   matching shape by position in the near main."
+  [shape file page libraries]
+  (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
+    (when (and (some? near-match)
+               (not= (:shape-ref shape) (:id near-match))
+               (nil? (ctk/get-swap-slot shape)))
+      (report-error :missing-slot
+                    "Shape has been swapped, should have swap slot"
+                    shape file page
+                    :swap-slot (or (ctk/get-swap-slot near-match) (:id shape))))))
+
 (defn- check-valid-touched
   "Validate that the text touched flags are coherent."
   [shape file page]
@@ -435,6 +448,7 @@
   (check-component-not-root shape file page)
   (check-valid-touched shape file page)
   (check-ref-component-id shape file page libraries)
+  (check-required-swap-slot shape file page libraries)
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
   ;; so we only validate the shape-ref if the ancestor is from a valid library
   (when library-exists
@@ -699,7 +713,7 @@
 ;; PUBLIC API: VALIDATION FUNCTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare check-swap-slots)
+#_(declare check-swap-slots)
 
 (defn validate-file
   "Validate full referential integrity and semantic coherence on file data.
@@ -711,7 +725,7 @@
 
       (doseq [page (filter :id (ctpl/pages-seq data))]
         (check-shape uuid/zero file page libraries)
-        (when (str/includes? (:name file) "check-swap-slot")
+        #_(when (str/includes? (:name file) "check-swap-slot")
           (check-swap-slots uuid/zero file page libraries))
         (->> (get-orphan-shapes page)
              (run! #(check-shape % file page libraries))))
@@ -754,7 +768,7 @@
               :file-id (:id file)
               :details errors)))
 
-(declare compare-slots)
+#_(declare compare-slots)
 
 ;; Optional check to look for missing swap slots.
 ;; Search for copies that do not point the shape-ref to the near component but don't have swap slot
@@ -764,18 +778,18 @@
 ;; may have copies with shapes that do not match by position, but have not been swapped. So we enable
 ;; it for specific files only. To activate the check, you need to add the string "check-swap-slot" to
 ;; the name of the file.
-(defn- check-swap-slots
+#_(defn- check-swap-slots
   [shape-id file page libraries]
   (let [shape (ctst/get-shape page shape-id)]
     (if (and (ctk/instance-head? shape) (ctk/in-component-copy? shape))
-      (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true :with-context? true)
-            container (:container (meta ref-shape))]
-        (when (some? ref-shape)
-          (compare-slots shape ref-shape file page container)))
-      (doall (for [child-id (:shapes shape)]
-               (check-swap-slots child-id file page libraries))))))
+        (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true :with-context? true)
+              container (:container (meta ref-shape))]
+          (when (some? ref-shape)
+            (compare-slots shape ref-shape file page container)))
+        (doall (for [child-id (:shapes shape)]
+                 (check-swap-slots child-id file page libraries))))))
 
-(defn- compare-slots
+#_(defn- compare-slots
   [shape-copy shape-main file container-copy container-main]
   (if (and (not= (:shape-ref shape-copy) (:id shape-main))
            (nil? (ctk/get-swap-slot shape-copy)))
