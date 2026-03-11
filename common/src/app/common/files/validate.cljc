@@ -767,7 +767,7 @@
 (defn- check-swap-slots
   [shape-id file page libraries]
   (let [shape (ctst/get-shape page shape-id)]
-    (if (and (ctk/instance-root? shape) (ctk/in-component-copy? shape))
+    (if (and (ctk/instance-head? shape) (ctk/in-component-copy? shape))
       (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true :with-context? true)
             container (:container (meta ref-shape))]
         (when (some? ref-shape)
