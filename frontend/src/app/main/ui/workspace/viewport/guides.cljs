@@ -447,7 +447,7 @@
                          :pointer-events "fill"}}]))
 
      (when (:new-position @state)
-       [:& guide* {:guide {:axis axis :position (:new-position @state)}
+       [:> guide* {:guide {:axis axis :position (:new-position @state)}
                    :get-hover-frame get-hover-frame
                    :vbox vbox
                    :zoom zoom
