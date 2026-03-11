@@ -7,6 +7,7 @@ import {
   setupTypographyTokensFileRender,
   testTokenCreationFlow,
   unfoldTokenType,
+  createToken,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -1788,6 +1789,27 @@ test("User duplicate color token", async ({ page }) => {
   await expect(
     tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
   ).toBeVisible();
+});
+
+test("User disables the current set but token still have resolved values shown in the sidebar", async ({
+  page,
+}) => {
+  const { tokenThemesSetsSidebar, tokensSidebar } = await setupEmptyTokensFileRender(page);
+
+  // Create color token
+  await createToken(page, "Color", "color.primary", "Value", "#ff0000");
+  await unfoldTokenType(tokensSidebar, "color");
+
+  // Deactivate current set
+  await tokenThemesSetsSidebar
+    .getByRole("checkbox")
+    .click();
+
+  // Tokens tab panel should have a token with the color #ff0000 and correct resolved value in the tooltip
+  const colorTokenPill = tokensSidebar.getByRole("button", { name: "#ff0000 color.primary" });
+  await expect(colorTokenPill).toHaveCount(1);
+  await colorTokenPill.hover();  // Force title attribute to be attached to the button
+  await expect(colorTokenPill).toHaveAttribute("title", /Resolved value: #ff0000/);
 });
 
 test.describe("Tokens tab - edition", () => {
