@@ -25,60 +25,68 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(def guide-width 1)
-(def guide-opacity 0.7)
-(def guide-opacity-hover 1)
-(def guide-color colors/new-danger)
-(def guide-pill-width 34)
-(def guide-pill-height 20)
-(def guide-pill-corner-radius 4)
-(def guide-active-area 16)
+(def ^:const guide-width 1)
+(def ^:const guide-opacity 0.7)
+(def ^:const guide-opacity-hover 1)
+(def ^:const guide-color colors/new-danger)
+(def ^:const guide-pill-width 34)
+(def ^:const guide-pill-height 20)
+(def ^:const guide-pill-corner-radius 4)
+(def ^:const guide-active-area 16)
 
-(def guide-creation-margin-left 8)
-(def guide-creation-margin-top 28)
-(def guide-creation-width 16)
-(def guide-creation-height 24)
+(def ^:const guide-creation-margin-left 8)
+(def ^:const guide-creation-margin-top 28)
+(def ^:const guide-creation-width 16)
+(def ^:const guide-creation-height 24)
 
 (defn use-guide
   "Hooks to support drag/drop for existing guides and new guides"
   [on-guide-change get-hover-frame zoom {:keys [id position axis frame-id]}]
-  (let [dragging-ref (mf/use-ref false)
-        start-ref (mf/use-ref nil)
+  (let [dragging-ref  (mf/use-ref false)
+        start-ref     (mf/use-ref nil)
         start-pos-ref (mf/use-ref nil)
-        state (mf/use-state {:hover false
+        state         (mf/use-state
+                       #(do {:hover false
                              :new-position nil
-                             :new-frame-id frame-id})
+                             :new-frame-id frame-id}))
 
-        frame-id (:new-frame-id @state)
+        frame-id
+        (:new-frame-id @state)
 
-        frame-ref (mf/use-memo (mf/deps frame-id) #(refs/object-by-id frame-id))
-        frame (mf/deref frame-ref)
+        frame-ref
+        (mf/with-memo [frame-id]
+          (refs/object-by-id frame-id))
 
-        snap-pixel? (mf/deref refs/snap-pixel?)
+        frame
+        (mf/deref frame-ref)
 
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+        snap-pixel?
+        (mf/deref refs/snap-pixel?)
+
+        read-only?
+        (mf/use-ctx ctx/workspace-read-only?)
 
         on-pointer-enter
-        (mf/use-callback
-         (mf/deps workspace-read-only?)
+        (mf/use-fn
+         (mf/deps read-only?)
          (fn []
-           (when-not workspace-read-only?
+           (when-not read-only?
              (st/emit! (dw/set-hover-guide id true))
              (swap! state assoc :hover true))))
 
         on-pointer-leave
-        (mf/use-callback
-         (mf/deps workspace-read-only?)
+        (mf/use-fn
+         (mf/deps read-only?)
          (fn []
-           (when-not workspace-read-only?
+           (when-not read-only?
              (st/emit! (dw/set-hover-guide id false))
              (swap! state assoc :hover false))))
 
         on-pointer-down
-        (mf/use-callback
-         (mf/deps workspace-read-only?)
+        (mf/use-fn
+         (mf/deps read-only?)
          (fn [event]
-           (when-not workspace-read-only?
+           (when-not read-only?
              (when (= 0 (.-button event))
                (dom/capture-pointer event)
                (mf/set-ref-val! dragging-ref true)
@@ -86,20 +94,20 @@
                (mf/set-ref-val! start-pos-ref (get @ms/mouse-position axis))))))
 
         on-pointer-up
-        (mf/use-callback
-         (mf/deps (select-keys @state [:new-position :new-frame-id]) on-guide-change workspace-read-only?)
+        (mf/use-fn
+         (mf/deps (select-keys @state [:new-position :new-frame-id]) on-guide-change read-only?)
          (fn []
-           (when-not workspace-read-only?
+           (when-not read-only?
              (when (some? on-guide-change)
                (when (some? (:new-position @state))
                  (on-guide-change {:position (:new-position @state)
                                    :frame-id (:new-frame-id @state)}))))))
 
         on-lost-pointer-capture
-        (mf/use-callback
-         (mf/deps workspace-read-only?)
+        (mf/use-fn
+         (mf/deps read-only?)
          (fn [event]
-           (when-not workspace-read-only?
+           (when-not read-only?
              (dom/release-pointer event)
              (mf/set-ref-val! dragging-ref false)
              (mf/set-ref-val! start-ref nil)
@@ -107,27 +115,29 @@
              (swap! state assoc :new-position nil))))
 
         on-pointer-move
-        (mf/use-callback
-         (mf/deps position zoom snap-pixel? workspace-read-only?)
+        (mf/use-fn
+         (mf/deps position zoom snap-pixel? read-only? get-hover-frame)
          (fn [event]
-           (when-not workspace-read-only?
-             (when-let [_ (mf/ref-val dragging-ref)]
-               (let [start-pt (mf/ref-val start-ref)
-                     start-pos (mf/ref-val start-pos-ref)
-                     current-pt (dom/get-client-position event)
-                     delta (/ (- (get current-pt axis) (get start-pt axis)) zoom)
+           (when-not read-only?
+             (when (mf/ref-val dragging-ref)
+               (let [start-pt     (mf/ref-val start-ref)
+                     start-pos    (mf/ref-val start-pos-ref)
+                     current-pt   (dom/get-client-position event)
+                     delta        (/ (- (get current-pt axis) (get start-pt axis)) zoom)
                      new-position (if (some? position)
                                     (+ position delta)
                                     (+ start-pos delta))
-
                      new-position (if snap-pixel?
                                     (mth/round new-position)
                                     new-position)
 
-                     new-frame-id (:id (get-hover-frame))]
+                     new-frame-id (-> (get-hover-frame)
+                                      (get :id))]
+
                  (swap! state assoc
                         :new-position new-position
                         :new-frame-id new-frame-id))))))]
+
     {:on-pointer-enter on-pointer-enter
      :on-pointer-leave on-pointer-leave
      :on-pointer-down on-pointer-down
@@ -137,8 +147,8 @@
      :state state
      :frame frame}))
 
-;; This functions are auxiliary to get the coords of components depending on the axis
-;; we're handling
+;; This functions are auxiliary to get the coords of components
+;; depending on the axis we're handling
 
 (defn guide-area-axis
   [pos vbox zoom frame axis]
@@ -270,11 +280,11 @@
          (<= (:position guide) (+ (:y frame) (:height frame))))))
 
 (mf/defc guide*
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+  {::mf/wrap [mf/memo]}
   [{:keys [guide is-hover on-guide-change get-hover-frame vbox zoom
            hover-frame disabled-guides frame-modifier frame-transform]}]
-  (let [axis (:axis guide)
+  (let [axis
+        (get guide :axis)
 
         handle-change-position
         (mf/use-fn
@@ -290,9 +300,11 @@
                 on-lost-pointer-capture
                 on-pointer-move
                 state
-                frame]} (use-guide handle-change-position get-hover-frame zoom guide)
+                frame]}
+        (use-guide handle-change-position get-hover-frame zoom guide)
 
-        base-frame (or frame hover-frame)
+        base-frame
+        (or frame hover-frame)
 
         frame
         (cond-> base-frame
@@ -302,12 +314,18 @@
           (some? frame-transform)
           (gsh/apply-transform frame-transform))
 
-        move-vec (gpt/to-vec (gpt/point (:x base-frame) (:y base-frame))
-                             (gpt/point (:x frame) (:y frame)))
+        move-vec
+        (gpt/to-vec (gpt/point (:x base-frame) (:y base-frame))
+                    (gpt/point (:x frame) (:y frame)))
 
-        pos (+ (or (:new-position @state) (:position guide)) (get move-vec axis))
-        guide-width (/ guide-width zoom)
-        guide-pill-corner-radius (/ guide-pill-corner-radius zoom)
+        pos
+        (+ (or (:new-position @state) (:position guide)) (get move-vec axis))
+
+        guide-width
+        (/ guide-width zoom)
+
+        guide-pill-corner-radius
+        (/ guide-pill-corner-radius zoom)
 
         frame-guide-outside?
         (and (some? frame)
@@ -404,9 +422,7 @@
              (fmt/format-number (- pos (if (= axis :x) (:x frame) (:y frame))))]]))])))
 
 (mf/defc new-guide-area*
-  {::mf/props :obj}
   [{:keys [vbox zoom axis get-hover-frame disabled-guides]}]
-
   (let [on-guide-change
         (mf/use-fn
          (mf/deps vbox)
@@ -426,7 +442,9 @@
                 state
                 frame]}
         (use-guide on-guide-change get-hover-frame zoom {:axis axis})
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)]
+
+        read-only?
+        (mf/use-ctx ctx/workspace-read-only?)]
 
     [:g.new-guides
      (when-not disabled-guides
@@ -441,8 +459,10 @@
                  :on-pointer-up on-pointer-up
                  :on-lost-pointer-capture on-lost-pointer-capture
                  :on-pointer-move on-pointer-move
-                 :class (when-not workspace-read-only?
-                          (if (= axis :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ns" 0)))
+                 :class (when-not read-only?
+                          (if (= axis :x)
+                            (cur/get-dynamic "resize-ew" 0)
+                            (cur/get-dynamic "resize-ns" 0)))
                  :style {:fill "none"
                          :pointer-events "fill"}}]))
 
@@ -455,17 +475,18 @@
                    :hover-frame frame}])]))
 
 (mf/defc viewport-guides*
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+  {::mf/wrap [mf/memo]}
   [{:keys [zoom vbox hover-frame disabled-guides modifiers guides]}]
   (let [guides
         (mf/with-memo [guides vbox]
           (->> (vals guides)
                (filter (partial guide-inside-vbox? zoom vbox))))
 
-        focus (mf/deref refs/workspace-focus-selected)
+        focus
+        (mf/deref refs/workspace-focus-selected)
 
-        hover-frame-ref (mf/use-ref nil)
+        hover-frame-ref
+        (mf/use-ref nil)
 
         ;; We use the ref to not redraw every guide everytime the hovering frame change
         ;; we're only interested to get the frame in the guide we're moving
