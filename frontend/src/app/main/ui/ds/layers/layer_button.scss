@@ -16,9 +16,7 @@
 
   display: flex;
   justify-content: space-between;
-
   block-size: var(--layer-button-block-size);
-
   background: var(--layer-button-background);
   color: var(--layer-button-text);
 }
@@ -27,11 +25,9 @@
   @include use-typography("body-small");
 
   appearance: none;
-
   flex: 1;
   display: flex;
   align-items: center;
-
   border: none;
   background: none;
   color: inherit;

@@ -29,15 +29,14 @@
   z-index: var(--z-index-dropdown);
 }
 
-//SIDEBAR CONTENT COMPONENT
+// SIDEBAR CONTENT COMPONENT
 .sidebar-content {
   display: grid;
   grid-template-rows: auto auto auto auto 1fr;
   gap: var(--sp-xxl);
   height: 100%;
   padding: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 .sidebar-content-nitrate {
@@ -57,6 +56,7 @@
 
 .sidebar-section-title {
   @include t.use-typography("headline-small");
+
   padding: 0 var(--sp-s) var(--sp-s) var(--sp-xxl);
   color: var(--color-foreground-secondary);
 }
@@ -80,6 +80,7 @@
 
 .current-team {
   @include deprecated.buttonStyle;
+
   display: grid;
   align-items: center;
   grid-template-columns: 1fr auto;
@@ -99,6 +100,7 @@
 .team-text {
   @include deprecated.textEllipsis;
   @include t.use-typography("title-small");
+
   width: auto;
   text-align: left;
   color: var(--menu-foreground-color-hover);
@@ -124,13 +126,15 @@
 
 .team-picture {
   @include deprecated.flexCenter;
+
   border-radius: 50%;
   height: var(--sp-xxl);
   width: var(--sp-xxl);
 }
 
 .arrow-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   transform: rotate(90deg);
   stroke: var(--icon-foreground);
 }
@@ -138,6 +142,7 @@
 .switch-options {
   @include deprecated.buttonStyle;
   @include deprecated.flexCenter;
+
   max-width: var(--sp-xxl);
   min-width: deprecated.$s-28;
   height: 100%;
@@ -146,7 +151,8 @@
 }
 
 .menu-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
 }
 
@@ -154,18 +160,19 @@
 
 .teams-dropdown {
   @extend .menu-dropdown;
+
   left: 0;
   top: deprecated.$s-52;
   height: fit-content;
   max-height: $sz-480;
   min-width: deprecated.$s-248;
   width: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 .team-dropdown-item {
   @extend .menu-item-base;
+
   display: grid;
   grid-template-columns: var(--sp-xxl) 1fr auto;
   gap: var(--sp-s);
@@ -192,6 +199,7 @@
 
 .icon-wrapper {
   @include deprecated.flexCenter;
+
   width: var(--sp-xxl);
   height: var(--sp-xxl);
   margin-right: var(--sp-m);
@@ -200,7 +208,8 @@
 }
 
 .add-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   width: var(--sp-xxl);
   height: var(--sp-xxl);
   stroke: var(--sidebar-action-icon-color);
@@ -212,12 +221,14 @@
 }
 
 .tick-icon {
-  @extend .button-icon-small;
+  @extend %button-icon-small;
+
   stroke: var(--icon-foreground);
 }
 
 .options-dropdown {
   @extend .menu-dropdown;
+
   right: var(--sp-xxs);
   top: deprecated.$s-52;
   max-height: $sz-480;
@@ -229,6 +240,7 @@
 
 .team-options-item {
   @extend .menu-item-base;
+
   height: $sz-40;
 }
 
@@ -290,6 +302,7 @@
 
 .element-title {
   @include deprecated.textEllipsis;
+
   width: deprecated.$s-256;
   color: var(--color-foreground-primary);
   font-size: deprecated.$fs-14;
@@ -305,7 +318,8 @@
 }
 
 .pin-icon {
-  @extend .button-icon-small;
+  @extend %button-icon-small;
+
   stroke: var(--icon-foreground);
   margin: 0 var(--sp-m);
 }
@@ -329,6 +343,7 @@
 
 .input-text {
   @include t.use-typography("title-small");
+
   height: $sz-40;
   width: 100%;
   padding: $sz-6 var(--sp-m);
@@ -353,6 +368,7 @@
 .search-btn {
   @include deprecated.buttonStyle;
   @include deprecated.flexCenter;
+
   position: absolute;
   right: 0;
   height: var(--sp-xxl);
@@ -362,8 +378,10 @@
 
 .search-icon,
 .clear-search-btn {
-  @extend .button-icon;
+  @extend %button-icon;
+
   --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color);
+
   stroke: var(--sidebar-search-foreground-color);
 }
 
@@ -384,6 +402,7 @@
 
 .profile {
   @include deprecated.buttonStyle;
+
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--sp-s);
@@ -394,6 +413,7 @@
 .profile-fullname {
   @include t.use-typography("title-small");
   @include deprecated.textEllipsis;
+
   align-self: center;
   max-width: var(--sp-l) 0;
   color: var(--profile-foreground-color);
@@ -407,15 +427,18 @@
 
 .profile-dropdown {
   @extend .menu-dropdown;
+
   inset-inline-start: var(--sp-s);
   inset-block-end: px2rem(72); // 72 is the height of the profile button
   min-width: calc(100% - var(--sp-s));
+
   // TODO ADD animation fadeInUp
 }
 
 .profile-dropdown-item {
   @extend .menu-item-base;
   @include t.use-typography("body-medium");
+
   block-size: $sz-40;
   margin-block-end: var(--sp-xs);
   padding: var(--sp-s);
@@ -435,12 +458,14 @@
 }
 
 .profile-dropdown-item .open-arrow svg {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
 }
 
 .sub-menu {
   @extend .menu-dropdown;
+
   inset-inline-start: calc(deprecated.$s-292 + var(--sp-s));
   min-width: deprecated.$s-192;
 }
@@ -460,6 +485,7 @@
 .submenu-item {
   @extend .menu-item-base;
   @include t.use-typography("body-medium");
+
   block-size: $sz-40;
   margin-block-end: var(--sp-xs);
   padding-block: var(--sp-s);
@@ -479,6 +505,7 @@
 .menu-version {
   @include t.use-typography("code-font");
   @include deprecated.textEllipsis;
+
   color: var(--color-foreground-secondary);
   margin-inline-start: var(--sp-s);
   text-transform: uppercase;
@@ -496,7 +523,8 @@
 }
 
 .exit-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
 }
 
@@ -516,6 +544,7 @@
 
 .upgrade-plan-section {
   @include deprecated.buttonStyle;
+
   display: flex;
   justify-content: space-between;
   border: $b-1 solid var(--color-background-quaternary);
@@ -528,6 +557,7 @@
 
 .penpot-free {
   @include t.use-typography("body-medium");
+
   display: flex;
   flex-direction: column;
   text-align: left;
@@ -539,6 +569,7 @@
 
 .power-up {
   @include t.use-typography("body-small");
+
   color: var(--color-accent-tertiary);
 }
 
@@ -549,11 +580,13 @@
   max-height: calc(2 * var(--sp-xxxl));
   justify-content: space-between;
   padding: var(--sp-xs) var(--sp-l) var(--sp-xs) var(--sp-s);
+
   // border-block-end: $b-1 solid var(--color-background-quaternary);
 }
 
 .nitrate-selected-org {
   @include t.use-typography("body-medium");
+
   color: var(--color-foreground-primary);
   width: 100%;
   margin: var(--sp-xs) 0 var(--sp-xs) var(--sp-l);

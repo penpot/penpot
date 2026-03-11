@@ -45,11 +45,13 @@
 
 .tooltip-token-title {
   @include use-typography("body-small");
+
   color: var(--title-color);
 }
 
 .tooltip-token-value {
   @include use-typography("body-small");
+
   color: var(--title-value);
 }
 

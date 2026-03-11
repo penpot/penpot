@@ -23,6 +23,7 @@
 
 .search-input-wrapper {
   @include deprecated.flexCenter;
+
   height: deprecated.$s-32;
   width: 100%;
   border: deprecated.$s-1 solid var(--search-bar-input-border-color);
@@ -32,6 +33,7 @@
   &:hover {
     border: deprecated.$s-1 solid var(--input-border-color-hover);
     background-color: var(--input-background-color-hover);
+
     .search-input {
       background-color: var(--input-background-color-hover);
     }
@@ -41,6 +43,7 @@
     background-color: var(--input-background-color-active);
     color: var(--input-foreground-color-active);
     border: deprecated.$s-1 solid var(--input-border-color-focus);
+
     .search-input {
       background-color: var(--input-background-color-active);
     }
@@ -56,6 +59,7 @@
   font-size: deprecated.$fs-12;
   color: var(--input-foreground-color);
   border-radius: deprecated.$br-8;
+
   &:focus {
     outline: none;
   }
@@ -63,6 +67,7 @@
 
 .clear-icon {
   @extend .button-tag;
+
   flex: 0 0 deprecated.$s-32;
   height: 100%;
   color: var(--color-icon-default);

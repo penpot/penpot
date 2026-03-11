@@ -22,11 +22,13 @@
 
 .checkbox-wrapper {
   @extend .input-checkbox;
+
   height: deprecated.$s-32;
   padding: 0;
 }
 
 .checkbox-icon {
   @extend .checkbox-icon;
+
   cursor: pointer;
 }

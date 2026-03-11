@@ -10,6 +10,7 @@
   .marker-shape {
     fill: var(--grid-editor-marker-color);
   }
+
   .marker-text {
     fill: var(--app-white);
     font-size: calc(deprecated.$s-12 / var(--zoom));
@@ -119,9 +120,10 @@
 
 .grid-actions-container {
   @include deprecated.flexRow;
+
   background: var(--panel-background-color);
   border-radius: deprecated.$br-12;
-  box-shadow: 0px 0px deprecated.$s-12 0px var(--menu-shadow-color);
+  box-shadow: 0 0 deprecated.$s-12 0 var(--menu-shadow-color);
   gap: deprecated.$s-8;
   height: deprecated.$s-48;
   margin-left: -50%;
@@ -139,7 +141,8 @@
 }
 
 .locate-btn {
-  @extend .button-secondary;
+  @extend %button-secondary;
+
   text-transform: uppercase;
   padding: deprecated.$s-8 deprecated.$s-20;
   font-size: deprecated.$fs-11;
@@ -147,14 +150,16 @@
 
 .done-btn {
   @extend .button-primary;
+
   text-transform: uppercase;
   padding: deprecated.$s-8 deprecated.$s-20;
   font-size: deprecated.$fs-11;
 }
 
 .close-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
 }

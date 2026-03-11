@@ -4,18 +4,17 @@
 //
 // Copyright (c) KALEIDOS INC
 
-// FIXME: we need this import for .asset-element
+// FIXME: we need this import for %asset-element
 @use "refactor/basic-rules.scss" as deprecated;
-
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
 @use "ds/spacing.scss" as *;
 
 .editable-select {
-  @extend .asset-element;
+  @extend %asset-element;
+
   margin: 0;
-  padding: 0;
   border: $b-1 solid var(--input-border-color);
   position: relative;
   display: flex;
@@ -24,27 +23,34 @@
   padding: var(--sp-s);
   border-radius: $br-8;
   cursor: pointer;
+
   .dropdown-button {
     display: flex;
     place-content: center;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       transform: rotate(90deg);
       stroke: var(--icon-foreground);
     }
   }
 
   .custom-select-dropdown {
-    @extend .dropdown-wrapper;
+    @extend %dropdown-wrapper;
+
     width: fit-content;
     max-height: px2rem(320); // TODO: when this gets addressed in the DS, use a token
     .separator {
       margin: 0;
       height: $sz-12;
     }
+
     .dropdown-element {
-      @extend .dropdown-element-base;
+      @extend %dropdown-element-base;
+
       color: var(--menu-foreground-color-rest);
+
       .label {
         flex-grow: 1;
         width: 100%;
@@ -53,8 +59,10 @@
       .check-icon {
         display: flex;
         place-content: center;
+
         svg {
-          @extend .button-icon-small;
+          @extend %button-icon-small;
+
           visibility: hidden;
           stroke: var(--icon-foreground);
         }
@@ -62,14 +70,17 @@
 
       &.is-selected {
         color: var(--menu-foreground-color);
+
         .check-icon svg {
           stroke: var(--menu-foreground-color);
           visibility: visible;
         }
       }
+
       &:hover {
         background-color: var(--menu-background-color-hover);
         color: var(--menu-foreground-color-hover);
+
         .check-icon svg {
           stroke: var(--menu-foreground-color-hover);
         }

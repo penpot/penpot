@@ -24,6 +24,7 @@
 
 .error-text {
   @include deprecated.bodySmallTypography;
+
   color: var(--color-foreground-error);
 }
 
@@ -44,6 +45,7 @@
 
 .author {
   @include deprecated.bodySmallTypography;
+
   display: flex;
   align-items: center;
   gap: deprecated.$s-8;
@@ -55,11 +57,13 @@
 
 .author-fullname {
   @include deprecated.textEllipsis;
+
   color: var(--comment-title-color);
 }
 
 .author-timeago {
   @include deprecated.textEllipsis;
+
   color: var(--comment-subtitle-color);
 }
 
@@ -112,11 +116,12 @@
 }
 
 .avatar-darken {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
 }
 
 .cover {
   @include deprecated.bodySmallTypography;
+
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -127,8 +132,8 @@
 
 .item {
   @include deprecated.bodySmallTypography;
+
   color: var(--color-foreground-primary);
-  word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
   white-space: pre-wrap;
@@ -136,6 +141,7 @@
 
 .replies {
   @include deprecated.bodySmallTypography;
+
   display: flex;
   gap: deprecated.$s-8;
 }
@@ -143,6 +149,7 @@
 .replies-total {
   color: var(--color-foreground-secondary);
 }
+
 .replies-unread {
   color: var(--color-accent-primary);
 }
@@ -168,15 +175,18 @@
 
   --translate-x: 0%;
   --translate-y: 0%;
+
   transform: translate(var(--translate-x), var(--translate-y));
 
   &.left {
     --translate-x: -100%;
+
     flex-direction: row-reverse;
   }
 
   &.top {
     --translate-y: -100%;
+
     align-items: flex-end;
   }
 }
@@ -214,10 +224,13 @@
 
   --translate-x: 0%;
   --translate-y: 0%;
+
   transform: translate(var(--translate-x), var(--translate-y));
+
   &.left {
     --translate-x: -100%;
   }
+
   &.top {
     --translate-y: -100%;
   }
@@ -233,6 +246,7 @@
 
 .floating-thread-header-left {
   @include deprecated.bodySmallTypography;
+
   color: var(--color-foreground-primary);
 }
 
@@ -257,11 +271,13 @@
   display: flex;
   flex-direction: column;
   gap: deprecated.$s-8;
+
   @include deprecated.bodySmallTypography;
 }
 
 .checkbox-wrapper {
   @include deprecated.flexCenter;
+
   width: deprecated.$s-16;
   height: deprecated.$s-24;
   margin-right: deprecated.$s-8;
@@ -272,7 +288,8 @@
 }
 
 .dropdown-menu {
-  @extend .dropdown-wrapper;
+  @extend %dropdown-wrapper;
+
   position: absolute;
   width: fit-content;
   max-width: deprecated.$s-200;
@@ -282,7 +299,7 @@
 }
 
 .dropdown-menu-option {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
 }
 
 .form {
@@ -365,7 +382,7 @@
 
 .comment-input {
   @include deprecated.bodySmallTypography;
-  white-space: pre-line;
+
   background: var(--input-background-color);
   border-radius: deprecated.$br-8;
   border: deprecated.$s-1 solid var(--input-border-color);

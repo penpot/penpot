@@ -11,6 +11,7 @@
 
 .attributes-block {
   --box-border-color: var(--color-background-primary);
+
   display: flex;
   flex-direction: column;
   border-block-end: $b-2 solid var(--box-border-color);
@@ -27,6 +28,7 @@
 
 .svg-row {
   @extend .attr-row;
+
   block-size: $sz-36;
 }
 
@@ -36,14 +38,17 @@
 
 .attributes-subtitle {
   @include use-typography("headline-small");
+
   display: flex;
   justify-content: space-between;
   block-size: $sz-32;
+
   span {
     block-size: $sz-32;
     display: flex;
     align-items: center;
   }
+
   button {
     display: none;
   }

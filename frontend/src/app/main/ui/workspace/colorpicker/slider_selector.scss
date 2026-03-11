@@ -14,6 +14,7 @@
     --gradient-direction: 0deg;
     --background-repeat: top;
   }
+
   position: relative;
   align-self: center;
   height: deprecated.$s-24;
@@ -22,8 +23,8 @@
   border-radius: deprecated.$br-6;
   background: linear-gradient(
     var(--gradient-direction),
-    rgba(var(--color), 0) 0%,
-    rgba(var(--color), 1) 100%
+    rgb(var(--color), 0) 0%,
+    rgb(var(--color), 1) 100%
   );
   cursor: pointer;
 
@@ -65,8 +66,8 @@
       height: 100%;
       background: linear-gradient(
         var(--gradient-direction),
-        rgba(var(--color), 0) 0%,
-        rgba(var(--color), 1) 100%
+        rgb(var(--color), 0) 0%,
+        rgb(var(--color), 1) 100%
       );
     }
   }
@@ -109,6 +110,7 @@
 .slider-selector.value {
   background: linear-gradient(var(--gradient-direction), var(--hue-from, #000) 0%, var(--hue-to, #fff) 100%);
 }
+
 .slider-selector.saturation {
   background: linear-gradient(
     var(--gradient-direction),

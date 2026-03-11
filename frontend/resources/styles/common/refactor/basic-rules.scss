@@ -12,7 +12,7 @@
 @use "./z-index.scss" as *;
 
 // SCROLLBAR
-.new-scrollbar {
+%new-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(170, 181, 186, 0.3) transparent;
   &:hover {
@@ -100,7 +100,7 @@
   }
 }
 
-.button-secondary {
+%button-secondary {
   @include buttonStyle;
   @include flexCenter;
   border-radius: $br-8;
@@ -142,7 +142,7 @@
   }
 }
 
-.button-tertiary {
+%button-tertiary {
   @include buttonStyle;
   @include flexCenter;
   --button-tertiary-border-width: #{$s-2};
@@ -191,7 +191,7 @@
   }
 }
 
-.button-icon-selected {
+%button-icon-selected {
   outline: none;
   border-color: var(--button-icon-border-color-selected);
   background-color: var(--button-icon-background-color-selected);
@@ -265,7 +265,7 @@
   }
 }
 
-.button-icon {
+%button-icon {
   @include flexCenter;
   height: $s-16;
   width: $s-16;
@@ -274,8 +274,8 @@
   stroke-width: 1px;
 }
 
-.button-icon-small {
-  @extend .button-icon;
+%button-icon-small {
+  @extend %button-icon;
   height: $s-12;
   width: $s-12;
   stroke-width: 1.33px;
@@ -296,7 +296,7 @@
 }
 
 // INPUTS
-.input-base {
+%input-base {
   @include removeInputStyle;
   @include textEllipsis;
   height: $s-28;
@@ -317,7 +317,7 @@
   min-width: $s-12;
   height: $s-32;
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
   }
 }
 
@@ -330,7 +330,7 @@
   color: var(--input-foreground-color);
 }
 
-.input-element {
+%input-element {
   display: flex;
   align-items: center;
   height: $s-32;
@@ -342,13 +342,13 @@
   label {
     @extend .input-label;
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--input-foreground-color);
     }
   }
 
   input {
-    @extend .input-base;
+    @extend %input-base;
   }
 
   ::placeholder {
@@ -405,7 +405,7 @@
   align-items: flex-start;
   padding: 0;
   input {
-    @extend .input-base;
+    @extend %input-base;
     padding-left: $s-8;
     display: flex;
     align-items: flex-start;
@@ -439,7 +439,7 @@
   }
 }
 
-.disabled-input {
+%disabled-input {
   background-color: var(--input-background-color-disabled);
   border: $s-1 solid var(--input-border-color-disabled);
   color: var(--input-foreground-color-disabled);
@@ -479,7 +479,7 @@
     border-color: var(--input-checkbox-border-color-active);
     background-color: var(--input-checkbox-background-color-active);
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--input-checkbox-foreground-color-active);
     }
   }
@@ -488,7 +488,7 @@
     background-color: var(--input-checkbox-background-color-intermediate);
     border-color: var(--input-checkbox-border-color-intermediate);
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--input-checkbox-foreground-color-intermediate);
     }
   }
@@ -546,7 +546,7 @@
   }
 
   input {
-    @extend .input-base;
+    @extend %input-base;
     @include bodySmallTypography;
     border-radius: $br-8;
     height: $s-32;
@@ -565,7 +565,7 @@
     }
   }
   &:global(.disabled) {
-    @extend .disabled-input;
+    @extend %disabled-input;
   }
 
   &:global(.invalid) {
@@ -588,7 +588,7 @@
   background-color: var(--modal-background-color);
 }
 
-.modal-overlay-base {
+%modal-overlay-base {
   @include flexCenter;
   position: fixed;
   left: 0;
@@ -599,7 +599,7 @@
   background-color: var(--overlay-color);
 }
 
-.modal-container-base {
+%modal-container-base {
   position: relative;
   padding: $s-32;
   border-radius: $br-8;
@@ -611,15 +611,15 @@
   max-height: $s-512;
 }
 
-.modal-close-btn-base {
-  @extend .button-tertiary;
+%modal-close-btn-base {
+  @extend %button-tertiary;
   position: absolute;
   top: $s-8;
   right: $s-6;
   height: $s-32;
   width: $s-28;
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
 }
 
@@ -637,7 +637,7 @@
 }
 
 .modal-cancel-btn {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include uppercaseTitleTipography;
   padding: $s-8 $s-24;
   border-radius: $br-8;
@@ -670,7 +670,7 @@
 
 // FIXME: This is used multiple times accross the app. We should design this in
 // the DS and create a proper component for it.
-.asset-element {
+%asset-element {
   @include bodySmallTypography;
   display: flex;
   align-items: center;
@@ -700,7 +700,7 @@
   background-color: var(--menu-shortcut-background-color);
 }
 
-.mixed-bar {
+%mixed-bar {
   @include bodySmallTypography;
   display: flex;
   align-items: center;
@@ -742,10 +742,10 @@
     color: var(--entry-foreground-color-hover);
   }
   button {
-    @extend .button-tertiary;
+    @extend %button-tertiary;
     display: none;
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--icon-foreground);
     }
   }
@@ -822,7 +822,7 @@
   }
 }
 
-.dropdown-element-base {
+%dropdown-element-base {
   @include bodySmallTypography;
   display: flex;
   align-items: center;
@@ -837,7 +837,7 @@
     @include flexCenter;
     @include textEllipsis;
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--icon-foreground);
     }
   }
@@ -850,7 +850,7 @@
   }
 }
 
-.dropdown-wrapper {
+%dropdown-wrapper {
   @include menuShadow;
   position: absolute;
   top: $s-32;

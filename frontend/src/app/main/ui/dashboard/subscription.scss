@@ -27,6 +27,7 @@
 
 .cta-top-section {
   @include deprecated.buttonStyle;
+
   display: grid;
   color: var(--color-foreground-secondary);
   grid-template-columns: 1fr auto;
@@ -44,12 +45,14 @@
 
 .icon-dropdown {
   @include deprecated.flexCenter;
+
   height: 100%;
   width: var(--sp-l);
 }
 
 .icon-dropdown svg {
-  @extend .button-icon-small;
+  @extend %button-icon-small;
+
   stroke: var(--icon-foreground);
   transform: rotate(90deg);
 }
@@ -68,6 +71,7 @@
 .cta-bottom-section .content {
   @include t.use-typography("body-medium");
   @include deprecated.buttonStyle;
+
   color: var(--color-foreground-secondary);
   display: inline-block;
   text-align: left;
@@ -88,11 +92,13 @@
 
 .cta-title {
   @include t.use-typography("body-small");
+
   margin-block-end: var(--sp-xs);
 }
 
 .highlighted .cta-title {
   @include t.use-typography("body-medium");
+
   margin-block-end: 0;
 }
 
@@ -102,17 +108,20 @@
 
 .highlighted .cta-text {
   @include t.use-typography("body-large");
+
   color: var(--color-foreground-primary);
 }
 
 .cta-bottom-section .content a {
   @include t.use-typography("body-medium");
+
   color: var(--color-accent-tertiary);
   margin-inline-start: var(--sp-xs);
 }
 
 .cta-link {
   @include deprecated.buttonStyle;
+
   align-self: end;
   margin-inline-start: var(--sp-xs);
 }
@@ -127,17 +136,20 @@
 
 .team-label {
   @include t.use-typography("headline-small");
+
   color: var(--title-foreground-color);
 }
 
 .team-text {
   @include t.use-typography("title-medium");
+
   color: var(--color-foreground-primary);
 }
 
 .manage-subscription-link {
   @include deprecated.buttonStyle;
   @include t.use-typography("body-medium");
+
   color: var(--color-accent-tertiary);
   display: flex;
   margin-block-start: -8px;
@@ -162,6 +174,7 @@
 
 .menu-item {
   @extend .menu-item-base;
+
   cursor: pointer;
 
   &:hover {
@@ -197,6 +210,7 @@
 
 .cta-message {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-secondary);
   line-height: 1;
 
@@ -218,11 +232,13 @@
 
 .nitrate-title {
   @include t.use-typography("body-large");
+
   color: var(--color-foreground-primary);
 }
 
 .nitrate-info {
   @include t.use-typography("body-medium");
+
   color: var(--color-foreground-secondary);
   margin-block: var(--sp-s) var(--sp-xxl);
 }

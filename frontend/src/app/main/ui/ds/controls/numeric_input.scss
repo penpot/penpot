@@ -13,7 +13,9 @@
 .input-wrapper {
   --input-padding-size: var(--sp-xs);
   --opacity-button: 0;
+
   @include t.use-typography("code-font");
+
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
@@ -23,6 +25,7 @@
   &:hover {
     --opacity-button: 1;
   }
+
   &:focus-within {
     --opacity-button: 1;
   }
@@ -35,7 +38,9 @@
 
 .text-icon {
   color: var(--color-foreground-secondary);
+
   @include t.use-typography("code-font");
+
   inline-size: fit-content;
   min-inline-size: px2rem(40);
 }
@@ -46,12 +51,16 @@
   inset-block-start: 0;
   opacity: var(--opacity-button);
   background-color: var(--color-background-quaternary);
+
   &:hover {
     background-color: var(--color-background-quaternary);
+
     --opacity-button: 1;
   }
+
   &:focus {
     background-color: var(--color-background-quaternary);
+
     --opacity-button: 1;
   }
 }

@@ -42,6 +42,7 @@
 
 .flex-layout-menu {
   @include sidebar.option-grid-structure;
+
   margin-block-end: var(--sp-s);
 }
 
@@ -49,8 +50,7 @@
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: subgrid;
-  margin-block-end: var(--sp-m);
-  margin-block-start: var(--sp-xs);
+  margin-block: var(--sp-xs) var(--sp-m);
 }
 
 .align-row {
@@ -63,16 +63,20 @@
 
 // TODO: Replace this buttons with DS buttons
 .wrap-button {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   border-radius: $br-8;
   block-size: $sz-32;
   inline-size: $sz-32;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--color-foreground-secondary);
   }
+
   &.selected {
-    @extend .button-icon-selected;
+    @extend %button-icon-selected;
   }
 }
 
@@ -95,6 +99,7 @@
     var(--grid-exception-input-width) /* first input block */
     var(--grid-exception-input-width) /* second input block */
     var(--sp-xxxl); /* action button */
+
   gap: var(--sp-xs);
   grid-column: 1 / -1;
 }
@@ -115,10 +120,11 @@
 // TODO: Remove when activating token numeric inputs
 .column-gap,
 .row-gap {
-  @extend .input-element;
+  @extend %input-element;
   @include t.use-typography("body-small");
+
   &.disabled {
-    @extend .disabled-input;
+    @extend %disabled-input;
   }
 }
 
@@ -126,7 +132,7 @@
 .padding-simple,
 .padding-multiple {
   @include t.use-typography("body-small");
-  @extend .input-element;
+  @extend %input-element;
 }
 
 .padding-group {
@@ -151,16 +157,20 @@
 
 // TODO: Replace this buttons with DS buttons
 .padding-toggle {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   block-size: $sz-32;
   inline-size: $sz-32;
   border-radius: $br-8;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--color-foreground-secondary);
   }
+
   &.selected {
-    @extend .button-icon-selected;
+    @extend %button-icon-selected;
   }
 }
 
@@ -197,6 +207,7 @@
 
 .grid-layout-menu-title {
   @include t.use-typography("headline-small");
+
   flex: 1;
   color: var(--color-foreground-primary);
   grid-column: span 5;
@@ -204,8 +215,9 @@
 
 // TODO: Replace this buttons with DS buttons
 .edit-mode-btn {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include t.use-typography("headline-small");
+
   inline-size: 100%;
   padding: var(--sp-s);
   grid-column: span 7;
@@ -213,8 +225,9 @@
 
 // TODO: Replace this buttons with DS buttons
 .exit-btn {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include t.use-typography("headline-small");
+
   padding: var(--sp-s) var(--sp-xl);
   grid-column: span 2;
 }
@@ -267,19 +280,23 @@
   border-radius: $br-8 0 0 $br-8;
   background-color: var(--color-background-tertiary);
   padding: 0 var(--sp-s);
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--color-foreground-secondary);
     block-size: 100%;
   }
+
   &:hover svg {
     stroke: var(--color-foreground-primary);
   }
 }
 
 .track-info-value {
-  @extend .input-element;
+  @extend %input-element;
   @include t.use-typography("body-small");
+
   border-radius: 0;
   border-inline-end: $b-1 solid var(--color-background-primary);
 }
@@ -298,6 +315,7 @@
 
 .grid-track-header {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
@@ -330,16 +348,19 @@
 
 // TODO: Replace this buttons with DS buttons
 .expand-icon {
-  @extend .button-secondary;
-  block-size: px2rem(52);
+  @extend %button-secondary;
 
+  block-size: px2rem(52);
   border-radius: $br-8 0 0 $br-8;
   border-inline-end: $b-1 solid var(--color-background-primary);
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--color-foreground-secondary);
     fill: var(--color-foreground-secondary);
   }
+
   &:hover,
   &:active {
     svg {
@@ -351,7 +372,8 @@
 
 // TODO: Replace this buttons with DS buttons
 .add-column {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   block-size: px2rem(52);
 
   svg {
@@ -359,7 +381,6 @@
     justify-content: center;
     align-items: center;
     color: transparent;
-    fill: none;
     stroke-width: px2rem(1);
     block-size: $sz-12;
     inline-size: $sz-12;
@@ -369,7 +390,7 @@
 }
 
 .layout-options {
-  box-shadow: 0px 0px $sz-12 0px var(--color-shadow-dark);
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -382,8 +403,7 @@
   margin-block-start: px2rem(1);
   border-radius: $br-8;
   z-index: var(--z-index-dropdown);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   background-color: var(--color-background-tertiary);
   color: var(--color-foreground-primary);
   border: $b-2 solid var(--color-background-quaternary);
@@ -423,6 +443,7 @@
     var(--grid-exception-input-width) /* first input block */
     var(--grid-exception-input-width) /* second input block */
     var(--sp-xxxl); /* action button */
+
   gap: var(--sp-xs);
 }
 

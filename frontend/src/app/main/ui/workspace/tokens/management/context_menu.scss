@@ -23,6 +23,7 @@
 .context-list,
 .token-context-submenu {
   @include deprecated.menuShadow;
+
   display: grid;
   width: deprecated.$s-240;
   padding: deprecated.$s-4;
@@ -56,7 +57,9 @@
   --context-menu-item-bg-color: none;
   --context-menu-item-fg-color: var(--color-foreground-primary);
   --context-menu-item-border-color: none;
+
   @include use-typography("body-small");
+
   display: flex;
   align-items: center;
   height: deprecated.$s-32;
@@ -67,6 +70,7 @@
   background-color: var(--context-menu-item-bg-color);
   border: deprecated.$s-1 solid var(--context-menu-item-border-color);
   cursor: pointer;
+
   &:hover {
     --context-menu-item-bg-color: var(--color-background-quaternary);
   }
@@ -124,6 +128,7 @@
 .item-with-icon-space {
   padding-left: deprecated.$s-20;
 }
+
 .icon-wrapper {
   margin-right: deprecated.$s-4;
 }

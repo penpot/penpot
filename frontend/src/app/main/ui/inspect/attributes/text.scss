@@ -12,6 +12,7 @@
 
 .attributes-block {
   --box-border-color: var(--color-background-primary);
+
   display: flex;
   flex-direction: column;
   border-block-end: $b-2 solid var(--box-border-color);
@@ -34,8 +35,10 @@
 
 .text-row {
   @extend .attr-row;
+
   block-size: unset;
   min-block-size: $sz-36;
+
   :global(.attr-value) {
     align-items: center;
   }
@@ -51,8 +54,10 @@
   border-radius: $br-8;
   border: $b-1 solid var(--menu-border-color-disabled);
   margin-block-start: var(--sp-xs);
+
   .content {
     @include use-typography("body-small");
+
     width: 100%;
     padding: var(--sp-xs) 0;
     color: var(--color-foreground-secondary);
@@ -61,6 +66,7 @@
   &:hover {
     border: $b-1 solid var(--color-background-tertiary);
     background-color: var(--menu-background-color);
+
     .content {
       color: var(--menu-foreground-color-hover);
     }
