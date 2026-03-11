@@ -120,15 +120,22 @@ export function initCanvasContext(
 }
 
 /**
- * Clear canvas
+ * Clear canvas.
+ * @param releaseContext - If true, call loseContext() so the browser releases GPU resources (final teardown).
+ *   If false, only unregister/delete the GL context so the same canvas can get a new context (re-init).
  */
-export function clearCanvas(module: WasmModule, canvas?: HTMLCanvasElement): void {
+export function clearCanvas(
+  module: WasmModule,
+  canvas?: HTMLCanvasElement,
+  releaseContext: boolean = false
+): void {
   if (!getContextInitialized()) {
     return
   }
 
   try {
     setContextInitialized(false)
+    setContextLost(false)
     module._clean_up()
 
     // Use provided canvas or stored canvas
@@ -142,8 +149,7 @@ export function clearCanvas(module: WasmModule, canvas?: HTMLCanvasElement): voi
     const gl = module.GL
     if (gl && storedContextHandle !== null) {
       try {
-        // Ask the browser to release resources explicitly if available
-        if (storedWebGLContext) {
+        if (releaseContext && storedWebGLContext) {
           const loseExt = storedWebGLContext.getExtension('WEBGL_lose_context')
           if (loseExt) {
             loseExt.loseContext()

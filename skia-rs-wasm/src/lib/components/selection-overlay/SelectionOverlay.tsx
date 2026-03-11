@@ -26,8 +26,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
   const selectedIds = useWorkspaceStore((state) => state.selectedIds)
   const wasmSelectionRect = useWorkspaceStore((state) => state.wasmSelectionRect)
   const viewport = useWorkspaceStore((state) => state.viewport)
-  const viewportVersion = useWorkspaceStore((state) => state.viewportVersion)
-  const zoom = useWorkspaceStore((state) => (state.viewportVersion, state.viewport?.zoom ?? 1))
+  const zoom = useWorkspaceStore((state) => state.viewport?.zoom ?? 1)
   const isSelecting = useWorkspaceStore((state) => state.isSelecting)
   const selectionRect = useWorkspaceStore((state) => state.selectionRect)
   const isMoving = useWorkspaceStore((state) => state.isMoving)
@@ -153,7 +152,6 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
 
   return (
     <svg
-      key={`selection-overlay-${viewportVersion}`}
       aria-hidden
       style={{
         position: 'absolute',

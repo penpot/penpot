@@ -10,20 +10,10 @@ import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
+import { screenToWorld } from '../viewport'
 import { applyModifiersAndCommit } from './utils'
 import type { Point } from '../types'
 import type { Matrix } from 'penpot-exporter/types'
-
-function screenToWorld(
-  sx: number,
-  sy: number,
-  viewport: { panX: number; panY: number; zoom: number }
-): { x: number; y: number } {
-  return {
-    x: viewport.panX + sx / viewport.zoom,
-    y: viewport.panY + sy / viewport.zoom,
-  }
-}
 
 function angleDegFromCenter(cx: number, cy: number, wx: number, wy: number): number {
   return Math.atan2(wy - cy, wx - cx) * (180 / Math.PI)
@@ -83,7 +73,7 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
     })
   }
 
-  const initialWorld = screenToWorld(initialPosition.x, initialPosition.y, viewport)
+  const initialWorld = screenToWorld(viewport, initialPosition.x, initialPosition.y)
   const initialAngleDeg = angleDegFromCenter(cx, cy, initialWorld.x, initialWorld.y)
 
   const stopper = dragStopper()
@@ -93,7 +83,7 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
 
   const rotateStream = mousePosition$.pipe(
     filter((pos): pos is NonNullable<typeof pos> => pos !== null),
-    map((pos) => screenToWorld(pos.x, pos.y, viewport)),
+    map((pos) => screenToWorld(viewport, pos.x, pos.y)),
     map((world) => angleDegFromCenter(cx, cy, world.x, world.y)),
     map((currentAngleDeg) => currentAngleDeg - initialAngleDeg),
     tap((deltaDeg) => {

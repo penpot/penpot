@@ -14,6 +14,9 @@ importers:
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
+      svg-path-parser:
+        specifier: ^1.1.0
+        version: 1.1.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.1
@@ -30,6 +33,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.9)
+      '@types/svg-path-parser':
+        specifier: ^1.1.6
+        version: 1.1.6
       '@vitejs/plugin-react-swc':
         specifier: ^4.2.2
         version: 4.2.2(vite@7.3.1(@types/node@24.10.9))
