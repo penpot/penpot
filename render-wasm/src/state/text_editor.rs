@@ -165,7 +165,7 @@ pub struct TextEditorState {
     pub theme: TextEditorTheme,
     pub selection: TextSelection,
     pub composition: TextComposition,
-    pub is_active: bool,
+    pub has_focus: bool,
     // This property indicates that we've started
     // selecting something with the pointer.
     pub is_pointer_selection_active: bool,
@@ -185,7 +185,7 @@ impl TextEditorState {
             },
             selection: TextSelection::new(),
             composition: TextComposition::new(),
-            is_active: false,
+            has_focus: false,
             is_pointer_selection_active: false,
             active_shape_id: None,
             cursor_visible: true,
@@ -194,8 +194,8 @@ impl TextEditorState {
         }
     }
 
-    pub fn start(&mut self, shape_id: Uuid) {
-        self.is_active = true;
+    pub fn focus(&mut self, shape_id: Uuid) {
+        self.has_focus = true;
         self.active_shape_id = Some(shape_id);
         self.cursor_visible = true;
         self.last_blink_time = 0.0;
@@ -204,8 +204,18 @@ impl TextEditorState {
         self.pending_events.clear();
     }
 
-    pub fn stop(&mut self) {
-        self.is_active = false;
+    pub fn blur(&mut self) {
+        self.has_focus = false;
+        // self.active_shape_id = None;
+        self.cursor_visible = false;
+        self.last_blink_time = 0.0;
+        // self.selection.reset();
+        self.is_pointer_selection_active = false;
+        self.pending_events.clear();
+    }
+
+    pub fn dispose(&mut self) {
+        self.has_focus = false;
         self.active_shape_id = None;
         self.cursor_visible = false;
         self.last_blink_time = 0.0;
@@ -344,7 +354,7 @@ impl TextEditorState {
     }
 
     pub fn update_blink(&mut self, timestamp_ms: f64) {
-        if !self.is_active {
+        if !self.has_focus {
             return;
         }
 
