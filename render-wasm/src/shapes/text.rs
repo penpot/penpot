@@ -1151,7 +1151,7 @@ impl TextSpan {
     pub fn apply_text_transform(&self) -> String {
         let browser = crate::with_state!(state, { state.current_browser });
         let text = Self::process_ignored_chars(&self.text, browser);
-        let transformed_text = match self.text_transform {
+        match self.text_transform {
             Some(TextTransform::Uppercase) => text.to_uppercase(),
             Some(TextTransform::Lowercase) => text.to_lowercase(),
             Some(TextTransform::Capitalize) => text
@@ -1166,9 +1166,7 @@ impl TextSpan {
                 .collect::<Vec<_>>()
                 .join(" "),
             None => text,
-        };
-
-        transformed_text.replace("/", "/\u{200B}")
+        }
     }
 
     pub fn scale_content(&mut self, value: f32) {
