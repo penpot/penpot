@@ -331,9 +331,16 @@
   (st/async-emit! (rt/assign-exception error)))
 
 (defonce uncaught-error-handler
-  (letfn [(is-ignorable-exception? [cause]
+  (letfn [(from-extension? [cause]
+            (let [stack (.-stack cause)]
+              (and (string? stack)
+                   (or (str/includes? stack "chrome-extension://")
+                       (str/includes? stack "moz-extension://")))))
+
+          (is-ignorable-exception? [cause]
             (let [message (ex-message cause)]
-              (or (= message "Possible side-effect in debug-evaluate")
+              (or (from-extension? cause)
+                  (= message "Possible side-effect in debug-evaluate")
                   (= message "Unexpected end of input")
                   (str/starts-with? message "invalid props on component")
                   (str/starts-with? message "Unexpected token "))))
@@ -341,17 +348,18 @@
           (on-unhandled-error [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
-              (set! last-exception cause)
               (when-not (is-ignorable-exception? cause)
+                (set! last-exception cause)
                 (ex/print-throwable cause :prefix "Uncaught Exception")
                 (ts/schedule #(flash :cause cause :type :unhandled)))))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "reason")]
-              (set! last-exception cause)
-              (ex/print-throwable cause :prefix "Uncaught Rejection")
-              (ts/schedule #(flash :cause cause :type :unhandled))))]
+              (when-not (is-ignorable-exception? cause)
+                (set! last-exception cause)
+                (ex/print-throwable cause :prefix "Uncaught Rejection")
+                (ts/schedule #(flash :cause cause :type :unhandled)))))]
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)
