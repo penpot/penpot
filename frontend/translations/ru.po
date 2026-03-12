@@ -3108,10 +3108,6 @@ msgstr ""
 "Технический перерыв: сервис будет недоступен короткое время в течение 5 "
 "минут."
 
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "Доступна новая версия, обновите страницу"
-
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "Приглашение успешно отправлено"

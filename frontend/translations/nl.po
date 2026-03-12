@@ -3711,7 +3711,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Er is een nieuwe versie beschikbaar, vernieuw de pagina"
+msgstr "Er is een nieuwe versie beschikbaar."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"
