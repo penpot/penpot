@@ -440,6 +440,7 @@
                (for [library sample-libraries]
                  [:> sample-library-entry*
                   {:library library
+                   :key (dm/str (:id library))
                    :importing importing*}])]]
 
              :else
