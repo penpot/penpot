@@ -3686,7 +3686,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Una nuova versione è disponibile, si prega di ricaricare la pagina"
+msgstr "Una nuova versione è disponibile."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"

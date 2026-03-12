@@ -3810,7 +3810,7 @@ msgstr "Maintenance break: we will be down for a short maintenance within 5 minu
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "A new version is available, please refresh the page"
+msgstr "A new version is available."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"

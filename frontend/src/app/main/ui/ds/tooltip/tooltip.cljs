@@ -185,17 +185,18 @@
         (mf/use-fn
          (mf/deps tooltip-id delay)
          (fn [_]
-           (let [trigger-el (mf/ref-val trigger-ref)]
-             (clear-schedule schedule-ref)
-             (add-schedule schedule-ref (d/nilv delay 300)
-                           (fn []
-                             (when-let [active @active-tooltip]
-                               (when (not= (:id active) tooltip-id)
-                                 (when-let [tooltip-el (dom/get-element (:id active))]
-                                   (dom/set-css-property! tooltip-el "display" "none"))
-                                 (reset! active-tooltip nil)))
-                             (reset! active-tooltip {:id tooltip-id :trigger trigger-el})
-                             (reset! visible* true))))))
+           (when-not (.-hidden js/document)
+             (let [trigger-el (mf/ref-val trigger-ref)]
+               (clear-schedule schedule-ref)
+               (add-schedule schedule-ref (d/nilv delay 300)
+                             (fn []
+                               (when-let [active @active-tooltip]
+                                 (when (not= (:id active) tooltip-id)
+                                   (when-let [tooltip-el (dom/get-element (:id active))]
+                                     (dom/set-css-property! tooltip-el "display" "none"))
+                                   (reset! active-tooltip nil)))
+                               (reset! active-tooltip {:id tooltip-id :trigger trigger-el})
+                               (reset! visible* true)))))))
 
         on-hide
         (mf/use-fn
@@ -242,6 +243,17 @@
                           :aria-label (if (string? content)
                                         content
                                         aria-label)})]
+
+    (mf/use-effect
+     (mf/deps tooltip-id)
+     (fn []
+       (let [handle-visibility-change
+             (fn []
+               (when (.-hidden js/document)
+                 (on-hide)))]
+         (js/document.addEventListener "visibilitychange" handle-visibility-change)
+         ;; cleanup
+         #(js/document.removeEventListener "visibilitychange" handle-visibility-change))))
 
     (mf/use-effect
      (mf/deps visible placement offset)

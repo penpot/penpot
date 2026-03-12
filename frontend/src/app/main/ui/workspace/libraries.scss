@@ -4,7 +4,6 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/_utils.scss" as *;
@@ -33,30 +32,13 @@
   background-color: var(--modal-background-color);
   border: $b-2 solid var(--modal-border-color);
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 0 auto 1fr;
   min-width: $sz-364;
   min-height: $sz-192;
   height: $sz-520;
   max-height: $sz-520;
   width: $sz-712;
   max-width: $sz-712;
-}
-
-// TODO: Remove this extended creating modal component
-.close-btn {
-  @extend .modal-close-btn-base;
-}
-
-.close-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: $sz-16;
-  width: $sz-16;
-  color: transparent;
-  fill: none;
-  stroke-width: $b-1;
-  stroke: var(--icon-foreground);
 }
 
 .modal-title {
@@ -81,12 +63,6 @@
   display: grid;
   grid-template-rows: auto 1fr;
   gap: var(--sp-s);
-
-  .section-list {
-    .section-list-item:first-child {
-      border: none;
-    }
-  }
 }
 
 .shared-section {
@@ -116,6 +92,10 @@
   border-radius: $br-8;
 }
 
+.section-list-item:first-child {
+  border: none;
+}
+
 .section-list-item-double-icon {
   @extend .section-list-item;
   grid-template-columns: 1fr auto auto;
@@ -125,44 +105,10 @@
   height: fit-content;
 }
 
-.item-publish,
-.item-unpublish {
-  // TODO: remove this extended by using DS button component
-  @extend .button-primary;
-  @include t.use-typography("headline-small");
-  height: $sz-32;
-  min-width: px2rem(92);
-  padding: var(--sp-s) var(--sp-xxl);
-  margin: 0;
-  border-radius: $br-8;
-}
-
-.item-unpublish {
-  // TODO: remove this extended by using DS button component
-  @extend .button-secondary;
-}
-
-.item-button,
-.item-button-shared {
-  // TODO: remove this extended by using DS button component
-  @extend .button-secondary;
-  height: $sz-32;
-  width: $sz-32;
-  margin-inline-start: var(--sp-xxs);
-  padding: var(--sp-s);
-}
-
-.detach-icon,
-.add-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: $sz-16;
-  width: $sz-16;
-  color: transparent;
-  fill: none;
-  stroke-width: $b-1;
-  stroke: var(--icon-foreground);
+.close-btn {
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-s);
 }
 
 .section-list-shared {
@@ -173,26 +119,6 @@
   @include t.use-typography("headline-small");
   margin-block-end: var(--sp-m);
   color: var(--title-foreground-color);
-}
-
-.search-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: px2rem(20);
-  padding: 0 0 0 var(--sp-s);
-
-  svg {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: transparent;
-    fill: none;
-    height: px2rem(12);
-    width: px2rem(12);
-    stroke-width: 1.33px;
-    stroke: var(--icon-foreground);
-  }
 }
 
 // empty state
@@ -206,21 +132,13 @@
   margin-block: var(--sp-l);
 }
 
-.library-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: transparent;
-  fill: none;
-  stroke-width: $b-1;
-  stroke: var(--icon-foreground);
-  height: $sz-32;
-  width: $sz-32;
-}
-
 // Update library tab
 .libraries-updates-see-all {
-  @extend .link;
+  background: unset;
+  border: none;
+  color: var(--link-foreground-color);
+  cursor: pointer;
+  text-decoration: none;
   direction: rtl;
   grid-column: span 3;
   margin-block-start: var(--sp-s);
@@ -236,7 +154,7 @@
   display: grid;
   grid-column: span 3;
   grid-template-columns: repeat(auto-fill, minmax(px2rem(160), 1fr));
-  gap: deprecated.$s-24;
+  gap: var(--sp-xxl);
   margin-block-start: var(--sp-l);
 }
 
@@ -246,7 +164,7 @@
 }
 
 .libraries-updates-item {
-  @include deprecated.bodyLargeTypography;
+  @include t.use-typography("body-large");
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: start;
@@ -277,22 +195,32 @@
   @include t.use-typography("body-large");
   @include textEllipsis;
   margin: 0;
-  max-width: px2rem(216);
+  max-width: px2rem(236);
+  color: var(--library-name-foreground-color);
+}
+
+.item-name-short {
+  max-width: px2rem(206);
+}
+
+.item-name-long {
+  @extend .item-name;
+  max-width: px2rem(450);
+}
+
+.item-title {
+  @include t.use-typography("body-large");
+  margin: 0;
   color: var(--library-name-foreground-color);
 }
 
 .item-update {
-  @extend .button-primary;
   @include t.use-typography("headline-small");
   height: $sz-32;
   min-width: px2rem(92);
   padding: var(--sp-s) var(--sp-xxl);
   margin-inline-end: var(--sp-xxs);
   border-radius: $br-8;
-
-  &:disabled {
-    @extend .button-disabled;
-  }
 }
 
 .item-contents {
@@ -301,6 +229,11 @@
   display: flex;
   flex-wrap: wrap;
   margin: 0;
+}
+
+.library-actions {
+  display: flex;
+  gap: var(--sp-xs);
 }
 
 .element-count {
@@ -386,7 +319,6 @@
 }
 
 .primary-button {
-  @extend .button-primary;
   @include t.use-typography("headline-small");
   padding: 0 var(--sp-l);
 }
@@ -432,16 +364,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: px2rem(232);
-}
-
-// TODO: Remove this extended using a DS component
-.sample-library-add {
-  @extend .button-secondary;
-}
-
-// TODO: Remove this extended using a DS component
-.sample-library-adding {
-  @extend .button-disabled;
 }
 
 .sample-library-button {
