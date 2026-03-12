@@ -19,18 +19,53 @@
    [app.main.store :as st]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
-   [clojure.datafy :refer [datafy]]))
+   [clojure.datafy :refer [datafy]]
+   [clojure.set :refer [map-invert]]
+   [cuerdas.core :as str]))
 
 ;; === Token
 
+(def token-name-mapping
+  {:r1 :borderRadiusTopLeft
+   :r2 :borderRadiusTopRight
+   :r3 :borderRadiusBottomRight
+   :r4 :borderRadiusBottomLeft
+
+   :p1 :paddingTopLeft
+   :p2 :paddingTopRight
+   :p3 :paddingBottomRight
+   :p4 :paddingBottomLeft
+
+   :m1 :marginTopLeft
+   :m2 :marginTopRight
+   :m3 :marginBottomRight
+   :m4 :marginBottomLeft})
+
+(def name-token-mapping
+  (map-invert token-name-mapping))
+
+(defn resolve-prop
+  [k]
+  (get token-name-mapping k k))
+
+(defn translate-prop
+  [k]
+  (let [k (-> (str/camel k) keyword)]
+    (get name-token-mapping k k)))
+
+(defn token-attr?
+  [attr]
+  (cto/token-attr? (translate-prop attr)))
+
 (defn- apply-token-to-shapes
   [file-id set-id id shape-ids attrs]
+
   (let [token (u/locate-token file-id set-id id)]
-    (if (some #(not (cto/token-attr? %)) attrs)
+    (if (some #(not (token-attr? %)) attrs)
       (u/display-not-valid :applyToSelected attrs)
       (st/emit!
        (dwta/toggle-token {:token token
-                           :attrs attrs
+                           :attrs (into #{} (map translate-prop) attrs)
                            :shape-ids shape-ids
                            :expand-with-children false})))))
 
@@ -41,6 +76,13 @@
                             (dm/get-in [(:name token) :resolved-value])
                             (ts/tokenscript-symbols->penpot-unit))]
     resolved-value))
+
+
+(defn resolve-tokens
+  [value]
+  (into {}
+        (map (fn [[k v]] [(resolve-prop k) v]))
+        value))
 
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
@@ -146,13 +188,13 @@
     {:enumerable false
      :schema [:tuple
               [:vector [:fn shape-proxy?]]
-              [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
+              [:maybe [:set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [shapes attrs]
            (apply-token-to-shapes file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
 
     :applyToSelected
     {:enumerable false
-     :schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
+     :schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [attrs]
            (let [selected (get-in @st/state [:workspace-local :selected])]
              (apply-token-to-shapes file-id set-id id selected attrs)))}))

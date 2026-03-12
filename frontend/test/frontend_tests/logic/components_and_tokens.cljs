@@ -141,7 +141,7 @@
           events [(dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
-                                     :on-update-shape dwta/update-shape-radius-all})]
+                                     :on-update-shape dwta/update-shape-radius})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
@@ -249,11 +249,11 @@
           events [(dwta/apply-token {:shape-ids [(cthi/id :c-frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
-                                     :on-update-shape dwta/update-shape-radius-all})
+                                     :on-update-shape dwta/update-shape-radius})
                   (dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-3")
-                                     :on-update-shape dwta/update-shape-radius-all})]
+                                     :on-update-shape dwta/update-shape-radius})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
@@ -293,7 +293,7 @@
                   (dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-3")
-                                     :on-update-shape dwta/update-shape-radius-all})]
+                                     :on-update-shape dwta/update-shape-radius})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
