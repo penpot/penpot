@@ -12,16 +12,16 @@
    [app.render-wasm.mem :as mem]
    [app.render-wasm.wasm :as wasm]))
 
-(defn text-editor-start
+(defn text-editor-focus
   [id]
   (when wasm/context-initialized?
     (let [buffer (uuid/get-u32 id)]
-      (when-not (h/call wasm/internal-module "_text_editor_start"
+      (when-not (h/call wasm/internal-module "_text_editor_focus"
                         (aget buffer 0)
                         (aget buffer 1)
                         (aget buffer 2)
                         (aget buffer 3))
-        (throw (js/Error. "TextEditor initialization failed"))))))
+        (throw (js/Error. "TextEditor focus failed"))))))
 
 (defn text-editor-set-cursor-from-offset
   "Sets caret position from shape relative coordinates"
@@ -111,19 +111,29 @@
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_select_word_boundary" x y)))
 
-(defn text-editor-stop
+(defn text-editor-blur
   []
   (when wasm/context-initialized?
-    (when-not (h/call wasm/internal-module "_text_editor_stop")
-      (throw (js/Error. "TextEditor finalization failed")))))
+    (when-not (h/call wasm/internal-module "_text_editor_blur")
+      (throw (js/Error. "TextEditor blur failed")))))
 
-(defn text-editor-is-active?
+(defn text-editor-dispose
+  []
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_dispose")))
+
+(defn text-editor-has-focus?
   ([id]
    (when wasm/context-initialized?
-     (not (zero? (h/call wasm/internal-module "_text_editor_is_active_with_id" id)))))
+     (not (zero? (h/call wasm/internal-module "_text_editor_has_focus_with_id" id)))))
   ([]
    (when wasm/context-initialized?
-     (not (zero? (h/call wasm/internal-module "_text_editor_is_active"))))))
+     (not (zero? (h/call wasm/internal-module "_text_editor_has_focus"))))))
+
+(defn text-editor-has-selection?
+  ([]
+   (when wasm/context-initialized?
+     (not (zero? (h/call wasm/internal-module "_text_editor_has_selection"))))))
 
 (defn text-editor-export-content
   []
@@ -167,18 +177,20 @@
 (defn text-editor-get-selection
   []
   (when wasm/context-initialized?
-    (let [byte-offset (mem/alloc 16)
-          u32-offset  (mem/->offset-32 byte-offset)
-          heap        (mem/get-heap-u32)
-          active?     (h/call wasm/internal-module "_text_editor_get_selection" byte-offset)]
-      (try
-        (when (= active? 1)
-          {:anchor-para   (aget heap u32-offset)
-           :anchor-offset (aget heap (+ u32-offset 1))
-           :focus-para    (aget heap (+ u32-offset 2))
-           :focus-offset  (aget heap (+ u32-offset 3))})
-        (finally
-          (mem/free))))))
+    (let [byte-offset     (mem/alloc 16)
+          u32-offset      (mem/->offset-32 byte-offset)
+          heap            (mem/get-heap-u32)
+          has-selection?  (h/call wasm/internal-module "_text_editor_get_selection" byte-offset)]
+      (if has-selection?
+        (let [result {:anchor-para   (aget heap u32-offset)
+                      :anchor-offset (aget heap (+ u32-offset 1))
+                      :focus-para    (aget heap (+ u32-offset 2))
+                      :focus-offset  (aget heap (+ u32-offset 3))}]
+          (mem/free)
+          result)
+        (do
+          (mem/free)
+          nil)))))
 
 ;; This is used as a intermediate cache between Clojure global state and WASM state.
 (def ^:private shape-text-contents (atom {}))
@@ -229,7 +241,7 @@
   shape-id and the fully merged content map ready for
   v2-update-text-shape-content."
   []
-  (when (and wasm/context-initialized? (text-editor-is-active?))
+  (when (and wasm/context-initialized? (text-editor-has-focus?))
     (let [shape-id  (text-editor-get-active-shape-id)
           new-texts (text-editor-export-content)]
       (when (and shape-id new-texts)
@@ -301,7 +313,7 @@
 
 (defn apply-style-to-selection
   [attrs use-shape-fn set-shape-text-content-fn]
-  (when (and wasm/context-initialized? (text-editor-is-active?))
+  (when wasm/context-initialized?
     (let [shape-id (text-editor-get-active-shape-id)
           sel      (text-editor-get-selection)]
       (when (and shape-id sel)

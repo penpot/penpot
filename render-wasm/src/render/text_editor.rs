@@ -9,10 +9,6 @@ pub fn render_overlay(
     shape: &Shape,
     transform: &Matrix,
 ) {
-    if !editor_state.is_active {
-        return;
-    }
-
     let Type::Text(text_content) = &shape.shape_type else {
         return;
     };
@@ -24,7 +20,7 @@ pub fn render_overlay(
         render_selection(canvas, editor_state, text_content, shape);
     }
 
-    if editor_state.cursor_visible {
+    if editor_state.has_focus && editor_state.cursor_visible {
         render_cursor(canvas, editor_state, text_content, shape);
     }
 
