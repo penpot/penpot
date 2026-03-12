@@ -3262,10 +3262,6 @@ msgstr ""
 "Перерва на технічне обслуговування: ми закінчимо технічне обслуговування "
 "протягом 5 хвилин."
 
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "Нова версія доступна, будь ласка, оновіть сторінку"
-
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "Запрощення успішно надіслано"
