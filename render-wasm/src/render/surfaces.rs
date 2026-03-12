@@ -427,17 +427,23 @@ impl Surfaces {
                 let mut stroke_paint = paint.clone();
                 stroke_paint.set_stroke_width(s * 2.0);
                 canvas.draw_path(&path, &stroke_paint);
+            } else if let Some(eps) = inset.filter(|&e| e > 0.0) {
+                // Wrap fill + clear in a save_layer so the BlendMode::Clear
+                // only erases the current shape's fill, not other shapes
+                // already drawn on this surface (avoids white seams at
+                // intersections of shapes with inner strokes).
+                let layer_rec = skia::canvas::SaveLayerRec::default();
+                canvas.save_layer(&layer_rec);
+                canvas.draw_path(&path, paint);
+                let mut clear_paint = skia::Paint::default();
+                clear_paint.set_style(skia::PaintStyle::Stroke);
+                clear_paint.set_stroke_width(eps * 2.0);
+                clear_paint.set_blend_mode(skia::BlendMode::Clear);
+                clear_paint.set_anti_alias(paint.is_anti_alias());
+                canvas.draw_path(&path, &clear_paint);
+                canvas.restore();
             } else {
                 canvas.draw_path(&path, paint);
-                // Inset: avoid seam with inner strokes by clearing a thin border from the fill
-                if let Some(eps) = inset.filter(|&e| e > 0.0) {
-                    let mut clear_paint = skia::Paint::default();
-                    clear_paint.set_style(skia::PaintStyle::Stroke);
-                    clear_paint.set_stroke_width(eps * 2.0);
-                    clear_paint.set_blend_mode(skia::BlendMode::Clear);
-                    clear_paint.set_anti_alias(paint.is_anti_alias());
-                    canvas.draw_path(&path, &clear_paint);
-                }
             }
         }
     }
