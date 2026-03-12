@@ -204,40 +204,41 @@
 (defn format-inst
   ([v] (format-inst v :iso))
   ([v fmt]
-   (case fmt
-     (:iso :iso8601)
-     #?(:clj (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
-        :cljs (dfn-format-iso v))
+   (when (some? v)
+     (case fmt
+       (:iso :iso8601)
+       #?(:clj (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
+          :cljs (dfn-format-iso v))
 
-     :iso-date
-     #?(:clj (.format DateTimeFormatter/ISO_LOCAL_DATE
-                      ^ZonedDateTime (ZonedDateTime/ofInstant v (ZoneId/of "UTC")))
-        :cljs (dfn-format-iso v #js {:representation "date"}))
+       :iso-date
+       #?(:clj (.format DateTimeFormatter/ISO_LOCAL_DATE
+                        ^ZonedDateTime (ZonedDateTime/ofInstant v (ZoneId/of "UTC")))
+          :cljs (dfn-format-iso v #js {:representation "date"}))
 
-     (:rfc1123 :http)
-     #?(:clj (.format DateTimeFormatter/RFC_1123_DATE_TIME
-                      ^ZonedDateTime (ZonedDateTime/ofInstant v (ZoneId/of "UTC")))
-        :cljs (dfn-format v "EEE, dd LLL yyyy HH:mm:ss 'GMT'"))
+       (:rfc1123 :http)
+       #?(:clj (.format DateTimeFormatter/RFC_1123_DATE_TIME
+                        ^ZonedDateTime (ZonedDateTime/ofInstant v (ZoneId/of "UTC")))
+          :cljs (dfn-format v "EEE, dd LLL yyyy HH:mm:ss 'GMT'"))
 
-     #?@(:cljs [:time-24-simple
-                (dfn-format v "HH:mm")
+       #?@(:cljs [:time-24-simple
+                  (dfn-format v "HH:mm")
 
-                ;; DEPRECATED
-                :date-full
-                (dfn-format v "PPP")
+                  ;; DEPRECATED
+                  :date-full
+                  (dfn-format v "PPP")
 
-                :localized-date
-                (dfn-format v "PPP")
+                  :localized-date
+                  (dfn-format v "PPP")
 
-                :localized-time
-                (dfn-format v "p")
+                  :localized-time
+                  (dfn-format v "p")
 
-                :localized-date-time
-                (dfn-format v "PPP . p")
+                  :localized-date-time
+                  (dfn-format v "PPP . p")
 
-                (if (string? fmt)
-                  (dfn-format v fmt)
-                  (throw (js/Error. "unpexted format")))]))))
+                  (if (string? fmt)
+                    (dfn-format v fmt)
+                    (throw (js/Error. "unpexted format")))])))))
 
 #?(:cljs
    (def locales
