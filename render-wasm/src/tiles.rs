@@ -1,9 +1,9 @@
+use crate::error::{Error, Result};
 use crate::render::Surfaces;
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use skia_safe as skia;
 use std::collections::{HashMap, HashSet};
-
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Tile(pub i32, pub i32);
 
@@ -177,15 +177,26 @@ impl TileHashMap {
         self.index.get(&shape_id)
     }
 
-    pub fn add_shape_at(&mut self, tile: Tile, shape_id: Uuid) {
+    pub fn add_shape_at(&mut self, tile: Tile, shape_id: Uuid) -> Result<()> {
         self.grid.entry(tile).or_default();
         self.index.entry(shape_id).or_default();
 
-        let tile_set = self.grid.get_mut(&tile).unwrap();
+        let tile_set = self
+            .grid
+            .get_mut(&tile)
+            .ok_or(Error::CriticalError("Tile not found in grid".to_string()))?;
         tile_set.insert(shape_id);
 
-        let index_set = self.index.get_mut(&shape_id).unwrap();
+        let index_set = self
+            .index
+            .get_mut(&shape_id)
+            .ok_or(Error::CriticalError(format!(
+                "Shape ID {} not found in index",
+                shape_id
+            )))?;
         index_set.insert(tile);
+
+        Ok(())
     }
 
     pub fn invalidate(&mut self) {
