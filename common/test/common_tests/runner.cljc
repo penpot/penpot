@@ -39,6 +39,7 @@
    [common-tests.time-test]
    [common-tests.types.absorb-assets-test]
    [common-tests.types.components-test]
+   [common-tests.types.container-test]
    [common-tests.types.fill-test]
    [common-tests.types.modifiers-test]
    [common-tests.types.objects-map-test]
@@ -92,6 +93,7 @@
    'common-tests.time-test
    'common-tests.types.absorb-assets-test
    'common-tests.types.components-test
+   'common-tests.types.container-test
    'common-tests.types.fill-test
    'common-tests.types.modifiers-test
    'common-tests.types.objects-map-test
