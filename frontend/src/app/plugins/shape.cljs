@@ -31,7 +31,6 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
-   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
@@ -55,6 +54,7 @@
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
    [app.plugins.text :as text]
+   [app.plugins.tokens :refer [resolve-tokens translate-prop token-attr?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -1300,7 +1300,8 @@
             (fn [_]
               (let [tokens
                     (-> (u/locate-shape file-id page-id id)
-                        (get :applied-tokens))]
+                        (get :applied-tokens)
+                        (resolve-tokens))]
                 (reduce
                  (fn [acc [prop name]]
                    (obj/set! acc (json/write-camel-key prop) name))
@@ -1311,11 +1312,11 @@
            {:enumerable false
             :schema [:tuple
                      [:fn token-proxy?]
-                     [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
+                     [:maybe [:set [:and ::sm/keyword [:fn token-attr?]]]]]
             :fn (fn [token attrs]
                   (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
-                        kw-attrs (into #{} (map keyword attrs))]
-                    (if (some #(not (cto/token-attr? %)) kw-attrs)
+                        kw-attrs (into #{} (map (comp translate-prop keyword) attrs))]
+                    (if (some #(not (token-attr? %)) kw-attrs)
                       (u/display-not-valid :applyToken attrs)
                       (st/emit!
                        (dwta/toggle-token {:token token

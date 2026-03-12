@@ -5231,7 +5231,11 @@ export interface TokenTheme {
 /**
  * The properties that a BorderRadius token can be applied to.
  */
-type TokenBorderRadiusProps = 'r1' | 'r2' | 'r3' | 'r4';
+type TokenBorderRadiusProps =
+  | 'borderRadiusTopLeft'
+  | 'borderRadiusTopRight'
+  | 'borderRadiusBottomRight'
+  | 'borderRadiusBottomLeft';
 
 /**
  * The properties that a Shadow token can be applied to.
@@ -5307,16 +5311,16 @@ type TokenSpacingProps =
   | 'columnGap'
 
   // Spacing / Padding
-  | 'p1'
-  | 'p2'
-  | 'p3'
-  | 'p4'
+  | 'paddingLeft'
+  | 'paddingTop'
+  | 'paddingRight'
+  | 'paddingBottom'
 
   // Spacing / Margin
-  | 'm1'
-  | 'm2'
-  | 'm3'
-  | 'm4';
+  | 'marginLeft'
+  | 'marginTop'
+  | 'marginRight'
+  | 'marginBottom';
 
 /**
  * The properties that a BorderWidth token can be applied to.

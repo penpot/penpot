@@ -290,7 +290,7 @@
                                                                            :r4 "Bottom Left"
                                                                            :r3 "Bottom Right"}
                                                         :hint (tr "workspace.tokens.radius")
-                                                        :on-update-shape-all dwta/update-shape-radius-all
+                                                        :on-update-shape-all dwta/update-shape-radius
                                                         :on-update-shape update-shape-radius-for-corners})
         shadow (partial generic-attribute-actions #{:shadow} "Shadow")]
     {:border-radius border-radius
