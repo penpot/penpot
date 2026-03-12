@@ -4,6 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+
 @mixin textEllipsis {
   display: block;
   max-width: 99%;
@@ -19,4 +23,74 @@
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+/// Custom Scrollbar Mixin
+/// @param {Color} $thumb-color - Base thumb color
+/// @param {Color} $thumb-hover-color - Thumb color on hover
+/// @param {Length} $size - Scrollbar size (width/height)
+/// @param {Length} $radius - Thumb border radius
+/// @param {Length} $border - Inner transparent border size
+/// @param {Bool} $include-selection - Include ::selection styles
+/// @param {Bool} $include-placeholder - Include placeholder styles
+@mixin custom-scrollbar(
+  $thumb-color: #aab5ba4d,
+  $thumb-hover-color: #aab5bab3,
+  $size: $sz-12,
+  $radius: $br-8,
+  $border: $b-2,
+  $include-selection: true,
+  $include-placeholder: true
+) {
+  // Firefox
+  scrollbar-width: thin;
+  scrollbar-color: #{$thumb-color} transparent;
+
+  &:hover {
+    scrollbar-color: #{$thumb-hover-color} transparent;
+  }
+
+  // Webkit (legacy support)
+  &::-webkit-scrollbar {
+    background: transparent;
+    cursor: pointer;
+    width: $size;
+    height: $size;
+  }
+
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: $thumb-color;
+    background-clip: content-box;
+    border: $border solid transparent;
+    border-radius: $radius;
+
+    &:hover {
+      background-color: $thumb-hover-color;
+    }
+  }
+
+  @if $include-selection {
+    &::selection {
+      background: var(--color-accent-background-select);
+      color: var(--color-static-white);
+    }
+  }
+
+  @if $include-placeholder {
+    &::placeholder {
+      @include t.use-typography("body-small");
+      color: var(--color-foreground-secondary);
+    }
+
+    // Legacy webkit
+    &::-webkit-input-placeholder {
+      @include t.use-typography("body-small");
+      color: var(--color-foreground-secondary);
+    }
+  }
 }

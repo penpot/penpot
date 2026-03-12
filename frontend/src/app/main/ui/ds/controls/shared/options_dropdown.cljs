@@ -35,6 +35,8 @@
 (def ^:private schema:options-dropdown
   [:map
    [:ref {:optional true} fn?]
+   [:class {:optional true} :string]
+   [:wrapper-ref {:optional true} :any]
    [:on-click fn?]
    [:options [:vector schema:option]]
    [:selected {:optional true} :any]
@@ -60,6 +62,7 @@
      (case type
        :group
        [:li {:class (stl/css :group-option)
+             :role "presentation"
              :key (weak-key option)}
         [:> icon*
          {:icon-id i/arrow-down
@@ -72,7 +75,7 @@
        [:hr {:key (weak-key option) :class (stl/css :option-separator)}]
 
        :empty
-       [:li {:key (weak-key option) :class (stl/css :option-empty)}
+       [:li {:key (weak-key option) :class (stl/css :option-empty) :role "presentation"}
         (get option :label)]
 
        ;; Token option
@@ -83,6 +86,7 @@
                           :name name
                           :resolved (get option :resolved-value)
                           :ref ref
+                          :role "option"
                           :focused (= id focused)
                           :on-click on-click}]
 
@@ -94,6 +98,7 @@
                     :aria-label (get option :aria-label)
                     :icon (get option :icon)
                     :ref ref
+                    :role "option"
                     :focused (= id focused)
                     :dimmed (true? (:dimmed option))
                     :on-click on-click}]))))
@@ -101,15 +106,16 @@
 
 (mf/defc options-dropdown*
   {::mf/schema schema:options-dropdown}
-  [{:keys [ref on-click options selected focused empty-to-end align] :rest props}]
+  [{:keys [ref on-click options selected focused empty-to-end align wrapper-ref class] :rest props}]
   (let [align
         (d/nilv align :left)
 
         props
         (mf/spread-props props
-                         {:class (stl/css-case :option-list true
-                                               :left-align (= align :left)
-                                               :right-align (= align :right))
+                         {:class [class (stl/css-case :option-list true
+                                                      :left-align (= align :left)
+                                                      :right-align (= align :right))]
+                          :ref wrapper-ref
                           :tab-index "-1"
                           :role "listbox"})
 
