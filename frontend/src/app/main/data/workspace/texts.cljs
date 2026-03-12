@@ -784,14 +784,15 @@
            (when (features/active-feature? state "render-wasm/v1")
              (rx/concat
               ;; Apply style to selected spans and sync content
-              (when (wasm.api/text-editor-is-active?)
-                (let [span-attrs (select-keys attrs txt/text-node-attrs)]
-                  (when (not (empty? span-attrs))
-                    (let [result (wasm.api/apply-style-to-selection span-attrs)]
-                      (when result
-                        (rx/of (v2-update-text-shape-content
-                                (:shape-id result) (:content result)
-                                :update-name? true)))))))
+              (let [has-selection? (wasm.api/text-editor-has-selection?)]
+                (when has-selection?
+                  (let [span-attrs (select-keys attrs txt/text-node-attrs)]
+                    (when (not (empty? span-attrs))
+                      (let [result (wasm.api/apply-style-to-selection span-attrs)]
+                        (when result
+                          (rx/of (v2-update-text-shape-content
+                                  (:shape-id result) (:content result)
+                                  :update-name? true))))))))
               ;; Resize (with delay for font-id changes)
               (cond->> (rx/of (dwwt/resize-wasm-text id))
                 (contains? attrs :font-id)

@@ -42,7 +42,7 @@ pub extern "C" fn text_editor_apply_theme(
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_start(a: u32, b: u32, c: u32, d: u32) -> bool {
+pub extern "C" fn text_editor_focus(a: u32, b: u32, c: u32, d: u32) -> bool {
     with_state_mut!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
 
@@ -54,35 +54,48 @@ pub extern "C" fn text_editor_start(a: u32, b: u32, c: u32, d: u32) -> bool {
             return false;
         }
 
-        state.text_editor_state.start(shape_id);
+        state.text_editor_state.focus(shape_id);
         true
     })
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_stop() -> bool {
+pub extern "C" fn text_editor_blur() -> bool {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return false;
         }
-        state.text_editor_state.stop();
+        state.text_editor_state.blur();
         true
     })
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_is_active() -> bool {
-    with_state!(state, { state.text_editor_state.is_active })
+pub extern "C" fn text_editor_dispose() -> bool {
+    with_state_mut!(state, {
+        state.text_editor_state.dispose();
+        true
+    })
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_is_active_with_id(a: u32, b: u32, c: u32, d: u32) -> bool {
+pub extern "C" fn text_editor_has_selection() -> bool {
+    with_state!(state, { state.text_editor_state.selection.is_selection() })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_has_focus() -> bool {
+    with_state!(state, { state.text_editor_state.has_focus })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_has_focus_with_id(a: u32, b: u32, c: u32, d: u32) -> bool {
     with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
         let Some(active_shape_id) = state.text_editor_state.active_shape_id else {
             return false;
         };
-        state.text_editor_state.is_active && active_shape_id == shape_id
+        state.text_editor_state.has_focus && active_shape_id == shape_id
     })
 }
 
@@ -104,7 +117,7 @@ pub extern "C" fn text_editor_get_active_shape_id(buffer_ptr: *mut u32) {
 #[no_mangle]
 pub extern "C" fn text_editor_select_all() -> bool {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return false;
         }
 
@@ -126,7 +139,7 @@ pub extern "C" fn text_editor_select_all() -> bool {
 #[no_mangle]
 pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -163,7 +176,7 @@ pub extern "C" fn text_editor_poll_event() -> u8 {
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
@@ -186,7 +199,7 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
         let point = Point::new(x, y);
@@ -214,7 +227,7 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
         let point = Point::new(x, y);
@@ -242,7 +255,7 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -265,7 +278,7 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -433,7 +446,7 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
     };
 
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return Ok(());
         }
 
@@ -486,7 +499,7 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
 #[no_mangle]
 pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -539,7 +552,7 @@ pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
 #[no_mangle]
 pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -592,7 +605,7 @@ pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
 #[no_mangle]
 pub extern "C" fn text_editor_insert_paragraph() {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -650,7 +663,7 @@ pub extern "C" fn text_editor_move_cursor(
     extend_selection: bool,
 ) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -733,7 +746,7 @@ pub extern "C" fn text_editor_move_cursor(
 #[no_mangle]
 pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active || !state.text_editor_state.cursor_visible {
+        if !state.text_editor_state.has_focus || !state.text_editor_state.cursor_visible {
             return std::ptr::null_mut();
         }
 
@@ -767,7 +780,7 @@ pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
 #[no_mangle]
 pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return std::ptr::null_mut();
         }
 
@@ -816,10 +829,6 @@ pub extern "C" fn text_editor_update_blink(timestamp_ms: f64) {
 #[no_mangle]
 pub extern "C" fn text_editor_render_overlay() {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
-            return;
-        }
-
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
@@ -864,7 +873,7 @@ pub extern "C" fn text_editor_render_overlay() {
 #[no_mangle]
 pub extern "C" fn text_editor_export_content() -> *mut u8 {
     with_state!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return std::ptr::null_mut();
         }
 
@@ -907,7 +916,7 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
 pub extern "C" fn text_editor_export_selection() -> *mut u8 {
     use std::ptr;
     with_state!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return ptr::null_mut();
         }
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
@@ -982,10 +991,10 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> u32 {
+pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
     with_state!(state, {
-        if !state.text_editor_state.is_active {
-            return 0;
+        if !state.text_editor_state.selection.is_selection() {
+            return false;
         }
         let sel = &state.text_editor_state.selection;
         unsafe {
@@ -994,7 +1003,7 @@ pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> u32 {
             *buffer_ptr.add(2) = sel.focus.paragraph as u32;
             *buffer_ptr.add(3) = sel.focus.offset as u32;
         }
-        1
+        true
     })
 }
 
