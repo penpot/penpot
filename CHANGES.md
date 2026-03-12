@@ -36,6 +36,7 @@
 - Fix error activating a set with invalid shadow token applied [Taiga #13528](https://tree.taiga.io/project/penpot/issue/13528)
 - Fix component "broken" after variant switch [Taiga #12984](https://tree.taiga.io/project/penpot/issue/12984)
 - Fix incorrect query for file versions [Github #8463](https://github.com/penpot/penpot/pull/8463)
+- Fix warning when clicking on number token pills [Taiga #13661](https://tree.taiga.io/project/penpot/issue/13661)
 
 ## 2.13.3
 
