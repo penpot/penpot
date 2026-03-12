@@ -32,6 +32,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
@@ -46,12 +47,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(def ^:private close-icon
-  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
-
-(def ^:private add-icon
-  (deprecated-icon/icon-xref :add (stl/css :add-icon)))
 
 (defn- get-library-summary
   "Given a library data return a summary representation of this library"
@@ -171,12 +166,12 @@
     [:div {:class (stl/css :sample-library-item)
            :key (dm/str id)}
      [:div {:class (stl/css :sample-library-item-name)} (:name library)]
-     [:input {:class (stl/css-case :sample-library-button true
-                                   :sample-library-add (nil? importing?)
-                                   :sample-library-adding (some? importing?))
-              :type "button"
-              :value (if (= importing? id) (tr "labels.adding") (tr "labels.add"))
-              :on-click import-library}]]))
+
+     [:> button* {:variant "secondary"
+                  :disabled (some? importing?)
+                  :on-click import-library
+                  :class (stl/css :sample-library-button)}
+      (if (= importing? id) (tr "labels.adding") (tr "labels.add"))]]))
 
 (defn- empty-library?
   "Check if currentt library summary has elements or not"
@@ -341,31 +336,31 @@
 
        [:div {:class (stl/css :section-list-item)}
         [:div {:class (stl/css :item-content)}
-         [:div {:class (stl/css :item-name)} (tr "workspace.libraries.file-library")]
+         [:div {:class (stl/css :item-title)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents)}
           [:> library-description* {:summary summary}]]]
 
         (if ^boolean is-shared
-          [:input {:class (stl/css :item-unpublish)
-                   :type "button"
-                   :value (tr "common.unpublish")
-                   :on-click unpublish}]
-          [:input {:class (stl/css :item-publish)
-                   :type "button"
-                   :value (tr "common.publish")
-                   :on-click publish}])]
+          [:> button* {:variant "secondary"
+                       :type "button"
+                       :on-click unpublish}
+           (tr "common.unpublish")]
+
+          [:> button* {:variant "primary"
+                       :type "button"
+                       :on-click publish}
+           (tr "common.publish")])]
 
        (for [{:keys [id name data connected-to connected-to-names] :as library} linked-libraries]
          (let [disabled?   (some #(contains? linked-libraries-ids %) connected-to)
                has-tokens? (and (has-tokens? library)
                                 (contains? cf/flags :token-import-from-library))]
-           [:div {:class (if has-tokens?
-                           (stl/css :section-list-item-double-icon)
-                           (stl/css :section-list-item))
+           [:div {:class (stl/css :section-list-item)
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css :item-name)} name]
+             [:div {:class (stl/css-case :item-name true
+                                         :item-name-short has-tokens?)} name]
              [:ul {:class (stl/css :item-contents)}
               (let [summary (get-library-summary data)]
                 [:*
@@ -375,23 +370,23 @@
                     [:span "(" (tr "workspace.libraries.connected-to") " "]
                     [:span {:class (stl/css :connected-to-values)} (str/join ", " connected-to-names)]
                     [:span ")"]])])]]
+            [:div {:class (stl/css :library-actions)}
+             (when ^boolean has-tokens?
+               [:> icon-button*
+                {:type "button"
+                 :aria-label (tr "workspace.tokens.import-tokens")
+                 :icon i/import-export
+                 :data-library-id (dm/str id)
+                 :variant "secondary"
+                 :on-click import-tokens}])
 
-            (when ^boolean has-tokens?
-              [:> icon-button*
-               {:type "button"
-                :aria-label (tr "workspace.tokens.import-tokens")
-                :icon i/import-export
-                :data-library-id (dm/str id)
-                :variant "secondary"
-                :on-click import-tokens}])
-
-            [:> icon-button* {:type "button"
-                              :aria-label (tr "workspace.libraries.unlink-library-btn")
-                              :icon i/detach
-                              :data-library-id (dm/str id)
-                              :variant "secondary"
-                              :disabled disabled?
-                              :on-click unlink-library}]]))]]
+             [:> icon-button* {:type "button"
+                               :aria-label (tr "workspace.libraries.unlink-library-btn")
+                               :icon i/detach
+                               :data-library-id (dm/str id)
+                               :variant "secondary"
+                               :disabled disabled?
+                               :on-click unlink-library}]]]))]]
 
      [:div {:class (stl/css :shared-section)}
       [:> title-bar* {:collapsable false
@@ -415,11 +410,12 @@
                                 (adapt-backend-summary))]
                 [:> library-description* {:summary summary}])]]
 
-            [:button {:class (stl/css :item-button-shared)
-                      :data-library-id (dm/str id)
-                      :title (tr "workspace.libraries.shared-library-btn")
-                      :on-click link-library}
-             add-icon]])]
+            [:> icon-button* {:class (stl/css :item-button-shared)
+                              :variant "secondary"
+                              :data-library-id (dm/str id)
+                              :icon "add"
+                              :aria-label (tr "workspace.libraries.shared-library-btn")
+                              :on-click link-library}]])]
 
         (when (empty? shared-libraries)
           [:div {:class (stl/css :section-list-empty)}
@@ -541,17 +537,17 @@
             [:div {:class (stl/css :section-list-item)
                    :key (dm/str id)}
              [:div {:class (stl/css :item-content)}
-              [:div {:class (stl/css :item-name)} name]
+              [:div {:class (stl/css :item-name-long)} name]
               [:ul {:class (stl/css :item-contents)} (describe-library
                                                       (count components)
                                                       0
                                                       (count colors)
                                                       (count typographies))]]
-             [:button {:type "button"
-                       :class (stl/css :item-update)
-                       :disabled updating?
-                       :data-library-id (dm/str id)
-                       :on-click update}
+             [:> button* {:class (stl/css :item-update)
+                          :disabled updating?
+                          :variant "primary"
+                          :data-library-id (dm/str id)
+                          :on-click update}
               (tr "workspace.libraries.update")]
 
              [:div {:class (stl/css :libraries-updates)}
@@ -685,11 +681,11 @@
            :on-click close-dialog-outside
            :data-testid "libraries-modal"}
      [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn)
-                :on-click close-dialog
-                :aria-label (tr "labels.close")
-                :data-testid "close-libraries"}
-       close-icon]
+      [:> icon-button* {:class (stl/css :close-btn)
+                        :on-click close-dialog
+                        :aria-label (tr "labels.close")
+                        :variant "ghost"
+                        :icon i/close}]
       [:div {:class (stl/css :modal-title)}
        (tr "workspace.libraries.libraries")]
 
@@ -761,5 +757,6 @@
           "created in your files previously to this new version."]]]
 
        [:div {:class (stl/css :info-bottom)}
-        [:button {:class (stl/css :primary-button)
-                  :on-click handle-gotit-click} "I GOT IT"]]]]]))
+        [:> button* {:class (stl/css :primary-button)
+                     :variant "primary"
+                     :on-click handle-gotit-click} "I GOT IT"]]]]]))

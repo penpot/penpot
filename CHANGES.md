@@ -35,6 +35,8 @@
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix collapsible sidebar property titles not toggling on click [Github #5168](https://github.com/penpot/penpot/issues/5168)
+- Fix `penpot.openPage()` plugin API not navigating in the same tab; change default to same-tab navigation and allow passing a UUID string instead of a Page object [Github #8520](https://github.com/penpot/penpot/issues/8520)
+- Fix scroll on library modal [Taiga #13639](https://tree.taiga.io/project/penpot/issue/13639)
 
 
 ## 2.14.0 (Unreleased)
