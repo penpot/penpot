@@ -114,8 +114,7 @@
                   :class (stl/css :theme-row)}
              [:div {:class (stl/css :theme-switch-row)}
 
-              [:> switch* {:id name
-                           :label name
+              [:> switch* {:label name
                            :on-change on-switch-theme
                            :default-checked selected?}]]
 
