@@ -123,10 +123,15 @@
                                 (/ current-time (inc count)))
                      count (inc count)]
                  (swap! network-averages assoc (:path uri) {:count count :average average})))))
+
        (fn []
          (vreset! unsubscribed? true)
          (when @abortable?
-           (.abort ^js controller)))))))
+           ;; Provide an explicit reason so that the resulting AbortError carries
+           ;; a meaningful message instead of the browser default
+           ;; "signal is aborted without reason".
+           (.abort ^js controller (ex-info (str "fetch to '" uri "' is aborted")
+                                           {:uri uri}))))))))
 
 (defn response->map
   [response]

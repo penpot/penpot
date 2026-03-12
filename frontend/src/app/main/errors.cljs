@@ -343,7 +343,12 @@
                   (= message "Possible side-effect in debug-evaluate")
                   (= message "Unexpected end of input")
                   (str/starts-with? message "invalid props on component")
-                  (str/starts-with? message "Unexpected token "))))
+                  (str/starts-with? message "Unexpected token ")
+                  ;; Abort errors are expected when an in-flight HTTP request is
+                  ;; cancelled (e.g. via RxJS unsubscription / take-until).  They
+                  ;; are handled gracefully inside app.util.http/fetch and must
+                  ;; NOT be surfaced as application errors.
+                  (= (.-name ^js cause) "AbortError"))))
 
           (on-unhandled-error [event]
             (.preventDefault ^js event)
