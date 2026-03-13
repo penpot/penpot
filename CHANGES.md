@@ -40,6 +40,7 @@
 - Fix 'not ISeqable' error when entering float values in layout item and opacity inputs [Github #8569](https://github.com/penpot/penpot/pull/8569)
 - Fix crash in select component when options vector is empty [Github #8578](https://github.com/penpot/penpot/pull/8578)
 - Fix scroll on colorpicker [Taiga #13623](https://tree.taiga.io/project/penpot/issue/13623)
+- Fix crash when pasting non-map transit clipboard data [Github #8580](https://github.com/penpot/penpot/pull/8580)
 
 ## 2.13.3
 
