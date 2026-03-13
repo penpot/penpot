@@ -49,14 +49,14 @@
 
 ;; (note that dwsh/update-shapes function returns an event)
 
-(defn update-shape-radius-all
-  ([value shape-ids attributes] (update-shape-radius-all value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+(defn update-shape-radius
+  ([value shape-ids attributes] (update-shape-radius value shape-ids attributes nil))
+  ([value shape-ids attributes page-id] ; The attributes param is needed to have the same arity that other update functions
    (when (number? value)
      (let [value (max 0 value)]
        (dwsh/update-shapes shape-ids
                            (fn [shape]
-                             (ctsr/set-radius-to-all-corners shape value))
+                             (ctsr/set-radius-for-corners shape attributes value))
                            {:reg-objects? true
                             :ignore-touched true
                             :page-id page-id
@@ -531,7 +531,7 @@
 
     (some attributes #{:r1 :r2 :r3 :r4})
     (conj #(if (= attributes #{:r1 :r2 :r3 :r4})
-             (update-shape-radius-all value shape-ids attributes page-id)
+             (update-shape-radius value shape-ids attributes page-id)
              (update-shape-radius-for-corners
               value shape-ids
               (set (filter attributes #{:r1 :r2 :r3 :r4}))
@@ -862,7 +862,7 @@
    :border-radius
    {:title "Border Radius"
     :attributes ctt/border-radius-keys
-    :on-update-shape update-shape-radius-all
+    :on-update-shape update-shape-radius
     :modal {:key :tokens/border-radius
             :fields [{:label "Border Radius"
                       :key :border-radius}]}}
