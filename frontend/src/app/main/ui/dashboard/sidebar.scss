@@ -180,7 +180,8 @@
 }
 
 .org-dropdown-item {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
+
   display: grid;
   grid-template-columns: var(--sp-xxxl) 1fr auto;
   gap: var(--sp-s);
@@ -529,14 +530,16 @@
 }
 
 .add-org-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   width: var(--sp-l);
   height: var(--sp-l);
   stroke: var(--sidebar-action-icon-color);
 }
 
 .arrow-up-right-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   width: var(--sp-m);
   height: var(--sp-m);
   stroke: var(--sidebar-action-icon-color);
@@ -639,6 +642,7 @@
 
 .current-org {
   @include deprecated.buttonStyle;
+
   display: grid;
   align-items: center;
   grid-template-columns: 1fr auto;
