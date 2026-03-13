@@ -56,13 +56,13 @@
   [mcp-enabled? mcp-connected?]
   (if mcp-enabled?
     (if mcp-connected?
-      (st/emit! (ntf/hide))
-      (st/emit! (ntf/dialog :content (tr "notifications.mcp.active-tab-switching.text")
-                            :cancel {:label (tr "notifications.mcp.active-tab-switching.dismiss")
-                                     :callback #(st/emit! (ntf/hide))}
-                            :accept {:label (tr "notifications.mcp.active-tab-switching.switch")
-                                     :callback #(st/emit! (connect-mcp))})))
-    (st/emit! (ntf/hide))))
+      (rx/of (ntf/hide))
+      (rx/of (ntf/dialog :content (tr "notifications.mcp.active-tab-switching.text")
+                         :cancel {:label (tr "labels.dismiss")
+                                  :callback #(st/emit! (ntf/hide))}
+                         :accept {:label (tr "labels.switch")
+                                  :callback #(st/emit! (connect-mcp))})))
+    (rx/of (ntf/hide))))
 
 (defn update-mcp-status
   [value]
@@ -73,12 +73,13 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [mcp-connected?  (-> state :workspace-local :mcp :connected)]
-        (manage-notification value mcp-connected?))
-      (case value
-        true  (rx/of (ptk/data-event ::connect))
-        false (rx/of (ptk/data-event ::disconnect))
-        nil))))
+      (rx/merge
+       (let [mcp-connected?  (-> state :workspace-local :mcp :connected)]
+         (manage-notification value mcp-connected?))
+       (case value
+         true  (rx/of (ptk/data-event ::connect))
+         false (rx/of (ptk/data-event ::disconnect))
+         nil)))))
 
 (defn update-mcp-connection
   [value]

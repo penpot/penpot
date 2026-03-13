@@ -2514,6 +2514,9 @@ msgstr "Director"
 msgid "labels.discard"
 msgstr "Discard"
 
+msgid "labels.dismiss"
+msgstr "Dismiss"
+
 #: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:409
 msgid "labels.download"
 msgstr "Download %s"
@@ -3832,12 +3835,6 @@ msgstr "Invitation link copied"
 
 msgid "notifications.mcp.active-tab-switching.text"
 msgstr "MCP is active in another tab. Switch here?"
-
-msgid "notifications.mcp.active-tab-switching.switch"
-msgstr "Switch"
-
-msgid "notifications.mcp.active-tab-switching.dismiss"
-msgstr "Dismiss"
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
