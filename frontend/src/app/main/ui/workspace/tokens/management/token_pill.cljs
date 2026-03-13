@@ -191,7 +191,7 @@
         full-applied?
         (if has-selected?
           (applied-all-attributes? token selected-shapes attributes)
-          false)
+          true)
 
         applied?
         (if has-selected?
@@ -290,11 +290,6 @@
                       :token-pill-invalid-applied-viewer (and is-viewer?
                                                               (and full-applied? errors?)))
               :type "button"
-              :role "checkbox"
-              :aria-checked (cond
-                              full-applied? "true"
-                              half-applied? "mixed"
-                              :else "false")
               :on-focus on-hover
 
               :on-click on-click

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import {
   setupTokensFileRender,
@@ -8,9 +9,7 @@ import {
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
-  await WasmWorkspacePage.mockConfigFlags(page, [
-    "enable-feature-design-tokens-v1",
-  ]);
+  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 test.describe("Tokens: Apply token", () => {
@@ -31,7 +30,7 @@ test.describe("Tokens: Apply token", () => {
     unfoldTokenTree(tokensSidebar, "color", "colors.black");
 
     await tokensSidebar
-      .getByRole("checkbox", { name: "black" })
+      .getByRole("button", { name: "black" })
       .click({ button: "right" });
     await tokenContextMenuForToken.getByText("Fill").click();
 
@@ -63,12 +62,12 @@ test.describe("Tokens: Apply token", () => {
     ).toBeVisible();
     await tokensSidebar.getByRole("button", { name: "borderRadius" }).click();
     await expect(
-      tokensSidebar.getByRole("checkbox", { name: "borderRadius.sm" }),
+      tokensSidebar.getByRole("button", { name: "borderRadius.sm" }),
     ).toBeVisible();
 
     // Apply border radius token from token panels
     await tokensSidebar
-      .getByRole("checkbox", { name: "borderRadius.sm" })
+      .getByRole("button", { name: "borderRadius.sm" })
       .click();
 
     // Check if border radius sections is visible on right sidebar
@@ -107,7 +106,7 @@ test.describe("Tokens: Apply token", () => {
   test("User applies opacity token to a shape from sidebar", async ({
     page,
   }) => {
-    const { workspacePage, tokensSidebar } =
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -127,11 +126,11 @@ test.describe("Tokens: Apply token", () => {
       .getByRole("button", { name: "opacity", exact: true })
       .click();
     await expect(
-      tokensSidebar.getByRole("checkbox", { name: "opacity.high" }),
+      tokensSidebar.getByRole("button", { name: "opacity.high" }),
     ).toBeVisible();
 
     // Apply opacity token from token panels
-    await tokensSidebar.getByRole("checkbox", { name: "opacity.high" }).click();
+    await tokensSidebar.getByRole("button", { name: "opacity.high" }).click();
 
     // Check if opacity sections is visible on right sidebar
     const layerMenuSection = page.getByRole("region", {
@@ -171,7 +170,8 @@ test.describe("Tokens: Apply token", () => {
   });
 
   test("User applies typography token to a text shape", async ({ page }) => {
-    const { workspacePage, tokensSidebar } = await setupTypographyTokensFileRender(page);
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTypographyTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -188,7 +188,7 @@ test.describe("Tokens: Apply token", () => {
       .filter({ hasText: "Typography" })
       .click();
 
-    await tokensSidebar.getByRole("checkbox", { name: "Full" }).click();
+    await tokensSidebar.getByRole("button", { name: "Full" }).click();
 
     const fontSizeInput = workspacePage.rightSidebar.getByRole("textbox", {
       name: "Font Size",
@@ -204,6 +204,7 @@ test.describe("Tokens: Apply token", () => {
       tokensUpdateCreateModal,
       tokensSidebar,
       workspacePage,
+      tokenContextMenuForToken,
     } = await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -467,7 +468,7 @@ test.describe("Tokens: Apply token", () => {
       unfoldTokenTree(tokensSidebar, "shadow", "primary");
 
       // Verify token appears in sidebar
-      const shadowToken = tokensSidebar.getByRole("checkbox", {
+      const shadowToken = tokensSidebar.getByRole("button", {
         name: "primary",
       });
       await expect(shadowToken).toBeEnabled();
@@ -489,7 +490,8 @@ test.describe("Tokens: Apply token", () => {
   test("User applies dimension token to a shape on width and height", async ({
     page,
   }) => {
-    const { workspacePage, tokensSidebar } = await setupTokensFileRender(page);
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page);
 
     // Unfolds dimensions on token panel
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -502,7 +504,7 @@ test.describe("Tokens: Apply token", () => {
     unfoldTokenTree(tokensSidebar, "dimensions", "dimension.dimension.sm");
 
     // Apply token to width and height token from token panel
-    await tokensSidebar.getByRole("checkbox", { name: "dimension.sm" }).click();
+    await tokensSidebar.getByRole("button", { name: "dimension.sm" }).click();
 
     // Check if measures sections is visible on right sidebar
     const measuresSection = page.getByRole("region", {
@@ -556,7 +558,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Apply token to width and height token from token panel
     await tokensSidebar
-      .getByRole("checkbox", { name: "dimension.sm" })
+      .getByRole("button", { name: "dimension.sm" })
       .click({ button: "right" });
     await tokenContextMenuForToken.getByText("AxisX").click();
 
@@ -612,7 +614,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Apply token to width and height token from token panel
     await tokensSidebar
-      .getByRole("checkbox", { name: "dimension.sm" })
+      .getByRole("button", { name: "dimension.sm" })
       .click({ button: "right" });
     await tokenContextMenuForToken.getByText("Y").click();
 
@@ -668,7 +670,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Apply token to width and height token from token panel
     await tokensSidebar
-      .getByRole("checkbox", { name: "dimension.xs" })
+      .getByRole("button", { name: "dimension.xs" })
       .click({ button: "right" });
     await tokenContextMenuForToken.getByText("Border radius").hover();
     await tokenContextMenuForToken.getByText("RadiusAll").click();
@@ -730,9 +732,9 @@ test.describe("Tokens: Apply token", () => {
     await page.getByRole("button", { name: "Stroke Width 2" }).click();
     const tokensSidebar = workspace.tokensSidebar;
     await expect(
-      tokensSidebar.getByRole("checkbox", { name: "width-big" }),
+      tokensSidebar.getByRole("button", { name: "width-big" }),
     ).toBeVisible();
-    await tokensSidebar.getByRole("checkbox", { name: "width-big" }).click();
+    await tokensSidebar.getByRole("button", { name: "width-big" }).click();
 
     // Check if token pill is visible on right sidebar
     const strokeSectionSidebar = rightSidebar.getByRole("region", {
@@ -741,17 +743,17 @@ test.describe("Tokens: Apply token", () => {
     await expect(strokeSectionSidebar).toBeVisible();
     const firstStrokeRow = strokeSectionSidebar.getByLabel("stroke-row-0");
     await expect(firstStrokeRow).toBeVisible();
-    const strokeWidthPill = firstStrokeRow.getByRole("button", {
+    const StrokeWidthPill = firstStrokeRow.getByRole("button", {
       name: "width-big",
     });
-    await expect(strokeWidthPill).toBeVisible();
+    await expect(StrokeWidthPill).toBeVisible();
 
     // Detach token from right sidebar and apply another from dropdown
     const detachButton = firstStrokeRow.getByRole("button", {
       name: "Detach token",
     });
     await detachButton.click();
-    await expect(strokeWidthPill).not.toBeVisible();
+    await expect(StrokeWidthPill).not.toBeVisible();
 
     const tokenDropdown = firstStrokeRow.getByRole("button", {
       name: "Open token list",
@@ -763,10 +765,10 @@ test.describe("Tokens: Apply token", () => {
     });
     await expect(widthOptionSmall).toBeVisible();
     await widthOptionSmall.click();
-    const strokeWidthPillSmall = firstStrokeRow.getByRole("button", {
+    const StrokeWidthPillSmall = firstStrokeRow.getByRole("button", {
       name: "width-small",
     });
-    await expect(strokeWidthPillSmall).toBeVisible();
+    await expect(StrokeWidthPillSmall).toBeVisible();
   });
 
   test("User applies margin token to a shape", async ({ page }) => {
@@ -800,10 +802,10 @@ test.describe("Tokens: Apply token", () => {
     await page.getByRole("button", { name: "dim", exact: true }).click();
     const tokensSidebar = workspace.tokensSidebar;
     await expect(
-      tokensSidebar.getByRole("checkbox", { name: "dim.md" }),
+      tokensSidebar.getByRole("button", { name: "dim.md" }),
     ).toBeVisible();
     await tokensSidebar
-      .getByRole("checkbox", { name: "dim.md" })
+      .getByRole("button", { name: "dim.md" })
       .click({ button: "right" });
     await page
       .getByTestId("tokens-context-menu-for-token")
@@ -856,7 +858,8 @@ test.describe("Tokens: Detach token", () => {
   test("User applies border-radius token to a shape from sidebar", async ({
     page,
   }) => {
-    const { workspacePage, tokensSidebar } = await setupTokensFileRender(page);
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -873,12 +876,12 @@ test.describe("Tokens: Detach token", () => {
     ).toBeVisible();
     await tokensSidebar.getByRole("button", { name: "borderRadius" }).click();
     await expect(
-      tokensSidebar.getByRole("checkbox", { name: "borderRadius.sm" }),
+      tokensSidebar.getByRole("button", { name: "borderRadius.sm" }),
     ).toBeVisible();
 
     // Apply border radius token from token panels
     await tokensSidebar
-      .getByRole("checkbox", { name: "borderRadius.sm" })
+      .getByRole("button", { name: "borderRadius.sm" })
       .click();
 
     // Check if border radius sections is visible on right sidebar
@@ -896,7 +899,7 @@ test.describe("Tokens: Detach token", () => {
 
     // Rename token
     await tokensSidebar
-      .getByRole("checkbox", { name: "borderRadius.sm" })
+      .getByRole("button", { name: "borderRadius.sm" })
       .click({ button: "right" });
     await expect(page.getByText("Edit token")).toBeVisible();
     await page.getByText("Edit token").click();
