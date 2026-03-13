@@ -24,7 +24,7 @@
   min-inline-size: px2rem(1021);
   padding: px2rem(80);
 
-  @media (max-width: 1024px) {
+  @media (width <= 1024px) {
     min-inline-size: px2rem(712);
     padding: var(--sp-xxxl);
   }

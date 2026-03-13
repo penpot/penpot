@@ -21,11 +21,7 @@
   inline-size: 100%;
   border: deprecated.$s-2 solid var(--colorpicker-details-color);
   border-radius: deprecated.$br-6;
-  background: linear-gradient(
-    var(--gradient-direction),
-    rgb(var(--color), 0) 0%,
-    rgb(var(--color), 1) 100%
-  );
+  background: linear-gradient(var(--gradient-direction), rgb(var(--color), 0) 0%, rgb(var(--color), 1) 100%);
   cursor: pointer;
 
   &.vertical {
