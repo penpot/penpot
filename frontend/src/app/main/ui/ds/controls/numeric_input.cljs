@@ -678,6 +678,7 @@
                               :on-blur on-blur
                               :class inner-class
                               :property property
+                              :is-open is-open
                               :slot-start (when (or icon text-icon)
                                             (mf/html
                                              (cond
