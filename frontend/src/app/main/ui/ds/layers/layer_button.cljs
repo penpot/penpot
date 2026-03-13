@@ -28,7 +28,7 @@
   (let [button-props (mf/spread-props props
                                       {:class [class (stl/css-case :layer-button true
                                                                    :layer-button--expandable is-expandable
-                                                                   :layer-button--expanded expanded)]
+                                                                   :layer-button-expanded expanded)]
                                        :type "button"
                                        :on-click on-toggle-expand
                                        :on-context-menu on-context-menu})]

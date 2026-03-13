@@ -11,7 +11,7 @@
 
   padding: var(--sp-s);
   color: var(--title-foreground-color);
-  word-break: break-word;
+  overflow-wrap: break-word;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;

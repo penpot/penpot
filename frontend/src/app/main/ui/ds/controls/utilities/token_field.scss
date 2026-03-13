@@ -65,7 +65,7 @@
   --pill-fg-color: var(--color-token-foreground);
 
   @include t.use-typography("code-font");
-  @include textEllipsis;
+  @include text-ellipsis;
 
   display: block;
   block-size: var(--sp-xxl);

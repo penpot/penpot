@@ -26,14 +26,14 @@
 }
 
 .variant-row {
-  @extend .attr-row;
+  @extend %attr-row;
 
   block-size: fit-content;
   min-block-size: $sz-36;
 }
 
 .button-children {
-  @extend .copy-button-children;
+  @extend %copy-button-children;
 
-  word-break: break-word;
+  overflow-wrap: break-word;
 }

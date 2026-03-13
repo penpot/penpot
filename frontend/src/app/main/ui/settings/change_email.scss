@@ -49,13 +49,13 @@
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 
   button {
-    @extend .modal-accept-btn;
+    @extend %modal-accept-btn;
   }
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }

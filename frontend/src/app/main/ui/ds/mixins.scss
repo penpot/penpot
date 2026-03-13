@@ -8,7 +8,7 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 
-@mixin textEllipsis {
+@mixin text-ellipsis {
   display: block;
   max-width: 99%;
   overflow: hidden;
@@ -16,7 +16,7 @@
   white-space: nowrap;
 }
 
-@mixin twoLineTextEllipsis {
+@mixin two-line-text-ellipsis {
   max-width: 99%;
   overflow: hidden;
   text-overflow: ellipsis;

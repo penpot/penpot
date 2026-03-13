@@ -18,7 +18,15 @@ export default {
     "scss/comment-no-empty": false,
     "scss/at-rule-no-unknown": true,
     "scss/load-no-partial-leading-underscore": false, // TODO: should be changed to true to follow scss conventions
-    // "selector-pseudo-element-no-unknown": true,
+    "selector-pseudo-class-no-unknown": [
+      true,
+      { ignorePseudoClasses: ["global"] }, // TODO: Avoid global selectore usage and remove this exception
+    ],
+    // This allows using the characters - or _ as a prefix and is ISO compliant with the Sass specification.
+    "scss/dollar-variable-pattern": "^[-_]?([a-z][a-z0-9]*)(-[a-z0-9]+)*$",
+    // This allows using the characters - or _ as a prefix and is ISO compliant with the Sass specification.
+    "scss/at-mixin-pattern": "^[-_]?([a-z][a-z0-9]*)(-[a-z0-9]+)*$",
+
     // // Using quotes
     // "font-family-name-quotes": "always-unless-keyword",
     // "function-url-quotes": "always",

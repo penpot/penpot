@@ -56,7 +56,7 @@
   padding-left: var(--sp-xxl);
 
   > .family {
-    @include twoLineTextEllipsis;
+    @include two-line-text-ellipsis;
 
     min-width: $sz-200;
     width: $sz-200;
@@ -76,7 +76,6 @@
     @include t.use-typography("body-medium");
 
     background-color: var(--color-background-tertiary);
-    border-color: transparent;
     border-radius: $br-8;
     border: $b-1 solid transparent;
     color: var(--color-foreground-primary);
@@ -111,7 +110,7 @@
 
   input {
     @include t.use-typography("body-medium");
-    @include textEllipsis;
+    @include text-ellipsis;
 
     border: $b-1 solid transparent;
     margin: 0;
@@ -128,7 +127,7 @@
   }
 
   > .family {
-    @include twoLineTextEllipsis;
+    @include two-line-text-ellipsis;
 
     min-width: $sz-200;
     width: $sz-200;
@@ -139,7 +138,7 @@
   }
 
   > .filenames {
-    @include textEllipsis;
+    @include text-ellipsis;
 
     min-width: $sz-200;
   }
@@ -199,7 +198,7 @@
 
   .filenames {
     @include t.use-typography("body-small");
-    @include textEllipsis;
+    @include text-ellipsis;
 
     min-width: $sz-400;
     padding-left: var(--sp-xxxl);

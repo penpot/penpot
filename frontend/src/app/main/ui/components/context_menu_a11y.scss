@@ -144,7 +144,7 @@
         }
 
         .selected-icon {
-          @extend .button-tag;
+          @extend %button-tag;
 
           border-radius: deprecated.$br-8;
           height: 100%;

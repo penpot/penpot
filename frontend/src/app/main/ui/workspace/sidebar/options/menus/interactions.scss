@@ -141,14 +141,14 @@
 
 .prototype-pill-name {
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
 
   color: var(--color-foreground-primary);
 }
 
 .prototype-pill-description {
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
 
   color: var(--color-foreground-secondary);
 }
@@ -165,7 +165,7 @@
 }
 
 .interaction-row-name {
-  @include twoLineTextEllipsis;
+  @include two-line-text-ellipsis;
   @include t.use-typography("body-small");
 
   color: var(--color-foreground-secondary);
@@ -193,12 +193,10 @@
 .interaction-row-position {
   grid-column: 4 / span 5;
   display: grid;
-  grid-template-areas:
-    "topleft top topright"
-    "left center right"
-    "bottomleft bottom bottomright";
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  grid-template:
+    "topleft top topright" 1fr
+    "left center right" 1fr
+    "bottomleft bottom bottomright" 1fr / repeat(3, 1fr);
   inline-size: calc($sz-32 * 3);
   block-size: calc($sz-32 * 3);
   border-radius: $br-8;

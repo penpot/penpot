@@ -37,7 +37,7 @@
 }
 
 .group-name-input {
-  @extend .input-element-label;
+  @extend %input-element-label;
   @include deprecated.bodySmallTypography;
 
   margin-bottom: deprecated.$s-8;
@@ -59,17 +59,17 @@
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }
 
 .accept-btn {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 
   &.danger {
-    @extend .modal-danger-btn;
+    @extend %modal-danger-btn;
   }
 }

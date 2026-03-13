@@ -33,7 +33,7 @@
 }
 
 .dropdown {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
 
   right: deprecated.$s-2;
   top: calc(deprecated.$s-2 + deprecated.$s-48);

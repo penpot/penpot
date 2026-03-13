@@ -56,7 +56,7 @@
 }
 
 // BUTTONS
-.button-primary {
+%button-primary {
   @include buttonStyle;
   @include flexCenter;
   @include headlineSmallTypography;
@@ -241,7 +241,7 @@
   color: var(--button-warning-foreground-color-rest);
 }
 
-.button-disabled {
+%button-disabled {
   @include buttonStyle;
   @include flexCenter;
   background-color: var(--button-background-color-disabled);
@@ -250,7 +250,7 @@
   cursor: unset;
 }
 
-.button-tag {
+%button-tag {
   @include buttonStyle;
   @include flexCenter;
   @include focus;
@@ -298,7 +298,7 @@
 // INPUTS
 %input-base {
   @include removeInputStyle;
-  @include textEllipsis;
+  @include text-ellipsis;
   height: $s-28;
   width: 100%;
   flex-grow: 1;
@@ -405,7 +405,7 @@
   }
 }
 
-.input-element-label {
+%input-element-label {
   @include bodySmallTypography;
   display: flex;
   align-items: flex-start;
@@ -459,7 +459,7 @@
   }
 }
 
-.checkbox-icon {
+%checkbox-icon {
   @include flexCenter;
   width: $s-16;
   height: $s-16;
@@ -508,7 +508,7 @@
   }
 }
 
-.input-checkbox {
+%input-checkbox {
   display: flex;
   align-items: center;
   label {
@@ -519,7 +519,7 @@
     cursor: pointer;
     color: var(--input-checkbox-text-foreground-color);
     span {
-      @extend .checkbox-icon;
+      @extend %checkbox-icon;
     }
     input {
       margin: 0;
@@ -539,7 +539,7 @@
   }
 }
 
-.input-with-label {
+%input-with-label {
   display: flex;
   flex-direction: column;
   label {
@@ -582,7 +582,7 @@
 }
 
 //MODALS
-.modal-background {
+%modal-background {
   @include menuShadow;
   position: absolute;
   display: flex;
@@ -636,13 +636,13 @@
   border-bottom: $s-1 solid var(--modal-hint-border-color);
 }
 
-.modal-action-btns {
+%modal-action-btns {
   display: flex;
   justify-content: flex-end;
   gap: $s-16;
 }
 
-.modal-cancel-btn {
+%modal-cancel-btn {
   @extend %button-secondary;
   @include uppercaseTitleTipography;
   padding: $s-8 $s-24;
@@ -651,8 +651,8 @@
   margin: 0;
 }
 
-.modal-accept-btn {
-  @extend .button-primary;
+%modal-accept-btn {
+  @extend %button-primary;
   @include uppercaseTitleTipography;
   padding: $s-8 $s-24;
   border-radius: $br-8;
@@ -660,8 +660,8 @@
   margin: 0;
 }
 
-.modal-danger-btn {
-  @extend .button-primary;
+%modal-danger-btn {
+  @extend %button-primary;
   @include uppercaseTitleTipography;
   padding: $s-8 $s-24;
   border-radius: $br-8;
@@ -691,13 +691,13 @@
   }
 }
 
-.shortcut-base {
+%shortcut-base {
   @include flexCenter;
   gap: $s-2;
   color: var(--menu-shortcut-foreground-color);
 }
 
-.shortcut-key-base {
+%shortcut-key-base {
   @include bodySmallTypography;
   @include flexCenter;
   height: $s-20;
@@ -718,7 +718,7 @@
   color: var(--input-foreground-color-active);
 }
 
-.link {
+%link {
   background: unset;
   border: none;
   color: var(--link-foreground-color);
@@ -726,7 +726,7 @@
   text-decoration: none;
 }
 
-.colorpicker-handler {
+%colorpicker-handler {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -742,7 +742,7 @@
   }
 }
 
-.attr-title {
+%attr-title {
   div {
     margin-left: 0;
     color: var(--entry-foreground-color-hover);
@@ -762,7 +762,7 @@
   }
 }
 
-.attr-row {
+%attr-row {
   display: grid;
   grid-template-areas: "name content";
   grid-template-columns: 1fr 3fr;
@@ -770,7 +770,7 @@
   height: $s-32;
   :global(.attr-label) {
     @include bodySmallTypography;
-    @include twoLineTextEllipsis;
+    @include two-line-text-ellipsis;
     width: $s-92;
     margin: auto 0;
     color: var(--entry-foreground-color);
@@ -785,7 +785,7 @@
   }
 }
 
-.copy-button-children {
+%copy-button-children {
   @include bodySmallTypography;
   color: var(--color-foreground-primary);
   text-align: left;
@@ -800,7 +800,7 @@
 }
 
 // SELECTS AND DROPDOWNS
-.menu-dropdown {
+%menu-dropdown {
   @include menuShadow;
   @include flexColumn;
   position: absolute;
@@ -813,7 +813,7 @@
   margin: 0;
 }
 
-.menu-item-base {
+%menu-item-base {
   @include bodySmallTypography;
   display: flex;
   align-items: center;
@@ -841,7 +841,7 @@
 
   span {
     @include flexCenter;
-    @include textEllipsis;
+    @include text-ellipsis;
     svg {
       @extend %button-icon-small;
       stroke: var(--icon-foreground);
@@ -875,7 +875,7 @@
   border: $s-2 solid var(--panel-border-color);
 }
 
-.select-wrapper {
+%select-wrapper {
   @include bodySmallTypography;
   position: relative;
   display: flex;

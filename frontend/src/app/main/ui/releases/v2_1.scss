@@ -75,7 +75,7 @@
 }
 
 .next-btn {
-  @extend .button-primary;
+  @extend %button-primary;
 
   width: deprecated.$s-100;
   justify-self: flex-end;

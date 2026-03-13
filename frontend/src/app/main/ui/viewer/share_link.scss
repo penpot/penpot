@@ -110,15 +110,15 @@
 }
 
 .button-active {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 }
 
 .button-cancel {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }
 
 .button-danger {
-  @extend .modal-danger-btn;
+  @extend %modal-danger-btn;
 }
 
 .permissions-section {
@@ -213,7 +213,7 @@
 }
 
 .checkbox-wrapper {
-  @extend .input-checkbox;
+  @extend %input-checkbox;
 
   height: deprecated.$s-32;
   padding: 0;

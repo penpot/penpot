@@ -33,7 +33,7 @@
 }
 
 .handler {
-  @extend .colorpicker-handler;
+  @extend %colorpicker-handler;
 
   height: deprecated.$s-16;
   width: deprecated.$s-16;

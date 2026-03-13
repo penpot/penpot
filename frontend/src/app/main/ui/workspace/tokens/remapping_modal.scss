@@ -52,7 +52,7 @@
   @include t.use-typography("headline-medium");
 
   color: var(--modal-title-foreground-color);
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .modal-content {
@@ -67,7 +67,7 @@
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 
   gap: var(--sp-s);
 }

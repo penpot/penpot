@@ -173,7 +173,7 @@
 }
 
 .menu-item {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
 
   cursor: pointer;
 

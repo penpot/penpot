@@ -12,7 +12,7 @@
 @use "refactor/basic-rules.scss" as *;
 
 .colorpicker-tooltip {
-  @extend .modal-background;
+  @extend %modal-background;
 
   left: calc(10 * px2rem(140));
   padding: var(--sp-m);
@@ -143,7 +143,7 @@
 
 .accept-color {
   @include t.use-typography("headline-small");
-  @extend .button-primary;
+  @extend %button-primary;
 
   width: 100%;
   height: var(--sp-xxxl);
@@ -212,7 +212,7 @@
 }
 
 .checkbox-option {
-  @extend .input-checkbox;
+  @extend %input-checkbox;
 
   margin: var(--sp-l) 0 0 0;
 }

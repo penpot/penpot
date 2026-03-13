@@ -30,7 +30,7 @@
   grid-template-rows: var(--cell-size) 1fr;
   padding: 0.5rem;
   color: var(--color-foreground-primary);
-  word-break: break-word;
+  overflow-wrap: break-word;
 
   @include deprecated.bodySmallTypography;
 

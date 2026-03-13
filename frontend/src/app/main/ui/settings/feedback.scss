@@ -44,7 +44,7 @@
   }
 
   .feedback-button-link {
-    @extend .button-primary;
+    @extend %button-primary;
 
     margin-block-end: px2rem(72);
   }

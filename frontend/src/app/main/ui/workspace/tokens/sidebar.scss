@@ -86,7 +86,7 @@
 }
 
 .import-export-menu {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
 
   top: -#{deprecated.$s-6};
   right: 0;
@@ -96,7 +96,7 @@
 }
 
 .import-export-menu-item {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
 
   cursor: pointer;
 
