@@ -84,7 +84,7 @@
                              :else "none")))
         copy-attr
         (mf/use-fn
-         (mf/deps copied formatted-color-value)
+         (mf/deps copied copiable-value)
          (fn []
            (reset! copied* true)
            (clipboard/to-clipboard copiable-value)

@@ -37,6 +37,12 @@
 - Fix error activating a set with invalid shadow token applied [Taiga #13528](https://tree.taiga.io/project/penpot/issue/13528)
 - Fix component "broken" after variant switch [Taiga #12984](https://tree.taiga.io/project/penpot/issue/12984)
 - Fix incorrect query for file versions [Github #8463](https://github.com/penpot/penpot/pull/8463)
+- Fix warning when clicking on number token pills [Taiga #13661](https://tree.taiga.io/project/penpot/issue/13661)
+- Fix 'not ISeqable' error when entering float values in layout item and opacity inputs [Github #8569](https://github.com/penpot/penpot/pull/8569)
+- Fix crash in select component when options vector is empty [Github #8578](https://github.com/penpot/penpot/pull/8578)
+- Fix scroll on colorpicker [Taiga #13623](https://tree.taiga.io/project/penpot/issue/13623)
+- Fix crash when pasting non-map transit clipboard data [Github #8580](https://github.com/penpot/penpot/pull/8580)
+- Fix `penpot.openPage()` plugin API not navigating in the same tab; change default to same-tab navigation and allow passing a UUID string instead of a Page object [Github #8520](https://github.com/penpot/penpot/issues/8520)
 
 ## 2.13.3
 

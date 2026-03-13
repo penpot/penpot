@@ -540,9 +540,14 @@
 
     :openPage
     (fn [page new-window]
-      (let [id (obj/get page "$id")
-            new-window (if (boolean? new-window) new-window true)]
-        (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window))))
+      (let [id (cond
+                 (page/page-proxy? page) (obj/get page "$id")
+                 (string? page)          (uuid/parse* page)
+                 :else nil)
+            new-window (if (boolean? new-window) new-window false)]
+        (if (nil? id)
+          (u/display-not-valid :openPage "Expected a Page object or a page UUID string")
+          (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
 
     :alignHorizontal
     (fn [shapes direction]

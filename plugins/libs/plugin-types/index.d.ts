@@ -1256,15 +1256,15 @@ export interface Context {
 
   /**
    * Changes the current open page to given page. Requires `content:read` permission.
-   * @param page the page to open
-   * @param newWindow if true opens the page in a new window
+   * @param page the page to open (a Page object or a page UUID string)
+   * @param newWindow if true opens the page in a new window, defaults to false
    *
    * @example
    * ```js
    * context.openPage(page);
    * ```
    */
-  openPage(page: Page, newWindow?: boolean): void;
+  openPage(page: Page | string, newWindow?: boolean): void;
 
   /**
    * Aligning will move all the selected layers to a position relative to one
