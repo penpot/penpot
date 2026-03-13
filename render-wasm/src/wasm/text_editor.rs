@@ -1,3 +1,5 @@
+use macros::{wasm_error, ToJs};
+
 use crate::math::{Matrix, Point, Rect};
 use crate::mem;
 use crate::shapes::{Paragraph, Shape, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
@@ -5,7 +7,7 @@ use crate::state::TextSelection;
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::{with_state, with_state_mut, STATE};
-use macros::ToJs;
+use skia_safe::{textlayout::TextDirection, Color};
 
 #[derive(PartialEq, ToJs)]
 #[repr(u8)]
@@ -22,6 +24,21 @@ pub enum CursorDirection {
 // ============================================================================
 // STATE MANAGEMENT
 // ============================================================================
+
+#[no_mangle]
+pub extern "C" fn text_editor_apply_theme(
+    selection_color: u32,
+    cursor_width: f32,
+    cursor_color: u32,
+) {
+    with_state_mut!(state, {
+        // NOTE: In the future could be interesting to fill al this data from
+        // a structure pointer.
+        state.text_editor_state.theme.selection_color = Color::new(selection_color);
+        state.text_editor_state.theme.cursor_width = cursor_width;
+        state.text_editor_state.theme.cursor_color = Color::new(cursor_color);
+    })
+}
 
 #[no_mangle]
 pub extern "C" fn text_editor_start(a: u32, b: u32, c: u32, d: u32) -> bool {
@@ -42,10 +59,14 @@ pub extern "C" fn text_editor_start(a: u32, b: u32, c: u32, d: u32) -> bool {
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_stop() {
+pub extern "C" fn text_editor_stop() -> bool {
     with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return false;
+        }
         state.text_editor_state.stop();
-    });
+        true
+    })
 }
 
 #[no_mangle]
@@ -102,6 +123,34 @@ pub extern "C" fn text_editor_select_all() -> bool {
 }
 
 #[no_mangle]
+pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
+    with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return;
+        }
+
+        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+            return;
+        };
+
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+
+        let Type::Text(text_content) = &shape.shape_type else {
+            return;
+        };
+
+        let point = Point::new(x, y);
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+            state
+                .text_editor_state
+                .select_word_boundary(text_content, &position);
+        }
+    })
+}
+
+#[no_mangle]
 pub extern "C" fn text_editor_poll_event() -> u8 {
     with_state_mut!(state, { state.text_editor_state.poll_event() as u8 })
 }
@@ -126,12 +175,8 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
             return;
         };
         let point = Point::new(x, y);
-        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
-        let shape_matrix = shape.get_matrix();
         state.text_editor_state.start_pointer_selection();
-        if let Some(position) =
-            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
-        {
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
             state.text_editor_state.set_caret_from_position(&position);
         }
     });
@@ -143,17 +188,11 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
         if !state.text_editor_state.is_active {
             return;
         }
-        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
         let point = Point::new(x, y);
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
         let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-        let shape_matrix = shape.get_matrix();
-        let Some(_shape_rel_point) = Shape::get_relative_point(&point, &view_matrix, &shape_matrix)
-        else {
             return;
         };
         if !state.text_editor_state.is_pointer_selection_active {
@@ -163,9 +202,7 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
             return;
         };
 
-        if let Some(position) =
-            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
-        {
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
             state
                 .text_editor_state
                 .extend_selection_from_position(&position);
@@ -179,17 +216,11 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
         if !state.text_editor_state.is_active {
             return;
         }
-        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
         let point = Point::new(x, y);
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
         let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-        let shape_matrix = shape.get_matrix();
-        let Some(_shape_rel_point) = Shape::get_relative_point(&point, &view_matrix, &shape_matrix)
-        else {
             return;
         };
         if !state.text_editor_state.is_pointer_selection_active {
@@ -198,14 +229,35 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
         let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
-        if let Some(position) =
-            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
-        {
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
             state
                 .text_editor_state
                 .extend_selection_from_position(&position);
         }
         state.text_editor_state.stop_pointer_selection();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
+    with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return;
+        }
+
+        let point = Point::new(x, y);
+        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+            return;
+        };
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+        let Type::Text(text_content) = &shape.shape_type else {
+            return;
+        };
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+            state.text_editor_state.set_caret_from_position(&position);
+        }
     });
 }
 
@@ -240,29 +292,31 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
 // TEXT OPERATIONS
 // ============================================================================
 
+// FIXME: Review if all the return Ok(()) should be Err instead.
 #[no_mangle]
-pub extern "C" fn text_editor_insert_text() {
+#[wasm_error]
+pub extern "C" fn text_editor_insert_text() -> Result<()> {
     let bytes = crate::mem::bytes();
     let text = match String::from_utf8(bytes) {
-        Ok(s) => s,
-        Err(_) => return,
+        Ok(text) => text,
+        Err(_) => return Ok(()),
     };
 
     with_state_mut!(state, {
         if !state.text_editor_state.is_active {
-            return;
+            return Ok(());
         }
 
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
-            return;
+            return Ok(());
         };
 
         let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return;
+            return Ok(());
         };
 
         let Type::Text(text_content) = &mut shape.shape_type else {
-            return;
+            return Ok(());
         };
 
         let selection = state.text_editor_state.selection;
@@ -275,9 +329,7 @@ pub extern "C" fn text_editor_insert_text() {
 
         let cursor = state.text_editor_state.selection.focus;
 
-        if let Some(new_offset) = insert_text_at_cursor(text_content, &cursor, &text) {
-            let new_cursor =
-                TextPositionWithAffinity::new_without_affinity(cursor.paragraph, new_offset);
+        if let Some(new_cursor) = insert_text_with_newlines(text_content, &cursor, &text) {
             state.text_editor_state.selection.set_caret(new_cursor);
         }
 
@@ -295,7 +347,8 @@ pub extern "C" fn text_editor_insert_text() {
         state.render_state.mark_touched(shape_id);
     });
 
-    crate::mem::free_bytes();
+    crate::mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]
@@ -474,7 +527,25 @@ pub extern "C" fn text_editor_move_cursor(direction: CursorDirection, extend_sel
 
         let current = state.text_editor_state.selection.focus;
 
-        let new_cursor = match direction {
+        // Get the text direction of the span at the current cursor position
+        let span_text_direction = if current.paragraph < paragraphs.len() {
+            get_span_text_direction_at_offset(&paragraphs[current.paragraph], current.offset)
+        } else {
+            TextDirection::LTR
+        };
+
+        // For horizontal navigation, swap Backward/Forward when in RTL text
+        let adjusted_direction = if span_text_direction == TextDirection::RTL {
+            match direction {
+                CursorDirection::Backward => CursorDirection::Forward,
+                CursorDirection::Forward => CursorDirection::Backward,
+                other => other,
+            }
+        } else {
+            direction
+        };
+
+        let new_cursor = match adjusted_direction {
             CursorDirection::Backward => move_cursor_backward(&current, paragraphs),
             CursorDirection::Forward => move_cursor_forward(&current, paragraphs),
             CursorDirection::LineBefore => {
@@ -744,12 +815,10 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
                     char_pos += span_len;
                 }
             }
-            if !para_text.is_empty() {
-                if !result.is_empty() {
-                    result.push('\n');
-                }
-                result.push_str(&para_text);
+            if para_idx > start.paragraph {
+                result.push('\n');
             }
+            result.push_str(&para_text);
         }
         let mut bytes = result.into_bytes();
         bytes.push(0);
@@ -1044,6 +1113,59 @@ fn find_span_at_offset(para: &Paragraph, char_offset: usize) -> Option<(usize, u
         return Some((last_idx, last_len));
     }
     None
+}
+
+/// Insert text at a cursor position, splitting on newlines into multiple paragraphs.
+/// Returns the final cursor position after insertion.
+fn insert_text_with_newlines(
+    text_content: &mut TextContent,
+    cursor: &TextPositionWithAffinity,
+    text: &str,
+) -> Option<TextPositionWithAffinity> {
+    let normalized = text.replace("\r\n", "\n").replace('\r', "\n");
+    let lines: Vec<&str> = normalized.split('\n').collect();
+    if lines.is_empty() {
+        return None;
+    }
+
+    let mut current_cursor = *cursor;
+
+    if let Some(new_offset) = insert_text_at_cursor(text_content, &current_cursor, lines[0]) {
+        current_cursor =
+            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph, new_offset);
+    } else {
+        return None;
+    }
+
+    for line in lines.iter().skip(1) {
+        if !split_paragraph_at_cursor(text_content, &current_cursor) {
+            break;
+        }
+        current_cursor =
+            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph + 1, 0);
+        if let Some(new_offset) = insert_text_at_cursor(text_content, &current_cursor, line) {
+            current_cursor = TextPositionWithAffinity::new_without_affinity(
+                current_cursor.paragraph,
+                new_offset,
+            );
+        }
+    }
+
+    Some(current_cursor)
+}
+
+/// Get the text direction of the span at a given offset in a paragraph.
+fn get_span_text_direction_at_offset(
+    para: &Paragraph,
+    char_offset: usize,
+) -> skia_safe::textlayout::TextDirection {
+    if let Some((span_idx, _)) = find_span_at_offset(para, char_offset) {
+        if let Some(span) = para.children().get(span_idx) {
+            return span.text_direction;
+        }
+    }
+    // Fallback to paragraph's text direction
+    para.text_direction()
 }
 
 /// Insert text at a cursor position. Returns the new character offset after insertion.

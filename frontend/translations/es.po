@@ -368,8 +368,14 @@ msgid "dashboard.copy-suffix"
 msgstr "(copia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
-msgid "dashboard.create-new-org"
+msgid "dashboard.plus-create-new-org"
 msgstr "+ Crear org"
+
+msgid "dashboard.create-new-org"
+msgstr "Crear org"
+
+msgid "dashboard.go-to-control-center"
+msgstr "Ir al centro de control"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
@@ -2171,7 +2177,7 @@ msgstr "La clave MCP utilizada para conectarse al servidor MCP ha expirado. Como
 
 #: src/app/main/ui/settings/integrations.cljs:368
 msgid "integrations.mcp-server.status.expired.1"
-msgstr "Por favor, regenera la clave MCP y actualiza la configuración de tu cliente con la nueva clave." 
+msgstr "Por favor, regenera la clave MCP y actualiza la configuración de tu cliente con la nueva clave."
 
 #: src/app/main/ui/settings/integrations.cljs:415
 msgid "integrations.mcp-server.mcp-keys.copy"

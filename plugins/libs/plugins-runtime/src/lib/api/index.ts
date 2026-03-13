@@ -68,8 +68,21 @@ export function createApi(
       },
 
       sendMessage(message: unknown) {
+        let cloneableMessage: unknown;
+
+        try {
+          cloneableMessage = structuredClone(message);
+        } catch (err) {
+          console.error(
+            'plugin sendMessage: the message could not be cloned. ' +
+              'Ensure the message does not contain functions, DOM nodes, or other non-serializable values.',
+            err,
+          );
+          return;
+        }
+
         const event = new CustomEvent('message', {
-          detail: message,
+          detail: cloneableMessage,
         });
 
         plugin.getModal()?.dispatchEvent(event);
@@ -323,9 +336,9 @@ export function createApi(
       return plugin.context.createPage();
     },
 
-    openPage(page: Page, newWindow?: boolean): void {
+    openPage(page: Page | string, newWindow?: boolean): void {
       checkPermission('content:read');
-      plugin.context.openPage(page, newWindow ?? true);
+      plugin.context.openPage(page, newWindow ?? false);
     },
 
     alignHorizontal(

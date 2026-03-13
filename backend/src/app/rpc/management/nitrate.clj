@@ -122,8 +122,7 @@
                      (set/difference cfeat/no-team-inheritable-features))
         params   {:profile-id profile-id
                   :name "Default"
-                  :features features
-                  :is-default true}
+                  :features features}
         team     (db/tx-run! cfg teams/create-team params)]
     (select-keys team [:id])))
 

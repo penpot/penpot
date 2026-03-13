@@ -1,4 +1,4 @@
-use macros::ToJs;
+use macros::{wasm_error, ToJs};
 
 use super::{fills::RawFillData, fonts::RawFontStyle};
 
@@ -8,6 +8,8 @@ use crate::shapes::{
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
 use crate::{with_current_shape, with_current_shape_mut, with_state, with_state_mut, STATE};
+
+use crate::error::Error;
 
 const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
@@ -285,22 +287,27 @@ pub extern "C" fn clear_shape_text() {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_text_content() {
+#[wasm_error]
+pub extern "C" fn set_shape_text_content() -> crate::error::Result<()> {
     let bytes = mem::bytes();
     with_current_shape_mut!(state, |shape: &mut Shape| {
         let raw_text_data = RawParagraph::try_from(&bytes).unwrap();
 
-        if shape.add_paragraph(raw_text_data.into()).is_err() {
-            println!("Error with set_shape_text_content on {:?}", shape.id);
-        }
+        shape.add_paragraph(raw_text_data.into()).map_err(|_| {
+            Error::RecoverableError(format!(
+                "Error with set_shape_text_content on {:?}",
+                shape.id
+            ))
+        })?;
     });
-    mem::free_bytes();
+
+    mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]
 pub extern "C" fn set_shape_grow_type(grow_type: u8) {
     let grow_type = RawGrowType::from(grow_type);
-
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(text_content) = &mut shape.shape_type {
             text_content.set_grow_type(GrowType::from(grow_type));

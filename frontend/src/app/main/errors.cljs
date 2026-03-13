@@ -127,6 +127,25 @@
       (ex/print-throwable cause :prefix "Unexpected Error")
       (flash :cause cause :type :unhandled))))
 
+(defmethod ptk/handle-error :wasm-non-blocking
+  [error]
+  (when-let [cause (::instance error)]
+    (flash :cause cause)))
+
+(defmethod ptk/handle-error :wasm-critical
+  [error]
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause :prefix "WASM critical error"))
+
+  (st/emit! (rt/assign-exception error)))
+
+(defmethod ptk/handle-error :wasm-exception
+  [error]
+  (when-let [cause (::instance error)]
+    (let [prefix (or (:prefix error) "Exception")]
+      (ex/print-throwable cause :prefix prefix)))
+  (st/emit! (rt/assign-exception error)))
+
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
 ;; for show the error page. Otherwise this explicitly clears all
@@ -331,27 +350,45 @@
   (st/async-emit! (rt/assign-exception error)))
 
 (defonce uncaught-error-handler
-  (letfn [(is-ignorable-exception? [cause]
+  (letfn [(from-extension? [cause]
+            (let [stack (.-stack cause)]
+              (and (string? stack)
+                   (or (str/includes? stack "chrome-extension://")
+                       (str/includes? stack "moz-extension://")))))
+
+          (is-ignorable-exception? [cause]
             (let [message (ex-message cause)]
-              (or (= message "Possible side-effect in debug-evaluate")
+              (or (from-extension? cause)
+                  (= message "Possible side-effect in debug-evaluate")
                   (= message "Unexpected end of input")
                   (str/starts-with? message "invalid props on component")
-                  (str/starts-with? message "Unexpected token "))))
+                  (str/starts-with? message "Unexpected token ")
+                  ;; Abort errors are expected when an in-flight HTTP request is
+                  ;; cancelled (e.g. via RxJS unsubscription / take-until).  They
+                  ;; are handled gracefully inside app.util.http/fetch and must
+                  ;; NOT be surfaced as application errors.
+                  (= (.-name ^js cause) "AbortError"))))
 
           (on-unhandled-error [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
-              (set! last-exception cause)
               (when-not (is-ignorable-exception? cause)
-                (ex/print-throwable cause :prefix "Uncaught Exception")
-                (ts/schedule #(flash :cause cause :type :unhandled)))))
+                (let [data (ex-data cause)
+                      type (get data :type)]
+                  (set! last-exception cause)
+                  (if (#{:wasm-critical :wasm-non-blocking :wasm-exception} type)
+                    (on-error cause)
+                    (do
+                      (ex/print-throwable cause :prefix "Uncaught Exception")
+                      (ts/schedule #(flash :cause cause :type :unhandled))))))))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "reason")]
-              (set! last-exception cause)
-              (ex/print-throwable cause :prefix "Uncaught Rejection")
-              (ts/schedule #(flash :cause cause :type :unhandled))))]
+              (when-not (is-ignorable-exception? cause)
+                (set! last-exception cause)
+                (ex/print-throwable cause :prefix "Uncaught Rejection")
+                (ts/schedule #(flash :cause cause :type :unhandled)))))]
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)

@@ -121,6 +121,7 @@
     :terms-and-privacy-checkbox
     :tiered-file-data-storage
     :token-base-font-size
+    :token-combobox
     :token-color
     :token-shadow
     :token-tokenscript

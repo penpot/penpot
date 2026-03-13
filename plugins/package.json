@@ -18,7 +18,7 @@
     "start:plugin:colors-to-tokens": "pnpm --filter colors-to-tokens-plugin run init",
     "start:plugin:poc-tokens": "pnpm --filter poc-tokens-plugin run init",
     "build:runtime": "pnpm --filter @penpot/plugins-runtime build",
-    "build:plugins": "pnpm --filter './apps/*-plugin' --filter '!poc-state-plugin' build",
+    "build:plugins": "pnpm --parallel --filter './apps/*-plugin' --filter '!poc-state-plugin' build",
     "build:styles-example": "pnpm --filter example-styles build",
     "lint": "pnpm -r --parallel lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,html,css}\"",

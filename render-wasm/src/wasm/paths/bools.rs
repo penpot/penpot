@@ -1,4 +1,4 @@
-use macros::ToJs;
+use macros::{wasm_error, ToJs};
 
 use super::RawSegmentData;
 use crate::math;
@@ -7,6 +7,9 @@ use crate::uuid::Uuid;
 use crate::{mem, SerializableResult};
 use crate::{with_current_shape_mut, with_state, STATE};
 use std::mem::size_of;
+
+#[allow(unused_imports)]
+use crate::error::{Error, Result};
 
 #[derive(Debug, Clone, Copy, PartialEq, ToJs)]
 #[repr(u8)]
@@ -43,15 +46,19 @@ pub extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
 }
 
 #[no_mangle]
-pub extern "C" fn calculate_bool(raw_bool_type: u8) -> *mut u8 {
+#[wasm_error]
+pub extern "C" fn calculate_bool(raw_bool_type: u8) -> Result<*mut u8> {
     let bytes = mem::bytes_or_empty();
 
     let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::try_from(data).unwrap())
-        .collect();
+        .map(|data| {
+            // FIXME: Review if this should be an critical or a recoverable error.
+            Uuid::try_from(data).map_err(|_| Error::RecoverableError("Invalid UUID".to_string()))
+        })
+        .collect::<Result<Vec<Uuid>>>()?;
 
-    mem::free_bytes();
+    mem::free_bytes()?;
 
     let bool_type = RawBoolType::from(raw_bool_type).into();
     let result;
@@ -64,5 +71,5 @@ pub extern "C" fn calculate_bool(raw_bool_type: u8) -> *mut u8 {
             .map(RawSegmentData::from_segment)
             .collect();
     });
-    mem::write_vec(result)
+    Ok(mem::write_vec(result))
 }

@@ -13,6 +13,7 @@
   "devDependencies": {
     "concurrently": "^9.1.2",
     "nodemon": "^3.1.10",
+    "prettier": "3.5.3",
     "source-map-support": "^0.5.21",
     "ws": "^8.18.2"
   },
@@ -20,11 +21,15 @@
     "date-fns": "^4.1.0"
   },
   "scripts": {
-    "lint:clj": "cljfmt check --parallel=false src/ test/ && clj-kondo --parallel=true --lint src/",
+    "lint:clj": "clj-kondo --parallel=true --lint src/",
+    "check-fmt:clj": "cljfmt check --parallel=true src/ test/",
+    "check-fmt:js": "prettier -c src/**/*.js",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
+    "fmt:js": "prettier -c src/**/*.js -w",
     "lint": "pnpm run lint:clj",
     "watch:test": "concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests/ --exec 'node target/tests/test.js'\"",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
-    "test": "pnpm run build:test && node target/tests/test.js"
+    "test:js": "pnpm run build:test && node target/tests/test.js",
+    "test:jvm": "clojure -M:dev:test"
   }
 }

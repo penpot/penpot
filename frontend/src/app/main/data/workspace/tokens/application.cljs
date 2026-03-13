@@ -609,6 +609,46 @@
 
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
+(def attributes->shape-update
+  "Maps each attribute-set to the update function that applies it to a shape.
+  Used both here (to resolve the correct update fn when explicit attrs are
+  passed to toggle-token) and in propagation.cljs (re-exported from there)."
+  {ctt/border-radius-keys  update-shape-radius-for-corners
+   ctt/color-keys          update-fill-stroke
+   ctt/stroke-width-keys   update-stroke-width
+   ctt/sizing-keys         apply-dimensions-token
+   ctt/opacity-keys        update-opacity
+   ctt/rotation-keys       update-rotation
+
+   ;; Typography
+   ctt/font-family-keys     update-font-family
+   ctt/font-size-keys       update-font-size
+   ctt/font-weight-keys     update-font-weight
+   ctt/letter-spacing-keys  update-letter-spacing
+   ctt/text-case-keys       update-text-case
+   ctt/text-decoration-keys update-text-decoration
+   ctt/typography-token-keys update-typography
+   ctt/shadow-keys          update-shadow
+   ctt/line-height-keys     update-line-height
+
+   ;; Layout
+   #{:x :y}                        update-shape-position
+   #{:p1 :p2 :p3 :p4}              update-layout-padding
+   #{:m1 :m2 :m3 :m4}              update-layout-item-margin
+   #{:column-gap :row-gap}          update-layout-gap
+   #{:width :height}                apply-dimensions-token
+   #{:layout-item-min-w :layout-item-min-h
+     :layout-item-max-w :layout-item-max-h} update-layout-sizing-limits})
+
+;; Flattened per-individual-key version of attributes->shape-update.
+;; Allows O(1) lookup of the update function for any single attribute.
+(def ^:private attr->shape-update
+  (reduce
+   (fn [acc [attr-set update-fn]]
+     (into acc (map (fn [k] [k update-fn]) attr-set)))
+   {}
+   attributes->shape-update))
+
 (defn apply-token
   "Apply `attributes` that match `token` for `shape-ids`.
 
@@ -752,10 +792,16 @@
             {:keys [attributes all-attributes on-update-shape]}
             (get token-properties (:type token))
 
+            on-update-shape
+            (if (seq attrs)
+              (or (get attr->shape-update (first attrs)) on-update-shape)
+              on-update-shape)
+
             unapply-tokens?
             (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
 
-            shape-ids (map :id shapes)]
+            shape-ids
+            (map :id shapes)]
 
         (if unapply-tokens?
           (rx/of

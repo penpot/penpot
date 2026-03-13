@@ -34,6 +34,8 @@ jobs:
           corepack enable;
           corepack install;
           pnpm install;
+          pnpm run check-fmt:clj
+          pnpm run check-fmt:js
           pnpm run lint:clj
 
       - name: Lint Frontend
@@ -42,6 +44,9 @@ jobs:
           corepack enable;
           corepack install;
           pnpm install;
+          pnpm run check-fmt:js
+          pnpm run check-fmt:clj
+          pnpm run check-fmt:scss
           pnpm run lint:clj
           pnpm run lint:js
           pnpm run lint:scss
@@ -52,7 +57,8 @@ jobs:
           corepack enable;
           corepack install;
           pnpm install;
-          pnpm run lint:clj
+          pnpm run check-fmt
+          pnpm run lint
 
       - name: Lint Exporter
         working-directory: ./exporter
@@ -60,7 +66,8 @@ jobs:
           corepack enable;
           corepack install;
           pnpm install;
-          pnpm run lint:clj
+          pnpm run check-fmt
+          pnpm run lint
 
       - name: Lint Library
         working-directory: ./library
@@ -68,7 +75,8 @@ jobs:
           corepack enable;
           corepack install;
           pnpm install;
-          pnpm run lint:clj
+          pnpm run check-fmt
+          pnpm run lint
 
   test-common:
     name: "Common Tests"
@@ -79,12 +87,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run tests on JVM
-        working-directory: ./common
-        run: |
-          clojure -M:dev:test
-
-      - name: Run tests on NODE
+      - name: Run tests
         working-directory: ./common
         run: |
           ./scripts/test

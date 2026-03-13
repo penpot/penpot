@@ -17,12 +17,17 @@
     (watch [_ _ _]
       (->> (rp/cmd! ::get-nitrate-connectivity {})
            (rx/map (fn [connectivity]
-                     (prn "connectivity" connectivity)
                      (modal/show popup-type (or connectivity {}))))))))
 
 (defn go-to-nitrate-cc
-  []
-  (st/emit! (rt/nav-raw :href "/control-center/")))
+  ([]
+   (st/emit! (rt/nav-raw :href "/control-center/")))
+  ([{:keys [organization-id organization-slug]}]
+   (let [href (dm/str "/control-center/org/"
+                      (u/percent-encode organization-slug)
+                      "/"
+                      (u/percent-encode (str organization-id)))]
+     (st/emit! (rt/nav-raw :href href)))))
 
 (defn go-to-nitrate-billing
   []
