@@ -269,8 +269,9 @@
 
         project         (get projects project-id)
         projects        (mf/with-memo [projects team-id]
-                          (->> (vals projects)
-                               (filterv #(= team-id (:team-id %)))))
+                          (when (some? team-id)
+                            (->> (vals projects)
+                                 (filterv #(= team-id (:team-id %))))))
 
         can-edit?       (dm/get-in team [:permissions :can-edit])
         template        (or template (:template storage/session))
@@ -285,9 +286,10 @@
     (hooks/use-shortcuts ::dashboard sc/shortcuts-dashboard)
 
     (mf/with-effect [team-id]
-      (st/emit! (dd/initialize team-id))
-      (fn []
-        (st/emit! (dd/finalize team-id))))
+      (when (some? team-id)
+        (st/emit! (dd/initialize team-id))
+        (fn []
+          (st/emit! (dd/finalize team-id)))))
 
     (mf/with-effect []
       (let [key (events/listen goog/global "keydown"
@@ -301,33 +303,34 @@
     (use-plugin-register plugin-url team-id (:id default-project))
     (use-templates-import can-edit? template default-project)
 
-    [:& (mf/provider ctx/current-project-id) {:value project-id}
-     [:> modal-container*]
-     ;; NOTE: dashboard events and other related functions assumes
-     ;; that the team is a implicit context variable that is
-     ;; available using react context or accessing
-     ;; the :current-team-id on the state. We set the key to the
-     ;; team-id because we want to completely refresh all the
-     ;; components on team change. Many components assumes that the
-     ;; team is already set so don't put the team into mf/deps.
-     [:main {:class (stl/css :dashboard)
-             :key (dm/str (:id team))}
-      [:> sidebar*
-       {:team team
-        :projects projects
-        :project project
-        :default-project default-project
-        :profile profile
-        :section section
-        :search-term search-term}]
-      [:> dashboard-content*
-       {:projects projects
-        :profile profile
-        :project project
-        :default-project default-project
-        :section section
-        :search-term search-term
-        :team team}]]]))
+    (when (some? team-id)
+      [:& (mf/provider ctx/current-project-id) {:value project-id}
+       [:> modal-container*]
+       ;; NOTE: dashboard events and other related functions assumes
+       ;; that the team is a implicit context variable that is
+       ;; available using react context or accessing
+       ;; the :current-team-id on the state. We set the key to the
+       ;; team-id because we want to completely refresh all the
+       ;; components on team change. Many components assumes that the
+       ;; team is already set so don't put the team into mf/deps.
+       [:main {:class (stl/css :dashboard)
+               :key (dm/str (:id team))}
+        [:> sidebar*
+         {:team team
+          :projects projects
+          :project project
+          :default-project default-project
+          :profile profile
+          :section section
+          :search-term search-term}]
+        [:> dashboard-content*
+         {:projects projects
+          :profile profile
+          :project project
+          :default-project default-project
+          :section section
+          :search-term search-term
+          :team team}]]]))
 
 (mf/defc dashboard-page*
   {::mf/lazy-load true}
