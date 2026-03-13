@@ -164,7 +164,7 @@
         (mf/use-fn
          (mf/deps on-detach-token)
          (fn [token]
-           (on-detach-token (first token) #{:stroke-width})))
+           (on-detach-token token #{:stroke-width})))
 
         stroke-caps-options
         [{:value nil :label (tr "workspace.options.stroke-cap.none")}
