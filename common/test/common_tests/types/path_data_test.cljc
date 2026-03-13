@@ -279,6 +279,12 @@
       (t/is (some? points))
       (t/is (= 3 (count points))))))
 
+(t/deftest path-get-points-plain-vector-safe
+  (t/testing "path/get-points does not throw for plain vector content"
+    (let [points (path/get-points sample-content)]
+      (t/is (some? points))
+      (t/is (= 3 (count points))))))
+
 (defn calculate-extremities
   "Calculate extremities for the provided content.
   A legacy implementation used mainly as reference for testing"
