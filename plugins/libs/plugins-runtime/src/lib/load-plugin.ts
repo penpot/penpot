@@ -48,6 +48,16 @@ export const loadPlugin = async function (
 
     closeAllPlugins();
 
+    // hardenIntrinsics must be called BEFORE harden() to ensure that
+    // override taming (enablePropertyOverrides) converts prototype
+    // properties like Function.prototype.toString into accessor pairs.
+    // Without this, harden() would freeze Function.prototype with plain
+    // data properties, making them non-configurable, which causes
+    // enablePropertyOverrides to silently skip them when hardenIntrinsics
+    // runs later — resulting in "Cannot assign to read only property
+    // 'toString'" errors.
+    ses.hardenIntrinsics();
+
     const plugin = await createPlugin(
       ses.harden(context) as Context,
       manifest,
