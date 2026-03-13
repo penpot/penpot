@@ -30,6 +30,7 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.common :as soc]
    [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -335,15 +336,8 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr event]
-           (if (or (string? value) (number? value))
-             (on-change :simple attr value event)
-             (do
-               (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     (if (= :p1 attr)
-                                                 #{:p1 :p3}
-                                                 #{:p2 :p4})
-                                    :shape-ids ids}))))))
+           (let [on-change-fn #(on-change :simple attr % event)]
+             (soc/emit-value-or-token value on-change-fn ids #{attr}))))
 
         on-detach-token
         (mf/use-fn
@@ -719,15 +713,8 @@
         (mf/use-fn
          (mf/deps on-change wrap-type ids)
          (fn [value event attr]
-           (if (or (string? value) (number? value))
-             (on-change (= "nowrap" wrap-type) attr value event)
-             (do
-               (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     (if (= "nowrap" wrap-type)
-                                                 #{:row-gap :colum-gap}
-                                                 #{attr})
-                                    :shape-ids ids}))))))
+           (let [on-change-fn #((on-change (= "nowrap" wrap-type) attr % event))]
+             (soc/emit-value-or-token value on-change-fn ids #{attr}))))
 
         on-detach-token
         (mf/use-fn

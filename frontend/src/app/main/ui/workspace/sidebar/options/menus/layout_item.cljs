@@ -21,6 +21,7 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.common :as soc]
    [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [get-layout-flex-icon]]
    [app.util.dom :as dom]
@@ -117,15 +118,11 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr]
-           (if (or (string? value) (number? value))
-             (on-change :simple attr value)
-             (do
-               (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     (if (= :m1 attr)
-                                                 #{:m1 :m3}
-                                                 #{:m2 :m4})
-                                    :shape-ids ids}))))))
+           (soc/emit-value-or-token
+            value
+            #(on-change :simple attr %)
+            ids
+            (if (= :m1 attr) #{:m1 :m3} #{:m2 :m4}))))
 
         on-focus-m1
         (mf/use-fn (mf/deps on-focus) #(on-focus :m1))
@@ -247,14 +244,11 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr]
-           (if (or (string? value) (number? value))
-             (on-change :multiple attr value)
-             (do
-               (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     #{attr}
-                                    :shape-ids ids}))))))
-
+           (soc/emit-value-or-token
+            value
+            #(on-change :multiple attr %)
+            ids
+            #{attr})))
 
         on-m1-change
         (mf/use-fn (mf/deps on-change') #(on-change' % :m1))
@@ -577,13 +571,11 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (if (or (string? value) (number? value))
-             (st/emit! (dwsl/update-layout-child ids {attr value}))
-             (do
-               (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     #{attr}
-                                    :shape-ids ids}))))))
+           (soc/emit-value-or-token
+            value
+            #(st/emit! (dwsl/update-layout-child ids {attr %}))
+            ids
+            #{attr})))
 
         on-layout-item-min-w-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :layout-item-min-w))

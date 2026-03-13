@@ -18,6 +18,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
+   [app.main.ui.workspace.sidebar.options.common :as soc]
    [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -92,14 +93,13 @@
 
         on-width-change
         (mf/use-fn
-         (mf/deps index on-stroke-width-change)
+         (mf/deps index on-stroke-width-change ids)
          (fn [value]
-           (if (or (string? value) (number? value))
-             (on-stroke-width-change index value)
-
-             (st/emit! (dwta/toggle-token {:token (first value)
-                                           :attrs #{:stroke-width}
-                                           :shape-ids ids})))))
+           (soc/emit-value-or-token
+            value
+            #(on-stroke-width-change index %)
+            ids
+            #{:stroke-width})))
 
         stroke-alignment (or (:stroke-alignment stroke) :center)
 
