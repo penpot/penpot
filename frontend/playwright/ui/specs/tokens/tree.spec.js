@@ -1,12 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
+import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import { setupTokensFileRender, unfoldTokenTree } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
-  await WasmWorkspacePage.mockConfigFlags(page, [
-    "enable-feature-design-tokens-v1",
-  ]);
+  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 test.describe("Tokens - node tree", () => {
@@ -23,7 +22,7 @@ test.describe("Tokens - node tree", () => {
 
     await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
 
-    const colorToken = tokensSidebar.getByRole("checkbox", {
+    const colorToken = tokensSidebar.getByRole("button", {
       name: "100",
     });
     await expect(colorToken).toBeVisible();

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
+import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import {
   setupEmptyTokensFileRender,
   setupTokensFileRender,
@@ -10,9 +11,7 @@ import {
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
-  await WasmWorkspacePage.mockConfigFlags(page, [
-    "enable-feature-design-tokens-v1",
-  ]);
+  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 test.describe("Tokens - creation", () => {
@@ -38,7 +37,7 @@ test.describe("Tokens - creation", () => {
     const missingReferenceError = "Missing token references";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFileRender(page , {
+      await setupEmptyTokensFileRender(page, {
         flags: ["enable-token-combobox", "enable-feature-token-input"],
       });
 
@@ -85,7 +84,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole('checkbox', { name: 'my-token' }),
+      tokensTabPanel.getByRole('button', { name: 'my-token' }),
     ).toBeEnabled();
 
     // Create second token referencing the first one using the combobox options
@@ -331,14 +330,14 @@ test.describe("Tokens - creation", () => {
     await submitButton.press("Enter");
 
     await expect(
-      tokensSidebar.getByRole("checkbox", {
+      tokensSidebar.getByRole("button", {
         name: "secondary",
       }),
     ).toBeEnabled();
 
     // Tokens tab panel should have two tokens with the color red / #ff0000
     await expect(
-      tokensSidebar.getByRole("checkbox", { name: "#ff0000" }),
+      tokensSidebar.getByRole("button", { name: "#ff0000" }),
     ).toHaveCount(2);
 
     // Global set has been auto created and is active
@@ -479,7 +478,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -520,7 +519,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
 
     //
@@ -537,7 +536,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token-3" }),
+      tokensTabPanel.getByRole("button", { name: "my-token-3" }),
     ).toBeEnabled();
   });
 
@@ -633,7 +632,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -653,7 +652,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
 
     //
@@ -673,7 +672,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token-3" }),
+      tokensTabPanel.getByRole("button", { name: "my-token-3" }),
     ).toBeEnabled();
   });
 
@@ -684,7 +683,8 @@ test.describe("Tokens - creation", () => {
     const selfReferenceError = "Token has self reference";
     const missingReferenceError = "Missing token references";
 
-    const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupEmptyTokensFileRender(page);
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -768,7 +768,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -788,7 +788,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
@@ -799,7 +799,7 @@ test.describe("Tokens - creation", () => {
     const selfReferenceError = "Token has self reference";
     const missingReferenceError = "Missing token references";
 
-    const { tokensUpdateCreateModal } =
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
       await setupEmptyTokensFileRender(page);
 
     // Open modal
@@ -886,7 +886,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -906,14 +906,14 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
   test("User creates shadow token", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
 
-    const { tokensUpdateCreateModal } =
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
       await setupEmptyTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     // Open modal
@@ -1050,7 +1050,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -1087,14 +1087,14 @@ test.describe("Tokens - creation", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
-  test("User can't submit empty typography token or reference", async ({
+  test("User cant submit empty typography token or reference", async ({
     page,
   }) => {
-    const { tokensUpdateCreateModal } =
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
       await setupTypographyTokensFileRender(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1129,7 +1129,7 @@ test.describe("Tokens - creation", () => {
   test("User creates shadow token with negative spread", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
 
-    const { tokensUpdateCreateModal } =
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
       await setupEmptyTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     // Open modal
@@ -1271,7 +1271,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -1308,13 +1308,14 @@ test.describe("Tokens - creation", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
   test("User creates typography token", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
-    const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupEmptyTokensFileRender(page);
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1514,7 +1515,7 @@ test.describe("Tokens - creation", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -1555,12 +1556,12 @@ test.describe("Tokens - creation", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
     await expect(
-      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
   test("User adds typography token with reference", async ({ page }) => {
-    const { tokensUpdateCreateModal, tokensSidebar } =
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
       await setupTypographyTokensFileRender(page);
 
     const newTokenTitle = "NewReference";
@@ -1602,7 +1603,7 @@ test.describe("Tokens - creation", () => {
 
     await expect(tokensUpdateCreateModal).not.toBeVisible();
 
-    const newToken = tokensSidebar.getByRole("checkbox", {
+    const newToken = tokensSidebar.getByRole("button", {
       name: newTokenTitle,
     });
 
@@ -1610,7 +1611,7 @@ test.describe("Tokens - creation", () => {
   });
 
   test("User creates grouped color token", async ({ page }) => {
-    const { tokensUpdateCreateModal, tokensSidebar } =
+    const { workspacePage, tokensUpdateCreateModal, tokensSidebar } =
       await setupEmptyTokensFileRender(page);
 
     await tokensSidebar
@@ -1641,7 +1642,7 @@ test.describe("Tokens - creation", () => {
     await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
   });
 
-  test("User can't create regular token with value missing", async ({
+  test("User cant create regular token with value missing", async ({
     page,
   }) => {
     const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
@@ -1667,6 +1668,29 @@ test.describe("Tokens - creation", () => {
 
     // Submit button should remain disabled when value is empty
     await expect(submitButton).toBeDisabled();
+  });
+
+  test("User duplicate color token", async ({ page }) => {
+    const { tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page);
+
+    await expect(tokensSidebar).toBeVisible();
+
+    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+
+    const colorToken = tokensSidebar.getByRole("button", {
+      name: "100",
+    });
+
+    await colorToken.click({ button: "right" });
+    await expect(tokenContextMenuForToken).toBeVisible();
+
+    await tokenContextMenuForToken.getByText("Duplicate token").click();
+    await expect(tokenContextMenuForToken).not.toBeVisible();
+
+    await expect(
+      tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
+    ).toBeVisible();
   });
 });
 
@@ -1726,7 +1750,7 @@ test("User cant create regular token with value missing", async ({ page }) => {
   await expect(submitButton).toBeDisabled();
 });
 
-test("User duplicates color token", async ({ page }) => {
+test("User duplicate color token", async ({ page }) => {
   const { tokensSidebar, tokenContextMenuForToken } =
     await setupTokensFileRender(page);
 
@@ -1734,7 +1758,7 @@ test("User duplicates color token", async ({ page }) => {
 
   unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
 
-  const colorToken = tokensSidebar.getByRole("checkbox", {
+  const colorToken = tokensSidebar.getByRole("button", {
     name: "100",
   });
 
@@ -1745,7 +1769,7 @@ test("User duplicates color token", async ({ page }) => {
   await expect(tokenContextMenuForToken).not.toBeVisible();
 
   await expect(
-    tokensSidebar.getByRole("checkbox", { name: "colors.blue.100-copy" }),
+    tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
   ).toBeVisible();
 });
 
@@ -1753,7 +1777,7 @@ test.describe("Tokens tab - edition", () => {
   test("User edits typography token and all fields are valid", async ({
     page,
   }) => {
-    const { tokensUpdateCreateModal, tokensSidebar } =
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
       await setupTypographyTokensFileRender(page);
 
     await tokensSidebar
@@ -1762,7 +1786,7 @@ test.describe("Tokens tab - edition", () => {
       .click();
 
     // Open edit modal for "Full" typography token
-    const token = tokensSidebar.getByRole("checkbox", { name: "Full" });
+    const token = tokensSidebar.getByRole("button", { name: "Full" });
     await token.click({ button: "right" });
     await page.getByText("Edit token").click();
 
@@ -1856,7 +1880,7 @@ test.describe("Tokens tab - edition", () => {
 
     await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
 
-    const colorToken = tokensSidebar.getByRole("checkbox", {
+    const colorToken = tokensSidebar.getByRole("button", {
       name: "100",
     });
 
@@ -1877,7 +1901,7 @@ test.describe("Tokens tab - edition", () => {
 
     await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100.changed");
 
-    const colorTokenChanged = tokensSidebar.getByRole("checkbox", {
+    const colorTokenChanged = tokensSidebar.getByRole("button", {
       name: "changed",
     });
     await expect(colorTokenChanged).toBeVisible();
@@ -1940,7 +1964,7 @@ test.describe("Tokens tab - edition", () => {
 });
 
 test.describe("Tokens tab - delete", () => {
-  test("User deletes color token", async ({ page }) => {
+  test("User delete color token", async ({ page }) => {
     const { tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page);
 
@@ -1948,7 +1972,7 @@ test.describe("Tokens tab - delete", () => {
 
     unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
 
-    const colorToken = tokensSidebar.getByRole("checkbox", {
+    const colorToken = tokensSidebar.getByRole("button", {
       name: "100",
     });
     await expect(colorToken).toBeVisible();
@@ -1974,7 +1998,7 @@ test.describe("Tokens tab - delete", () => {
       name: "colors",
       exact: true,
     });
-    const colorNodeToken = tokensSidebar.getByRole("checkbox", {
+    const colorNodeToken = tokensSidebar.getByRole("button", {
       name: "100",
     });
 

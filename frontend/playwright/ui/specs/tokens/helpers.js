@@ -11,6 +11,10 @@ const setupEmptyTokensFile = async (page, options = {}) => {
   }
 
   await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "get-team?id=*",
+    "workspace/get-team-tokens.json",
+  );
 
   await workspacePage.mockRPC(
     "update-file?id=*",
@@ -46,6 +50,10 @@ const setupEmptyTokensFileRender = async (page, options = {}) => {
   }
 
   await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "get-team?id=*",
+    "workspace/get-team-tokens.json",
+  );
 
   await workspacePage.mockRPC(
     "update-file?id=*",
@@ -85,7 +93,10 @@ const setupTokensFile = async (page, options = {}) => {
   }
 
   await workspacePage.setupEmptyFile();
-
+  await workspacePage.mockRPC(
+    "get-team?id=*",
+    "workspace/get-team-tokens.json",
+  );
   await workspacePage.mockRPC(/get\-file\?/, file);
   await workspacePage.mockRPC(/get\-file\-fragment\?/, fileFragment);
   await workspacePage.mockRPC(
@@ -127,7 +138,10 @@ const setupTokensFileRender = async (page, options = {}) => {
   }
 
   await workspacePage.setupEmptyFile();
-
+  await workspacePage.mockRPC(
+    "get-team?id=*",
+    "workspace/get-team-tokens.json",
+  );
   await workspacePage.mockRPC(/get\-file\?/, file);
   await workspacePage.mockRPC(/get\-file\-fragment\?/, fileFragment);
   await workspacePage.mockRPC(
@@ -192,7 +206,8 @@ const testTokenCreationFlow = async (
   const selfReferenceError = "Token has self reference";
   const missingReferenceError = "Missing token references";
 
-  const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
+  const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+    await setupEmptyTokensFileRender(page);
 
   // Open modal
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -273,7 +288,7 @@ const testTokenCreationFlow = async (
   await submitButton.click();
 
   await expect(
-    tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
+    tokensTabPanel.getByRole("button", { name: "my-token" }),
   ).toBeEnabled();
 
   //
@@ -293,7 +308,7 @@ const testTokenCreationFlow = async (
   await submitButton.click();
 
   await expect(
-    tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
+    tokensTabPanel.getByRole("button", { name: "my-token-2" }),
   ).toBeEnabled();
 };
 
@@ -329,7 +344,7 @@ const unfoldTokenTree = async (tokensTabPanel, type, tokenName) => {
   }
 
   await expect(
-    typeParentWrapper.getByRole("checkbox", {
+    typeParentWrapper.getByRole("button", {
       name: tokenLeafName,
     }),
   ).toBeEnabled();

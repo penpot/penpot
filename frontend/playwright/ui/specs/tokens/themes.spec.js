@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
+import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import { setupEmptyTokensFileRender, setupTokensFileRender } from "./helpers";
 
 // THEMES HELPERS
@@ -26,6 +27,7 @@ test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.mockConfigFlags(page, [
     "enable-feature-design-tokens-v1",
   ]);
+  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 test.describe("Tokens Themes", () => {
