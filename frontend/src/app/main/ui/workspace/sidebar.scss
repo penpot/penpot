@@ -9,8 +9,7 @@
 
 .left-settings-bar {
   display: grid;
-  grid-template:
-    "header header" deprecated.$s-52 "content resize" 1fr / 1fr 0;
+  grid-template: "header header" deprecated.$s-52 "content resize" 1fr / 1fr 0;
   position: relative;
   grid-area: left-sidebar;
   min-width: var(--left-sidebar-width);

@@ -168,6 +168,7 @@
 
 .libraries-updates-item {
   @include t.use-typography("body-large");
+
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: start;
@@ -208,12 +209,14 @@
 }
 
 .item-name-long {
-  @extend .item-name;
+  @extend %item-name;
+
   max-width: px2rem(450);
 }
 
 .item-title {
   @include t.use-typography("body-large");
+
   margin: 0;
   color: var(--library-name-foreground-color);
 }

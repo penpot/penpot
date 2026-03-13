@@ -14,7 +14,8 @@
   background: var(--color-background-primary);
   display: grid;
   grid-template:
-    "avatar name button" auto "avatar content button" 1fr / calc(var(--sp-xxl) + var(--sp-l)) 1fr auto;
+    "avatar name button" auto "avatar content button" 1fr / calc(var(--sp-xxl) + var(--sp-l))
+    1fr auto;
   padding: var(--sp-s) 0;
   align-items: center;
   column-gap: var(--sp-s);
