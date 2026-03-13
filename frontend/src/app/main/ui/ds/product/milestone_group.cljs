@@ -39,7 +39,6 @@
         (mf/spread-props props
                          {:class [class class']
                           :data-testid "milestone"})
-
         open*
         (mf/use-state false)
 
@@ -57,7 +56,13 @@
                            (dom/get-data "index")
                            (d/parse-integer))]
              (when (fn? on-menu-click)
-               (on-menu-click index event)))))]
+               (on-menu-click index event)))))
+
+        snapshots
+        (mf/with-memo [snapshots]
+          (map-indexed (fn [index date]
+                         (d/vec2 date index))
+                       snapshots))]
 
     [:> :div props
      [:> text*  {:as "span" :typography t/body-small :class (stl/css :name)} label]
@@ -76,14 +81,14 @@
                                        :icon-arrow-toggled open?)}]]
 
       (when ^boolean open?
-        (for [[idx d] (d/enumerate snapshots)]
-          [:div {:key (dm/str "entry-" idx)
+        (for [[date index] snapshots]
+          [:div {:key (dm/str "entry-" index)
                  :class (stl/css :version-entry)}
-           [:> date* {:date d :class (stl/css :date) :typography t/body-small}]
+           [:> date* {:date date :class (stl/css :date) :typography t/body-small}]
            [:> icon-button* {:class (stl/css :entry-button)
                              :variant "ghost"
                              :icon i/menu
                              :aria-label (tr "workspace.versions.version-menu")
-                             :data-index idx
+                             :data-index index
                              :on-click on-menu-click}]]))]]))
 

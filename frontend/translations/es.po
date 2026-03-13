@@ -368,8 +368,14 @@ msgid "dashboard.copy-suffix"
 msgstr "(copia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
-msgid "dashboard.create-new-org"
+msgid "dashboard.plus-create-new-org"
 msgstr "+ Crear org"
+
+msgid "dashboard.create-new-org"
+msgstr "Crear org"
+
+msgid "dashboard.go-to-control-center"
+msgstr "Ir al centro de control"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
@@ -1274,7 +1280,11 @@ msgstr "Desvincular token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "%s no está disponible en ningún set o tiene un valor inválido."
+msgstr "{%s} no está disponible en ningún set o tiene un valor inválido."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "ds.inputs.token-field.no-active-color.token-option"
+msgstr "Este token no está disponible en ningún set o tiene un valor inválido."
 
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
@@ -2167,7 +2177,7 @@ msgstr "La clave MCP utilizada para conectarse al servidor MCP ha expirado. Como
 
 #: src/app/main/ui/settings/integrations.cljs:368
 msgid "integrations.mcp-server.status.expired.1"
-msgstr "Por favor, regenera la clave MCP y actualiza la configuración de tu cliente con la nueva clave." 
+msgstr "Por favor, regenera la clave MCP y actualiza la configuración de tu cliente con la nueva clave."
 
 #: src/app/main/ui/settings/integrations.cljs:415
 msgid "integrations.mcp-server.mcp-keys.copy"
@@ -5682,6 +5692,18 @@ msgstr "Ocultar reglas"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Ocultar paleta de textos"
 
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Conectar"
+
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Desconectar"
+
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Gestionar (estado: habilitado)"
+
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Gestionar (estado: deshabilitado)"
+
 #: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "Editar"
@@ -5693,6 +5715,9 @@ msgstr "Archivo"
 #: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "Ayuda e información"
+
+msgid "workspace.header.menu.option.mcp"
+msgstr "Servidor MCP"
 
 #: src/app/main/ui/workspace/main_menu.cljs:906
 msgid "workspace.header.menu.option.preferences"

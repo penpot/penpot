@@ -28,9 +28,55 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check clojure code format
+      - name: Lint Common
+        working-directory: ./common
         run: |
-          ./scripts/lint
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run check-fmt:clj
+          pnpm run check-fmt:js
+          pnpm run lint:clj
+
+      - name: Lint Frontend
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run check-fmt:js
+          pnpm run check-fmt:clj
+          pnpm run check-fmt:scss
+          pnpm run lint:clj
+          pnpm run lint:js
+          pnpm run lint:scss
+
+      - name: Lint Backend
+        working-directory: ./backend
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run check-fmt
+          pnpm run lint
+
+      - name: Lint Exporter
+        working-directory: ./exporter
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run check-fmt
+          pnpm run lint
+
+      - name: Lint Library
+        working-directory: ./library
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run check-fmt
+          pnpm run lint
 
   test-common:
     name: "Common Tests"
@@ -41,12 +87,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run tests on JVM
-        working-directory: ./common
-        run: |
-          clojure -M:dev:test
-
-      - name: Run tests on NODE
+      - name: Run tests
         working-directory: ./common
         run: |
           ./scripts/test

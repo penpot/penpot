@@ -155,6 +155,7 @@ pub fn render_text_shadows(
             None,
             blur_filter.as_ref(),
             None,
+            None,
         );
 
         for stroke_paragraphs in stroke_paragraphs_group.iter_mut() {
@@ -166,6 +167,7 @@ pub fn render_text_shadows(
                 surface_id,
                 None,
                 blur_filter.as_ref(),
+                None,
                 None,
             );
         }

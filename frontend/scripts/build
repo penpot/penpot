@@ -39,6 +39,14 @@ rm -rf node_modules;
 WS_URI="/mcp/ws" pnpm run --filter "mcp-plugin" build:multi-user
 popd;
 
+pushd ../plugins
+rm -rf node_modules;
+rm -rf dist/apps/;
+corepack install;
+pnpm -r install;
+pnpm run build:plugins;
+popd
+
 pnpm run build:app:main $EXTRA_PARAMS;
 pnpm run build:app:libs;
 pnpm run build:app:assets;
@@ -47,6 +55,11 @@ sed -i "s/\.\/render.js/.\/render.js?version=$VERSION_TAG/g" resources/public/js
 
 rsync -avr resources/public/ target/dist/
 
+
+# Include all plugins on the bundle
+rsync -avr ../plugins/dist/apps/ target/dist/plugins/;
+
 # Include the MCP plugin on the bundle
-mkdir -p target/dist/plugins/mcp/;
-rsync -avr ../mcp/packages/plugin/dist/ target/dist/plugins/mcp/
+mkdir -p target/dist/plugins/mcp;
+rsync -avr ../mcp/packages/plugin/dist/ target/dist/plugins/mcp/;
+

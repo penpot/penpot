@@ -30,6 +30,89 @@ test.describe("Tokens - creation", () => {
     });
   });
 
+  test("User creates border radius token with combobox", async ({ page }) => {
+    const invalidValueError = "Invalid token value";
+    const emptyNameError = "Name should be at least 1 character";
+    const selfReferenceError = "Token has self reference";
+    const missingReferenceError = "Missing token references";
+
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupEmptyTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    // Open modal
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const addTokenButton = tokensTabPanel.getByRole("button", {
+      name: `Add Token: Border Radius`,
+    });
+
+    await addTokenButton.click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    // Placeholder checks
+    await expect(
+      tokensUpdateCreateModal.getByPlaceholder(
+        "Enter border radius token name",
+      ),
+    ).toBeVisible();
+    await expect(
+      tokensUpdateCreateModal.getByPlaceholder(
+        "Enter a value or alias with {alias}",
+      ),
+    ).toBeVisible();
+
+    // Elements
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByRole("combobox", {
+      name: "Value",
+    });
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    // Create first token
+    await nameField.fill("my-token");
+    await valueField.fill("1 + 2");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 3"),
+    ).toBeVisible();
+
+    await expect(submitButton).toBeEnabled();
+
+    await submitButton.click();
+
+    await expect(
+      tokensTabPanel.getByRole('button', { name: 'my-token' }),
+    ).toBeEnabled();
+
+    // Create second token referencing the first one using the combobox options
+    await addTokenButton.click();
+
+    await nameField.fill("my-token-2");
+    const toggleDropdownButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Open token list",
+    });
+    await toggleDropdownButton.click();
+    const option = page.getByRole("option", { name: "my-token" });
+    await expect(option).toBeVisible();
+    await option.click();
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 3"),
+    ).toBeVisible();
+
+    await valueField.pressSequentially(" + 2");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 5"),
+    ).toBeVisible();
+    await valueField.pressSequentially(" + {");
+    await option.click();
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 8"),
+    ).toBeVisible();
+  });
+
   test("User creates dimensions token", async ({ page }) => {
     await testTokenCreationFlow(page, {
       tokenLabel: "Dimensions",
@@ -1024,7 +1107,7 @@ test.describe("Tokens - creation", () => {
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.fill("typography.empty");
 
-    const valueField = tokensUpdateCreateModal.getByLabel("Font Size");
+    const valueField = tokensUpdateCreateModal.getByRole("textbox", { name: "Font Size" });
 
     // Insert a value and then delete it
     await valueField.fill("1");
@@ -1716,12 +1799,12 @@ test.describe("Tokens tab - edition", () => {
 
     // Fill font-family to verify to verify that input value doesn't get split into list of characters
     const fontFamilyField = tokensUpdateCreateModal
-      .getByLabel("Font family")
+      .getByRole("textbox", { name: "Font family" })
       .first();
     await fontFamilyField.fill("OneWord");
 
     // Invalidate incorrect values for font size
-    const fontSizeField = tokensUpdateCreateModal.getByLabel(/Font Size/i);
+    const fontSizeField = tokensUpdateCreateModal.getByRole("textbox", { name: "Font Size" });
     await fontSizeField.fill("invalid");
     await expect(
       tokensUpdateCreateModal.getByText(/Invalid token value:/),
@@ -1736,13 +1819,13 @@ test.describe("Tokens tab - edition", () => {
     await fontSizeField.fill("16");
     await expect(saveButton).toBeEnabled();
 
-    const fontWeightField = tokensUpdateCreateModal.getByLabel(/Font Weight/i);
+    const fontWeightField = tokensUpdateCreateModal.getByRole("textbox", { name: "Font Weight" });
     const letterSpacingField =
-      tokensUpdateCreateModal.getByLabel(/Letter Spacing/i);
-    const lineHeightField = tokensUpdateCreateModal.getByLabel(/Line Height/i);
-    const textCaseField = tokensUpdateCreateModal.getByLabel(/Text Case/i);
+      tokensUpdateCreateModal.getByRole("textbox", { name: "Letter Spacing" });
+    const lineHeightField = tokensUpdateCreateModal.getByRole("textbox", { name: "Line Height" });
+    const textCaseField = tokensUpdateCreateModal.getByRole("textbox", { name: "Text Case" });
     const textDecorationField =
-      tokensUpdateCreateModal.getByLabel(/Text Decoration/i);
+      tokensUpdateCreateModal.getByRole("textbox", { name: "Text Decoration" });
 
     // Capture all values before switching tabs
     const originalValues = {
@@ -1800,6 +1883,7 @@ test.describe("Tokens tab - edition", () => {
     const colorToken = tokensSidebar.getByRole("button", {
       name: "100",
     });
+
     await expect(colorToken).toBeVisible();
     await colorToken.click({ button: "right" });
 

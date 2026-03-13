@@ -11,6 +11,11 @@
 
 (mf/defc portal-on-document*
   [{:keys [children]}]
-  (mf/portal
-   (mf/html [:* children])
-   (dom/get-body)))
+  (let [container (mf/use-memo #(dom/create-element "div"))]
+    (mf/with-effect []
+      (let [body (dom/get-body)]
+        (dom/append-child! body container)
+        #(dom/remove-child! body container)))
+    (mf/portal
+     (mf/html [:* children])
+     container)))

@@ -86,12 +86,14 @@
 ;; Re-export public text editor functions
 (def text-editor-start text-editor/text-editor-start)
 (def text-editor-stop text-editor/text-editor-stop)
+(def text-editor-set-cursor-from-offset text-editor/text-editor-set-cursor-from-offset)
 (def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
 (def text-editor-pointer-down text-editor/text-editor-pointer-down)
 (def text-editor-pointer-move text-editor/text-editor-pointer-move)
 (def text-editor-pointer-up text-editor/text-editor-pointer-up)
 (def text-editor-is-active? text-editor/text-editor-is-active?)
 (def text-editor-select-all text-editor/text-editor-select-all)
+(def text-editor-select-word-boundary text-editor/text-editor-select-word-boundary)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
 
 (def dpr
@@ -1419,7 +1421,9 @@
   (dom/prevent-default event)
   (reset! wasm/context-lost? true)
   (log/warn :hint "WebGL context lost")
-  (ex/raise :type :webgl-context-lost
+  (ex/raise :type :wasm-exception
+            :exception-type :webgl-context-lost
+            :prefix "WebGL context lost"
             :hint "WebGL context lost"))
 
 (defn init-canvas-context

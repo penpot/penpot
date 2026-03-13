@@ -45,6 +45,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
   * `name` - Shape name
   * `fills: Fill[]`, `strokes: Stroke[]`, `shadows: Shadow[]` - Styling properties
     - Setting fills: `shape.fills = [{ fillColor: "#FF0000", fillOpacity: 1 }]`; no fill (transparent): `shape.fills = []`; 
+    - Reusing objects in another shape: `targetShape.fills = sourceShape.fills` or more granular `targetShape.fills = [{ fillOpacity: 1, fillImage: sourceShape.fills[0].fillImage }]`
+      The objects are not shared references; you can modify properties of the fills in the target shape without affecting the source shape.
     - Colors: Use hex strings with caps only (e.g. '#FF5533')
     - IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them!  
   * `borderRadius` - Uniform border radius for all corners
@@ -80,6 +82,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
 
 Cloning: Use `shape.clone(): Shape` to create an exact duplicate (including all properties and children) of a shape; same position as original.
 
+Annotations: Don't add text elements to the design that just repeat a shape's name. In the Penpot UI, the name is displayed anyway.
+
 # Images
 
 The `Image` type is a legacy type. Images are now typically embedded in a `Fill`, with `fillImage` set to an
@@ -91,10 +95,10 @@ Use the `export_shape` and `import_image` tools to export and import images.
 Boards can have layout systems that automatically control the positioning and spacing of their children:
 
   * If a board has a layout system, then child positions are controlled by the layout system.
-    For every child, key properties of the child within the layout are stored in `child.layoutChild: LayoutChildProperties`:
+    After adding a shape to the layout as a child, key properties of the child within the layout are controlled in `child.layoutChild: LayoutChildProperties`:
     - `absolute: boolean` - if true, child position is not controlled by layout system. x/y will set *relative* position within parent!
     - margins (`topMargin`, `rightMargin`, `bottomMargin`, `leftMargin` or combined `verticalMargin`, `horizontalMargin`)
-    - sizing (`verticalSizing`, `horizontalSizing`: "fill" | "auto" | "fix")
+    - sizing (`verticalSizing`, `horizontalSizing`: "fix" | "auto" | "fill") - controls child resizing depending on the layout's sizing mode (see below)
     - min/max sizes (`minWidth`, `maxWidth`, `minHeight`, `maxHeight`)
     - `zIndex: number` (higher numbers on top)
 
@@ -104,11 +108,9 @@ Boards can have layout systems that automatically control the positioning and sp
        - Padding: `topPadding`, `rightPadding`, `bottomPadding`, `leftPadding`, or combined `verticalPadding`, `horizontalPadding`
        - To modify spacing: adjust `rowGap` and `columnGap` properties, not individual child positions.
          Optionally, adjust individual child margins via `child.layoutChild`.
-       - Sizing: `verticalSizing` and `horizontalSizing` are NOT functional. You need to size manually for the time being.
     - When a board has flex layout, child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
       appending or inserting children automatically positions them according to the layout rules.
-    - CRITICAL: The FlexLayout method `board.flex.appendChild` is BROKEN. To append children to a flex layout board such that
-      they appear visually at the end, ALWAYS use the Board's method `board.appendChild(shape)`. So call it in the order of visual appearance.
+    - To append children to a flex layout board such that they appear visually at the end, use the Board's method `board.appendChild(shape)`, i.e. call it in the order of visual appearance.
       To insert at a specific index, use `board.insertChild(index, shape)`.
     - Add to a board with `board.addFlexLayout(): FlexLayout`; instance then accessible via `board.flex`.
       IMPORTANT: When adding a flex layout to a container that already has children,
@@ -121,8 +123,13 @@ Boards can have layout systems that automatically control the positioning and sp
       Check with: `if (board.grid) { ... }`
     - Properties: `rows`, `columns`, `rowGap`, `columnGap`
     - Children are positioned via 1-based row/column indices
-        - Add to grid via `board.flex.appendChild(shape, row, column)`
+        - Add to grid via `board.grid.appendChild(shape, row, column)`
         - Modify grid positioning after the fact via `shape.layoutCell: LayoutCellProperties`
+
+  * Auto-sizing: both types of layouts have properties `verticalSizing`, `horizontalSizing`: "fix" | "auto" | "fill"
+    - `fix` (default): no resizing (size determined by shape's own width/height)
+    - `auto`: size determined by content (container will resize depending on children's dimensions); ALWAYS set this if you want the container size to adapt to contents/margins/spacings!
+    - `fill`: resize children to fill the container's size (child resizing is controlled by each child's `layoutChild` properties)
 
   * When working with boards:
     - ALWAYS check if the board has a layout system before attempting to reposition children

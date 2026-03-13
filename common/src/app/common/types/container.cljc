@@ -212,25 +212,39 @@
     (get-instance-root objects (get objects (:parent-id shape)))))
 
 (defn find-component-main
-  "If the shape is a component main instance or is inside one, return that instance"
+  "If the shape is a component main instance or is inside one, return that instance.
+   Uses an iterative loop with cycle detection to prevent stack overflow on circular
+   parent references or malformed data structures."
   ([objects shape]
    (find-component-main objects shape true))
   ([objects shape only-direct-child?]
-   (cond
-     (or (nil? shape) (cfh/root? shape))
-     nil
-     (nil? (:parent-id shape))  ; This occurs in the root of components v1
-     shape
-     (ctk/main-instance? shape)
-     shape
-     (and only-direct-child?           ;; If we are asking only for direct childs of a component-main,
-          (ctk/instance-head? shape))  ;; stop when we found a instance-head that isn't main-instance
-     nil
-     (and (not only-direct-child?)
-          (ctk/instance-root? shape))
-     nil
-     :else
-     (find-component-main objects (get objects (:parent-id shape))))))
+   (loop [shape   shape
+          visited #{}]
+     (cond
+       (or (nil? shape) (cfh/root? shape))
+       nil
+
+       ;; Cycle detected: we have already visited this shape id
+       (contains? visited (:id shape))
+       nil
+
+       (nil? (:parent-id shape))  ; This occurs in the root of components v1
+       shape
+
+       (ctk/main-instance? shape)
+       shape
+
+       (and only-direct-child?           ;; If we are asking only for direct childs of a component-main,
+            (ctk/instance-head? shape))  ;; stop when we found a instance-head that isn't main-instance
+       nil
+
+       (and (not only-direct-child?)
+            (ctk/instance-root? shape))
+       nil
+
+       :else
+       (recur (get objects (:parent-id shape))
+              (conj visited (:id shape)))))))
 
 (defn inside-component-main?
   "Check if the shape is a component main instance or is inside one."

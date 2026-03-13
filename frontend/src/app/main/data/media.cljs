@@ -49,13 +49,14 @@
 (defn notify-start-loading
   []
   (st/emit! (ntf/show {:content (tr "media.loading")
+                       :tag ::media-upload
                        :type :toast
                        :level :info
                        :timeout nil})))
 
 (defn notify-finished-loading
   []
-  (st/emit! (ntf/hide)))
+  (st/emit! (ntf/hide :tag ::media-upload)))
 
 (defn process-error
   [error]

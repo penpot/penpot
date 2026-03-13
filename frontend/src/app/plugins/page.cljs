@@ -269,7 +269,7 @@
         (u/display-not-valid :openPage "Plugin doesn't have 'content:read' permission")
 
         :else
-        (let [new-window (if (boolean? new-window) new-window true)]
+        (let [new-window (if (boolean? new-window) new-window false)]
           (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
 
     :createFlow

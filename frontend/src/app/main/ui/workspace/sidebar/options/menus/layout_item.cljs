@@ -117,7 +117,7 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (on-change :simple attr value)
              (do
                (st/emit!
@@ -247,7 +247,7 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (on-change :multiple attr value)
              (do
                (st/emit!
@@ -577,7 +577,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (st/emit! (dwsl/update-layout-child ids {attr value}))
              (do
                (st/emit!

@@ -120,7 +120,10 @@
     :telemetry
     :terms-and-privacy-checkbox
     :tiered-file-data-storage
+
+    ;; Tokens
     :token-base-font-size
+    :token-combobox
     :token-color
     :token-shadow
     :token-tokenscript
@@ -139,6 +142,10 @@
     :inspect-styles
     ;; Enable performance logs in devconsole (disabled by default)
     :perf-logs
+
+    ;; Used for designate features that will be available in the next
+    ;; release
+    :canary
 
     ;; Security layer middleware that filters request by fetch
     ;; metadata headers
@@ -182,7 +189,8 @@
    :enable-token-shadow
    :enable-inspect-styles
    :enable-feature-fdata-objects-map
-   :enable-token-import-from-library])
+   ;; Temporary deactivated
+   #_:enable-token-import-from-library])
 
 (defn parse
   [& flags]

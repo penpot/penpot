@@ -43,6 +43,7 @@
                       (tr "ds.inputs.token-field.no-active-token-option" label))
         default-id  (mf/use-id)
         id          (d/nilv id default-id)
+        pill-ref    (mf/use-ref nil)
 
         focus-wrapper
         (mf/use-fn
@@ -53,6 +54,7 @@
              (dom/focus! (mf/ref-val token-wrapper-ref)))))]
     [:> tooltip* {:content property
                   :class (stl/css :token-field-wrapper)
+                  :trigger-ref token-wrapper-ref
                   :id (dm/str default-id "-input")}
      [:div {:class [class (stl/css-case :token-field true
                                         :with-icon (some? slot-start)
@@ -70,8 +72,10 @@
 
       [:div  {:class (stl/css :content-wrapper)}
        [:> tooltip* {:content content
+                     :trigger-ref pill-ref
                      :id (dm/str id "-pill")}
         [:button {:on-click on-click
+                  :ref pill-ref
                   :class (stl/css-case :pill true
                                        :no-set-pill (not set-active?)
                                        :pill-disabled disabled)

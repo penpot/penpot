@@ -41,8 +41,8 @@ fn draw_stroke_on_rect(
         }
     };
 
-    // By default just draw the rect. Only dotted inner/outer strokes need
-    // clipping to prevent the dotted pattern from appearing in wrong areas.
+    // Dotted inner/outer strokes need clipping to prevent the dotted
+    // pattern from appearing in wrong areas.
     if let Some(clip_op) = stroke.clip_op() {
         // Use a neutral layer (no extra paint) so opacity and filters
         // come solely from the stroke paint. This avoids applying
@@ -59,6 +59,35 @@ fn draw_stroke_on_rect(
             }
         }
         draw_stroke();
+        canvas.restore();
+    } else if stroke.kind == StrokeKind::Inner
+        && (stroke.width >= rect.width() || stroke.width >= rect.height())
+    {
+        // When the inner stroke width exceeds a shape dimension, the inset
+        // rect goes negative and the stroke overflows outside the shape.
+        // Fall back to the same approach as the SVG renderer: draw with
+        // doubled width centered on the original shape and clip to it.
+        canvas.save();
+        match corners {
+            Some(radii) => {
+                let rrect = RRect::new_rect_radii(*rect, radii);
+                canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+            }
+            None => {
+                canvas.clip_rect(*rect, skia::ClipOp::Intersect, antialias);
+            }
+        }
+        let mut inner_paint = paint.clone();
+        inner_paint.set_stroke_width(stroke.width * 2.0);
+        match corners {
+            Some(radii) => {
+                let rrect = RRect::new_rect_radii(*rect, radii);
+                canvas.draw_rrect(rrect, &inner_paint);
+            }
+            None => {
+                canvas.draw_rect(*rect, &inner_paint);
+            }
+        }
         canvas.restore();
     } else {
         draw_stroke();
@@ -83,8 +112,8 @@ fn draw_stroke_on_circle(
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
-    // By default just draw the circle. Only dotted inner/outer strokes need
-    // clipping to prevent the dotted pattern from appearing in wrong areas.
+    // Dotted inner/outer strokes need clipping to prevent the dotted
+    // pattern from appearing in wrong areas.
     if let Some(clip_op) = stroke.clip_op() {
         // Use a neutral layer (no extra paint) so opacity and filters
         // come solely from the stroke paint. This avoids applying
@@ -98,6 +127,24 @@ fn draw_stroke_on_circle(
         };
         canvas.clip_path(&clip_path, clip_op, antialias);
         canvas.draw_oval(stroke_rect, &paint);
+        canvas.restore();
+    } else if stroke.kind == StrokeKind::Inner
+        && (stroke.width >= rect.width() || stroke.width >= rect.height())
+    {
+        // When the inner stroke width exceeds a shape dimension, the inset
+        // rect goes negative and the stroke overflows outside the shape.
+        // Fall back to the same approach as the SVG renderer: draw with
+        // doubled width centered on the original shape and clip to it.
+        canvas.save();
+        let clip_path = {
+            let mut pb = skia::PathBuilder::new();
+            pb.add_oval(rect, None, None);
+            pb.detach()
+        };
+        canvas.clip_path(&clip_path, skia::ClipOp::Intersect, antialias);
+        let mut inner_paint = paint.clone();
+        inner_paint.set_stroke_width(stroke.width * 2.0);
+        canvas.draw_oval(*rect, &inner_paint);
         canvas.restore();
     } else {
         canvas.draw_oval(stroke_rect, &paint);
@@ -164,15 +211,24 @@ fn draw_stroke_on_path(
     blur: Option<&ImageFilter>,
     antialias: bool,
 ) {
-    let skia_path = path
-        .to_skia_path()
-        .make_transform(path_transform.unwrap_or(&Matrix::default()));
-
     let is_open = path.is_open();
 
     let mut draw_paint = paint.clone();
     let filter = compose_filters(blur, shadow);
     draw_paint.set_image_filter(filter);
+
+    // Move path_transform from the path geometry to the canvas so the
+    // stroke width is not distorted by non-uniform shape scaling.
+    // The path coordinates are already in world space, so we draw the
+    // raw path on a canvas where the shape transform has been undone:
+    //   canvas * path_transform = View × parents (no shape scale/rotation)
+    // This matches the SVG renderer, which bakes the transform into path
+    // coordinates and never sets a transform attribute on the element.
+    let save_count = canvas.save();
+    if let Some(pt) = path_transform {
+        canvas.concat(pt);
+    }
+    let skia_path = path.to_skia_path();
 
     match stroke.render_kind(is_open) {
         StrokeKind::Inner => {
@@ -187,6 +243,8 @@ fn draw_stroke_on_path(
     }
 
     handle_stroke_caps(&skia_path, stroke, canvas, is_open, paint, blur, antialias);
+
+    canvas.restore_to_count(save_count);
 }
 
 fn handle_stroke_cap(

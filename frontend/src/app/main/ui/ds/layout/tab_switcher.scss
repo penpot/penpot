@@ -115,3 +115,7 @@
   height: 100%;
   outline: $b-1 solid var(--tab-panel-outline-color);
 }
+
+.scrollable-panel {
+  overflow-y: auto;
+}

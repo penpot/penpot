@@ -53,6 +53,8 @@ pub struct NodeRenderState {
     visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
     mask: bool,
+    // True when this container was flattened (enter/exit skipped).
+    flattened: bool,
 }
 
 /// Get simplified children of a container, flattening nested flattened containers
@@ -745,16 +747,17 @@ impl RenderState {
                     s.canvas().concat(transform);
                 });
 
+                // Hard clip edge (antialias = false) to avoid alpha seam when clipping
+                // semi-transparent content larger than the frame.
                 if let Some(corners) = corners {
                     let rrect = RRect::new_rect_radii(*bounds, corners);
                     self.surfaces.apply_mut(surface_ids, |s| {
-                        s.canvas()
-                            .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+                        s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, false);
                     });
                 } else {
                     self.surfaces.apply_mut(surface_ids, |s| {
                         s.canvas()
-                            .clip_rect(*bounds, skia::ClipOp::Intersect, antialias);
+                            .clip_rect(*bounds, skia::ClipOp::Intersect, false);
                     });
                 }
 
@@ -865,7 +868,7 @@ impl RenderState {
                 let text_stroke_blur_outset =
                     Stroke::max_bounds_width(shape.visible_strokes(), false);
                 let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
-                let mut stroke_paragraphs_list = shape
+                let (mut stroke_paragraphs_list, stroke_opacities): (Vec<_>, Vec<_>) = shape
                     .visible_strokes()
                     .rev()
                     .map(|stroke| {
@@ -877,7 +880,7 @@ impl RenderState {
                             None,
                         )
                     })
-                    .collect::<Vec<_>>();
+                    .unzip();
                 if fast_mode {
                     // Fast path: render fills and strokes only (skip shadows/blur).
                     text::render(
@@ -889,9 +892,13 @@ impl RenderState {
                         None,
                         None,
                         text_fill_inset,
+                        None,
                     );
 
-                    for stroke_paragraphs in stroke_paragraphs_list.iter_mut() {
+                    for (stroke_paragraphs, layer_opacity) in stroke_paragraphs_list
+                        .iter_mut()
+                        .zip(stroke_opacities.iter())
+                    {
                         text::render_with_bounds_outset(
                             Some(self),
                             None,
@@ -902,6 +909,7 @@ impl RenderState {
                             None,
                             text_stroke_blur_outset,
                             None,
+                            *layer_opacity,
                         );
                     }
                 } else {
@@ -915,7 +923,10 @@ impl RenderState {
                     let blur_filter = shape.image_filter(1.);
                     let mut paragraphs_with_shadows =
                         text_content.paragraph_builder_group_from_text(Some(true));
-                    let mut stroke_paragraphs_with_shadows_list = shape
+                    let (mut stroke_paragraphs_with_shadows_list, _shadow_opacities): (
+                        Vec<_>,
+                        Vec<_>,
+                    ) = shape
                         .visible_strokes()
                         .rev()
                         .map(|stroke| {
@@ -927,7 +938,7 @@ impl RenderState {
                                 Some(true),
                             )
                         })
-                        .collect::<Vec<_>>();
+                        .unzip();
 
                     if let Some(parent_shadows) = parent_shadows {
                         if !shape.has_visible_strokes() {
@@ -940,6 +951,7 @@ impl RenderState {
                                     text_drop_shadows_surface_id.into(),
                                     Some(&shadow),
                                     blur_filter.as_ref(),
+                                    None,
                                     None,
                                 );
                             }
@@ -967,6 +979,7 @@ impl RenderState {
                                     Some(shadow),
                                     blur_filter.as_ref(),
                                     None,
+                                    None,
                                 );
                             }
                         }
@@ -981,6 +994,7 @@ impl RenderState {
                             None,
                             blur_filter.as_ref(),
                             text_fill_inset,
+                            None,
                         );
 
                         // 3. Stroke drop shadows
@@ -995,7 +1009,10 @@ impl RenderState {
                         );
 
                         // 4. Stroke fills
-                        for stroke_paragraphs in stroke_paragraphs_list.iter_mut() {
+                        for (stroke_paragraphs, layer_opacity) in stroke_paragraphs_list
+                            .iter_mut()
+                            .zip(stroke_opacities.iter())
+                        {
                             text::render_with_bounds_outset(
                                 Some(self),
                                 None,
@@ -1006,6 +1023,7 @@ impl RenderState {
                                 blur_filter.as_ref(),
                                 text_stroke_blur_outset,
                                 None,
+                                *layer_opacity,
                             );
                         }
 
@@ -1031,6 +1049,7 @@ impl RenderState {
                                     Some(innershadows_surface_id),
                                     Some(shadow),
                                     blur_filter.as_ref(),
+                                    None,
                                     None,
                                 );
                             }
@@ -1462,6 +1481,7 @@ impl RenderState {
                         clip_bounds: None,
                         visited_mask: true,
                         mask: false,
+                        flattened: false,
                     });
                     if let Some(&mask_id) = element.mask_id() {
                         self.pending_nodes.push(NodeRenderState {
@@ -1470,6 +1490,7 @@ impl RenderState {
                             clip_bounds: None,
                             visited_mask: false,
                             mask: true,
+                            flattened: false,
                         });
                     }
                 }
@@ -1999,8 +2020,7 @@ impl RenderState {
             }
 
             if visited_children {
-                // Skip render_shape_exit for flattened containers
-                if !element.can_flatten() {
+                if !node_render_state.flattened {
                     self.render_shape_exit(element, visited_mask, clip_bounds);
                 }
                 continue;
@@ -2149,6 +2169,7 @@ impl RenderState {
                 clip_bounds: clip_bounds.clone(),
                 visited_mask: false,
                 mask,
+                flattened: can_flatten,
             });
 
             if element.is_recursive() {
@@ -2175,13 +2196,13 @@ impl RenderState {
                         ids.reverse();
                     }
                     // Sort by z_index descending (higher z renders on top).
-                    // When z_index is equal, absolute children go behind
-                    // non-absolute children (false < true).
+                    // When z_index is equal, absolute children go above
+                    // non-absolute children
                     ids.sort_by_key(|id| {
                         let s = tree.get(id);
                         let z = s.map(|s| s.z_index()).unwrap_or(0);
                         let abs = s.map(|s| s.is_absolute()).unwrap_or(false);
-                        (std::cmp::Reverse(z), abs)
+                        (std::cmp::Reverse(z), !abs)
                     });
                     ids
                 } else {
@@ -2195,6 +2216,7 @@ impl RenderState {
                         clip_bounds: children_clip_bounds.clone(),
                         visited_mask: false,
                         mask: false,
+                        flattened: false,
                     });
                 }
             }
@@ -2309,6 +2331,7 @@ impl RenderState {
                                 clip_bounds: None,
                                 visited_mask: false,
                                 mask: false,
+                                flattened: false,
                             }
                         }));
                     }
