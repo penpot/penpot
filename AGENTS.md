@@ -1,8 +1,44 @@
-# Penpot – Instructions
+# IA Agent Guide for Penpot
 
-## Architecture Overview
+This document provides comprehensive context and guidelines for AI agents working on this repository.
 
-Penpot is a full-stack design tool composed of several distinct components:
+
+## STOP - DO NOT PROCEED WITHOUT COMPLETING THESE STEPS
+
+Before responding to ANY user request, you MUST:
+
+1. **READ** the CONTRIBUTING.md file
+2. **READ** this file and has special focus on your ROLE.
+
+
+## ROLE: SENIOR SOFTWARE ENGINEER
+
+You are a high-autonomy Senior Software Engineer. You have full
+permission to navigate the codebase, modify files, and execute
+commands to fulfill your tasks. Your goal is to solve complex
+technical tasks with high precision, focusing on maintainability and
+performance.
+
+### OPERATIONAL GUIDELINES
+
+1. Always begin by analyzing this document and understand the architecture and "Golden Rules".
+2. Before writing code, describe your plan. If the task is complex, break it down into atomic steps.
+3. Be concise and autonomous as possible in your task.
+
+### SEARCH STANDARDS
+
+When searching code, always use `ripgrep` (rg) instead of grep if
+available, as it respects `.gitignore` by default.
+
+If using grep, try to exclude node_modules and .shadow-cljs directories
+
+
+## ARCHITECTURE
+
+### Overview
+
+Penpot is a full-stack design tool composed of several distinct
+components separated in modules and subdirectories:
 
 | Component | Language | Role |
 |-----------|----------|------|
@@ -17,119 +53,6 @@ Penpot is a full-stack design tool composed of several distinct components:
 The monorepo is managed with `pnpm` workspaces. The `manage.sh`
 orchestrates cross-component builds. `run-ci.sh` defines the CI
 pipeline.
-
-## Search Standards
-
-When searching code, always use `ripgrep` (rg) instead of grep if
-available, as it respects `.gitignore` by default.
-
-If using grep, try to exclude node_modules and .shadow-cljs directories
-
-
-## Build, Test & Lint Commands
-
-### Frontend (`cd frontend`)
-
-Run `./scripts/setup` for setup all dependencies.
-
-
-```bash
-# Build (Producution)
-./scripts/build
-
-# Tests
-pnpm run test                      # Build ClojureScript tests + run node target/tests/test.js
-
-# Lint
-pnpm run lint:js              # Linter for JS/TS
-pnpm run lint:clj             # Linter for CLJ/CLJS/CLJC
-pnpm run lint:scss            # Linter for SCSS
-
-# Check Code Formart
-pnpm run check-fmt:clj        # Format CLJ/CLJS/CLJC
-pnpm run check-fmt:js         # Format JS/TS
-pnpm run check-fmt:scss       # Format SCSS
-
-# Code Format (Automatic Formating)
-pnpm run fmt:clj              # Format CLJ/CLJS/CLJC
-pnpm run fmt:js               # Format JS/TS
-pnpm run fmt:scss             # Format SCSS
-```
-
-To run a focused ClojureScript unit test: edit
-`test/frontend_tests/runner.cljs` to narrow the test suite, then `pnpm
-run build:test && node target/tests/test.js`.
-
-
-### Backend (`cd backend`)
-
-Run `pnpm install` for install all dependencies.
-
-```bash
-# Run full test suite
-pnpm run test
-
-# Run single namespace
-pnpm run test --focus backend-tests.rpc-doc-test
-
-# Check Code Format
-pnpm run check-fmt
-
-# Code Format (Automatic Formatting)
-pnpm run fmt
-
-# Code Linter
-pnpm run lint
-```
-
-Test config is in `backend/tests.edn`; test namespaces match
-`.*-test$` under `test/` directory. You should not touch this file,
-just use it for reference.
-
-
-### Common (`cd common`)
-
-This contains code that should compile and run under different runtimes: JVM & JS so the commands are
-separarated for each runtime.
-
-```bash
-clojure -M:dev:test                                    # Run full test suite under JVM
-clojure -M:dev:test --focus backend-tests.my-ns-test   # Run single namespace under JVM
-
-# Run full test suite under JS or JVM runtimes
-pnpm run test:js
-pnpm run test:jvm
-
-# Run single namespace (only on JVM)
-pnpm run test:jvm --focus common-tests.my-ns-test
-
-# Lint
-pnpm run lint:clj        # Lint CLJ/CLJS/CLJC code
-
-# Check Format
-pnpm run check-fmt:clj   # Check CLJ/CLJS/CLJS code
-pnpm run check-fmt:js    # Check JS/TS code
-
-# Code Format (Automatic Formatting)
-pnpm run fmt:clj         # Check CLJ/CLJS/CLJS code
-pnpm run fmt:js          # Check JS/TS code
-```
-
-To run a focused ClojureScript unit test: edit
-`test/common_tests/runner.cljs` to narrow the test suite, then `pnpm
-run build:test && node target/tests/test.js`.
-
-
-### Render-WASM (`cd render-wasm`)
-
-```bash
-./test                        # Rust unit tests (cargo test)
-./build                       # Compile to WASM (requires Emscripten)
-cargo fmt --check
-./lint --debug
-```
-
-## Key Conventions
 
 ### Namespace Structure
 
@@ -162,7 +85,9 @@ overview of the available namespaces.
 - `app.common.data.macros` – Performance macros used everywhere
 
 
-### Backend RPC Commands
+## Key Conventions
+
+### Backend RPC
 
 The PRC methods are implement in a some kind of multimethod structure using
 `app.util.serivices` namespace. All RPC methods are collected under `app.rpc`
@@ -240,26 +165,7 @@ available, prefer adding a new helper for handling it and the use the
 new helper.
 
 
-### CSS (Modules Pattern)
-
-Styles are co-located with components. Each `.cljs` file has a corresponding
-`.scss` file:
-
-```clojure
-;; In the component namespace:
-(require '[app.main.style :as stl])
-
-;; In the render function:
-[:div {:class (stl/css :container :active)}]
-
-;; Conditional:
-[:div {:class (stl/css-case :some-class true :selected (= drawtool :rect))}]
-
-;; When you need concat an existing class:
-[:div {:class [existing-class (stl/css-case :some-class true :selected (= drawtool :rect))]}]
-```
-
-### Integration tests (Playwright)
+### Integration Tests (Playwright)
 
 Integration tests are developed under `frontend/playwright` directory, we use
 mocks for remove communication with backend.
@@ -286,7 +192,7 @@ Always prefer these macros over their `clojure.core` equivalents — they compil
 (dm/str "a" "b" "c")           ;; string concatenation
 ```
 
-### Shared Code under Common (CLJC)
+### Shared Code
 
 Files in `common/src/app/common/` use reader conditionals to target both runtimes:
 
@@ -300,7 +206,7 @@ Both frontend and backend depend on `common` as a local library (`penpot/common
 
 
 
-### Component Standards & Syntax (React & Rumext: mf/defc)
+### UI Component Standards & Syntax (React & Rumext: mf/defc)
 
 The codebase contains various component patterns. When creating or refactoring
 components, follow the Modern Syntax rules outlined below.
@@ -417,7 +323,113 @@ Examples:
 - [ ] Does the component name end with *?
 
 
-## Commit Format Guidelines
+### Build, Test & Lint commands
+
+#### Frontend (`cd frontend`)
+
+Run `./scripts/setup` for setup all dependencies.
+
+
+```bash
+# Build (Producution)
+./scripts/build
+
+# Tests
+pnpm run test                      # Build ClojureScript tests + run node target/tests/test.js
+
+# Lint
+pnpm run lint:js              # Linter for JS/TS
+pnpm run lint:clj             # Linter for CLJ/CLJS/CLJC
+pnpm run lint:scss            # Linter for SCSS
+
+# Check Code Formart
+pnpm run check-fmt:clj        # Format CLJ/CLJS/CLJC
+pnpm run check-fmt:js         # Format JS/TS
+pnpm run check-fmt:scss       # Format SCSS
+
+# Code Format (Automatic Formating)
+pnpm run fmt:clj              # Format CLJ/CLJS/CLJC
+pnpm run fmt:js               # Format JS/TS
+pnpm run fmt:scss             # Format SCSS
+```
+
+To run a focused ClojureScript unit test: edit
+`test/frontend_tests/runner.cljs` to narrow the test suite, then `pnpm
+run build:test && node target/tests/test.js`.
+
+
+#### Backend (`cd backend`)
+
+Run `pnpm install` for install all dependencies.
+
+```bash
+# Run full test suite
+pnpm run test
+
+# Run single namespace
+pnpm run test --focus backend-tests.rpc-doc-test
+
+# Check Code Format
+pnpm run check-fmt
+
+# Code Format (Automatic Formatting)
+pnpm run fmt
+
+# Code Linter
+pnpm run lint
+```
+
+Test config is in `backend/tests.edn`; test namespaces match
+`.*-test$` under `test/` directory. You should not touch this file,
+just use it for reference.
+
+
+#### Common (`cd common`)
+
+This contains code that should compile and run under different runtimes: JVM & JS so the commands are
+separarated for each runtime.
+
+```bash
+clojure -M:dev:test                                    # Run full test suite under JVM
+clojure -M:dev:test --focus backend-tests.my-ns-test   # Run single namespace under JVM
+
+# Run full test suite under JS or JVM runtimes
+pnpm run test:js
+pnpm run test:jvm
+
+# Run single namespace (only on JVM)
+pnpm run test:jvm --focus common-tests.my-ns-test
+
+# Lint
+pnpm run lint:clj        # Lint CLJ/CLJS/CLJC code
+
+# Check Format
+pnpm run check-fmt:clj   # Check CLJ/CLJS/CLJS code
+pnpm run check-fmt:js    # Check JS/TS code
+
+# Code Format (Automatic Formatting)
+pnpm run fmt:clj         # Check CLJ/CLJS/CLJS code
+pnpm run fmt:js          # Check JS/TS code
+```
+
+To run a focused ClojureScript unit test: edit
+`test/common_tests/runner.cljs` to narrow the test suite, then `pnpm
+run build:test && node target/tests/test.js`.
+
+
+#### Render-WASM (`cd render-wasm`)
+
+```bash
+./test                        # Rust unit tests (cargo test)
+./build                       # Compile to WASM (requires Emscripten)
+cargo fmt --check
+./lint --debug
+```
+
+
+
+
+### Commit Format Guidelines
 
 Format: `<emoji-code> <subject>`
 
@@ -456,9 +468,28 @@ applicable.
 | 🌐 | `:globe_with_meridians:` | Translations |
 
 
-## SCSS Rules & Migration
+### CSS
+#### Usage convention for components
 
-### General rules
+Styles are co-located with components. Each `.cljs` file has a corresponding
+`.scss` file:
+
+```clojure
+;; In the component namespace:
+(require '[app.main.style :as stl])
+
+;; In the render function:
+[:div {:class (stl/css :container :active)}]
+
+;; Conditional:
+[:div {:class (stl/css-case :some-class true :selected (= drawtool :rect))}]
+
+;; When you need concat an existing class:
+[:div {:class [existing-class (stl/css-case :some-class true :selected (= drawtool :rect))]}]
+```
+
+#### Styles rules & migration
+##### General
 
 - Prefer CSS custom properties ( `margin: var(--sp-xs);`) instead of scss
   variables and get the already defined properties from `_sizes.scss`. The SCSS
@@ -478,7 +509,7 @@ applicable.
 - Use mixins only those defined in`ds/mixins.scss`. Avoid legacy mixins like
   `@include flexCenter;`. Write standard CSS (flex/grid) instead.
 
-### Syntax & Structure
+##### Syntax & Structure
 
 - Use the `@use` instead of `@import`. If you go to refactor existing SCSS file,
   try to replace all `@import` with `@use`. Example: `@use "ds/_sizes.scss" as
@@ -489,9 +520,9 @@ applicable.
 - Leverage component-level CSS variables for state changes (hover/focus) instead
   of rewriting properties.
 
-### Checklist
+##### Checklist
 
-- [ ] No references to `common/refactor/` 
+- [ ] No references to `common/refactor/`
 - [ ] All `@import` converted to `@use` (only if refactoring)
 - [ ] Physical properties (left/right) using logical properties (inline-start/end).
 - [ ] Typography implemented via `use-typography()` mixin.
