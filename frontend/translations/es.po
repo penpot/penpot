@@ -7860,6 +7860,10 @@ msgstr "Borrar theme"
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicar token"
 
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:350
+msgid "workspace.tokens.copy-name"
+msgstr "Copiar nombre"
+
 #: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "copiar"
