@@ -649,6 +649,7 @@
                                                                          :icon i/tokens
                                                                          :tooltip-class (stl/css :button-tooltip)
                                                                          :class (stl/css :invisible-button)
+                                                                         :tooltip-placement "top-left"
                                                                          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                                                                          :ref open-dropdown-ref
                                                                          :on-click open-dropdown}])))
