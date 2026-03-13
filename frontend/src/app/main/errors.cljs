@@ -337,9 +337,15 @@
                    (or (str/includes? stack "chrome-extension://")
                        (str/includes? stack "moz-extension://")))))
 
+          (from-posthog? [cause]
+            (let [stack (.-stack cause)]
+              (and (string? stack)
+                   (str/includes? stack "posthog"))))
+
           (is-ignorable-exception? [cause]
             (let [message (ex-message cause)]
               (or (from-extension? cause)
+                  (from-posthog? cause)
                   (= message "Possible side-effect in debug-evaluate")
                   (= message "Unexpected end of input")
                   (str/starts-with? message "invalid props on component")
