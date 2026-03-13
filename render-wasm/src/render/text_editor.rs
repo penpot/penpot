@@ -123,9 +123,9 @@ fn calculate_cursor_rect(
                 .map(|span| span.text.chars().count())
                 .sum();
 
-            let (cursor_x, cursor_height) = if para_char_count == 0 {
+            let (cursor_x, cursor_y, cursor_height) = if para_char_count == 0 {
                 // Empty paragraph - use default height
-                (0.0, laid_out_para.height())
+                (0.0, 0.0, laid_out_para.height())
             } else if char_pos == 0 {
                 let rects = laid_out_para.get_rects_for_range(
                     0..1,
@@ -133,9 +133,10 @@ fn calculate_cursor_rect(
                     RectWidthStyle::Tight,
                 );
                 if !rects.is_empty() {
-                    (rects[0].rect.left(), rects[0].rect.height())
+                    let r = &rects[0].rect;
+                    (r.left(), r.top(), r.height())
                 } else {
-                    (0.0, laid_out_para.height())
+                    (0.0, 0.0, laid_out_para.height())
                 }
             } else if char_pos >= para_char_count {
                 let rects = laid_out_para.get_rects_for_range(
@@ -144,9 +145,10 @@ fn calculate_cursor_rect(
                     RectWidthStyle::Tight,
                 );
                 if !rects.is_empty() {
-                    (rects[0].rect.right(), rects[0].rect.height())
+                    let r = &rects[0].rect;
+                    (r.right(), r.top(), r.height())
                 } else {
-                    (laid_out_para.longest_line(), laid_out_para.height())
+                    (laid_out_para.longest_line(), 0.0, laid_out_para.height())
                 }
             } else {
                 let rects = laid_out_para.get_rects_for_range(
@@ -155,17 +157,18 @@ fn calculate_cursor_rect(
                     RectWidthStyle::Tight,
                 );
                 if !rects.is_empty() {
-                    (rects[0].rect.left(), rects[0].rect.height())
+                    let r = &rects[0].rect;
+                    (r.left(), r.top(), r.height())
                 } else {
                     // Fallback: use glyph position
                     let pos = laid_out_para.get_glyph_position_at_coordinate((0.0, 0.0));
-                    (pos.position as f32, laid_out_para.height())
+                    (pos.position as f32, 0.0, laid_out_para.height())
                 }
             };
 
             return Some(Rect::from_xywh(
                 cursor_x,
-                y_offset,
+                y_offset + cursor_y,
                 editor_state.theme.cursor_width,
                 cursor_height,
             ));
