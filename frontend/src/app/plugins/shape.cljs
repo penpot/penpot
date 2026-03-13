@@ -1266,20 +1266,20 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/display-not-valid :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
-                 :else
-                 (let [id        (uuid/next)
-                       axis      (parser/orientation->axis orientation)
-                       objects   (u/locate-objects file-id page-id)
-                       frame     (get objects id)
-                       board-pos (get frame axis)
-                       position  (+ board-pos value)]
-                   (st/emit!
-                    (dwgu/update-guides
-                     {:id       id
-                      :axis     axis
-                      :position position
-                      :frame-id id}))
-                   (rg/ruler-guide-proxy plugin-id file-id page-id id)))))
+                :else
+                (let [ruler-id  (uuid/next)
+                      axis      (parser/orientation->axis orientation)
+                      objects   (u/locate-objects file-id page-id)
+                      frame     (get objects id)
+                      board-pos (get frame axis)
+                      position  (+ board-pos value)]
+                  (st/emit!
+                   (dwgu/update-guides
+                    {:id       ruler-id
+                     :axis     axis
+                     :position position
+                     :frame-id id}))
+                  (rg/ruler-guide-proxy plugin-id file-id page-id ruler-id)))))
 
            :removeRulerGuide
            (fn [_ value]
