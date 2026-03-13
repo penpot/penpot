@@ -628,12 +628,13 @@
       (let [prev-wasm-props (:prev-wasm-props state)
             wasm-props      (:wasm-props state)
             objects         (dsh/lookup-page-objects state)
-            pixel-precision false]
+            snap-pixel?
+            (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
         (set-wasm-props! objects prev-wasm-props wasm-props)
         (let [structure-entries (parse-structure-modifiers modif-tree)]
           (wasm.api/set-structure-modifiers structure-entries)
           (let [geometry-entries (parse-geometry-modifiers modif-tree)
-                modifiers        (wasm.api/propagate-modifiers geometry-entries pixel-precision)]
+                modifiers        (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
             (wasm.api/set-modifiers modifiers)
             (let [ids     (into [] xf:map-key geometry-entries)
                   selrect (wasm.api/get-selection-rect ids)]
