@@ -716,7 +716,7 @@
 
         (when-let [node (mf/ref-val ref)]
           (dom/set-value! node value'))))
-    
+
     (mf/with-effect [applied-token]
       (when (nil? applied-token)
         (reset! token-applied* nil)
