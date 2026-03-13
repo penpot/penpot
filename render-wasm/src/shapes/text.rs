@@ -480,8 +480,12 @@ impl TextContent {
             };
 
             if matches {
+                // Skia's get_glyph_position_at_coordinate expects coordinates relative to
+                // the paragraph's top-left. For multi-paragraph or wrapped text, each
+                // paragraph has its own origin; subtract start_y so we pass paragraph-local coords.
+                let para_pt = Point::new(point.x, point.y - start_y);
                 let position_with_affinity =
-                    layout_paragraph.get_glyph_position_at_coordinate(*point);
+                    layout_paragraph.get_glyph_position_at_coordinate((para_pt.x, para_pt.y));
                 if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
                     // Computed position keeps the current position in terms
                     // of number of characters of text. This is used to know
