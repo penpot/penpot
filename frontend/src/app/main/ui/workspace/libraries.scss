@@ -84,7 +84,7 @@
   overflow-y: auto;
 }
 
-.section-list-item {
+%section-list-item-placeholder {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: var(--sp-s);
@@ -98,7 +98,7 @@
 }
 
 .section-list-item-double-icon {
-  @extend .section-list-item;
+  @extend %section-list-item-placeholder;
 
   grid-template-columns: 1fr auto auto;
 }
@@ -196,7 +196,7 @@
 
 .item-name {
   @include t.use-typography("body-large");
-  @include textEllipsis;
+  @include text-ellipsis;
 
   margin: 0;
   max-width: px2rem(236);
@@ -281,11 +281,10 @@
 
 .info-block {
   display: grid;
-  grid-template-columns: auto 1fr;
   column-gap: var(--sp-xl);
   grid-template:
-    "icon title"
-    "icon content";
+    "icon title" auto
+    "icon content" auto / auto 1fr;
 }
 
 .info-icon {

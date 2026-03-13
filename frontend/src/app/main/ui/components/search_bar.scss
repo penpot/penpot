@@ -66,7 +66,7 @@
 }
 
 .clear-icon {
-  @extend .button-tag;
+  @extend %button-tag;
 
   flex: 0 0 deprecated.$s-32;
   height: 100%;

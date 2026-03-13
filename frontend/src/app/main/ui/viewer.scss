@@ -66,9 +66,8 @@
   grid-column: 1 / span 1;
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   height: calc(100vh - deprecated.$s-48);
-  flex-flow: wrap;
   overflow: auto;
 }
 

@@ -82,7 +82,7 @@
     block-size: auto;
   }
 
-  @media (max-width: 992px) {
+  @media (width <= 992px) {
     display: none;
   }
 }

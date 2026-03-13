@@ -39,18 +39,18 @@
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }
 
 .accept-btn {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 
   &.danger {
-    @extend .modal-danger-btn;
+    @extend %modal-danger-btn;
   }
 }
 

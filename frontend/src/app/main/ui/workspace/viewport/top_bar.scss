@@ -47,7 +47,7 @@
 }
 
 .done-btn {
-  @extend .button-primary;
+  @extend %button-primary;
 
   text-transform: uppercase;
   padding: deprecated.$s-8 deprecated.$s-20;

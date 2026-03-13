@@ -11,7 +11,7 @@
 }
 
 .title-spacing-annotation {
-  @extend .attr-title;
+  @extend %attr-title;
 }
 
 .annotation-content {

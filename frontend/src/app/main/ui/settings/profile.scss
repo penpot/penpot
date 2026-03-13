@@ -21,7 +21,6 @@
   display: flex;
   flex-direction: column;
   max-width: $s-500;
-  margin-bottom: $s-32;
   width: $s-580;
   margin: $s-80 auto $s-120 auto;
   justify-content: center;
@@ -343,7 +342,7 @@ form.avatar-form {
 }
 
 .btn-primary {
-  @extend .button-primary;
+  @extend %button-primary;
 
   height: $s-32;
 }

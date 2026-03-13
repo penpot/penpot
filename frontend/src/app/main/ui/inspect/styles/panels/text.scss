@@ -8,7 +8,7 @@
 
 .text-content-wrapper {
   --border-color: var(--color-background-quaternary);
-  --border-radius: ${#{$br-8}};
+  --border-radius: #{$br-8};
 
   border: $b-1 solid var(--border-color);
   border-radius: var(--border-radius);

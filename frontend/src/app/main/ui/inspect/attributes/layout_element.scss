@@ -26,13 +26,13 @@
 }
 
 .layout-element-row {
-  @extend .attr-row;
+  @extend %attr-row;
 
   block-size: $sz-36;
 }
 
 .button-children {
-  @extend .copy-button-children;
+  @extend %copy-button-children;
 }
 
 .copy-btn-title {

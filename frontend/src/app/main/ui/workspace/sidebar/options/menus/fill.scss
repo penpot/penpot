@@ -51,7 +51,7 @@
 
 .fill-checkbox {
   // TODO create a checkbox component in the DS
-  @extend .input-checkbox;
+  @extend %input-checkbox;
 
   padding-inline-start: var(--sp-s);
 

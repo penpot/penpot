@@ -112,17 +112,17 @@
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 
   justify-content: flex-end;
 }
 
 .accept-button {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 }
 
 .back-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }
 
 // SEPARATOR
@@ -162,7 +162,7 @@
 }
 
 .team-name-input {
-  @extend .input-element-label;
+  @extend %input-element-label;
 
   label {
     @include deprecated.flexColumn;

@@ -187,7 +187,7 @@
 }
 
 .item-title {
-  @include textEllipsis;
+  @include text-ellipsis;
 
   align-content: center;
   block-size: $sz-64;

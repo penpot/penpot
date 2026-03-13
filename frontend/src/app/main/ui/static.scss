@@ -106,7 +106,7 @@
 }
 
 .login-header {
-  @extend .button-primary;
+  @extend %button-primary;
 
   padding: deprecated.$s-8 deprecated.$s-16;
   font-size: deprecated.$fs-11;
@@ -164,7 +164,7 @@
   text-align: center;
 
   button {
-    @extend .button-primary;
+    @extend %button-primary;
 
     text-transform: uppercase;
     padding: deprecated.$s-8 deprecated.$s-16;
@@ -282,7 +282,7 @@
       margin-top: deprecated.$s-32;
 
       button {
-        @extend .button-primary;
+        @extend %button-primary;
 
         text-transform: uppercase;
         padding: deprecated.$s-8 deprecated.$s-16;
