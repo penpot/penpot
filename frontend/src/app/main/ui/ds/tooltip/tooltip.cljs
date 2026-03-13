@@ -172,7 +172,7 @@
         (deref placement*)
 
         delay
-        (d/nilv delay 300)
+        (d/nilv delay 700)
 
         schedule-ref
         (mf/use-ref nil)
@@ -187,7 +187,7 @@
          (fn [_]
            (let [trigger-el (mf/ref-val trigger-ref)]
              (clear-schedule schedule-ref)
-             (add-schedule schedule-ref (d/nilv delay 300)
+             (add-schedule schedule-ref delay
                            (fn []
                              (when-let [active @active-tooltip]
                                (when (not= (:id active) tooltip-id)
