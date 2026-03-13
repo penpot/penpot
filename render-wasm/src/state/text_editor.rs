@@ -2,6 +2,7 @@
 
 use crate::shapes::{TextContent, TextPositionWithAffinity};
 use crate::uuid::Uuid;
+use crate::wasm::text::helpers as text_helpers;
 use skia_safe::{
     textlayout::{Affinity, PositionWithAffinity},
     Color,
@@ -233,11 +234,14 @@ impl TextEditorState {
 
         if offset == chars.len() {
             offset = offset.saturating_sub(1);
-        } else if !is_word_char(chars[offset]) && offset > 0 && is_word_char(chars[offset - 1]) {
+        } else if !text_helpers::is_word_char(chars[offset])
+            && offset > 0
+            && text_helpers::is_word_char(chars[offset - 1])
+        {
             offset -= 1;
         }
 
-        if !is_word_char(chars[offset]) {
+        if !text_helpers::is_word_char(chars[offset]) {
             self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
                 position.paragraph,
                 position.offset.min(chars.len()),
@@ -248,12 +252,12 @@ impl TextEditorState {
         }
 
         let mut start = offset;
-        while start > 0 && is_word_char(chars[start - 1]) {
+        while start > 0 && text_helpers::is_word_char(chars[start - 1]) {
             start -= 1;
         }
 
         let mut end = offset + 1;
-        while end < chars.len() && is_word_char(chars[end]) {
+        while end < chars.len() && text_helpers::is_word_char(chars[end]) {
             end += 1;
         }
 

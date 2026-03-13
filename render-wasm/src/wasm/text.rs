@@ -11,6 +11,8 @@ use crate::{with_current_shape, with_current_shape_mut, with_state, with_state_m
 
 use crate::error::Error;
 
+pub mod helpers;
+
 const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
 
