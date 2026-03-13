@@ -37,7 +37,8 @@
   color: var(--color-foreground-secondary);
   @include t.use-typography("code-font");
   inline-size: fit-content;
-  min-inline-size: px2rem(40);
+  min-inline-size: px2rem(44);
+  padding-inline-start: var(--sp-xs);
 }
 
 .invisible-button {
