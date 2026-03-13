@@ -150,7 +150,7 @@
           indices)))
 
 (defn- sort-groups-and-tokens
-  "Sorts both the groups and the tokens inside them alphabetically.
+  "Sorts the tokens inside the groups alphabetically.
 
    Input:
    A map where:
@@ -162,18 +162,19 @@
     :colors    [{:name \"azul\"} {:name \"rojo\"}]}
 
    Output:
-   A sorted map where:
-   - groups are ordered alphabetically by key
+   A map which:
    - tokens inside each group are sorted alphabetically by :name
 
    Example output:
-   {:colors    [{:name \"azul\"} {:name \"rojo\"}]
-    :dimensions [{:name \"quini\"} {:name \"tres\"}]}"
+   {:dimensions [{:name \"quini\"} {:name \"tres\"}]
+    :colors    [{:name \"azul\"} {:name \"rojo\"}]}"
 
   [groups->tokens]
-  (into (sorted-map) ;; ensure groups are ordered alphabetically by their key
-        (for [[group tokens] groups->tokens]
-          [group (sort-by :name tokens)])))
+  (reduce (fn [acc [group tokens]]
+            (assoc acc group (sort-by :name tokens)))
+          {}
+          groups->tokens))
+
 
 (def ^:private schema:icon
   [:and :string [:fn #(contains? icon-list %)]])

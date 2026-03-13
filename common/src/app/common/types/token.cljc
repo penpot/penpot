@@ -522,31 +522,31 @@
 
 (def tokens-by-input
   "A map from input name to applicable token for that input."
-  {:width #{:sizing :dimensions}
-   :height #{:sizing :dimensions}
-   :max-width #{:sizing :dimensions}
-   :max-height #{:sizing :dimensions}
-   :min-width #{:sizing :dimensions}
-   :min-height #{:sizing :dimensions}
-   :x #{:dimensions}
-   :y #{:dimensions}
-   :rotation #{:number :rotation}
-   :border-radius #{:border-radius :dimensions}
-   :row-gap #{:spacing :dimensions}
-   :column-gap #{:spacing :dimensions}
-   :horizontal-padding #{:spacing :dimensions}
-   :vertical-padding #{:spacing :dimensions}
-   :sided-paddings #{:spacing :dimensions}
-   :horizontal-margin #{:spacing :dimensions}
-   :vertical-margin #{:spacing :dimensions}
-   :sided-margins #{:spacing :dimensions}
-   :line-height #{:line-height :number}
-   :opacity #{:opacity}
-   :stroke-width #{:stroke-width :dimensions}
-   :font-size #{:font-size}
-   :letter-spacing #{:letter-spacing}
-   :fill #{:color}
-   :stroke-color #{:color}})
+  {:width              [:sizing :dimensions]
+   :height             [:sizing :dimensions]
+   :max-width          [:sizing :dimensions]
+   :max-height         [:sizing :dimensions]
+   :min-width          [:sizing :dimensions]
+   :min-height         [:sizing :dimensions]
+   :x                  [:dimensions]
+   :y                  [:dimensions]
+   :rotation           [:rotation :number]
+   :border-radius      [:border-radius :dimensions]
+   :row-gap            [:spacing :dimensions]
+   :column-gap         [:spacing :dimensions]
+   :horizontal-padding [:spacing :dimensions]
+   :vertical-padding   [:spacing :dimensions]
+   :sided-paddings     [:spacing :dimensions]
+   :horizontal-margin  [:spacing :dimensions]
+   :vertical-margin    [:spacing :dimensions]
+   :sided-margins      [:spacing :dimensions]
+   :line-height        [:line-height :number]
+   :opacity            [:opacity]
+   :stroke-width       [:stroke-width :dimensions]
+   :font-size          [:font-size]
+   :letter-spacing     [:letter-spacing]
+   :fill               [:color]
+   :stroke-color       [:color]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS for tokens application

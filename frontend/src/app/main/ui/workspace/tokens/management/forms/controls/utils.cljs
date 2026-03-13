@@ -53,7 +53,7 @@
           tokens)))
 
 (defn- sort-groups-and-tokens
-  "Sorts both the groups and the tokens inside them alphabetically.
+  "Sorts the tokens inside the groups alphabetically.
 
    Input:
    A map where:
@@ -65,18 +65,18 @@
     :colors    [{:name \"azul\"} {:name \"rojo\"}]}
 
    Output:
-   A sorted map where:
-   - groups are ordered alphabetically by key
+   A map which:
    - tokens inside each group are sorted alphabetically by :name
 
    Example output:
-   {:colors    [{:name \"azul\"} {:name \"rojo\"}]
-    :dimensions [{:name \"quini\"} {:name \"tres\"}]}"
+   {:dimensions [{:name \"quini\"} {:name \"tres\"}]
+    :colors    [{:name \"azul\"} {:name \"rojo\"}]}"
 
   [groups->tokens]
-  (into (sorted-map) ;; ensure groups are ordered alphabetically by their key
-        (for [[group tokens] groups->tokens]
-          [group (sort-by :name tokens)])))
+  (reduce (fn [acc [group tokens]]
+            (assoc acc group (sort-by :name tokens)))
+          {}
+          groups->tokens))
 
 (defn get-token-dropdown-options
   [tokens filter-term]
@@ -94,9 +94,15 @@
 (defn filter-tokens-for-input
   [raw-tokens input-type]
   (delay
-    (-> (deref raw-tokens)
-        (select-keys (get cto/tokens-by-input input-type))
-        (not-empty))))
+    (let [raw-tokens (deref raw-tokens)
+          key-order  (get  cto/tokens-by-input input-type)]
+      (-> (reduce (fn [acc k]
+                    (if (contains? raw-tokens k)
+                      (assoc acc k (get raw-tokens k))
+                      acc))
+                  (array-map)
+                  key-order)
+          (not-empty)))))
 
 (defn focusable-options [options]
   (filter #(= (:type %) :token) options))

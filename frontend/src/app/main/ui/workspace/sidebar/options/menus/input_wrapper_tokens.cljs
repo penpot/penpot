@@ -1,9 +1,9 @@
 (ns app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.types.token :as tk]
    [app.main.ui.context :as muc]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -11,11 +11,8 @@
   [{:keys [value attr applied-token align on-detach placeholder input-type class] :rest props}]
   (let [tokens (mf/use-ctx muc/active-tokens-by-type)
 
-        tokens (mf/with-memo [tokens input-type]
-                 (delay
-                   (-> (deref tokens)
-                       (select-keys (get tk/tokens-by-input (or input-type attr)))
-                       (not-empty))))
+        tokens (mf/with-memo [tokens input-type attr]
+                 (csu/filter-tokens-for-input tokens (or input-type attr)))
 
         on-detach-attr
         (mf/use-fn
