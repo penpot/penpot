@@ -45,7 +45,7 @@
       [:div {:class (stl/css :modal-success-content)}
        [:div {:class (stl/css :modal-start)}
         ;; TODO this svg is a placeholder. Use the proper one when created
-        [:> raw-svg* {:id "logo-subscription"}]]
+        [:> raw-svg* {:id "nitrate-welcome"}]]
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
