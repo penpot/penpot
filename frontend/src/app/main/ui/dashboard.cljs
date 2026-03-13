@@ -263,6 +263,7 @@
           (swap! storage/session dissoc :template))))))
 
 (mf/defc dashboard*
+  {::mf/props :obj}
   [{:keys [profile project-id team-id search-term plugin-url template section]}]
   (let [team            (mf/deref refs/team)
         projects        (mf/deref refs/projects)
