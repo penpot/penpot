@@ -150,7 +150,7 @@
           indices)))
 
 (defn- sort-groups-and-tokens
-  "Sorts both the groups and the tokens inside them alphabetically.
+  "Sorts the tokens inside the groups alphabetically.
 
    Input:
    A map where:
@@ -162,18 +162,19 @@
     :colors    [{:name \"azul\"} {:name \"rojo\"}]}
 
    Output:
-   A sorted map where:
-   - groups are ordered alphabetically by key
+   A map which:
    - tokens inside each group are sorted alphabetically by :name
 
    Example output:
-   {:colors    [{:name \"azul\"} {:name \"rojo\"}]
-    :dimensions [{:name \"quini\"} {:name \"tres\"}]}"
+   {:dimensions [{:name \"quini\"} {:name \"tres\"}]
+    :colors    [{:name \"azul\"} {:name \"rojo\"}]}"
 
   [groups->tokens]
-  (into (sorted-map) ;; ensure groups are ordered alphabetically by their key
-        (for [[group tokens] groups->tokens]
-          [group (sort-by :name tokens)])))
+  (reduce (fn [acc [group tokens]]
+            (assoc acc group (sort-by :name tokens)))
+          {}
+          groups->tokens))
+
 
 (def ^:private schema:icon
   [:and :string [:fn #(contains? icon-list %)]])
@@ -649,6 +650,7 @@
                                                                          :icon i/tokens
                                                                          :tooltip-class (stl/css :button-tooltip)
                                                                          :class (stl/css :invisible-button)
+                                                                         :tooltip-placement "top-left"
                                                                          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                                                                          :ref open-dropdown-ref
                                                                          :on-click open-dropdown}])))
@@ -676,6 +678,7 @@
                               :on-blur on-blur
                               :class inner-class
                               :property property
+                              :is-open is-open
                               :slot-start (when (or icon text-icon)
                                             (mf/html
                                              (cond
@@ -713,6 +716,11 @@
 
         (when-let [node (mf/ref-val ref)]
           (dom/set-value! node value'))))
+
+    (mf/with-effect [applied-token]
+      (when (nil? applied-token)
+        (reset! token-applied* nil)
+        (reset! selected-id* nil)))
 
     (mf/with-layout-effect [on-mouse-wheel]
       (when-let [node (mf/ref-val ref)]

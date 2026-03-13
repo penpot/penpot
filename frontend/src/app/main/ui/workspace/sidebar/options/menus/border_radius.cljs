@@ -11,6 +11,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.workspace.sidebar.options.common :as soc]
    [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -130,26 +131,21 @@
         (mf/use-fn
          (mf/deps change-radius ids)
          (fn [value]
-           (if (or (string? value) (number? value))
-             (st/emit!
-              (change-radius (fn [shape]
-                               (ctsr/set-radius-to-all-corners shape value))))
-             (st/emit!
-              (dwta/toggle-token {:token     (first value)
-                                  :attrs     #{:r1 :r2 :r3 :r4}
-                                  :shape-ids ids})))))
-
+           (soc/emit-value-or-token
+            value
+            #(st/emit! (change-radius (fn [shape] (ctsr/set-radius-to-all-corners shape %))))
+            ids
+            #{:r1 :r2 :r3 :r4})))
 
         on-single-radius-change
         (mf/use-fn
          (mf/deps change-one-radius ids)
          (fn [value attr]
-           (if (or (string? value) (number? value))
-             (st/emit! (change-one-radius #(ctsr/set-radius-to-single-corner % attr value) attr))
-             (st/emit! (st/emit!
-                        (dwta/toggle-token {:token     (first value)
-                                            :attrs     #{attr}
-                                            :shape-ids ids}))))))
+           (soc/emit-value-or-token
+            value
+            #(st/emit! (change-one-radius (fn [shape] (ctsr/set-radius-to-single-corner shape attr %)) attr))
+            ids
+            #{attr})))
 
         on-radius-r1-change #(on-single-radius-change % :r1)
         on-radius-r2-change #(on-single-radius-change % :r2)

@@ -25,6 +25,7 @@
    [:property {:optional true} [:maybe :string]]
    [:value :any]
    [:disabled {:optional true} :boolean]
+   [:is-open {:optional true} :boolean]
    [:slot-start {:optional true} [:maybe some?]]
    [:on-click {:optional true} fn?]
    [:on-token-key-down fn?]
@@ -36,7 +37,7 @@
   {::mf/schema schema:token-field}
   [{:keys [id label value slot-start disabled class
            on-click on-token-key-down on-blur detach-token
-           token-wrapper-ref token-detach-btn-ref on-focus property]}]
+           token-wrapper-ref token-detach-btn-ref on-focus property is-open]}]
   (let [set-active? (some? id)
         content     (if set-active?
                       label
@@ -88,9 +89,11 @@
 
       (when-not ^boolean disabled
         [:> icon-button* {:variant "ghost"
-                          :class (stl/css :invisible-button)
+                          :class (stl/css-case :invisible-button true
+                                               :invisible-btn-dropdown-open is-open)
                           :tooltip-class (stl/css :button-tooltip)
                           :icon i/broken-link
                           :ref token-detach-btn-ref
+                          :tooltip-placement "top-left"
                           :aria-label (tr "ds.inputs.token-field.detach-token")
                           :on-click detach-token}])]]))
