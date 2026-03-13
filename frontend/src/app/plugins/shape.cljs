@@ -33,6 +33,8 @@
    [app.common.types.text :as txt]
    [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
@@ -1200,30 +1202,53 @@
                  (u/display-not-valid :export value)
 
                  :else
-                 (let [shape (u/locate-shape file-id page-id id)
-                       payload
-                       {:cmd :export-shapes
-                        :profile-id (:profile-id @st/state)
-                        :wait true
-                        :exports [{:file-id   file-id
-                                   :page-id   page-id
-                                   :object-id id
-                                   :name      (:name shape)
-                                   :type      (:type value :png)
-                                   :suffix    (:suffix value "")
-                                   :scale     (:scale value 1)}]}]
-                   (js/Promise.
-                    (fn [resolve reject]
-                      (->> (rp/cmd! :export payload)
-                           (rx/mapcat (fn [{:keys [uri]}]
-                                        (->> (http/send! {:method :get
-                                                          :uri uri
-                                                          :response-type :blob
-                                                          :omit-default-headers true})
-                                             (rx/map :body))))
-                           (rx/mapcat #(.arrayBuffer %))
-                           (rx/map #(js/Uint8Array. %))
-                           (rx/subs! resolve reject))))))))
+                 (if (and (contains? cf/flags :wasm-export)
+                          (contains? #{:jpeg :webp :png} (:type value :png)))
+                   ;; New export with wasm
+                   (let [uri (wasm.exports/export-image-uri
+                              {:file-id   file-id
+                               :page-id   page-id
+                               :object-id id
+                               :type      (:type value :png)
+                               :scale     (:scale value 1)})]
+                     (js/Promise.
+                      (fn [resolve reject]
+                        (->> (http/send!
+                              {:method :get
+                               :uri uri
+                               :response-type :blob
+                               :omit-default-headers true})
+                             (rx/map :body)
+                             (rx/mapcat #(.arrayBuffer %))
+                             (rx/map #(js/Uint8Array. %))
+                             (rx/subs! resolve reject)))))
+
+
+                   ;; Old export through exporter
+                   (let [shape (u/locate-shape file-id page-id id)
+                         payload
+                         {:cmd :export-shapes
+                          :profile-id (:profile-id @st/state)
+                          :wait true
+                          :exports [{:file-id   file-id
+                                     :page-id   page-id
+                                     :object-id id
+                                     :name      (:name shape)
+                                     :type      (:type value :png)
+                                     :suffix    (:suffix value "")
+                                     :scale     (:scale value 1)}]}]
+                     (js/Promise.
+                      (fn [resolve reject]
+                        (->> (rp/cmd! :export payload)
+                             (rx/mapcat (fn [{:keys [uri]}]
+                                          (->> (http/send! {:method :get
+                                                            :uri uri
+                                                            :response-type :blob
+                                                            :omit-default-headers true})
+                                               (rx/map :body))))
+                             (rx/mapcat #(.arrayBuffer %))
+                             (rx/map #(js/Uint8Array. %))
+                             (rx/subs! resolve reject)))))))))
 
            ;; Interactions
            :addInteraction
