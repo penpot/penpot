@@ -105,7 +105,7 @@
         on-copy
         (mf/use-fn
          (fn [^js event]
-           (when (text-editor/text-editor-is-active?)
+           (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
              (when (text-editor/text-editor-get-selection)
                (let [text (text-editor/text-editor-export-selection)]
@@ -114,7 +114,7 @@
         on-cut
         (mf/use-fn
          (fn [^js event]
-           (when (text-editor/text-editor-is-active?)
+           (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
              (when (text-editor/text-editor-get-selection)
                (let [text (text-editor/text-editor-export-selection)]
@@ -129,7 +129,7 @@
         on-key-down
         (mf/use-fn
          (fn [^js event]
-           (when (and (text-editor/text-editor-is-active?)
+           (when (and (text-editor/text-editor-has-focus?)
                       (not @composing?))
              (let [key    (.-key event)
                    ctrl?  (or (.-ctrlKey event) (.-metaKey event))
@@ -268,13 +268,13 @@
         on-focus
         (mf/use-fn
          (fn [^js _event]
-           (wasm.api/text-editor-start shape-id)))
+           (wasm.api/text-editor-focus shape-id)))
 
         on-blur
         (mf/use-fn
          (fn [^js _event]
            (sync-wasm-text-editor-content! {:finalize? true})
-           (wasm.api/text-editor-stop)))
+           (wasm.api/text-editor-blur)))
 
         style #js {:pointerEvents "all"
                    "--editor-container-width" (dm/str width "px")
@@ -297,11 +297,15 @@
      (fn []
        (let [timeout-id (atom nil)
              schedule-blink (fn schedule-blink []
-                              (when (text-editor/text-editor-is-active?)
+                              (when (text-editor/text-editor-has-focus?)
                                 (wasm.api/request-render "cursor-blink"))
                               (reset! timeout-id (js/setTimeout schedule-blink caret-blink-interval-ms)))]
          (schedule-blink)
          (fn []
+           ;; ESTO ES JUSTO LO QUE NO QUIERO, NO QUIERO QUE SE HAGA
+           ;; DISPOSE CUANDO SE DESMONTA EL COMPONENTE.
+           #_(when (text-editor/text-editor-dispose)
+               (wasm.api/request-render "text-editor-dispose"))
            (when @timeout-id
              (js/clearTimeout @timeout-id))))))
 
