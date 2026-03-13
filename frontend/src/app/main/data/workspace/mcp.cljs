@@ -9,10 +9,13 @@
    [app.common.logging :as log]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.main.broadcast :as mbc]
+   [app.main.data.notifications :as ntf]
    [app.main.data.plugins :as dp]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.register :refer [mcp-plugin-id]]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -34,6 +37,33 @@
   [event]
   (= (ptk/type event) :app.main.data.workspace/finalize-workspace))
 
+(defn disconnect-mcp
+  []
+  (st/emit! (ptk/data-event ::disconnect)))
+
+(defn connect-mcp
+  []
+  (ptk/reify ::connect-mcp
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (mbc/emit! :mcp-enabled-change-connection false)
+      (->> stream
+           (rx/filter (ptk/type? ::disconnect))
+           (rx/take 1)
+           (rx/map #(ptk/data-event ::connect))))))
+
+(defn manage-notification
+  [mcp-enabled? mcp-connected?]
+  (if mcp-enabled?
+    (if mcp-connected?
+      (rx/of (ntf/hide))
+      (rx/of (ntf/dialog :content (tr "notifications.mcp.active-tab-switching.text")
+                         :cancel {:label (tr "labels.dismiss")
+                                  :callback #(st/emit! (ntf/hide))}
+                         :accept {:label (tr "labels.switch")
+                                  :callback #(st/emit! (connect-mcp))})))
+    (rx/of (ntf/hide))))
+
 (defn update-mcp-status
   [value]
   (ptk/reify ::update-mcp-status
@@ -42,7 +72,9 @@
       (update-in state [:profile :props] assoc :mcp-enabled value))
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
+      (let [mcp-connected?  (-> state :workspace-local :mcp :connected)]
+        (manage-notification value mcp-connected?))
       (case value
         true  (rx/of (ptk/data-event ::connect))
         false (rx/of (ptk/data-event ::disconnect))
@@ -53,7 +85,12 @@
   (ptk/reify ::update-mcp-plugin-connection
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-local :mcp] assoc :connected value))))
+      (update-in state [:workspace-local :mcp] assoc :connected value))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [mcp-enabled? (-> state :profile :props :mcp-enabled)]
+        (manage-notification mcp-enabled? value)))))
 
 (defn init-mcp!
   [stream]
@@ -93,14 +130,6 @@
                                (rx/filter (ptk/type? event))
                                (rx/take-until stopper)
                                (rx/subs! #(cb))))))}}))))))
-
-(defn disconnect-mcp
-  []
-  (st/emit! (ptk/data-event ::disconnect)))
-
-(defn connect-mcp
-  []
-  (st/emit! (ptk/data-event ::connect)))
 
 (defn init-mcp-connection
   []
