@@ -40,6 +40,7 @@
 
 .title {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-primary);
   display: flex;
   align-items: center;
@@ -51,6 +52,7 @@
 
 .visible-label {
   @include t.use-typography("headline-small");
+
   color: var(--color-foreground-secondary);
   line-height: $sz-32;
 }

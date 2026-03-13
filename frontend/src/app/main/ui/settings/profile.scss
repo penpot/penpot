@@ -11,17 +11,16 @@
   width: 100%;
   justify-content: center;
   align-items: center;
-  a:not(.button-primary):not(.link) {
+
+  a:not(.button-primary, .link) {
     color: var(--color-foreground-secondary);
   }
 }
 
 .form-container {
   display: flex;
-  justify-content: center;
   flex-direction: column;
   max-width: $s-500;
-  margin-bottom: $s-32;
   width: $s-580;
   margin: $s-80 auto $s-120 auto;
   justify-content: center;
@@ -36,11 +35,13 @@
       text-transform: uppercase;
       background-color: var(--color-background-tertiary);
       color: var(--color-foreground-primary);
+
       &:hover {
         color: var(--color-accent-primary);
         background-color: var(--color-background-quaternary);
       }
     }
+
     hr {
       display: none;
     }
@@ -48,6 +49,7 @@
 
   .fields-row {
     --input-height: #{$s-40};
+
     margin-bottom: $s-20;
     flex-direction: column;
 
@@ -78,6 +80,7 @@
   .custom-input,
   .custom-select {
     flex-direction: column-reverse;
+
     label {
       position: relative;
       text-transform: uppercase;
@@ -86,6 +89,7 @@
       margin-bottom: $s-12;
       margin-left: calc(-1 * $s-4);
     }
+
     input,
     select {
       background-color: var(--color-background-tertiary);
@@ -93,20 +97,25 @@
       border-color: transparent;
       color: var(--color-foreground-primary);
       padding: 0 $s-16;
+
       &:focus {
         outline: $s-1 solid var(--color-accent-primary);
       }
+
       ::placeholder {
         color: var(--color-foreground-secondary);
       }
     }
+
     .help-icon {
       bottom: $s-12;
       top: auto;
+
       svg {
         fill: var(--color-foreground-secondary);
       }
     }
+
     &.disabled {
       input {
         background-color: var(--input-background-color-disabled);
@@ -114,30 +123,36 @@
         color: var(--color-foreground-secondary);
       }
     }
+
     .input-container {
       background-color: var(--color-background-tertiary);
       border-radius: $br-8;
       border-color: transparent;
       margin-top: $s-24;
+
       .main-content {
         label {
           position: absolute;
           top: calc(-1 * $s-24);
         }
+
         span {
           color: var(--color-foreground-primary);
         }
       }
+
       &:focus {
         border: $s-1 solid var(--color-accent-primary);
       }
     }
+
     textarea {
       border-radius: $br-8;
       padding: $s-12 $s-16;
       background-color: var(--color-background-tertiary);
       color: var(--color-foreground-primary);
       border: none;
+
       &:focus {
         outline: $s-1 solid var(--color-accent-primary);
       }
@@ -296,13 +311,13 @@ form.avatar-form {
   margin-bottom: $s-32;
 
   .newsletter-title {
-    font-family: "worksans", "vazirmatn", sans-serif;
+    font-family: worksans, vazirmatn, sans-serif;
     color: var(--color-foreground-secondary);
     font-size: $fs-14;
   }
 
   label {
-    font-family: "worksans", "vazirmatn", sans-serif;
+    font-family: worksans, vazirmatn, sans-serif;
     color: var(--color-background-primary);
     font-size: $fs-12;
     margin-right: calc(-1 * $s-16);
@@ -321,11 +336,13 @@ form.avatar-form {
 }
 
 .btn-secondary {
-  @extend .button-secondary;
+  @extend %button-secondary;
+
   height: $s-32;
 }
 
 .btn-primary {
-  @extend .button-primary;
+  @extend %button-primary;
+
   height: $s-32;
 }

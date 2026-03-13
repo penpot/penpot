@@ -72,13 +72,13 @@
 
   &.plugins {
     max-height: calc(100vh - $sz-200);
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden auto;
   }
 }
 
 .base-menu-item {
   @include t.use-typography("body-small");
+
   display: grid;
   align-items: center;
   grid-template-columns: auto $sz-16 $sz-16;
@@ -99,6 +99,7 @@
 
   &.disabled {
     --menu-foreground-color: var(--color-foreground-secondary);
+
     pointer-events: none;
   }
 }
@@ -122,6 +123,7 @@
 
 .item-indicator {
   --menu-indicator-color: var(--color-foreground-secondary);
+
   grid-area: indicator;
   display: flex;
   align-items: center;
@@ -167,6 +169,7 @@
 
 .shortcut-key {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   justify-content: center;

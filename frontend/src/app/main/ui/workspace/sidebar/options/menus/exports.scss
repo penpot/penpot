@@ -22,15 +22,19 @@
 
 .element-set-content {
   @include sidebar.option-grid-structure;
+
   gap: var(--sp-xs);
 }
 
 .multiple-exports {
   @include deprecated.flexRow;
+
   grid-column: 1 / span 9;
+
   .label {
-    @extend .mixed-bar;
+    @extend %mixed-bar;
   }
+
   .actions {
     @include deprecated.flexRow;
   }
@@ -62,6 +66,7 @@
 .size-select {
   grid-column: span 2;
   padding: 0;
+
   .dropdown-upwards {
     bottom: deprecated.$s-36;
     top: unset;
@@ -71,13 +76,15 @@
 
 .suffix-input {
   grid-column: span 3;
-  @extend .input-element;
+
+  @extend %input-element;
   @include deprecated.bodySmallTypography;
 }
 
 .export-btn {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include deprecated.uppercaseTitleTipography;
+
   grid-column: 1 / span 9;
   height: deprecated.$s-32;
 }

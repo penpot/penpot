@@ -6,6 +6,7 @@
 
 @use "ds/typography.scss" as t;
 @use "refactor/common-refactor.scss" as deprecated;
+
 .tool-window {
   padding: 0 0 deprecated.$s-24 deprecated.$s-12;
   display: grid;
@@ -16,6 +17,7 @@
 
 .file-name {
   @include t.use-typography("body-small");
+
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -25,6 +27,7 @@
 
 .loading {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -35,18 +38,22 @@
 
 .special-title {
   @include deprecated.textEllipsis;
+
   color: var(--title-foreground-color-hover);
   margin-left: deprecated.$s-2;
   text-align: left;
 }
 
 .file-link {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: deprecated.$s-32;
   width: deprecated.$s-28;
   border-radius: deprecated.$br-8;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
     fill: var(--title-foreground-color-hover);
   }
@@ -69,12 +76,15 @@
 
 .no-found-icon {
   @include deprecated.flexCenter;
+
   background-color: var(--not-found-background-color);
   border-radius: deprecated.$br-circle;
   height: deprecated.$s-48;
   width: deprecated.$s-48;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     height: deprecated.$s-24;
     width: deprecated.$s-24;
     stroke: var(--not-found-foreground-color);
@@ -83,5 +93,6 @@
 
 .no-found-text {
   @include deprecated.bodySmallTypography;
+
   color: var(--not-found-foreground-color);
 }

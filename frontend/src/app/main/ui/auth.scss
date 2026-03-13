@@ -18,7 +18,7 @@
   width: 100%;
   overflow: auto;
 
-  @media (max-width: 992px) {
+  @media (width <= 992px) {
     display: flex;
     justify-content: center;
   }
@@ -53,7 +53,7 @@
   height: auto;
   justify-self: center;
 
-  @media (max-width: 992px) {
+  @media (width <= 992px) {
     display: none;
   }
 }

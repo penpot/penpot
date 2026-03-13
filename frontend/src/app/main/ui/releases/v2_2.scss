@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
@@ -40,6 +40,7 @@
 .version-tag {
   @include deprecated.flexCenter;
   @include deprecated.headlineSmallTypography;
+
   height: deprecated.$s-32;
   width: deprecated.$s-96;
   background-color: var(--communication-tag-background-color);
@@ -49,6 +50,7 @@
 
 .modal-title {
   @include deprecated.headlineLargeTypography;
+
   color: var(--modal-title-foreground-color);
 }
 
@@ -61,6 +63,7 @@
 
 .feature-content {
   @include deprecated.bodyMediumTypography;
+
   margin: 0;
   color: var(--modal-text-foreground-color);
 }
@@ -72,7 +75,8 @@
 }
 
 .next-btn {
-  @extend .button-primary;
+  @extend %button-primary;
+
   width: deprecated.$s-100;
   justify-self: flex-end;
   grid-area: button;

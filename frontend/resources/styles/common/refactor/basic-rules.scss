@@ -12,7 +12,7 @@
 @use "./z-index.scss" as *;
 
 // SCROLLBAR
-.new-scrollbar {
+%new-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(170, 181, 186, 0.3) transparent;
   &:hover {
@@ -56,7 +56,7 @@
 }
 
 // BUTTONS
-.button-primary {
+%button-primary {
   @include buttonStyle;
   @include flexCenter;
   @include headlineSmallTypography;
@@ -100,7 +100,7 @@
   }
 }
 
-.button-secondary {
+%button-secondary {
   @include buttonStyle;
   @include flexCenter;
   border-radius: $br-8;
@@ -142,7 +142,7 @@
   }
 }
 
-.button-tertiary {
+%button-tertiary {
   @include buttonStyle;
   @include flexCenter;
   --button-tertiary-border-width: #{$s-2};
@@ -191,7 +191,7 @@
   }
 }
 
-.button-icon-selected {
+%button-icon-selected {
   outline: none;
   border-color: var(--button-icon-border-color-selected);
   background-color: var(--button-icon-background-color-selected);
@@ -241,7 +241,7 @@
   color: var(--button-warning-foreground-color-rest);
 }
 
-.button-disabled {
+%button-disabled {
   @include buttonStyle;
   @include flexCenter;
   background-color: var(--button-background-color-disabled);
@@ -250,7 +250,7 @@
   cursor: unset;
 }
 
-.button-tag {
+%button-tag {
   @include buttonStyle;
   @include flexCenter;
   @include focus;
@@ -265,7 +265,7 @@
   }
 }
 
-.button-icon {
+%button-icon {
   @include flexCenter;
   height: $s-16;
   width: $s-16;
@@ -274,8 +274,8 @@
   stroke-width: 1px;
 }
 
-.button-icon-small {
-  @extend .button-icon;
+%button-icon-small {
+  @extend %button-icon;
   height: $s-12;
   width: $s-12;
   stroke-width: 1.33px;
@@ -296,9 +296,9 @@
 }
 
 // INPUTS
-.input-base {
+%input-base {
   @include removeInputStyle;
-  @include textEllipsis;
+  @include text-ellipsis;
   height: $s-28;
   width: 100%;
   flex-grow: 1;
@@ -317,7 +317,7 @@
   min-width: $s-12;
   height: $s-32;
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
   }
 }
 
@@ -330,7 +330,7 @@
   color: var(--input-foreground-color);
 }
 
-.input-element {
+%input-element {
   display: flex;
   align-items: center;
   height: $s-32;
@@ -342,13 +342,13 @@
   label {
     @extend .input-label;
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--input-foreground-color);
     }
   }
 
   input {
-    @extend .input-base;
+    @extend %input-base;
   }
 
   ::placeholder {
@@ -399,13 +399,13 @@
   }
 }
 
-.input-element-label {
+%input-element-label {
   @include bodySmallTypography;
   display: flex;
   align-items: flex-start;
   padding: 0;
   input {
-    @extend .input-base;
+    @extend %input-base;
     padding-left: $s-8;
     display: flex;
     align-items: flex-start;
@@ -439,7 +439,7 @@
   }
 }
 
-.disabled-input {
+%disabled-input {
   background-color: var(--input-background-color-disabled);
   border: $s-1 solid var(--input-border-color-disabled);
   color: var(--input-foreground-color-disabled);
@@ -453,7 +453,7 @@
   }
 }
 
-.checkbox-icon {
+%checkbox-icon {
   @include flexCenter;
   width: $s-16;
   height: $s-16;
@@ -479,7 +479,7 @@
     border-color: var(--input-checkbox-border-color-active);
     background-color: var(--input-checkbox-background-color-active);
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--input-checkbox-foreground-color-active);
     }
   }
@@ -488,7 +488,7 @@
     background-color: var(--input-checkbox-background-color-intermediate);
     border-color: var(--input-checkbox-border-color-intermediate);
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--input-checkbox-foreground-color-intermediate);
     }
   }
@@ -502,7 +502,7 @@
   }
 }
 
-.input-checkbox {
+%input-checkbox {
   display: flex;
   align-items: center;
   label {
@@ -513,7 +513,7 @@
     cursor: pointer;
     color: var(--input-checkbox-text-foreground-color);
     span {
-      @extend .checkbox-icon;
+      @extend %checkbox-icon;
     }
     input {
       margin: 0;
@@ -533,7 +533,7 @@
   }
 }
 
-.input-with-label {
+%input-with-label {
   display: flex;
   flex-direction: column;
   label {
@@ -546,7 +546,7 @@
   }
 
   input {
-    @extend .input-base;
+    @extend %input-base;
     @include bodySmallTypography;
     border-radius: $br-8;
     height: $s-32;
@@ -565,7 +565,7 @@
     }
   }
   &:global(.disabled) {
-    @extend .disabled-input;
+    @extend %disabled-input;
   }
 
   &:global(.invalid) {
@@ -576,7 +576,7 @@
 }
 
 //MODALS
-.modal-background {
+%modal-background {
   @include menuShadow;
   position: absolute;
   display: flex;
@@ -588,7 +588,7 @@
   background-color: var(--modal-background-color);
 }
 
-.modal-overlay-base {
+%modal-overlay-base {
   @include flexCenter;
   position: fixed;
   left: 0;
@@ -599,7 +599,7 @@
   background-color: var(--overlay-color);
 }
 
-.modal-container-base {
+%modal-container-base {
   position: relative;
   padding: $s-32;
   border-radius: $br-8;
@@ -611,15 +611,15 @@
   max-height: $s-512;
 }
 
-.modal-close-btn-base {
-  @extend .button-tertiary;
+%modal-close-btn-base {
+  @extend %button-tertiary;
   position: absolute;
   top: $s-8;
   right: $s-6;
   height: $s-32;
   width: $s-28;
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
 }
 
@@ -630,14 +630,14 @@
   border-bottom: $s-1 solid var(--modal-hint-border-color);
 }
 
-.modal-action-btns {
+%modal-action-btns {
   display: flex;
   justify-content: flex-end;
   gap: $s-16;
 }
 
-.modal-cancel-btn {
-  @extend .button-secondary;
+%modal-cancel-btn {
+  @extend %button-secondary;
   @include uppercaseTitleTipography;
   padding: $s-8 $s-24;
   border-radius: $br-8;
@@ -645,8 +645,8 @@
   margin: 0;
 }
 
-.modal-accept-btn {
-  @extend .button-primary;
+%modal-accept-btn {
+  @extend %button-primary;
   @include uppercaseTitleTipography;
   padding: $s-8 $s-24;
   border-radius: $br-8;
@@ -654,8 +654,8 @@
   margin: 0;
 }
 
-.modal-danger-btn {
-  @extend .button-primary;
+%modal-danger-btn {
+  @extend %button-primary;
   @include uppercaseTitleTipography;
   padding: $s-8 $s-24;
   border-radius: $br-8;
@@ -670,7 +670,7 @@
 
 // FIXME: This is used multiple times accross the app. We should design this in
 // the DS and create a proper component for it.
-.asset-element {
+%asset-element {
   @include bodySmallTypography;
   display: flex;
   align-items: center;
@@ -685,13 +685,13 @@
   }
 }
 
-.shortcut-base {
+%shortcut-base {
   @include flexCenter;
   gap: $s-2;
   color: var(--menu-shortcut-foreground-color);
 }
 
-.shortcut-key-base {
+%shortcut-key-base {
   @include bodySmallTypography;
   @include flexCenter;
   height: $s-20;
@@ -700,7 +700,7 @@
   background-color: var(--menu-shortcut-background-color);
 }
 
-.mixed-bar {
+%mixed-bar {
   @include bodySmallTypography;
   display: flex;
   align-items: center;
@@ -712,7 +712,7 @@
   color: var(--input-foreground-color-active);
 }
 
-.link {
+%link {
   background: unset;
   border: none;
   color: var(--link-foreground-color);
@@ -720,7 +720,7 @@
   text-decoration: none;
 }
 
-.colorpicker-handler {
+%colorpicker-handler {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -736,16 +736,16 @@
   }
 }
 
-.attr-title {
+%attr-title {
   div {
     margin-left: 0;
     color: var(--entry-foreground-color-hover);
   }
   button {
-    @extend .button-tertiary;
+    @extend %button-tertiary;
     display: none;
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--icon-foreground);
     }
   }
@@ -756,7 +756,7 @@
   }
 }
 
-.attr-row {
+%attr-row {
   display: grid;
   grid-template-areas: "name content";
   grid-template-columns: 1fr 3fr;
@@ -764,7 +764,7 @@
   height: $s-32;
   :global(.attr-label) {
     @include bodySmallTypography;
-    @include twoLineTextEllipsis;
+    @include two-line-text-ellipsis;
     width: $s-92;
     margin: auto 0;
     color: var(--entry-foreground-color);
@@ -779,7 +779,7 @@
   }
 }
 
-.copy-button-children {
+%copy-button-children {
   @include bodySmallTypography;
   color: var(--color-foreground-primary);
   text-align: left;
@@ -794,7 +794,7 @@
 }
 
 // SELECTS AND DROPDOWNS
-.menu-dropdown {
+%menu-dropdown {
   @include menuShadow;
   @include flexColumn;
   position: absolute;
@@ -807,7 +807,7 @@
   margin: 0;
 }
 
-.menu-item-base {
+%menu-item-base {
   @include bodySmallTypography;
   display: flex;
   align-items: center;
@@ -822,7 +822,7 @@
   }
 }
 
-.dropdown-element-base {
+%dropdown-element-base {
   @include bodySmallTypography;
   display: flex;
   align-items: center;
@@ -835,9 +835,9 @@
 
   span {
     @include flexCenter;
-    @include textEllipsis;
+    @include text-ellipsis;
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
       stroke: var(--icon-foreground);
     }
   }
@@ -850,7 +850,7 @@
   }
 }
 
-.dropdown-wrapper {
+%dropdown-wrapper {
   @include menuShadow;
   position: absolute;
   top: $s-32;
@@ -869,7 +869,7 @@
   border: $s-2 solid var(--panel-border-color);
 }
 
-.select-wrapper {
+%select-wrapper {
   @include bodySmallTypography;
   position: relative;
   display: flex;

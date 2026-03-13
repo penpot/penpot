@@ -16,6 +16,7 @@
 .context-list,
 .workspace-context-submenu {
   @include deprecated.menuShadow;
+
   display: grid;
   width: deprecated.$s-240;
   padding: deprecated.$s-4;
@@ -46,15 +47,20 @@
 
   .title {
     @include deprecated.bodySmallTypography;
+
     color: var(--menu-foreground-color);
   }
+
   .shortcut {
     @include deprecated.flexCenter;
+
     gap: deprecated.$s-2;
     color: var(--menu-shortcut-foreground-color);
+
     .shortcut-key {
       @include deprecated.bodySmallTypography;
       @include deprecated.flexCenter;
+
       height: deprecated.$s-20;
       padding: deprecated.$s-2 deprecated.$s-6;
       border-radius: deprecated.$br-6;
@@ -63,19 +69,23 @@
   }
 
   .submenu-icon svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
+
     stroke: var(--menu-foreground-color);
   }
 
   &:hover {
     background-color: var(--menu-background-color-hover);
+
     .title {
       color: var(--menu-foreground-color-hover);
     }
+
     .shortcut {
       color: var(--menu-shortcut-foreground-color-hover);
     }
   }
+
   &:focus {
     border: 1px solid var(--menu-border-color-focus);
     background-color: var(--menu-background-color-focus);
@@ -89,6 +99,7 @@
   height: deprecated.$s-28;
   padding: deprecated.$s-6;
   border-radius: deprecated.$br-8;
+
   &:hover {
     background-color: var(--menu-background-color-hover);
   }
@@ -99,15 +110,18 @@
 
   .selected-icon {
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--menu-foreground-color);
     }
   }
 
   .shape-icon {
     margin-left: deprecated.$s-2;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--menu-foreground-color);
     }
   }

@@ -5,7 +5,6 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
-
 @use "ds/_utils.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
@@ -24,7 +23,7 @@
 }
 
 .attributes-color-row {
-  @extend .attr-row;
+  @extend %attr-row;
 }
 
 .bullet-wrapper {
@@ -41,6 +40,7 @@
 
 .image-format {
   @include use-typography("headline-small");
+
   block-size: $sz-32;
   padding: var(--sp-s) 0;
   color: var(--color-foreground-secondary);
@@ -56,6 +56,7 @@
 
 .format-info {
   @include use-typography("body-small");
+
   padding-left: var(--sp-xxs);
   color: var(--color-foreground-secondary);
 }
@@ -66,10 +67,12 @@
   gap: var(--sp-xs);
   flex-grow: 1;
   max-inline-size: px2rem(144);
+
   button {
     visibility: hidden;
     min-inline-size: px2rem(28);
   }
+
   &:hover button {
     visibility: visible;
   }
@@ -87,6 +90,7 @@
 
 .color-name-wrapper {
   @include use-typography("body-small");
+
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
@@ -109,7 +113,8 @@
 
 .color-value-wrapper {
   @include use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
+
   color: var(--menu-foreground-color);
   text-transform: uppercase;
 }
@@ -120,6 +125,7 @@
 
 .opacity-info {
   @include use-typography("body-small");
+
   color: var(--menu-foreground-color);
   text-transform: uppercase;
   inline-size: 100%;
@@ -127,7 +133,6 @@
 
 .second-row {
   min-block-size: $sz-16;
-  padding-right: var(--sp-s);
   inline-size: 100%;
   text-align: left;
   margin: 0;
@@ -136,8 +141,9 @@
 
 .color-name-library {
   @include use-typography("body-small");
+
   color: var(--color-foreground-secondary);
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .image-download {

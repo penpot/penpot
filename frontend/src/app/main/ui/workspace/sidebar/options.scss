@@ -18,8 +18,7 @@
 }
 
 .content-class {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   height: calc(100vh - #{$sz-96});
   scrollbar-gutter: stable;
 }
@@ -29,9 +28,11 @@
   flex-direction: column;
   gap: var(--sp-s);
   width: 100%;
+
   /* FIXME: This is hacky and prone to break, we should tackle the whole layout
             of the sidebar differently */
   --sidebar-element-options-height: calc(100vh - #{$sz-88});
+
   height: var(--sidebar-element-options-height);
   padding-block-start: var(--sp-s);
 }

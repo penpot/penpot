@@ -46,6 +46,7 @@
 
 .property-detail-copied {
   --button-border-active: var(--color-accent-tertiary);
+
   border: $b-1 solid var(--button-border-active);
 }
 
@@ -61,11 +62,13 @@
 
 .property-detail-text {
   @include use-typography("body-small");
+
   color: var(--detail-color);
 }
 
 .property-detail-text-token {
   @include use-typography("code-font");
+
   --detail-color: var(--color-token-foreground);
 
   line-height: 1.4;

@@ -11,6 +11,7 @@
   --context-notification-fg-color: var(--alert-text-foreground-color-default);
   --context-notification-icon-color: var(--alert-icon-foreground-color-default);
   --context-notification-border-color: var(--alert-border-color-default);
+
   box-sizing: border-box;
   display: grid;
   grid-template-columns: deprecated.$s-16 1fr;
@@ -60,13 +61,15 @@
 }
 
 .icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   align-self: self-start;
   stroke: var(--context-notification-icon-color);
 }
 
 .context-text {
   @include deprecated.bodySmallTypography;
+
   align-self: center;
   color: var(--context-notification-fg-color);
   margin: auto 0;
@@ -79,6 +82,7 @@
 .link,
 .contain-html .context-text a {
   @include deprecated.bodySmallTypography;
+
   align-self: center;
   display: inline;
   text-align: left;

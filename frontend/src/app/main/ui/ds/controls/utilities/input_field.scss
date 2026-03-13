@@ -22,7 +22,6 @@
   align-items: center;
   position: relative;
   inline-size: 100%;
-
   background: var(--input-bg-color);
   border-radius: $br-8;
   padding: 0 var(--input-padding-size, var(--sp-s));
@@ -80,12 +79,10 @@
   border: none;
   background: none;
   inline-size: 100%;
-
   font-family: inherit;
   font-size: inherit;
   font-weight: inherit;
   line-height: inherit;
-
   color: var(--input-fg-color);
 
   &:focus-visible {
@@ -102,7 +99,6 @@
 
   &:is(:autofill, :autofill:hover, :autofill:focus, :autofill:active) {
     -webkit-text-fill-color: var(--input-fg-color);
-    -webkit-background-clip: text;
     background-clip: text;
     caret-color: var(--input-bg-color);
   }

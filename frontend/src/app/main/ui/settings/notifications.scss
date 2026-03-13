@@ -9,7 +9,9 @@
 
 .update-btn {
   margin-top: deprecated.$s-16;
-  @extend .button-primary;
+
+  @extend %button-primary;
+
   height: deprecated.$s-36;
 }
 
