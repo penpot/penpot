@@ -350,20 +350,32 @@
   (st/async-emit! (rt/assign-exception error)))
 
 (defonce uncaught-error-handler
-  (letfn [(is-ignorable-exception? [cause]
+  (letfn [(from-extension? [cause]
+            (let [stack (.-stack cause)]
+              (and (string? stack)
+                   (or (str/includes? stack "chrome-extension://")
+                       (str/includes? stack "moz-extension://")))))
+
+          (is-ignorable-exception? [cause]
             (let [message (ex-message cause)]
-              (or (= message "Possible side-effect in debug-evaluate")
+              (or (from-extension? cause)
+                  (= message "Possible side-effect in debug-evaluate")
                   (= message "Unexpected end of input")
                   (str/starts-with? message "invalid props on component")
-                  (str/starts-with? message "Unexpected token "))))
+                  (str/starts-with? message "Unexpected token ")
+                  ;; Abort errors are expected when an in-flight HTTP request is
+                  ;; cancelled (e.g. via RxJS unsubscription / take-until).  They
+                  ;; are handled gracefully inside app.util.http/fetch and must
+                  ;; NOT be surfaced as application errors.
+                  (= (.-name ^js cause) "AbortError"))))
 
           (on-unhandled-error [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
-              (set! last-exception cause)
               (when-not (is-ignorable-exception? cause)
                 (let [data (ex-data cause)
                       type (get data :type)]
+                  (set! last-exception cause)
                   (if (#{:wasm-critical :wasm-non-blocking :wasm-exception} type)
                     (on-error cause)
                     (do
@@ -373,9 +385,10 @@
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "reason")]
-              (set! last-exception cause)
-              (ex/print-throwable cause :prefix "Uncaught Rejection")
-              (ts/schedule #(flash :cause cause :type :unhandled))))]
+              (when-not (is-ignorable-exception? cause)
+                (set! last-exception cause)
+                (ex/print-throwable cause :prefix "Uncaught Rejection")
+                (ts/schedule #(flash :cause cause :type :unhandled)))))]
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)

@@ -104,10 +104,17 @@
               (.next ^js subscriber response)
               (.complete ^js subscriber)))
            (p/catch
-            (fn [err]
+            (fn [cause]
               (vreset! abortable? false)
               (when-not @unsubscribed?
-                (.error ^js subscriber err))))
+                (let [error (ex-info (ex-message cause)
+                                     {:type :internal
+                                      :code :unable-to-fetch
+                                      :hint "unable to perform fetch operation"
+                                      :uri uri
+                                      :headers headers}
+                                     cause)]
+                  (.error ^js subscriber error)))))
            (p/finally
              (fn []
                (let [{:keys [count average] :or {count 0 average 0}} (get @network-averages (:path uri))
@@ -116,10 +123,15 @@
                                 (/ current-time (inc count)))
                      count (inc count)]
                  (swap! network-averages assoc (:path uri) {:count count :average average})))))
+
        (fn []
          (vreset! unsubscribed? true)
          (when @abortable?
-           (.abort ^js controller)))))))
+           ;; Provide an explicit reason so that the resulting AbortError carries
+           ;; a meaningful message instead of the browser default
+           ;; "signal is aborted without reason".
+           (.abort ^js controller (ex-info (str "fetch to '" uri "' is aborted")
+                                           {:uri uri}))))))))
 
 (defn response->map
   [response]
