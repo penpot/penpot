@@ -168,7 +168,7 @@
                       child-as-paths)]
     (-> group
         (assoc :type :path)
-        (assoc :content content)
+        (assoc :content (path.impl/path-data content))
         (merge head-data)
         (d/without-keys dissoc-attrs))))
 
@@ -184,7 +184,8 @@
         (:bool-type shape)
 
         content
-        (bool/calculate-content bool-type (map :content children))]
+        (-> (bool/calculate-content bool-type (map :content children))
+            (path.impl/path-data))]
 
     (-> shape
         (assoc :type :path)

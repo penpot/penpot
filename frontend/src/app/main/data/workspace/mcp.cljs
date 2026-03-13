@@ -34,6 +34,27 @@
   [event]
   (= (ptk/type event) :app.main.data.workspace/finalize-workspace))
 
+(defn update-mcp-status
+  [value]
+  (ptk/reify ::update-mcp-status
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:profile :props] assoc :mcp-enabled value))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (case value
+        true  (rx/of (ptk/data-event ::connect))
+        false (rx/of (ptk/data-event ::disconnect))
+        nil))))
+
+(defn update-mcp-connection
+  [value]
+  (ptk/reify ::update-mcp-plugin-connection
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :mcp] assoc :connected value))))
+
 (defn init-mcp!
   [stream]
   (->> (rp/cmd! :get-current-mcp-token)
@@ -52,8 +73,12 @@
                     :getServerUrl #(str cf/mcp-ws-uri)
                     :setMcpStatus
                     (fn [status]
-                      ;; TODO: Visual feedback
-                      (log/info :hint "MCP STATUS" :status status))
+                      (let [mcp-connected? (case status
+                                             "connected"    true
+                                             "disconnected" false
+                                             nil)]
+                        (st/emit! (update-mcp-connection mcp-connected?))
+                        (log/info :hint "MCP STATUS" :status status)))
 
                     :on
                     (fn [event cb]
@@ -77,11 +102,11 @@
   []
   (st/emit! (ptk/data-event ::connect)))
 
-(defn init-mcp-connexion
+(defn init-mcp-connection
   []
-  (ptk/reify ::init-mcp-connexion
+  (ptk/reify ::init-mcp-connection
     ptk/EffectEvent
     (effect [_ state stream]
       (when (and (contains? cf/flags :mcp)
-                 (-> state :profile :props :mcp-status))
+                 (-> state :profile :props :mcp-enabled))
         (init-mcp! stream)))))

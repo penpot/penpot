@@ -611,7 +611,7 @@
                  is-source
                  external-id
                  (ct/now)
-                 set-names))
+                 (into #{} (filter some?) set-names)))
 
   (enable-set [this set-name]
     (set-sets this (conj sets set-name)))
@@ -632,14 +632,9 @@
 
   (update-set-name [this prev-set-name set-name]
     (if (get sets prev-set-name)
-      (TokenTheme. id
-                   name
-                   group
-                   description
-                   is-source
-                   external-id
-                   (ct/now)
-                   (conj (disj sets prev-set-name) set-name))
+      (let [sets (-> (disj sets prev-set-name)
+                     (conj set-name))]
+        (set-sets this sets))
       this))
 
   (theme-matches-group-name [this group name]
@@ -724,7 +719,7 @@
         (update :is-source d/nilv false)
         (update :external-id #(or % (str new-id)))
         (update :modified-at #(or % (ct/now)))
-        (update :sets set)
+        (update :sets #(into #{} (filter some?) %))
         (check-token-theme-attrs)
         (map->TokenTheme))))
 

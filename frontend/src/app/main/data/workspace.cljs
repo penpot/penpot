@@ -25,6 +25,7 @@
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.broadcast :as mbc]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
@@ -214,7 +215,7 @@
     (watch [_ _ _]
       (rx/of (dp/check-open-plugin)
              (fdf/fix-deleted-fonts-for-local-library file-id)
-             (mcp/init-mcp-connexion)))))
+             (mcp/init-mcp-connection)))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
@@ -369,6 +370,12 @@
                       (rx/filter (ptk/type? ::workspace-initialized))
                       (rx/take 1)
                       (rx/tap (fn [_] (perf/setup)))))
+
+               (when (contains? cf/flags :mcp)
+                 (->> mbc/stream
+                      (rx/filter (mbc/type? :mcp-enabled-change))
+                      (rx/map deref)
+                      (rx/map mcp/update-mcp-status)))
 
                (->> stream
                     (rx/filter (ptk/type? ::dps/persistence-notification))

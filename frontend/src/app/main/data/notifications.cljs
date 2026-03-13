@@ -76,6 +76,7 @@
               (rx/filter #(not= route-id (:id %)))
               (rx/map hide)
               (rx/take-until stopper)))
+
        (when (:timeout data)
          (let [stopper (rx/filter (ptk/type? ::show) stream)]
            (->> (rx/of (hide))

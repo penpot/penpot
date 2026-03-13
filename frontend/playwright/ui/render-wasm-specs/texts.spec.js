@@ -587,3 +587,23 @@ test.skip("Updates text alignment edition - part 3", async ({ page }) => {
 
   await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
 });
+
+
+test("Renders a file with group with strokes and not 100% opacities", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-strokes-and-not-100-percent-opacities.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-b0ebecd7ebf4",
+    pageId: "3e9e17c3-fc57-80ce-8007-101743996fe9",
+  });
+
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.01,
+  });
+});

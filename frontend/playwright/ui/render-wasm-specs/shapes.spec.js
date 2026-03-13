@@ -456,3 +456,94 @@ test("Check inner stroke artifacts", async ({
     threshold: 0.1,
   });
 });
+
+test("No white seam at intersections of overlapping shapes with inner strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-inner-stroke-overlap-seam.json");
+
+  await workspace.goToWorkspace({
+    id: "aaa00001-0001-0001-8007-000000000001",
+    pageId: "aaa00001-0001-0001-8007-000000000002",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.viewport.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("f");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  await workspace.hideUI();
+
+  // Stricter comparison: white seam artifacts are very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});
+
+test("Correct stroke closing at self-intersection of overlapping shapes with outer strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-outer-stroke-overlap-seam.json");
+
+  await workspace.goToWorkspace({
+    id: "aaa00001-0001-0001-8007-000000000001",
+    pageId: "aaa00001-0001-0001-8007-000000000002",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.viewport.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("f");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  await workspace.hideUI();
+
+  // Stricter comparison: white seam artifacts are very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});
+
+test("BUG 13551 - Blurs affecting other elements", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-blurs-affecting-other-elements.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-a7dc677169cd",
+    pageId: "a5508528-5928-8008-8007-a7de9feef61bd",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  // Stricter comparison: blur is very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});
+
+test("BUG 13610 - Huge inner strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-huge-inner-strokes.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-b11dd34fe190",
+    pageId: "effcbebc-b8c8-802f-8007-b11dd34fe191",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});

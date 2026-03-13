@@ -1,4 +1,4 @@
-use macros::ToJs;
+use macros::{wasm_error, ToJs};
 
 use crate::mem;
 use crate::shapes::{GridCell, GridDirection, GridTrack, GridTrackType};
@@ -6,6 +6,9 @@ use crate::uuid::Uuid;
 use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state, with_state_mut, STATE};
 
 use super::align;
+
+#[allow(unused_imports)]
+use crate::error::Result;
 
 #[derive(Debug)]
 #[repr(C, align(1))]
@@ -168,7 +171,8 @@ pub extern "C" fn set_grid_layout_data(
 }
 
 #[no_mangle]
-pub extern "C" fn set_grid_columns() {
+#[wasm_error]
+pub extern "C" fn set_grid_columns() -> Result<()> {
     let bytes = mem::bytes();
 
     let entries: Vec<GridTrack> = bytes
@@ -181,11 +185,13 @@ pub extern "C" fn set_grid_columns() {
         shape.set_grid_columns(entries);
     });
 
-    mem::free_bytes();
+    mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]
-pub extern "C" fn set_grid_rows() {
+#[wasm_error]
+pub extern "C" fn set_grid_rows() -> Result<()> {
     let bytes = mem::bytes();
 
     let entries: Vec<GridTrack> = bytes
@@ -198,11 +204,13 @@ pub extern "C" fn set_grid_rows() {
         shape.set_grid_rows(entries);
     });
 
-    mem::free_bytes();
+    mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]
-pub extern "C" fn set_grid_cells() {
+#[wasm_error]
+pub extern "C" fn set_grid_cells() -> Result<()> {
     let bytes = mem::bytes();
 
     let cells: Vec<RawGridCell> = bytes
@@ -215,7 +223,8 @@ pub extern "C" fn set_grid_cells() {
         shape.set_grid_cells(cells.into_iter().map(|raw| raw.into()).collect());
     });
 
-    mem::free_bytes();
+    mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]

@@ -94,12 +94,12 @@
         (mf/use-fn
          (mf/deps index on-stroke-width-change)
          (fn [value]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (on-stroke-width-change index value)
-             (do
-               (st/emit! (dwta/toggle-token {:token (first value)
-                                             :attrs #{:stroke-width}
-                                             :shape-ids ids}))))))
+
+             (st/emit! (dwta/toggle-token {:token (first value)
+                                           :attrs #{:stroke-width}
+                                           :shape-ids ids})))))
 
         stroke-alignment (or (:stroke-alignment stroke) :center)
 

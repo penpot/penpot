@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.path-names :as cpn]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -446,7 +447,8 @@
                         :id      "assets-edit-typography"
                         :handler handle-edit-typography-clicked})
 
-                     (when-not (or multi-typographies? multi-assets?)
+                     (when (and (not (or multi-typographies? multi-assets?))
+                                (contains? cf/flags :canary))
                        {:name    (tr "workspace.assets.duplicate")
                         :id      "assets-duplicate-typography"
                         :handler handle-duplicate-typography})

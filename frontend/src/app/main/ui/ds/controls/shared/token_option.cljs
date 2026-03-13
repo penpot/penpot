@@ -28,7 +28,8 @@
   {::mf/schema schema:token-option}
   [{:keys [id name on-click selected ref focused resolved] :rest props}]
   (let [internal-id (mf/use-id)
-        id          (d/nilv id internal-id)]
+        id          (d/nilv id internal-id)
+        element-ref (mf/use-ref nil)]
     [:li {:value id
           :class (stl/css-case :token-option true
                                :option-with-pill true
@@ -40,6 +41,7 @@
           :id id
           :on-click on-click
           :data-id id
+          :aria-label name
           :data-testid "dropdown-option"}
 
      (if selected
@@ -50,10 +52,12 @@
          :aria-hidden (when name true)}]
        [:span {:class (stl/css :icon-placeholder)}])
      [:> tooltip* {:content name
+                   :trigger-ref element-ref
                    :id (dm/str id "-name")
                    :class (stl/css :option-text)}
-      ;;  Add ellipsis
-      [:span {:aria-labelledby (dm/str id "-name")}
+      ;; Add ellipsis
+      [:span {:aria-labelledby (dm/str id "-name")
+              :ref element-ref}
        name]]
      (when resolved
        [:> :span {:class (stl/css :option-pill)}

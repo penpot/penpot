@@ -44,12 +44,15 @@
            (on-token-pill-click event token)))
         id-tooltip  (mf/use-id)
         resolved    (:resolved-value token)
-        color-value (dwta/value->color resolved)]
+        color-value (dwta/value->color resolved)
+        item-ref (mf/use-ref nil)]
     [:> tooltip* {:id id-tooltip
                   :style {:width "100%"}
+                  :trigger-ref item-ref
                   :content (:name token)}
      [:button {:class (stl/css-case :color-token-item true
                                     :color-token-selected selected)
+               :ref item-ref
                :aria-labelledby id-tooltip
                :on-click on-click}
       [:> swatch* {:background color-value

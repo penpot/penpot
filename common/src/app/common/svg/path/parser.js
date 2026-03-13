@@ -31,74 +31,81 @@ class Segment {
   toPersistentMap() {
     const fromArray = (data) => {
       return cljs.PersistentArrayMap.fromArray(data);
-    }
+    };
 
     let command, params;
 
-    switch(this.command) {
-    case "M":
-      command = MOVE_TO;
-      params = fromArray([K_X, this.params[0], K_Y, this.params[1]]);
-      break;
+    switch (this.command) {
+      case "M":
+        command = MOVE_TO;
+        params = fromArray([K_X, this.params[0], K_Y, this.params[1]]);
+        break;
 
-    case "Z":
-      command = CLOSE_PATH;
-      params = cljs.PersistentArrayMap.EMPTY;
-      break;
+      case "Z":
+        command = CLOSE_PATH;
+        params = cljs.PersistentArrayMap.EMPTY;
+        break;
 
-    case "L":
-      command = LINE_TO;
-      params = fromArray([K_X, this.params[0], K_Y, this.params[1]]);
-      break;
+      case "L":
+        command = LINE_TO;
+        params = fromArray([K_X, this.params[0], K_Y, this.params[1]]);
+        break;
 
-    case "C":
-      command = CURVE_TO;
-      params = fromArray([K_C1X, this.params[0],
-                          K_C1Y, this.params[1],
-                          K_C2X, this.params[2],
-                          K_C2Y, this.params[3],
-                          K_X, this.params[4],
-                          K_Y, this.params[5]]);
-      break;
-    default:
-      command = null
-      params = null;
+      case "C":
+        command = CURVE_TO;
+        params = fromArray([
+          K_C1X,
+          this.params[0],
+          K_C1Y,
+          this.params[1],
+          K_C2X,
+          this.params[2],
+          K_C2Y,
+          this.params[3],
+          K_X,
+          this.params[4],
+          K_Y,
+          this.params[5],
+        ]);
+        break;
+      default:
+        command = null;
+        params = null;
     }
 
     if (command === null || params === null) {
       throw new Error("invalid segment");
     }
 
-    return fromArray([K_COMMAND, command,
-                      K_PARAMS, params])
+    return fromArray([K_COMMAND, command, K_PARAMS, params]);
   }
 }
 
 function validCommand(c) {
   switch (c) {
-  case "Z":
-  case "M":
-  case "L":
-  case "C":
-  case "Q":
-  case "A":
-  case "H":
-  case "V":
-  case "S":
-  case "T":
-  case "z":
-  case "m":
-  case "l":
-  case "c":
-  case "q":
-  case "a":
-  case "h":
-  case "v":
-  case "s":
-  case "t":
-    return true;
-  default:
-    return false;
+    case "Z":
+    case "M":
+    case "L":
+    case "C":
+    case "Q":
+    case "A":
+    case "H":
+    case "V":
+    case "S":
+    case "T":
+    case "z":
+    case "m":
+    case "l":
+    case "c":
+    case "q":
+    case "a":
+    case "h":
+    case "v":
+    case "s":
+    case "t":
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -118,11 +125,11 @@ class Parser {
   next() {
     const done = !this.hasNext();
     if (done) {
-      return {done: true};
+      return { done: true };
     } else {
       return {
         done: false,
-        value: this.parseSegment()
+        value: this.parseSegment(),
       };
     }
   }
@@ -130,8 +137,10 @@ class Parser {
   hasNext() {
     if (this._currentIndex === 0) {
       const command = this._peekSegmentCommand();
-      return ((this._currentIndex < this._endIndex) &&
-              (command === "M" || command === "m"));
+      return (
+        this._currentIndex < this._endIndex &&
+        (command === "M" || command === "m")
+      );
     } else {
       return this._currentIndex < this._endIndex;
     }
@@ -148,7 +157,10 @@ class Parser {
       }
 
       // Check for remaining coordinates in the current command.
-      if ((ch === "+" || ch === "-" || ch === "." || (ch >= "0" && ch <= "9")) && this._prevCommand !== "Z") {
+      if (
+        (ch === "+" || ch === "-" || ch === "." || (ch >= "0" && ch <= "9")) &&
+        this._prevCommand !== "Z"
+      ) {
         if (this._prevCommand === "M") {
           command = "L";
         } else if (this._prevCommand === "m") {
@@ -177,7 +189,12 @@ class Parser {
     } else if (cmd === "M" || cmd === "L" || cmd === "T") {
       params = [this._parseNumber(), this._parseNumber()];
     } else if (cmd === "S" || cmd === "Q") {
-      params = [this._parseNumber(), this._parseNumber(), this._parseNumber(), this._parseNumber()];
+      params = [
+        this._parseNumber(),
+        this._parseNumber(),
+        this._parseNumber(),
+        this._parseNumber(),
+      ];
     } else if (cmd === "C") {
       params = [
         this._parseNumber(),
@@ -185,7 +202,7 @@ class Parser {
         this._parseNumber(),
         this._parseNumber(),
         this._parseNumber(),
-        this._parseNumber()
+        this._parseNumber(),
       ];
     } else if (cmd === "A") {
       params = [
@@ -195,7 +212,7 @@ class Parser {
         this._parseArcFlag(),
         this._parseArcFlag(),
         this._parseNumber(),
-        this._parseNumber()
+        this._parseNumber(),
       ];
     } else if (cmd === "Z") {
       this._skipOptionalSpaces();
@@ -217,7 +234,10 @@ class Parser {
 
   _isCurrentSpace() {
     var ch = this._string[this._currentIndex];
-    return ch <= " " && (ch === " " || ch === "\n" || ch === "\t" || ch === "\r" || ch === "\f");
+    return (
+      ch <= " " &&
+      (ch === " " || ch === "\n" || ch === "\t" || ch === "\r" || ch === "\f")
+    );
   }
 
   _skipOptionalSpaces() {
@@ -228,14 +248,19 @@ class Parser {
   }
 
   _skipOptionalSpacesOrDelimiter() {
-    if (this._currentIndex < this._endIndex &&
-        !this._isCurrentSpace() &&
-        this._string[this._currentIndex] !== ",") {
+    if (
+      this._currentIndex < this._endIndex &&
+      !this._isCurrentSpace() &&
+      this._string[this._currentIndex] !== ","
+    ) {
       return false;
     }
 
     if (this._skipOptionalSpaces()) {
-      if (this._currentIndex < this._endIndex && this._string[this._currentIndex] === ",") {
+      if (
+        this._currentIndex < this._endIndex &&
+        this._string[this._currentIndex] === ","
+      ) {
         this._currentIndex += 1;
         this._skipOptionalSpaces();
       }
@@ -258,16 +283,25 @@ class Parser {
     this._skipOptionalSpaces();
 
     // Read the sign.
-    if (this._currentIndex < this._endIndex && this._string[this._currentIndex] === "+") {
+    if (
+      this._currentIndex < this._endIndex &&
+      this._string[this._currentIndex] === "+"
+    ) {
       this._currentIndex += 1;
-    } else if (this._currentIndex < this._endIndex && this._string[this._currentIndex] === "-") {
+    } else if (
+      this._currentIndex < this._endIndex &&
+      this._string[this._currentIndex] === "-"
+    ) {
       this._currentIndex += 1;
       sign = -1;
     }
 
-    if (this._currentIndex === this._endIndex ||
-        ((this._string[this._currentIndex] < "0" || this._string[this._currentIndex] > "9") &&
-         this._string[this._currentIndex] !== ".")) {
+    if (
+      this._currentIndex === this._endIndex ||
+      ((this._string[this._currentIndex] < "0" ||
+        this._string[this._currentIndex] > "9") &&
+        this._string[this._currentIndex] !== ".")
+    ) {
       // The first chacter of a number must be one of [0-9+-.].
       return null;
     }
@@ -275,9 +309,11 @@ class Parser {
     // Read the integer part, build right-to-left.
     var startIntPartIndex = this._currentIndex;
 
-    while (this._currentIndex < this._endIndex &&
-           this._string[this._currentIndex] >= "0" &&
-           this._string[this._currentIndex] <= "9") {
+    while (
+      this._currentIndex < this._endIndex &&
+      this._string[this._currentIndex] >= "0" &&
+      this._string[this._currentIndex] <= "9"
+    ) {
       this._currentIndex += 1; // Advance to first non-digit.
     }
 
@@ -293,19 +329,26 @@ class Parser {
     }
 
     // Read the decimals.
-    if (this._currentIndex < this._endIndex && this._string[this._currentIndex] === ".") {
+    if (
+      this._currentIndex < this._endIndex &&
+      this._string[this._currentIndex] === "."
+    ) {
       this._currentIndex += 1;
 
       // There must be a least one digit following the .
-      if (this._currentIndex >= this._endIndex ||
-          this._string[this._currentIndex] < "0" ||
-          this._string[this._currentIndex] > "9") {
+      if (
+        this._currentIndex >= this._endIndex ||
+        this._string[this._currentIndex] < "0" ||
+        this._string[this._currentIndex] > "9"
+      ) {
         return null;
       }
 
-      while (this._currentIndex < this._endIndex &&
-             this._string[this._currentIndex] >= "0" &&
-             this._string[this._currentIndex] <= "9") {
+      while (
+        this._currentIndex < this._endIndex &&
+        this._string[this._currentIndex] >= "0" &&
+        this._string[this._currentIndex] <= "9"
+      ) {
         frac *= 10;
         decimal += (this._string[this._currentIndex] - "0") / frac;
         this._currentIndex += 1;
@@ -313,10 +356,14 @@ class Parser {
     }
 
     // Read the exponent part.
-    if (this._currentIndex !== startIndex &&
-        this._currentIndex + 1 < this._endIndex &&
-        (this._string[this._currentIndex] === "e" || this._string[this._currentIndex] === "E") &&
-        (this._string[this._currentIndex + 1] !== "x" && this._string[this._currentIndex + 1] !== "m")) {
+    if (
+      this._currentIndex !== startIndex &&
+      this._currentIndex + 1 < this._endIndex &&
+      (this._string[this._currentIndex] === "e" ||
+        this._string[this._currentIndex] === "E") &&
+      this._string[this._currentIndex + 1] !== "x" &&
+      this._string[this._currentIndex + 1] !== "m"
+    ) {
       this._currentIndex += 1;
 
       // Read the sign of the exponent.
@@ -328,17 +375,21 @@ class Parser {
       }
 
       // There must be an exponent.
-      if (this._currentIndex >= this._endIndex ||
-          this._string[this._currentIndex] < "0" ||
-          this._string[this._currentIndex] > "9") {
+      if (
+        this._currentIndex >= this._endIndex ||
+        this._string[this._currentIndex] < "0" ||
+        this._string[this._currentIndex] > "9"
+      ) {
         return null;
       }
 
-      while (this._currentIndex < this._endIndex &&
-             this._string[this._currentIndex] >= "0" &&
-             this._string[this._currentIndex] <= "9") {
+      while (
+        this._currentIndex < this._endIndex &&
+        this._string[this._currentIndex] >= "0" &&
+        this._string[this._currentIndex] <= "9"
+      ) {
         exponent *= 10;
-        exponent += (this._string[this._currentIndex] - "0");
+        exponent += this._string[this._currentIndex] - "0";
         this._currentIndex += 1;
       }
     }
@@ -380,7 +431,7 @@ class Parser {
     this._skipOptionalSpacesOrDelimiter();
     return flag;
   }
-};
+}
 
 function absolutizePathData(pdata) {
   var currentX = null;
@@ -389,212 +440,210 @@ function absolutizePathData(pdata) {
   var subpathX = null;
   var subpathY = null;
 
-  for (let i=0; i<pdata.length; i++) {
+  for (let i = 0; i < pdata.length; i++) {
     let segment = pdata[i];
-    switch(segment.command) {
-    case "M":
-      var x = segment.params[0];
-      var y = segment.params[1];
+    switch (segment.command) {
+      case "M":
+        var x = segment.params[0];
+        var y = segment.params[1];
 
-      subpathX = x;
-      subpathY = y;
-      currentX = x;
-      currentY = y;
-      break;
+        subpathX = x;
+        subpathY = y;
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "m":
-      var x = currentX + segment.params[0];
-      var y = currentY + segment.params[1];
+      case "m":
+        var x = currentX + segment.params[0];
+        var y = currentY + segment.params[1];
 
-      segment.command = "M";
-      segment.params[0] = x;
-      segment.params[1] = y;
+        segment.command = "M";
+        segment.params[0] = x;
+        segment.params[1] = y;
 
-      subpathX = x;
-      subpathY = y;
+        subpathX = x;
+        subpathY = y;
 
-      currentX = x;
-      currentY = y;
-      break;
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "L":
-      var x = segment.params[0];
-      var y = segment.params[1];
+      case "L":
+        var x = segment.params[0];
+        var y = segment.params[1];
 
-      currentX = x;
-      currentY = y;
-      break;
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "l":
-      var x = currentX + segment.params[0];
-      var y = currentY + segment.params[1];
+      case "l":
+        var x = currentX + segment.params[0];
+        var y = currentY + segment.params[1];
 
-      segment.command = "L";
-      segment.params[0] = x;
-      segment.params[1] = y;
+        segment.command = "L";
+        segment.params[0] = x;
+        segment.params[1] = y;
 
-      currentX = x;
-      currentY = y;
-      break;
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "C":
-      var x = segment.params[4];
-      var y = segment.params[5];
+      case "C":
+        var x = segment.params[4];
+        var y = segment.params[5];
 
-      currentX = x;
-      currentY = y;
-      break;
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "c":
-      var x1 = currentX + segment.params[0];
-      var y1 = currentY + segment.params[1];
-      var x2 = currentX + segment.params[2];
-      var y2 = currentY + segment.params[3];
-      var x = currentX + segment.params[4];
-      var y = currentY + segment.params[5];
+      case "c":
+        var x1 = currentX + segment.params[0];
+        var y1 = currentY + segment.params[1];
+        var x2 = currentX + segment.params[2];
+        var y2 = currentY + segment.params[3];
+        var x = currentX + segment.params[4];
+        var y = currentY + segment.params[5];
 
-      segment.command = "C";
-      segment.params[0] = x1;
-      segment.params[1] = y1;
-      segment.params[2] = x2;
-      segment.params[3] = y2;
-      segment.params[4] = x;
-      segment.params[5] = y;
+        segment.command = "C";
+        segment.params[0] = x1;
+        segment.params[1] = y1;
+        segment.params[2] = x2;
+        segment.params[3] = y2;
+        segment.params[4] = x;
+        segment.params[5] = y;
 
-      currentX = x;
-      currentY = y;
-      break;
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "Q":
-      var x = segment.params[2];
-      var y = segment.params[3];
-      currentX = x;
-      currentY = y;
-      break;
+      case "Q":
+        var x = segment.params[2];
+        var y = segment.params[3];
+        currentX = x;
+        currentY = y;
+        break;
 
+      case "q":
+        var x1 = currentX + segment.params[0];
+        var y1 = currentY + segment.params[1];
+        var x = currentX + segment.params[2];
+        var y = currentY + segment.params[3];
 
-    case "q":
-      var x1 = currentX + segment.params[0];
-      var y1 = currentY + segment.params[1];
-      var x = currentX + segment.params[2];
-      var y = currentY + segment.params[3];
+        segment.command = "Q";
+        segment.params[0] = x1;
+        segment.params[1] = y1;
+        segment.params[2] = x;
+        segment.params[3] = y;
 
-      segment.command = "Q";
-      segment.params[0] = x1;
-      segment.params[1] = y1;
-      segment.params[2] = x;
-      segment.params[3] = y;
+        currentX = x;
+        currentY = y;
+        break;
 
-      currentX = x;
-      currentY = y;
-      break;
+      case "A":
+        var x = segment.params[5];
+        var y = segment.params[6];
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "A":
-      var x = segment.params[5];
-      var y = segment.params[6];
-      currentX = x;
-      currentY = y;
-      break;
+      case "a":
+        var x = currentX + segment.params[5];
+        var y = currentY + segment.params[6];
 
-    case "a":
-      var x = currentX + segment.params[5];
-      var y = currentY + segment.params[6];
+        segment.command = "A";
+        segment.params[5] = x;
+        segment.params[6] = y;
 
-      segment.command = "A";
-      segment.params[5] = x;
-      segment.params[6] = y;
+        currentX = x;
+        currentY = y;
+        break;
 
-      currentX = x;
-      currentY = y;
-      break;
+      case "H":
+        var x = segment.params[0];
+        currentX = x;
+        break;
 
-    case "H":
-      var x = segment.params[0];
-      currentX = x;
-      break;
+      case "h":
+        var x = currentX + segment.params[0];
+        segment.command = "H";
+        segment.params[0] = x;
+        currentX = x;
+        break;
 
-    case "h":
-      var x = currentX + segment.params[0];
-      segment.command = "H";
-      segment.params[0] = x;
-      currentX = x;
-      break;
+      case "V":
+        var y = segment.params[0];
+        currentY = y;
+        break;
 
-    case "V":
-      var y = segment.params[0];
-      currentY = y;
-      break;
+      case "v":
+        var y = currentY + segment.params[0];
+        segment.command = "V";
+        segment.params[0] = y;
+        currentY = y;
+        break;
 
-    case "v":
-      var y = currentY + segment.params[0];
-      segment.command = "V";
-      segment.params[0] = y;
-      currentY = y;
-      break;
+      case "S":
+        var x = segment.params[2];
+        var y = segment.params[3];
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "S":
-      var x = segment.params[2];
-      var y = segment.params[3];
-      currentX = x;
-      currentY = y;
-      break;
+      case "s":
+        var x2 = currentX + segment.params[0];
+        var y2 = currentY + segment.params[1];
+        var x = currentX + segment.params[2];
+        var y = currentY + segment.params[3];
 
-    case "s":
-      var x2 = currentX + segment.params[0];
-      var y2 = currentY + segment.params[1];
-      var x = currentX + segment.params[2];
-      var y = currentY + segment.params[3];
+        segment.command = "S";
+        segment.params[0] = x2;
+        segment.params[1] = y2;
+        segment.params[2] = x;
+        segment.params[3] = y;
 
-      segment.command = "S";
-      segment.params[0] = x2;
-      segment.params[1] = y2;
-      segment.params[2] = x;
-      segment.params[3] = y;
+        currentX = x;
+        currentY = y;
+        break;
 
-      currentX = x;
-      currentY = y;
-      break;
+      case "T":
+        var x = segment.params[0];
+        var y = segment.params[1];
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "T":
-      var x = segment.params[0];
-      var y = segment.params[1]
-      currentX = x;
-      currentY = y;
-      break;
+      case "t":
+        var x = currentX + segment.params[0];
+        var y = currentY + segment.params[1];
 
-    case "t":
-      var x = currentX + segment.params[0];
-      var y = currentY + segment.params[1]
+        segment.command = "T";
+        segment.params[0] = x;
+        segment.params[1] = y;
 
-      segment.command = "T";
-      segment.params[0] = x;
-      segment.params[1] = y;
-
-      currentX = x;
-      currentY = y;
-      break;
-    case "Z":
-    case "z":
-      currentX = subpathX;
-      currentY = subpathY;
-      segment.command = "Z";
-      break;
+        currentX = x;
+        currentY = y;
+        break;
+      case "Z":
+      case "z":
+        currentX = subpathX;
+        currentY = subpathY;
+        segment.command = "Z";
+        break;
     }
   }
   return pdata;
 }
 
-
 function unitVectorAngle(ux, uy, vx, vy) {
-  const sign = (ux * vy - uy * vx) < 0 ? -1.0 : 1.0;
+  const sign = ux * vy - uy * vx < 0 ? -1.0 : 1.0;
   let dot = ux * vx + uy * vy;
-  dot = (dot > 1.0) ? 1.0 : (dot < -1.0) ? -1.0 : dot;
+  dot = dot > 1.0 ? 1.0 : dot < -1.0 ? -1.0 : dot;
   return sign * Math.acos(dot);
 }
 
 function getArcCenter(x1, y1, x2, y2, fa, fs, rx, ry, sinPhi, cosPhi) {
-  let x1p = (cosPhi * ((x1 - x2) / 2)) + (sinPhi * ((y1 - y2) / 2));
-  let y1p = (-sinPhi * ((x1 - x2) / 2)) + (cosPhi * ((y1 - y2) / 2));
+  let x1p = cosPhi * ((x1 - x2) / 2) + sinPhi * ((y1 - y2) / 2);
+  let y1p = -sinPhi * ((x1 - x2) / 2) + cosPhi * ((y1 - y2) / 2);
 
   let rxSq = rx * rx;
   let rySq = ry * ry;
@@ -602,9 +651,9 @@ function getArcCenter(x1, y1, x2, y2, fa, fs, rx, ry, sinPhi, cosPhi) {
   let y1pSq = y1p * y1p;
   let radicant = rxSq * rySq - rxSq * y1pSq - rySq * x1pSq;
 
-  radicant = (radicant < 0) ? 0 : radicant;
-  radicant /= (rxSq * y1pSq + rySq * x1pSq);
-  radicant = (Math.sqrt(radicant) * ((fa === fs) ? -1 : 1))
+  radicant = radicant < 0 ? 0 : radicant;
+  radicant /= rxSq * y1pSq + rySq * x1pSq;
+  radicant = Math.sqrt(radicant) * (fa === fs ? -1 : 1);
 
   let cxp = radicant * (rx / ry) * y1p;
   let cyp = radicant * (-ry / rx) * x1p;
@@ -618,8 +667,8 @@ function getArcCenter(x1, y1, x2, y2, fa, fs, rx, ry, sinPhi, cosPhi) {
   let theta1 = unitVectorAngle(1, 0, v1x, v1y);
 
   let dtheta = unitVectorAngle(v1x, v1y, v2x, v2y);
-  dtheta = (fs === 0 && dtheta > 0) ? dtheta - Math.PI * 2 : dtheta;
-  dtheta = (fs === 1 && dtheta < 0) ? dtheta + Math.PI * 2 : dtheta;
+  dtheta = fs === 0 && dtheta > 0 ? dtheta - Math.PI * 2 : dtheta;
+  dtheta = fs === 1 && dtheta < 0 ? dtheta + Math.PI * 2 : dtheta;
 
   return [cx, cy, theta1, dtheta];
 }
@@ -639,7 +688,7 @@ function approximateUnitArc(theta1, dtheta) {
     x2 + y2 * alpha,
     y2 - x2 * alpha,
     x2,
-    y2
+    y2,
   ];
 }
 
@@ -674,7 +723,7 @@ function processCurve(curve, cx, cy, rx, ry, sinPhi, cosPhi) {
 
 export function arcToBeziers(x1, y1, x2, y2, fa, fs, rx, ry, phi) {
   const tau = Math.PI * 2;
-  const phiTau = phi * tau / 360;
+  const phiTau = (phi * tau) / 360;
 
   const sinPhi = Math.sin(phiTau);
   const cosPhi = Math.cos(phiTau);
@@ -688,7 +737,7 @@ export function arcToBeziers(x1, y1, x2, y2, fa, fs, rx, ry, phi) {
   }
 
   if (rx === 0 || ry === 0) {
-      // one of the radii is zero
+    // one of the radii is zero
     return [];
   }
 
@@ -696,8 +745,8 @@ export function arcToBeziers(x1, y1, x2, y2, fa, fs, rx, ry, phi) {
   ry = Math.abs(ry);
 
   let lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
-  rx = (lambda > 1) ? rx * Math.sqrt(lambda) : rx;
-  ry = (lambda > 1) ? ry * Math.sqrt(lambda) : ry;
+  rx = lambda > 1 ? rx * Math.sqrt(lambda) : rx;
+  ry = lambda > 1 ? ry * Math.sqrt(lambda) : ry;
 
   const cc = getArcCenter(x1, y1, x2, y2, fa, fs, rx, ry, sinPhi, cosPhi);
   const cx = cc[0];
@@ -736,175 +785,183 @@ function simplifyPathData(pdata) {
   var subpathX = null;
   var subpathY = null;
 
-  for (let i=0; i<pdata.length; i++) {
+  for (let i = 0; i < pdata.length; i++) {
     const segment = pdata[i];
     const currentCommand = segment.command;
 
-    switch(currentCommand) {
-    case "M":
-      var x = segment.params[0];
-      var y = segment.params[1];
-      result.push(segment);
-      subpathX = x;
-      subpathY = y;
-      currentX = x;
-      currentY = y;
-      break;
+    switch (currentCommand) {
+      case "M":
+        var x = segment.params[0];
+        var y = segment.params[1];
+        result.push(segment);
+        subpathX = x;
+        subpathY = y;
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "C":
-      var x2 = segment.params[2];
-      var y2 = segment.params[3];
-      var x = segment.params[4];
-      var y = segment.params[5];
+      case "C":
+        var x2 = segment.params[2];
+        var y2 = segment.params[3];
+        var x = segment.params[4];
+        var y = segment.params[5];
 
-      result.push(segment);
+        result.push(segment);
 
-      lastControlX = x2;
-      lastControlY = y2;
-      currentX = x;
-      currentY = y;
-      break;
+        lastControlX = x2;
+        lastControlY = y2;
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "L":
-      var x = segment.params[0];
-      var y = segment.params[1];
+      case "L":
+        var x = segment.params[0];
+        var y = segment.params[1];
 
-      result.push(segment);
-      currentX = x;
-      currentY = y;
-      break;
+        result.push(segment);
+        currentX = x;
+        currentY = y;
+        break;
 
-    case "H":
-      var x = segment.params[0];
+      case "H":
+        var x = segment.params[0];
 
-      segment.command = "L";
-      segment.params = [x, currentY];
+        segment.command = "L";
+        segment.params = [x, currentY];
 
-      result.push(segment);
-      currentX = x;
-      break;
+        result.push(segment);
+        currentX = x;
+        break;
 
-    case "V":
-      var y = segment.params[0];
+      case "V":
+        var y = segment.params[0];
 
-      segment.command = "L";
-      segment.params = [currentX, y];
-      result.push(segment);
+        segment.command = "L";
+        segment.params = [currentX, y];
+        result.push(segment);
 
-      currentY = y;
-      break;
+        currentY = y;
+        break;
 
-    case "S":
-      var x2 = segment.params[0];
-      var y2 = segment.params[1];
-      var x = segment.params[2];
-      var y = segment.params[3];
+      case "S":
+        var x2 = segment.params[0];
+        var y2 = segment.params[1];
+        var x = segment.params[2];
+        var y = segment.params[3];
 
-      var cx1, cy1;
+        var cx1, cy1;
 
-      if (lastCommand === "C" || lastCommand === "S") {
-        cx1 = currentX + (currentX - lastControlX);
-        cy1 = currentY + (currentY - lastControlY);
-      } else {
-        cx1 = currentX;
-        cy1 = currentY;
-      }
+        if (lastCommand === "C" || lastCommand === "S") {
+          cx1 = currentX + (currentX - lastControlX);
+          cy1 = currentY + (currentY - lastControlY);
+        } else {
+          cx1 = currentX;
+          cy1 = currentY;
+        }
 
-
-      segment.command = "C";
-      segment.params = [cx1, cy1, x2, y2, x, y];
-      result.push(segment);
-
-      lastControlX = x2;
-      lastControlY = y2;
-
-      currentX = x;
-      currentY = y;
-      break;
-
-    case "T":
-      var x = segment.params[0];
-      var y = segment.params[1];
-
-      var x1, y1;
-
-      if (lastCommand === "Q" || lastCommand === "T") {
-        x1 = currentX + (currentX - lastControlX);
-        y1 = currentY + (currentY - lastControlY);
-      } else {
-        x1 = currentX;
-        y1 = currentY;
-      }
-
-      var cx1 = currentX + 2 * (x1 - currentX) / 3;
-      var cy1 = currentY + 2 * (y1 - currentY) / 3;
-      var cx2 = x + 2 * (x1 - x) / 3;
-      var cy2 = y + 2 * (y1 - y) / 3;
-
-      segment.command = "C";
-      segment.params = [cx1, cy1, cx2, cy2, x, y];
-      result.push(segment);
-
-      lastControlX = x1;
-      lastControlY = y1;
-
-      currentX = x;
-      currentY = y;
-      break;
-
-    case "Q":
-      var x1 = segment.params[0];
-      var y1 = segment.params[1];
-      var x = segment.params[2];
-      var y = segment.params[3];
-
-      var cx1 = currentX + 2 * (x1 - currentX) / 3;
-      var cy1 = currentY + 2 * (y1 - currentY) / 3;
-      var cx2 = x + 2 * (x1 - x) / 3;
-      var cy2 = y + 2 * (y1 - y) / 3;
-
-      segment.command = "C";
-      segment.params = [cx1, cy1, cx2, cy2, x, y];
-      result.push(segment);
-
-      lastControlX = x1;
-      lastControlY = y1;
-
-      currentX = x;
-      currentY = y;
-      break;
-
-    case "A":
-      var rx = Math.abs(segment.params[0]);
-      var ry = Math.abs(segment.params[1]);
-      var phi = segment.params[2];
-      var fa = segment.params[3];
-      var fs = segment.params[4];
-      var x = segment.params[5];
-      var y = segment.params[6];
-
-      if (rx === 0 || ry === 0) {
         segment.command = "C";
-        segment.params = [currentX, currentY, x, y, x, y];
-        result.add(segment);
+        segment.params = [cx1, cy1, x2, y2, x, y];
+        result.push(segment);
+
+        lastControlX = x2;
+        lastControlY = y2;
 
         currentX = x;
         currentY = y;
-      } else if (currentX !== x || currentY !== y) {
+        break;
 
-        var segments = arcToBeziers(currentX, currentY, x, y, fa, fs, rx, ry, phi);
-        result.push(...segments);
+      case "T":
+        var x = segment.params[0];
+        var y = segment.params[1];
+
+        var x1, y1;
+
+        if (lastCommand === "Q" || lastCommand === "T") {
+          x1 = currentX + (currentX - lastControlX);
+          y1 = currentY + (currentY - lastControlY);
+        } else {
+          x1 = currentX;
+          y1 = currentY;
+        }
+
+        var cx1 = currentX + (2 * (x1 - currentX)) / 3;
+        var cy1 = currentY + (2 * (y1 - currentY)) / 3;
+        var cx2 = x + (2 * (x1 - x)) / 3;
+        var cy2 = y + (2 * (y1 - y)) / 3;
+
+        segment.command = "C";
+        segment.params = [cx1, cy1, cx2, cy2, x, y];
+        result.push(segment);
+
+        lastControlX = x1;
+        lastControlY = y1;
 
         currentX = x;
         currentY = y;
-      }
-      break;
+        break;
 
-    case "Z":
-      result.push(segment);
-      currentX = subpathX;
-      currentY = subpathY;
-      break;
+      case "Q":
+        var x1 = segment.params[0];
+        var y1 = segment.params[1];
+        var x = segment.params[2];
+        var y = segment.params[3];
+
+        var cx1 = currentX + (2 * (x1 - currentX)) / 3;
+        var cy1 = currentY + (2 * (y1 - currentY)) / 3;
+        var cx2 = x + (2 * (x1 - x)) / 3;
+        var cy2 = y + (2 * (y1 - y)) / 3;
+
+        segment.command = "C";
+        segment.params = [cx1, cy1, cx2, cy2, x, y];
+        result.push(segment);
+
+        lastControlX = x1;
+        lastControlY = y1;
+
+        currentX = x;
+        currentY = y;
+        break;
+
+      case "A":
+        var rx = Math.abs(segment.params[0]);
+        var ry = Math.abs(segment.params[1]);
+        var phi = segment.params[2];
+        var fa = segment.params[3];
+        var fs = segment.params[4];
+        var x = segment.params[5];
+        var y = segment.params[6];
+
+        if (rx === 0 || ry === 0) {
+          segment.command = "C";
+          segment.params = [currentX, currentY, x, y, x, y];
+          result.add(segment);
+
+          currentX = x;
+          currentY = y;
+        } else if (currentX !== x || currentY !== y) {
+          var segments = arcToBeziers(
+            currentX,
+            currentY,
+            x,
+            y,
+            fa,
+            fs,
+            rx,
+            ry,
+            phi,
+          );
+          result.push(...segments);
+
+          currentX = x;
+          currentY = y;
+        }
+        break;
+
+      case "Z":
+        result.push(segment);
+        currentX = subpathX;
+        currentY = subpathY;
+        break;
     }
 
     lastCommand = currentCommand;
@@ -927,7 +984,7 @@ export function parse(string) {
   } catch (cause) {
     const msg = "unexpected exception parsing path";
     console.group(msg);
-    console.log(`string: ${string}`)
+    console.log(`string: ${string}`);
     console.error(cause);
     console.groupEnd(msg);
 
