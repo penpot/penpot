@@ -85,7 +85,7 @@
 }
 
 .project-name {
-  @include textEllipsis;
+  @include text-ellipsis;
   @include t.use-typography("body-large");
 
   color: var(--title-foreground-color-hover);

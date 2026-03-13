@@ -108,7 +108,7 @@
   overflow-y: auto;
 }
 
-.section-list-item {
+%section-list-item-placeholder {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: var(--sp-s);
@@ -117,8 +117,12 @@
   border-radius: $br-8;
 }
 
+.section-list-item {
+  @extend %section-list-item-placeholder;
+}
+
 .section-list-item-double-icon {
-  @extend .section-list-item;
+  @extend %section-list-item-placeholder;
 
   grid-template-columns: 1fr auto auto;
 }
@@ -130,7 +134,7 @@
 .item-publish,
 .item-unpublish {
   // TODO: remove this extended by using DS button component
-  @extend .button-primary;
+  @extend %button-primary;
   @include t.use-typography("headline-small");
 
   height: $sz-32;
@@ -225,7 +229,7 @@
 
 // Update library tab
 .libraries-updates-see-all {
-  @extend .link;
+  @extend %link;
 
   direction: rtl;
   grid-column: span 3;
@@ -282,7 +286,7 @@
 
 .item-name {
   @include t.use-typography("body-large");
-  @include textEllipsis;
+  @include text-ellipsis;
 
   margin: 0;
   max-width: px2rem(216);
@@ -290,7 +294,7 @@
 }
 
 .item-update {
-  @extend .button-primary;
+  @extend %button-primary;
   @include t.use-typography("headline-small");
 
   height: $sz-32;
@@ -300,7 +304,7 @@
   border-radius: $br-8;
 
   &:disabled {
-    @extend .button-disabled;
+    @extend %button-disabled;
   }
 }
 
@@ -352,11 +356,10 @@
 
 .info-block {
   display: grid;
-  grid-template-columns: auto 1fr;
   column-gap: var(--sp-xl);
   grid-template:
-    "icon title"
-    "icon content";
+    "icon title" auto
+    "icon content" auto / auto 1fr;
 }
 
 .info-icon {
@@ -399,7 +402,7 @@
 }
 
 .primary-button {
-  @extend .button-primary;
+  @extend %button-primary;
   @include t.use-typography("headline-small");
 
   padding: 0 var(--sp-l);
@@ -459,7 +462,7 @@
 
 // TODO: Remove this extended using a DS component
 .sample-library-adding {
-  @extend .button-disabled;
+  @extend %button-disabled;
 }
 
 .sample-library-button {

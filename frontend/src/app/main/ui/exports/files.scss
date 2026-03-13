@@ -56,7 +56,7 @@
 
     .selection-btn {
       @include deprecated.buttonStyle;
-      @extend .input-checkbox;
+      @extend %input-checkbox;
       @include deprecated.flexCenter;
 
       height: deprecated.$s-24;
@@ -65,7 +65,7 @@
       margin-left: deprecated.$s-16;
 
       span {
-        @extend .checkbox-icon;
+        @extend %checkbox-icon;
       }
     }
 
@@ -124,7 +124,7 @@
         padding: 0 deprecated.$s-16;
 
         .checkbox-wrapper {
-          @extend .input-checkbox;
+          @extend %input-checkbox;
           @include deprecated.flexCenter;
 
           height: deprecated.$s-24;
@@ -132,7 +132,7 @@
           padding: 0;
 
           .checkobox-tick {
-            @extend .checkbox-icon;
+            @extend %checkbox-icon;
           }
         }
 
@@ -184,18 +184,18 @@
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }
 
 .accept-btn {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 
   &.danger {
-    @extend .modal-danger-btn;
+    @extend %modal-danger-btn;
   }
 }
 
@@ -208,7 +208,7 @@
 }
 
 .export-option {
-  @extend .input-checkbox;
+  @extend %input-checkbox;
 
   width: 100%;
   align-items: flex-start;

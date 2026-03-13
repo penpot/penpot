@@ -56,7 +56,7 @@
   --color-name-wrapper-boder-color: var(--color-background-tertiary);
 
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
 
   display: flex;
   align-items: center;
@@ -141,7 +141,7 @@
 
 .color-name {
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
 
   flex-grow: 1;
   padding-inline: px2rem(6);
@@ -164,7 +164,7 @@
 }
 
 .color-input {
-  @include textEllipsis;
+  @include text-ellipsis;
 
   border: none;
   background: none;
@@ -241,7 +241,7 @@
 }
 
 .opacity-input {
-  @include textEllipsis;
+  @include text-ellipsis;
 
   block-size: $sz-28;
   min-inline-size: $sz-28;
@@ -315,7 +315,7 @@
 
 .token-name {
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
 
   color: var(--token-color-wrapper-foreground-color);
   block-size: $sz-32;

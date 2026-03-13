@@ -167,7 +167,7 @@
 }
 
 .checkbox {
-  @extend .input-checkbox;
+  @extend %input-checkbox;
 
   .checkbox-label {
     @include deprecated.bodySmallTypography;
@@ -180,7 +180,7 @@
     cursor: pointer;
 
     span {
-      @extend .checkbox-icon;
+      @extend %checkbox-icon;
     }
 
     input {
@@ -202,7 +202,7 @@
 
 // SELECT
 .custom-select {
-  @extend .select-wrapper;
+  @extend %select-wrapper;
 
   height: deprecated.$s-32;
 
@@ -269,7 +269,7 @@
   }
 
   select {
-    @extend .menu-dropdown;
+    @extend %menu-dropdown;
     @include deprecated.bodySmallTypography;
 
     box-sizing: border-box;
@@ -300,10 +300,10 @@
 
 // SUBMIT-BUTTON
 .button-submit {
-  @extend .button-primary;
+  @extend %button-primary;
 
   &:disabled {
-    @extend .button-disabled;
+    @extend %button-disabled;
 
     min-height: deprecated.$s-32;
   }
@@ -327,7 +327,6 @@
     width: 100%;
     max-width: calc(100% - deprecated.$s-1);
     min-height: deprecated.$s-32;
-    padding-top: 0;
     height: deprecated.$s-32;
     padding: deprecated.$s-8;
     margin: 0;
@@ -451,7 +450,7 @@
 }
 
 .radio-icon {
-  @extend .checkbox-icon;
+  @extend %checkbox-icon;
 
   border-radius: deprecated.$br-circle;
 }

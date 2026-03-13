@@ -41,7 +41,7 @@
 }
 
 .add-library-button {
-  @extend .button-primary;
+  @extend %button-primary;
   @include deprecated.uppercaseTitleTipography;
 
   gap: deprecated.$s-2;

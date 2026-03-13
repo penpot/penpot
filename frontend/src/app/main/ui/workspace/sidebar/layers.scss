@@ -135,7 +135,7 @@
 }
 
 .layer-filter {
-  @extend .button-tag;
+  @extend %button-tag;
 
   gap: deprecated.$s-6;
   height: deprecated.$s-24;
@@ -162,7 +162,7 @@
 }
 
 .filters-container {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
 
   position: absolute;
   left: deprecated.$s-20;

@@ -64,7 +64,7 @@
 
 .login-button,
 .login-ldap-button {
-  @extend .button-primary;
+  @extend %button-primary;
   @include deprecated.uppercaseTitleTipography;
 
   height: deprecated.$s-40;
@@ -137,7 +137,7 @@
 .submit-btn,
 .register-btn,
 .recover-btn {
-  @extend .button-primary;
+  @extend %button-primary;
   @include deprecated.uppercaseTitleTipography;
 
   height: deprecated.$s-40;

@@ -55,7 +55,7 @@
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .modal-scd-msg,

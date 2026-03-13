@@ -248,7 +248,7 @@
 
 .member-name,
 .member-email {
-  @include textEllipsis;
+  @include text-ellipsis;
   @include t.use-typography("body-large");
 }
 
@@ -344,7 +344,7 @@
 
 .input-checkbox {
   // TODO: remove this extended class.
-  @extend .input-checkbox;
+  @extend %input-checkbox;
 
   cursor: pointer;
 }
@@ -443,7 +443,7 @@
 
 .btn-empty-invitations {
   // TODO: Remove this extend add DS component
-  @extend .button-primary;
+  @extend %button-primary;
 
   margin-block-start: var(--sp-l);
   padding-inline: var(--sp-m);
@@ -463,7 +463,7 @@
 }
 
 .field-email {
-  @include textEllipsis;
+  @include text-ellipsis;
   @include t.use-typography("body-large");
 
   display: flex;
@@ -516,7 +516,6 @@
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: var(--sp-xxxl);
-  margin-top: var(--sp-xxxl);
   margin: 0;
   padding: var(--sp-xxxl);
   padding: 0;
@@ -539,7 +538,7 @@
 
 .hero-btn {
   // TODO: Remove this extended class using a DS component
-  @extend .button-primary;
+  @extend %button-primary;
 
   height: $sz-32;
   max-width: $sz-512;
@@ -710,7 +709,7 @@
 
 .accept-btn {
   // TODO: remove this extend class creating a modal component
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 }
 
 // WEBHOOKS MODAL
@@ -786,14 +785,14 @@
 
 // TODO: Remove this extended classes creating a modal component
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 
   button {
-    @extend .modal-accept-btn;
+    @extend %modal-accept-btn;
   }
 
   .cancel-button {
-    @extend .modal-cancel-btn;
+    @extend %modal-cancel-btn;
   }
 }
 
@@ -835,7 +834,7 @@
   }
 
   span {
-    @extend .checkbox-icon;
+    @extend %checkbox-icon;
     @include t.use-typography("body-small");
 
     color: var(--color-foreground-secondary);

@@ -95,7 +95,7 @@
 }
 
 .dropdown-sitemap {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
 
   left: 0;
   top: calc(deprecated.$s-2 + deprecated.$s-48);
@@ -200,7 +200,7 @@
 }
 
 .share-btn {
-  @extend .button-primary;
+  @extend %button-primary;
 
   height: deprecated.$s-32;
   min-width: deprecated.$s-72;
@@ -260,7 +260,7 @@
 }
 
 .dropdown {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
 
   right: deprecated.$s-2;
   top: calc(deprecated.$s-2 + deprecated.$s-48);
@@ -324,13 +324,13 @@
 }
 
 .zoom-option {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
 
   .shortcuts {
-    @extend .shortcut-base;
+    @extend %shortcut-base;
 
     .shortcut-key {
-      @extend .shortcut-key-base;
+      @extend %shortcut-key-base;
     }
   }
 

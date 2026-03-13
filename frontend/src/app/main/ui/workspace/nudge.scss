@@ -41,7 +41,7 @@
 }
 
 .input-wrapper {
-  @extend .input-with-label;
+  @extend %input-with-label;
   @include deprecated.bodySmallTypography;
 
   label {

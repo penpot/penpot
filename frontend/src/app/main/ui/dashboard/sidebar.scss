@@ -159,7 +159,7 @@
 // DROPDOWNS
 
 .teams-dropdown {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
 
   left: 0;
   top: deprecated.$s-52;
@@ -171,7 +171,7 @@
 }
 
 .team-dropdown-item {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
 
   display: grid;
   grid-template-columns: var(--sp-xxl) 1fr auto;
@@ -227,7 +227,7 @@
 }
 
 .options-dropdown {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
 
   right: var(--sp-xxs);
   top: deprecated.$s-52;
@@ -239,7 +239,7 @@
 }
 
 .team-options-item {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
 
   height: $sz-40;
 }
@@ -426,7 +426,7 @@
 }
 
 .profile-dropdown {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
 
   inset-inline-start: var(--sp-s);
   inset-block-end: px2rem(72); // 72 is the height of the profile button
@@ -436,7 +436,7 @@
 }
 
 .profile-dropdown-item {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
   @include t.use-typography("body-medium");
 
   block-size: $sz-40;
@@ -464,7 +464,7 @@
 }
 
 .sub-menu {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
 
   inset-inline-start: calc(deprecated.$s-292 + var(--sp-s));
   min-width: deprecated.$s-192;
@@ -483,7 +483,7 @@
 }
 
 .submenu-item {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
   @include t.use-typography("body-medium");
 
   block-size: $sz-40;

@@ -76,7 +76,7 @@
     block-size: auto;
   }
 
-  @media (max-inline-size: 992px) {
+  @media (width <= 992px) {
     display: none;
   }
 }

@@ -251,7 +251,7 @@
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .success-action-buttons {
@@ -259,14 +259,14 @@
 }
 
 .primary-button {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 
   min-block-size: $sz-32;
   block-size: auto;
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 
   min-block-size: $sz-32;
   white-space: break-spaces;
@@ -283,7 +283,7 @@
     block-size: auto;
   }
 
-  @media (max-inline-size: 992px) {
+  @media (width <= 992px) {
     display: none;
   }
 }

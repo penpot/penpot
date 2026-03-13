@@ -64,7 +64,7 @@
 }
 
 .input-wrapper {
-  @extend .input-checkbox;
+  @extend %input-checkbox;
 }
 
 .modal-link {
@@ -75,7 +75,7 @@
 }
 
 .accept-btn {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 
   justify-self: flex-end;
 }
