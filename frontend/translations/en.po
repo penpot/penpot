@@ -359,8 +359,14 @@ msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
-msgid "dashboard.create-new-org"
+msgid "dashboard.plus-create-new-org"
 msgstr "+ Create org"
+
+msgid "dashboard.create-new-org"
+msgstr "Create org"
+
+msgid "dashboard.go-to-control-center"
+msgstr "Go to Control Center"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"

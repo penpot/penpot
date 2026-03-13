@@ -82,8 +82,9 @@
 
 (def ^:private schema:organization
   [:map
-   [:id ::sm/text]
-   [:name ::sm/text]])
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:slug ::sm/text]])
 
 ;; TODO Unify with schemas on backend/src/app/http/management.clj
 (def ^:private schema:timestamp
@@ -189,6 +190,9 @@
 
 
 (defn add-nitrate-licence-to-profile
+  "Enriches a profile map with subscription information from Nitrate.
+  Adds a :subscription field containing the user's license details.
+  Returns the original profile unchanged if the request fails."
   [cfg profile]
   (try
     (let [subscription (call cfg :get-subscription {:profile-id (:id profile)})]
@@ -199,11 +203,26 @@
                :cause cause)
       profile)))
 
-(defn add-org-to-team
+(defn add-org-info-to-team
+  "Enriches a team map with organization information from Nitrate.
+  Adds organization-id, organization-name, organization-slug, and your-penpot fields.
+  Returns the original team unchanged if the request fails or org data is nil."
   [cfg team params]
-  (let [params (assoc (or params {}) :team-id (:id team))
-        org (call cfg :get-team-org params)]
-    (assoc team :organization-id (:id org) :organization-name (:name org))))
+  (try
+    (let [params (assoc (or params {}) :team-id (:id team))
+          org (call cfg :get-team-org params)]
+      (if (some? org)
+        (assoc team
+               :organization-id (:id org)
+               :organization-name (:name org)
+               :organization-slug (:slug org)
+               :is-default (or (:is-default team) (true? (:isYourPenpot org))))
+        team))
+    (catch Throwable cause
+      (l/error :hint "failed to get team organization info"
+               :team-id (:id team)
+               :cause cause)
+      team)))
 
 (defn connectivity
   [cfg]
