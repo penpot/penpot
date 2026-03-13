@@ -92,5 +92,6 @@
                           :tooltip-class (stl/css :button-tooltip)
                           :icon i/broken-link
                           :ref token-detach-btn-ref
+                          :tooltip-placement "top-left"
                           :aria-label (tr "ds.inputs.token-field.detach-token")
                           :on-click detach-token}])]]))
