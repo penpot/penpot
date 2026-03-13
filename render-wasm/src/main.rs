@@ -30,6 +30,9 @@ use uuid::Uuid;
 
 pub(crate) static mut STATE: Option<Box<State>> = None;
 
+// FIXME: These with_state* macros should be using our CriticalError instead of expect.
+// But to do that, we need to not use them at domain-level (i.e. in business logic), just
+// in the context of the wasm call.
 #[macro_export]
 macro_rules! with_state_mut {
     ($state:ident, $block:block) => {{
@@ -149,7 +152,7 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
     with_state_mut!(state, {
         let color = skia::Color::new(raw_color);
         state.set_background_color(color);
-        state.rebuild_tiles_shallow();
+        state.rebuild_tiles_shallow()?;
     });
 
     Ok(())
@@ -159,10 +162,10 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 #[wasm_error]
 pub extern "C" fn render(_: i32) -> Result<()> {
     with_state_mut!(state, {
-        state.rebuild_touched_tiles();
+        state.rebuild_touched_tiles()?;
         state
             .start_render_loop(performance::get_time())
-            .expect("Error rendering");
+            .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
     });
     Ok(())
 }
@@ -171,10 +174,10 @@ pub extern "C" fn render(_: i32) -> Result<()> {
 #[wasm_error]
 pub extern "C" fn render_sync() -> Result<()> {
     with_state_mut!(state, {
-        state.rebuild_tiles();
+        state.rebuild_tiles()?;
         state
             .render_sync(performance::get_time())
-            .expect("Error rendering");
+            .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
     });
     Ok(())
 }
@@ -197,7 +200,7 @@ pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()
             state.set_parent_for_current_shape(Uuid::nil());
         }
 
-        state.rebuild_tiles_from(Some(&id));
+        state.rebuild_tiles_from(Some(&id))?;
         state
             .render_sync_shape(&id, performance::get_time())
             .map_err(|e| Error::RecoverableError(e.to_string()))?;
@@ -236,24 +239,12 @@ pub extern "C" fn render_preview() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn process_animation_frame(timestamp: i32) -> Result<()> {
-    let result = std::panic::catch_unwind(|| {
-        with_state_mut!(state, {
-            state
-                .process_animation_frame(timestamp)
-                .expect("Error processing animation frame");
-        });
-    });
+    let result = with_state_mut!(state, { state.process_animation_frame(timestamp) });
 
-    match result {
-        Ok(_) => {}
-        Err(err) => {
-            match err.downcast_ref::<String>() {
-                Some(message) => println!("process_animation_frame error: {}", message),
-                None => println!("process_animation_frame error: {:?}", err),
-            }
-            std::panic::resume_unwind(err);
-        }
+    if let Err(err) = result {
+        eprintln!("process_animation_frame error: {}", err);
     }
+
     Ok(())
 }
 
@@ -327,9 +318,9 @@ pub extern "C" fn set_view_end() -> Result<()> {
         let _rebuild_start = performance::begin_timed_log!("rebuild_tiles");
         performance::begin_measure!("set_view_end::rebuild_tiles");
         if state.render_state.options.is_profile_rebuild_tiles() {
-            state.rebuild_tiles();
+            state.rebuild_tiles()?;
         } else {
-            state.rebuild_tiles_shallow();
+            state.rebuild_tiles_shallow()?;
         }
         performance::end_measure!("set_view_end::rebuild_tiles");
         performance::end_timed_log!("rebuild_tiles", _rebuild_start);
@@ -362,8 +353,8 @@ pub extern "C" fn set_focus_mode() -> Result<()> {
 
     let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::try_from(data).unwrap())
-        .collect();
+        .map(|data| Uuid::try_from(data).map_err(|e| Error::RecoverableError(e.to_string())))
+        .collect::<Result<Vec<Uuid>>>()?;
 
     with_state_mut!(state, {
         state.set_focus_mode(entries);
@@ -637,8 +628,8 @@ pub extern "C" fn set_children() -> Result<()> {
 
     let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::try_from(data).unwrap())
-        .collect();
+        .map(|data| Uuid::try_from(data).map_err(|e| Error::CriticalError(e.to_string())))
+        .collect::<Result<Vec<Uuid>>>()?;
 
     set_children_set(entries)?;
 
@@ -761,10 +752,15 @@ pub extern "C" fn get_selection_rect() -> Result<*mut u8> {
 pub extern "C" fn set_structure_modifiers() -> Result<()> {
     let bytes = mem::bytes();
 
-    let entries: Vec<_> = bytes
+    let entries: Vec<StructureEntry> = bytes
         .chunks(44)
-        .map(|data| StructureEntry::from_bytes(data.try_into().unwrap()))
-        .collect();
+        .map(|chunk| {
+            let data = chunk
+                .try_into()
+                .map_err(|_| Error::CriticalError("Invalid StructureEntry bytes".to_string()))?;
+            Ok(StructureEntry::from_bytes(data))
+        })
+        .collect::<Result<Vec<_>>>()?;
 
     with_state_mut!(state, {
         let mut structure = HashMap::new();
@@ -783,7 +779,9 @@ pub extern "C" fn set_structure_modifiers() -> Result<()> {
                     structure.entry(entry.parent).or_insert_with(Vec::new);
                     structure
                         .get_mut(&entry.parent)
-                        .expect("Parent not found for entry")
+                        .ok_or(Error::CriticalError(
+                            "Parent not found for entry".to_string(),
+                        ))?
                         .push(entry);
                 }
             }
@@ -814,10 +812,10 @@ pub extern "C" fn clean_modifiers() -> Result<()> {
 pub extern "C" fn set_modifiers() -> Result<()> {
     let bytes = mem::bytes();
 
-    let entries: Vec<_> = bytes
+    let entries: Vec<TransformEntry> = bytes
         .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::try_from(data).unwrap())
-        .collect();
+        .map(|data| TransformEntry::try_from(data).map_err(|e| Error::CriticalError(e.to_string())))
+        .collect::<Result<Vec<_>>>()?;
 
     let mut modifiers = HashMap::new();
     let mut ids = Vec::<Uuid>::new();
@@ -828,7 +826,7 @@ pub extern "C" fn set_modifiers() -> Result<()> {
 
     with_state_mut!(state, {
         state.set_modifiers(modifiers);
-        state.rebuild_modifier_tiles(ids);
+        state.rebuild_modifier_tiles(ids)?;
     });
     Ok(())
 }
@@ -838,8 +836,10 @@ pub extern "C" fn set_modifiers() -> Result<()> {
 pub extern "C" fn start_temp_objects() -> Result<()> {
     unsafe {
         #[allow(static_mut_refs)]
-        let mut state = STATE.take().expect("Got an invalid state pointer");
-        state = Box::new(state.start_temp_objects());
+        let mut state = STATE.take().ok_or(Error::CriticalError(
+            "Got an invalid state pointer".to_string(),
+        ))?;
+        state = Box::new(state.start_temp_objects()?);
         STATE = Some(state);
     }
     Ok(())
@@ -850,8 +850,10 @@ pub extern "C" fn start_temp_objects() -> Result<()> {
 pub extern "C" fn end_temp_objects() -> Result<()> {
     unsafe {
         #[allow(static_mut_refs)]
-        let mut state = STATE.take().expect("Got an invalid state pointer");
-        state = Box::new(state.end_temp_objects());
+        let mut state = STATE.take().ok_or(Error::CriticalError(
+            "Got an invalid state pointer".to_string(),
+        ))?;
+        state = Box::new(state.end_temp_objects()?);
         STATE = Some(state);
     }
     Ok(())
