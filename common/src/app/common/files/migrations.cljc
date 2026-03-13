@@ -29,6 +29,7 @@
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctsht]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctst]
@@ -1786,6 +1787,108 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0018-sync-component-id-with-near-main"
+  [data _]
+  (let [libs (some-> (:libs data) deref)]
+    (letfn [(fix-shape
+              [data page shape]
+              (if (and (ctk/subcopy-head? shape)
+                       (nil? (ctk/get-swap-slot shape)))
+                (let [file {:id (:id data) :data data}
+                      ref-shape  (ctf/find-ref-shape file page libs shape {:include-deleted? true :with-context? true})]
+                  (if (and (some? ref-shape)
+                           (or (not= (:component-id shape) (:component-id ref-shape))
+                               (not= (:component-file shape) (:component-file ref-shape))))
+                    (cond-> shape
+                      (some? (:component-id ref-shape))
+                      (assoc :component-id (:component-id ref-shape))
+
+                      (nil? (:component-id ref-shape))
+                      (dissoc :component-id)
+
+                      (some? (:component-file ref-shape))
+                      (assoc :component-file (:component-file ref-shape))
+
+                      (nil? (:component-file ref-shape))
+                      (dissoc :component-file))
+                    shape))
+                shape))
+
+            (update-page
+              [data page]
+              (d/update-when page :objects d/update-vals (partial fix-shape data page)))
+
+            (fix-data [data]
+              (loop [current-data data
+                     iteration    0]
+                (let [next-data (update current-data :pages-index d/update-vals (partial update-page current-data))]
+                  (if (or (= current-data next-data)
+                          (> iteration 20))     ;; safety bound
+                    next-data
+                    (recur next-data (inc iteration))))))]
+      (fix-data data))))
+
+(defmethod migrate-data "0019-remove-unneeded-objects-from-components"
+  [data _]
+  ;; Some components have an `:objects` attribute, despite not being
+  ;; deleted. This migration removes it.
+  (letfn [(check-component [component]
+            (if (and (not (:deleted component))
+                     (contains? component :objects))
+              (dissoc component :objects)
+              component))]
+    (d/update-when data :components check-component)))
+
+(defmethod migrate-data "0020-fix-missing-swap-slots"
+  [data _]
+  (let [file      {:id (:id data) :data data}
+        libraries (when (:libs data)
+                    (deref (:libs data)))]
+
+    (letfn [(update-shape-recursive
+              [container shape-id root?]
+              #_(when root?
+                  (prn "Checking container:" (:id container)))
+              (if (:objects container)
+                (let [shape (ctsht/get-shape container shape-id)]
+                  (if (and (ctk/instance-head? shape) (ctk/in-component-copy? shape))
+                    (let [ref-shape (ctf/find-ref-shape file container libraries shape :include-deleted? true :with-context? true)
+                          container (:container (meta ref-shape))]
+                      (if (some? ref-shape)
+                        (compare-slots container container shape ref-shape)
+                        container))
+                    (reduce (fn [container child-id]
+                              (update-shape-recursive container child-id false))
+                            container
+                            (:shapes shape))))
+              container))
+
+            (compare-slots
+              [container-copy container-main shape-copy shape-main]
+              (prn "comparing shape:" (:id shape-copy) " with ref:" (:id shape-main))
+              (if (and (not= (:shape-ref shape-copy) (:id shape-main))
+                       (nil? (ctk/get-swap-slot shape-copy)))
+                (let [new-slot (or (ctk/get-swap-slot shape-main) (:id shape-main))]
+                  (prn "Fixing swap slot for shape:" (:id shape-copy) " to " new-slot)
+                  container-copy)
+                (if (nil? (ctk/get-swap-slot shape-copy))
+                  (let [children-id-pairs (d/zip-all (:shapes shape-copy) (:shapes shape-main))]
+                    (reduce (fn [container [child-copy-id child-main-id]]
+                              (let [child-copy (ctsht/get-shape container-copy child-copy-id)
+                                    child-main (ctsht/get-shape container-main child-main-id)]
+                                (if (and (some? child-copy) (some? child-main))
+                                  (compare-slots container container-main child-copy child-main)
+                                  container-copy)))
+                            container-copy
+                            children-id-pairs))
+                  container-copy)))]
+
+      (prn "start migration" (:id data))
+      (-> data
+          (update :pages-index d/update-vals #(update-shape-recursive % uuid/zero true))
+          (d/update-when :components d/update-vals #(update-shape-recursive % (:main-instance-id %) true))
+          (d/tap-r (fn [_] (prn "end migration")))))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1860,4 +1963,7 @@
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
          "0016-copy-fills-from-position-data-to-text-node"
-         "0017-fix-layout-flex-dir"]))
+         "0017-fix-layout-flex-dir"
+         "0018-sync-component-id-with-near-main"
+         "0019-remove-unneeded-objects-from-components"
+         "0020-fix-missing-swap-slots"]))

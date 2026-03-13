@@ -332,7 +332,7 @@
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> promote to root")
                                            (assoc % :component-root true)))
 
-        :always
+        (some? (ctk/get-swap-slot shape))
         ; First level subinstances of a detached component can't have swap-slot
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> remove swap-slot")
                                            (ctk/remove-swap-slot %)))
@@ -363,7 +363,7 @@
                       (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
                         (cond-> changes
                           (some? (:shape-ref ref-shape))
-                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (advanced)")
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (advanced to " (:shape-ref ref-shape) ")"))
                                                                 (assoc % :shape-ref (:shape-ref ref-shape))))
 
                           ;; When advancing level, the normal touched groups (not swap slots) of the
@@ -373,6 +373,8 @@
                           (pcb/update-shapes
                            [(:id shape)]
                            #(do (log/trace :msg "       (merge touched)")
+                                (log/trace :msg (str "       (ref-shape: " (:id ref-shape) ")"))
+                                (log/trace :msg (str "       (ref touched: " (:touched ref-shape) ")"))
                                 (assoc % :touched
                                        (clojure.set/union (:touched shape)
                                                           (ctk/normal-touched-groups ref-shape)))))
@@ -382,7 +384,7 @@
                           (and (some? (ctk/get-swap-slot ref-shape))
                                (nil? (ctk/get-swap-slot shape))
                                (not= (:id shape) shape-id))
-                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (got swap-slot)")
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (got swap-slot " (ctk/get-swap-slot ref-shape) ")"))
                                                                 (ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))
 
                           ;; If we can't get the ref-shape (e.g. it's in an external library not linked),
@@ -1769,6 +1771,23 @@
     (pcb/update-shapes changes [(:id dest-shape)] ctk/unhead-shape {:ignore-touched true})
     changes))
 
+(defn- check-swapped-main
+  [changes dest-shape origin-shape]
+  ;; Only for direct updates (from main to copy). Check if the main shape
+  ;; has been swapped. If so, the new component-id and component-file must
+  ;; be put into the copy.
+  (if (and (= (:shape-ref dest-shape) (:id origin-shape))
+           (ctk/instance-head? dest-shape)
+           (ctk/instance-head? origin-shape)
+           (or (not= (:component-id dest-shape) (:component-id origin-shape))
+               (not= (:component-file dest-shape) (:component-file origin-shape))))
+    (pcb/update-shapes changes [(:id dest-shape)]
+                       #(assoc %
+                               :component-id (:component-id origin-shape)
+                               :component-file (:component-file origin-shape))
+                       {:ignore-touched true})
+    changes))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1810,6 +1829,8 @@
             (add-update-attr-changes dest-shape container roperations uoperations)
             :always
             (check-detached-main dest-shape origin-shape)
+            :always
+            (check-swapped-main dest-shape origin-shape)
             :always
             (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))
 
