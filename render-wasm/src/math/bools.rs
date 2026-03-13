@@ -365,11 +365,10 @@ fn beziers_to_segments(beziers: &[(BezierSource, Bezier)]) -> Vec<Segment> {
     let mut bm = init_bm(beziers);
 
     while let Some(bezier) = pop_first(&mut bm) {
-        result.push(Segment::MoveTo((
-            bezier.1.start.x as f32,
-            bezier.1.start.y as f32,
-        )));
+        let start = (bezier.1.start.x as f32, bezier.1.start.y as f32);
+        result.push(Segment::MoveTo(start));
         push_bezier(&mut result, &bezier.1);
+        let mut last_end = (bezier.1.end.x as f32, bezier.1.end.y as f32);
         let mut next_p = BezierStart(bezier.0, bezier.1.end);
 
         loop {
@@ -377,7 +376,23 @@ fn beziers_to_segments(beziers: &[(BezierSource, Bezier)]) -> Vec<Segment> {
                 break;
             };
             push_bezier(&mut result, &next.1);
+            last_end = (next.1.end.x as f32, next.1.end.y as f32);
             next_p = BezierStart(next.0, next.1.end);
+        }
+
+        // Close the subpath if the last point is close to the start.
+        if (last_end.0 - start.0).abs() < INTERSECT_THRESHOLD_SAME
+            && (last_end.1 - start.1).abs() < INTERSECT_THRESHOLD_SAME
+        {
+            // Remove the redundant LineTo that goes back to start, if present.
+            if let Some(Segment::LineTo(p)) = result.last() {
+                if (p.0 - start.0).abs() < INTERSECT_THRESHOLD_SAME
+                    && (p.1 - start.1).abs() < INTERSECT_THRESHOLD_SAME
+                {
+                    result.pop();
+                }
+            }
+            result.push(Segment::Close);
         }
     }
     result

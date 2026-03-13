@@ -114,6 +114,12 @@
    (cts/check-shape shape)
 
    (ptk/reify ::add-shape
+     ptk/UpdateEvent
+     (update [_ state]
+       (cond-> state
+         (and (cfh/text-shape? shape) (nil? (:content shape)))
+         (update :workspace-new-text-shapes (fnil conj #{}) (:id shape))))
+
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id  (:current-page-id state)
