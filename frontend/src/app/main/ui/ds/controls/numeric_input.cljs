@@ -202,6 +202,8 @@
    [:applied-token {:optional true} [:maybe [:or :string [:= :multiple]]]]
    [:empty-to-end {:optional true} :boolean]
    [:on-change {:optional true} fn?]
+   [:on-change-start {:optional true} fn?]
+   [:on-change-end {:optional true} fn?]
    [:on-blur {:optional true} fn?]
    [:on-focus {:optional true} fn?]
    [:on-detach {:optional true} fn?]
@@ -215,7 +217,8 @@
            min max max-length step
            is-selected-on-focus nillable
            tokens applied-token empty-to-end
-           on-change on-blur on-focus on-detach
+           on-change on-change-start on-change-end
+           on-blur on-focus on-detach
            property align ref name
            text-icon]
     :rest props}]
@@ -285,6 +288,11 @@
         dirty-ref            (mf/use-ref false)
         open-dropdown-ref    (mf/use-ref nil)
         token-detach-btn-ref (mf/use-ref nil)
+
+        ;; Drag scrubbing state
+        drag-state*          (mf/use-ref :idle)
+        drag-start-x*        (mf/use-ref 0)
+        drag-start-val*      (mf/use-ref 0)
 
         dropdown-options
         (mf/with-memo [tokens filter-id]
@@ -515,13 +523,14 @@
         (mf/use-fn
          (mf/deps on-focus select-on-focus)
          (fn [event]
-           (when (fn? on-focus)
-             (on-focus event))
-           (let [target (dom/get-target event)]
-             (when select-on-focus
-               (dom/select-text! target)
-               ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
-               (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
+           (when-not (= :dragging (mf/ref-val drag-state*))
+             (when (fn? on-focus)
+               (on-focus event))
+             (let [target (dom/get-target event)]
+               (when select-on-focus
+                 (dom/select-text! target)
+                 ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
+                 (.addEventListener target "mouseup" dom/prevent-default #js {:once true}))))))
 
         on-mouse-wheel
         (mf/use-fn
@@ -540,6 +549,77 @@
                  (dom/prevent-default event)
                  (dom/stop-propagation event)
                  (apply-value (dm/str new-val)))))))
+
+        on-scrub-pointer-down
+        (mf/use-fn
+         (mf/deps disabled is-open is-multiple? ref min max nillable default)
+         (fn [event]
+           (when-not (or disabled is-open is-multiple?)
+             (let [node (mf/ref-val ref)
+                   is-focused (and (some? node) (dom/active? node))
+                   has-token (some? (deref token-applied*))]
+               (when-not (or is-focused has-token)
+                 (let [client-x  (.-clientX event)
+                       parsed    (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
+                       start-val (or parsed default 0)]
+                   (mf/set-ref-val! drag-state* :maybe-dragging)
+                   (mf/set-ref-val! drag-start-x* client-x)
+                   (mf/set-ref-val! drag-start-val* start-val)
+                   (dom/capture-pointer event)))))))
+
+        on-scrub-pointer-move
+        (mf/use-fn
+         (mf/deps apply-value update-input step min max on-change-start)
+         (fn [event]
+           (let [state (mf/ref-val drag-state*)]
+             (when (or (= state :maybe-dragging) (= state :dragging))
+               (let [client-x (.-clientX event)
+                     start-x  (mf/ref-val drag-start-x*)
+                     delta-x  (- client-x start-x)]
+                 (when (and (= state :maybe-dragging)
+                            (>= (js/Math.abs delta-x) 3))
+                   (mf/set-ref-val! drag-state* :dragging)
+                   (dom/add-class! (dom/get-body) "cursor-drag-scrub")
+                   (when (fn? on-change-start)
+                     (on-change-start)))
+                 (when (= (mf/ref-val drag-state*) :dragging)
+                   (let [effective-step (cond
+                                          (.-shiftKey event) (* step 10)
+                                          (.-ctrlKey event)  (* step 0.1)
+                                          :else              step)
+                         steps   (js/Math.round (/ delta-x 1))
+                         new-val (mth/clamp (+ (mf/ref-val drag-start-val*)
+                                               (* steps effective-step))
+                                            min max)]
+                     (update-input (fmt/format-number new-val))
+                     (apply-value (dm/str new-val)))))))))
+
+        on-scrub-pointer-up
+        (mf/use-fn
+         (mf/deps ref on-change-end)
+         (fn [event]
+           (let [state (mf/ref-val drag-state*)]
+             (when (= state :maybe-dragging)
+               (mf/set-ref-val! drag-state* :idle)
+               (dom/release-pointer event)
+               (when-let [node (mf/ref-val ref)]
+                 (dom/focus! node)))
+             (when (= state :dragging)
+               (mf/set-ref-val! drag-state* :idle)
+               (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
+               (dom/release-pointer event)
+               (when (fn? on-change-end)
+                 (on-change-end))))))
+
+        on-scrub-lost-pointer-capture
+        (mf/use-fn
+         (mf/deps on-change-end)
+         (fn [_event]
+           (let [was-dragging (= :dragging (mf/ref-val drag-state*))]
+             (mf/set-ref-val! drag-state* :idle)
+             (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
+             (when (and was-dragging (fn? on-change-end))
+               (on-change-end)))))
 
         open-dropdown
         (mf/use-fn
@@ -723,7 +803,11 @@
       (mf/set-ref-val! options-ref dropdown-options))
 
     [:div {:class [class (stl/css :input-wrapper)]
-           :ref wrapper-ref}
+           :ref wrapper-ref
+           :on-pointer-down on-scrub-pointer-down
+           :on-pointer-move on-scrub-pointer-move
+           :on-pointer-up on-scrub-pointer-up
+           :on-lost-pointer-capture on-scrub-lost-pointer-capture}
 
      (if (and (some? token-applied)
               (not= :multiple token-applied))

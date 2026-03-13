@@ -14,6 +14,7 @@
 - Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
 - Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
+- Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
 
 
 ### :bug: Bugs fixed

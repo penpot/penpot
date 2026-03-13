@@ -184,6 +184,9 @@
   @include t.use-typography("body-small");
   display: flex;
   align-items: center;
+  &:not(:focus-within) {
+    cursor: ew-resize;
+  }
   block-size: $sz-32;
   inline-size: px2rem(60);
   padding-inline-start: var(--sp-xs);
@@ -240,6 +243,10 @@
   margin: var(--sp-xxs) 0;
   padding: 0 0 0 px2rem(6);
   color: var(--color-foreground-primary);
+  cursor: ew-resize;
+  &:focus {
+    cursor: text;
+  }
   &[disabled] {
     opacity: 0.5;
     pointer-events: none;
