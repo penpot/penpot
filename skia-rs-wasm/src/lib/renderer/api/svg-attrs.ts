@@ -4,7 +4,7 @@
  */
 
 import type { PenpotNode, Fill } from 'penpot-exporter/types'
-import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from './constants'
+import { isColorFill, isLinearGradient, isRadialGradient, isAngularGradient, isImageFill } from './constants'
 
 /**
  * Add fill props to an attributes object
@@ -28,7 +28,7 @@ export function addFillProps(
   // Determine if URL fill is needed (multiple fills, gradients, or images)
   const hasImageFill = shapeFills.some((fill: Fill) => isImageFill(fill))
   const hasGradientFill = shapeFills.some(
-    (fill: Fill) => isLinearGradient(fill) || isRadialGradient(fill)
+    (fill: Fill) => isLinearGradient(fill) || isRadialGradient(fill) || isAngularGradient(fill)
   )
   const urlFillNeeded =
     hasImageFill ||
@@ -91,7 +91,7 @@ export function addFillProps(
     if (isImageFill(firstFill)) {
       // Image fill: use pattern URL
       result.fill = `url(#fill-image-${renderId})`
-    } else if (isLinearGradient(firstFill) || isRadialGradient(firstFill)) {
+    } else if (isLinearGradient(firstFill) || isRadialGradient(firstFill) || isAngularGradient(firstFill)) {
       // Gradient fill: use gradient URL (index is empty for first fill)
       const index = ''
       result.fill = `url(#fill-color-gradient-${renderId}${index})`
@@ -113,6 +113,7 @@ export function addFillProps(
       shapeType === 'text' &&
       !isLinearGradient(firstFill) &&
       !isRadialGradient(firstFill) &&
+      !isAngularGradient(firstFill) &&
       !isColorFill(firstFill)
     ) {
       result.fill = 'black'

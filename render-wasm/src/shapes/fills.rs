@@ -93,6 +93,32 @@ impl Gradient {
             Some(&transform),
         )
     }
+
+    pub fn to_angular_shader(&self, rect: &Rect) -> Option<skia::Shader> {
+        let center = skia::Point::new(
+            rect.left + self.start.0 * rect.width(),
+            rect.top + self.start.1 * rect.height(),
+        );
+        // Convert the angle-zero point from normalized shape coords to pixel space,
+        // then compute the angle there so it is correct for non-square shapes.
+        let end = skia::Point::new(
+            rect.left + self.end.0 * rect.width(),
+            rect.top + self.end.1 * rect.height(),
+        );
+        let dir = end - center;
+        let start_angle = dir.y.atan2(dir.x).to_degrees();
+        let end_angle = start_angle + 360.0;
+
+        skia::shader::Shader::sweep_gradient(
+            center,
+            self.colors.as_slice(),
+            self.offsets.as_slice(),
+            skia::TileMode::Repeat,
+            Some((start_angle, end_angle)),
+            None,
+            None,
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -136,6 +162,7 @@ pub enum Fill {
     Solid(SolidColor),
     LinearGradient(Gradient),
     RadialGradient(Gradient),
+    AngularGradient(Gradient),
     Image(ImageFill),
 }
 
@@ -200,6 +227,15 @@ impl Fill {
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }
+            Self::AngularGradient(gradient) => {
+                let mut p = skia::Paint::default();
+                p.set_shader(gradient.to_angular_shader(rect));
+                p.set_alpha(gradient.opacity);
+                p.set_style(skia::PaintStyle::Fill);
+                p.set_anti_alias(anti_alias);
+                p.set_blend_mode(skia::BlendMode::SrcOver);
+                p
+            }
             Self::Image(image_fill) => {
                 let mut p = skia::Paint::default();
                 p.set_style(skia::PaintStyle::Fill);
@@ -217,6 +253,7 @@ pub fn get_fill_shader(fill: &Fill, bounding_box: &Rect) -> Option<skia::Shader>
         Fill::Solid(SolidColor(color)) => Some(skia::shaders::color(*color)),
         Fill::LinearGradient(gradient) => gradient.to_linear_shader(bounding_box),
         Fill::RadialGradient(gradient) => gradient.to_radial_shader(bounding_box),
+        Fill::AngularGradient(gradient) => gradient.to_angular_shader(bounding_box),
         Fill::Image(image_fill) => {
             let mut image_shader = None;
             let image = get_image(&image_fill.id);
