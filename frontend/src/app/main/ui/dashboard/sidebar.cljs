@@ -314,7 +314,9 @@
         (mf/use-fn
          (mf/deps organization)
          (fn []
-           (dnt/go-to-nitrate-cc organization)))
+           (if (:organization-id organization)
+             (dnt/go-to-nitrate-cc organization)
+             (dnt/go-to-nitrate-cc))))
 
         default-team-id (or (->> organizations
                                  vals
@@ -371,7 +373,13 @@
 
         teams (dissoc teams default-team-id)
         on-create-team-click
-        (mf/use-fn #(st/emit! (modal/show :team-form {})))
+        (mf/use-fn
+         (mf/deps team)
+         (fn []
+           (let [params (if (and (contains? cf/flags :nitrate) (:organization-id team))
+                          {:organization-id (:organization-id team)}
+                          {})]
+             (st/emit! (modal/show :team-form params)))))
 
         on-team-click
         (mf/use-fn
@@ -383,12 +391,12 @@
 
     [:> dropdown-menu* props
      [:> dropdown-menu-item* {:on-click    on-team-click
-                              :data-value  (:default-team-id profile)
+                              :data-value  default-team-id
                               :class       (stl/css :team-dropdown-item)}
       [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
 
       [:span {:class (stl/css :team-text)} (tr "dashboard.your-penpot")]
-      (when (= (:default-team-id profile) (:id team))
+      (when (= default-team-id (:id team))
         tick-icon)]
 
      (for [team-item (remove :is-default (vals teams))]

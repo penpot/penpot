@@ -18,16 +18,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- request-builder
-  [cfg method uri shared-key profile-id]
+  [cfg method uri shared-key profile-id request-params]
   (fn []
-    (http/req! cfg {:method method
-                    :headers {"content-type" "application/json"
-                              "accept" "application/json"
-                              "x-shared-key" shared-key
-                              "x-profile-id" (str profile-id)}
-                    :uri uri
-                    :version :http1.1})))
-
+    (http/req! cfg (cond-> {:method method
+                            :headers {"content-type" "application/json"
+                                      "accept" "application/json"
+                                      "x-shared-key" shared-key
+                                      "x-profile-id" (str profile-id)}
+                            :uri uri
+                            :version :http1.1}
+                     (= method :post) (assoc :body (json/encode request-params))))))
 
 (defn- with-retries
   [handler max-retries]
@@ -60,9 +60,9 @@
           nil)))))
 
 (defn- request-to-nitrate
-  [cfg method uri schema {:keys [::rpc/profile-id] :as params}]
+  [cfg method uri schema {:keys [::rpc/profile-id request-params] :as params}]
   (let [shared-key     (-> cfg ::setup/shared-keys :nitrate)
-        full-http-call (-> (request-builder cfg method uri shared-key profile-id)
+        full-http-call (-> (request-builder cfg method uri shared-key profile-id request-params)
                            (with-retries 3)
                            (with-validate uri schema))]
     (full-http-call)))
@@ -85,6 +85,12 @@
    [:id ::sm/uuid]
    [:name ::sm/text]
    [:slug ::sm/text]])
+
+(def ^:private schema:team
+  [:map
+   [:id ::sm/uuid]
+   [:organizationId ::sm/uuid]
+   [:yourPenpot :boolean]])
 
 ;; TODO Unify with schemas on backend/src/app/http/management.clj
 (def ^:private schema:timestamp
@@ -161,17 +167,40 @@
 (defn- get-team-org
   [cfg {:keys [team-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get (str baseuri "/api/teams/" (str team-id)) schema:organization params)))
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/teams/"
+                             team-id)
+                        schema:organization params)))
+
+(defn- set-team-org
+  [cfg {:keys [organization-id team-id is-default] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)
+        params (assoc params :request-params {:teamId team-id
+                                              :yourPenpot (true? is-default)})]
+    (request-to-nitrate cfg :post
+                        (str baseuri
+                             "/api/organizations/"
+                             organization-id
+                             "/add-team")
+                        schema:team params)))
 
 (defn- get-subscription
   [cfg {:keys [profile-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get (str baseuri "/api/subscriptions/" (str profile-id)) schema:subscription params)))
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/subscriptions/"
+                             profile-id)
+                        schema:subscription params)))
 
 (defn- get-connectivity
   [cfg params]
   (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get (str baseuri "/api/connectivity") schema:connectivity params)))
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/connectivity")
+                        schema:connectivity params)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
@@ -181,6 +210,7 @@
   [_ cfg]
   (when (contains? cf/flags :nitrate)
     {:get-team-org     (partial get-team-org cfg)
+     :set-team-org     (partial set-team-org cfg)
      :get-subscription (partial get-subscription cfg)
      :connectivity     (partial get-connectivity cfg)}))
 
@@ -223,6 +253,22 @@
                :team-id (:id team)
                :cause cause)
       team)))
+
+(defn set-team-organization
+  "Associates a team with an organization in Nitrate.
+  Requires organization-id and is-default in params.
+  Throws an exception if the request fails."
+  [cfg team params]
+  (let [params (assoc (or params {})
+                      :team-id (:id team)
+                      :organization-id (:organization-id params)
+                      :is-default (:is-default params))
+        result (call cfg :set-team-org params)]
+    (when (nil? result)
+      (throw (ex-info "Failed to set team organization"
+                      {:team-id (:id team)
+                       :organization-id (:organization-id params)})))
+    team))
 
 (defn connectivity
   [cfg]

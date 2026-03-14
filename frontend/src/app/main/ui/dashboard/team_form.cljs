@@ -24,7 +24,8 @@
 
 (def ^:private schema:team-form
   [:map {:title "TeamForm"}
-   [:name [::sm/text {:max 250}]]])
+   [:name [::sm/text {:max 250}]]
+   [:organization-id {:optional true} [:maybe ::sm/uuid]]])
 
 (defn- on-create-success
   [_form response]
@@ -50,7 +51,9 @@
   [form]
   (let [mdata  {:on-success (partial on-create-success form)
                 :on-error   (partial on-error form)}
-        params {:name (get-in @form [:clean-data :name])}]
+        data   (:clean-data @form)
+        params (cond-> {:name (:name data)}
+                 (:organization-id data) (assoc :organization-id (:organization-id data)))]
     (st/emit! (-> (dtm/create-team (with-meta params mdata))
                   (with-meta {::ev/origin :dashboard})))))
 
@@ -58,7 +61,8 @@
   [form]
   (let [mdata  {:on-success (partial on-update-success form)
                 :on-error   (partial on-error form)}
-        team   (get @form :clean-data)]
+        data   (:clean-data @form)
+        team   (select-keys data [:id :name])]  ;; Only send name and id for updates
     (st/emit! (dtm/update-team (with-meta team mdata))
               (modal/hide))))
 
@@ -72,10 +76,16 @@
 (mf/defc team-form-modal
   {::mf/register modal/components
    ::mf/register-as :team-form}
-  [{:keys [team] :as props}]
-  (let [initial (mf/use-memo (fn []
-                               (or (some-> team (select-keys [:name :id]))
-                                   {})))
+  [{:keys [team organization-id] :as props}]
+  (let [initial (mf/use-memo
+                 (mf/deps team organization-id)
+                 (fn []
+                   (if team
+                     ;; For existing teams, only include name and id (no organization changes)
+                     (select-keys team [:name :id])
+                     ;; For new teams, include organization-id if provided
+                     (cond-> {}
+                       organization-id (assoc :organization-id organization-id)))))
         form    (fm/use-form :schema schema:team-form
                              :initial initial)
         handle-keydown
