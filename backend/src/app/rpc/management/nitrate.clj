@@ -113,7 +113,7 @@
   {::doc/added "2.14"
    ::sm/params schema:notify-user-added-to-organization
    ::rpc/auth false}
-  [cfg {:keys [profile-id]}]
+  [cfg {:keys [profile-id organization-id]}]
   (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
                       ::quotes/profile-id profile-id})
 
@@ -122,7 +122,9 @@
                      (set/difference cfeat/no-team-inheritable-features))
         params   {:profile-id profile-id
                   :name "Default"
-                  :features features}
+                  :features features
+                  :organization-id organization-id
+                  :is-default true}
         team     (db/tx-run! cfg teams/create-team params)]
     (select-keys team [:id])))
 
