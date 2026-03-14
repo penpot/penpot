@@ -38,7 +38,12 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
   const state = useWorkspaceStore.getState()
   const { renderer, viewport, selectedIds, selectedNodes, wasmSelectionRect } = state
 
-  if (!renderer || !viewport || selectedIds.size < 1) return EMPTY
+  if (!renderer || !viewport || selectedIds.size < 1) {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/c70ec86b-9ad9-405f-b916-1c6ac9ad8098',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0fdc8e'},body:JSON.stringify({sessionId:'0fdc8e',location:'rotate.ts:startRotateSelected',message:'rotate EMPTY early',data:{hasRenderer:!!renderer,hasViewport:!!viewport,selectedCount:selectedIds.size},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+    // #endregion
+    return EMPTY
+  }
 
   const ids = Array.from(selectedIds)
   const isSingle = ids.length === 1
@@ -46,7 +51,12 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
 
   // Single selection: require valid node with selrect (current behavior)
   if (isSingle) {
-    if (!singleNode || singleNode.id !== ids[0] || !singleNode.selrect) return EMPTY
+    if (!singleNode || singleNode.id !== ids[0] || !singleNode.selrect) {
+      // #region agent log
+      fetch('http://127.0.0.1:7245/ingest/c70ec86b-9ad9-405f-b916-1c6ac9ad8098',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0fdc8e'},body:JSON.stringify({sessionId:'0fdc8e',location:'rotate.ts:startRotateSelected',message:'rotate EMPTY singleNode',data:{hasSingleNode:!!singleNode,hasSelrect:!!singleNode?.selrect},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
+      return EMPTY
+    }
   }
 
   // Rotation center: selection rect center (works for single and group)
@@ -108,6 +118,9 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
   const commitOnRelease = stopper.pipe(
     take(1),
     tap(() => {
+      // #region agent log
+      fetch('http://127.0.0.1:7245/ingest/c70ec86b-9ad9-405f-b916-1c6ac9ad8098',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'0fdc8e'},body:JSON.stringify({sessionId:'0fdc8e',location:'rotate.ts:commitOnRelease',message:'pointer up',data:{modifiersApplied:modifiersAppliedRef.current},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
+      // #endregion
       if (!modifiersAppliedRef.current) {
         const store = useWorkspaceStore.getState()
         store.setRotationCorner(null)

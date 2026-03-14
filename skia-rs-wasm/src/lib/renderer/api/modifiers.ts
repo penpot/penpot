@@ -19,7 +19,7 @@ import {
   translateStructureModifierType,
 } from './serializers'
 import { checkContext } from './context'
-import { MODIFIER_U8_SIZE, MODIFIER_U32_SIZE } from './constants'
+import { MODIFIER_U8_SIZE, MODIFIER_U32_SIZE, PROPAGATE_MODIFIER_ENTRY_U8_SIZE } from './constants'
 import { requestRender } from './rendering'
 
 /**
@@ -61,7 +61,7 @@ export function propagateModifiers(
     return []
   }
 
-  const offset = offset8To32(allocBytes(module, MODIFIER_U8_SIZE * entries.length))
+  const offset = offset8To32(allocBytes(module, PROPAGATE_MODIFIER_ENTRY_U8_SIZE * entries.length))
   const heapU32 = module.HEAPU32
   const heapF32 = module.HEAPF32
 
@@ -69,6 +69,8 @@ export function propagateModifiers(
   for (const [id, transform] of entries) {
     currentOffset = writeUUIDToHeap(currentOffset, heapU32, id)
     currentOffset = writeMatrixToHeap(currentOffset, heapF32, transform)
+    heapU32[currentOffset] = 0
+    currentOffset += 1
   }
 
   const resultOffset = offset8To32(module._propagate_modifiers(pixelPrecision))
