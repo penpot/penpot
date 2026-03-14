@@ -81,6 +81,17 @@
       "unknown"
       date)))
 
+;; --- Compile-time version tag
+;;
+;; This value is baked into the compiled JS at build time via
+;; closure-defines, so it travels with the JS bundle. In contrast,
+;; `version-tag` (below) is read at runtime from
+;; globalThis.penpotVersionTag which is set by the always-fresh
+;; index.html. Comparing the two lets us detect when the browser
+;; has loaded stale cached JS files.
+
+(goog-define compiled-version-tag "develop")
+
 ;; --- Global Config Vars
 
 (def default-theme  "default")
@@ -96,6 +107,16 @@
 (def platform             (parse-platform))
 
 (def version-tag          (obj/get global "penpotVersionTag"))
+
+(defn ^boolean stale-build?
+  "Returns true when the compiled JS was built with a different version
+  tag than the one present in the current index.html. This indicates
+  the browser has cached JS from a previous deployment."
+  []
+  (and (string? version-tag)
+       (not= compiled-version-tag "develop")
+       (not= compiled-version-tag version-tag)))
+
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI"))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
