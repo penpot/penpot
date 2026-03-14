@@ -17,6 +17,7 @@ import {
   writeSolidFill,
   writeLinearGradientFill,
   writeRadialGradientFill,
+  writeAngularGradientFill,
   writeImageFill,
   fetchImage,
 } from './fills'
@@ -68,6 +69,8 @@ export function setShapeStrokes(
         writeLinearGradientFill(fillOffset, dataView, gradient, opacity)
       } else if (gradient.type === 'radial') {
         writeRadialGradientFill(fillOffset, dataView, gradient, opacity)
+      } else if (gradient.type === 'angular') {
+        writeAngularGradientFill(fillOffset, dataView, gradient, opacity)
       }
       module._add_shape_stroke_fill()
     } else if (image) {

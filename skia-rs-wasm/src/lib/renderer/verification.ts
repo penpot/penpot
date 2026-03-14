@@ -47,6 +47,12 @@ export function isRadialGradient(
   return fill.fillColorGradient != null && fill.fillColorGradient.type === 'radial'
 }
 
+export function isAngularGradient(
+  fill: Fill
+): fill is Fill & { fillColorGradient: Gradient & { type: 'angular' } } {
+  return fill.fillColorGradient != null && fill.fillColorGradient.type === 'angular'
+}
+
 export function isImageFill(
   fill: Fill
 ): fill is Fill & { fillImage: ImageColor } {

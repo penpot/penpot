@@ -8,6 +8,7 @@ export {
   isColorFill,
   isLinearGradient,
   isRadialGradient,
+  isAngularGradient,
   isImageFill,
 } from '../verification'
 

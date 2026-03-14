@@ -19,6 +19,7 @@ import {
   isColorFill,
   isLinearGradient,
   isRadialGradient,
+  isAngularGradient,
   isImageFill,
 } from './constants'
 import { getWebGLContext } from './webgl-helpers'
@@ -202,7 +203,8 @@ export function writeLinearGradientFill(
 }
 
 /**
- * Writes a radial gradient fill to the heap (exporter Gradient: startX, startY = center, width = radius)
+ * Writes a radial gradient fill to the heap.
+ * For radial gradients: startX/startY = center, endX/endY = point on ellipse, width = ellipse aspect ratio (e.g. ry/rx).
  */
 export function writeRadialGradientFill(
   offset: number,
@@ -218,15 +220,63 @@ export function writeRadialGradientFill(
   dataView.setFloat32(offset + 4, gradient.startX, true)
   dataView.setFloat32(offset + 8, gradient.startY, true)
 
-  // End = center + radius (offset + 12)
-  dataView.setFloat32(offset + 12, gradient.startX, true)
-  dataView.setFloat32(offset + 16, gradient.startY + gradient.width, true)
+  // End = point on ellipse (offset + 12)
+  dataView.setFloat32(offset + 12, gradient.endX, true)
+  dataView.setFloat32(offset + 16, gradient.endY, true)
 
   // Alpha (offset + 20)
   const alpha = Math.floor(opacity * 0xff)
   dataView.setUint8(offset + 20, alpha)
 
-  // Width (offset + 24) - radius for radial
+  // Width (offset + 24) - ellipse aspect ratio for radial (e.g. ry/rx)
+  dataView.setFloat32(offset + 24, gradient.width, true)
+
+  // Stop count (offset + 28)
+  const stops = gradient.stops.slice(0, MAX_GRADIENT_STOPS)
+  dataView.setUint8(offset + 28, stops.length)
+
+  // Padding (3 bytes at offset + 29) - already zeroed
+
+  // Write stops (offset + 32)
+  let stopOffset = offset + 32
+  for (const stop of stops) {
+    const stopColor = colorToU32ARGB({
+      color: stop.color,
+      opacity: stop.opacity,
+    })
+    dataView.setUint32(stopOffset, stopColor, true)
+    dataView.setFloat32(stopOffset + 4, stop.offset, true)
+    stopOffset += GRADIENT_STOP_U8_SIZE
+  }
+}
+
+/**
+ * Writes an angular (conic/sweep) gradient fill to the heap.
+ * For angular: startX/startY = center, width = start angle in degrees; endX/endY unused.
+ */
+export function writeAngularGradientFill(
+  offset: number,
+  dataView: DataView,
+  gradient: Gradient,
+  opacity: number
+): void {
+  // Type byte: 0x04 for angular gradient
+  dataView.setUint8(offset, 0x04)
+  // Padding (3 bytes) - already zeroed
+
+  // Center (offset + 4)
+  dataView.setFloat32(offset + 4, gradient.startX, true)
+  dataView.setFloat32(offset + 8, gradient.startY, true)
+
+  // End = angle-zero point in normalized shape coords (offset + 12)
+  dataView.setFloat32(offset + 12, gradient.endX, true)
+  dataView.setFloat32(offset + 16, gradient.endY, true)
+
+  // Alpha (offset + 20)
+  const alpha = Math.floor(opacity * 0xff)
+  dataView.setUint8(offset + 20, alpha)
+
+  // Width (offset + 24) - start angle in degrees for angular
   dataView.setFloat32(offset + 24, gradient.width, true)
 
   // Stop count (offset + 28)
@@ -322,6 +372,8 @@ export function setShapeFills(
       writeLinearGradientFill(fillOffset, dataView, fill.fillColorGradient, fillOpacity)
     } else if (isRadialGradient(fill)) {
       writeRadialGradientFill(fillOffset, dataView, fill.fillColorGradient, fillOpacity)
+    } else if (isAngularGradient(fill)) {
+      writeAngularGradientFill(fillOffset, dataView, fill.fillColorGradient, fillOpacity)
     } else if (isImageFill(fill)) {
       writeImageFill(fillOffset, dataView, fill.fillImage, fillOpacity)
 

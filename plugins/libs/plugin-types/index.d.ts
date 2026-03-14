@@ -1948,13 +1948,14 @@ export type Gradient = {
    * Specifies the type of gradient.
    * - 'linear': A gradient that transitions colors along a straight line.
    * - 'radial': A gradient that transitions colors radiating outward from a central point.
+   * - 'angular': A gradient that transitions colors around a center point (conic/sweep).
    *
    * @example
    * ```js
    * const gradient: Gradient = { type: 'linear', startX: 0, startY: 0, endX: 100, endY: 100, width: 100, stops: [{ color: '#FF5733', offset: 0 }] };
    * ```
    */
-  type: 'linear' | 'radial';
+  type: 'linear' | 'radial' | 'angular';
   /**
    * The X-coordinate of the starting point of the gradient.
    */

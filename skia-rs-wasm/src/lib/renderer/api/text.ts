@@ -21,7 +21,7 @@ import {
   FILL_U8_SIZE,
   ZERO_UUID,
 } from './constants'
-import { isImageFill, isColorFill, isLinearGradient, isRadialGradient } from './constants'
+import { isImageFill, isColorFill, isLinearGradient, isRadialGradient, isAngularGradient } from './constants'
 import { moduleUseShape } from './shape'
 import { setShapeVerticalAlign } from './shape'
 import { fetchImage } from './fills'
@@ -36,6 +36,7 @@ import {
   writeSolidFill,
   writeLinearGradientFill,
   writeRadialGradientFill,
+  writeAngularGradientFill,
   writeImageFill,
 } from './fills'
 
@@ -346,6 +347,8 @@ function writeSpanFills(offset: number, dataView: DataView, fills: Fill[]): numb
       writeLinearGradientFill(currentOffset, dataView, fill.fillColorGradient!, opacity)
     } else if (isRadialGradient(fill)) {
       writeRadialGradientFill(currentOffset, dataView, fill.fillColorGradient!, opacity)
+    } else if (isAngularGradient(fill)) {
+      writeAngularGradientFill(currentOffset, dataView, fill.fillColorGradient!, opacity)
     } else if (isImageFill(fill)) {
       writeImageFill(currentOffset, dataView, fill.fillImage!, opacity)
     }
