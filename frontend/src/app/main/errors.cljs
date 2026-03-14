@@ -8,6 +8,7 @@
   "Generic error handling"
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as log]
    [app.common.pprint :as pp]
    [app.config :as cf]
    [app.main.data.auth :as da]
@@ -32,6 +33,57 @@
 
 ;; Will contain last uncaught exception
 (def last-exception nil)
+
+;; --- Stale-asset error detection and auto-reload
+;;
+;; When the browser loads JS modules from different builds (e.g.
+;; shared.js from build A and main-dashboard.js from build B due to
+;; aggressive caching), keyword constants referenced across modules
+;; will be undefined. This manifests as TypeError messages containing
+;; "$cljs$cst$" and "is undefined" or "is null".
+;;
+;; We detect this pattern and trigger a hard reload, using
+;; sessionStorage to prevent infinite reload loops.
+
+(def ^:private reload-storage-key "penpot-stale-reload-ts")
+(def ^:private reload-cooldown-ms 30000)
+
+(defn stale-asset-error?
+  "Returns true if the error matches the signature of a cross-build
+  module mismatch: accessing a ClojureScript keyword constant that
+  doesn't exist on the shared $APP object."
+  [cause]
+  (when (some? cause)
+    (let [message (ex-message cause)]
+      (and (string? message)
+           (str/includes? message "$cljs$cst$")
+           (or (str/includes? message "is undefined")
+               (str/includes? message "is null")
+               (str/includes? message "is not a function"))))))
+
+(defn reload-on-stale-asset!
+  "Force a hard page reload when a stale-asset error is detected.
+  Uses sessionStorage to prevent infinite reload loops: if we already
+  reloaded within the last 30 seconds, do not reload again."
+  [cause]
+  (let [now     (.now js/Date)
+        storage (.-sessionStorage g/window)
+        prev-ts (when (some? storage)
+                  (js/parseInt (.getItem storage reload-storage-key) 10))]
+    (if (and (some? prev-ts)
+             (not (js/isNaN prev-ts))
+             (< (- now prev-ts) reload-cooldown-ms))
+      (do
+        (log/wrn :hint "stale-asset error detected but reload was already attempted recently"
+                 :message (ex-message cause))
+        false)
+      (do
+        (log/wrn :hint "stale-asset error detected, forcing reload"
+                 :message (ex-message cause))
+        (when (some? storage)
+          (.setItem storage reload-storage-key (str now)))
+        (.reload js/location)
+        true))))
 
 (defn exception->error-data
   [cause]
@@ -354,17 +406,23 @@
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
               (when-not (is-ignorable-exception? cause)
-                (set! last-exception cause)
-                (ex/print-throwable cause :prefix "Uncaught Exception")
-                (ts/schedule #(flash :cause cause :type :unhandled)))))
+                (if (stale-asset-error? cause)
+                  (reload-on-stale-asset! cause)
+                  (do
+                    (set! last-exception cause)
+                    (ex/print-throwable cause :prefix "Uncaught Exception")
+                    (ts/schedule #(flash :cause cause :type :unhandled)))))))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "reason")]
               (when-not (is-ignorable-exception? cause)
-                (set! last-exception cause)
-                (ex/print-throwable cause :prefix "Uncaught Rejection")
-                (ts/schedule #(flash :cause cause :type :unhandled)))))]
+                (if (stale-asset-error? cause)
+                  (reload-on-stale-asset! cause)
+                  (do
+                    (set! last-exception cause)
+                    (ex/print-throwable cause :prefix "Uncaught Rejection")
+                    (ts/schedule #(flash :cause cause :type :unhandled)))))))]
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)

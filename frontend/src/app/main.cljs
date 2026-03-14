@@ -100,16 +100,26 @@
 
 (defn ^:export init
   [options]
-  (some-> (unchecked-get options "defaultTranslations")
-          (i18n/set-default-translations))
+  ;; Before initializing anything, check if the browser has loaded
+  ;; stale JS from a previous deployment. If so, do a hard reload so
+  ;; the browser fetches fresh assets matching the current index.html.
+  (if (cf/stale-build?)
+    (do
+      (log/wrn :hint "stale JS detected, forcing reload"
+               :compiled-version cf/compiled-version-tag
+               :expected-version cf/version-tag)
+      (.reload js/location))
+    (do
+      (some-> (unchecked-get options "defaultTranslations")
+              (i18n/set-default-translations))
 
-  (mw/init!)
-  (i18n/init)
-  (cur/init-styles)
+      (mw/init!)
+      (i18n/init)
+      (cur/init-styles)
 
-  (init-ui)
-  (st/emit! (plugins/initialize)
-            (initialize)))
+      (init-ui)
+      (st/emit! (plugins/initialize)
+                (initialize)))))
 
 (defn ^:export reinit
   ([]
