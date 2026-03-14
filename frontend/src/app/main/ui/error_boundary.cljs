@@ -9,6 +9,7 @@
   (:require
    ["react-error-boundary" :as reb]
    [app.common.exceptions :as ex]
+   [app.config :as cf]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [goog.functions :as gfn]
@@ -33,13 +34,19 @@
           ;; very small amount of time, so we debounce for 100ms for
           ;; avoid duplicate and redundant reports
           (gfn/debounce (fn [error info]
-                          (set! errors/last-exception error)
-                          (ex/print-throwable error)
-                          (js/console.error
-                           "Component trace: \n"
-                           (unchecked-get info "componentStack")
-                           "\n"
-                           error))
+                          ;; If the error is a stale-asset error (cross-build
+                          ;; module mismatch), force a hard page reload instead
+                          ;; of showing the error page to the user.
+                          (if (errors/stale-asset-error? error)
+                            (cf/throttled-reload :reason (ex-message error))
+                            (do
+                              (set! errors/last-exception error)
+                              (ex/print-throwable error)
+                              (js/console.error
+                               "Component trace: \n"
+                               (unchecked-get info "componentStack")
+                               "\n"
+                               error))))
                         100))]
 
     [:> reb/ErrorBoundary
