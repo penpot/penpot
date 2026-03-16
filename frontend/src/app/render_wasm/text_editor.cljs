@@ -78,22 +78,28 @@
       (h/call wasm/internal-module "_text_editor_insert_text")
       (mem/free))))
 
-(defn text-editor-delete-backward []
-  (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_delete_backward")))
+(defn text-editor-delete-backward
+  ([]
+   (text-editor-delete-backward false))
+  ([word-boundary]
+   (when wasm/context-initialized?
+     (h/call wasm/internal-module "_text_editor_delete_backward" word-boundary))))
 
-(defn text-editor-delete-forward []
-  (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_delete_forward")))
+(defn text-editor-delete-forward
+  ([]
+   (text-editor-delete-forward false))
+  ([word-boundary]
+   (when wasm/context-initialized?
+     (h/call wasm/internal-module "_text_editor_delete_forward" word-boundary))))
 
 (defn text-editor-insert-paragraph []
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_insert_paragraph")))
 
 (defn text-editor-move-cursor
-  [direction extend-selection]
+  [direction word-boundary extend-selection]
   (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_move_cursor" direction (if extend-selection 1 0))))
+    (h/call wasm/internal-module "_text_editor_move_cursor" direction word-boundary (if extend-selection 1 0))))
 
 (defn text-editor-select-all
   []

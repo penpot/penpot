@@ -206,3 +206,6 @@ Signed-off-by: Andrey Antukh <niwi@niwi.nz>
 
 Please, use your real name (sorry, no pseudonyms or anonymous
 contributions are allowed).
+
+The commit Signed-off-by is mandatory and should match the commit author.
+
