@@ -303,6 +303,7 @@
                        (when (not= "INPUT" (-> (dom/get-active) (dom/get-tag-name)))
                          (let [node (txu/get-text-editor-content)]
                            (dom/focus! node))))))}]
+
     (hooks/use-stream
      expand-stream
      #(swap! state* assoc-in [:more-options] true))

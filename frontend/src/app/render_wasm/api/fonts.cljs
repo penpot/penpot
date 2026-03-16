@@ -32,7 +32,7 @@
 
 (defn- google-font-id->uuid
   "Returns the UUID for a Google Font ID. Uses uuid/zero as fallback when the
-  font is not found in fontsdb. uuid/zero maps to the default font (Source 
+  font is not found in fontsdb. uuid/zero maps to the default font (Source
   Sans Pro) in WASM.
   A font id may not exist for different reasons:
   - the gfonts.json catalog was updated and fonts were renamed or removed,
@@ -75,6 +75,20 @@
     :builtin
     uuid/zero))
 
+(defn uuid->font-id
+  [font-uuid]
+  (if (= font-uuid uuid/zero)
+    "sourcesanspro"
+    (or (:id (fonts/find-font-data {:uuid font-uuid}))
+        (dm/str "custom-" font-uuid))))
+
+(defn uuid->font-variant-id
+  [font-id font-variant-uuid]
+  (if (= font-variant-uuid uuid/zero)
+    "regular"
+    (or (:id (d/seek #(= (:uuid %) font-variant-uuid)
+                     (:variants (fonts/get-font-data font-id))))
+        "regular")))
 
 (defn ^:private font-id->asset-id [font-id font-variant-id font-weight font-style]
   (case (font-backend font-id)
