@@ -187,7 +187,54 @@ python3 manage.py create-profile --skip-tutorial --skip-walkthrough
 python3 manage.py create-profile -n "Jane Doe" -e jane@example.com -p secretpassword --skip-tutorial --skip-walkthrough
 ```
 
-## Team Feature Flags
+## Feature Flags
+
+### Frontend flags via config.js
+
+You can enable or disable feature flags on the frontend by creating (or editing) a
+`config.js` file at `frontend/resources/public/js/config.js`. This file is
+**gitignored**, so it has to be created manually. Your local flags won't affect other developers.
+
+Set the `penpotFlags` variable with a space-separated list of flags:
+
+```js
+var penpotFlags = "enable-mcp enable-webhooks enable-access-tokens";
+```
+
+Each flag entry uses the format `enable-<flag>` or `disable-<flag>`. They are
+merged on top of the built-in defaults, so you only need to list the flags you want
+to change.
+
+Some examples of commonly used flags:
+
+- `enable-access-tokens` — enables the Access Tokens section under profile settings.
+- `enable-mcp` — enables the MCP server configuration section.
+- `enable-webhooks` — enables webhooks configuration.
+- `enable-login-with-ldap` — enables LDAP login.
+
+The full list of available flags can be found in `common/src/app/common/flags.cljc`.
+
+After creating or modifying this file, **reload the browser** (no need to restart anything).
+
+### Backend flags via PENPOT_FLAGS
+
+Backend feature flags are controlled through the `PENPOT_FLAGS` environment
+variable using the same `enable-<flag>` / `disable-<flag>` format. You can set
+this in the `docker/devenv/docker-compose.yaml` file under the `main` service
+`environment` section:
+
+```yaml
+environment:
+  - PENPOT_FLAGS=enable-access-tokens enable-mcp
+```
+
+This requires **restarting the backend** to take effect.
+
+> **Note**: Some features (e.g., access tokens, webhooks) need both frontend and
+> backend flags enabled to work end-to-end. The frontend flag enables the UI, while
+> the backend flag enables the corresponding API endpoints.
+
+### Team Feature Flags
 
 To test a Feature Flag, you can enable or disable them by team through the `dbg` page:
 
