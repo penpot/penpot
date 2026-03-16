@@ -7,8 +7,7 @@
 (ns app.util.timers
   (:require
    [app.common.data :as d]
-   [beicon.v2.core :as rx]
-   [promesa.core :as p]))
+   [beicon.v2.core :as rx]))
 
 (defn schedule
   ([func]
@@ -30,8 +29,8 @@
 
 (defn asap
   [f]
-  (-> (p/resolved nil)
-      (p/then (fn [_] (f)))))
+  (-> (js/Promise.resolve nil)
+      (.then (fn [_] (f)))))
 
 (defn interval
   [ms func]
