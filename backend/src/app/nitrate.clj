@@ -182,7 +182,7 @@
                         (str baseuri
                              "/api/organizations/"
                              organization-id
-                             "/addTeam")
+                             "/add-team")
                         schema:team params)))
 
 (defn- get-subscription
