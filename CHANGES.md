@@ -34,6 +34,7 @@
 
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
+- Fix collapsible sidebar property titles not toggling on click [Github #5168](https://github.com/penpot/penpot/issues/5168)
 
 
 ## 2.14.0 (Unreleased)
