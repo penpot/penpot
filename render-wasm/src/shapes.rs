@@ -152,10 +152,11 @@ pub enum ConstraintH {
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
+#[repr(u8)]
 pub enum VerticalAlign {
-    Top,
-    Center,
-    Bottom,
+    Top = 0,
+    Center = 1,
+    Bottom = 2,
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]

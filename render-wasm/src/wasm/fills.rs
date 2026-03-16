@@ -36,9 +36,39 @@ impl From<RawFillData> for shapes::Fill {
     }
 }
 
+impl TryFrom<&shapes::Fill> for RawFillData {
+    type Error = String;
+
+    fn try_from(fill: &shapes::Fill) -> Result<Self, Self::Error> {
+        match fill {
+            shapes::Fill::Solid(shapes::SolidColor(color)) => {
+                Ok(RawFillData::Solid(solid::RawSolidData {
+                    color: ((color.a() as u32) << 24)
+                        | ((color.r() as u32) << 16)
+                        | ((color.g() as u32) << 8)
+                        | (color.b() as u32),
+                }))
+            }
+            shapes::Fill::LinearGradient(_) => {
+                Err("LinearGradient serialization is not implemented".to_string())
+            }
+            shapes::Fill::RadialGradient(_) => {
+                Err("RadialGradient serialization is not implemented".to_string())
+            }
+            shapes::Fill::Image(_) => Err("Image fill serialization is not implemented".to_string()),
+        }
+    }
+}
+
 impl From<[u8; RAW_FILL_DATA_SIZE]> for RawFillData {
     fn from(bytes: [u8; RAW_FILL_DATA_SIZE]) -> Self {
         unsafe { std::mem::transmute(bytes) }
+    }
+}
+
+impl From<RawFillData> for [u8; RAW_FILL_DATA_SIZE] {
+    fn from(fill_data: RawFillData) -> Self {
+        unsafe { std::mem::transmute(fill_data) }
     }
 }
 
@@ -54,7 +84,7 @@ impl TryFrom<&[u8]> for RawFillData {
 }
 
 // FIXME: return Result
-pub fn parse_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fill> {
+pub fn read_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fill> {
     buffer
         .chunks_exact(RAW_FILL_DATA_SIZE)
         .take(num_fills)
@@ -66,6 +96,16 @@ pub fn parse_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fi
         .collect()
 }
 
+/// Serializes raw fills to bytes using the same fixed-size chunk layout consumed by
+/// `read_fills_from_bytes`.
+pub fn write_fills_to_bytes(fills: Vec<shapes::Fill>) -> Vec<u8> {
+    fills
+    .iter()
+    .map(|fill| RawFillData::try_from(fill).expect("Unsupported fill type for serialization"))
+    .flat_map(|raw_fill| <[u8; RAW_FILL_DATA_SIZE]>::from(raw_fill))
+        .collect()
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_shape_fills() -> Result<()> {
@@ -74,7 +114,7 @@ pub extern "C" fn set_shape_fills() -> Result<()> {
         // The first byte contains the actual number of fills
         let num_fills = bytes.first().copied().unwrap_or(0) as usize;
         // Skip the first 4 bytes (header with fill count) and parse only the actual fills
-        let fills = parse_fills_from_bytes(&bytes[4..], num_fills);
+        let fills = read_fills_from_bytes(&bytes[4..], num_fills);
         shape.set_fills(fills);
         mem::free_bytes()?;
     });
@@ -122,6 +162,44 @@ mod tests {
         assert_eq!(
             raw_fill.unwrap(),
             RawFillData::Solid(solid::RawSolidData { color: 0xfffabada })
+        );
+    }
+
+    #[test]
+    fn test_write_fills_to_bytes_single_solid() {
+        let fills = vec![shapes::Fill::Solid(shapes::SolidColor(shapes::Color::new(
+            0xfffabada,
+        )))];
+
+        let bytes = write_fills_to_bytes(fills);
+
+        assert_eq!(bytes.len(), RAW_FILL_DATA_SIZE);
+        assert_eq!(bytes[0], 0x00);
+        assert_eq!(
+            RawFillData::try_from(&bytes[..]).unwrap(),
+            RawFillData::Solid(solid::RawSolidData { color: 0xfffabada })
+        );
+    }
+
+    #[test]
+    fn test_write_fills_to_bytes_roundtrip_multiple() {
+        let fills = vec![
+            shapes::Fill::Solid(shapes::SolidColor(shapes::Color::new(0xfffabada))),
+            shapes::Fill::Solid(shapes::SolidColor(shapes::Color::new(0xff112233))),
+        ];
+
+        let bytes = write_fills_to_bytes(fills);
+        let decoded: Vec<RawFillData> = bytes
+            .chunks_exact(RAW_FILL_DATA_SIZE)
+            .map(|chunk| RawFillData::try_from(chunk).unwrap())
+            .collect();
+
+        assert_eq!(
+            decoded,
+            vec![
+                RawFillData::Solid(solid::RawSolidData { color: 0xfffabada }),
+                RawFillData::Solid(solid::RawSolidData { color: 0xff112233 }),
+            ]
         );
     }
 }
