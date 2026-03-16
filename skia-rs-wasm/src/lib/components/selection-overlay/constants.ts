@@ -32,7 +32,13 @@ function getEffectiveCursorRotationDeg(
 }
 
 export const SELECTION_STROKE = 'var(--color-accent-tertiary, #0d7377)'
-export const SELECTION_STROKE_WIDTH = 1
+/** Overlay line color: white so it stays visible with the gray glow on light backgrounds */
+export const SELECTION_OVERLAY_STROKE = 'var(--app-white, #fff)'
+/** Soft gray glow color around overlay lines (visible on white) */
+export const SELECTION_OVERLAY_GLOW = 'rgba(0,0,0,0.28)'
+export const SELECTION_STROKE_WIDTH = 0.6
+/** Max stroke width in world units so the overlay does not dominate when zoomed out */
+export const SELECTION_STROKE_WIDTH_MAX = 1.5
 export const HANDLE_FILL = 'var(--app-white, #fff)'
 export const HANDLE_STROKE = 'var(--color-accent-tertiary, #0d7377)'
 /** Handle size in world units; divided by zoom so ~8px on screen */
@@ -40,6 +46,13 @@ export const HANDLE_SIZE_WORLD = 8
 
 /** Rotation handle size in world units (matches frontend rotation-handler-size 20) */
 export const ROTATION_HANDLE_SIZE_WORLD = 20
+
+/** Gradient overlay: line stroke width in world units */
+export const GRADIENT_LINE_STROKE_WORLD = 2
+/** Gradient overlay: endpoint circle radius in world units */
+export const GRADIENT_ENDPOINT_RADIUS_WORLD = 4
+/** Gradient overlay: stop position dot radius in world units */
+export const GRADIENT_STOP_DOT_RADIUS_WORLD = 2
 
 /** Cursor for the rotation hit area (fallback when custom SVG not used) */
 export const ROTATION_CURSOR = 'grab'

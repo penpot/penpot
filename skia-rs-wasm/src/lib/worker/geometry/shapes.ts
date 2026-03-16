@@ -28,6 +28,10 @@ export function shapesToRect(shapes: PenpotNode[]): Selrect | null {
       if (points && points.length > 0) {
         return pointsToRect(points)
       }
+      const sr = shape.selrect
+      if (sr && typeof sr.x === 'number' && typeof sr.y === 'number' && sr.width > 0 && sr.height > 0) {
+        return sr
+      }
       return null
     })
     .filter((rect): rect is Selrect => rect !== null)

@@ -188,7 +188,6 @@ async function retrieveFont(url: string): Promise<ArrayBuffer> {
  */
 function fetchFont(
   module: WasmModule,
-  shapeId: string,
   fontData: FontData,
   fontUrl: string,
   emoji: boolean = false,
@@ -210,16 +209,11 @@ function fetchFont(
         // Copy font bytes to WASM heap
         mem.set(new Uint8Array(fontBuffer))
         
-        // Get UUID buffers
-        const shapeIdBuffer = uuidToU32(shapeId)
+        // Get UUID buffer for font
         const fontIdBuffer = uuidToU32(fontData.wasmId)
         
-        // Call WASM to store font
+        // Call WASM to store font (8 params: fontId as 4×u32, weight, style, emoji, fallback)
         module._store_font(
-          shapeIdBuffer[0],
-          shapeIdBuffer[1],
-          shapeIdBuffer[2],
-          shapeIdBuffer[3],
           fontIdBuffer[0],
           fontIdBuffer[1],
           fontIdBuffer[2],
@@ -250,7 +244,6 @@ function fetchFont(
  */
 function storeFont(
   module: WasmModule,
-  shapeId: string,
   font: FontInfo,
   resolveFontUrl?: ResolveFontUrlCallback
 ): PendingImageCallback | null {
@@ -300,7 +293,7 @@ function storeFont(
   }
   
   // Return pending callback
-  return fetchFont(module, shapeId, fontData, fontUrl, emoji, fallback)
+  return fetchFont(module, fontData, fontUrl, emoji, fallback)
 }
 
 /**
@@ -308,13 +301,12 @@ function storeFont(
  */
 function storeFonts(
   module: WasmModule,
-  shapeId: string,
   fonts: FontInfo[],
   resolveFontUrl?: ResolveFontUrlCallback
 ): PendingImageCallback[] {
   const pending: PendingImageCallback[] = []
   for (const font of fonts) {
-    const callback = storeFont(module, shapeId, font, resolveFontUrl)
+    const callback = storeFont(module, font, resolveFontUrl)
     if (callback) {
       pending.push(callback)
     }
@@ -542,7 +534,7 @@ function writeShapeText(module: WasmModule, content: TextContent): void {
  */
 export function setShapeTextContent(
   module: WasmModule,
-  shapeId: string,
+  _shapeId: string,
   content: TextContent,
   _resolveImageUrl?: (imageId: string, thumbnail: boolean) => string,
   resolveFontUrl?: ResolveFontUrlCallback
@@ -564,7 +556,7 @@ export function setShapeTextContent(
   const allFonts = [...fonts, ...fallbackFonts]
 
   // Store fonts and get pending callbacks
-  const pendingFontCallbacks = storeFonts(module, shapeId, allFonts, resolveFontUrl)
+  const pendingFontCallbacks = storeFonts(module, allFonts, resolveFontUrl)
   
   // Serialize text tree structure to WASM
   // This should be called when processing fallback fonts (similar to ClojureScript line 793)

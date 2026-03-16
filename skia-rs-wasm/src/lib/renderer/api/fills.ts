@@ -276,7 +276,7 @@ export function writeAngularGradientFill(
   const alpha = Math.floor(opacity * 0xff)
   dataView.setUint8(offset + 20, alpha)
 
-  // Width (offset + 24) - start angle in degrees for angular
+  // Width (offset + 24) - ellipse aspect ratio for angular, 1 = circle
   dataView.setFloat32(offset + 24, gradient.width, true)
 
   // Stop count (offset + 28)

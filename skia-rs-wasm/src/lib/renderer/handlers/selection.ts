@@ -59,8 +59,7 @@ export function handleAreaSelection(
             rect.height / viewport.zoom
           )
         }),
-        switchMap(rect => 
-        {
+        switchMap(rect => {
           if (!pageId) return EMPTY
           return askWorker$(workerClient, 'index/query-selection', {
             pageId,

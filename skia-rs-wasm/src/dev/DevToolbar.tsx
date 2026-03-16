@@ -2,7 +2,8 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType, ShapeGeomAttributes, ModObjChange, AddObjChange, DelObjChange } from 'penpot-exporter/types'
 import { createNode } from './node-factory'
 import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Preset } from './presets'
-import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from '../lib/renderer/api/constants'
+import { isColorFill, isLinearGradient, isRadialGradient, isAngularGradient, isImageFill } from '../lib/renderer/api/constants'
+import { FillEditor } from './components/FillEditor/FillEditor'
 import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
 import { useWorkspaceDevStore } from '../lib/renderer/store/workspace-dev-store'
 import { applyChanges, setDocument, createNewDocument } from '../lib/page-crud'
@@ -35,9 +36,7 @@ export function DevToolbar() {
   const [y, setY] = useState(200)
   const [width, setWidth] = useState(150)
   const [height, setHeight] = useState(100)
-  const [fillColor, setFillColor] = useState('#3B82F6')
-  const [fillOpacity, setFillOpacity] = useState(0.8)
-  const [fillGradient, setFillGradient] = useState<Gradient | undefined>(undefined)
+  const [addNodeFill, setAddNodeFill] = useState<Fill>({ fillColor: '#3B82F6', fillOpacity: 0.8 })
   const [strokeColor, setStrokeColor] = useState('#1E40AF')
   const [strokeWidth, setStrokeWidth] = useState(2)
   const [borderRadius, setBorderRadius] = useState(0)
@@ -161,14 +160,13 @@ export function DevToolbar() {
     if (preset.radius !== undefined) setRadius(preset.radius)
 
     if (preset.fillGradient !== undefined) {
-      setFillGradient(normalizePresetGradient(preset.fillGradient))
-      setFillColor('#000000')
+      setAddNodeFill({ fillColorGradient: normalizePresetGradient(preset.fillGradient) as Gradient })
     } else if (preset.fillColor !== undefined) {
-      setFillColor(preset.fillColor)
-      setFillGradient(undefined)
+      setAddNodeFill({
+        fillColor: preset.fillColor,
+        fillOpacity: preset.fillOpacity ?? 0.8,
+      })
     }
-
-    if (preset.fillOpacity !== undefined) setFillOpacity(preset.fillOpacity)
     if (preset.strokeColor !== undefined) setStrokeColor(preset.strokeColor)
     if (preset.strokeWidth !== undefined) setStrokeWidth(preset.strokeWidth)
     if (preset.borderRadius !== undefined) setBorderRadius(preset.borderRadius)
@@ -206,11 +204,11 @@ export function DevToolbar() {
     }
 
     if (selectedType === 'rect' || selectedType === 'circle' || selectedType === 'path') {
-      if (fillGradient) {
+      if (addNodeFill.fillColorGradient) {
         options.fillColor = undefined
       } else {
-        options.fillColor = fillColor
-        options.fillOpacity = fillOpacity
+        options.fillColor = addNodeFill.fillColor ?? '#3B82F6'
+        options.fillOpacity = addNodeFill.fillOpacity ?? 0.8
       }
       options.strokeColor = strokeColor
       options.strokeWidth = strokeWidth
@@ -221,14 +219,14 @@ export function DevToolbar() {
 
     if (selectedType === 'text') {
       options.text = textContent
-      options.fillColor = fillColor
+      options.fillColor = addNodeFill.fillColor ?? '#3B82F6'
     }
 
     try {
       const newNode = createNode(selectedType, options)
 
-      if (fillGradient && (selectedType === 'rect' || selectedType === 'circle' || selectedType === 'path')) {
-        newNode.fills = [{ fillColorGradient: fillGradient }]
+      if (addNodeFill.fillColorGradient && (selectedType === 'rect' || selectedType === 'circle' || selectedType === 'path')) {
+        newNode.fills = [{ fillColorGradient: addNodeFill.fillColorGradient }]
       }
 
       if (shadows.length > 0) {
@@ -259,7 +257,7 @@ export function DevToolbar() {
       console.error('Failed to create node:', error)
       alert(`Failed to create node: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-  }, [isPageReady, selectedType, x, y, width, height, fillColor, fillOpacity, fillGradient, strokeColor, strokeWidth, borderRadius, textContent, radius, shadows, blur, opacity])
+  }, [isPageReady, selectedType, x, y, width, height, addNodeFill, strokeColor, strokeWidth, borderRadius, textContent, radius, shadows, blur, opacity])
 
   const handleRemoveNode = useCallback(
     (nodeId: string) => {
@@ -274,6 +272,87 @@ export function DevToolbar() {
     },
     []
   )
+
+  const handleAddGradientOverlayDemo = useCallback(async () => {
+    if (!isPageReady) return
+    const state = useWorkspaceStore.getState()
+    const pageId = state.pageId
+    const page = pageId ? state.documentModel?.getPage(pageId) : undefined
+    if (!pageId || !page) return
+    const root = Object.values(page.objects).find((o) => o.parentId == null)
+    const rootId = root?.id ?? ROOT_UUID
+    const rectW = 180
+    const rectH = 120
+    const x = Math.max(0, (CANVAS_WIDTH - rectW) / 2)
+    const y = Math.max(0, (CANVAS_HEIGHT - rectH) / 2)
+    const gradient: Gradient = {
+      type: 'linear',
+      startX: 0.25,
+      startY: 0.5,
+      endX: 0.75,
+      endY: 0.5,
+      width: 0,
+      stops: [
+        { offset: 0, color: '#3B82F6' },
+        { offset: 0.5, color: '#ffffff' },
+        { offset: 1, color: '#F97316' },
+      ],
+    }
+    const newNode = createNode('rect', { x, y, width: rectW, height: rectH })
+    newNode.fills = [{ fillColorGradient: gradient }]
+    const addChange: AddObjChange = {
+      type: 'add-obj',
+      id: newNode.id,
+      obj: newNode,
+      frameId: rootId,
+      parentId: rootId,
+      index: root?.shapes?.length ?? 0,
+      ...(pageId ? { pageId } : {}),
+    }
+    await applyChanges([addChange])
+    useWorkspaceStore.getState().setSelectedIds(new Set([newNode.id]))
+  }, [isPageReady])
+
+  const handleAddAngularGradientOverlayDemo = useCallback(async () => {
+    if (!isPageReady) return
+    const state = useWorkspaceStore.getState()
+    const pageId = state.pageId
+    const page = pageId ? state.documentModel?.getPage(pageId) : undefined
+    if (!pageId || !page) return
+    const root = Object.values(page.objects).find((o) => o.parentId == null)
+    const rootId = root?.id ?? ROOT_UUID
+    const rectW = 180
+    const rectH = 120
+    const x = Math.max(0, (CANVAS_WIDTH - rectW) / 2)
+    const y = Math.max(0, (CANVAS_HEIGHT - rectH) / 2)
+    const gradient: Gradient = {
+      type: 'angular',
+      startX: 0.5,
+      startY: 0.5,
+      endX: 1,
+      endY: 0.5,
+      width: 0,
+      stops: [
+        { offset: 0, color: '#3B82F6' },
+        { offset: 0.33, color: '#ffffff' },
+        { offset: 0.66, color: '#F97316' },
+        { offset: 1, color: '#3B82F6' },
+      ],
+    }
+    const newNode = createNode('rect', { x, y, width: rectW, height: rectH })
+    newNode.fills = [{ fillColorGradient: gradient }]
+    const addChange: AddObjChange = {
+      type: 'add-obj',
+      id: newNode.id,
+      obj: newNode,
+      frameId: rootId,
+      parentId: rootId,
+      index: root?.shapes?.length ?? 0,
+      ...(pageId ? { pageId } : {}),
+    }
+    await applyChanges([addChange])
+    useWorkspaceStore.getState().setSelectedIds(new Set([newNode.id]))
+  }, [isPageReady])
 
   const handleExport = useCallback(() => {
     const data = JSON.stringify(nodes, null, 2)
@@ -692,29 +771,7 @@ export function DevToolbar() {
 
                   {(selectedType === 'rect' || selectedType === 'circle' || selectedType === 'path') && (
                     <>
-                      <div className="form-group">
-                        <label>Fill Color:</label>
-                        <input
-                          type="color"
-                          value={fillColor}
-                          onChange={(e) => {
-                            setFillColor(e.target.value)
-                            setFillGradient(undefined)
-                          }}
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Fill Opacity:</label>
-                        <input
-                          type="number"
-                          value={fillOpacity}
-                          onChange={(e) => setFillOpacity(Number(e.target.value))}
-                          min={0}
-                          max={1}
-                          step={0.1}
-                        />
-                      </div>
+                      <FillEditor fill={addNodeFill} onChange={setAddNodeFill} />
 
                       <div className="form-group">
                         <label>Stroke Color:</label>
@@ -764,8 +821,8 @@ export function DevToolbar() {
                         <label>Text Color:</label>
                         <input
                           type="color"
-                          value={fillColor}
-                          onChange={(e) => setFillColor(e.target.value)}
+                          value={addNodeFill.fillColor ?? '#3B82F6'}
+                          onChange={(e) => setAddNodeFill({ ...addNodeFill, fillColor: e.target.value })}
                         />
                       </div>
                     </>
@@ -776,6 +833,28 @@ export function DevToolbar() {
               <button className="btn-primary" onClick={handleAddNode} disabled={!isPageReady}>
                 Add Node
               </button>
+
+              <div className="form-group" style={{ marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleAddGradientOverlayDemo}
+                  disabled={!isPageReady}
+                  title="Add a rect with linear gradient and select it to show the gradient overlay"
+                >
+                  Add gradient (overlay demo)
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleAddAngularGradientOverlayDemo}
+                  disabled={!isPageReady}
+                  title="Add a rect with angular gradient and select it to show the gradient overlay"
+                  style={{ marginLeft: '0.5rem' }}
+                >
+                  Add angular gradient (overlay demo)
+                </button>
+              </div>
             </div>
           )}
 
@@ -1014,7 +1093,9 @@ export function DevToolbar() {
                         const isColor = isColorFill(fill)
                         const isLinear = isLinearGradient(fill)
                         const isRadial = isRadialGradient(fill)
+                        const isAngular = isAngularGradient(fill)
                         const isImage = isImageFill(fill)
+                        const isSolidOrGradient = isColor || isLinear || isRadial || isAngular
 
                         return (
                           <div key={index} className="array-item">
@@ -1025,7 +1106,7 @@ export function DevToolbar() {
                             <div className="form-group">
                               <label>Type:</label>
                               <select
-                                value={isColor ? 'color' : isLinear ? 'linear' : isRadial ? 'radial' : isImage ? 'image' : 'color'}
+                                value={isColor ? 'color' : isLinear ? 'linear' : isRadial ? 'radial' : isAngular ? 'angular' : isImage ? 'image' : 'color'}
                                 onChange={(e) => {
                                   const type = e.target.value
                                   if (type === 'color') {
@@ -1060,6 +1141,21 @@ export function DevToolbar() {
                                         ],
                                       },
                                     })
+                                  } else if (type === 'angular') {
+                                    updateFill(index, {
+                                      fillColorGradient: {
+                                        type: 'angular',
+                                        startX: 0.5,
+                                        startY: 0.5,
+                                        endX: 1,
+                                        endY: 0.5,
+                                        width: 0,
+                                        stops: [
+                                          { offset: 0, color: '#3B82F6', opacity: 1 },
+                                          { offset: 1, color: '#1E40AF', opacity: 1 },
+                                        ],
+                                      },
+                                    })
                                   } else if (type === 'image') {
                                     updateFill(index, { fillImage: { id: '', width: 100, height: 100 } })
                                   }
@@ -1068,219 +1164,17 @@ export function DevToolbar() {
                                 <option value="color">Solid Color</option>
                                 <option value="linear">Linear Gradient</option>
                                 <option value="radial">Radial Gradient</option>
+                                <option value="angular">Angular Gradient</option>
                                 <option value="image">Image</option>
                               </select>
                             </div>
 
-                            {isColor && (
-                              <>
-                                <div className="form-group">
-                                  <label>Color:</label>
-                                  <input
-                                    type="color"
-                                    value={fill.fillColor ?? '#3B82F6'}
-                                    onChange={(e) => updateFill(index, { ...fill, fillColor: e.target.value })}
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label>Opacity:</label>
-                                  <input
-                                    type="number"
-                                    value={fill.fillOpacity ?? 1}
-                                    onChange={(e) => updateFill(index, { ...fill, fillOpacity: Number(e.target.value) })}
-                                    min={0}
-                                    max={1}
-                                    step={0.1}
-                                  />
-                                </div>
-                              </>
-                            )}
-
-                            {isLinear && fill.fillColorGradient && (
-                              <>
-                                <div className="form-group">
-                                  <label>Start X:</label>
-                                  <input
-                                    type="number"
-                                    value={fill.fillColorGradient.startX}
-                                    onChange={(e) => updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, startX: Number(e.target.value) } })}
-                                    step={0.1}
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label>Start Y:</label>
-                                  <input
-                                    type="number"
-                                    value={fill.fillColorGradient.startY}
-                                    onChange={(e) => updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, startY: Number(e.target.value) } })}
-                                    step={0.1}
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label>End X:</label>
-                                  <input
-                                    type="number"
-                                    value={fill.fillColorGradient.endX}
-                                    onChange={(e) => updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, endX: Number(e.target.value) } })}
-                                    step={0.1}
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label>End Y:</label>
-                                  <input
-                                    type="number"
-                                    value={fill.fillColorGradient.endY}
-                                    onChange={(e) => updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, endY: Number(e.target.value) } })}
-                                    step={0.1}
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label>Stops ({fill.fillColorGradient.stops.length})</label>
-                                  <button className="btn-small" onClick={() => {
-                                    const newStop = { offset: 1, color: '#000000', opacity: 1 }
-                                    updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: [...fill.fillColorGradient!.stops, newStop] } })
-                                  }}>+ Add Stop</button>
-                                  {fill.fillColorGradient.stops.map((stop: { offset: number; color: string; opacity?: number }, stopIndex: number) => (
-                                    <div key={stopIndex} className="array-item nested">
-                                      <div className="array-item-header">
-                                        <span>Stop {stopIndex + 1}</span>
-                                        <button className="btn-remove-small" onClick={() => {
-                                          updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: fill.fillColorGradient!.stops.filter((_: unknown, i: number) => i !== stopIndex) } })
-                                        }}>×</button>
-                                      </div>
-                                      <div className="form-group">
-                                        <label>Offset:</label>
-                                        <input
-                                          type="number"
-                                          value={stop.offset}
-                                          onChange={(e) => {
-                                            const newStops = [...fill.fillColorGradient!.stops]
-                                            newStops[stopIndex] = { ...stop, offset: Number(e.target.value) }
-                                            updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: newStops } })
-                                          }}
-                                          min={0}
-                                          max={1}
-                                          step={0.1}
-                                        />
-                                      </div>
-                                      <div className="form-group">
-                                        <label>Color:</label>
-                                        <input
-                                          type="color"
-                                          value={typeof stop.color === 'string' ? stop.color : '#000000'}
-                                          onChange={(e) => {
-                                            const newStops = [...fill.fillColorGradient!.stops]
-                                            newStops[stopIndex] = { ...stop, color: e.target.value }
-                                            updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: newStops } })
-                                          }}
-                                        />
-                                        <input
-                                          type="number"
-                                          value={stop.opacity ?? 1}
-                                          onChange={(e) => {
-                                            const newStops = [...fill.fillColorGradient!.stops]
-                                            newStops[stopIndex] = { ...stop, opacity: Number(e.target.value) }
-                                            updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: newStops } })
-                                          }}
-                                          min={0}
-                                          max={1}
-                                          step={0.1}
-                                          placeholder="Opacity"
-                                        />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-
-                            {isRadial && fill.fillColorGradient && (
-                              <>
-                                <div className="form-group">
-                                  <label>CX:</label>
-                                  <input
-                                    type="number"
-                                    value={fill.fillColorGradient.startX}
-                                    onChange={(e) => updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, startX: Number(e.target.value) } })}
-                                    step={0.1}
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label>CY:</label>
-                                  <input
-                                    type="number"
-                                    value={fill.fillColorGradient.startY}
-                                    onChange={(e) => updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, startY: Number(e.target.value) } })}
-                                    step={0.1}
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label>Radius:</label>
-                                  <input
-                                    type="number"
-                                    value={fill.fillColorGradient.width}
-                                    onChange={(e) => updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, width: Number(e.target.value) } })}
-                                    step={0.1}
-                                  />
-                                </div>
-                                <div className="form-group">
-                                  <label>Stops ({fill.fillColorGradient.stops.length})</label>
-                                  <button className="btn-small" onClick={() => {
-                                    const newStop = { offset: 1, color: '#000000', opacity: 1 }
-                                    updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: [...fill.fillColorGradient!.stops, newStop] } })
-                                  }}>+ Add Stop</button>
-                                  {fill.fillColorGradient.stops.map((stop: { offset: number; color: string; opacity?: number }, stopIndex: number) => (
-                                    <div key={stopIndex} className="array-item nested">
-                                      <div className="array-item-header">
-                                        <span>Stop {stopIndex + 1}</span>
-                                        <button className="btn-remove-small" onClick={() => {
-                                          updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: fill.fillColorGradient!.stops.filter((_: unknown, i: number) => i !== stopIndex) } })
-                                        }}>×</button>
-                                      </div>
-                                      <div className="form-group">
-                                        <label>Offset:</label>
-                                        <input
-                                          type="number"
-                                          value={stop.offset}
-                                          onChange={(e) => {
-                                            const newStops = [...fill.fillColorGradient!.stops]
-                                            newStops[stopIndex] = { ...stop, offset: Number(e.target.value) }
-                                            updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: newStops } })
-                                          }}
-                                          min={0}
-                                          max={1}
-                                          step={0.1}
-                                        />
-                                      </div>
-                                      <div className="form-group">
-                                        <label>Color:</label>
-                                        <input
-                                          type="color"
-                                          value={typeof stop.color === 'string' ? stop.color : '#000000'}
-                                          onChange={(e) => {
-                                            const newStops = [...fill.fillColorGradient!.stops]
-                                            newStops[stopIndex] = { ...stop, color: e.target.value }
-                                            updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: newStops } })
-                                          }}
-                                        />
-                                        <input
-                                          type="number"
-                                          value={stop.opacity ?? 1}
-                                          onChange={(e) => {
-                                            const newStops = [...fill.fillColorGradient!.stops]
-                                            newStops[stopIndex] = { ...stop, opacity: Number(e.target.value) }
-                                            updateFill(index, { ...fill, fillColorGradient: { ...fill.fillColorGradient!, stops: newStops } })
-                                          }}
-                                          min={0}
-                                          max={1}
-                                          step={0.1}
-                                          placeholder="Opacity"
-                                        />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </>
+                            {isSolidOrGradient && (
+                              <FillEditor
+                                fill={fill}
+                                onChange={(newFill) => updateFill(index, newFill)}
+                                hideTypeSelector
+                              />
                             )}
 
                             {isImage && fill.fillImage && isImageColor(fill.fillImage) && (() => {
