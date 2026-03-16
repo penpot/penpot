@@ -540,7 +540,7 @@
    [:values schema:layout-item-props-schema]
    [:applied-tokens [:maybe [:map-of :keyword :string]]]
    [:ids [::sm/vec ::sm/uuid]]
-   [:v-sizing {:optional true} [:maybe [:= :fill]]]])
+   [:v-sizing {:optional true} [:maybe [:enum :fill :fix :auto]]]])
 
 (mf/defc layout-size-constraints*
   {::mf/private true

@@ -73,9 +73,13 @@
                                      (if (nil? result)
                                        204
                                        200))
-                         headers (cond-> (::http/headers mdata {})
-                                   (yres/stream-body? result)
+
+                         headers (::http/headers mdata {})
+                         headers (cond-> headers
+                                   (and (yres/stream-body? result)
+                                        (not (contains? headers "content-type")))
                                    (assoc "content-type" "application/octet-stream"))]
+
                      {::yres/status  status
                       ::yres/headers headers
                       ::yres/body    result}))]
@@ -258,6 +262,7 @@
           'app.rpc.commands.ldap
           'app.rpc.commands.management
           'app.rpc.commands.media
+          'app.rpc.commands.nitrate
           'app.rpc.commands.profile
           'app.rpc.commands.projects
           'app.rpc.commands.search

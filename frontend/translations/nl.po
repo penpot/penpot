@@ -1358,7 +1358,7 @@ msgstr "Token loskoppelen"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "Dit token is niet beschikbaar in een actieve verzameling of thema."
+msgstr "{%s} is niet beschikbaar in een actieve verzameling of thema."
 
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"

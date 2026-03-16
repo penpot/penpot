@@ -7,16 +7,16 @@ use skia::Matrix;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Modifier {
-    Transform(TransformEntry),
+    Transform(TransformEntry, bool),
     Reflow(Uuid, bool),
 }
 
 impl Modifier {
     pub fn transform_propagate(id: Uuid, transform: Matrix) -> Self {
-        Modifier::Transform(TransformEntry::from_propagate(id, transform))
+        Modifier::Transform(TransformEntry::from_propagate(id, transform), false)
     }
     pub fn parent(id: Uuid, transform: Matrix) -> Self {
-        Modifier::Transform(TransformEntry::parent(id, transform))
+        Modifier::Transform(TransformEntry::parent(id, transform), false)
     }
     pub fn reflow(id: Uuid, force_reflow: bool) -> Self {
         Modifier::Reflow(id, force_reflow)

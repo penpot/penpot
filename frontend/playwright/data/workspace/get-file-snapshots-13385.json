@@ -1,0 +1,23 @@
+[
+    {
+        "~:id": "~u3ea49ce0-9d99-8197-8007-95037190405b",
+        "~:label": "Version 000",
+        "~:revn": 1,
+        "~:version": 67,
+        "~:created-at": "~m1771254407745",
+        "~:modified-at": "~m1771254407745",
+        "~:created-by": "user",
+        "~:profile-id": "~u99e49e93-362f-80ef-8007-3450ea5204aa"
+    },
+    {
+        "~:revn": 0,
+        "~:modified-at": "~m1771254406526",
+        "~:deleted-at": "~m1771340806524",
+        "~:created-by": "system",
+        "~:label": "internal/snapshot/0",
+        "~:id": "~u3ea49ce0-9d99-8197-8007-9503705f8b9b",
+        "~:profile-id": "~u99e49e93-362f-80ef-8007-3450ea5204aa",
+        "~:version": 67,
+        "~:created-at": "~m1771254406526"
+    }
+]

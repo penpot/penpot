@@ -20,11 +20,12 @@ pub fn stroke_paragraph_builder_group_from_text(
     bounds: &Rect,
     count_inner_strokes: usize,
     use_shadow: Option<bool>,
-) -> Vec<ParagraphBuilderGroup> {
+) -> (Vec<ParagraphBuilderGroup>, Option<f32>) {
     let fallback_fonts = get_fallback_fonts();
     let fonts = get_font_collection();
     let mut paragraph_group = Vec::new();
     let remove_stroke_alpha = use_shadow.unwrap_or(false) && !stroke.is_transparent();
+    let mut group_layer_opacity: Option<f32> = None;
 
     for paragraph in text_content.paragraphs() {
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
@@ -32,13 +33,17 @@ pub fn stroke_paragraph_builder_group_from_text(
 
         for span in paragraph.children().iter() {
             let text_paint: skia_safe::Handle<_> = merge_fills(span.fills(), *bounds);
-            let stroke_paints = get_text_stroke_paints(
+            let (stroke_paints, stroke_layer_opacity) = get_text_stroke_paints(
                 stroke,
                 bounds,
                 &text_paint,
                 count_inner_strokes,
                 remove_stroke_alpha,
             );
+
+            if group_layer_opacity.is_none() {
+                group_layer_opacity = stroke_layer_opacity;
+            }
 
             let text: String = span.apply_text_transform();
 
@@ -67,7 +72,7 @@ pub fn stroke_paragraph_builder_group_from_text(
         paragraph_group.push(stroke_paragraphs);
     }
 
-    paragraph_group
+    (paragraph_group, group_layer_opacity)
 }
 
 fn get_text_stroke_paints(
@@ -76,8 +81,25 @@ fn get_text_stroke_paints(
     text_paint: &Paint,
     count_inner_strokes: usize,
     remove_stroke_alpha: bool,
-) -> Vec<Paint> {
+) -> (Vec<Paint>, Option<f32>) {
     let mut paints = Vec::new();
+    let mut layer_opacity: Option<f32> = None;
+
+    let stroke_opacity = stroke.fill.opacity();
+    let needs_opacity_layer = stroke_opacity < 1.0 && !remove_stroke_alpha;
+
+    let fill_for_paint = |paint: &mut Paint| {
+        if needs_opacity_layer {
+            let opaque_fill = stroke.fill.with_full_opacity();
+            set_paint_fill(paint, &opaque_fill, bounds, remove_stroke_alpha);
+        } else {
+            set_paint_fill(paint, &stroke.fill, bounds, remove_stroke_alpha);
+        }
+    };
+
+    if needs_opacity_layer {
+        layer_opacity = Some(stroke_opacity);
+    }
 
     match stroke.kind {
         StrokeKind::Inner => {
@@ -99,7 +121,7 @@ fn get_text_stroke_paints(
                 paint.set_blend_mode(skia::BlendMode::SrcIn);
                 paint.set_anti_alias(true);
                 paint.set_stroke_width(stroke.width * 2.0);
-                set_paint_fill(&mut paint, &stroke.fill, bounds, remove_stroke_alpha);
+                fill_for_paint(&mut paint);
                 paints.push(paint);
             } else {
                 let mut paint = skia::Paint::default();
@@ -108,7 +130,12 @@ fn get_text_stroke_paints(
                     paint.set_alpha(255);
                 } else {
                     paint = text_paint.clone();
-                    set_paint_fill(&mut paint, &stroke.fill, bounds, false);
+                    if needs_opacity_layer {
+                        let opaque_fill = stroke.fill.with_full_opacity();
+                        set_paint_fill(&mut paint, &opaque_fill, bounds, false);
+                    } else {
+                        set_paint_fill(&mut paint, &stroke.fill, bounds, false);
+                    }
                 }
 
                 paint.set_style(skia::PaintStyle::Fill);
@@ -132,7 +159,7 @@ fn get_text_stroke_paints(
             paint.set_style(skia::PaintStyle::Stroke);
             paint.set_anti_alias(true);
             paint.set_stroke_width(stroke.width);
-            set_paint_fill(&mut paint, &stroke.fill, bounds, remove_stroke_alpha);
+            fill_for_paint(&mut paint);
             paints.push(paint);
         }
         StrokeKind::Outer => {
@@ -141,7 +168,7 @@ fn get_text_stroke_paints(
             paint.set_blend_mode(skia::BlendMode::DstOver);
             paint.set_anti_alias(true);
             paint.set_stroke_width(stroke.width * 2.0);
-            set_paint_fill(&mut paint, &stroke.fill, bounds, remove_stroke_alpha);
+            fill_for_paint(&mut paint);
             paints.push(paint);
 
             let mut paint = skia::Paint::default();
@@ -153,10 +180,11 @@ fn get_text_stroke_paints(
         }
     }
 
-    paints
+    (paints, layer_opacity)
 }
 
-pub fn render(
+#[allow(clippy::too_many_arguments)]
+pub fn render_with_bounds_outset(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
     shape: &Shape,
@@ -164,12 +192,22 @@ pub fn render(
     surface_id: Option<SurfaceId>,
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
+    stroke_bounds_outset: f32,
+    fill_inset: Option<f32>,
+    layer_opacity: Option<f32>,
 ) {
     if let Some(render_state) = render_state {
         let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
 
         if let Some(blur_filter) = blur {
-            let bounds = blur_filter.compute_fast_bounds(shape.selrect);
+            let mut text_bounds = shape
+                .get_text_content()
+                .calculate_bounds(shape, false)
+                .to_rect();
+            if stroke_bounds_outset > 0.0 {
+                text_bounds.inset((-stroke_bounds_outset, -stroke_bounds_outset));
+            }
+            let bounds = blur_filter.compute_fast_bounds(text_bounds);
             if bounds.is_finite() && bounds.width() > 0.0 && bounds.height() > 0.0 {
                 let blur_filter_clone = blur_filter.clone();
                 if filters::render_with_filter_surface(
@@ -184,6 +222,8 @@ pub fn render(
                             paragraph_builders,
                             shadow,
                             Some(&blur_filter_clone),
+                            fill_inset,
+                            layer_opacity,
                         );
                     },
                 ) {
@@ -193,13 +233,55 @@ pub fn render(
         }
 
         let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
-        render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur);
+        render_text_on_canvas(
+            canvas,
+            shape,
+            paragraph_builders,
+            shadow,
+            blur,
+            fill_inset,
+            layer_opacity,
+        );
         return;
     }
 
     if let Some(canvas) = canvas {
-        render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur);
+        render_text_on_canvas(
+            canvas,
+            shape,
+            paragraph_builders,
+            shadow,
+            blur,
+            fill_inset,
+            layer_opacity,
+        );
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn render(
+    render_state: Option<&mut RenderState>,
+    canvas: Option<&Canvas>,
+    shape: &Shape,
+    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    surface_id: Option<SurfaceId>,
+    shadow: Option<&Paint>,
+    blur: Option<&ImageFilter>,
+    fill_inset: Option<f32>,
+    layer_opacity: Option<f32>,
+) {
+    render_with_bounds_outset(
+        render_state,
+        canvas,
+        shape,
+        paragraph_builders,
+        surface_id,
+        shadow,
+        blur,
+        0.0,
+        fill_inset,
+        layer_opacity,
+    );
 }
 
 fn render_text_on_canvas(
@@ -208,6 +290,8 @@ fn render_text_on_canvas(
     paragraph_builders: &mut [Vec<ParagraphBuilder>],
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
+    fill_inset: Option<f32>,
+    layer_opacity: Option<f32>,
 ) {
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
@@ -219,10 +303,21 @@ fn render_text_on_canvas(
     if let Some(shadow_paint) = shadow {
         let layer_rec = SaveLayerRec::default().paint(shadow_paint);
         canvas.save_layer(&layer_rec);
-        draw_text(canvas, shape, paragraph_builders);
+        draw_text(canvas, shape, paragraph_builders, layer_opacity);
         canvas.restore();
+    } else if let Some(eps) = fill_inset.filter(|&e| e > 0.0) {
+        if let Some(erode) = skia_safe::image_filters::erode((eps, eps), None, None) {
+            let mut layer_paint = Paint::default();
+            layer_paint.set_image_filter(erode);
+            let layer_rec = SaveLayerRec::default().paint(&layer_paint);
+            canvas.save_layer(&layer_rec);
+            draw_text(canvas, shape, paragraph_builders, layer_opacity);
+            canvas.restore();
+        } else {
+            draw_text(canvas, shape, paragraph_builders, layer_opacity);
+        }
     } else {
-        draw_text(canvas, shape, paragraph_builders);
+        draw_text(canvas, shape, paragraph_builders, layer_opacity);
     }
 
     if blur.is_some() {
@@ -236,13 +331,20 @@ fn draw_text(
     canvas: &Canvas,
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+    layer_opacity: Option<f32>,
 ) {
     let text_content = shape.get_text_content();
     let layout_info =
         calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
 
-    let layer_rec = SaveLayerRec::default();
-    canvas.save_layer(&layer_rec);
+    if let Some(opacity) = layer_opacity {
+        let mut opacity_paint = Paint::default();
+        opacity_paint.set_alpha_f(opacity);
+        let layer_rec = SaveLayerRec::default().paint(&opacity_paint);
+        canvas.save_layer(&layer_rec);
+    } else {
+        canvas.save_layer(&SaveLayerRec::default());
+    }
 
     for para in &layout_info.paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));

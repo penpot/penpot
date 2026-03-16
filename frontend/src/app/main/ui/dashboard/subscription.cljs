@@ -3,9 +3,11 @@
 (ns app.main.ui.dashboard.subscription
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.event :as ev]
+   [app.main.data.nitrate :as dnt]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
@@ -114,6 +116,51 @@
           :top-description (tr "subscription.dashboard.power-up.enterprise-plan")
           :has-dropdown false
           :is-highlighted false}]))))
+
+(mf/defc nitrate-sidebar*
+  {::mf/props :obj}
+  [{:keys [profile teams]}]
+  (let [nitrate? (dnt/is-valid-license? profile)
+        orgs (mf/with-memo [teams]
+               (let [orgs (->> teams
+                               vals
+                               (group-by :organization-id)
+                               (map (fn [[_group entries]] (first entries)))
+                               vec
+                               (d/index-by :id))]
+                 orgs))
+
+        no-orgs-created? (= (count orgs) 1)
+
+        handle-click
+        (mf/use-fn
+         (fn []
+           (st/emit! (dnt/show-nitrate-popup :nitrate-form))))]
+
+    ;; TODO add translations for this texts when we have the definitive ones
+    (if (and nitrate? no-orgs-created?)
+      ;; Banner for users with active nitrate license but no organizations created
+      [:div {:class (stl/css :nitrate-banner :highlighted)}
+       [:div {:class (stl/css :nitrate-content)}
+        [:span {:class (stl/css :nitrate-title)} "Create your first org"]]
+       [:div {:class (stl/css :nitrate-content)}
+        [:span {:class (stl/css :nitrate-info)} "Some further information and explanation."]
+        [:> button* {:variant "primary"
+                     :type "button"
+                     :class (stl/css :nitrate-bottom-button)
+                     :on-click dnt/go-to-nitrate-cc} "CREATE ORGANIZATION"]]]
+
+      ;; Banner for users without nitrate license
+      (when (not nitrate?)
+        [:div {:class (stl/css :nitrate-banner :highlighted)}
+         [:div {:class (stl/css :nitrate-content)}
+          [:span {:class (stl/css :nitrate-title)} "Unlock Nitrate features"]]
+         [:div {:class (stl/css :nitrate-content)}
+          [:span {:class (stl/css :nitrate-info)} "Some further information and explanation."]
+          [:> button* {:variant "primary"
+                       :type "button"
+                       :class (stl/css :nitrate-bottom-button)
+                       :on-click handle-click} "UPGRADE TO NITRATE"]]]))))
 
 (mf/defc team*
   [{:keys [is-owner team]}]

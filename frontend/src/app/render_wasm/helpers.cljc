@@ -7,11 +7,30 @@
 (ns app.render-wasm.helpers
   #?(:cljs (:require-macros [app.render-wasm.helpers])))
 
+(def ^:export error-code
+  "WASM error code constants (must match render-wasm/src/error.rs and mem.rs)."
+  {0x01 :wasm-non-blocking 0x02 :wasm-critical})
+
 (defmacro call
-  "A helper for easy call wasm defined function in a module."
+  "A helper for calling a wasm  function.
+   Catches any exception thrown by the WASM function, reads the error code from
+   WASM when available, and routes it based on the error type:
+   - :wasm-non-blocking: call app.main.errors/on-error (eventually, shows a toast and logs the error)
+   - :wasm-critical or unknown: throws an exception to be handled by the global error handler (eventually, shows the internal error page)"
   [module name & params]
-  (let [fn-sym (with-meta (gensym "fn-") {:tag 'function})]
+  (let [fn-sym   (with-meta (gensym "fn-") {:tag 'function})
+        e-sym    (gensym "e")
+        code-sym (gensym "code")]
     `(let [~fn-sym (cljs.core/unchecked-get ~module ~name)]
-       ;; DEBUG
-       ;; (println "##" ~name)
-       (~fn-sym ~@params))))
+       (try
+         (~fn-sym ~@params)
+         (catch :default ~e-sym
+           (let [read-code# (cljs.core/unchecked-get ~module "_read_error_code")
+                 ~code-sym (when read-code# (read-code#))
+                 type#    (or (get app.render-wasm.helpers/error-code ~code-sym) :wasm-critical)
+                 ex#      (ex-info (str "WASM error (type: " type# ")")
+                                   {:fn ~name :type type# :message (.-message ~e-sym) :error-code ~code-sym}
+                                   ~e-sym)]
+             (if (= type# :wasm-non-blocking)
+               (@~'app.main.store/on-error ex#)
+               (throw ex#))))))))

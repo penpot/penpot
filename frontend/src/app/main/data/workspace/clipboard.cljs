@@ -1045,3 +1045,55 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (clipboard/to-clipboard (rt/get-current-href)))))
+
+(defn copy-as-image
+  []
+  (ptk/reify ::copy-as-image
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id  (:current-file-id state)
+            page-id  (:current-page-id state)
+            selected (first (dsh/lookup-selected state))
+
+            export {:file-id file-id
+                    :page-id page-id
+                    :object-id selected
+                    ;; webp would be preferrable, but PNG is the most supported image MIME type by clipboard APIs.
+                    :type :png
+                    ;; Always use 2 to ensure good enough quality for wireframes.
+                    :scale 2
+                    :suffix ""
+                    :enabled true
+                    :name ""}
+
+            params {:exports [export]
+                    :profile-id (:profile-id state)
+                    :cmd :export-shapes
+                    :wait true}]
+
+        (rx/concat
+         ;; Ensure current state persisted before exporting.
+         (rx/of ::dps/force-persist)
+         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+              (rx/filter #(or (nil? %) (= :saved %)))
+              (rx/first)
+              (rx/timeout 400 (rx/empty)))
+
+         ;; Exporting itself can time its time, better to notify that we are busy.
+         (rx/of (ntf/info (tr "workspace.clipboard.copying")))
+
+         ;; Call exporter to get image URI, then fetch and copy blob.
+         (->> (rp/cmd! :export params)
+              (rx/mapcat (fn [{:keys [uri]}]
+                           (http/send! {:method :get
+                                        :uri uri
+                                        :response-type :blob})))
+              (rx/map :body)
+              (rx/tap (fn [blob]
+                        (clipboard/to-clipboard-promise "image/png" (p/resolved blob))))
+              (rx/map (fn [_]
+                        (ntf/success (tr "workspace.clipboard.image-copied"))))
+              (rx/catch (fn [e]
+                          (js/console.error "clipboard blocked:" e)
+                          (ntf/error (tr "workspace.clipboard.image-copy-failed"))
+                          (rx/empty)))))))))

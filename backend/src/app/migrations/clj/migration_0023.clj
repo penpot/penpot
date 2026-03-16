@@ -58,4 +58,3 @@
       (when (nil? (:data file))
         (migrate-file conn file)))
     (db/exec-one! conn ["drop table page cascade;"])))
-

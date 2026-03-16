@@ -1187,7 +1187,7 @@ msgstr "Desvincular token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "Este token não está em nenhum conjunto ativo ou possui um valor inválido."
+msgstr "{%s} não está em nenhum conjunto ativo ou possui um valor inválido."
 
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"

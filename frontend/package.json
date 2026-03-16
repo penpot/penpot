@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
-  "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8",
+  "packageManager": "pnpm@10.31.0+sha512.e3927388bfaa8078ceb79b748ffc1e8274e84d75163e67bc22e06c0d3aed43dd153151cbf11d7f8301ff4acb98c68bdc5cadf6989532801ffafe3b3e4a63c268",
   "browserslist": [
     "defaults"
   ],
@@ -42,15 +42,16 @@
     "watch:app:libs": "node ./scripts/build-libs.js --watch",
     "watch:app:main": "clojure -M:dev:shadow-cljs watch main worker storybook",
     "clear:shadow-cache": "rm -rf .shadow-cljs",
+    "clear:wasm": "cargo clean --manifest-path ../render-wasm/Cargo.toml",
     "watch": "exit 0",
-    "watch:app": "pnpm run clear:shadow-cache && pnpm run build:wasm && concurrently --kill-others-on-fail \"pnpm run watch:app:assets\" \"pnpm run watch:app:main\" \"pnpm run watch:app:libs\"",
+    "watch:app": "pnpm run clear:shadow-cache && pnpm run clear:wasm && pnpm run build:wasm && concurrently --kill-others-on-fail \"pnpm run watch:app:assets\" \"pnpm run watch:app:main\" \"pnpm run watch:app:libs\"",
     "watch:storybook": "pnpm run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 6006 --no-open\" \"node ./scripts/watch-storybook.js\"",
     "postinstall": "(cd ../plugins/libs/plugins-runtime; pnpm install; pnpm run build)"
   },
   "devDependencies": {
     "@penpot/draft-js": "workspace:./packages/draft-js",
     "@penpot/mousetrap": "workspace:./packages/mousetrap",
-    "@penpot/plugins-runtime": "link:../plugins/dist/plugins-runtime",
+    "@penpot/plugins-runtime": "link:../plugins/libs/plugins-runtime",
     "@penpot/svgo": "penpot/svgo#v3.2",
     "@penpot/text-editor": "workspace:./text-editor",
     "@penpot/tokenscript": "workspace:./packages/tokenscript",

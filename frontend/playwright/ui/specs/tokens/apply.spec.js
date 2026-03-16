@@ -1,22 +1,21 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../../pages/WorkspacePage";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
+import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import {
-  setupEmptyTokensFile,
-  setupTokensFile,
-  setupTypographyTokensFile,
+  setupTokensFileRender,
+  setupTypographyTokensFileRender,
   unfoldTokenTree,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 test.describe("Tokens: Apply token", () => {
   test("User applies color token to a shape", async ({ page }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -44,7 +43,9 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -83,7 +84,8 @@ test.describe("Tokens: Apply token", () => {
     await brTokenPillSM.click();
 
     // Change token from dropdown
-    const brTokenOptionXl = borderRadiusSection.getByRole('option', { name: 'borderRadius.xl' })
+    const brTokenOptionXl = borderRadiusSection
+      .getByRole("option", { name: "borderRadius.xl" });
     await expect(brTokenOptionXl).toBeVisible();
     await brTokenOptionXl.click();
 
@@ -105,7 +107,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -169,7 +171,7 @@ test.describe("Tokens: Apply token", () => {
 
   test("User applies typography token to a text shape", async ({ page }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTypographyTokensFile(page);
+      await setupTypographyTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -203,7 +205,7 @@ test.describe("Tokens: Apply token", () => {
       tokensSidebar,
       workspacePage,
       tokenContextMenuForToken,
-    } = await setupTokensFile(page, { flags: ["enable-token-shadow"] });
+    } = await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -489,7 +491,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     // Unfolds dimensions on token panel
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -518,7 +520,9 @@ test.describe("Tokens: Apply token", () => {
     await dimensionSMTokenPill.nth(1).click();
 
     // Change token from dropdown
-    const dimensionTokenOptionXl = measuresSection.getByRole('option', { name: 'dimension.xl' })
+    const dimensionTokenOptionXl = measuresSection.getByRole("option", {
+      name: "dimension.xl",
+    });
     await expect(dimensionTokenOptionXl).toBeVisible();
     await dimensionTokenOptionXl.click();
 
@@ -540,7 +544,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     // Unfolds dimensions on token panel
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -572,7 +576,9 @@ test.describe("Tokens: Apply token", () => {
     await dimensionSMTokenPill.click();
 
     // Change token from dropdown
-    const dimensionTokenOptionXl = measuresSection.getByRole('option', { name: 'dimension.xl' });
+    const dimensionTokenOptionXl = measuresSection.getByRole("option", {
+      name: "dimension.xl",
+    });
     await expect(dimensionTokenOptionXl).toBeVisible();
     await dimensionTokenOptionXl.click();
 
@@ -594,7 +600,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     // Unfolds dimensions on token panel
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -626,7 +632,9 @@ test.describe("Tokens: Apply token", () => {
     await dimensionSMTokenPill.click();
 
     // Change token from dropdown
-    const dimensionTokenOptionXl = measuresSection.getByRole('option', { name: 'dimension.xl' });
+    const dimensionTokenOptionXl = measuresSection.getByRole("option", {
+      name: "dimension.xl",
+    });
     await expect(dimensionTokenOptionXl).toBeVisible();
     await dimensionTokenOptionXl.click();
 
@@ -648,7 +656,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     // Unfolds dimensions on token panel
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -681,8 +689,9 @@ test.describe("Tokens: Apply token", () => {
     await dimensionXSTokenPill.click();
 
     // Change token from dropdown
-    const dimensionTokenOptionXl =
-      borderRadiusSection.getByRole('option', { name: 'dimension.xl' });
+    const dimensionTokenOptionXl = borderRadiusSection.getByRole("option", {
+      name: "dimension.xl",
+    });
     await expect(dimensionTokenOptionXl).toBeVisible();
     await dimensionTokenOptionXl.click();
 
@@ -701,7 +710,7 @@ test.describe("Tokens: Apply token", () => {
   });
 
   test("User applies stroke width token to a shape", async ({ page }) => {
-    const workspace = new WorkspacePage(page, {
+    const workspace = new WasmWorkspacePage(page, {
       textEditor: true,
     });
     // Set up
@@ -751,7 +760,9 @@ test.describe("Tokens: Apply token", () => {
     });
     await tokenDropdown.click();
 
-    const widthOptionSmall = firstStrokeRow.getByRole('option', { name: 'width-small' });
+    const widthOptionSmall = firstStrokeRow.getByRole("option", {
+      name: "width-small",
+    });
     await expect(widthOptionSmall).toBeVisible();
     await widthOptionSmall.click();
     const StrokeWidthPillSmall = firstStrokeRow.getByRole("button", {
@@ -761,7 +772,7 @@ test.describe("Tokens: Apply token", () => {
   });
 
   test("User applies margin token to a shape", async ({ page }) => {
-    const workspace = new WorkspacePage(page, {
+    const workspace = new WasmWorkspacePage(page, {
       textEditor: true,
     });
     // Set up
@@ -848,7 +859,7 @@ test.describe("Tokens: Detach token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -906,7 +917,7 @@ test.describe("Tokens: Detach token", () => {
     await expect(page.getByText("Don't remap")).toBeVisible();
     await page.getByText("Don't remap").click();
     const brokenPill = borderRadiusSection.getByRole("button", {
-      name: "This token is not in any",
+      name: "is not in any active set",
     });
     await expect(brokenPill).toBeVisible();
 

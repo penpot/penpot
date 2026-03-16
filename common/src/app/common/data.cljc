@@ -1165,3 +1165,40 @@
   [class current-class]
   (str (if (some? class) (str class " ") "")
        current-class))
+
+
+(defn nth-index-of*
+  "Finds the nth occurrence of `char` in `string`, searching either forward or backward.
+   `dir` must be :forward (left to right) or :backward (right to left).
+   Returns the absolute index of the match, or nil if fewer than n occurrences exist."
+  [string char n dir]
+  (loop [s string
+         offset 0
+         cnt 1]
+    (let [index (case dir
+                  :forward  (str/index-of s char)
+                  :backward (str/last-index-of s char))]
+      (cond
+        (nil? index) nil
+        (= cnt n)   (case dir
+                      :forward  (+ index offset)
+                      :backward index)
+        :else       (case dir
+                      :forward  (recur (str/slice s (inc index))
+                                       (+ offset index 1)
+                                       (inc cnt))
+                      :backward (recur (str/slice s 0 index)
+                                       offset
+                                       (inc cnt)))))))
+
+(defn nth-index-of
+  "Returns the index of the nth occurrence of `char` in `string`, searching left to right.
+   Returns nil if fewer than n occurrences exist."
+  [string char n]
+  (nth-index-of* string char n :forward))
+
+(defn nth-last-index-of
+  "Returns the index of the nth occurrence of `char` in `string`, searching right to left.
+   Returns nil if fewer than n occurrences exist."
+  [string char n]
+  (nth-index-of* string char n :backward))

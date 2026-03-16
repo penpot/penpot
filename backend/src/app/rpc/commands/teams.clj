@@ -193,7 +193,7 @@
   (dm/with-open [conn (db/open pool)]
     (cond->> (get-teams conn profile-id)
       (contains? cf/flags :nitrate)
-      (map #(nitrate/add-org-to-team cfg % params)))))
+      (map #(nitrate/add-org-info-to-team cfg % params)))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,

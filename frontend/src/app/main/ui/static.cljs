@@ -477,8 +477,12 @@
       :service-unavailable
       [:> service-unavailable*]
 
-      :webgl-context-lost
-      [:> webgl-context-lost*]
+      :wasm-exception
+      (case (get data :exception-type)
+        :webgl-context-lost
+        [:> webgl-context-lost*]
+
+        [:> internal-error* props])
 
       [:> internal-error* props])))
 

@@ -13,8 +13,10 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -36,6 +38,7 @@
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.tokens.import-from-library]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [c tr]]
@@ -180,6 +183,12 @@
   [summary]
   (boolean (:is-empty summary)))
 
+(defn- has-tokens?
+  "Check if library has tokens to be imported"
+  [{:keys [data]}]
+  (when-let [tokens-lib (get data :tokens-lib)]
+    (not (ctob/empty-lib? tokens-lib))))
+
 (mf/defc libraries-tab*
   {::mf/props :obj
    ::mf/private true}
@@ -230,14 +239,18 @@
                                                        (keep library-names))))
                (sort-by (comp str/lower :name))))
 
-        linked-libraries-ids (mf/with-memo [linked-libraries]
-                               (into #{} (map :id) linked-libraries))
+        linked-libraries-ids
+        (mf/with-memo [linked-libraries]
+          (into #{} d/xf:map-id linked-libraries))
 
+        importing*
+        (mf/use-state nil)
 
-        importing*       (mf/use-state nil)
-        sample-libraries [{:id "penpot-design-system", :name "Design system example"}
-                          {:id "wireframing-kit", :name "Wireframe library"}
-                          {:id "whiteboarding-kit", :name "Whiteboarding Kit"}]
+        sample-libraries
+        (mf/with-memo []
+          [{:id "penpot-design-system", :name "Design system example"}
+           {:id "wireframing-kit", :name "Wireframe library"}
+           {:id "whiteboarding-kit", :name "Whiteboarding Kit"}])
 
 
         change-search-term
@@ -266,6 +279,17 @@
                (reset! selected :file))
              (st/emit! (dwl/unlink-file-from-library file-id library-id)
                        (dwl/sync-file file-id library-id)))))
+
+        import-tokens
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [event]
+           (let [library-id (some-> (dom/get-current-target event)
+                                    (dom/get-data "library-id")
+                                    (uuid/parse))]
+             (st/emit! (modal/show
+                        :tokens/import-from-library {:file-id file-id
+                                                     :library-id library-id})))))
 
         on-delete-accept
         (mf/use-fn
@@ -332,8 +356,12 @@
                    :on-click publish}])]
 
        (for [{:keys [id name data connected-to connected-to-names] :as library} linked-libraries]
-         (let [disabled? (some #(contains? linked-libraries-ids %) connected-to)]
-           [:div {:class (stl/css :section-list-item)
+         (let [disabled?   (some #(contains? linked-libraries-ids %) connected-to)
+               has-tokens? (and (has-tokens? library)
+                                (contains? cf/flags :token-import-from-library))]
+           [:div {:class (if has-tokens?
+                           (stl/css :section-list-item-double-icon)
+                           (stl/css :section-list-item))
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
@@ -347,6 +375,15 @@
                     [:span "(" (tr "workspace.libraries.connected-to") " "]
                     [:span {:class (stl/css :connected-to-values)} (str/join ", " connected-to-names)]
                     [:span ")"]])])]]
+
+            (when ^boolean has-tokens?
+              [:> icon-button*
+               {:type "button"
+                :aria-label (tr "workspace.tokens.import-tokens")
+                :icon i/import-export
+                :data-library-id (dm/str id)
+                :variant "secondary"
+                :on-click import-tokens}])
 
             [:> icon-button* {:type "button"
                               :aria-label (tr "workspace.libraries.unlink-library-btn")

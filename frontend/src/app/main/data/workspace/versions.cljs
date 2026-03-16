@@ -108,7 +108,7 @@
               (rx/take 1)
               (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
               (rx/tap #(th/clear-queue!))
-              (rx/map #(dw/initialize-workspace team-id file-id)))
+              (rx/map #(dw/initialize-workspace team-id file-id id)))
          (case origin
            :version
            (rx/of (ptk/event ::ev/event {::ev/name "restore-pin-version"}))
@@ -231,7 +231,7 @@
               (rx/filter #(or (nil? %) (= :saved %)))
               (rx/take 1)
               (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
-              (rx/map #(dw/initialize-workspace team-id file-id)))
+              (rx/map #(dw/initialize-workspace team-id file-id id)))
 
          (->> (rx/of 1)
               (rx/tap resolve)

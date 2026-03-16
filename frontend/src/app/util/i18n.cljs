@@ -31,6 +31,7 @@
    {:label "Dutch (community)" :value "nl"}
    {:label "Euskera (community)" :value "eu"}
    {:label "Français (community)" :value "fr"}
+   {:label "Français - Canada (community)" :value "fr_CA"}
    {:label "Gallego (Community)" :value "gl"}
    {:label "Hausa (Community)" :value "ha"}
    {:label "Hrvatski (Community)" :value "hr"}

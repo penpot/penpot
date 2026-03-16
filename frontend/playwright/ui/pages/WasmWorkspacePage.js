@@ -35,8 +35,8 @@ export class WasmWorkspacePage extends WorkspacePage {
     return WasmWorkspacePage.mockConfigFlags(this.page, flags);
   }
 
-  constructor(page) {
-    super(page);
+  constructor(page, options) {
+    super(page, options);
     this.canvas = page.getByTestId("canvas-wasm-shapes");
   }
 
@@ -52,6 +52,19 @@ export class WasmWorkspacePage extends WorkspacePage {
   async waitForFirstRenderWithoutUI() {
     await this.waitForFirstRender();
     await this.hideUI();
+  }
+
+  async getRenderCount() {
+    return this.page.evaluate(() => window.wasmRenderCount || 0);
+  }
+
+  async waitForNextRender(previousCount = null) {
+    const baseCount =
+      previousCount === null ? await this.getRenderCount() : previousCount;
+    await this.page.waitForFunction(
+      (count) => (window.wasmRenderCount || 0) > count,
+      baseCount,
+    );
   }
 
   async hideUI() {

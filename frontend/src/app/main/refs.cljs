@@ -183,9 +183,6 @@
   [id]
   (l/derived #(contains? % id) selected-shapes))
 
-(def highlighted-shapes
-  (l/derived :highlighted workspace-local))
-
 (def export-in-progress?
   (l/derived :export-in-progress? export))
 
@@ -255,6 +252,9 @@
 
 (def workspace-layout
   (l/derived :workspace-layout st/state))
+
+(def workspace-file-version-id
+  (l/derived :workspace-file-version-id st/state))
 
 (def snap-pixel?
   (l/derived #(contains? % :snap-pixel-grid) workspace-layout))

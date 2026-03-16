@@ -11,6 +11,7 @@ use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
 use skia_safe::{
     self as skia,
     paint::{self, Paint},
+    textlayout::Affinity,
     textlayout::ParagraphBuilder,
     textlayout::ParagraphStyle,
     textlayout::PositionWithAffinity,
@@ -112,28 +113,60 @@ impl TextContentSize {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct TextPositionWithAffinity {
-    pub position_with_affinity: PositionWithAffinity,
-    pub paragraph: i32,
     #[allow(dead_code)]
-    pub span: i32,
-    pub offset: i32,
+    pub position_with_affinity: PositionWithAffinity,
+    pub paragraph: usize,
+    pub offset: usize,
+}
+
+impl PartialEq for TextPositionWithAffinity {
+    fn eq(&self, other: &Self) -> bool {
+        self.paragraph == other.paragraph && self.offset == other.offset
+    }
 }
 
 impl TextPositionWithAffinity {
     pub fn new(
         position_with_affinity: PositionWithAffinity,
-        paragraph: i32,
-        span: i32,
-        offset: i32,
+        paragraph: usize,
+        offset: usize,
     ) -> Self {
         Self {
             position_with_affinity,
             paragraph,
-            span,
             offset,
         }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            position_with_affinity: PositionWithAffinity {
+                position: 0,
+                affinity: Affinity::Downstream,
+            },
+            paragraph: 0,
+            offset: 0,
+        }
+    }
+
+    pub fn new_without_affinity(paragraph: usize, offset: usize) -> Self {
+        Self {
+            position_with_affinity: PositionWithAffinity {
+                position: offset as i32,
+                affinity: Affinity::Downstream,
+            },
+            paragraph,
+            offset,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.position_with_affinity.position = 0;
+        self.position_with_affinity.affinity = Affinity::Downstream;
+        self.paragraph = 0;
+        self.offset = 0;
     }
 }
 
@@ -421,14 +454,18 @@ impl TextContent {
         self.bounds = Rect::from_ltrb(p1.x, p1.y, p2.x, p2.y);
     }
 
-    pub fn get_caret_position_at(&self, point: &Point) -> Option<TextPositionWithAffinity> {
+    pub fn get_caret_position_from_shape_coords(
+        &self,
+        point: &Point,
+    ) -> Option<TextPositionWithAffinity> {
         let mut offset_y = 0.0;
         let layout_paragraphs = self.layout.paragraphs.iter().flatten();
 
-        let mut paragraph_index: i32 = -1;
-        let mut span_index: i32 = -1;
-        for layout_paragraph in layout_paragraphs {
-            paragraph_index += 1;
+        // IMPORTANT! I'm keeping this because I think it should be better to have the span index
+        // cached the same way we keep the paragraph index.
+        #[allow(dead_code)]
+        let mut _span_index: usize = 0;
+        for (paragraph_index, layout_paragraph) in layout_paragraphs.enumerate() {
             let start_y = offset_y;
             let end_y = offset_y + layout_paragraph.height();
 
@@ -443,22 +480,28 @@ impl TextContent {
             };
 
             if matches {
+                // Skia's get_glyph_position_at_coordinate expects coordinates relative to
+                // the paragraph's top-left. For multi-paragraph or wrapped text, each
+                // paragraph has its own origin; subtract start_y so we pass paragraph-local coords.
+                let para_pt = Point::new(point.x, point.y - start_y);
                 let position_with_affinity =
-                    layout_paragraph.get_glyph_position_at_coordinate(*point);
-                if let Some(paragraph) = self.paragraphs().get(paragraph_index as usize) {
+                    layout_paragraph.get_glyph_position_at_coordinate((para_pt.x, para_pt.y));
+                if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
                     // Computed position keeps the current position in terms
                     // of number of characters of text. This is used to know
                     // in which span we are.
-                    let mut computed_position = 0;
-                    let mut span_offset = 0;
+                    let mut computed_position: usize = 0;
+
+                    // This could be useful in the future as part of the TextPositionWithAffinity.
+                    #[allow(dead_code)]
+                    let mut _span_offset: usize = 0;
 
                     // If paragraph has no spans, default to span 0, offset 0
                     if paragraph.children().is_empty() {
-                        span_index = 0;
-                        span_offset = 0;
+                        _span_index = 0;
+                        _span_offset = 0;
                     } else {
                         for span in paragraph.children() {
-                            span_index += 1;
                             let length = span.text.chars().count();
                             let start_position = computed_position;
                             let end_position = computed_position + length;
@@ -467,26 +510,26 @@ impl TextContent {
                             // Handle empty spans: if the span is empty and current position
                             // matches the start, this is the right span
                             if length == 0 && current_position == start_position {
-                                span_offset = 0;
+                                _span_offset = 0;
                                 break;
                             }
 
                             if start_position <= current_position
                                 && end_position >= current_position
                             {
-                                span_offset =
-                                    position_with_affinity.position - start_position as i32;
+                                _span_offset =
+                                    position_with_affinity.position as usize - start_position;
                                 break;
                             }
                             computed_position += length;
+                            _span_index += 1;
                         }
                     }
 
                     return Some(TextPositionWithAffinity::new(
                         position_with_affinity,
                         paragraph_index,
-                        span_index,
-                        span_offset,
+                        position_with_affinity.position as usize,
                     ));
                 }
             }
@@ -507,12 +550,21 @@ impl TextContent {
             return Some(TextPositionWithAffinity::new(
                 default_position,
                 0, // paragraph 0
-                0, // span 0
                 0, // offset 0
             ));
         }
 
         None
+    }
+
+    pub fn get_caret_position_from_screen_coords(
+        &self,
+        point: &Point,
+        view_matrix: &Matrix,
+        shape_matrix: &Matrix,
+    ) -> Option<TextPositionWithAffinity> {
+        let shape_rel_point = Shape::get_relative_point(point, view_matrix, shape_matrix)?;
+        self.get_caret_position_from_shape_coords(&shape_rel_point)
     }
 
     /// Builds the ParagraphBuilders necessary to render
@@ -528,6 +580,7 @@ impl TextContent {
         for paragraph in self.paragraphs() {
             let paragraph_style = paragraph.paragraph_to_style();
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            let mut has_text = false;
             for span in paragraph.children() {
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
                 let text_style = span.to_style(
@@ -537,8 +590,14 @@ impl TextContent {
                     paragraph.line_height(),
                 );
                 let text: String = span.apply_text_transform();
+                if !text.is_empty() {
+                    has_text = true;
+                }
                 builder.push_style(&text_style);
                 builder.add_text(&text);
+            }
+            if !has_text {
+                builder.add_text(" ");
             }
             paragraph_group.push(vec![builder]);
         }
@@ -618,7 +677,7 @@ impl TextContent {
             });
 
         let size = TextContentSize::new_with_normalized_line_height(
-            width,
+            width.ceil(),
             paragraph_height.ceil(),
             DEFAULT_TEXT_CONTENT_SIZE,
             normalized_line_height,
@@ -653,12 +712,12 @@ impl TextContent {
     pub fn set_layout_from_result(
         &mut self,
         result: TextContentLayoutResult,
-        default_height: f32,
         default_width: f32,
+        default_height: f32,
     ) {
         self.layout.set(result.0, result.1);
         self.size
-            .copy_finite_size(result.2, default_height, default_width);
+            .copy_finite_size(result.2, default_width, default_height);
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
@@ -1096,7 +1155,7 @@ impl TextSpan {
     pub fn apply_text_transform(&self) -> String {
         let browser = crate::with_state!(state, { state.current_browser });
         let text = Self::process_ignored_chars(&self.text, browser);
-        let transformed_text = match self.text_transform {
+        match self.text_transform {
             Some(TextTransform::Uppercase) => text.to_uppercase(),
             Some(TextTransform::Lowercase) => text.to_lowercase(),
             Some(TextTransform::Capitalize) => text
@@ -1111,9 +1170,7 @@ impl TextSpan {
                 .collect::<Vec<_>>()
                 .join(" "),
             None => text,
-        };
-
-        transformed_text.replace("/", "/\u{200B}")
+        }
     }
 
     pub fn scale_content(&mut self, value: f32) {

@@ -127,6 +127,25 @@
       (ex/print-throwable cause :prefix "Unexpected Error")
       (flash :cause cause :type :unhandled))))
 
+(defmethod ptk/handle-error :wasm-non-blocking
+  [error]
+  (when-let [cause (::instance error)]
+    (flash :cause cause)))
+
+(defmethod ptk/handle-error :wasm-critical
+  [error]
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause :prefix "WASM critical error"))
+
+  (st/emit! (rt/assign-exception error)))
+
+(defmethod ptk/handle-error :wasm-exception
+  [error]
+  (when-let [cause (::instance error)]
+    (let [prefix (or (:prefix error) "Exception")]
+      (ex/print-throwable cause :prefix prefix)))
+  (st/emit! (rt/assign-exception error)))
+
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
 ;; for show the error page. Otherwise this explicitly clears all
@@ -354,9 +373,14 @@
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
               (when-not (is-ignorable-exception? cause)
-                (set! last-exception cause)
-                (ex/print-throwable cause :prefix "Uncaught Exception")
-                (ts/schedule #(flash :cause cause :type :unhandled)))))
+                (let [data (ex-data cause)
+                      type (get data :type)]
+                  (set! last-exception cause)
+                  (if (#{:wasm-critical :wasm-non-blocking :wasm-exception} type)
+                    (on-error cause)
+                    (do
+                      (ex/print-throwable cause :prefix "Uncaught Exception")
+                      (ts/schedule #(flash :cause cause :type :unhandled))))))))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)

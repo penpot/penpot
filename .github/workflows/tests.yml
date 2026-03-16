@@ -146,10 +146,17 @@ jobs:
     name: "Frontend Tests"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
+    needs: test-render-wasm
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Restore shared.js
+        uses: actions/cache/restore@v4
+        with:
+          key: "render-wasm-shared-js-${{ github.sha }}"
+          path: frontend/src/app/render_wasm/api/shared.js
 
       - name: Unit Tests
         working-directory: ./frontend
@@ -186,6 +193,19 @@ jobs:
         working-directory: ./render-wasm
         run: |
           ./test
+
+      - name: Copy shared.js artifact
+        working-directory: ./render-wasm
+        run: |
+          SHARED_FILE=$(find target -name render_wasm_shared.js | head -n 1);
+          mkdir -p ../frontend/src/app/render_wasm/api;
+          cp $SHARED_FILE ../frontend/src/app/render_wasm/api/shared.js;
+
+      - name: Cache shared.js
+        uses: actions/cache@v4
+        with:
+          key: "render-wasm-shared-js-${{ github.sha }}"
+          path: frontend/src/app/render_wasm/api/shared.js
 
   test-backend:
     name: "Backend Tests"

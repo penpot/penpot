@@ -97,14 +97,14 @@
         token-name-ref (mf/use-ref nil)
         swatch-tooltip-content (cond
                                  not-active
-                                 (tr "ds.inputs.token-field.no-active-token-option")
+                                 (tr "ds.inputs.token-field.no-active-color.token-option")
                                  has-errors
                                  (tr "color-row.token-color-row.deleted-token")
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
         name-tooltip-content (cond
                                not-active
-                               (tr "ds.inputs.token-field.no-active-token-option")
+                               (tr "ds.inputs.token-field.no-active-color.token-option")
                                has-errors
                                (tr "color-row.token-color-row.deleted-token")
                                :else

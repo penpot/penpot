@@ -8,17 +8,22 @@
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
   organization management and token validation endpoints."
   (:require
+   [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as doc]
-   [app.util.services :as sv]))
+   [app.rpc.quotes :as quotes]
+   [app.util.services :as sv]
+   [clojure.set :as set]))
 
 ;; ---- API: authenticate
 
@@ -45,6 +50,19 @@
       AND t.is_default IS FALSE
       AND t.deleted_at IS NULL;")
 
+;; ---- API: get-penpot-version
+
+(def ^:private schema:get-penpot-version-result
+  [:map [:version ::sm/text]])
+
+(sv/defmethod ::get-penpot-version
+  "Get the current Penpot version"
+  {::doc/added "2.14"
+   ::sm/params [:map]
+   ::sm/result schema:get-penpot-version-result}
+  [_cfg _params]
+  {:version cf/version})
+
 (def ^:private schema:get-teams-result
   [:vector schema:team])
 
@@ -63,7 +81,8 @@
 (def ^:private schema:notify-team-change
   [:map
    [:id ::sm/uuid]
-   [:organization-id ::sm/text]])
+   [:organization-id ::sm/uuid]
+   [:organization-name ::sm/text]])
 
 (sv/defmethod ::notify-team-change
   "Notify to Penpot a team change from nitrate"
@@ -80,6 +99,32 @@
                          :team-id id
                          :organization-id organization-id
                          :organization-name organization-name})))
+
+;; ---- API: notify-user-added-to-organization
+
+(def ^:private schema:notify-user-added-to-organization
+  [:map
+   [:profile-id ::sm/uuid]
+   [:organization-id ::sm/uuid]
+   [:role ::sm/text]])
+
+(sv/defmethod ::notify-user-added-to-organization
+  "Notify to Penpot that an user has joined an org from nitrate"
+  {::doc/added "2.14"
+   ::sm/params schema:notify-user-added-to-organization
+   ::rpc/auth false}
+  [cfg {:keys [profile-id]}]
+  (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
+                      ::quotes/profile-id profile-id})
+
+  (let [features (-> (cfeat/get-enabled-features cf/flags)
+                     (set/difference cfeat/frontend-only-features)
+                     (set/difference cfeat/no-team-inheritable-features))
+        params   {:profile-id profile-id
+                  :name "Default"
+                  :features features}
+        team     (db/tx-run! cfg teams/create-team params)]
+    (select-keys team [:id])))
 
 
 ;; ---- API: get-managed-profiles
@@ -112,3 +157,4 @@
   [cfg {:keys [::rpc/profile-id]}]
   (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
     (db/exec! cfg [sql:get-managed-profiles current-user-id current-user-id])))
+

@@ -133,21 +133,21 @@ fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
     let width = bounds.width();
     let height = bounds.height();
 
+    let target_width = bounds.width().round();
+    let target_height = bounds.height().round();
+
     let scale_width = if width > 0.1 {
-        f32::max(0.01, bounds.width().round() / bounds.width())
+        f32::max(0.01, target_width / width)
     } else {
         1.0
     };
     let scale_height = if height > 0.1 {
-        f32::max(0.01, bounds.height().round() / bounds.height())
+        f32::max(0.01, target_height / height)
     } else {
         1.0
     };
 
-    if f32::is_finite(scale_width)
-        && f32::is_finite(scale_height)
-        && (!math::is_close_to(scale_width, 1.0) || !math::is_close_to(scale_height, 1.0))
-    {
+    if f32::is_finite(scale_width) && f32::is_finite(scale_height) {
         let mut round_transform = Matrix::scale((scale_width, scale_height));
         round_transform.post_concat(&tr);
         round_transform.pre_concat(&tr_inv);
@@ -300,20 +300,7 @@ fn propagate_reflow(
         Type::Frame(Frame {
             layout: Some(_), ..
         }) => {
-            let mut skip_reflow = false;
-            if shape.is_layout_horizontal_fill() || shape.is_layout_vertical_fill() {
-                if let Some(parent_id) = shape.parent_id {
-                    if parent_id != Uuid::nil() && !reflown.contains(&parent_id) {
-                        // If this is a fill layout but the parent has not been reflown yet
-                        // we wait for the next iteration for reflow
-                        skip_reflow = true;
-                    }
-                }
-            }
-
-            if !skip_reflow {
-                layout_reflows.insert(*id);
-            }
+            layout_reflows.insert(*id);
         }
         Type::Group(Group { masked: true }) => {
             let children_ids = shape.children_ids(true);
@@ -386,7 +373,7 @@ pub fn propagate_modifiers(
             if math::identitish(&entry.transform) {
                 Modifier::Reflow(entry.id, false)
             } else {
-                Modifier::Transform(*entry)
+                Modifier::Transform(*entry, pixel_precision)
             }
         })
         .collect();
@@ -405,9 +392,9 @@ pub fn propagate_modifiers(
     while !entries.is_empty() {
         while let Some(modifier) = entries.pop_front() {
             match modifier {
-                Modifier::Transform(entry) => propagate_transform(
+                Modifier::Transform(entry, pixel) => propagate_transform(
                     entry,
-                    pixel_precision,
+                    pixel,
                     state,
                     &mut entries,
                     &mut bounds,
@@ -441,12 +428,18 @@ pub fn propagate_modifiers(
             db.cmp(&da)
         });
 
+        // This temporary bounds is necesary so the layouts can be calculated
+        // correctly but will be discarded before the next iteration for the
+        // bounds to be calculated properly with the modifiers.
+        let mut bounds_temp = bounds.clone();
+
         for id in &layout_reflows_vec {
             if reflown.contains(id) {
                 continue;
             }
-            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds);
+            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp);
         }
+        layout_reflows = HashSet::new();
     }
 
     #[allow(dead_code)]

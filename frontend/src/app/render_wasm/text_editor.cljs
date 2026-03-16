@@ -16,16 +16,39 @@
   [id]
   (when wasm/context-initialized?
     (let [buffer (uuid/get-u32 id)]
-      (h/call wasm/internal-module "_text_editor_start"
-              (aget buffer 0)
-              (aget buffer 1)
-              (aget buffer 2)
-              (aget buffer 3)))))
+      (when-not (h/call wasm/internal-module "_text_editor_start"
+                        (aget buffer 0)
+                        (aget buffer 1)
+                        (aget buffer 2)
+                        (aget buffer 3))
+        (throw (js/Error. "TextEditor initialization failed"))))))
+
+(defn text-editor-set-cursor-from-offset
+  "Sets caret position from shape relative coordinates"
+  [{:keys [x y]}]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_set_cursor_from_offset" x y)))
 
 (defn text-editor-set-cursor-from-point
-  [x y]
+  "Sets caret position from screen (canvas) coordinates"
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_set_cursor_from_point" x y)))
+
+(defn text-editor-pointer-down
+  [{:keys [x y]}]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_pointer_down" x y)))
+
+(defn text-editor-pointer-move
+  [{:keys [x y]}]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_pointer_move" x y)))
+
+(defn text-editor-pointer-up
+  [{:keys [x y]}]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_pointer_up" x y)))
 
 (defn text-editor-update-blink
   [timestamp-ms]
@@ -55,37 +78,52 @@
       (h/call wasm/internal-module "_text_editor_insert_text")
       (mem/free))))
 
-(defn text-editor-delete-backward []
-  (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_delete_backward")))
+(defn text-editor-delete-backward
+  ([]
+   (text-editor-delete-backward false))
+  ([word-boundary]
+   (when wasm/context-initialized?
+     (h/call wasm/internal-module "_text_editor_delete_backward" word-boundary))))
 
-(defn text-editor-delete-forward []
-  (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_delete_forward")))
+(defn text-editor-delete-forward
+  ([]
+   (text-editor-delete-forward false))
+  ([word-boundary]
+   (when wasm/context-initialized?
+     (h/call wasm/internal-module "_text_editor_delete_forward" word-boundary))))
 
 (defn text-editor-insert-paragraph []
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_insert_paragraph")))
 
 (defn text-editor-move-cursor
-  [direction extend-selection]
+  [direction word-boundary extend-selection]
   (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_move_cursor" direction (if extend-selection 1 0))))
+    (h/call wasm/internal-module "_text_editor_move_cursor" direction word-boundary (if extend-selection 1 0))))
 
 (defn text-editor-select-all
   []
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_select_all")))
 
+(defn text-editor-select-word-boundary
+  [{:keys [x y]}]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_select_word_boundary" x y)))
+
 (defn text-editor-stop
   []
   (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_stop")))
+    (when-not (h/call wasm/internal-module "_text_editor_stop")
+      (throw (js/Error. "TextEditor finalization failed")))))
 
 (defn text-editor-is-active?
-  []
-  (when wasm/context-initialized?
-    (not (zero? (h/call wasm/internal-module "_text_editor_is_active")))))
+  ([id]
+   (when wasm/context-initialized?
+     (not (zero? (h/call wasm/internal-module "_text_editor_is_active_with_id" id)))))
+  ([]
+   (when wasm/context-initialized?
+     (not (zero? (h/call wasm/internal-module "_text_editor_is_active"))))))
 
 (defn text-editor-export-content
   []
@@ -142,6 +180,7 @@
         (finally
           (mem/free))))))
 
+;; This is used as a intermediate cache between Clojure global state and WASM state.
 (def ^:private shape-text-contents (atom {}))
 
 (defn- merge-exported-texts-into-content
