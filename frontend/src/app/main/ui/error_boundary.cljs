@@ -15,12 +15,10 @@
    [rumext.v2 :as mf]))
 
 (mf/defc error-boundary*
-  {::mf/props :obj}
   [{:keys [fallback children]}]
   (let [fallback-wrapper
         (mf/with-memo [fallback]
           (mf/fnc fallback-wrapper*
-            {::mf/props :obj}
             [{:keys [error reset-error-boundary]}]
             (let [route (mf/deref refs/route)
                   data  (errors/exception->error-data error)]

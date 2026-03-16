@@ -477,8 +477,8 @@
       :service-unavailable
       [:> service-unavailable*]
 
-      :wasm-exception
-      (case (get data :exception-type)
+      :wasm-error
+      (case (get data :code)
         :webgl-context-lost
         [:> webgl-context-lost*]
 
