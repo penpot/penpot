@@ -73,16 +73,28 @@ $seven-column-width: calc(
 //        |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|
 //   -> 8 columns (32px each) + 7 gaps (4px each) = 284px
 //
-//   But one block (grid-exception-input) doesn’t fit perfectly:
+//   But two blocks don’t fit perfectly:
+//   First  (grid-exception-input)
 //        |__________________|-|__________________|-|___|
-//
 // We calculate the width of that grid-exception-input as:
 //
 //   - 3.5 columns of base grid width
 //   - + 3 inter-column gaps
 //   - − half a gap (because it’s visually shared with the next block)
-
 $grid-exception-input-width: calc(#{$sz-32} * 3.5 + 3 * var(--sp-xs) - (var(--sp-xs) / 2));
+//
+//        |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|
+//
+//   Second  (grid-exception-input-small)
+//        |__________________|-|____________|-|___|-|___|
+//
+// We calculate the width of that grid-exception-input-small as:
+//
+//   - 2.5 columns of base grid width
+//   - + 2 inter-column gaps
+//   - − half a gap (because it’s visually shared with the next block)
+
+$grid-exception-input-width-small: calc(#{$sz-32} * 2.5 + 2 * var(--sp-xs) - (var(--sp-xs) / 2));
 
 // ============================================================
 // CSS VARIABLES (exposed for runtime use)
@@ -98,4 +110,5 @@ $grid-exception-input-width: calc(#{$sz-32} * 3.5 + 3 * var(--sp-xs) - (var(--sp
   --7-columns-dropdown-width: #{$seven-column-width};
   --options-width: #{$options-width};
   --grid-exception-input-width: #{$grid-exception-input-width};
+  --grid-exception-input-width-small: #{$grid-exception-input-width-small};
 }
