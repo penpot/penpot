@@ -1276,32 +1276,25 @@ impl RenderState {
 
         // Blur margin: sigma 4 needs ~12px extra each side for Gaussian falloff
         let sigma = 32.0;
-        let mut blur_rect = rect;
-        blur_rect.outset((1., 1.));
 
         let mut blur_paint = skia::Paint::default();
         blur_paint.set_image_filter(skia::image_filters::blur((sigma, sigma), Some(skia::TileMode::Clamp), None, None));
 
         let canvas = self.surfaces.get_mut(SurfaceId::Target).canvas();
-        // canvas.clear(self.background_color);        
+
+        canvas.clear(self.background_color);        
         let layer_rec = skia::canvas::SaveLayerRec::default()
-            .bounds(&blur_rect)
+            // .bounds(&blur_rect)
             .paint(&blur_paint);
         canvas.save_layer(&layer_rec);
 
-        // Draw background first so the blur samples it at the edges (no halo when bg = fill)
-        // let mut bg_paint = skia::Paint::default();
-        // bg_paint.set_color(self.background_color);
-        // bg_paint.set_style(skia::PaintStyle::Fill);
-        // canvas.draw_rect(blur_rect, &bg_paint);
-
-        // Draw shape on top
         let mut shape_paint = skia::Paint::default();
         shape_paint.set_color(fill_color);
         shape_paint.set_style(skia::PaintStyle::Fill);
         canvas.draw_rect(rect, &shape_paint);
 
         canvas.restore();
+        
         self.flush_and_submit();
 
         Ok(())
