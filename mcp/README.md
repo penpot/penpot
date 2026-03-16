@@ -277,6 +277,214 @@ you may set the following environment variables to configure the two servers
    where the MCP server can be reached. The Penpot MCP Plugin uses this to construct
    the WebSocket URL as `ws://<your-address>:<port>` (default port: `4402`).
 
+## Docker Deployment
+
+You can run the Penpot MCP server as a Docker container alongside your existing
+Penpot docker-compose stack. The container includes both the MCP server and
+the plugin UI server.
+
+### How It Works
+
+```
+MCP Client (e.g. Claude Code) ──(HTTPS/SSE)──► MCP Server (:4401)
+                                                    ▲
+                                                    │ WebSocket (:4402)
+                                                    ▼
+Browser (Penpot) ◄──────────────────────────── Plugin UI (:4400)
+```
+
+The MCP server acts as a bridge between your AI client and Penpot.
+The Penpot MCP Plugin runs inside your browser within Penpot's UI and must
+remain open while using the MCP server. The plugin communicates with the
+MCP server via WebSocket to execute design operations.
+
+### Prerequisites
+
+- A running Penpot instance (docker-compose based)
+- A reverse proxy (e.g. Traefik) for TLS termination (recommended for remote access)
+- A DNS record for the MCP server (e.g. `mcp.yourdomain.com`)
+
+### Files
+
+The Docker setup requires two files in the `mcp/` directory, alongside the
+existing source code:
+
+- `Dockerfile` — multi-stage build (build + runtime)
+- `entrypoint.sh` — starts the MCP server and plugin UI server
+
+### Building
+
+The plugin's WebSocket URL is baked in at build time. Set the `WS_URI` build
+argument to match how your browser will reach the WebSocket endpoint:
+
+```shell
+# For localhost development
+docker compose build penpot-mcp
+
+# For production behind a reverse proxy
+docker compose build --build-arg WS_URI="wss://mcp.yourdomain.com/ws" penpot-mcp
+```
+
+### docker-compose Service Definition
+
+Add the following service to your `docker-compose.yml`:
+
+```yaml
+  penpot-mcp:
+    build:
+      context: ./mcp
+      dockerfile: Dockerfile
+      args:
+        WS_URI: "wss://${PENPOT_MCP_DOMAIN_NAME}/ws"
+    restart: always
+    expose:
+      - 4400
+      - 4401
+      - 4402
+    networks:
+      - penpot
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+
+      # MCP SSE + HTTP endpoint (AI clients connect here)
+      - "traefik.http.routers.penpot-mcp.rule=Host(`${PENPOT_MCP_DOMAIN_NAME}`)"
+      - "traefik.http.routers.penpot-mcp.entrypoints=websecure"
+      - "traefik.http.routers.penpot-mcp.tls=true"
+      - "traefik.http.routers.penpot-mcp.tls.certresolver=tls_resolver"
+      - "traefik.http.routers.penpot-mcp.service=penpot-mcp"
+      - "traefik.http.routers.penpot-mcp.priority=1"
+      - "traefik.http.services.penpot-mcp.loadbalancer.server.port=4401"
+
+      # WebSocket (plugin in browser connects here)
+      - "traefik.http.routers.penpot-mcp-ws.rule=Host(`${PENPOT_MCP_DOMAIN_NAME}`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.penpot-mcp-ws.entrypoints=websecure"
+      - "traefik.http.routers.penpot-mcp-ws.tls=true"
+      - "traefik.http.routers.penpot-mcp-ws.tls.certresolver=tls_resolver"
+      - "traefik.http.routers.penpot-mcp-ws.service=penpot-mcp-ws"
+      - "traefik.http.routers.penpot-mcp-ws.priority=2"
+      - "traefik.http.services.penpot-mcp-ws.loadbalancer.server.port=4402"
+
+      # Plugin UI (load into Penpot's plugin manager)
+      - "traefik.http.routers.penpot-mcp-plugin.rule=Host(`${PENPOT_MCP_DOMAIN_NAME}`) && PathPrefix(`/plugin`)"
+      - "traefik.http.routers.penpot-mcp-plugin.entrypoints=websecure"
+      - "traefik.http.routers.penpot-mcp-plugin.tls=true"
+      - "traefik.http.routers.penpot-mcp-plugin.tls.certresolver=tls_resolver"
+      - "traefik.http.routers.penpot-mcp-plugin.service=penpot-mcp-plugin"
+      - "traefik.http.routers.penpot-mcp-plugin.priority=3"
+      - "traefik.http.middlewares.mcp-plugin-strip.stripprefix.prefixes=/plugin"
+      - "traefik.http.routers.penpot-mcp-plugin.middlewares=mcp-plugin-strip"
+      - "traefik.http.services.penpot-mcp-plugin.loadbalancer.server.port=4400"
+
+    environment:
+      PENPOT_MCP_SERVER_HOST: "0.0.0.0"
+      PENPOT_MCP_SERVER_PORT: "4401"
+      PENPOT_MCP_WEBSOCKET_PORT: "4402"
+      PENPOT_MCP_LOG_LEVEL: "info"
+      PENPOT_MCP_REMOTE_MODE: "true"
+```
+
+Add to your `.env` file:
+
+```
+PENPOT_MCP_DOMAIN_NAME=mcp.yourdomain.com
+```
+
+### Connecting MCP Clients
+
+#### Claude Code
+
+Claude Code supports HTTP transport natively:
+
+```shell
+claude mcp add penpot -t http https://mcp.yourdomain.com/mcp
+```
+
+Or add to `~/.claude/settings.json` (or project `.claude/settings.json`):
+
+```json
+{
+    "mcpServers": {
+        "penpot": {
+            "type": "sse",
+            "url": "https://mcp.yourdomain.com/sse"
+        }
+    }
+}
+```
+
+#### Claude Desktop
+
+Since Claude Desktop only supports stdio transport, use `mcp-remote` as a proxy:
+
+```json
+{
+    "mcpServers": {
+        "penpot": {
+            "command": "npx",
+            "args": ["-y", "mcp-remote", "https://mcp.yourdomain.com/sse"]
+        }
+    }
+}
+```
+
+### Loading the Plugin in Penpot
+
+1. Open Penpot in your browser and navigate to a design file
+2. Open the Plugins menu
+3. Add the plugin URL: `https://mcp.yourdomain.com/plugin/manifest.json`
+4. Open the plugin UI and click "Connect to MCP server"
+5. The connection status should change to "Connected to MCP server"
+
+> [!IMPORTANT]
+> Do not close the plugin's UI while using the MCP server, as this will
+> disconnect the WebSocket and the AI client will lose access to your designs.
+
+### Without a Reverse Proxy
+
+If you are running Penpot without a reverse proxy (e.g. for local development
+with Docker), you can expose the ports directly instead:
+
+```yaml
+  penpot-mcp:
+    build:
+      context: ./mcp
+      dockerfile: Dockerfile
+      # Default WS_URI (ws://localhost:4402) works for localhost
+    restart: always
+    ports:
+      - "4400:4400"
+      - "4401:4401"
+      - "4402:4402"
+    networks:
+      - penpot
+    environment:
+      PENPOT_MCP_SERVER_HOST: "0.0.0.0"
+      PENPOT_MCP_SERVER_PORT: "4401"
+      PENPOT_MCP_WEBSOCKET_PORT: "4402"
+      PENPOT_MCP_LOG_LEVEL: "info"
+      PENPOT_MCP_REMOTE_MODE: "true"
+```
+
+Then connect Claude Code with:
+
+```shell
+claude mcp add penpot -t http http://localhost:4401/mcp --allow-http
+```
+
+And load the plugin in Penpot using `http://localhost:4400/manifest.json`.
+
+### Without the Plugin UI Server (Port 4400)
+
+If you prefer to serve the plugin UI separately (e.g. from another web server
+or CDN), you can skip port 4400 in the container. In that case:
+
+1. Build the plugin locally: `cd packages/plugin && WS_URI="wss://mcp.yourdomain.com/ws" pnpm run build`
+2. Deploy the contents of `packages/plugin/dist/` to any static file host
+3. Point Penpot's plugin manager to that host's `manifest.json`
+4. The Docker container only needs to expose ports 4401 and 4402
+
 ## Development
 
 * The [contribution guidelines for Penpot](../CONTRIBUTING.md) apply
