@@ -9,7 +9,7 @@ cleanup() {
     wait "$MCP_PID" "$PLUGIN_PID" 2>/dev/null || true
     exit 0
 }
-trap cleanup SIGTERM SIGINT
+trap cleanup 15 2
 
 # Start MCP server (ports 4401 + 4402 via env vars)
 cd /app
