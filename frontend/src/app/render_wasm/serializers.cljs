@@ -271,6 +271,8 @@
     :firefox 0
     :chrome 1
     :safari 2
+    :safari-16 2
+    :safari-17 2
     :edge 3
     :unknown 4
     4))
