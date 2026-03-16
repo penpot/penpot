@@ -12,8 +12,9 @@ cleanup() {
 trap cleanup 15 2
 
 # Start MCP server (ports 4401 + 4402 via env vars)
-cd /app
-node packages/server/dist/index.js &
+# CWD must be the server dist dir — ConfigurationLoader resolves data/ relative to process.cwd()
+cd /app/packages/server/dist
+node index.js &
 MCP_PID=$!
 
 # Serve plugin static files (manifest.json, plugin.js, index.html)
