@@ -43,7 +43,7 @@
       ^boolean (check-safari-16?) :safari-16
       ^boolean (check-safari-17?) :safari-17
       ^boolean (check-safari?)    :safari
-      :else              :other)))
+      :else                       :unknown)))
 
 (defn- parse-platform
   []

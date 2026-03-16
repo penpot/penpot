@@ -1404,18 +1404,6 @@
     (set! (.-width canvas) (* dpr width))
     (set! (.-height canvas) (* dpr height))))
 
-(defn- get-browser
-  []
-  (when (exists? js/navigator)
-    (let [user-agent (.-userAgent js/navigator)]
-      (when user-agent
-        (cond
-          (re-find #"(?i)firefox" user-agent) :firefox
-          (re-find #"(?i)chrome" user-agent) :chrome
-          (re-find #"(?i)safari" user-agent) :safari
-          (re-find #"(?i)edge" user-agent) :edge
-          :else :unknown)))))
-
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
@@ -1431,8 +1419,7 @@
         context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
         context (.getContext ^js canvas context-id default-context-options)
         context-init? (not (nil? context))
-        browser (get-browser)
-        browser (sr/translate-browser browser)]
+        browser (sr/translate-browser cf/browser)]
     (when-not (nil? context)
       (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
         (.makeContextCurrent ^js gl handle)
