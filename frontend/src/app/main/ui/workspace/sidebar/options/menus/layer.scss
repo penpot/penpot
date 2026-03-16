@@ -7,18 +7,23 @@
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 @use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
 
+// This code should be remove when numeric-input-tokens are activated
+// https://tree.taiga.io/project/penpot/task/13704
 .element-set-content {
   @include sidebar.option-grid-structure;
-  height: deprecated.$s-32;
-  margin-bottom: deprecated.$s-8;
+  block-size: $sz-32;
+  margin-block-end: var(--sp-s);
   .select {
     grid-column: span 4;
     padding: 0;
   }
   .input {
     @extend .input-element;
-    @include deprecated.bodySmallTypography;
+    @include t.use-typography("body-small");
     grid-column: span 2;
   }
   .actions {
@@ -29,12 +34,22 @@
 
   &.hidden {
     .hidden-select {
-      @include deprecated.hiddenElement;
-      border: deprecated.$s-1 solid var(--input-border-color-disabled);
+      cursor: default;
+      pointer-events: none;
+      box-sizing: border-box;
+      color: var(--input-foreground-color-disabled);
+      stroke: var(--input-foreground-color-disabled);
+      background-color: transparent;
+      border: $b-1 solid var(--input-border-color-disabled);
     }
     .input {
-      @include deprecated.hiddenElement;
-      border: deprecated.$s-1 solid var(--input-border-color-disabled);
+      cursor: default;
+      pointer-events: none;
+      box-sizing: border-box;
+      color: var(--input-foreground-color-disabled);
+      stroke: var(--input-foreground-color-disabled);
+      background-color: transparent;
+      border: $b-1 solid var(--input-border-color-disabled);
       .icon {
         stroke: var(--input-foreground-color-disabled);
       }
@@ -45,7 +60,24 @@
   }
 }
 
+// This rule should be rename when numeric-input-tokens are activated
+.element-set-content-token {
+  @include sidebar.option-grid-structure;
+  block-size: $sz-32;
+  margin-block-end: var(--sp-s);
+  grid-template-columns: var(--grid-exception-input-width) var(--grid-exception-input-width-small) auto auto;
+}
+
+.hidden-select {
+  cursor: default;
+  pointer-events: none;
+  box-sizing: border-box;
+  color: var(--input-foreground-color-disabled);
+  stroke: var(--input-foreground-color-disabled);
+  background-color: transparent;
+  border: deprecated.$b-1 solid var(--input-border-color-disabled);
+}
+
 .numeric-input-wrapper {
-  grid-column: span 2;
   --dropdown-offset: #{px2rem(-35)};
 }
