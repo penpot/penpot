@@ -102,14 +102,14 @@ impl State {
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<()> {
-        // If zoom changed, we MUST rebuild the tile index before using it.
-        // Otherwise, the index will have tiles from the old zoom level, causing visible
-        // tiles to appear empty. This can happen if start_render_loop() is called before
-        // set_view_end() finishes rebuilding the index, or if set_view_end() hasn't been
-        // called yet.
-        let zoom_changed = self.render_state.zoom_changed();
-        if zoom_changed {
-            self.rebuild_tiles_shallow();
+        // If zoom changed (e.g. interrupted zoom render followed by pan), the
+        // tile index may be stale for the new viewport position. Rebuild the
+        // index so shapes are mapped to the correct tiles. We use
+        // rebuild_tile_index (NOT rebuild_tiles_shallow) to preserve the tile
+        // texture cache — otherwise cached tiles with shadows/blur would be
+        // cleared and re-rendered in fast mode without effects.
+        if self.render_state.zoom_changed() {
+            self.render_state.rebuild_tile_index(&self.shapes);
         }
 
         self.render_state
