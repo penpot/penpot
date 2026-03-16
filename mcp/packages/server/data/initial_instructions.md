@@ -312,18 +312,18 @@ Design tokens are reusable design values (colors, dimensions, typography, etc.) 
 The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
   * `sets: TokenSet[]` - Token collections (order matters for precedence)
   * `themes: TokenTheme[]` - Presets that activate specific sets
-  * `addSet(name: string): TokenSet` - Create new set
+  * `addSet({name: string}): TokenSet` - Create new set
   * `addTheme(group: string, name: string): TokenTheme` - Create new theme
 
 `TokenSet` contains tokens with unique names:
   * `active: boolean` - Only active sets affect shapes; use `set.toggleActive()` to change: `if (!set.active) set.toggleActive();`
   * `tokens: Token[]` - All tokens in set
-  * `addToken(type: TokenType, name: string, value: TokenValueString): Token` - Creates a token, adding it to the set.
+  * `addToken({type: TokenType, name: string, value: TokenValueString}): Token` - Creates a token, adding it to the set.
      - `TokenType`: "color" | "dimension" | "spacing" | "typography" | "shadow" | "opacity" | "borderRadius" | "borderWidth" | "fontWeights" | "fontSizes" | "fontFamilies" | "letterSpacing" | "textDecoration" | "textCase"
      - `value`: depends on the type of token (inspect `Token` and related types)
      - Examples:
-       const token = set.addToken("color", "color.primary", "#0066FF"); // direct value
-       const token2 = set.addToken("color", "color.accent", "{color.primary}"); // reference to another token
+       const token = set.addToken({type: "color", name: "color.primary", value: "#0066FF"}); // direct value
+       const token2 = set.addToken({type: "color", name: "color.accent", value: "{color.primary}"}); // reference to another token
 
 `Token`: union type encompassing various token types, with common properties:
   * `name: string` - Token name (typically structured, e.g. "color.base.white")
