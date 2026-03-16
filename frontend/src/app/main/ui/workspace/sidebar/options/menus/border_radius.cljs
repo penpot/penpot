@@ -168,64 +168,50 @@
     (mf/with-effect [ids]
       (reset! radius-expanded* false))
 
-    [:section {:class (dm/str class " " (stl/css :radius))
-               :aria-label "border-radius-section"}
-     (if (not radius-expanded)
-       (if token-numeric-inputs
-         [:> numeric-input-wrapper*
-          {:on-change on-all-radius-change
-           :on-detach on-detach-all
-           :icon i/corner-radius
-           :min 0
-           :attr :border-radius
-           :nillable true
-           :property (tr "workspace.options.radius")
-           :applied-token (cond
-                            (not (seq applied-tokens))
-                            nil
+    (if token-numeric-inputs
+      [:section {:class (dm/str class " " (stl/css :radius-token))
+                 :aria-label "border-radius-section"}
+       [:div {:class (stl/css :radius-first-row)}
+        [:> numeric-input-wrapper*
+         {:on-change on-all-radius-change
+          :on-detach on-detach-all
+          :icon i/corner-radius
+          :min 0
+          :attr :border-radius
+          :nillable true
+          :property (tr "workspace.options.radius")
+          :applied-token (cond
+                           (not (seq applied-tokens))
+                           nil
 
-                            (or (not all-values-equal?) (not all-token-equal?))
-                            :multiple
+                           (or (not all-values-equal?) (not all-token-equal?))
+                           :multiple
 
-                            :else
-                            (get applied-tokens :r1))
-           :align :right
-           :placeholder (cond
-                          (or (not all-values-equal?)
-                              (not all-token-equal?))
-                          (tr "settings.multiple")
-                          :else
-                          "--")
-           :value (if all-values-equal?
-                    (if (nil? (:r1 values))
-                      0
-                      (:r1 values))
-                    nil)}]
-
-         [:div {:class (stl/css :radius-1)
-                :title (tr "workspace.options.radius")}
-          [:> icon* {:icon-id i/corner-radius
-                     :size "s"
-                     :class (stl/css :icon)}]
-          [:> deprecated-input/numeric-input*
-           {:placeholder (cond
-                           (not all-values-equal?)
-                           (tr "settings.multiple")
-                           (= :multiple (:r1 values))
-                           (tr "settings.multiple")
                            :else
-                           "--")
-            :min 0
-            :nillable true
-            :on-change on-all-radius-change
-            :value (if all-values-equal?
-                     (if (nil? (:r1 values))
-                       0
-                       (:r1 values))
-                     nil)}]])
+                           (get applied-tokens :r1))
+          :align :right
+          :placeholder (cond
+                         (or (not all-values-equal?)
+                             (not all-token-equal?))
+                         (tr "settings.multiple")
+                         :else
+                         "--")
+          :value (if all-values-equal?
+                   (if (nil? (:r1 values))
+                     0
+                     (:r1 values))
+                   nil)}]
+        [:> icon-button* {:class (stl/css-case :selected radius-expanded)
+                          :variant "ghost"
+                          :tooltip-placement "top-left"
+                          :on-click toggle-radius-mode
+                          :aria-label (if radius-expanded
+                                        (tr "workspace.options.radius.hide-all-corners")
+                                        (tr "workspace.options.radius.show-single-corners"))
+                          :icon i/corner-radius}]]
 
-       (if token-numeric-inputs
-         [:div {:class (stl/css :radius-4)}
+       (when radius-expanded
+         [:div {:class (stl/css :radius-4-token)}
           [:> numeric-input-wrapper*
            {:on-change on-radius-r1-change
             :on-detach on-detach-r1
@@ -253,6 +239,7 @@
             :property (tr "workspace.options.radius-top-right")
             :applied-token (get applied-tokens :r2)
             :align :right
+            :tooltip-placement "top-left"
             :inner-class (stl/css :no-icon-input)
             :placeholder (cond
                            (or (= :multiple (get applied-tokens :r2))
@@ -297,9 +284,33 @@
                            "--")
             :align :right
             :class (stl/css :radius-wrapper)
+            :tooltip-placement "top-left"
             :inner-class (stl/css :no-icon-input)
-            :value (:r3 values)}]]
-
+            :value (:r3 values)}]])]
+      [:section {:class (dm/str class " " (stl/css :radius))
+                 :aria-label "border-radius-section"}
+       (if (not radius-expanded)
+         [:div {:class (stl/css :radius-1)
+                :title (tr "workspace.options.radius")}
+          [:> icon* {:icon-id i/corner-radius
+                     :size "s"
+                     :class (stl/css :icon)}]
+          [:> deprecated-input/numeric-input*
+           {:placeholder (cond
+                           (not all-values-equal?)
+                           (tr "settings.multiple")
+                           (= :multiple (:r1 values))
+                           (tr "settings.multiple")
+                           :else
+                           "--")
+            :min 0
+            :nillable true
+            :on-change on-all-radius-change
+            :value (if all-values-equal?
+                     (if (nil? (:r1 values))
+                       0
+                       (:r1 values))
+                     nil)}]]
          [:div {:class (stl/css :radius-4)}
           [:div {:class (stl/css :small-input)}
            [:> deprecated-input/numeric-input*
@@ -331,12 +342,11 @@
              :title (tr "workspace.options.radius-bottom-right")
              :min 0
              :on-change on-radius-r3-change
-             :value (:r3 values)}]]]))
-
-     [:> icon-button* {:class (stl/css-case :selected radius-expanded)
-                       :variant "ghost"
-                       :on-click toggle-radius-mode
-                       :aria-label (if radius-expanded
-                                     (tr "workspace.options.radius.hide-all-corners")
-                                     (tr "workspace.options.radius.show-single-corners"))
-                       :icon i/corner-radius}]]))
+             :value (:r3 values)}]]])
+       [:> icon-button* {:class (stl/css-case :selected radius-expanded)
+                         :variant "ghost"
+                         :on-click toggle-radius-mode
+                         :aria-label (if radius-expanded
+                                       (tr "workspace.options.radius.hide-all-corners")
+                                       (tr "workspace.options.radius.show-single-corners"))
+                         :icon i/corner-radius}]])))

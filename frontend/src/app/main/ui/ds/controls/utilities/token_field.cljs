@@ -30,12 +30,14 @@
    [:on-token-key-down fn?]
    [:on-blur {:optional true} fn?]
    [:on-focus {:optional true} fn?]
+   [:tooltip-placement {:optional true}
+    [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]
    [:detach-token fn?]])
 
 (mf/defc token-field*
   {::mf/schema schema:token-field}
   [{:keys [id label value slot-start disabled class
-           on-click on-token-key-down on-blur detach-token
+           on-click on-token-key-down on-blur detach-token tooltip-placement
            token-wrapper-ref token-detach-btn-ref on-focus property]}]
   (let [set-active? (some? id)
         content     (if set-active?
@@ -90,6 +92,7 @@
         [:> icon-button* {:variant "ghost"
                           :class (stl/css :invisible-button)
                           :tooltip-class (stl/css :button-tooltip)
+                          :tooltip-placement tooltip-placement
                           :icon i/broken-link
                           :ref token-detach-btn-ref
                           :aria-label (tr "ds.inputs.token-field.detach-token")
