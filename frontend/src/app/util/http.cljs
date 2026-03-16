@@ -109,7 +109,7 @@
               (when-not @unsubscribed?
                 (let [error (ex-info (ex-message cause)
                                      {:type :internal
-                                      :code :unable-to-fetch
+                                      :code :fetch-error
                                       :hint "unable to perform fetch operation"
                                       :uri uri
                                       :headers headers}

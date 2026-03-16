@@ -8,6 +8,7 @@
   "Helpers for make zip file."
   (:require
    ["@zip.js/zip.js" :as zip]
+   [app.common.exceptions :as ex]
    [app.util.array :as array]
    [promesa.core :as p]))
 
@@ -27,9 +28,9 @@
     (reader (js/Uint8Array. blob))
 
     :else
-    (throw (ex-info "invalid arguments"
-                    {:type :internal
-                     :code :invalid-type}))))
+    (ex/raise :type :assertion
+              :coce :invalid-type
+              :hint "invalid data received for zip/reader")))
 
 (defn blob-writer
   [& {:keys [mtype]}]
@@ -62,10 +63,9 @@
     (.add writer path (new zip/TextReader content))
 
     :else
-    (throw (ex-info "invalid arguments"
-                    {:type :internal
-                     :code :invalid-type}))))
-
+    (ex/raise :type :assertion
+              :code :invalid-type
+              :hint "invalid data received for zip/add fn")))
 
 (defn get-entry
   [reader path]
