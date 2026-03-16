@@ -114,11 +114,22 @@
 
 (defn calculate-text-values
   [shape]
-  (let [state-map    (if (features/active-feature? @st/state "text-editor/v2")
+  (let [state-map    (cond
+                       (features/active-feature? @st/state "text-editor-wasm/v1")
+                       (deref refs/workspace-wasm-editor-styles)
+
+                       (features/active-feature? @st/state "text-editor/v2")
                        (deref refs/workspace-v2-editor-state)
+
+                       :else
                        (deref refs/workspace-editor-state))
+
+        editor-styles (when (features/active-feature? @st/state "text-editor-wasm/v1")
+                        (get state-map (:id shape)))
+
         editor-state  (when-not (features/active-feature? @st/state "text-editor/v2")
                         (get state-map (:id shape)))
+
         editor-instance (when (features/active-feature? @st/state "text-editor/v2")
                           (deref refs/workspace-editor))]
     (d/merge
@@ -126,12 +137,14 @@
       {:shape shape
        :attrs txt/root-attrs})
      (dwt/current-paragraph-values
-      {:editor-state editor-state
+      {:editor-styles editor-styles
+       :editor-state editor-state
        :editor-instance editor-instance
        :shape shape
        :attrs txt/paragraph-attrs})
      (dwt/current-text-values
-      {:editor-state editor-state
+      {:editor-styles editor-styles
+       :editor-state editor-state
        :editor-instance editor-instance
        :shape shape
        :attrs txt/text-node-attrs}))))

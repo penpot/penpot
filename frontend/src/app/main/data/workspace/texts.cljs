@@ -250,6 +250,14 @@
   [{:keys [attrs shape]}]
   (shape-current-values shape txt/is-root-node? attrs))
 
+(defn v3-current-text-values
+  [{:keys [editor-styles attrs]}]
+  (let [result (-> editor-styles
+                   ;; If we use dm/select-keys compilation fails
+                   (select-keys attrs))
+        result (if (empty? result) txt/default-text-attrs result)]
+    result))
+
 (defn v2-current-text-values
   [{:keys [editor-instance attrs]}]
   (let [result (-> (.-currentStyle editor-instance)
@@ -266,8 +274,9 @@
     (shape-current-values shape txt/is-paragraph-node? attrs)))
 
 (defn current-paragraph-values
-  [{:keys [editor-state editor-instance attrs shape] :as options}]
+  [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
+    (some? editor-styles) (v3-current-text-values options)
     (some? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-paragraph-values options)
     :else (shape-current-values shape txt/is-paragraph-node? attrs)))
@@ -282,8 +291,9 @@
     result))
 
 (defn current-text-values
-  [{:keys [editor-state editor-instance attrs shape] :as options}]
+  [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
+    (some? editor-styles) (v3-current-text-values options)
     (some? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-text-values options)
     :else (shape-current-values shape txt/is-text-node? attrs)))
@@ -480,13 +490,21 @@
    (ptk/reify ::update-text-with-function
      ptk/UpdateEvent
      (update [_ state]
+       ;; This is only called when `[:workspace-editor-state id]` is set, this property
+       ;; keeps a Draft.js EditorState object.
        (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-inline-styles-fn (comp update-node-fn migrate-node)))
 
      ptk/WatchEvent
      (watch [_ state _]
        (when (or
-              (and (features/active-feature? state "text-editor/v2") (nil? (:workspace-editor state)))
-              (and (not (features/active-feature? state "text-editor/v2")) (nil? (get-in state [:workspace-editor-state id]))))
+              (and (features/active-feature? state "text-editor-wasm/v1")
+                   (nil? (get-in state [:workspace-wasm-editor-styles id])))
+              (and (features/active-feature? state "text-editor/v2")
+                   (not (features/active-feature? state "text-editor-wasm/v1"))
+                   (nil? (:workspace-editor state)))
+              (and (not (features/active-feature? state "text-editor/v2"))
+                   (not (features/active-feature? state "text-editor-wasm/v1"))
+                   (nil? (get-in state [:workspace-editor-state id]))))
          (let [page-id      (or (get options :page-id)
                                 (get state :current-page-id))
                objects      (dsh/lookup-page-objects state page-id)
@@ -513,7 +531,12 @@
 
      ptk/EffectEvent
      (effect [_ state _]
-       (when (features/active-feature? state "text-editor/v2")
+       (cond
+         (features/active-feature? state "text-editor-wasm/v1")
+         (let [styles ((comp update-node-fn migrate-node))]
+           (wasm.api/apply-styles-to-selection styles))
+
+         (features/active-feature? state "text-editor/v2")
          (when-let [instance (:workspace-editor state)]
            (let [styles   (some-> (editor.v2/getCurrentStyle instance)
                                   (styles/get-styles-from-style-declaration :removed-mixed true)
@@ -792,7 +815,7 @@
                 (when has-selection?
                   (let [span-attrs (select-keys attrs txt/text-node-attrs)]
                     (when (not (empty? span-attrs))
-                      (let [result (wasm.api/apply-style-to-selection span-attrs)]
+                      (let [result (wasm.api/apply-styles-to-selection span-attrs)]
                         (when result
                           (rx/of (v2-update-text-shape-content
                                   (:shape-id result) (:content result)
@@ -905,7 +928,7 @@
                                 {:typography-ref-id typ-id
                                  :typography-ref-file file-id}))))))))
 
-;; -- New Editor
+;; -- Text Editor v2
 
 (defn v2-update-text-editor-styles
   [id new-styles]
@@ -1121,3 +1144,7 @@
                                        (cond-> (or (some? width) (some? height))
                                          (gsh/transform-shape (ctm/change-size shape width height))))))
                                {:undo-group (when new-shape? id)})))))))
+
+;; -- Text Editor v3
+
+;; @see texts_v3.cljs

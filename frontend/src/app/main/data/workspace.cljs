@@ -509,6 +509,7 @@
           (dissoc
            :current-file-id
            :workspace-editor-state
+           :workspace-wasm-editor-styles
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence

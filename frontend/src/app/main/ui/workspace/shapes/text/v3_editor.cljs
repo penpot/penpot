@@ -317,10 +317,6 @@
                               (reset! timeout-id (js/setTimeout schedule-blink caret-blink-interval-ms)))]
          (schedule-blink)
          (fn []
-           ;; ESTO ES JUSTO LO QUE NO QUIERO, NO QUIERO QUE SE HAGA
-           ;; DISPOSE CUANDO SE DESMONTA EL COMPONENTE.
-           #_(when (text-editor/text-editor-dispose)
-               (wasm.api/request-render "text-editor-dispose"))
            (when @timeout-id
              (js/clearTimeout @timeout-id))))))
 
