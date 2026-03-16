@@ -1,6 +1,7 @@
 (ns app.nitrate
   "Module that make calls to the external nitrate aplication"
   (:require
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -9,7 +10,6 @@
    [app.http.client :as http]
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
-   [app.util.json :as json]
    [clojure.core :as c]
    [integrant.core :as ig]))
 
@@ -27,7 +27,7 @@
                                       "x-profile-id" (str profile-id)}
                             :uri uri
                             :version :http1.1}
-                     (= method :post) (assoc :body (json/encode request-params))))))
+                     (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key))))))
 
 (defn- with-retries
   [handler max-retries]
@@ -49,15 +49,27 @@
 
 (defn- with-validate [handler uri schema]
   (fn []
-    (let [coercer-http (sm/coercer schema
-                                   :type :validation
-                                   :hint (str "invalid data received calling " uri))]
-      (try
-        (coercer-http (-> (handler) :body json/decode))
-        (catch Exception e
-          ;; TODO Error handling
-          (l/error :hint "error validating json response" :cause e)
-          nil)))))
+    (let [response (handler)
+          status (:status response)]
+      (if (>= status 400)
+        ;; For error status codes (4xx, 5xx), fail immediately without validation
+        (do
+          (l/error :hint "nitrate request failed with error status"
+                   :uri uri
+                   :status status
+                   :body (:body response))
+          nil)
+        ;; For success status codes, validate the response
+        (let [coercer-http (sm/coercer schema
+                                       :type :validation
+                                       :hint (str "invalid data received calling " uri))
+              data (-> response :body (json/decode :key-fn json/read-kebab-key))]
+          (try
+            (coercer-http data)
+            (catch Exception e
+              ;; TODO Error handling
+              (l/error :hint "error validating json response" :cause e)
+              nil)))))))
 
 (defn- request-to-nitrate
   [cfg method uri schema {:keys [::rpc/profile-id request-params] :as params}]
@@ -84,13 +96,14 @@
   [:map
    [:id ::sm/uuid]
    [:name ::sm/text]
-   [:slug ::sm/text]])
+   [:slug ::sm/text]
+   [:is-your-penpot :boolean]])
 
 (def ^:private schema:team
   [:map
    [:id ::sm/uuid]
-   [:organizationId ::sm/uuid]
-   [:yourPenpot :boolean]])
+   [:organization-id ::sm/uuid]
+   [:is-your-penpot :boolean]])
 
 ;; TODO Unify with schemas on backend/src/app/http/management.clj
 (def ^:private schema:timestamp
@@ -176,8 +189,8 @@
 (defn- set-team-org
   [cfg {:keys [organization-id team-id is-default] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
-        params (assoc params :request-params {:teamId team-id
-                                              :yourPenpot (true? is-default)})]
+        params (assoc params :request-params {:team-id team-id
+                                              :is-your-penpot (true? is-default)})]
     (request-to-nitrate cfg :post
                         (str baseuri
                              "/api/organizations/"
@@ -246,7 +259,7 @@
                :organization-id (:id org)
                :organization-name (:name org)
                :organization-slug (:slug org)
-               :is-default (or (:is-default team) (true? (:isYourPenpot org))))
+               :is-default (or (:is-default team) (true? (:is-your-penpot org))))
         team))
     (catch Throwable cause
       (l/error :hint "failed to get team organization info"
