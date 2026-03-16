@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Lint Common
         working-directory: ./common
@@ -85,7 +85,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run tests
         working-directory: ./common
@@ -98,7 +98,7 @@ jobs:
     container: penpotapp/devenv:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node
         id: setup-node
@@ -150,10 +150,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore shared.js
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: "render-wasm-shared-js-${{ github.sha }}"
           path: frontend/src/app/render_wasm/api/shared.js
@@ -177,7 +177,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Format
         working-directory: ./render-wasm
@@ -202,7 +202,7 @@ jobs:
           cp $SHARED_FILE ../frontend/src/app/render_wasm/api/shared.js;
 
       - name: Cache shared.js
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: "render-wasm-shared-js-${{ github.sha }}"
           path: frontend/src/app/render_wasm/api/shared.js
@@ -233,7 +233,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run tests
         working-directory: ./backend
@@ -253,7 +253,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run tests
         working-directory: ./library
@@ -267,7 +267,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build Bundle
         working-directory: ./frontend
@@ -275,7 +275,7 @@ jobs:
           ./scripts/build 0.0.0
 
       - name: Store Bundle Cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
@@ -289,10 +289,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
@@ -303,7 +303,7 @@ jobs:
           ./scripts/test-e2e --shard="1/4";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-tests-result-1
@@ -319,10 +319,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
@@ -333,7 +333,7 @@ jobs:
           ./scripts/test-e2e --shard="2/4";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-tests-result-2
@@ -349,10 +349,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
@@ -363,7 +363,7 @@ jobs:
           ./scripts/test-e2e --shard="3/4";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-tests-result-3
@@ -379,10 +379,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
@@ -393,7 +393,7 @@ jobs:
           ./scripts/test-e2e --shard="4/4";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-tests-result-4

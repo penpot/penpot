@@ -28,7 +28,7 @@ jobs:
           echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.gh_ref }}
@@ -63,10 +63,10 @@ jobs:
           popd
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -76,14 +76,14 @@ jobs:
       # images from DockerHub for unregistered users.
       # https://docs.docker.com/docker-hub/usage/
       - name: Login to DockerHub Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
           password: ${{ secrets.PUB_DOCKER_PASSWORD }}
 
       - name: Extract metadata (tags, labels)
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images:
             frontend
@@ -95,7 +95,7 @@ jobs:
             bundle_version=${{ steps.bundles.outputs.bundle_version }}
 
       - name: Build and push Backend Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         env:
           DOCKER_IMAGE: 'backend'
           BUNDLE_PATH: './bundle-backend'
@@ -110,7 +110,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
       - name: Build and push Frontend Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         env:
           DOCKER_IMAGE: 'frontend'
           BUNDLE_PATH: './bundle-frontend'
@@ -125,7 +125,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
       - name: Build and push Exporter Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         env:
           DOCKER_IMAGE: 'exporter'
           BUNDLE_PATH: './bundle-exporter'
@@ -140,7 +140,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
       - name: Build and push Storybook Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         env:
           DOCKER_IMAGE: 'storybook'
           BUNDLE_PATH: './bundle-storybook'
@@ -155,7 +155,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
       - name: Build and push MCP Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         env:
           DOCKER_IMAGE: 'mcp'
           BUNDLE_PATH: './bundle-mcp'
