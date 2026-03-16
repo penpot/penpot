@@ -30,6 +30,10 @@
     (.exit js/process 0)
     (.exit js/process 1)))
 
+;; FIXME: workaround, wasn is temporarily disabled for unit tests
+(set! app.main.features/global-enabled-features
+      (disj app.main.features/global-enabled-features "render-wasm/v1"))
+
 (defn init
   []
   (t/run-tests
