@@ -215,10 +215,6 @@ export interface WasmModule {
 
   // Fonts
   _store_font(
-    shape_a: number,
-    shape_b: number,
-    shape_c: number,
-    shape_d: number,
     font_a: number,
     font_b: number,
     font_c: number,

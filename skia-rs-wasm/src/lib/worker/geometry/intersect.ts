@@ -176,6 +176,10 @@ function isPointInsideNonzero(p: Point, lines: Line[]): boolean {
 }
 
 export function overlapsRectPoints(rect: Selrect, points: Point[]): boolean {
+  if (points.length === 0) {
+    return false
+  }
+
   const rectPoints = rectToPoints(rect)
   if (!rectPoints || rectPoints.length === 0) {
     return false
@@ -565,6 +569,10 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
     case 'path':
     case 'bool': {
       const points = shape.points || []
+      if (points.length === 0) {
+        const pts = getShapePointsForOverlap(shape)
+        return pts.length > 0 && overlapsRectPoints(adjustedRect, pts) && overlapsPath(shape, adjustedRect, true)
+      }
       return (
         overlapsRectPoints(adjustedRect, points) &&
         overlapsPath(shape, adjustedRect, true)

@@ -8,14 +8,17 @@ import { useCallback, useMemo } from 'react'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
 import { mousePosition$ } from '../../renderer/streams'
 import type { ResizeHandlePosition } from '../../renderer/types'
-import { HANDLE_SIZE_WORLD, getResizeCursor, getRotationCursor, matrixHasHalfFlip, matrixToRotationDeg } from './constants'
+import { HANDLE_SIZE_WORLD, getResizeCursor, getRotationCursor, matrixHasHalfFlip, matrixToRotationDeg, SELECTION_OVERLAY_GLOW } from './constants'
 import { SelectionRect } from './SelectionRect'
 import { ResizeHandles } from './ResizeHandles'
 import { CornerHandles } from './CornerHandles'
 import { MoveHitArea } from './MoveHitArea'
 import { RotationHitArea } from './RotationHitArea'
 import { AreaMarquee } from './AreaMarquee'
+import { GradientOverlay } from './GradientOverlay'
 import { getSelectionWorldCorners } from './world-corners'
+import { isLinearGradient, isRadialGradient, isAngularGradient, MAX_GRADIENT_STOPS } from '../../renderer/api/constants'
+import type { Fill } from 'penpot-exporter/types'
 
 export interface SelectionOverlayProps {
   canvasSize: { width: number; height: number }
@@ -24,6 +27,7 @@ export interface SelectionOverlayProps {
 
 export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProps) {
   const selectedIds = useWorkspaceStore((state) => state.selectedIds)
+  const selectedNodes = useWorkspaceStore((state) => state.selectedNodes)
   const wasmSelectionRect = useWorkspaceStore((state) => state.wasmSelectionRect)
   const viewport = useWorkspaceStore((state) => state.viewport)
   const zoom = useWorkspaceStore((state) => state.viewport?.zoom ?? 1)
@@ -150,6 +154,18 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
     [wasmSelectionRect]
   )
 
+  const gradientFill = useMemo(() => {
+    if (selectedIds.size !== 1 || selectedNodes.length === 0) return null
+    const fills = selectedNodes[0]?.fills
+    if (!fills?.length) return null
+    return fills.find((f: Fill) => isLinearGradient(f) || isRadialGradient(f) || isAngularGradient(f)) ?? null
+  }, [selectedIds.size, selectedNodes])
+
+  const gradientForOverlay =
+    gradientFill?.fillColorGradient != null
+      ? { ...gradientFill.fillColorGradient, stops: gradientFill.fillColorGradient.stops?.slice(0, MAX_GRADIENT_STOPS) ?? [] }
+      : null
+
   return (
     <svg
       aria-hidden
@@ -164,10 +180,23 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       viewBox={viewBox}
       preserveAspectRatio="xMidYMid meet"
     >
+      <defs>
+        <filter id="selection-line-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+          <feFlood floodColor={SELECTION_OVERLAY_GLOW} result="flood" />
+          <feComposite in="flood" in2="blur" operator="in" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
       {showSelectionRect && rect != null && (
         <>
           <g transform={transformStr}>
-            <SelectionRect bounds={rect} skipTransform />
+            <g style={{ filter: 'url(#selection-line-glow)' }}>
+              <SelectionRect bounds={rect} skipTransform />
+            </g>
             {showHandles && (
               <>
                 <MoveHitArea
@@ -194,6 +223,15 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
                   onPointerDown={onRotationPointerDown}
                 />
               </>
+            )}
+            {showHandles && wasmSelectionRect != null && gradientForOverlay != null && (
+              <g style={{ filter: 'url(#selection-line-glow)' }}>
+                <GradientOverlay
+                  wasmSelectionRect={wasmSelectionRect}
+                  gradient={gradientForOverlay}
+                  zoom={zoom}
+                />
+              </g>
             )}
           </g>
           {showHandles && worldCorners != null && (

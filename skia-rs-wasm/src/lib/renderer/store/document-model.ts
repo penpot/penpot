@@ -121,6 +121,7 @@ export class DocumentModel implements IDocumentModel {
     this.pushToStores()
 
     const state = useWorkspaceStore.getState()
+
     for (const page of this.pageMap.values()) {
       await state.workerClient?.addPage(page)
     }

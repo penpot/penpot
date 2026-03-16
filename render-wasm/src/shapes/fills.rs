@@ -109,6 +109,19 @@ impl Gradient {
         let start_angle = dir.y.atan2(dir.x).to_degrees();
         let end_angle = start_angle + 360.0;
 
+        // Ellipse aspect: width = 1 means circle; same convention as radial.
+        let aspect = if self.width > 0.0 {
+            self.width * rect.width() / rect.height()
+        } else {
+            1.0
+        };
+
+        let mut transform = skia::Matrix::new_identity();
+        transform.pre_translate((center.x, center.y));
+        transform.pre_rotate(start_angle, skia::Point::new(0., 0.));
+        transform.pre_scale((aspect, 1.), None);
+        transform.pre_translate((-center.x, -center.y));
+
         skia::shader::Shader::sweep_gradient(
             center,
             self.colors.as_slice(),
@@ -116,7 +129,7 @@ impl Gradient {
             skia::TileMode::Repeat,
             Some((start_angle, end_angle)),
             None,
-            None,
+            Some(&transform),
         )
     }
 }
