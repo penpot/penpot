@@ -11,6 +11,14 @@
   display: flex;
 }
 
+.palette-search {
+  display: flex;
+  align-items: center;
+  width: deprecated.$s-160;
+  min-width: deprecated.$s-160;
+  padding-inline: deprecated.$s-4;
+}
+
 .left-arrow,
 .right-arrow {
   @include deprecated.buttonStyle;
