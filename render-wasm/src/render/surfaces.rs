@@ -305,7 +305,7 @@ impl Surfaces {
     }
 
     #[inline]
-    fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
+    pub fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
             SurfaceId::Filter => &mut self.filter,

@@ -1266,74 +1266,20 @@ impl RenderState {
 
     pub fn start_render_loop(
         &mut self,
-        base_object: Option<&Uuid>,
-        tree: ShapesPoolRef,
-        timestamp: i32,
-        sync_render: bool,
+        _base_object: Option<&Uuid>,
+        _tree: ShapesPoolRef,
+        _timestamp: i32,
+        _sync_render: bool,
     ) -> Result<(), String> {
-        let _start = performance::begin_timed_log!("start_render_loop");
-        let scale = self.get_scale();
+        let mut p = skia::Paint::default();
+        p.set_color(skia::Color::from_argb(255, 47, 44, 53));
+        p.set_style(skia::PaintStyle::Fill);
 
-        self.tile_viewbox.update(self.viewbox, scale);
-        self.focus_mode.reset();
+        let b = skia::image_filters::blur((32., 32.), None, None, None);
+        p.set_image_filter(b);
+        self.surfaces.get_mut(SurfaceId::Target).canvas().draw_rect(skia::Rect::from_xywh(600.0, 600.0, 200.0, 200.0), &p);
+        self.flush_and_submit();
 
-        performance::begin_measure!("render");
-        performance::begin_measure!("start_render_loop");
-
-        self.reset_canvas();
-        let surface_ids = SurfaceId::Strokes as u32
-            | SurfaceId::Fills as u32
-            | SurfaceId::InnerShadows as u32
-            | SurfaceId::TextDropShadows as u32;
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().scale((scale, scale));
-        });
-
-        let viewbox_cache_size = get_cache_size(self.viewbox, scale);
-        let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
-        // Only resize cache if the new size is larger than the cached size
-        // This avoids unnecessary surface recreations when the cache size decreases
-        if viewbox_cache_size.width > cached_viewbox_cache_size.width
-            || viewbox_cache_size.height > cached_viewbox_cache_size.height
-        {
-            self.surfaces
-                .resize_cache(viewbox_cache_size, VIEWPORT_INTEREST_AREA_THRESHOLD);
-        }
-
-        // FIXME - review debug
-        // debug::render_debug_tiles_for_viewbox(self);
-
-        let _tile_start = performance::begin_timed_log!("tile_cache_update");
-        performance::begin_measure!("tile_cache");
-        self.pending_tiles
-            .update(&self.tile_viewbox, &self.surfaces);
-        performance::end_measure!("tile_cache");
-        performance::end_timed_log!("tile_cache_update", _tile_start);
-
-        self.pending_nodes.clear();
-        if self.pending_nodes.capacity() < tree.len() {
-            self.pending_nodes
-                .reserve(tree.len() - self.pending_nodes.capacity());
-        }
-        // Clear nested state stacks to avoid residual fills/blurs from previous renders
-        // being incorrectly applied to new frames
-        self.nested_fills.clear();
-        self.nested_blurs.clear();
-        self.nested_shadows.clear();
-        // reorder by distance to the center.
-        self.current_tile = None;
-        self.render_in_progress = true;
-
-        self.apply_drawing_to_render_canvas(None);
-
-        if sync_render {
-            self.render_shape_tree_sync(base_object, tree, timestamp)?;
-        } else {
-            self.process_animation_frame(base_object, tree, timestamp)?;
-        }
-
-        performance::end_measure!("start_render_loop");
-        performance::end_timed_log!("start_render_loop", _start);
         Ok(())
     }
 
