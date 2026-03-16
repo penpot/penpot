@@ -46,12 +46,12 @@
   (st/emit! (da/create-demo-profile)))
 
 (defn- store-login-redirect
-  []
+  [callback-url]
   (binding [s/*sync* true]
     ;; Save the current login raw uri for later redirect user back to
     ;; the same page, we need it to be synchronous because the user is
     ;; going to be redirected instantly to the oidc provider uri
-    (swap! s/session assoc :login-redirect (rt/get-current-href))))
+    (swap! s/session assoc :login-redirect (or callback-url (rt/get-current-href)))))
 
 (defn- clear-login-redirect
   []
@@ -76,6 +76,7 @@
         error   (mf/use-state false)
         form    (fm/use-form :schema schema:login-form
                              :initial initial)
+        callback-url (:callback-url params)
         on-error
         (fn [cause]
           (let [cause (ex-data cause)]
@@ -158,9 +159,9 @@
             #(st/emit! (rt/nav :auth-recovery-request)))]
 
 
-    (mf/with-effect [handle-redirect]
-      (if handle-redirect
-        (store-login-redirect)
+    (mf/with-effect [handle-redirect callback-url]
+      (if (or handle-redirect callback-url)
+        (store-login-redirect callback-url)
         (clear-login-redirect)))
 
     [:*
