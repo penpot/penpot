@@ -8,6 +8,9 @@
   (:require
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.path.common :as dwpc]
+   [app.main.features :as features]
+   [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.text-editor :as text-editor]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -50,12 +53,19 @@
       (-> state
           (update :workspace-local dissoc :edition :edit-path)
           (update :workspace-drawing dissoc :tool :object :lock)
-          (dissoc :workspace-grid-edition)))
+          (dissoc :workspace-grid-edition)
+          (dissoc :workspace-wasm-editor-styles)))
 
     ptk/WatchEvent
     (watch [_ state _]
       (let [id (get-in state [:workspace-local :edition])]
         (rx/concat
          (when (some? id)
-           (dwpc/finish-path)))))))
+           (dwpc/finish-path)))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (features/active-feature? state "text-editor-wasm/v1")
+        (text-editor/text-editor-dispose)
+        (wasm.api/request-render "clear-edition-mode")))))
 

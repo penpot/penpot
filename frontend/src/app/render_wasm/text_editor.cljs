@@ -7,10 +7,118 @@
 (ns app.render-wasm.text-editor
   "Text editor WASM bindings"
   (:require
+   [app.common.types.fills.impl :as types.fills.impl]
    [app.common.uuid :as uuid]
+   [app.main.fonts :as main-fonts]
+   [app.render-wasm.api.fonts :as fonts]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.wasm :as wasm]))
+
+(def ^:const TEXT_EDITOR_STYLES_METADATA_SIZE (* 30 4))
+(def ^:const TEXT_EDITOR_STYLES_FILL_SOLID 0)
+(def ^:const TEXT_EDITOR_STYLES_FILL_LINEAR_GRADIENT 1)
+(def ^:const TEXT_EDITOR_STYLES_FILL_RADIAL_GRADIENT 2)
+(def ^:const TEXT_EDITOR_STYLES_FILL_IMAGE 3)
+
+(defn- rgba->fill-color
+  [rgba]
+  (let [rgb (bit-and rgba 0x00ffffff)
+        hex (.toString rgb 16)]
+    (str "#" (.padStart hex 6 "0"))))
+
+(defn- rgba->opacity
+  [rgba]
+  (let [alpha (bit-and (bit-shift-right rgba 24) 0xff)]
+    (/ (js/Math.round (* (/ alpha 255) 100)) 100)))
+
+(defn- u8->opacity
+  [alpha]
+  (/ (js/Math.round (* (/ alpha 255) 100)) 100))
+
+(defn- read-fill-from-heap
+  [heap-u8 heap-u32 heap-i32 heap-f32 fill-byte-offset]
+  (let [fill-type (aget heap-u8 fill-byte-offset)
+        fill-u32-offset (mem/->offset-32 fill-byte-offset)]
+    (case fill-type
+      TEXT_EDITOR_STYLES_FILL_SOLID
+      (let [rgba (aget heap-u32 (+ fill-u32-offset 1))]
+        {:fill-color (rgba->fill-color rgba)
+         :fill-opacity (rgba->opacity rgba)})
+
+      TEXT_EDITOR_STYLES_FILL_LINEAR_GRADIENT
+      (let [gradient-u32-offset (mem/->offset-32 (+ fill-byte-offset 4))
+            start-x (aget heap-f32 gradient-u32-offset)
+            start-y (aget heap-f32 (+ gradient-u32-offset 1))
+            end-x (aget heap-f32 (+ gradient-u32-offset 2))
+            end-y (aget heap-f32 (+ gradient-u32-offset 3))
+            alpha (aget heap-u8 (+ fill-byte-offset 20))
+            width (aget heap-f32 (+ gradient-u32-offset 5))
+            stop-count (aget heap-u8 (+ fill-byte-offset 28))
+            stops (->> (range stop-count)
+                       (map (fn [idx]
+                              (let [stop-offset (+ fill-byte-offset 32 (* idx 8))
+                                    stop-u32-offset (mem/->offset-32 stop-offset)
+                                    rgba (aget heap-u32 stop-u32-offset)
+                                    offset (aget heap-f32 (+ stop-u32-offset 1))]
+                                {:color (rgba->fill-color rgba)
+                                 :opacity (rgba->opacity rgba)
+                                 :offset (/ (js/Math.round (* offset 100)) 100)})))
+                       (into []))]
+        {:fill-opacity (u8->opacity alpha)
+         :fill-color-gradient {:start-x start-x
+                               :start-y start-y
+                               :end-x end-x
+                               :end-y end-y
+                               :width width
+                               :stops stops
+                               :type :linear}})
+
+      TEXT_EDITOR_STYLES_FILL_RADIAL_GRADIENT
+      (let [gradient-u32-offset (mem/->offset-32 (+ fill-byte-offset 4))
+            start-x (aget heap-f32 gradient-u32-offset)
+            start-y (aget heap-f32 (+ gradient-u32-offset 1))
+            end-x (aget heap-f32 (+ gradient-u32-offset 2))
+            end-y (aget heap-f32 (+ gradient-u32-offset 3))
+            alpha (aget heap-u8 (+ fill-byte-offset 20))
+            width (aget heap-f32 (+ gradient-u32-offset 5))
+            stop-count (aget heap-u8 (+ fill-byte-offset 28))
+            stops (->> (range stop-count)
+                       (map (fn [idx]
+                              (let [stop-offset (+ fill-byte-offset 32 (* idx 8))
+                                    stop-u32-offset (mem/->offset-32 stop-offset)
+                                    rgba (aget heap-u32 stop-u32-offset)
+                                    offset (aget heap-f32 (+ stop-u32-offset 1))]
+                                {:color (rgba->fill-color rgba)
+                                 :opacity (rgba->opacity rgba)
+                                 :offset (/ (js/Math.round (* offset 100)) 100)})))
+                       (into []))]
+        {:fill-opacity (u8->opacity alpha)
+         :fill-color-gradient {:start-x start-x
+                               :start-y start-y
+                               :end-x end-x
+                               :end-y end-y
+                               :width width
+                               :stops stops
+                               :type :radial}})
+
+      TEXT_EDITOR_STYLES_FILL_IMAGE
+      (let [a (aget heap-u32 (+ fill-u32-offset 1))
+            b (aget heap-u32 (+ fill-u32-offset 2))
+            c (aget heap-u32 (+ fill-u32-offset 3))
+            d (aget heap-u32 (+ fill-u32-offset 4))
+            alpha (aget heap-u8 (+ fill-byte-offset 20))
+            flags (aget heap-u8 (+ fill-byte-offset 21))
+            width (aget heap-i32 (+ fill-u32-offset 6))
+            height (aget heap-i32 (+ fill-u32-offset 7))]
+        {:fill-opacity (u8->opacity alpha)
+         :fill-image {:id (uuid/from-unsigned-parts a b c d)
+                      :width width
+                      :height height
+                      :keep-aspect-ratio (not (zero? (bit-and flags 0x01)))
+                      :name "sample"}})
+
+      nil)))
 
 (defn text-editor-focus
   [id]
@@ -65,6 +173,143 @@
   (when wasm/context-initialized?
     (let [res (h/call wasm/internal-module "_text_editor_poll_event")]
       res)))
+
+(defn- text-editor-get-style-property
+  ([state value]
+   (text-editor-get-style-property state value value))
+  ([state value default-value]
+   (case state
+     0 default-value
+     1 value
+     2 :multiple
+     0)))
+
+(defn- text-editor-translate-vertical-align
+  [vertical-align]
+  (case vertical-align
+    0 "top"
+    1 "center"
+    2 "bottom"))
+
+(defn- text-editor-translate-text-align
+  [text-align]
+  (case text-align
+    0 "left"
+    1 "center"
+    2 "right"
+    text-align))
+
+(defn- text-editor-translate-text-direction
+  [text-direction]
+  (case text-direction
+    0 "ltr"
+    1 "rtl"
+    text-direction))
+
+(defn- text-editor-translate-text-transform
+  [text-transform]
+  (case text-transform
+    0 "none"
+    1 "lowercase"
+    2 "uppercase"
+    3 "capitalize"
+    text-transform))
+
+(defn- text-editor-translate-text-decoration
+  [text-decoration]
+  (case text-decoration
+    0 "none"
+    1 "underline"
+    2 "linethrough"
+    3 "overline"
+    text-decoration))
+
+(defn- text-editor-translate-font-style
+  [font-style]
+  (case font-style
+    0 "normal"
+    1 "italic"
+    font-style))
+
+(defn- text-editor-compute-font-variant-id
+  [font-id font-weight font-style]
+  (let [font-data (main-fonts/get-font-data font-id)
+        variant (main-fonts/find-closest-variant font-data font-weight font-style)]
+    (or (:id variant)
+        (:name variant)
+        "regular")))
+
+(defn text-editor-get-current-styles
+  []
+  (when wasm/context-initialized?
+    (let [ptr (h/call wasm/internal-module "_text_editor_get_current_styles")]
+      (when (and ptr (not (zero? ptr)))
+        (let [heap-u8 (mem/get-heap-u8)
+              heap-u32 (mem/get-heap-u32)
+              heap-i32 (mem/get-heap-i32)
+              heap-f32 (mem/get-heap-f32)
+              u32-offset (mem/->offset-32 ptr)
+              vertical-align   (aget heap-u32 u32-offset)
+              text-align-state (aget heap-u32 (+ u32-offset 1))
+              text-direction-state (aget heap-u32 (+ u32-offset 2))
+              text-decoration-state (aget heap-u32 (+ u32-offset 3))
+              text-transform-state (aget heap-u32 (+ u32-offset 4))
+              font-family-state (aget heap-u32 (+ u32-offset 5))
+              font-size-state (aget heap-u32 (+ u32-offset 6))
+              font-weight-state (aget heap-u32 (+ u32-offset 7))
+              font-variant-id-state (aget heap-u32 (+ u32-offset 8))
+              line-height-state (aget heap-u32 (+ u32-offset 9))
+              letter-spacing-state (aget heap-u32 (+ u32-offset 10))
+              num-fills (aget heap-u32 (+ u32-offset 11))
+
+              text-align-value (aget heap-u32 (+ u32-offset 12))
+              text-direction-value (aget heap-u32 (+ u32-offset 13))
+              text-decoration-value (aget heap-u32 (+ u32-offset 14))
+              text-transform-value (aget heap-u32 (+ u32-offset 15))
+              font-family-id-a (aget heap-u32 (+ u32-offset 16))
+              font-family-id-b (aget heap-u32 (+ u32-offset 17))
+              font-family-id-c (aget heap-u32 (+ u32-offset 18))
+              font-family-id-d (aget heap-u32 (+ u32-offset 19))
+              font-family-id-value (uuid/from-unsigned-parts font-family-id-a font-family-id-b font-family-id-c font-family-id-d)
+              font-family-style-value (aget heap-u32 (+ u32-offset 20))
+              _font-family-weight-value (aget heap-u32 (+ u32-offset 21))
+              font-size-value (aget heap-f32 (+ u32-offset 22))
+              font-weight-value (aget heap-i32 (+ u32-offset 23))
+              line-height-value (aget heap-f32 (+ u32-offset 28))
+              letter-spacing-value (aget heap-f32 (+ u32-offset 29))
+              font-id (fonts/uuid->font-id font-family-id-value)
+              font-style-value (text-editor-translate-font-style (text-editor-get-style-property font-family-state font-family-style-value))
+              font-variant-id-computed (text-editor-compute-font-variant-id font-id font-weight-value font-style-value)
+
+              fills (->> (range num-fills)
+                         (map (fn [idx]
+                                (read-fill-from-heap
+                                 heap-u8 heap-u32 heap-i32 heap-f32
+                                 (+ ptr
+                                    TEXT_EDITOR_STYLES_METADATA_SIZE
+                                    (* idx types.fills.impl/FILL-U8-SIZE)))))
+                         (filter some?)
+                         (into []))
+
+              result {:vertical-align (text-editor-translate-vertical-align vertical-align)
+                      :text-align (text-editor-translate-text-align (text-editor-get-style-property text-align-state text-align-value))
+                      :text-direction (text-editor-translate-text-direction (text-editor-get-style-property text-direction-state text-direction-value))
+                      :text-decoration (text-editor-translate-text-decoration (text-editor-get-style-property text-decoration-state text-decoration-value))
+                      :text-transform (text-editor-translate-text-transform (text-editor-get-style-property text-transform-state text-transform-value))
+                      :line-height (text-editor-get-style-property line-height-state line-height-value)
+                      :letter-spacing (text-editor-get-style-property letter-spacing-state letter-spacing-value)
+                      :font-size (text-editor-get-style-property font-size-state font-size-value)
+                      :font-weight (text-editor-get-style-property font-weight-state font-weight-value)
+                      :font-style font-style-value
+                      :font-family (text-editor-get-style-property font-family-state font-id)
+                      :font-id (text-editor-get-style-property font-family-state font-id)
+                      :font-variant-id (text-editor-get-style-property font-variant-id-state font-variant-id-computed)
+                      :typography-ref-file nil
+                      :typography-ref-id nil
+                      :fills fills}]
+
+          (mem/free)
+          result)))))
 
 (defn text-editor-encode-text-pre
   [text]
@@ -171,7 +416,7 @@
   (when wasm/context-initialized?
     (let [ptr (h/call wasm/internal-module "_text_editor_export_content")]
       (when (and ptr (not (zero? ptr)))
-        (let [json-str (mem/read-null-terminated-string ptr)]
+        (let [json-str (mem/read-string ptr)]
           (mem/free)
           (js/JSON.parse json-str))))))
 
@@ -181,7 +426,7 @@
   (when wasm/context-initialized?
     (let [ptr (h/call wasm/internal-module "_text_editor_export_selection")]
       (when (and ptr (not (zero? ptr)))
-        (let [text (mem/read-null-terminated-string ptr)]
+        (let [text (mem/read-string ptr)]
           (mem/free)
           text)))))
 
@@ -342,38 +587,52 @@
   [para]
   (apply + (map (fn [span] (count (:text span))) (:children para))))
 
-(defn apply-style-to-selection
+(defn apply-styles-to-selection
   [attrs use-shape-fn set-shape-text-content-fn]
   (when wasm/context-initialized?
-    (let [shape-id (text-editor-get-active-shape-id)
-          sel      (text-editor-get-selection)]
-      (when (and shape-id sel)
+    (let [shape-id  (text-editor-get-active-shape-id)
+          selection (text-editor-get-selection)]
+
+      (when (and shape-id selection)
         (let [content (get @shape-text-contents shape-id)]
           (when content
-            (let [{:keys [start-para start-offset end-para end-offset]}
-                  (normalize-selection sel)
-                  collapsed? (and (= start-para end-para) (= start-offset end-offset))
-                  para-set   (first (:children content))
-                  paras      (:children para-set)
-                  new-paras
+            (let [normalized-selection (normalize-selection selection)
+                  {:keys [start-para start-offset end-para end-offset]} normalized-selection
+
+                  collapsed?      (and (= start-para end-para) (= start-offset end-offset))
+
+                  paragraph-set   (first (:children content))
+                  paragraphs      (:children paragraph-set)
+
+                  new-paragraphs
                   (when (not collapsed?)
                     (mapv (fn [idx para]
                             (cond
+                              ;; paragraph outside the range of paragraphs.
                               (or (< idx start-para) (> idx end-para))
                               para
+
+                              ;; same paragraph.
                               (= start-para end-para)
                               (apply-attrs-to-paragraph para start-offset end-offset attrs)
+
+                              ;; first paragraph
                               (= idx start-para)
                               (apply-attrs-to-paragraph para start-offset (para-char-count para) attrs)
+
+                              ;; final paragraph
                               (= idx end-para)
                               (apply-attrs-to-paragraph para 0 end-offset attrs)
+
+                              ;; any other paragraph
                               :else
                               (apply-attrs-to-paragraph para 0 (para-char-count para) attrs)))
-                          (range (count paras))
-                          paras))
-                  new-content (when new-paras
+
+                          (range (count paragraphs))
+                          paragraphs))
+                  new-content (when new-paragraphs
                                 (assoc content :children
-                                       [(assoc para-set :children new-paras)]))]
+                                       [(assoc paragraph-set :children new-paragraphs)]))]
               (when new-content
                 (swap! shape-text-contents assoc shape-id new-content)
                 (use-shape-fn shape-id)

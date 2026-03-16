@@ -1,4 +1,4 @@
-use crate::shapes::{Paragraph, TextContent, TextPositionWithAffinity};
+use crate::shapes::{Paragraph, TextContent, TextDirection, TextPositionWithAffinity};
 use crate::state::TextSelection;
 
 /// Get total character count in a paragraph.
@@ -10,11 +10,11 @@ pub fn paragraph_char_count(para: &Paragraph) -> usize {
 }
 
 /// Get the text direction of the span at a given offset in a paragraph.
-pub fn get_span_text_direction_at_offset(
+pub fn get_text_span_text_direction_at_offset(
     para: &Paragraph,
     char_offset: usize,
-) -> skia_safe::textlayout::TextDirection {
-    if let Some((span_idx, _)) = find_span_at_offset(para, char_offset) {
+) -> TextDirection {
+    if let Some((span_idx, _)) = find_text_span_at_offset(para, char_offset) {
         if let Some(span) = para.children().get(span_idx) {
             return span.text_direction;
         }
@@ -258,7 +258,7 @@ pub fn paragraph_text_char_at(para: &Paragraph, offset: usize) -> Option<char> {
     None
 }
 
-pub fn find_span_at_offset(para: &Paragraph, char_offset: usize) -> Option<(usize, usize)> {
+pub fn find_text_span_at_offset(para: &Paragraph, char_offset: usize) -> Option<(usize, usize)> {
     let children = para.children();
     let mut accumulated = 0;
     for (span_idx, span) in children.iter().enumerate() {
@@ -338,7 +338,7 @@ pub fn insert_text_at_cursor(
         return Some(text.chars().count());
     }
 
-    let (span_idx, offset_in_span) = find_span_at_offset(para, cursor.offset)?;
+    let (span_idx, offset_in_span) = find_text_span_at_offset(para, cursor.offset)?;
 
     let children = para.children_mut();
     let span = &mut children[span_idx];
@@ -690,7 +690,7 @@ pub fn split_paragraph_at_cursor(
 
     let para = &paragraphs[cursor.paragraph];
 
-    let Some((span_idx, offset_in_span)) = find_span_at_offset(para, cursor.offset) else {
+    let Some((span_idx, offset_in_span)) = find_text_span_at_offset(para, cursor.offset) else {
         return false;
     };
 
