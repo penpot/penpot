@@ -118,6 +118,12 @@
               :level :error
               :timeout 5000})))
 
+(defmethod ptk/handle-error :internal
+  [error]
+  (st/emit! (rt/assign-exception error))
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause :prefix "Internal Error")))
+
 (defmethod ptk/handle-error :default
   [error]
   (if (and (string? (:hint error))
@@ -209,8 +215,7 @@
     (st/async-emit! (rt/assign-exception error))))
 
 ;; This is a pure frontend error that can be caused by an active
-;; assertion (assertion that is preserved on production builds). From
-;; the user perspective this should be treated as internal error.
+;; assertion (assertion that is preserved on production builds).
 (defmethod ptk/handle-error :assertion
   [error]
   (when-let [cause (::instance error)]

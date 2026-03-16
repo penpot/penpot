@@ -178,7 +178,7 @@
            (rx/map (fn [{:keys [redirect-uri] :as rsp}]
                      (if redirect-uri
                        (rt/nav-raw :uri redirect-uri)
-                       (ex/raise :type :internal
+                       (ex/raise :type :assertion
                                  :code :unexpected-response
                                  :hint "unexpected response from OIDC method"
                                  :resp (pr-str rsp)))))

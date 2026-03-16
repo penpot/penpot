@@ -57,13 +57,13 @@
 
     :else
     (rx/throw
-     (ex-info "repository request error"
-              {:type :internal
-               :code :repository-access-error
+     (ex/error :type :internal
+               :code :unexpected-repository-response
+               :hint "unable to process repository response"
                :uri uri
                :status status
                :headers headers
-               :data body}))))
+               :data body))))
 
 (def default-options
   {:update-file {:query-params [:id]}
@@ -156,11 +156,11 @@
                             tpoint (ct/tpoint-ms)]
 
                         (when (and response-stream? (not stream?))
-                          (ex/raise :type :internal
-                                    :code :invalid-response-processing
+                          (ex/raise :type :assertion
+                                    :code :unexpected-response
                                     :hint "expected normal response, received sse stream"
-                                    :response-uri (:uri response)
-                                    :response-status (:status response)))
+                                    :uri (:uri response)
+                                    :status (:status response)))
 
                         (if response-stream?
                           (-> (sse/create-stream body)

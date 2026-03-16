@@ -90,9 +90,10 @@
   [team-id]
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ _ stream]
       (->> (rp/cmd! :get-projects {:team-id team-id})
-           (rx/map projects-fetched)))))
+           (rx/map projects-fetched)
+           (rx/take-until (rx/filter (ptk/type? :app.main.data.workspace/initialize-layout) stream))))))
 
 ;; --- EVENT: search
 

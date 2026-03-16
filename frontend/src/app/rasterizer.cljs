@@ -44,8 +44,8 @@
                                    (rx/end! subs)))
        (obj/set! image "crossOrigin" "anonymous")
        (obj/set! image "onerror" #(rx/error! subs %))
-       (obj/set! image "onabort" #(rx/error! subs (ex/error :type :internal
-                                                            :code :abort
+       (obj/set! image "onabort" #(rx/error! subs (ex/error :type :abort
+                                                            :code :operation-aborted
                                                             :hint "operation aborted")))
        (obj/set! image "src" uri)
        (fn []
