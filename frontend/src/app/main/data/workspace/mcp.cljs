@@ -10,6 +10,7 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.broadcast :as mbc]
+   [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.plugins :as dp]
    [app.main.repo :as rp]
@@ -59,9 +60,13 @@
       (rx/of (ntf/hide))
       (rx/of (ntf/dialog :content (tr "notifications.mcp.active-tab-switching.text")
                          :cancel {:label (tr "labels.dismiss")
-                                  :callback #(st/emit! (ntf/hide))}
+                                  :callback #(st/emit! (ntf/hide)
+                                                       (ptk/event ::ev/event {::ev/name "confirm-mcp-tab-switch"
+                                                                              ::ev/origin "workspace-notification"}))}
                          :accept {:label (tr "labels.switch")
-                                  :callback #(st/emit! (connect-mcp))})))
+                                  :callback #(st/emit! (connect-mcp)
+                                                       (ptk/event ::ev/event {::ev/name "dismiss-mcp-tab-switch"
+                                                                              ::ev/origin "workspace-notification"}))})))
     (rx/of (ntf/hide))))
 
 (defn update-mcp-status
