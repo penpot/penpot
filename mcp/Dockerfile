@@ -40,9 +40,9 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/common/package.json packages/common/
 COPY packages/server/package.json packages/server/
 
-# Plugin is not needed at runtime (static files only)
-# Create a stub so pnpm doesn't complain about missing workspace member
-RUN mkdir -p packages/plugin && echo '{"name":"mcp-plugin","version":"1.0.0"}' > packages/plugin/package.json
+# Copy real plugin package.json to satisfy the lockfile,
+# but --prod will skip its devDependencies (vite, typescript, etc.)
+COPY packages/plugin/package.json packages/plugin/
 
 RUN pnpm install --frozen-lockfile --prod
 
