@@ -160,3 +160,55 @@
   (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
     (db/exec! cfg [sql:get-managed-profiles current-user-id current-user-id])))
 
+;; ---- API: get-teams-summary
+
+(def ^:private sql:get-teams-summary
+  "SELECT t.id, t.name
+     FROM team AS t
+    WHERE t.id = ANY(?)
+      AND t.deleted_at IS NULL;")
+
+(def ^:private sql:get-files-count
+  "SELECT COUNT(f.*) AS count
+     FROM file AS f
+     JOIN project AS p ON f.project_id = p.id
+     JOIN team AS t ON t.id = p.team_id
+    WHERE p.team_id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND p.deleted_at IS NULL
+      AND f.deleted_at IS NULL;")
+
+(def ^:private schema:get-teams-summary-params
+  [:map
+   [:ids [:or ::sm/uuid [:vector ::sm/uuid]]]])
+
+(def ^:private schema:get-teams-summary-result
+  [:map
+   [:teams [:vector [:map
+                     [:id ::sm/uuid]
+                     [:name ::sm/text]]]]
+   [:num-files ::sm/int]])
+
+(sv/defmethod ::get-teams-summary
+  "Get summary information for a list of teams"
+  {::doc/added "2.15"
+   ::sm/params schema:get-teams-summary-params
+   ::sm/result schema:get-teams-summary-result}
+  [cfg {:keys [ids]}]
+  (let [;; Handle one or multiple params
+        ids (cond
+              (uuid? ids)
+              [ids]
+
+              (and (vector? ids) (every? uuid? ids))
+              ids
+
+              :else
+              [])]
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array     (db/create-array conn "uuid" ids)
+                         teams         (db/exec! conn [sql:get-teams-summary ids-array])
+                         files-count   (-> (db/exec-one! conn [sql:get-files-count ids-array]) :count)]
+                     {:teams (mapv #(select-keys % [:id :name]) teams)
+                      :num-files files-count})))))
+
