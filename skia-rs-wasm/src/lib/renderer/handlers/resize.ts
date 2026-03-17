@@ -41,7 +41,7 @@ function getHandlerMultiplier(handle: ResizeHandlePosition): { x: number; y: num
 
 const IDENTITY_MATRIX: Matrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }
 
-/** Fallback: full 6-component inverse matching Clojure's gmt/inverse. Only called when node.transformInverse is absent. */
+/** Full 6-component inverse matching Clojure's gmt/inverse. */
 function invertMatrix(T: Matrix): Matrix | null {
   const det = T.a * T.d - T.b * T.c
   if (Math.abs(det) < 1e-10) return null
@@ -109,10 +109,9 @@ export function startResizeSelected(
   const nodeSr = singleNode ? singleNode.selrect : null
 
   const T = singleNode?.transform ?? IDENTITY_MATRIX
-  const Tinv =
-    singleNode?.transformInverse ??
-    invertMatrix(T) ??
-    IDENTITY_MATRIX
+  // Always compute inverse dynamically - the stored transformInverse may be incorrect
+  // for sheered/skewed transforms (it swaps b/c without proper negation and det division)
+  const Tinv = invertMatrix(T) ?? IDENTITY_MATRIX
 
   const localW = nodeSr?.width ?? width
   const localH = nodeSr?.height ?? height
