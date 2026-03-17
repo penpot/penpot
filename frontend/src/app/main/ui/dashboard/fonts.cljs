@@ -7,7 +7,9 @@
 (ns app.main.ui.dashboard.fonts
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -22,6 +24,7 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
+   [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
@@ -32,7 +35,7 @@
 (def ^:private accept-font-types
   (str (str/join "," cm/font-types)
        ;; A workaround to solve a problem with chrome input selector
-       ",.ttf,application/font-woff,woff,.otf"))
+       ",.ttf,application/font-woff,font/woff,.woff,application/font-woff2,font/woff2,.woff2,.otf"))
 
 (defn- use-page-title
   [team section]
@@ -116,10 +119,10 @@
                             (swap! fonts* dissoc id)
                             (swap! uploading* disj id)
                             (st/emit! (df/add-font font)))
-                          (fn [error]
+                          (fn [cause]
                             (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
                             (swap! fonts* dissoc id)
-                            (js/console.log "error" error))))))
+                            (ex/print-throwable cause))))))
 
         on-upload
         (mf/use-fn
@@ -259,11 +262,15 @@
 (mf/defc installed-font-context-menu
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [is-open on-close on-edit on-delete]}]
-  (let [options (mf/with-memo [on-edit on-delete]
+  [{:keys [is-open on-close on-edit on-download on-delete]}]
+  (let [options (mf/with-memo [on-edit on-download on-delete]
                   [{:name    (tr "labels.edit")
                     :id      "font-edit"
                     :handler on-edit}
+                   (when (contains? cf/flags :canary)
+                     {:name    (tr "labels.download-simple")
+                      :id      "font-download"
+                      :handler on-download})
                    {:name    (tr "labels.delete")
                     :id      "font-delete"
                     :handler on-delete}])]
@@ -345,6 +352,26 @@
                                          (st/emit! (df/delete-font font-id)))}]
              (st/emit! (modal/show options)))))
 
+        on-download
+        (mf/use-fn
+         (mf/deps variants)
+         (fn [_event]
+           (let [variant    (first variants)
+                 variant-id (:id variant)
+                 multiple?  (> (count variants) 1)
+                 cmd        (if multiple? :download-font-family :download-font)
+                 params     (if multiple? {:font-id font-id} {:id variant-id})]
+             (->> (rp/cmd! cmd params)
+                  (rx/mapcat (fn [{:keys [name uri]}]
+                               (->> (http/send! {:uri uri :method :get :response-type :blob})
+                                    (rx/map :body)
+                                    (rx/map (fn [blob] (d/vec2 name blob))))))
+                  (rx/subs! (fn [[filename blob]]
+                              (dom/trigger-download filename blob))
+                            (fn [error]
+                              (js/console.error "error downloading font" error)
+                              (st/emit! (ntf/error (tr "errors.generic")))))))))
+
         on-delete-variant
         (mf/use-fn
          (fn [event]
@@ -407,6 +434,7 @@
            {:on-close on-menu-close
             :is-open menu-open?
             :on-delete on-delete-font
+            :on-download on-download
             :on-edit on-edit}]]))]))
 
 (mf/defc installed-fonts*
