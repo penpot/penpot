@@ -1777,6 +1777,13 @@
   in the destination shape will not be copied."
   [changes dest-shape origin-shape dest-root origin-root container omit-touched?]
 
+  ;; (when (or (= #uuid "fe6ff6fc-0062-8060-8001-ad3331737f7d" (:id origin-shape))
+  ;;           (= #uuid "fe6ff6fc-0062-8060-8001-ad3331737f7d" (:id dest-shape)))
+  ;;   (println "=========================")
+  ;;   (app.common.pprint/pprint origin-shape)
+  ;;   (println "-------------------------")
+  ;;   (app.common.pprint/pprint dest-shape))
+
   (shape-log :info (:id dest-shape) container
              :msg (str "SYNC "
                        (:name origin-shape)
@@ -1789,7 +1796,12 @@
                        " "
                        (pretty-uuid (:id dest-shape))))
 
-  (let [;; To synchronize geometry attributes we need to make a prior
+  (let [is-my-shape? (or (= #uuid "fe6ff6fc-0062-8060-8001-ad3331737f7d" (:id origin-shape))
+                         (= #uuid "fe6ff6fc-0062-8060-8001-ad3331737f7d" (:id dest-shape)))
+
+        is-my-shape? (= #uuid "fe6ff6fc-0062-8060-8001-ad3331737f7d" (:id dest-shape))
+
+        ;; To synchronize geometry attributes we need to make a prior
         ;; operation, because coordinates are absolute, but we need to
         ;; sync only the position relative to the origin of the component.
         ;; We solve this by moving the origin shape so it is aligned with
@@ -1804,24 +1816,33 @@
            uoperations '()]
 
       (let [attr (first attrs)]
-        (if (nil? attr)
-          (cond-> changes
-            (seq roperations)
-            (add-update-attr-changes dest-shape container roperations uoperations)
-            :always
-            (check-detached-main dest-shape origin-shape)
-            :always
-            (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))
 
-          (let [attr-group        (get ctk/sync-attrs attr)
+        (if (nil? attr)
+          (do
+
+            (app.common.pprint/pprint roperations)
+
+            (cond-> changes
+              (seq roperations)
+              (add-update-attr-changes dest-shape container roperations uoperations)
+              :always
+              (check-detached-main dest-shape origin-shape)
+              :always
+              (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil)))
+
+          (let [attr-group
+                (get ctk/sync-attrs attr)
+
                 ;; position-data is a special case because can be affected by
-                ;; :geometry-group and :content-group so, if the position-data
-                ;; changes but the geometry is touched we need to reset the position-data
-                ;; so it's calculated again
-                reset-pos-data? (and (cfh/text-shape? origin-shape)
-                                     (= attr :position-data)
-                                     (not= (:position-data origin-shape) (:position-data dest-shape))
-                                     (touched :geometry-group))
+                ;; :geometry-group and :content-group so, if the
+                ;; position-data changes but the geometry is touched
+                ;; we need to reset the position-data so it's
+                ;; calculated again
+                reset-pos-data?
+                (and (cfh/text-shape? origin-shape)
+                     (= attr :position-data)
+                     (not= (:position-data origin-shape) (:position-data dest-shape))
+                     (touched :geometry-group))
 
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
                 ;; and attrs (bold, font, etc) are in the same attr :content.
@@ -1843,25 +1864,41 @@
                          ;; the attributes, omiting the other part
                          (not text-content-change?)))
 
-                attr-val (when-not skip-operations?
-                           (cond
-                             ;; If position data changes and the geometry group is touched
-                             ;; we need to put to nil so we can regenerate it
-                             reset-pos-data?
-                             nil
+                _ (when (and is-my-shape? (= attr :type))
+                    (prn "PROCESS ATTR" attr (touched attr-group) omit-touched?))
 
-                             text-content-change?
-                             (text-change-value (:content dest-shape)
-                                                (:content origin-shape)
-                                                touched)
+                attr-val
+                (when-not skip-operations?
+                  (cond
+                    ;; If position data changes and the geometry group is touched
+                    ;; we need to put to nil so we can regenerate it
+                    reset-pos-data?
+                    nil
 
-                             :else
-                             (get origin-shape attr)))
+                    text-content-change?
+                    (text-change-value (:content dest-shape)
+                                       (:content origin-shape)
+                                       touched)
+
+                    :else
+                    (get origin-shape attr)))
 
                 ;; If the final attr-value is the actual value, skip
-                skip-operations? (or skip-operations?
-                                     (= attr-val (get dest-shape attr)))
+                skip-operations?
+                (or skip-operations?
+                    (= attr-val (get dest-shape attr)))
 
+                _ (when (and is-my-shape? (not skip-operations?))
+                    (println "ATTR:" attr " FROM:" (get dest-shape attr) " TO:" attr-val)
+                    #_(when (nil? attr-val)
+                      (prn (:id dest-shape))))
+
+                ;; _ (when (and (not skip-operations?) (= attr :type))
+                ;;     (println "=========================")
+                ;;     (prn
+                ;;     #_(app.common.pprint/pprint origin-shape)
+                ;;     #_(println "-------------------------")
+                ;;     #_(app.common.pprint/pprint dest-shape))
 
                 ;; On a text-partial-change, we want to force a position-data reset
                 ;; so it's calculated again

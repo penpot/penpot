@@ -47,7 +47,7 @@
   {:name                    :name-group
    :fills                   :fill-group
    :hide-fill-on-export     :fill-group
-   :content                 :content-group
+   :content                 :geometry-group
    :position-data           :content-group
    :hidden                  :visibility-group
    :blocked                 :modifiable-group
