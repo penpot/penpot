@@ -30,6 +30,18 @@ impl FontFamily {
         Self { id, style, weight }
     }
 
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
+    pub fn style(&self) -> FontStyle {
+        self.style
+    }
+
+    pub fn weight(&self) -> u32 {
+        self.weight
+    }
+
     pub fn alias(&self) -> String {
         format!("{}", self)
     }

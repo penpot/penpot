@@ -1,20 +1,20 @@
 use crate::shapes::{Color, Gradient};
 
-const MAX_GRADIENT_STOPS: usize = 16;
+pub(crate) const MAX_GRADIENT_STOPS: usize = 16;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(C)]
 #[repr(align(4))]
 pub struct RawGradientData {
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-    opacity: u8,
+    pub(crate) start_x: f32,
+    pub(crate) start_y: f32,
+    pub(crate) end_x: f32,
+    pub(crate) end_y: f32,
+    pub(crate) opacity: u8,
     // 24-bit padding here, reserved for future use
-    width: f32,
-    stop_count: u8,
-    stops: [RawStopData; MAX_GRADIENT_STOPS],
+    pub(crate) width: f32,
+    pub(crate) stop_count: u8,
+    pub(crate) stops: [RawStopData; MAX_GRADIENT_STOPS],
 }
 
 impl RawGradientData {
@@ -29,9 +29,9 @@ impl RawGradientData {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(C)]
-struct RawStopData {
-    color: u32,
-    offset: f32,
+pub(crate) struct RawStopData {
+    pub(crate) color: u32,
+    pub(crate) offset: f32,
 }
 
 impl RawStopData {

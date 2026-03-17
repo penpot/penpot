@@ -154,6 +154,229 @@
           (mem/free)
           text)))))
 
+;; ---------------------------------------------------------------------------
+;; Binary layout constants for TextEditorStyles (must match text_editor.rs)
+;; ---------------------------------------------------------------------------
+(def ^:const STYLES-HEADER-SIZE 120)
+
+;; RAW_FILL_DATA_SIZE = 4 (tag+padding) + RawGradientData (largest variant)
+;; RawGradientData = 28 header + 16 stops × 8 bytes = 156
+(def ^:const RAW-FILL-DATA-SIZE 160)
+
+;; MultipleState enum values
+(def ^:const MULTIPLE-UNDEFINED 0)
+(def ^:const MULTIPLE-SINGLE 1)
+(def ^:const MULTIPLE-MULTIPLE 2)
+
+(def ^:private vertical-align-map
+  {0 :top 1 :center 2 :bottom})
+
+(def ^:private text-align-map
+  {0 :left 1 :center 2 :right 3 :justify})
+
+(def ^:private text-direction-map
+  {0 :ltr 1 :rtl})
+
+(def ^:private text-decoration-map
+  {0 nil 1 :underline 2 :line-through 3 :overline})
+
+(def ^:private text-transform-map
+  {0 nil 1 :uppercase 2 :lowercase 3 :capitalize})
+
+(def ^:private font-style-map
+  {0 :normal 1 :italic})
+
+(defn- read-multiple
+  "Read a Multiple<T> field from a DataView. Returns :mixed when Multiple,
+   nil when Undefined, or calls value-fn to read the value when Single."
+  [dview state-offset value-fn]
+  (let [state (.getUint32 dview state-offset true)]
+    (case state
+      1 (value-fn)     ;; Single
+      2 :mixed         ;; Multiple
+      nil)))           ;; Undefined
+
+(defn- u32-argb->hex
+  "Convert u32 ARGB to #RRGGBB hex string."
+  [argb]
+  (let [r (bit-and (unsigned-bit-shift-right argb 16) 0xFF)
+        g (bit-and (unsigned-bit-shift-right argb 8) 0xFF)
+        b (bit-and argb 0xFF)]
+    (str "#"
+         (.padStart (.toString r 16) 2 "0")
+         (.padStart (.toString g 16) 2 "0")
+         (.padStart (.toString b 16) 2 "0"))))
+
+(defn- u32-argb->opacity
+  "Extract normalized opacity (0.0-1.0) from u32 ARGB."
+  [argb]
+  (/ (bit-and (unsigned-bit-shift-right argb 24) 0xFF) 255.0))
+
+(defn- read-gradient-stops
+  "Read gradient stops from DataView at the given byte offset."
+  [dview base-offset stop-count]
+  (let [stops-offset (+ base-offset 28)] ;; stops start at byte 28 within gradient data
+    (into []
+          (map (fn [i]
+                 (let [stop-off (+ stops-offset (* i 8))
+                       color (.getUint32 dview stop-off true)
+                       offset (.getFloat32 dview (+ stop-off 4) true)]
+                   {:color (u32-argb->hex color)
+                    :opacity (u32-argb->opacity color)
+                    :offset offset})))
+          (range stop-count))))
+
+(defn- read-fill-from-dview
+  "Read a single RawFillData entry from DataView at the given byte offset.
+   Returns a fill map in the standard Penpot text content format."
+  [dview fill-offset]
+  (let [tag (.getUint8 dview fill-offset)]
+    (case tag
+      ;; Solid fill
+      0 (let [color (.getUint32 dview (+ fill-offset 4) true)]
+          {:fill-color (u32-argb->hex color)
+           :fill-opacity (u32-argb->opacity color)})
+
+      ;; Linear gradient
+      1 (let [base (+ fill-offset 4)
+              stop-count (.getUint8 dview (+ base 24))]
+          {:fill-color-gradient
+           {:type :linear
+            :start-x (.getFloat32 dview base true)
+            :start-y (.getFloat32 dview (+ base 4) true)
+            :end-x (.getFloat32 dview (+ base 8) true)
+            :end-y (.getFloat32 dview (+ base 12) true)
+            :width (.getFloat32 dview (+ base 20) true)
+            :stops (read-gradient-stops dview base stop-count)}
+           :fill-opacity (/ (.getUint8 dview (+ base 16)) 255.0)})
+
+      ;; Radial gradient
+      2 (let [base (+ fill-offset 4)
+              stop-count (.getUint8 dview (+ base 24))]
+          {:fill-color-gradient
+           {:type :radial
+            :start-x (.getFloat32 dview base true)
+            :start-y (.getFloat32 dview (+ base 4) true)
+            :end-x (.getFloat32 dview (+ base 8) true)
+            :end-y (.getFloat32 dview (+ base 12) true)
+            :width (.getFloat32 dview (+ base 20) true)
+            :stops (read-gradient-stops dview base stop-count)}
+           :fill-opacity (/ (.getUint8 dview (+ base 16)) 255.0)})
+
+      ;; Image fill
+      3 (let [base (+ fill-offset 4)
+              a (.getUint32 dview base true)
+              b (.getUint32 dview (+ base 4) true)
+              c (.getUint32 dview (+ base 8) true)
+              d (.getUint32 dview (+ base 12) true)
+              opacity (.getUint8 dview (+ base 16))
+              flags (.getUint8 dview (+ base 17))
+              width (.getInt32 dview (+ base 20) true)
+              height (.getInt32 dview (+ base 24) true)]
+          {:fill-image
+           {:id (uuid/from-unsigned-parts a b c d)
+            :width width
+            :height height
+            :keep-aspect-ratio (not (zero? (bit-and flags 1)))}
+           :fill-opacity (/ opacity 255.0)})
+
+      ;; Unknown tag
+      nil)))
+
+(defn text-editor-get-current-styles
+  "Read the current text editor styles from WASM. Returns a map with the
+   style values for the current selection, or nil if no selection/focus.
+   Multiple<T> fields return :mixed when spans have different values."
+  []
+  (when wasm/context-initialized?
+    (let [ptr (h/call wasm/internal-module "_text_editor_get_current_styles")]
+      (when (and ptr (not (zero? ptr)))
+        (let [heap-u8 (mem/get-heap-u8)
+              dview   (js/DataView. (.-buffer heap-u8) (.-byteOffset heap-u8))
+
+              ;; Read fills count first to know total size
+              fills-count (.getUint32 dview (+ ptr 116) true)
+
+              ;; Read scalar Multiple<T> fields
+              vertical-align (get vertical-align-map
+                                  (.getUint32 dview ptr true)
+                                  :top)
+
+              text-align
+              (read-multiple dview (+ ptr 4)
+                             #(get text-align-map (.getUint32 dview (+ ptr 8) true)))
+
+              text-direction
+              (read-multiple dview (+ ptr 12)
+                             #(get text-direction-map (.getUint32 dview (+ ptr 16) true)))
+
+              text-decoration
+              (read-multiple dview (+ ptr 20)
+                             #(get text-decoration-map (.getUint32 dview (+ ptr 24) true)))
+
+              text-transform
+              (read-multiple dview (+ ptr 28)
+                             #(get text-transform-map (.getUint32 dview (+ ptr 32) true)))
+
+              font-size
+              (read-multiple dview (+ ptr 36)
+                             #(.getFloat32 dview (+ ptr 40) true))
+
+              font-weight
+              (read-multiple dview (+ ptr 44)
+                             #(.getInt32 dview (+ ptr 48) true))
+
+              line-height
+              (read-multiple dview (+ ptr 52)
+                             #(.getFloat32 dview (+ ptr 56) true))
+
+              letter-spacing
+              (read-multiple dview (+ ptr 60)
+                             #(.getFloat32 dview (+ ptr 64) true))
+
+              font-family
+              (read-multiple dview (+ ptr 68)
+                             (fn []
+                               (let [a (.getUint32 dview (+ ptr 72) true)
+                                     b (.getUint32 dview (+ ptr 76) true)
+                                     c (.getUint32 dview (+ ptr 80) true)
+                                     d (.getUint32 dview (+ ptr 84) true)]
+                                 {:id (uuid/from-unsigned-parts a b c d)
+                                  :style (get font-style-map (.getUint32 dview (+ ptr 88) true))
+                                  :weight (.getUint32 dview (+ ptr 92) true)})))
+
+              font-variant-id
+              (read-multiple dview (+ ptr 96)
+                             (fn []
+                               (let [a (.getUint32 dview (+ ptr 100) true)
+                                     b (.getUint32 dview (+ ptr 104) true)
+                                     c (.getUint32 dview (+ ptr 108) true)
+                                     d (.getUint32 dview (+ ptr 112) true)]
+                                 (uuid/from-unsigned-parts a b c d))))
+
+              ;; Read fills
+              fills
+              (into []
+                    (keep (fn [i]
+                            (read-fill-from-dview dview
+                                                  (+ ptr STYLES-HEADER-SIZE
+                                                     (* i RAW-FILL-DATA-SIZE)))))
+                    (range fills-count))]
+
+          (mem/free)
+          {:vertical-align  vertical-align
+           :text-align      text-align
+           :text-direction  text-direction
+           :text-decoration text-decoration
+           :text-transform  text-transform
+           :font-size       font-size
+           :font-weight     font-weight
+           :line-height     line-height
+           :letter-spacing  letter-spacing
+           :font-family     font-family
+           :font-variant-id font-variant-id
+           :fills           fills})))))
+
 (defn text-editor-get-active-shape-id
   []
   (when wasm/context-initialized?

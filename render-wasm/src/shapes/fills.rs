@@ -35,6 +35,30 @@ impl Gradient {
         gradient
     }
 
+    pub fn start(&self) -> (f32, f32) {
+        self.start
+    }
+
+    pub fn end(&self) -> (f32, f32) {
+        self.end
+    }
+
+    pub fn opacity(&self) -> u8 {
+        self.opacity
+    }
+
+    pub fn width(&self) -> f32 {
+        self.width
+    }
+
+    pub fn colors(&self) -> &[Color] {
+        &self.colors
+    }
+
+    pub fn offsets(&self) -> &[f32] {
+        &self.offsets
+    }
+
     fn add_stops(&mut self, stops: &[(Color, f32)]) {
         let colors = stops.iter().map(|(color, _)| *color);
         let offsets = stops.iter().map(|(_, offset)| *offset);
@@ -121,6 +145,14 @@ impl ImageFill {
 
     pub fn opacity(&self) -> u8 {
         self.opacity
+    }
+
+    pub fn width(&self) -> i32 {
+        self.width
+    }
+
+    pub fn height(&self) -> i32 {
+        self.height
     }
 
     pub fn keep_aspect_ratio(&self) -> bool {

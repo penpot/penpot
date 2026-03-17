@@ -15,15 +15,15 @@ const IMAGE_HEADER_SIZE: usize = 36; // 32 bytes for IDs + 4 bytes for is_thumbn
 #[repr(C)]
 #[repr(align(4))]
 pub struct RawImageFillData {
-    a: u32,
-    b: u32,
-    c: u32,
-    d: u32,
-    opacity: u8,
-    flags: u8,
+    pub(crate) a: u32,
+    pub(crate) b: u32,
+    pub(crate) c: u32,
+    pub(crate) d: u32,
+    pub(crate) opacity: u8,
+    pub(crate) flags: u8,
     // 16-bit padding here, reserved for future use
-    width: i32,
-    height: i32,
+    pub(crate) width: i32,
+    pub(crate) height: i32,
 }
 
 impl From<RawImageFillData> for ImageFill {

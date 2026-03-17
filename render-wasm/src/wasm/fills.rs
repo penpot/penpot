@@ -36,6 +36,39 @@ impl From<RawFillData> for shapes::Fill {
     }
 }
 
+fn color_to_u32(color: &shapes::Color) -> u32 {
+    ((color.a() as u32) << 24)
+        | ((color.r() as u32) << 16)
+        | ((color.g() as u32) << 8)
+        | (color.b() as u32)
+}
+
+fn gradient_to_raw(g: &shapes::Gradient) -> gradient::RawGradientData {
+    let mut stops = [gradient::RawStopData {
+        color: 0,
+        offset: 0.0,
+    }; gradient::MAX_GRADIENT_STOPS];
+    let colors = g.colors();
+    let offsets = g.offsets();
+    let stop_count = colors.len().min(gradient::MAX_GRADIENT_STOPS);
+    for i in 0..stop_count {
+        stops[i] = gradient::RawStopData {
+            color: color_to_u32(&colors[i]),
+            offset: offsets[i],
+        };
+    }
+    gradient::RawGradientData {
+        start_x: g.start().0,
+        start_y: g.start().1,
+        end_x: g.end().0,
+        end_y: g.end().1,
+        opacity: g.opacity(),
+        width: g.width(),
+        stop_count: stop_count as u8,
+        stops,
+    }
+}
+
 impl TryFrom<&shapes::Fill> for RawFillData {
     type Error = String;
 
@@ -43,19 +76,29 @@ impl TryFrom<&shapes::Fill> for RawFillData {
         match fill {
             shapes::Fill::Solid(shapes::SolidColor(color)) => {
                 Ok(RawFillData::Solid(solid::RawSolidData {
-                    color: ((color.a() as u32) << 24)
-                        | ((color.r() as u32) << 16)
-                        | ((color.g() as u32) << 8)
-                        | (color.b() as u32),
+                    color: color_to_u32(color),
                 }))
             }
-            shapes::Fill::LinearGradient(_) => {
-                Err("LinearGradient serialization is not implemented".to_string())
+            shapes::Fill::LinearGradient(g) => Ok(RawFillData::Linear(gradient_to_raw(g))),
+            shapes::Fill::RadialGradient(g) => Ok(RawFillData::Radial(gradient_to_raw(g))),
+            shapes::Fill::Image(img) => {
+                let id_bytes: [u8; 16] = img.id().into();
+                let a = u32::from_le_bytes(id_bytes[0..4].try_into().unwrap());
+                let b = u32::from_le_bytes(id_bytes[4..8].try_into().unwrap());
+                let c = u32::from_le_bytes(id_bytes[8..12].try_into().unwrap());
+                let d = u32::from_le_bytes(id_bytes[12..16].try_into().unwrap());
+                let flags = if img.keep_aspect_ratio() { 1u8 } else { 0u8 };
+                Ok(RawFillData::Image(image::RawImageFillData {
+                    a,
+                    b,
+                    c,
+                    d,
+                    opacity: img.opacity(),
+                    flags,
+                    width: img.width(),
+                    height: img.height(),
+                }))
             }
-            shapes::Fill::RadialGradient(_) => {
-                Err("RadialGradient serialization is not implemented".to_string())
-            }
-            shapes::Fill::Image(_) => Err("Image fill serialization is not implemented".to_string()),
         }
     }
 }
