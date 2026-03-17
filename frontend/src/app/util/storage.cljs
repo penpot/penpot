@@ -17,10 +17,10 @@
 ;; Using ex/ignoring because can receive a DOMException like this when
 ;; importing the code as a library: Failed to read the 'localStorage'
 ;; property from 'Window': Storage is disabled inside 'data:' URLs.
-(defonce ^:private local-storage-backend
+(defonce local-storage
   (ex/ignoring (unchecked-get g/global "localStorage")))
 
-(defonce ^:private session-storage-backend
+(defonce session-storage
   (ex/ignoring (unchecked-get g/global "sessionStorage")))
 
 (def ^:dynamic *sync*
@@ -68,6 +68,17 @@
                  (lookup-by-index backend prefix result index))
           (persistent! result))))
     {}))
+
+(defn set-item
+  [storage key val]
+  (when (and (some? storage)
+             (string? key))
+    (.setItem ^js storage key val)))
+
+(defn get-item
+  [storage key]
+  (when (some? storage)
+    (.getItem storage key)))
 
 (defn create-storage
   [backend prefix]
@@ -154,10 +165,10 @@
       (-remove-watch [_ key]
         (.delete watches key)))))
 
-(defonce global  (create-storage local-storage-backend "penpot-global"))
-(defonce user    (create-storage local-storage-backend "penpot-user"))
-(defonce storage (create-storage local-storage-backend "penpot"))
-(defonce session (create-storage session-storage-backend "penpot"))
+(defonce global  (create-storage local-storage "penpot-global"))
+(defonce user    (create-storage local-storage "penpot-user"))
+(defonce storage (create-storage local-storage "penpot"))
+(defonce session (create-storage session-storage "penpot"))
 
 (defonce before-unload
   (letfn [(on-before-unload [_]
