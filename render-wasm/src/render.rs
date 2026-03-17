@@ -742,22 +742,27 @@ impl RenderState {
 
         // set clipping
         if let Some(clips) = clip_bounds.as_ref() {
-            for (bounds, corners, transform) in clips.iter() {
+            let scale = self.get_scale();
+            for (mut bounds, corners, transform) in clips.iter() {
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(transform);
                 });
 
+                // Outset clip by ~0.5 to include edge pixels that
+                // aliased clip misclassifies as outside (causing artifacts).
+                let outset = 0.5 / scale;
+                bounds.outset((outset, outset));
+
                 // Hard clip edge (antialias = false) to avoid alpha seam when clipping
                 // semi-transparent content larger than the frame.
                 if let Some(corners) = corners {
-                    let rrect = RRect::new_rect_radii(*bounds, corners);
+                    let rrect = RRect::new_rect_radii(bounds, corners);
                     self.surfaces.apply_mut(surface_ids, |s| {
                         s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, false);
                     });
                 } else {
                     self.surfaces.apply_mut(surface_ids, |s| {
-                        s.canvas()
-                            .clip_rect(*bounds, skia::ClipOp::Intersect, false);
+                        s.canvas().clip_rect(bounds, skia::ClipOp::Intersect, false);
                     });
                 }
 
@@ -770,7 +775,7 @@ impl RenderState {
                     paint.set_stroke_width(4.);
                     self.surfaces
                         .canvas(fills_surface_id)
-                        .draw_rect(*bounds, &paint);
+                        .draw_rect(bounds, &paint);
                 }
 
                 self.surfaces.apply_mut(surface_ids, |s| {
