@@ -1241,6 +1241,7 @@ impl Shape {
                     let sigma = radius_to_sigma(blur.value * scale);
                     skia::image_filters::blur((sigma, sigma), None, None, None)
                 }
+                BlurType::BackgroundBlur => None,
             })
     }
 
@@ -1253,6 +1254,7 @@ impl Shape {
                     let sigma = radius_to_sigma(blur.value * scale);
                     skia::MaskFilter::blur(skia::BlurStyle::Normal, sigma, Some(true))
                 }
+                BlurType::BackgroundBlur => None,
             })
     }
 
