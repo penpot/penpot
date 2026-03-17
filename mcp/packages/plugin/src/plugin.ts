@@ -8,12 +8,8 @@ mcp?.setMcpStatus("connecting");
  */
 const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
 
-// Determine whether multi-user mode is enabled based on build-time configuration
-declare const IS_MULTI_USER_MODE: boolean;
-const isMultiUserMode = typeof IS_MULTI_USER_MODE !== "undefined" ? IS_MULTI_USER_MODE : false;
-
 // Open the plugin UI (main.ts)
-penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}&multiUser=${isMultiUserMode}`, {
+penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
     width: 158,
     height: 200,
     hidden: !!mcp,
