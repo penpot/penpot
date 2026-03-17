@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "vite build --watch --config vite.config.ts",
+    "start:multi-user": "pnpm run start",
     "build": "tsc && vite build --config vite.release.config.ts",
     "types:check": "tsc --noEmit",
     "clean": "rm -rf dist/"
