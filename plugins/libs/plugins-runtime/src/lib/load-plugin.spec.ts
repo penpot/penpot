@@ -22,7 +22,6 @@ vi.mock('./create-plugin', () => ({
 vi.mock('./ses.js', () => ({
   ses: {
     harden: vi.fn().mockImplementation((obj) => obj),
-    hardenIntrinsics: vi.fn(),
   },
 }));
 
