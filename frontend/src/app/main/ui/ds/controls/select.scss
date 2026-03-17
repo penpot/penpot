@@ -109,3 +109,8 @@
   grid-template-columns: auto 1fr;
   color: var(--select-icon-color);
 }
+
+.header-icon-only {
+  grid-template-columns: 1fr;
+  color: var(--select-icon-color);
+}
