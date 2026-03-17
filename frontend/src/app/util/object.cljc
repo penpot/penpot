@@ -466,17 +466,10 @@
 
 #?(:cljs
    (def Proxy
-     (let [ctor (app.util.object/class
-                 :name "Proxy"
-                 :extends js/Object
-                 :constructor (constantly nil))]
-       ;; Remove the `constructor` data property from the prototype so that
-       ;; SES `harden` (used by the plugin sandbox) does not traverse from a
-       ;; proxy instance back to this constructor function and freeze it.
-       ;; If the constructor is frozen before Transit's `typeTag` helper sets
-       ;; its cache property, Transit throws "object is not extensible".
-       (js-delete (.-prototype ctor) "constructor")
-       ctor)))
+     (app.util.object/class
+      :name "Proxy"
+      :extends js/Object
+      :constructor (constantly nil))))
 
 (defmacro reify
   "A domain specific variation of reify that creates anonymous objects
