@@ -68,7 +68,7 @@
        (let [content (st/get-path state :content)
              content (if (and (not preserve-move-to)
                               (= (-> content last :command) :move-to))
-                       (into [] (take (dec (count content)) content))
+                       (path/content (take (dec (count content)) content))
                        content)]
          (st/set-content state content)))
 

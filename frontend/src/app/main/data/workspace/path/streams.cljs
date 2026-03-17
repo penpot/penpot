@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
-   [app.common.types.path.segment :as path.segm]
+   [app.common.types.path :as path]
    [app.main.data.workspace.path.state :as pst]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -167,7 +167,7 @@
         ranges-stream
         (->> content-stream
              (rx/filter some?)
-             (rx/map path.segm/get-points)
+             (rx/map path/get-points)
              (rx/map snap/create-ranges))]
 
     (->> ms/mouse-position
