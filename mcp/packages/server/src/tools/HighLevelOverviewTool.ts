@@ -21,6 +21,6 @@ export class HighLevelOverviewTool extends Tool<EmptyToolArgs> {
     }
 
     protected async executeCore(args: EmptyToolArgs): Promise<ToolResponse> {
-        return new TextResponse(this.mcpServer.getInitialInstructions());
+        return new TextResponse(this.mcpServer.getHighLevelOverviewInstructions());
     }
 }

@@ -56,7 +56,8 @@ export class PenpotMcpServer {
     public readonly pluginBridge: PluginBridge;
     private readonly replServer: ReplServer;
     private apiDocs: ApiDocs;
-    private initialInstructions: string;
+    private readonly penpotHighLevelOverview: string;
+    private readonly connectionInstructions: string;
 
     /**
      * Manages session-specific context, particularly user tokens for each request.
@@ -82,10 +83,11 @@ export class PenpotMcpServer {
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
 
-        // prepare initial instructions
+        // prepare instructions
         let instructions = this.configLoader.getInitialInstructions();
         instructions = instructions.replace("$api_types", this.apiDocs.getTypeNames().join(", "));
-        this.initialInstructions = instructions;
+        this.penpotHighLevelOverview = instructions;
+        this.connectionInstructions = this.configLoader.getBaseInstructions();
 
         this.tools = this.initTools();
 
@@ -124,8 +126,11 @@ export class PenpotMcpServer {
         return !this.isRemoteMode();
     }
 
-    public getInitialInstructions(): string {
-        return this.initialInstructions;
+    /**
+     * Retrieves the high-level overview instructions explaining core Penpot usage.
+     */
+    public getHighLevelOverviewInstructions(): string {
+        return this.penpotHighLevelOverview;
     }
 
     /**
@@ -163,7 +168,7 @@ export class PenpotMcpServer {
     private createMcpServer(): McpServer {
         const server = new McpServer(
             { name: "penpot", version: "1.0.0" },
-            { instructions: this.getInitialInstructions() }
+            { instructions: this.connectionInstructions }
         );
 
         for (const tool of this.tools) {

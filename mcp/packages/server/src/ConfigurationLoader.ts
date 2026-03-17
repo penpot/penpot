@@ -4,15 +4,12 @@ import { createLogger } from "./logger.js";
 
 /**
  * Configuration loader for prompts and server settings.
- *
- * Handles loading and parsing of YAML configuration files,
- * providing type-safe access to configuration values with
- * appropriate fallbacks for missing files or values.
  */
 export class ConfigurationLoader {
     private readonly logger = createLogger("ConfigurationLoader");
     private readonly baseDir: string;
-    private initialInstructions: string;
+    private readonly initialInstructions: string;
+    private readonly baseInstructions: string;
 
     /**
      * Creates a new configuration loader instance.
@@ -22,6 +19,7 @@ export class ConfigurationLoader {
     constructor(baseDir: string) {
         this.baseDir = baseDir;
         this.initialInstructions = this.loadFileContent(join(this.baseDir, "data", "initial_instructions.md"));
+        this.baseInstructions = this.loadFileContent(join(this.baseDir, "data", "base_instructions.md"));
     }
 
     private loadFileContent(filePath: string): string {
@@ -32,11 +30,22 @@ export class ConfigurationLoader {
     }
 
     /**
-     * Gets the initial instructions for the MCP server.
+     * Gets the initial instructions for the MCP server corresponding to the
+     * 'Penpot High-Level Overview'
      *
-     * @returns The initial instructions string, or undefined if not configured
+     * @returns The initial instructions string
      */
     public getInitialInstructions(): string {
         return this.initialInstructions;
+    }
+
+    /**
+     * Gets the base instructions which shall be provided to clients when connecting to
+     * the MCP server
+     *
+     * @returns The initial instructions string
+     */
+    public getBaseInstructions(): string {
+        return this.baseInstructions;
     }
 }
