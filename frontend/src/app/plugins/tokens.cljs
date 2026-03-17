@@ -20,42 +20,47 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [clojure.datafy :refer [datafy]]
-   [clojure.set :refer [map-invert]]
-   [cuerdas.core :as str]))
+   [clojure.set :refer [map-invert]]))
 
 ;; === Token
 
-(def token-name-mapping
-  {:r1 :borderRadiusTopLeft
-   :r2 :borderRadiusTopRight
-   :r3 :borderRadiusBottomRight
-   :r4 :borderRadiusBottomLeft
+;; Give more semantic names to the shape attributes that tokens can be applied to
+(def ^:private map:token-attr->token-attr-plugin
+  {:r1 :border-radius-top-left
+   :r2 :border-radius-top-right
+   :r3 :border-radius-bottom-right
+   :r4 :border-radius-bottom-left
 
-   :p1 :paddingTopLeft
-   :p2 :paddingTopRight
-   :p3 :paddingBottomRight
-   :p4 :paddingBottomLeft
+   :p1 :padding-top-left
+   :p2 :padding-top-right
+   :p3 :padding-bottom-right
+   :p4 :padding-bottom-left
 
-   :m1 :marginTopLeft
-   :m2 :marginTopRight
-   :m3 :marginBottomRight
-   :m4 :marginBottomLeft})
+   :m1 :margin-top-left
+   :m2 :margin-top-right
+   :m3 :margin-bottom-right
+   :m4 :margin-bottom-left})
 
-(def name-token-mapping
-  (map-invert token-name-mapping))
+(def ^:private map:token-attr-plugin->token-attr
+  (map-invert map:token-attr->token-attr-plugin))
 
-(defn resolve-prop
+(defn token-attr->token-attr-plugin
   [k]
-  (get token-name-mapping k k))
+  (get map:token-attr->token-attr-plugin k k))
 
-(defn translate-prop
+(defn token-attr-plugin->token-attr
   [k]
-  (let [k (-> (str/camel k) keyword)]
-    (get name-token-mapping k k)))
+  (get map:token-attr-plugin->token-attr k k))
+
+(defn applied-tokens-plugin->applied-tokens
+  [value]
+  (into {}
+        (map (fn [[k v]] [(token-attr->token-attr-plugin k) v]))
+        value))
 
 (defn token-attr?
   [attr]
-  (cto/token-attr? (translate-prop attr)))
+  (cto/token-attr? (token-attr-plugin->token-attr attr)))
 
 (defn- apply-token-to-shapes
   [file-id set-id id shape-ids attrs]
@@ -65,7 +70,7 @@
       (u/display-not-valid :applyToSelected attrs)
       (st/emit!
        (dwta/toggle-token {:token token
-                           :attrs (into #{} (map translate-prop) attrs)
+                           :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
                            :shape-ids shape-ids
                            :expand-with-children false})))))
 
@@ -76,13 +81,6 @@
                             (dm/get-in [(:name token) :resolved-value])
                             (ts/tokenscript-symbols->penpot-unit))]
     resolved-value))
-
-
-(defn resolve-tokens
-  [value]
-  (into {}
-        (map (fn [[k v]] [(resolve-prop k) v]))
-        value))
 
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
