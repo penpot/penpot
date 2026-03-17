@@ -7,7 +7,6 @@
   "scripts": {
     "build:server": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --external:@modelcontextprotocol/* --external:ws --external:express --external:class-transformer --external:class-validator --external:reflect-metadata --external:pino --external:pino-pretty --external:js-yaml --external:sharp",
     "build": "pnpm run build:server && node scripts/copy-resources.js",
-    "build:multi-user": "pnpm run build",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "start": "node dist/index.js",
     "start:multi-user": "node dist/index.js --multi-user",

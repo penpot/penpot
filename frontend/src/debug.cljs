@@ -462,3 +462,9 @@
 (defn print-last-exception
   []
   (some-> errors/last-exception ex/print-throwable))
+
+
+(defn ^:export dbg
+  [o]
+  (app.common.pprint/pprint o {:level 100 :length 100}))
+

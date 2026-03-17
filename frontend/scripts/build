@@ -36,7 +36,7 @@ popd
 pushd ../mcp;
 rm -rf node_modules;
 ./scripts/setup
-WS_URI="/mcp/ws" pnpm run --filter "mcp-plugin" build:multi-user
+WS_URI="/mcp/ws" pnpm run --filter "mcp-plugin" build
 popd;
 
 pushd ../plugins
