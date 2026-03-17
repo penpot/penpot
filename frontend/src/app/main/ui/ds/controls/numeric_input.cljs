@@ -19,6 +19,7 @@
    [app.main.ui.ds.controls.utilities.token-field :refer [token-field*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -83,48 +84,6 @@
           (str/replace #"^\{" "")
           (str/replace #"\}$" "")))
 
-(defn- token->dropdown-option
-  [token]
-  {:id (str (get token :id))
-   :type :token
-   :resolved-value (get token :resolved-value)
-   :name (get token :name)})
-
-(defn- generate-dropdown-options
-  [tokens no-sets]
-  (if (empty? tokens)
-    [{:type :empty
-      :label (if no-sets
-               (tr "ds.inputs.numeric-input.no-applicable-tokens")
-               (tr "ds.inputs.numeric-input.no-matches"))}]
-    (->> tokens
-         (map (fn [[type items]]
-                (cons {:group true
-                       :type  :group
-                       :id (dm/str "group-" (name type))
-                       :name  (name type)}
-                      (map token->dropdown-option items))))
-         (interpose [{:separator true
-                      :id "separator"
-                      :type :separator}])
-         (apply concat)
-         (vec)
-         (not-empty))))
-
-(defn- extract-partial-brace-text
-  [s]
-  (when-let [start (str/last-index-of s "{")]
-    (subs s (inc start))))
-
-(defn- filter-token-groups-by-name
-  [tokens filter-text]
-  (let [lc-filter (str/lower filter-text)]
-    (into {}
-          (keep (fn [[group tokens]]
-                  (let [filtered (filter #(str/includes? (str/lower (:name %)) lc-filter) tokens)]
-                    (when (seq filtered)
-                      [group filtered]))))
-          tokens)))
 
 (defn- focusable-option?
   [option]
@@ -148,32 +107,6 @@
               (when (focusable-option? (nth options j))
                 j)))
           indices)))
-
-(defn- sort-groups-and-tokens
-  "Sorts the tokens inside the groups alphabetically.
-
-   Input:
-   A map where:
-   - keys are groups (keywords or strings, e.g. :dimensions, :colors)
-   - values are vectors of token maps, each containing at least a :name key
-
-   Example input:
-   {:dimensions [{:name \"tres\"} {:name \"quini\"}]
-    :colors    [{:name \"azul\"} {:name \"rojo\"}]}
-
-   Output:
-   A map which:
-   - tokens inside each group are sorted alphabetically by :name
-
-   Example output:
-   {:dimensions [{:name \"quini\"} {:name \"tres\"}]
-    :colors    [{:name \"azul\"} {:name \"rojo\"}]}"
-
-  [groups->tokens]
-  (reduce (fn [acc [group tokens]]
-            (assoc acc group (sort-by :name tokens)))
-          {}
-          groups->tokens))
 
 
 (def ^:private schema:icon
@@ -289,16 +222,7 @@
 
         dropdown-options
         (mf/with-memo [tokens filter-id]
-          (delay
-            (let [tokens  (if (delay? tokens) @tokens tokens)
-
-                  sorted-tokens (sort-groups-and-tokens tokens)
-                  partial (extract-partial-brace-text filter-id)
-                  options (if (seq partial)
-                            (filter-token-groups-by-name sorted-tokens partial)
-                            sorted-tokens)
-                  no-sets? (nil? sorted-tokens)]
-              (generate-dropdown-options options no-sets?))))
+          (csu/get-token-dropdown-options tokens filter-id))
 
         selected-id*
         (mf/use-state (fn []
