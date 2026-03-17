@@ -138,14 +138,13 @@
 
         on-opacity-change
         (mf/use-fn
-         (mf/deps on-change handle-opacity-change)
+         (mf/deps handle-opacity-change)
          (fn [value]
            (if (or (string? value) (number? value))
              (handle-opacity-change value)
-             (do
-               (st/emit! (dwta/toggle-token {:token (first value)
-                                             :attrs #{:opacity}
-                                             :shape-ids ids}))))))
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
+                                                     :attrs #{:opacity}
+                                                     :shape-ids ids})))))
 
         handle-set-hidden
         (mf/use-fn

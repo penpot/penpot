@@ -75,7 +75,7 @@
   color: var(--input-foreground-color-disabled);
   stroke: var(--input-foreground-color-disabled);
   background-color: transparent;
-  border: deprecated.$b-1 solid var(--input-border-color-disabled);
+  border: $b-1 solid var(--input-border-color-disabled);
 }
 
 .numeric-input-wrapper {

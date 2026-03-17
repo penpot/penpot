@@ -822,9 +822,50 @@
                            :shape-ids shape-ids
                            :on-update-shape on-update-shape}))))))))
 
-(defn apply-token-on-selected
+(defn apply-token-from-input
+  [{:keys [token attrs shape-ids expand-with-children]}]
+  (ptk/reify ::apply-token-from-input
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            shapes (into [] (keep (d/getf objects)) shape-ids)
+
+            shapes
+            (if expand-with-children
+              (into []
+                    (mapcat (fn [shape]
+                              (if (= (:type shape) :group)
+                                (keep objects (:shapes shape))
+                                [shape])))
+                    shapes)
+              shapes)
+
+            {:keys [attributes _ on-update-shape]}
+            (get token-properties (:type token))
+
+            on-update-shape
+            (if (seq attrs)
+              (or (get attr->shape-update (first attrs)) on-update-shape)
+              on-update-shape)]
+
+        (rx/of
+         (cond
+           (and (= (:type token) :spacing)
+                (nil? attrs))
+           (apply-spacing-token-separated {:token token
+                                           :attr attrs
+                                           :shapes shapes})
+
+           :else
+           (apply-token {:attributes (if (empty? attrs) attributes attrs)
+                         :token token
+                         :shape-ids shape-ids
+                         :on-update-shape on-update-shape})))))))
+
+
+(defn apply-token-on-color-selected
   [color-operations token]
-  (ptk/reify ::apply-token-on-selected
+  (ptk/reify ::apply-token-on-color-selected
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
