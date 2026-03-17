@@ -3,7 +3,6 @@ use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use skia_safe as skia;
 use std::collections::{HashMap, HashSet};
-
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Tile(pub i32, pub i32);
 
@@ -178,13 +177,10 @@ impl TileHashMap {
     }
 
     pub fn add_shape_at(&mut self, tile: Tile, shape_id: Uuid) {
-        self.grid.entry(tile).or_default();
-        self.index.entry(shape_id).or_default();
-
-        let tile_set = self.grid.get_mut(&tile).unwrap();
+        let tile_set = self.grid.entry(tile).or_default();
         tile_set.insert(shape_id);
 
-        let index_set = self.index.get_mut(&shape_id).unwrap();
+        let index_set = self.index.entry(shape_id).or_default();
         index_set.insert(tile);
     }
 

@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use crate::performance;
 use crate::shapes::Shape;
 
@@ -61,38 +62,39 @@ pub struct Surfaces {
 
 #[allow(dead_code)]
 impl Surfaces {
-    pub fn new(
+    pub fn try_new(
         gpu_state: &mut GpuState,
         (width, height): (i32, i32),
         sampling_options: skia::SamplingOptions,
         tile_dims: skia::ISize,
-    ) -> Self {
+    ) -> Result<Self> {
         let extra_tile_dims = skia::ISize::new(
             tile_dims.width * TILE_SIZE_MULTIPLIER,
             tile_dims.height * TILE_SIZE_MULTIPLIER,
         );
         let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
 
-        let target = gpu_state.create_target_surface(width, height);
-        let filter = gpu_state.create_surface_with_isize("filter".to_string(), extra_tile_dims);
-        let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height);
-        let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
+        let target = gpu_state.create_target_surface(width, height)?;
+        let filter = gpu_state.create_surface_with_isize("filter".to_string(), extra_tile_dims)?;
+        let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height)?;
+        let current =
+            gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims)?;
         let drop_shadows =
-            gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
+            gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims)?;
         let inner_shadows =
-            gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims);
-        let text_drop_shadows =
-            gpu_state.create_surface_with_isize("text_drop_shadows".to_string(), extra_tile_dims);
+            gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims)?;
+        let text_drop_shadows = gpu_state
+            .create_surface_with_isize("text_drop_shadows".to_string(), extra_tile_dims)?;
         let shape_fills =
-            gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims);
+            gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims)?;
         let shape_strokes =
-            gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims);
+            gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims)?;
 
-        let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height);
-        let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height);
+        let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height)?;
+        let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height)?;
 
         let tiles = TileTextureCache::new();
-        Surfaces {
+        Ok(Surfaces {
             target,
             filter,
             cache,
@@ -108,7 +110,7 @@ impl Surfaces {
             sampling_options,
             margins,
             dirty_surfaces: 0,
-        }
+        })
     }
 
     pub fn clear_tiles(&mut self) {
@@ -119,8 +121,14 @@ impl Surfaces {
         self.margins
     }
 
-    pub fn resize(&mut self, gpu_state: &mut GpuState, new_width: i32, new_height: i32) {
-        self.reset_from_target(gpu_state.create_target_surface(new_width, new_height));
+    pub fn resize(
+        &mut self,
+        gpu_state: &mut GpuState,
+        new_width: i32,
+        new_height: i32,
+    ) -> Result<()> {
+        self.reset_from_target(gpu_state.create_target_surface(new_width, new_height)?)?;
+        Ok(())
     }
 
     pub fn snapshot(&mut self, id: SurfaceId) -> skia::Image {
@@ -132,26 +140,33 @@ impl Surfaces {
         (self.filter.width(), self.filter.height())
     }
 
-    pub fn base64_snapshot(&mut self, id: SurfaceId) -> String {
+    pub fn base64_snapshot(&mut self, id: SurfaceId) -> Result<String> {
         let surface = self.get_mut(id);
         let image = surface.image_snapshot();
         let mut context = surface.direct_context();
         let encoded_image = image
             .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
-            .unwrap();
-        general_purpose::STANDARD.encode(encoded_image.as_bytes())
+            .ok_or(Error::CriticalError("Failed to encode image".to_string()))?;
+        Ok(general_purpose::STANDARD.encode(encoded_image.as_bytes()))
     }
 
-    pub fn base64_snapshot_rect(&mut self, id: SurfaceId, irect: skia::IRect) -> Option<String> {
+    pub fn base64_snapshot_rect(
+        &mut self,
+        id: SurfaceId,
+        irect: skia::IRect,
+    ) -> Result<Option<String>> {
         let surface = self.get_mut(id);
         if let Some(image) = surface.image_snapshot_with_bounds(irect) {
             let mut context = surface.direct_context();
             let encoded_image = image
                 .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
-                .unwrap();
-            return Some(general_purpose::STANDARD.encode(encoded_image.as_bytes()));
+                .ok_or(Error::CriticalError("Failed to encode image".to_string()))?;
+            Ok(Some(
+                general_purpose::STANDARD.encode(encoded_image.as_bytes()),
+            ))
+        } else {
+            Ok(None)
         }
-        None
     }
 
     /// Returns a mutable reference to the canvas and automatically marks
@@ -341,22 +356,41 @@ impl Surfaces {
         }
     }
 
-    fn reset_from_target(&mut self, target: skia::Surface) {
+    fn reset_from_target(&mut self, target: skia::Surface) -> Result<()> {
         let dim = (target.width(), target.height());
         self.target = target;
-        self.filter = self.target.new_surface_with_dimensions(dim).unwrap();
-        self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
-        self.ui = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.filter = self
+            .target
+            .new_surface_with_dimensions(dim)
+            .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
+        self.debug = self
+            .target
+            .new_surface_with_dimensions(dim)
+            .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
+        self.ui = self
+            .target
+            .new_surface_with_dimensions(dim)
+            .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
         // The rest are tile size surfaces
+
+        Ok(())
     }
 
-    pub fn resize_cache(&mut self, cache_dims: skia::ISize, interest_area_threshold: i32) {
-        self.cache = self.target.new_surface_with_dimensions(cache_dims).unwrap();
+    pub fn resize_cache(
+        &mut self,
+        cache_dims: skia::ISize,
+        interest_area_threshold: i32,
+    ) -> Result<()> {
+        self.cache = self
+            .target
+            .new_surface_with_dimensions(cache_dims)
+            .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
         self.cache.canvas().reset_matrix();
         self.cache.canvas().translate((
             (interest_area_threshold as f32 * TILE_SIZE),
             (interest_area_threshold as f32 * TILE_SIZE),
         ));
+        Ok(())
     }
 
     pub fn draw_rect_to(

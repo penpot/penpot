@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use crate::math::{self as math, intersect_rays, Bounds, Matrix, Point, Ray, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, Frame, GridCell, GridData, GridTrack, GridTrackType,
@@ -6,6 +7,7 @@ use crate::shapes::{
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
+
 use std::collections::{HashMap, HashSet, VecDeque};
 
 use super::common::GetBounds;
@@ -704,7 +706,7 @@ pub fn reflow_grid_layout(
     grid_data: &GridData,
     shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
-) -> VecDeque<Modifier> {
+) -> Result<VecDeque<Modifier>> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
     let children: HashSet<Uuid> = shape.children_ids_iter(true).copied().collect();
@@ -825,7 +827,9 @@ pub fn reflow_grid_layout(
 
         let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
-        let parent_transform_inv = &parent_transform.invert().unwrap();
+        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
+            "Failed to invert parent transform".to_string(),
+        ))?;
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
 
         let mut scale = Matrix::scale((scale_width, scale_height));
@@ -839,5 +843,5 @@ pub fn reflow_grid_layout(
         bounds.insert(shape.id, layout_bounds_after);
     }
 
-    result
+    Ok(result)
 }
