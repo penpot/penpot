@@ -62,6 +62,7 @@
 /frontend/test-results/
 /frontend/.shadow-cljs
 /other/
+/scripts/
 /nexus/
 /tmp/
 /vendor/**/target
