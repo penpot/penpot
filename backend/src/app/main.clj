@@ -466,16 +466,17 @@
 
    ::setup/shared-keys
    {::setup/props (ig/ref ::setup/props)
-    :nitrate (cf/get :nitrate-shared-key)
-    :exporter (cf/get :exporter-shared-key)}
+    :nexus        (cf/get :nexus-shared-key)
+    :nitrate      (cf/get :nitrate-shared-key)
+    :exporter     (cf/get :exporter-shared-key)}
 
    ::setup/clock
    {}
 
    :app.loggers.audit.archive-task/handler
-   {::setup/props        (ig/ref ::setup/props)
-    ::db/pool            (ig/ref ::db/pool)
-    ::http.client/client (ig/ref ::http.client/client)}
+   {::setup/shared-keys  (ig/ref ::setup/shared-keys)
+    ::http.client/client (ig/ref ::http.client/client)
+    ::db/pool            (ig/ref ::db/pool)}
 
    :app.loggers.audit.gc-task/handler
    {::db/pool (ig/ref ::db/pool)}

@@ -57,11 +57,13 @@
 /frontend/package-lock.json
 /frontend/resources/fonts/experiments
 /frontend/resources/public/*
+/frontend/src/app/render_wasm/api/shared.js
 /frontend/storybook-static/
 /frontend/target/
 /frontend/test-results/
 /frontend/.shadow-cljs
 /other/
+/scripts/
 /nexus/
 /tmp/
 /vendor/**/target

@@ -33,7 +33,7 @@
     "lint:js": "exit 0",
     "lint:scss": "exit 0",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
-    "test": "pnpm run build:test && node target/tests/test.js",
+    "test": "pnpm run build:wasm && pnpm run build:test && node target/tests/test.js",
     "test:storybook": "vitest run --project=storybook",
     "watch:test": "mkdir -p target/tests && concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests --exec 'node target/tests/test.js'\"",
     "test:e2e": "playwright test --project default",

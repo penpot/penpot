@@ -5,11 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.render-wasm.helpers
-  #?(:cljs (:require-macros [app.render-wasm.helpers])))
+  #?(:cljs (:require-macros [app.render-wasm.helpers]))
+  (:require [app.common.data :as d]))
 
-(def ^:export error-code
+(def error-code
   "WASM error code constants (must match render-wasm/src/error.rs and mem.rs)."
-  {0x01 :wasm-non-blocking 0x02 :wasm-critical})
+  {0x01 :non-blocking
+   0x02 :panic})
 
 (defmacro call
   "A helper for calling a wasm  function.
@@ -18,19 +20,19 @@
    - :wasm-non-blocking: call app.main.errors/on-error (eventually, shows a toast and logs the error)
    - :wasm-critical or unknown: throws an exception to be handled by the global error handler (eventually, shows the internal error page)"
   [module name & params]
-  (let [fn-sym   (with-meta (gensym "fn-") {:tag 'function})
-        e-sym    (gensym "e")
-        code-sym (gensym "code")]
+  (let [fn-sym    (with-meta (gensym "fn-") {:tag 'function})
+        cause-sym (gensym "cause")]
     `(let [~fn-sym (cljs.core/unchecked-get ~module ~name)]
        (try
          (~fn-sym ~@params)
-         (catch :default ~e-sym
-           (let [read-code# (cljs.core/unchecked-get ~module "_read_error_code")
-                 ~code-sym (when read-code# (read-code#))
-                 type#    (or (get app.render-wasm.helpers/error-code ~code-sym) :wasm-critical)
-                 ex#      (ex-info (str "WASM error (type: " type# ")")
-                                   {:fn ~name :type type# :message (.-message ~e-sym) :error-code ~code-sym}
-                                   ~e-sym)]
-             (if (= type# :wasm-non-blocking)
-               (@~'app.main.store/on-error ex#)
-               (throw ex#))))))))
+         (catch :default ~cause-sym
+           (let [read-code-fn# (cljs.core/unchecked-get ~module "_read_error_code")
+                 code-num#     (when read-code-fn# (read-code-fn#))
+                 code#         (get error-code code-num# :wasm-critical)
+                 hint#         (str "WASM Error (" (d/name code#)   ")")
+                 context#      {:type :wasm-error
+                                :code code#
+                                :hint hint#
+                                :fn ~name}
+                 cause#        (ex-info hint# context# ~cause-sym)]
+             (throw cause#)))))))

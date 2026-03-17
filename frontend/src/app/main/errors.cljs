@@ -33,6 +33,27 @@
 ;; Will contain last uncaught exception
 (def last-exception nil)
 
+;; --- Stale-asset error detection and auto-reload
+;;
+;; When the browser loads JS modules from different builds (e.g.  shared.js from
+;; build A and main-dashboard.js from build B because you loaded it in the
+;; middle of a deploy per example), keyword constants referenced across modules
+;; will be undefined. This manifests as TypeError messages containing
+;; "$cljs$cst$" and "is undefined" or "is null".
+
+(defn stale-asset-error?
+  "Returns true if the error matches the signature of a cross-build
+  module mismatch: accessing a ClojureScript keyword constant that
+  doesn't exist on the shared $APP object."
+  [cause]
+  (when (some? cause)
+    (let [message (ex-message cause)]
+      (and (string? message)
+           (str/includes? message "$cljs$cst$")
+           (or (str/includes? message "is undefined")
+               (str/includes? message "is null")
+               (str/includes? message "is not a function"))))))
+
 (defn exception->error-data
   [cause]
   (let [data (ex-data cause)]
@@ -127,24 +148,15 @@
       (ex/print-throwable cause :prefix "Unexpected Error")
       (flash :cause cause :type :unhandled))))
 
-(defmethod ptk/handle-error :wasm-non-blocking
+(defmethod ptk/handle-error :wasm-error
   [error]
   (when-let [cause (::instance error)]
-    (flash :cause cause)))
-
-(defmethod ptk/handle-error :wasm-critical
-  [error]
-  (when-let [cause (::instance error)]
-    (ex/print-throwable cause :prefix "WASM critical error"))
-
-  (st/emit! (rt/assign-exception error)))
-
-(defmethod ptk/handle-error :wasm-exception
-  [error]
-  (when-let [cause (::instance error)]
-    (let [prefix (or (:prefix error) "Exception")]
-      (ex/print-throwable cause :prefix prefix)))
-  (st/emit! (rt/assign-exception error)))
+    (ex/print-throwable cause)
+    (let [code (get error :code)]
+      (if (or (= code :panic)
+              (= code :webgl-context-lost))
+        (st/emit! (rt/assign-exception error))
+        (flash :type :handled :cause cause)))))
 
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
@@ -373,22 +385,31 @@
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
               (when-not (is-ignorable-exception? cause)
-                (let [data (ex-data cause)
-                      type (get data :type)]
-                  (set! last-exception cause)
-                  (if (#{:wasm-critical :wasm-non-blocking :wasm-exception} type)
-                    (on-error cause)
-                    (do
-                      (ex/print-throwable cause :prefix "Uncaught Exception")
-                      (ts/schedule #(flash :cause cause :type :unhandled))))))))
+                (if (stale-asset-error? cause)
+                  (cf/throttled-reload :reason (ex-message cause))
+                  (let [data (ex-data cause)
+                        type (get data :type)]
+                    (set! last-exception cause)
+                    (if (= :wasm-error type)
+                      (on-error cause)
+                      (do
+                        (ex/print-throwable cause :prefix "Uncaught Exception")
+                        (ts/asap #(flash :cause cause :type :unhandled)))))))))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "reason")]
               (when-not (is-ignorable-exception? cause)
-                (set! last-exception cause)
-                (ex/print-throwable cause :prefix "Uncaught Rejection")
-                (ts/schedule #(flash :cause cause :type :unhandled)))))]
+                (if (stale-asset-error? cause)
+                  (cf/throttled-reload :reason (ex-message cause))
+                  (let [data (ex-data cause)
+                        type (get data :type)]
+                    (set! last-exception cause)
+                    (if (= :wasm-error type)
+                      (on-error cause)
+                      (do
+                        (ex/print-throwable cause :prefix "Uncaught Rejection")
+                        (ts/asap #(flash :cause cause :type :unhandled)))))))))]
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)

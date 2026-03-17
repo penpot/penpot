@@ -46,16 +46,25 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::GRAY);
 
-    let str = if render_state.options.is_debug_visible() {
+    let mut str = if render_state.options.is_debug_visible() {
         "WASM RENDERER (DEBUG)"
     } else {
         "WASM RENDERER"
     };
     let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
-    let p = skia::Point::new(width as f32 - 25.0 - scalar, height as f32 - 25.0);
+    let mut p = skia::Point::new(width as f32 - 25.0 - scalar, height as f32 - 25.0);
 
     let debug_font = render_state.fonts.debug_font();
     canvas.draw_str(str, p, debug_font, &paint);
+
+    if render_state.options.show_info_text() {
+        str = "TEXT EDITOR / V3";
+
+        let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
+        p.x = width as f32 - 25.0 - scalar;
+        p.y -= 20.0;
+        canvas.draw_str(str, p, debug_font, &paint);
+    }
 }
 
 #[allow(dead_code)]

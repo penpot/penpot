@@ -53,6 +53,13 @@
    [rumext.v2 :as mf]))
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
 
+(defn text-editor-wasm?
+  []
+  (let [runtime-features (get @st/state :features-runtime)
+        enabled-features (get @st/state :features)]
+    (or (contains? runtime-features "text-editor-wasm/v1")
+        (contains? enabled-features "text-editor-wasm/v1"))))
+
 (def ^:const UUID-U8-SIZE 16)
 (def ^:const UUID-U32-SIZE (/ UUID-U8-SIZE 4))
 
@@ -149,11 +156,8 @@
         ;; Determine if text-editor-wasm feature is active without requiring
         ;; app.main.features to avoid circular dependency: check runtime and
         ;; persisted feature sets in the store state.
-        (let [runtime-features (get @st/state :features-runtime)
-              enabled-features (get @st/state :features)]
-          (when (or (contains? runtime-features "text-editor-wasm/v1")
-                    (contains? enabled-features "text-editor-wasm/v1"))
-            (text-editor/text-editor-render-overlay)))
+        (when (text-editor-wasm?)
+          (text-editor/text-editor-render-overlay))
         ;; Poll for editor events; if any event occurs, trigger a re-render
         (let [ev (text-editor/text-editor-poll-event)]
           (when (and ev (not= ev 0))
@@ -1395,7 +1399,9 @@
   []
   (cond-> 0
     (dbg/enabled? :wasm-viewbox)
-    (bit-or 2r00000000000000000000000000000001)))
+    (bit-or 2r00000000000000000000000000000001)
+    (text-editor-wasm?)
+    (bit-or 2r00000000000000000000000000001000)))
 
 (defn set-canvas-size
   [canvas]
@@ -1404,27 +1410,13 @@
     (set! (.-width canvas) (* dpr width))
     (set! (.-height canvas) (* dpr height))))
 
-(defn- get-browser
-  []
-  (when (exists? js/navigator)
-    (let [user-agent (.-userAgent js/navigator)]
-      (when user-agent
-        (cond
-          (re-find #"(?i)firefox" user-agent) :firefox
-          (re-find #"(?i)chrome" user-agent) :chrome
-          (re-find #"(?i)safari" user-agent) :safari
-          (re-find #"(?i)edge" user-agent) :edge
-          :else :unknown)))))
-
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
   (reset! wasm/context-lost? true)
-  (log/warn :hint "WebGL context lost")
-  (ex/raise :type :wasm-exception
-            :exception-type :webgl-context-lost
-            :prefix "WebGL context lost"
-            :hint "WebGL context lost"))
+  (ex/raise :type :wasm-error
+            :code :webgl-context-lost
+            :hint "WASM Error: WebGL context lost"))
 
 (defn init-canvas-context
   [canvas]
@@ -1433,8 +1425,7 @@
         context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
         context (.getContext ^js canvas context-id default-context-options)
         context-init? (not (nil? context))
-        browser (get-browser)
-        browser (sr/translate-browser browser)]
+        browser (sr/translate-browser cf/browser)]
     (when-not (nil? context)
       (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
         (.makeContextCurrent ^js gl handle)

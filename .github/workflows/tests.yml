@@ -272,7 +272,7 @@ jobs:
       - name: Build Bundle
         working-directory: ./frontend
         run: |
-          ./scripts/build 0.0.0
+          ./scripts/build
 
       - name: Store Bundle Cache
         uses: actions/cache@v5

@@ -57,6 +57,7 @@
    [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
+   [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -361,9 +362,9 @@
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)
-        (if (empty? focus)
-          (wasm.api/clear-focus-mode)
-          (wasm.api/set-focus-mode focus))))
+        (ts/asap #(if (empty? focus)
+                    (wasm.api/clear-focus-mode)
+                    (wasm.api/set-focus-mode focus)))))
 
     (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
