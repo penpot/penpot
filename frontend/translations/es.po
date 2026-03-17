@@ -6059,6 +6059,14 @@ msgstr "Eliminar desenfoque"
 msgid "workspace.options.blur-options.title"
 msgstr "Desenfoque"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Desenfoque de capa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Desenfoque de fondo"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"
 msgstr "Desenfoque del grupo"

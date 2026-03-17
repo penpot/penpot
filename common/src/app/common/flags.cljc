@@ -162,7 +162,8 @@
     ;; Activates the nitrate module
     :nitrate
 
-    :mcp})
+    :mcp
+    :background-blur})
 
 (def all-flags
   (set/union email login varia))
