@@ -331,7 +331,7 @@
         (u/display-not-valid :removeRulerGuide "Guide not provided")
 
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'comment:write' permission")
+        (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'content:write' permission")
 
         :else
         (let [guide (u/proxy->ruler-guide value)]

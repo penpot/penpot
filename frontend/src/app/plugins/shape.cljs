@@ -1267,7 +1267,7 @@
                  (u/display-not-valid :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (let [id        (uuid/next)
+                 (let [ruler-id  (uuid/next)
                        axis      (parser/orientation->axis orientation)
                        objects   (u/locate-objects file-id page-id)
                        frame     (get objects id)
@@ -1275,11 +1275,11 @@
                        position  (+ board-pos value)]
                    (st/emit!
                     (dwgu/update-guides
-                     {:id       id
+                     {:id       ruler-id
                       :axis     axis
                       :position position
                       :frame-id id}))
-                   (rg/ruler-guide-proxy plugin-id file-id page-id id)))))
+                   (rg/ruler-guide-proxy plugin-id file-id page-id ruler-id)))))
 
            :removeRulerGuide
            (fn [_ value]
