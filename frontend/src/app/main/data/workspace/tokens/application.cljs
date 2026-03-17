@@ -51,7 +51,7 @@
 
 (defn update-shape-radius
   ([value shape-ids attributes] (update-shape-radius value shape-ids attributes nil))
-  ([value shape-ids attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+  ([value shape-ids attributes page-id]
    (when (number? value)
      (let [value (max 0 value)]
        (dwsh/update-shapes shape-ids

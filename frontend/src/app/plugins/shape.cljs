@@ -54,7 +54,7 @@
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [resolve-tokens translate-prop token-attr?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -1298,15 +1298,15 @@
            {:this true
             :get
             (fn [_]
-              (let [tokens
+              (let [applied-tokens
                     (-> (u/locate-shape file-id page-id id)
                         (get :applied-tokens)
-                        (resolve-tokens))]
+                        (applied-tokens-plugin->applied-tokens))]
                 (reduce
                  (fn [acc [prop name]]
                    (obj/set! acc (json/write-camel-key prop) name))
                  #js {}
-                 tokens)))}
+                 applied-tokens)))}
 
            :applyToken
            {:enumerable false
@@ -1315,7 +1315,7 @@
                      [:maybe [:set [:and ::sm/keyword [:fn token-attr?]]]]]
             :fn (fn [token attrs]
                   (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
-                        kw-attrs (into #{} (map (comp translate-prop keyword) attrs))]
+                        kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
                     (if (some #(not (token-attr? %)) kw-attrs)
                       (u/display-not-valid :applyToken attrs)
                       (st/emit!
