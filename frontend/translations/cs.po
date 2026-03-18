@@ -2916,7 +2916,7 @@ msgstr "Přestávka na údržbu: do 5 minut budeme mimo provoz na krátkou údr�
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "K dispozici je nová verze, obnovte prosím stránku"
+msgstr "K dispozici je nová verze."
 
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
