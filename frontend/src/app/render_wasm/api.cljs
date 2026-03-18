@@ -1533,6 +1533,25 @@
     (mem/free)
     content))
 
+(defn stroke-to-path
+  "Converts a shape's stroke at the given index into a filled path.
+   Returns the stroke outline as PathData content."
+  [id stroke-index]
+  (use-shape id)
+  (let [offset (-> (h/call wasm/internal-module "_current_stroke_to_path" stroke-index)
+                   (mem/->offset-32))
+        heap   (mem/get-heap-u32)
+        length (aget heap offset)]
+    (if (pos? length)
+      (let [data    (mem/slice heap
+                               (+ offset 1)
+                               (* length path.impl/SEGMENT-U32-SIZE))
+            content (path/from-bytes data)]
+        (mem/free)
+        content)
+      (do (mem/free)
+          nil))))
+
 (defn calculate-bool*
   [bool-type ids]
   (let [size   (mem/get-alloc-size ids UUID-U8-SIZE)
