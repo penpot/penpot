@@ -23,7 +23,8 @@ pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
 use crate::shapes::{
-    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, Type,
+    all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
+    Stroke, Type,
 };
 use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
@@ -816,7 +817,7 @@ impl RenderState {
         {
             if let Some(blur) = shape.blur.filter(|b| !b.hidden) {
                 shape.to_mut().set_blur(None);
-                Some(blur.value)
+                Some(blur.sigma())
             } else {
                 None
             }
@@ -1437,7 +1438,7 @@ impl RenderState {
             if !self.options.is_fast_mode() {
                 if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
                     let scale = self.get_scale();
-                    let sigma = frame_blur.value * scale;
+                    let sigma = radius_to_sigma(frame_blur.value * scale);
                     if let Some(filter) =
                         skia::image_filters::blur((sigma, sigma), None, None, None)
                     {
@@ -1630,8 +1631,10 @@ impl RenderState {
         let mut plain_shape = Cow::Borrowed(shape);
         let combined_blur =
             Self::combine_blur_values(self.combined_layer_blur(shape.blur), extra_layer_blur);
-        let blur_filter = combined_blur
-            .and_then(|blur| skia::image_filters::blur((blur.value, blur.value), None, None, None));
+        let blur_filter = combined_blur.and_then(|blur| {
+            let sigma = blur.sigma();
+            skia::image_filters::blur((sigma, sigma), None, None, None)
+        });
 
         let use_low_zoom_path = scale <= 1.0 && combined_blur.is_none();
 
@@ -1714,12 +1717,8 @@ impl RenderState {
 
         // Create filter with blur only (no offset, no spread - handled geometrically)
         let blur_only_filter = if transformed_shadow.blur > 0.0 {
-            Some(skia::image_filters::blur(
-                (transformed_shadow.blur, transformed_shadow.blur),
-                None,
-                None,
-                None,
-            ))
+            let sigma = radius_to_sigma(transformed_shadow.blur);
+            Some(skia::image_filters::blur((sigma, sigma), None, None, None))
         } else {
             None
         };
