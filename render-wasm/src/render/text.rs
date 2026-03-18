@@ -1,5 +1,6 @@
 use super::{filters, RenderState, Shape, SurfaceId};
 use crate::{
+    error::Result,
     math::Rect,
     shapes::{
         calculate_position_data, calculate_text_layout_data, merge_fills, set_paint_fill,
@@ -66,7 +67,7 @@ pub fn stroke_paragraph_builder_group_from_text(
         }
 
         let stroke_paragraphs: Vec<ParagraphBuilder> = (0..stroke_paragraphs_map.len())
-            .map(|i| stroke_paragraphs_map.remove(&i).unwrap())
+            .filter_map(|i| stroke_paragraphs_map.remove(&i))
             .collect();
 
         paragraph_group.push(stroke_paragraphs);
@@ -195,7 +196,7 @@ pub fn render_with_bounds_outset(
     stroke_bounds_outset: f32,
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
-) {
+) -> Result<()> {
     if let Some(render_state) = render_state {
         let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
 
@@ -225,9 +226,10 @@ pub fn render_with_bounds_outset(
                             fill_inset,
                             layer_opacity,
                         );
+                        Ok(())
                     },
-                ) {
-                    return;
+                )? {
+                    return Ok(());
                 }
             }
         }
@@ -242,7 +244,7 @@ pub fn render_with_bounds_outset(
             fill_inset,
             layer_opacity,
         );
-        return;
+        return Ok(());
     }
 
     if let Some(canvas) = canvas {
@@ -256,6 +258,7 @@ pub fn render_with_bounds_outset(
             layer_opacity,
         );
     }
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -269,7 +272,7 @@ pub fn render(
     blur: Option<&ImageFilter>,
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
-) {
+) -> Result<()> {
     render_with_bounds_outset(
         render_state,
         canvas,
@@ -281,7 +284,7 @@ pub fn render(
         0.0,
         fill_inset,
         layer_opacity,
-    );
+    )
 }
 
 fn render_text_on_canvas(

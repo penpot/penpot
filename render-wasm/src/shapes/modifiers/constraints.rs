@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use crate::math::{is_move_only_matrix, Bounds, Matrix};
 use crate::shapes::{ConstraintH, ConstraintV};
 
@@ -105,14 +106,14 @@ pub fn propagate_shape_constraints(
     constraint_v: ConstraintV,
     transform: Matrix,
     ignore_constrainst: bool,
-) -> Matrix {
+) -> Result<Matrix> {
     // if the constrains are scale & scale or the transform has only moves we
     // can propagate as is
     if (ignore_constrainst
         || constraint_h == ConstraintH::Scale && constraint_v == ConstraintV::Scale)
         || is_move_only_matrix(&transform)
     {
-        return transform;
+        return Ok(transform);
     }
 
     let mut transform = transform;
@@ -133,7 +134,9 @@ pub fn propagate_shape_constraints(
         parent_transform.post_translate(center);
         parent_transform.pre_translate(-center);
 
-        let parent_transform_inv = &parent_transform.invert().unwrap();
+        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
+            "Failed to invert parent transform".to_string(),
+        ))?;
         let origin = parent_transform_inv.map_point(child_bounds_after.nw);
 
         let mut scale = Matrix::scale((scale_width, scale_height));
@@ -160,5 +163,5 @@ pub fn propagate_shape_constraints(
         transform.post_concat(&Matrix::translate(th + tv));
     }
 
-    transform
+    Ok(transform)
 }

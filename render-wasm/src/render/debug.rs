@@ -179,9 +179,12 @@ pub fn render_debug_shape(
 #[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
 pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
-    let base64_image = render_state.surfaces.base64_snapshot(id);
+    let base64_image = render_state
+        .surfaces
+        .base64_snapshot(id)
+        .expect("Failed to get base64 image");
 
-    run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
+    run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"));
 }
 
 #[allow(dead_code)]
@@ -194,7 +197,10 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
         rect.bottom as i32,
     );
 
-    let base64_image = render_state.surfaces.base64_snapshot_rect(id, int_rect);
+    let base64_image = render_state
+        .surfaces
+        .base64_snapshot_rect(id, int_rect)
+        .expect("Failed to get base64 image");
 
     if let Some(base64_image) = base64_image {
         run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))

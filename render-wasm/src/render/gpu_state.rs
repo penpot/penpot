@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use skia_safe::gpu::{self, gl::FramebufferInfo, gl::TextureInfo, DirectContext};
 use skia_safe::{self as skia, ISize};
 
@@ -8,24 +9,30 @@ pub struct GpuState {
 }
 
 impl GpuState {
-    pub fn new() -> Self {
-        let interface = gpu::gl::Interface::new_native().unwrap();
-        let context = gpu::direct_contexts::make_gl(interface, None).unwrap();
+    pub fn try_new() -> Result<Self> {
+        let interface = gpu::gl::Interface::new_native().ok_or(Error::CriticalError(
+            "Failed to create GL interface".to_string(),
+        ))?;
+        let context = gpu::direct_contexts::make_gl(interface, None).ok_or(
+            Error::CriticalError("Failed to create GL context".to_string()),
+        )?;
         let framebuffer_info = {
             let mut fboid: gl::types::GLint = 0;
             unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut fboid) };
 
             FramebufferInfo {
-                fboid: fboid.try_into().unwrap(),
+                fboid: fboid.try_into().map_err(|_| {
+                    Error::CriticalError("Failed to convert GL framebuffer ID to u32".to_string())
+                })?,
                 format: gpu::gl::Format::RGBA8.into(),
                 protected: gpu::Protected::No,
             }
         };
 
-        GpuState {
+        Ok(GpuState {
             context,
             framebuffer_info,
-        }
+        })
     }
 
     fn create_webgl_texture(&mut self, width: i32, height: i32) -> gl::types::GLuint {
@@ -56,7 +63,11 @@ impl GpuState {
         texture_id
     }
 
-    pub fn create_surface_with_isize(&mut self, label: String, size: ISize) -> skia::Surface {
+    pub fn create_surface_with_isize(
+        &mut self,
+        label: String,
+        size: ISize,
+    ) -> Result<skia::Surface> {
         self.create_surface_with_dimensions(label, size.width, size.height)
     }
 
@@ -65,7 +76,7 @@ impl GpuState {
         label: String,
         width: i32,
         height: i32,
-    ) -> skia::Surface {
+    ) -> Result<skia::Surface> {
         let backend_texture = unsafe {
             let texture_id = self.create_webgl_texture(width, height);
             let texture_info = TextureInfo {
@@ -77,7 +88,7 @@ impl GpuState {
             gpu::backend_textures::make_gl((width, height), gpu::Mipmapped::No, texture_info, label)
         };
 
-        gpu::surfaces::wrap_backend_texture(
+        let surface = gpu::surfaces::wrap_backend_texture(
             &mut self.context,
             &backend_texture,
             gpu::SurfaceOrigin::BottomLeft,
@@ -86,15 +97,19 @@ impl GpuState {
             None,
             None,
         )
-        .unwrap()
+        .ok_or(Error::CriticalError(
+            "Failed to create Skia surface".to_string(),
+        ))?;
+
+        Ok(surface)
     }
 
     /// Create a Skia surface that will be used for rendering.
-    pub fn create_target_surface(&mut self, width: i32, height: i32) -> skia::Surface {
+    pub fn create_target_surface(&mut self, width: i32, height: i32) -> Result<skia::Surface> {
         let backend_render_target =
             gpu::backend_render_targets::make_gl((width, height), 1, 8, self.framebuffer_info);
 
-        gpu::surfaces::wrap_backend_render_target(
+        let surface = gpu::surfaces::wrap_backend_render_target(
             &mut self.context,
             &backend_render_target,
             gpu::SurfaceOrigin::BottomLeft,
@@ -102,6 +117,10 @@ impl GpuState {
             None,
             None,
         )
-        .unwrap()
+        .ok_or(Error::CriticalError(
+            "Failed to create Skia surface".to_string(),
+        ))?;
+
+        Ok(surface)
     }
 }
