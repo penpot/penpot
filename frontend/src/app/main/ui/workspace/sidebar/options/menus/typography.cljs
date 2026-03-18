@@ -16,6 +16,8 @@
    [app.main.data.common :as dcm]
    [app.main.data.fonts :as fts]
    [app.main.data.shortcuts :as dsc]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -464,7 +466,7 @@
 
 (mf/defc typography-advanced-options
   {::mf/wrap [mf/memo]}
-  [{:keys [visible? typography editable? name-input-ref on-close on-change on-name-blur local? navigate-to-library on-key-down]}]
+  [{:keys [visible? typography editable? name-input-ref on-close on-change on-name-blur on-delete on-duplicate local? navigate-to-library on-key-down]}]
   (let [ref       (mf/use-ref nil)
         font-data (fonts/get-font-data (:font-id typography))]
     (fonts/ensure-loaded! (:font-id typography))
@@ -498,9 +500,20 @@
              :on-key-down on-key-down
              :on-blur on-name-blur}]
 
-           [:div {:class (stl/css :action-btn)
-                  :on-click on-close}
-            deprecated-icon/tick]]
+           [:div {:class (stl/css :action-btns)}
+            (when (fn? on-duplicate)
+              [:button {:class (stl/css :action-btn)
+                        :title (tr "workspace.assets.duplicate")
+                        :on-click on-duplicate}
+               deprecated-icon/add])
+            (when (fn? on-delete)
+              [:button {:class (stl/css :action-btn)
+                        :title (tr "workspace.assets.delete")
+                        :on-click on-delete}
+               deprecated-icon/delete])
+            [:div {:class (stl/css :action-btn)
+                   :on-click on-close}
+             deprecated-icon/tick]]]
 
           [:& text-options {:values typography
                             :on-change on-change
@@ -592,7 +605,26 @@
              (when ^boolean enter?
                (dom/blur! input-node))
              (when ^boolean esc?
-               (dom/blur! input-node)))))]
+               (dom/blur! input-node)))))
+
+        typography-id (:id typography)
+
+        on-delete
+        (mf/use-fn
+         (mf/deps typography-id file-id on-close)
+         (fn []
+           (on-close)
+           (let [undo-id (js/Symbol)]
+             (st/emit! (dwu/start-undo-transaction undo-id)
+                       (dwl/delete-typography typography-id)
+                       (dwl/sync-file file-id file-id :typographies typography-id)
+                       (dwu/commit-undo-transaction undo-id)))))
+
+        on-duplicate
+        (mf/use-fn
+         (mf/deps file-id typography-id)
+         (fn []
+           (st/emit! (dwl/duplicate-typography file-id typography-id))))]
 
     (mf/with-effect [editing?]
       (when editing?
@@ -667,5 +699,7 @@
        :on-change  on-change
        :on-name-blur on-name-blur
        :on-key-down on-key-down
+       :on-delete (when editable? on-delete)
+       :on-duplicate (when editable? on-duplicate)
        :local?  local?
        :navigate-to-library navigate-to-library}]]))
