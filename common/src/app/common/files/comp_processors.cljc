@@ -6,8 +6,26 @@
 
 (ns app.common.files.comp-processors
   (:require
+   [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]))
 
- (defn fix-missing-swap-slots
-  [file]
-  file)
+(defn fix-missing-swap-slots
+  [file libraries]
+  (ctf/update-all-shapes
+   file
+   (fn [shape]
+     (if (and (ctk/instance-head? shape) (ctk/in-component-copy? shape))
+       (let [{:keys [container]}
+             (meta shape)
+
+             ref-shape
+             (ctf/find-ref-shape file container libraries shape :include-deleted? true :with-context? true)]
+         (println "comparing" (:name shape) "with ref" (some-> ref-shape :name))
+         (if ref-shape
+           (if (and (not= (:shape-ref shape) (:id ref-shape))
+                    (nil? (ctk/get-swap-slot shape)))
+             (let [updated-shape (ctk/set-swap-slot shape (:id ref-shape))]
+               {:result :update :updated-shape updated-shape})
+             {:result :keep})
+           {:result :keep}))
+       {:result :keep}))))

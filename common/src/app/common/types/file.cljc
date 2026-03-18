@@ -225,6 +225,86 @@
     (ctpl/update-page file-data (:id container) f)
     (ctkl/update-component file-data (:id container) f)))
 
+(defn update-pages
+  "Update all pages inside the file"
+  [file-data f]
+  (update file-data :pages-index d/update-vals
+         (fn [page]
+           (-> page
+               (ctn/make-container :page)
+               (f)
+               (ctn/unmake-container)))))
+
+(defn update-components
+  "Update all components inside the file"
+  [file-data f]
+  (d/update-when file-data :components d/update-vals
+                 (fn [component]
+                   (-> component
+                       (ctn/make-container :component)
+                       (f)
+                       (ctn/unmake-container)))))
+
+(defn update-containers
+  "Update all pages and components inside the file"
+  [file-data f]
+  (-> file-data
+      (update-pages f)
+      (update-components f)))
+
+(defn update-objects-tree
+  "Do a depth-first traversal of the shapes in a container, doing different kinds of updates.
+   The function f receives a shape with a context metadata with the container.
+   It must return a map with the following keys:
+   - :result -> :keep, :update or :remove
+   - :updated-shape -> the updated shape if result is :update"
+  [container f]
+  (letfn [(update-shape-recursive
+            [container shape-id]
+            (let [shape (ctst/get-shape container shape-id)]
+              (when (not shape)
+                (throw (ex-info "Shape not found" {:shape-id shape-id})))
+              (let [shape (with-meta shape {:container container})
+
+                    {:keys [result updated-shape]} (f shape)
+
+                    container'
+                    (case result
+                      :keep
+                      container
+
+                      :update
+                      (ctst/set-shape container updated-shape)
+
+                      :remove
+                      (ctst/delete-shape container shape-id true)
+
+                      :else
+                      (throw (ex-info "Invalid result from update function" {:result result})))]
+
+                (reduce update-shape-recursive
+                        container'
+                        (:shapes shape)))))]
+
+    (let [root-id (if (ctn/page? container)
+                    uuid/zero
+                    (:main-instance-id container))]
+
+      (if (:objects container)
+        (update-shape-recursive container root-id)
+        container))))
+
+(defn update-all-shapes
+  "Update all shapes in the file, using the update-objects-tree function for each container"
+  [file f]
+  (update-file-data
+   file
+   (fn [file-data]
+     (update-containers
+      file-data
+      (fn [container]
+        (update-objects-tree container f))))))
+
 ;; Asset helpers
 (defn find-component-file
   [file libraries component-file]
