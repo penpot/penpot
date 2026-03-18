@@ -1401,7 +1401,9 @@
     (dbg/enabled? :wasm-viewbox)
     (bit-or 2r00000000000000000000000000000001)
     (text-editor-wasm?)
-    (bit-or 2r00000000000000000000000000001000)))
+    (bit-or 2r00000000000000000000000000001000)
+    (contains? cf/flags :render-wasm-info)
+    (bit-or 2r00000000000000000000000000010000)))
 
 (defn set-canvas-size
   [canvas]

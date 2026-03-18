@@ -33,6 +33,10 @@ impl RenderOptions {
     }
 
     pub fn show_info_text(&self) -> bool {
-        self.flags & options::INFO_TEXT == options::INFO_TEXT
+        self.flags & options::TEXT_EDITOR_V3 == options::TEXT_EDITOR_V3
+    }
+
+    pub fn show_wasm_info(&self) -> bool {
+        self.flags & options::SHOW_WASM_INFO == options::SHOW_WASM_INFO
     }
 }
