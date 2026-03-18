@@ -18,6 +18,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as ch]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
@@ -84,6 +85,10 @@
     :$plugin {:enumerable false :get (fn [] plugin-id)}
 
     ;; Public properties
+    :version
+    {:this true
+     :get (constantly (:base cf/version))}
+
     :root
     {:this true
      :get #(.getRoot ^js %)}
