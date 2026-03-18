@@ -53,21 +53,28 @@
            (rx/take 1)
            (rx/map #(ptk/data-event ::connect))))))
 
-(defn manage-notification
-  [mcp-enabled? mcp-connected?]
-  (if mcp-enabled?
-    (if mcp-connected?
-      (rx/of (ntf/hide))
-      (rx/of (ntf/dialog :content (tr "notifications.mcp.active-tab-switching.text")
-                         :cancel {:label (tr "labels.dismiss")
-                                  :callback #(st/emit! (ntf/hide)
-                                                       (ptk/event ::ev/event {::ev/name "confirm-mcp-tab-switch"
-                                                                              ::ev/origin "workspace-notification"}))}
-                         :accept {:label (tr "labels.switch")
-                                  :callback #(st/emit! (connect-mcp)
-                                                       (ptk/event ::ev/event {::ev/name "dismiss-mcp-tab-switch"
-                                                                              ::ev/origin "workspace-notification"}))})))
-    (rx/of (ntf/hide))))
+(defn manage-mcp-notification
+  []
+  (ptk/reify ::manage-mcp-notification
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [mcp-connected? (true? (-> state :workspace-local :mcp :connection))
+            mcp-enabled?   (true? (-> state :profile :props :mcp-enabled))
+            num-sessions   (-> state :workspace-presence vals count)
+            multi-session? (> num-sessions 1)]
+        (if (and mcp-enabled? multi-session?)
+          (if mcp-connected?
+            (rx/of (ntf/hide))
+            (rx/of (ntf/dialog :content (tr "notifications.mcp.active-in-another-tab")
+                               :cancel {:label (tr "labels.dismiss")
+                                        :callback #(st/emit! (ntf/hide)
+                                                             (ptk/event ::ev/event {::ev/name "confirm-mcp-tab-switch"
+                                                                                    ::ev/origin "workspace-notification"}))}
+                               :accept {:label (tr "labels.switch")
+                                        :callback #(st/emit! (connect-mcp)
+                                                             (ptk/event ::ev/event {::ev/name "dismiss-mcp-tab-switch"
+                                                                                    ::ev/origin "workspace-notification"}))})))
+          (rx/of (ntf/hide)))))))
 
 (defn update-mcp-status
   [value]
@@ -77,26 +84,24 @@
       (update-in state [:profile :props] assoc :mcp-enabled value))
 
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ _ _]
       (rx/merge
-       (let [mcp-connected?  (-> state :workspace-local :mcp :connected)]
-         (manage-notification value mcp-connected?))
-       (case value
-         true  (rx/of (ptk/data-event ::connect))
-         false (rx/of (ptk/data-event ::disconnect))
-         nil)))))
+       (rx/of (manage-mcp-notification)))
+      (case value
+        true  (rx/of (ptk/data-event ::connect))
+        false (rx/of (ptk/data-event ::disconnect))
+        nil))))
 
 (defn update-mcp-connection
   [value]
   (ptk/reify ::update-mcp-plugin-connection
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-local :mcp] assoc :connected value))
+      (update-in state [:workspace-local :mcp] assoc :connection value))
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [mcp-enabled? (-> state :profile :props :mcp-enabled)]
-        (manage-notification mcp-enabled? value)))))
+    (watch [_ _ _]
+      (rx/of (manage-mcp-notification)))))
 
 (defn init-mcp!
   [stream]
@@ -116,11 +121,12 @@
                     :getServerUrl #(str cf/mcp-ws-uri)
                     :setMcpStatus
                     (fn [status]
-                      (let [mcp-connected? (case status
+                      (let [mcp-connection (case status
                                              "connected"    true
                                              "disconnected" false
-                                             nil)]
-                        (st/emit! (update-mcp-connection mcp-connected?))
+                                             "error"        nil
+                                             "")]
+                        (st/emit! (update-mcp-connection mcp-connection))
                         (log/info :hint "MCP STATUS" :status status)))
 
                     :on
