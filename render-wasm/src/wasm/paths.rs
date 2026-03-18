@@ -5,7 +5,7 @@ use std::mem::size_of;
 use std::sync::{Mutex, OnceLock};
 
 use crate::error::{Error, Result};
-use crate::shapes::{Path, Segment, ToPath};
+use crate::shapes::{stroke_to_path, Path, Segment, ToPath};
 use crate::{mem, with_current_shape, with_current_shape_mut, STATE};
 
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
@@ -230,6 +230,40 @@ pub extern "C" fn current_to_path() -> *mut u8 {
             .copied()
             .map(RawSegmentData::from_segment)
             .collect();
+    });
+
+    mem::write_vec(result)
+}
+
+/// Converts a shape's stroke (at the given index) into a filled path.
+///
+/// This uses Skia's `fill_path_with_paint` to convert the stroke outline
+/// into a filled path, properly handling inner/outer/center alignment
+/// via boolean path operations.
+#[no_mangle]
+pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> *mut u8 {
+    let mut result = Vec::<RawSegmentData>::default();
+    with_current_shape!(state, |shape: &Shape| {
+        let idx = stroke_index as usize;
+        if let Some(stroke) = shape.strokes.get(idx) {
+            let shape_path = shape.to_path(&state.shapes);
+            let path_transform = shape.to_path_transform();
+
+            if let Some(path) = stroke_to_path(
+                stroke,
+                &shape_path,
+                path_transform.as_ref(),
+                &shape.selrect,
+                shape.svg_attrs.as_ref(),
+            ) {
+                result = path
+                    .segments()
+                    .iter()
+                    .copied()
+                    .map(RawSegmentData::from_segment)
+                    .collect();
+            }
+        }
     });
 
     mem::write_vec(result)
