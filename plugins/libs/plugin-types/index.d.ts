@@ -769,6 +769,11 @@ export interface CommonLayout {
  */
 export interface Context {
   /**
+   * Returns the current penpot version.
+   */
+  readonly version: string;
+
+  /**
    * The root shape in the current Penpot context. Requires `content:read` permission.
    *
    * @example
