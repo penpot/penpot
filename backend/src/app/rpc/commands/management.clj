@@ -339,6 +339,21 @@
 ;; --- COMMAND: Move project
 
 (defn move-project
+  "Moves a project from one team to another.
+
+  Performs comprehensive validation including:
+  - Permission checks on both source and destination teams
+  - Team compatibility verification between source and destination
+  - File features compatibility with destination team
+
+  The operation also:
+  - Updates the project's team assignment
+  - Cleans up any broken library relations after the move
+
+  Throws:
+  - :cant-move-to-same-team if trying to move project to its current team
+  - Permission exceptions if user lacks required permissions
+  - Team compatibility exceptions if teams are incompatible"
   [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id project-id] :as params}]
   (let [project (db/get-by-id conn :project project-id {:columns [:id :team-id]})
         pids    (->> (db/query conn :project {:team-id (:team-id project)} {:columns [:id]})
