@@ -24,6 +24,7 @@
 ### :bug: Bugs fixed
 
 - Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
+- Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
 
 ## 2.15.0 (Unreleased)
 
