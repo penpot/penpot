@@ -1,6 +1,7 @@
 # render-wasm – Agent Instructions
 
-This component compiles Rust to WebAssembly using Emscripten + Skia. It is consumed by the frontend as a canvas renderer.
+This component compiles Rust to WebAssembly using Emscripten +
+Skia. It is consumed by the frontend as a canvas renderer.
 
 ## Commands
 
