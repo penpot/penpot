@@ -1715,6 +1715,13 @@ export interface Flags {
    * Defaults to false
    */
   naturalChildOrdering: boolean;
+
+  /**
+   * If `true` the validation errors will throw an exception instead of displaying an
+   * error in the debugger console.
+   * Defaults to false
+   */
+  throwValidationErrors: boolean;
 }
 
 /**
