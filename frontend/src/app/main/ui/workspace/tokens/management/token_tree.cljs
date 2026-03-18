@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.management.token-tree
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.path-names :as cpn]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
@@ -69,8 +70,8 @@
          [:div {:class (stl/css :folder-children-wrapper)
                 :id (str "folder-children-" (:path node))}
           (when children-fn
-            (let [children (children-fn)]
-              (for [child children]
+            (let [sorted-children (d/natural-sort-by :name (children-fn))]
+              (for [child sorted-children]
                 (if (not (:leaf child))
                   [:ul {:class (stl/css :node-parent)
                         :key (:path child)}
@@ -127,7 +128,8 @@
         tree (mf/use-memo
               (mf/deps tokens)
               (fn []
-                (cpn/build-tree-root tokens separator)))
+                (->> (cpn/build-tree-root tokens separator)
+                     (d/natural-sort-by :name))))
         can-edit? (:can-edit (deref refs/permissions))
         on-node-context-menu (mf/use-fn
                               (mf/deps can-edit? on-node-context-menu)
