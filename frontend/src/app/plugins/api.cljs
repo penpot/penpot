@@ -117,7 +117,7 @@
      (fn [_ shapes]
        (cond
          (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-         (u/display-not-valid :selection shapes)
+         (u/not-valid plugin-id :selection shapes)
 
          :else
          (let [ids (into (d/ordered-set) (map #(obj/get % "$id")) shapes)]
@@ -182,7 +182,7 @@
     (fn [shapes]
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :shapesColors-shapes shapes)
+        (u/not-valid plugin-id :shapesColors-shapes shapes)
 
         :else
         (let [objects (u/locate-objects)
@@ -202,13 +202,13 @@
             new-color (parser/parse-color-data new-color)]
         (cond
           (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-          (u/display-not-valid :replaceColor-shapes shapes)
+          (u/not-valid plugin-id :replaceColor-shapes shapes)
 
           (not (sm/validate ctc/schema:color old-color))
-          (u/display-not-valid :replaceColor-oldColor old-color)
+          (u/not-valid plugin-id :replaceColor-oldColor old-color)
 
           (not (sm/validate ctc/schema:color new-color))
-          (u/display-not-valid :replaceColor-newColor new-color)
+          (u/not-valid plugin-id :replaceColor-newColor new-color)
 
           :else
           (let [file-id (:current-file-id @st/state)
@@ -261,10 +261,10 @@
     (fn  [name url]
       (cond
         (not (string? name))
-        (u/display-not-valid :uploadMedia-name name)
+        (u/not-valid plugin-id :uploadMedia-name name)
 
         (not (string? url))
-        (u/display-not-valid :uploadMedia-url url)
+        (u/not-valid plugin-id :uploadMedia-url url)
 
         :else
         (let [file-id (:current-file-id @st/state)]
@@ -295,7 +295,7 @@
     (fn [shapes]
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :group-shapes shapes)
+        (u/not-valid plugin-id :group-shapes shapes)
 
         :else
         (let [file-id (:current-file-id @st/state)
@@ -310,10 +310,10 @@
     (fn [group & rest]
       (cond
         (not (shape/shape-proxy? group))
-        (u/display-not-valid :ungroup group)
+        (u/not-valid plugin-id :ungroup group)
 
         (and (some? rest) (not (every? shape/shape-proxy? rest)))
-        (u/display-not-valid :ungroup rest)
+        (u/not-valid plugin-id :ungroup rest)
 
         :else
         (let [shapes (concat [group] rest)
@@ -353,7 +353,7 @@
     (fn [text]
       (cond
         (or (not (string? text)) (empty? text))
-        (u/display-not-valid :createText text)
+        (u/not-valid plugin-id :createText text)
 
         :else
         (let [page  (dsh/lookup-page @st/state)
@@ -384,7 +384,7 @@
     (fn [svg-string]
       (cond
         (or (not (string? svg-string)) (empty? svg-string))
-        (u/display-not-valid :createShapeFromSvg svg-string)
+        (u/not-valid plugin-id :createShapeFromSvg svg-string)
 
         :else
         (let [id (uuid/next)
@@ -401,7 +401,7 @@
          (cond
            (or (not (string? svg-string)) (empty? svg-string))
            (do
-             (u/display-not-valid :createShapeFromSvg "Svg not valid")
+             (u/not-valid plugin-id :createShapeFromSvg "Svg not valid")
              (reject "Svg not valid"))
 
            :else
@@ -419,10 +419,10 @@
       (let [bool-type (keyword bool-type)]
         (cond
           (not (contains? cts/bool-types bool-type))
-          (u/display-not-valid :createBoolean-boolType bool-type)
+          (u/not-valid plugin-id :createBoolean-boolType bool-type)
 
           (or (not (array? shapes)) (empty? shapes) (not (every? shape/shape-proxy? shapes)))
-          (u/display-not-valid :createBoolean-shapes shapes)
+          (u/not-valid plugin-id :createBoolean-shapes shapes)
 
           :else
           (let [ids      (into #{} (map #(obj/get % "$id")) shapes)
@@ -436,10 +436,10 @@
       (let [type (d/nilv (obj/get options "type") "html")]
         (cond
           (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-          (u/display-not-valid :generateMarkup-shapes shapes)
+          (u/not-valid plugin-id :generateMarkup-shapes shapes)
 
           (and (some? type) (not (contains? #{"html" "svg"} type)))
-          (u/display-not-valid :generateMarkup-type type)
+          (u/not-valid plugin-id :generateMarkup-type type)
 
           :else
           (let [resolved-code
@@ -471,16 +471,16 @@
             children? (d/nilv (obj/get options "includeChildren") true)]
         (cond
           (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-          (u/display-not-valid :generateStyle-shapes shapes)
+          (u/not-valid plugin-id :generateStyle-shapes shapes)
 
           (and (some? type) (not (contains? #{"css"} type)))
-          (u/display-not-valid :generateStyle-type type)
+          (u/not-valid plugin-id :generateStyle-type type)
 
           (and (some? prelude?) (not (boolean? prelude?)))
-          (u/display-not-valid :generateStyle-withPrelude prelude?)
+          (u/not-valid plugin-id :generateStyle-withPrelude prelude?)
 
           (and (some? children?) (not (boolean? children?)))
-          (u/display-not-valid :generateStyle-includeChildren children?)
+          (u/not-valid plugin-id :generateStyle-includeChildren children?)
 
           :else
           (let [resolved-styles
@@ -553,7 +553,7 @@
                  :else nil)
             new-window (if (boolean? new-window) new-window false)]
         (if (nil? id)
-          (u/display-not-valid :openPage "Expected a Page object or a page UUID string")
+          (u/not-valid plugin-id :openPage "Expected a Page object or a page UUID string")
           (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
 
     :alignHorizontal
@@ -565,10 +565,10 @@
                   nil)]
         (cond
           (nil? dir)
-          (u/display-not-valid :alignHorizontal-direction "Direction not valid")
+          (u/not-valid plugin-id :alignHorizontal-direction "Direction not valid")
 
           (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-          (u/display-not-valid :alignHorizontal-shapes "Not valid shapes")
+          (u/not-valid plugin-id :alignHorizontal-shapes "Not valid shapes")
 
           :else
           (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
@@ -583,10 +583,10 @@
                   nil)]
         (cond
           (nil? dir)
-          (u/display-not-valid :alignVertical-direction "Direction not valid")
+          (u/not-valid plugin-id :alignVertical-direction "Direction not valid")
 
           (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-          (u/display-not-valid :alignVertical-shapes "Not valid shapes")
+          (u/not-valid plugin-id :alignVertical-shapes "Not valid shapes")
 
           :else
           (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
@@ -596,7 +596,7 @@
     (fn [shapes]
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :distributeHorizontal-shapes "Not valid shapes")
+        (u/not-valid plugin-id :distributeHorizontal-shapes "Not valid shapes")
 
         :else
         (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
@@ -606,7 +606,7 @@
     (fn [shapes]
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :distributeVertical-shapes "Not valid shapes")
+        (u/not-valid plugin-id :distributeVertical-shapes "Not valid shapes")
 
         :else
         (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
@@ -616,7 +616,7 @@
     (fn [shapes]
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :flatten-shapes "Not valid shapes")
+        (u/not-valid plugin-id :flatten-shapes "Not valid shapes")
 
         :else
         (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
@@ -627,7 +627,7 @@
       (cond
         (or (not (seq shapes))
             (not (every? u/is-main-component-proxy? shapes)))
-        (u/display-not-valid :shapes shapes)
+        (u/not-valid plugin-id :shapes shapes)
 
         :else
         (let [file-id (obj/get (first shapes) "$file")

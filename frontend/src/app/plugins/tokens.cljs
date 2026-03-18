@@ -63,11 +63,11 @@
   (cto/token-attr? (token-attr-plugin->token-attr attr)))
 
 (defn- apply-token-to-shapes
-  [file-id set-id id shape-ids attrs]
+  [plugin-id file-id set-id id shape-ids attrs]
 
   (let [token (u/locate-token file-id set-id id)]
     (if (some #(not (token-attr? %)) attrs)
-      (u/display-not-valid :applyToSelected attrs)
+      (u/not-valid plugin-id :applyToSelected attrs)
       (st/emit!
        (dwta/toggle-token {:token token
                            :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
@@ -92,7 +92,7 @@
 (defn token-proxy
   [plugin-id file-id set-id id]
   (obj/reify {:name "TokenProxy"
-              :on-error u/handle-error}
+              :on-error (u/handle-error plugin-id)}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$set-id {:enumerable false :get (constantly set-id)}
@@ -188,14 +188,14 @@
               [:vector [:fn shape-proxy?]]
               [:maybe [:set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [shapes attrs]
-           (apply-token-to-shapes file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
+           (apply-token-to-shapes plugin-id file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
 
     :applyToSelected
     {:enumerable false
      :schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [attrs]
            (let [selected (get-in @st/state [:workspace-local :selected])]
-             (apply-token-to-shapes file-id set-id id selected attrs)))}))
+             (apply-token-to-shapes plugin-id file-id set-id id selected attrs)))}))
 
 ;; === Token Set
 
@@ -205,7 +205,7 @@
 (defn token-set-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenSetProxy"
-              :on-error u/handle-error}
+              :on-error (u/handle-error plugin-id)}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$id {:enumerable false :get (constantly id)}
@@ -310,7 +310,7 @@
              (if resolved-value
                (do (st/emit! (dwtl/create-token id token))
                    (token-proxy plugin-id file-id id (:id token)))
-               (do (u/display-not-valid :addToken (str errors))
+               (do (u/not-valid plugin-id :addToken (str errors))
                    nil))))}
 
     :duplicate
@@ -327,7 +327,7 @@
 (defn token-theme-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenThemeProxy"
-              :on-error u/handle-error}
+              :on-error (u/handle-error plugin-id)}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$id {:enumerable false :get (constantly id)}
@@ -434,7 +434,7 @@
 (defn tokens-catalog
   [plugin-id file-id]
   (obj/reify {:name "TokensCatalog"
-              :on-error u/handle-error}
+              :on-error (u/handle-error plugin-id)}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$id {:enumerable false :get (constantly file-id)}
 

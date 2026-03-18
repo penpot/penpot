@@ -6,6 +6,7 @@
 - **plugin-types**: Added `createVariantFromComponents`
 - **plugin-types**: Change return type of `combineAsVariants`
 - **plugin-types**: Added `textBounds` property for text shapes
+- **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 
 ## 1.4.2 (2026-01-21)
 

@@ -59,7 +59,7 @@
      (fn [_ value]
        (cond
          (or (not (string? value)) (empty? value))
-         (u/display-not-valid :name value)
+         (u/not-valid plugin-id :name value)
 
          :else
          (st/emit! (dwi/update-flow page-id id #(assoc % :name value)))))}
@@ -74,7 +74,7 @@
      (fn [_ value]
        (cond
          (not (shape/shape-proxy? value))
-         (u/display-not-valid :startingBoard value)
+         (u/not-valid plugin-id :startingBoard value)
 
          :else
          (st/emit! (dwi/update-flow page-id id #(assoc % :starting-frame (obj/get value "$id"))))))}
@@ -103,10 +103,10 @@
      (fn [_ value]
        (cond
          (not (string? value))
-         (u/display-not-valid :name value)
+         (u/not-valid plugin-id :name value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :name "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dw/rename-page id value))))}
@@ -127,10 +127,10 @@
      (fn [_ value]
        (cond
          (or (not (string? value)) (not (cc/valid-hex-color? value)))
-         (u/display-not-valid :background value)
+         (u/not-valid plugin-id :background value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :background "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :background "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dw/change-canvas-color id {:color value}))))}
@@ -158,7 +158,7 @@
     (fn [shape-id]
       (cond
         (not (string? shape-id))
-        (u/display-not-valid :getShapeById shape-id)
+        (u/not-valid plugin-id :getShapeById shape-id)
 
         :else
         (let [shape-id (uuid/parse shape-id)
@@ -195,7 +195,7 @@
     (fn [key]
       (cond
         (not (string? key))
-        (u/display-not-valid :page-plugin-data-key key)
+        (u/not-valid plugin-id :page-plugin-data-key key)
 
         :else
         (let [page (u/locate-page file-id id)]
@@ -205,13 +205,13 @@
     (fn [key value]
       (cond
         (not (string? key))
-        (u/display-not-valid :setPluginData-key key)
+        (u/not-valid plugin-id :setPluginData-key key)
 
         (and (some? value) (not (string? value)))
-        (u/display-not-valid :setPluginData-value value)
+        (u/not-valid plugin-id :setPluginData-value value)
 
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
+        (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'content:write' permission")
 
         :else
         (st/emit! (dp/set-plugin-data file-id :page id (keyword "plugin" (str plugin-id)) key value))))
@@ -225,10 +225,10 @@
     (fn [namespace key]
       (cond
         (not (string? namespace))
-        (u/display-not-valid :page-plugin-data-namespace namespace)
+        (u/not-valid plugin-id :page-plugin-data-namespace namespace)
 
         (not (string? key))
-        (u/display-not-valid :page-plugin-data-key key)
+        (u/not-valid plugin-id :page-plugin-data-key key)
 
         :else
         (let [page (u/locate-page file-id id)]
@@ -238,16 +238,16 @@
     (fn [namespace key value]
       (cond
         (not (string? namespace))
-        (u/display-not-valid :setSharedPluginData-namespace namespace)
+        (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
 
         (not (string? key))
-        (u/display-not-valid :setSharedPluginData-key key)
+        (u/not-valid plugin-id :setSharedPluginData-key key)
 
         (and (some? value) (not (string? value)))
-        (u/display-not-valid :setSharedPluginData-value value)
+        (u/not-valid plugin-id :setSharedPluginData-value value)
 
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
+        (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'content:write' permission")
 
         :else
         (st/emit! (dp/set-plugin-data file-id :page id (keyword "shared" namespace) key value))))
@@ -256,7 +256,7 @@
     (fn [self namespace]
       (cond
         (not (string? namespace))
-        (u/display-not-valid :page-plugin-data-namespace namespace)
+        (u/not-valid plugin-id :page-plugin-data-namespace namespace)
 
         :else
         (let [page (u/proxy->page self)]
@@ -266,7 +266,7 @@
     (fn [new-window]
       (cond
         (not (r/check-permission plugin-id "content:read"))
-        (u/display-not-valid :openPage "Plugin doesn't have 'content:read' permission")
+        (u/not-valid plugin-id :openPage "Plugin doesn't have 'content:read' permission")
 
         :else
         (let [new-window (if (boolean? new-window) new-window false)]
@@ -276,10 +276,10 @@
     (fn [name frame]
       (cond
         (or (not (string? name)) (empty? name))
-        (u/display-not-valid :createFlow-name name)
+        (u/not-valid plugin-id :createFlow-name name)
 
         (not (shape/shape-proxy? frame))
-        (u/display-not-valid :createFlow-frame frame)
+        (u/not-valid plugin-id :createFlow-frame frame)
 
         :else
         (let [flow-id (uuid/next)]
@@ -290,7 +290,7 @@
     (fn [flow]
       (cond
         (not (flow-proxy? flow))
-        (u/display-not-valid :removeFlow-flow flow)
+        (u/not-valid plugin-id :removeFlow-flow flow)
 
         :else
         (st/emit! (dwi/remove-flow id (obj/get flow "$id")))))
@@ -300,18 +300,18 @@
       (let [shape (u/proxy->shape board)]
         (cond
           (not (sm/valid-safe-number? value))
-          (u/display-not-valid :addRulerGuide "Value not a safe number")
+          (u/not-valid plugin-id :addRulerGuide "Value not a safe number")
 
           (not (contains? #{"vertical" "horizontal"} orientation))
-          (u/display-not-valid :addRulerGuide "Orientation should be either 'vertical' or 'horizontal'")
+          (u/not-valid plugin-id :addRulerGuide "Orientation should be either 'vertical' or 'horizontal'")
 
           (and (some? shape)
                (or (not (shape/shape-proxy? board))
                    (not (cfh/frame-shape? shape))))
-          (u/display-not-valid :addRulerGuide "The shape is not a board")
+          (u/not-valid plugin-id :addRulerGuide "The shape is not a board")
 
           (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :addRulerGuide "Plugin doesn't have 'content:write' permission")
+          (u/not-valid plugin-id :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
           :else
           (let [ruler-id (uuid/next)]
@@ -328,10 +328,10 @@
     (fn [value]
       (cond
         (not (rg/ruler-guide-proxy? value))
-        (u/display-not-valid :removeRulerGuide "Guide not provided")
+        (u/not-valid plugin-id :removeRulerGuide "Guide not provided")
 
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'comment:write' permission")
+        (u/not-valid plugin-id :removeRulerGuide "Plugin doesn't have 'comment:write' permission")
 
         :else
         (let [guide (u/proxy->ruler-guide value)]
@@ -343,17 +343,17 @@
             position (parser/parse-point position)]
         (cond
           (or (not (string? content)) (empty? content))
-          (u/display-not-valid :addCommentThread "Content not valid")
+          (u/not-valid plugin-id :addCommentThread "Content not valid")
 
           (or (not (sm/valid-safe-number? (:x position)))
               (not (sm/valid-safe-number? (:y position))))
-          (u/display-not-valid :addCommentThread "Position not valid")
+          (u/not-valid plugin-id :addCommentThread "Position not valid")
 
           (and (some? board) (or (not (shape/shape-proxy? board)) (not (cfh/frame-shape? shape))))
-          (u/display-not-valid :addCommentThread "Board not valid")
+          (u/not-valid plugin-id :addCommentThread "Board not valid")
 
           (not (r/check-permission plugin-id "comment:write"))
-          (u/display-not-valid :addCommentThread "Plugin doesn't have 'comment:write' permission")
+          (u/not-valid plugin-id :addCommentThread "Plugin doesn't have 'comment:write' permission")
 
           :else
           (let [position
@@ -378,10 +378,10 @@
     (fn [thread]
       (cond
         (not (pc/comment-thread-proxy? thread))
-        (u/display-not-valid :removeCommentThread "Comment thread not valid")
+        (u/not-valid plugin-id :removeCommentThread "Comment thread not valid")
 
         (not (r/check-permission plugin-id "comment:write"))
-        (u/display-not-valid :removeCommentThread "Plugin doesn't have 'content:write' permission")
+        (u/not-valid plugin-id :removeCommentThread "Plugin doesn't have 'content:write' permission")
 
         :else
         (js/Promise.
@@ -400,7 +400,7 @@
            (cond
              (not (r/check-permission plugin-id "comment:read"))
              (do
-               (u/display-not-valid :findCommentThreads "Plugin doesn't have 'comment:read' permission")
+               (u/not-valid plugin-id :findCommentThreads "Plugin doesn't have 'comment:read' permission")
                (reject "Plugin doesn't have 'comment:read' permission"))
 
              :else

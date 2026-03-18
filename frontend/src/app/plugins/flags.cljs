@@ -6,16 +6,10 @@
 
 (ns app.plugins.flags
   (:require
-   [app.common.data.macros :as dm]
    [app.main.store :as st]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [potok.v2.core :as ptk]))
-
-(defn natural-child-ordering?
-  [plugin-id]
-  (boolean
-   (dm/get-in @st/state [:plugins :flags plugin-id :natural-child-ordering])))
 
 (defn clear
   [id]
@@ -37,13 +31,27 @@
     :naturalChildOrdering
     {:this false
      :get
-     (fn [] (natural-child-ordering? plugin-id))
+     (fn [] (u/natural-child-ordering? plugin-id))
 
      :set
      (fn [value]
        (cond
          (not (boolean? value))
-         (u/display-not-valid :naturalChildOrdering value)
+         (u/not-valid plugin-id :naturalChildOrdering value)
 
          :else
-         (st/emit! (set-flag plugin-id :natural-child-ordering value))))}))
+         (st/emit! (set-flag plugin-id :natural-child-ordering value))))}
+
+    :throwValidationErrors
+    {:this false
+     :get
+     (fn [] (u/throw-validation-errors? plugin-id))
+
+     :set
+     (fn [value]
+       (cond
+         (not (boolean? value))
+         (u/not-valid plugin-id :throwValidationErrors value)
+
+         :else
+         (st/emit! (set-flag plugin-id :throw-validation-errors value))))}))
