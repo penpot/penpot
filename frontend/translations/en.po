@@ -3833,8 +3833,11 @@ msgstr "Invitation sent successfully"
 msgid "notifications.invitation-link-copied"
 msgstr "Invitation link copied"
 
-msgid "notifications.mcp.active-tab-switching.text"
+msgid "notifications.mcp.active-in-another-tab"
 msgstr "MCP is active in another tab. Switch here?"
+
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP is now active in this tab."
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
