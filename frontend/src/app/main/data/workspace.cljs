@@ -1508,6 +1508,7 @@
 
 ;; Shapes to path
 (dm/export dwps/convert-selected-to-path)
+(dm/export dwps/convert-selected-strokes-to-path)
 
 ;; Guides
 (dm/export dwgu/update-guides)
