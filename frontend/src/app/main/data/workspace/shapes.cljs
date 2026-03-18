@@ -25,6 +25,7 @@
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.store :as st]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -50,7 +51,7 @@
   ([ids update-fn] (update-shapes ids update-fn nil))
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr]
+            ignore-touched undo-group with-objects? changed-sub-attr ignore-wasm?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -97,7 +98,9 @@
 
          (rx/concat
           (if (seq (:redo-changes changes))
-            (let [changes (cond-> changes reg-objects? (pcb/resize-parents ids))]
+            (let [changes (cond-> changes
+                           reg-objects? (pcb/resize-parents ids)
+                           ignore-wasm? (assoc :ignore-wasm? true))]
               (rx/of (dch/commit-changes changes)))
             (rx/empty))
 

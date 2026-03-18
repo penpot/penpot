@@ -22,6 +22,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.workspace.text-selrect-callback :as text-selrect-cb]
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -993,11 +994,16 @@
 (defn update-text-rect!
   [id]
   (when wasm/context-initialized?
-    (mw/emit!
-     {:cmd :index/update-text-rect
-      :page-id (:current-page-id @st/state)
-      :shape-id id
-      :dimensions (get-text-dimensions id)})))
+    (let [dimensions (get-text-dimensions id)]
+      (mw/emit!
+       {:cmd :index/update-text-rect
+        :page-id (:current-page-id @st/state)
+        :shape-id id
+        :dimensions dimensions})
+      ;; Also update the main store so the selrect is correct when pasting text
+      ;; (no text shape selected). Event lives in text-selrect-callback to avoid
+      ;; circular dependency (shapes -> changes -> render-wasm).
+      (st/emit! (text-selrect-cb/update-text-shape-selrect id dimensions)))))
 
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the
