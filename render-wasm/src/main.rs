@@ -3,7 +3,6 @@ mod emscripten;
 mod error;
 mod math;
 mod mem;
-mod options;
 mod performance;
 mod render;
 mod shapes;

@@ -61,7 +61,7 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     let debug_font = render_state.fonts.debug_font();
     canvas.draw_str(str, p, debug_font, &paint);
 
-    if render_state.options.show_info_text() {
+    if render_state.options.is_text_editor_v3() {
         str = "TEXT EDITOR / V3";
 
         let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
