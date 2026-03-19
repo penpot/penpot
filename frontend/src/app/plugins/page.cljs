@@ -109,7 +109,9 @@
   (obj/type-of? proxy "PageProxy"))
 
 (defn page-proxy
-  [plugin-id file-id id]
+  ([plugin-id file-id id]
+   (page-proxy plugin-id file-id id nil))
+  ([plugin-id file-id id initial-name]
   (obj/reify {:name "PageProxy"}
     :$plugin {:enumerable false :get (fn [] plugin-id)}
     :$file {:enumerable false :get (fn [] file-id)}
@@ -120,7 +122,11 @@
 
     :name
     {:this true
-     :get #(-> % u/proxy->page :name)
+     :get (fn [self]
+            (let [page (u/proxy->page self)]
+              (if (some? page)
+                (:name page)
+                initial-name)))
      :set
      (fn [_ value]
        (cond
@@ -440,4 +446,4 @@
                        (resolve
                         (format/format-array
                          #(pc/comment-thread-proxy plugin-id file-id id %) threads))))
-                   reject)))))))))
+                   reject))))))))))
