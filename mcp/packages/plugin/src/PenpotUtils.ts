@@ -511,6 +511,32 @@ export class PenpotUtils {
     }
 
     /**
+     * Wraps a board in a library component.
+     *
+     * The underlying API only works with boards freshly created via `penpot.createBoard()`
+     * that are already inserted into `penpot.root` before this call. Existing or cloned
+     * boards silently produce an empty component.
+     *
+     * Cross-page reparenting is unsupported by the Plugin API — main instances always
+     * land on the current page. Move them to another page manually in the Penpot UI.
+     *
+     * Use `"/"` in `name` to create nested groups in the Assets panel (e.g. `"Buttons/Primary"`).
+     */
+    public static createComponent(board: Board, name: string): any {
+        const isOnRoot = !!(penpot.root.children?.some((child) => child.id === board.id));
+        if (!isOnRoot) {
+            throw new Error(
+                "createComponent() requires the board to already be a direct child of penpot.root. " +
+                    "Insert it first: penpot.root.insertChild(penpot.root.children.length, board)"
+            );
+        }
+        // @ts-ignore — createComponent is not yet in the TS type definitions
+        const component = penpot.library.local.createComponent([board]);
+        component.name = name;
+        return component;
+    }
+
+    /**
      * Generates an overview of all tokens organized by token set name, token type, and token name.
      * The result is a nested object structure: {tokenSetName: {tokenType: [tokenName, ...]}}.
      *

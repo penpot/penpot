@@ -8,6 +8,9 @@
 
 ### :heart: Community contributions (Thank you!)
 
+- Add 'page' special shapeId to MCP export_shape tool for full-page snapshots [Github #8689](https://github.com/penpot/penpot/issues/8689)
+- Add createComponent() helper to PenpotUtils with board-on-root guard and API constraint documentation [Github #8691](https://github.com/penpot/penpot/issues/8691)
+
 ### :sparkles: New features & Enhancements
 
 - Access to design tokens in Penpot Plugins [Taiga #8990](https://tree.taiga.io/project/penpot/us/8990)
