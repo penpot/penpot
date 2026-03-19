@@ -28,6 +28,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   z-index: var(--z-index-dropdown);
+  box-shadow: 0px 0px $sz-12 0px var(--color-shadow-dark);
 }
 
 .left-align {
