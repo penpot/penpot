@@ -339,11 +339,11 @@
              (on-change :simple attr value event)
              (do
                (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     (if (= :p1 attr)
-                                                 #{:p1 :p3}
-                                                 #{:p2 :p4})
-                                    :shape-ids ids}))))))
+                (dwta/apply-token-from-input {:token     (first value)
+                                              :attrs     (if (= :p1 attr)
+                                                           #{:p1 :p3}
+                                                           #{:p2 :p4})
+                                              :shape-ids ids}))))))
 
         on-detach-token
         (mf/use-fn
@@ -469,9 +469,9 @@
            (if (or (string? value) (number? value))
              (on-change :multiple attr value event)
              (do
-               (st/emit! (dwta/toggle-token {:token (first value)
-                                             :attrs #{attr}
-                                             :shape-ids ids}))))))
+               (st/emit! (dwta/apply-token-from-input {:token (first value)
+                                                       :attrs #{attr}
+                                                       :shape-ids ids}))))))
 
         on-focus
         (mf/use-fn
@@ -723,11 +723,11 @@
              (on-change (= "nowrap" wrap-type) attr value event)
              (do
                (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     (if (= "nowrap" wrap-type)
-                                                 #{:row-gap :colum-gap}
-                                                 #{attr})
-                                    :shape-ids ids}))))))
+                (dwta/apply-token-from-input {:token     (first value)
+                                              :attrs     (if (= "nowrap" wrap-type)
+                                                           #{:row-gap :colum-gap}
+                                                           #{attr})
+                                              :shape-ids ids}))))))
 
         on-detach-token
         (mf/use-fn

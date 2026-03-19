@@ -9,7 +9,7 @@ import Components from "@target/components";
 
 const { Select } = Components;
 
-const variants = ["default", "ghost"];
+const variants = ["default", "ghost", "icon-only"];
 
 const options = [
   { id: "option-code", label: "Code" },
@@ -73,5 +73,12 @@ export const WithIcons = {
 export const EmptyToEnd = {
   args: {
     emptyToEnd: true,
+  },
+};
+
+export const OnlyWithIcons = {
+  args: {
+    options: optionsWithIcons,
+    variant: variants[2],
   },
 };

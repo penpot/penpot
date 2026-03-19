@@ -138,14 +138,13 @@
 
         on-opacity-change
         (mf/use-fn
-         (mf/deps on-change handle-opacity-change)
+         (mf/deps handle-opacity-change)
          (fn [value]
            (if (or (string? value) (number? value))
              (handle-opacity-change value)
-             (do
-               (st/emit! (dwta/toggle-token {:token (first value)
-                                             :attrs #{:opacity}
-                                             :shape-ids ids}))))))
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
+                                                     :attrs #{:opacity}
+                                                     :shape-ids ids})))))
 
         handle-set-hidden
         (mf/use-fn
@@ -205,20 +204,25 @@
                      preview-complete?))
         (swap! state* assoc :selected-blend-mode current-blend-mode)))
 
-    [:section {:class (stl/css-case :element-set-content true
-                                    :hidden hidden?)
-               :aria-label "layer-menu-section"}
-     [:div {:class (stl/css :select)}
-      [:& select
-       {:default-value selected-blend-mode
-        :options options
-        :on-change handle-change-blend-mode
-        :is-open? option-highlighted?
-        :class (stl/css-case :hidden-select hidden?)
-        :on-pointer-enter-option handle-blend-mode-enter
-        :on-pointer-leave-option handle-blend-mode-leave}]]
+    ;; NOTE:
+    ;; This code is temporarily duplicated because the UI is changing with a new feature.
+    ;; The new implementation is currently behind a feature/config flag and not yet released.
+    ;; Once the feature is released, the duplicated ClojureScript and SCSS code should be removed.
+    ;; https://tree.taiga.io/project/penpot/task/13704
 
-     (if token-numeric-inputs
+    (if token-numeric-inputs
+      ;; TODO: Rename this section when duplicated code is deleted
+      [:section {:class (stl/css :element-set-content-token)
+                 :aria-label "layer-menu-section"}
+       [:& select
+        {:default-value selected-blend-mode
+         :options options
+         :on-change handle-change-blend-mode
+         :is-open? option-highlighted?
+         :class (stl/css-case :hidden-select hidden?)
+         :on-pointer-enter-option handle-blend-mode-enter
+         :on-pointer-leave-option handle-blend-mode-leave}]
+
        [:> numeric-input-wrapper*
         {:on-change on-opacity-change
          :on-detach on-detach-token
@@ -233,9 +237,53 @@
                         (tr "settings.multiple")
                         "--")
          :align :right
+         :disabled hidden?
          :class (stl/css :numeric-input-wrapper)
          :value (* 100
                    (or (get values :opacity) 1))}]
+
+       (cond
+         (or (= :multiple hidden?) (not hidden?))
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                           :on-click handle-set-hidden
+                           :tooltip-placement "top-left"
+                           :icon i/shown}]
+
+         :else
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                           :on-click handle-set-visible
+                           :tooltip-placement "top-left"
+                           :icon i/hide}])
+
+       (cond
+         (or (= :multiple blocked?) (not blocked?))
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.shape.menu.lock")
+                           :on-click handle-set-blocked
+                           :tooltip-placement "top-left"
+                           :icon i/unlock}]
+
+         :else
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.shape.menu.unlock")
+                           :on-click handle-set-unblocked
+                           :tooltip-placement "top-left"
+                           :icon i/lock}])]
+
+      [:section {:class (stl/css-case :element-set-content true
+                                      :hidden hidden?)
+                 :aria-label "layer-menu-section"}
+       [:div {:class (stl/css :select)}
+        [:& select
+         {:default-value selected-blend-mode
+          :options options
+          :on-change handle-change-blend-mode
+          :is-open? option-highlighted?
+          :class (stl/css-case :hidden-select hidden?)
+          :on-pointer-enter-option handle-blend-mode-enter
+          :on-pointer-leave-option handle-blend-mode-leave}]]
 
        [:div {:class (stl/css :input)
               :title (tr "workspace.options.opacity")}
@@ -246,31 +294,31 @@
           :on-change handle-opacity-change
           :min 0
           :max 100
-          :className (stl/css :numeric-input)}]])
+          :className (stl/css :numeric-input)}]]
 
-     [:div {:class (stl/css :actions)}
-      (cond
-        (or (= :multiple hidden?) (not hidden?))
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.options.layer-options.toggle-layer")
-                          :on-click handle-set-hidden
-                          :icon i/shown}]
+       [:div {:class (stl/css :actions)}
+        (cond
+          (or (= :multiple hidden?) (not hidden?))
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                            :on-click handle-set-hidden
+                            :icon i/shown}]
 
-        :else
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.options.layer-options.toggle-layer")
-                          :on-click handle-set-visible
-                          :icon i/hide}])
+          :else
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                            :on-click handle-set-visible
+                            :icon i/hide}])
 
-      (cond
-        (or (= :multiple blocked?) (not blocked?))
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.shape.menu.lock")
-                          :on-click handle-set-blocked
-                          :icon i/unlock}]
+        (cond
+          (or (= :multiple blocked?) (not blocked?))
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.shape.menu.lock")
+                            :on-click handle-set-blocked
+                            :icon i/unlock}]
 
-        :else
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.shape.menu.unlock")
-                          :on-click handle-set-unblocked
-                          :icon i/lock}])]]))
+          :else
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.shape.menu.unlock")
+                            :on-click handle-set-unblocked
+                            :icon i/lock}])]])))

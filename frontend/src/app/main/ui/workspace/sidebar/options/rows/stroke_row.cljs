@@ -16,6 +16,7 @@
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
@@ -97,9 +98,9 @@
            (if (or (string? value) (number? value))
              (on-stroke-width-change index value)
 
-             (st/emit! (dwta/toggle-token {:token (first value)
-                                           :attrs #{:stroke-width}
-                                           :shape-ids ids})))))
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
+                                                     :attrs #{:stroke-width}
+                                                     :shape-ids ids})))))
 
         stroke-alignment (or (:stroke-alignment stroke) :center)
 
@@ -108,9 +109,9 @@
           (d/concat-vec
            (when (= :multiple stroke-alignment)
              [{:value :multiple :label "--"}])
-           [{:value :center :label (tr "workspace.options.stroke.center")}
-            {:value :inner :label (tr "workspace.options.stroke.inner")}
-            {:value :outer :label (tr "workspace.options.stroke.outer")}]))
+           [{:value :center :label (tr "workspace.options.stroke.center") :id "center" :icon "stroke-center"}
+            {:value :inner :label (tr "workspace.options.stroke.inner") :id "inner" :icon "stroke-inside"}
+            {:value :outer :label (tr "workspace.options.stroke.outer") :id "outer" :icon "stroke-outside"}]))
 
         on-alignment-change
         (mf/use-fn
@@ -122,10 +123,10 @@
          (mf/deps ids)
          (fn [_ token]
            (st/emit!
-            (dwta/toggle-token {:token token
-                                :attrs #{:stroke-color}
-                                :shape-ids ids
-                                :expand-with-children true}))))
+            (dwta/apply-token-from-input {:token token
+                                          :attrs #{:stroke-color}
+                                          :shape-ids ids
+                                          :expand-with-children true}))))
 
         stroke-style (or (:stroke-style stroke) :solid)
 
@@ -134,10 +135,10 @@
           (d/concat-vec
            (when (= :multiple stroke-style)
              [{:value :multiple :label "--"}])
-           [{:value :solid :label (tr "workspace.options.stroke.solid")}
-            {:value :dotted :label (tr "workspace.options.stroke.dotted")}
-            {:value :dashed :label (tr "workspace.options.stroke.dashed")}
-            {:value :mixed :label (tr "workspace.options.stroke.mixed")}]))
+           [{:value :solid :label (tr "workspace.options.stroke.solid") :id "solid" :icon "stroke-solid"}
+            {:value :dotted :label (tr "workspace.options.stroke.dotted") :id "dotted" :icon "stroke-dotted"}
+            {:value :dashed :label (tr "workspace.options.stroke.dashed") :id "dashed" :icon "stroke-dashed"}
+            {:value :mixed :label (tr "workspace.options.stroke.mixed") :id "mixed" :icon "stroke-mixed"}]))
 
         on-style-change
         (mf/use-fn
@@ -212,8 +213,8 @@
                      :on-blur on-blur}]
 
      ;; Stroke Width, Alignment & Style
-     [:div {:class (stl/css :stroke-options)}
-      (if token-numeric-inputs
+     (if token-numeric-inputs
+       [:div {:class (stl/css :stroke-options-tokens)}
         [:> numeric-input-wrapper* {:on-change on-width-change
                                     :on-detach on-detach-token-width
                                     :icon i/stroke-size
@@ -225,7 +226,23 @@
                                     :property (tr "workspace.options.stroke-width")
                                     :applied-token (get applied-tokens :stroke-width)
                                     :value stroke-width}]
+        [:> select* {:default-selected (d/name stroke-alignment)
+                     :options stroke-alignment-options
+                     :variant "icon-only"
+                     :data-testid "stroke.alignment"
+                     :wrapper-class (stl/css :stroke-align-icon-select)
+                     :on-change on-alignment-change}]
 
+        (when-not disable-stroke-style
+          [:> select* {:default-selected (d/name stroke-style)
+                       :options stroke-style-options
+                       :wrapper-class (stl/css :stroke-style-icon-select)
+                       :data-testid "stroke.style"
+                       :variant "icon-only"
+                       :dropdown-alignment :right
+                       :on-change on-style-change}])]
+
+       [:div {:class (stl/css :stroke-options)}
         [:div {:class (stl/css :stroke-width-input)
                :title (tr "workspace.options.stroke-width")}
          [:> icon* {:icon-id i/stroke-size
@@ -236,20 +253,19 @@
                                               :on-change on-width-change
                                               :on-focus on-focus
                                               :select-on-focus select-on-focus
-                                              :on-blur on-blur}]])
+                                              :on-blur on-blur}]]
+        [:div {:class (stl/css :stroke-alignment-select)
+               :data-testid "stroke.alignment"}
+         [:& select {:default-value stroke-alignment
+                     :options stroke-alignment-options
+                     :on-change on-alignment-change}]]
 
-      [:div {:class (stl/css :stroke-alignment-select)
-             :data-testid "stroke.alignment"}
-       [:& select {:default-value stroke-alignment
-                   :options stroke-alignment-options
-                   :on-change on-alignment-change}]]
-
-      (when-not disable-stroke-style
-        [:div {:class (stl/css :stroke-style-select)
-               :data-testid "stroke.style"}
-         [:& select {:default-value stroke-style
-                     :options stroke-style-options
-                     :on-change on-style-change}]])]
+        (when-not disable-stroke-style
+          [:div {:class (stl/css :stroke-style-select)
+                 :data-testid "stroke.style"}
+           [:& select {:default-value stroke-style
+                       :options stroke-style-options
+                       :on-change on-style-change}]])])
 
      ;; Stroke Caps
      (when show-caps

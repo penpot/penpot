@@ -121,11 +121,11 @@
              (on-change :simple attr value)
              (do
                (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     (if (= :m1 attr)
-                                                 #{:m1 :m3}
-                                                 #{:m2 :m4})
-                                    :shape-ids ids}))))))
+                (dwta/apply-token-from-input {:token     (first value)
+                                              :attrs     (if (= :m1 attr)
+                                                           #{:m1 :m3}
+                                                           #{:m2 :m4})
+                                              :shape-ids ids}))))))
 
         on-focus-m1
         (mf/use-fn (mf/deps on-focus) #(on-focus :m1))
@@ -251,9 +251,9 @@
              (on-change :multiple attr value)
              (do
                (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     #{attr}
-                                    :shape-ids ids}))))))
+                (dwta/apply-token-from-input {:token     (first value)
+                                              :attrs     #{attr}
+                                              :shape-ids ids}))))))
 
 
         on-m1-change
@@ -581,9 +581,9 @@
              (st/emit! (dwsl/update-layout-child ids {attr value}))
              (do
                (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     #{attr}
-                                    :shape-ids ids}))))))
+                (dwta/apply-token-from-input {:token     (first value)
+                                              :attrs     #{attr}
+                                              :shape-ids ids}))))))
 
         on-layout-item-min-w-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :layout-item-min-w))

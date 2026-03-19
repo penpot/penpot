@@ -38,15 +38,10 @@
 .stroke-width-input {
   grid-column: span 2;
 
-  // TODO replace with numeric-input* from DS
   @extend .input-element;
 
   @include t.use-typography("body-small");
   padding-inline-start: var(--sp-xs);
-}
-
-.numeric-input-wrapper {
-  grid-column: span 2;
 }
 
 .stroke-alignment-select {
@@ -61,4 +56,19 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   column-gap: var(--sp-xs);
+}
+
+.stroke-options-tokens {
+  @include sidebar.option-grid-structure;
+  grid-template-columns: var(--3-columns-width) var(--grid-exception-input-width-small) var(
+      --grid-exception-input-width-small
+    );
+}
+
+.stroke-align-icon-select {
+  --dropdown-width: var(--4-columns-width);
+}
+
+.stroke-style-icon-select {
+  --dropdown-width: var(--4-columns-width);
 }

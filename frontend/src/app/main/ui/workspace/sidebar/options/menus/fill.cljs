@@ -174,10 +174,10 @@
          (mf/deps ids)
          (fn [_ token]
            (st/emit!
-            (dwta/toggle-token {:token token
-                                :attrs #{:fill}
-                                :shape-ids ids
-                                :expand-with-children true}))))
+            (dwta/apply-token-from-input {:token token
+                                          :attrs #{:fill}
+                                          :shape-ids ids
+                                          :expand-with-children true}))))
 
         on-detach-token
         (mf/use-fn

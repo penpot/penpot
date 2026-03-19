@@ -206,6 +206,8 @@
    [:on-focus {:optional true} fn?]
    [:on-detach {:optional true} fn?]
    [:property {:optional true} :string]
+   [:tooltip-placement {:optional true}
+    [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]
    [:align {:optional true} [:maybe [:enum :left :right]]]])
 
 (mf/defc numeric-input*
@@ -217,7 +219,7 @@
            tokens applied-token empty-to-end
            on-change on-blur on-focus on-detach
            property align ref name
-           text-icon]
+           tooltip-placement text-icon]
     :rest props}]
 
   (let [;; NOTE: we use mfu/bean here for transparently handle
@@ -651,6 +653,7 @@
                                                                          :class (stl/css :invisible-button)
                                                                          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                                                                          :ref open-dropdown-ref
+                                                                         :tooltip-placement tooltip-placement
                                                                          :on-click open-dropdown}])))
                                 :max-length max-length})
 
@@ -676,6 +679,7 @@
                               :on-blur on-blur
                               :class inner-class
                               :property property
+                              :tooltip-placement tooltip-placement
                               :slot-start (when (or icon text-icon)
                                             (mf/html
                                              (cond
