@@ -1,10 +1,11 @@
 /**
  * Read-only gradient overlay: line, endpoints, angular center/circle, and stop positions.
- * Drawn in local shape space inside the selection transform group so rotation/scale apply.
+ * Drawn in viewport space (same as frontend): local geometry is converted to viewport
+ * and all sizes use zoom only (no shape scale factor).
  */
 
 import { useMemo } from 'react'
-import type { Gradient } from 'penpot-exporter/types'
+import type { Gradient, Matrix } from 'penpot-exporter/types'
 import type { SelectionRectResult } from '../../renderer/types'
 import {
   HANDLE_FILL,
@@ -19,14 +20,91 @@ export interface GradientOverlayProps {
   zoom: number
 }
 
+function localToViewport(
+  local: { x: number; y: number },
+  center: { x: number; y: number },
+  transform: Matrix
+): { x: number; y: number } {
+  const { a, b, c, d } = transform
+  return {
+    x: center.x + a * local.x + c * local.y,
+    y: center.y + b * local.x + d * local.y,
+  }
+}
+
+/**
+ * Affine transform of ellipse: compute perpendicular semi-axes and rotation in viewport.
+ * Given local ellipse (radiusX, radiusY, angle0) and 2x2 linear part {a,b,c,d}, returns
+ * { rx, ry, rotationRad } for the transformed ellipse (exact under shear).
+ */
+function ellipseAffineTransform(
+  radiusX: number,
+  radiusY: number,
+  angle0: number,
+  transform: Matrix
+): { rx: number; ry: number; rotationRad: number } {
+  const { a, b, c, d } = transform
+  const cos0 = Math.cos(angle0)
+  const sin0 = Math.sin(angle0)
+  const V1 = { x: radiusX * cos0, y: radiusX * sin0 }
+  const V2 = { x: radiusY * -sin0, y: radiusY * cos0 }
+  const W1 = { x: a * V1.x + c * V1.y, y: b * V1.x + d * V1.y }
+  const W2 = { x: a * V2.x + c * V2.y, y: b * V2.x + d * V2.y }
+  const w1w2 = W1.x * W2.x + W1.y * W2.y
+  const w11 = W1.x * W1.x + W1.y * W1.y
+  const w22 = W2.x * W2.x + W2.y * W2.y
+  const denom = w11 - w22
+  const t0 =
+    denom === 0 && w1w2 === 0 ? 0 : 0.5 * Math.atan2(2 * w1w2, denom)
+  const cosT = Math.cos(t0)
+  const sinT = Math.sin(t0)
+  const U1 = {
+    x: W1.x * cosT + W2.x * sinT,
+    y: W1.y * cosT + W2.y * sinT,
+  }
+  const U2 = {
+    x: -W1.x * sinT + W2.x * cosT,
+    y: -W1.y * sinT + W2.y * cosT,
+  }
+  let rx = Math.hypot(U1.x, U1.y)
+  let ry = Math.hypot(U2.x, U2.y)
+  const MIN_AXIS = 1e-6
+  if (rx < MIN_AXIS) rx = MIN_AXIS
+  if (ry < MIN_AXIS) ry = MIN_AXIS
+  const rotationRad = Math.atan2(U1.y, U1.x)
+  return { rx, ry, rotationRad }
+}
+
+/** Right-hand perpendicular: (dx, dy) -> (dy, -dx) normalized. Polygon: from-sc*perp, from+sc*perp, to+sc*perp, to-sc*perp. */
+function lineSegmentToPolygonPoints(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  sc: number
+): string {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const len = Math.hypot(dx, dy) || 1
+  const px = dy / len
+  const py = -dx / len
+  const p1 = { x: from.x - sc * px, y: from.y - sc * py }
+  const p2 = { x: from.x + sc * px, y: from.y + sc * py }
+  const p3 = { x: to.x + sc * px, y: to.y + sc * py }
+  const p4 = { x: to.x - sc * px, y: to.y - sc * py }
+  return `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`
+}
+
 export function GradientOverlay({
   wasmSelectionRect,
   gradient,
   zoom,
 }: GradientOverlayProps) {
-  const { width: selW, height: selH, transform } = wasmSelectionRect
-  const { a, b } = transform
-  const scaleFactor = Math.sqrt(a * a + b * b) || 1
+  const { width: selW, height: selH, center, transform } = wasmSelectionRect
+
+  const toViewport = useMemo(
+    () => (local: { x: number; y: number }) =>
+      localToViewport(local, center, transform),
+    [center, transform]
+  )
 
   const points = useMemo(() => {
     const localFrom = {
@@ -78,7 +156,6 @@ export function GradientOverlay({
         const y = localCenter.y + lx * Math.sin(angle0) + ly * Math.cos(angle0)
         return { ...stop, local: { x, y } }
       }) ?? []
-    const angle0Deg = (angle0 * 180) / Math.PI
     const localAngle0OnEllipse = {
       x: localCenter.x + radiusX * Math.cos(angle0),
       y: localCenter.y + radiusX * Math.sin(angle0),
@@ -91,7 +168,7 @@ export function GradientOverlay({
       localCenter,
       radiusX,
       radiusY,
-      angle0Deg,
+      angle0,
       stops,
       localAngle0OnEllipse,
       localAngle90OnEllipse,
@@ -137,231 +214,161 @@ export function GradientOverlay({
     }
   }, [gradient, selW, selH])
 
-  const lineStroke = GRADIENT_LINE_STROKE_WORLD / zoom / scaleFactor
-  const endpointR = GRADIENT_ENDPOINT_RADIUS_WORLD / zoom / scaleFactor
-  const stopR = GRADIENT_STOP_DOT_RADIUS_WORLD / zoom / scaleFactor
+  // Zoom-only sizing (viewport space; no scale factor)
+  const sc = GRADIENT_LINE_STROKE_WORLD / 2 / zoom
+  const endpointR = GRADIENT_ENDPOINT_RADIUS_WORLD / zoom
+  const stopR = GRADIENT_STOP_DOT_RADIUS_WORLD / zoom
+  const lineStroke = GRADIENT_LINE_STROKE_WORLD / zoom
 
   if (gradient.type === 'angular' && angularPoints != null) {
     const {
       localCenter,
       radiusX,
       radiusY,
-      angle0Deg,
+      angle0,
       localAngle0OnEllipse,
       localAngle90OnEllipse,
     } = angularPoints
+    const vpCenter = toViewport(localCenter)
+    const vpAngle0 = toViewport(localAngle0OnEllipse)
+    const vpAngle90 = toViewport(localAngle90OnEllipse)
+    const { rx, ry, rotationRad } = ellipseAffineTransform(
+      radiusX,
+      radiusY,
+      angle0,
+      transform
+    )
+    const ellipseRotationDeg = (rotationRad * 180) / Math.PI
+
     return (
       <g aria-hidden style={{ pointerEvents: 'none' }}>
-        {/* Center point */}
         <circle
-          cx={localCenter.x}
-          cy={localCenter.y}
+          cx={vpCenter.x}
+          cy={vpCenter.y}
           r={endpointR}
           fill={HANDLE_FILL}
-          vectorEffect="non-scaling-stroke"
         />
-        {/* Angle 0 and 90 reference lines */}
-        <line
-          x1={localCenter.x}
-          y1={localCenter.y}
-          x2={localAngle0OnEllipse.x}
-          y2={localAngle0OnEllipse.y}
+        <polygon
+          points={lineSegmentToPolygonPoints(vpCenter, vpAngle0, sc)}
+          fill={HANDLE_FILL}
+        />
+        <polygon
+          points={lineSegmentToPolygonPoints(vpCenter, vpAngle90, sc)}
+          fill={HANDLE_FILL}
+        />
+        <circle
+          cx={vpAngle0.x}
+          cy={vpAngle0.y}
+          r={endpointR}
+          fill={HANDLE_FILL}
+        />
+        <circle
+          cx={vpAngle90.x}
+          cy={vpAngle90.y}
+          r={endpointR}
+          fill={HANDLE_FILL}
+        />
+        <ellipse
+          cx={vpCenter.x}
+          cy={vpCenter.y}
+          rx={rx}
+          ry={ry}
+          fill="none"
           stroke={HANDLE_FILL}
           strokeWidth={lineStroke}
-          vectorEffect="non-scaling-stroke"
+          transform={`rotate(${ellipseRotationDeg} ${vpCenter.x} ${vpCenter.y})`}
         />
-        <line
-          x1={localCenter.x}
-          y1={localCenter.y}
-          x2={localAngle90OnEllipse.x}
-          y2={localAngle90OnEllipse.y}
-          stroke={HANDLE_FILL}
-          strokeWidth={lineStroke}
-          vectorEffect="non-scaling-stroke"
-        />
-        {/* Angle 0 and 90 dots on ellipse */}
-        <circle
-          cx={localAngle0OnEllipse.x}
-          cy={localAngle0OnEllipse.y}
-          r={endpointR}
-          fill={HANDLE_FILL}
-          vectorEffect="non-scaling-stroke"
-        />
-        <circle
-          cx={localAngle90OnEllipse.x}
-          cy={localAngle90OnEllipse.y}
-          r={endpointR}
-          fill={HANDLE_FILL}
-          vectorEffect="non-scaling-stroke"
-        />
-        {/* Sweep ellipse */}
-        <g
-          transform={`rotate(${angle0Deg} ${localCenter.x} ${localCenter.y})`}
-        >
-          <ellipse
-            cx={localCenter.x}
-            cy={localCenter.y}
-            rx={radiusX}
-            ry={radiusY}
-            fill="none"
-            stroke={HANDLE_FILL}
-            strokeWidth={lineStroke}
-            vectorEffect="non-scaling-stroke"
-          />
-        </g>
-        {/* Stop positions: swatch then white dot */}
-        {angularPoints.stops.map((stop, i) => (
-          <g key={i}>
-            <rect
-              x={stop.local.x + stopR}
-              y={stop.local.y - stopR * 2}
-              width={stopR * 4}
-              height={stopR * 4}
-              fill={stop.color}
-              fillOpacity={stop.opacity ?? 1}
-              stroke={HANDLE_FILL}
-              strokeWidth={lineStroke / 2}
-              vectorEffect="non-scaling-stroke"
-            />
-            <circle
-              cx={stop.local.x}
-              cy={stop.local.y}
-              r={stopR}
-              fill={HANDLE_FILL}
-              vectorEffect="non-scaling-stroke"
-            />
-          </g>
-        ))}
+        {angularPoints.stops.map((stop, i) => {
+          const vp = toViewport(stop.local)
+          return (
+            <g key={i}>
+              <rect
+                x={vp.x + stopR}
+                y={vp.y - stopR * 2}
+                width={stopR * 4}
+                height={stopR * 4}
+                fill={stop.color}
+                fillOpacity={stop.opacity ?? 1}
+                stroke={HANDLE_FILL}
+                strokeWidth={lineStroke / 2}
+              />
+              <circle cx={vp.x} cy={vp.y} r={stopR} fill={HANDLE_FILL} />
+            </g>
+          )
+        })}
       </g>
     )
   }
 
   if (gradient.type === 'radial' && radialPoints != null) {
     const { localCenter, localTo, localWidth, stops } = radialPoints
+    const vpCenter = toViewport(localCenter)
+    const vpTo = toViewport(localTo)
+    const vpWidth = toViewport(localWidth)
     return (
       <g aria-hidden style={{ pointerEvents: 'none' }}>
-        {/* Main radius line */}
-        <line
-          x1={localCenter.x}
-          y1={localCenter.y}
-          x2={localTo.x}
-          y2={localTo.y}
-          stroke={HANDLE_FILL}
-          strokeWidth={lineStroke}
-          vectorEffect="non-scaling-stroke"
-        />
-        {/* Width (ellipse) line */}
-        <line
-          x1={localCenter.x}
-          y1={localCenter.y}
-          x2={localWidth.x}
-          y2={localWidth.y}
-          stroke={HANDLE_FILL}
-          strokeWidth={lineStroke}
-          vectorEffect="non-scaling-stroke"
-        />
-        {/* Center point */}
-        <circle
-          cx={localCenter.x}
-          cy={localCenter.y}
-          r={endpointR}
+        <polygon
+          points={lineSegmentToPolygonPoints(vpCenter, vpTo, sc)}
           fill={HANDLE_FILL}
-          vectorEffect="non-scaling-stroke"
         />
-        {/* Radius end point */}
-        <circle
-          cx={localTo.x}
-          cy={localTo.y}
-          r={endpointR}
+        <polygon
+          points={lineSegmentToPolygonPoints(vpCenter, vpWidth, sc)}
           fill={HANDLE_FILL}
-          vectorEffect="non-scaling-stroke"
         />
-        {/* Width handle */}
-        <circle
-          cx={localWidth.x}
-          cy={localWidth.y}
-          r={endpointR}
-          fill={HANDLE_FILL}
-          vectorEffect="non-scaling-stroke"
-        />
-        {/* Stop positions: swatch then white dot */}
-        {stops.map((stop, i) => (
+        <circle cx={vpCenter.x} cy={vpCenter.y} r={endpointR} fill={HANDLE_FILL} />
+        <circle cx={vpTo.x} cy={vpTo.y} r={endpointR} fill={HANDLE_FILL} />
+        <circle cx={vpWidth.x} cy={vpWidth.y} r={endpointR} fill={HANDLE_FILL} />
+        {stops.map((stop, i) => {
+          const vp = toViewport(stop.local)
+          return (
+            <g key={i}>
+              <rect
+                x={vp.x + stopR}
+                y={vp.y - stopR * 2}
+                width={stopR * 4}
+                height={stopR * 4}
+                fill={stop.color}
+                fillOpacity={stop.opacity ?? 1}
+                stroke={HANDLE_FILL}
+                strokeWidth={lineStroke / 2}
+              />
+              <circle cx={vp.x} cy={vp.y} r={stopR} fill={HANDLE_FILL} />
+            </g>
+          )
+        })}
+      </g>
+    )
+  }
+
+  // Linear
+  const vpFrom = toViewport(points.localFrom)
+  const vpTo = toViewport(points.localTo)
+  return (
+    <g aria-hidden style={{ pointerEvents: 'none' }}>
+      <polygon
+        points={lineSegmentToPolygonPoints(vpFrom, vpTo, sc)}
+        fill={HANDLE_FILL}
+      />
+      <circle cx={vpFrom.x} cy={vpFrom.y} r={endpointR} fill={HANDLE_FILL} />
+      <circle cx={vpTo.x} cy={vpTo.y} r={endpointR} fill={HANDLE_FILL} />
+      {points.stops.map((stop, i) => {
+        const vp = toViewport(stop.local)
+        return (
           <g key={i}>
             <rect
-              x={stop.local.x + stopR}
-              y={stop.local.y - stopR * 2}
+              x={vp.x + stopR}
+              y={vp.y - stopR * 2}
               width={stopR * 4}
               height={stopR * 4}
               fill={stop.color}
               fillOpacity={stop.opacity ?? 1}
               stroke={HANDLE_FILL}
               strokeWidth={lineStroke / 2}
-              vectorEffect="non-scaling-stroke"
             />
-            <circle
-              cx={stop.local.x}
-              cy={stop.local.y}
-              r={stopR}
-              fill={HANDLE_FILL}
-              vectorEffect="non-scaling-stroke"
-            />
+            <circle cx={vp.x} cy={vp.y} r={stopR} fill={HANDLE_FILL} />
           </g>
-        ))}
-      </g>
-    )
-  }
-
-  return (
-    <g aria-hidden style={{ pointerEvents: 'none' }}>
-      {/* Gradient line */}
-      <line
-        x1={points.localFrom.x}
-        y1={points.localFrom.y}
-        x2={points.localTo.x}
-        y2={points.localTo.y}
-        stroke={HANDLE_FILL}
-        strokeWidth={lineStroke}
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* Start endpoint */}
-      <circle
-        cx={points.localFrom.x}
-        cy={points.localFrom.y}
-        r={endpointR}
-        fill={HANDLE_FILL}
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* End endpoint */}
-      <circle
-        cx={points.localTo.x}
-        cy={points.localTo.y}
-        r={endpointR}
-        fill={HANDLE_FILL}
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* Stop positions: swatch then white dot on top */}
-      {points.stops.map((stop, i) => (
-        <g key={i}>
-          <rect
-            x={stop.local.x + stopR}
-            y={stop.local.y - stopR * 2}
-            width={stopR * 4}
-            height={stopR * 4}
-            fill={stop.color}
-            fillOpacity={stop.opacity ?? 1}
-            stroke={HANDLE_FILL}
-            strokeWidth={lineStroke / 2}
-            vectorEffect="non-scaling-stroke"
-          />
-          <circle
-            cx={stop.local.x}
-            cy={stop.local.y}
-            r={stopR}
-            fill={HANDLE_FILL}
-            vectorEffect="non-scaling-stroke"
-          />
-        </g>
-      ))}
+        )
+      })}
     </g>
   )
 }
