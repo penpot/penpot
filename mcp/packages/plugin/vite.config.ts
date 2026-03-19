@@ -29,7 +29,7 @@ export default defineConfig({
         },
     },
     preview: {
-        host: "0.0.0.0",
+        host: process.env.PENPOT_MCP_PLUGIN_SERVER_LISTEN_ADDRESS ?? "localhost",
         port: 4400,
         cors: true,
         allowedHosts: [],
