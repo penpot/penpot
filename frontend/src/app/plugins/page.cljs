@@ -86,8 +86,10 @@
         ;; Prefer the authoritative state lookup; fall back to initial-starting-frame
         ;; when the async state update from `page.createFlow()` hasn't
         ;; propagated yet.
-        (let [frame (or (-> self u/proxy->flow :starting-frame)
-                        initial-starting-frame)]
+        (let [flow  (u/proxy->flow self)
+              frame (if (some? flow)
+                      (:starting-frame flow)
+                      initial-starting-frame)]
           (when (some? frame)
             (shape/shape-proxy file-id page-id frame))))
       :set
