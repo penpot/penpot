@@ -62,30 +62,30 @@ impl Gradient {
     }
 
     pub fn to_radial_shader(&self, rect: &Rect) -> Option<skia::Shader> {
-        let center = skia::Point::new(
-            rect.left + self.start.0 * rect.width(),
-            rect.top + self.start.1 * rect.height(),
-        );
-        let end = skia::Point::new(
-            rect.left + self.end.0 * rect.width(),
-            rect.top + self.end.1 * rect.height(),
-        );
+        // Center and radius use normalized 0–1 coords; local matrix maps to `rect` then applies
+        // rotate + `width` ellipse scaling around the center (same units as the wire format).
+        let dx = self.end.0 - self.start.0;
+        let dy = self.end.1 - self.start.1;
+        let r_norm_sq = dx * dx + dy * dy;
+        if r_norm_sq < 1e-18 {
+            return None;
+        }
+        let r_norm = r_norm_sq.sqrt().max(1e-6);
+        let angle = dy.atan2(dx).to_degrees();
+        let sx = self.start.0;
+        let sy = self.start.1;
 
-        let direction = end - center;
-        let distance = (direction.x.powi(2) + direction.y.powi(2)).sqrt();
-        let angle = direction.y.atan2(direction.x).to_degrees();
-
-        // Based on the code from frontend/src/app/main/ui/shapes/gradients.cljs
         let mut transform = skia::Matrix::new_identity();
-        transform.pre_translate((center.x, center.y));
+        transform.pre_translate((rect.left, rect.top));
+        transform.pre_scale((rect.width(), rect.height()), None);
+        transform.pre_translate((sx, sy));
         transform.pre_rotate(angle + 90., skia::Point::new(0., 0.));
-        // We need an extra transform, because in skia radial gradients are circular and we need them to be ellipses if they must adapt to the shape
-        transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
-        transform.pre_translate((-center.x, -center.y));
+        transform.pre_scale((self.width, 1.), None);
+        transform.pre_translate((-sx, -sy));
 
         skia::gradient_shader::radial(
-            center,
-            distance,
+            skia::Point::new(sx, sy),
+            r_norm,
             self.colors.as_slice(),
             Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
@@ -111,7 +111,7 @@ impl Gradient {
 
         // Ellipse aspect: width = 1 means circle; same convention as radial.
         let aspect = if self.width > 0.0 {
-            self.width * rect.width() / rect.height()
+            self.width
         } else {
             1.0
         };
@@ -185,6 +185,7 @@ impl Fill {
             Fill::Solid(SolidColor(color)) => color.a() as f32 / 255.0,
             Fill::LinearGradient(g) => g.opacity as f32 / 255.0,
             Fill::RadialGradient(g) => g.opacity as f32 / 255.0,
+            Fill::AngularGradient(g) => g.opacity as f32 / 255.0,
             Fill::Image(i) => i.opacity as f32 / 255.0,
         }
     }
@@ -202,6 +203,10 @@ impl Fill {
                 ..g.clone()
             }),
             Fill::RadialGradient(g) => Fill::RadialGradient(Gradient {
+                opacity: 255,
+                ..g.clone()
+            }),
+            Fill::AngularGradient(g) => Fill::AngularGradient(Gradient {
                 opacity: 255,
                 ..g.clone()
             }),
