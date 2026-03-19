@@ -10,8 +10,8 @@ const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
 
 // Open the plugin UI (main.ts)
 penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
-    width: 158,
-    height: 200,
+    width: 244,
+    height: 210,
     hidden: !!mcp,
 } as any);
 
