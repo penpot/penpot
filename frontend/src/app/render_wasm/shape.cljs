@@ -332,9 +332,10 @@
 
 (defn process-shape-changes!
   [objects shape-changes]
-  (->> (rx/from shape-changes)
-       (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
-       (rx/subs! #(api/request-render "set-wasm-attrs"))))
+  (when (seq shape-changes)
+    (->> (rx/from shape-changes)
+         (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
+         (rx/subs! #(api/request-render "set-wasm-attrs")))))
 
 ;; `conj` empty set initialization
 (def conj* (fnil conj (d/ordered-set)))
