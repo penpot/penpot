@@ -41,11 +41,13 @@
   (obj/type-of? p "LibraryColorProxy"))
 
 (defn lib-color-proxy
-  [plugin-id file-id id]
-  (assert (uuid? file-id))
-  (assert (uuid? id))
+  ([plugin-id file-id id]
+   (lib-color-proxy plugin-id file-id id nil))
+  ([plugin-id file-id id initial-color]
+   (assert (uuid? file-id))
+   (assert (uuid? id))
 
-  (obj/reify {:name "LibraryColorProxy"}
+   (obj/reify {:name "LibraryColorProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
@@ -55,7 +57,11 @@
 
     :name
     {:this true
-     :get #(-> % u/proxy->library-color :name)
+     :get (fn [self]
+            (let [color (u/proxy->library-color self)]
+              (if (some? color)
+                (:name color)
+                (:name initial-color))))
      :set
      (fn [self value]
        (cond
@@ -66,13 +72,17 @@
          (u/display-not-valid :name "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [color (u/proxy->library-color self)
-               value (dm/str (d/nilv (:path color) "") " / " value)]
-           (st/emit! (dwl/rename-color file-id id value)))))}
+         (when-let [color (u/proxy->library-color self)]
+           (let [value (dm/str (d/nilv (:path color) "") " / " value)]
+             (st/emit! (dwl/rename-color file-id id value))))))}
 
     :path
     {:this true
-     :get #(-> % u/proxy->library-color :path)
+     :get (fn [self]
+            (let [color (u/proxy->library-color self)]
+              (if (some? color)
+                (:path color)
+                (:path initial-color))))
      :set
      (fn [self value]
        (cond
@@ -83,13 +93,17 @@
          (u/display-not-valid :path "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [color (-> (u/proxy->library-color self)
-                         (update :name #(str value " / " %)))]
-           (st/emit! (dwl/update-color color file-id)))))}
+         (when-let [color (u/proxy->library-color self)]
+           (let [color (update color :name #(str value " / " %))]
+             (st/emit! (dwl/update-color color file-id))))))}
 
     :color
     {:this true
-     :get #(-> % u/proxy->library-color :color)
+     :get (fn [self]
+            (let [color (u/proxy->library-color self)]
+              (if (some? color)
+                (:color color)
+                (:color initial-color))))
      :set
      (fn [self value]
        (cond
@@ -100,13 +114,17 @@
          (u/display-not-valid :color "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [color (-> (u/proxy->library-color self)
-                         (assoc :color value))]
-           (st/emit! (dwl/update-color-data color file-id)))))}
+         (when-let [color (u/proxy->library-color self)]
+           (let [color (assoc color :color value)]
+             (st/emit! (dwl/update-color-data color file-id))))))}
 
     :opacity
     {:this true
-     :get #(-> % u/proxy->library-color :opacity)
+     :get (fn [self]
+            (let [color (u/proxy->library-color self)]
+              (if (some? color)
+                (:opacity color)
+                (:opacity initial-color))))
      :set
      (fn [self value]
        (cond
@@ -117,13 +135,15 @@
          (u/display-not-valid :opacity "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [color (-> (u/proxy->library-color self)
-                         (assoc :opacity value))]
-           (st/emit! (dwl/update-color-data color file-id)))))}
+         (when-let [color (u/proxy->library-color self)]
+           (let [color (assoc color :opacity value)]
+             (st/emit! (dwl/update-color-data color file-id))))))}
 
     :gradient
     {:this true
-     :get #(-> % u/proxy->library-color :gradient format/format-gradient)
+     :get (fn [self]
+            (let [color (u/proxy->library-color self)]
+              (-> (if (some? color) color initial-color) :gradient format/format-gradient)))
      :set
      (fn [self value]
        (let [value (parser/parse-gradient value)]
@@ -135,13 +155,15 @@
            (u/display-not-valid :gradient "Plugin doesn't have 'library:write' permission")
 
            :else
-           (let [color (-> (u/proxy->library-color self)
-                           (assoc :gradient value))]
-             (st/emit! (dwl/update-color-data color file-id))))))}
+           (when-let [color (u/proxy->library-color self)]
+             (let [color (assoc color :gradient value)]
+               (st/emit! (dwl/update-color-data color file-id)))))))}
 
     :image
     {:this true
-     :get #(-> % u/proxy->library-color :image format/format-image)
+     :get (fn [self]
+            (let [color (u/proxy->library-color self)]
+              (-> (if (some? color) color initial-color) :image format/format-image)))
      :set
      (fn [self value]
        (let [value (parser/parse-image-data value)]
@@ -153,9 +175,9 @@
            (u/display-not-valid :image "Plugin doesn't have 'library:write' permission")
 
            :else
-           (let [color (-> (u/proxy->library-color self)
-                           (assoc :image value))]
-             (st/emit! (dwl/update-color-data color file-id))))))}
+           (when-let [color (u/proxy->library-color self)]
+             (let [color (assoc color :image value)]
+               (st/emit! (dwl/update-color-data color file-id)))))))}
 
     :remove
     (fn []
@@ -177,7 +199,7 @@
               color (-> (u/locate-library-color file-id id)
                         (assoc :id color-id))]
           (st/emit! (dwl/add-color color {:rename? false}))
-          (lib-color-proxy plugin-id id color-id))))
+          (lib-color-proxy plugin-id id color-id color))))
 
     :asFill
     (fn []
@@ -278,7 +300,7 @@
 
         :else
         (let [color (u/locate-library-color file-id id)]
-          (apply array (keys (dm/get-in color [:plugin-data (keyword "shared" namespace)]))))))))
+          (apply array (keys (dm/get-in color [:plugin-data (keyword "shared" namespace)]))))))))))
 
 (defn lib-typography-proxy? [p]
   (obj/type-of? p "LibraryTypographyProxy"))
@@ -973,9 +995,10 @@
         (u/display-not-valid :createColor "Plugin doesn't have 'library:write' permission")
 
         :else
-        (let [color-id (uuid/next)]
-          (st/emit! (dwl/add-color {:id color-id :name "Color" :color "#000000" :opacity 1} {:rename? false}))
-          (lib-color-proxy plugin-id file-id color-id))))
+        (let [color-id (uuid/next)
+              color {:id color-id :name "Color" :color "#000000" :opacity 1}]
+          (st/emit! (dwl/add-color color {:rename? false}))
+          (lib-color-proxy plugin-id file-id color-id color))))
 
     :createTypography
     (fn []
