@@ -23,7 +23,9 @@
   (obj/type-of? p "RulerGuideProxy"))
 
 (defn ruler-guide-proxy
-  [plugin-id file-id page-id id]
+  ([plugin-id file-id page-id id]
+   (ruler-guide-proxy plugin-id file-id page-id id nil))
+  ([plugin-id file-id page-id id initial-guide]
   (obj/reify {:name "RulerGuideProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file {:enumerable false :get (constantly file-id)}
@@ -35,7 +37,10 @@
      :enumerable false
      :get
      (fn [self]
-       (let [board-id (-> self u/proxy->ruler-guide :frame-id)]
+       (let [guide (u/proxy->ruler-guide self)
+             board-id (if (some? guide)
+                        (:frame-id guide)
+                        (:frame-id initial-guide))]
          (when board-id
            (shape-proxy plugin-id file-id page-id board-id))))
 
@@ -59,21 +64,25 @@
 
     :orientation
     {:this true
-     :get #(-> % u/proxy->ruler-guide :axis format/axis->orientation)}
+     :get (fn [self]
+            (let [guide (u/proxy->ruler-guide self)]
+              (if (some? guide)
+                (-> guide :axis format/axis->orientation)
+                (-> initial-guide :axis format/axis->orientation))))}
 
     :position
     {:this true
      :get
      (fn [self]
        (let [guide (u/proxy->ruler-guide self)]
-         (if (:frame-id guide)
-           (let [objects   (u/locate-objects file-id page-id)
-                 board-pos (dm/get-in objects [(:frame-id guide) (:axis guide)])
-                 position  (:position guide)]
-             (- position board-pos))
-
-           ;; No frame
-           (:position guide))))
+         (if (some? guide)
+           (if (:frame-id guide)
+             (let [objects   (u/locate-objects file-id page-id)
+                   board-pos (dm/get-in objects [(:frame-id guide) (:axis guide)])
+                   position  (:position guide)]
+               (- position board-pos))
+             (:position guide))
+           (:position initial-guide))))
      :set
      (fn [self value]
        (cond
@@ -97,4 +106,4 @@
     :remove
     (fn []
       (let [guide (u/locate-ruler-guide file-id page-id id)]
-        (st/emit! (dwgu/remove-guide guide))))))
+        (st/emit! (dwgu/remove-guide guide)))))))
