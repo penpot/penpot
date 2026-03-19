@@ -17,6 +17,7 @@
 - Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
 - Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
 - Rename token group [Taiga #13137](https://tree.taiga.io/project/penpot/us/13137)
+- Copy token name from contextual menu [Taiga #13568](https://tree.taiga.io/project/penpot/issue/13568)
 
 ### :bug: Bugs fixed
 
