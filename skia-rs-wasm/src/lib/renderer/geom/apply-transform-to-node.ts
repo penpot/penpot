@@ -5,6 +5,7 @@
 
 import type { Matrix, PenpotNode } from 'penpot-exporter/types'
 import { makeSelrect } from '../types'
+import { invertMatrix } from './matrix'
 
 export function applyTransformToNode(
   node: PenpotNode,
@@ -63,19 +64,19 @@ export function applyTransformToNode(
   const hvy = (newNe.y - newNw.y) / newWidth
   const vvx = (newSw.x - newNw.x) / newHeight
   const vvy = (newSw.y - newNw.y) / newHeight
-  const newTransform = { a: hvx, b: hvy, c: vvx, d: vvy, e: 0, f: 0 }
-
+  const newTransform: Matrix = { a: hvx, b: hvy, c: vvx, d: vvy, e: 0, f: 0 }
+  const newTransformInverse = invertMatrix(newTransform)
   const points = [newNw, newNe, newSe, newSw]
 
-  const nodeGeom = node as { x?: number; y?: number; width?: number; height?: number }
   const updates: Partial<PenpotNode> = {
     selrect,
     points,
-    transform: newTransform as PenpotNode['transform'],
+    transform: newTransform,
+    transformInverse: newTransformInverse ?? undefined,
   }
-  if (typeof nodeGeom.x === 'number') (updates as { x?: number }).x = newX
-  if (typeof nodeGeom.y === 'number') (updates as { y?: number }).y = newY
-  if (typeof nodeGeom.width === 'number') (updates as { width?: number }).width = newWidth
-  if (typeof nodeGeom.height === 'number') (updates as { height?: number }).height = newHeight
+  if (typeof node.x === 'number') updates.x = newX
+  if (typeof node.y === 'number') updates.y = newY
+  if (typeof node.width === 'number') updates.width = newWidth
+  if (typeof node.height === 'number') updates.height = newHeight
   return updates
 }

@@ -8,7 +8,7 @@ import { useCallback, useMemo } from 'react'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
 import { mousePosition$ } from '../../renderer/streams'
 import type { ResizeHandlePosition } from '../../renderer/types'
-import { HANDLE_SIZE_WORLD, getResizeCursor, getRotationCursor, matrixHasHalfFlip, matrixToRotationDeg, SELECTION_OVERLAY_GLOW } from './constants'
+import { HANDLE_SIZE_WORLD, MIN_SELRECT_SIDE_SCREEN, getResizeCursor, getRotationCursor, matrixHasHalfFlip, matrixToRotationDeg, SELECTION_OVERLAY_GLOW } from './constants'
 import { SelectionRect } from './SelectionRect'
 import { ResizeHandles } from './ResizeHandles'
 import { CornerHandles } from './CornerHandles'
@@ -154,6 +154,12 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
     [wasmSelectionRect]
   )
 
+  const thresholdTinyWorld = MIN_SELRECT_SIDE_SCREEN / zoom
+  const showCornerHandles =
+    wasmSelectionRect != null &&
+    wasmSelectionRect.width > thresholdTinyWorld &&
+    wasmSelectionRect.height > thresholdTinyWorld
+
   const gradientFill = useMemo(() => {
     if (selectedIds.size !== 1 || selectedNodes.length === 0) return null
     const fills = selectedNodes[0]?.fills
@@ -194,9 +200,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       {showSelectionRect && rect != null && (
         <>
           <g transform={transformStr}>
-            <g style={{ filter: 'url(#selection-line-glow)' }}>
-              <SelectionRect bounds={rect} skipTransform />
-            </g>
+            <SelectionRect bounds={rect} skipTransform zoom={zoom} />
             {showHandles && (
               <>
                 <MoveHitArea
@@ -224,17 +228,17 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
                 />
               </>
             )}
-            {showHandles && wasmSelectionRect != null && gradientForOverlay != null && (
-              <g style={{ filter: 'url(#selection-line-glow)' }}>
-                <GradientOverlay
-                  wasmSelectionRect={wasmSelectionRect}
-                  gradient={gradientForOverlay}
-                  zoom={zoom}
-                />
-              </g>
-            )}
           </g>
-          {showHandles && worldCorners != null && (
+          {showHandles && wasmSelectionRect != null && gradientForOverlay != null && (
+            <g style={{ filter: 'url(#selection-line-glow)' }}>
+              <GradientOverlay
+                wasmSelectionRect={wasmSelectionRect}
+                gradient={gradientForOverlay}
+                zoom={zoom}
+              />
+            </g>
+          )}
+          {showHandles && showCornerHandles && worldCorners != null && (
             <CornerHandles
               worldCorners={worldCorners}
               zoom={zoom}

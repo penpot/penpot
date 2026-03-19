@@ -13,6 +13,7 @@ import { applyModifiersAndCommit } from './utils'
 import type { Point } from '../types'
 import type { Matrix } from 'penpot-exporter/types'
 import type { ResizeHandlePosition } from '../types'
+import { invertMatrix } from '../geom/matrix'
 
 const MIN_SIZE = 1
 
@@ -40,20 +41,6 @@ function getHandlerMultiplier(handle: ResizeHandlePosition): { x: number; y: num
 }
 
 const IDENTITY_MATRIX: Matrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }
-
-/** Full 6-component inverse matching Clojure's gmt/inverse. */
-function invertMatrix(T: Matrix): Matrix | null {
-  const det = T.a * T.d - T.b * T.c
-  if (Math.abs(det) < 1e-10) return null
-  return {
-    a: T.d / det,
-    b: -T.b / det,
-    c: -T.c / det,
-    d: T.a / det,
-    e: (T.c * T.f - T.d * T.e) / det,
-    f: (T.b * T.e - T.a * T.f) / det,
-  }
-}
 
 /** Unified resize matrix: T · S(localOrigin) · T⁻¹. When T = identity degenerates to axis-aligned scale. */
 function buildResizeMatrix(
@@ -109,9 +96,11 @@ export function startResizeSelected(
   const nodeSr = singleNode ? singleNode.selrect : null
 
   const T = singleNode?.transform ?? IDENTITY_MATRIX
-  // Always compute inverse dynamically - the stored transformInverse may be incorrect
-  // for sheered/skewed transforms (it swaps b/c without proper negation and det division)
-  const Tinv = invertMatrix(T) ?? IDENTITY_MATRIX
+  // Use stored inverse when available (e.g. from Figma plugin); fallback for app/legacy documents.
+  const Tinv =
+    singleNode?.transformInverse ??
+    invertMatrix(T) ??
+    IDENTITY_MATRIX
 
   const localW = nodeSr?.width ?? width
   const localH = nodeSr?.height ?? height

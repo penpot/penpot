@@ -228,7 +228,7 @@ export function writeRadialGradientFill(
   const alpha = Math.floor(opacity * 0xff)
   dataView.setUint8(offset + 20, alpha)
 
-  // Width (offset + 24) - ellipse aspect ratio for radial (e.g. ry/rx)
+  // Width (offset + 24)
   dataView.setFloat32(offset + 24, gradient.width, true)
 
   // Stop count (offset + 28)

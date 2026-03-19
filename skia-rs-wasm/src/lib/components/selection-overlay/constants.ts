@@ -36,13 +36,16 @@ export const SELECTION_STROKE = 'var(--color-accent-tertiary, #0d7377)'
 export const SELECTION_OVERLAY_STROKE = 'var(--app-white, #fff)'
 /** Soft gray glow color around overlay lines (visible on white) */
 export const SELECTION_OVERLAY_GLOW = 'rgba(0,0,0,0.28)'
-export const SELECTION_STROKE_WIDTH = 0.6
+export const SELECTION_STROKE_WIDTH = 1
 /** Max stroke width in world units so the overlay does not dominate when zoomed out */
 export const SELECTION_STROKE_WIDTH_MAX = 1.5
 export const HANDLE_FILL = 'var(--app-white, #fff)'
 export const HANDLE_STROKE = 'var(--color-accent-tertiary, #0d7377)'
 /** Handle size in world units; divided by zoom so ~8px on screen */
 export const HANDLE_SIZE_WORLD = 8
+
+/** Minimum selection side in screen px above which corner handles are shown (matches frontend threshold-tiny) */
+export const MIN_SELRECT_SIDE_SCREEN = 10
 
 /** Rotation handle size in world units (matches frontend rotation-handler-size 20) */
 export const ROTATION_HANDLE_SIZE_WORLD = 20
