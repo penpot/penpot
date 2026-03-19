@@ -136,6 +136,8 @@
     :webhooks
     ;; TODO: deprecate this flag and consolidate the code
     :render-wasm-dpr
+    ;; Show WASM renderer info label (hidden by default).
+    :render-wasm-info
     :hide-release-modal
     :subscriptions
     :subscriptions-old

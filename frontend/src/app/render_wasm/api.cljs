@@ -55,10 +55,11 @@
 
 (defn text-editor-wasm?
   []
-  (let [runtime-features (get @st/state :features-runtime)
-        enabled-features (get @st/state :features)]
-    (or (contains? runtime-features "text-editor-wasm/v1")
-        (contains? enabled-features "text-editor-wasm/v1"))))
+  (or (contains? cf/flags :feature-text-editor-wasm)
+      (let [runtime-features (get @st/state :features-runtime)
+            enabled-features (get @st/state :features)]
+        (or (contains? runtime-features "text-editor-wasm/v1")
+            (contains? enabled-features "text-editor-wasm/v1")))))
 
 (def ^:const UUID-U8-SIZE 16)
 (def ^:const UUID-U32-SIZE (/ UUID-U8-SIZE 4))
@@ -1401,6 +1402,8 @@
     (dbg/enabled? :wasm-viewbox)
     (bit-or 2r00000000000000000000000000000001)
     (text-editor-wasm?)
+    (bit-or 2r00000000000000000000000000000100)
+    (contains? cf/flags :render-wasm-info)
     (bit-or 2r00000000000000000000000000001000)))
 
 (defn set-canvas-size
