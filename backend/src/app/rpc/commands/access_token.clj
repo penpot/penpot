@@ -100,6 +100,7 @@
                   :type "mcp"}
                  {:order-by [[:expires-at :asc] [:created-at :asc]]
                   :columns [:token :expires-at]})
-       (remove #(ct/is-after? request-at (:expires-at %)))
+       (remove #(and (some? (:expires-at %))
+                     (ct/is-after? request-at (:expires-at %))))
        (map decode-row)
        (first)))
