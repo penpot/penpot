@@ -1,10 +1,177 @@
 @import "@penpot/plugin-styles/styles.css";
 
 body {
-    line-height: 1.5;
-    padding: 10px;
+    margin: 0;
+    padding: 0;
 }
 
-p {
-    margin-block-end: 0.75rem;
+.plugin-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-8);
+    padding: var(--spacing-16);
+    min-width: 224px;
+    box-sizing: border-box;
+}
+
+/* ── Status pill ─────────────────────────────────────────────────── */
+
+.status-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-8);
+    padding: var(--spacing-8) var(--spacing-16);
+    border-radius: var(--spacing-8);
+    border: 1px solid var(--background-quaternary);
+    color: var(--foreground-secondary);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.status-pill[data-status="connected"] {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.status-pill[data-status="disconnected"],
+.status-pill[data-status="error"] {
+    border-color: var(--error-500);
+    color: var(--error-500);
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+    flex-shrink: 0;
+}
+
+/* ── Collapsible section ─────────────────────────────────────────── */
+
+.collapsible-section {
+    border: 1px solid var(--background-quaternary);
+    border-radius: var(--spacing-8);
+    overflow: hidden;
+}
+
+.collapsible-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-8);
+    padding: var(--spacing-8) var(--spacing-12);
+    cursor: pointer;
+    color: var(--foreground-secondary);
+    list-style: none;
+    user-select: none;
+}
+
+.collapsible-header::-webkit-details-marker {
+    display: none;
+}
+
+.collapsible-arrow {
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+details[open] > .collapsible-header .collapsible-arrow {
+    transform: rotate(90deg);
+}
+
+.collapsible-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    padding: var(--spacing-4) var(--spacing-12) var(--spacing-12);
+    border-top: 1px solid var(--background-quaternary);
+}
+
+/* ── Tool section ────────────────────────────────────────────────── */
+
+.tool-label {
+    color: var(--foreground-secondary);
+}
+
+.tool-display {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-8);
+    padding: var(--spacing-8) var(--spacing-12);
+    border-radius: var(--spacing-8);
+    background-color: var(--background-tertiary);
+    color: var(--foreground-secondary);
+    min-height: 32px;
+    box-sizing: border-box;
+}
+
+.tool-icon {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+/* ── Code section ────────────────────────────────────────────────── */
+
+.code-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--spacing-8);
+}
+
+.code-textarea {
+    width: 100%;
+    height: 100px;
+    resize: vertical;
+    padding: var(--spacing-8) var(--spacing-12);
+    border-radius: var(--spacing-8);
+    border: 1px solid var(--background-quaternary);
+    background-color: var(--background-tertiary);
+    color: var(--foreground-secondary);
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.copy-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--background-quaternary);
+    border-radius: var(--spacing-4);
+    background-color: transparent;
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.copy-btn:hover:not(:disabled) {
+    background-color: var(--background-tertiary);
+    color: var(--foreground-primary);
+}
+
+.copy-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.copy-btn.copied {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+/* ── Action buttons ──────────────────────────────────────────────── */
+
+#connect-btn,
+#disconnect-btn {
+    width: 100%;
+    margin-top: var(--spacing-4);
 }
