@@ -108,7 +108,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     }
 
     async waitForIdle() {
-      await this.page.evaluate(() => new Promise((resolve) => globalThis.requestIdleCallback(resolve)));
+      await this.page.evaluate(
+        () => new Promise((resolve) => globalThis.requestIdleCallback(resolve)),
+      );
     }
   };
 
@@ -190,6 +192,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.tokensUpdateCreateModal = page.getByTestId(
       "token-update-create-modal",
     );
+    this.tokenRenameNodeModal = page.getByTestId("token-rename-node-modal");
     this.tokenThemeUpdateCreateModal = page.getByTestId(
       "token-theme-update-create-modal",
     );
@@ -224,7 +227,7 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async #waitForWebSocketReadiness() {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
-    await expect(this.pageName).toHaveText("Page 1", { timeout: 30000 })
+    await expect(this.pageName).toHaveText("Page 1", { timeout: 30000 });
   }
 
   async sendPresenceMessage(fixture) {
@@ -309,7 +312,7 @@ export class WorkspacePage extends BaseWebSocketPage {
   async clickWithDragViewportAt(x, y, width, height) {
     await this.page.waitForTimeout(100);
     const box = await this.viewport.boundingBox();
-    if (!box) throw new Error('Viewport not visible');
+    if (!box) throw new Error("Viewport not visible");
 
     const startX = box.x + x;
     const startY = box.y + y;
@@ -362,7 +365,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.keyboard.press("T");
     await this.page.waitForTimeout(timeToWait);
 
-    const layersCountBefore = await this.layers.getByTestId("layer-row").count();
+    const layersCountBefore = await this.layers
+      .getByTestId("layer-row")
+      .count();
     await this.clickAndMove(x1, y1, x2, y2);
 
     if (initialText) {
@@ -385,10 +390,13 @@ export class WorkspacePage extends BaseWebSocketPage {
       await this.page.keyboard.press("ControlOrMeta+C");
     }
     // wait for the clipboard to be updated
-    await this.page.waitForFunction(async () => {
-      const content = await navigator.clipboard.readText()
-      return content !== "";
-    }, { timeout: 1000 });
+    await this.page.waitForFunction(
+      async () => {
+        const content = await navigator.clipboard.readText();
+        return content !== "";
+      },
+      { timeout: 1000 },
+    );
   }
 
   async cut(kind = "keyboard", locator = undefined) {
@@ -399,13 +407,15 @@ export class WorkspacePage extends BaseWebSocketPage {
       await this.page.keyboard.press("ControlOrMeta+X");
     }
     // wait for the clipboard to be updated
-    await this.page.waitForFunction(async () => {
-      const content = await navigator.clipboard.readText()
-      return content !== "";
-    }, { timeout: 1000 });
+    await this.page.waitForFunction(
+      async () => {
+        const content = await navigator.clipboard.readText();
+        return content !== "";
+      },
+      { timeout: 1000 },
+    );
 
     await this.page.waitForTimeout(3000);
-
   }
 
   /**

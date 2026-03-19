@@ -914,7 +914,9 @@ test.describe("Tokens - creation", () => {
     const emptyNameError = "Name should be at least 1 character";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFileRender(page, { flags: ["enable-token-shadow"] });
+      await setupEmptyTokensFileRender(page, {
+        flags: ["enable-token-shadow"],
+      });
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1130,7 +1132,9 @@ test.describe("Tokens - creation", () => {
     const emptyNameError = "Name should be at least 1 character";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFileRender(page, { flags: ["enable-token-shadow"] });
+      await setupEmptyTokensFileRender(page, {
+        flags: ["enable-token-shadow"],
+      });
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1576,7 +1580,8 @@ test.describe("Tokens - creation", () => {
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.fill(newTokenTitle);
 
-    const referenceTabButton = tokensUpdateCreateModal.getByTestId("reference-opt");
+    const referenceTabButton =
+      tokensUpdateCreateModal.getByTestId("reference-opt");
     await referenceTabButton.click();
 
     const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
