@@ -1847,8 +1847,8 @@
 
     (letfn [(update-shape-recursive
               [container shape-id root?]
-              #_(when root?
-                  (prn "Checking container:" (:id container)))
+              (when root?
+                (prn "Checking container:" (:id container)))
               (if (:objects container)
                 (let [shape (ctsht/get-shape container shape-id)]
                   (if (and (ctk/instance-head? shape) (ctk/in-component-copy? shape))
@@ -1861,7 +1861,7 @@
                               (update-shape-recursive container child-id false))
                             container
                             (:shapes shape))))
-              container))
+                container))
 
             (compare-slots
               [container-copy container-main shape-copy shape-main]

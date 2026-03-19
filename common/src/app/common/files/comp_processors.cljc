@@ -10,22 +10,20 @@
    [app.common.types.file :as ctf]))
 
 (defn fix-missing-swap-slots
+  "Locate shapes that have been swapped (i.e. their shape-ref does not point to the near match) but
+   they don't have a swap slot. In this case, add one pointing to the near match."
   [file libraries]
   (ctf/update-all-shapes
    file
    (fn [shape]
-     (if (and (ctk/instance-head? shape) (ctk/in-component-copy? shape))
-       (let [{:keys [container]}
-             (meta shape)
-
-             ref-shape
-             (ctf/find-ref-shape file container libraries shape :include-deleted? true :with-context? true)]
-         (println "comparing" (:name shape) "with ref" (some-> ref-shape :name))
-         (if ref-shape
-           (if (and (not= (:shape-ref shape) (:id ref-shape))
-                    (nil? (ctk/get-swap-slot shape)))
-             (let [updated-shape (ctk/set-swap-slot shape (:id ref-shape))]
-               {:result :update :updated-shape updated-shape})
-             {:result :keep})
+     (if (ctk/subcopy-head? shape)
+       (let [container (:container (meta shape))
+             near-match (ctf/find-near-match file container libraries shape :include-deleted? true :with-context? false)]
+         (if (and (some? near-match)
+                  (not= (:shape-ref shape) (:id near-match))
+                  (nil? (ctk/get-swap-slot shape)))
+           (let [updated-shape (ctk/set-swap-slot shape (:id near-match))]
+             {:result :update :updated-shape updated-shape})
            {:result :keep}))
        {:result :keep}))))
+

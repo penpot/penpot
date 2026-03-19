@@ -408,6 +408,27 @@
               (get-ref-shape (:data component-file) component shape :with-context? with-context?))))]
     (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
 
+(defn find-near-match
+  "Locate the shape that occupies the same position in the near main component.
+  This will be the ref-shape except if the shape is a copy subhead that has been
+  swapped. In this case, the near match will be the ref-shape that was before
+  the swap."
+  [file container libraries shape & {:keys [with-context?] :or {with-context? false}}]
+  (let  [parent-shape     (ctst/get-shape container (:parent-id shape))
+         parent-ref-shape (when parent-shape
+                            (find-ref-shape file container libraries parent-shape :include-deleted? true :with-context? true))
+         ref-container    (when parent-ref-shape
+                            (:container (meta parent-ref-shape)))
+         shape-index      (when parent-shape
+                            (d/index-of (:shapes parent-shape) (:id shape)))
+         near-match-id    (when (and parent-ref-shape shape-index)
+                            (get (:shapes parent-ref-shape) shape-index))
+         near-match       (when near-match-id
+                            (cond-> (ctst/get-shape ref-container near-match-id)
+                              with-context?
+                              (with-meta (meta parent-ref-shape))))]
+    near-match))
+
 (defn advance-shape-ref
   "Get the shape-ref of the near main of the shape, recursively repeated as many times
    as the given levels."
