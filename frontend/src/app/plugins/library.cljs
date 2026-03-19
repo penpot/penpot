@@ -766,11 +766,13 @@
   (obj/type-of? p "LibraryComponentProxy"))
 
 (defn lib-component-proxy
-  [plugin-id file-id id]
-  (assert (uuid? file-id))
-  (assert (uuid? id))
+  ([plugin-id file-id id]
+   (lib-component-proxy plugin-id file-id id nil))
+  ([plugin-id file-id id initial-component]
+   (assert (uuid? file-id))
+   (assert (uuid? id))
 
-  (obj/reify {:name "LibraryComponentProxy"}
+   (obj/reify {:name "LibraryComponentProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
@@ -778,7 +780,11 @@
 
     :name
     {:this true
-     :get #(-> % u/proxy->library-component :name)
+     :get (fn [self]
+            (let [component (u/proxy->library-component self)]
+              (if (some? component)
+                (:name component)
+                (:name initial-component))))
      :set
      (fn [self value]
        (cond
@@ -789,13 +795,17 @@
          (u/display-not-valid :name "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [component (u/proxy->library-component self)
-               value (dm/str (d/nilv (:path component) "") " / " value)]
-           (st/emit! (dwv/rename-comp-or-variant-and-main id value)))))}
+         (when-let [component (u/proxy->library-component self)]
+           (let [value (dm/str (d/nilv (:path component) "") " / " value)]
+             (st/emit! (dwv/rename-comp-or-variant-and-main id value))))))}
 
     :path
     {:this true
-     :get #(-> % u/proxy->library-component :path)
+     :get (fn [self]
+            (let [component (u/proxy->library-component self)]
+              (if (some? component)
+                (:path component)
+                (:path initial-component))))
      :set
      (fn [self value]
        (cond
@@ -806,9 +816,9 @@
          (u/display-not-valid :path "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [component (u/proxy->library-component self)
-               value (dm/str value " / " (:name component))]
-           (st/emit! (dwl/rename-component id value)))))}
+         (when-let [component (u/proxy->library-component self)]
+           (let [value (dm/str value " / " (:name component))]
+             (st/emit! (dwl/rename-component id value))))))}
 
     :remove
     (fn []
@@ -977,7 +987,7 @@
         :else
         (st/emit!
          (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "plugin:edit-property-value"})
-         (dwv/update-property-value id pos value))))))
+         (dwv/update-property-value id pos value)))))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))
