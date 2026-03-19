@@ -7570,6 +7570,10 @@ msgstr "Exclusión"
 msgid "workspace.shape.menu.flatten"
 msgstr "Aplanar"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.stroke-to-path"
+msgstr "Borde a ruta"
+
 #: src/app/main/ui/workspace/context_menu.cljs:299
 msgid "workspace.shape.menu.flip-horizontal"
 msgstr "Voltear horizontal"

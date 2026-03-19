@@ -28,6 +28,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.variants :as dwv]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -411,7 +412,7 @@
 (mf/defc context-menu-path*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes disable-flatten disable-booleans]}]
+  [{:keys [shapes objects disable-flatten disable-booleans]}]
   (let [multiple?            (> (count shapes) 1)
         single?              (= (count shapes) 1)
 
@@ -424,8 +425,17 @@
         is-bool?             (and single? has-bool?)
         is-frame?            (and single? has-frame?)
 
+        has-strokes?         (or (->> shapes (d/seek #(seq (:strokes %))))
+                                 (when objects
+                                   (->> shapes
+                                        (d/seek
+                                         (fn [shape]
+                                           (->> (cfh/get-children-ids objects (:id shape))
+                                                (d/seek #(seq (:strokes (get objects %))))))))))
+
         do-start-editing     (fn [] (timers/schedule #(st/emit! (dw/start-editing-selected))))
         do-transform-to-path #(st/emit! (dw/convert-selected-to-path))
+        do-strokes-to-path   #(st/emit! (dw/convert-selected-strokes-to-path))
 
         make-do-bool
         (fn [bool-type]
@@ -447,6 +457,12 @@
      (when-not (or disable-flatten has-frame? has-path?)
        [:> menu-entry* {:title (tr "workspace.shape.menu.flatten")
                         :on-click do-transform-to-path}])
+
+     (when (and has-strokes?
+                (features/active-feature? @st/state "render-wasm/v1")
+                (contains? cf/flags :stroke-path))
+       [:> menu-entry* {:title (tr "workspace.shape.menu.stroke-to-path")
+                        :on-click do-strokes-to-path}])
 
      (when (and (not has-frame?)
                 (not disable-booleans)
@@ -652,6 +668,7 @@
         is-not-variant-container? (->> shapes (d/seek #(not (ctk/is-variant-container? %))))
         props  (mf/props
                 {:shapes shapes
+                 :objects objects
                  :disable-booleans disable-booleans
                  :disable-flatten disable-flatten})]
     (when-not (empty? shapes)

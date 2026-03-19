@@ -1,11 +1,12 @@
 #![allow(unused_mut, unused_variables)]
 use macros::{wasm_error, ToJs};
 use mem::SerializableResult;
+use skia_safe::{self as skia};
 use std::mem::size_of;
 use std::sync::{Mutex, OnceLock};
 
 use crate::error::{Error, Result};
-use crate::shapes::{Path, Segment, ToPath};
+use crate::shapes::{Path, Segment, StrokeKind, ToPath};
 use crate::{mem, with_current_shape, with_current_shape_mut, STATE};
 
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
@@ -230,6 +231,99 @@ pub extern "C" fn current_to_path() -> *mut u8 {
             .copied()
             .map(RawSegmentData::from_segment)
             .collect();
+    });
+
+    mem::write_vec(result)
+}
+
+/// Converts a shape's stroke (at the given index) into a filled path.
+///
+/// This uses Skia's `fill_path_with_paint` to convert the stroke outline
+/// into a filled path, properly handling inner/outer/center alignment
+/// via boolean path operations.
+#[no_mangle]
+pub extern "C" fn current_stroke_to_path(stroke_index: i32) -> *mut u8 {
+    let mut result = Vec::<RawSegmentData>::default();
+    with_current_shape!(state, |shape: &Shape| {
+        let idx = stroke_index as usize;
+        if let Some(stroke) = shape.strokes.get(idx) {
+            let svg_attrs = shape.svg_attrs.as_ref();
+
+            let shape_path = shape.to_path(&state.shapes);
+            let skia_shape_path = shape_path.to_skia_path();
+
+            let path_transform = shape.to_path_transform();
+            let transformed_shape_path = if let Some(ref pt) = path_transform {
+                skia_shape_path.make_transform(pt)
+            } else {
+                skia_shape_path.clone()
+            };
+
+            let is_open = shape_path.is_open();
+            let selrect = shape.selrect;
+            let mut paint = stroke.to_paint(&selrect, svg_attrs, true);
+
+            let render_kind = stroke.render_kind(is_open);
+            if render_kind != StrokeKind::Center {
+                paint.set_stroke_width(stroke.width * 2.0);
+            }
+
+            let mut stroke_outline = skia::Path::default();
+            let success = skia::path_utils::fill_path_with_paint(
+                &transformed_shape_path,
+                &paint,
+                &mut stroke_outline,
+                None,
+                None,
+            );
+
+            if success {
+                // For inner/outer strokes, use boolean ops to clip
+                // the 2×-width stroke outline to the correct region.
+                // Set EvenOdd to preserve the annular ring's inner hole,
+                // then as_winding() on the result fixes contour winding
+                // for Penpot's NonZero fill rule.
+                let final_path = match render_kind {
+                    StrokeKind::Inner => {
+                        stroke_outline.set_fill_type(skia::PathFillType::EvenOdd);
+                        let inner = stroke_outline
+                            .op(&transformed_shape_path, skia::PathOp::Intersect)
+                            .unwrap_or(stroke_outline);
+                        inner.as_winding().unwrap_or(inner)
+                    }
+                    StrokeKind::Outer => {
+                        stroke_outline.set_fill_type(skia::PathFillType::EvenOdd);
+                        let outer = stroke_outline
+                            .op(&transformed_shape_path, skia::PathOp::Difference)
+                            .unwrap_or(stroke_outline);
+                        outer.as_winding().unwrap_or(outer)
+                    }
+                    StrokeKind::Center => {
+                        stroke_outline.set_fill_type(skia::PathFillType::EvenOdd);
+                        stroke_outline.as_winding().unwrap_or(stroke_outline)
+                    }
+                };
+
+                // If there was a path_transform, invert it back to local coords
+                let final_path = if let Some(ref pt) = path_transform {
+                    if let Some(inv) = pt.invert() {
+                        final_path.make_transform(&inv)
+                    } else {
+                        final_path
+                    }
+                } else {
+                    final_path
+                };
+
+                let path = Path::from_skia_path_accurate(final_path);
+                result = path
+                    .segments()
+                    .iter()
+                    .copied()
+                    .map(RawSegmentData::from_segment)
+                    .collect();
+            }
+        }
     });
 
     mem::write_vec(result)
