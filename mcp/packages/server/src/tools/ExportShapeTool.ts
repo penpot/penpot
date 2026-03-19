@@ -17,7 +17,8 @@ export class ExportShapeArgs {
             .min(1, "shapeId cannot be empty")
             .describe(
                 "Identifier of the shape to export. Use the special identifier 'selection' to " +
-                    "export the first shape currently selected by the user."
+                    "export the first shape currently selected by the user. " +
+                    "Use the special identifier 'page' to export the entire current page as a snapshot."
             ),
         format: z.enum(["svg", "png"]).default("png").describe("The output format, either 'png' (default) or 'svg'."),
         mode: z
@@ -71,7 +72,9 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
     public getToolDescription(): string {
         let description =
             "Exports a shape (or a shape's image fill) from the Penpot design to a PNG or SVG image, " +
-            "such that you can get an impression of what it looks like. ";
+            "such that you can get an impression of what it looks like. " +
+            "Use the special shapeId 'page' to take a full snapshot of the entire current page. " +
+            "Use the special shapeId 'selection' to export the currently selected shape.";
         if (this.mcpServer.isFileSystemAccessEnabled()) {
             description += "\nAlternatively, you can save it to a file.";
         }
@@ -88,6 +91,8 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
         let shapeCode: string;
         if (args.shapeId === "selection") {
             shapeCode = `penpot.selection[0]`;
+        } else if (args.shapeId === "page") {
+            shapeCode = `penpot.root`;
         } else {
             shapeCode = `penpotUtils.findShapeById("${args.shapeId}")`;
         }
