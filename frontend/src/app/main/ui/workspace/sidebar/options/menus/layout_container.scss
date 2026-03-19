@@ -188,6 +188,7 @@
   align-items: flex-start;
   position: relative;
   gap: var(--sp-xs);
+  margin-block-end: var(--sp-s);
 }
 
 .locate-button {
@@ -424,6 +425,7 @@
     var(--grid-exception-input-width) /* second input block */
     var(--sp-xxxl); /* action button */
   gap: var(--sp-xs);
+  margin-block-end: var(--sp-xs);
 }
 
 .grid-first-row {
