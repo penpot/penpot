@@ -86,6 +86,7 @@
 ## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
+- Add 'page' special shapeId to MCP export_shape tool for full-page snapshots [Github #8689](https://github.com/penpot/penpot/issues/8689)
 
 - Fix mask issues with component swap (by @dfelinto) [Github #7675](https://github.com/penpot/penpot/issues/7675)
 
