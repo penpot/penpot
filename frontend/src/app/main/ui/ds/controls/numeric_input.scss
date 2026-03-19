@@ -20,6 +20,9 @@
   inline-size: 100%;
   position: relative;
 
+  &:not(:focus-within) {
+    cursor: ew-resize;
+  }
   &:hover {
     --opacity-button: 1;
   }
