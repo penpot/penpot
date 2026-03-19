@@ -368,8 +368,14 @@ msgid "dashboard.copy-suffix"
 msgstr "(copia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
-msgid "dashboard.create-new-org"
+msgid "dashboard.plus-create-new-org"
 msgstr "+ Crear org"
+
+msgid "dashboard.create-new-org"
+msgstr "Crear org"
+
+msgid "dashboard.go-to-control-center"
+msgstr "Ir al centro de control"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
@@ -1274,6 +1280,10 @@ msgstr "Desvincular token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "{%s} no está disponible en ningún set o tiene un valor inválido."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "ds.inputs.token-field.no-active-color.token-option"
 msgstr "Este token no está disponible en ningún set o tiene un valor inválido."
 
 #: src/app/main/data/auth.cljs:339
@@ -2058,8 +2068,8 @@ msgstr ""
 "otras aplicaciones acceso a la API interna de Penpot"
 
 #: src/app/main/ui/settings/integrations.cljs:152, src/app/main/ui/settings/integrations.cljs:158
-msgid "integrations.copy-token"
-msgstr "Copiar token"
+msgid "integrations.copy-to-clipboard"
+msgstr "Copiar al portapapeles"
 
 #: src/app/main/ui/settings/integrations.cljs:432
 msgid "integrations.create-access-token.title"
@@ -2068,14 +2078,6 @@ msgstr "Crear token de accesso"
 #: src/app/main/ui/settings/integrations.cljs:433
 msgid "integrations.create-access-token.title.created"
 msgstr "Token de acceso creado"
-
-#: src/app/main/ui/settings/integrations.cljs:290
-msgid "integrations.create-mcp-key.title"
-msgstr "Crear nueva clave MCP"
-
-#: src/app/main/ui/settings/integrations.cljs:291
-msgid "integrations.create-mcp-key.title.created"
-msgstr "Clave MCP creada"
 
 #: src/app/main/ui/settings/integrations.cljs:257
 msgid "integrations.delete-token.accept"
@@ -2125,6 +2127,22 @@ msgstr "Sin fecha de expiración"
 msgid "integrations.expiration-date.label"
 msgstr "Fecha de expiración"
 
+#: src/app/main/ui/settings/integrations.cljs:290
+msgid "integrations.generate-mcp-key.title"
+msgstr "Generar clave MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:291
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "Clave MCP generada"
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.info.mcp-client-config"
+msgstr "Agrega esta configuración a tu cliente MCP (por ejemplo, ~/.mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:183
+msgid "integrations.info.mcp-server"
+msgstr "El servidor MCP de Penpot permite a los clientes MCP interactuar directamente con los archivos de diseño de Penpot."
+
 #: src/app/main/ui/settings/integrations.cljs:131
 msgid "integrations.info.non-recuperable"
 msgstr "Esta clave única no es recuperable. Si la pierdes, tendrás que crear una nueva."
@@ -2159,7 +2177,7 @@ msgstr "La clave MCP utilizada para conectarse al servidor MCP ha expirado. Como
 
 #: src/app/main/ui/settings/integrations.cljs:368
 msgid "integrations.mcp-server.status.expired.1"
-msgstr "Por favor, regenera la clave MCP y actualiza la configuración de tu cliente con la nueva clave." 
+msgstr "Por favor, regenera la clave MCP y actualiza la configuración de tu cliente con la nueva clave."
 
 #: src/app/main/ui/settings/integrations.cljs:415
 msgid "integrations.mcp-server.mcp-keys.copy"
@@ -2179,7 +2197,7 @@ msgstr "Regenerar clave MCP"
 
 #: src/app/main/ui/settings/integrations.cljs:381
 msgid "integrations.mcp-server.mcp-keys.title"
-msgstr "Claves MCP"
+msgstr "Clave MCP"
 
 #: src/app/main/ui/settings/integrations.cljs:388
 msgid "integrations.mcp-server.mcp-keys.tootip"
@@ -2452,6 +2470,9 @@ msgstr "Director"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:211
 msgid "labels.discard"
 msgstr "Descartar"
+
+msgid "labels.dismiss"
+msgstr "Cancelar"
 
 #: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:409
 msgid "labels.download"
@@ -3755,7 +3776,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Una nueva versión está disponible, por favor actualiza la página"
+msgstr "Una nueva versión está disponible."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"
@@ -3768,6 +3789,9 @@ msgstr "Invitación enviada con éxito"
 #: src/app/main/ui/dashboard/team.cljs:635
 msgid "notifications.invitation-link-copied"
 msgstr "Enlace de invitacion copiado"
+
+msgid "notifications.mcp.active-tab-switching.text"
+msgstr "MCP está activo en otra pestaña. ¿Cambiar a esta?"
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
@@ -5510,10 +5534,6 @@ msgstr "Desagrupar"
 msgid "workspace.colorpicker.color-tokens"
 msgstr "Tokens de color"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:434
-msgid "workspace.colorpicker.get-color"
-msgstr "Absorber color"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
 msgid "workspace.component.swap.loop-error"
 msgstr "Los componentes no pueden anidarse dentro de sí mismos."
@@ -5678,6 +5698,18 @@ msgstr "Ocultar reglas"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Ocultar paleta de textos"
 
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Conectar"
+
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Desconectar"
+
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Gestionar (estado: habilitado)"
+
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Gestionar (estado: deshabilitado)"
+
 #: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "Editar"
@@ -5689,6 +5721,9 @@ msgstr "Archivo"
 #: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "Ayuda e información"
+
+msgid "workspace.header.menu.option.mcp"
+msgstr "Servidor MCP"
 
 #: src/app/main/ui/workspace/main_menu.cljs:906
 msgid "workspace.header.menu.option.preferences"
@@ -5799,12 +5834,8 @@ msgstr "Pantalla completa"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom a selección"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
-msgid "workspace.layout-grid.editor.margin.expand"
-msgstr "Mostrar el margen a 4 lados"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:859
-msgid "workspace.layout-grid.editor.options.edit-grid"
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:274, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:276, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
+msgid "workspace.layout_grid.editor.options.edit-grid"
 msgstr "Editar rejilla"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1539
@@ -5854,30 +5885,6 @@ msgstr "Mostrar"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1565
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Mostrar grid layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
-msgid "workspace.layout-item.fit-content-horizontal"
-msgstr "Ajustar contenido (horizontal)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
-msgid "workspace.layout-item.fit-content-vertical"
-msgstr "Ajustar contenido (vertical)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
-msgid "workspace.layout-item.fix-height"
-msgstr "Fijar altura"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
-msgid "workspace.layout-item.fix-width"
-msgstr "Fijar anchura"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
-msgid "workspace.layout-item.height-100"
-msgstr "Altura 100%"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
-msgid "workspace.layout-item.width-100"
-msgstr "Anchura 100%"
 
 #: src/app/main/ui/workspace/libraries.cljs
 #, unused
@@ -6443,30 +6450,6 @@ msgstr "Tiempo"
 msgid "workspace.options.interaction-animation"
 msgstr "Animación"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
-msgid "workspace.options.interaction-animation-direction-down"
-msgstr "Abajo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
-msgid "workspace.options.interaction-animation-direction-in"
-msgstr "Dentro"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
-msgid "workspace.options.interaction-animation-direction-left"
-msgstr "Izquierda"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
-msgid "workspace.options.interaction-animation-direction-out"
-msgstr "Fuera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
-msgid "workspace.options.interaction-animation-direction-right"
-msgstr "Derecha"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
-msgid "workspace.options.interaction-animation-direction-up"
-msgstr "Arriba"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Disolver"
@@ -6911,14 +6894,6 @@ msgstr "Más tokens de color"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
 msgstr "Opacidad"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
-msgid "workspace.options.orientation.horizontal"
-msgstr "Horizontal"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
-msgid "workspace.options.orientation.vertical"
-msgstr "Vertical"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 #, unused
@@ -7770,11 +7745,7 @@ msgstr "Capas"
 msgid "workspace.sidebar.layers.components"
 msgstr "Componentes"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:297
-msgid "workspace.sidebar.layers.filter"
-msgstr "Filtrar"
-
-#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:338
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:339
 msgid "workspace.sidebar.layers.frames"
 msgstr "Paneles"
 
@@ -8331,7 +8302,6 @@ msgid "workspace.tokens.text-decoration-value-enter"
 msgstr "none | underline | strike-through o {alias}"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
-#, unused
 msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 
@@ -8429,6 +8399,10 @@ msgid "workspace.tokens.warning-name-change"
 msgstr ""
 "Cambiar el nombre de este token romperá cualquier referencia a su nombre "
 "anterior."
+
+#: src/app/main/data/workspace/tokens/application.cljs
+msgid "workspace.tokens.error-text-edition"
+msgstr "No se pueden aplicar tokens mientras se edita texto. Seleccione la capa de texto en su lugar."
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"

@@ -213,25 +213,40 @@ impl Stroke {
         paint.set_anti_alias(antialias);
 
         if let Some(svg_attrs) = svg_attrs {
-            if svg_attrs.stroke_linecap == StrokeLineCap::Round {
-                paint.set_stroke_cap(skia::paint::Cap::Round);
+            match svg_attrs.stroke_linecap {
+                StrokeLineCap::Round => {
+                    paint.set_stroke_cap(skia::paint::Cap::Round);
+                }
+                StrokeLineCap::Square => {
+                    paint.set_stroke_cap(skia::paint::Cap::Square);
+                }
+                StrokeLineCap::Butt => {} // Skia default
             }
 
-            if svg_attrs.stroke_linejoin == StrokeLineJoin::Round {
-                paint.set_stroke_join(skia::paint::Join::Round);
+            match svg_attrs.stroke_linejoin {
+                StrokeLineJoin::Round => {
+                    paint.set_stroke_join(skia::paint::Join::Round);
+                }
+                StrokeLineJoin::Bevel => {
+                    paint.set_stroke_join(skia::paint::Join::Bevel);
+                }
+                StrokeLineJoin::Miter => {} // Skia default
             }
         }
 
         if self.style != StrokeStyle::Solid {
             let path_effect = match self.style {
                 StrokeStyle::Dotted => {
-                    let mut circle_path = skia::Path::new();
                     let width = match self.kind {
                         StrokeKind::Inner => self.width,
                         StrokeKind::Center => self.width / 2.0,
                         StrokeKind::Outer => self.width,
                     };
-                    circle_path.add_circle((0.0, 0.0), width, None);
+                    let circle_path = {
+                        let mut pb = skia::PathBuilder::new();
+                        pb.add_circle((0.0, 0.0), width, None);
+                        pb.detach()
+                    };
                     let advance = self.width + 5.0;
                     skia::PathEffect::path_1d(
                         &circle_path,

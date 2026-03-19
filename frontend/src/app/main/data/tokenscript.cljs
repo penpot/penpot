@@ -69,6 +69,10 @@
   (and (number-with-unit-symbol? v)
        (= (.-unit v) "rem")))
 
+(defn percent-number-with-unit? [v]
+  (and (number-with-unit-symbol? v)
+       (= (.-unit v) "%")))
+
 (defn rem->px [^js v]
   (* (.-value v) 16))
 
@@ -79,7 +83,7 @@
   Structured tokens are non-primitive token types like `typography` or `box-shadow`."
   [^js token-symbol]
   (if (instance? js/Array (.-value token-symbol))
-    (mapv structured-token->penpot-map (.-value token-symbol))
+    (mapv tokenscript-symbols->penpot-unit (.-value token-symbol))
     (let [entries (es6-iterator-seq (.entries (.-value token-symbol)))]
       (into {} (map (fn [[k v :as V]]
                       [(keyword k) (tokenscript-symbols->penpot-unit v)])
@@ -87,10 +91,12 @@
 
 (defn tokenscript-symbols->penpot-unit [^js v]
   (cond
+    (nil? v) nil
     (structured-token? v) (structured-token->penpot-map v)
-    (list-symbol? v) (tokenscript-symbols->penpot-unit (.nth 1 v))
+    (list-symbol? v) (structured-token->penpot-map v)
     (color-symbol? v) (.-value (.to v "hex"))
     (rem-number-with-unit? v) (rem->px v)
+    (percent-number-with-unit? v) (/ (.-value v) 100)
     :else (.-value v)))
 
 ;; Processors ------------------------------------------------------------------

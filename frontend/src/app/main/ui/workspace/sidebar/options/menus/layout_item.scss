@@ -34,8 +34,10 @@
   grid-template-columns: auto auto;
 }
 
-.rotated {
-  transform: rotate(90deg);
+.vertical-behaviour {
+  .rotated {
+    transform: rotate(90deg);
+  }
 }
 
 .z-index-wrapper {
@@ -70,6 +72,18 @@
     var(--grid-exception-input-width) /* second input block */
     var(--sp-xxxl); /* action button */
   gap: var(--sp-xs);
+}
+
+.margin-mode {
+  @extend .button-tertiary;
+  grid-column: 3;
+  height: deprecated.$s-32;
+  svg {
+    @extend .button-icon;
+  }
+  &.selected {
+    @extend .button-icon-selected;
+  }
 }
 
 .margin-simple {

@@ -172,7 +172,6 @@
      [:> title-bar*
       {:collapsable   (< 0 assets-count)
        :collapsed     (not is-open)
-       :all-clickable true
        :on-collapsed  on-collapsed
        :add-icon-gap  (= 0 assets-count)
        :title         title}

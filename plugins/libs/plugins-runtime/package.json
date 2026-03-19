@@ -6,8 +6,8 @@
     "ses": "^1.1.0",
     "zod": "^3.22.4"
   },
-  "module": "./index.mjs",
-  "typings": "./index.d.ts",
+  "module": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "type": "module",
   "scripts": {
     "build": "vite build",

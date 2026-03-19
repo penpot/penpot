@@ -45,7 +45,11 @@ fn render_cursor(
     paint.set_color(editor_state.theme.cursor_color);
     paint.set_anti_alias(true);
 
+    let shape_matrix = shape.get_matrix();
+    canvas.save();
+    canvas.concat(&shape_matrix);
     canvas.draw_rect(rect, &paint);
+    canvas.restore();
 }
 
 fn render_selection(
@@ -62,12 +66,17 @@ fn render_selection(
     }
 
     let mut paint = Paint::default();
-    paint.set_blend_mode(BlendMode::Multiply);
+    paint.set_blend_mode(BlendMode::default());
     paint.set_color(editor_state.theme.selection_color);
     paint.set_anti_alias(true);
+
+    let shape_matrix = shape.get_matrix();
+    canvas.save();
+    canvas.concat(&shape_matrix);
     for rect in rects {
         canvas.draw_rect(rect, &paint);
     }
+    canvas.restore();
 }
 
 fn vertical_align_offset(
@@ -99,12 +108,10 @@ fn calculate_cursor_rect(
         return None;
     }
 
-    let selrect = shape.selrect();
-
     let mut y_offset = vertical_align_offset(shape, &layout_paragraphs);
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
-            let char_pos = cursor.char_offset;
+            let char_pos = cursor.offset;
             // For cursor, we get a zero-width range at the position
             // We need to handle edge cases:
             // - At start of paragraph: use position 0
@@ -116,9 +123,9 @@ fn calculate_cursor_rect(
                 .map(|span| span.text.chars().count())
                 .sum();
 
-            let (cursor_x, cursor_height) = if para_char_count == 0 {
+            let (cursor_x, cursor_y, cursor_height) = if para_char_count == 0 {
                 // Empty paragraph - use default height
-                (0.0, laid_out_para.height())
+                (0.0, 0.0, laid_out_para.height())
             } else if char_pos == 0 {
                 let rects = laid_out_para.get_rects_for_range(
                     0..1,
@@ -126,9 +133,10 @@ fn calculate_cursor_rect(
                     RectWidthStyle::Tight,
                 );
                 if !rects.is_empty() {
-                    (rects[0].rect.left(), rects[0].rect.height())
+                    let r = &rects[0].rect;
+                    (r.left(), r.top(), r.height())
                 } else {
-                    (0.0, laid_out_para.height())
+                    (0.0, 0.0, laid_out_para.height())
                 }
             } else if char_pos >= para_char_count {
                 let rects = laid_out_para.get_rects_for_range(
@@ -137,9 +145,10 @@ fn calculate_cursor_rect(
                     RectWidthStyle::Tight,
                 );
                 if !rects.is_empty() {
-                    (rects[0].rect.right(), rects[0].rect.height())
+                    let r = &rects[0].rect;
+                    (r.right(), r.top(), r.height())
                 } else {
-                    (laid_out_para.longest_line(), laid_out_para.height())
+                    (laid_out_para.longest_line(), 0.0, laid_out_para.height())
                 }
             } else {
                 let rects = laid_out_para.get_rects_for_range(
@@ -148,17 +157,18 @@ fn calculate_cursor_rect(
                     RectWidthStyle::Tight,
                 );
                 if !rects.is_empty() {
-                    (rects[0].rect.left(), rects[0].rect.height())
+                    let r = &rects[0].rect;
+                    (r.left(), r.top(), r.height())
                 } else {
                     // Fallback: use glyph position
                     let pos = laid_out_para.get_glyph_position_at_coordinate((0.0, 0.0));
-                    (pos.position as f32, laid_out_para.height())
+                    (pos.position as f32, 0.0, laid_out_para.height())
                 }
             };
 
             return Some(Rect::from_xywh(
-                selrect.x() + cursor_x,
-                selrect.y() + y_offset,
+                cursor_x,
+                y_offset + cursor_y,
                 editor_state.theme.cursor_width,
                 cursor_height,
             ));
@@ -182,7 +192,6 @@ fn calculate_selection_rects(
     let paragraphs = text_content.paragraphs();
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
 
-    let selrect = shape.selrect();
     let mut y_offset = vertical_align_offset(shape, &layout_paragraphs);
 
     for (para_idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
@@ -203,13 +212,13 @@ fn calculate_selection_rects(
             .sum();
 
         let range_start = if para_idx == start.paragraph {
-            start.char_offset
+            start.offset
         } else {
             0
         };
 
         let range_end = if para_idx == end.paragraph {
-            end.char_offset
+            end.offset
         } else {
             para_char_count
         };
@@ -225,8 +234,8 @@ fn calculate_selection_rects(
             for text_box in text_boxes {
                 let r = text_box.rect;
                 rects.push(Rect::from_xywh(
-                    selrect.x() + r.left(),
-                    selrect.y() + y_offset + r.top(),
+                    r.left(),
+                    y_offset + r.top(),
                     r.width(),
                     r.height(),
                 ));

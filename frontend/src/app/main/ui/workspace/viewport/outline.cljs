@@ -111,11 +111,6 @@
                      :modifier modifier
                      :zoom zoom}]))))
 
-(defn- show-outline?
-  [shape]
-  (and (not (:hidden shape))
-       (not (:blocked shape))))
-
 (mf/defc shape-outlines
   {::mf/wrap-props false}
   [props]
@@ -133,8 +128,7 @@
 
         shapes      (-> #{}
                         (into (comp (remove edition?)
-                                    (keep lookup)
-                                    (filter show-outline?))
+                                    (keep lookup))
                               (set/union selected hover))
                         (into (comp (remove edition?)
                                     (keep lookup))

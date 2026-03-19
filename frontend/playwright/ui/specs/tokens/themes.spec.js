@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
-import { setupEmptyTokensFile, setupTokensFile } from "./helpers";
+import { setupEmptyTokensFileRender, setupTokensFileRender } from "./helpers";
 
 // THEMES HELPERS
 
@@ -23,14 +23,17 @@ const checkInputFieldWithoutError = async (inputLocator) => {
 };
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, [
+    "enable-feature-design-tokens-v1",
+  ]);
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 test.describe("Tokens Themes", () => {
   test("User edits theme and activates it in the sidebar", async ({ page }) => {
     const { tokenThemesSetsSidebar, tokenThemeUpdateCreateModal } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await expect(tokenThemesSetsSidebar).toBeVisible();
 
@@ -117,7 +120,7 @@ test.describe("Tokens Themes", () => {
 test.describe("Tokens: Themes modal", () => {
   test("Delete theme", async ({ page }) => {
     const { tokenThemeUpdateCreateModal, workspacePage } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     workspacePage.openTokenThemesModal();
 
@@ -137,7 +140,7 @@ test.describe("Tokens: Themes modal", () => {
 
   test("Add new theme in empty file", async ({ page }) => {
     const { tokenThemesSetsSidebar, tokenThemeUpdateCreateModal } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFileRender(page);
 
     await tokenThemesSetsSidebar
       .getByRole("button", { name: "Create one." })
@@ -170,7 +173,7 @@ test.describe("Tokens: Themes modal", () => {
 
   test("Add new theme", async ({ page }) => {
     const { tokenThemeUpdateCreateModal, workspacePage } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     workspacePage.openTokenThemesModal();
 
@@ -210,7 +213,7 @@ test.describe("Tokens: Themes modal", () => {
 
   test("Edit theme", async ({ page }) => {
     const { tokenThemeUpdateCreateModal, workspacePage } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     workspacePage.openTokenThemesModal();
 

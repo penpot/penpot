@@ -18,6 +18,7 @@ RUN set -ex; \
         curl \
         bash \
         git \
+        ripgrep \
         \
         curl \
         ca-certificates \

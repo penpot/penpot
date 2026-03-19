@@ -1,21 +1,23 @@
 import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../../pages/WorkspacePage";
-import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
+import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import {
-  setupEmptyTokensFile,
-  setupTokensFile,
-  setupTypographyTokensFile,
+  setupTokensFileRender,
+  setupTypographyTokensFileRender,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
-  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
+  await WasmWorkspacePage.mockConfigFlags(page, [
+    "enable-feature-design-tokens-v1",
+  ]);
+  await WasmWorkspacePage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 const createToken = async (page, type, name, textFieldName, value) => {
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
-  const { tokensUpdateCreateModal } = await setupTokensFile(page, {
+  const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
     flags: ["enable-token-shadow"],
   });
 
@@ -40,9 +42,37 @@ const createToken = async (page, type, name, textFieldName, value) => {
   await expect(tokensUpdateCreateModal).not.toBeVisible();
 };
 
+const createTokenCombobox = async (page, type, name, textFieldName, value) => {
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+  const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+    flags: ["enable-token-shadow"],
+  });
+
+  // Create base token
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: ${type}` })
+    .click();
+  await expect(tokensUpdateCreateModal).toBeVisible();
+
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  await nameField.fill(name);
+
+  const valueFill = tokensUpdateCreateModal.getByRole("combobox", {
+    name: textFieldName,
+  });
+  await valueFill.fill(value);
+
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await submitButton.click();
+  await expect(tokensUpdateCreateModal).not.toBeVisible();
+};
+
 const renameToken = async (page, oldName, newName) => {
   const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
-    await setupTokensFile(page, { flags: ["enable-token-shadow"] });
+    await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
   const baseToken = tokensSidebar.getByRole("button", {
     name: oldName,
@@ -64,7 +94,7 @@ const renameToken = async (page, oldName, newName) => {
 const createCompositeDerivedToken = async (page, type, name, reference) => {
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
-  const { tokensUpdateCreateModal } = await setupTokensFile(page, {
+  const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
     flags: ["enable-token-shadow"],
   });
 
@@ -98,7 +128,7 @@ test.describe("Remapping Tokens", () => {
     test("User renames box shadow token with alias references", async ({
       page,
     }) => {
-      const { tokensSidebar } = await setupTokensFile(page, {
+      const { tokensSidebar } = await setupTokensFileRender(page, {
         flags: ["enable-token-shadow"],
       });
 
@@ -144,7 +174,7 @@ test.describe("Remapping Tokens", () => {
         tokensSidebar,
         tokenContextMenuForToken,
         workspacePage,
-      } = await setupTokensFile(page, { flags: ["enable-token-shadow"] });
+      } = await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
       // Create base shadow token
       await createToken(page, "Shadow", "primary-shadow", "Color", "#000000");
@@ -249,7 +279,7 @@ test.describe("Remapping Tokens", () => {
         tokensUpdateCreateModal,
         tokensSidebar,
         tokenContextMenuForToken,
-      } = await setupTypographyTokensFile(page);
+      } = await setupTypographyTokensFileRender(page);
 
       const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -293,7 +323,7 @@ test.describe("Remapping Tokens", () => {
         tokensSidebar,
         tokenContextMenuForToken,
         workspacePage,
-      } = await setupTypographyTokensFile(page);
+      } = await setupTypographyTokensFileRender(page);
 
       const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -401,13 +431,21 @@ test.describe("Remapping Tokens", () => {
     test("User renames border radius token with alias references", async ({
       page,
     }) => {
-      const { tokensSidebar } = await setupTokensFile(page);
+      const { tokensSidebar } = await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
 
       // Create base border radius token
-      await createToken(page, "Border Radius", "base-radius", "Value", "4");
+      await createTokenCombobox(
+        page,
+        "Border Radius",
+        "base-radius",
+        "Value",
+        "4",
+      );
 
       // Create derived border radius token
-      await createToken(
+      await createTokenCombobox(
         page,
         "Border Radius",
         "card-radius",
@@ -443,13 +481,21 @@ test.describe("Remapping Tokens", () => {
         tokensUpdateCreateModal,
         tokensSidebar,
         tokenContextMenuForToken,
-      } = await setupTokensFile(page);
+      } = await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
 
       // Create base border radius token
-      await createToken(page, "Border Radius", "radius-sm", "Value", "4");
+      await createTokenCombobox(
+        page,
+        "Border Radius",
+        "radius-sm",
+        "Value",
+        "4",
+      );
 
       // Create derived border radius token
-      await createToken(
+      await createTokenCombobox(
         page,
         "Border Radius",
         "button-radius",
@@ -512,7 +558,7 @@ test.describe("Remapping Tokens", () => {
 
   test.describe("Cancel remap", () => {
     test("Only rename - breaks reference", async ({ page }) => {
-      const { tokensSidebar } = await setupTokensFile(page, {
+      const { tokensSidebar } = await setupTokensFileRender(page, {
         flags: ["enable-token-shadow"],
       });
 
@@ -551,7 +597,7 @@ test.describe("Remapping Tokens", () => {
     });
 
     test("Cancel process - no changes applied", async ({ page }) => {
-      const { tokensSidebar } = await setupTokensFile(page, {
+      const { tokensSidebar } = await setupTokensFileRender(page, {
         flags: ["enable-token-shadow"],
       });
 

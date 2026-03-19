@@ -4,4 +4,5 @@ set -ex
 corepack enable;
 corepack install;
 pnpm install;
-pnpm run test;
+pnpm run test:js;
+pnpm run test:jvm;

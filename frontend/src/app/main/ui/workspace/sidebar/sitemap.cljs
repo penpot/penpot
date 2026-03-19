@@ -260,7 +260,6 @@
      [:> title-bar* {:collapsable   true
                      :collapsed     collapsed
                      :on-collapsed  on-toggle-collapsed
-                     :all-clickable true
                      :title         (tr "workspace.sidebar.sitemap")
                      :class         (stl/css :title-spacing-sitemap)}
 

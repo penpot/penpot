@@ -99,46 +99,65 @@
   map with temporal ID's associated to each font entry."
   [blobs team-id]
   (letfn [(prepare [{:keys [font type name data] :as params}]
-            (let [family          (or (.getEnglishName ^js font "preferredFamily")
-                                      (.getEnglishName ^js font "fontFamily"))
-                  variant         (or (.getEnglishName ^js font "preferredSubfamily")
-                                      (.getEnglishName ^js font "fontSubfamily"))
+            (if font
+              ;; Font was parsed with opentype.js (ttf, otf, woff)
+              (let [family          (or (.getEnglishName ^js font "preferredFamily")
+                                        (.getEnglishName ^js font "fontFamily"))
+                    variant         (or (.getEnglishName ^js font "preferredSubfamily")
+                                        (.getEnglishName ^js font "fontSubfamily"))
 
-                  ;; Vertical metrics determine the baseline in a text and the space between lines of
-                  ;; text. For historical reasons, there are three pairs of ascender/descender
-                  ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
-                  ;; system and application a different set will be used to render text on the
-                  ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
-                  ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
-                  ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
-                  ;; table. On Windows, all browsers use the usWin metrics, but respect the
-                  ;; useTypoMetrics setting and if set will use the OS/2 values.
+                    ;; Vertical metrics determine the baseline in a text and the space between lines of
+                    ;; text. For historical reasons, there are three pairs of ascender/descender
+                    ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
+                    ;; system and application a different set will be used to render text on the
+                    ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
+                    ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
+                    ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
+                    ;; table. On Windows, all browsers use the usWin metrics, but respect the
+                    ;; useTypoMetrics setting and if set will use the OS/2 values.
 
-                  hhea-ascender   (abs (-> ^js font .-tables .-hhea .-ascender))
-                  hhea-descender  (abs (-> ^js font .-tables .-hhea .-descender))
+                    hhea-ascender   (abs (-> ^js font .-tables .-hhea .-ascender))
+                    hhea-descender  (abs (-> ^js font .-tables .-hhea .-descender))
 
-                  win-ascent      (abs (-> ^js font .-tables .-os2 .-usWinAscent))
-                  win-descent     (abs (-> ^js font .-tables .-os2 .-usWinDescent))
+                    win-ascent      (abs (-> ^js font .-tables .-os2 .-usWinAscent))
+                    win-descent     (abs (-> ^js font .-tables .-os2 .-usWinDescent))
 
-                  os2-ascent      (abs (-> ^js font .-tables .-os2 .-sTypoAscender))
-                  os2-descent     (abs (-> ^js font .-tables .-os2 .-sTypoDescender))
+                    os2-ascent      (abs (-> ^js font .-tables .-os2 .-sTypoAscender))
+                    os2-descent     (abs (-> ^js font .-tables .-os2 .-sTypoDescender))
 
-                  ;; useTypoMetrics can be read from the 7th bit
-                  f-selection     (-> ^js font .-tables .-os2 .-fsSelection (bit-test 7))
+                    ;; useTypoMetrics can be read from the 7th bit
+                    f-selection     (-> ^js font .-tables .-os2 .-fsSelection (bit-test 7))
 
-                  height-warning? (or (not= hhea-ascender win-ascent)
-                                      (not= hhea-descender win-descent)
-                                      (and f-selection (or
-                                                        (not= hhea-ascender os2-ascent)
-                                                        (not= hhea-descender os2-descent))))
-                  data            (js/Uint8Array. data)]
-              {:content {:data (chunk-array data default-chunk-size)
-                         :name name
-                         :type type}
-               :font-family (or family "")
-               :font-weight (cm/parse-font-weight variant)
-               :font-style  (cm/parse-font-style variant)
-               :height-warning? height-warning?}))
+                    height-warning? (or (not= hhea-ascender win-ascent)
+                                        (not= hhea-descender win-descent)
+                                        (and f-selection (or
+                                                          (not= hhea-ascender os2-ascent)
+                                                          (not= hhea-descender os2-descent))))
+                    data            (js/Uint8Array. data)]
+                {:content {:data (chunk-array data default-chunk-size)
+                           :name name
+                           :type type}
+                 :font-family (or family "")
+                 :font-weight (cm/parse-font-weight variant)
+                 :font-style  (cm/parse-font-style variant)
+                 :height-warning? height-warning?})
+              ;; Font could not be parsed (woff2), extract metadata from filename
+              (let [base-name       (str/replace name #"\.[^.]+$" "")
+                    ;; Strip known weight/style tokens and separators to derive family name
+                    ;; Use word boundaries to avoid matching substrings (e.g. "Boldini" should not match "bold")
+                    raw-family-name (-> base-name
+                                        (str/replace #"(?i)(^|[-_\s])(extra\s*black|ultra\s*black|extra\s*bold|ultra\s*bold|semi\s*bold|demi\s*bold|extra\s*light|ultra\s*light|hairline|thin|light|normal|regular|medium|bold|black|heavy|solid|italic)([-_\s]|$)" "$1$3")
+                                        (str/replace #"[-_\s]+" " ")
+                                        (str/trim))
+                    family-name     (if (str/blank? raw-family-name) base-name raw-family-name)
+                    data            (js/Uint8Array. data)]
+                {:content {:data (chunk-array data default-chunk-size)
+                           :name name
+                           :type type}
+                 :font-family family-name
+                 :font-weight (cm/parse-font-weight base-name)
+                 :font-style  (cm/parse-font-style base-name)
+                 :height-warning? false})))
 
           (join [res {:keys [content] :as font}]
             (let [key-fn   (juxt :font-family :font-weight :font-style)
@@ -166,14 +185,18 @@
               (case sg
                 "117 124 124 117" "font/otf"
                 "0 1 0 0"         "font/ttf"
-                "167 117 106 106" "font/woff")))
+                "167 117 106 106" "font/woff"
+                "167 117 106 62"  "font/woff2")))
 
-          (parse-font [{:keys [data] :as params}]
-            (try
-              (assoc params :font (ot/parse data))
-              (catch :default _e
-                (log/warn :msg (str/fmt "skipping file %s, unsupported format" (:name params)))
-                nil)))
+          (parse-font [{:keys [data type name] :as params}]
+            (if (= type "font/woff2")
+              ;; woff2 cannot be parsed by opentype.js, extract metadata from filename
+              (assoc params :font nil)
+              (try
+                (assoc params :font (ot/parse data))
+                (catch :default _e
+                  (log/warn :msg (str/fmt "skipping file %s, unsupported format" name))
+                  nil))))
 
           (read-blob [blob]
             (->> (wa/read-file-as-array-buffer blob)

@@ -24,7 +24,7 @@
 
 (defn ruler-guide-proxy
   [plugin-id file-id page-id id]
-  (obj/reify {:name "RuleGuideProxy"}
+  (obj/reify {:name "RulerGuideProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file {:enumerable false :get (constantly file-id)}
     :$page {:enumerable false :get (constantly page-id)}

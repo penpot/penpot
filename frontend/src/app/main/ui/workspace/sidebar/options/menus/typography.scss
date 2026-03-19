@@ -324,6 +324,15 @@
         }
       }
     }
+    .text-transform {
+      @extend .asset-element;
+      width: fit-content;
+      padding: 0;
+      background-color: var(--radio-btns-background-color);
+      &:hover {
+        background-color: var(--radio-btns-background-color);
+      }
+    }
   }
 }
 

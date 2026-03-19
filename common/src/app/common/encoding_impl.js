@@ -10,7 +10,7 @@
 goog.require("cljs.core");
 goog.provide("app.common.encoding_impl");
 
-goog.scope(function() {
+goog.scope(function () {
   const core = cljs.core;
   const global = goog.global;
   const self = app.common.encoding_impl;
@@ -28,8 +28,10 @@ goog.scope(function() {
     // Accept UUID hex format
     input = input.replace(/-/g, "");
 
-    if ((input.length % 2) !== 0) {
-      throw new RangeError("Expected string to be an even number of characters")
+    if (input.length % 2 !== 0) {
+      throw new RangeError(
+        "Expected string to be an even number of characters",
+      );
     }
 
     const view = new Uint8Array(input.length / 2);
@@ -44,7 +46,11 @@ goog.scope(function() {
   function bufferToHex(source, isUuid) {
     if (source instanceof Uint8Array) {
     } else if (ArrayBuffer.isView(source)) {
-      source = new Uint8Array(source.buffer, source.byteOffset, source.byteLength);
+      source = new Uint8Array(
+        source.buffer,
+        source.byteOffset,
+        source.byteLength,
+      );
     } else if (Array.isArray(source)) {
       source = Uint8Array.from(source);
     }
@@ -56,22 +62,28 @@ goog.scope(function() {
     const spacer = isUuid ? "-" : "";
 
     let i = 0;
-    return  (hexMap[source[i++]] +
-             hexMap[source[i++]] +
-             hexMap[source[i++]] +
-             hexMap[source[i++]] + spacer +
-             hexMap[source[i++]] +
-             hexMap[source[i++]] + spacer +
-             hexMap[source[i++]] +
-             hexMap[source[i++]] + spacer +
-             hexMap[source[i++]] +
-             hexMap[source[i++]] + spacer +
-             hexMap[source[i++]] +
-             hexMap[source[i++]] +
-             hexMap[source[i++]] +
-             hexMap[source[i++]] +
-             hexMap[source[i++]] +
-             hexMap[source[i++]]);
+    return (
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      spacer +
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      spacer +
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      spacer +
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      spacer +
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      hexMap[source[i++]] +
+      hexMap[source[i++]]
+    );
   }
 
   self.hexToBuffer = hexToBuffer;
@@ -87,8 +99,10 @@ goog.scope(function() {
   // for base16 (hex), base32, or base64 encoding in a standards
   // compliant manner.
 
-  function getBaseCodec (ALPHABET) {
-    if (ALPHABET.length >= 255) { throw new TypeError("Alphabet too long"); }
+  function getBaseCodec(ALPHABET) {
+    if (ALPHABET.length >= 255) {
+      throw new TypeError("Alphabet too long");
+    }
     let BASE_MAP = new Uint8Array(256);
     for (let j = 0; j < BASE_MAP.length; j++) {
       BASE_MAP[j] = 255;
@@ -96,22 +110,32 @@ goog.scope(function() {
     for (let i = 0; i < ALPHABET.length; i++) {
       let x = ALPHABET.charAt(i);
       let xc = x.charCodeAt(0);
-      if (BASE_MAP[xc] !== 255) { throw new TypeError(x + " is ambiguous"); }
+      if (BASE_MAP[xc] !== 255) {
+        throw new TypeError(x + " is ambiguous");
+      }
       BASE_MAP[xc] = i;
     }
     let BASE = ALPHABET.length;
     let LEADER = ALPHABET.charAt(0);
     let FACTOR = Math.log(BASE) / Math.log(256); // log(BASE) / log(256), rounded up
     let iFACTOR = Math.log(256) / Math.log(BASE); // log(256) / log(BASE), rounded up
-    function encode (source) {
+    function encode(source) {
       if (source instanceof Uint8Array) {
       } else if (ArrayBuffer.isView(source)) {
-        source = new Uint8Array(source.buffer, source.byteOffset, source.byteLength);
+        source = new Uint8Array(
+          source.buffer,
+          source.byteOffset,
+          source.byteLength,
+        );
       } else if (Array.isArray(source)) {
         source = Uint8Array.from(source);
       }
-      if (!(source instanceof Uint8Array)) { throw new TypeError("Expected Uint8Array"); }
-      if (source.length === 0) { return ""; }
+      if (!(source instanceof Uint8Array)) {
+        throw new TypeError("Expected Uint8Array");
+      }
+      if (source.length === 0) {
+        return "";
+      }
       // Skip & count leading zeroes.
       let zeroes = 0;
       let length = 0;
@@ -129,12 +153,18 @@ goog.scope(function() {
         let carry = source[pbegin];
         // Apply "b58 = b58 * 256 + ch".
         let i = 0;
-        for (let it1 = size - 1; (carry !== 0 || i < length) && (it1 !== -1); it1--, i++) {
+        for (
+          let it1 = size - 1;
+          (carry !== 0 || i < length) && it1 !== -1;
+          it1--, i++
+        ) {
           carry += (256 * b58[it1]) >>> 0;
-          b58[it1] = (carry % BASE) >>> 0;
+          b58[it1] = carry % BASE >>> 0;
           carry = (carry / BASE) >>> 0;
         }
-        if (carry !== 0) { throw new Error("Non-zero carry"); }
+        if (carry !== 0) {
+          throw new Error("Non-zero carry");
+        }
         length = i;
         pbegin++;
       }
@@ -145,13 +175,19 @@ goog.scope(function() {
       }
       // Translate the result into a string.
       let str = LEADER.repeat(zeroes);
-      for (; it2 < size; ++it2) { str += ALPHABET.charAt(b58[it2]); }
+      for (; it2 < size; ++it2) {
+        str += ALPHABET.charAt(b58[it2]);
+      }
       return str;
     }
 
-    function decodeUnsafe (source) {
-      if (typeof source !== "string") { throw new TypeError("Expected String"); }
-      if (source.length === 0) { return new Uint8Array(); }
+    function decodeUnsafe(source) {
+      if (typeof source !== "string") {
+        throw new TypeError("Expected String");
+      }
+      if (source.length === 0) {
+        return new Uint8Array();
+      }
       let psz = 0;
       // Skip and count leading '1's.
       let zeroes = 0;
@@ -161,21 +197,29 @@ goog.scope(function() {
         psz++;
       }
       // Allocate enough space in big-endian base256 representation.
-      let size = (((source.length - psz) * FACTOR) + 1) >>> 0; // log(58) / log(256), rounded up.
+      let size = ((source.length - psz) * FACTOR + 1) >>> 0; // log(58) / log(256), rounded up.
       let b256 = new Uint8Array(size);
       // Process the characters.
       while (source[psz]) {
         // Decode character
         let carry = BASE_MAP[source.charCodeAt(psz)];
         // Invalid character
-        if (carry === 255) { return; }
+        if (carry === 255) {
+          return;
+        }
         let i = 0;
-        for (let it3 = size - 1; (carry !== 0 || i < length) && (it3 !== -1); it3--, i++) {
+        for (
+          let it3 = size - 1;
+          (carry !== 0 || i < length) && it3 !== -1;
+          it3--, i++
+        ) {
           carry += (BASE * b256[it3]) >>> 0;
-          b256[it3] = (carry % 256) >>> 0;
+          b256[it3] = carry % 256 >>> 0;
           carry = (carry / 256) >>> 0;
         }
-        if (carry !== 0) { throw new Error("Non-zero carry"); }
+        if (carry !== 0) {
+          throw new Error("Non-zero carry");
+        }
         length = i;
         psz++;
       }
@@ -192,20 +236,22 @@ goog.scope(function() {
       return vch;
     }
 
-    function decode (string) {
+    function decode(string) {
       let buffer = decodeUnsafe(string);
-      if (buffer) { return buffer; }
+      if (buffer) {
+        return buffer;
+      }
       throw new Error("Non-base" + BASE + " character");
     }
 
     return {
       encode: encode,
       decodeUnsafe: decodeUnsafe,
-      decode: decode
+      decode: decode,
     };
   }
   // MORE bases here: https://github.com/cryptocoinjs/base-x/tree/master
-  const BASE62 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const BASE62 =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   self.bufferToBase62 = getBaseCodec(BASE62).encode;
-
 });

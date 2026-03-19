@@ -40,5 +40,7 @@
 }
 
 .more-colors-btn {
-  justify-content: center;
+  @extend .button-secondary;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
 }

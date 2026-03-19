@@ -86,6 +86,24 @@
       :else
       (enabled-by-flags? state feature))))
 
+(defn active-features?
+  "Given a state and a set of features, check if the features are all enabled."
+  ([state a]
+   (js/console.warn "Please, use active-feature? instead")
+   (active-feature? state a))
+  ([state a b]
+   (and ^boolean (active-feature? state a)
+        ^boolean (active-feature? state b)))
+  ([state a b c]
+   (and ^boolean (active-feature? state a)
+        ^boolean (active-feature? state b)
+        ^boolean (active-feature? state c)))
+  ([state a b c & others]
+   (and ^boolean (active-feature? state a)
+        ^boolean (active-feature? state b)
+        ^boolean (active-feature? state c)
+        ^boolean (every? #(active-feature? state %) others))))
+
 (def ^:private features-ref
   (l/derived (l/key :features) st/state))
 

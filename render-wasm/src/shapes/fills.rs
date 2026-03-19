@@ -51,10 +51,10 @@ impl Gradient {
             rect.left + self.end.0 * rect.width(),
             rect.top + self.end.1 * rect.height(),
         );
-        skia::shader::Shader::linear_gradient(
+        skia::gradient_shader::linear(
             (start, end),
             self.colors.as_slice(),
-            self.offsets.as_slice(),
+            Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
             None,
@@ -83,11 +83,11 @@ impl Gradient {
         transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
         transform.pre_translate((-center.x, -center.y));
 
-        skia::shader::Shader::radial_gradient(
+        skia::gradient_shader::radial(
             center,
             distance,
             self.colors.as_slice(),
-            self.offsets.as_slice(),
+            Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
             Some(&transform),
@@ -140,6 +140,38 @@ pub enum Fill {
 }
 
 impl Fill {
+    pub fn opacity(&self) -> f32 {
+        match self {
+            Fill::Solid(SolidColor(color)) => color.a() as f32 / 255.0,
+            Fill::LinearGradient(g) => g.opacity as f32 / 255.0,
+            Fill::RadialGradient(g) => g.opacity as f32 / 255.0,
+            Fill::Image(i) => i.opacity as f32 / 255.0,
+        }
+    }
+
+    pub fn with_full_opacity(&self) -> Fill {
+        match self {
+            Fill::Solid(SolidColor(color)) => Fill::Solid(SolidColor(skia::Color::from_argb(
+                255,
+                color.r(),
+                color.g(),
+                color.b(),
+            ))),
+            Fill::LinearGradient(g) => Fill::LinearGradient(Gradient {
+                opacity: 255,
+                ..g.clone()
+            }),
+            Fill::RadialGradient(g) => Fill::RadialGradient(Gradient {
+                opacity: 255,
+                ..g.clone()
+            }),
+            Fill::Image(i) => Fill::Image(ImageFill {
+                opacity: 255,
+                ..i.clone()
+            }),
+        }
+    }
+
     pub fn to_paint(&self, rect: &Rect, anti_alias: bool) -> skia::Paint {
         match self {
             Self::Solid(SolidColor(color)) => {

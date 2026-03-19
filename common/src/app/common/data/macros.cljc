@@ -40,6 +40,13 @@
                                      (list `c/get key)))
                                  keys)))))
 
+(defmacro number
+  "Coerce number to number in a multiplatform way"
+  [o]
+  (if (:ns &env)
+    (with-meta o {:tag 'number})
+    `(double ~o)))
+
 (defmacro str
   [& params]
   `(str/concat ~@params))

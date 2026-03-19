@@ -168,6 +168,7 @@
 
         on-blur (fn [_]
                   (reset! disable-drag false))
+
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
@@ -205,7 +206,7 @@
           (seq strokes)
           [:> h/sortable-container* {}
            (for [[index value] (d/enumerate (:strokes values []))]
-             [:> stroke-row* {:key (dm/str "stroke-" index)
+             [:> stroke-row* {:key (dm/str "stroke-" index "-" (hash applied-tokens))
                               :stroke value
                               :title (tr "workspace.options.stroke-color")
                               :index index
@@ -222,7 +223,7 @@
                               :on-stroke-cap-start-change on-stroke-cap-start-change
                               :on-stroke-cap-end-change on-stroke-cap-end-change
                               :on-stroke-cap-switch on-stroke-cap-switch
-                              :applied-tokens applied-tokens
+                              :applied-tokens (when (= 0 index) applied-tokens)
                               :on-detach-token on-detach-token
                               :on-remove on-remove
                               :on-reorder handle-reorder

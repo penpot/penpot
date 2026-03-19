@@ -317,8 +317,10 @@
       (let [objects (dsh/lookup-page-objects state)
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
-        (when (and (or (nil? edition) (ctl/grid-layout? objects edition))
-                   (or (empty? drawing) (= :curve (:tool drawing))))
+
+        ;; Editors handle their own undo's
+        (when (or (and (nil? edition) (nil? (:object drawing)))
+                  (ctl/grid-layout? objects edition))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]

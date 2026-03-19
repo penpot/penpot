@@ -188,7 +188,7 @@ Some naming conventions:
   [segments separator]
   (let [sorted  (sort-by-children segments separator)
         grouped (group-by-first-segment sorted separator)]
-    grouped))
+    (into (sorted-map) grouped)))
 
 (defn- build-tree-node
   "Builds a single tree node with lazy children."

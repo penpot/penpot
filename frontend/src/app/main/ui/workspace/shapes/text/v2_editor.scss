@@ -73,12 +73,12 @@
 }
 
 .grow-type-auto-width {
-  [data-itype="inline"],
+  [data-itype="span"],
   [data-itype="paragraph"] {
     white-space: nowrap;
   }
 
-  [data-itype="inline"] {
+  [data-itype="span"] {
     white-space-collapse: preserve;
   }
 }

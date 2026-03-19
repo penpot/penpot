@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -18,7 +19,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
-   [app.main.ui.components.file-uploader :refer [file-uploader*]]
+   [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -34,7 +35,7 @@
 (def ^:private accept-font-types
   (str (str/join "," cm/font-types)
        ;; A workaround to solve a problem with chrome input selector
-       ",.ttf,application/font-woff,woff,.otf"))
+       ",.ttf,application/font-woff,.woff,.woff2,.otf"))
 
 (defn- use-page-title
   [team section]
@@ -118,10 +119,10 @@
                             (swap! fonts* dissoc id)
                             (swap! uploading* disj id)
                             (st/emit! (df/add-font font)))
-                          (fn [error]
+                          (fn [cause]
                             (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
                             (swap! fonts* dissoc id)
-                            (js/console.log "error" error))))))
+                            (ex/print-throwable cause))))))
 
         on-upload
         (mf/use-fn
@@ -186,11 +187,11 @@
                  :on-click on-click
                  :tab-index "0"}
         [:span (tr "labels.add-custom-font")]
-        [:> file-uploader* {:input-id "font-upload"
-                            :accept accept-font-types
-                            :multi true
-                            :ref input-ref
-                            :on-selected on-selected}]]
+        [:& file-uploader {:input-id "font-upload"
+                           :accept accept-font-types
+                           :multi true
+                           :ref input-ref
+                           :on-selected on-selected}]]
 
        (when-let [url cf/terms-of-service-uri]
          [:& context-notification {:content (tr "dashboard.fonts.hero-text2" url)
@@ -266,9 +267,10 @@
                   [{:name    (tr "labels.edit")
                     :id      "font-edit"
                     :handler on-edit}
-                   {:name    (tr "labels.download-simple")
-                    :id      "font-download"
-                    :handler on-download}
+                   (when (contains? cf/flags :canary)
+                     {:name    (tr "labels.download-simple")
+                      :id      "font-download"
+                      :handler on-download})
                    {:name    (tr "labels.delete")
                     :id      "font-delete"
                     :handler on-delete}])]
@@ -368,7 +370,7 @@
                               (dom/trigger-download filename blob))
                             (fn [error]
                               (js/console.error "error downloading font" error)
-                              (st/emit! (ntf/error (tr "errors.download-font")))))))))
+                              (st/emit! (ntf/error (tr "errors.generic")))))))))
 
         on-delete-variant
         (mf/use-fn

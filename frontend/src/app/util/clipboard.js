@@ -30,6 +30,15 @@ const exclusiveTypes = [
  * @property {boolean} [allowHTMLPaste]
  */
 
+const looksLikeJSON = (str) => {
+  if (typeof str !== 'string') return false;
+  const trimmed = str.trim();
+  return (
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']'))
+  );
+};
+
 /**
  *
  * @param {string} text
@@ -39,13 +48,14 @@ const exclusiveTypes = [
  */
 function parseText(text, options) {
   options = options || {};
+
   const decodeTransit = options["decodeTransit"];
-  if (decodeTransit) {
+  if (decodeTransit && looksLikeJSON(text)) {
     try {
       decodeTransit(text);
       return new Blob([text], { type: "application/transit+json" });
     } catch (_error) {
-      // NOOP
+      return new Blob([text], { type: "text/plain" });
     }
   }
 
@@ -135,7 +145,7 @@ function sortItems(a, b) {
 export async function fromNavigator(options) {
   options = options || {};
   const items = await navigator.clipboard.read();
-  return Promise.all(
+  const result = await Promise.all(
     Array.from(items).map(async (item) => {
       const itemAllowedTypes = Array.from(item.types)
         .filter(filterAllowedTypes(options))
@@ -155,9 +165,15 @@ export async function fromNavigator(options) {
       }
 
       const type = itemAllowedTypes.at(0);
+
+      if (type == null) {
+        return null;
+      }
+
       return item.getType(type);
     }),
   );
+  return result.filter((item) => !!item);
 }
 
 /**

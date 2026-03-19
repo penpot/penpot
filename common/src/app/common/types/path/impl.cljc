@@ -52,14 +52,15 @@
   [target key & expr]
   (if (:ns &env)
     (let [target (with-meta target {:tag 'js})]
-      `(let [~'cache  (.-cache ~target)
-             ~'result (.get ~'cache ~key)]
-         (if ~'result
-           (do
-             ~'result)
-           (let [~'result (do ~@expr)]
-             (.set ~'cache ~key ~'result)
-             ~'result))))
+      `(let [~'cache (.-cache ~target)]
+         (if (some? ~'cache)
+           (let [~'result (.get ~'cache ~key)]
+             (if ~'result
+               ~'result
+               (let [~'result (do ~@expr)]
+                 (.set ~'cache ~key ~'result)
+                 ~'result)))
+           (do ~@expr))))
     `(do ~@expr)))
 
 (defn- impl-transform-segment

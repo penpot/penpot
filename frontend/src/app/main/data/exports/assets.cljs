@@ -195,7 +195,7 @@
             params      {:exports exports
                          :cmd cmd
                          :profile-id profile-id
-                         :wait false}
+                         :force-multiple true}
 
             progress-stream
             (->> (ws/get-rcv-stream ws-conn)

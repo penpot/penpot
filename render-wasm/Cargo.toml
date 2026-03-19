@@ -25,13 +25,14 @@ gl = "0.14.0"
 glam = "0.24.2"
 indexmap = "2.7.1"
 macros = { path = "macros" }
-skia-safe = { version = "0.87.0", default-features = false, features = [
+skia-safe = { version = "0.93.1", default-features = false, features = [
   "gl",
   "svg",
   "textlayout",
   "binary-cache",
   "webp",
 ] }
+thiserror = "2.0.18"
 uuid = { version = "1.11.0", features = ["v4", "js"] }
 
 [profile.release]

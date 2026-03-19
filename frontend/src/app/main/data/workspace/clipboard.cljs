@@ -258,33 +258,39 @@
   #js {:decodeTransit t/decode-str
        :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")})
 
-(defn create-paste-from-blob
+(defn- create-paste-from-blob
   [in-viewport?]
   (fn [blob]
-    (let [type (.-type blob)
-          result (cond
-                   (= type "image/svg+xml")
-                   (->> (rx/from (.text blob))
-                        (rx/map paste-svg-text))
+    (let [type (.-type blob)]
+      (cond
+        (= type "image/svg+xml")
+        (->> (rx/from (.text blob))
+             (rx/map paste-svg-text))
 
-                   (some #(= type %) clipboard/image-types)
-                   (rx/of (paste-image blob))
+        (some #(= type %) clipboard/image-types)
+        (rx/of (paste-image blob))
 
-                   (= type "text/html")
-                   (->> (rx/from (.text blob))
-                        (rx/map paste-html-text))
+        (= type "text/html")
+        (->> (rx/from (.text blob))
+             (rx/map paste-html-text))
 
-                   (= type "application/transit+json")
-                   (->> (rx/from (.text blob))
-                        (rx/map (fn [text]
-                                  (let [transit-data (t/decode-str text)]
-                                    (assoc transit-data :in-viewport in-viewport?))))
-                        (rx/map paste-transit-shapes))
+        (= type "application/transit+json")
+        (->> (rx/from (.text blob))
+             (rx/map t/decode-str)
+             (rx/filter map?)
+             (rx/map
+              (fn [pdata]
+                (assoc pdata :in-viewport in-viewport?)))
+             (rx/mapcat
+              (fn [pdata]
+                (case (:type pdata)
+                  :copied-props  (rx/of (paste-transit-props pdata))
+                  :copied-shapes (rx/of (paste-transit-shapes pdata))
+                  (rx/empty)))))
 
-                   :else
-                   (->> (rx/from (.text blob))
-                        (rx/map paste-text)))]
-      result)))
+        :else
+        (->> (rx/from (.text blob))
+             (rx/map paste-text))))))
 
 (def default-paste-from-blob (create-paste-from-blob false))
 

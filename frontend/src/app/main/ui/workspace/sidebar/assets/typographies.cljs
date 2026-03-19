@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.path-names :as cpn]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -23,7 +24,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry*]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -113,17 +114,18 @@
            :on-drag-over dom/prevent-default
            :on-drop on-drop}
 
-     [:> typography-entry* {:file-id file-id
-                            :typography typography
-                            :local? local?
-                            :selected? (contains? selected typography-id)
-                            :on-click on-asset-click
-                            :on-change handle-change
-                            :on-context-menu on-context-menu
-                            :editing? editing?
-                            :renaming? renaming?
-                            :focus-name? rename?
-                            :external-open* open*}]
+     [:& typography-entry
+      {:file-id file-id
+       :typography typography
+       :local? local?
+       :selected? (contains? selected typography-id)
+       :on-click on-asset-click
+       :on-change handle-change
+       :on-context-menu on-context-menu
+       :editing? editing?
+       :renaming? renaming?
+       :focus-name? rename?
+       :external-open* open*}]
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))
 
@@ -376,6 +378,12 @@
                          (dwl/sync-file file-id file-id :typographies (:id @state))
                          (dwu/commit-undo-transaction undo-id))))))
 
+        handle-duplicate-typography
+        (mf/use-fn
+         (mf/deps file-id @state)
+         (fn []
+           (st/emit! (dwl/duplicate-typography file-id (:id @state)))))
+
         editing-id (:edit-typography local-data)
 
         renaming-id (:rename-typography local-data)
@@ -438,6 +446,12 @@
                        {:name    (tr "workspace.assets.edit")
                         :id      "assets-edit-typography"
                         :handler handle-edit-typography-clicked})
+
+                     (when (and (not (or multi-typographies? multi-assets?))
+                                (contains? cf/flags :canary))
+                       {:name    (tr "workspace.assets.duplicate")
+                        :id      "assets-duplicate-typography"
+                        :handler handle-duplicate-typography})
 
                      {:name    (tr "workspace.assets.delete")
                       :id      "assets-delete-typography"

@@ -53,9 +53,10 @@ export class ExecuteCodeTool extends Tool<ExecuteCodeArgs> {
             "could come in handy later should be stored in `storage` instead of just a fleeting variable; " +
             "you can also store functions and thus build up a library).\n" +
             "Think of the code being executed as the body of a function: " +
-            "The tool call returns whatever you return in the applicable `return` statement, if any.\n" +
+            "The tool call returns whatever you return in the applicable `return` statement, if any. " +
+            "You can return arbitrary JS objects; no need to apply JSON.stringify.\n" +
             "If an exception occurs, the exception's message will be returned to you.\n" +
-            "Any output that you generate via the `console` object will be returned to you separately; so you may use it" +
+            "Any output that you generate via the `console` object will be returned to you separately; so you may use it " +
             "to track what your code is doing, but you should *only* do so only if there is an ACTUAL NEED for this! " +
             "VERY IMPORTANT: Don't use logging prematurely! NEVER log the data you are returning, as you will otherwise receive it twice!\n" +
             "VERY IMPORTANT: In general, try a simple approach first, and only if it fails, try more complex code that involves " +

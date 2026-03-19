@@ -299,3 +299,8 @@
          (js/console.log (format-throwable cause))
          (finally
            (js/console.groupEnd))))))
+
+(defn get-hint
+  [cause]
+  (or (some-> (ex-data cause) (get :hint) first-line)
+      (some-> (ex-message cause) first-line)))

@@ -120,7 +120,7 @@
 ;; an external storage and data cleared.
 
 (def ^:private schema:event
-  [:map {:title "event"}
+  [:map {:title "AuditEvent"}
    [::type ::sm/text]
    [::name ::sm/text]
    [::profile-id ::sm/uuid]

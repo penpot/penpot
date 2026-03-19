@@ -8,18 +8,17 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cfo]
+   [app.common.json :as json]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
-   [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   ;; [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]
    [clojure.datafy :refer [datafy]]))
 
 ;; === Token
@@ -35,13 +34,25 @@
                            :shape-ids shape-ids
                            :expand-with-children false})))))
 
+(defn- get-resolved-value
+  [token tokens-tree]
+  (let [resolved-tokens (ts/resolve-tokens tokens-tree)
+        resolved-value  (-> resolved-tokens
+                            (dm/get-in [(:name token) :resolved-value])
+                            (ts/tokenscript-symbols->penpot-unit))]
+    resolved-value))
+
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
+
+;; Cannot use shape/shape-proxy? here because of circular dependency in applyToken in shape proxy
+(defn shape-proxy? [s]
+  (obj/type-of? s "ShapeProxy"))
 
 (defn token-proxy
   [plugin-id file-id set-id id]
   (obj/reify {:name "TokenProxy"
-              :wrap u/wrap-errors}
+              :on-error u/handle-error}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$set-id {:enumerable false :get (constantly set-id)}
@@ -75,12 +86,32 @@
      :get
      (fn [_]
        (let [token (u/locate-token file-id set-id id)]
-         (:value token)))
+         (json/->js (:value token))))
      :schema (let [token (u/locate-token file-id set-id id)]
                (cfo/make-token-value-schema (:type token)))
      :set
      (fn [_ value]
        (st/emit! (dwtl/update-token set-id id {:value value})))}
+
+    :resolvedValue
+    {:this true
+     :enumerable false
+     :get
+     (fn [_]
+       (let [token           (u/locate-token file-id set-id id)
+             tokens-lib      (u/locate-tokens-lib file-id)
+             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+         (get-resolved-value token tokens-tree)))}
+
+    :resolvedValueString
+    {:this true
+     :enumerable false
+     :get
+     (fn [_]
+       (let [token           (u/locate-token file-id set-id id)
+             tokens-lib      (u/locate-tokens-lib file-id)
+             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+         (str (get-resolved-value token tokens-tree))))}
 
     :description
     {:this true
@@ -112,18 +143,16 @@
       (st/emit! (dwtl/delete-token set-id id)))
 
     :applyToShapes
-    {:schema [:tuple
-              ;; FIXME: the schema decoder is interpreting the array of shape-proxys and converting
-              ;;        them to plain maps. For now we adapt the schema to accept it, but the decoder
-              ;;        should be fixed to keep the original proxy objects coming from the plugin.
-              ;; [:vector [:fn shape/shape-proxy?]]
-              [:vector [:map [:id ::sm/uuid]]]
-              [:maybe [:set [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]]
+    {:enumerable false
+     :schema [:tuple
+              [:vector [:fn shape-proxy?]]
+              [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
      :fn (fn [shapes attrs]
-           (apply-token-to-shapes file-id set-id id (map :id shapes) attrs))}
+           (apply-token-to-shapes file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
 
     :applyToSelected
-    {:schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
+    {:enumerable false
+     :schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
      :fn (fn [attrs]
            (let [selected (get-in @st/state [:workspace-local :selected])]
              (apply-token-to-shapes file-id set-id id selected attrs)))}))
@@ -136,7 +165,7 @@
 (defn token-set-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenSetProxy"
-              :wrap u/wrap-errors}
+              :on-error u/handle-error}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$id {:enumerable false :get (constantly id)}
@@ -208,14 +237,16 @@
               (apply array))))}
 
     :getTokenById
-    {:schema [:tuple ::sm/uuid]
+    {:enumerable false
+     :schema [:tuple ::sm/uuid]
      :fn (fn [token-id]
            (let [token (u/locate-token file-id id token-id)]
              (when (some? token)
                (token-proxy plugin-id file-id id token-id))))}
 
     :addToken
-    {:schema (fn [args]
+    {:enumerable false
+     :schema (fn [args]
                [:tuple (-> (cfo/make-token-schema
                             (-> (u/locate-tokens-lib file-id) (ctob/get-tokens id))
                             (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
@@ -228,20 +259,19 @@
      :decode/options {:key-fn identity}
      :fn (fn [attrs]
            (let [tokens-lib (u/locate-tokens-lib file-id)
-                 tokens-tree (ctob/get-tokens-in-active-sets tokens-lib)
-                 token (ctob/make-token attrs)]
-             (->> (assoc tokens-tree (:name token) token)
-                  (sd/resolve-tokens-interactive)
-                  (rx/subs!
-                   (fn [resolved-tokens]
-                     (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
-                       (if resolved-value
-                         (st/emit! (dwtl/create-token id token))
-                         (u/display-not-valid :addToken (str errors)))))))
-             ;; TODO: as the addToken function is synchronous, we must return the newly created
-             ;;       token even if the validator will throw it away if the resolution fails.
-             ;;       This will be solved with the TokenScript resolver, that is syncronous.
-             (token-proxy plugin-id file-id id (:id token))))}
+                 token (ctob/make-token attrs)
+                 tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+                                 (assoc (:name token) token))
+                 resolved-tokens (ts/resolve-tokens tokens-tree)
+
+                 {:keys [errors resolved-value] :as resolved-token}
+                 (get resolved-tokens (:name token))]
+
+             (if resolved-value
+               (do (st/emit! (dwtl/create-token id token))
+                   (token-proxy plugin-id file-id id (:id token)))
+               (do (u/display-not-valid :addToken (str errors))
+                   nil))))}
 
     :duplicate
     (fn []
@@ -257,7 +287,7 @@
 (defn token-theme-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenThemeProxy"
-              :wrap u/wrap-errors}
+              :on-error u/handle-error}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$id {:enumerable false :get (constantly id)}
@@ -322,16 +352,28 @@
       (st/emit! (dwtl/toggle-token-theme-active id)))
 
     :activeSets
-    {:this true :get (fn [_])}
+    {:this true
+     :get (fn [_]
+            (let [tokens-lib (u/locate-tokens-lib file-id)
+                  theme (u/locate-token-theme file-id id)]
+              (->> theme
+                   :sets
+                   (map #(->> %
+                              (ctob/get-set-by-name tokens-lib)
+                              (ctob/get-id)
+                              (token-set-proxy plugin-id file-id)))
+                   (apply array))))}
 
     :addSet
-    {:schema [:tuple [:fn token-set-proxy?]]
+    {:enumerable false
+     :schema [:tuple [:fn token-set-proxy?]]
      :fn (fn [token-set]
            (let [theme (u/locate-token-theme file-id id)]
              (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme (obj/get token-set :name))))))}
 
     :removeSet
-    {:schema [:tuple [:fn token-set-proxy?]]
+    {:enumerable false
+     :schema [:tuple [:fn token-set-proxy?]]
      :fn (fn [token-set]
            (let [theme (u/locate-token-theme file-id id)]
              (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme (obj/get token-set :name))))))}
@@ -352,7 +394,7 @@
 (defn tokens-catalog
   [plugin-id file-id]
   (obj/reify {:name "TokensCatalog"
-              :wrap u/wrap-errors}
+              :on-error u/handle-error}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$id {:enumerable false :get (constantly file-id)}
 
@@ -378,7 +420,8 @@
          (apply array (map #(token-set-proxy plugin-id file-id (ctob/get-id %)) sets))))}
 
     :addTheme
-    {:schema (fn [attrs]
+    {:enumerable false
+     :schema (fn [attrs]
                [:tuple (-> (sm/schema (cfo/make-token-theme-schema
                                        (u/locate-tokens-lib file-id)
                                        (or (obj/get attrs "group") "")
@@ -391,7 +434,8 @@
              (token-theme-proxy plugin-id file-id (:id theme))))}
 
     :addSet
-    {:schema [:tuple (-> (sm/schema (cfo/make-token-set-schema
+    {:enumerable false
+     :schema [:tuple (-> (sm/schema (cfo/make-token-set-schema
                                      (u/locate-tokens-lib file-id)
                                      nil))
                          (sm/dissoc-key :id))] ;; We don't allow plugins to set the id
@@ -403,14 +447,16 @@
              (token-set-proxy plugin-id file-id (ctob/get-id set))))}
 
     :getThemeById
-    {:schema [:tuple ::sm/uuid]
+    {:enumerable false
+     :schema [:tuple ::sm/uuid]
      :fn (fn [theme-id]
            (let [theme (u/locate-token-theme file-id theme-id)]
              (when (some? theme)
                (token-theme-proxy plugin-id file-id theme-id))))}
 
     :getSetById
-    {:schema [:tuple ::sm/uuid]
+    {:enumerable false
+     :schema [:tuple ::sm/uuid]
      :fn (fn [set-id]
            (let [set (u/locate-token-set file-id set-id)]
              (when (some? set)

@@ -5,14 +5,17 @@ import { readFile } from "node:fs/promises";
  * esbuild plugin to watch a directory recursively
  */
 const watchExtraDirPlugin = {
-  name: 'watch-extra-dir',
+  name: "watch-extra-dir",
   setup(build) {
-    build.onLoad({ filter: /target\/index.js/, namespace: 'file' }, async (args) => {
-      return {
-        watchDirs: ["packages/ui/dist"],
-      };
-    });
-  }
+    build.onLoad(
+      { filter: /target\/index.js/, namespace: "file" },
+      async (args) => {
+        return {
+          watchDirs: ["packages/ui/dist"],
+        };
+      },
+    );
+  },
 };
 
 const filter =

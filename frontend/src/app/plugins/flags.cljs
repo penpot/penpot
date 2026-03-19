@@ -6,10 +6,30 @@
 
 (ns app.plugins.flags
   (:require
-   [app.main.data.plugins :as dp]
+   [app.common.data.macros :as dm]
    [app.main.store :as st]
    [app.plugins.utils :as u]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [potok.v2.core :as ptk]))
+
+(defn natural-child-ordering?
+  [plugin-id]
+  (boolean
+   (dm/get-in @st/state [:plugins :flags plugin-id :natural-child-ordering])))
+
+(defn clear
+  [id]
+  (ptk/reify ::reset
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:plugins :flags] assoc id {}))))
+
+(defn- set-flag
+  [id key value]
+  (ptk/reify ::set-flag
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:plugins :flags id] assoc key value))))
 
 (defn flags-proxy
   [plugin-id]
@@ -17,11 +37,7 @@
     :naturalChildOrdering
     {:this false
      :get
-     (fn []
-       (boolean
-        (get-in
-         @st/state
-         [:workspace-local :plugin-flags plugin-id :natural-child-ordering])))
+     (fn [] (natural-child-ordering? plugin-id))
 
      :set
      (fn [value]
@@ -30,4 +46,4 @@
          (u/display-not-valid :naturalChildOrdering value)
 
          :else
-         (st/emit! (dp/set-plugin-flag plugin-id :natural-child-ordering value))))}))
+         (st/emit! (set-flag plugin-id :natural-child-ordering value))))}))

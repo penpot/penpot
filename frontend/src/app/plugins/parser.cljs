@@ -147,7 +147,7 @@
 ;; export interface Shadow {
 ;;   id?: string;
 ;;   style?: 'drop-shadow' | 'inner-shadow';
-;;   offset--y?: number;
+;;   offsetX?: number;
 ;;   offsetY?: number;
 ;;   blur?: number;
 ;;   spread?: number;
@@ -160,8 +160,8 @@
     (d/without-nils
      {:id (-> (obj/get shadow "id") parse-id)
       :style (-> (obj/get shadow "style") parse-keyword)
-      :offset-x (obj/get shadow "offset-x")
-      :offset-y (obj/get shadow "offset-y")
+      :offset-x (obj/get shadow "offsetX")
+      :offset-y (obj/get shadow "offsetY")
       :blur (obj/get shadow "blur")
       :spread (obj/get shadow "spread")
       :hidden (obj/get shadow "hidden")

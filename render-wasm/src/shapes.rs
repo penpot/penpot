@@ -30,7 +30,7 @@ pub mod text_paths;
 mod transform;
 
 pub use blend::*;
-pub use blurs::*;
+pub use blurs::{radius_to_sigma, Blur, BlurType};
 pub use bools::*;
 pub use corners::*;
 pub use fills::*;
@@ -196,6 +196,7 @@ pub struct Shape {
     pub extrect_cache: RefCell<Option<(math::Rect, u32)>>,
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
+    deleted: bool,
 }
 
 // Returns all ancestor shapes of this shape, traversing up the parent hierarchy
@@ -257,6 +258,18 @@ pub fn all_with_ancestors(
 }
 
 impl Shape {
+    pub fn get_relative_point(
+        point: &Point,
+        view_matrix: &Matrix,
+        shape_matrix: &Matrix,
+    ) -> Option<Point> {
+        let inv_view_matrix = view_matrix.invert()?;
+        let inv_shape_matrix = shape_matrix.invert()?;
+        let transform_matrix: Matrix = Matrix::concat(&inv_shape_matrix, &inv_view_matrix);
+        let shape_relative_point = transform_matrix.map_point(*point);
+        Some(shape_relative_point)
+    }
+
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
@@ -284,6 +297,7 @@ impl Shape {
             extrect_cache: RefCell::new(None),
             svg_transform: None,
             ignore_constraints: false,
+            deleted: false,
         }
     }
 
@@ -439,6 +453,14 @@ impl Shape {
 
     pub fn svg_transform(&self) -> Option<Matrix> {
         self.svg_transform
+    }
+
+    pub fn set_deleted(&mut self, value: bool) {
+        self.deleted = value;
+    }
+
+    pub fn deleted(&self) -> bool {
+        self.deleted
     }
 
     // FIXME: These arguments could be grouped or simplified
@@ -683,9 +705,8 @@ impl Shape {
         self.invalidate_extrect();
     }
 
-    pub fn set_svg_raw_content(&mut self, content: String) -> Result<(), String> {
+    pub fn set_svg_raw_content(&mut self, content: String) {
         self.shape_type = Type::SVGRaw(SVGRaw::from_content(content));
-        Ok(())
     }
 
     pub fn set_blend_mode(&mut self, mode: BlendMode) {
@@ -983,7 +1004,8 @@ impl Shape {
             }
         }
 
-        let blur = skia::image_filters::blur((children_blur, children_blur), None, None, None);
+        let sigma = radius_to_sigma(children_blur);
+        let blur = skia::image_filters::blur((sigma, sigma), None, None, None);
         if let Some(image_filter) = blur {
             let blur_bounds = image_filter.compute_fast_bounds(rect);
             rect.join(blur_bounds);
@@ -1215,12 +1237,10 @@ impl Shape {
         self.blur
             .filter(|blur| !blur.hidden)
             .and_then(|blur| match blur.blur_type {
-                BlurType::LayerBlur => skia::image_filters::blur(
-                    (blur.value * scale, blur.value * scale),
-                    None,
-                    None,
-                    None,
-                ),
+                BlurType::LayerBlur => {
+                    let sigma = radius_to_sigma(blur.value * scale);
+                    skia::image_filters::blur((sigma, sigma), None, None, None)
+                }
             })
     }
 
@@ -1230,7 +1250,8 @@ impl Shape {
             .filter(|blur| !blur.hidden)
             .and_then(|blur| match blur.blur_type {
                 BlurType::LayerBlur => {
-                    skia::MaskFilter::blur(skia::BlurStyle::Normal, blur.value * scale, Some(true))
+                    let sigma = radius_to_sigma(blur.value * scale);
+                    skia::MaskFilter::blur(skia::BlurStyle::Normal, sigma, Some(true))
                 }
             })
     }
@@ -1326,7 +1347,7 @@ impl Shape {
         if let Some(path) = self.shape_type.path() {
             let mut skia_path = path.to_skia_path();
             if let Some(path_transform) = self.to_path_transform() {
-                skia_path.transform(&path_transform);
+                skia_path = skia_path.make_transform(&path_transform);
             }
             if let Some(svg_attrs) = &self.svg_attrs {
                 if svg_attrs.fill_rule == FillRule::Evenodd {

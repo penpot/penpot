@@ -21,6 +21,7 @@
    [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -36,9 +37,9 @@
    [rumext.v2 :as mf]))
 
 (defn get-value-for-validator
-  [active-tab value value-subfield form-type]
+  [active-tab value value-subfield value-type]
 
-  (case form-type
+  (case value-type
     :indexed
     (if (= active-tab :reference)
       (:reference value)
@@ -62,7 +63,7 @@
            make-schema
            input-component
            initial
-           type
+           value-type
            value-subfield
            input-value-placeholder] :as props}]
 
@@ -96,6 +97,10 @@
           (cond-> (merge tokens tokens-in-selected-set)
             (and (:name token) (:value token))
             (assoc (:name token) token)))
+
+        active-tokens-by-type
+        (mf/with-memo [tokens]
+          (delay (ctob/group-by-type tokens)))
 
         schema
         (mf/with-memo [tokens-tree-in-selected-set active-tab]
@@ -178,13 +183,13 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-token token tokens token-type value-subfield type active-tab on-remap-token on-rename-token is-create)
+         (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
                  path (str (d/name token-type) "." name)
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
-                 value-for-validation (get-value-for-validator active-tab value value-subfield type)]
+                 value-for-validation (get-value-for-validator active-tab value value-subfield value-type)]
              (->> (validate-token {:token-value value-for-validation
                                    :token-name name
                                    :token-description description
@@ -224,78 +229,80 @@
                            error-message (first error-messages)]
                        (swap! form assoc-in [:extra-errors :value] {:message error-message}))))))))]
 
-    [:> fc/form* {:class (stl/css :form-wrapper)
-                  :form form
-                  :on-submit on-submit}
-     [:div {:class (stl/css :token-rows)}
+    [(mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
+     [:> fc/form* {:class (stl/css :form-wrapper)
+                   :form form
+                   :on-submit on-submit}
+      [:div {:class (stl/css :token-rows)}
 
-      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
-       (if (= action "edit")
-         (tr "workspace.tokens.edit-token" token-type)
-         (tr "workspace.tokens.create-token" token-type))]
+       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
+        (if (= action "edit")
+          (tr "workspace.tokens.edit-token" token-type)
+          (tr "workspace.tokens.create-token" token-type))]
 
-      [:div {:class (stl/css :input-row)}
-       [:> fc/form-input* {:id "token-name"
-                           :name :name
-                           :label (tr "workspace.tokens.token-name")
-                           :placeholder (tr "workspace.tokens.enter-token-name" token-title)
-                           :max-length max-input-length
-                           :variant "comfortable"
-                           :trim true
-                           :auto-focus true}]]
+       [:div {:class (stl/css :input-row)}
+        [:> fc/form-input* {:id "token-name"
+                            :name :name
+                            :label (tr "workspace.tokens.token-name")
+                            :placeholder (tr "workspace.tokens.enter-token-name" token-title)
+                            :max-length max-input-length
+                            :variant "comfortable"
+                            :trim true
+                            :auto-focus true}]]
 
-      [:div {:class (stl/css :input-row)}
-       (case type
-         :indexed
-         [:> input-component
-          {:token          token
-           :tokens         tokens
-           :tab            active-tab
-           :value-subfield value-subfield
-           :handle-toggle  on-toggle-tab}]
+       [:div {:class (stl/css :input-row)}
+        (case value-type
+          :indexed
+          [:> input-component
+           {:token          token
+            :tokens         tokens
+            :tab            active-tab
+            :value-subfield value-subfield
+            :handle-toggle  on-toggle-tab}]
 
-         :composite
-         [:> input-component
-          {:token         token
-           :tokens        tokens
-           :tab           active-tab
-           :handle-toggle on-toggle-tab}]
+          :composite
+          [:> input-component
+           {:token         token
+            :tokens        tokens
+            :tab           active-tab
+            :handle-toggle on-toggle-tab}]
 
-         [:> input-component
-          {:placeholder (or input-value-placeholder
-                            (tr "workspace.tokens.token-value-enter"))
-           :label       (tr "workspace.tokens.token-value")
-           :name        :value
-           :token       token
-           :tokens      tokens}])]
+          [:> input-component
+           {:placeholder (or input-value-placeholder
+                             (tr "workspace.tokens.token-value-enter"))
+            :label       (tr "workspace.tokens.token-value")
+            :name        :value
+            :token       token
+            :token-type  token-type
+            :tokens      tokens}])]
 
-      [:div {:class (stl/css :input-row)}
-       [:> fc/form-input* {:id "token-description"
-                           :name :description
-                           :label (tr "workspace.tokens.token-description")
-                           :placeholder (tr "workspace.tokens.token-description")
-                           :max-length max-input-length
-                           :variant "comfortable"
-                           :is-optional true}]]
+       [:div {:class (stl/css :input-row)}
+        [:> fc/form-input* {:id "token-description"
+                            :name :description
+                            :label (tr "workspace.tokens.token-description")
+                            :placeholder (tr "workspace.tokens.token-description")
+                            :max-length max-input-length
+                            :variant "comfortable"
+                            :is-optional true}]]
 
-      [:div {:class (stl/css-case :button-row true
-                                  :with-delete (= action "edit"))}
-       (when (= action "edit")
-         [:> button* {:on-click on-delete-token
-                      :on-key-down handle-key-down-delete
-                      :class (stl/css :delete-btn)
-                      :type "button"
-                      :icon i/delete
-                      :variant "secondary"}
-          (tr "labels.delete")])
+       [:div {:class (stl/css-case :button-row true
+                                   :with-delete (= action "edit"))}
+        (when (= action "edit")
+          [:> button* {:on-click on-delete-token
+                       :on-key-down handle-key-down-delete
+                       :class (stl/css :delete-btn)
+                       :type "button"
+                       :icon i/delete
+                       :variant "secondary"}
+           (tr "labels.delete")])
 
-       [:> button* {:on-click on-cancel
-                    :on-key-down handle-key-down-cancel
-                    :type "button"
-                    :id "token-modal-cancel"
-                    :variant "secondary"}
-        (tr "labels.cancel")]
+        [:> button* {:on-click on-cancel
+                     :on-key-down handle-key-down-cancel
+                     :type "button"
+                     :id "token-modal-cancel"
+                     :variant "secondary"}
+         (tr "labels.cancel")]
 
-       [:> fc/form-submit* {:variant "primary"
-                            :on-submit on-submit}
-        (tr "labels.save")]]]]))
+        [:> fc/form-submit* {:variant "primary"
+                             :on-submit on-submit}
+         (tr "labels.save")]]]]]))

@@ -15,6 +15,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -39,7 +40,6 @@
    [app.main.ui.workspace.sidebar.options.shapes.text :as text]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
-
    [rumext.v2 :as mf]))
 
 ;; --- Options
@@ -50,10 +50,15 @@
   (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
+        wasm-modifiers (mf/deref refs/workspace-wasm-modifiers)
         modifiers  (mf/deref refs/workspace-modifiers)
-        modifiers  (dm/get-in modifiers [shape-id :modifiers])
 
-        shape      (gsh/transform-shape shape modifiers)
+        shape
+        (if (features/active-feature? @st/state "render-wasm/v1")
+          (let [wasm-modifiers (into {} wasm-modifiers)]
+            (gsh/apply-transform shape (get wasm-modifiers shape-id)))
+          (gsh/transform-shape shape (dm/get-in modifiers [shape-id :modifiers])))
+
         props      (mf/spread-props props {:shape shape :file-id file-id :page-id page-id :libraries libraries})]
 
     (case shape-type

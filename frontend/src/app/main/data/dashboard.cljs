@@ -362,7 +362,7 @@
   (ptk/reify ::toggle-project-pin
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:projects id :is-pinned] (not is-pinned)))
+      (d/update-in-when state [:projects id] assoc :is-pinned (not is-pinned)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -379,7 +379,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:projects id :name] (constantly name))
+          (d/update-in-when [:projects id] assoc :name name)
           (update :dashboard-local dissoc :project-for-edit)))
 
     ptk/WatchEvent
@@ -409,7 +409,7 @@
   (ptk/reify ::file-deleted
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:projects project-id :count] dec))))
+      (d/update-in-when state [:projects project-id :count] dec))))
 
 (defn delete-file
   [{:keys [id project-id] :as params}]
@@ -514,7 +514,7 @@
         (-> state
             (assoc-in [:files id] file)
             (assoc-in [:recent-files id] file)
-            (update-in [:projects project-id :count] inc))))))
+            (d/update-in-when [:projects project-id :count] inc))))))
 
 (defn create-file
   [{:keys [project-id name] :as params}]

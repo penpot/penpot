@@ -214,10 +214,11 @@
    (mf/use-effect
     deps
     (fn []
-      (let [sub (->> stream (rx/subs! on-subscribe))]
-        #(do
-           (rx/dispose! sub)
-           (when on-dispose (on-dispose))))))))
+      (when stream
+        (let [sub (->> stream (rx/subs! on-subscribe))]
+          #(do
+             (rx/dispose! sub)
+             (when on-dispose (on-dispose)))))))))
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
 ;; FIXME: replace with rumext

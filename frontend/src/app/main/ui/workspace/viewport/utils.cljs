@@ -55,7 +55,7 @@
 
 (defn top?
   [cur cand]
-  (let [closey? (mth/close? (:y cand) (:y cur))]
+  (let [closey? (mth/close? (:y cand) (:y cur) 0.01)]
     (cond
       (and closey? (< (:x cand) (:x cur))) cand
       closey?                              cur
@@ -64,12 +64,18 @@
 
 (defn right?
   [cur cand]
-  (let [closex? (mth/close? (:x cand) (:x cur))]
+  (let [closex? (mth/close? (:x cand) (:x cur) 0.01)]
     (cond
       (and closex? (< (:y cand) (:y cur))) cand
       closex?                              cur
       (> (:x cand) (:x cur))               cand
       :else                                cur)))
+
+(defn title-transform-use-width?
+  [{:keys [rotation] :as shape}]
+  (let [side       (mth/ceil (/ (- rotation 45) 90))
+        use-width? (even? side)]
+    use-width?))
 
 (defn title-transform
   [{:keys [points] :as shape} zoom grid-edition?]

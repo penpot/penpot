@@ -22,6 +22,9 @@ export class EmptyToolArgs {
 export abstract class Tool<TArgs extends object> {
     private readonly logger = createLogger("Tool");
 
+    /** monotonically increasing counter for unique tool execution IDs */
+    private static executionCounter = 0;
+
     protected constructor(
         protected mcpServer: PenpotMcpServer,
         private inputSchema: z.ZodRawShape
@@ -34,17 +37,21 @@ export abstract class Tool<TArgs extends object> {
      * delegating to the type-safe implementation.
      */
     async execute(args: unknown): Promise<ToolResponse> {
+        const executionId = ++Tool.executionCounter;
         try {
             let argsInstance: TArgs = args as TArgs;
-            this.logger.info("Executing tool: %s; arguments: %s", this.getToolName(), this.formatArgs(argsInstance));
+            this.logger.info("Tool execution #%d starting: %s", executionId, this.getToolName());
+            if (this.logger.isLevelEnabled("debug")) {
+                this.logger.debug("Tool execution #%d arguments: %s", executionId, this.formatArgs(argsInstance));
+            }
 
             // execute the actual tool logic
             let result = await this.executeCore(argsInstance);
 
-            this.logger.info("Tool execution completed: %s", this.getToolName());
+            this.logger.info("Tool execution #%d complete: %s", executionId, this.getToolName());
             return result;
         } catch (error) {
-            this.logger.error(error);
+            this.logger.error("Tool execution #%d failed: %s; error: %s", executionId, this.getToolName(), error);
             return new TextResponse(`Tool execution failed: ${String(error)}`);
         }
     }

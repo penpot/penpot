@@ -328,7 +328,11 @@
                ;; it right afterwards, in the next render cycle.
                (dom/append-child! item-el counter-el)
                (dnd/set-drag-image! event item-el (:x offset) (:y offset))
-               (ts/raf #(dom/remove-child! item-el counter-el))))))
+               ;; Guard against race condition: if the user navigates away
+               ;; before the RAF fires, item-el may have been unmounted and
+               ;; counter-el is no longer a child — removeChild would throw.
+               (ts/raf #(when (dom/child? counter-el item-el)
+                          (dom/remove-child! item-el counter-el)))))))
 
         on-menu-click
         (mf/use-fn

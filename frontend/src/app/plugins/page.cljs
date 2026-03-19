@@ -269,7 +269,7 @@
         (u/display-not-valid :openPage "Plugin doesn't have 'content:read' permission")
 
         :else
-        (let [new-window (if (boolean? new-window) new-window true)]
+        (let [new-window (if (boolean? new-window) new-window false)]
           (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
 
     :createFlow
@@ -331,7 +331,7 @@
         (u/display-not-valid :removeRulerGuide "Guide not provided")
 
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'comment:write' permission")
+        (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'content:write' permission")
 
         :else
         (let [guide (u/proxy->ruler-guide value)]

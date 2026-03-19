@@ -243,6 +243,46 @@ test("Renders a file with a closed path shape with multiple segments using strok
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders solid shadows after select all and zoom to selected", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-solid-shadows.json");
+
+  await workspace.goToWorkspace({
+    id: "93113137-fe66-80fb-8007-99ca9fd96841",
+    pageId: "93113137-fe66-80fb-8007-99ca9fd96842",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.viewport.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("f");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  await workspace.hideUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders strokes with solid shadows", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-solid-strokes-shadows.json");
+
+  await workspace.goToWorkspace({
+    id: "93113137-fe66-80fb-8007-99cfd5cbf361",
+    pageId: "93113137-fe66-80fb-8007-99cfd5cbf362",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.hideUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders a file with paths and svg attrs", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
@@ -354,5 +394,156 @@ test("Renders shapes with multiple fills and blur", async ({
   });
   await workspace.waitForFirstRenderWithoutUI();
 
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Keeps component visible when focusing after creating it", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
+  await workspace.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspace.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.clickLayers();
+  await workspace.clickLeafLayer("Rectangle");
+  await page.keyboard.press("ControlOrMeta+k");
+
+  const componentLayer = workspace.layers
+    .getByTestId("layer-row")
+    .filter({ has: page.getByTestId("icon-component") })
+    .first();
+  await expect(componentLayer).toBeVisible();
+  await componentLayer.click();
+
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("f");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  await workspace.hideUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Check inner stroke artifacts", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-inner-strokes-artifacts.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-9a0b2e2c863f",
+    pageId: "effcbebc-b8c8-802f-8007-9a0b2e2c8640",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("ControlOrMeta++");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  // Stricter comparison: artifacts are very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});
+
+test("No white seam at intersections of overlapping shapes with inner strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-inner-stroke-overlap-seam.json");
+
+  await workspace.goToWorkspace({
+    id: "aaa00001-0001-0001-8007-000000000001",
+    pageId: "aaa00001-0001-0001-8007-000000000002",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.viewport.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("f");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  await workspace.hideUI();
+
+  // Stricter comparison: white seam artifacts are very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});
+
+test("Correct stroke closing at self-intersection of overlapping shapes with outer strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-outer-stroke-overlap-seam.json");
+
+  await workspace.goToWorkspace({
+    id: "aaa00001-0001-0001-8007-000000000001",
+    pageId: "aaa00001-0001-0001-8007-000000000002",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.viewport.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("f");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  await workspace.hideUI();
+
+  // Stricter comparison: white seam artifacts are very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});
+
+test("BUG 13551 - Blurs affecting other elements", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-blurs-affecting-other-elements.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-a7dc677169cd",
+    pageId: "a5508528-5928-8008-8007-a7de9feef61bd",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  // Stricter comparison: blur is very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});
+
+test("BUG 13610 - Huge inner strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-huge-inner-strokes.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-b11dd34fe190",
+    pageId: "effcbebc-b8c8-802f-8007-b11dd34fe191",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });

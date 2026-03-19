@@ -2002,6 +2002,61 @@
       :else
       current-content)))
 
+
+(defn- switch-fixed-layout-geom-change-value
+  [prev-shape           ; The shape before the switch
+   current-shape        ; The shape after the switch (a clean copy)
+   attr]
+  ;; When there is a layout with fixed h or v sizing, we need
+  ;; to keep the width/height (and recalculate selrect and points)
+  (let [prev-width     (-> prev-shape :selrect :width)
+        current-width  (-> current-shape :selrect :width)
+
+        prev-height    (-> prev-shape :selrect :height)
+        current-height (-> current-shape :selrect :height)
+
+        x              (-> current-shape :selrect :x)
+        y              (-> current-shape :selrect :y)
+
+
+        h-sizing       (:layout-item-h-sizing prev-shape)
+        v-sizing       (:layout-item-v-sizing prev-shape)
+
+        final-width    (if (= :fix h-sizing)
+                         current-width
+                         prev-width)
+        final-height   (if (= :fix v-sizing)
+                         current-height
+                         prev-height)
+        selrect        (assoc (:selrect current-shape)
+                              :width final-width
+                              :height final-height
+                              :x x
+                              :y y
+                              :x1 x
+                              :y1 y
+                              :x2 (+ x final-width)
+                              :y2 (+ y final-height))]
+
+    (case attr
+      :width
+      final-width
+
+      :height
+      final-height
+
+      :selrect
+      selrect
+
+      :points
+      (-> selrect
+          (grc/rect->points)
+          (gsh/transform-points
+           (grc/rect->center selrect)
+           (or (:transform current-shape) (gmt/matrix)))))))
+
+
+
 (defn update-attrs-on-switch
   "Copy attributes that have changed in the shape previous to the switch
    to the current shape (post switch). Used only on variants switch"
@@ -2109,6 +2164,11 @@
                                             current-shape
                                             origin-ref-shape
                                             attr)
+
+                  (and (or (= :fix (:layout-item-h-sizing previous-shape))
+                           (= :fix (:layout-item-v-sizing previous-shape)))
+                       (contains? #{:points :selrect :width :height} attr))
+                  (switch-fixed-layout-geom-change-value previous-shape current-shape attr)
 
                   :else
                   (get previous-shape attr)))

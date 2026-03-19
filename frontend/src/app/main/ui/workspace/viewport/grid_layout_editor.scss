@@ -138,8 +138,18 @@
   padding-left: deprecated.$s-8;
 }
 
-.action-btn {
-  padding: 0 var(--sp-xl);
+.locate-btn {
+  @extend .button-secondary;
+  text-transform: uppercase;
+  padding: deprecated.$s-8 deprecated.$s-20;
+  font-size: deprecated.$fs-11;
+}
+
+.done-btn {
+  @extend .button-primary;
+  text-transform: uppercase;
+  padding: deprecated.$s-8 deprecated.$s-20;
+  font-size: deprecated.$fs-11;
 }
 
 .close-btn {

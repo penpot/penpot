@@ -605,31 +605,31 @@
          add-undo-change-shape
          (fn [change-set id]
            (let [shape (get objects id)]
-             (conj
-              change-set
-              {:type :add-obj
-               :id id
-               :page-id page-id
-               :parent-id (:parent-id shape)
-               :frame-id (:frame-id shape)
-               :index (cfh/get-position-on-parent objects id)
-               :obj (cond-> shape
-                      (contains? shape :shapes)
-                      (assoc :shapes []))})))
+             (cond-> change-set
+               (some? shape)
+               (conj {:type :add-obj
+                      :id id
+                      :page-id page-id
+                      :parent-id (:parent-id shape)
+                      :frame-id (:frame-id shape)
+                      :index (cfh/get-position-on-parent objects id)
+                      :obj (cond-> shape
+                             (contains? shape :shapes)
+                             (assoc :shapes []))}))))
 
          add-undo-change-parent
          (fn [change-set id]
            (let [shape (get objects id)
                  prev-sibling (cfh/get-prev-sibling objects (:id shape))]
-             (conj
-              change-set
-              {:type :mov-objects
-               :page-id page-id
-               :parent-id (:parent-id shape)
-               :shapes [id]
-               :after-shape prev-sibling
-               :index 0
-               :ignore-touched true})))]
+             (cond-> change-set
+               (some? shape)
+               (conj {:type :mov-objects
+                      :page-id page-id
+                      :parent-id (:parent-id shape)
+                      :shapes [id]
+                      :after-shape prev-sibling
+                      :index 0
+                      :ignore-touched true}))))]
 
      (-> changes
          (update :redo-changes #(reduce add-redo-change % ids))
@@ -1150,3 +1150,24 @@
   [changes]
   (::page-id (meta changes)))
 
+
+(defn set-text-content
+  [changes id content prev-content]
+  (assert-page-id! changes)
+  (let [page-id (::page-id (meta changes))
+
+        redo-change
+        {:type :mod-obj
+         :page-id page-id
+         :id id
+         :operations [{:type :set :attr :content :val content}]}
+
+        undo-change
+        {:type :mod-obj
+         :page-id page-id
+         :id id
+         :operations [{:type :set :attr :content :val prev-content}]}]
+
+    (-> changes
+        (update :redo-changes conj redo-change)
+        (update :undo-changes conj undo-change))))

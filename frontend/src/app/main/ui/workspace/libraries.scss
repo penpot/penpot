@@ -4,7 +4,6 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/_utils.scss" as *;
@@ -42,12 +41,6 @@
   max-width: $sz-712;
 }
 
-.close-btn {
-  position: absolute;
-  top: var(--sp-s);
-  right: var(--sp-s);
-}
-
 .modal-title {
   @include t.use-typography("headline-medium");
   margin-block-end: var(--sp-l);
@@ -70,12 +63,6 @@
   display: grid;
   grid-template-rows: auto 1fr;
   gap: var(--sp-s);
-
-  .section-list {
-    .section-list-item:first-child {
-      border: none;
-    }
-  }
 }
 
 .shared-section {
@@ -105,8 +92,23 @@
   border-radius: $br-8;
 }
 
+.section-list-item:first-child {
+  border: none;
+}
+
+.section-list-item-double-icon {
+  @extend .section-list-item;
+  grid-template-columns: 1fr auto auto;
+}
+
 .item-content {
   height: fit-content;
+}
+
+.close-btn {
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-s);
 }
 
 .section-list-shared {
@@ -130,21 +132,13 @@
   margin-block: var(--sp-l);
 }
 
-.library-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: transparent;
-  fill: none;
-  stroke-width: $b-1;
-  stroke: var(--icon-foreground);
-  height: $sz-32;
-  width: $sz-32;
-}
-
 // Update library tab
 .libraries-updates-see-all {
-  @extend .link;
+  background: unset;
+  border: none;
+  color: var(--link-foreground-color);
+  cursor: pointer;
+  text-decoration: none;
   direction: rtl;
   grid-column: span 3;
   margin-block-start: var(--sp-s);
@@ -160,7 +154,7 @@
   display: grid;
   grid-column: span 3;
   grid-template-columns: repeat(auto-fill, minmax(px2rem(160), 1fr));
-  gap: deprecated.$s-24;
+  gap: var(--sp-xxl);
   margin-block-start: var(--sp-l);
 }
 
@@ -170,7 +164,7 @@
 }
 
 .libraries-updates-item {
-  @include deprecated.bodyLargeTypography;
+  @include t.use-typography("body-large");
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: start;
@@ -201,22 +195,32 @@
   @include t.use-typography("body-large");
   @include textEllipsis;
   margin: 0;
-  max-width: px2rem(216);
+  max-width: px2rem(236);
+  color: var(--library-name-foreground-color);
+}
+
+.item-name-short {
+  max-width: px2rem(206);
+}
+
+.item-name-long {
+  @extend .item-name;
+  max-width: px2rem(450);
+}
+
+.item-title {
+  @include t.use-typography("body-large");
+  margin: 0;
   color: var(--library-name-foreground-color);
 }
 
 .item-update {
-  @extend .button-primary;
   @include t.use-typography("headline-small");
   height: $sz-32;
   min-width: px2rem(92);
   padding: var(--sp-s) var(--sp-xxl);
   margin-inline-end: var(--sp-xxs);
   border-radius: $br-8;
-
-  &:disabled {
-    @extend .button-disabled;
-  }
 }
 
 .item-contents {
@@ -225,6 +229,11 @@
   display: flex;
   flex-wrap: wrap;
   margin: 0;
+}
+
+.library-actions {
+  display: flex;
+  gap: var(--sp-xs);
 }
 
 .element-count {
@@ -310,7 +319,6 @@
 }
 
 .primary-button {
-  @extend .button-primary;
   @include t.use-typography("headline-small");
   padding: 0 var(--sp-l);
 }
@@ -356,4 +364,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: px2rem(232);
+}
+
+.sample-library-button {
+  @include t.use-typography("headline-small");
+  height: $sz-32;
+  width: px2rem(80);
+  margin: 0;
+  border-radius: $br-8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

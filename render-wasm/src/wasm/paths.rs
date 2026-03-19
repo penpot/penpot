@@ -1,5 +1,5 @@
 #![allow(unused_mut, unused_variables)]
-use macros::ToJs;
+use macros::{wasm_error, ToJs};
 use mem::SerializableResult;
 use std::mem::size_of;
 use std::sync::{Mutex, OnceLock};
@@ -161,12 +161,14 @@ pub extern "C" fn start_shape_path_buffer() {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_path_chunk_buffer() {
+#[wasm_error]
+pub extern "C" fn set_shape_path_chunk_buffer() -> Result<()> {
     let bytes = mem::bytes();
     let buffer = get_path_upload_buffer();
     let mut buffer = buffer.lock().unwrap();
     buffer.extend_from_slice(&bytes);
-    mem::free_bytes();
+    mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]

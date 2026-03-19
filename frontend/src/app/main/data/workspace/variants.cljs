@@ -613,7 +613,7 @@
        vec))
 
 (defn combine-as-variants
-  [ids {:keys [page-id trigger]}]
+  [ids {:keys [page-id trigger variant-id]}]
   (ptk/reify ::combine-as-variants
     ptk/WatchEvent
     (watch [_ state stream]
@@ -647,7 +647,7 @@
                                           :shapes
                                           count
                                           inc)
-                        variant-id    (uuid/next)
+                        variant-id    (or variant-id (uuid/next))
                         undo-id       (js/Symbol)]
 
                     (rx/concat

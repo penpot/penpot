@@ -353,33 +353,24 @@ test("Copy/paste properties", async ({ page, context }) => {
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 
-  await page
-    .getByTestId("layer-item")
-    .getByText("Rectangle")
-    .first()
-    .click({ button: "right" });
+  await page.getByText("Rectangle").first().click({ button: "right" });
+  await page.getByText("Copy/Paste as").hover();
+  await page.getByText("Paste properties").click();
+
+  await page.getByText("Board").nth(2).click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 
   await page
     .getByTestId("layer-item")
-    .getByText("Board")
+    .locator("div")
+    .filter({ hasText: "Path" })
     .nth(1)
     .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 
-  await page
-    .getByTestId("layer-item")
-    .getByText("Path")
-    .click({ button: "right" });
-  await page.getByText("Copy/Paste as").hover();
-  await page.getByText("Paste properties").click();
-
-  await page
-    .getByTestId("layer-item")
-    .getByText("Ellipse")
-    .click({ button: "right" });
+  await page.getByText("Ellipse").click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 });
@@ -491,4 +482,26 @@ test("Bug 8371 - Flatten option is not visible in context menu", async ({
       // there are hidden elements in the context menu (in submenus) with "Flatten" text
       .filter({ visible: true }),
   ).toBeVisible();
+});
+
+test("BUG 13415 - Grid layout overlay is not removed when deleting a board", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockGetFile("workspace/get-file-13415.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-13415.json",
+  );
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.clickLeafLayer("Board");
+
+  const currentRenderCount = await workspacePage.getRenderCount();
+  await workspacePage.page.keyboard.press("Delete");
+
+  await workspacePage.waitForNextRender(currentRenderCount);
+  await workspacePage.hideUI();
+  await expect(workspacePage.canvas).toHaveScreenshot();
 });

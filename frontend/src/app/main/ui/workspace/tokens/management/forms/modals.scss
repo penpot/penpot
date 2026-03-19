@@ -4,17 +4,27 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
 
 .token-modal-wrapper {
-  @extend .modal-container-base;
-  @include deprecated.menuShadow;
+  border-radius: $br-4;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  min-width: $sz-364;
+  min-height: $sz-192;
+  max-width: $sz-512;
+  max-height: $sz-512;
+  box-shadow: 0px 0px $sz-12 0px var(--color-shadow-dark);
   position: absolute;
   width: auto;
   min-width: auto;
-  z-index: 11;
+  z-index: var(--z-index-set);
   overflow-y: auto;
   overflow-x: hidden;
+  padding: var(--sp-xxxl);
   &.token-modal-large {
     max-block-size: 95vh;
   }
@@ -22,6 +32,6 @@
 
 .close-btn {
   position: absolute;
-  top: deprecated.$s-6;
-  right: deprecated.$s-6;
+  top: px2rem(6);
+  right: px2rem(6);
 }

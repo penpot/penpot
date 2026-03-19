@@ -29,8 +29,13 @@ export class RegisterPage extends BasePage {
     );
   }
 
+  static async init(page) {
+    await BasePage.init(page);
+  }
+
   static async initWithLoggedOutUser(page) {
-    await this.mockRPC(page, "get-profile", "get-profile-anonymous.json");
+    await BasePage.init(page);
+    await BasePage.mockRPC(page, "get-profile", "get-profile-anonymous.json");
   }
 }
 

@@ -1116,10 +1116,6 @@ msgstr "打开token列表"
 msgid "ds.inputs.token-field.detach-token"
 msgstr "分离token"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "该token于任意活动集合或主题皆不可用。"
-
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
 msgstr "认证提供者不允许访问此个人设定"
@@ -3143,10 +3139,6 @@ msgstr "要访问此项目，您可以询问团队拥有者。"
 #: src/app/main/data/common.cljs:89
 msgid "notifications.by-code.maintenance"
 msgstr "维护中断：我们将在5分钟内进行短暂维护。"
-
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "有新版本可用，请刷新页面"
 
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"

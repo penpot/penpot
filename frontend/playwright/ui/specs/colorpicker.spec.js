@@ -94,7 +94,7 @@ test("Create a LINEAR gradient", async ({ page }) => {
   await expect(inputOpacityGlobal).toBeVisible();
 
   await expect(
-    workspacePage.page.getByText("Linear gradient").nth(1),
+    workspacePage.page.getByText("Linear gradient")
   ).toBeVisible();
 });
 
@@ -178,7 +178,7 @@ test("Create a RADIAL gradient", async ({ page }) => {
   await expect(inputOpacityGlobal).toBeVisible();
 
   await expect(
-    workspacePage.page.getByText("Radial gradient").nth(1),
+    workspacePage.page.getByText("Radial gradient")
   ).toBeVisible();
 });
 

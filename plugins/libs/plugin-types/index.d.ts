@@ -23,7 +23,7 @@ export interface Penpot extends Omit<
     open: (
       name: string,
       url: string,
-      options?: { width: number; height: number },
+      options?: { width: number; height: number; hidden: boolean },
     ) => void;
 
     size: {
@@ -243,11 +243,17 @@ export interface Board extends ShapeBase {
 
   /**
    * The horizontal sizing behavior of the board.
+   * It can be one of the following values:
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'auto': The container fits the content.
    */
   horizontalSizing?: 'auto' | 'fix';
 
   /**
    * The vertical sizing behavior of the board.
+   * It can be one of the following values:
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'auto': The container fits the content.
    */
   verticalSizing?: 'auto' | 'fix';
 
@@ -738,19 +744,19 @@ export interface CommonLayout {
   /**
    * The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
    * It can be one of the following values:
-   * - 'fit-content': The container fits the content.
-   * - 'fill': The container fills the available space.
-   * - 'auto': The container size is determined automatically.
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fill': The container fills the available space. Only can be set if it's inside another layout.
+   * - 'auto': The container fits the content.
    */
-  horizontalSizing: 'fit-content' | 'fill' | 'auto';
+  horizontalSizing: 'fix' | 'fill' | 'auto';
   /**
    * The `verticalSizing` property specifies the vertical sizing behavior of the container.
    * It can be one of the following values:
-   * - 'fit-content': The container fits the content.
-   * - 'fill': The container fills the available space.
-   * - 'auto': The container size is determined automatically.
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fill': The container fills the available space. Only can be set if it's inside another layout.
+   * - 'auto': The container fits the content.
    */
-  verticalSizing: 'fit-content' | 'fill' | 'auto';
+  verticalSizing: 'fix' | 'fill' | 'auto';
 
   /**
    * The `remove` method removes the layout.
@@ -1250,15 +1256,15 @@ export interface Context {
 
   /**
    * Changes the current open page to given page. Requires `content:read` permission.
-   * @param page the page to open
-   * @param newWindow if true opens the page in a new window
+   * @param page the page to open (a Page object or a page UUID string)
+   * @param newWindow if true opens the page in a new window, defaults to false
    *
    * @example
    * ```js
    * context.openPage(page);
    * ```
    */
-  openPage(page: Page, newWindow?: boolean): void;
+  openPage(page: Page | string, newWindow?: boolean): void;
 
   /**
    * Aligning will move all the selected layers to a position relative to one
@@ -1297,6 +1303,15 @@ export interface Context {
    * @param shapes to flatten
    */
   flatten(shapes: Shape[]): Path[];
+
+  /**
+   * Combine several standard Components into a VariantComponent. Similar to doing it
+   * with the contextual menu on the Penpot interface.
+   * All the shapes passed as arguments should be main instances.
+   * @param shapes A list of main instances of the components to combine.
+   * @return The variant container created
+   */
+  createVariantFromComponents(shapes: Board[]): VariantContainer;
 }
 
 /**
@@ -3723,7 +3738,7 @@ export interface ShapeBase extends PluginData {
   /**
    * Layout properties for cells in a grid layout.
    */
-  readonly layoutCell?: LayoutChildProperties;
+  readonly layoutCell?: LayoutCellProperties;
 
   /**
    * Changes the index inside the parent of the current shape.
@@ -3818,8 +3833,9 @@ export interface ShapeBase extends PluginData {
    * on the Penpot interface.
    * The current shape must be a component main instance.
    * @param ids A list of ids of the main instances of the components to combine with this one.
+   * @return The variant container created
    */
-  combineAsVariants(ids: string[]): void;
+  combineAsVariants(ids: string[]): VariantContainer;
 
   /**
    * @return Returns true when the current shape is the head of a components tree nested structure,
@@ -4128,6 +4144,12 @@ export interface Text extends ShapeBase {
   verticalAlign: 'top' | 'center' | 'bottom' | null;
 
   /**
+   * Return the bounding box for the text as a (x, y, width, height) rectangle
+   * This is the box that covers the text even if it overflows its selection rectangle.
+   */
+  readonly textBounds: { x: number; y: number; width: number; height: number };
+
+  /**
    * Gets a text range within the text shape.
    * @param start - The start index of the text range.
    * @param end - The end index of the text range.
@@ -4344,6 +4366,15 @@ export interface TokenBase {
    * with the same name.
    */
   remove(): void;
+
+  /**
+   * The value calculated by finding all tokens with the same name in active sets
+   * and resolving the references.
+   *
+   * It's converted to string, regardless of the data type of the value depending
+   * on the token type. It can be undefined if no value has been found in active sets.
+   */
+  readonly resolvedValueString: string | undefined;
 
   /**
    * Applies this token to one or more properties of the given shapes.
@@ -5226,27 +5257,27 @@ type TokenDimensionProps =
 /**
  * The properties that a FontFamilies token can be applied to.
  */
-type TokenFontFamiliesProps = 'font-families';
+type TokenFontFamiliesProps = 'fontFamilies';
 
 /**
  * The properties that a FontSizes token can be applied to.
  */
-type TokenFontSizesProps = 'font-size';
+type TokenFontSizesProps = 'fontSize';
 
 /**
  * The properties that a FontWeight token can be applied to.
  */
-type TokenFontWeightProps = 'font-weight';
+type TokenFontWeightProps = 'fontWeight';
 
 /**
  * The properties that a LetterSpacing token can be applied to.
  */
-type TokenLetterSpacingProps = 'letter-spacing';
+type TokenLetterSpacingProps = 'letterSpacing';
 
 /**
  * The properties that a Number token can be applied to.
  */
-type TokenNumberProps = 'rotation' | 'line-height';
+type TokenNumberProps = 'rotation';
 
 /**
  * The properties that an Opacity token can be applied to.
@@ -5262,18 +5293,18 @@ type TokenSizingProps =
   | 'height'
 
   // Layout
-  | 'layout-item-min-w'
-  | 'layout-item-max-w'
-  | 'layout-item-min-h'
-  | 'layout-item-max-h';
+  | 'layoutItemMinW'
+  | 'layoutItemMaxW'
+  | 'layoutItemMinH'
+  | 'layoutItemMaxH';
 
 /**
  * The properties that a Spacing token can be applied to.
  */
 type TokenSpacingProps =
   // Spacing / Gap
-  | 'row-gap'
-  | 'column-gap'
+  | 'rowGap'
+  | 'columnGap'
 
   // Spacing / Padding
   | 'p1'
@@ -5290,17 +5321,17 @@ type TokenSpacingProps =
 /**
  * The properties that a BorderWidth token can be applied to.
  */
-type TokenBorderWidthProps = 'stroke-width';
+type TokenBorderWidthProps = 'strokeWidth';
 
 /**
  * The properties that a TextCase token can be applied to.
  */
-type TokenTextCaseProps = 'text-case';
+type TokenTextCaseProps = 'textCase';
 
 /**
  * The properties that a TextDecoration token can be applied to.
  */
-type TokenTextDecorationProps = 'text-decoration';
+type TokenTextDecorationProps = 'textDecoration';
 
 /**
  * The properties that a Typography token can be applied to.

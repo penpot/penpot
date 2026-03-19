@@ -1184,12 +1184,6 @@ msgstr "Открыть список токенов"
 msgid "ds.inputs.token-field.detach-token"
 msgstr "Отсоединить токен"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr ""
-"Этот токен не входит ни в один активный набор или имеет недопустимое "
-"значение."
-
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
 msgstr "Поставщик аутентификации не разрешён для этого профиля"
@@ -3113,10 +3107,6 @@ msgid "notifications.by-code.maintenance"
 msgstr ""
 "Технический перерыв: сервис будет недоступен короткое время в течение 5 "
 "минут."
-
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "Доступна новая версия, обновите страницу"
 
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"

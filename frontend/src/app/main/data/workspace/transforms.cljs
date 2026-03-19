@@ -548,7 +548,7 @@
                modif-tree
                (dwm/build-modif-tree ids objects get-modifier)]
 
-           (rx/of (dwm/apply-wasm-modifiers modif-tree)))
+           (rx/of (dwm/apply-wasm-modifiers modif-tree :ignore-touched (:ignore-touched options))))
 
          (let [page-id (or (:page-id options)
                            (:current-page-id state))
@@ -1173,7 +1173,8 @@
          (when add-component-to-variant?
            (rx/of (ev/event {::ev/name "add-component-to-variant"})))
          (when add-new-variant?
-           (rx/of (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-to-frame"}))))))))
+           (rx/of (ev/event {::ev/name "add-new-variant"
+                             ::ev/origin "workspace:move-shapes-to-frame"}))))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the

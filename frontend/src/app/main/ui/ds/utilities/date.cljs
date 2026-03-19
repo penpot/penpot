@@ -6,10 +6,8 @@
 
 (ns app.main.ui.ds.utilities.date
   (:require-macros
-   [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.time :as ct]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
@@ -30,15 +28,10 @@
 (mf/defc date*
   {::mf/schema schema:date}
   [{:keys [class date selected typography] :rest props}]
-  (let [class (d/append-class class (stl/css-case :date true :is-selected selected))
-        date  (cond-> date (not (ct/inst? date)) ct/inst)
+  (let [date       (cond-> date (not (ct/inst? date)) ct/inst)
         typography (or typography t/body-medium)]
     [:> text* {:as "time"
                :typography typography
-               :class class
+               :class [class (stl/css-case :date true :is-selected selected)]
                :date-time (ct/format-inst date :iso)}
-     (dm/str
-      (ct/format-inst date :localized-date)
-      " . "
-      (ct/format-inst date :localized-time)
-      "h")]))
+     (ct/format-inst date :localized-date-time)]))

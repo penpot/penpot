@@ -3,11 +3,7 @@ import DashboardPage from "../pages/DashboardPage";
 
 test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
-  await DashboardPage.mockRPC(
-    page,
-    "get-profile",
-    "logged-in-user/get-profile-logged-in-no-onboarding.json",
-  );
+
   await DashboardPage.mockRPC(
     page,
     "get-teams",

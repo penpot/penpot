@@ -119,12 +119,16 @@
     :strict-session-cookies
     :telemetry
     :terms-and-privacy-checkbox
-    ;; Only for developtment.
     :tiered-file-data-storage
+
+    ;; Tokens
     :token-base-font-size
+    :token-combobox
     :token-color
     :token-shadow
     :token-tokenscript
+    :token-import-from-library
+    ;; Only for developtment.
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.
@@ -138,6 +142,10 @@
     :inspect-styles
     ;; Enable performance logs in devconsole (disabled by default)
     :perf-logs
+
+    ;; Used for designate features that will be available in the next
+    ;; release
+    :canary
 
     ;; Security layer middleware that filters request by fetch
     ;; metadata headers
@@ -180,7 +188,10 @@
    :enable-token-color
    :enable-token-shadow
    :enable-inspect-styles
-   :enable-feature-fdata-objects-map])
+   :enable-feature-fdata-objects-map
+   :enable-feature-render-wasm
+   ;; Temporary deactivated
+   #_:enable-token-import-from-library])
 
 (defn parse
   [& flags]

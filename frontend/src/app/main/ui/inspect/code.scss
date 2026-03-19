@@ -17,18 +17,16 @@
   padding-inline: var(--sp-m);
 }
 
-.attributes-block {
-  display: flex;
-  flex-direction: column;
-  row-gap: 12px;
-}
-
 .viewer-code-block {
   height: calc(100vh - #{deprecated.$s-108}); // TODO: Fix this hardcoded value
 }
 
 .download-button {
-  margin: var(--sp-s) 0;
+  @extend .button-secondary;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
+  width: 100%;
+  margin: deprecated.$s-8 0;
 }
 
 .code-block {
@@ -75,6 +73,7 @@
   gap: deprecated.$s-4;
 }
 
+.expand-button,
 .css-copy-btn,
 .html-copy-btn {
   @extend .button-tertiary;
@@ -86,6 +85,9 @@
   }
 }
 
+.code-lang-options {
+  max-width: deprecated.$s-108;
+}
 .code-lang-select {
   @include deprecated.uppercaseTitleTipography;
   width: deprecated.$s-72;

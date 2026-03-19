@@ -14,13 +14,10 @@
    [app.main.data.viewer.shortcuts :as sc]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.exports.assets :refer [progress-widget*]]
+   [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.viewer.comments :refer [comments-menu*]]
+   [app.main.ui.viewer.comments :refer [comments-menu]]
    [app.main.ui.viewer.interactions :refer [flows-menu* interactions-menu*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -36,12 +33,20 @@
   []
   (modal/show! :login-register {}))
 
-(mf/defc zoom-widget*
-  {::mf/memo true}
-  [{:keys [zoom on-increase on-decrease on-zoom-reset on-fullscreen on-zoom-fit on-zoom-fill]}]
-  (let [open* (mf/use-state false)
-        open? (deref open*)
+(mf/defc zoom-widget
+  {::mf/memo true
+   ::mf/props :obj}
+  [{:keys [zoom
+           on-increase
+           on-decrease
+           on-zoom-reset
+           on-fullscreen
+           on-zoom-fit
+           on-zoom-fill]
+    :as props}]
 
+  (let [open*           (mf/use-state false)
+        open?           (deref open*)
         open-dropdown
         (mf/use-fn
          (fn [event]
@@ -70,7 +75,7 @@
 
     [:div {:class (stl/css-case :zoom-widget true
                                 :selected open?)
-           :on-click (if open? close-dropdown open-dropdown)
+           :on-click open-dropdown
            :title (tr "workspace.header.zoom")}
      [:span {:class (stl/css :label)} (fmt/format-percent zoom)]
      [:& dropdown {:show open?
@@ -78,18 +83,18 @@
       [:ul {:class (stl/css :dropdown)}
        [:li  {:class (stl/css :basic-zoom-bar)}
         [:span {:class (stl/css :zoom-btns)}
-         [:> icon-button* {:variant "ghost"
-                           :aria-label (tr "shortcuts.decrease-zoom")
-                           :on-click on-decrease
-                           :icon i/remove}]
-         [:p {:class (stl/css :zoom-text)}
+         [:button {:class (stl/css :zoom-btn)
+                   :on-click on-decrease}
+          [:span {:class (stl/css :zoom-icon)}
+           deprecated-icon/remove-icon]]
+         [:p  {:class (stl/css :zoom-text)}
           (fmt/format-percent zoom)]
-         [:> icon-button* {:variant "ghost"
-                           :aria-label (tr "shortcuts.increase-zoom")
-                           :on-click on-increase
-                           :icon i/add}]]
-        [:> button* {:variant "ghost"
-                     :on-click on-zoom-reset}
+         [:button {:class (stl/css :zoom-btn)
+                   :on-click on-increase}
+          [:span {:class (stl/css :zoom-icon)}
+           deprecated-icon/add]]]
+        [:button {:class (stl/css :reset-btn)
+                  :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
 
        [:li {:class (stl/css :zoom-option)
@@ -114,7 +119,7 @@
            [:span {:class (stl/css :shortcut-key)
                    :key (dm/str "zoom-fullscreen-" sc)} sc])]]]]]))
 
-(mf/defc header-options*
+(mf/defc header-options
   [{:keys [section zoom page file index permissions interactions-mode share]}]
   (let [fullscreen?    (mf/deref fullscreen-ref)
 
@@ -154,7 +159,6 @@
         handle-zoom-fit
         (mf/use-fn
          #(st/emit! dv/zoom-to-fit))]
-
     (mf/with-effect [permissions share]
       (when (and
              (:in-team permissions)
@@ -163,7 +167,7 @@
         (open-share-dialog)))
 
     [:div {:class (stl/css :options-zone)}
-     [:> progress-widget*]
+     [:& progress-widget]
 
      (case section
        :interactions [:*
@@ -171,41 +175,40 @@
                         [:> flows-menu* {:page page :index index}])
                       [:> interactions-menu*
                        {:interactions-mode interactions-mode}]]
-       :comments [:> comments-menu*]
+       :comments [:& comments-menu]
        [:div {:class (stl/css :view-options)}])
 
-     [:> zoom-widget* {:zoom zoom
-                       :on-increase handle-increase
-                       :on-decrease handle-decrease
-                       :on-zoom-reset handle-zoom-reset
-                       :on-zoom-fill handle-zoom-fill
-                       :on-zoom-fit  handle-zoom-fit
-                       :on-fullscreen toggle-fullscreen}]
+     [:& zoom-widget
+      {:zoom zoom
+       :on-increase handle-increase
+       :on-decrease handle-decrease
+       :on-zoom-reset handle-zoom-reset
+       :on-zoom-fill handle-zoom-fill
+       :on-zoom-fit  handle-zoom-fit
+       :on-fullscreen toggle-fullscreen}]
 
      (when (:in-team permissions)
-       [:> icon-button* {:variant "ghost"
-                         :aria-label (tr "viewer.header.edit-in-workspace")
-                         :on-click go-to-workspace
-                         :icon i/curve}])
+       [:span {:on-click go-to-workspace
+               :class (stl/css :edit-btn)}
+        deprecated-icon/curve])
 
-     [:> icon-button* {:variant "ghost"
-                       :aria-pressed fullscreen?
-                       :aria-label (tr "viewer.header.fullscreen")
-                       :on-click toggle-fullscreen
-                       :icon i/expand}]
+     [:span {:title (tr "viewer.header.fullscreen")
+             :class (stl/css-case :fullscreen-btn true
+                                  :selected fullscreen?)
+             :on-click toggle-fullscreen}
+      deprecated-icon/expand]
 
      (when (:in-team permissions)
-       [:> button* {:variant "primary"
-                    :class (stl/css :share-btn)
-                    :on-click open-share-dialog}
+       [:button {:on-click open-share-dialog
+                 :class (stl/css :share-btn)}
         (tr "labels.share")])
 
      (when-not (:is-logged permissions)
        [:span {:on-click open-login-dialog
                :class (stl/css :go-log-btn)} (tr "labels.log-or-sign")])]))
 
-(mf/defc header-sitemap*
-  [{:keys [project file page frame toggle-thumbnails]}]
+(mf/defc header-sitemap
+  [{:keys [project file page frame toggle-thumbnails] :as props}]
   (let [project-name   (:name project)
         file-name      (:name file)
         page-name      (:name page)
@@ -314,44 +317,44 @@
                    :pointer-events (when-not (:in-team permissions) "none")}}
        penpot-logo-icon]
 
-      [:> header-sitemap* {:project project
-                           :file file
-                           :page page
-                           :frame frame
-                           :toggle-thumbnails toggle-thumbnails
-                           :index index}]]
+      [:& header-sitemap {:project project
+                          :file file
+                          :page page
+                          :frame frame
+                          :toggle-thumbnails toggle-thumbnails
+                          :index index}]]
 
      [:div {:class (stl/css :mode-zone)}
-      [:> icon-button* {:variant "ghost"
-                        :aria-pressed (= section :interactions)
-                        :aria-label (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))
-                        :data-value "interactions"
-                        :on-click navigate
-                        :icon i/play}]
+      [:button {:on-click navigate
+                :data-value "interactions"
+                :class (stl/css-case :mode-zone-btn true
+                                     :selected (= section :interactions))
+                :title (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
+       deprecated-icon/play]
 
       (when (or (:in-team permissions)
                 (= (:who-comment permissions) "all"))
-        [:> icon-button* {:variant "ghost"
-                          :aria-pressed (= section :comments)
-                          :aria-label (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))
-                          :data-value "comments"
-                          :on-click navigate
-                          :icon i/comments}])
+        [:button {:on-click navigate
+                  :data-value "comments"
+                  :class (stl/css-case :mode-zone-btn true
+                                       :selected (= section :comments))
+                  :title (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))}
+         deprecated-icon/comments])
 
       (when (or (:in-team permissions)
                 (and (= (:type permissions) :share-link)
                      (= (:who-inspect permissions) "all")))
-        [:> icon-button* {:variant "ghost"
-                          :aria-pressed (= section :inspect)
-                          :aria-label (tr "viewer.header.inspect-section" (sc/get-tooltip :open-inspect))
-                          :on-click go-to-inspect
-                          :icon i/code}])]
+        [:button {:on-click go-to-inspect
+                  :class (stl/css-case :mode-zone-btn true
+                                       :selected (= section :inspect))
+                  :title (tr "viewer.header.inspect-section" (sc/get-tooltip :open-inspect))}
+         deprecated-icon/code])]
 
-     [:> header-options* {:section section
-                          :permissions permissions
-                          :page page
-                          :file file
-                          :index index
-                          :zoom zoom
-                          :interactions-mode interactions-mode
-                          :share share}]]))
+     [:& header-options {:section section
+                         :permissions permissions
+                         :page page
+                         :file file
+                         :index index
+                         :zoom zoom
+                         :interactions-mode interactions-mode
+                         :share share}]]))

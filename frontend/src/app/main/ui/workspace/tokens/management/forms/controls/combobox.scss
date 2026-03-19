@@ -1,0 +1,16 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.dropdown {
+  position: fixed;
+  max-block-size: $sz-400;
+  overflow-y: auto;
+  @include custom-scrollbar();
+}

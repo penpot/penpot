@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.drawing.box
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -28,9 +29,9 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn adjust-ratio
+(defn- adjust-ratio
   [point initial]
-  (let [v (gpt/to-vec point initial)
+  (let [v  (gpt/to-vec point initial)
         dx (mth/abs (:x v))
         dy (mth/abs (:y v))
         sx (mth/sign (:x v))
@@ -43,32 +44,43 @@
       (> dy dx)
       (assoc :x (- (:x point) (* sx (- dy dx)))))))
 
-(defn resize-shape [{:keys [x y width height] :as shape} initial point lock? mod? snap-pixel?]
+(defn- resize-shape
+  [{:keys [x y width height] :as shape} initial point lock? mod? snap-pixel?]
   (if (and (some? x) (some? y) (some? width) (some? height))
-    (let [draw-rect (cond-> (grc/make-rect initial (cond-> point lock? (adjust-ratio initial)))
-                      snap-pixel?
-                      (-> (update :width max 1)
-                          (update :height max 1)))
+    (let [p2
+          (cond-> point lock? (adjust-ratio initial))
 
-          shape-rect (grc/make-rect x y width height)
+          p1
+          (if mod?
+            (gpt/point (- (* 2 (:x initial)) (:x p2))
+                       (- (* 2 (:y initial)) (:y p2)))
+            initial)
 
-          scalev     (gpt/point (/ (:width draw-rect)
-                                   (:width shape-rect))
-                                (/ (:height draw-rect)
-                                   (:height shape-rect)))
+          draw-rect
+          (cond-> (grc/make-rect p1 p2)
+            snap-pixel?
+            (-> (update :width d/max 1)
+                (update :height d/max 1)))
 
-          movev      (gpt/to-vec (gpt/point shape-rect)
-                                 (gpt/point draw-rect))]
+          shape-rect
+          (grc/make-rect x y width height)
+
+          scalev
+          (gpt/point (/ (:width draw-rect) (:width shape-rect))
+                     (/ (:height draw-rect) (:height shape-rect)))
+
+          movev
+          (gpt/to-vec (gpt/point shape-rect) (gpt/point draw-rect))]
 
       (-> shape
           (assoc :click-draw? false)
-          (vary-meta merge {:mod? mod?})
           (gsh/transform-shape (-> (ctm/empty)
                                    (ctm/resize scalev (gpt/point x y))
                                    (ctm/move movev)))))
     shape))
 
-(defn- update-drawing [state initial point lock? mod? snap-pixel?]
+(defn- update-drawing
+  [state initial point lock? mod? snap-pixel?]
   (update-in state [:workspace-drawing :object] resize-shape initial point lock? mod? snap-pixel?))
 
 (defn move-drawing
@@ -128,7 +140,7 @@
                     ;; Take until before the snap calculation otherwise we could cancel the snap in the worker
                     ;; and its a problem for fast moving drawing
                     (rx/take-until stopper)
-                    (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-mod)
+                    (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
                     (rx/switch-map
                      (fn [[point :as current]]
                        (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus point)

@@ -96,8 +96,9 @@
         image          (:image background)
         format         (if id? "rounded" "square")
         element-id     (mf/use-id)
-        has-opacity?  (and (some? (:color background))
-                           (< (:opacity background) 1))
+        has-opacity?   (and (some? (:color background))
+                            (< (:opacity background) 1))
+        element-ref    (mf/use-ref nil)
         on-click
         (mf/use-fn
          (mf/deps background on-click)
@@ -120,7 +121,8 @@
         (mf/spread-props props {:class class
                                 :on-click on-click
                                 :type button-type
-                                :aria-labelledby element-id})
+                                :aria-labelledby element-id
+                                :ref element-ref})
         children (mf/html
                   [:> element-type props
                    (cond
@@ -147,6 +149,7 @@
       [:> tooltip* {:content (if tooltip-content
                                tooltip-content
                                (color-title background))
+                    :trigger-ref element-ref
                     :id element-id}
        children]
 

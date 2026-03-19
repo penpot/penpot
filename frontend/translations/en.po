@@ -359,8 +359,14 @@ msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
-msgid "dashboard.create-new-org"
+msgid "dashboard.plus-create-new-org"
 msgstr "+ Create org"
+
+msgid "dashboard.create-new-org"
+msgstr "Create org"
+
+msgid "dashboard.go-to-control-center"
+msgstr "Go to Control Center"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
@@ -1153,6 +1159,20 @@ msgstr "Type to search results"
 msgid "dashboard.unpublish-shared"
 msgstr "Unpublish Library"
 
+#:src/app/main/ui/workspace/tokens/import_from_library.cljs
+msgid "modals.import-library-tokens.title"
+msgstr "Import tokens from library?"
+
+#:src/app/main/ui/workspace/tokens/import_from_library.cljs
+msgid "modals.import-library-tokens.description"
+msgstr ""
+"The library has tokens and themes which "
+"are likely used by its components."
+
+#:src/app/main/ui/workspace/tokens/import_from_library.cljs
+msgid "modals.import-library-tokens.import"
+msgstr "Import tokens"
+
 #: src/app/main/ui/settings/options.cljs:74
 msgid "dashboard.update-settings"
 msgstr "Update settings"
@@ -1270,6 +1290,10 @@ msgstr "Detach token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "{%s} is not in any active set or has an invalid value."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "ds.inputs.token-field.no-active-color.token-option"
 msgstr "This token is not in any active set or has an invalid value."
 
 #: src/app/main/data/auth.cljs:339
@@ -2087,8 +2111,8 @@ msgstr ""
 "internal Penpot API"
 
 #: src/app/main/ui/settings/integrations.cljs:152, src/app/main/ui/settings/integrations.cljs:158
-msgid "integrations.copy-token"
-msgstr "Copy token"
+msgid "integrations.copy-to-clipboard"
+msgstr "Copy to clipboard"
 
 #: src/app/main/ui/settings/integrations.cljs:432
 msgid "integrations.create-access-token.title"
@@ -2097,14 +2121,6 @@ msgstr "Create access token"
 #: src/app/main/ui/settings/integrations.cljs:433
 msgid "integrations.create-access-token.title.created"
 msgstr "Access token created"
-
-#: src/app/main/ui/settings/integrations.cljs:290
-msgid "integrations.create-mcp-key.title"
-msgstr "Create new MCP key"
-
-#: src/app/main/ui/settings/integrations.cljs:291
-msgid "integrations.create-mcp-key.title.created"
-msgstr "MCP key created"
 
 #: src/app/main/ui/settings/integrations.cljs:257
 msgid "integrations.delete-token.accept"
@@ -2153,6 +2169,22 @@ msgstr "No expiration date"
 #: src/app/main/ui/settings/integrations.cljs:130
 msgid "integrations.expiration-date.label"
 msgstr "Expiration date"
+
+#: src/app/main/ui/settings/integrations.cljs:290
+msgid "integrations.generate-mcp-key.title"
+msgstr "Generate MCP key"
+
+#: src/app/main/ui/settings/integrations.cljs:291
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "MCP key generated"
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.info.mcp-client-config"
+msgstr "Add this configuration to your MCP client (e.g. ~/​​​​​​.mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:183
+msgid "integrations.info.mcp-server"
+msgstr "The Penpot MCP Server enables MCP clients to interact directly with Penpot design files."
 
 #: src/app/main/ui/settings/integrations.cljs:131
 msgid "integrations.info.non-recuperable"
@@ -2204,11 +2236,11 @@ msgstr "This is the server url you'll need to configure your MCP client in order
 
 #: src/app/main/ui/settings/integrations.cljs:387
 msgid "integrations.mcp-server.mcp-keys.regenerate"
-msgstr "Regenerate MCP keys"
+msgstr "Regenerate MCP key"
 
 #: src/app/main/ui/settings/integrations.cljs:381
 msgid "integrations.mcp-server.mcp-keys.title"
-msgstr "MCP keys"
+msgstr "MCP key"
 
 #: src/app/main/ui/settings/integrations.cljs:388
 msgid "integrations.mcp-server.mcp-keys.tootip"
@@ -2481,6 +2513,9 @@ msgstr "Director"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:211
 msgid "labels.discard"
 msgstr "Discard"
+
+msgid "labels.dismiss"
+msgstr "Dismiss"
 
 #: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:409
 msgid "labels.download"
@@ -3784,7 +3819,7 @@ msgstr "Maintenance break: we will be down for a short maintenance within 5 minu
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "A new version is available, please refresh the page"
+msgstr "A new version is available."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"
@@ -3797,6 +3832,9 @@ msgstr "Invitation sent successfully"
 #: src/app/main/ui/dashboard/team.cljs:635
 msgid "notifications.invitation-link-copied"
 msgstr "Invitation link copied"
+
+msgid "notifications.mcp.active-tab-switching.text"
+msgstr "MCP is active in another tab. Switch here?"
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
@@ -5529,10 +5567,6 @@ msgstr "Ungroup"
 msgid "workspace.colorpicker.color-tokens"
 msgstr "Color tokens"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:434
-msgid "workspace.colorpicker.get-color"
-msgstr "Get color"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
 msgid "workspace.component.swap.loop-error"
 msgstr "Components can't be nested inside themselves."
@@ -5554,6 +5588,15 @@ msgstr "Create board"
 #: src/app/main/ui/workspace/context_menu.cljs:791
 msgid "workspace.context-menu.grid-cells.merge"
 msgstr "Merge cells"
+
+msgid "workspace.context-menu.grid-cells.copy-rows"
+msgstr "Copy rows"
+
+msgid "workspace.context-menu.grid-cells.copy-columns"
+msgstr "Copy columns"
+
+msgid "workspace.context-menu.grid-cells.paste-tracks"
+msgstr "Paste"
 
 #: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.column.add-after"
@@ -5697,6 +5740,18 @@ msgstr "Hide rulers"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Hide fonts palette"
 
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Connect"
+
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Disconnect"
+
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Manage (Status: enabled)"
+
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Manage (Status: disabled)"
+
 #: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "Edit"
@@ -5708,6 +5763,9 @@ msgstr "File"
 #: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "Help & info"
+
+msgid "workspace.header.menu.option.mcp"
+msgstr "MCP server"
 
 #: src/app/main/ui/workspace/main_menu.cljs:916
 #, unused
@@ -5823,10 +5881,6 @@ msgstr "Full screen"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom to selected"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
-msgid "workspace.layout-grid.editor.margin.expand"
-msgstr "Show 4 sided margin options"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:859
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Edit grid"
@@ -5878,30 +5932,6 @@ msgstr "Locate"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1565
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Locate grid layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
-msgid "workspace.layout-item.fit-content-horizontal"
-msgstr "Fit content (Horizontal)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
-msgid "workspace.layout-item.fit-content-vertical"
-msgstr "Fit content (Vertical)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
-msgid "workspace.layout-item.fix-height"
-msgstr "Fix height"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
-msgid "workspace.layout-item.fix-width"
-msgstr "Fix width"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
-msgid "workspace.layout-item.height-100"
-msgstr "Height 100%"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
-msgid "workspace.layout-item.width-100"
-msgstr "Width 100%"
 
 #: src/app/main/ui/workspace/libraries.cljs
 #, unused
@@ -6503,30 +6533,6 @@ msgstr "After delay"
 msgid "workspace.options.interaction-animation"
 msgstr "Animation"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
-msgid "workspace.options.interaction-animation-direction-down"
-msgstr "Down"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
-msgid "workspace.options.interaction-animation-direction-in"
-msgstr "In"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
-msgid "workspace.options.interaction-animation-direction-left"
-msgstr "Left"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
-msgid "workspace.options.interaction-animation-direction-out"
-msgstr "Out"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
-msgid "workspace.options.interaction-animation-direction-right"
-msgstr "Right"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
-msgid "workspace.options.interaction-animation-direction-up"
-msgstr "Up"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Dissolve"
@@ -6971,14 +6977,6 @@ msgstr "More color tokens"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
 msgstr "Opacity"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
-msgid "workspace.options.orientation.horizontal"
-msgstr "Horizontal"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
-msgid "workspace.options.orientation.vertical"
-msgstr "Vertical"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 #, unused
@@ -7830,7 +7828,7 @@ msgstr "Components"
 msgid "workspace.sidebar.layers.filter"
 msgstr "Filter"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:338
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:339
 msgid "workspace.sidebar.layers.frames"
 msgstr "Boards"
 
@@ -8544,6 +8542,10 @@ msgstr "Invalid value: Units are not allowed."
 #, unused
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name"
+
+#: src/app/main/data/workspace/tokens/application.cljs
+msgid "workspace.tokens.error-text-edition"
+msgstr "Tokens can't be applied while editing text. Select the text layer instead."
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"

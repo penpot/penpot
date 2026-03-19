@@ -92,10 +92,15 @@
                 (not= :svg (dm/get-in shape [:content :tag])))
            ;; If no shadows or blur, we return the selrect as is
            (and (empty? (-> shape :shadow))
-                (zero? (-> shape :blur :value (or 0)))))
+                (or (nil? (:blur shape))
+                    (not= :layer-blur (-> shape :blur :type))
+                    (zero? (-> shape :blur :value (or 0))))))
      (dm/get-prop shape :selrect)
      (let [filters    (shape->filters shape)
-           blur-value (or (-> shape :blur :value) 0)
+           blur-value (case (-> shape :blur :type)
+                        :layer-blur (or (-> shape :blur :value) 0)
+                        :background-blur 0
+                        0)
            srect      (-> (dm/get-prop shape :points)
                           (grc/points->rect))]
        (get-rect-filter-bounds srect filters blur-value ignore-shadow-margin?)))))
@@ -209,7 +214,10 @@
            (not (cfh/frame-shape? shape)) (or (:children-bounds shape)))
 
          filters (shape->filters shape)
-         blur-value (or (-> shape :blur :value) 0)]
+         blur-value (case (-> shape :blur :type)
+                      :layer-blur (or (-> shape :blur :value) 0)
+                      :background-blur 0
+                      0)]
 
      (get-rect-filter-bounds children-bounds filters blur-value ignore-shadow-margin?))))
 

@@ -22,7 +22,8 @@
   [options id]
   (let [options (if (delay? options) @options options)]
     (or (d/seek #(= id (get % :id)) options)
-        (nth options 0))))
+        (when (seq options)
+          (nth options 0)))))
 
 (defn- get-selected-option-id
   [options default]
@@ -178,7 +179,8 @@
 
         selected-option
         (mf/with-memo [options selected-id]
-          (get-option options selected-id))
+          (when (d/not-empty? options)
+            (get-option options selected-id)))
 
         label
         (get selected-option :label)

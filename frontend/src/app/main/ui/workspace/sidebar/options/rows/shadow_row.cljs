@@ -141,9 +141,8 @@
         [:> icon-button* {:variant "secondary"
                           :icon i/menu
                           :class (stl/css-case :shadow-basic-button true
-                                               :hidden hidden?)
-                          :aria-pressed is-open
-                          :aria-label (tr "labels.options")
+                                               :selected is-open)
+                          :aria-label "open more options"
                           :disabled hidden?
                           :on-click on-toggle-open}]
         [:& select {:class (stl/css :shadow-basic-select)

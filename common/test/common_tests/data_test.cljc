@@ -113,3 +113,27 @@
     (t/is (= (d/reorder v 3 -1) ["d" "a" "b" "c"]))
     (t/is (= (d/reorder v 5 -1) ["d" "a" "b" "c"]))
     (t/is (= (d/reorder v -1 5) ["b" "c" "d" "a"]))))
+
+(t/deftest nth-last-index-of-test
+  (t/is (= (d/nth-last-index-of "" "*" 1) nil))
+  (t/is (= (d/nth-last-index-of "*abc" "*" 1) 0))
+  (t/is (= (d/nth-last-index-of "**abc" "*" 2) 0))
+  (t/is (= (d/nth-last-index-of "abc*def*ghi" "*" 3) nil))
+  (t/is (= (d/nth-last-index-of "" "*" 2) nil))
+  (t/is (= (d/nth-last-index-of "abc*" "*" 1) 3))
+  (t/is (= (d/nth-last-index-of "abc*" "*" 2) nil))
+  (t/is (= (d/nth-last-index-of "*abc[*" "*" 1) 5))
+  (t/is (= (d/nth-last-index-of "abc*def*ghi" "*" 1) 7))
+  (t/is (= (d/nth-last-index-of "abc*def*ghi" "*" 2) 3)))
+
+(t/deftest nth-index-of-test
+  (t/is (= (d/nth-index-of "" "*" 1) nil))
+  (t/is (= (d/nth-index-of "" "*" 2) nil))
+  (t/is (= (d/nth-index-of "abc*" "*" 1) 3))
+  (t/is (= (d/nth-index-of "abc*" "*" 1) 3))
+  (t/is (= (d/nth-index-of "abc**" "*" 2) 4))
+  (t/is (= (d/nth-index-of "abc*" "*" 2) nil))
+  (t/is (= (d/nth-index-of "*abc[*" "*" 1) 0))
+  (t/is (= (d/nth-index-of "abc*def*ghi" "*" 1) 3))
+  (t/is (= (d/nth-index-of "abc*def*ghi" "*" 2) 7))
+  (t/is (= (d/nth-index-of "abc*def*ghi" "*" 3) nil)))

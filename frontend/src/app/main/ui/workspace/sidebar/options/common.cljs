@@ -7,6 +7,8 @@
 (ns app.main.ui.workspace.sidebar.options.common
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.store :as st]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
@@ -23,4 +25,18 @@
       [:div {:class [class (stl/css :advanced-options-wrapper)]
              :ref ref}
        children])))
+
+(defn emit-value-or-token [value emit-value-fn ids attrs]
+  (cond
+    (nil? value)
+    (emit-value-fn nil)
+
+    (or (string? value) (number? value))
+    (emit-value-fn value)
+
+    :else
+    (st/emit!
+     (dwta/toggle-token {:token     (first value)
+                         :attrs     attrs
+                         :shape-ids ids}))))
 

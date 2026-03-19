@@ -70,7 +70,8 @@
 
    :release
    {:closure-defines {goog.DEBUG false
-                      goog.debug.LOGGING_ENABLED true}
+                      goog.debug.LOGGING_ENABLED true
+                      app.config/compiled-version-tag #shadow/env ["VERSION_TAG" :default "develop"]}
     :compiler-options
     {:fn-invoke-direct true
      :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]

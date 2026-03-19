@@ -2495,10 +2495,6 @@ msgstr ""
 msgid "modals.update-remote-component.message"
 msgstr "Ажурирајте компоненту у дељеној библиотеци"
 
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "Доступна је нова верзија, молимо Вас да освежите страницу"
-
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "Позивница је успешно послата"

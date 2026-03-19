@@ -190,10 +190,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-points
-  "Returns points for the given segment, faster version of
-  the `content->points`."
+  "Returns points for the given content. Accepts PathData instances or
+  plain segment vectors. Returns nil for nil content."
   [content]
-  (some-> content segment/get-points))
+  (when (some? content)
+    (let [content (if (impl/path-data? content)
+                    content
+                    (impl/path-data content))]
+      (segment/get-points content))))
 
 (defn calc-selrect
   "Calculate selrect from a content. The content can be in a PathData

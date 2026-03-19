@@ -47,12 +47,13 @@
 
 (s/def ::params
   (s/keys :req-un [::exports ::profile-id]
-          :opt-un [::wait ::name ::skip-children]))
+          :opt-un [::wait ::name ::skip-children ::force-multiple]))
 
 (defn handler
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports] :as params}]
+  [{:keys [:request/auth-token] :as exchange} {:keys [exports force-multiple] :as params}]
   (let [exports (prepare-exports exports auth-token)]
-    (if (and (= 1 (count exports))
+    (if (and (not force-multiple)
+             (= 1 (count exports))
              (= 1 (count (-> exports first :objects))))
       (handle-single-export exchange (-> params
                                          (assoc :export (first exports))

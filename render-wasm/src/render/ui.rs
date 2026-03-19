@@ -45,6 +45,10 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
             continue;
         }
 
+        if shape.deleted() {
+            continue;
+        }
+
         if let Some(shape) = shapes.get(&shape.id) {
             grid_layout::render_overlay(zoom, canvas, shape, shapes);
         }

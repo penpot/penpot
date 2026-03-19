@@ -50,7 +50,7 @@
 
 (mf/defc workspace-content*
   {::mf/private true}
-  [{:keys [file layout page wglobal]}]
+  [{:keys [file layout page wglobal file-version-id]}]
 
   (let [palete-size (mf/use-state nil)
         selected    (mf/deref refs/selected-shapes)
@@ -109,6 +109,7 @@
          :wglobal wglobal
          :selected selected
          :layout layout
+         :file-version-id file-version-id
          :palete-size
          (when (and (or colorpalette? textpalette?) (not hide-ui?))
            @palete-size)}]]]
@@ -168,7 +169,7 @@
 
 (mf/defc workspace-inner*
   {::mf/private true}
-  [{:keys [page-id file-id file layout wglobal]}]
+  [{:keys [page-id file-id file layout wglobal file-version-id]}]
   (let [page-ref (mf/with-memo [file-id page-id]
                    (make-page-ref file-id page-id))
         page     (mf/deref page-ref)]
@@ -187,7 +188,8 @@
       [:> workspace-content* {:file file
                               :page page
                               :wglobal wglobal
-                              :layout layout}]
+                              :layout layout
+                              :file-version-id file-version-id}]
       [:> workspace-loader*])))
 
 (mf/defc workspace*
@@ -199,6 +201,7 @@
 
         layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
+        file-version-id (mf/deref refs/workspace-file-version-id)
 
         team-ref         (mf/with-memo [team-id]
                            (make-team-ref team-id))
@@ -274,7 +277,8 @@
               :file-id file-id
               :file file
               :wglobal wglobal
-              :layout layout}])
+              :layout layout
+              :file-version-id file-version-id}])
           (when (or (not (and file-loaded? page-id))
                     ;; in wasm renderer, extend the pixel loader until the first frame is rendered
                     ;; but do not apply it when switching pages

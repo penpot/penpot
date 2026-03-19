@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.json :as json]
    [app.common.schema :as sm]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
@@ -223,7 +224,9 @@
 
 (defn display-not-valid
   [code value]
-  (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code))
+  (if (some? value)
+    (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code))
+    (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid. Code: " code)))
   nil)
 
 (defn reject-not-valid
@@ -248,19 +251,17 @@
   (let [s (set values)]
     (if (= (count s) 1) (first s) "mixed")))
 
-(defn wrap-errors
-  "Function wrapper to be used in plugin proxies methods to handle errors.
-   When an exception is thrown, a readable error message is output to the console
-   and the exception is captured."
-  [f]
-  (fn []
-    (let [args (js-arguments)]
-      (try
-        (.apply f nil args)
-        (catch :default cause
-          (display-not-valid (ex-message cause) (obj/stringify args))
-          (if-let [explain (-> cause ex-data ::sm/explain)]
-            (println (sm/humanize-explain explain))
-            (js/console.log (ex-data cause)))
-          (js/console.log (.-stack cause))
-          nil)))))
+(defn handle-error
+  "Function to be used in plugin proxies methods to handle errors and print a readable
+   message to the console."
+  [cause]
+  (display-not-valid (ex-message cause) nil)
+  (if-let [explain (-> cause ex-data ::sm/explain)]
+    (println (sm/humanize-explain explain))
+    (js/console.log (ex-data cause)))
+  (js/console.log (.-stack cause)))
+
+(defn is-main-component-proxy?
+  [p]
+  (when-let [shape (proxy->shape p)]
+    (ctk/main-instance? shape)))

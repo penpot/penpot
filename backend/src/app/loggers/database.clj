@@ -117,7 +117,8 @@
 
     {:context (-> (into (sorted-map) context)
                   (pp/pprint-str :length 50))
-     :props   (pp/pprint-str props :length 50)
+     :origin  (::audit/name record)
+     :href    (get props :href)
      :hint    (get props :hint)
      :report  (get props :report)}))
 

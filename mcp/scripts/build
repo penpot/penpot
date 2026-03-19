@@ -25,7 +25,7 @@ set -e
 popd
 
 pnpm -r --filter "!mcp-plugin" install;
-pnpm -r --filter "mcp-server" run build:multi-user;
+pnpm -r --filter "mcp-server" run build;
 
 rsync -avr packages/server/dist/ ./dist/;
 

@@ -140,7 +140,7 @@
         (mf/use-fn
          (mf/deps on-change handle-opacity-change)
          (fn [value]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (handle-opacity-change value)
              (do
                (st/emit! (dwta/toggle-token {:token (first value)

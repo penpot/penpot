@@ -1,16 +1,16 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
-import { setupTokensFile, unfoldTokenTree } from "./helpers";
+import { setupTokensFileRender, unfoldTokenTree } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 test.describe("Tokens - node tree", () => {
   test("User fold/unfold color tokens", async ({ page }) => {
-    const { tokensSidebar } = await setupTokensFile(page);
+    const { tokensSidebar } = await setupTokensFileRender(page);
 
     await expect(tokensSidebar).toBeVisible();
 

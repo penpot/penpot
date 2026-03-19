@@ -1005,19 +1005,19 @@
   "Link a file to a library. Returns the recursive list of libraries used by that library"
   {::doc/added "1.17"
    ::webhooks/event? true
-   ::sm/params schema:link-file-to-library}
-  [cfg {:keys [::rpc/profile-id file-id library-id] :as params}]
+   ::sm/params schema:link-file-to-library
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
+
   (when (= file-id library-id)
     (ex/raise :type :validation
               :code :invalid-library
               :hint "A file cannot be linked to itself"))
 
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn]}]
-                (check-edition-permissions! conn profile-id file-id)
-                (check-edition-permissions! conn profile-id library-id)
-                (link-file-to-library conn params)
-                (bfc/get-libraries cfg [library-id]))))
+  (check-edition-permissions! conn profile-id file-id)
+  (check-edition-permissions! conn profile-id library-id)
+  (link-file-to-library conn params)
+  (bfc/get-libraries cfg [library-id]))
 
 ;; --- MUTATION COMMAND: unlink-file-from-library
 
@@ -1037,8 +1037,9 @@
    ::webhooks/event? true
    ::sm/params schema:unlink-file-to-library
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
   (check-edition-permissions! conn profile-id file-id)
+  (check-edition-permissions! conn profile-id library-id)
   (unlink-file-from-library conn params)
   nil)
 
@@ -1062,8 +1063,9 @@
   {::doc/added "1.17"
    ::sm/params schema:update-file-library-sync-status
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id library-id] :as params}]
   (check-edition-permissions! conn profile-id file-id)
+  (check-edition-permissions! conn profile-id library-id)
   (update-sync conn params))
 
 ;; --- MUTATION COMMAND: ignore-sync
