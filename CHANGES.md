@@ -5,6 +5,7 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :rocket: Epics and highlights
+
 - Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
 
 ### :sparkles: New features & Enhancements
@@ -15,10 +16,9 @@
 - Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
 - Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
-
+- Rename token group [Taiga #13137](https://tree.taiga.io/project/penpot/us/13137)
 
 ### :bug: Bugs fixed
-
 
 ## 2.15.0 (Unreleased)
 
