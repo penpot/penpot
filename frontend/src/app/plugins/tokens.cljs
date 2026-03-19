@@ -105,8 +105,16 @@
         (apply-token-to-shapes file-id set-id id selected attrs)))))
 
 (defn token-set-proxy
-  [plugin-id file-id id]
-  (obj/reify {:name "TokenSetProxy"}
+  ;; `initial-name` — optional fallback for the :name getter. When a set is
+  ;; freshly created via `catalog.addSet()`, `st/emit!` is async so the new set
+  ;; is not yet in `@st/state`. Without this fallback, `locate-token-set`
+  ;; returns nil and the :name getter returns nil, which cascades into
+  ;; `theme.addSet()` sending `:sets #{nil}` to the backend → 400 → workspace
+  ;; crash. Passing the known name at construction time avoids the race.
+  ([plugin-id file-id id]
+   (token-set-proxy plugin-id file-id id nil))
+  ([plugin-id file-id id initial-name]
+   (obj/reify {:name "TokenSetProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$id {:enumerable false :get (constantly id)}
@@ -119,7 +127,9 @@
      :get
      (fn [_]
        (let [set (u/locate-token-set file-id id)]
-         (ctob/get-name set)))
+         (if (some? set)
+           (ctob/get-name set)
+           initial-name)))
      :set
      (fn [_ value]
        (let [set (u/locate-token-set file-id id)]
@@ -225,7 +235,7 @@
 
     :remove
     (fn []
-      (st/emit! (dwtl/delete-token-set id)))))
+      (st/emit! (dwtl/delete-token-set id))))))
 
 (defn token-theme-proxy
   [plugin-id file-id id]
@@ -301,13 +311,17 @@
 
     :addSet
     (fn [tokenSet]
-      (let [theme (u/locate-token-theme file-id id)]
-        (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme (obj/get tokenSet :name))))))
+      (let [set-name (obj/get tokenSet :name)
+            theme    (u/locate-token-theme file-id id)]
+        (when (and (some? set-name) (some? theme))
+          (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name))))))
 
     :removeSet
     (fn [tokenSet]
-      (let [theme (u/locate-token-theme file-id id)]
-        (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme (obj/get tokenSet :name))))))
+      (let [set-name (obj/get tokenSet :name)
+            theme    (u/locate-token-theme file-id id)]
+        (when (and (some? set-name) (some? theme))
+          (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))
 
     :duplicate
     (fn []
@@ -373,7 +387,9 @@
         :else
         (let [set (ctob/make-token-set {:name name})]
           (st/emit! (dwtl/create-token-set set))
-          (token-set-proxy plugin-id file-id (:id set)))))
+          ;; Pass the set name as `initial-name` so the proxy can resolve
+          ;; it immediately, before the async `st/emit!` propagates.
+          (token-set-proxy plugin-id file-id (:id set) (ctob/get-name set)))))
 
     :getThemeById
     (fn [theme-id]
