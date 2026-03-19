@@ -1375,6 +1375,10 @@ msgstr "Character limit exceeded"
 msgid "errors.clipboard-not-implemented"
 msgstr "Your browser cannot do this operation"
 
+#: src/app/main/data/workspace/clipboard.cljs
+msgid "errors.clipboard-permission-denied"
+msgstr "Clipboard access denied. Please allow clipboard permissions in your browser to paste content"
+
 #: src/app/main/errors.cljs:235
 msgid "errors.comment-error"
 msgstr "There was an error with the comment"
