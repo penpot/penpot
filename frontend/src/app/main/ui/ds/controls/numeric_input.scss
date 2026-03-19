@@ -35,9 +35,10 @@
 
 .text-icon {
   color: var(--color-foreground-secondary);
-  @include t.use-typography("code-font");
+  @include t.use-typography("body-small");
   inline-size: fit-content;
-  min-inline-size: px2rem(40);
+  min-inline-size: px2rem(46);
+  padding-inline-start: var(--sp-xs);
 }
 
 .invisible-button {
