@@ -324,7 +324,14 @@
                                  first
                                  :id)
                             (:default-team-id profile))
-        organizations (dissoc organizations default-team-id)]
+        organizations (dissoc organizations default-team-id)
+
+        ;; Check if user is owner of any NON-DEFAULT organization
+        ;; Default org doesn't count as user is always owner of it
+        is-owner-of-any-org? (or (and (not= (:id organization) default-team-id)
+                                      (get-in organization [:permissions :is-owner]))
+                                 (some #(get-in % [:permissions :is-owner])
+                                       (vals organizations)))]
 
     [:> dropdown-menu* props
 
@@ -356,10 +363,11 @@
                               :class       (stl/css :org-dropdown-item :action)}
       [:span {:class (stl/css :icon-wrapper)} add-org-icon]
       [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-org")]]
-     [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
-                              :class       (stl/css :org-dropdown-item :action)}
-      [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
-      [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]]]))
+     (when is-owner-of-any-org?
+       [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
+                                :class       (stl/css :org-dropdown-item :action)}
+        [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
+        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]])]))
 
 (mf/defc teams-selector-dropdown*
   {::mf/private true}
@@ -575,7 +583,7 @@
 
 
 (defn- team->org [team]
-  (assoc (dm/select-keys team [:id :organization-id :organization-slug])
+  (assoc (dm/select-keys team [:id :organization-id :organization-slug :permissions])
          :name (:organization-name team)))
 
 (mf/defc sidebar-org-switch*
