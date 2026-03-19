@@ -17,6 +17,7 @@
 
 .element-set-content {
   @include deprecated.flexColumn;
+
   margin: deprecated.$s-4 0 0 0;
 }
 
@@ -28,6 +29,7 @@
 .attr-name {
   @include deprecated.bodySmallTypography;
   @include deprecated.twoLineTextEllipsis;
+
   width: deprecated.$s-88;
   margin: auto deprecated.$s-4;
   margin-right: 0;
@@ -36,8 +38,9 @@
 }
 
 .attr-input {
-  @extend .input-element;
+  @extend %input-element;
   @include deprecated.bodySmallTypography;
+
   width: deprecated.$s-124;
 }
 
@@ -47,11 +50,13 @@
 }
 
 .attr-action-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   width: deprecated.$s-28;
   height: deprecated.$s-32;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
 }
 
@@ -62,6 +67,7 @@
 
 .attr-title {
   @include deprecated.bodySmallTypography;
+
   font-size: deprecated.$fs-10;
   text-transform: uppercase;
   margin-inline-start: deprecated.$s-4;

@@ -23,7 +23,6 @@
 
 .shadow-content {
   grid-column: span 8;
-
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
@@ -38,6 +37,7 @@
 
 .shadow-multiple-label {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   flex-grow: 1;

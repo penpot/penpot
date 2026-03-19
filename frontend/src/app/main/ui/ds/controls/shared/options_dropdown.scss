@@ -25,8 +25,7 @@
   padding-block: var(--sp-xs);
   margin-block-end: 0;
   max-block-size: $sz-400;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   z-index: var(--z-index-dropdown);
 }
 
@@ -40,13 +39,13 @@
 
 .option-separator {
   border: $b-1 solid var(--options-dropdown-border-color);
-  margin-block-start: var(--sp-xs);
-  margin-block-end: var(--sp-xs);
+  margin-block: var(--sp-xs) var(--sp-xs);
 }
 
 .group-option,
 .option-empty {
   @include use-typography("body-small");
+
   display: flex;
   align-items: center;
   gap: var(--sp-xs);

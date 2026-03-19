@@ -43,6 +43,7 @@
 
 .modal-title {
   @include t.use-typography("headline-medium");
+
   margin-block-end: var(--sp-l);
   color: var(--color-foreground-primary);
 }
@@ -83,7 +84,7 @@
   overflow-y: auto;
 }
 
-.section-list-item {
+%section-list-item-placeholder {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: var(--sp-s);
@@ -97,7 +98,8 @@
 }
 
 .section-list-item-double-icon {
-  @extend .section-list-item;
+  @extend %section-list-item-placeholder;
+
   grid-template-columns: 1fr auto auto;
 }
 
@@ -117,6 +119,7 @@
 
 .section-title {
   @include t.use-typography("headline-small");
+
   margin-block-end: var(--sp-m);
   color: var(--title-foreground-color);
 }
@@ -165,6 +168,7 @@
 
 .libraries-updates-item {
   @include t.use-typography("body-large");
+
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: start;
@@ -193,7 +197,8 @@
 
 .item-name {
   @include t.use-typography("body-large");
-  @include textEllipsis;
+  @include text-ellipsis;
+
   margin: 0;
   max-width: px2rem(236);
   color: var(--library-name-foreground-color);
@@ -204,18 +209,21 @@
 }
 
 .item-name-long {
-  @extend .item-name;
+  @extend %item-name;
+
   max-width: px2rem(450);
 }
 
 .item-title {
   @include t.use-typography("body-large");
+
   margin: 0;
   color: var(--library-name-foreground-color);
 }
 
 .item-update {
   @include t.use-typography("headline-small");
+
   height: $sz-32;
   min-width: px2rem(92);
   padding: var(--sp-s) var(--sp-xxl);
@@ -225,6 +233,7 @@
 
 .item-contents {
   @include t.use-typography("body-small");
+
   color: var(--library-content-foreground-color);
   display: flex;
   flex-wrap: wrap;
@@ -262,6 +271,7 @@
 
 .modal-v2-title {
   @include t.use-typography("headline-medium");
+
   color: var(--modal-title-foreground-color);
 }
 
@@ -274,11 +284,10 @@
 
 .info-block {
   display: grid;
-  grid-template-columns: auto 1fr;
   column-gap: var(--sp-xl);
   grid-template:
-    "icon title"
-    "icon content";
+    "icon title" auto
+    "icon content" auto / auto 1fr;
 }
 
 .info-icon {
@@ -301,12 +310,14 @@
 
 .info-block-title {
   @include t.use-typography("body-large");
+
   grid-area: title;
   color: var(--modal-title-foreground-color);
 }
 
 .info-block-content {
   @include t.use-typography("body-medium");
+
   grid-area: content;
   color: var(--library-content-foreground-color);
 }
@@ -320,11 +331,13 @@
 
 .primary-button {
   @include t.use-typography("headline-small");
+
   padding: 0 var(--sp-l);
 }
 
 .sample-libraries-info {
   @include t.use-typography("body-small");
+
   display: flex;
   flex-direction: column;
   margin: var(--sp-xxxl);
@@ -333,6 +346,7 @@
 
 .sample-libraries-link {
   @include t.use-typography("body-small");
+
   color: var(--color-accent-primary);
 
   &:hover {
@@ -342,6 +356,7 @@
 
 .sample-libraries-container {
   @include t.use-typography("body-small");
+
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -359,6 +374,7 @@
 
 .sample-library-item-name {
   @include t.use-typography("body-medium");
+
   color: var(--color-foreground-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -368,6 +384,7 @@
 
 .sample-library-button {
   @include t.use-typography("headline-small");
+
   height: $sz-32;
   width: px2rem(80);
   margin: 0;

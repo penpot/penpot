@@ -5,16 +5,16 @@
 // Copyright (c) KALEIDOS INC
 
 @use "ds/typography.scss" as t;
-@use "ds/spacing.scss";
+@use "ds/spacing";
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
 @use "refactor/basic-rules.scss" as *;
 
 .colorpicker-tooltip {
-  @extend .modal-background;
+  @extend %modal-background;
+
   left: calc(10 * px2rem(140));
-  width: auto;
   padding: var(--sp-m);
   width: $sz-284;
   overflow: auto;
@@ -41,8 +41,9 @@
 }
 
 .opacity-input-wrapper {
-  @extend .input-element;
+  @extend %input-element;
   @include t.use-typography("body-small");
+
   width: px2rem(68);
 }
 
@@ -51,10 +52,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border: none;
   background: none;
   cursor: pointer;
-  border-radius: $br-8;
   background-color: transparent;
   border: $b-1 solid transparent;
   height: var(--sp-xl);
@@ -62,29 +61,37 @@
   border-radius: $br-4;
   padding: 0;
   margin-top: var(--sp-xs);
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--button-tertiary-foreground-color-rest);
   }
+
   &:hover {
     svg {
       stroke: var(--button-tertiary-foreground-color-focus);
     }
   }
+
   &:focus,
   &:focus-visible {
     outline: none;
+
     svg {
       stroke: var(--button-secondary-foreground-color-hover);
     }
   }
+
   &:active {
     outline: none;
     border: $b-1 solid transparent;
+
     svg {
       stroke: var(--button-tertiary-foreground-color-active);
     }
   }
+
   &.selected {
     svg {
       stroke: var(--button-tertiary-foreground-color-active);
@@ -99,11 +106,13 @@
 }
 
 .gradient-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: var(--sp-xl);
   width: var(--sp-xl);
   border-radius: $br-4;
   border: $b-2 solid transparent;
+
   &:hover {
     border: $b-2 solid var(--colorpicker-details-color-selected);
   }
@@ -111,16 +120,18 @@
 
 .linear-gradient-btn {
   background: linear-gradient(180deg, var(--color-foreground-secondary), transparent);
+
   &.selected {
-    background: linear-gradient(to bottom, rgba(126, 255, 245, 1) 0%, rgba(126, 255, 245, 0.2) 100%);
+    background: linear-gradient(to bottom, rgb(126 255 245 / 100%) 0%, rgb(126 255 245 / 20%) 100%);
     border: $b-2 solid var(--colorpicker-details-color-selected);
   }
 }
 
 .radial-gradient-btn {
   background: radial-gradient(transparent, var(--color-foreground-secondary));
+
   &.selected {
-    background: radial-gradient(rgba(126, 255, 245, 1) 0%, rgba(126, 255, 245, 0.2) 100%);
+    background: radial-gradient(rgb(126 255 245 / 100%) 0%, rgb(126 255 245 / 20%) 100%);
     border: $b-2 solid var(--colorpicker-details-color-selected);
   }
 }
@@ -132,7 +143,8 @@
 
 .accept-color {
   @include t.use-typography("headline-small");
-  @extend .button-primary;
+  @extend %button-primary;
+
   width: 100%;
   height: var(--sp-xxxl);
   margin-top: var(--sp-s);
@@ -180,6 +192,7 @@
   height: px2rem(140);
   margin-bottom: $sz-6;
   margin-right: $sz-1;
+
   img {
     height: fit-content;
     width: fit-content;
@@ -190,20 +203,23 @@
 }
 
 .choose-image {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include t.use-typography("headline-small");
+
   width: 100%;
   margin-top: var(--sp-m);
   height: var(--sp-xxxl);
 }
 
 .checkbox-option {
-  @extend .input-checkbox;
+  @extend %input-checkbox;
+
   margin: var(--sp-l) 0 0 0;
 }
 
 .token-color-title {
   @include t.use-typography("title-small");
+
   color: var(--color-foreground-secondary);
   display: flex;
   align-items: center;

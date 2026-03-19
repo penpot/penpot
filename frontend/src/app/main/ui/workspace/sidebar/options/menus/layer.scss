@@ -10,17 +10,22 @@
 
 .element-set-content {
   @include sidebar.option-grid-structure;
+
   height: deprecated.$s-32;
   margin-bottom: deprecated.$s-8;
+
   .select {
     grid-column: span 4;
     padding: 0;
   }
+
   .input {
-    @extend .input-element;
+    @extend %input-element;
     @include deprecated.bodySmallTypography;
+
     grid-column: span 2;
   }
+
   .actions {
     grid-column: span 2;
     display: grid;
@@ -30,14 +35,19 @@
   &.hidden {
     .hidden-select {
       @include deprecated.hiddenElement;
+
       border: deprecated.$s-1 solid var(--input-border-color-disabled);
     }
+
     .input {
       @include deprecated.hiddenElement;
+
       border: deprecated.$s-1 solid var(--input-border-color-disabled);
+
       .icon {
         stroke: var(--input-foreground-color-disabled);
       }
+
       .numeric-input {
         color: var(--input-foreground-color-disabled);
       }
@@ -47,5 +57,6 @@
 
 .numeric-input-wrapper {
   grid-column: span 2;
+
   --dropdown-offset: #{px2rem(-35)};
 }

@@ -46,7 +46,7 @@
   background-size: deprecated.$s-8;
   border-radius: deprecated.$br-6;
   border: deprecated.$s-2 solid var(--color-foreground-primary);
-  box-shadow: 0px 0px deprecated.$s-4 0px var(--menu-shadow-color);
+  box-shadow: 0 0 deprecated.$s-4 0 var(--menu-shadow-color);
   height: calc(deprecated.$s-24 - deprecated.$s-2);
   left: var(--position);
   overflow: hidden;
@@ -59,11 +59,12 @@
     outline: deprecated.$s-2 solid var(--color-accent-primary);
   }
 }
+
 .gradient-preview-stop-decoration {
   background: var(--color-foreground-primary);
   border-radius: 100%;
   bottom: deprecated.$s-32;
-  box-shadow: 0px 0px deprecated.$s-4 0px var(--menu-shadow-color);
+  box-shadow: 0 0 deprecated.$s-4 0 var(--menu-shadow-color);
   height: deprecated.$s-4;
   left: calc(var(--position) + deprecated.$s-8);
   position: absolute;
@@ -109,8 +110,7 @@
   flex-direction: column;
   gap: deprecated.$s-4;
   max-height: deprecated.$s-180;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding: 0 0 var(--sp-s) var(--sp-m);
 }
 
@@ -120,7 +120,6 @@
   padding: deprecated.$s-2;
   border-radius: deprecated.$br-12;
   border: deprecated.$s-1 solid transparent;
-
   position: relative;
 
   &.is-selected {
@@ -141,8 +140,9 @@
 }
 
 .offset-input-wrapper {
-  @extend .input-element;
+  @extend %input-element;
   @include deprecated.bodySmallTypography;
+
   width: deprecated.$s-92;
 }
 

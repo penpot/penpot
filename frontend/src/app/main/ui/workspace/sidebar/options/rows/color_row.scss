@@ -54,8 +54,10 @@
   --color-name-wrapper-background-color: var(--color-background-tertiary);
   --color-name-wrapper-foreground-color: var(--color-foreground-primary);
   --color-name-wrapper-boder-color: var(--color-background-tertiary);
+
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
+
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -66,13 +68,13 @@
   padding: 0;
   margin-inline-end: 0;
   border: $b-1 solid var(--color-name-wrapper-boder-color);
-  border-radius: $br-8;
   background-color: var(--color-name-wrapper-background-color);
   color: var(--color-name-wrapper-foreground-color);
   border-radius: $br-8 0 0 $br-8;
 
   &.no-opacity {
     border-radius: $br-8;
+
     .color-input-wrapper {
       border-radius: $br-8;
     }
@@ -86,6 +88,7 @@
     .detach-btn {
       display: grid;
     }
+
     &.editing {
       --color-name-wrapper-background-color: var(--color-background-primary);
     }
@@ -101,6 +104,7 @@
   &:focus-within {
     --color-name-wrapper-background-color: var(--color-background-tertiary);
     --color-name-wrapper-boder-color: var(--color-accent-primary);
+
     &:hover {
       --color-name-wrapper-background-color: var(--color-background-quaternary);
     }
@@ -108,6 +112,7 @@
 
   &.editing {
     --color-name-wrapper-background-color: var(--color-background-primary);
+
     &:hover {
       --color-name-wrapper-boder-color: var(--color-accent-primary);
     }
@@ -121,6 +126,7 @@
 
 .color-input-wrapper {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -135,7 +141,8 @@
 
 .color-name {
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
+
   flex-grow: 1;
   padding-inline: px2rem(6);
   border-radius: $br-8;
@@ -150,13 +157,15 @@
   padding: 0 var(--sp-xxs) 0 var(--sp-s);
   border-radius: $br-8 0 0 $br-8;
   background-color: transparent;
+
   &:hover {
     background-color: transparent;
   }
 }
 
 .color-input {
-  @include textEllipsis;
+  @include text-ellipsis;
+
   border: none;
   background: none;
   outline: none;
@@ -167,6 +176,7 @@
   padding: 0 0 0 px2rem(6);
   border-radius: $br-8;
   color: var(--input-foreground-color-active);
+
   &[disabled] {
     opacity: 0.5;
     pointer-events: none;
@@ -182,6 +192,7 @@
   --opacity-input-boder-color: var(--color-background-tertiary);
 
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   block-size: $sz-32;
@@ -198,6 +209,7 @@
     .detach-btn {
       display: grid;
     }
+
     &.editing {
       --opacity-input-background-color: var(--color-background-primary);
     }
@@ -213,6 +225,7 @@
   &:focus-within {
     --opacity-input-background-color: var(--color-background-tertiary);
     --opacity-input-boder-color: var(--color-accent-primary);
+
     &:hover {
       --opacity-input-background-color: var(--color-background-quaternary);
     }
@@ -220,6 +233,7 @@
 
   &.editing {
     --opacity-input-background-color: var(--color-background-primary);
+
     &:hover {
       --opacity-input-boder-color: var(--color-accent-primary);
     }
@@ -227,12 +241,12 @@
 }
 
 .opacity-input {
-  @include textEllipsis;
+  @include text-ellipsis;
+
   block-size: $sz-28;
   min-inline-size: $sz-28;
   flex-grow: 1;
   inline-size: 100%;
-  padding: 0;
   border-radius: 0 $br-8 $br-8 0;
   border: none;
   background: none;
@@ -240,6 +254,7 @@
   margin: var(--sp-xxs) 0;
   padding: 0 0 0 px2rem(6);
   color: var(--color-foreground-primary);
+
   &[disabled] {
     opacity: 0.5;
     pointer-events: none;
@@ -263,6 +278,7 @@
   --token-color-wrapper-foreground-color: var(--color-token-foreground);
   --token-color-wrapper-border-color: var(--color-token-border);
   --token-actions-display: none;
+
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: var(--sp-xs);
@@ -274,6 +290,7 @@
   background: var(--token-color-wrapper-background-color);
   border: $b-1 solid var(--token-color-wrapper-border-color);
   border-radius: $br-8;
+
   &:hover {
     --token-color-wrapper-background-color: var(--color-token-background);
     --token-color-wrapper-foreground-color: var(--color-foreground-primary);
@@ -287,6 +304,7 @@
   --token-color-wrapper-background-color: var(--color-background-primary);
   --token-color-wrapper-foreground-color: var(--color-foreground-secondary);
   --token-color-wrapper-border-color: var(--color-token-border);
+
   &:hover {
     --token-color-wrapper-background-color: var(--color-background-primary);
     --token-color-wrapper-foreground-color: var(--color-foreground-secondary);
@@ -297,7 +315,8 @@
 
 .token-name {
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
+
   color: var(--token-color-wrapper-foreground-color);
   block-size: $sz-32;
   line-height: $sz-32;

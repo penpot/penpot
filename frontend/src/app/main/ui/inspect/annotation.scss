@@ -11,11 +11,12 @@
 }
 
 .title-spacing-annotation {
-  @extend .attr-title;
+  @extend %attr-title;
 }
 
 .annotation-content {
   @include deprecated.bodySmallTypography;
+
   color: var(--entry-foreground-color);
 }
 

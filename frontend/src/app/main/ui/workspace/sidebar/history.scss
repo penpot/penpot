@@ -24,8 +24,7 @@
 .history-entries {
   height: calc(100vh - deprecated.$s-100);
   padding: deprecated.$s-12;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden auto;
   font-size: deprecated.$fs-12;
 }
 
@@ -45,26 +44,33 @@
   .history-entry-summary {
     display: flex;
     align-items: center;
+
     .history-entry-summary-icon {
       svg {
-        @extend .button-icon-small;
+        @extend %button-icon-small;
+
         stroke: var(--entry-foreground-color);
       }
     }
+
     .history-entry-summary-text {
       margin: 0 deprecated.$s-8;
       color: var(--color-foreground-primary);
     }
+
     .history-entry-summary-button {
       opacity: deprecated.$op-0;
       margin-left: auto;
+
       &.button-opened {
         svg {
           transform: rotate(90deg);
         }
       }
+
       svg {
-        @extend .button-icon-small;
+        @extend %button-icon-small;
+
         stroke: var(--entry-foreground-color);
       }
     }
@@ -74,6 +80,7 @@
     display: block;
     padding-top: deprecated.$s-16;
     color: var(--modal-text-foreground-color);
+
     .history-entry-details-list {
       margin: 0;
     }
@@ -88,14 +95,17 @@
   &:hover {
     background-color: var(--entry-background-color-hover);
     color: var(--entry-foreground-color-hover);
+
     .history-entry-summary {
       .history-entry-summary-icon {
         svg {
           stroke: var(--entry-foreground-color-hover);
         }
       }
+
       .history-entry-summary-button {
         opacity: deprecated.$op-10;
+
         &.button-opened {
           svg {
             transform: rotate(90deg);

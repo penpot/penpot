@@ -18,12 +18,7 @@
 .constraints-widget {
   background-color: var(--constraint-widget-background-color);
   display: grid;
-  grid-template-columns: deprecated.$s-24 deprecated.$s-60 deprecated.$s-24;
-  grid-template-rows: deprecated.$s-24 deprecated.$s-60 deprecated.$s-24;
-  grid-template-areas:
-    "top top top"
-    "left center right"
-    "bottom bottom bottom";
+  grid-template: "top top top" deprecated.$s-24 "left center right" deprecated.$s-60 "bottom bottom bottom" deprecated.$s-24 / deprecated.$s-24 deprecated.$s-60 deprecated.$s-24;
   height: deprecated.$s-108;
   width: deprecated.$s-108;
   border-radius: deprecated.$br-8;
@@ -35,21 +30,27 @@
 .constraints-right,
 .constraints-bottom {
   @include deprecated.flexCenter;
+
   grid-area: top;
 }
+
 .constraint-btn,
 .constraint-btn-special,
 .constraint-btn-rotated {
   @include deprecated.buttonStyle;
   @include deprecated.flexCenter;
+
   width: 100%;
   height: 100%;
+
   --resalted-area-background-color: var(--button-constraint-background-color-rest);
   --resalted-area-border-color: none;
+
   &.active {
     --resalted-area-border-color: var(--button-constraint-border-color-hover);
     --resalted-area-background-color: var(--button-constraint-background-color-hover);
   }
+
   &:hover,
   &:focus-visible {
     --resalted-area-border-color: var(--button-constraint-border-color-hover);
@@ -69,9 +70,11 @@
 
 .constraints-left {
   grid-area: left;
+
   .constraint-btn-rotated {
     height: deprecated.$s-60;
     width: deprecated.$s-24;
+
     .resalted-area {
       height: deprecated.$s-32;
       width: deprecated.$s-3;
@@ -84,18 +87,22 @@
   position: relative;
   background-color: var(--constraint-center-area-background-color);
   border-radius: deprecated.$br-8;
+
   .constraint-btn {
     width: deprecated.$s-60;
     height: deprecated.$s-24;
+
     .resalted-area {
       width: deprecated.$s-32;
       height: deprecated.$s-3;
     }
   }
+
   .constraint-btn-special {
     position: absolute;
     height: deprecated.$s-60;
     width: deprecated.$s-24;
+
     .resalted-area {
       height: deprecated.$s-32;
       width: deprecated.$s-3;
@@ -105,9 +112,11 @@
 
 .constraints-right {
   grid-area: right;
+
   .constraint-btn-rotated {
     height: deprecated.$s-72;
     width: deprecated.$s-24;
+
     .resalted-area {
       height: deprecated.$s-32;
       width: deprecated.$s-3;
@@ -137,33 +146,42 @@
   margin-bottom: deprecated.$s-8;
   margin-top: deprecated.$s-8;
   padding-left: 0;
+
   input {
     margin: 0;
   }
 
   label {
     @include deprecated.bodySmallTypography;
+
     display: flex;
     align-items: center;
     gap: deprecated.$s-2;
     cursor: pointer;
     color: var(--input-checkbox-text-foreground-color);
+
     .check-mark {
       @include deprecated.flexCenter;
+
       width: deprecated.$s-16;
       height: deprecated.$s-16;
       border-radius: deprecated.$br-6;
       background-color: var(--input-checkbox-inactive-background-color);
+
       &.checked {
         background-color: var(--input-checkbox-background-color-active);
+
         svg {
-          @extend .button-icon-small;
+          @extend %button-icon-small;
+
           stroke: var(--input-details-color);
         }
       }
+
       &:hover {
         border-color: var(--input-checkbox-border-color-hover);
       }
+
       &:focus {
         border-color: var(--input-checkbox-border-color-focus);
       }

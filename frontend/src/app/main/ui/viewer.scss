@@ -25,6 +25,7 @@
 
 .empty-state {
   @include deprecated.bodySmallTypography;
+
   color: var(--empty-message-foreground-color);
   display: grid;
   place-items: center;
@@ -47,6 +48,7 @@
 
 .thumbnails-close {
   @include deprecated.buttonStyle;
+
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
   z-index: deprecated.$z-index-10;
@@ -58,14 +60,14 @@
 }
 
 .viewer-section {
-  @extend .new-scrollbar;
+  @extend %new-scrollbar;
+
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   height: calc(100vh - deprecated.$s-48);
-  flex-flow: wrap;
   overflow: auto;
 }
 
@@ -78,8 +80,9 @@
 
 .viewer-go-prev,
 .viewer-go-next {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include deprecated.flexCenter;
+
   position: absolute;
   right: deprecated.$s-8;
   height: deprecated.$s-64;
@@ -88,8 +91,10 @@
   z-index: deprecated.$z-index-2;
   background-color: var(--viewer-controls-background-color);
   transition: transform 400ms ease 300ms;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
   }
 }
@@ -101,6 +106,7 @@
 .viewer-go-prev {
   left: deprecated.$s-8;
   right: unset;
+
   svg {
     transform: rotate(180deg);
   }
@@ -121,15 +127,18 @@
 }
 
 .reset-button {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include deprecated.flexCenter;
+
   height: deprecated.$s-32;
   width: deprecated.$s-28;
   margin-left: deprecated.$s-8;
   background-color: var(--viewer-controls-background-color);
   pointer-events: all;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
   }
 }
@@ -137,6 +146,7 @@
 .counter {
   @include deprecated.flexCenter;
   @include deprecated.bodySmallTypography;
+
   border-radius: deprecated.$br-8;
   width: deprecated.$s-64;
   height: deprecated.$s-32;
@@ -153,8 +163,7 @@
   display: grid;
   grid-template-rows: 1fr;
   grid-template-columns: 1fr;
-  justify-items: center;
-  align-items: center;
+  place-items: center center;
   overflow: hidden;
 }
 
@@ -164,7 +173,7 @@
   left: 0;
 
   &.visible {
-    background-color: rgb(0, 0, 0, 0.2);
+    background-color: rgb(0 0 0 / 20%);
   }
 }
 

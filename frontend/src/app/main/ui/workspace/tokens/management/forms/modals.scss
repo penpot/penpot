@@ -13,18 +13,17 @@
   border-radius: $br-4;
   background-color: var(--color-background-primary);
   border: $b-2 solid var(--color-background-quaternary);
-  min-width: $sz-364;
   min-height: $sz-192;
   max-width: $sz-512;
   max-height: $sz-512;
-  box-shadow: 0px 0px $sz-12 0px var(--color-shadow-dark);
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
   position: absolute;
   width: auto;
   min-width: auto;
   z-index: var(--z-index-set);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding: var(--sp-xxxl);
+
   &.token-modal-large {
     max-block-size: 95vh;
   }
