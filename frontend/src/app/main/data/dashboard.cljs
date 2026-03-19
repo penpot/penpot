@@ -685,14 +685,27 @@
              (modal/hide)))))
 
 (defn handle-change-team-org
-  [{:keys [team-id organization-id organization-name]}]
+  [{:keys [team-id team-name organization-id organization-name notification]}]
   (ptk/reify ::handle-change-team-org
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [current-team-id (:current-team-id state)]
+        (when (and (contains? cf/flags :nitrate)
+                   notification
+                   (= team-id current-team-id))
+          (rx/of (ntf/show {:content (tr notification organization-name)
+                            :type :toast
+                            :level :info
+                            :timeout nil})))))
     ptk/UpdateEvent
     (update [_ state]
       (if (contains? cf/flags :nitrate)
-        (d/update-in-when state [:teams team-id] assoc
-                          :organization-id organization-id
-                          :organization-name organization-name)
+        (d/update-in-when state [:teams team-id]
+                          (fn [team]
+                            (cond-> (assoc team
+                                           :organization-id organization-id
+                                           :organization-name organization-name)
+                              team-name (assoc :name team-name))))
         state))))
 
 

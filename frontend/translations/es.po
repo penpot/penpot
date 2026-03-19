@@ -347,6 +347,9 @@ msgstr "Vas a restaurar %s."
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restaurar archivo"
 
+msgid "dashboard.org-deleted"
+msgstr "La organización %s se ha borrado."
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Añadir archivo"
