@@ -17,6 +17,7 @@
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
+- Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
 
 
 ## 2.14.0 (Unreleased)
