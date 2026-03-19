@@ -60,7 +60,7 @@
     (watch [_ state _]
       (let [mcp-connected? (true? (-> state :workspace-local :mcp :connection))
             mcp-enabled?   (true? (-> state :profile :props :mcp-enabled))
-            num-sessions   (-> state :workspace-presence vals count)
+            num-sessions   (-> state :workspace-presence count)
             multi-session? (> num-sessions 1)]
         (if (and mcp-enabled? multi-session?)
           (if mcp-connected?
