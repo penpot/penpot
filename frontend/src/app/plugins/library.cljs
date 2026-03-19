@@ -306,11 +306,13 @@
   (obj/type-of? p "LibraryTypographyProxy"))
 
 (defn lib-typography-proxy
-  [plugin-id file-id id]
-  (assert (uuid? file-id))
-  (assert (uuid? id))
+  ([plugin-id file-id id]
+   (lib-typography-proxy plugin-id file-id id nil))
+  ([plugin-id file-id id initial-typo]
+   (assert (uuid? file-id))
+   (assert (uuid? id))
 
-  (obj/reify {:name "LibraryTypographyProxy"}
+   (obj/reify {:name "LibraryTypographyProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
@@ -318,7 +320,11 @@
 
     :name
     {:this true
-     :get #(-> % u/proxy->library-typography :name)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:name typo)
+                (:name initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -329,13 +335,17 @@
          (u/display-not-valid :name "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (u/proxy->library-typography self)
-               value (dm/str (d/nilv (:path typo) "") " / " value)]
-           (st/emit! (dwl/rename-typography file-id id value)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [value (dm/str (d/nilv (:path typo) "") " / " value)]
+             (st/emit! (dwl/rename-typography file-id id value))))))}
 
     :path
     {:this true
-     :get #(-> % u/proxy->library-typography :path)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:path typo)
+                (:path initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -346,13 +356,17 @@
          (u/display-not-valid :path "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (update :name #(str value " / " %)))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (update typo :name #(str value " / " %))]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :fontId
     {:this true
-     :get #(-> % u/proxy->library-typography :font-id)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:font-id typo)
+                (:font-id initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -363,13 +377,17 @@
          (u/display-not-valid :fontId "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (assoc :font-id value))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (assoc typo :font-id value)]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :fontFamily
     {:this true
-     :get #(-> % u/proxy->library-typography :font-family)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:font-family typo)
+                (:font-family initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -380,13 +398,17 @@
          (u/display-not-valid :fontFamily "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (assoc :font-family value))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (assoc typo :font-family value)]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :fontVariantId
     {:this true
-     :get #(-> % u/proxy->library-typography :font-variant-id)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:font-variant-id typo)
+                (:font-variant-id initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -397,13 +419,17 @@
          (u/display-not-valid :fontVariantId "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (assoc :font-variant-id value))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (assoc typo :font-variant-id value)]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :fontSize
     {:this true
-     :get #(-> % u/proxy->library-typography :font-size)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:font-size typo)
+                (:font-size initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -414,13 +440,17 @@
          (u/display-not-valid :fontSize "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (assoc :font-size value))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (assoc typo :font-size value)]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :fontWeight
     {:this true
-     :get #(-> % u/proxy->library-typography :font-weight)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:font-weight typo)
+                (:font-weight initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -431,13 +461,17 @@
          (u/display-not-valid :fontWeight "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (assoc :font-weight value))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (assoc typo :font-weight value)]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :fontStyle
     {:this true
-     :get #(-> % u/proxy->library-typography :font-style)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:font-style typo)
+                (:font-style initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -448,13 +482,17 @@
          (u/display-not-valid :fontStyle "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (assoc :font-style value))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (assoc typo :font-style value)]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :lineHeight
     {:this true
-     :get #(-> % u/proxy->library-typography :font-height)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:font-height typo)
+                (:font-height initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -465,13 +503,17 @@
          (u/display-not-valid :lineHeight "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (assoc :font-height value))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (assoc typo :font-height value)]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :letterSpacing
     {:this true
-     :get #(-> % u/proxy->library-typography :letter-spacing)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:letter-spacing typo)
+                (:letter-spacing initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -482,13 +524,17 @@
          (u/display-not-valid :letterSpacing "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (assoc :letter-spacing value))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (assoc typo :letter-spacing value)]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :textTransform
     {:this true
-     :get #(-> % u/proxy->library-typography :text-transform)
+     :get (fn [self]
+            (let [typo (u/proxy->library-typography self)]
+              (if (some? typo)
+                (:text-transform typo)
+                (:text-transform initial-typo))))
      :set
      (fn [self value]
        (cond
@@ -499,9 +545,9 @@
          (u/display-not-valid :textTransform "Plugin doesn't have 'library:write' permission")
 
          :else
-         (let [typo (-> (u/proxy->library-typography self)
-                        (assoc :text-transform value))]
-           (st/emit! (dwl/update-typography typo file-id)))))}
+         (when-let [typo (u/proxy->library-typography self)]
+           (let [typo (assoc typo :text-transform value)]
+             (st/emit! (dwl/update-typography typo file-id))))))}
 
     :remove
     (fn []
@@ -523,7 +569,7 @@
               typo (-> (u/locate-library-typography file-id id)
                        (assoc :id typo-id))]
           (st/emit! (dwl/add-typography typo false))
-          (lib-typography-proxy plugin-id id typo-id))))
+          (lib-typography-proxy plugin-id id typo-id typo))))
 
     :applyToText
     (fn [shape]
@@ -635,7 +681,7 @@
 
         :else
         (let [typography (u/locate-library-typography file-id id)]
-          (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)]))))))))
+          (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)])))))))))))
 
 (defn get-variant-components
   [file-id variant-id]
@@ -1007,9 +1053,10 @@
         (u/display-not-valid :createTypography "Plugin doesn't have 'library:write' permission")
 
         :else
-        (let [typography-id (uuid/next)]
-          (st/emit! (dwl/add-typography (ctt/make-typography {:id typography-id :name "Typography"}) false))
-          (lib-typography-proxy plugin-id file-id typography-id))))
+        (let [typography-id (uuid/next)
+              typo (ctt/make-typography {:id typography-id :name "Typography"})]
+          (st/emit! (dwl/add-typography typo false))
+          (lib-typography-proxy plugin-id file-id typography-id typo))))
 
     :createComponent
     (fn [shapes]
