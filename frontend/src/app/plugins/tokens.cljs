@@ -163,22 +163,35 @@
   (obj/type-of? p "TokenSetProxy"))
 
 (defn token-set-proxy
-  [plugin-id file-id id]
-  (obj/reify {:name "TokenSetProxy"
-              :on-error u/handle-error}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$file-id {:enumerable false :get (constantly file-id)}
-    :$id {:enumerable false :get (constantly id)}
+  ;; `initial-name` — optional fallback for the :name getter. When a set is
+  ;; freshly created via `catalog.addSet()`, `st/emit!` is async so the new set
+  ;; is not yet in `@st/state`. Without this fallback, `locate-token-set`
+  ;; returns nil and the :name getter returns nil, which cascades into
+  ;; `theme.addSet()` sending `:sets #{nil}` to the backend → 400 → workspace
+  ;; crash. Passing the known name at construction time avoids the race.
+  ([plugin-id file-id id]
+   (token-set-proxy plugin-id file-id id nil))
+  ([plugin-id file-id id initial-name]
+   (obj/reify {:name "TokenSetProxy"
+               :on-error u/handle-error}
+     :$plugin {:enumerable false :get (constantly plugin-id)}
+     :$file-id {:enumerable false :get (constantly file-id)}
+     :$id {:enumerable false :get (constantly id)}
 
-    :id
-    {:get #(dm/str id)}
+     :id
+     {:get #(dm/str id)}
 
-    :name
-    {:this true
-     :get
-     (fn [_]
-       (let [set (u/locate-token-set file-id id)]
-         (ctob/get-name set)))
+     :name
+     {:this true
+      :get
+      (fn [_]
+        ;; Prefer the authoritative state lookup; fall back to initial-name
+        ;; when the async state update from `catalog.addSet()` hasn't
+        ;; propagated yet.
+        (let [set (u/locate-token-set file-id id)]
+          (if (some? set)
+            (ctob/get-name set)
+            initial-name)))
      :schema (cfo/make-token-set-name-schema
               (u/locate-tokens-lib file-id)
               id)
@@ -279,7 +292,7 @@
 
     :remove
     (fn []
-      (st/emit! (dwtl/delete-token-set id)))))
+      (st/emit! (dwtl/delete-token-set id))))))
 
 (defn token-theme-proxy? [p]
   (obj/type-of? p "TokenThemeProxy"))
@@ -368,15 +381,26 @@
     {:enumerable false
      :schema [:tuple [:fn token-set-proxy?]]
      :fn (fn [token-set]
-           (let [theme (u/locate-token-theme file-id id)]
-             (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme (obj/get token-set :name))))))}
+           ;; Resolve the set name before the theme lookup. The proxy's :name
+           ;; getter now falls back to `initial-name` when state hasn't
+           ;; propagated, so this is safe even for freshly created sets.
+           ;; Guard against nil to prevent `enable-set` from conj'ing nil
+           ;; into the theme's :sets — which would send `:sets #{nil}` to the
+           ;; backend and crash the workspace.
+           (let [set-name (obj/get token-set :name)
+                 theme    (u/locate-token-theme file-id id)]
+             (when (and (some? set-name) (some? theme))
+               (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name))))))}
 
     :removeSet
     {:enumerable false
      :schema [:tuple [:fn token-set-proxy?]]
      :fn (fn [token-set]
-           (let [theme (u/locate-token-theme file-id id)]
-             (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme (obj/get token-set :name))))))}
+           ;; Same nil guard as addSet — see comment above.
+           (let [set-name (obj/get token-set :name)
+                 theme    (u/locate-token-theme file-id id)]
+             (when (and (some? set-name) (some? theme))
+               (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))}
 
     :duplicate
     (fn []
@@ -444,7 +468,10 @@
            (let [attrs (update attrs :name ctob/normalize-set-name)
                  set (ctob/make-token-set attrs)]
              (st/emit! (dwtl/create-token-set set))
-             (token-set-proxy plugin-id file-id (ctob/get-id set))))}
+             ;; Pass the set name as `initial-name` so the proxy can resolve
+             ;; it immediately, before the async `st/emit!` above propagates
+             ;; the new set into `@st/state`.
+             (token-set-proxy plugin-id file-id (ctob/get-id set) (ctob/get-name set))))}
 
     :getThemeById
     {:enumerable false
