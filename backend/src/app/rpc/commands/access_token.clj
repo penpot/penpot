@@ -88,7 +88,6 @@
                   :columns [:id :name :perms :type :created-at :updated-at :expires-at]})
        (mapv decode-row)))
 
-
 (def ^:private schema:get-current-mcp-token
   [:map {:title "get-current-mcp-token"}])
 
@@ -101,6 +100,6 @@
                   :type "mcp"}
                  {:order-by [[:expires-at :asc] [:created-at :asc]]
                   :columns [:token :expires-at]})
-       (remove #(ct/is-after? (:expires-at %) request-at))
+       (remove #(ct/is-after? request-at (:expires-at %)))
        (map decode-row)
        (first)))
