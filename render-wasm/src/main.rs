@@ -295,43 +295,33 @@ pub extern "C" fn set_view_start() -> Result<()> {
     Ok(())
 }
 
+/// Finishes a view interaction (zoom or pan). Rebuilds the tile index
+/// and invalidates the tile texture cache so the subsequent render
+/// re-draws all tiles at full quality (fast_mode is off at this point).
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_view_end() -> Result<()> {
     with_state_mut!(state, {
-        let _end_start = performance::begin_timed_log!("set_view_end");
         performance::begin_measure!("set_view_end");
         state.render_state.options.set_fast_mode(false);
         state.render_state.cancel_animation_frame();
 
-        // Update tile_viewbox first so that get_tiles_for_shape uses the correct interest area
-        // This is critical because we limit tiles to the interest area for optimization
         let scale = state.render_state.get_scale();
         state
             .render_state
             .tile_viewbox
             .update(state.render_state.viewbox, scale);
 
-        // We rebuild the tile index on both pan and zoom because `get_tiles_for_shape`
-        // clips each shape to the current `TileViewbox::interest_rect` (viewport-dependent).
-        let _rebuild_start = performance::begin_timed_log!("rebuild_tiles");
-        performance::begin_measure!("set_view_end::rebuild_tiles");
         if state.render_state.options.is_profile_rebuild_tiles() {
             state.rebuild_tiles();
         } else {
+            // Rebuild tile index + invalidate tile texture cache.
+            // Cache canvas is preserved so render_from_cache can still
+            // show a scaled preview during zoom.
             state.rebuild_tiles_shallow();
         }
-        performance::end_measure!("set_view_end::rebuild_tiles");
-        performance::end_timed_log!("rebuild_tiles", _rebuild_start);
 
-        state.render_state.sync_cached_viewbox();
         performance::end_measure!("set_view_end");
-        performance::end_timed_log!("set_view_end", _end_start);
-        #[cfg(feature = "profile-macros")]
-        {
-            let total_time = performance::get_time() - unsafe { VIEW_INTERACTION_START };
-            performance::console_log!("[PERF] view_interaction: {}ms", total_time);
-        }
     });
     Ok(())
 }

@@ -2675,24 +2675,20 @@ impl RenderState {
         self.surfaces.remove_cached_tile_surface(tile);
     }
 
-    pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
-        performance::begin_measure!("rebuild_tiles_shallow");
-
-        // Check if zoom changed - if so, we need full cache invalidation
-        // because tiles are rendered at specific zoom levels
+    /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.
+    /// This does NOT invalidate the tile texture cache — cached tile images
+    /// survive so that fast-mode renders during pan still show shadows/blur.
+    pub fn rebuild_tile_index(&mut self, tree: ShapesPoolRef) {
         let zoom_changed = self.zoom_changed();
 
-        let mut tiles_to_invalidate = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
                     if zoom_changed {
-                        // Zoom changed: use full update that tracks all affected tiles
-                        tiles_to_invalidate.extend(self.update_shape_tiles(shape, tree));
+                        let _ = self.update_shape_tiles(shape, tree);
                     } else {
-                        // Pan only: use incremental update that preserves valid cached tiles
-                        self.update_shape_tiles_incremental(shape, tree);
+                        let _ = self.update_shape_tiles_incremental(shape, tree);
                     }
                 } else {
                     // We only need to rebuild tiles from the first level.
@@ -2702,9 +2698,17 @@ impl RenderState {
                 }
             }
         }
+    }
 
-        // Invalidate changed tiles - old content stays visible until new tiles render
-        self.surfaces.remove_cached_tiles(self.background_color);
+    pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
+        performance::begin_measure!("rebuild_tiles_shallow");
+
+        self.rebuild_tile_index(tree);
+
+        // Invalidate the tile texture cache so all tiles are re-rendered, but
+        // preserve the cache canvas so render_from_cache can still show a scaled
+        // preview of old content while new tiles load progressively.
+        self.surfaces.invalidate_tile_cache();
 
         performance::end_measure!("rebuild_tiles_shallow");
     }
@@ -2824,10 +2828,6 @@ impl RenderState {
 
     pub fn zoom_changed(&self) -> bool {
         (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
-    }
-
-    pub fn sync_cached_viewbox(&mut self) {
-        self.cached_viewbox = self.viewbox;
     }
 
     pub fn mark_touched(&mut self, uuid: Uuid) {

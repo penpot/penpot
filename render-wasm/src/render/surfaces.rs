@@ -608,9 +608,20 @@ impl Surfaces {
         );
     }
 
+    /// Full cache reset: clears both the tile texture cache and the cache canvas.
+    /// Used by `rebuild_tiles` (full rebuild). For shallow rebuilds that preserve
+    /// the cache canvas for scaled previews, use `invalidate_tile_cache` instead.
     pub fn remove_cached_tiles(&mut self, color: skia::Color) {
         self.tiles.clear();
         self.cache.canvas().clear(color);
+    }
+
+    /// Invalidate the tile texture cache without clearing the cache canvas.
+    /// This forces all tiles to be re-rendered, but preserves the cache canvas
+    /// so that `render_from_cache` can still show a scaled preview of the old
+    /// content while new tiles are being rendered.
+    pub fn invalidate_tile_cache(&mut self) {
+        self.tiles.clear();
     }
 
     pub fn gc(&mut self) {

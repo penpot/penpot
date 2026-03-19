@@ -952,14 +952,14 @@
     (= result 1)))
 
 (def render-finish
-  (letfn [(do-render [ts]
+  (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when wasm/context-initialized?
               (perf/begin-measure "render-finish")
               (h/call wasm/internal-module "_set_view_end")
-              (render ts)
-              (perf/end-measure "render-finish")))]
+              (perf/end-measure "render-finish")
+              (render (js/performance.now))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan
