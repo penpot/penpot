@@ -16,6 +16,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.plugins :refer [schema:plugin-data]]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as cttx]
@@ -54,6 +55,10 @@
 (defn make-container
   [page-or-component type]
   (assoc page-or-component :type type))
+
+(defn unmake-container
+  [container]
+  (dissoc container :type))
 
 (defn page?
   [container]

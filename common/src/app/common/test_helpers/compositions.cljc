@@ -274,7 +274,7 @@
                      file-id
                      {file-id file}
                      file-id))]
-    (thf/apply-changes file changes)))
+    (thf/apply-changes file changes :validate? false)))
 
 (defn swap-component
   "Swap the specified shape by the component specified by component-tag"
@@ -305,12 +305,13 @@
                       [changes nil])
 
 
-        file' (thf/apply-changes file changes)]
+        file' (thf/apply-changes file changes :validate? (not propagate-fn))]
     (when new-shape-label
       (thi/rm-id! (:id new-shape))
       (thi/set-id! new-shape-label (:id new-shape)))
     (if propagate-fn
-      (propagate-fn file')
+      (-> (propagate-fn file')
+          (thf/validate-file!))
       file')))
 
 (defn swap-component-in-shape [file shape-tag component-tag & {:keys [page-label propagate-fn]}]
@@ -339,9 +340,10 @@
                                       (assoc shape :fills (ths/sample-fills-color :fill-color color)))
                                     (:objects page)
                                     {})
-        file' (thf/apply-changes file changes)]
+        file' (thf/apply-changes file changes :validate? (not propagate-fn))]
     (if propagate-fn
-      (propagate-fn file')
+      (-> (propagate-fn file')
+          (thf/validate-file!))
       file')))
 
 (defn update-bottom-color
@@ -357,9 +359,10 @@
                                       (assoc shape :fills (ths/sample-fills-color :fill-color color)))
                                     (:objects page)
                                     {})
-        file' (thf/apply-changes file changes)]
+        file' (thf/apply-changes file changes :validate? (not propagate-fn))]
     (if propagate-fn
-      (propagate-fn file')
+      (-> (propagate-fn file')
+          (thf/validate-file!))
       file')))
 
 (defn reset-overrides [file shape & {:keys [page-label propagate-fn]}]
@@ -374,9 +377,10 @@
                        {file-id file}
                        (ctn/make-container container :page)
                        (:id shape)))
-        file' (thf/apply-changes file changes)]
+        file' (thf/apply-changes file changes :validate? (not propagate-fn))]
     (if propagate-fn
-      (propagate-fn file')
+      (-> (propagate-fn file')
+          (thf/validate-file!))
       file')))
 
 (defn reset-overrides-in-first-child [file shape-tag & {:keys [page-label propagate-fn]}]
@@ -398,9 +402,10 @@
                                                 #{(-> (ths/get-shape file shape-tag :page-label page-label)
                                                       :id)}
                                                 {})
-        file' (thf/apply-changes file changes)]
+        file' (thf/apply-changes file changes :validate? (not propagate-fn))]
     (if propagate-fn
-      (propagate-fn file')
+      (-> (propagate-fn file')
+          (thf/validate-file!))
       file')))
 
 (defn duplicate-shape [file shape-tag & {:keys [page-label propagate-fn]}]
@@ -419,8 +424,9 @@
                                             (:id file))             ;; file-id
             (cll/generate-duplicate-changes-update-indices (:objects page)  ;; objects
                                                            #{(:id shape)}))
-        file' (thf/apply-changes file changes)]
+        file' (thf/apply-changes file changes :validate? (not propagate-fn))]
     (if propagate-fn
-      (propagate-fn file')
+      (-> (propagate-fn file')
+          (thf/validate-file!))
       file')))
 
