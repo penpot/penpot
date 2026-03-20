@@ -3,6 +3,7 @@ use crate::render::strokes;
 use crate::shapes::{ParagraphBuilderGroup, Shadow, Shape, Stroke, Type};
 use skia_safe::{canvas::SaveLayerRec, Paint, Path};
 
+use crate::error::Result;
 use crate::render::text;
 
 // Fill Shadows
@@ -36,7 +37,7 @@ pub fn render_stroke_inner_shadows(
     stroke: &Stroke,
     antialias: bool,
     surface_id: SurfaceId,
-) {
+) -> Result<()> {
     if !shape.has_fills() {
         for shadow in shape.inner_shadows_visible() {
             let filter = shadow.get_inner_shadow_filter();
@@ -48,9 +49,10 @@ pub fn render_stroke_inner_shadows(
                 filter.as_ref(),
                 antialias,
                 None, // Inner shadows don't use spread
-            )
+            )?;
         }
     }
+    Ok(())
 }
 
 // Render text paths (unused)
@@ -133,9 +135,9 @@ pub fn render_text_shadows(
     surface_id: Option<SurfaceId>,
     shadows: &[Paint],
     blur_filter: &Option<skia_safe::ImageFilter>,
-) {
+) -> Result<()> {
     if stroke_paragraphs_group.is_empty() {
-        return;
+        return Ok(());
     }
 
     let canvas = render_state
@@ -156,7 +158,7 @@ pub fn render_text_shadows(
             blur_filter.as_ref(),
             None,
             None,
-        );
+        )?;
 
         for stroke_paragraphs in stroke_paragraphs_group.iter_mut() {
             text::render(
@@ -169,9 +171,10 @@ pub fn render_text_shadows(
                 blur_filter.as_ref(),
                 None,
                 None,
-            );
+            )?;
         }
 
         canvas.restore();
     }
+    Ok(())
 }

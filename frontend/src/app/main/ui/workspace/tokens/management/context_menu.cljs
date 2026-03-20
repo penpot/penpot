@@ -20,6 +20,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as timers]
@@ -290,7 +291,7 @@
                                                                            :r4 "Bottom Left"
                                                                            :r3 "Bottom Right"}
                                                         :hint (tr "workspace.tokens.radius")
-                                                        :on-update-shape-all dwta/update-shape-radius-all
+                                                        :on-update-shape-all dwta/update-shape-radius
                                                         :on-update-shape update-shape-radius-for-corners})
         shadow (partial generic-attribute-actions #{:shadow} "Shadow")]
     {:border-radius border-radius
@@ -333,6 +334,7 @@
 
 (defn default-actions [{:keys [token selected-token-set-id on-delete-token]}]
   (let [{:keys [modal]} (dwta/get-token-properties token)
+        on-copy-name #(clipboard/to-clipboard (:name token))
         on-duplicate-token #(st/emit! (dwtl/duplicate-token (:id token)))]
     [{:title (tr "workspace.tokens.edit")
       :no-selectable true
@@ -350,6 +352,9 @@
      {:title (tr "workspace.tokens.duplicate")
       :no-selectable true
       :action on-duplicate-token}
+     {:title (tr "workspace.tokens.copy-name")
+      :no-selectable true
+      :action on-copy-name}
      {:title (tr "workspace.tokens.delete")
       :no-selectable true
       :action #(on-delete-token token)}]))

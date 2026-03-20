@@ -3790,8 +3790,11 @@ msgstr "Invitación enviada con éxito"
 msgid "notifications.invitation-link-copied"
 msgstr "Enlace de invitacion copiado"
 
-msgid "notifications.mcp.active-tab-switching.text"
+msgid "notifications.mcp.active-in-another-tab"
 msgstr "MCP está activo en otra pestaña. ¿Cambiar a esta?"
+
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP está ahora activo en esta pestaña."
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
@@ -6059,6 +6062,14 @@ msgstr "Eliminar desenfoque"
 msgid "workspace.options.blur-options.title"
 msgstr "Desenfoque"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Desenfoque de capa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Desenfoque de fondo"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"
 msgstr "Desenfoque del grupo"
@@ -7866,6 +7877,10 @@ msgstr "Borrar theme"
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicar token"
 
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:350
+msgid "workspace.tokens.copy-name"
+msgstr "Copiar ruta de token"
+
 #: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "copiar"
@@ -8175,11 +8190,13 @@ msgstr "Actualizar tokens"
 msgid "workspace.tokens.remap-token-references-title"
 msgstr "¿Actualizar todas las referencias de `%s` a `%s`?"
 
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-node-references-title"
+msgstr "¿Renombrar `%s` to `%s` y remapear todos los tokens de este grupo?"
+
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
 msgid "workspace.tokens.remap-warning-effects"
-msgstr ""
-"Esta acción actualizará todas las capas y referencias que usen el token "
-"antiguo"
+msgstr "Esta acción actualizará todas las capas y referencias que usen el token antiguo"
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
 msgid "workspace.tokens.remap-warning-time"
@@ -8403,6 +8420,14 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/application.cljs
 msgid "workspace.tokens.error-text-edition"
 msgstr "No se pueden aplicar tokens mientras se edita texto. Seleccione la capa de texto en su lugar."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group"
+msgstr "Renombrar grupo de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr "Tus tokens serán automáticamente renombrados a %s.(sufijo).(token)"
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"

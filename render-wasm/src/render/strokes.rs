@@ -6,6 +6,7 @@ use crate::shapes::{
 use skia_safe::{self as skia, ImageFilter, RRect};
 
 use super::{filters, RenderState, SurfaceId};
+use crate::error::{Error, Result};
 use crate::render::filters::compose_filters;
 use crate::render::{get_dest_rect, get_source_rect};
 
@@ -294,16 +295,16 @@ fn handle_stroke_caps(
     blur: Option<&ImageFilter>,
     _antialias: bool,
 ) {
-    let mut points = path.points().to_vec();
-    // Curves can have duplicated points, so let's remove consecutive duplicated points
-    points.dedup();
-    let c_points = points.len();
-
     // Closed shapes don't have caps
-    if c_points >= 2 && is_open {
-        let first_point = points.first().unwrap();
-        let last_point = points.last().unwrap();
+    if !is_open {
+        return;
+    }
 
+    // Curves can have duplicated points, so let's remove consecutive duplicated points
+    let mut points = path.points().to_vec();
+    points.dedup();
+
+    if let [first_point, .., last_point] = points.as_slice() {
         let mut paint_stroke = paint.clone();
 
         if let Some(filter) = blur {
@@ -328,7 +329,7 @@ fn handle_stroke_caps(
                 stroke.width,
                 &mut paint_stroke,
                 last_point,
-                &points[c_points - 2],
+                &points[points.len() - 2],
             );
         }
     }
@@ -456,14 +457,13 @@ fn draw_image_stroke_in_container(
     image_fill: &ImageFill,
     antialias: bool,
     surface_id: SurfaceId,
-) {
+) -> Result<()> {
     let scale = render_state.get_scale();
-    let image = render_state.images.get(&image_fill.id());
-    if image.is_none() {
-        return;
-    }
+    let Some(image) = render_state.images.get(&image_fill.id()) else {
+        return Ok(());
+    };
 
-    let size = image.unwrap().dimensions();
+    let size = image.dimensions();
     let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
@@ -509,7 +509,10 @@ fn draw_image_stroke_in_container(
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
             if let Some(p) = shape_type.path() {
                 canvas.save();
-                let path = p.to_skia_path().make_transform(&path_transform.unwrap());
+
+                let path = p.to_skia_path().make_transform(
+                    &path_transform.ok_or(Error::CriticalError("No path transform".to_string()))?,
+                );
                 let stroke_kind = stroke.render_kind(p.is_open());
                 match stroke_kind {
                     StrokeKind::Inner => {
@@ -561,7 +564,7 @@ fn draw_image_stroke_in_container(
 
     canvas.clip_rect(dest_rect, skia::ClipOp::Intersect, antialias);
     canvas.draw_image_rect_with_sampling_options(
-        image.unwrap(),
+        image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
         render_state.sampling_options,
@@ -571,7 +574,9 @@ fn draw_image_stroke_in_container(
     // Clear outer stroke for paths if necessary. When adding an outer stroke we need to empty the stroke added too in the inner area.
     if let Type::Path(p) = &shape.shape_type {
         if stroke.render_kind(p.is_open()) == StrokeKind::Outer {
-            let path = p.to_skia_path().make_transform(&path_transform.unwrap());
+            let path = p.to_skia_path().make_transform(
+                &path_transform.ok_or(Error::CriticalError("No path transform".to_string()))?,
+            );
             let mut clear_paint = skia::Paint::default();
             clear_paint.set_blend_mode(skia::BlendMode::Clear);
             clear_paint.set_anti_alias(antialias);
@@ -581,6 +586,7 @@ fn draw_image_stroke_in_container(
 
     // Restore canvas state
     canvas.restore();
+    Ok(())
 }
 
 /// Renders all strokes for a shape. Merges strokes that share the same
@@ -593,9 +599,9 @@ pub fn render(
     surface_id: Option<SurfaceId>,
     antialias: bool,
     outset: Option<f32>,
-) {
+) -> Result<()> {
     if strokes.is_empty() {
-        return;
+        return Ok(());
     }
 
     let has_image_fills = strokes.iter().any(|s| matches!(s.fill, Fill::Image(_)));
@@ -655,13 +661,14 @@ pub fn render(
                             true,
                             true,
                             outset,
-                        );
+                        )?;
                     }
 
                     state.surfaces.canvas(temp_surface).restore();
+                    Ok(())
                 },
-            ) {
-                return;
+            )? {
+                return Ok(());
             }
         }
 
@@ -675,9 +682,9 @@ pub fn render(
                 None,
                 antialias,
                 outset,
-            );
+            )?;
         }
-        return;
+        return Ok(());
     }
 
     render_merged(
@@ -688,7 +695,7 @@ pub fn render(
         antialias,
         false,
         outset,
-    );
+    )
 }
 
 fn strokes_share_geometry(strokes: &[&Stroke]) -> bool {
@@ -709,7 +716,7 @@ fn render_merged(
     antialias: bool,
     bypass_filter: bool,
     outset: Option<f32>,
-) {
+) -> Result<()> {
     let representative = *strokes
         .last()
         .expect("render_merged expects at least one stroke");
@@ -761,14 +768,15 @@ fn render_merged(
                         antialias,
                         true,
                         outset,
-                    );
+                    )?;
 
                     state.surfaces.apply_mut(temp_surface as u32, |surface| {
                         surface.canvas().restore();
                     });
+                    Ok(())
                 },
-            ) {
-                return;
+            )? {
+                return Ok(());
             }
         }
     }
@@ -844,6 +852,7 @@ fn render_merged(
         }
         _ => unreachable!("This shape should not have strokes"),
     }
+    Ok(())
 }
 
 /// Renders a single stroke. Used by the shadow module which needs per-stroke
@@ -857,7 +866,7 @@ pub fn render_single(
     shadow: Option<&ImageFilter>,
     antialias: bool,
     outset: Option<f32>,
-) {
+) -> Result<()> {
     render_single_internal(
         render_state,
         shape,
@@ -868,7 +877,7 @@ pub fn render_single(
         false,
         false,
         outset,
-    );
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -882,7 +891,7 @@ fn render_single_internal(
     bypass_filter: bool,
     skip_blur: bool,
     outset: Option<f32>,
-) {
+) -> Result<()> {
     if !bypass_filter {
         if let Some(image_filter) = shape.image_filter(1.) {
             let mut content_bounds = shape.selrect;
@@ -916,10 +925,10 @@ fn render_single_internal(
                         true,
                         true,
                         outset,
-                    );
+                    )
                 },
-            ) {
-                return;
+            )? {
+                return Ok(());
             }
         }
     }
@@ -949,7 +958,7 @@ fn render_single_internal(
                 image_fill,
                 antialias,
                 target_surface,
-            );
+            )?;
         }
     } else {
         match &shape.shape_type {
@@ -1014,6 +1023,7 @@ fn render_single_internal(
             _ => unreachable!("This shape should not have strokes"),
         }
     }
+    Ok(())
 }
 
 // Render text paths (unused)

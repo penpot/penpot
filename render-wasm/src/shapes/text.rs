@@ -1139,7 +1139,11 @@ impl TextSpan {
     fn process_ignored_chars(text: &str, browser: u8) -> String {
         text.chars()
             .filter_map(|c| {
-                if c < '\u{0020}' || c == '\u{2028}' || c == '\u{2029}' {
+                // Preserve line breaks: \n (U+000A), \r (U+000D), and Unicode separators
+                if c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
+                    return Some(c);
+                }
+                if c < '\u{0020}' {
                     if browser == Browser::Firefox as u8 {
                         None
                     } else {

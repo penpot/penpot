@@ -61,11 +61,13 @@ pub fn wasm_error(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         let _: &dyn std::error::Error = &__e;
                         let __msg = __e.to_string();
                         crate::mem::set_error_code(__e.into());
+                        crate::mem::free_bytes().expect("Failed to free bytes");
                         panic!("WASM error: {}",__msg);
                     }
                 },
                 Err(__payload) => {
                     crate::mem::set_error_code(0x02); // critical, same as Error::Critical
+                    crate::mem::free_bytes().expect("Failed to free bytes");
                     std::panic::resume_unwind(__payload);
                 }
             }

@@ -8,10 +8,13 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.event :as ev]
+   [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.persistence :as dwp]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -152,35 +155,46 @@
 
 (defn request-simple-export
   [{:keys [export]}]
-  (ptk/reify ::request-simple-export
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :export assoc :in-progress true :id uuid/zero))
+  (if (and (contains? cf/flags :wasm-export)
+           (contains? #{:jpeg :webp :png} (:type export)))
+    (ptk/reify ::request-simple-export-wasm
+      ptk/EffectEvent
+      (effect [_ _ _]
+        (wasm.exports/export-image export)))
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [profile-id (:profile-id state)
-            params     {:exports [export]
-                        :profile-id profile-id
-                        :cmd :export-shapes
-                        :wait true}]
-        (rx/concat
-         (rx/of ::dwp/force-persist)
+    (ptk/reify ::request-simple-export
+      ptk/UpdateEvent
+      (update [_ state]
+        (update state :export assoc :in-progress true :id uuid/zero))
 
-         ;; Wait the persist to be succesfull
-         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-              (rx/filter #(or (nil? %) (= :saved %)))
-              (rx/first)
-              (rx/timeout 400 (rx/empty)))
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [profile-id (:profile-id state)
+              params     {:exports [export]
+                          :profile-id profile-id
+                          :cmd :export-shapes
+                          :wait true
+                          :is-wasm
+                          (and
+                           (features/active-feature? state "render-wasm/v1")
+                           (contains? cf/flags :wasm-export))}]
+          (rx/concat
+           (rx/of ::dwp/force-persist)
 
-         (->> (rp/cmd! :export params)
-              (rx/map (fn [{:keys [filename mtype uri]}]
-                        (dom/trigger-download-uri filename mtype uri)
-                        (clear-export-state uuid/zero)))
-              (rx/catch (fn [cause]
-                          (rx/concat
-                           (rx/of (clear-export-state uuid/zero))
-                           (rx/throw cause))))))))))
+           ;; Wait the persist to be succesfull
+           (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+                (rx/filter #(or (nil? %) (= :saved %)))
+                (rx/first)
+                (rx/timeout 400 (rx/empty)))
+
+           (->> (rp/cmd! :export params)
+                (rx/map (fn [{:keys [filename mtype uri]}]
+                          (dom/trigger-download-uri filename mtype uri)
+                          (clear-export-state uuid/zero)))
+                (rx/catch (fn [cause]
+                            (rx/concat
+                             (rx/of (clear-export-state uuid/zero))
+                             (rx/throw cause)))))))))))
 
 (defn request-multiple-export
   [{:keys [exports cmd]
@@ -195,7 +209,11 @@
             params      {:exports exports
                          :cmd cmd
                          :profile-id profile-id
-                         :force-multiple true}
+                         :force-multiple true
+                         :is-wasm
+                         (and
+                          (features/active-feature? state "render-wasm/v1")
+                          (contains? cf/flags :wasm-export))}
 
             progress-stream
             (->> (ws/get-rcv-stream ws-conn)

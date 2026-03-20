@@ -188,7 +188,7 @@
            (when-not (.-hidden js/document)
              (let [trigger-el (mf/ref-val trigger-ref)]
                (clear-schedule schedule-ref)
-               (add-schedule schedule-ref delay
+               (add-schedule schedule-ref (d/nilv delay 300)
                              (fn []
                                (when-let [active @active-tooltip]
                                  (when (not= (:id active) tooltip-id)

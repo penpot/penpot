@@ -13,3 +13,8 @@
 .styles-tab-workspace {
   block-size: calc(100vh - px2rem(180)); // TODO: Fix this hardcoded value
 }
+
+.exports-wrapper {
+  padding-block: var(--sp-s);
+  padding-inline: var(--sp-m);
+}

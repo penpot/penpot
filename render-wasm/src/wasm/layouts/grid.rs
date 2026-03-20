@@ -8,7 +8,7 @@ use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state, with_stat
 use super::align;
 
 #[allow(unused_imports)]
-use crate::error::Result;
+use crate::error::{Error, Result};
 
 #[derive(Debug)]
 #[repr(C, align(1))]
@@ -177,9 +177,13 @@ pub extern "C" fn set_grid_columns() -> Result<()> {
 
     let entries: Vec<GridTrack> = bytes
         .chunks(size_of::<RawGridTrack>())
-        .map(|data| data.try_into().unwrap())
-        .map(|data: [u8; size_of::<RawGridTrack>()]| RawGridTrack::from(data).into())
-        .collect();
+        .map(|data| {
+            let track_bytes: [u8; size_of::<RawGridTrack>()] = data
+                .try_into()
+                .map_err(|_| Error::CriticalError("Invalid bytes for grid track".to_string()))?;
+            Ok(RawGridTrack::from(track_bytes).into())
+        })
+        .collect::<Result<Vec<_>>>()?;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_grid_columns(entries);
@@ -196,9 +200,13 @@ pub extern "C" fn set_grid_rows() -> Result<()> {
 
     let entries: Vec<GridTrack> = bytes
         .chunks(size_of::<RawGridTrack>())
-        .map(|data| data.try_into().unwrap())
-        .map(|data: [u8; size_of::<RawGridTrack>()]| RawGridTrack::from(data).into())
-        .collect();
+        .map(|data| {
+            let track_bytes: [u8; size_of::<RawGridTrack>()] = data
+                .try_into()
+                .map_err(|_| Error::CriticalError("Invalid bytes for grid track".to_string()))?;
+            Ok(RawGridTrack::from(track_bytes).into())
+        })
+        .collect::<Result<Vec<_>>>()?;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_grid_rows(entries);
@@ -215,9 +223,13 @@ pub extern "C" fn set_grid_cells() -> Result<()> {
 
     let cells: Vec<RawGridCell> = bytes
         .chunks(size_of::<RawGridCell>())
-        .map(|data| data.try_into().expect("Invalid grid cell data"))
-        .map(|data: [u8; size_of::<RawGridCell>()]| RawGridCell::from(data))
-        .collect();
+        .map(|data| {
+            let cell_bytes: [u8; size_of::<RawGridCell>()] = data
+                .try_into()
+                .map_err(|_| Error::CriticalError("Invalid bytes for grid cell".to_string()))?;
+            Ok(RawGridCell::from(cell_bytes))
+        })
+        .collect::<Result<Vec<_>>>()?;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_grid_cells(cells.into_iter().map(|raw| raw.into()).collect());

@@ -769,6 +769,11 @@ export interface CommonLayout {
  */
 export interface Context {
   /**
+   * Returns the current penpot version.
+   */
+  readonly version: string;
+
+  /**
    * The root shape in the current Penpot context. Requires `content:read` permission.
    *
    * @example
@@ -1710,6 +1715,13 @@ export interface Flags {
    * Defaults to false
    */
   naturalChildOrdering: boolean;
+
+  /**
+   * If `true` the validation errors will throw an exception instead of displaying an
+   * error in the debugger console.
+   * Defaults to false
+   */
+  throwValidationErrors: boolean;
 }
 
 /**
@@ -5231,7 +5243,11 @@ export interface TokenTheme {
 /**
  * The properties that a BorderRadius token can be applied to.
  */
-type TokenBorderRadiusProps = 'r1' | 'r2' | 'r3' | 'r4';
+type TokenBorderRadiusProps =
+  | 'borderRadiusTopLeft'
+  | 'borderRadiusTopRight'
+  | 'borderRadiusBottomRight'
+  | 'borderRadiusBottomLeft';
 
 /**
  * The properties that a Shadow token can be applied to.
@@ -5307,16 +5323,16 @@ type TokenSpacingProps =
   | 'columnGap'
 
   // Spacing / Padding
-  | 'p1'
-  | 'p2'
-  | 'p3'
-  | 'p4'
+  | 'paddingLeft'
+  | 'paddingTop'
+  | 'paddingRight'
+  | 'paddingBottom'
 
   // Spacing / Margin
-  | 'm1'
-  | 'm2'
-  | 'm3'
-  | 'm4';
+  | 'marginLeft'
+  | 'marginTop'
+  | 'marginRight'
+  | 'marginBottom';
 
 /**
  * The properties that a BorderWidth token can be applied to.

@@ -307,14 +307,16 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc)
+             (dnt/go-to-nitrate-cc-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         on-go-to-cc-click
         (mf/use-fn
-         (mf/deps organization)
+         (mf/deps organization profile)
          (fn []
-           (if (:organization-id organization)
+           ;; Navigate to active org if user owns it, otherwise to last visited org
+           (if (and (:organization-id organization)
+                    (= (:id profile) (:organization-owner-id organization)))
              (dnt/go-to-nitrate-cc organization)
              (dnt/go-to-nitrate-cc))))
 
@@ -324,7 +326,9 @@
                                  first
                                  :id)
                             (:default-team-id profile))
-        organizations (dissoc organizations default-team-id)]
+        organizations (dissoc organizations default-team-id)
+
+        is-valid-license? (dnt/is-valid-license? profile)]
 
     [:> dropdown-menu* props
 
@@ -356,10 +360,11 @@
                               :class       (stl/css :org-dropdown-item :action)}
       [:span {:class (stl/css :icon-wrapper)} add-org-icon]
       [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-org")]]
-     [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
-                              :class       (stl/css :org-dropdown-item :action)}
-      [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
-      [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]]]))
+     (when is-valid-license?
+       [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
+                                :class       (stl/css :org-dropdown-item :action)}
+        [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
+        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]])]))
 
 (mf/defc teams-selector-dropdown*
   {::mf/private true}
@@ -575,7 +580,7 @@
 
 
 (defn- team->org [team]
-  (assoc (dm/select-keys team [:id :organization-id :organization-slug])
+  (assoc (dm/select-keys team [:id :organization-id :organization-slug :organization-owner-id])
          :name (:organization-name team)))
 
 (mf/defc sidebar-org-switch*
@@ -590,7 +595,9 @@
                      (map team->org)
                      (d/index-by :id)))
 
-        no-orgs? (= (count orgs) 0)
+        ;; There is always at least one default organization
+        ;; so no-orgs? is true when only that default one exists (count <= 1).
+        no-orgs? (<= (count orgs) 1)
 
         current-org (team->org team)
 
@@ -625,7 +632,7 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc)
+             (dnt/go-to-nitrate-cc-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if no-orgs?
       [:div {:class (stl/css :nitrate-selected-org)}

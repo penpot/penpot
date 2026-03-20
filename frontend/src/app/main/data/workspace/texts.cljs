@@ -121,7 +121,7 @@
 
               new-shape?   (contains? (:workspace-new-text-shapes state) id)]
           (if (ted/content-has-text? content)
-            (when (features/active-feature? state "render-wasm/v1")
+            (if (features/active-feature? state "render-wasm/v1")
               (let [content  (d/merge (ted/export-content content)
                                       (dissoc (:content shape) :children))
                     new-size (dwwt/get-wasm-text-new-size shape content)]
@@ -141,34 +141,34 @@
                            (cond-> (some? new-size)
                              (gsh/transform-shape
                               (ctm/change-size shape (:width new-size) (:height new-size))))))
+                     {:undo-group (when new-shape? id)})))))
+
+              (let [content (d/merge (ted/export-content content)
+                                     (dissoc (:content shape) :children))
+                    modifiers (get-in state [:workspace-text-modifier id])]
+                (rx/merge
+                 (rx/of (update-editor-state shape nil))
+                 (when (and (not= content (:content shape))
+                            (some? (:current-page-id state))
+                            (some? shape))
+                   (rx/of
+                    (dwsh/update-shapes
+                     [id]
+                     (fn [shape]
+                       (let [{:keys [width height position-data]} modifiers]
+                         (-> shape
+                             (assoc :content content)
+                             (cond-> position-data
+                               (assoc :position-data position-data))
+                             (cond-> (and update-name? (some? name))
+                               (assoc :name name))
+                             (cond-> (or (some? width) (some? height))
+                               (gsh/transform-shape (ctm/change-size shape width height))))))
                      {:undo-group (when new-shape? id)}))))))
 
-            (let [content (d/merge (ted/export-content content)
-                                   (dissoc (:content shape) :children))
-                  modifiers (get-in state [:workspace-text-modifier id])]
-              (rx/merge
-               (rx/of (update-editor-state shape nil))
-               (when (and (not= content (:content shape))
-                          (some? (:current-page-id state))
-                          (some? shape))
-                 (rx/of
-                  (dwsh/update-shapes
-                   [id]
-                   (fn [shape]
-                     (let [{:keys [width height position-data]} modifiers]
-                       (-> shape
-                           (assoc :content content)
-                           (cond-> position-data
-                             (assoc :position-data position-data))
-                           (cond-> (and update-name? (some? name))
-                             (assoc :name name))
-                           (cond-> (or (some? width) (some? height))
-                             (gsh/transform-shape (ctm/change-size shape width height))))))
-                   {:undo-group (when new-shape? id)}))))))
-
-          (when (some? id)
-            (rx/of (dws/deselect-shape id)
-                   (dwsh/delete-shapes #{id}))))))))
+            (when (some? id)
+              (rx/of (dws/deselect-shape id)
+                     (dwsh/delete-shapes #{id})))))))))
 
 (defn initialize-editor-state
   [{:keys [id name content] :as shape} decorator]
@@ -966,7 +966,11 @@
     ptk/WatchEvent
     (watch [it state _]
       (if (features/active-feature? state "render-wasm/v1")
-        (let [objects      (dsh/lookup-page-objects state)
+        (let [;; v3 editor always passes :finalize? from keyword opts; when absent
+              ;; that binds nil and :or defaults do not apply — coerce so undo flags
+              ;; stay strict booleans for changes-builder schema validation.
+              finalize?    (boolean finalize?)
+              objects      (dsh/lookup-page-objects state)
               shape        (get objects id)
               new-shape?   (contains? (:workspace-new-text-shapes state) id)
               prev-content (:content shape)
@@ -978,8 +982,7 @@
                                      (select-keys shape [:selrect :points :width :height]))
               content-has-text? (v2-content-has-text? content)
               prev-content-has-text? (v2-content-has-text? prev-content)
-              new-size (when (and (not= :fixed (:grow-type shape))
-                                  content-has-text?)
+              new-size (when (not= :fixed (:grow-type shape))
                          (dwwt/get-wasm-text-new-size shape content))
               ;; New shapes: single undo on finalize only (no per-keystroke undo)
               effective-save-undo? (if new-shape? finalize? save-undo?)

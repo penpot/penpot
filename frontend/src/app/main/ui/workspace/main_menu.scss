@@ -134,6 +134,10 @@
   &.active {
     --menu-indicator-color: var(--color-accent-primary);
   }
+
+  &.failed {
+    --menu-indicator-color: var(--color-foreground-error);
+  }
 }
 
 .item-arrow {

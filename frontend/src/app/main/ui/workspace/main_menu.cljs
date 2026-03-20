@@ -749,8 +749,8 @@
         profile         (mf/deref refs/profile)
         workspace-local (mf/deref refs/workspace-local)
 
-        mcp-enabled?    (-> profile :props :mcp-enabled)
-        mcp-connected?  (-> workspace-local :mcp :connected)
+        mcp-enabled?    (true? (-> profile :props :mcp-enabled))
+        mcp-connected?  (true? (-> workspace-local :mcp :connection))
 
         on-nav-to-integrations
         (mf/use-fn
@@ -978,9 +978,10 @@
                     :class (stl/css :item-arrow)}]])
 
       (when (contains? cf/flags :mcp)
-        (let [mcp-enabled?   (-> profile :props :mcp-enabled)
-              mcp-connected? (-> workspace-local :mcp :connected)
-              mcp-active?    (and mcp-enabled? mcp-connected?)]
+        (let [mcp-enabled?   (true? (-> profile :props :mcp-enabled))
+              mcp-connection (-> workspace-local :mcp :connection)
+              mcp-connected? (true? mcp-connection)
+              mcp-error?     (nil? mcp-connection)]
           [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
                                    :on-click    on-menu-click
                                    :on-key-down (fn [event]
@@ -992,7 +993,8 @@
            [:span {:class (stl/css :item-name)}
             (tr "workspace.header.menu.option.mcp")]
            [:span {:class (stl/css-case :item-indicator true
-                                        :active mcp-active?)}]
+                                        :active (and mcp-enabled? mcp-connected?)
+                                        :failed (and mcp-enabled? mcp-error?))}]
            [:> icon* {:icon-id i/arrow-right
                       :class (stl/css :item-arrow)}]]))
 

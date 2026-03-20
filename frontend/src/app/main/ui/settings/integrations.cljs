@@ -7,7 +7,6 @@
 (ns app.main.ui.settings.integrations
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -410,7 +409,7 @@
         profile (mf/deref refs/profile)
 
         mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
-        mcp-enabled? (d/nilv (-> profile :props :mcp-enabled) false)
+        mcp-enabled? (true? (-> profile :props :mcp-enabled))
 
         expires-at  (:expires-at mcp-key)
         expired?    (and (some? expires-at) (> (ct/now) expires-at))

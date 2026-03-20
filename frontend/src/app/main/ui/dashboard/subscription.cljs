@@ -135,7 +135,10 @@
         handle-click
         (mf/use-fn
          (fn []
-           (st/emit! (dnt/show-nitrate-popup :nitrate-form))))]
+           (st/emit! (dnt/show-nitrate-popup :nitrate-form))))
+
+        handle-go-to-cc
+        (mf/use-fn dnt/go-to-nitrate-cc-create-org)]
 
     ;; TODO add translations for this texts when we have the definitive ones
     (if (and nitrate? no-orgs-created?)
@@ -148,7 +151,7 @@
         [:> button* {:variant "primary"
                      :type "button"
                      :class (stl/css :nitrate-bottom-button)
-                     :on-click dnt/go-to-nitrate-cc} "CREATE ORGANIZATION"]]]
+                     :on-click handle-go-to-cc} "CREATE ORGANIZATION"]]]
 
       ;; Banner for users without nitrate license
       (when (not nitrate?)

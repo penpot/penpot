@@ -12,7 +12,6 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
-   [app.plugins.flags :refer [natural-child-ordering?]]
    [app.plugins.register :as r]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
@@ -39,10 +38,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/flex-direction-types value))
-           (u/display-not-valid :dir value)
+           (u/not-valid plugin-id :dir value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :dir "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :dir "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-flex-dir value})))))}
@@ -55,10 +54,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/wrap-types value))
-           (u/display-not-valid :wrap value)
+           (u/not-valid plugin-id :wrap value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :wrap "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :wrap "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-wrap-type value})))))}
@@ -71,10 +70,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/align-items-types value))
-           (u/display-not-valid :alignItems value)
+           (u/not-valid plugin-id :alignItems value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :alignItems "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :alignItems "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-align-items value})))))}
@@ -87,10 +86,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/align-content-types value))
-           (u/display-not-valid :alignContent value)
+           (u/not-valid plugin-id :alignContent value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :alignContent "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :alignContent "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-align-content value})))))}
@@ -103,10 +102,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/justify-items-types value))
-           (u/display-not-valid :justifyItems value)
+           (u/not-valid plugin-id :justifyItems value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :justifyItems "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :justifyItems "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-justify-items value})))))}
@@ -119,10 +118,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/justify-content-types value))
-           (u/display-not-valid :justifyContent value)
+           (u/not-valid plugin-id :justifyContent value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :justifyContent "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :justifyContent "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-justify-content value})))))}
@@ -134,10 +133,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-int? value))
-         (u/display-not-valid :rowGap value)
+         (u/not-valid plugin-id :rowGap value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :rowGap "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :rowGap "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-gap {:row-gap value}}))))}
@@ -149,10 +148,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-int? value))
-         (u/display-not-valid :columnGap value)
+         (u/not-valid plugin-id :columnGap value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :columnGap "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :columnGap "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-gap {:column-gap value}}))))}
@@ -164,10 +163,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-int? value))
-         (u/display-not-valid :verticalPadding value)
+         (u/not-valid plugin-id :verticalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :verticalPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :verticalPadding "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value :p3 value}}))))}
@@ -179,10 +178,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-int? value))
-         (u/display-not-valid :horizontalPadding value)
+         (u/not-valid plugin-id :horizontalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :horizontalPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :horizontalPadding "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}}))))}
@@ -195,10 +194,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-int? value))
-         (u/display-not-valid :topPadding value)
+         (u/not-valid plugin-id :topPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :topPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :topPadding "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value}}))))}
@@ -210,10 +209,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-int? value))
-         (u/display-not-valid :rightPadding value)
+         (u/not-valid plugin-id :rightPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :rightPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :rightPadding "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value}}))))}
@@ -225,10 +224,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-int? value))
-         (u/display-not-valid :bottomPadding value)
+         (u/not-valid plugin-id :bottomPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :bottomPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :bottomPadding "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p3 value}}))))}
@@ -240,10 +239,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-int? value))
-         (u/display-not-valid :leftPadding value)
+         (u/not-valid plugin-id :leftPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :leftPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :leftPadding "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p4 value}}))))}
@@ -256,13 +255,13 @@
     (fn [child]
       (cond
         (not (shape-proxy? child))
-        (u/display-not-valid :appendChild child)
+        (u/not-valid plugin-id :appendChild child)
 
         :else
         (let [child-id (obj/get child "$id")
               shape (u/locate-shape file-id page-id id)
               index
-              (if (and (natural-child-ordering? plugin-id) (not (ctl/reverse? shape)))
+              (if (and (u/natural-child-ordering? plugin-id) (not (ctl/reverse? shape)))
                 0
                 (count (:shapes shape)))]
           (st/emit! (dwsh/relocate-shapes #{child-id} id index)))))
@@ -275,10 +274,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/item-h-sizing-types value))
-           (u/display-not-valid :horizontalSizing value)
+           (u/not-valid plugin-id :horizontalSizing value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :horizontalSizing "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :horizontalSizing "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
@@ -291,10 +290,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/item-v-sizing-types value))
-           (u/display-not-valid :verticalSizing value)
+           (u/not-valid plugin-id :verticalSizing value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :verticalSizing "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :verticalSizing "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}))
@@ -317,10 +316,10 @@
      (fn [_ value]
        (cond
          (not (boolean? value))
-         (u/display-not-valid :absolute value)
+         (u/not-valid plugin-id :absolute value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :absolute "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :absolute "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-item-absolute value}))))}
@@ -332,10 +331,10 @@
      (fn [_ value]
        (cond
          (sm/valid-safe-int? value)
-         (u/display-not-valid :zIndex value)
+         (u/not-valid plugin-id :zIndex value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :zIndex "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :zIndex "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-z-index value}))))}
@@ -348,10 +347,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/item-h-sizing-types value))
-           (u/display-not-valid :horizontalPadding value)
+           (u/not-valid plugin-id :horizontalPadding value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :horizontalPadding "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :horizontalPadding "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout-child #{id} {:layout-item-h-sizing value})))))}
@@ -364,10 +363,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/item-v-sizing-types value))
-           (u/display-not-valid :verticalSizing value)
+           (u/not-valid plugin-id :verticalSizing value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :verticalSizing "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :verticalSizing "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout-child #{id} {:layout-item-v-sizing value})))))}
@@ -380,10 +379,10 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/item-align-self-types value))
-           (u/display-not-valid :alignSelf value)
+           (u/not-valid plugin-id :alignSelf value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :alignSelf "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :alignSelf "Plugin doesn't have 'content:write' permission")
 
            :else
            (st/emit! (dwsl/update-layout-child #{id} {:layout-item-align-self value})))))}
@@ -395,10 +394,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :verticalMargin value)
+         (u/not-valid plugin-id :verticalMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :verticalMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :verticalMargin "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m1 value :m3 value}}))))}
@@ -410,10 +409,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :horizontalMargin value)
+         (u/not-valid plugin-id :horizontalMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :horizontalMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :horizontalMargin "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m2 value :m4 value}}))))}
@@ -425,10 +424,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :topMargin value)
+         (u/not-valid plugin-id :topMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :topMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :topMargin "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m1 value}}))))}
@@ -440,10 +439,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :rightMargin value)
+         (u/not-valid plugin-id :rightMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :rightMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :rightMargin "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m2 value}}))))}
@@ -455,10 +454,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :bottomMargin value)
+         (u/not-valid plugin-id :bottomMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :bottomMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :bottomMargin "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m3 value}}))))}
@@ -470,10 +469,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :leftMargin value)
+         (u/not-valid plugin-id :leftMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :leftMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :leftMargin "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m4 value}}))))}
@@ -485,10 +484,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :maxWidth value)
+         (u/not-valid plugin-id :maxWidth value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :maxWidth "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :maxWidth "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-max-w value}))))}
@@ -500,10 +499,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :minWidth value)
+         (u/not-valid plugin-id :minWidth value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :minWidth "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :minWidth "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-min-w value}))))}
@@ -515,10 +514,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :maxHeight value)
+         (u/not-valid plugin-id :maxHeight value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :maxHeight "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :maxHeight "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-max-h value}))))}
@@ -530,10 +529,10 @@
      (fn [_ value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :minHeight value)
+         (u/not-valid plugin-id :minHeight value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :minHeight "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :minHeight "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-min-h value}))))}))

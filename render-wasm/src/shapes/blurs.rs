@@ -15,6 +15,7 @@ pub fn radius_to_sigma(radius: f32) -> f32 {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BlurType {
     LayerBlur,
+    BackgroundBlur,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

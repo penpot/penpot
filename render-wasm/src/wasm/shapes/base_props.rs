@@ -6,6 +6,10 @@ use crate::wasm::blend::RawBlendMode;
 use crate::wasm::layouts::constraints::{RawConstraintH, RawConstraintV};
 use crate::{with_state_mut, STATE};
 
+#[allow(unused_imports)]
+use crate::error::{Error, Result};
+use macros::wasm_error;
+
 use super::RawShapeType;
 
 const FLAG_CLIP_CONTENT: u8 = 0b0000_0001;
@@ -106,14 +110,18 @@ impl From<[u8; RAW_BASE_PROPS_SIZE]> for RawBasePropsData {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_base_props() {
+#[wasm_error]
+pub extern "C" fn set_shape_base_props() -> Result<()> {
     let bytes = mem::bytes();
 
     if bytes.len() < RAW_BASE_PROPS_SIZE {
-        return;
+        return Ok(());
     }
 
-    let data: [u8; RAW_BASE_PROPS_SIZE] = bytes[..RAW_BASE_PROPS_SIZE].try_into().unwrap();
+    // FIXME: this should just be a try_from
+    let data: [u8; RAW_BASE_PROPS_SIZE] = bytes[..RAW_BASE_PROPS_SIZE]
+        .try_into()
+        .map_err(|_| Error::CriticalError("Invalid bytes for base props".to_string()))?;
     let raw = RawBasePropsData::from(data);
 
     let id = raw.id();
@@ -151,6 +159,7 @@ pub extern "C" fn set_shape_base_props() {
             shape.set_corners((raw.corner_r1, raw.corner_r2, raw.corner_r3, raw.corner_r4));
         }
     });
+    Ok(())
 }
 
 #[cfg(test)]

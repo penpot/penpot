@@ -84,8 +84,9 @@ test.describe("Tokens: Apply token", () => {
     await brTokenPillSM.click();
 
     // Change token from dropdown
-    const brTokenOptionXl = borderRadiusSection
-      .getByRole("option", { name: "borderRadius.xl" });
+    const brTokenOptionXl = borderRadiusSection.getByRole("option", {
+      name: "borderRadius.xl",
+    });
     await expect(brTokenOptionXl).toBeVisible();
     await brTokenOptionXl.click();
 
@@ -151,7 +152,9 @@ test.describe("Tokens: Apply token", () => {
     await detachButton.click();
 
     // Open dropdown from input
-    const dropdownBtn = layerMenuSection.getByRole('button', { name: 'Open token list' })
+    const dropdownBtn = layerMenuSection.getByRole("button", {
+      name: "Open token list",
+    });
     await expect(dropdownBtn).toBeVisible();
     await dropdownBtn.click();
 
@@ -227,8 +230,12 @@ test.describe("Tokens: Apply token", () => {
       await expect(firstShadowFields).toBeVisible();
 
       // Fill in the shadow values
-      const offsetXInput = firstShadowFields.getByRole('textbox', { name: 'X' });
-      const offsetYInput = firstShadowFields.getByRole('textbox', { name: 'Y' });
+      const offsetXInput = firstShadowFields.getByRole("textbox", {
+        name: "X",
+      });
+      const offsetYInput = firstShadowFields.getByRole("textbox", {
+        name: "Y",
+      });
       const blurInput = firstShadowFields.getByRole("textbox", {
         name: "Blur",
       });
@@ -301,8 +308,12 @@ test.describe("Tokens: Apply token", () => {
       await expect(thirdShadowFields).toBeVisible();
 
       // User adds values for the third shadow
-      const thirdOffsetXInput = thirdShadowFields.getByRole('textbox', { name: 'X' });
-      const thirdOffsetYInput = thirdShadowFields.getByRole('textbox', { name: 'Y' });
+      const thirdOffsetXInput = thirdShadowFields.getByRole("textbox", {
+        name: "X",
+      });
+      const thirdOffsetYInput = thirdShadowFields.getByRole("textbox", {
+        name: "Y",
+      });
       const thirdBlurInput = thirdShadowFields.getByRole("textbox", {
         name: "Blur",
       });
@@ -330,10 +341,10 @@ test.describe("Tokens: Apply token", () => {
 
       // Verify that the first shadow kept its values
       const firstOffsetXValue = await firstShadowFields
-        .getByRole('textbox', { name: 'X' })
+        .getByRole("textbox", { name: "X" })
         .inputValue();
       const firstOffsetYValue = await firstShadowFields
-        .getByRole('textbox', { name: 'Y' })
+        .getByRole("textbox", { name: "Y" })
         .inputValue();
       const firstBlurValue = await firstShadowFields
         .getByRole("textbox", { name: "Blur" })
@@ -359,10 +370,10 @@ test.describe("Tokens: Apply token", () => {
       await expect(newSecondShadowFields).toBeVisible();
 
       const secondOffsetXValue = await newSecondShadowFields
-        .getByRole('textbox', { name: 'X' })
+        .getByRole("textbox", { name: "X" })
         .inputValue();
       const secondOffsetYValue = await newSecondShadowFields
-        .getByRole('textbox', { name: 'Y' })
+        .getByRole("textbox", { name: "Y" })
         .inputValue();
       const secondBlurValue = await newSecondShadowFields
         .getByRole("textbox", { name: "Blur" })
@@ -412,10 +423,10 @@ test.describe("Tokens: Apply token", () => {
 
       // Verify first shadow values are still there
       const restoredFirstOffsetX = await firstShadowFields
-        .getByRole('textbox', { name: 'X' })
+        .getByRole("textbox", { name: "X" })
         .inputValue();
       const restoredFirstOffsetY = await firstShadowFields
-        .getByRole('textbox', { name: 'Y' })
+        .getByRole("textbox", { name: "Y" })
         .inputValue();
       const restoredFirstBlur = await firstShadowFields
         .getByRole("textbox", { name: "Blur" })
@@ -435,10 +446,10 @@ test.describe("Tokens: Apply token", () => {
 
       // Verify second shadow values are still there
       const restoredSecondOffsetX = await newSecondShadowFields
-        .getByRole('textbox', { name: 'X' })
+        .getByRole("textbox", { name: "X" })
         .inputValue();
       const restoredSecondOffsetY = await newSecondShadowFields
-        .getByRole('textbox', { name: 'Y' })
+        .getByRole("textbox", { name: "Y" })
         .inputValue();
       const restoredSecondBlur = await newSecondShadowFields
         .getByRole("textbox", { name: "Blur" })
@@ -616,7 +627,7 @@ test.describe("Tokens: Apply token", () => {
     await tokensSidebar
       .getByRole("button", { name: "dimension.sm" })
       .click({ button: "right" });
-    await tokenContextMenuForToken.getByText("Y").click();
+    await tokenContextMenuForToken.getByText("Y", { exact: true }).click();
 
     // Check if measures sections is visible on right sidebar
     const measuresSection = page.getByRole("region", {

@@ -97,7 +97,8 @@
    [:id ::sm/uuid]
    [:name ::sm/text]
    [:slug ::sm/text]
-   [:is-your-penpot :boolean]])
+   [:is-your-penpot :boolean]
+   [:owner-id ::sm/uuid]])
 
 (def ^:private schema:team
   [:map
@@ -248,7 +249,7 @@
 
 (defn add-org-info-to-team
   "Enriches a team map with organization information from Nitrate.
-  Adds organization-id, organization-name, organization-slug, and your-penpot fields.
+  Adds organization-id, organization-name, organization-slug, organization-owner-id, and your-penpot fields.
   Returns the original team unchanged if the request fails or org data is nil."
   [cfg team params]
   (try
@@ -259,6 +260,7 @@
                :organization-id (:id org)
                :organization-name (:name org)
                :organization-slug (:slug org)
+               :organization-owner-id (:owner-id org)
                :is-default (or (:is-default team) (true? (:is-your-penpot org))))
         team))
     (catch Throwable cause
