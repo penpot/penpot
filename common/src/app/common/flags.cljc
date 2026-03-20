@@ -136,6 +136,8 @@
     :webhooks
     ;; TODO: deprecate this flag and consolidate the code
     :render-wasm-dpr
+    ;; Show WASM renderer info label (hidden by default).
+    :render-wasm-info
     :hide-release-modal
     :subscriptions
     :subscriptions-old
@@ -162,7 +164,8 @@
     ;; Activates the nitrate module
     :nitrate
 
-    :mcp})
+    :mcp
+    :background-blur})
 
 (def all-flags
   (set/union email login varia))

@@ -966,7 +966,11 @@
     ptk/WatchEvent
     (watch [it state _]
       (if (features/active-feature? state "render-wasm/v1")
-        (let [objects      (dsh/lookup-page-objects state)
+        (let [;; v3 editor always passes :finalize? from keyword opts; when absent
+              ;; that binds nil and :or defaults do not apply — coerce so undo flags
+              ;; stay strict booleans for changes-builder schema validation.
+              finalize?    (boolean finalize?)
+              objects      (dsh/lookup-page-objects state)
               shape        (get objects id)
               new-shape?   (contains? (:workspace-new-text-shapes state) id)
               prev-content (:content shape)
@@ -978,8 +982,7 @@
                                      (select-keys shape [:selrect :points :width :height]))
               content-has-text? (v2-content-has-text? content)
               prev-content-has-text? (v2-content-has-text? prev-content)
-              new-size (when (and (not= :fixed (:grow-type shape))
-                                  content-has-text?)
+              new-size (when (not= :fixed (:grow-type shape))
                          (dwwt/get-wasm-text-new-size shape content))
               ;; New shapes: single undo on finalize only (no per-keystroke undo)
               effective-save-undo? (if new-shape? finalize? save-undo?)

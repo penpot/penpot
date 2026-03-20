@@ -31,7 +31,6 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
-   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
@@ -47,7 +46,6 @@
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.plugins.flags :refer [natural-child-ordering?]]
    [app.plugins.flex :as flex]
    [app.plugins.format :as format]
    [app.plugins.grid :as grid]
@@ -55,6 +53,7 @@
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
    [app.plugins.text :as text]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -91,7 +90,7 @@
        (let [value (parser/parse-keyword value)]
          (cond
            (not (contains? ctsi/event-types value))
-           (u/display-not-valid :trigger value)
+           (u/not-valid plugin-id :trigger value)
 
            :else
            (st/emit! (dwi/update-interaction
@@ -107,7 +106,7 @@
      (fn [_ value]
        (cond
          (or (not (number? value)) (not (pos? value)))
-         (u/display-not-valid :delay value)
+         (u/not-valid plugin-id :delay value)
 
          :else
          (st/emit! (dwi/update-interaction
@@ -127,7 +126,7 @@
                  (d/patch-object params))]
          (cond
            (not (sm/validate ctsi/schema:interaction interaction))
-           (u/display-not-valid :action interaction)
+           (u/not-valid plugin-id :action interaction)
 
            :else
            (st/emit! (dwi/update-interaction
@@ -192,7 +191,8 @@
    (assert (uuid? id))
 
    (let [data (u/locate-shape file-id page-id id)]
-     (-> (obj/reify {:name "ShapeProxy" :on-error u/handle-error}
+     (-> (obj/reify {:name "ShapeProxy"
+                     :on-error (u/handle-error plugin-id)}
            :$plugin {:enumerable false :get (fn [] plugin-id)}
            :$id {:enumerable false :get (fn [] id)}
            :$file {:enumerable false :get (fn [] file-id)}
@@ -218,10 +218,10 @@
                                 (not (str/blank? value)))]
                 (cond
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :name "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
 
                   (not valid?)
-                  (u/display-not-valid :name value)
+                  (u/not-valid plugin-id :name value)
 
                   :else
                   (st/emit! (dw/rename-shape-or-variant file-id page-id id value)))))}
@@ -233,10 +233,10 @@
             (fn [self value]
               (cond
                 (not (boolean? value))
-                (u/display-not-valid :blocked value)
+                (u/not-valid plugin-id :blocked value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :blocked "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :blocked "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")]
@@ -249,10 +249,10 @@
             (fn [self value]
               (cond
                 (not (boolean? value))
-                (u/display-not-valid :hidden value)
+                (u/not-valid plugin-id :hidden value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :hidden "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :hidden "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")]
@@ -265,10 +265,10 @@
             (fn [self value]
               (cond
                 (not (boolean? value))
-                (u/display-not-valid :visible value)
+                (u/not-valid plugin-id :visible value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :visible "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :visible "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")]
@@ -281,10 +281,10 @@
             (fn [self value]
               (cond
                 (not (boolean? value))
-                (u/display-not-valid :proportionLock value)
+                (u/not-valid plugin-id :proportionLock value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :proportionLock "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :proportionLock "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")]
@@ -299,10 +299,10 @@
                     value (keyword value)]
                 (cond
                   (not (contains? cts/horizontal-constraint-types value))
-                  (u/display-not-valid :constraintsHorizontal value)
+                  (u/not-valid plugin-id :constraintsHorizontal value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :constraintsHorizontal "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :constraintsHorizontal "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :constraints-h value))))))}
@@ -316,10 +316,10 @@
                     value (keyword value)]
                 (cond
                   (not (contains? cts/vertical-constraint-types value))
-                  (u/display-not-valid :constraintsVertical value)
+                  (u/not-valid plugin-id :constraintsVertical value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :constraintsVertical "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :constraintsVertical "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :constraints-v value))))))}
@@ -332,10 +332,10 @@
               (let [id (obj/get self "$id")]
                 (cond
                   (or (not (sm/valid-safe-int? value)) (< value 0))
-                  (u/display-not-valid :borderRadius value)
+                  (u/not-valid plugin-id :borderRadius value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :borderRadius "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :borderRadius "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-all-corners % value))))))}
@@ -348,10 +348,10 @@
               (let [id (obj/get self "$id")]
                 (cond
                   (not (sm/valid-safe-int? value))
-                  (u/display-not-valid :borderRadiusTopLeft value)
+                  (u/not-valid plugin-id :borderRadiusTopLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :borderRadiusTopLeft "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :borderRadiusTopLeft "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r1 value))))))}
@@ -364,10 +364,10 @@
               (let [id (obj/get self "$id")]
                 (cond
                   (not (sm/valid-safe-int? value))
-                  (u/display-not-valid :borderRadiusTopRight value)
+                  (u/not-valid plugin-id :borderRadiusTopRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :borderRadiusTopRight "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :borderRadiusTopRight "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r2 value))))))}
@@ -380,10 +380,10 @@
               (let [id (obj/get self "$id")]
                 (cond
                   (not (sm/valid-safe-int? value))
-                  (u/display-not-valid :borderRadiusBottomRight value)
+                  (u/not-valid plugin-id :borderRadiusBottomRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :borderRadiusBottomRight "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :borderRadiusBottomRight "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r3 value))))))}
@@ -396,10 +396,10 @@
               (let [id (obj/get self "$id")]
                 (cond
                   (not (sm/valid-safe-int? value))
-                  (u/display-not-valid :borderRadiusBottomLeft value)
+                  (u/not-valid plugin-id :borderRadiusBottomLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :borderRadiusBottomLeft "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :borderRadiusBottomLeft "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r4 value))))))}
@@ -412,10 +412,10 @@
               (let [id (obj/get self "$id")]
                 (cond
                   (or (not (sm/valid-safe-number? value)) (< value 0) (> value 1))
-                  (u/display-not-valid :opacity value)
+                  (u/not-valid plugin-id :opacity value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :opacity "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :opacity "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :opacity value))))))}
@@ -429,10 +429,10 @@
                     value (keyword value)]
                 (cond
                   (not (contains? cts/blend-modes value))
-                  (u/display-not-valid :blendMode value)
+                  (u/not-valid plugin-id :blendMode value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :blendMode "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :blendMode "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :blend-mode value))))))}
@@ -446,10 +446,10 @@
                     value (mapv #(shadow-defaults (parser/parse-shadow %)) value)]
                 (cond
                   (not (sm/validate [:vector ctss/schema:shadow] value))
-                  (u/display-not-valid :shadows value)
+                  (u/not-valid plugin-id :shadows value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :shadows "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :shadows "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :shadow value))))))}
@@ -465,10 +465,10 @@
                       value (blur-defaults (parser/parse-blur value))]
                   (cond
                     (not (sm/validate ctsb/schema:blur value))
-                    (u/display-not-valid :blur value)
+                    (u/not-valid plugin-id :blur value)
 
                     (not (r/check-permission plugin-id "content:write"))
-                    (u/display-not-valid :blur "Plugin doesn't have 'content:write' permission")
+                    (u/not-valid plugin-id :blur "Plugin doesn't have 'content:write' permission")
 
                     :else
                     (st/emit! (dwsh/update-shapes [id] #(assoc % :blur value)))))))}
@@ -482,10 +482,10 @@
                     value (parser/parse-exports value)]
                 (cond
                   (not (sm/validate [:vector ctse/schema:export] value))
-                  (u/display-not-valid :exports value)
+                  (u/not-valid plugin-id :exports value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :exports "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :exports "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value))))))}
@@ -499,10 +499,10 @@
               (let [id (obj/get self "$id")]
                 (cond
                   (not (sm/valid-safe-number? value))
-                  (u/display-not-valid :x value)
+                  (u/not-valid plugin-id :x value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :x "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :x "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dw/update-position id
@@ -517,10 +517,10 @@
               (let [id (obj/get self "$id")]
                 (cond
                   (not (sm/valid-safe-number? value))
-                  (u/display-not-valid :y value)
+                  (u/not-valid plugin-id :y value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :y "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :y "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dw/update-position id
@@ -562,10 +562,10 @@
             (fn [self value]
               (cond
                 (not (sm/valid-safe-number? value))
-                (u/display-not-valid :parentX value)
+                (u/not-valid plugin-id :parentX value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :parentX "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :parentX "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")
@@ -589,10 +589,10 @@
             (fn [self value]
               (cond
                 (not (sm/valid-safe-number? value))
-                (u/display-not-valid :parentY value)
+                (u/not-valid plugin-id :parentY value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :parentY "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :parentY "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")
@@ -616,10 +616,10 @@
             (fn [self value]
               (cond
                 (not (sm/valid-safe-number? value))
-                (u/display-not-valid :frameX value)
+                (u/not-valid plugin-id :frameX value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :frameX "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :frameX "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")
@@ -643,10 +643,10 @@
             (fn [self value]
               (cond
                 (not (sm/valid-safe-number? value))
-                (u/display-not-valid :frameY value)
+                (u/not-valid plugin-id :frameY value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :frameY "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :frameY "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")
@@ -680,10 +680,10 @@
             (fn [self value]
               (cond
                 (not (number? value))
-                (u/display-not-valid :rotation value)
+                (u/not-valid plugin-id :rotation value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :rotation "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :rotation "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [shape (u/proxy->shape self)]
@@ -696,10 +696,10 @@
             (fn [self value]
               (cond
                 (not (boolean? value))
-                (u/display-not-valid :flipX value)
+                (u/not-valid plugin-id :flipX value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :flipX "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :flipX "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")]
@@ -712,10 +712,10 @@
             (fn [self value]
               (cond
                 (not (boolean? value))
-                (u/display-not-valid :flipY value)
+                (u/not-valid plugin-id :flipY value)
 
                 (not (r/check-permission plugin-id "content:write"))
-                (u/display-not-valid :flipY "Plugin doesn't have 'content:write' permission")
+                (u/not-valid plugin-id :flipY "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (let [id (obj/get self "$id")]
@@ -734,13 +734,13 @@
                     value (parser/parse-fills value)]
                 (cond
                   (not (sm/validate [:vector types.fills/schema:fill] value))
-                  (u/display-not-valid :fills value)
+                  (u/not-valid plugin-id :fills value)
 
                   (cfh/text-shape? shape)
                   (st/emit! (dwt/update-attrs id {:fills value}))
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :fills "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :fills "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))}
@@ -754,10 +754,10 @@
                     value (parser/parse-strokes value)]
                 (cond
                   (not (sm/validate [:vector cts/schema:stroke] value))
-                  (u/display-not-valid :strokes value)
+                  (u/not-valid plugin-id :strokes value)
 
                   (not (r/check-permission plugin-id "content:write"))
-                  (u/display-not-valid :strokes "Plugin doesn't have 'content:write' permission")
+                  (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))}
@@ -802,13 +802,13 @@
            (fn [width height]
              (cond
                (or (not (sm/valid-safe-number? width)) (<= width 0))
-               (u/display-not-valid :resize width)
+               (u/not-valid plugin-id :resize width)
 
                (or (not (sm/valid-safe-number? height)) (<= height 0))
-               (u/display-not-valid :resize height)
+               (u/not-valid plugin-id :resize height)
 
                (not (r/check-permission plugin-id "content:write"))
-               (u/display-not-valid :resize "Plugin doesn't have 'content:write' permission")
+               (u/not-valid plugin-id :resize "Plugin doesn't have 'content:write' permission")
 
                :else
                (st/emit! (dw/update-dimensions [id] :width width)
@@ -819,13 +819,13 @@
              (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
                (cond
                  (not (number? angle))
-                 (u/display-not-valid :rotate-angle angle)
+                 (u/not-valid plugin-id :rotate-angle angle)
 
                  (and (some? center) (or (not (number? (:x center))) (not (number? (:y center)))))
-                 (u/display-not-valid :rotate-center center)
+                 (u/not-valid plugin-id :rotate-center center)
 
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :rotate "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :rotate "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (st/emit! (dw/increase-rotation [id] angle {:center center :delta? true})))))
@@ -835,7 +835,7 @@
              (let [ret-v (atom nil)]
                (cond
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :clone "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :clone "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (do (st/emit! (dws/duplicate-shapes #{id} :change-selection? false :return-ref ret-v))
@@ -845,7 +845,7 @@
            (fn []
              (cond
                (not (r/check-permission plugin-id "content:write"))
-               (u/display-not-valid :remove "Plugin doesn't have 'content:write' permission")
+               (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
 
                :else
                (st/emit! (dwsh/delete-shapes #{id}))))
@@ -855,7 +855,7 @@
            (fn [key]
              (cond
                (not (string? key))
-               (u/display-not-valid :getPluginData key)
+               (u/not-valid plugin-id :getPluginData key)
 
                :else
                (let [shape (u/locate-shape file-id page-id id)]
@@ -865,13 +865,13 @@
            (fn [key value]
              (cond
                (not (string? key))
-               (u/display-not-valid :setPluginData-key key)
+               (u/not-valid plugin-id :setPluginData-key key)
 
                (and (some? value) (not (string? value)))
-               (u/display-not-valid :setPluginData-value value)
+               (u/not-valid plugin-id :setPluginData-value value)
 
                (not (r/check-permission plugin-id "content:write"))
-               (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
+               (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'content:write' permission")
 
                :else
                (st/emit! (dp/set-plugin-data file-id :shape id page-id (keyword "plugin" (str plugin-id)) key value))))
@@ -885,10 +885,10 @@
            (fn [namespace key]
              (cond
                (not (string? namespace))
-               (u/display-not-valid :getSharedPluginData-namespace namespace)
+               (u/not-valid plugin-id :getSharedPluginData-namespace namespace)
 
                (not (string? key))
-               (u/display-not-valid :getSharedPluginData-key key)
+               (u/not-valid plugin-id :getSharedPluginData-key key)
 
                :else
                (let [shape (u/locate-shape file-id page-id id)]
@@ -898,16 +898,16 @@
            (fn [namespace key value]
              (cond
                (not (string? namespace))
-               (u/display-not-valid :setSharedPluginData-namespace namespace)
+               (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
 
                (not (string? key))
-               (u/display-not-valid :setSharedPluginData-key key)
+               (u/not-valid plugin-id :setSharedPluginData-key key)
 
                (and (some? value) (not (string? value)))
-               (u/display-not-valid :setSharedPluginData-value value)
+               (u/not-valid plugin-id :setSharedPluginData-value value)
 
                (not (r/check-permission plugin-id "content:write"))
-               (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
+               (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'content:write' permission")
 
                :else
                (st/emit! (dp/set-plugin-data file-id :shape id page-id (keyword "shared" namespace) key value))))
@@ -916,7 +916,7 @@
            (fn [namespace]
              (cond
                (not (string? namespace))
-               (u/display-not-valid :getSharedPluginDataKeys namespace)
+               (u/not-valid plugin-id :getSharedPluginDataKeys namespace)
 
                :else
                (let [shape (u/locate-shape file-id page-id id)]
@@ -931,12 +931,12 @@
                       (not (cfh/group-shape? shape))
                       (not (cfh/svg-raw-shape? shape))
                       (not (cfh/bool-shape? shape)))
-                 (u/display-not-valid :getChildren (:type shape))
+                 (u/not-valid plugin-id :getChildren (:type shape))
 
                  :else
                  (let [is-reversed? (ctl/flex-layout? shape)
                        reverse-fn
-                       (if (and (natural-child-ordering? plugin-id) is-reversed?)
+                       (if (and (u/natural-child-ordering? plugin-id) is-reversed?)
                          reverse identity)]
                    (->> (u/locate-shape file-id page-id id)
                         (:shapes)
@@ -951,19 +951,19 @@
                       (not (cfh/group-shape? shape))
                       (not (cfh/svg-raw-shape? shape))
                       (not (cfh/bool-shape? shape)))
-                 (u/display-not-valid :appendChild (:type shape))
+                 (u/not-valid plugin-id :appendChild (:type shape))
 
                  (not (shape-proxy? child))
-                 (u/display-not-valid :appendChild-child child)
+                 (u/not-valid plugin-id :appendChild-child child)
 
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :appendChild "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :appendChild "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (let [child-id     (obj/get child "$id")
                        is-reversed? (ctl/flex-layout? shape)
                        index
-                       (if (or (not (natural-child-ordering? plugin-id)) is-reversed?)
+                       (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
                          0
                          (count (:shapes shape)))]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
@@ -976,19 +976,19 @@
                       (not (cfh/group-shape? shape))
                       (not (cfh/svg-raw-shape? shape))
                       (not (cfh/bool-shape? shape)))
-                 (u/display-not-valid :insertChild (:type shape))
+                 (u/not-valid plugin-id :insertChild (:type shape))
 
                  (not (shape-proxy? child))
-                 (u/display-not-valid :insertChild-child child)
+                 (u/not-valid plugin-id :insertChild-child child)
 
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :insertChild "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :insertChild "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (let [child-id (obj/get child "$id")
                        is-reversed? (ctl/flex-layout? shape)
                        index
-                       (if (or (not (natural-child-ordering? plugin-id)) is-reversed?)
+                       (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
                          (- (count (:shapes shape)) index)
                          index)]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
@@ -999,10 +999,10 @@
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
                  (not (cfh/frame-shape? shape))
-                 (u/display-not-valid :addFlexLayout (:type shape))
+                 (u/not-valid plugin-id :addFlexLayout (:type shape))
 
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :addFlexLayout "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :addFlexLayout "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (do (st/emit! (dwsl/create-layout-from-id id :flex :from-frame? true :calculate-params? false))
@@ -1013,10 +1013,10 @@
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
                  (not (cfh/frame-shape? shape))
-                 (u/display-not-valid :addGridLayout (:type shape))
+                 (u/not-valid plugin-id :addGridLayout (:type shape))
 
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :addGridLayout "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :addGridLayout "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (do (st/emit! (dwsl/create-layout-from-id id :grid :from-frame? true :calculate-params? false))
@@ -1028,10 +1028,10 @@
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
                  (not (cfh/group-shape? shape))
-                 (u/display-not-valid :makeMask (:type shape))
+                 (u/not-valid plugin-id :makeMask (:type shape))
 
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :makeMask "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :makeMask "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (st/emit! (dwg/mask-group #{id})))))
@@ -1041,10 +1041,10 @@
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
                  (not (cfh/mask-shape? shape))
-                 (u/display-not-valid :removeMask (:type shape))
+                 (u/not-valid plugin-id :removeMask (:type shape))
 
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :removeMask "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :removeMask "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (st/emit! (dwg/unmask-group #{id})))))
@@ -1055,7 +1055,7 @@
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
                  (and (not (cfh/path-shape? shape)) (not (cfh/bool-shape? shape)))
-                 (u/display-not-valid :toD (:type shape))
+                 (u/not-valid plugin-id :toD (:type shape))
 
                  :else
                  (.toString (:content shape)))))
@@ -1066,13 +1066,13 @@
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
                  (not (cfh/text-shape? shape))
-                 (u/display-not-valid :getRange-shape "shape is not text")
+                 (u/not-valid plugin-id :getRange-shape "shape is not text")
 
                  (or (not (sm/valid-safe-int? start)) (< start 0) (> start end))
-                 (u/display-not-valid :getRange-start start)
+                 (u/not-valid plugin-id :getRange-start start)
 
                  (not (sm/valid-safe-int? end))
-                 (u/display-not-valid :getRange-end end)
+                 (u/not-valid plugin-id :getRange-end end)
 
                  :else
                  (text/text-range-proxy plugin-id file-id page-id id start end))))
@@ -1082,13 +1082,13 @@
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
                  (not (lib-typography-proxy? typography))
-                 (u/display-not-valid :applyTypography-typography typography)
+                 (u/not-valid plugin-id :applyTypography-typography typography)
 
                  (not (cfh/text-shape? shape))
-                 (u/display-not-valid :applyTypography-shape (:type shape))
+                 (u/not-valid plugin-id :applyTypography-shape (:type shape))
 
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :applyTypography "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :applyTypography "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (let [typography (u/proxy->library-typography typography)]
@@ -1099,10 +1099,10 @@
            (fn [index]
              (cond
                (not (sm/valid-safe-int? index))
-               (u/display-not-valid :setParentIndex index)
+               (u/not-valid plugin-id :setParentIndex index)
 
                (not (r/check-permission plugin-id "content:write"))
-               (u/display-not-valid :setParentIndex "Plugin doesn't have 'content:write' permission")
+               (u/not-valid plugin-id :setParentIndex "Plugin doesn't have 'content:write' permission")
 
                :else
                (st/emit! (dw/set-shape-index file-id page-id id index))))
@@ -1197,7 +1197,7 @@
              (let [value (parser/parse-export value)]
                (cond
                  (not (sm/validate ctse/schema:export value))
-                 (u/display-not-valid :export value)
+                 (u/not-valid plugin-id :export value)
 
                  :else
                  (let [shape (u/locate-shape file-id page-id id)
@@ -1233,7 +1233,7 @@
                        (d/patch-object (parser/parse-interaction trigger action delay)))]
                (cond
                  (not (sm/validate ctsi/schema:interaction interaction))
-                 (u/display-not-valid :addInteraction interaction)
+                 (u/not-valid plugin-id :addInteraction interaction)
 
                  :else
                  (let [index (-> (u/locate-shape file-id page-id id) (:interactions [])  count)]
@@ -1244,7 +1244,7 @@
            (fn [interaction]
              (cond
                (not (interaction-proxy? interaction))
-               (u/display-not-valid :removeInteraction interaction)
+               (u/not-valid plugin-id :removeInteraction interaction)
 
                :else
                (st/emit! (dwi/remove-interaction {:id id} (obj/get interaction "$index")))))
@@ -1255,16 +1255,16 @@
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
                  (not (sm/valid-safe-number? value))
-                 (u/display-not-valid :addRulerGuide "Value not a safe number")
+                 (u/not-valid plugin-id :addRulerGuide "Value not a safe number")
 
                  (not (contains? #{"vertical" "horizontal"} orientation))
-                 (u/display-not-valid :addRulerGuide "Orientation should be either 'vertical' or 'horizontal'")
+                 (u/not-valid plugin-id :addRulerGuide "Orientation should be either 'vertical' or 'horizontal'")
 
                  (not (cfh/frame-shape? shape))
-                 (u/display-not-valid :addRulerGuide "The shape is not a board")
+                 (u/not-valid plugin-id :addRulerGuide "The shape is not a board")
 
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :addRulerGuide "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (let [ruler-id  (uuid/next)
@@ -1285,10 +1285,10 @@
            (fn [_ value]
              (cond
                (not (rg/ruler-guide-proxy? value))
-               (u/display-not-valid :removeRulerGuide "Guide not provided")
+               (u/not-valid plugin-id :removeRulerGuide "Guide not provided")
 
                (not (r/check-permission plugin-id "content:write"))
-               (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'content:write' permission")
+               (u/not-valid plugin-id :removeRulerGuide "Plugin doesn't have 'content:write' permission")
 
                :else
                (let [guide (u/proxy->ruler-guide value)]
@@ -1298,25 +1298,26 @@
            {:this true
             :get
             (fn [_]
-              (let [tokens
+              (let [applied-tokens
                     (-> (u/locate-shape file-id page-id id)
-                        (get :applied-tokens))]
+                        (get :applied-tokens)
+                        (applied-tokens-plugin->applied-tokens))]
                 (reduce
                  (fn [acc [prop name]]
                    (obj/set! acc (json/write-camel-key prop) name))
                  #js {}
-                 tokens)))}
+                 applied-tokens)))}
 
            :applyToken
            {:enumerable false
             :schema [:tuple
                      [:fn token-proxy?]
-                     [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
+                     [:maybe [:set [:and ::sm/keyword [:fn token-attr?]]]]]
             :fn (fn [token attrs]
                   (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
-                        kw-attrs (into #{} (map keyword attrs))]
-                    (if (some #(not (cto/token-attr? %)) kw-attrs)
-                      (u/display-not-valid :applyToken attrs)
+                        kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
+                    (if (some #(not (token-attr? %)) kw-attrs)
+                      (u/not-valid plugin-id :applyToken attrs)
                       (st/emit!
                        (dwta/toggle-token {:token token
                                            :attrs kw-attrs
@@ -1338,10 +1339,10 @@
            (fn [pos value]
              (cond
                (not (nat-int? pos))
-               (u/display-not-valid :pos pos)
+               (u/not-valid plugin-id :pos pos)
 
                (not (string? value))
-               (u/display-not-valid :value value)
+               (u/not-valid plugin-id :value value)
 
                :else
                (let [shape     (u/locate-shape file-id page-id id)
@@ -1353,7 +1354,7 @@
            (fn [ids]
              (cond
                (or (not (seq ids)) (not (every? uuid/parse* ids)))
-               (u/display-not-valid :ids ids)
+               (u/not-valid plugin-id :ids ids)
 
                :else
                (let [shape     (u/locate-shape file-id page-id id)
@@ -1381,21 +1382,21 @@
              (fn [^js self children]
                (cond
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/display-not-valid :children "Plugin doesn't have 'content:write' permission")
+                 (u/not-valid plugin-id :children "Plugin doesn't have 'content:write' permission")
 
                  (not (every? shape-proxy? children))
-                 (u/display-not-valid :children "Every children needs to be shape proxies")
+                 (u/not-valid plugin-id :children "Every children needs to be shape proxies")
 
                  :else
                  (let [shape (u/proxy->shape self)
                        file-id (obj/get self "$file")
                        page-id (obj/get self "$page")
-                       reverse-fn (if (natural-child-ordering? plugin-id) reverse identity)
+                       reverse-fn (if (u/natural-child-ordering? plugin-id) reverse identity)
                        ids (->> children reverse-fn (map #(obj/get % "$id")))]
 
                    (cond
                      (not= (set ids) (set (:shapes shape)))
-                     (u/display-not-valid :children "Not all children are present in the input")
+                     (u/not-valid plugin-id :children "Not all children are present in the input")
 
                      :else
                      (st/emit! (dw/reorder-children file-id page-id (:id shape) ids))))))}))
@@ -1411,10 +1412,10 @@
                  (fn [_ value]
                    (cond
                      (not (boolean? value))
-                     (u/display-not-valid :clipContent value)
+                     (u/not-valid plugin-id :clipContent value)
 
                      (not (r/check-permission plugin-id "content:write"))
-                     (u/display-not-valid :clipContent "Plugin doesn't have 'content:write' permission")
+                     (u/not-valid plugin-id :clipContent "Plugin doesn't have 'content:write' permission")
 
                      :else
                      (st/emit! (dwsh/update-shapes [id] #(assoc % :show-content (not value))))))}
@@ -1427,10 +1428,10 @@
                  (fn [_ value]
                    (cond
                      (not (boolean? value))
-                     (u/display-not-valid :showInViewMode value)
+                     (u/not-valid plugin-id :showInViewMode value)
 
                      (not (r/check-permission plugin-id "content:write"))
-                     (u/display-not-valid :showInViewMode "Plugin doesn't have 'content:write' permission")
+                     (u/not-valid plugin-id :showInViewMode "Plugin doesn't have 'content:write' permission")
 
                      :else
                      (st/emit! (dwsh/update-shapes [id] #(assoc % :hide-in-viewer (not value))))))}
@@ -1462,10 +1463,10 @@
                               value (parser/parse-frame-guides value)]
                           (cond
                             (not (sm/validate [:vector ::ctg/grid] value))
-                            (u/display-not-valid :guides value)
+                            (u/not-valid plugin-id :guides value)
 
                             (not (r/check-permission plugin-id "content:write"))
-                            (u/display-not-valid :guides "Plugin doesn't have 'content:write' permission")
+                            (u/not-valid plugin-id :guides "Plugin doesn't have 'content:write' permission")
 
                             :else
                             (st/emit! (dwsh/update-shapes [id] #(assoc % :grids value))))))}
@@ -1487,10 +1488,10 @@
                          value (keyword value)]
                      (cond
                        (not (contains? #{:fix :auto} value))
-                       (u/display-not-valid :horizontalSizing value)
+                       (u/not-valid plugin-id :horizontalSizing value)
 
                        (not (r/check-permission plugin-id "content:write"))
-                       (u/display-not-valid :horizontalSizing "Plugin doesn't have 'content:write' permission")
+                       (u/not-valid plugin-id :horizontalSizing "Plugin doesn't have 'content:write' permission")
 
                        :else
                        (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
@@ -1503,10 +1504,10 @@
                          value (keyword value)]
                      (cond
                        (not (contains? #{:fix :auto} value))
-                       (u/display-not-valid :verticalSizing value)
+                       (u/not-valid plugin-id :verticalSizing value)
 
                        (not (r/check-permission plugin-id "content:write"))
-                       (u/display-not-valid :verticalSizing "Plugin doesn't have 'content:write' permission")
+                       (u/not-valid plugin-id :verticalSizing "Plugin doesn't have 'content:write' permission")
 
                        :else
                        (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}
@@ -1530,10 +1531,10 @@
                (let [segments (parser/parse-commands value)]
                  (cond
                    (not (r/check-permission plugin-id "content:write"))
-                   (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
+                   (u/not-valid plugin-id :content "Plugin doesn't have 'content:write' permission")
 
                    (not (sm/validate path/schema:segments segments))
-                   (u/display-not-valid :content segments)
+                   (u/not-valid plugin-id :content segments)
 
                    :else
                    (let [selrect (path/calc-selrect segments)
@@ -1556,13 +1557,13 @@
                        value)]
                  (cond
                    (not (r/check-permission plugin-id "content:write"))
-                   (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
+                   (u/not-valid plugin-id :content "Plugin doesn't have 'content:write' permission")
 
                    (not (cfh/path-shape? data))
-                   (u/display-not-valid :content-type type)
+                   (u/not-valid plugin-id :content-type type)
 
                    (not (sm/validate path/schema:segments segments))
-                   (u/display-not-valid :content segments)
+                   (u/not-valid plugin-id :content segments)
 
                    :else
                    (let [selrect (path/calc-selrect segments)

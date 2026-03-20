@@ -6,6 +6,7 @@ mod text_editor;
 pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
 
+use crate::error::{Error, Result};
 use crate::render::RenderState;
 use crate::shapes::Shape;
 use crate::tiles;
@@ -28,41 +29,44 @@ pub(crate) struct State {
 }
 
 impl State {
-    pub fn new(width: i32, height: i32) -> Self {
-        State {
-            render_state: RenderState::new(width, height),
+    pub fn try_new(width: i32, height: i32) -> Result<Self> {
+        Ok(State {
+            render_state: RenderState::try_new(width, height)?,
             text_editor_state: TextEditorState::new(),
             current_id: None,
             current_browser: 0,
             shapes: ShapesPool::new(),
             // TODO: Maybe this can be moved to a different object
             saved_shapes: None,
-        }
+        })
     }
 
     // Creates a new temporary shapes pool.
     // Will panic if a previous temporary pool exists.
-    pub fn start_temp_objects(mut self) -> Self {
+    pub fn start_temp_objects(mut self) -> Result<Self> {
         if self.saved_shapes.is_some() {
-            panic!("Tried to start a temp objects while the previous have not been restored");
+            return Err(Error::CriticalError(
+                "Tried to start a temp objects while the previous have not been restored"
+                    .to_string(),
+            ));
         }
         self.saved_shapes = Some(self.shapes);
         self.shapes = ShapesPool::new();
-        self
+        Ok(self)
     }
 
     // Disposes of the temporary shapes pool restoring the normal pool
     // Will panic if a there is no temporary pool.
-    pub fn end_temp_objects(mut self) -> Self {
-        self.shapes = self
-            .saved_shapes
-            .expect("Tried to end temp objects but not content to be restored is present");
+    pub fn end_temp_objects(mut self) -> Result<Self> {
+        self.shapes = self.saved_shapes.ok_or(Error::CriticalError(
+            "Tried to end temp objects but not content to be restored is present".to_string(),
+        ))?;
         self.saved_shapes = None;
-        self
+        Ok(self)
     }
 
-    pub fn resize(&mut self, width: i32, height: i32) {
-        self.render_state.resize(width, height);
+    pub fn resize(&mut self, width: i32, height: i32) -> Result<()> {
+        self.render_state.resize(width, height)
     }
 
     pub fn render_state_mut(&mut self) -> &mut RenderState {
@@ -87,38 +91,34 @@ impl State {
         self.render_state.render_from_cache(&self.shapes);
     }
 
-    pub fn render_sync(&mut self, timestamp: i32) -> Result<(), String> {
+    pub fn render_sync(&mut self, timestamp: i32) -> Result<()> {
         self.render_state
-            .start_render_loop(None, &self.shapes, timestamp, true)?;
-        Ok(())
+            .start_render_loop(None, &self.shapes, timestamp, true)
     }
 
-    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<(), String> {
+    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<()> {
         self.render_state
-            .start_render_loop(Some(id), &self.shapes, timestamp, true)?;
-        Ok(())
+            .start_render_loop(Some(id), &self.shapes, timestamp, true)
     }
 
-    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
-        // If zoom changed, we MUST rebuild the tile index before using it.
-        // Otherwise, the index will have tiles from the old zoom level, causing visible
-        // tiles to appear empty. This can happen if start_render_loop() is called before
-        // set_view_end() finishes rebuilding the index, or if set_view_end() hasn't been
-        // called yet.
-        let zoom_changed = self.render_state.zoom_changed();
-        if zoom_changed {
-            self.rebuild_tiles_shallow();
+    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<()> {
+        // If zoom changed (e.g. interrupted zoom render followed by pan), the
+        // tile index may be stale for the new viewport position. Rebuild the
+        // index so shapes are mapped to the correct tiles. We use
+        // rebuild_tile_index (NOT rebuild_tiles_shallow) to preserve the tile
+        // texture cache — otherwise cached tiles with shadows/blur would be
+        // cleared and re-rendered in fast mode without effects.
+        if self.render_state.zoom_changed() {
+            self.render_state.rebuild_tile_index(&self.shapes);
         }
 
         self.render_state
-            .start_render_loop(None, &self.shapes, timestamp, false)?;
-        Ok(())
+            .start_render_loop(None, &self.shapes, timestamp, false)
     }
 
-    pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
+    pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<()> {
         self.render_state
-            .process_animation_frame(None, &self.shapes, timestamp)?;
-        Ok(())
+            .process_animation_frame(None, &self.shapes, timestamp)
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -227,10 +227,10 @@ impl State {
         let _ = self.render_state.render_preview(&self.shapes, timestamp);
     }
 
-    pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
+    pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) -> Result<()> {
         // Index-based storage is safe
         self.render_state
-            .rebuild_modifier_tiles(&mut self.shapes, ids);
+            .rebuild_modifier_tiles(&mut self.shapes, ids)
     }
 
     pub fn font_collection(&self) -> &FontCollection {

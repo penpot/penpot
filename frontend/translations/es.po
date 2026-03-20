@@ -3790,8 +3790,11 @@ msgstr "Invitación enviada con éxito"
 msgid "notifications.invitation-link-copied"
 msgstr "Enlace de invitacion copiado"
 
-msgid "notifications.mcp.active-tab-switching.text"
+msgid "notifications.mcp.active-in-another-tab"
 msgstr "MCP está activo en otra pestaña. ¿Cambiar a esta?"
+
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP está ahora activo en esta pestaña."
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
@@ -6058,6 +6061,14 @@ msgstr "Eliminar desenfoque"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.title"
 msgstr "Desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Desenfoque de capa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Desenfoque de fondo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"

@@ -4,6 +4,7 @@ use mem::SerializableResult;
 use std::mem::size_of;
 use std::sync::{Mutex, OnceLock};
 
+use crate::error::{Error, Result};
 use crate::shapes::{Path, Segment, ToPath};
 use crate::{mem, with_current_shape, with_current_shape_mut, STATE};
 
@@ -41,12 +42,12 @@ impl From<[u8; size_of::<RawSegmentData>()]> for RawSegmentData {
 }
 
 impl TryFrom<&[u8]> for RawSegmentData {
-    type Error = String;
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+    type Error = Error;
+    fn try_from(bytes: &[u8]) -> Result<Self> {
         let data: [u8; RAW_SEGMENT_DATA_SIZE] = bytes
             .get(0..RAW_SEGMENT_DATA_SIZE)
             .and_then(|slice| slice.try_into().ok())
-            .ok_or("Invalid path data".to_string())?;
+            .ok_or(Error::CriticalError("Invalid path data".to_string()))?;
         Ok(RawSegmentData::from(data))
     }
 }
@@ -154,10 +155,14 @@ fn get_path_upload_buffer() -> &'static Mutex<Vec<u8>> {
 }
 
 #[no_mangle]
-pub extern "C" fn start_shape_path_buffer() {
+#[wasm_error]
+pub extern "C" fn start_shape_path_buffer() -> Result<()> {
     let buffer = get_path_upload_buffer();
-    let mut buffer = buffer.lock().unwrap();
+    let mut buffer = buffer
+        .lock()
+        .map_err(|_| Error::CriticalError("Failed to lock path buffer".to_string()))?;
     buffer.clear();
+    Ok(())
 }
 
 #[no_mangle]
@@ -165,32 +170,40 @@ pub extern "C" fn start_shape_path_buffer() {
 pub extern "C" fn set_shape_path_chunk_buffer() -> Result<()> {
     let bytes = mem::bytes();
     let buffer = get_path_upload_buffer();
-    let mut buffer = buffer.lock().unwrap();
+    let mut buffer = buffer
+        .lock()
+        .map_err(|_| Error::CriticalError("Failed to lock path buffer".to_string()))?;
     buffer.extend_from_slice(&bytes);
     mem::free_bytes()?;
     Ok(())
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_path_buffer() {
+#[wasm_error]
+pub extern "C" fn set_shape_path_buffer() -> Result<()> {
+    let buffer = get_path_upload_buffer();
+    let mut buffer = buffer
+        .lock()
+        .map_err(|_| Error::CriticalError("Failed to lock path buffer".to_string()))?;
+    let chunk_size = size_of::<RawSegmentData>();
+    if !buffer.len().is_multiple_of(chunk_size) {
+        // FIXME
+        println!("Warning: buffer length is not a multiple of chunk size!");
+    }
+    let mut segments = Vec::new();
+    for (i, chunk) in buffer.chunks(chunk_size).enumerate() {
+        match RawSegmentData::try_from(chunk) {
+            Ok(seg) => segments.push(Segment::from(seg)),
+            Err(e) => println!("Error at segment {}: {}", i, e),
+        }
+    }
+
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        let buffer = get_path_upload_buffer();
-        let mut buffer = buffer.lock().unwrap();
-        let chunk_size = size_of::<RawSegmentData>();
-        if !buffer.len().is_multiple_of(chunk_size) {
-            // FIXME
-            println!("Warning: buffer length is not a multiple of chunk size!");
-        }
-        let mut segments = Vec::new();
-        for (i, chunk) in buffer.chunks(chunk_size).enumerate() {
-            match RawSegmentData::try_from(chunk) {
-                Ok(seg) => segments.push(Segment::from(seg)),
-                Err(e) => println!("Error at segment {}: {}", i, e),
-            }
-        }
         shape.set_path_segments(segments);
-        buffer.clear();
     });
+    buffer.clear();
+
+    Ok(())
 }
 
 #[no_mangle]

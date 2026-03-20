@@ -64,7 +64,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.md")
-                                       :on-update-shape dwta/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -89,11 +89,11 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape dwta/update-shape-radius-all})
+                                       :on-update-shape dwta/update-shape-radius})
                     (dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.md")
-                                       :on-update-shape dwta/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -117,14 +117,14 @@
                     (dwta/apply-token {:attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
                                        :shape-ids [(:id rect-1)]
-                                       :on-update-shape dwta/update-shape-radius-all})
+                                       :on-update-shape dwta/update-shape-radius})
                     ;; Apply single `:r1` attribute to same shape
                     ;; while removing other attributes from the border-radius set
                     ;; but keep `:r4` for testing purposes
                     (dwta/apply-token {:attributes #{:r1 :r2 :r3}
                                        :token (toht/get-token file "borderRadius.md")
                                        :shape-ids [(:id rect-1)]
-                                       :on-update-shape dwta/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -153,7 +153,7 @@
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape dwta/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -762,7 +762,7 @@
             rect-2 (cths/get-shape file :rect-2)
             events [(dwta/toggle-token {:shape-ids [(:id rect-1) (:id rect-2)]
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}
-                                                           :on-update-shape dwta/update-shape-radius-all}
+                                                           :on-update-shape dwta/update-shape-radius}
                                         :token (toht/get-token file "borderRadius.md")})]]
         (tohs/run-store-async
          store done events

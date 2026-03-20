@@ -84,6 +84,7 @@ Penpot:
         distributeHorizontal(shapes: Shape[]): void;
         distributeVertical(shapes: Shape[]): void;
         flatten(shapes: Shape[]): Path[];
+        createVariantFromComponents(shapes: Board[]): VariantContainer;
     }
     ```
 
@@ -823,6 +824,24 @@ Penpot:
           to flatten
 
         Returns Path[]
+      createVariantFromComponents: |-
+        ```
+        createVariantFromComponents(shapes: Board[]): VariantContainer
+        ```
+
+        Combine several standard Components into a VariantComponent. Similar to doing it
+        with the contextual menu on the Penpot interface.
+        All the shapes passed as arguments should be main instances.
+
+        Parameters
+
+        * shapes: Board[]
+
+          A list of main instances of the components to combine.
+
+        Returns VariantContainer
+
+        The variant container created
 ActiveUser:
   overview: |-
     Interface ActiveUser
@@ -1071,10 +1090,10 @@ Board:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -1090,14 +1109,14 @@ Board:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -1114,7 +1133,7 @@ Board:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -1193,12 +1212,20 @@ Board:
         ```
 
         The horizontal sizing behavior of the board.
+        It can be one of the following values:
+
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'auto': The container fits the content.
       verticalSizing: |-
         ```
         verticalSizing?: "auto" | "fix"
         ```
 
         The vertical sizing behavior of the board.
+        It can be one of the following values:
+
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'auto': The container fits the content.
       fills: |-
         ```
         fills: Fill[]
@@ -1469,10 +1496,10 @@ Board:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -1488,14 +1515,14 @@ Board:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -1881,7 +1908,7 @@ Board:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -1894,7 +1921,9 @@ Board:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -2180,10 +2209,10 @@ VariantContainer:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -2199,14 +2228,14 @@ VariantContainer:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -2223,7 +2252,7 @@ VariantContainer:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -2250,7 +2279,7 @@ VariantContainer:
     * Board
       + VariantContainer
 
-    Referenced by: ContextTypesUtils
+    Referenced by: Board, Boolean, Context, ContextTypesUtils, Ellipse, Group, Image, Path, Penpot, Rectangle, ShapeBase, SvgRaw, Text, VariantContainer
   members:
     Properties:
       type: |-
@@ -2301,12 +2330,20 @@ VariantContainer:
         ```
 
         The horizontal sizing behavior of the board.
+        It can be one of the following values:
+
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'auto': The container fits the content.
       verticalSizing: |-
         ```
         verticalSizing?: "auto" | "fix"
         ```
 
         The vertical sizing behavior of the board.
+        It can be one of the following values:
+
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'auto': The container fits the content.
       fills: |-
         ```
         fills: Fill[]
@@ -2581,10 +2618,10 @@ VariantContainer:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -2600,14 +2637,14 @@ VariantContainer:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -2993,7 +3030,7 @@ VariantContainer:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -3006,7 +3043,9 @@ VariantContainer:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -3279,10 +3318,10 @@ Boolean:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -3298,14 +3337,14 @@ Boolean:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -3322,7 +3361,7 @@ Boolean:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -3642,10 +3681,10 @@ Boolean:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -3661,14 +3700,14 @@ Boolean:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -4005,7 +4044,7 @@ Boolean:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -4018,7 +4057,9 @@ Boolean:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -4575,8 +4616,8 @@ CommonLayout:
         leftPadding: number;
         horizontalSizing: "fill"
         | "auto"
-        | "fit-content";
-        verticalSizing: "fill" | "auto" | "fit-content";
+        | "fix";
+        verticalSizing: "fill" | "auto" | "fix";
         remove(): void;
     }
     ```
@@ -4706,26 +4747,26 @@ CommonLayout:
         The `leftPadding` property specifies the padding at the left of the container.
       horizontalSizing: |-
         ```
-        horizontalSizing: "fill" | "auto" | "fit-content"
+        horizontalSizing: "fill" | "auto" | "fix"
         ```
 
         The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fit-content': The container fits the content.
-        * 'fill': The container fills the available space.
-        * 'auto': The container size is determined automatically.
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fill': The container fills the available space. Only can be set if it's inside another layout.
+        * 'auto': The container fits the content.
       verticalSizing: |-
         ```
-        verticalSizing: "fill" | "auto" | "fit-content"
+        verticalSizing: "fill" | "auto" | "fix"
         ```
 
         The `verticalSizing` property specifies the vertical sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fit-content': The container fits the content.
-        * 'fill': The container fills the available space.
-        * 'auto': The container size is determined automatically.
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fill': The container fills the available space. Only can be set if it's inside another layout.
+        * 'auto': The container fits the content.
     Methods:
       remove: |-
         ```
@@ -4808,6 +4849,7 @@ Context:
         distributeHorizontal(shapes: Shape[]): void;
         distributeVertical(shapes: Shape[]): void;
         flatten(shapes: Shape[]): Path[];
+        createVariantFromComponents(shapes: Board[]): VariantContainer;
     }
     ```
   members:
@@ -5449,6 +5491,24 @@ Context:
           to flatten
 
         Returns Path[]
+      createVariantFromComponents: |-
+        ```
+        createVariantFromComponents(shapes: Board[]): VariantContainer
+        ```
+
+        Combine several standard Components into a VariantComponent. Similar to doing it
+        with the contextual menu on the Penpot interface.
+        All the shapes passed as arguments should be main instances.
+
+        Parameters
+
+        * shapes: Board[]
+
+          A list of main instances of the components to combine.
+
+        Returns VariantContainer
+
+        The variant container created
 ContextGeometryUtils:
   overview: |-
     Interface ContextGeometryUtils
@@ -5859,10 +5919,10 @@ Ellipse:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -5878,14 +5938,14 @@ Ellipse:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -5902,7 +5962,7 @@ Ellipse:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -6192,10 +6252,10 @@ Ellipse:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -6211,14 +6271,14 @@ Ellipse:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -6500,7 +6560,7 @@ Ellipse:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -6513,7 +6573,9 @@ Ellipse:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -7244,8 +7306,8 @@ FlexLayout:
         leftPadding: number;
         horizontalSizing: "fill"
         | "auto"
-        | "fit-content";
-        verticalSizing: "fill" | "auto" | "fit-content";
+        | "fix";
+        verticalSizing: "fill" | "auto" | "fix";
         remove(): void;
         dir: "row" | "row-reverse" | "column" | "column-reverse";
         wrap?: "wrap" | "nowrap";
@@ -7379,26 +7441,26 @@ FlexLayout:
         The `leftPadding` property specifies the padding at the left of the container.
       horizontalSizing: |-
         ```
-        horizontalSizing: "fill" | "auto" | "fit-content"
+        horizontalSizing: "fill" | "auto" | "fix"
         ```
 
         The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fit-content': The container fits the content.
-        * 'fill': The container fills the available space.
-        * 'auto': The container size is determined automatically.
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fill': The container fills the available space. Only can be set if it's inside another layout.
+        * 'auto': The container fits the content.
       verticalSizing: |-
         ```
-        verticalSizing: "fill" | "auto" | "fit-content"
+        verticalSizing: "fill" | "auto" | "fix"
         ```
 
         The `verticalSizing` property specifies the vertical sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fit-content': The container fits the content.
-        * 'fill': The container fills the available space.
-        * 'auto': The container size is determined automatically.
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fill': The container fills the available space. Only can be set if it's inside another layout.
+        * 'auto': The container fits the content.
       dir: |-
         ```
         dir: "row" | "row-reverse" | "column" | "column-reverse"
@@ -7802,8 +7864,8 @@ GridLayout:
         leftPadding: number;
         horizontalSizing: "fill"
         | "auto"
-        | "fit-content";
-        verticalSizing: "fill" | "auto" | "fit-content";
+        | "fix";
+        verticalSizing: "fill" | "auto" | "fix";
         remove(): void;
         dir: "row" | "column";
         rows: Track[];
@@ -7946,26 +8008,26 @@ GridLayout:
         The `leftPadding` property specifies the padding at the left of the container.
       horizontalSizing: |-
         ```
-        horizontalSizing: "fill" | "auto" | "fit-content"
+        horizontalSizing: "fill" | "auto" | "fix"
         ```
 
         The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fit-content': The container fits the content.
-        * 'fill': The container fills the available space.
-        * 'auto': The container size is determined automatically.
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fill': The container fills the available space. Only can be set if it's inside another layout.
+        * 'auto': The container fits the content.
       verticalSizing: |-
         ```
-        verticalSizing: "fill" | "auto" | "fit-content"
+        verticalSizing: "fill" | "auto" | "fix"
         ```
 
         The `verticalSizing` property specifies the vertical sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fit-content': The container fits the content.
-        * 'fill': The container fills the available space.
-        * 'auto': The container size is determined automatically.
+        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fill': The container fills the available space. Only can be set if it's inside another layout.
+        * 'auto': The container fits the content.
       dir: |-
         ```
         dir: "row" | "column"
@@ -8288,10 +8350,10 @@ Group:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -8307,14 +8369,14 @@ Group:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -8331,7 +8393,7 @@ Group:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -8627,10 +8689,10 @@ Group:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -8646,14 +8708,14 @@ Group:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -9001,7 +9063,7 @@ Group:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -9014,7 +9076,9 @@ Group:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -9532,10 +9596,10 @@ Image:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -9551,14 +9615,14 @@ Image:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -9575,7 +9639,7 @@ Image:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -9865,10 +9929,10 @@ Image:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -9884,14 +9948,14 @@ Image:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -10173,7 +10237,7 @@ Image:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -10186,7 +10250,9 @@ Image:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -12997,10 +13063,10 @@ Path:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -13016,14 +13082,14 @@ Path:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -13040,7 +13106,7 @@ Path:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -13354,10 +13420,10 @@ Path:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -13373,14 +13439,14 @@ Path:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -13676,7 +13742,7 @@ Path:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -13689,7 +13755,9 @@ Path:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -14324,10 +14392,10 @@ Rectangle:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -14343,14 +14411,14 @@ Rectangle:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -14367,7 +14435,7 @@ Rectangle:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -14659,10 +14727,10 @@ Rectangle:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -14678,14 +14746,14 @@ Rectangle:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -14967,7 +15035,7 @@ Rectangle:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -14980,7 +15048,9 @@ Rectangle:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -15360,10 +15430,10 @@ ShapeBase:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -15379,14 +15449,14 @@ ShapeBase:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -15403,7 +15473,7 @@ ShapeBase:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -15694,10 +15764,10 @@ ShapeBase:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -15713,14 +15783,14 @@ ShapeBase:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -16002,7 +16072,7 @@ ShapeBase:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -16015,7 +16085,9 @@ ShapeBase:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -16426,10 +16498,10 @@ SvgRaw:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -16445,14 +16517,14 @@ SvgRaw:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -16469,7 +16541,7 @@ SvgRaw:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -16754,10 +16826,10 @@ SvgRaw:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -16773,14 +16845,14 @@ SvgRaw:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -17066,7 +17138,7 @@ SvgRaw:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -17079,7 +17151,9 @@ SvgRaw:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -17345,10 +17419,10 @@ Text:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -17364,14 +17438,14 @@ Text:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -17388,7 +17462,7 @@ Text:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         switchVariant(pos: number, value: string): void;
-        combineAsVariants(ids: string[]): void;
+        combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
         resize(width: number, height: number): void;
         rotate(angle: number, center?: { x: number; y: number } | null): void;
@@ -17691,10 +17765,10 @@ Text:
             x: string;
             y: string;
             all: string;
-            r1: string;
-            r2: string;
-            r3: string;
-            r4: string;
+            borderRadiusTopLeft: string;
+            borderRadiusTopRight: string;
+            borderRadiusBottomRight: string;
+            borderRadiusBottomLeft: string;
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
@@ -17710,14 +17784,14 @@ Text:
             layoutItemMaxH: string;
             rowGap: string;
             columnGap: string;
-            p1: string;
-            p2: string;
-            p3: string;
-            p4: string;
-            m1: string;
-            m2: string;
-            m3: string;
-            m4: string;
+            paddingLeft: string;
+            paddingTop: string;
+            paddingRight: string;
+            paddingBottom: string;
+            marginLeft: string;
+            marginTop: string;
+            marginRight: string;
+            marginBottom: string;
             textCase: string;
             textDecoration: string;
             typography: string;
@@ -18107,7 +18181,7 @@ Text:
         Returns void
       combineAsVariants: |-
         ```
-        combineAsVariants(ids: string[]): void
+        combineAsVariants(ids: string[]): VariantContainer
         ```
 
         Combine several standard Components into a VariantComponent. Similar to doing it with the contextual menu
@@ -18120,7 +18194,9 @@ Text:
 
           A list of ids of the main instances of the components to combine with this one.
 
-        Returns void
+        Returns VariantContainer
+
+        The variant container created
       isVariantHead: |-
         ```
         isVariantHead(): boolean
@@ -22618,7 +22694,11 @@ TokenBorderRadiusProps:
     =================================
 
     ```
-    TokenBorderRadiusProps: "r1" | "r2" | "r3" | "r4"
+    TokenBorderRadiusProps:
+        | "borderRadiusTopLeft"
+        | "borderRadiusTopRight"
+        | "borderRadiusBottomRight"
+        | "borderRadiusBottomLeft"
     ```
 
     The properties that a BorderRadius token can be applied to.
@@ -22770,14 +22850,14 @@ TokenSpacingProps:
     TokenSpacingProps:
         | "rowGap"
         | "columnGap"
-        | "p1"
-        | "p2"
-        | "p3"
-        | "p4"
-        | "m1"
-        | "m2"
-        | "m3"
-        | "m4"
+        | "paddingLeft"
+        | "paddingTop"
+        | "paddingRight"
+        | "paddingBottom"
+        | "marginLeft"
+        | "marginTop"
+        | "marginRight"
+        | "marginBottom"
     ```
 
     The properties that a Spacing token can be applied to.

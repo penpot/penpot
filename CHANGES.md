@@ -32,6 +32,9 @@
 ### :sparkles: New features & Enhancements
 
 - Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
+- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112), [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
+- Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
+- Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 
 ### :bug: Bugs fixed
 
@@ -43,6 +46,8 @@
 - Update copy on penpot update message [Taiga #12924](https://tree.taiga.io/project/penpot/issue/12924)
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
 - Fix tooltip shown on tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
+- Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
+
 
 ## 2.14.0 (Unreleased)
 

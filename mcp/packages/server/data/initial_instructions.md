@@ -282,7 +282,7 @@ Variants are a system for grouping related component versions along named proper
   - check with `isVariantContainer()`
   - property `variants: Variants`.
 * `Variants`: Defines the combinations of property values for which component variants can exist and manages the concrete component variants. 
-  - `properties: string[]` (ordered list of property names); `addProperty()`, `renameProperty(pos, name)`, `currentValues(property)`
+  - `properties: string[]` (ordered list of property names); `addProperty(): void`, `renameProperty(pos, name)`, `currentValues(property)`
   - `variantComponents(): LibraryVariantComponent[]` 
 * `LibraryVariantComponent` (extends `LibraryComponent`): full library component with metadata, for which `isVariant()` returns true.
   - `variantProps: { [property: string]: string }` (this component's value for each property)
@@ -292,11 +292,11 @@ Variants are a system for grouping related component versions along named proper
 Properties are often addressed positionally: `pos` parameter in various methods = index in `Variants.properties`.
 
 **Creating a variant group**:
-- `component.transformInVariant(): null`: Converts a standard component into a variant group, creating a `VariantContainer` and a second duplicate variant. 
-  Both start with a default property `Property 1` with values `Value 1` / `Value 2`; there is no name-based auto-parsing.
-- `board.combineAsVariants(ids: string[]): null`: Combines the board (a main component instance) with other main components (referenced via IDs) into a new variant group. 
-  All components end up inside a single new `VariantContainer` on the canvas.
-- In both cases, look for the created `VariantContainer` on the page, and then edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
+- `penpot.createVariantFromComponents(mainInstances: Board[]): VariantContainer`: Combines several main component instances into a new variant group. 
+  All components end up inside a single new container on the canvas.
+  NOTE: The returned instance `variantContainer` is not usable but has an usable id; use `penpot.findShapeById(variantContainer.id)` to get the actual instance you can work with.
+  The container's `Variants` instance is initialised with one property `Property 1`, with the property values set to the respective component's name.
+- After creation, edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
 
 **Adding a variant to an existing group**:
 Use `variantContainer.appendChild(mainInstance)` to move a component's main instance into the container, then set its position manually and assign property values via `setVariantProperty`.
@@ -342,7 +342,7 @@ Applying tokens:
     (if properties is undefined, use a default property based on the token type - not usually recommended).
     `TokenProperty` is a union type; possible values are:
     - "all": applies the token to all properties it can control
-    - TokenBorderRadiusProps: "r1", "r2", "r3", "r4"
+    - TokenBorderRadiusProps: "borderRadiusTopLeft", "borderRadiusTopRight", "borderRadiusBottomRight", "borderRadiusBottomLeft"
     - TokenShadowProps: "shadow"
     - TokenColorProps: "fill", "strokeColor"
     - TokenDimensionProps: "x", "y", "strokeWidth"
@@ -353,7 +353,7 @@ Applying tokens:
     - TokenNumberProps: "rotation"
     - TokenOpacityProps: "opacity"
     - TokenSizingProps: "width", "height", "layoutItemMinW", "layoutItemMaxW", "layoutItemMinH", "layoutItemMaxH"
-    - TokenSpacingProps: "rowGap", "columnGap", "p1", "p2", "p3", "p4", "m1", "m2", "m3", "m4"
+    - TokenSpacingProps: "rowGap", "columnGap", "paddingLeft", "paddingTop", "paddingRight", "paddingBottom", "marginLeft", "marginTop", "marginRight", "marginBottom"
     - TokenBorderWidthProps: "strokeWidth"
     - TokenTextCaseProps: "textCase"
     - TokenTextDecorationProps: "textDecoration"

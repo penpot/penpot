@@ -17,6 +17,11 @@
 (defn- has-blur? [shape]
   (:blur shape))
 
+(defn- blur-css-property [shape]
+  (if (= :background-blur (get-in shape [:blur :type]))
+    :backdrop-filter
+    :filter))
+
 (mf/defc blur-panel
   [{:keys [objects shapes]}]
   (let [shapes (->> shapes (filter has-blur?))]
@@ -27,15 +32,18 @@
          :class (stl/css :title-wrapper)
          :title-class (stl/css :blur-attr-title)}
         (when (= (count shapes) 1)
-          [:> copy-button* {:data  (css/get-css-property objects (first shapes) :filter)
-                            :class (stl/css :copy-btn-title)}])]
+          (let [prop (blur-css-property (first shapes))]
+            [:> copy-button* {:data  (css/get-css-property objects (first shapes) prop)
+                              :class (stl/css :copy-btn-title)}]))]
 
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]
-          [:div {:class (stl/css :blur-row)
-                 :key (dm/str "block-" (:id shape) "-blur")}
-           [:div {:class (stl/css :global/attr-label)} "Filter"]
-           [:div {:class (stl/css :global/attr-value)}
-            [:> copy-button* {:data (css/get-css-property objects shape :filter)}
-             [:div {:class (stl/css :button-children)}
-              (css/get-css-value objects shape :filter)]]]])]])))
+          (let [prop (blur-css-property shape)]
+            [:div {:class (stl/css :blur-row)
+                   :key (dm/str "block-" (:id shape) "-blur")}
+             [:div {:class (stl/css :global/attr-label)}
+              (if (= prop :backdrop-filter) "Backdrop Filter" "Filter")]
+             [:div {:class (stl/css :global/attr-value)}
+              [:> copy-button* {:data (css/get-css-property objects shape prop)}
+               [:div {:class (stl/css :button-children)}
+                (css/get-css-value objects shape prop)]]]]))]])))

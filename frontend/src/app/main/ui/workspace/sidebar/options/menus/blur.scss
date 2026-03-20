@@ -66,6 +66,10 @@
       box-sizing: border-box;
       border: deprecated.$s-1 solid var(--input-border-color);
     }
+    .blur-type-select {
+      flex-grow: 1;
+      border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
+    }
   }
   .actions {
     @include deprecated.flexRow;

@@ -215,6 +215,7 @@ export class WorkspacePage extends BaseWebSocketPage {
   async goToWorkspace({
     fileId = this.fileId ?? WorkspacePage.anyFileId,
     pageId = this.pageId ?? WorkspacePage.anyPageId,
+    pageName = "Page 1",
   } = {}) {
     await this.page.goto(
       `/#/workspace?team-id=${WorkspacePage.anyTeamId}&file-id=${fileId}&page-id=${pageId}`,
@@ -222,12 +223,12 @@ export class WorkspacePage extends BaseWebSocketPage {
 
     this.#ws = await this.waitForNotificationsWebSocket();
     await this.#ws.mockOpen();
-    await this.#waitForWebSocketReadiness();
+    await this.#waitForWebSocketReadiness(pageName);
   }
 
-  async #waitForWebSocketReadiness() {
+  async #waitForWebSocketReadiness(pageName) {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
-    await expect(this.pageName).toHaveText("Page 1", { timeout: 30000 });
+    await expect(this.pageName).toHaveText(pageName, { timeout: 30000 })
   }
 
   async sendPresenceMessage(fixture) {

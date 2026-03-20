@@ -55,6 +55,8 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
 
     try {
         let wsUrl = baseUrl || PENPOT_MCP_WEBSOCKET_URL;
+        let wsError: unknown | undefined;
+
         if (token) {
             wsUrl += `?userToken=${encodeURIComponent(token)}`;
         }
@@ -79,14 +81,18 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         };
 
         ws.onclose = (event: CloseEvent) => {
-            console.log("Disconnected from MCP server");
-            const message = event.reason || undefined;
-            updateConnectionStatus("disconnected", "Disconnected", false, message);
+            // If we've send the error update we don't send the disconnect as well
+            if (!wsError) {
+                console.log("Disconnected from MCP server");
+                const message = event.reason || undefined;
+                updateConnectionStatus("disconnected", "Disconnected", false, message);
+            }
             ws = null;
         };
 
         ws.onerror = (error) => {
             console.error("WebSocket error:", error);
+            wsError = error;
             // note: WebSocket error events typically don't contain detailed error messages
             updateConnectionStatus("error", "Connection error", false);
         };

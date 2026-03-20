@@ -14,10 +14,10 @@
    [app.plugins.utils :as u]))
 
 (defn ^:export centerShapes
-  [shapes]
+  [plugin-id shapes]
   (cond
     (not (every? shape/shape-proxy? shapes))
-    (u/display-not-valid :centerShapes shapes)
+    (u/not-valid plugin-id :centerShapes shapes)
 
     :else
     (let [shapes (->> shapes (map u/proxy->shape))]

@@ -23,6 +23,7 @@
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.texts :as dwt]
    [app.main.router :as rt]
    [app.util.globals :refer [global]]
@@ -212,7 +213,11 @@
       (update [_ state]
         (if (or (= :disconnect type) (= :leave-file type))
           (update state :workspace-presence dissoc session-id)
-          (update state :workspace-presence update-presence))))))
+          (update state :workspace-presence update-presence)))
+
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (rx/of (mcp/manage-mcp-notification))))))
 
 (defn handle-pointer-update
   [{:keys [page-id session-id position zoom zoom-inverse vbox vport] :as msg}]

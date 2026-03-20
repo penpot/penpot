@@ -292,9 +292,10 @@ pub extern "C" fn clear_shape_text() {
 #[wasm_error]
 pub extern "C" fn set_shape_text_content() -> crate::error::Result<()> {
     let bytes = mem::bytes();
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        let raw_text_data = RawParagraph::try_from(&bytes).unwrap();
+    let raw_text_data = RawParagraph::try_from(&bytes)
+        .map_err(|_| Error::CriticalError("Invalid text data".to_string()))?;
 
+    with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.add_paragraph(raw_text_data.into()).map_err(|_| {
             Error::RecoverableError(format!(
                 "Error with set_shape_text_content on {:?}",

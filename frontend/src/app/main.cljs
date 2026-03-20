@@ -58,6 +58,14 @@
   []
   (mf/render! app-root (mf/element ui/app)))
 
+(defn- initialize-rasterizer
+  []
+  (ptk/reify ::initialize-rasterizer
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (feat/active-feature? state "render-wasm/v1")
+        (thr/init!)))))
+
 (defn initialize
   []
   (ptk/reify ::initialize
@@ -93,12 +101,12 @@
             (rx/map deref)
             (rx/filter dp/is-authenticated?)
             (rx/take 1)
-            (rx/map #(ws/initialize)))))
+            (rx/map #(ws/initialize)))
 
-    ptk/EffectEvent
-    (effect [_ state _]
-      (when-not (feat/active-feature? state "render-wasm/v1")
-        (thr/init!)))))
+       (->> stream
+            (rx/filter (ptk/type? ::feat/initialize))
+            (rx/take 1)
+            (rx/map #(initialize-rasterizer)))))))
 
 (defn ^:export init
   [options]
