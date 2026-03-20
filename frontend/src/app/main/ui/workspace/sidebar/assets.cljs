@@ -90,6 +90,7 @@
         libs           (mf/deref refs/libraries)
         num-libs       (count libs)
         file           (get libs file-id)
+        shared?     (:is-shared file)
         components     (mf/with-memo [file] (ctkl/components (:data file)))
 
         toggle-ordering
@@ -164,7 +165,7 @@
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
-        (if (and (= num-libs 1) (empty? components))
+        (if (and (= num-libs 1) (empty? components) (not shared?))
           [:button {:class (stl/css :add-library-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}
