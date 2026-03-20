@@ -109,7 +109,7 @@
       (t/is (= (:id near-copy2-nested-head) (thi/id :nested-head)))
       (t/is (= (:id near-copy2-nested-child) (thi/id :nested-child)))))
 
-  (t/testing "shapes in nested swapped components get the swap slot"
+  (t/testing "shapes swapped components get the swap slot"
     (let [file
           ;; {:main1-root} [:name Frame1]           # [Component :component1]
           ;;     :main1-child [:name Rect1]
@@ -133,8 +133,7 @@
               (tho/add-simple-component :component3 :main3-root :main3-child
                                         :root-params {:name "Frame3"}
                                         :child-params {:name "Rect3"})
-              (tho/swap-component-in-first-child :copy2 :component3)
-              (ths/update-shape :copy2-nested-head :touched nil))
+              (tho/swap-component-in-first-child :copy2 :component3))
 
           page (thf/current-page file)
           main1-root (ths/get-shape file :main1-root)
@@ -155,7 +154,6 @@
           near-copy2-nested-head (ctf/find-near-match file page {} copy2-nested-head)
           near-copy2-nested-child (ctf/find-near-match file page {} copy2-nested-child)]
 
-      (thf/dump-file file :keys [:name :swap-slot-label] :show-refs? true)
       (t/is (nil? near-main1-root))
       (t/is (nil? near-main1-child))
       (t/is (nil? near-main2-root))
@@ -163,4 +161,85 @@
       (t/is (= (:id near-nested-child) (thi/id :main1-child)))
       (t/is (nil? near-copy2))
       (t/is (= (:id near-copy2-nested-head) (thi/id :nested-head)))
-      (t/is (= (:id near-copy2-nested-child) (thi/id :main3-child))))))
+      (t/is (= (:id near-copy2-nested-child) (thi/id :main3-child)))))
+
+  (t/testing "shapes in second level nested components under swapped get the shape in the new main"
+    (let [file
+          ;; {:main1-root} [:name Frame1]           # [Component :component1]
+          ;;     :main1-child [:name Rect1]
+          ;;
+          ;; {:main2-root} [:name Frame2]           # [Component :component2]
+          ;;     :nested2-head [:name Frame1]       @--> [Component :component1] :main1-root
+          ;;         :nested2-child [:name Rect1]   ---> :main1-child
+          ;;
+          ;; {:main3-root} [:name Frame3]           # [Component :component3]
+          ;;     :main3-child [:name Rect3]
+          ;;
+          ;; {:main4-root} [:name Frame4]           # [Component :component4]
+          ;;     :nested4-head [:name Frame3]       @--> [Component :component1] :main3-root
+          ;;         :nested4-child [:name Rect3]   ---> :main3-child
+          ;;
+          ;; :copy2 [:name Frame2]                  #--> [Component :component2] :main2-root
+          ;;     :copy2-nested-head [:name Frame4]  @--> [Component :component4] :main4-root
+          ;;                                             {swap-slot :nested2-head}
+          ;;         <no-label> [:name Frame3]      @--> :nested4-head
+          ;;             <no-label> [:name Rect3]   ---> :nested4-child
+          (-> (thf/sample-file :file1)
+              (tho/add-nested-component :component1 :main1-root :main1-child
+                                        :component2 :main2-root :nested2-head
+                                        :nested-head-params {:children-labels [:nested2-child]})
+              (thc/instantiate-component :component2 :copy2 :children-labels [:copy2-nested-head])
+              (tho/add-nested-component :component3 :main3-root :main3-child
+                                        :component4 :main4-root :nested4-head
+                                        :root1-params {:name "Frame3"}
+                                        :main1-child-params {:name "Rect3"}
+                                        :main2-root-params {:name "Frame4"}
+                                        :nested-head-params {:children-labels [:nested4-child]})
+              (tho/swap-component-in-first-child :copy2 :component4))
+
+          page (thf/current-page file)
+          main1-root (ths/get-shape file :main1-root)
+          main1-child (ths/get-shape file :main1-child)
+          main2-root (ths/get-shape file :main2-root)
+          nested2-head (ths/get-shape file :nested2-head)
+          nested2-child (ths/get-shape file :nested2-child)
+          main3-root (ths/get-shape file :main3-root)
+          main3-child (ths/get-shape file :main3-child)
+          main4-root (ths/get-shape file :main4-root)
+          nested4-head (ths/get-shape file :nested4-head)
+          nested4-child (ths/get-shape file :nested4-child)
+          copy2 (ths/get-shape file :copy2)
+          copy2-nested-head (ths/get-shape file :copy2-nested-head)
+          copy2-nested4-head (ths/get-shape-by-id file (first (:shapes copy2-nested-head)))
+          copy2-nested4-child (ths/get-shape-by-id file (first (:shapes copy2-nested4-head)))
+
+          near-main1-root (ctf/find-near-match file page {} main1-root)
+          near-main1-child (ctf/find-near-match file page {} main1-child)
+          near-main2-root (ctf/find-near-match file page {} main2-root)
+          near-nested2-head (ctf/find-near-match file page {} nested2-head)
+          near-nested2-child (ctf/find-near-match file page {} nested2-child)
+          near-main3-root (ctf/find-near-match file page {} main3-root)
+          near-main3-child (ctf/find-near-match file page {} main3-child)
+          near-main4-root (ctf/find-near-match file page {} main4-root)
+          near-nested4-head (ctf/find-near-match file page {} nested4-head)
+          near-nested4-child (ctf/find-near-match file page {} nested4-child)
+          near-copy2 (ctf/find-near-match file page {} copy2)
+          near-copy2-nested-head (ctf/find-near-match file page {} copy2-nested-head)
+          near-copy2-nested4-head (ctf/find-near-match file page {} copy2-nested4-head)
+          near-copy2-nested4-child (ctf/find-near-match file page {} copy2-nested4-child)]
+
+      (thf/dump-file file :keys [:name :swap-slot-label] :show-refs? true)
+      (t/is (nil? near-main1-root))
+      (t/is (nil? near-main1-child))
+      (t/is (nil? near-main2-root))
+      (t/is (nil? near-nested2-head))
+      (t/is (= (:id near-nested2-child) (thi/id :main1-child)))
+      (t/is (nil? near-main3-root))
+      (t/is (nil? near-main3-child))
+      (t/is (nil? near-main4-root))
+      (t/is (nil? near-nested4-head))
+      (t/is (= (:id near-nested4-child) (thi/id :main3-child)))
+      (t/is (nil? near-copy2))
+      (t/is (= (:id near-copy2-nested-head) (thi/id :nested2-head)))
+      (t/is (= (:id near-copy2-nested4-head) (thi/id :nested4-head)))
+      (t/is (= (:id near-copy2-nested4-child) (thi/id :nested4-child))))))
