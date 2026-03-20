@@ -221,6 +221,7 @@
                                 :aria-activedescendant focused-id
                                 :aria-controls listbox-id
                                 :aria-expanded is-open
+                                :data-option-focused (boolean focused-id) 
                                 :slot-end
                                 (when (some? @filtered-tokens-by-type)
                                   (mf/html
