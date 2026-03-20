@@ -300,7 +300,7 @@
 
         :else
         (let [color (u/locate-library-color file-id id)]
-          (apply array (keys (dm/get-in color [:plugin-data (keyword "shared" namespace)]))))))))))
+          (apply array (keys (dm/get-in color [:plugin-data (keyword "shared" namespace)])))))))))
 
 (defn lib-typography-proxy? [p]
   (obj/type-of? p "LibraryTypographyProxy"))
@@ -681,7 +681,7 @@
 
         :else
         (let [typography (u/locate-library-typography file-id id)]
-          (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)])))))))))))
+          (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)])))))))))
 
 (defn get-variant-components
   [file-id variant-id]

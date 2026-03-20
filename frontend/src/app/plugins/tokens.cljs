@@ -440,7 +440,7 @@
            (let [set-name (obj/get token-set :name)
                  theme    (u/locate-token-theme file-id id)]
              (when (and (some? set-name) (some? theme))
-               (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name)))))}
+               (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))}
 
     :duplicate
     (fn []
@@ -511,7 +511,7 @@
              ;; Pass the set name as `initial-name` so the proxy can resolve
              ;; it immediately, before the async `st/emit!` above propagates
              ;; the new set into `@st/state`.
-             (token-set-proxy plugin-id file-id (ctob/get-id set) (ctob/get-name set)))}
+             (token-set-proxy plugin-id file-id (ctob/get-id set) (ctob/get-name set))))}
 
     :getThemeById
     {:enumerable false
