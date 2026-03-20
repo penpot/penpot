@@ -966,7 +966,11 @@
     ptk/WatchEvent
     (watch [it state _]
       (if (features/active-feature? state "render-wasm/v1")
-        (let [objects      (dsh/lookup-page-objects state)
+        (let [;; v3 editor always passes :finalize? from keyword opts; when absent
+              ;; that binds nil and :or defaults do not apply — coerce so undo flags
+              ;; stay strict booleans for changes-builder schema validation.
+              finalize?    (boolean finalize?)
+              objects      (dsh/lookup-page-objects state)
               shape        (get objects id)
               new-shape?   (contains? (:workspace-new-text-shapes state) id)
               prev-content (:content shape)
