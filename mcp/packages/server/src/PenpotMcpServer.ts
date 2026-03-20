@@ -75,7 +75,7 @@ export class PenpotMcpServer {
 
     constructor(private isMultiUser: boolean = false) {
         // read port configuration from environment variables
-        this.host = process.env.PENPOT_MCP_SERVER_HOST ?? "0.0.0.0";
+        this.host = process.env.PENPOT_MCP_SERVER_LISTEN_ADDRESS ?? "localhost";
         this.port = parseInt(process.env.PENPOT_MCP_SERVER_PORT ?? "4401", 10);
         this.webSocketPort = parseInt(process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402", 10);
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
