@@ -9,7 +9,7 @@ let ws: WebSocket | null = null;
 
 const statusPill = document.getElementById("connection-status") as HTMLElement;
 const statusText = document.getElementById("status-text") as HTMLElement;
-const currentToolEl = document.getElementById("current-tool") as HTMLElement;
+const currentTaskEl = document.getElementById("current-task") as HTMLElement;
 const executedCodeEl = document.getElementById("executed-code") as HTMLTextAreaElement;
 const copyCodeBtn = document.getElementById("copy-code-btn") as HTMLButtonElement;
 const connectBtn = document.getElementById("connect-btn") as HTMLButtonElement;
@@ -43,21 +43,21 @@ function updateConnectionStatus(code: string, label: string): void {
 }
 
 /**
- * Updates the "Using tool" display with the currently executing tool name.
+ * Updates the "Current task" display with the currently executing task name.
  *
- * @param toolName - the tool/task name to display, or null to reset to "---"
+ * @param taskName - the task name to display, or null to reset to "---"
  */
-function updateCurrentTool(toolName: string | null): void {
-    if (currentToolEl) {
-        currentToolEl.textContent = toolName ?? "---";
+function updateCurrentTask(taskName: string | null): void {
+    if (currentTaskEl) {
+        currentTaskEl.textContent = taskName ?? "---";
     }
-    if (toolName === null) {
+    if (taskName === null) {
         updateExecutedCode(null);
     }
 }
 
 /**
- * Updates the executed code textarea with the last code run by the MCP server.
+ * Updates the executed code textarea with the last code run during task execution.
  *
  * @param code - the code string to display, or null to clear
  */
@@ -113,9 +113,9 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
             try {
                 console.log("Received from MCP server:", event.data);
                 const request = JSON.parse(event.data);
-                // Track the last tool received from the MCP server
+                // Track the current task received from the MCP server
                 if (request.task) {
-                    updateCurrentTool(request.task);
+                    updateCurrentTask(request.task);
                     updateExecutedCode(request.params?.code ?? null);
                 }
                 // Forward the task request to the plugin for execution
@@ -131,7 +131,7 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
                 console.log("Disconnected from MCP server");
                 const label = event.reason ? `Disconnected: ${event.reason}` : "Disconnected";
                 updateConnectionStatus("disconnected", label);
-                updateCurrentTool(null);
+                updateCurrentTask(null);
             }
             ws = null;
         };
