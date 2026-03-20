@@ -312,9 +312,11 @@
 
         on-go-to-cc-click
         (mf/use-fn
-         (mf/deps organization)
+         (mf/deps organization profile)
          (fn []
-           (if (:organization-id organization)
+           ;; Navigate to active org if user owns it, otherwise to last visited org
+           (if (and (:organization-id organization)
+                    (= (:id profile) (:organization-owner-id organization)))
              (dnt/go-to-nitrate-cc organization)
              (dnt/go-to-nitrate-cc))))
 
@@ -329,8 +331,8 @@
         ;; Check if user is owner of any NON-DEFAULT organization
         ;; Default org doesn't count as user is always owner of it
         is-owner-of-any-org? (or (and (not= (:id organization) default-team-id)
-                                      (get-in organization [:permissions :is-owner]))
-                                 (some #(get-in % [:permissions :is-owner])
+                                      (= (:id profile) (:organization-owner-id organization)))
+                                 (some #(= (:id profile) (:organization-owner-id %))
                                        (vals organizations)))]
 
     [:> dropdown-menu* props
@@ -583,7 +585,7 @@
 
 
 (defn- team->org [team]
-  (assoc (dm/select-keys team [:id :organization-id :organization-slug :permissions])
+  (assoc (dm/select-keys team [:id :organization-id :organization-slug :organization-owner-id])
          :name (:organization-name team)))
 
 (mf/defc sidebar-org-switch*
