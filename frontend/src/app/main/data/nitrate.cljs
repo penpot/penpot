@@ -29,6 +29,10 @@
                       (u/percent-encode (str organization-id)))]
      (st/emit! (rt/nav-raw :href href)))))
 
+(defn go-to-nitrate-cc-create-org
+  []
+  (st/emit! (rt/nav-raw :href "/control-center/?action=create-org")))
+
 (defn go-to-nitrate-billing
   []
   (st/emit! (rt/nav-raw :href "/control-center/licenses/billing")))
