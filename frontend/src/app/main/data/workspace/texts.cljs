@@ -121,7 +121,7 @@
 
               new-shape?   (contains? (:workspace-new-text-shapes state) id)]
           (if (ted/content-has-text? content)
-            (when (features/active-feature? state "render-wasm/v1")
+            (if (features/active-feature? state "render-wasm/v1")
               (let [content  (d/merge (ted/export-content content)
                                       (dissoc (:content shape) :children))
                     new-size (dwwt/get-wasm-text-new-size shape content)]
@@ -141,34 +141,34 @@
                            (cond-> (some? new-size)
                              (gsh/transform-shape
                               (ctm/change-size shape (:width new-size) (:height new-size))))))
+                     {:undo-group (when new-shape? id)})))))
+
+              (let [content (d/merge (ted/export-content content)
+                                     (dissoc (:content shape) :children))
+                    modifiers (get-in state [:workspace-text-modifier id])]
+                (rx/merge
+                 (rx/of (update-editor-state shape nil))
+                 (when (and (not= content (:content shape))
+                            (some? (:current-page-id state))
+                            (some? shape))
+                   (rx/of
+                    (dwsh/update-shapes
+                     [id]
+                     (fn [shape]
+                       (let [{:keys [width height position-data]} modifiers]
+                         (-> shape
+                             (assoc :content content)
+                             (cond-> position-data
+                               (assoc :position-data position-data))
+                             (cond-> (and update-name? (some? name))
+                               (assoc :name name))
+                             (cond-> (or (some? width) (some? height))
+                               (gsh/transform-shape (ctm/change-size shape width height))))))
                      {:undo-group (when new-shape? id)}))))))
 
-            (let [content (d/merge (ted/export-content content)
-                                   (dissoc (:content shape) :children))
-                  modifiers (get-in state [:workspace-text-modifier id])]
-              (rx/merge
-               (rx/of (update-editor-state shape nil))
-               (when (and (not= content (:content shape))
-                          (some? (:current-page-id state))
-                          (some? shape))
-                 (rx/of
-                  (dwsh/update-shapes
-                   [id]
-                   (fn [shape]
-                     (let [{:keys [width height position-data]} modifiers]
-                       (-> shape
-                           (assoc :content content)
-                           (cond-> position-data
-                             (assoc :position-data position-data))
-                           (cond-> (and update-name? (some? name))
-                             (assoc :name name))
-                           (cond-> (or (some? width) (some? height))
-                             (gsh/transform-shape (ctm/change-size shape width height))))))
-                   {:undo-group (when new-shape? id)}))))))
-
-          (when (some? id)
-            (rx/of (dws/deselect-shape id)
-                   (dwsh/delete-shapes #{id}))))))))
+            (when (some? id)
+              (rx/of (dws/deselect-shape id)
+                     (dwsh/delete-shapes #{id})))))))))
 
 (defn initialize-editor-state
   [{:keys [id name content] :as shape} decorator]
