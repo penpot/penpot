@@ -26,6 +26,7 @@
 (s/def ::file-id ::us/uuid)
 (s/def ::page-id ::us/uuid)
 (s/def ::object-id ::us/uuid)
+(s/def ::is-wasm ::us/boolean)
 
 (s/def ::export
   (s/keys :req-un [::file-id ::page-id ::object-id ::name]))
@@ -35,7 +36,7 @@
 
 (s/def ::params
   (s/keys :req-un [::exports]
-          :opt-un [::name]))
+          :opt-un [::name ::is-wasm]))
 
 (defn handler
   [{:keys [:request/auth-token] :as exchange} {:keys [exports] :as params}]
@@ -47,7 +48,7 @@
     (handle-export exchange (assoc params :exports exports))))
 
 (defn handle-export
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports name profile-id] :as params}]
+  [{:keys [:request/auth-token] :as exchange} {:keys [exports name profile-id is-wasm] :as params}]
   (let [topic       (str profile-id)
         file-id     (-> exports first :file-id)
 
@@ -94,7 +95,7 @@
 
         procs
         (->> (seq exports)
-             (map #(rd/render % on-object)))]
+             (map #(rd/render (assoc % :is-wasm is-wasm) on-object)))]
 
     (->> (p/all procs)
          (p/fmap (fn [] @result-cache))
