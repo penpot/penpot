@@ -190,8 +190,7 @@
    :enable-inspect-styles
    :enable-feature-fdata-objects-map
    :enable-feature-render-wasm
-   ;; Temporary deactivated
-   #_:enable-token-import-from-library])
+   :enable-token-import-from-library])
 
 (defn parse
   [& flags]
