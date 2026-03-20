@@ -92,6 +92,7 @@
         internal-ref      (mf/use-ref nil)
         nodes-ref         (mf/use-ref nil)
         wrapper-ref       (mf/use-ref nil)
+        input-wrapper-ref (mf/use-ref nil)
         icon-button-ref   (mf/use-ref nil)
         ref               (or ref internal-ref)
 
@@ -236,6 +237,7 @@
                                 :hint-message (:message hint)
                                 :on-key-down on-key-down
                                 :hint-type (:type hint)
+                                :input-wrapper-ref input-wrapper-ref
                                 :ref ref
                                 :role "combobox"
                                 :aria-activedescendant focused-id
@@ -262,7 +264,7 @@
           props)
 
 
-        {:keys [style ready?]} (use-floating-dropdown is-open wrapper-ref dropdown-ref)]
+        {:keys [style ready?]} (use-floating-dropdown is-open input-wrapper-ref wrapper-ref dropdown-ref)]
 
     (mf/with-effect [resolve-stream tokens token name token-name]
       (let [subs (->> resolve-stream
