@@ -22,6 +22,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.workspace.texts-v3 :as texts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
@@ -50,6 +51,7 @@
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
+
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
 
 (defn text-editor-wasm?
@@ -91,14 +93,16 @@
 (def clear-canvas-pixels webgl/clear-canvas-pixels)
 
 ;; Re-export public text editor functions
-(def text-editor-start text-editor/text-editor-start)
-(def text-editor-stop text-editor/text-editor-stop)
+(def text-editor-focus text-editor/text-editor-focus)
+(def text-editor-blur text-editor/text-editor-blur)
 (def text-editor-set-cursor-from-offset text-editor/text-editor-set-cursor-from-offset)
 (def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
 (def text-editor-pointer-down text-editor/text-editor-pointer-down)
 (def text-editor-pointer-move text-editor/text-editor-pointer-move)
 (def text-editor-pointer-up text-editor/text-editor-pointer-up)
-(def text-editor-is-active? text-editor/text-editor-is-active?)
+(def text-editor-get-current-styles text-editor/text-editor-get-current-styles)
+(def text-editor-has-focus? text-editor/text-editor-has-focus?)
+(def text-editor-has-selection? text-editor/text-editor-has-selection?)
 (def text-editor-select-all text-editor/text-editor-select-all)
 (def text-editor-select-word-boundary text-editor/text-editor-select-word-boundary)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
@@ -135,6 +139,13 @@
            :fill "none"}
      [:& shape-wrapper {:shape shape}]]))
 
+(defn is-text-editor-wasm-enabled
+  [state]
+  (let [runtime-features (get state :features-runtime)
+        enabled-features (get state :features)]
+    (or (contains? runtime-features "text-editor-wasm/v1")
+        (contains? enabled-features "text-editor-wasm/v1"))))
+
 (defn get-static-markup
   [shape]
   (->
@@ -153,17 +164,22 @@
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
     (try
-      (when wasm/context-initialized?
+      (when (is-text-editor-wasm-enabled @st/state)
         (text-editor/text-editor-update-blink timestamp)
-        ;; Render text editor overlay on top of main canvas (only if feature enabled)
-        ;; Determine if text-editor-wasm feature is active without requiring
-        ;; app.main.features to avoid circular dependency: check runtime and
-        ;; persisted feature sets in the store state.
-        (when (text-editor-wasm?)
-          (text-editor/text-editor-render-overlay))
+        (text-editor/text-editor-render-overlay)
         ;; Poll for editor events; if any event occurs, trigger a re-render
         (let [ev (text-editor/text-editor-poll-event)]
           (when (and ev (not= ev 0))
+            ;; When StylesChanged, get the current styles.
+            (case ev
+              ;; StylesChanged Event
+              3 (let [current-styles (text-editor/text-editor-get-current-styles)
+                      shape-id (text-editor/text-editor-get-active-shape-id)]
+                  (st/emit! (texts/v3-update-text-editor-styles shape-id current-styles)))
+
+              ;; Default case
+              nil)
+
             (request-render "text-editor-event"))))
       (catch :default e
         (js/console.error "text-editor overlay/update failed:" e)))

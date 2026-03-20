@@ -249,6 +249,13 @@
   [{:keys [attrs shape]}]
   (shape-current-values shape txt/is-root-node? attrs))
 
+(defn v3-current-text-values
+  [{:keys [editor-styles attrs]}]
+  (let [result (-> editor-styles
+                   (dm/select-keys attrs))
+        result (if (empty? result) txt/default-text-attrs result)]
+    result))
+
 (defn v2-current-text-values
   [{:keys [editor-instance attrs]}]
   (let [result (-> (.-currentStyle editor-instance)
@@ -265,8 +272,9 @@
     (shape-current-values shape txt/is-paragraph-node? attrs)))
 
 (defn current-paragraph-values
-  [{:keys [editor-state editor-instance attrs shape] :as options}]
+  [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
+    (some? editor-styles) (v3-current-text-values options)
     (some? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-paragraph-values options)
     :else (shape-current-values shape txt/is-paragraph-node? attrs)))
@@ -281,8 +289,9 @@
     result))
 
 (defn current-text-values
-  [{:keys [editor-state editor-instance attrs shape] :as options}]
+  [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
+    (some? editor-styles) (v3-current-text-values options)
     (some? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-text-values options)
     :else (shape-current-values shape txt/is-text-node? attrs)))
@@ -784,14 +793,15 @@
            (when (features/active-feature? state "render-wasm/v1")
              (rx/concat
               ;; Apply style to selected spans and sync content
-              (when (wasm.api/text-editor-is-active?)
-                (let [span-attrs (select-keys attrs txt/text-node-attrs)]
-                  (when (not (empty? span-attrs))
-                    (let [result (wasm.api/apply-style-to-selection span-attrs)]
-                      (when result
-                        (rx/of (v2-update-text-shape-content
-                                (:shape-id result) (:content result)
-                                :update-name? true)))))))
+              (let [has-selection? (wasm.api/text-editor-has-selection?)]
+                (when has-selection?
+                  (let [span-attrs (select-keys attrs txt/text-node-attrs)]
+                    (when (not (empty? span-attrs))
+                      (let [result (wasm.api/apply-style-to-selection span-attrs)]
+                        (when result
+                          (rx/of (v2-update-text-shape-content
+                                  (:shape-id result) (:content result)
+                                  :update-name? true))))))))
               ;; Resize (with delay for font-id changes)
               (cond->> (rx/of (dwwt/resize-wasm-text id))
                 (contains? attrs :font-id)
@@ -900,7 +910,7 @@
                                 {:typography-ref-id typ-id
                                  :typography-ref-file file-id}))))))))
 
-;; -- New Editor
+;; -- Text Editor v2
 
 (defn v2-update-text-editor-styles
   [id new-styles]
@@ -1062,3 +1072,7 @@
                                        (cond-> (or (some? width) (some? height))
                                          (gsh/transform-shape (ctm/change-size shape width height))))))
                                {:undo-group (when new-shape? id)})))))))
+
+;; -- Text Editor v3
+
+;; @see texts_v3.cljs
