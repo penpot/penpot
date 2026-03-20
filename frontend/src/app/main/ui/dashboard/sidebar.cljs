@@ -594,7 +594,7 @@
 
         current-org (team->org team)
 
-        default-org? (= (:default-team-id profile) (:id current-org))
+        default-org? (nil? (:organization-id current-org))
 
         show-orgs-menu*
         (mf/use-state false)
