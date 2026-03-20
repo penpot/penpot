@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## 2.16.0 (Unreleased)
+
+### :boom: Breaking changes & Deprecations
+
+### :rocket: Epics and highlights
+
+### :heart: Community contributions (Thank you!)
+
+- Add `createComponent()` helper to `PenpotUtils` that wraps `penpot.library.local.createComponent()` with a board-on-root precondition guard and documents cross-page limitations and the `/` group separator behaviour (by @abhishek-mittal) [Github #8691](https://github.com/penpot/penpot/issues/8691)
+
+- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
+
+### :sparkles: New features & Enhancements
+
+- Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
+- Import Tokens from linked library (by @dfelinto) [Github #8391](https://github.com/penpot/penpot/pull/8391)
+- Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
+- Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
+- Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
+- Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
+
+
+### :bug: Bugs fixed
+
+
 ## 2.15.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
@@ -8,16 +33,18 @@
 
 ### :sparkles: New features & Enhancements
 
-- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112), [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
-- Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 
 ### :bug: Bugs fixed
 
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
-- Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
-
+- Fix collapsible sidebar property titles not toggling on click [Github #5168](https://github.com/penpot/penpot/issues/5168)
+- Fix `penpot.openPage()` plugin API not navigating in the same tab; change default to same-tab navigation and allow passing a UUID string instead of a Page object [Github #8520](https://github.com/penpot/penpot/issues/8520)
+- Fix scroll on library modal [Taiga #13639](https://tree.taiga.io/project/penpot/issue/13639)
+- Update copy on penpot update message [Taiga #12924](https://tree.taiga.io/project/penpot/issue/12924)
+- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
+- Fix tooltip shown on tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 
 ## 2.14.0 (Unreleased)
 
