@@ -32,17 +32,7 @@
    [:label {:optional true} :string]
    [:aria-label {:optional true} :string]])
 
-(def ^:private schema:options-dropdown
-  [:map
-   [:ref {:optional true} fn?]
-   [:class {:optional true} :string]
-   [:wrapper-ref {:optional true} :any]
-   [:on-click fn?]
-   [:options [:vector schema:option]]
-   [:selected {:optional true} :any]
-   [:focused {:optional true} :any]
-   [:empty-to-end {:optional true} [:maybe :boolean]]
-   [:align {:optional true} [:maybe [:enum :left :right]]]])
+
 
 (def ^:private
   xf:filter-blank-id
@@ -103,6 +93,17 @@
                     :dimmed (true? (:dimmed option))
                     :on-click on-click}]))))
 
+(def ^:private schema:options-dropdown
+  [:map
+   [:ref {:optional true} fn?]
+   [:class {:optional true} :string]
+   [:wrapper-ref {:optional true} :any]
+   [:on-click fn?]
+   [:options [:vector schema:option]]
+   [:selected {:optional true} :any]
+   [:focused {:optional true} :any]
+   [:empty-to-end {:optional true} [:maybe :boolean]]
+   [:align {:optional true} [:maybe [:enum :left :right]]]])
 
 (mf/defc options-dropdown*
   {::mf/schema schema:options-dropdown}

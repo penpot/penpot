@@ -77,7 +77,9 @@
                    (reset! focused-id* next-id)))
 
                open-dropdown
-               (reset! is-open* true)
+               (do
+                 (reset! is-open* true)
+                 (reset! focused-id* nil))
 
                close-dropdown
                (reset! is-open* false)
@@ -95,15 +97,9 @@
                  (reset! is-open* false))
                :else nil))))]
 
-    ;; Initial focus on first option
-    (mf/with-effect [is-open options]
-      (when is-open
-        (let [opts (if (delay? options) @options options)
-              focusables (focusable-options opts)
-              ids (set (map :id focusables))]
-          (when (and (seq focusables)
-                     (not (contains? ids focused-id)))
-            (reset! focused-id* (:id (first focusables)))))))
+    (mf/with-effect [is-open]
+      (when (not is-open)
+        (reset! focused-id* nil)))
 
     ;; auto scroll when key down
     (mf/with-effect [focused-id nodes-ref]
