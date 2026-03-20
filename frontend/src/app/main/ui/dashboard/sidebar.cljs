@@ -328,12 +328,7 @@
                             (:default-team-id profile))
         organizations (dissoc organizations default-team-id)
 
-        ;; Check if user is owner of any NON-DEFAULT organization
-        ;; Default org doesn't count as user is always owner of it
-        is-owner-of-any-org? (or (and (not= (:id organization) default-team-id)
-                                      (= (:id profile) (:organization-owner-id organization)))
-                                 (some #(= (:id profile) (:organization-owner-id %))
-                                       (vals organizations)))]
+        is-valid-license? (dnt/is-valid-license? profile)]
 
     [:> dropdown-menu* props
 
@@ -365,7 +360,7 @@
                               :class       (stl/css :org-dropdown-item :action)}
       [:span {:class (stl/css :icon-wrapper)} add-org-icon]
       [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-org")]]
-     (when is-owner-of-any-org?
+     (when is-valid-license?
        [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
                                 :class       (stl/css :org-dropdown-item :action)}
         [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
