@@ -9,8 +9,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-8);
-    padding: var(--spacing-16);
-    min-width: 224px;
+    padding: var(--spacing-16) var(--spacing-8);
     box-sizing: border-box;
 }
 
