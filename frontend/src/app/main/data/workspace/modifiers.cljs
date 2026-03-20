@@ -179,6 +179,56 @@
          (map #(get objects %))
          (reduce get-ignore-tree nil))))
 
+(defn calculate-ignore-tree-wasm
+  "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
+  [transforms objects]
+
+  (letfn [(get-ignore-tree
+            ([ignore-tree shape]
+             (let [shape-id (dm/get-prop shape :id)
+                   transformed-shape (gsh/apply-transform shape (get transforms shape-id))
+
+                   root
+                   (if (:component-root shape)
+                     shape
+                     (ctn/get-component-shape objects shape {:allow-main? true}))
+
+                   transformed-root
+                   (if (:component-root shape)
+                     transformed-shape
+                     (gsh/apply-transform root (get transforms (:id root))))]
+
+               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
+
+            ([ignore-tree shape root transformed-root]
+             (let [shape-id (dm/get-prop shape :id)
+                   transformed-shape (gsh/apply-transform shape (get transforms shape-id))]
+               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
+
+            ([ignore-tree shape transformed-shape root transformed-root]
+             (let [shape-id (dm/get-prop shape :id)
+
+                   ignore-tree
+                   (cond-> ignore-tree
+                     (and (some? root) (ctk/in-component-copy? shape))
+                     (assoc
+                      shape-id
+                      (check-delta shape root transformed-shape transformed-root)))
+
+                   set-child
+                   (fn [ignore-tree child]
+                     (get-ignore-tree ignore-tree child root transformed-root))]
+
+               (->> (:shapes shape)
+                    (map (d/getf objects))
+                    (reduce set-child ignore-tree)))))]
+
+    ;; we check twice because we want only to search parents of components but once the
+    ;; tree is traversed we only want to process the objects in components
+    (->> (keys transforms)
+         (map #(get objects %))
+         (reduce get-ignore-tree nil))))
+
 (defn assoc-position-data
   [shape position-data old-shape]
   (let [deltav (gpt/to-vec (gpt/point (:selrect old-shape))
@@ -521,11 +571,13 @@
               nil
 
               (ctm/has-geometry? (:modifiers data))
-              (d/vec2 id (ctm/modifiers->transform (:modifiers data)))
+              (let [parent (:geometry-parent (:modifiers data))
+                    kind (if (d/not-empty? parent) :parent :child)]
+                (d/vec2 id {:transform (ctm/modifiers->transform (:modifiers data)) :kind kind}))
 
               ;; Unit matrix is used for reflowing
               :else
-              (d/vec2 id default-transform))))))
+              (d/vec2 id {:transform default-transform :kind :parent}))))))
 
 (defn- parse-geometry-modifiers
   [modif-tree]
@@ -576,12 +628,13 @@
       (let [prev-wasm-props (:prev-wasm-props state)
             wasm-props      (:wasm-props state)
             objects         (dsh/lookup-page-objects state)
-            pixel-precision false]
+            snap-pixel?
+            (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
         (set-wasm-props! objects prev-wasm-props wasm-props)
         (let [structure-entries (parse-structure-modifiers modif-tree)]
           (wasm.api/set-structure-modifiers structure-entries)
           (let [geometry-entries (parse-geometry-modifiers modif-tree)
-                modifiers        (wasm.api/propagate-modifiers geometry-entries pixel-precision)]
+                modifiers        (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
             (wasm.api/set-modifiers modifiers)
             (let [ids     (into [] xf:map-key geometry-entries)
                   selrect (wasm.api/get-selection-rect ids)]
@@ -623,18 +676,14 @@
       (let [structure-entries (parse-structure-modifiers modif-tree)]
         (wasm.api/set-structure-modifiers structure-entries))
 
+      ;; Apply property changes (e.g. grow-type) to WASM shapes before
+      ;; propagating geometry, so propagate_modifiers sees the updated state.
+      (doseq [[id {:keys [property value]}] (extract-property-changes modif-tree)]
+        (when (= property :grow-type)
+          (wasm.api/use-shape id)
+          (wasm.api/set-shape-grow-type value)))
+
       (let [objects          (dsh/lookup-page-objects state)
-
-            ignore-tree
-            (calculate-ignore-tree modif-tree objects)
-
-            options
-            (-> params
-                (assoc :reg-objects? true)
-                (assoc :ignore-tree ignore-tree)
-                ;; Attributes that can change in the transform. This
-                ;; way we don't have to check all the attributes
-                (assoc :attrs transform-attrs))
 
             geometry-entries
             (parse-geometry-modifiers modif-tree)
@@ -644,6 +693,17 @@
 
             transforms
             (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
+
+            ignore-tree
+            (calculate-ignore-tree-wasm transforms objects)
+
+            options
+            (-> params
+                (assoc :reg-objects? true)
+                (assoc :ignore-tree ignore-tree)
+                ;; Attributes that can change in the transform. This
+                ;; way we don't have to check all the attributes
+                (assoc :attrs transform-attrs))
 
             modif-tree
             (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
@@ -712,8 +772,7 @@
                (ctm/rotation-modifiers shape center angle))
 
              modif-tree
-             (-> (build-modif-tree ids objects get-modifier)
-                 (gm/set-objects-modifiers objects))
+             (build-modif-tree ids objects get-modifier)
 
              modifiers
              (mapv (fn [[id {:keys [modifiers]}]]
@@ -793,8 +852,8 @@
             (-> options
                 (assoc :reg-objects? true)
                 (assoc :ignore-tree ignore-tree)
-                 ;; Attributes that can change in the transform. This
-                 ;; way we don't have to check all the attributes
+                ;; Attributes that can change in the transform. This
+                ;; way we don't have to check all the attributes
                 (assoc :attrs transform-attrs))
 
             update-shape

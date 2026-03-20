@@ -40,13 +40,14 @@ pub fn render_stroke_inner_shadows(
     if !shape.has_fills() {
         for shadow in shape.inner_shadows_visible() {
             let filter = shadow.get_inner_shadow_filter();
-            strokes::render(
+            strokes::render_single(
                 render_state,
                 shape,
                 stroke,
                 Some(surface_id),
                 filter.as_ref(),
                 antialias,
+                None, // Inner shadows don't use spread
             )
         }
     }
@@ -106,15 +107,19 @@ fn render_shadow_paint(
 ) {
     match &shape.shape_type {
         Type::Rect(_) | Type::Frame(_) => {
-            render_state.surfaces.draw_rect_to(surface_id, shape, paint);
+            render_state
+                .surfaces
+                .draw_rect_to(surface_id, shape, paint, None, None);
         }
         Type::Circle => {
             render_state
                 .surfaces
-                .draw_circle_to(surface_id, shape, paint);
+                .draw_circle_to(surface_id, shape, paint, None, None);
         }
         Type::Path(_) | Type::Bool(_) => {
-            render_state.surfaces.draw_path_to(surface_id, shape, paint);
+            render_state
+                .surfaces
+                .draw_path_to(surface_id, shape, paint, None, None);
         }
         _ => {}
     }
@@ -135,7 +140,7 @@ pub fn render_text_shadows(
 
     let canvas = render_state
         .surfaces
-        .canvas(surface_id.unwrap_or(SurfaceId::TextDropShadows));
+        .canvas_and_mark_dirty(surface_id.unwrap_or(SurfaceId::TextDropShadows));
 
     for shadow in shadows {
         let shadow_layer = SaveLayerRec::default().paint(shadow);
@@ -149,6 +154,8 @@ pub fn render_text_shadows(
             surface_id,
             None,
             blur_filter.as_ref(),
+            None,
+            None,
         );
 
         for stroke_paragraphs in stroke_paragraphs_group.iter_mut() {
@@ -160,6 +167,8 @@ pub fn render_text_shadows(
                 surface_id,
                 None,
                 blur_filter.as_ref(),
+                None,
+                None,
             );
         }
 

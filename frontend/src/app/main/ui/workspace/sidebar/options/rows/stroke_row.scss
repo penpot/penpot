@@ -45,6 +45,10 @@
   padding-inline-start: var(--sp-xs);
 }
 
+.numeric-input-wrapper {
+  grid-column: span 2;
+}
+
 .stroke-alignment-select {
   grid-column: span 3;
 }

@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import puppeteer, { ConsoleMessage } from 'puppeteer';
 import { PenpotApi } from './api';
 import { getFileUrl } from './get-file-url';
 import { idObjectToArray } from './clean-id';
@@ -56,10 +56,16 @@ export async function Agent() {
   console.log('File URL:', fileUrl);
 
   console.log('Launching browser...');
-  const browser = await puppeteer.launch({});
+  const browser = await puppeteer.launch({
+    headless: process.env['E2E_HEADLESS'] !== 'false',
+    args: ['--ignore-certificate-errors'],
+  });
   const page = await browser.newPage();
 
   await page.setViewport({ width: 1920, height: 1080 });
+  await page.setExtraHTTPHeaders({
+    'X-Client': 'plugins/e2e:puppeter',
+  });
 
   console.log('Setting authentication cookie...');
   page.setCookie({
@@ -85,8 +91,11 @@ export async function Agent() {
 
   const finish = async () => {
     console.log('Deleting file and closing browser...');
-    await penpotApi.deleteFile(file['~:id']);
-    await browser.close();
+    // TODO
+    // await penpotApi.deleteFile(file['~:id']);
+    if (process.env['E2E_CLOSE_BROWSER'] !== 'false') {
+      await browser.close();
+    }
     console.log('Clean up done.');
   };
 
@@ -96,39 +105,37 @@ export async function Agent() {
       options: {
         screenshot?: string;
         autoFinish?: boolean;
-        avoidSavedStatus?: boolean;
       } = {
         screenshot: '',
         autoFinish: true,
-        avoidSavedStatus: false,
       },
     ) {
       const autoFinish = options.autoFinish ?? true;
 
       console.log('Running plugin code...');
       await page.evaluate((testingPlugin) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (globalThis as any).ɵloadPlugin({
-          pluginId: 'TEST',
+          pluginId: '00000000-0000-0000-0000-000000000000',
           name: 'Test',
           code: `
             (${testingPlugin})();
           `,
           icon: '',
           description: '',
-          permissions: ['content:read', 'content:write'],
+          permissions: [
+            'content:read',
+            'content:write',
+            'library:read',
+            'library:write',
+            'user:read',
+            'comment:read',
+            'comment:write',
+            'allow:downloads',
+            'allow:localstorage',
+          ],
         });
       }, code);
-
-      if (!options.avoidSavedStatus) {
-        console.log('Waiting for save status...');
-        await page.waitForSelector(
-          '.main_ui_workspace_right_header__saved-status',
-          {
-            timeout: 10000,
-          },
-        );
-        console.log('Save status found.');
-      }
 
       if (options.screenshot && screenshotsEnable) {
         console.log('Taking screenshot:', options.screenshot);
@@ -137,30 +144,55 @@ export async function Agent() {
         });
       }
 
-      return new Promise((resolve) => {
-        page.once('console', async (msg) => {
+      const result = await new Promise((resolve) => {
+        const handleConsole = async (msg: ConsoleMessage) => {
           const args = (await Promise.all(
             msg.args().map((arg) => arg.jsonValue()),
-          )) as Record<string, unknown>[];
+          )) as unknown[];
 
-          const result = Object.values(args[1]) as Shape[];
+          const type = args[0];
+          const data = args[1];
+
+          if (type !== 'objects' || !data || typeof data !== 'object') {
+            console.log('Invalid console message, waiting for valid one...');
+            page.once('console', handleConsole);
+            return;
+          }
+
+          const result = Object.values(data) as Shape[];
 
           replaceIds(result);
           console.log('IDs replaced in result.');
 
           resolve(result);
+        };
 
-          if (autoFinish) {
-            console.log('Auto finish enabled. Cleaning up...');
-            finish();
-          }
-        });
+        page.once('console', handleConsole);
 
         console.log('Evaluating debug.dump_objects...');
         page.evaluate(`
           debug.dump_objects();
         `);
       });
+
+      await page.waitForNetworkIdle({ idleTime: 2000 });
+
+      // Wait for the update-file API call to complete
+      if (process.env['E2E_WAIT_API_RESPONSE'] === 'true') {
+        await page.waitForResponse(
+          (response) =>
+            response.url().includes('api/main/methods/update-file') &&
+            response.status() === 200,
+          { timeout: 10000 },
+        );
+      }
+
+      if (autoFinish) {
+        console.log('Auto finish enabled. Cleaning up...');
+        await finish();
+      }
+
+      return result;
     },
     finish,
   };

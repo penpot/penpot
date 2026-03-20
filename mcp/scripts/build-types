@@ -7,6 +7,7 @@ pushd $SCRIPT_DIR;
 
 if [[ "$URL" = "http://localhost:9090" ]]; then
     pushd ../../plugins
+    rm -rf node_modules;
     pnpm install
     pnpm run build:doc
     popd
@@ -15,9 +16,9 @@ fi
 if [[ "$URL" = "http://localhost:9090" ]]; then
     pnpx concurrently --kill-others-on-fail -s last -k \
          "caddy file-server --root ../../plugins/dist/doc/ --listen :9090" \
-         "../types-generator/build $URL";
+         "bash ../types-generator/build $URL";
 else
-    ../types-generator/build $URL;
+    bash ../types-generator/build $URL;
 fi
 
 popd

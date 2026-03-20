@@ -54,6 +54,7 @@
 (def ^:icon-id arrow-left "arrow-left")
 (def ^:icon-id arrow-right "arrow-right")
 (def ^:icon-id arrow-up "arrow-up")
+(def ^:icon-id arrow-up-right "arrow-up-right")
 (def ^:icon-id asc-sort "asc-sort")
 (def ^:icon-id at "at")
 (def ^:icon-id board "board")

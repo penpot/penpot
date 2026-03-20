@@ -107,4 +107,18 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (let [results (:result out)]
-          (t/is (= 2 (count results))))))))
+          (t/is (= 2 (count results))))))
+
+    (t/testing "get mcp token"
+      (let [_ (th/command! {::th/type :create-access-token
+                            ::rpc/profile-id (:id prof)
+                            :type "mcp"
+                            :name "token 1"
+                            :perms ["get-profile"]})
+            {:keys [error result]}
+            (th/command! {::th/type :get-current-mcp-token
+                          ::rpc/profile-id (:id prof)})]
+        ;; (th/print-result! result)
+        (t/is (nil? error))
+        (t/is (string? (:token result)))))))
+

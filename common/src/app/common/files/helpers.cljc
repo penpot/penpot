@@ -526,20 +526,25 @@
           ids))
 
 (defn clean-loops
-  "Clean a list of ids from circular references."
+  "Clean a list of ids from circular references. Optimized fast-path for single selections."
   [objects ids]
-  (let [parent-selected?
-        (fn [id]
-          (let [parents (get-parent-ids objects id)]
-            (some ids parents)))
+  (if (<= (count ids) 1)
+    ;; For single selection, there can't be circularity; return as ordered-set.
+    (into (d/ordered-set) ids)
+    (let [ids-set (if (set? ids) ids (set ids))
+          parent-selected?
+          (fn [id]
+            ;; Stop early as soon as we find any selected parent
+            (let [parents (get-parent-ids objects id)]
+              (some #(contains? ids-set %) parents)))
 
-        add-element
-        (fn [result id]
-          (cond-> result
-            (not (parent-selected? id))
-            (conj id)))]
+          add-element
+          (fn [result id]
+            (cond-> result
+              (not (parent-selected? id))
+              (conj id)))]
 
-    (reduce add-element (d/ordered-set) ids)))
+      (reduce add-element (d/ordered-set) ids))))
 
 (defn- indexed-shapes
   "Retrieves a vector with the indexes for each element in the layer

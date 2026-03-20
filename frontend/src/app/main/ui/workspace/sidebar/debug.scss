@@ -12,21 +12,12 @@
   background-color: var(--panel-background-color);
 }
 
-.panel-title {
-  @include deprecated.flexCenter;
-  @include deprecated.uppercaseTitleTipography;
-  position: relative;
-  height: deprecated.$s-32;
-  min-height: deprecated.$s-32;
-  margin: deprecated.$s-8 deprecated.$s-8 0 deprecated.$s-8;
-  border-radius: deprecated.$br-8;
-  background-color: var(--panel-title-background-color);
+.debug-panel-title {
+  margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
+}
 
-  span {
-    @include deprecated.flexCenter;
-    flex-grow: 1;
-    color: var(--title-foreground-color-hover);
-  }
+.debug-panel-inner {
+  padding: deprecated.$s-16 deprecated.$s-8;
 }
 
 .checkbox-wrapper {
@@ -38,8 +29,4 @@
 .checkbox-icon {
   @extend .checkbox-icon;
   cursor: pointer;
-}
-
-.debug-panel-inner {
-  padding: deprecated.$s-16 deprecated.$s-8;
 }

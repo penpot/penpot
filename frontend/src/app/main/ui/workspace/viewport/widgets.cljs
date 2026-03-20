@@ -129,13 +129,15 @@
          (fn [_]
            (on-frame-leave (:id frame))))
 
-        main-instance? (ctk/main-instance? frame)
-        is-variant?    (:is-variant-container frame)
+        main-instance?   (ctk/main-instance? frame)
+        is-variant?      (:is-variant-container frame)
 
-        text-width (* (:width frame) zoom)
-        show-icon? (and (or (:use-for-thumbnail frame) is-grid-edition main-instance? is-variant?)
-                        (not (<= text-width 15)))
-        text-pos-x (if show-icon? 15 0)
+        use-width?        (vwu/title-transform-use-width? frame)
+
+        text-width       (* (if use-width? (:width frame) (:height frame)) zoom)
+        show-icon?       (and (or (:use-for-thumbnail frame) is-grid-edition main-instance? is-variant?)
+                              (not (<= text-width 15)))
+        text-pos-x       (if show-icon? 15 0)
 
         edition*         (mf/use-state false)
         edition?         (deref edition*)
@@ -178,7 +180,6 @@
            (when (kbd/enter? event) (accept-edit))
            (when (kbd/esc? event) (cancel-edit))))]
 
-
     (when (not (:hidden frame))
       [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
                        :data-edit-grid is-grid-edition
@@ -200,7 +201,7 @@
             is-variant?                [:use {:href "#icon-component"}])])
 
        (if ^boolean edition?
-           ;; Case when edition? is true
+         ;; Case when edition? is true
          [:foreignObject {:x text-pos-x
                           :y -15
                           :width (max 0 (- text-width text-pos-x))
@@ -217,7 +218,7 @@
                    :ref ref
                    :default-value (:name frame)
                    :on-blur accept-edit}]]
-           ;; Case when edition? is false
+         ;; Case when edition? is false
          [:foreignObject {:x text-pos-x
                           :y -11
                           :width (max 0 (- text-width text-pos-x))
@@ -242,7 +243,7 @@
   [{:keys [objects zoom selected focus is-show-artboard-names
            on-frame-enter on-frame-leave on-frame-select]}]
   (let [selected       (or selected #{})
-        shapes         (ctt/get-frames objects {:skip-copies? true})
+        shapes         (ctt/get-frames objects {:skip-copies? true :ignore-index? true})
         shapes         (if (dbg/enabled? :shape-titles)
                          (into (set shapes)
                                (map (d/getf objects))
@@ -252,7 +253,7 @@
         edition        (mf/deref refs/selected-edition)
         grid-edition?  (ctl/grid-layout? objects edition)]
 
-    [:g.frame-titles
+    [:g.frame-titles.blurrable
      (for [{:keys [id parent-id] :as shape} shapes]
        (when (and
               (not= id uuid/zero)

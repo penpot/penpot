@@ -41,7 +41,7 @@ penpot.ui.onMessage<PluginUIEvent>((message) => {
 
 function resize(width: number, height: number) {
   if ('resize' in penpot.ui) {
-    (penpot as any).ui.resize(width, height);
+    penpot.ui.resize(width, height);
   }
 }
 

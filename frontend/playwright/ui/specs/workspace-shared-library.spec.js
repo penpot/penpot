@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 const mainFileId = "3622460c-3408-81e2-8005-2fd0e55888b7";
 const sharedFileId = "3622460c-3408-81e2-8005-2fc938010233";
@@ -13,12 +13,12 @@ const sharedFileFragmentId1 = "3622460c-3408-81e2-8005-31859c15ff91";
 const sharedFileFragmentId2 = "3622460c-3408-81e2-8005-31859c15ff90";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/9042
 test("Bug 9056 - 'More info' doesn't open the update tab", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 
   await workspacePage.mockRPC(
@@ -76,7 +76,7 @@ test("Bug 9056 - 'More info' doesn't open the update tab", async ({ page }) => {
 test("Bug 10113 - Empty library modal for non-empty library", async ({
   page,
 }) => {
-  const workspace = new WorkspacePage(page);
+  const workspace = new WasmWorkspacePage(page);
 
   await workspace.setupEmptyFile(page);
   await workspace.mockRPC(/get\-file\?/, "workspace/get-file-10113.json");

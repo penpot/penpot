@@ -1,0 +1,104 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+  z-index: var(--z-index-notifications);
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  max-block-size: initial;
+  min-inline-size: px2rem(1021);
+  padding: px2rem(80);
+
+  @media (max-width: 1024px) {
+    min-inline-size: px2rem(712);
+    padding: var(--sp-xxxl);
+  }
+}
+
+.close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-title {
+  @include t.use-typography("title-large");
+  margin-block-end: var(--sp-xxxl);
+  color: var(--modal-title-foreground-color);
+  display: flex;
+  gap: var(--sp-m);
+}
+
+.modal-text-large {
+  @include t.use-typography("body-large");
+}
+
+.modal-text-medium {
+  @include t.use-typography("body-medium");
+}
+
+.modal-text-small {
+  @include t.use-typography("body-small");
+}
+
+.modal-info {
+  margin-block-start: var(--sp-s);
+  width: 40%;
+}
+
+.modal-content,
+.modal-end {
+  color: var(--color-foreground-secondary);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-success-content {
+  display: flex;
+  gap: $sz-40;
+}
+
+.modal-start {
+  display: flex;
+  justify-content: center;
+  min-inline-size: $sz-284;
+
+  svg {
+    inline-size: 100%;
+    block-size: auto;
+  }
+
+  @media (max-width: 992px) {
+    display: none;
+  }
+}
+
+.radio-btns {
+  label {
+    @include t.use-typography("body-large");
+    padding: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-l) 0 0 0;
+  gap: 0;
+}
+
+.contact {
+  margin-block-start: $sz-96;
+  color: var(--color-foreground-primary);
+}

@@ -17,7 +17,6 @@
    [app.db.sql :as sql]
    [app.http :as http]
    [app.rpc :as-alias rpc]
-   [app.setup.clock :as clock]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -134,7 +133,7 @@
         ;; this will run pending task triggered by deleting user snapshot
         (th/run-pending-tasks!)
 
-        (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+        (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
           (let [res (th/run-task! :objects-gc {})]
             ;; delete 2 snapshots and 2 file data entries
             (t/is (= 4 (:processed res)))))))))

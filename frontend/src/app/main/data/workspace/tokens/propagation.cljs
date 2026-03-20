@@ -6,13 +6,16 @@
 
 (ns app.main.data.workspace.tokens.propagation
   (:require
+   [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -21,6 +24,9 @@
    [clojure.data :as data]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
+
+;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
+(l/set-level! :warn)
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -47,32 +53,7 @@
 
 (def ^:private filter-existing-values? false)
 
-(def ^:private attributes->shape-update
-  {ctt/border-radius-keys dwta/update-shape-radius-for-corners
-   ctt/color-keys dwta/update-fill-stroke
-   ctt/stroke-width-keys dwta/update-stroke-width
-   ctt/sizing-keys dwta/update-shape-dimensions
-   ctt/opacity-keys dwta/update-opacity
-   ctt/rotation-keys dwta/update-rotation
-
-   ;; Typography
-   ctt/font-family-keys dwta/update-font-family
-   ctt/font-size-keys dwta/update-font-size
-   ctt/font-weight-keys dwta/update-font-weight
-   ctt/letter-spacing-keys dwta/update-letter-spacing
-   ctt/text-case-keys dwta/update-text-case
-   ctt/text-decoration-keys dwta/update-text-decoration
-   ctt/typography-token-keys dwta/update-typography
-   ctt/shadow-keys dwta/update-shadow
-   #{:line-height} dwta/update-line-height
-
-   ;; Layout
-   #{:x :y} dwta/update-shape-position
-   #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
-   #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
-   #{:column-gap :row-gap} dwta/update-layout-spacing
-   #{:width :height} dwta/update-shape-dimensions
-   #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} dwta/update-layout-sizing-limits})
+(def ^:private attributes->shape-update dwta/attributes->shape-update)
 
 (def ^:private attribute-actions-map
   (flatten-set-keyed-map attributes->shape-update {}))
@@ -207,10 +188,13 @@
   (ptk/reify ::propagate-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [tokens-lib (-> (dsh/lookup-file-data state)
-                                (get :tokens-lib))]
-        (->> (ctob/get-tokens-in-active-sets tokens-lib)
-             (sd/resolve-tokens)
+      (when-let [tokens-tree (-> (dsh/lookup-file-data state)
+                                 (get :tokens-lib)
+                                 (ctob/get-tokens-in-active-sets))]
+        (->> (if (contains? cf/flags :tokenscript)
+               (rx/of (-> (ts/resolve-tokens tokens-tree)
+                          (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
+               (sd/resolve-tokens tokens-tree))
              (rx/mapcat (fn [sd-tokens]
                           (let [undo-id (js/Symbol)]
                             (rx/concat

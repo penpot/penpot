@@ -231,12 +231,12 @@
                          :timeout nil
                          :tag :media-loading}))
        (->> (if (seq uris)
-                ;; Media objects is a list of URL's pointing to the path
+              ;; Media objects is a list of URL's pointing to the path
               (process-uris params)
-                ;; Media objects are blob of data to be upload
+              ;; Media objects are blob of data to be upload
               (process-blobs params))
 
-              ;; Every stream has its own sideeffect. We need to ignore the result
+            ;; Every stream has its own sideeffect. We need to ignore the result
             (rx/ignore)
             (rx/catch #(handle-media-error % on-error))
             (rx/finalize #(st/emit! (ntf/hide :tag :media-loading))))))))
@@ -251,9 +251,8 @@
 
 (defn upload-fill-image
   [file on-success]
-  (dm/assert!
-   "expected a valid blob for `file` param"
-   (dmm/blob? file))
+  (assert (dmm/blob? file) "expected a valid blob for `file` param")
+
   (ptk/reify ::upload-fill-image
     ptk/WatchEvent
     (watch [_ state _]

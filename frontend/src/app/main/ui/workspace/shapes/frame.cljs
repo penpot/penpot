@@ -191,7 +191,7 @@
            :key "frame-container"
            :opacity (when ^boolean hidden? 0)}
 
-           ;; When there is no thumbnail, we generate a empty rect.
+          ;; When there is no thumbnail, we generate a empty rect.
           (when (and (not ^boolean content-visible?) (not @imposter-loaded))
             [:g.frame-placeholder
              [:rect {:x x

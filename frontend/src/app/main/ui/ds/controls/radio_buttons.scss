@@ -1,0 +1,40 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+
+.wrapper {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: fit-content;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  gap: var(--sp-xs);
+
+  &.extended {
+    width: 100%;
+    display: flex;
+  }
+}
+
+.label {
+  &.extended {
+    display: flex;
+    flex: 1 1 0;
+  }
+}
+
+.button {
+  &.extended {
+    flex-grow: 1;
+  }
+}
+
+.input {
+  display: none;
+}

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Sets the version from Git tags, then produces the npm tarball.
+# Must be invoked directly (not via npm/pnpm) so that the version
+# is written to package.json before npm reads it.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+bash ./scripts/set-version
+npm pack

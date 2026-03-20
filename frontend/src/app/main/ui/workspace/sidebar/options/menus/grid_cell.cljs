@@ -271,6 +271,6 @@
         [:div {:class (stl/css :row)}
          [:button
           {:class (stl/css :edit-grid-btn)
-           :alt    (tr "workspace.layout_grid.editor.options.edit-grid")
+           :alt    (tr "workspace.layout-grid.editor.options.edit-grid")
            :on-click toggle-edit-mode}
-          (tr "workspace.layout_grid.editor.options.edit-grid")]]])]))
+          (tr "workspace.layout-grid.editor.options.edit-grid")]]])]))

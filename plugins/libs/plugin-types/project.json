@@ -3,16 +3,5 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/plugin-types",
   "projectType": "library",
-  "targets": {
-    "lint": {
-      "command": "tsc -p {projectRoot} --noEmit"
-    },
-    "build": {
-      "command": "node tools/scripts/build-types.mjs",
-      "options": {
-        "outputPath": "dist/plugin-types"
-      }
-    }
-  },
-  "tags": ["type:ui"]
+  "targets": {}
 }

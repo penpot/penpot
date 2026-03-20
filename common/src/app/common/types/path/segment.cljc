@@ -777,7 +777,7 @@
   content as PathData instance."
   [content transform]
   (if (some? transform)
-    (impl/-transform content transform)
+    (impl/-transform (impl/path-data content) transform)
     content))
 
 (defn move-content

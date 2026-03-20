@@ -6,7 +6,14 @@
     "ses": "^1.1.0",
     "zod": "^3.22.4"
   },
-  "module": "./index.mjs",
-  "typings": "./index.d.ts",
-  "type": "module"
+  "module": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "build:watch": "vite build --watch --mode development",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest"
+  }
 }

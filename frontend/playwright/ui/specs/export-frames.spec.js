@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
 });
 
 /**
@@ -32,7 +32,7 @@ test.describe("Export frames to PDF", () => {
   test("Export frames menu option is NOT visible when page has no frames", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await workspacePage.setupEmptyFile();
 
     await workspacePage.goToWorkspace();
@@ -48,7 +48,7 @@ test.describe("Export frames to PDF", () => {
   test("Export frames menu option is visible when there are frames (even if not selected)", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
     // Open main menu
@@ -62,7 +62,7 @@ test.describe("Export frames to PDF", () => {
   test("Export frames modal shows all frames when none are selected", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
     // Don't select any frame
@@ -88,7 +88,7 @@ test.describe("Export frames to PDF", () => {
   test("Export frames modal shows only the selected frames", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
     // Select Frame 1
@@ -116,7 +116,7 @@ test.describe("Export frames to PDF", () => {
   });
 
   test("User can deselect frames in the export modal", async ({ page }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
     // Select Frame 1
@@ -149,7 +149,7 @@ test.describe("Export frames to PDF", () => {
   test("Export button is disabled when all frames are deselected", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
     // Select Frame 1
@@ -173,7 +173,7 @@ test.describe("Export frames to PDF", () => {
   });
 
   test("User can cancel the export modal", async ({ page }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
     // Select Frame 1

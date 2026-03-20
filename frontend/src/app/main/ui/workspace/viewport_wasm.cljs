@@ -30,6 +30,7 @@
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
+   [app.main.ui.workspace.shapes.text.v3-editor :as editor-v3]
    [app.main.ui.workspace.top-toolbar :refer [top-toolbar*]]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
@@ -56,6 +57,7 @@
    [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
+   [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -72,7 +74,7 @@
         objects)))
 
 (mf/defc viewport*
-  [{:keys [selected wglobal wlocal layout file page palete-size]}]
+  [{:keys [selected wglobal wlocal layout file page palete-size file-version-id]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
@@ -140,6 +142,7 @@
 
         canvas-ref        (mf/use-ref nil)
         text-editor-ref   (mf/use-ref nil)
+        last-file-version-id-ref (mf/use-ref nil)
 
         ;; STATE REFS
         disable-paste-ref (mf/use-ref false)
@@ -222,8 +225,9 @@
         show-gradient-handlers?  (= (count selected) 1)
         show-grids?              (contains? layout :display-guides)
 
-        show-frame-outline?      (= transform :move)
+        show-frame-outline?      (and (= transform :move) (not panning))
         show-outlines?           (and (nil? transform)
+                                      (not panning)
                                       (not edition)
                                       (not drawing-obj)
                                       (not (#{:comments :path :curve} drawing-tool)))
@@ -312,6 +316,11 @@
                                          (js/console.error "Error initializing canvas context:" e)
                                          false))]
                            (reset! canvas-init? init?)
+                           (when init?
+                             ;; Restore previous canvas pixels immediately after context initialization
+                             ;; This happens before initialize-viewport is called
+                             (wasm.api/apply-canvas-blur)
+                             (wasm.api/restore-previous-canvas-pixels))
                            (when-not init?
                              (js/alert "WebGL not supported")
                              (st/emit! (dcm/go-to-dashboard-recent))))))))
@@ -338,16 +347,24 @@
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render "with-effect")))
 
-    (mf/with-effect [@canvas-init? zoom vbox background]
-      (when (and @canvas-init? (not @initialized?))
-        (wasm.api/initialize-viewport base-objects zoom vbox background)
-        (reset! initialized? true)))
+    (mf/with-effect [@canvas-init? file-version-id zoom vbox background]
+      (when @canvas-init?
+        (if (not @initialized?)
+          (do
+            (wasm.api/clear-canvas-pixels)
+            (wasm.api/initialize-viewport base-objects zoom vbox background)
+            (reset! initialized? true)
+            (mf/set-ref-val! last-file-version-id-ref file-version-id))
+          (when (and (some? file-version-id)
+                     (not= file-version-id (mf/ref-val last-file-version-id-ref)))
+            (wasm.api/initialize-viewport base-objects zoom vbox background)
+            (mf/set-ref-val! last-file-version-id-ref file-version-id)))))
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)
-        (if (empty? focus)
-          (wasm.api/clear-focus-mode)
-          (wasm.api/set-focus-mode focus))))
+        (ts/asap #(if (empty? focus)
+                    (wasm.api/clear-focus-mode)
+                    (wasm.api/set-focus-mode focus)))))
 
     (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
@@ -418,6 +435,7 @@
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :preserveAspectRatio "xMidYMid meet"
        :key (str "viewport" page-id)
+       :id "viewport-controls"
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
        :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
@@ -445,13 +463,22 @@
                 :height (max 0 (- (:height vbox) rule-area-size))}]]]
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
+       ;; Text editor handling:
+       ;; - When text-editor-wasm/v1 is active, contenteditable is rendered in viewport-overlays (HTML DOM)
        (when show-text-editor?
-         (if (features/active-feature? @st/state "text-editor/v2")
+         (cond
+           (features/active-feature? @st/state "text-editor-wasm/v1")
+           [:& editor-v3/text-editor {:shape editing-shape
+                                      :canvas-ref canvas-ref
+                                      :ref text-editor-ref}]
+
+           (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
                                       :canvas-ref canvas-ref
                                       :ref text-editor-ref}]
-           [:& editor-v1/text-editor-svg {:shape editing-shape
-                                          :ref text-editor-ref}]))
+
+           :else [:& editor-v1/text-editor-svg {:shape editing-shape
+                                                :ref text-editor-ref}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id
@@ -467,7 +494,7 @@
               :zoom zoom}]
 
             (when (ctl/any-layout? outlined-frame)
-              [:g.ghost-outline
+              [:g.ghost-outline.blurrable
                [:& outline/shape-outlines
                 {:objects base-objects
                  :selected selected
@@ -535,7 +562,7 @@
            :shift? @shift?}])
 
        [:> widgets/frame-titles*
-        {:objects (with-meta objects-modified nil)
+        {:objects objects-modified
          :selected selected
          :zoom zoom
          :is-show-artboard-names show-artboard-names?
@@ -698,8 +725,8 @@
           [:& grid-layout/editor
            {:zoom zoom
             :objects objects-modified
-            :shape (or (get base-objects edition)
-                       (get base-objects @hover-top-frame-id))
+            :shape (or (get objects-modified edition)
+                       (get objects-modified @hover-top-frame-id))
             :view-only (not show-grid-editor?)}])]
 
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}

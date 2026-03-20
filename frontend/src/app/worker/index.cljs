@@ -58,6 +58,8 @@
 
         (swap! state update ::snap snap/update-page old-page new-page)
         (swap! state update ::selection selection/update-page old-page new-page))
+      (catch :default cause
+        (log/error :hint "error updating page index" :id page-id :cause cause))
       (finally
         (let [elapsed (tpoint)]
           (log/dbg :hint "page index updated" :id page-id :elapsed elapsed ::log/sync? true))))

@@ -1,0 +1,98 @@
+{
+    "~:revn": 11,
+    "~:lagged": [
+        {
+            "~:id": "~u9666e946-78e8-8111-8007-8fe7be6223c2",
+            "~:revn": 12,
+            "~:file-id": "~u9666e946-78e8-8111-8007-8fe5f0f454bf",
+            "~:session-id": "~u3966be0d-5f49-807f-8007-8fe68b13fee6",
+            "~:changes": [
+                {
+                    "~:type": "~:mod-obj",
+                    "~:id": "~u3edd6127-ced7-80c6-8007-8fe5f6c52e5a",
+                    "~:page-id": "~u9666e946-78e8-8111-8007-8fe5f0f49ac6",
+                    "~:operations": [
+                        {
+                            "~:type": "~:set",
+                            "~:attr": "~:y",
+                            "~:val": 110.00000528339297,
+                            "~:ignore-geometry": false,
+                            "~:ignore-touched": false
+                        },
+                        {
+                            "~:type": "~:set",
+                            "~:attr": "~:width",
+                            "~:val": 629.9999776102587,
+                            "~:ignore-geometry": false,
+                            "~:ignore-touched": false
+                        },
+                        {
+                            "~:type": "~:set",
+                            "~:attr": "~:points",
+                            "~:val": [
+                                {
+                                    "~#point": {
+                                        "~:x": 109.99999217353886,
+                                        "~:y": 110.00000528339297
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 739.9999697837976,
+                                        "~:y": 110.00000528339297
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 739.9999697837976,
+                                        "~:y": 739.9999740316338
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 109.99999217353886,
+                                        "~:y": 739.9999740316338
+                                    }
+                                }
+                            ],
+                            "~:ignore-geometry": false,
+                            "~:ignore-touched": false
+                        },
+                        {
+                            "~:type": "~:set",
+                            "~:attr": "~:x",
+                            "~:val": 109.99999217353889,
+                            "~:ignore-geometry": false,
+                            "~:ignore-touched": false
+                        },
+                        {
+                            "~:type": "~:set",
+                            "~:attr": "~:selrect",
+                            "~:val": {
+                                "~#rect": {
+                                    "~:x": 109.99999217353889,
+                                    "~:y": 110.00000528339297,
+                                    "~:width": 629.9999776102587,
+                                    "~:height": 629.9999687482408,
+                                    "~:x1": 109.99999217353889,
+                                    "~:y1": 110.00000528339297,
+                                    "~:x2": 739.9999697837976,
+                                    "~:y2": 739.9999740316338
+                                }
+                            },
+                            "~:ignore-geometry": false,
+                            "~:ignore-touched": false
+                        },
+                        {
+                            "~:type": "~:set",
+                            "~:attr": "~:height",
+                            "~:val": 629.9999687482408,
+                            "~:ignore-geometry": false,
+                            "~:ignore-touched": false
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -10,16 +10,15 @@ To view this site locally, first set up the environment:
 # only if necessary
 nvm install
 nvm use
-# only if necessary
 corepack enable
 
-yarn install
+pnpm install
 ```
 
 And launch a development server:
 
 ```sh
-yarn start
+pnpm start
 ```
 
 You can then point a browser to [http://localhost:8080](http://localhost:8080).

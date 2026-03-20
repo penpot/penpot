@@ -10,7 +10,7 @@ fi
 
 export BUILD_NAME="${BUILD_NAME:-render-wasm}"
 export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.87.0/skia-binaries-e551f334ad5cbdf43abf-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.93.1/skia-binaries-319323662b1685a112f5-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
 
 # 256 MB of initial heap to perform less
 # initial calls to memory grow.
@@ -66,7 +66,7 @@ function clean {
 function setup {
     corepack enable;
     corepack install;
-    yarn install;
+    pnpm install;
 }
 
 function build {
@@ -83,7 +83,7 @@ function copy_artifacts {
 
     sed -i "s/render_wasm.wasm/$BUILD_NAME.wasm?version=$VERSION_TAG/g" $DEST/$BUILD_NAME.js;
 
-    yarn esbuild target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js \
+    pnpx esbuild target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js \
         --log-level=error \
         --outfile=$DEST/worker/render.js \
         --platform=neutral \

@@ -14,6 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
+   [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
@@ -26,12 +27,16 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.variants :as dwv]
+   [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.features :as features]
    [app.main.fonts :refer [fetch-font-css]]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
+   [app.plugins.flags :as flags]
    [app.plugins.fonts :as fonts]
    [app.plugins.format :as format]
    [app.plugins.history :as history]
@@ -40,6 +45,7 @@
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
    [app.plugins.shape :as shape]
+   [app.plugins.system-events :as se]
    [app.plugins.user :as user]
    [app.plugins.utils :as u]
    [app.plugins.viewport :as viewport]
@@ -65,7 +71,10 @@
             (cb/with-objects (:objects page))
             (cb/add-object shape))]
 
-    (st/emit! (ch/commit-changes changes))
+    (st/emit!
+     (ch/commit-changes changes)
+     (se/event plugin-id "create-shape" :type type))
+
     (shape/shape-proxy plugin-id (:id shape))))
 
 (defn create-context
@@ -123,6 +132,9 @@
 
     :fonts
     {:get (fn [] (fonts/fonts-subcontext plugin-id))}
+
+    :flags
+    {:get (fn [] (flags/flags-proxy plugin-id))}
 
     :library
     {:get (fn [] (library/library-subcontext plugin-id))}
@@ -285,7 +297,8 @@
               page-id (:current-page-id @st/state)
               id (uuid/next)
               ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dwg/group-shapes id ids))
+          (st/emit! (dwg/group-shapes id ids)
+                    (se/event plugin-id "create-shape" :type type))
           (shape/shape-proxy plugin-id file-id page-id id))))
 
     :ungroup
@@ -327,7 +340,8 @@
                 (cb/with-objects (:objects page))
                 (cb/add-object shape))]
 
-        (st/emit! (ch/commit-changes changes))
+        (st/emit! (ch/commit-changes changes)
+                  (se/event plugin-id "create-shape" :type :path))
         (shape/shape-proxy plugin-id (:id shape))))
 
     :createText
@@ -338,9 +352,14 @@
 
         :else
         (let [page  (dsh/lookup-page @st/state)
-              shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                        (update :content txt/change-text text)
-                        (assoc :position-data nil))
+              shape (-> (cts/setup-shape {:type :text
+                                          :x 0 :y 0
+                                          :width 1 :height 1
+                                          :grow-type :auto-width})
+                        (update :content txt/change-text text
+                                ;; Text should be given a color by default
+                                {:fills [{:fill-color "#000000" :fill-opacity 1}]})
+                        (dissoc :position-data))
 
               changes
               (-> (cb/empty-changes)
@@ -348,7 +367,12 @@
                   (cb/with-objects (:objects page))
                   (cb/add-object shape))]
 
-          (st/emit! (ch/commit-changes changes))
+          (st/emit! (ch/commit-changes changes)
+                    (se/event plugin-id "create-shape" :type :text))
+
+          (when (features/active-feature? @st/state "render-wasm/v1")
+            (st/emit! (dwwt/resize-wasm-text-debounce (:id shape))))
+
           (shape/shape-proxy plugin-id (:id shape)))))
 
     :createShapeFromSvg
@@ -361,7 +385,8 @@
         (let [id (uuid/next)
               file-id (:current-file-id @st/state)
               page-id (:current-page-id @st/state)]
-          (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
+          (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0))
+                    (se/event plugin-id "create-shape" :type :svg))
           (shape/shape-proxy plugin-id file-id page-id id))))
 
     :createShapeFromSvgWithImages
@@ -381,7 +406,8 @@
              (st/emit! (dwm/create-svg-shape-with-images
                         file-id id "svg" svg-string (gpt/point 0 0)
                         #(resolve (shape/shape-proxy plugin-id file-id page-id id))
-                        reject)))))))
+                        reject)
+                       (se/event plugin-id "create-shape" :type :text)))))))
 
     :createBoolean
     (fn [bool-type shapes]
@@ -396,7 +422,8 @@
           :else
           (let [ids      (into #{} (map #(obj/get % "$id")) shapes)
                 shape-id (uuid/next)]
-            (st/emit! (dwb/create-bool bool-type :ids ids :force-shape-id shape-id))
+            (st/emit! (dwb/create-bool bool-type :ids ids :force-shape-id shape-id)
+                      (se/event plugin-id "create-shape" :type :boolean))
             (shape/shape-proxy plugin-id shape-id)))))
 
     :generateMarkup
@@ -515,9 +542,14 @@
 
     :openPage
     (fn [page new-window]
-      (let [id (obj/get page "$id")
-            new-window (if (boolean? new-window) new-window true)]
-        (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window))))
+      (let [id (cond
+                 (page/page-proxy? page) (obj/get page "$id")
+                 (string? page)          (uuid/parse* page)
+                 :else nil)
+            new-window (if (boolean? new-window) new-window false)]
+        (if (nil? id)
+          (u/display-not-valid :openPage "Expected a Page object or a page UUID string")
+          (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
 
     :alignHorizontal
     (fn [shapes direction]
@@ -583,4 +615,35 @@
 
         :else
         (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dw/convert-selected-to-path ids)))))))
+          (st/emit! (dw/convert-selected-to-path ids)))))
+
+    :createVariantFromComponents
+    (fn [shapes]
+      (cond
+        (or (not (seq shapes))
+            (not (every? u/is-main-component-proxy? shapes)))
+        (u/display-not-valid :shapes shapes)
+
+        :else
+        (let [file-id (obj/get (first shapes) "$file")
+              page-id (obj/get (first shapes) "$page")
+              ids (->> shapes
+                       (map #(obj/get % "$id"))
+                       (into #{}))
+
+              ;; Check that every component is:
+              ;; - in the same page
+              ;; - not already a variant
+              valid?
+              (every?
+               (fn [id]
+                 (let [shape     (u/locate-shape file-id page-id id)
+                       component (u/locate-library-component file-id (:component-id shape))]
+                   (not (ctk/is-variant? component))))
+               ids)]
+          (when valid?
+            (let [variant-id (uuid/next)]
+              (st/emit! (dwv/combine-as-variants
+                         ids
+                         {:trigger "plugin:combine-as-variants" :variant-id variant-id}))
+              (library/variant-proxy plugin-id file-id variant-id))))))))

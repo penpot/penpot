@@ -76,7 +76,7 @@
                        (ctho/add-frame :frame-blue {:name "frame-blue"}))
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page       (cthf/current-page file)
           frame-red  (cths/get-shape file :frame-red)
           frame-blue (cths/get-shape file :frame-blue)
@@ -99,7 +99,7 @@
                frame-blue'   (cths/get-shape file' :frame-blue)
                copied-blue1' (find-copied-shape frame-blue' page' (:id frame-red'))]
 
-          ;; ==== Check
+           ;; ==== Check
            (t/is (= (:parent-id copied-blue1') (:id frame-red')))))))))
 
 (t/deftest copy-shape-to-component
@@ -113,7 +113,7 @@
                        (ctho/add-frame :frame-blue {:name "frame-blue"}))
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page       (cthf/current-page file)
           frame-red  (cths/get-shape file :frame-red)
           frame-blue (cths/get-shape file :frame-blue)
@@ -136,7 +136,7 @@
                frame-blue'   (cths/get-shape file' :frame-blue)
                copied-blue1' (find-copied-shape frame-blue' page' (:id frame-red'))]
 
-          ;; ==== Check
+           ;; ==== Check
            (t/is (= (:parent-id copied-blue1') (:id frame-red')))))))))
 
 (t/deftest copy-component-to-frame
@@ -150,7 +150,7 @@
                        (cthc/make-component :blue :frame-blue))
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page       (cthf/current-page file)
           frame-red  (cths/get-shape file :frame-red)
           frame-blue (cths/get-shape file :frame-blue)
@@ -173,7 +173,7 @@
                frame-blue'   (cths/get-shape file' :frame-blue)
                copied-blue1' (find-copied-shape frame-blue' page' (:id frame-red'))]
 
-            ;; ==== Check
+           ;; ==== Check
            (t/is (= (:parent-id copied-blue1') (:id frame-red')))))))))
 
 (t/deftest copy-component-to-component
@@ -188,7 +188,7 @@
                        (cthc/make-component :blue :frame-blue))
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page       (cthf/current-page file)
           frame-red  (cths/get-shape file :frame-red)
           frame-blue (cths/get-shape file :frame-blue)
@@ -211,7 +211,7 @@
                frame-blue'   (cths/get-shape file' :frame-blue)
                copied-blue1' (find-copied-shape frame-blue' page' (:id frame-red'))]
 
-            ;; ==== Check
+           ;; ==== Check
            (t/is (not (ctk/main-instance? copied-blue1')))
            (t/is (= (:parent-id copied-blue1') (:id frame-red')))))))))
 
@@ -228,7 +228,7 @@
                        (cthc/make-component :blue :frame-blue))
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           frame-red    (cths/get-shape file :frame-red)
           frame-blue   (cths/get-shape file :frame-blue)
@@ -254,7 +254,7 @@
                copied-blue1' (find-copied-shape frame-blue' page' (:id frame-red'))
                copied-blue2' (find-copied-shape frame-blue' page' uuid/zero true)]
 
-            ;; ==== Check
+           ;; ==== Check
            (t/is (nil? copied-blue1'))
            (t/is (ctk/main-instance? copied-blue2'))
            (t/is (= (:parent-id copied-blue2') uuid/zero))))))))
@@ -272,7 +272,7 @@
 
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           root         (cths/get-shape-by-id file uuid/zero)
           frame-red    (cths/get-shape file :frame-red)
@@ -297,13 +297,13 @@
                root-children' (->> (:shapes root')
                                    (map #(cths/get-shape-by-id file' %)))]
 
-          ;; ==== Check
-          ;; The main shape of the component have no children
+           ;; ==== Check
+           ;; The main shape of the component have no children
            (t/is (= 0 (count (:shapes frame-red'))))
-          ;; Root had two children, now have 3
+           ;; Root had two children, now have 3
            (t/is (= 2 (count (:shapes root))))
            (t/is (= 3 (count (:shapes root'))))
-          ;; Two of the children of root are variant-containers
+           ;; Two of the children of root are variant-containers
            (t/is (= 2 (count (filter ctk/is-variant-container? root-children'))))))))))
 
 (t/deftest cut-paste-variant-container-into-component
@@ -319,7 +319,7 @@
 
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           root         (cths/get-shape-by-id file uuid/zero)
           frame-red    (cths/get-shape file :frame-red)
@@ -346,13 +346,13 @@
                root-children' (->> (:shapes root')
                                    (map #(cths/get-shape-by-id file' %)))]
 
-            ;; ==== Check
-          ;; The main shape of the component have no children
+           ;; ==== Check
+           ;; The main shape of the component have no children
            (t/is (= 0 (count (:shapes frame-red'))))
-          ;; Root had two children, now it still have two (because we have cutted one of them, and then created a new one)
+           ;; Root had two children, now it still have two (because we have cutted one of them, and then created a new one)
            (t/is (= 2 (count (:shapes root))))
            (t/is (= 2 (count (:shapes root'))))
-          ;; One of the children of root is a variant-container
+           ;; One of the children of root is a variant-container
            (t/is (= 1 (count (filter ctk/is-variant-container? root-children'))))))))))
 
 (t/deftest copy-variant-into-different-variant-container
@@ -366,7 +366,7 @@
 
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           m01          (cths/get-shape file :m01)
           v02          (cths/get-shape file :v02)
@@ -389,12 +389,12 @@
                v02'           (cths/get-shape file' :v02)
                components'    (cthc/get-components file')]
 
-          ;; ==== Check
-          ;; v02 had two children, now it have 3
+           ;; ==== Check
+           ;; v02 had two children, now it have 3
            (t/is (= 2 (count (:shapes v02))))
            (t/is (= 3 (count (:shapes v02'))))
 
-          ;;There was 4 components, now there are 5
+           ;;There was 4 components, now there are 5
            (t/is (= 4 (count components)))
            (t/is (= 5 (count components')))))))))
 
@@ -409,7 +409,7 @@
 
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           m01          (cths/get-shape file :m01)
           v02          (cths/get-shape file :v02)
@@ -434,16 +434,16 @@
                m03'           (cths/get-shape file' :m03)
                components'    (cthc/get-components file')]
 
-          ;; ==== Check
-          ;; v02 had two children, now it have still 2
+           ;; ==== Check
+           ;; v02 had two children, now it have still 2
            (t/is (= 2 (count (:shapes v02))))
            (t/is (= 2 (count (:shapes v02'))))
 
-          ;; m03 had no children, now it have 1
+           ;; m03 had no children, now it have 1
            (t/is (= 0 (count (:shapes m03))))
            (t/is (= 1 (count (:shapes m03'))))
 
-          ;;There was 4 components, now there is still 4
+           ;;There was 4 components, now there is still 4
            (t/is (= 4 (count components)))
            (t/is (= 4 (count components')))))))))
 
@@ -457,7 +457,7 @@
 
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           m01          (cths/get-shape file :m01)
           v01          (cths/get-shape file :v01)
@@ -480,12 +480,12 @@
                v01'           (cths/get-shape file' :v01)
                components'    (cthc/get-components file')]
 
-          ;; ==== Check
-          ;; v01 had two children, now it have 3
+           ;; ==== Check
+           ;; v01 had two children, now it have 3
            (t/is (= 2 (count (:shapes v01))))
            (t/is (= 3 (count (:shapes v01'))))
 
-          ;;There was 2 components, now there are 3
+           ;;There was 2 components, now there are 3
            (t/is (= 2 (count components)))
            (t/is (= 3 (count components')))))))))
 
@@ -499,7 +499,7 @@
 
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           m01          (cths/get-shape file :m01)
           v01          (cths/get-shape file :v01)
@@ -522,12 +522,12 @@
                v01'           (cths/get-shape file' :v01)
                components'    (cthc/get-components file')]
 
-          ;; ==== Check
-          ;; v01 had two children, now it have 3
+           ;; ==== Check
+           ;; v01 had two children, now it have 3
            (t/is (= 2 (count (:shapes v01))))
            (t/is (= 3 (count (:shapes v01'))))
 
-          ;;There was 2 components, now there are 3
+           ;;There was 2 components, now there are 3
            (t/is (= 2 (count components)))
            (t/is (= 3 (count components')))))))))
 
@@ -541,7 +541,7 @@
 
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           m01          (cths/get-shape file :m01)
           m02          (cths/get-shape file :m02)
@@ -565,12 +565,12 @@
                v01'           (cths/get-shape file' :v01)
                components'    (cthc/get-components file')]
 
-          ;; ==== Check
-          ;; v01 had two children, now it have 3
+           ;; ==== Check
+           ;; v01 had two children, now it have 3
            (t/is (= 2 (count (:shapes v01))))
            (t/is (= 3 (count (:shapes v01'))))
 
-          ;;There was 2 components, now there are 3
+           ;;There was 2 components, now there are 3
            (t/is (= 2 (count components)))
            (t/is (= 3 (count components')))))))))
 
@@ -586,7 +586,7 @@
 
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           frame-red    (cths/get-shape file :frame-red)
           v01          (cths/get-shape file :v01)
@@ -609,12 +609,12 @@
                v01'           (cths/get-shape file' :v01)
                components'    (cthc/get-components file')]
 
-          ;; ==== Check
-          ;; v01 had two children, now it have 3
+           ;; ==== Check
+           ;; v01 had two children, now it have 3
            (t/is (= 2 (count (:shapes v01))))
            (t/is (= 3 (count (:shapes v01'))))
 
-          ;;There was 3 components, now there are 4
+           ;;There was 3 components, now there are 4
            (t/is (= 3 (count components)))
            (t/is (= 4 (count components')))))))))
 
@@ -630,7 +630,7 @@
 
           store    (ths/setup-store file)
 
-           ;; ==== Action
+          ;; ==== Action
           page         (cthf/current-page file)
           frame-red    (cths/get-shape file :frame-red)
           v01          (cths/get-shape file :v01)
@@ -655,15 +655,15 @@
                m01'           (cths/get-shape file' :m01)
                components'    (cthc/get-components file')]
 
-          ;; ==== Check
-          ;; v01 had two children, now it have still 2
+           ;; ==== Check
+           ;; v01 had two children, now it have still 2
            (t/is (= 2 (count (:shapes v01))))
            (t/is (= 2 (count (:shapes v01'))))
 
-          ;; m01 had no children, now it have 1
+           ;; m01 had no children, now it have 1
            (t/is (= 0 (count (:shapes m01))))
            (t/is (= 1 (count (:shapes m01'))))
 
-          ;;There was 3 components, now there are still 3
+           ;;There was 3 components, now there are still 3
            (t/is (= 3 (count components)))
            (t/is (= 3 (count components')))))))))

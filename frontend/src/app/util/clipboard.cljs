@@ -56,7 +56,7 @@
          is-input?
          (= (dom/get-tag-name target) "INPUT")]
 
-    ;; ignore when pasting into an editable control
+     ;; ignore when pasting into an editable control
      (if-not (or content-editable? is-input?)
        (-> event
            (dom/event->browser-event)

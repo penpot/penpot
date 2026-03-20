@@ -46,7 +46,9 @@
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.data.workspace.zoom :as dwz]
+   [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -219,6 +221,24 @@
                         (pcb/delete-color id))]
         (rx/of (dch/commit-changes changes))))))
 
+(defn duplicate-color
+  [file-id color-id]
+  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  (assert (uuid? color-id) "expected valid uuid for `color-id`")
+
+  (ptk/reify ::duplicate-color
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data      (dsh/lookup-file-data state)
+            color     (ctl/get-color data color-id)
+            new-color (-> color
+                          (assoc :id (uuid/next))
+                          (d/without-nils)
+                          (ctc/check-library-color))
+            changes   (-> (pcb/empty-changes it)
+                          (pcb/add-color new-color))]
+        (rx/of (dch/commit-changes changes))))))
+
 ;; FIXME: this should be deleted
 (defn add-media
   [media]
@@ -346,6 +366,23 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-typography id))]
+        (rx/of (dch/commit-changes changes))))))
+
+(defn duplicate-typography
+  [file-id typography-id]
+  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  (assert (uuid? typography-id) "expected valid uuid for `typography-id`")
+
+  (ptk/reify ::duplicate-typography
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data           (dsh/lookup-file-data state)
+            typography     (get-in data [:typographies typography-id])
+            new-typography (-> typography
+                               (assoc :id (uuid/next))
+                               (ctt/check-typography))
+            changes        (-> (pcb/empty-changes it)
+                               (pcb/add-typography new-typography))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn- add-component2
@@ -1012,6 +1049,13 @@
 
             updated-objects  (pcb/get-objects changes)
             new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
+            new-text-ids     (->> new-children-ids
+                                  (keep (fn [id]
+                                          (when-let [child (get updated-objects id)]
+                                            (when (and (cfh/text-shape? child)
+                                                       (not= :fixed (:grow-type child)))
+                                              id))))
+                                  (vec))
 
             [changes parents-of-swapped]
             (if keep-touched?
@@ -1021,6 +1065,9 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
+         (when (and (features/active-feature? state "render-wasm/v1")
+                    (seq new-text-ids))
+           (dwwt/resize-wasm-text-all new-text-ids))
          (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group})
          (dwu/commit-undo-transaction undo-id)
          (dws/select-shape (:id new-shape) false))))))
@@ -1205,6 +1252,7 @@
             file         (dsh/lookup-file state file-id)
             file-data    (get file :data)
             ignore-until (get file :ignore-sync-until)
+            permissions (:permissions state)
 
             libraries-need-sync
             (->> (vals (get state :files))
@@ -1224,7 +1272,8 @@
             do-dismiss
             #(st/emit! ignore-sync (ntf/hide))]
 
-        (when (seq libraries-need-sync)
+        (when (and (:can-edit permissions)
+                   (seq libraries-need-sync))
           (rx/of (ntf/dialog
                   :content (tr "workspace.updates.there-are-updates")
                   :controls :inline-actions
@@ -1292,9 +1341,9 @@
                   (rx/take 1 workspace-data-s)
                   (rx/take 1 workspace-data-s)
                   workspace-data-s)
-                  ;; Need to get the file data before the change, so deleted shapes
-                  ;; still exist, for example. We initialize the buffer with three
-                  ;; copies of the initial state
+                 ;; Need to get the file data before the change, so deleted shapes
+                 ;; still exist, for example. We initialize the buffer with three
+                 ;; copies of the initial state
                  (rx/buffer 3 1))
 
             changes-s

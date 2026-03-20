@@ -67,8 +67,11 @@ export class WeakEqMap {
   }
 
   set(key, value) {
-    if (key === null || (typeof key !== 'object' && typeof key !== 'function')) {
-      throw new TypeError('WeakEqMap keys must be objects (like WeakMap).');
+    if (
+      key === null ||
+      (typeof key !== "object" && typeof key !== "function")
+    ) {
+      throw new TypeError("WeakEqMap keys must be objects (like WeakMap).");
     }
     const hash = this._hash(key);
     const bucket = this._getBucket(hash);

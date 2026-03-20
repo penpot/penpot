@@ -1,5 +1,0 @@
-#!/bin/bash
-
-if [ "$HUSKY_HOOK" = "pre-push" ]; then
-    pnpm run lint:affected
-fi

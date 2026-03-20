@@ -762,7 +762,7 @@
         h (:height viewport)
 
         comment-width 284 ;; TODO: this is the width set via CSS in an outer container…
-                          ;; We should probably do this in a different way.
+        ;; We should probably do this in a different way.
 
         orientation-left? (>= (+ base-x comment-width (:x bubble-margin)) w)
         orientation-top?  (>= base-y (/ h 2))

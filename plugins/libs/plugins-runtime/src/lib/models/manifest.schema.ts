@@ -6,6 +6,7 @@ export const manifestSchema = z.object({
   host: z.string().url(),
   code: z.string(),
   icon: z.string().optional(),
+  version: z.number().optional(),
   description: z.string().max(200).optional(),
   permissions: z.array(
     z.enum([

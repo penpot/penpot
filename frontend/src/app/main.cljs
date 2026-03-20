@@ -8,6 +8,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.time :as ct]
+   [app.common.transit :as t]
    [app.common.types.objects-map]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -16,6 +18,7 @@
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.errors]
+   [app.main.features :as feat]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
    [app.main.ui :as ui]
@@ -65,8 +68,11 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (rx/merge
-       (rx/of (ev/initialize)
-              (dp/refresh-profile))
+       (if (contains? cf/flags :audit-log)
+         (rx/of (ev/initialize))
+         (rx/empty))
+
+       (rx/of (dp/refresh-profile))
 
        ;; Watch for profile deletion events
        (->> stream
@@ -87,20 +93,41 @@
             (rx/map deref)
             (rx/filter dp/is-authenticated?)
             (rx/take 1)
-            (rx/map #(ws/initialize)))))))
+            (rx/map #(ws/initialize)))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when-not (feat/active-feature? state "render-wasm/v1")
+        (thr/init!)))))
 
 (defn ^:export init
   [options]
-  (some-> (unchecked-get options "defaultTranslations")
-          (i18n/set-default-translations))
+  ;; WORKAROUND: we set this really not usefull property for signal a
+  ;; sideffect and prevent GCC remove it. We need it because we need
+  ;; to populate the Date prototype with transit related properties
+  ;; before SES hardning is applied on loading MCP plugin
+  (unchecked-set js/globalThis "penpotStartDate"
+                 (-> (ct/now)
+                     (t/encode-str)
+                     (t/decode-str)))
 
-  (mw/init!)
-  (i18n/init)
-  (cur/init-styles)
-  (thr/init!)
-  (init-ui)
-  (st/emit! (plugins/initialize)
-            (initialize)))
+  ;; Before initializing anything, check if the browser has loaded
+  ;; stale JS from a previous deployment. If so, do a hard reload so
+  ;; the browser fetches fresh assets matching the current index.html.
+  (if (cf/stale-build?)
+    (cf/throttled-reload
+     :reason (dm/str "stale JS: compiled=" cf/compiled-version-tag
+                     " expected=" cf/version-tag))
+    (do
+      (some-> (unchecked-get options "defaultTranslations")
+              (i18n/set-default-translations))
+      (mw/init!)
+      (i18n/init)
+      (cur/init-styles)
+
+      (init-ui)
+      (st/emit! (plugins/initialize)
+                (initialize)))))
 
 (defn ^:export reinit
   ([]

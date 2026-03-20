@@ -12,6 +12,7 @@
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
@@ -37,6 +38,7 @@
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.product.milestone :refer [milestone*]]
    [app.main.ui.ds.product.milestone-group :refer [milestone-group*]]
+   [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.main.ui.ds.storybook :as sb]
    [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.date :refer [date*]]
@@ -63,6 +65,7 @@
     :Select select*
     :Switch switch*
     :Checkbox checkbox*
+    :RadioButtons radio-buttons*
     :Combobox combobox*
     :Text text*
     :TabSwitcher tab-switcher*
@@ -79,6 +82,7 @@
     :Milestone milestone*
     :MilestoneGroup milestone-group*
     :Date date*
+    :PanelTitle panel-title*
 
     :set-default-translations
     (fn [data]

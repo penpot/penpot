@@ -16,7 +16,6 @@
 
 (def ^:private schema:switch
   [:map
-   [:id {:optional true} :string]
    [:class {:optional true} :string]
    [:label {:optional true} [:maybe :string]]
    [:aria-label {:optional true} [:maybe :string]]
@@ -26,9 +25,11 @@
 
 (mf/defc switch*
   {::mf/schema schema:switch}
-  [{:keys [id class label aria-label default-checked on-change disabled] :rest props} ref]
+  [{:keys [class label aria-label default-checked on-change disabled] :rest props} ref]
   (let [checked*   (mf/use-state default-checked)
         checked?   (deref checked*)
+
+        id   (mf/use-id)
 
         disabled?  (d/nilv disabled false)
 
@@ -66,6 +67,11 @@
                                 :on-click handle-toggle
                                 :on-key-down handle-keydown
                                 :disabled disabled?})]
+
+    (mf/use-effect
+     (mf/deps default-checked)
+     (fn []
+       (reset! checked* default-checked)))
 
     [:> :div props
      [:div {:id id

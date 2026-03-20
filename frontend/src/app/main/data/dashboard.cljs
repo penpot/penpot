@@ -15,6 +15,7 @@
    [app.common.time :as ct]
    [app.common.types.project :refer [valid-project?]]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.constants :as mconst]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -80,7 +81,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (reduce (fn [state {:keys [id] :as project}]
-                  ;; Replace completely instead of merge to ensure deleted-at is removed
+                ;; Replace completely instead of merge to ensure deleted-at is removed
                 (assoc-in state [:projects id] project))
               state
               projects))))
@@ -361,7 +362,7 @@
   (ptk/reify ::toggle-project-pin
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:projects id :is-pinned] (not is-pinned)))
+      (d/update-in-when state [:projects id] assoc :is-pinned (not is-pinned)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -378,7 +379,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:projects id :name] (constantly name))
+          (d/update-in-when [:projects id] assoc :name name)
           (update :dashboard-local dissoc :project-for-edit)))
 
     ptk/WatchEvent
@@ -408,7 +409,7 @@
   (ptk/reify ::file-deleted
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:projects project-id :count] dec))))
+      (d/update-in-when state [:projects project-id :count] dec))))
 
 (defn delete-file
   [{:keys [id project-id] :as params}]
@@ -513,7 +514,7 @@
         (-> state
             (assoc-in [:files id] file)
             (assoc-in [:recent-files id] file)
-            (update-in [:projects project-id :count] inc))))))
+            (d/update-in-when [:projects project-id :count] inc))))))
 
 (defn create-file
   [{:keys [project-id name] :as params}]
@@ -683,12 +684,25 @@
       (rx/of (dcm/change-team-role params)
              (modal/hide)))))
 
+(defn handle-change-team-org
+  [{:keys [team-id organization-id organization-name]}]
+  (ptk/reify ::handle-change-team-org
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (contains? cf/flags :nitrate)
+        (d/update-in-when state [:teams team-id] assoc
+                          :organization-id organization-id
+                          :organization-name organization-name)
+        state))))
+
+
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
     :notification           (dcm/handle-notification msg)
     :team-role-change       (handle-change-team-role msg)
     :team-membership-change (dcm/team-membership-change msg)
+    :team-org-change        (handle-change-team-org msg)
     nil))
 
 

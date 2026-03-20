@@ -3,6 +3,11 @@
 SCRIPT_DIR=$(dirname $0);
 
 source $SCRIPT_DIR/_env;
+
+if [ -f $SCRIPT_DIR/_env.local ]; then
+    source $SCRIPT_DIR/_env.local;
+fi
+
 export OPTIONS="-A:dev"
 
 entrypoint=${1:-app.main};

@@ -33,6 +33,7 @@
    java.util.Optional
    java.util.concurrent.atomic.AtomicLong
    org.reactivestreams.Subscriber
+   software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
    software.amazon.awssdk.core.ResponseBytes
    software.amazon.awssdk.core.async.AsyncRequestBody
    software.amazon.awssdk.core.async.AsyncResponseTransformer
@@ -199,7 +200,8 @@
 
 (defn- build-s3-client
   [{:keys [::region ::endpoint ::wrk/netty-io-executor]}]
-  (let [aconfig  (-> (ClientAsyncConfiguration/builder)
+  (let [creds-provider (DefaultCredentialsProvider/create)
+        aconfig  (-> (ClientAsyncConfiguration/builder)
                      (.build))
 
         sconfig  (-> (S3Configuration/builder)
@@ -221,6 +223,7 @@
                        builder (.asyncConfiguration ^S3AsyncClientBuilder builder ^ClientAsyncConfiguration aconfig)
                        builder (.httpClient ^S3AsyncClientBuilder builder ^NettyNioAsyncHttpClient hclient)
                        builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
+                       builder (.credentialsProvider ^S3AsyncClientBuilder builder creds-provider)
                        builder (cond-> ^S3AsyncClientBuilder builder
                                  (some? endpoint)
                                  (.endpointOverride (URI. (str endpoint))))]
@@ -237,7 +240,8 @@
 
 (defn- build-s3-presigner
   [{:keys [::region ::endpoint]}]
-  (let [config (-> (S3Configuration/builder)
+  (let [creds-provider (DefaultCredentialsProvider/create)
+        config (-> (S3Configuration/builder)
                    (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
                    (.build))]
 
@@ -245,6 +249,7 @@
         (cond-> (some? endpoint) (.endpointOverride (URI. (str endpoint))))
         (.region (lookup-region region))
         (.serviceConfiguration ^S3Configuration config)
+        (.credentialsProvider creds-provider)
         (.build))))
 
 (defn- write-input-stream

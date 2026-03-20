@@ -191,59 +191,63 @@
   [page-id [event [old-data new-data]]]
 
   (let [changes (:changes event)
-        lookup-data-objects
-        (fn [data page-id]
-          (dm/get-in data [:pages-index page-id :objects]))
+        ;; cache for the get-frame-ids function
+        frame-id-cache (atom {})]
 
+    (letfn [(lookup-data-objects [data page-id]
+              (dm/get-in data [:pages-index page-id :objects]))
 
-        extract-ids
-        (fn [{:keys [page-id type] :as change}]
-          (case type
-            :add-obj [[page-id (:id change)]]
-            :mod-obj [[page-id (:id change)]]
-            :del-obj [[page-id (:id change)]]
-            :mov-objects (->> (:shapes change) (map #(vector page-id %)))
-            []))
+            (extract-ids [{:keys [page-id type] :as change}]
+              (case type
+                :add-obj [[page-id (:id change)]]
+                :mod-obj [[page-id (:id change)]]
+                :del-obj [[page-id (:id change)]]
+                :mov-objects (->> (:shapes change) (map #(vector page-id %)))
+                []))
 
-        get-frame-ids
-        (fn get-frame-ids [id]
-          (let [old-objects     (lookup-data-objects old-data page-id)
-                new-objects     (lookup-data-objects new-data page-id)
+            (get-frame-ids [id]
+              (let [old-objects     (lookup-data-objects old-data page-id)
+                    new-objects     (lookup-data-objects new-data page-id)
 
-                new-shape       (get new-objects id)
-                old-shape       (get old-objects id)
+                    new-shape       (get new-objects id)
+                    old-shape       (get old-objects id)
 
-                old-frame-id    (if (cfh/frame-shape? old-shape) id (:frame-id old-shape))
-                new-frame-id    (if (cfh/frame-shape? new-shape) id (:frame-id new-shape))
+                    old-frame-id    (if (cfh/frame-shape? old-shape) id (:frame-id old-shape))
+                    new-frame-id    (if (cfh/frame-shape? new-shape) id (:frame-id new-shape))
 
-                root-frame-old? (cfh/root-frame? old-objects old-frame-id)
-                root-frame-new? (cfh/root-frame? new-objects new-frame-id)
-                instance-root?  (ctc/instance-root? new-shape)]
+                    root-frame-old? (cfh/root-frame? old-objects old-frame-id)
+                    root-frame-new? (cfh/root-frame? new-objects new-frame-id)
+                    instance-root?  (ctc/instance-root? new-shape)]
 
-            (cond-> #{}
-              root-frame-old?
-              (conj ["frame" old-frame-id])
+                (cond-> #{}
+                  root-frame-old?
+                  (conj ["frame" old-frame-id])
 
-              root-frame-new?
-              (conj ["frame" new-frame-id])
+                  root-frame-new?
+                  (conj ["frame" new-frame-id])
 
-              instance-root?
-              (conj ["component" id])
+                  instance-root?
+                  (conj ["component" id])
 
-              (and (uuid? (:frame-id old-shape))
-                   (not= uuid/zero (:frame-id old-shape)))
-              (into (get-frame-ids (:frame-id old-shape)))
+                  (and (uuid? (:frame-id old-shape))
+                       (not= uuid/zero (:frame-id old-shape)))
+                  (into (get-frame-ids (:frame-id old-shape)))
 
-              (and (uuid? (:frame-id new-shape))
-                   (not= uuid/zero (:frame-id new-shape)))
-              (into (get-frame-ids (:frame-id new-shape))))))]
+                  (and (uuid? (:frame-id new-shape))
+                       (not= uuid/zero (:frame-id new-shape)))
+                  (into (get-frame-ids (:frame-id new-shape))))))
 
-    (into #{}
-          (comp (mapcat extract-ids)
-                (filter (fn [[page-id']] (= page-id page-id')))
-                (map (fn [[_ id]] id))
-                (mapcat get-frame-ids))
-          changes)))
+            (get-frame-ids-cached [id]
+              (or (get @frame-id-cache id)
+                  (let [result (get-frame-ids id)]
+                    (swap! frame-id-cache assoc id result)
+                    result)))]
+      (into #{}
+            (comp (mapcat extract-ids)
+                  (filter (fn [[page-id']] (= page-id page-id')))
+                  (map (fn [[_ id]] id))
+                  (mapcat get-frame-ids-cached))
+            changes))))
 
 (defn watch-state-changes
   "Watch the state for changes inside frames. If a change is detected will force a rendering

@@ -73,7 +73,7 @@
        (p/mcat (fn [blob]
                  (let [fdata  (new http/FormData)
                        agent  (new http/Agent #js {:connect #js {:rejectUnauthorized false}})
-                       headers #js {"X-Shared-Key" cf/management-key
+                       headers #js {"X-Shared-Key" (str "exporter " cf/management-key)
                                     "Authorization" (str "Bearer " auth-token)}
 
                        request #js {:headers headers

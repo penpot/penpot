@@ -13,7 +13,6 @@
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
-   [app.setup.clock :as clock]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
@@ -526,7 +525,7 @@
         (t/is (= :not-found (:type edata)))))
 
     ;; run permanent deletion
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [result (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed result)))))
 
@@ -583,7 +582,7 @@
       (t/is (= 1 (count rows)))
       (t/is (ct/inst? (:deleted-at (first rows)))))
 
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [result (th/run-task! :objects-gc {})]
         (t/is (= 7 (:processed result)))))))
 

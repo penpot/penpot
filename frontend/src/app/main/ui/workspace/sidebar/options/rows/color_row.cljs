@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.types.color :as clr]
    [app.common.types.shape.attrs :refer [default-color]]
-   [app.common.types.token :as tk]
    [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
@@ -27,6 +26,7 @@
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -85,25 +85,26 @@
         (mf/use-fn
          (mf/deps detach-token token applied-token-name)
          (fn []
-           (let [token (or token applied-token-name)]
-             (detach-token token))))
+           (let [token-name (or (:name token) applied-token-name)]
+             (detach-token token-name))))
 
         has-errors (some? (:errors token))
         token-name (:name token)
         resolved (:resolved-value token)
-        not-active (and (empty? active-tokens)
-                        (nil? token))
+        not-active (or (empty? active-tokens)
+                       (nil? token))
         id (dm/str (:id token) "-name")
+        token-name-ref (mf/use-ref nil)
         swatch-tooltip-content (cond
                                  not-active
-                                 (tr "ds.inputs.token-field.no-active-token-option")
+                                 (tr "ds.inputs.token-field.no-active-color.token-option")
                                  has-errors
                                  (tr "color-row.token-color-row.deleted-token")
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
         name-tooltip-content (cond
                                not-active
-                               (tr "ds.inputs.token-field.no-active-token-option")
+                               (tr "ds.inputs.token-field.no-active-color.token-option")
                                has-errors
                                (tr "color-row.token-color-row.deleted-token")
                                :else
@@ -126,8 +127,11 @@
                     :size "small"}]]
       [:> tooltip* {:content name-tooltip-content
                     :id id
+                    :aria-label (str (tr "workspace.tokens.token-name") ": " applied-token-name)
+                    :trigger-ref token-name-ref
                     :class (stl/css :token-tooltip)}
        [:div {:class (stl/css :token-name)
+              :ref token-name-ref
               :aria-labelledby id}
         (or token-name applied-token-name)]]
       [:div {:class (stl/css :token-actions)}
@@ -147,11 +151,7 @@
            on-change on-reorder on-detach on-open on-close on-remove origin on-detach-token
            disable-drag on-focus on-blur select-only select-on-focus on-token-change applied-token]}]
 
-  (let [;; TODO: Remove this workaround fixing `get-attrs*` fn on sidebar/options/shapes/multiple.cljs
-        applied-token (if (= :multiple applied-token)
-                        nil
-                        applied-token)
-        token-color      (contains? cfg/flags :token-color)
+  (let [token-color      (contains? cfg/flags :token-color)
         libraries        (mf/deref refs/files)
 
         color-without-hash (mf/use-memo
@@ -176,12 +176,9 @@
 
         active-tokens*    (mf/use-ctx ctx/active-tokens-by-type)
 
-        tokens            (mf/with-memo [active-tokens* origin]
-                            (let [origin (if (= :color-selection origin) :fill origin)]
-                              (delay
-                                (-> (deref active-tokens*)
-                                    (select-keys (get tk/tokens-by-input origin))
-                                    (not-empty)))))
+        tokens (mf/with-memo [active-tokens* origin]
+                 (csu/filter-tokens-for-input active-tokens* origin))
+
         on-focus'
         (mf/use-fn
          (mf/deps on-focus)
@@ -313,7 +310,7 @@
 
         on-remove'
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index on-remove)
          (fn [_]
            (when on-remove
              (on-remove index))))
@@ -348,7 +345,6 @@
     (mf/with-effect [color prev-color disable-picker]
       (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
-
     [:div {:class [class row-class]}
      ;; Drag handler
      (when (some? on-reorder)

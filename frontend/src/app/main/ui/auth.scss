@@ -50,13 +50,8 @@
   justify-content: center;
   grid-column: 1 / 4;
   width: 40vw;
+  height: auto;
   justify-self: center;
-
-  svg {
-    width: 100%;
-    fill: var(--color-foreground-primary);
-    height: auto;
-  }
 
   @media (max-width: 992px) {
     display: none;

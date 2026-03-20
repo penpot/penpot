@@ -533,7 +533,7 @@ async function exportSelected() {
   const selection = await penpot.selection[0];
 
   if (selection) {
-    let data = await selection.export({ type: 'png', skipChildren: true });
+    const data = await selection.export({ type: 'png', skipChildren: true });
     penpot.ui.sendMessage({
       type: 'start-download',
       name: 'export.png',
@@ -547,8 +547,8 @@ async function resizeModal() {
 }
 
 async function saveLocalStorage() {
-  let oldvalue = penpot.localStorage.getItem('test');
-  let newvalue = oldvalue ? parseInt(oldvalue, 10) + 1 : 1;
+  const oldvalue = penpot.localStorage.getItem('test');
+  const newvalue = oldvalue ? parseInt(oldvalue, 10) + 1 : 1;
   console.log(newvalue);
   penpot.localStorage.setItem('test', newvalue);
 }

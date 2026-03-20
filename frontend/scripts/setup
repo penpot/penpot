@@ -2,5 +2,5 @@
 
 corepack enable;
 corepack install;
-yarn install;
-yarn playwright install chromium;
+pnpm install;
+pnpx playwright install chromium;

@@ -138,6 +138,7 @@
                  c.deleted_at
             FROM snapshots1 AS c
            WHERE c.file_id = ?
+           ORDER BY c.created_at DESC
        ), snapshots3 AS (
           (SELECT * FROM snapshots2
             WHERE created_by = 'system'
@@ -150,8 +151,7 @@
               AND deleted_at IS NULL
             LIMIT 500)
        )
-       SELECT * FROM snapshots3
-        ORDER BY created_at DESC"))
+       SELECT * FROM snapshots3;"))
 
 (defn get-visible-snapshots
   "Return a list of snapshots fecheable from the API, it has a limited

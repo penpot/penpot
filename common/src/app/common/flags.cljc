@@ -62,6 +62,7 @@
   #{:audit-log
     :audit-log-archive
     :audit-log-gc
+    :audit-log-logger
     :auto-file-snapshot
     ;; enables the `/api/doc` endpoint that lists all the rpc methods available.
     :backend-api-doc
@@ -118,11 +119,16 @@
     :strict-session-cookies
     :telemetry
     :terms-and-privacy-checkbox
-    ;; Only for developtment.
     :tiered-file-data-storage
+
+    ;; Tokens
     :token-base-font-size
+    :token-combobox
     :token-color
     :token-shadow
+    :token-tokenscript
+    :token-import-from-library
+    ;; Only for developtment.
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.
@@ -134,6 +140,12 @@
     :subscriptions
     :subscriptions-old
     :inspect-styles
+    ;; Enable performance logs in devconsole (disabled by default)
+    :perf-logs
+
+    ;; Used for designate features that will be available in the next
+    ;; release
+    :canary
 
     ;; Security layer middleware that filters request by fetch
     ;; metadata headers
@@ -145,7 +157,12 @@
 
     ;; A temporal flag, enables backend code use more extensivelly
     ;; redis for caching data
-    :redis-cache})
+    :redis-cache
+
+    ;; Activates the nitrate module
+    :nitrate
+
+    :mcp})
 
 (def all-flags
   (set/union email login varia))
@@ -171,7 +188,10 @@
    :enable-token-color
    :enable-token-shadow
    :enable-inspect-styles
-   :enable-feature-fdata-objects-map])
+   :enable-feature-fdata-objects-map
+   :enable-feature-render-wasm
+   ;; Temporary deactivated
+   #_:enable-token-import-from-library])
 
 (defn parse
   [& flags]

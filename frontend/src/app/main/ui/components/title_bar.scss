@@ -75,12 +75,3 @@
     --title-color: var(--title-foreground-color-hover);
   }
 }
-
-.icon-btn {
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
-
-  &:hover {
-    --arrow-icon-color: var(--icon-foreground-hover);
-  }
-}

@@ -214,8 +214,8 @@
        ptk/WatchEvent
        (watch [_ state _]
          (let [change-fn
-               (fn [shape attrs]
-                 (update shape :fills types.fills/prepend attrs))
+               (fn [node attrs]
+                 (update node :fills types.fills/prepend attrs))
                undo-id
                (js/Symbol)]
            (rx/concat
@@ -1016,7 +1016,7 @@
     (update [_ state]
       (update state :colorpicker
               (fn [state]
-                (let [type (:type state)
+                (let [type  (:type state)
                       state (-> state
                                 (update :current-color merge changes)
                                 (update :current-color materialize-color-components)
@@ -1024,6 +1024,7 @@
                                 ;; current color can be a library one
                                 ;; I'm changing via colorpicker
                                 (update :current-color dissoc :ref-id :ref-file))]
+
                   (if-let [stop (:editing-stop state)]
                     (update-in state [:stops stop] (fn [data] (->> changes
                                                                    (merge data)
@@ -1044,7 +1045,9 @@
             (and (= type :color) (nil? (:color state)))]
 
         (when (and add-recent? (not ignore-color?))
-          (let [color (select-keys state [:image :gradient :color :opacity])]
+          (when-let [color (-> state
+                               (select-keys [:image :gradient :color :opacity])
+                               (not-empty))]
             (rx/of (add-recent-color color))))))))
 
 (defn update-colorpicker-gradient

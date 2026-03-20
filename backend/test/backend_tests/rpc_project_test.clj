@@ -12,7 +12,6 @@
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
-   [app.setup.clock :as clock]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -31,7 +30,7 @@
                 :team-id (:id team)
                 :name "test project"}
           out  (th/command! data)]
-        ;; (th/print-result! out)
+      ;; (th/print-result! out)
 
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -94,7 +93,7 @@
                 :id project-id}
           out  (th/command! data)]
 
-        ;; (th/print-result! out)
+      ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -228,7 +227,7 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [result (th/run-task! :objects-gc {})]
         (t/is (= 1 (:processed result)))))
 

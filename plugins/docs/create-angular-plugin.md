@@ -10,11 +10,16 @@ Let's dive in.
 
 ### Step 1: Initialize the Plugin
 
-First, you need to create the scaffolding for your plugin. Use the following command, replacing `example-plugin` with the name of your plugin:
+First, you need to create the scaffolding for your plugin. Use the Angular CLI to generate a new application:
 
 ```sh
-pnpx nx g @nx/angular:app example-plugin --directory=apps/example-plugin --bundler=esbuild
+cd apps
+ng new example-plugin --style=css --routing=false --skip-git --skip-install
+cd ..
+pnpm install
 ```
+
+Then register it in `angular.json` by adding a new project entry (see existing plugins for reference).
 
 ### Step 2: Configure the Manifest
 
@@ -38,39 +43,40 @@ Next, create a `manifest.json` file inside the `/src/assets` directory. This fil
 
 ### Step 3: Update Project Configuration
 
-Now, add the plugin tag.
-
-```typescript
-"tags": ["type:plugin"],
-```
-
-Also, update `targets.build` with the following code to allow the use of Penpot styles and build the plugin code.
+Update `angular.json` to configure the build for your plugin. Add to the project's `architect.build.options`:
 
 ```json
-"options": {
-  "styles": [
-    "libs/plugins-styles/src/lib/styles.css",
-    "apps/example-plugin/src/styles.css"
-  ],
-  "optimization": {
-    "scripts": true,
-    "styles": true,
-    "fonts": false
-  }
-},
-"dependsOn": ["buildPlugin"]
-```
-
-Add the default port to the `serve.configurations.development` task:
-
-```json
-"development": {
-  // ...
-  "port": 4302,
+"styles": [
+  "libs/plugins-styles/src/lib/styles.css",
+  "apps/example-plugin/src/styles.css"
+],
+"optimization": {
+  "scripts": true,
+  "styles": true,
+  "fonts": false
 }
 ```
 
+Add a custom port to `architect.serve.options`:
+
+```json
+"port": 4302
+```
+
 For choosing the port go check the Sample Plugins table at the [README](../README.md) so your plugin doesn't use a duplicate port. We're using the range 4300-4399.
+
+Create a `package.json` in your plugin folder with build scripts:
+
+```json
+{
+  "name": "example-plugin",
+  "scripts": {
+    "build": "ng build example-plugin",
+    "serve": "ng serve example-plugin",
+    "lint": "eslint src --ext .ts,.html"
+  }
+}
+```
 
 ### Step 4: Modify TypeScript Configuration
 
@@ -125,10 +131,10 @@ console.log('Hello Plugin');
 Run this command:
 
 ```sh
-pnpx nx run example-plugin:init
+pnpm --filter example-plugin serve
 ```
 
-This will run two tasks: `serve`, the usual Angular server, and `buildPlugin`, which will compile the `plugin.ts` file.
+This will start the Angular development server.
 
 ### Step 8: Load the Plugin in Penpot
 
@@ -142,8 +148,8 @@ You can also open the Plugin manager modal via:
 
 ### Step 9: Build plugin
 
-```
-pnpx nx run example-plugin:build
+```sh
+pnpm --filter example-plugin build
 ```
 
 ### Learn More About Plugin Development

@@ -15,6 +15,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -39,7 +40,6 @@
    [app.main.ui.workspace.sidebar.options.shapes.text :as text]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
-
    [rumext.v2 :as mf]))
 
 ;; --- Options
@@ -50,10 +50,15 @@
   (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
+        wasm-modifiers (mf/deref refs/workspace-wasm-modifiers)
         modifiers  (mf/deref refs/workspace-modifiers)
-        modifiers  (dm/get-in modifiers [shape-id :modifiers])
 
-        shape      (gsh/transform-shape shape modifiers)
+        shape
+        (if (features/active-feature? @st/state "render-wasm/v1")
+          (let [wasm-modifiers (into {} wasm-modifiers)]
+            (gsh/apply-transform shape (get wasm-modifiers shape-id)))
+          (gsh/transform-shape shape (dm/get-in modifiers [shape-id :modifiers])))
+
         props      (mf/spread-props props {:shape shape :file-id file-id :page-id page-id :libraries libraries})]
 
     (case shape-type
@@ -116,13 +121,29 @@
         (->> (dm/get-in grid-edition [edition :selected])
              (map #(dm/get-in objects [edition :layout-grid-cells %])))
 
-        shapes-with-children
-        (mf/with-memo [selected objects shapes]
-          (let [xform    (comp (remove nil?)
-                               (mapcat #(cfh/get-children-ids objects %)))
-                selected (into selected xform selected)]
-            (sequence (keep (d/getf objects)) selected)))
+        shapes-with-children*
+        (mf/use-state nil)
 
+        _ (mf/use-effect
+           (mf/deps selected objects shapes)
+           (fn []
+             (reset! shapes-with-children* nil)
+             (let [result
+                   (loop [queue   (into #queue [] selected)
+                          visited selected]
+                     (if-let [id (peek queue)]
+                       (let [shape    (get objects id)
+                             children (:shapes shape)]
+                         (if (seq children)
+                           (let [new-children (remove visited children)]
+                             (recur (into (pop queue) new-children)
+                                    (into visited new-children)))
+                           (recur (pop queue) visited)))
+                       (sequence (keep (d/getf objects)) visited)))]
+               (reset! shapes-with-children* result))))
+
+        shapes-with-children
+        (deref shapes-with-children*)
 
         total-selected
         (count selected)]

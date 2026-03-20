@@ -21,6 +21,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.rpc.doc :as-alias doc]
@@ -47,6 +48,7 @@
 (def schema:props
   [:map {:title "ProfileProps"}
    [:plugins {:optional true} schema:plugin-registry]
+   [:mcp-status {:optional true} ::sm/boolean]
    [:newsletter-updates {:optional true} ::sm/boolean]
    [:newsletter-news {:optional true} ::sm/boolean]
    [:onboarding-team-id {:optional true} ::sm/uuid]
@@ -88,6 +90,8 @@
 
 ;; --- QUERY: Get profile (own)
 
+
+
 (sv/defmethod ::get-profile
   {::rpc/auth false
    ::doc/added "1.18"
@@ -98,9 +102,13 @@
   ;; no profile-id is in session, and when db call raises not found. In all other
   ;; cases we need to reraise the exception.
   (try
-    (-> (get-profile pool profile-id)
-        (strip-private-attrs)
-        (update :props filter-props))
+    (let [profile (-> (get-profile pool profile-id)
+                      (strip-private-attrs)
+                      (update :props filter-props))]
+      (if (contains? cf/flags :nitrate)
+        (nitrate/add-nitrate-licence-to-profile cfg profile)
+        profile))
+
     (catch Throwable _
       {:id uuid/zero :fullname "Anonymous User"})))
 

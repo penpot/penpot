@@ -760,6 +760,21 @@
        default
        v))))
 
+(defn percent?
+  [v]
+  (str/numeric? (str/rtrim v "%")))
+
+(defn parse-percent
+  ([v]
+   (parse-percent v nil))
+  ([v default]
+   (if (str/ends-with? v "%")
+     (let [v (impl-parse-double (str/trim v "%"))]
+       (if (or (nil? v) (nan? v))
+         default
+         (/ v 100)))
+     (parse-double v default))))
+
 (defn parse-uuid
   [v]
   (try
@@ -1092,9 +1107,9 @@
   (if (number? num)
     (try
       (let [num-str (mth/to-fixed num precision)
-               ;; Remove all trailing zeros after the comma 100.00000
+            ;; Remove all trailing zeros after the comma 100.00000
             num-str (str/replace num-str trail-zeros-regex-1 "")]
-           ;; Remove trailing zeros after a decimal number: 0.001|00|
+        ;; Remove trailing zeros after a decimal number: 0.001|00|
         (if-let [m (re-find trail-zeros-regex-2 num-str)]
           (str/replace num-str (first m) (second m))
           num-str))
@@ -1150,3 +1165,40 @@
   [class current-class]
   (str (if (some? class) (str class " ") "")
        current-class))
+
+
+(defn nth-index-of*
+  "Finds the nth occurrence of `char` in `string`, searching either forward or backward.
+   `dir` must be :forward (left to right) or :backward (right to left).
+   Returns the absolute index of the match, or nil if fewer than n occurrences exist."
+  [string char n dir]
+  (loop [s string
+         offset 0
+         cnt 1]
+    (let [index (case dir
+                  :forward  (str/index-of s char)
+                  :backward (str/last-index-of s char))]
+      (cond
+        (nil? index) nil
+        (= cnt n)   (case dir
+                      :forward  (+ index offset)
+                      :backward index)
+        :else       (case dir
+                      :forward  (recur (str/slice s (inc index))
+                                       (+ offset index 1)
+                                       (inc cnt))
+                      :backward (recur (str/slice s 0 index)
+                                       offset
+                                       (inc cnt)))))))
+
+(defn nth-index-of
+  "Returns the index of the nth occurrence of `char` in `string`, searching left to right.
+   Returns nil if fewer than n occurrences exist."
+  [string char n]
+  (nth-index-of* string char n :forward))
+
+(defn nth-last-index-of
+  "Returns the index of the nth occurrence of `char` in `string`, searching right to left.
+   Returns nil if fewer than n occurrences exist."
+  [string char n]
+  (nth-index-of* string char n :backward))

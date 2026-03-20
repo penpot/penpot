@@ -4,4 +4,4 @@ TARGET=${1:-app};
 
 set -ex
 
-exec yarn run watch:$TARGET
+exec pnpm run watch:$TARGET

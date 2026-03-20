@@ -173,7 +173,8 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :delete-team-member params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-members team-id)
+                          (rx/of (dp/refresh-profile)
+                                 (fetch-members team-id)
                                  (fetch-teams)
                                  (ptk/data-event ::ev/event
                                                  {::ev/name "delete-team-member"
@@ -254,7 +255,7 @@
     (-deref [_] team)))
 
 (defn create-team
-  [{:keys [name] :as params}]
+  [{:keys [name organization-id] :as params}]
   (dm/assert! (string? name))
   (ptk/reify ::create-team
     ptk/WatchEvent
@@ -263,7 +264,8 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)
             features features/global-enabled-features
-            params   {:name name :features features}]
+            params   (cond-> {:name name :features features}
+                       organization-id (assoc :organization-id organization-id))]
         (->> (rp/cmd! :create-team (with-meta params (meta it)))
              (rx/tap on-success)
              (rx/map team-created)

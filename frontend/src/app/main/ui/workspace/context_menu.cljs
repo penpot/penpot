@@ -150,7 +150,9 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [shapes]}]
-  (let [do-copy           #(st/emit! (dw/copy-selected))
+  (let [multiple?         (> (count shapes) 1)
+
+        do-copy           #(st/emit! (dw/copy-selected))
         do-copy-link      #(st/emit! (dw/copy-link-to-clipboard))
 
         do-cut            #(st/emit! (dw/copy-selected)
@@ -177,6 +179,9 @@
 
         handle-copy-text
         (mf/use-callback #(st/emit! (dw/copy-selected-text)))
+
+        handle-copy-as-image
+        (mf/use-callback #(st/emit! (dw/copy-as-image)))
 
         handle-hover-copy-paste
         (mf/use-callback
@@ -222,6 +227,12 @@
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-svg")
                        :on-click handle-copy-svg}]
 
+      (when (and (some cfh/frame-shape? shapes)
+                 (contains? cf/flags :canary))
+        [:> menu-entry* {:title (tr "workspace.shape.menu.copy-as-image")
+                         :disabled multiple?
+                         :on-click handle-copy-as-image}])
+
       [:> menu-separator* {}]
 
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-text")
@@ -229,7 +240,7 @@
 
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-props")
                        :shortcut (sc/get-tooltip :copy-props)
-                       :disabled (> (count shapes) 1)
+                       :disabled multiple?
                        :on-click handle-copy-props}]
       [:> menu-entry* {:title (tr "workspace.shape.menu.paste-props")
                        :shortcut (sc/get-tooltip :paste-props)
@@ -437,7 +448,8 @@
        [:> menu-entry* {:title (tr "workspace.shape.menu.flatten")
                         :on-click do-transform-to-path}])
 
-     (when (and (not disable-booleans)
+     (when (and (not has-frame?)
+                (not disable-booleans)
                 (or multiple? (and single? (or is-group? is-bool?))))
        [:> menu-entry* {:title (tr "workspace.shape.menu.path")}
         [:> menu-entry* {:title (tr "workspace.shape.menu.union")
@@ -767,6 +779,7 @@
   [{:keys [mdata]}]
   (let [{:keys [grid cells]} mdata
 
+        grid-id (:id grid)
         single? (= (count cells) 1)
 
         can-merge?
@@ -774,17 +787,53 @@
          (mf/deps cells)
          #(ctl/valid-area-cells? cells))
 
+        can-copy-rows?
+        (mf/use-memo
+         (mf/deps grid cells)
+         #(dwsl/complete-rows? grid cells))
+
+        can-copy-columns?
+        (mf/use-memo
+         (mf/deps grid cells)
+         #(dwsl/complete-columns? grid cells))
+
+        grid-edition-ref
+        (mf/use-memo
+         (mf/deps grid-id)
+         #(refs/workspace-grid-edition-id grid-id))
+
+        grid-edition (mf/deref grid-edition-ref)
+        has-copied-tracks? (some? (:copied-tracks grid-edition))
+
         do-merge-cells
         (mf/use-fn
-         (mf/deps grid cells)
+         (mf/deps grid-id cells)
          (fn []
-           (st/emit! (dwsl/merge-cells (:id grid) (map :id cells)))))
+           (st/emit! (dwsl/merge-cells grid-id (map :id cells)))))
 
         do-create-board
         (mf/use-fn
-         (mf/deps grid cells)
+         (mf/deps grid-id cells)
          (fn []
-           (st/emit! (dwsl/create-cell-board (:id grid) (map :id cells)))))]
+           (st/emit! (dwsl/create-cell-board grid-id (map :id cells)))))
+
+        do-copy-rows
+        (mf/use-fn
+         (mf/deps grid-id)
+         (fn []
+           (st/emit! (dwsl/copy-grid-tracks grid-id :row))))
+
+        do-copy-columns
+        (mf/use-fn
+         (mf/deps grid-id)
+         (fn []
+           (st/emit! (dwsl/copy-grid-tracks grid-id :column))))
+
+        do-paste-tracks
+        (mf/use-fn
+         (mf/deps grid-id)
+         (fn []
+           (st/emit! (dwsl/paste-grid-tracks grid-id))))]
     [:*
      (when (not single?)
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.merge")
@@ -797,7 +846,19 @@
 
      [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.create-board")
                       :on-click do-create-board
-                      :disabled (and (not single?) (not can-merge?))}]]))
+                      :disabled (and (not single?) (not can-merge?))}]
+
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.copy-rows")
+                      :on-click do-copy-rows
+                      :disabled (not can-copy-rows?)}]
+
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.copy-columns")
+                      :on-click do-copy-columns
+                      :disabled (not can-copy-columns?)}]
+
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.paste-tracks")
+                      :on-click do-paste-tracks
+                      :disabled (not has-copied-tracks?)}]]))
 
 
 ;; FIXME: optimize because it is rendered always

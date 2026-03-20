@@ -75,20 +75,25 @@
 
 #?(:cljs
    (defn ->clj
-     [o & {:keys [key-fn val-fn] :or {key-fn read-kebab-key val-fn identity}}]
+     [o & {:keys [key-fn val-fn recursive] :or {key-fn read-kebab-key val-fn identity recursive true}}]
      (let [f (fn this-fn [x]
                (let [x (val-fn x)]
                  (cond
                    (array? x)
                    (persistent!
                     (.reduce ^js/Array x
-                             #(conj! %1 (this-fn %2))
+                             #(conj! %1 (if recursive
+                                          (this-fn %2)
+                                          %2))
                              (transient [])))
 
                    (identical? (type x) js/Object)
                    (persistent!
                     (.reduce ^js/Array (js-keys x)
-                             #(assoc! %1 (key-fn %2) (this-fn (unchecked-get x %2)))
+                             #(assoc! %1 (key-fn %2)
+                                      (if recursive
+                                        (this-fn (unchecked-get x %2))
+                                        (unchecked-get x %2)))
                              (transient {})))
 
                    :else

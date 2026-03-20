@@ -12,6 +12,8 @@
 
 ;; Reference to the HTML canvas element.
 (defonce canvas nil)
+;; Reference to the captured pixels of the canvas (for page switching effect)
+(defonce canvas-pixels nil)
 
 ;; Reference to the Emscripten GL context wrapper.
 (defonce gl-context-handle nil)
@@ -22,6 +24,7 @@
 
 (defonce context-initialized? false)
 (defonce context-lost? (atom false))
+
 
 (defonce serializers
   #js {:blur-type shared/RawBlurType
@@ -52,7 +55,9 @@
        :text-direction shared/RawTextDirection
        :text-decoration shared/RawTextDecoration
        :text-transform shared/RawTextTransform
+       :transform-entry-kind shared/RawTransformEntryKind
        :segment-data shared/RawSegmentData
        :stroke-linecap shared/RawStrokeLineCap
        :stroke-linejoin shared/RawStrokeLineJoin
        :fill-rule shared/RawFillRule})
+

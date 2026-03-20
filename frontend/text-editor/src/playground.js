@@ -1,7 +1,7 @@
 import "./style.css";
 import "./fonts.css";
 import "./editor/TextEditor.css";
-import initWasmModule from "./wasm/render_wasm.js";
+import initWasmModule from "./wasm/render-wasm.js";
 import { UUID } from "./playground/uuid.js";
 import { Rect, Point } from "./playground/geom.js";
 import { WASMModuleWrapper } from "./playground/wasm.js";
@@ -162,12 +162,15 @@ class TextEditorPlayground {
     }
 
     this.#module.call("use_shape", ...textShape.id);
+    // FIXME: This function doesn't exists anymore.
+    /*
     const caretPosition = this.#module.call(
       "get_caret_position_at",
       e.offsetX,
       e.offsetY,
     );
     console.log("caretPosition", caretPosition);
+    */
   };
 
   #onResize = (_entries) => {
@@ -461,8 +464,6 @@ class TextEditorPlayground {
         const view = this.#module.viewOf(ptr, paragraph.byteLength);
         // Number of text leaves in the paragraph.
         view.setUint32(0, paragraph.leaves.length, true);
-
-        console.log("lineHeight", paragraph.lineHeight);
 
         // Serialize paragraph attributes
         view.setUint8(4, paragraph.textAlign, true); // text-align: left

@@ -507,7 +507,7 @@
 
                    mdata     {:on-error #(do
                                            (reset! key* (uuid/next))
-                                           (st/emit! (ntf/error error-msg)))}
+                                           (st/emit! (ntf/warn error-msg)))}
                    params    {:shapes shapes :pos pos :val val}]
                (st/emit! (dwv/variants-switch (with-meta params mdata)))))))
 

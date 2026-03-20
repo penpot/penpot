@@ -10,7 +10,7 @@ mod shadows;
 mod strokes;
 mod surfaces;
 pub mod text;
-
+pub mod text_editor;
 mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
@@ -23,7 +23,8 @@ pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
 use crate::shapes::{
-    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, Type,
+    all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
+    Stroke, Type,
 };
 use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
@@ -34,10 +35,12 @@ use crate::wapi;
 pub use fonts::*;
 pub use images::*;
 
-// This is the extra are used for tile rendering.
-const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 2;
+// This is the extra area used for tile rendering (tiles beyond viewport).
+// Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
+const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
@@ -51,6 +54,27 @@ pub struct NodeRenderState {
     visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
     mask: bool,
+    // True when this container was flattened (enter/exit skipped).
+    flattened: bool,
+}
+
+/// Get simplified children of a container, flattening nested flattened containers
+fn get_simplified_children<'a>(tree: ShapesPoolRef<'a>, shape: &'a Shape) -> Vec<Uuid> {
+    let mut result = Vec::new();
+
+    for child_id in shape.children_ids_iter(false) {
+        if let Some(child) = tree.get(child_id) {
+            if child.can_flatten() {
+                // Child is flattened: recursively get its simplified children
+                result.extend(get_simplified_children(tree, child));
+            } else {
+                // Child is not flattened: add it directly
+                result.push(*child_id);
+            }
+        }
+    }
+
+    result
 }
 
 impl NodeRenderState {
@@ -246,7 +270,6 @@ pub(crate) struct RenderState {
     pub fonts: FontStore,
     pub viewbox: Viewbox,
     pub cached_viewbox: Viewbox,
-    pub cached_target_snapshot: Option<skia::Image>,
     pub images: ImageStore,
     pub background_color: skia::Color,
     // Identifier of the current requestAnimationFrame call, if any.
@@ -276,6 +299,8 @@ pub(crate) struct RenderState {
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
     /// `with_nested_blurs_suppressed` to ensure it's always restored.
     pub ignore_nested_blurs: bool,
+    /// Preview render mode - when true, uses simplified rendering for progressive loading
+    pub preview_mode: bool,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -325,7 +350,6 @@ impl RenderState {
             fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
-            cached_target_snapshot: None,
             images: ImageStore::new(gpu_state.context.clone()),
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
@@ -348,6 +372,7 @@ impl RenderState {
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
+            preview_mode: false,
         }
     }
 
@@ -398,12 +423,7 @@ impl RenderState {
     }
 
     fn frame_clip_layer_blur(shape: &Shape) -> Option<Blur> {
-        match shape.shape_type {
-            Type::Frame(_) if shape.clip() => shape.blur.filter(|blur| {
-                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.
-            }),
-            _ => None,
-        }
+        shape.frame_clip_layer_blur()
     }
 
     /// Runs `f` with `ignore_nested_blurs` temporarily forced to `true`.
@@ -473,6 +493,10 @@ impl RenderState {
         self.background_color = color;
     }
 
+    pub fn set_preview_mode(&mut self, enabled: bool) {
+        self.preview_mode = enabled;
+    }
+
     pub fn resize(&mut self, width: i32, height: i32) {
         let dpr_width = (width as f32 * self.options.dpr()).floor() as i32;
         let dpr_height = (height as f32 * self.options.dpr()).floor() as i32;
@@ -521,38 +545,59 @@ impl RenderState {
 
         let paint = skia::Paint::default();
 
-        self.surfaces
-            .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+        // Only draw surfaces that have content (dirty flag optimization)
+        if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
+            self.surfaces
+                .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+        }
 
-        self.surfaces
-            .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
+        if self.surfaces.is_dirty(SurfaceId::Fills) {
+            self.surfaces
+                .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
+        }
 
         let mut render_overlay_below_strokes = false;
         if let Some(shape) = shape {
             render_overlay_below_strokes = shape.has_fills();
         }
 
-        if render_overlay_below_strokes {
+        if render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        self.surfaces
-            .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
+        if self.surfaces.is_dirty(SurfaceId::Strokes) {
+            self.surfaces
+                .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
+        }
 
-        if !render_overlay_below_strokes {
+        if !render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        let surface_ids = SurfaceId::Strokes as u32
-            | SurfaceId::Fills as u32
-            | SurfaceId::InnerShadows as u32
-            | SurfaceId::TextDropShadows as u32;
+        // Build mask of dirty surfaces that need clearing
+        let mut dirty_surfaces_to_clear = 0u32;
+        if self.surfaces.is_dirty(SurfaceId::Strokes) {
+            dirty_surfaces_to_clear |= SurfaceId::Strokes as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::Fills) {
+            dirty_surfaces_to_clear |= SurfaceId::Fills as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::InnerShadows) {
+            dirty_surfaces_to_clear |= SurfaceId::InnerShadows as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
+            dirty_surfaces_to_clear |= SurfaceId::TextDropShadows as u32;
+        }
 
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().clear(skia::Color::TRANSPARENT);
-        });
+        if dirty_surfaces_to_clear != 0 {
+            self.surfaces.apply_mut(dirty_surfaces_to_clear, |s| {
+                s.canvas().clear(skia::Color::TRANSPARENT);
+            });
+            // Clear dirty flags for surfaces we just cleared
+            self.surfaces.clear_dirty(dirty_surfaces_to_clear);
+        }
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -600,34 +645,125 @@ impl RenderState {
         apply_to_current_surface: bool,
         offset: Option<(f32, f32)>,
         parent_shadows: Option<Vec<skia_safe::Paint>>,
+        outset: Option<f32>,
     ) {
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
             | innershadows_surface_id as u32
             | text_drop_shadows_surface_id as u32;
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().save();
-        });
+
+        // Only save canvas state if we have clipping or transforms
+        // For simple shapes without clipping, skip expensive save/restore
+        let needs_save =
+            clip_bounds.is_some() || offset.is_some() || !shape.transform.is_identity();
+
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().save();
+            });
+        }
 
         let antialias = shape.should_use_antialias(self.get_scale());
+        let fast_mode = self.options.is_fast_mode();
+        let has_nested_fills = self
+            .nested_fills
+            .last()
+            .is_some_and(|fills| !fills.is_empty());
+        let has_inherited_blur = !self.ignore_nested_blurs
+            && self.nested_blurs.iter().flatten().any(|blur| {
+                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
+            });
+        let can_render_directly = apply_to_current_surface
+            && clip_bounds.is_none()
+            && offset.is_none()
+            && parent_shadows.is_none()
+            && !shape.needs_layer()
+            && shape.blur.is_none()
+            && !has_inherited_blur
+            && shape.shadows.is_empty()
+            && shape.transform.is_identity()
+            && matches!(
+                shape.shape_type,
+                Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_)
+            )
+            && !(shape.fills.is_empty() && has_nested_fills)
+            && !shape
+                .svg_attrs
+                .as_ref()
+                .is_some_and(|attrs| attrs.fill_none);
+
+        if can_render_directly {
+            let scale = self.get_scale();
+            let translation = self
+                .surfaces
+                .get_render_context_translation(self.render_area, scale);
+            self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
+                let canvas = s.canvas();
+                canvas.save();
+                canvas.scale((scale, scale));
+                canvas.translate(translation);
+            });
+
+            fills::render(
+                self,
+                shape,
+                &shape.fills,
+                antialias,
+                SurfaceId::Current,
+                None,
+            );
+
+            // Pass strokes in natural order; stroke merging handles top-most ordering internally.
+            let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+            strokes::render(
+                self,
+                shape,
+                &visible_strokes,
+                Some(SurfaceId::Current),
+                antialias,
+                outset,
+            );
+
+            self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
+                s.canvas().restore();
+            });
+
+            if self.options.is_debug_visible() {
+                let shape_selrect_bounds = self.get_shape_selrect_bounds(shape);
+                debug::render_debug_shape(self, Some(shape_selrect_bounds), None);
+            }
+
+            if needs_save {
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().restore();
+                });
+            }
+            return;
+        }
 
         // set clipping
         if let Some(clips) = clip_bounds.as_ref() {
-            for (bounds, corners, transform) in clips.iter() {
+            let scale = self.get_scale();
+            for (mut bounds, corners, transform) in clips.iter() {
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(transform);
                 });
 
+                // Outset clip by ~0.5 to include edge pixels that
+                // aliased clip misclassifies as outside (causing artifacts).
+                let outset = 0.5 / scale;
+                bounds.outset((outset, outset));
+
+                // Hard clip edge (antialias = false) to avoid alpha seam when clipping
+                // semi-transparent content larger than the frame.
                 if let Some(corners) = corners {
-                    let rrect = RRect::new_rect_radii(*bounds, corners);
+                    let rrect = RRect::new_rect_radii(bounds, corners);
                     self.surfaces.apply_mut(surface_ids, |s| {
-                        s.canvas()
-                            .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+                        s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, false);
                     });
                 } else {
                     self.surfaces.apply_mut(surface_ids, |s| {
-                        s.canvas()
-                            .clip_rect(*bounds, skia::ClipOp::Intersect, antialias);
+                        s.canvas().clip_rect(bounds, skia::ClipOp::Intersect, false);
                     });
                 }
 
@@ -640,7 +776,7 @@ impl RenderState {
                     paint.set_stroke_width(4.);
                     self.surfaces
                         .canvas(fills_surface_id)
-                        .draw_rect(*bounds, &paint);
+                        .draw_rect(bounds, &paint);
                 }
 
                 self.surfaces.apply_mut(surface_ids, |s| {
@@ -666,6 +802,28 @@ impl RenderState {
         } else if shape_has_blur {
             shape.to_mut().set_blur(None);
         }
+        if fast_mode {
+            shape.to_mut().set_blur(None);
+        }
+
+        // For non-text, non-SVG shapes in the normal rendering path, apply blur
+        // via a single save_layer on each render surface
+        // Clip correctness is preserved
+        let blur_sigma_for_layers: Option<f32> = if !fast_mode
+            && apply_to_current_surface
+            && fills_surface_id == SurfaceId::Fills
+            && !matches!(shape.shape_type, Type::Text(_))
+            && !matches!(shape.shape_type, Type::SVGRaw(_))
+        {
+            if let Some(blur) = shape.blur.filter(|b| !b.hidden) {
+                shape.to_mut().set_blur(None);
+                Some(blur.sigma())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         let center = shape.center();
         let mut matrix = shape.transform;
@@ -683,16 +841,18 @@ impl RenderState {
                     matrix.pre_concat(&svg_transform);
                 }
 
-                self.surfaces.canvas(fills_surface_id).concat(&matrix);
+                self.surfaces
+                    .canvas_and_mark_dirty(fills_surface_id)
+                    .concat(&matrix);
 
                 if let Some(svg) = shape.svg.as_ref() {
-                    svg.render(self.surfaces.canvas(fills_surface_id))
+                    svg.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                 } else {
                     let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
                     let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
                     match dom_result {
                         Ok(dom) => {
-                            dom.render(self.surfaces.canvas(fills_surface_id));
+                            dom.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                             shape.to_mut().set_svg(dom);
                         }
                         Err(e) => {
@@ -708,19 +868,13 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let mut drop_shadows = shape.drop_shadow_paints();
-
-                if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
-                    drop_shadows.extend(inherited_shadows);
-                }
-
-                let inner_shadows = shape.inner_shadow_paints();
-                let blur_filter = shape.image_filter(1.);
                 let count_inner_strokes = shape.count_visible_inner_strokes();
+                // Erode the main text fill by 1px when there are inner strokes, to avoid a visible seam at the glyph edge.
+                let text_fill_inset = (count_inner_strokes > 0).then(|| 1.0 / self.get_scale());
+                let text_stroke_blur_outset =
+                    Stroke::max_bounds_width(shape.visible_strokes(), false);
                 let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
-                let mut paragraphs_with_shadows =
-                    text_content.paragraph_builder_group_from_text(Some(true));
-                let mut stroke_paragraphs_list = shape
+                let (mut stroke_paragraphs_list, stroke_opacities): (Vec<_>, Vec<_>) = shape
                     .visible_strokes()
                     .rev()
                     .map(|stroke| {
@@ -732,63 +886,9 @@ impl RenderState {
                             None,
                         )
                     })
-                    .collect::<Vec<_>>();
-
-                let mut stroke_paragraphs_with_shadows_list = shape
-                    .visible_strokes()
-                    .rev()
-                    .map(|stroke| {
-                        text::stroke_paragraph_builder_group_from_text(
-                            &text_content,
-                            stroke,
-                            &shape.selrect(),
-                            count_inner_strokes,
-                            Some(true),
-                        )
-                    })
-                    .collect::<Vec<_>>();
-
-                if let Some(parent_shadows) = parent_shadows {
-                    if !shape.has_visible_strokes() {
-                        for shadow in parent_shadows {
-                            text::render(
-                                Some(self),
-                                None,
-                                &shape,
-                                &mut paragraphs_with_shadows,
-                                text_drop_shadows_surface_id.into(),
-                                Some(&shadow),
-                                blur_filter.as_ref(),
-                            );
-                        }
-                    } else {
-                        shadows::render_text_shadows(
-                            self,
-                            &shape,
-                            &mut paragraphs_with_shadows,
-                            &mut stroke_paragraphs_with_shadows_list,
-                            text_drop_shadows_surface_id.into(),
-                            &parent_shadows,
-                            &blur_filter,
-                        );
-                    }
-                } else {
-                    // 1. Text drop shadows
-                    if !shape.has_visible_strokes() {
-                        for shadow in &drop_shadows {
-                            text::render(
-                                Some(self),
-                                None,
-                                &shape,
-                                &mut paragraphs_with_shadows,
-                                text_drop_shadows_surface_id.into(),
-                                Some(shadow),
-                                blur_filter.as_ref(),
-                            );
-                        }
-                    }
-
-                    // 2. Text fills
+                    .unzip();
+                if fast_mode {
+                    // Fast path: render fills and strokes only (skip shadows/blur).
                     text::render(
                         Some(self),
                         None,
@@ -796,56 +896,169 @@ impl RenderState {
                         &mut paragraph_builders,
                         Some(fills_surface_id),
                         None,
-                        blur_filter.as_ref(),
+                        None,
+                        text_fill_inset,
+                        None,
                     );
 
-                    // 3. Stroke drop shadows
-                    shadows::render_text_shadows(
-                        self,
-                        &shape,
-                        &mut paragraphs_with_shadows,
-                        &mut stroke_paragraphs_with_shadows_list,
-                        text_drop_shadows_surface_id.into(),
-                        &drop_shadows,
-                        &blur_filter,
-                    );
-
-                    // 4. Stroke fills
-                    for stroke_paragraphs in stroke_paragraphs_list.iter_mut() {
-                        text::render(
+                    for (stroke_paragraphs, layer_opacity) in stroke_paragraphs_list
+                        .iter_mut()
+                        .zip(stroke_opacities.iter())
+                    {
+                        text::render_with_bounds_outset(
                             Some(self),
                             None,
                             &shape,
                             stroke_paragraphs,
                             Some(strokes_surface_id),
                             None,
-                            blur_filter.as_ref(),
+                            None,
+                            text_stroke_blur_outset,
+                            None,
+                            *layer_opacity,
                         );
                     }
+                } else {
+                    let mut drop_shadows = shape.drop_shadow_paints();
 
-                    // 5. Stroke inner shadows
-                    shadows::render_text_shadows(
-                        self,
-                        &shape,
-                        &mut paragraphs_with_shadows,
-                        &mut stroke_paragraphs_with_shadows_list,
-                        Some(innershadows_surface_id),
-                        &inner_shadows,
-                        &blur_filter,
-                    );
+                    if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
+                        drop_shadows.extend(inherited_shadows);
+                    }
 
-                    // 6. Fill Inner shadows
-                    if !shape.has_visible_strokes() {
-                        for shadow in &inner_shadows {
-                            text::render(
+                    let inner_shadows = shape.inner_shadow_paints();
+                    let blur_filter = shape.image_filter(1.);
+                    let mut paragraphs_with_shadows =
+                        text_content.paragraph_builder_group_from_text(Some(true));
+                    let (mut stroke_paragraphs_with_shadows_list, _shadow_opacities): (
+                        Vec<_>,
+                        Vec<_>,
+                    ) = shape
+                        .visible_strokes()
+                        .rev()
+                        .map(|stroke| {
+                            text::stroke_paragraph_builder_group_from_text(
+                                &text_content,
+                                stroke,
+                                &shape.selrect(),
+                                count_inner_strokes,
+                                Some(true),
+                            )
+                        })
+                        .unzip();
+
+                    if let Some(parent_shadows) = parent_shadows {
+                        if !shape.has_visible_strokes() {
+                            for shadow in parent_shadows {
+                                text::render(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    &mut paragraphs_with_shadows,
+                                    text_drop_shadows_surface_id.into(),
+                                    Some(&shadow),
+                                    blur_filter.as_ref(),
+                                    None,
+                                    None,
+                                );
+                            }
+                        } else {
+                            shadows::render_text_shadows(
+                                self,
+                                &shape,
+                                &mut paragraphs_with_shadows,
+                                &mut stroke_paragraphs_with_shadows_list,
+                                text_drop_shadows_surface_id.into(),
+                                &parent_shadows,
+                                &blur_filter,
+                            );
+                        }
+                    } else {
+                        // 1. Text drop shadows
+                        if !shape.has_visible_strokes() {
+                            for shadow in &drop_shadows {
+                                text::render(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    &mut paragraphs_with_shadows,
+                                    text_drop_shadows_surface_id.into(),
+                                    Some(shadow),
+                                    blur_filter.as_ref(),
+                                    None,
+                                    None,
+                                );
+                            }
+                        }
+
+                        // 2. Text fills
+                        text::render(
+                            Some(self),
+                            None,
+                            &shape,
+                            &mut paragraph_builders,
+                            Some(fills_surface_id),
+                            None,
+                            blur_filter.as_ref(),
+                            text_fill_inset,
+                            None,
+                        );
+
+                        // 3. Stroke drop shadows
+                        shadows::render_text_shadows(
+                            self,
+                            &shape,
+                            &mut paragraphs_with_shadows,
+                            &mut stroke_paragraphs_with_shadows_list,
+                            text_drop_shadows_surface_id.into(),
+                            &drop_shadows,
+                            &blur_filter,
+                        );
+
+                        // 4. Stroke fills
+                        for (stroke_paragraphs, layer_opacity) in stroke_paragraphs_list
+                            .iter_mut()
+                            .zip(stroke_opacities.iter())
+                        {
+                            text::render_with_bounds_outset(
                                 Some(self),
                                 None,
                                 &shape,
-                                &mut paragraphs_with_shadows,
-                                Some(innershadows_surface_id),
-                                Some(shadow),
+                                stroke_paragraphs,
+                                Some(strokes_surface_id),
+                                None,
                                 blur_filter.as_ref(),
+                                text_stroke_blur_outset,
+                                None,
+                                *layer_opacity,
                             );
+                        }
+
+                        // 5. Stroke inner shadows
+                        shadows::render_text_shadows(
+                            self,
+                            &shape,
+                            &mut paragraphs_with_shadows,
+                            &mut stroke_paragraphs_with_shadows_list,
+                            Some(innershadows_surface_id),
+                            &inner_shadows,
+                            &blur_filter,
+                        );
+
+                        // 6. Fill Inner shadows
+                        if !shape.has_visible_strokes() {
+                            for shadow in &inner_shadows {
+                                text::render(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    &mut paragraphs_with_shadows,
+                                    Some(innershadows_surface_id),
+                                    Some(shadow),
+                                    blur_filter.as_ref(),
+                                    None,
+                                    None,
+                                );
+                            }
                         }
                     }
                 }
@@ -854,6 +1067,24 @@ impl RenderState {
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });
+
+                // Wrap ALL fill/stroke/shadow rendering so a single GPU blur pass calls
+                let blur_filter_for_layers: Option<skia::ImageFilter> = blur_sigma_for_layers
+                    .and_then(|sigma| skia::image_filters::blur((sigma, sigma), None, None, None));
+                if let Some(ref filter) = blur_filter_for_layers {
+                    let mut layer_paint = skia::Paint::default();
+                    layer_paint.set_image_filter(filter.clone());
+                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
+                    self.surfaces
+                        .canvas(fills_surface_id)
+                        .save_layer(&layer_rec);
+                    self.surfaces
+                        .canvas(strokes_surface_id)
+                        .save_layer(&layer_rec);
+                    self.surfaces
+                        .canvas(innershadows_surface_id)
+                        .save_layer(&layer_rec);
+                }
 
                 let shape = &shape;
 
@@ -867,36 +1098,67 @@ impl RenderState {
                 {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
-                        for fill in fills_to_render.iter() {
-                            fills::render(self, shape, fill, antialias, fills_surface_id);
-                        }
+                        fills::render(
+                            self,
+                            shape,
+                            &fills_to_render,
+                            antialias,
+                            fills_surface_id,
+                            outset,
+                        );
                     }
                 } else {
-                    for fill in shape.fills().rev() {
-                        fills::render(self, shape, fill, antialias, fills_surface_id);
-                    }
+                    fills::render(
+                        self,
+                        shape,
+                        &shape.fills,
+                        antialias,
+                        fills_surface_id,
+                        outset,
+                    );
                 }
 
-                for stroke in shape.visible_strokes().rev() {
+                // Skip stroke rendering for clipped frames - they are drawn in render_shape_exit
+                // over the children. Drawing twice would cause incorrect opacity blending.
+                let skip_strokes = matches!(shape.shape_type, Type::Frame(_)) && shape.clip_content;
+                if !skip_strokes {
+                    // Pass strokes in natural order; stroke merging handles top-most ordering internally.
+                    let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
                     strokes::render(
                         self,
                         shape,
-                        stroke,
+                        &visible_strokes,
                         Some(strokes_surface_id),
-                        None,
                         antialias,
+                        outset,
                     );
-                    shadows::render_stroke_inner_shadows(
+                    if !fast_mode {
+                        for stroke in &visible_strokes {
+                            shadows::render_stroke_inner_shadows(
+                                self,
+                                shape,
+                                stroke,
+                                antialias,
+                                innershadows_surface_id,
+                            );
+                        }
+                    }
+                }
+
+                if !fast_mode {
+                    shadows::render_fill_inner_shadows(
                         self,
                         shape,
-                        stroke,
                         antialias,
                         innershadows_surface_id,
                     );
                 }
 
-                shadows::render_fill_inner_shadows(self, shape, antialias, innershadows_surface_id);
-                // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
+                if blur_filter_for_layers.is_some() {
+                    self.surfaces.canvas(innershadows_surface_id).restore();
+                    self.surfaces.canvas(strokes_surface_id).restore();
+                    self.surfaces.canvas(fills_surface_id).restore();
+                }
             }
         };
 
@@ -908,9 +1170,13 @@ impl RenderState {
         if apply_to_current_surface {
             self.apply_drawing_to_render_canvas(Some(&shape));
         }
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().restore();
-        });
+
+        // Only restore if we saved (optimization for simple shapes)
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().restore();
+            });
+        }
     }
 
     pub fn update_render_context(&mut self, tile: tiles::Tile) {
@@ -932,14 +1198,11 @@ impl RenderState {
         let _start = performance::begin_timed_log!("render_from_cache");
         performance::begin_measure!("render_from_cache");
         let scale = self.get_cached_scale();
-        if let Some(snapshot) = &self.cached_target_snapshot {
-            let canvas = self.surfaces.canvas(SurfaceId::Target);
-            canvas.save();
 
+        // Check if we have a valid cached viewbox (non-zero dimensions indicate valid cache)
+        if self.cached_viewbox.area.width() > 0.0 {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
-
-            canvas.scale((navigate_zoom, navigate_zoom));
 
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
@@ -949,15 +1212,24 @@ impl RenderState {
                 );
             let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr();
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr();
+            let translate_x = (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x;
+            let translate_y = (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y;
+            let bg_color = self.background_color;
 
-            canvas.translate((
-                (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x,
-                (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y,
-            ));
+            // Setup canvas transform
+            {
+                let canvas = self.surfaces.canvas(SurfaceId::Target);
+                canvas.save();
+                canvas.scale((navigate_zoom, navigate_zoom));
+                canvas.translate((translate_x, translate_y));
+                canvas.clear(bg_color);
+            }
 
-            canvas.clear(self.background_color);
-            canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
-            canvas.restore();
+            // Draw directly from cache surface, avoiding snapshot overhead
+            self.surfaces.draw_cache_to_target();
+
+            // Restore canvas state
+            self.surfaces.canvas(SurfaceId::Target).restore();
 
             if self.options.is_debug_visible() {
                 debug::render(self);
@@ -972,6 +1244,32 @@ impl RenderState {
         performance::end_timed_log!("render_from_cache", _start);
     }
 
+    /// Render a preview of the shapes during loading.
+    /// This rebuilds tiles for touched shapes and renders synchronously.
+    pub fn render_preview(&mut self, tree: ShapesPoolRef, timestamp: i32) -> Result<(), String> {
+        let _start = performance::begin_timed_log!("render_preview");
+        performance::begin_measure!("render_preview");
+
+        // Enable fast_mode during preview to skip expensive effects (blur, shadows).
+        // Restore the previous state afterward so the final render is full quality.
+        let current_fast_mode = self.options.is_fast_mode();
+        self.options.set_fast_mode(true);
+
+        // Skip tile rebuilding during preview - we'll do it at the end
+        // Just rebuild tiles for touched shapes and render synchronously
+        self.rebuild_touched_tiles(tree);
+
+        // Use the sync render path
+        self.start_render_loop(None, tree, timestamp, true)?;
+
+        self.options.set_fast_mode(current_fast_mode);
+
+        performance::end_measure!("render_preview");
+        performance::end_timed_log!("render_preview", _start);
+
+        Ok(())
+    }
+
     pub fn start_render_loop(
         &mut self,
         base_object: Option<&Uuid>,
@@ -981,8 +1279,8 @@ impl RenderState {
     ) -> Result<(), String> {
         let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
-        self.tile_viewbox.update(self.viewbox, scale);
 
+        self.tile_viewbox.update(self.viewbox, scale);
         self.focus_mode.reset();
 
         performance::begin_measure!("render");
@@ -1031,6 +1329,7 @@ impl RenderState {
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;
+
         self.apply_drawing_to_render_canvas(None);
 
         if sync_render {
@@ -1054,8 +1353,6 @@ impl RenderState {
         if self.render_in_progress {
             if tree.len() != 0 {
                 self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
-            } else {
-                println!("Empty tree");
             }
             self.flush_and_submit();
 
@@ -1078,8 +1375,6 @@ impl RenderState {
     ) -> Result<(), String> {
         if tree.len() != 0 {
             self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
-        } else {
-            println!("Empty tree");
         }
         self.flush_and_submit();
 
@@ -1117,18 +1412,6 @@ impl RenderState {
             self.nested_fills.push(Vec::new());
         }
 
-        let mut paint = skia::Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
-
-        if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
-            let scale = self.get_scale();
-            let sigma = frame_blur.value * scale;
-            if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
-                paint.set_image_filter(filter);
-            }
-        }
-
         // When we're rendering the mask shape we need to set a special blend mode
         // called 'destination-in' that keeps the drawn content within the mask.
         // @see https://skia.org/docs/user/api/skblendmode_overview/
@@ -1141,16 +1424,45 @@ impl RenderState {
                 .save_layer(&mask_rec);
         }
 
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        self.surfaces
-            .canvas(SurfaceId::Current)
-            .save_layer(&layer_rec);
+        // Only create save_layer if actually needed
+        // For simple shapes with default opacity and blend mode, skip expensive save_layer
+        // Groups with masks need a layer to properly handle the mask rendering
+        let needs_layer = element.needs_layer();
+
+        if needs_layer {
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(element.blend_mode().into());
+            paint.set_alpha_f(element.opacity());
+
+            // Skip frame-level blur in fast mode (pan/zoom)
+            if !self.options.is_fast_mode() {
+                if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
+                    let scale = self.get_scale();
+                    let sigma = radius_to_sigma(frame_blur.value * scale);
+                    if let Some(filter) =
+                        skia::image_filters::blur((sigma, sigma), None, None, None)
+                    {
+                        paint.set_image_filter(filter);
+                    }
+                }
+            }
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            self.surfaces
+                .canvas(SurfaceId::Current)
+                .save_layer(&layer_rec);
+        }
 
         self.focus_mode.enter(&element.id);
     }
 
     #[inline]
-    pub fn render_shape_exit(&mut self, element: &Shape, visited_mask: bool) {
+    pub fn render_shape_exit(
+        &mut self,
+        element: &Shape,
+        visited_mask: bool,
+        clip_bounds: Option<ClipStack>,
+    ) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
@@ -1175,6 +1487,7 @@ impl RenderState {
                         clip_bounds: None,
                         visited_mask: true,
                         mask: false,
+                        flattened: false,
                     });
                     if let Some(&mask_id) = element.mask_id() {
                         self.pending_nodes.push(NodeRenderState {
@@ -1183,6 +1496,7 @@ impl RenderState {
                             clip_bounds: None,
                             visited_mask: false,
                             mask: true,
+                            flattened: false,
                         });
                     }
                 }
@@ -1204,9 +1518,13 @@ impl RenderState {
             element_strokes.to_mut().clear_fills();
             element_strokes.to_mut().clear_shadows();
             element_strokes.to_mut().clip_content = false;
+            // Frame blur is applied at the save_layer level - avoid double blur on the stroke paint
+            if Self::frame_clip_layer_blur(element).is_some() {
+                element_strokes.to_mut().set_blur(None);
+            }
             self.render_shape(
                 &element_strokes,
-                None,
+                clip_bounds,
                 SurfaceId::Fills,
                 SurfaceId::Strokes,
                 SurfaceId::InnerShadows,
@@ -1214,10 +1532,18 @@ impl RenderState {
                 true,
                 None,
                 None,
+                None,
             );
         }
 
-        self.surfaces.canvas(SurfaceId::Current).restore();
+        // Only restore if we created a layer (optimization for simple shapes)
+        // Groups with masks need restore to properly handle the mask rendering
+        let needs_layer = element.needs_layer();
+
+        if needs_layer {
+            self.surfaces.canvas(SurfaceId::Current).restore();
+        }
+
         self.focus_mode.exit(&element.id);
     }
 
@@ -1305,8 +1631,18 @@ impl RenderState {
         let mut plain_shape = Cow::Borrowed(shape);
         let combined_blur =
             Self::combine_blur_values(self.combined_layer_blur(shape.blur), extra_layer_blur);
-        let blur_filter = combined_blur
-            .and_then(|blur| skia::image_filters::blur((blur.value, blur.value), None, None, None));
+        let blur_filter = combined_blur.and_then(|blur| {
+            let sigma = blur.sigma();
+            skia::image_filters::blur((sigma, sigma), None, None, None)
+        });
+
+        let use_low_zoom_path = scale <= 1.0 && combined_blur.is_none();
+
+        if use_low_zoom_path {
+            // Match pre-commit behavior: scale blur/spread with zoom for low zoom levels.
+            transformed_shadow.to_mut().blur = shadow.blur * scale;
+            transformed_shadow.to_mut().spread = shadow.spread * scale;
+        }
 
         let mut transform_matrix = shape.transform;
         let center = shape.center();
@@ -1321,28 +1657,25 @@ impl RenderState {
         let world_offset = (mapped.x, mapped.y);
 
         // The opacity of fills and strokes shouldn't affect the shadow,
-        // so we paint everything black with the same opacity
-        plain_shape.to_mut().clear_fills();
+        // so we paint everything black with the same opacity.
+        let plain_shape_mut = plain_shape.to_mut();
+        plain_shape_mut.clear_fills();
         if shape.has_fills() {
-            plain_shape
-                .to_mut()
-                .add_fill(Fill::Solid(SolidColor(skia::Color::BLACK)));
+            plain_shape_mut.add_fill(Fill::Solid(SolidColor(skia::Color::BLACK)));
         }
 
-        plain_shape.to_mut().clear_strokes();
-        for stroke in shape.strokes.iter() {
-            plain_shape.to_mut().add_stroke(Stroke {
-                fill: Fill::Solid(SolidColor(skia::Color::BLACK)),
-                width: stroke.width,
-                style: stroke.style,
-                cap_end: stroke.cap_end,
-                cap_start: stroke.cap_start,
-                kind: stroke.kind,
-            });
+        // Reuse existing strokes and only override their fill color.
+        for stroke in plain_shape_mut.strokes.iter_mut() {
+            stroke.fill = Fill::Solid(SolidColor(skia::Color::BLACK));
         }
 
-        plain_shape.to_mut().clear_shadows();
-        plain_shape.to_mut().blur = None;
+        plain_shape_mut.clear_shadows();
+        plain_shape_mut.blur = None;
+
+        // Shadow rendering uses a single render_shape call with no render_shape_exit,
+        // so strokes must be drawn here. Disable clip_content to avoid skip_strokes
+        // (which defers strokes to render_shape_exit for clipped frames).
+        plain_shape_mut.clip_content = false;
 
         let Some(drop_filter) = transformed_shadow.get_drop_shadow_filter() else {
             return;
@@ -1351,21 +1684,102 @@ impl RenderState {
         let mut bounds = drop_filter.compute_fast_bounds(shape_bounds);
         // Account for the shadow offset so the temporary surface fully contains the shifted blur.
         bounds.offset(world_offset);
+        // Early cull if the shadow bounds are outside the render area.
+        if !bounds.intersects(self.render_area) {
+            return;
+        }
 
-        let filter_result =
-            filters::render_into_filter_surface(self, bounds, |state, temp_surface| {
-                {
-                    let canvas = state.surfaces.canvas(temp_surface);
+        // blur=0 at high zoom: draw directly on DropShadows with geometric spread (no filter).
+        if scale > 1.0 && shadow.blur <= 0.0 {
+            let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
+            drop_canvas.save();
+            drop_canvas.scale((scale, scale));
+            drop_canvas.translate(translation);
 
-                    let mut shadow_paint = skia::Paint::default();
-                    shadow_paint.set_image_filter(drop_filter.clone());
-                    shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+            self.with_nested_blurs_suppressed(|state| {
+                state.render_shape(
+                    &plain_shape,
+                    clip_bounds,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    false,
+                    Some(shadow.offset),
+                    None,
+                    Some(shadow.spread),
+                );
+            });
 
-                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
-                    canvas.save_layer(&layer_rec);
-                }
+            self.surfaces.canvas(SurfaceId::DropShadows).restore();
+            return;
+        }
+
+        // Create filter with blur only (no offset, no spread - handled geometrically)
+        let blur_only_filter = if transformed_shadow.blur > 0.0 {
+            let sigma = radius_to_sigma(transformed_shadow.blur);
+            Some(skia::image_filters::blur((sigma, sigma), None, None, None))
+        } else {
+            None
+        };
+
+        let mut shadow_paint = skia::Paint::default();
+        if let Some(blur_filter) = blur_only_filter {
+            shadow_paint.set_image_filter(blur_filter);
+        }
+        shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
+
+        // Low zoom path: use blur filter but apply offset and spread geometrically
+        if use_low_zoom_path {
+            let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
+            drop_canvas.save_layer(&layer_rec);
+            drop_canvas.scale((scale, scale));
+            drop_canvas.translate(translation);
+
+            self.with_nested_blurs_suppressed(|state| {
+                state.render_shape(
+                    &plain_shape,
+                    clip_bounds,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    false,
+                    Some(shadow.offset), // Offset is geometric
+                    None,
+                    Some(shadow.spread),
+                );
+            });
+
+            self.surfaces.canvas(SurfaceId::DropShadows).restore();
+            return;
+        }
+
+        // Adaptive downscale for large blur values (lossless GPU optimization).
+        // Bounds above were computed from the original sigma so filter surface coverage is correct.
+        // Maximum downscale is 1/BLUR_DOWNSCALE_THRESHOLD (i.e. 8x): beyond that the
+        // filter surface becomes too small and quality degrades noticeably.
+        const MIN_BLUR_DOWNSCALE: f32 = 1.0 / BLUR_DOWNSCALE_THRESHOLD;
+        let blur_downscale = if shadow.blur > BLUR_DOWNSCALE_THRESHOLD {
+            (BLUR_DOWNSCALE_THRESHOLD / shadow.blur).max(MIN_BLUR_DOWNSCALE)
+        } else {
+            1.0
+        };
+
+        // High zoom with blur: use render_into_filter_surface to ensure blur has enough space
+        // Apply spread geometrically to avoid dilate filter rounding issues
+        let filter_result = filters::render_into_filter_surface(
+            self,
+            bounds,
+            blur_downscale,
+            |state, temp_surface| {
+                let canvas = state.surfaces.canvas(temp_surface);
+                canvas.save_layer(&layer_rec);
 
                 state.with_nested_blurs_suppressed(|state| {
+                    // Apply offset and spread geometrically
                     state.render_shape(
                         &plain_shape,
                         clip_bounds,
@@ -1374,18 +1788,17 @@ impl RenderState {
                         temp_surface,
                         temp_surface,
                         false,
-                        Some(shadow.offset),
+                        Some(shadow.offset), // Offset is geometric
                         None,
+                        Some(shadow.spread),
                     );
                 });
 
-                {
-                    let canvas = state.surfaces.canvas(temp_surface);
-                    canvas.restore();
-                }
-            });
+                state.surfaces.canvas(temp_surface).restore();
+            },
+        );
 
-        if let Some((image, filter_scale)) = filter_result {
+        if let Some((mut surface, filter_scale)) = filter_result {
             let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
             drop_canvas.save();
             drop_canvas.scale((scale, scale));
@@ -1395,37 +1808,188 @@ impl RenderState {
 
             // If we scaled down in the filter surface, we need to scale back up
             if filter_scale < 1.0 {
-                let scaled_width = bounds.width() * filter_scale;
-                let scaled_height = bounds.height() * filter_scale;
-                let src_rect = skia::Rect::from_xywh(0.0, 0.0, scaled_width, scaled_height);
-
                 drop_canvas.save();
                 drop_canvas.scale((1.0 / filter_scale, 1.0 / filter_scale));
-                drop_canvas.draw_image_rect_with_sampling_options(
-                    image,
-                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-                    skia::Rect::from_xywh(
-                        bounds.left * filter_scale,
-                        bounds.top * filter_scale,
-                        scaled_width,
-                        scaled_height,
-                    ),
+                drop_canvas.translate((bounds.left * filter_scale, bounds.top * filter_scale));
+                surface.draw(
+                    drop_canvas,
+                    (0.0, 0.0),
                     self.sampling_options,
-                    &drop_paint,
+                    Some(&drop_paint),
                 );
                 drop_canvas.restore();
             } else {
-                let src_rect = skia::Rect::from_xywh(0.0, 0.0, bounds.width(), bounds.height());
-                drop_canvas.draw_image_rect_with_sampling_options(
-                    image,
-                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-                    bounds,
+                drop_canvas.save();
+                drop_canvas.translate((bounds.left, bounds.top));
+                surface.draw(
+                    drop_canvas,
+                    (0.0, 0.0),
                     self.sampling_options,
-                    &drop_paint,
+                    Some(&drop_paint),
                 );
+                drop_canvas.restore();
             }
             drop_canvas.restore();
         }
+    }
+
+    /// Renders element drop shadows to DropShadows surface and composites to Current.
+    /// Used for both normal shadow rendering and pre-layer rendering (frame_clip_layer_blur).
+    #[allow(clippy::too_many_arguments)]
+    fn render_element_drop_shadows_and_composite(
+        &mut self,
+        element: &Shape,
+        tree: ShapesPoolRef,
+        extrect: &mut Option<Rect>,
+        clip_bounds: Option<ClipStack>,
+        scale: f32,
+        translation: (f32, f32),
+        node_render_state: &NodeRenderState,
+    ) {
+        let element_extrect = extrect.get_or_insert_with(|| element.extrect(tree, scale));
+        let inherited_layer_blur = match element.shape_type {
+            Type::Frame(_) | Type::Group(_) => element.blur,
+            _ => None,
+        };
+
+        for shadow in element.drop_shadows_visible() {
+            let paint = skia::Paint::default();
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            self.surfaces
+                .canvas(SurfaceId::DropShadows)
+                .save_layer(&layer_rec);
+
+            self.render_drop_black_shadow(
+                element,
+                element_extrect,
+                shadow,
+                clip_bounds.clone(),
+                scale,
+                translation,
+                None,
+            );
+
+            if !matches!(element.shape_type, Type::Bool(_)) {
+                let shadow_children = if element.is_recursive() {
+                    get_simplified_children(tree, element)
+                } else {
+                    Vec::new()
+                };
+
+                for shadow_shape_id in shadow_children.iter() {
+                    let Some(shadow_shape) = tree.get(shadow_shape_id) else {
+                        continue;
+                    };
+                    if shadow_shape.hidden {
+                        continue;
+                    }
+
+                    let nested_clip_bounds =
+                        node_render_state.get_nested_shadow_clip_bounds(element, shadow);
+
+                    if !matches!(shadow_shape.shape_type, Type::Text(_)) {
+                        self.render_drop_black_shadow(
+                            shadow_shape,
+                            &shadow_shape.extrect(tree, scale),
+                            shadow,
+                            nested_clip_bounds,
+                            scale,
+                            translation,
+                            inherited_layer_blur,
+                        );
+                    } else {
+                        let paint = skia::Paint::default();
+                        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                        self.surfaces
+                            .canvas(SurfaceId::DropShadows)
+                            .save_layer(&layer_rec);
+                        self.surfaces
+                            .canvas(SurfaceId::DropShadows)
+                            .scale((scale, scale));
+                        self.surfaces
+                            .canvas(SurfaceId::DropShadows)
+                            .translate(translation);
+
+                        let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
+                        transformed_shadow.to_mut().color = skia::Color::BLACK;
+                        transformed_shadow.to_mut().blur = transformed_shadow.blur * scale;
+                        transformed_shadow.to_mut().spread = transformed_shadow.spread * scale;
+
+                        let mut new_shadow_paint = skia::Paint::default();
+                        new_shadow_paint
+                            .set_image_filter(transformed_shadow.get_drop_shadow_filter());
+                        new_shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+                        self.with_nested_blurs_suppressed(|state| {
+                            state.render_shape(
+                                shadow_shape,
+                                nested_clip_bounds,
+                                SurfaceId::DropShadows,
+                                SurfaceId::DropShadows,
+                                SurfaceId::DropShadows,
+                                SurfaceId::DropShadows,
+                                true,
+                                None,
+                                Some(vec![new_shadow_paint.clone()]),
+                                None,
+                            );
+                        });
+                        self.surfaces.canvas(SurfaceId::DropShadows).restore();
+                    }
+                }
+            }
+
+            let mut paint = skia::Paint::default();
+            paint.set_color(shadow.color);
+            paint.set_blend_mode(skia::BlendMode::SrcIn);
+            self.surfaces
+                .canvas(SurfaceId::DropShadows)
+                .draw_paint(&paint);
+            self.surfaces.canvas(SurfaceId::DropShadows).restore();
+        }
+
+        if let Some(clips) = clip_bounds.as_ref() {
+            let antialias = element.should_use_antialias(scale);
+            self.surfaces.canvas(SurfaceId::Current).save();
+            for (bounds, corners, transform) in clips.iter() {
+                let mut total_matrix = Matrix::new_identity();
+                total_matrix.pre_scale((scale, scale), None);
+                total_matrix.pre_translate((translation.0, translation.1));
+                total_matrix.pre_concat(transform);
+
+                self.surfaces
+                    .canvas(SurfaceId::Current)
+                    .concat(&total_matrix);
+
+                if let Some(corners) = corners {
+                    let rrect = RRect::new_rect_radii(*bounds, corners);
+                    self.surfaces.canvas(SurfaceId::Current).clip_rrect(
+                        rrect,
+                        skia::ClipOp::Intersect,
+                        antialias,
+                    );
+                } else {
+                    self.surfaces.canvas(SurfaceId::Current).clip_rect(
+                        *bounds,
+                        skia::ClipOp::Intersect,
+                        antialias,
+                    );
+                }
+
+                self.surfaces
+                    .canvas(SurfaceId::Current)
+                    .concat(&total_matrix.invert().unwrap_or_default());
+            }
+            self.surfaces
+                .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+            self.surfaces.canvas(SurfaceId::Current).restore();
+        } else {
+            self.surfaces
+                .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+        }
+        self.surfaces
+            .canvas(SurfaceId::DropShadows)
+            .clear(skia::Color::TRANSPARENT);
     }
 
     pub fn render_shape_tree_partial_uncached(
@@ -1446,10 +2010,13 @@ impl RenderState {
 
             is_empty = false;
 
-            let element = tree.get(&node_id).ok_or(format!(
-                "Error: Element with root_id {} not found in the tree.",
-                node_render_state.id
-            ))?;
+            let Some(element) = tree.get(&node_id) else {
+                // The shape isn't available yet (likely still streaming in from WASM).
+                // Skip it for this pass; a subsequent render will pick it up once present.
+                continue;
+            };
+            let scale = self.get_scale();
+            let mut extrect: Option<Rect> = None;
 
             // If the shape is not in the tile set, then we add them.
             if self.tiles.get_tiles_of(node_id).is_none() {
@@ -1457,22 +2024,43 @@ impl RenderState {
             }
 
             if visited_children {
-                self.render_shape_exit(element, visited_mask);
+                if !node_render_state.flattened {
+                    self.render_shape_exit(element, visited_mask, clip_bounds);
+                }
                 continue;
             }
 
             if !node_render_state.is_root() {
                 let transformed_element: Cow<Shape> = Cow::Borrowed(element);
-                let scale = self.get_scale();
-                let extrect = transformed_element.extrect(tree, scale);
 
-                let is_visible = extrect.intersects(self.render_area)
-                    && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(scale, tree);
+                // Aggressive early exit: check hidden first (fastest check)
+                if transformed_element.hidden {
+                    continue;
+                }
+
+                // For frames and groups, we must use extrect because they can have nested content
+                // that extends beyond their selrect. Using selrect for early exit would incorrectly
+                // skip frames/groups that have nested content in the current tile.
+                let is_container = matches!(
+                    transformed_element.shape_type,
+                    crate::shapes::Type::Frame(_) | crate::shapes::Type::Group(_)
+                );
+
+                let has_effects = transformed_element.has_effects_that_extend_bounds();
+
+                let is_visible = if is_container || has_effects {
+                    let element_extrect =
+                        extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
+                    element_extrect.intersects(self.render_area)
+                        && !transformed_element.visually_insignificant(scale, tree)
+                } else {
+                    let selrect = transformed_element.selrect();
+                    selrect.intersects(self.render_area)
+                        && !transformed_element.visually_insignificant(scale, tree)
+                };
 
                 if self.options.is_debug_visible() {
-                    let shape_extrect_bounds =
-                        self.get_shape_extrect_bounds(&transformed_element, tree);
+                    let shape_extrect_bounds = self.get_shape_extrect_bounds(element, tree);
                     debug::render_debug_shape(self, None, Some(shape_extrect_bounds));
                 }
 
@@ -1481,10 +2069,43 @@ impl RenderState {
                 }
             }
 
-            self.render_shape_enter(element, mask);
+            let can_flatten = element.can_flatten() && !self.focus_mode.should_focus(&element.id);
+
+            // Skip render_shape_enter/exit for flattened containers
+            // If a container was flattened, it doesn't affect children visually, so we skip
+            // the expensive enter/exit operations and process children directly
+            if !can_flatten {
+                // Enter focus early so shadow_before_layer can run (it needs focus_mode.is_active())
+                self.focus_mode.enter(&element.id);
+
+                // For frames with layer blur, render shadow BEFORE the layer so it doesn't get
+                // the layer blur (which would make it more diffused than without clipping)
+                let shadow_before_layer = !node_render_state.is_root()
+                    && self.focus_mode.is_active()
+                    && !self.options.is_fast_mode()
+                    && !matches!(element.shape_type, Type::Text(_))
+                    && Self::frame_clip_layer_blur(element).is_some()
+                    && element.drop_shadows_visible().next().is_some();
+
+                if shadow_before_layer {
+                    let translation = self
+                        .surfaces
+                        .get_render_context_translation(self.render_area, scale);
+                    self.render_element_drop_shadows_and_composite(
+                        element,
+                        tree,
+                        &mut extrect,
+                        clip_bounds.clone(),
+                        scale,
+                        translation,
+                        &node_render_state,
+                    );
+                }
+
+                self.render_shape_enter(element, mask);
+            }
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
-                let scale: f32 = self.get_scale();
                 let translation = self
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
@@ -1492,176 +2113,24 @@ impl RenderState {
                 // Skip expensive drop shadow rendering in fast mode (during pan/zoom)
                 let skip_shadows = self.options.is_fast_mode();
 
+                // Skip shadow block when already rendered before the layer (frame_clip_layer_blur)
+                let shadows_already_rendered = Self::frame_clip_layer_blur(element).is_some();
+
                 // For text shapes, render drop shadow using text rendering logic
-                if !skip_shadows && !matches!(element.shape_type, Type::Text(_)) {
-                    // Shadow rendering technique: Two-pass approach for proper opacity handling
-                    //
-                    // The shadow rendering uses a two-pass technique to ensure that overlapping
-                    // shadow areas maintain correct opacity without unwanted darkening:
-                    //
-                    // 1. First pass: Render shadow shape in pure black (alpha channel preserved)
-                    //    - This creates the shadow silhouette with proper alpha gradients
-                    //    - The black color acts as a mask for the final shadow color
-                    //
-                    // 2. Second pass: Apply actual shadow color using SrcIn blend mode
-                    //    - SrcIn preserves the alpha channel from the black shadow
-                    //    - Only the color channels are replaced, maintaining transparency
-                    //    - This prevents overlapping shadows from accumulating opacity
-                    //
-                    // This approach is essential for complex shapes with transparency where
-                    // multiple shadow areas might overlap, ensuring visual consistency.
-                    let inherited_layer_blur = match element.shape_type {
-                        Type::Frame(_) | Type::Group(_) => element.blur,
-                        _ => None,
-                    };
-
-                    for shadow in element.drop_shadows_visible() {
-                        let paint = skia::Paint::default();
-                        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-
-                        self.surfaces
-                            .canvas(SurfaceId::DropShadows)
-                            .save_layer(&layer_rec);
-
-                        // First pass: Render shadow in black to establish alpha mask
-                        self.render_drop_black_shadow(
-                            element,
-                            &element.extrect(tree, scale),
-                            shadow,
-                            clip_bounds.clone(),
-                            scale,
-                            translation,
-                            None,
-                        );
-
-                        if !matches!(element.shape_type, Type::Bool(_)) {
-                            // Nested shapes shadowing - apply black shadow to child shapes too
-                            for shadow_shape_id in element.children.iter() {
-                                let shadow_shape = tree.get(shadow_shape_id).unwrap();
-                                if shadow_shape.hidden {
-                                    continue;
-                                }
-
-                                let clip_bounds = node_render_state
-                                    .get_nested_shadow_clip_bounds(element, shadow);
-
-                                if !matches!(shadow_shape.shape_type, Type::Text(_)) {
-                                    self.render_drop_black_shadow(
-                                        shadow_shape,
-                                        &shadow_shape.extrect(tree, scale),
-                                        shadow,
-                                        clip_bounds,
-                                        scale,
-                                        translation,
-                                        inherited_layer_blur,
-                                    );
-                                } else {
-                                    let paint = skia::Paint::default();
-                                    let layer_rec =
-                                        skia::canvas::SaveLayerRec::default().paint(&paint);
-
-                                    self.surfaces
-                                        .canvas(SurfaceId::DropShadows)
-                                        .save_layer(&layer_rec);
-                                    self.surfaces
-                                        .canvas(SurfaceId::DropShadows)
-                                        .scale((scale, scale));
-                                    self.surfaces
-                                        .canvas(SurfaceId::DropShadows)
-                                        .translate(translation);
-
-                                    let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
-
-                                    transformed_shadow.to_mut().color = skia::Color::BLACK;
-                                    transformed_shadow.to_mut().blur =
-                                        transformed_shadow.blur * scale;
-                                    transformed_shadow.to_mut().spread =
-                                        transformed_shadow.spread * scale;
-
-                                    let mut new_shadow_paint = skia::Paint::default();
-                                    new_shadow_paint.set_image_filter(
-                                        transformed_shadow.get_drop_shadow_filter(),
-                                    );
-                                    new_shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
-
-                                    self.with_nested_blurs_suppressed(|state| {
-                                        state.render_shape(
-                                            shadow_shape,
-                                            clip_bounds,
-                                            SurfaceId::DropShadows,
-                                            SurfaceId::DropShadows,
-                                            SurfaceId::DropShadows,
-                                            SurfaceId::DropShadows,
-                                            true,
-                                            None,
-                                            Some(vec![new_shadow_paint.clone()]),
-                                        );
-                                    });
-                                    self.surfaces.canvas(SurfaceId::DropShadows).restore();
-                                }
-                            }
-                        }
-
-                        // Second pass: Apply actual shadow color using SrcIn blend mode
-                        // This preserves the alpha channel from the black shadow while
-                        // replacing only the color channels, preventing opacity accumulation
-                        let mut paint = skia::Paint::default();
-                        paint.set_color(shadow.color);
-                        paint.set_blend_mode(skia::BlendMode::SrcIn);
-                        self.surfaces
-                            .canvas(SurfaceId::DropShadows)
-                            .draw_paint(&paint);
-
-                        self.surfaces.canvas(SurfaceId::DropShadows).restore();
-                    }
+                if !skip_shadows
+                    && !shadows_already_rendered
+                    && !matches!(element.shape_type, Type::Text(_))
+                {
+                    self.render_element_drop_shadows_and_composite(
+                        element,
+                        tree,
+                        &mut extrect,
+                        clip_bounds.clone(),
+                        scale,
+                        translation,
+                        &node_render_state,
+                    );
                 }
-
-                if let Some(clips) = clip_bounds.as_ref() {
-                    let antialias = element.should_use_antialias(scale);
-
-                    self.surfaces.canvas(SurfaceId::Current).save();
-                    for (bounds, corners, transform) in clips.iter() {
-                        let mut total_matrix = Matrix::new_identity();
-                        total_matrix.pre_scale((scale, scale), None);
-                        total_matrix.pre_translate((translation.0, translation.1));
-                        total_matrix.pre_concat(transform);
-
-                        self.surfaces
-                            .canvas(SurfaceId::Current)
-                            .concat(&total_matrix);
-
-                        if let Some(corners) = corners {
-                            let rrect = RRect::new_rect_radii(*bounds, corners);
-                            self.surfaces.canvas(SurfaceId::Current).clip_rrect(
-                                rrect,
-                                skia::ClipOp::Intersect,
-                                antialias,
-                            );
-                        } else {
-                            self.surfaces.canvas(SurfaceId::Current).clip_rect(
-                                *bounds,
-                                skia::ClipOp::Intersect,
-                                antialias,
-                            );
-                        }
-
-                        self.surfaces
-                            .canvas(SurfaceId::Current)
-                            .concat(&total_matrix.invert().unwrap_or_default());
-                    }
-
-                    self.surfaces
-                        .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
-
-                    self.surfaces.canvas(SurfaceId::Current).restore();
-                } else {
-                    self.surfaces
-                        .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
-                }
-
-                self.surfaces
-                    .canvas(SurfaceId::DropShadows)
-                    .clear(skia::Color::TRANSPARENT);
 
                 self.render_shape(
                     element,
@@ -1673,6 +2142,7 @@ impl RenderState {
                     true,
                     None,
                     None,
+                    None,
                 );
 
                 self.surfaces
@@ -1682,14 +2152,18 @@ impl RenderState {
                 self.apply_drawing_to_render_canvas(Some(element));
             }
 
-            match element.shape_type {
-                Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
-                    self.nested_blurs.push(None);
+            // Skip nested state updates for flattened containers
+            // Flattened containers don't affect children, so we don't need to track their state
+            if !can_flatten {
+                match element.shape_type {
+                    Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
+                        self.nested_blurs.push(None);
+                    }
+                    Type::Frame(_) | Type::Group(_) => {
+                        self.nested_blurs.push(element.blur);
+                    }
+                    _ => {}
                 }
-                Type::Frame(_) | Type::Group(_) => {
-                    self.nested_blurs.push(element.blur);
-                }
-                _ => {}
             }
 
             // Set the node as visited_children before processing children
@@ -1699,33 +2173,54 @@ impl RenderState {
                 clip_bounds: clip_bounds.clone(),
                 visited_mask: false,
                 mask,
+                flattened: can_flatten,
             });
 
             if element.is_recursive() {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, None);
-                let mut children_ids: Vec<_> = element.children_ids_iter(false).collect();
 
-                // Z-index ordering on Layouts
-                if element.has_layout() {
-                    if element.is_flex() && !element.is_flex_reverse() {
-                        children_ids.reverse();
+                let children_ids: Vec<_> = if can_flatten {
+                    // Container was flattened: get simplified children (which skip this level)
+                    get_simplified_children(tree, element)
+                } else {
+                    // Container not flattened: use original children
+                    element.children_ids_iter(false).copied().collect()
+                };
+
+                // Z-index ordering
+                // For reverse flex layouts with custom z-indexes, we reverse the base order
+                // so that visual stacking matches visual position
+                let children_ids = if element.has_layout() {
+                    let mut ids = children_ids;
+                    let has_z_index = ids
+                        .iter()
+                        .any(|id| tree.get(id).map(|s| s.has_z_index()).unwrap_or(false));
+                    if element.is_flex_reverse() && has_z_index {
+                        ids.reverse();
                     }
-
-                    children_ids.sort_by(|id1, id2| {
-                        let z1 = tree.get(id1).map(|s| s.z_index()).unwrap_or(0);
-                        let z2 = tree.get(id2).map(|s| s.z_index()).unwrap_or(0);
-                        z2.cmp(&z1)
+                    // Sort by z_index descending (higher z renders on top).
+                    // When z_index is equal, absolute children go above
+                    // non-absolute children
+                    ids.sort_by_key(|id| {
+                        let s = tree.get(id);
+                        let z = s.map(|s| s.z_index()).unwrap_or(0);
+                        let abs = s.map(|s| s.is_absolute()).unwrap_or(false);
+                        (std::cmp::Reverse(z), !abs)
                     });
-                }
+                    ids
+                } else {
+                    children_ids
+                };
 
                 for child_id in children_ids.iter() {
                     self.pending_nodes.push(NodeRenderState {
-                        id: **child_id,
+                        id: *child_id,
                         visited_children: false,
                         clip_bounds: children_clip_bounds.clone(),
                         visited_mask: false,
                         mask: false,
+                        flattened: false,
                     });
                 }
             }
@@ -1747,6 +2242,16 @@ impl RenderState {
         allow_stop: bool,
     ) -> Result<(), String> {
         let mut should_stop = false;
+        let root_ids = {
+            if let Some(shape_id) = base_object {
+                vec![*shape_id]
+            } else {
+                let Some(root) = tree.get(&Uuid::nil()) else {
+                    return Err(String::from("Root shape not found"));
+                };
+                root.children_ids(false)
+            }
+        };
 
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
@@ -1770,8 +2275,13 @@ impl RenderState {
                     }
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
+                    // Only allow stopping (yielding) if the current tile is NOT visible.
+                    // This ensures all visible tiles render synchronously before showing,
+                    // eliminating empty squares during zoom. Interest-area tiles can still yield.
+                    let tile_is_visible = self.tile_viewbox.is_visible(&current_tile);
+                    let can_stop = allow_stop && !tile_is_visible;
                     let (is_empty, early_return) =
-                        self.render_shape_tree_partial_uncached(tree, timestamp, allow_stop)?;
+                        self.render_shape_tree_partial_uncached(tree, timestamp, can_stop)?;
 
                     if early_return {
                         return Ok(());
@@ -1803,17 +2313,6 @@ impl RenderState {
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
 
-            let root_ids = {
-                if let Some(shape_id) = base_object {
-                    vec![*shape_id]
-                } else {
-                    let Some(root) = tree.get(&Uuid::nil()) else {
-                        return Err(String::from("Root shape not found"));
-                    };
-                    root.children_ids(false)
-                }
-            };
-
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
@@ -1821,21 +2320,13 @@ impl RenderState {
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
-                        let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
-                            .iter()
-                            .enumerate()
-                            .map(|(i, id)| (*id, i))
-                            .collect();
-
-                        // We only need first level shapes
-                        let mut valid_ids: Vec<Uuid> = ids
-                            .iter()
-                            .filter(|id| root_ids_map.contains_key(id))
-                            .copied()
-                            .collect();
-
-                        // These shapes for the tile should be ordered as they are in the parent node
-                        valid_ids.sort_by_key(|id| root_ids_map.get(id).unwrap_or(&usize::MAX));
+                        // We only need first level shapes, in the same order as the parent node
+                        let mut valid_ids = Vec::with_capacity(ids.len());
+                        for root_id in root_ids.iter() {
+                            if ids.contains(root_id) {
+                                valid_ids.push(*root_id);
+                            }
+                        }
 
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
@@ -1844,6 +2335,7 @@ impl RenderState {
                                 clip_bounds: None,
                                 visited_mask: false,
                                 mask: false,
+                                flattened: false,
                             }
                         }));
                     }
@@ -1857,10 +2349,8 @@ impl RenderState {
 
         self.surfaces.gc();
 
-        // Cache target surface in a texture
+        // Mark cache as valid for render_from_cache
         self.cached_viewbox = self.viewbox;
-
-        self.cached_target_snapshot = Some(self.surfaces.snapshot(SurfaceId::Cache));
 
         if self.options.is_debug_visible() {
             debug::render(self);
@@ -1873,30 +2363,64 @@ impl RenderState {
     }
 
     /*
-     * Given a shape returns the TileRect with the range of tiles that the shape is in
+     * Given a shape returns the TileRect with the range of tiles that the shape is in.
+     * This is always limited to the interest area to optimize performance and prevent
+     * processing unnecessary tiles outside the viewport. The interest area already
+     * includes a margin (VIEWPORT_INTEREST_AREA_THRESHOLD) calculated via
+     * get_tiles_for_viewbox_with_interest, ensuring smooth pan/zoom interactions.
+     *
+     * When the viewport changes (pan/zoom), the interest area is updated and shapes
+     * are dynamically added to the tile index via the fallback mechanism in
+     * render_shape_tree_partial_uncached, ensuring all shapes render correctly.
      */
     pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
         let scale = self.get_scale();
         let extrect = self.get_cached_extrect(shape, tree, scale);
         let tile_size = tiles::get_tile_size(scale);
-        tiles::get_tiles_for_rect(extrect, tile_size)
+        let shape_tiles = tiles::get_tiles_for_rect(extrect, tile_size);
+        let interest_rect = &self.tile_viewbox.interest_rect;
+        // Calculate the intersection of shape_tiles with interest_rect
+        // This returns only the tiles that are both in the shape and in the interest area
+        let intersection_x1 = shape_tiles.x1().max(interest_rect.x1());
+        let intersection_y1 = shape_tiles.y1().max(interest_rect.y1());
+        let intersection_x2 = shape_tiles.x2().min(interest_rect.x2());
+        let intersection_y2 = shape_tiles.y2().min(interest_rect.y2());
+
+        // Return the intersection if valid (there is overlap), otherwise return empty rect
+        if intersection_x1 <= intersection_x2 && intersection_y1 <= intersection_y2 {
+            // Valid intersection: return the tiles that are in both shape_tiles and interest_rect
+            TileRect(
+                intersection_x1,
+                intersection_y1,
+                intersection_x2,
+                intersection_y2,
+            )
+        } else {
+            // No intersection: shape is completely outside interest area
+            // The shape will be added dynamically via add_shape_tiles when it enters
+            // the interest area during pan/zoom operations
+            TileRect(0, 0, -1, -1)
+        }
     }
 
     /*
      * Given a shape, check the indexes and update it's location in the tile set
      * returns the tiles that have changed in the process.
      */
-    pub fn update_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Vec<tiles::Tile> {
+    pub fn update_shape_tiles(
+        &mut self,
+        shape: &Shape,
+        tree: ShapesPoolRef,
+    ) -> HashSet<tiles::Tile> {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
 
-        let old_tiles = self
+        // Collect old tiles to avoid borrow conflict with remove_shape_at
+        let old_tiles: Vec<_> = self
             .tiles
             .get_tiles_of(shape.id)
-            .map_or(Vec::new(), |tiles| tiles.iter().copied().collect());
+            .map_or(Vec::new(), |t| t.iter().copied().collect());
 
-        let new_tiles = (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y)));
-
-        let mut result = HashSet::<tiles::Tile>::new();
+        let mut result = HashSet::<tiles::Tile>::with_capacity(old_tiles.len());
 
         // First, remove the shape from all tiles where it was previously located
         for tile in old_tiles {
@@ -1905,12 +2429,66 @@ impl RenderState {
         }
 
         // Then, add the shape to the new tiles
-        for tile in new_tiles {
+        for tile in (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y))) {
             self.tiles.add_shape_at(tile, shape.id);
             result.insert(tile);
         }
 
-        result.iter().copied().collect()
+        result
+    }
+
+    /*
+     * Incremental version of update_shape_tiles for pan/zoom operations.
+     * Updates the tile index and returns ONLY tiles that need cache invalidation.
+     *
+     * During pan operations, shapes don't move in world coordinates. The interest
+     * area (viewport) moves, which changes which tiles we track in the index, but
+     * tiles that were already cached don't need re-rendering just because the
+     * viewport moved.
+     *
+     * This function:
+     * 1. Updates the tile index (adds/removes shapes from tiles based on interest area)
+     * 2. Returns empty vec for cache invalidation (pan doesn't change tile content)
+     *
+     * Tile cache invalidation only happens when shapes actually move or change,
+     * which is handled by rebuild_touched_tiles, not during pan/zoom.
+     */
+    pub fn update_shape_tiles_incremental(
+        &mut self,
+        shape: &Shape,
+        tree: ShapesPoolRef,
+    ) -> Vec<tiles::Tile> {
+        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
+
+        let old_tiles: HashSet<tiles::Tile> = self
+            .tiles
+            .get_tiles_of(shape.id)
+            .map_or(HashSet::new(), |tiles| tiles.iter().copied().collect());
+
+        let new_tiles: HashSet<tiles::Tile> = (rsx..=rex)
+            .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y)))
+            .collect();
+
+        // Tiles where shape is being removed from index (left interest area)
+        let removed: Vec<_> = old_tiles.difference(&new_tiles).copied().collect();
+        // Tiles where shape is being added to index (entered interest area)
+        let added: Vec<_> = new_tiles.difference(&old_tiles).copied().collect();
+
+        // Update the index: remove from old tiles
+        for tile in &removed {
+            self.tiles.remove_shape_at(*tile, shape.id);
+        }
+
+        // Update the index: add to new tiles
+        for tile in &added {
+            self.tiles.add_shape_at(*tile, shape.id);
+        }
+
+        // Don't invalidate cache for pan/zoom - the tile content hasn't changed,
+        // only the interest area moved. Tiles that were cached are still valid.
+        // New tiles that entered the interest area will be rendered fresh since
+        // they weren't in the cache anyway.
+        Vec::new()
     }
 
     /*
@@ -1930,20 +2508,28 @@ impl RenderState {
     }
 
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
-        let rect = self.get_aligned_tile_bounds(tile);
-        self.surfaces
-            .remove_cached_tile_surface(tile, rect, self.background_color);
+        self.surfaces.remove_cached_tile_surface(tile);
     }
 
     pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles_shallow");
 
-        let mut all_tiles = HashSet::<tiles::Tile>::new();
+        // Check if zoom changed - if so, we need full cache invalidation
+        // because tiles are rendered at specific zoom levels
+        let zoom_changed = self.zoom_changed();
+
+        let mut tiles_to_invalidate = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
-                    all_tiles.extend(self.update_shape_tiles(shape, tree));
+                    if zoom_changed {
+                        // Zoom changed: use full update that tracks all affected tiles
+                        tiles_to_invalidate.extend(self.update_shape_tiles(shape, tree));
+                    } else {
+                        // Pan only: use incremental update that preserves valid cached tiles
+                        self.update_shape_tiles_incremental(shape, tree);
+                    }
                 } else {
                     // We only need to rebuild tiles from the first level.
                     for child_id in shape.children_ids_iter(false) {
@@ -1953,24 +2539,10 @@ impl RenderState {
             }
         }
 
-        // Update the changed tiles
+        // Invalidate changed tiles - old content stays visible until new tiles render
         self.surfaces.remove_cached_tiles(self.background_color);
-        for tile in all_tiles {
-            self.remove_cached_tile(tile);
-        }
 
         performance::end_measure!("rebuild_tiles_shallow");
-    }
-
-    /// Clears the tile index without invalidating cached tile textures.
-    /// This is useful when tile positions don't change (e.g., during pan operations)
-    /// but the tile index needs to be synchronized. The cached tile textures remain
-    /// valid since they don't depend on the current view position, only on zoom level.
-    /// This is much more efficient than clearing the entire cache surface.
-    pub fn clear_tile_index(&mut self) {
-        performance::begin_measure!("clear_tile_index");
-        self.surfaces.clear_tiles();
-        performance::end_measure!("clear_tile_index");
     }
 
     pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {
@@ -2000,7 +2572,7 @@ impl RenderState {
             }
         }
 
-        // Update the changed tiles
+        // Invalidate changed tiles - old content stays visible until new tiles render
         self.surfaces.remove_cached_tiles(self.background_color);
         for tile in all_tiles {
             self.remove_cached_tile(tile);
@@ -2017,7 +2589,7 @@ impl RenderState {
 
         let mut all_tiles = HashSet::<tiles::Tile>::new();
 
-        let ids = self.touched_ids.clone();
+        let ids = std::mem::take(&mut self.touched_ids);
 
         for shape_id in ids.iter() {
             if let Some(shape) = tree.get(shape_id) {
@@ -2031,8 +2603,6 @@ impl RenderState {
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
-
-        self.clean_touched();
 
         performance::end_measure!("rebuild_touched_tiles");
     }
@@ -2082,10 +2652,15 @@ impl RenderState {
         (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
     }
 
+    pub fn sync_cached_viewbox(&mut self) {
+        self.cached_viewbox = self.viewbox;
+    }
+
     pub fn mark_touched(&mut self, uuid: Uuid) {
         self.touched_ids.insert(uuid);
     }
 
+    #[allow(dead_code)]
     pub fn clean_touched(&mut self) {
         self.touched_ids.clear();
     }

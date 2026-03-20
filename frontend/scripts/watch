@@ -4,4 +4,7 @@ TARGET=${1:-app};
 
 set -ex
 
-exec yarn run watch:$TARGET
+corepack enable;
+corepack install;
+pnpm install;
+pnpm run watch:$TARGET

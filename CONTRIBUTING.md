@@ -120,16 +120,11 @@ them on your system, you can run them with:
 
 ```bash
 # Check formatting
-yarn fmt:clj:check
+./scripts/fmt
 
-# Check and fix formatting
-yarn fmt:clj
-
-# Run the linter
-yarn lint:clj
+# Lint
+./scripts/lint
 ```
-
-There are more choices in `package.json`.
 
 Ideally, you should run these commands as git pre-commit hooks. A convenient way
 of defining them is to use [Husky](https://typicode.github.io/husky/#/).
@@ -211,3 +206,6 @@ Signed-off-by: Andrey Antukh <niwi@niwi.nz>
 
 Please, use your real name (sorry, no pseudonyms or anonymous
 contributions are allowed).
+
+The commit Signed-off-by is mandatory and should match the commit author.
+

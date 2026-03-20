@@ -77,7 +77,7 @@
         (mf/use-ref nil)
 
         on-import-files
-        (fn [] (dom/click! (mf/ref-val file-input)))
+        (fn [] (dom/click (mf/ref-val file-input)))
 
         on-finish-import
         (mf/use-fn

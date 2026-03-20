@@ -1,0 +1,97 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as RadioButtons from "./radio_buttons.stories";
+
+<Meta title="Controls/Radio Buttons" />
+
+# Radio Buttons
+
+The `radio-buttons*` component allows users to switch between two or more options that are mutually exclusive.
+
+## Variants
+
+Radio buttons with text only. The label will be the text of the button.
+
+<Canvas of={RadioButtons.Default} />
+
+```clj
+[:> radio-buttons* {:selected "left"
+                    :on-change handle-change
+                    :name "alignment"
+                    :extended false
+                    :allow-empty false
+                    :options [{:id "align-left"
+                               :label "Left"
+                               :value "left"}
+                              {:id "align-center"
+                               :label "Center"
+                               :value "center"}
+                              {:id "align-right"
+                               :label "Right"
+                               :value "right"}]}]
+```
+
+Radio buttons with icons only. In this case, the label will act as the tooltip of each button.
+
+<Canvas of={RadioButtons.WithIcons} />
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.assets.icon :as i]))
+
+[:> radio-buttons* {:selected "left"
+                    :on-change handle-change
+                    :name "alignment"
+                    :extended false
+                    :allow-empty false
+                    :options [{:id "align-left"
+                               :icon i/text-align-left
+                               :label "Left align"
+                               :value "left"}
+                              {:id "align-center"
+                               :icon i/text-align-center
+                               :label "Center align"
+                               :value "center"}
+                              {:id "align-right"
+                               :icon i/text-align-right
+                               :label "Right align"
+                               :value "right"}]}]
+```
+
+## Anatomy
+
+Under the hood, each option is represented by
+- a button, which is the visible and clickable element. It may be either an icon button or a text button.
+- a radio input, which is not visible but retains the current state of the option.
+
+A radio group is defined by giving each of radio buttons in the group the same name. Once a radio group is established,
+selecting any radio button in that group automatically deselects any currently-selected radio button in the same group.
+
+The `selected` parameter should be set to the value of the option that is to be active. Otherwise, no option will be selected.
+
+If the parameter `allow-empty` is enabled, then the component will work with checkboxes instead of radio buttons,
+and therefore the selected option can be deselected. However, it will still only be possible to select one option.
+
+The `extended` parameter allows the component to use all the available space from the parent and distribute it equally
+among all elements.
+
+Any option can be individually disabled using the `disabled` parameter.
+
+## Usage Guidelines
+
+### When to Use
+
+- For multiple choice settings that take effect immediately.
+- In preference panels and configuration screens.
+
+### When Not to Use
+
+- For boolean settings (use switch or checkbox instead).
+- For actions that require confirmation (use buttons instead).
+- For temporary states that need explicit "Apply" action.

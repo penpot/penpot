@@ -31,4 +31,8 @@ impl RenderOptions {
     pub fn dpr(&self) -> f32 {
         self.dpr.unwrap_or(1.0)
     }
+
+    pub fn show_info_text(&self) -> bool {
+        self.flags & options::INFO_TEXT == options::INFO_TEXT
+    }
 }

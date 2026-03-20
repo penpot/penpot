@@ -140,7 +140,8 @@
     :layout-item-min-w
     :layout-item-absolute
     :layout-item-z-index
-    :layout-item-align-self})
+    :layout-item-align-self
+    :interactions})
 
 (defn component-attr?
   "Check if some attribute is one that is involved in component syncrhonization.

@@ -227,7 +227,7 @@
         :svg-attrs
         (do
           (api/set-shape-svg-attrs v)
-          ;; Always update fills/blur/shadow to clear previous state if filters disappear          
+          ;; Always update fills/blur/shadow to clear previous state if filters disappear
           (api/set-shape-fills id (:fills shape) false)
           (api/set-shape-blur (:blur shape))
           (api/set-shape-shadows (:shadow shape)))
@@ -397,12 +397,18 @@
                    (next es))
             (throw (js/Error. "conj on a map takes map entries or seqables of map entries"))))))))
 
+(def ^:private xf:without-id-and-type
+  (remove (fn [kvpair]
+            (let [k (key kvpair)]
+              (or (= k :id)
+                  (= k :type))))))
+
 (defn create-shape
   "Instanciate a shape from a map"
   [attrs]
   (ShapeProxy. (:id attrs)
                (:type attrs)
-               (dissoc attrs :id :type)))
+               (into {} xf:without-id-and-type attrs)))
 
 (t/add-handlers!
  ;; We only add a write handler, read handler uses the dynamic dispatch

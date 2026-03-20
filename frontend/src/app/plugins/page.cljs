@@ -39,55 +39,79 @@
   (obj/type-of? p "FlowProxy"))
 
 (defn flow-proxy
-  [plugin-id file-id page-id id]
-  (obj/reify {:name "FlowProxy"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
-    :$file {:enumerable false :get (fn [] file-id)}
-    :$page {:enumerable false :get (fn [] page-id)}
-    :$id {:enumerable false :get (fn [] id)}
+  ;; `initial-name` and `initial-starting-frame` — optional fallbacks for the
+  ;; :name and :startingBoard getters. When a flow is freshly created via
+  ;; `page.createFlow()`, `st/emit!` is async so the new flow is not yet in
+  ;; `@st/state`. Without these fallbacks, `u/proxy->flow` returns nil and the
+  ;; getters crash. Passing the known values at construction time avoids the race.
+  ([plugin-id file-id page-id id]
+   (flow-proxy plugin-id file-id page-id id nil nil))
+  ([plugin-id file-id page-id id initial-name initial-starting-frame]
+   (obj/reify {:name "FlowProxy"}
+     :$plugin {:enumerable false :get (fn [] plugin-id)}
+     :$file {:enumerable false :get (fn [] file-id)}
+     :$page {:enumerable false :get (fn [] page-id)}
+     :$id {:enumerable false :get (fn [] id)}
 
-    :page
-    {:enumerable false
-     :get
+     :page
+     {:enumerable false
+      :get
+      (fn []
+        (page-proxy plugin-id file-id page-id))}
+
+     :name
+     {:this true
+      :get
+      (fn [self]
+        ;; Prefer the authoritative state lookup; fall back to initial-name
+        ;; when the async state update from `page.createFlow()` hasn't
+        ;; propagated yet.
+        (let [flow (u/proxy->flow self)]
+          (if (some? flow)
+            (:name flow)
+            initial-name)))
+      :set
+      (fn [_ value]
+        (cond
+          (or (not (string? value)) (empty? value))
+          (u/display-not-valid :name value)
+
+          :else
+          (st/emit! (dwi/update-flow page-id id #(assoc % :name value)))))}
+
+     :startingBoard
+     {:this true
+      :get
+      (fn [self]
+        ;; Prefer the authoritative state lookup; fall back to initial-starting-frame
+        ;; when the async state update from `page.createFlow()` hasn't
+        ;; propagated yet.
+        (let [flow  (u/proxy->flow self)
+              frame (if (some? flow)
+                      (:starting-frame flow)
+                      initial-starting-frame)]
+          (when (some? frame)
+            (shape/shape-proxy file-id page-id frame))))
+      :set
+      (fn [_ value]
+        (cond
+          (not (shape/shape-proxy? value))
+          (u/display-not-valid :startingBoard value)
+
+          :else
+          (st/emit! (dwi/update-flow page-id id #(assoc % :starting-frame (obj/get value "$id"))))))}
+
+     :remove
      (fn []
-       (page-proxy plugin-id file-id page-id))}
-
-    :name
-    {:this true
-     :get #(-> % u/proxy->flow :name)
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (empty? value))
-         (u/display-not-valid :name value)
-
-         :else
-         (st/emit! (dwi/update-flow page-id id #(assoc % :name value)))))}
-
-    :startingBoard
-    {:this true
-     :get
-     (fn [self]
-       (when-let [frame (-> self u/proxy->flow :starting-frame)]
-         (shape/shape-proxy file-id page-id frame)))
-     :set
-     (fn [_ value]
-       (cond
-         (not (shape/shape-proxy? value))
-         (u/display-not-valid :startingBoard value)
-
-         :else
-         (st/emit! (dwi/update-flow page-id id #(assoc % :starting-frame (obj/get value "$id"))))))}
-
-    :remove
-    (fn []
-      (st/emit! (dwi/remove-flow page-id id)))))
+       (st/emit! (dwi/remove-flow page-id id))))))
 
 (defn page-proxy? [proxy]
   (obj/type-of? proxy "PageProxy"))
 
 (defn page-proxy
-  [plugin-id file-id id]
+  ([plugin-id file-id id]
+   (page-proxy plugin-id file-id id nil))
+  ([plugin-id file-id id initial-name]
   (obj/reify {:name "PageProxy"}
     :$plugin {:enumerable false :get (fn [] plugin-id)}
     :$file {:enumerable false :get (fn [] file-id)}
@@ -98,7 +122,11 @@
 
     :name
     {:this true
-     :get #(-> % u/proxy->page :name)
+     :get (fn [self]
+            (let [page (u/proxy->page self)]
+              (if (some? page)
+                (:name page)
+                initial-name)))
      :set
      (fn [_ value]
        (cond
@@ -269,7 +297,7 @@
         (u/display-not-valid :openPage "Plugin doesn't have 'content:read' permission")
 
         :else
-        (let [new-window (if (boolean? new-window) new-window true)]
+        (let [new-window (if (boolean? new-window) new-window false)]
           (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
 
     :createFlow
@@ -282,9 +310,10 @@
         (u/display-not-valid :createFlow-frame frame)
 
         :else
-        (let [flow-id (uuid/next)]
-          (st/emit! (dwi/add-flow flow-id id name (obj/get frame "$id")))
-          (flow-proxy plugin-id file-id id flow-id))))
+        (let [flow-id  (uuid/next)
+              frame-id (obj/get frame "$id")]
+          (st/emit! (dwi/add-flow flow-id id name frame-id))
+          (flow-proxy plugin-id file-id id flow-id name frame-id))))
 
     :removeFlow
     (fn [flow]
@@ -314,15 +343,14 @@
           (u/display-not-valid :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
           :else
-          (let [ruler-id (uuid/next)]
-            (st/emit!
-             (dwgu/update-guides
-              (d/without-nils
-               {:id       ruler-id
-                :axis     (parser/orientation->axis orientation)
-                :position value
-                :frame-id (when board (obj/get board "$id"))})))
-            (rg/ruler-guide-proxy plugin-id file-id id ruler-id)))))
+          (let [ruler-id (uuid/next)
+                guide (d/without-nils
+                       {:id       ruler-id
+                        :axis     (parser/orientation->axis orientation)
+                        :position value
+                        :frame-id (when board (obj/get board "$id"))})]
+            (st/emit! (dwgu/update-guides guide))
+            (rg/ruler-guide-proxy plugin-id file-id id ruler-id guide)))))
 
     :removeRulerGuide
     (fn [value]
@@ -331,7 +359,7 @@
         (u/display-not-valid :removeRulerGuide "Guide not provided")
 
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'comment:write' permission")
+        (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'content:write' permission")
 
         :else
         (let [guide (u/proxy->ruler-guide value)]
@@ -417,4 +445,4 @@
                        (resolve
                         (format/format-array
                          #(pc/comment-thread-proxy plugin-id file-id id %) threads))))
-                   reject)))))))))
+                   reject))))))))))

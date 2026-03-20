@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -x
 
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.87.0/skia-binaries-e551f334ad5cbdf43abf-x86_64-unknown-linux-gnu-gl-svg-textlayout-binary-cache-webp.tar.gz"}
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.93.1/skia-binaries-319323662b1685a112f5-x86_64-unknown-linux-gnu-gl-svg-textlayout-binary-cache-webp.tar.gz"}
 export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"x86_64-unknown-linux-gnu"};
 
 _SCRIPT_DIR=$(dirname $0);

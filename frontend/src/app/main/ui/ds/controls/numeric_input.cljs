@@ -18,8 +18,8 @@
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.token-field :refer [token-field*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
-   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -84,48 +84,6 @@
           (str/replace #"^\{" "")
           (str/replace #"\}$" "")))
 
-(defn- token->dropdown-option
-  [token]
-  {:id (str (get token :id))
-   :type :token
-   :resolved-value (get token :resolved-value)
-   :name (get token :name)})
-
-(defn- generate-dropdown-options
-  [tokens no-sets]
-  (if (empty? tokens)
-    [{:type :empty
-      :label (if no-sets
-               (tr "ds.inputs.numeric-input.no-applicable-tokens")
-               (tr "ds.inputs.numeric-input.no-matches"))}]
-    (->> tokens
-         (map (fn [[type items]]
-                (cons {:group true
-                       :type  :group
-                       :id (dm/str "group-" (name type))
-                       :name  (name type)}
-                      (map token->dropdown-option items))))
-         (interpose [{:separator true
-                      :id "separator"
-                      :type :separator}])
-         (apply concat)
-         (vec)
-         (not-empty))))
-
-(defn- extract-partial-brace-text
-  [s]
-  (when-let [start (str/last-index-of s "{")]
-    (subs s (inc start))))
-
-(defn- filter-token-groups-by-name
-  [tokens filter-text]
-  (let [lc-filter (str/lower filter-text)]
-    (into {}
-          (keep (fn [[group tokens]]
-                  (let [filtered (filter #(str/includes? (str/lower (:name %)) lc-filter) tokens)]
-                    (when (seq filtered)
-                      [group filtered]))))
-          tokens)))
 
 (defn- focusable-option?
   [option]
@@ -150,31 +108,6 @@
                 j)))
           indices)))
 
-(defn- sort-groups-and-tokens
-  "Sorts both the groups and the tokens inside them alphabetically.
-
-   Input:
-   A map where:
-   - keys are groups (keywords or strings, e.g. :dimensions, :colors)
-   - values are vectors of token maps, each containing at least a :name key
-
-   Example input:
-   {:dimensions [{:name \"tres\"} {:name \"quini\"}]
-    :colors    [{:name \"azul\"} {:name \"rojo\"}]}
-
-   Output:
-   A sorted map where:
-   - groups are ordered alphabetically by key
-   - tokens inside each group are sorted alphabetically by :name
-
-   Example output:
-   {:colors    [{:name \"azul\"} {:name \"rojo\"}]
-    :dimensions [{:name \"quini\"} {:name \"tres\"}]}"
-
-  [groups->tokens]
-  (into (sorted-map) ;; ensure groups are ordered alphabetically by their key
-        (for [[group tokens] groups->tokens]
-          [group (sort-by :name tokens)])))
 
 (def ^:private schema:icon
   [:and :string [:fn #(contains? icon-list %)]])
@@ -183,11 +116,13 @@
   [:map
    [:id {:optional true} :string]
    [:class {:optional true} :string]
+   [:inner-class {:optional true} :string]
    [:value {:optional true} [:maybe [:or
                                      :int
                                      :float
                                      :string
                                      [:= :multiple]]]]
+   [:text-icon {:optional true} :string]
    [:default {:optional true} [:maybe :string]]
    [:placeholder {:optional true} :string]
    [:icon {:optional true} [:maybe schema:icon]]
@@ -209,12 +144,14 @@
 
 (mf/defc numeric-input*
   {::mf/schema schema:numeric-input}
-  [{:keys [id class value default placeholder icon disabled
+  [{:keys [id class value default placeholder
+           icon disabled inner-class
            min max max-length step
            is-selected-on-focus nillable
            tokens applied-token empty-to-end
            on-change on-blur on-focus on-detach
-           property align ref]
+           property align ref name
+           text-icon]
     :rest props}]
 
   (let [;; NOTE: we use mfu/bean here for transparently handle
@@ -285,16 +222,7 @@
 
         dropdown-options
         (mf/with-memo [tokens filter-id]
-          (delay
-            (let [tokens  (if (delay? tokens) @tokens tokens)
-
-                  sorted-tokens (sort-groups-and-tokens tokens)
-                  partial (extract-partial-brace-text filter-id)
-                  options (if (seq partial)
-                            (filter-token-groups-by-name sorted-tokens partial)
-                            sorted-tokens)
-                  no-sets? (nil? sorted-tokens)]
-              (generate-dropdown-options options no-sets?))))
+          (csu/get-token-dropdown-options tokens filter-id))
 
         selected-id*
         (mf/use-state (fn []
@@ -560,18 +488,17 @@
         (mf/use-fn
          (mf/deps on-detach tokens disabled token-applied)
          (fn [event]
-           (let [token (get-token-op tokens token-applied)]
-             (when-not disabled
-               (dom/prevent-default event)
-               (dom/stop-propagation event)
-               (reset! token-applied* nil)
-               (reset! selected-id* nil)
-               (reset! focused-id* nil)
-               (when on-detach
-                 (on-detach token))
-               (ts/schedule-on-idle
-                (fn []
-                  (dom/focus! (mf/ref-val ref))))))))
+           (when-not disabled
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (reset! token-applied* nil)
+             (reset! selected-id* nil)
+             (reset! focused-id* nil)
+             (when on-detach
+               (on-detach token-applied))
+             (ts/schedule-on-idle
+              (fn []
+                (dom/focus! (mf/ref-val ref)))))))
 
         on-token-key-down
         (mf/use-fn
@@ -624,6 +551,7 @@
         (mf/spread-props props {:ref ref
                                 :type "text"
                                 :id id
+                                :class inner-class
                                 :placeholder (if is-multiple?
                                                (tr "labels.mixed-values")
                                                placeholder)
@@ -634,19 +562,19 @@
                                 :on-change store-raw-value
                                 :variant "comfortable"
                                 :disabled disabled
-                                :slot-start (when icon
-                                              (mf/html [:> tooltip*
-                                                        {:content property
-                                                         :id property}
-                                                        [:> icon* {:icon-id icon
-                                                                   :size "s"
-                                                                   :aria-labelledby property
-                                                                   :class (stl/css :icon)}]]))
+                                :icon icon
+                                :aria-label property
+                                :slot-start (when text-icon
+                                              (mf/html
+                                               [:div {:class (stl/css :text-icon)}
+                                                text-icon]))
                                 :slot-end (when-not disabled
                                             (when (some? tokens)
-                                              (mf/html [:> icon-button* {:variant "action"
+                                              (mf/html [:> icon-button* {:variant "ghost"
                                                                          :icon i/tokens
+                                                                         :tooltip-class (stl/css :button-tooltip)
                                                                          :class (stl/css :invisible-button)
+                                                                         :tooltip-placement "top-left"
                                                                          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                                                                          :ref open-dropdown-ref
                                                                          :on-click open-dropdown}])))
@@ -656,10 +584,13 @@
         (when (and token-applied (not= :multiple token-applied))
           (let [token       (get-option-by-name dropdown-options token-applied)
                 id          (get token :id)
-                label       (get token :name)
+                label       (or (get token :name) applied-token)
                 token-value (or (get token :resolved-value)
                                 (or (mf/ref-val last-value*)
-                                    (fmt/format-number value)))]
+                                    (fmt/format-number value)))
+                token-value (if (and (some? id) (= name :opacity))
+                              (* 100 token-value)
+                              token-value)]
             (mf/spread-props props
                              {:id id
                               :label label
@@ -669,14 +600,21 @@
                               :on-token-key-down on-token-key-down
                               :disabled disabled
                               :on-blur on-blur
-                              :slot-start (when icon
-                                            (mf/html [:> tooltip*
-                                                      {:content property
-                                                       :id property}
-                                                      [:> icon* {:icon-id icon
-                                                                 :size "s"
-                                                                 :aria-labelledby property
-                                                                 :class (stl/css :icon)}]]))
+                              :class inner-class
+                              :property property
+                              :is-open is-open
+                              :slot-start (when (or icon text-icon)
+                                            (mf/html
+                                             (cond
+                                               icon
+                                               [:> icon*
+                                                {:icon-id icon
+                                                 :size "s"
+                                                 :class (stl/css :icon)}]
+
+                                               text-icon
+                                               [:div {:class (stl/css :text-icon)}
+                                                text-icon])))
                               :token-wrapper-ref token-wrapper-ref
                               :token-detach-btn-ref token-detach-btn-ref
                               :detach-token detach-token})))]
@@ -703,6 +641,11 @@
         (when-let [node (mf/ref-val ref)]
           (dom/set-value! node value'))))
 
+    (mf/with-effect [applied-token]
+      (when (nil? applied-token)
+        (reset! token-applied* nil)
+        (reset! selected-id* nil)))
+
     (mf/with-layout-effect [on-mouse-wheel]
       (when-let [node (mf/ref-val ref)]
         (let [key (events/listen node "wheel" on-mouse-wheel #js {:passive false})]
@@ -711,7 +654,7 @@
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
 
-    [:div {:class (dm/str class " " (stl/css :input-wrapper))
+    [:div {:class [class (stl/css :input-wrapper)]
            :ref wrapper-ref}
 
      (if (and (some? token-applied)

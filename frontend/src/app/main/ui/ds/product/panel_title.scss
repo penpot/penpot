@@ -1,0 +1,25 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: $sz-32;
+  border-radius: $br-8;
+  background-color: var(--color-background-secondary);
+}
+
+.panel-title-text {
+  @include t.use-typography("headline-small");
+  flex-grow: 1;
+  text-align: center;
+  color: var(--color-foreground-primary);
+}

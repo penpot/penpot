@@ -78,6 +78,7 @@ describe('plugin-loader', () => {
       mockContext,
       manifest,
       expect.any(Function),
+      undefined,
     );
     expect(mockPluginApi.plugin.close).not.toHaveBeenCalled();
     expect(getPlugins()).toHaveLength(1);
@@ -130,6 +131,7 @@ describe('plugin-loader', () => {
       mockContext,
       manifest,
       expect.any(Function),
+      undefined,
     );
   });
 
@@ -144,6 +146,7 @@ describe('plugin-loader', () => {
       mockContext,
       manifest,
       expect.any(Function),
+      undefined,
     );
   });
 });

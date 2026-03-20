@@ -13,6 +13,8 @@ copy_shared_artifact;
 pushd $_SCRIPT_DIR;
 
 cargo watch \
+      --why \
+      -i "_tmp*" \
       -x "build $CARGO_PARAMS" \
       -s "./build" \
       -s "echo 'DONE\n'";

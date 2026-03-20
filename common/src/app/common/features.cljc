@@ -55,6 +55,7 @@
     "design-tokens/v1"
     "text-editor/v2-html-paste"
     "text-editor/v2"
+    "text-editor-wasm/v1"
     "render-wasm/v1"
     "variants/v1"})
 
@@ -78,6 +79,7 @@
     "plugins/runtime"
     "text-editor/v2-html-paste"
     "text-editor/v2"
+    "text-editor-wasm/v1"
     "tokens/numeric-input"
     "render-wasm/v1"})
 
@@ -127,6 +129,7 @@
     :feature-design-tokens "design-tokens/v1"
     :feature-text-editor-v2 "text-editor/v2"
     :feature-text-editor-v2-html-paste "text-editor/v2-html-paste"
+    :feature-text-editor-wasm "text-editor-wasm/v1"
     :feature-render-wasm "render-wasm/v1"
     :feature-variants "variants/v1"
     :feature-token-input "tokens/numeric-input"

@@ -13,13 +13,13 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.http.middleware :as mw]
    [app.main :as-alias main]
    [app.rpc.commands.profile :as cmd.profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.worker :as-alias wrk]
    [integrant.core :as ig]
+   [yetti.request :as yreq]
    [yetti.response :as-alias yres]))
 
 ;; ---- ROUTES
@@ -49,28 +49,40 @@
          (fn [cfg request]
            (db/tx-run! cfg handler request)))))})
 
+(def ^:private shared-key-auth
+  {:name ::shared-key-auth
+   :compile
+   (fn [_ _]
+     (fn [handler key]
+       (if key
+         (fn [request]
+           (if-let [key' (yreq/get-header request "x-shared-key")]
+             (if (= key key')
+               (handler request)
+               {::yres/status 403})
+             {::yres/status 403}))
+         (fn [_ _]
+           {::yres/status 403}))))})
+
 (defmethod ig/init-key ::routes
-  [_ {:keys [::setup/props] :as cfg}]
+  [_ cfg]
 
-  (let [management-key (or (cf/get :management-api-key)
-                           (get props :management-key))]
+  ["" {:middleware [[shared-key-auth (cf/get :management-api-key)]
+                    [default-system cfg]
+                    [transaction]]}
+   ["/authenticate"
+    {:handler authenticate
+     :allowed-methods #{:post}}]
 
-    ["" {:middleware [[mw/shared-key-auth management-key]
-                      [default-system cfg]
-                      [transaction]]}
-     ["/authenticate"
-      {:handler authenticate
-       :allowed-methods #{:post}}]
+   ["/get-customer"
+    {:handler get-customer
+     :transaction true
+     :allowed-methods #{:post}}]
 
-     ["/get-customer"
-      {:handler get-customer
-       :transaction true
-       :allowed-methods #{:post}}]
-
-     ["/update-customer"
-      {:handler update-customer
-       :allowed-methods #{:post}
-       :transaction true}]]))
+   ["/update-customer"
+    {:handler update-customer
+     :allowed-methods #{:post}
+     :transaction true}]])
 
 ;; ---- HELPERS
 

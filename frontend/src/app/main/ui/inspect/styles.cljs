@@ -141,14 +141,14 @@
      (for [panel panels]
        [:li {:key (d/name panel)}
         (case panel
-        ;;  VARIANTS PANEL
+          ;;  VARIANTS PANEL
           :variant
           [:> style-box* {:panel :variant}
            [:> variants-panel* {:component first-component
                                 :objects objects
                                 :shape first-shape
                                 :data data}]]
-        ;;  GEOMETRY PANEL
+          ;;  GEOMETRY PANEL
           :geometry
           [:> style-box* {:panel :geometry
                           :shorthand (:geometry shorthands)}
@@ -156,7 +156,7 @@
                                 :objects objects
                                 :resolved-tokens resolved-active-tokens
                                 :on-geometry-shorthand set-shorthands}]]
-         ;;  LAYOUT PANEL
+          ;;  LAYOUT PANEL
           :layout
           (let [layout-shapes (->> shapes (filter ctl/any-layout?))]
             (when (seq layout-shapes)
@@ -166,7 +166,7 @@
                                   :objects objects
                                   :resolved-tokens resolved-active-tokens
                                   :on-layout-shorthand set-shorthands}]]))
-         ;;  LAYOUT ELEMENT PANEL
+          ;;  LAYOUT ELEMENT PANEL
           :layout-element
           (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))
                 some-layout-prop? (->> shapes

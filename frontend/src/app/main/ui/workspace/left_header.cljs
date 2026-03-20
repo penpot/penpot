@@ -15,7 +15,6 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.main-menu :as main-menu]
    [app.util.dom :as dom]
@@ -27,20 +26,16 @@
 ;; --- Header Component
 
 (mf/defc left-header*
-  [{:keys [file layout project page-id class]}]
-  (let [profile     (mf/deref refs/profile)
-        file-id     (:id file)
+  [{:keys [file layout project class]}]
+  (let [file-id     (:id file)
         file-name   (:name file)
         project-id  (:id project)
-        team-id     (:team-id project)
         shared?     (:is-shared file)
         persistence
         (mf/deref refs/persistence)
 
         persistence-status
         (get persistence :status)
-
-        read-only?  (mf/use-ctx ctx/workspace-read-only?)
 
         editing*    (mf/use-state false)
         editing?    (deref editing*)
@@ -78,13 +73,15 @@
          (fn []
            (close-modals)
            ;; FIXME: move set-mode to uri?
-           (st/emit! (dw/set-options-mode :design)
+           (st/emit! :interrupt
+                     (dw/set-options-mode :design)
                      (dcm/go-to-dashboard-recent))))
 
         nav-to-project
         (mf/use-fn
          (mf/deps project-id)
-         #(st/emit! (dcm/go-to-dashboard-files ::rt/new-window true :project-id project-id)))]
+         #(st/emit! :interrupt
+                    (dcm/go-to-dashboard-files ::rt/new-window true :project-id project-id)))]
 
     (mf/with-effect [editing?]
       (when ^boolean editing?
@@ -112,7 +109,7 @@
          {:class (stl/css :file-name)
           :title file-name
           :on-double-click start-editing-name}
-          ;;-- Persistende state widget
+         ;;-- Persistende state widget
          [:div {:class (case persistence-status
                          :pending (stl/css :status-notification :pending-status)
                          :saving (stl/css :status-notification :saving-status)
@@ -135,10 +132,5 @@
      (when ^boolean shared?
        [:span {:class (stl/css :shared-badge)} deprecated-icon/library])
      [:div {:class (stl/css :menu-section)}
-      [:& main-menu/menu
-       {:layout layout
-        :file file
-        :profile profile
-        :read-only? read-only?
-        :team-id team-id
-        :page-id page-id}]]]))
+      [:> main-menu/menu* {:layout layout
+                           :file file}]]]))

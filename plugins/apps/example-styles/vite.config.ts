@@ -1,28 +1,20 @@
-/// <reference types='vitest' />
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
-
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   root: __dirname,
-  cacheDir: '../../node_modules/.vite/apps/example-styles',
-
   server: {
-    port: 4201,
+    port: 4202,
     host: '0.0.0.0',
   },
 
   preview: {
-    port: 4201,
+    port: 4202,
     host: '0.0.0.0',
   },
 
-  plugins: [nxViteTsPaths()],
-
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [ nxViteTsPaths() ],
-  // },
+  plugins: [tsconfigPaths()],
 
   build: {
     outDir: '../../dist/apps/example-styles',
@@ -34,9 +26,6 @@ export default defineConfig({
 
   test: {
     globals: true,
-    cache: {
-      dir: '../../node_modules/.vitest',
-    },
     environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
 

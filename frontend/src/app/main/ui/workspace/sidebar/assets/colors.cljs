@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.path-names :as cpn]
+   [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -92,6 +93,12 @@
                          (dwl/delete-color color)
                          (dwl/sync-file file-id file-id :colors color-id)
                          (dwu/commit-undo-transaction undo-id))))))
+
+        duplicate-color
+        (mf/use-fn
+         (mf/deps file-id color-id)
+         (fn []
+           (st/emit! (dwl/duplicate-color file-id color-id))))
 
         rename-color-clicked
         (mf/use-fn
@@ -247,7 +254,11 @@
                      {:name    (tr "workspace.assets.edit")
                       :id      "assets-edit-color"
                       :handler edit-color-clicked})
-
+                   (when (and (not (or multi-colors? multi-assets?))
+                              (contains? cf/flags :canary))
+                     {:name    (tr "workspace.assets.duplicate")
+                      :id      "assets-duplicate-color"
+                      :handler duplicate-color})
                    {:name    (tr "workspace.assets.delete")
                     :id      "assets-delete-color"
                     :handler delete-color}

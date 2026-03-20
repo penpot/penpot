@@ -1,4 +1,4 @@
-import { Board, Fill, FlexLayout, GridLayout, Page, Rectangle, Shape } from "@penpot/plugin-types";
+import { Board, Bounds, Fill, FlexLayout, GridLayout, Page, Rectangle, Shape, Text } from "@penpot/plugin-types";
 
 export class PenpotUtils {
     /**
@@ -25,7 +25,6 @@ export class PenpotUtils {
             id: shape.id,
             name: shape.name,
             type: shape.type,
-            children: children,
         };
 
         // add layout information if present
@@ -48,6 +47,23 @@ export class PenpotUtils {
             };
         }
 
+        // add component instance information if present
+        if (shape.isComponentInstance()) {
+            result.componentInstance = {};
+            const component = shape.component();
+            if (component) {
+                result.componentInstance.componentId = component.id;
+                result.componentInstance.componentName = component.name;
+                const mainInstance = component.mainInstance();
+                if (mainInstance) {
+                    result.componentInstance.mainInstanceId = mainInstance.id;
+                }
+            }
+        }
+
+        // finally, add children (last for more readable nesting order)
+        result.children = children;
+
         return result;
     }
 
@@ -55,9 +71,9 @@ export class PenpotUtils {
      * Finds all shapes that matches the given predicate in the given shape tree.
      *
      * @param predicate - A function that takes a shape and returns true if it matches the criteria
-     * @param root - The root shape to start the search from (defaults to penpot.root)
+     * @param root - The root shape to start the search from (if null, searches all pages)
      */
-    public static findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = penpot.root): Shape[] {
+    public static findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape[] {
         let result = new Array<Shape>();
 
         let find = function (shape: Shape | null) {
@@ -74,7 +90,16 @@ export class PenpotUtils {
             }
         };
 
-        find(root);
+        if (root === null) {
+            const pages = penpot.currentFile?.pages;
+            if (pages) {
+                for (let page of pages) {
+                    find(page.root);
+                }
+            }
+        } else {
+            find(root);
+        }
         return result;
     }
 
@@ -165,6 +190,24 @@ export class PenpotUtils {
     }
 
     /**
+     * Gets the actual rendering bounds of a shape. For most shapes, this is simply the `bounds` property.
+     * However, for Text shapes, the `bounds` may not reflect the true size of the rendered text content,
+     * so we use the `textBounds` property instead.
+     *
+     * @param shape - The shape to get the bounds for
+     */
+    public static getBounds(shape: Shape): Bounds {
+        if (shape.type === "text") {
+            const text = shape as Text;
+            // TODO: Remove ts-ignore once type definitions are updated
+            // @ts-ignore
+            return text.textBounds;
+        } else {
+            return shape.bounds;
+        }
+    }
+
+    /**
      * Checks if a child shape is fully contained within its parent's bounds.
      * Visual containment means all edges of the child are within the parent's bounding box.
      *
@@ -173,11 +216,13 @@ export class PenpotUtils {
      * @returns true if child is fully contained within parent bounds, false otherwise
      */
     public static isContainedIn(child: Shape, parent: Shape): boolean {
+        const childBounds = this.getBounds(child);
+        const parentBounds = this.getBounds(parent);
         return (
-            child.x >= parent.x &&
-            child.y >= parent.y &&
-            child.x + child.width <= parent.x + parent.width &&
-            child.y + child.height <= parent.y + parent.height
+            childBounds.x >= parentBounds.x &&
+            childBounds.y >= parentBounds.y &&
+            childBounds.x + childBounds.width <= parentBounds.x + parentBounds.width &&
+            childBounds.y + childBounds.height <= parentBounds.y + parentBounds.height
         );
     }
 
@@ -273,39 +318,16 @@ export class PenpotUtils {
 
     /**
      * Decodes a base64 string to a Uint8Array.
-     * This is required because the Penpot plugin environment does not provide the atob function.
      *
      * @param base64 - The base64-encoded string to decode
      * @returns The decoded data as a Uint8Array
      */
-    public static atob(base64: string): Uint8Array {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        const lookup = new Uint8Array(256);
-        for (let i = 0; i < chars.length; i++) {
-            lookup[chars.charCodeAt(i)] = i;
+    public static base64ToByteArray(base64: string): Uint8Array {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
         }
-
-        let bufferLength = base64.length * 0.75;
-        if (base64[base64.length - 1] === "=") {
-            bufferLength--;
-            if (base64[base64.length - 2] === "=") {
-                bufferLength--;
-            }
-        }
-
-        const bytes = new Uint8Array(bufferLength);
-        let p = 0;
-        for (let i = 0; i < base64.length; i += 4) {
-            const encoded1 = lookup[base64.charCodeAt(i)];
-            const encoded2 = lookup[base64.charCodeAt(i + 1)];
-            const encoded3 = lookup[base64.charCodeAt(i + 2)];
-            const encoded4 = lookup[base64.charCodeAt(i + 3)];
-
-            bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-            bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-            bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
-        }
-
         return bytes;
     }
 
@@ -335,7 +357,7 @@ export class PenpotUtils {
         height: number | undefined
     ): Promise<Rectangle> {
         // convert base64 to Uint8Array
-        const bytes = PenpotUtils.atob(base64);
+        const bytes = PenpotUtils.base64ToByteArray(base64);
 
         // upload the image data to Penpot
         const imageData = await penpot.uploadMediaData(name, bytes, mimeType);
@@ -421,5 +443,95 @@ export class PenpotUtils {
             default:
                 throw new Error(`Unsupported export mode: ${mode}`);
         }
+    }
+
+    /**
+     * Finds all tokens that match the given name across all token sets.
+     *
+     * @param name - The name of the token to search for (case-sensitive exact match)
+     * @returns An array of all matching tokens (may be empty)
+     */
+    public static findTokensByName(name: string): any[] {
+        const tokens: any[] = [];
+        // @ts-ignore
+        const tokenCatalog = penpot.library.local.tokens;
+
+        for (const set of tokenCatalog.sets) {
+            for (const token of set.tokens) {
+                if (token.name === name) {
+                    tokens.push(token);
+                }
+            }
+        }
+
+        return tokens;
+    }
+
+    /**
+     * Finds the first token that matches the given name across all token sets.
+     *
+     * @param name - The name of the token to search for (case-sensitive exact match)
+     * @returns The first matching token, or null if not found
+     */
+    public static findTokenByName(name: string): any | null {
+        // @ts-ignore
+        const tokenCatalog = penpot.library.local.tokens;
+
+        for (const set of tokenCatalog.sets) {
+            for (const token of set.tokens) {
+                if (token.name === name) {
+                    return token;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Gets the token set that contains the given token.
+     *
+     * @param token - The token whose set to find
+     * @returns The TokenSet containing this token, or null if not found
+     */
+    public static getTokenSet(token: any): any | null {
+        // @ts-ignore
+        const tokenCatalog = penpot.library.local.tokens;
+
+        for (const set of tokenCatalog.sets) {
+            if (set.tokens.includes(token)) {
+                return set;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates an overview of all tokens organized by token set name, token type, and token name.
+     * The result is a nested object structure: {tokenSetName: {tokenType: [tokenName, ...]}}.
+     *
+     * @returns An object mapping token set names to objects that map token types to arrays of token names
+     */
+    public static tokenOverview(): Record<string, Record<string, string[]>> {
+        const overview: Record<string, Record<string, string[]>> = {};
+        // @ts-ignore
+        const tokenCatalog = penpot.library.local.tokens;
+
+        for (const set of tokenCatalog.sets) {
+            const setOverview: Record<string, string[]> = {};
+
+            for (const token of set.tokens) {
+                const tokenType = token.type;
+                if (!setOverview[tokenType]) {
+                    setOverview[tokenType] = [];
+                }
+                setOverview[tokenType].push(token.name);
+            }
+
+            overview[set.name] = setOverview;
+        }
+
+        return overview;
     }
 }

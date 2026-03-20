@@ -7,22 +7,24 @@
 (ns app.main.ui.workspace.tokens.management.forms.generic-form
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.files.tokens :as cft]
+   [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
-   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
+   [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
+   [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
-   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
@@ -34,17 +36,10 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn- token-value-error-fn
-  [{:keys [value]}]
-  (when (or (str/empty? value)
-            (str/blank? value))
-    (tr "workspace.tokens.empty-input")))
-
-
 (defn get-value-for-validator
-  [active-tab value value-subfield form-type]
+  [active-tab value value-subfield value-type]
 
-  (case form-type
+  (case value-type
     :indexed
     (if (= active-tab :reference)
       (:reference value)
@@ -57,29 +52,6 @@
 
     value))
 
-(defn- default-make-schema
-  [tokens-tree _]
-  (sm/schema
-   [:and
-    [:map
-     [:name
-      [:and
-       [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-       (sm/update-properties cto/token-name-ref assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
-       [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (cft/token-name-path-exists? % tokens-tree))]]]
-
-     [:value [::sm/text {:error/fn token-value-error-fn}]]
-
-     [:description {:optional true}
-      [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]]]
-
-    [:fn {:error/field :value
-          :error/fn #(tr "workspace.tokens.self-reference")}
-     (fn [{:keys [name value]}]
-       (when (and name value)
-         (nil? (cto/token-value-self-reference? name value))))]]))
-
 (mf/defc form*
   [{:keys [token
            validator
@@ -91,16 +63,17 @@
            make-schema
            input-component
            initial
-           type
+           value-type
            value-subfield
            input-value-placeholder] :as props}]
 
-  (let [make-schema           (or make-schema default-make-schema)
+  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema % token-type)
+                                             (sm/dissoc-key :id)))
         input-component (or input-component token.controls/input*)
-        validate-token (or validator default-validate-token)
+        validate-token  (or validator default-validate-token)
 
-        active-tab* (mf/use-state #(if (cft/is-reference? token) :reference :composite))
-        active-tab (deref active-tab*)
+        active-tab*     (mf/use-state #(if (cfo/is-reference? token) :reference :composite))
+        active-tab      (deref active-tab*)
 
         token
         (mf/with-memo [token]
@@ -113,23 +86,31 @@
 
         tokens (mf/deref refs/workspace-all-tokens-map)
 
+        tokens-in-selected-set
+        (mf/deref refs/workspace-all-tokens-in-selected-set)
+
         tokens
-        (mf/with-memo [tokens token]
+        (mf/with-memo [tokens tokens-in-selected-set token]
           ;; Ensure that the resolved value uses the currently editing token
           ;; even if the name has been overriden by a token with the same name
           ;; in another set below.
-          (cond-> tokens
+          (cond-> (merge tokens tokens-in-selected-set)
             (and (:name token) (:value token))
             (assoc (:name token) token)))
+
+        active-tokens-by-type
+        (mf/with-memo [tokens]
+          (delay (ctob/group-by-type tokens)))
 
         schema
         (mf/with-memo [tokens-tree-in-selected-set active-tab]
           (make-schema tokens-tree-in-selected-set active-tab))
 
         initial
-        (mf/with-memo [token]
+        (mf/with-memo [token initial]
           (or initial
-              {:name (:name token "")
+              {:type token-type
+               :name (:name token "")
                :value (:value token "")
                :description (:description token "")}))
 
@@ -147,10 +128,6 @@
                       {:message "Need valid reference"})
                (swap! form update :async-errors dissoc :reference))
              (reset! active-tab* new-tab))))
-
-        warning-name-change?
-        (not= (get-in @form [:data :name])
-              (:name initial))
 
         on-cancel
         (mf/use-fn
@@ -180,14 +157,39 @@
            (when (or (k/enter? e) (k/space? e))
              (on-cancel e))))
 
+        on-remap-token
+        (mf/use-fn
+         (mf/deps token)
+         (fn [valid-token name old-name description]
+           (st/emit!
+            (dwtl/update-token (:id token)
+                               {:name name
+                                :value (:value valid-token)
+                                :description description})
+            (remap/remap-tokens old-name name)
+            (dwtp/propagate-workspace-tokens)
+            (modal/hide!))))
+
+        on-rename-token
+        (mf/use-fn
+         (mf/deps token)
+         (fn [valid-token name description]
+           (st/emit!
+            (dwtl/update-token (:id token)
+                               {:name name
+                                :value (:value valid-token)
+                                :description description})
+            (modal/hide!))))
+
         on-submit
         (mf/use-fn
-         (mf/deps validate-token token tokens token-type value-subfield type active-tab)
+         (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
+                 path (str (d/name token-type) "." name)
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
-                 value-for-validation (get-value-for-validator active-tab value value-subfield type)]
+                 value-for-validation (get-value-for-validator active-tab value value-subfield value-type)]
              (->> (validate-token {:token-value value-for-validation
                                    :token-name name
                                    :token-description description
@@ -195,101 +197,112 @@
                                    :tokens tokens})
                   (rx/subs!
                    (fn [valid-token]
-                     (st/emit!
-                      (if is-create
-                        (dwtl/create-token (ctob/make-token {:name name
-                                                             :type token-type
-                                                             :value (:value valid-token)
-                                                             :description description}))
-
-                        (dwtl/update-token (:id token)
-                                           {:name name
-                                            :value (:value valid-token)
-                                            :description description}))
-                      (dwtp/propagate-workspace-tokens)
-                      (modal/hide)))
+                     (let [state @st/state
+                           file-data (dh/lookup-file-data state)
+                           old-name (:name token)
+                           is-rename (and (= action "edit") (not= name old-name))
+                           references-count (remap/count-token-references file-data old-name)
+                           on-remap #(on-remap-token valid-token name old-name description)
+                           on-rename #(on-rename-token valid-token name description)]
+                       (if (and is-rename (> references-count 0))
+                         (st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name old-name
+                                                                               :new-token-name name
+                                                                               :references-count references-count
+                                                                               :on-remap on-remap
+                                                                               :on-rename on-rename}))
+                         (st/emit!
+                          (if is-create
+                            (dwtl/create-token (ctob/make-token {:name name
+                                                                 :type token-type
+                                                                 :value (:value valid-token)
+                                                                 :description description}))
+                            (dwtl/update-token (:id token)
+                                               {:name name
+                                                :value (:value valid-token)
+                                                :description description}))
+                          (dwtl/toggle-token-path path)
+                          (dwtp/propagate-workspace-tokens)
+                          (modal/hide!)))))
+                   ;; WORKAROUND:  display validation errors in the form instead of crashing
                    (fn [{:keys [errors]}]
                      (let [error-messages (wte/humanize-errors errors)
                            error-message (first error-messages)]
                        (swap! form assoc-in [:extra-errors :value] {:message error-message}))))))))]
 
-    [:> fc/form* {:class (stl/css :form-wrapper)
-                  :form form
-                  :on-submit on-submit}
-     [:div {:class (stl/css :token-rows)}
+    [(mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
+     [:> fc/form* {:class (stl/css :form-wrapper)
+                   :form form
+                   :on-submit on-submit}
+      [:div {:class (stl/css :token-rows)}
 
-      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
-       (if (= action "edit")
-         (tr "workspace.tokens.edit-token" token-type)
-         (tr "workspace.tokens.create-token" token-type))]
+       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
+        (if (= action "edit")
+          (tr "workspace.tokens.edit-token" token-type)
+          (tr "workspace.tokens.create-token" token-type))]
 
-      [:div {:class (stl/css :input-row)}
-       [:> fc/form-input* {:id "token-name"
-                           :name :name
-                           :label (tr "workspace.tokens.token-name")
-                           :placeholder (tr "workspace.tokens.enter-token-name" token-title)
-                           :max-length max-input-length
-                           :variant "comfortable"
-                           :trim true
-                           :auto-focus true}]
+       [:div {:class (stl/css :input-row)}
+        [:> fc/form-input* {:id "token-name"
+                            :name :name
+                            :label (tr "workspace.tokens.token-name")
+                            :placeholder (tr "workspace.tokens.enter-token-name" token-title)
+                            :max-length max-input-length
+                            :variant "comfortable"
+                            :trim true
+                            :auto-focus true}]]
 
-       (when (and warning-name-change? (= action "edit"))
-         [:div {:class (stl/css :warning-name-change-notification-wrapper)}
-          [:> context-notification*
-           {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
+       [:div {:class (stl/css :input-row)}
+        (case value-type
+          :indexed
+          [:> input-component
+           {:token          token
+            :tokens         tokens
+            :tab            active-tab
+            :value-subfield value-subfield
+            :handle-toggle  on-toggle-tab}]
 
-      [:div {:class (stl/css :input-row)}
-       (case type
-         :indexed
-         [:> input-component
-          {:token          token
-           :tokens         tokens
-           :tab            active-tab
-           :value-subfield value-subfield
-           :handle-toggle  on-toggle-tab}]
+          :composite
+          [:> input-component
+           {:token         token
+            :tokens        tokens
+            :tab           active-tab
+            :handle-toggle on-toggle-tab}]
 
-         :composite
-         [:> input-component
-          {:token         token
-           :tokens        tokens
-           :tab           active-tab
-           :handle-toggle on-toggle-tab}]
+          [:> input-component
+           {:placeholder (or input-value-placeholder
+                             (tr "workspace.tokens.token-value-enter"))
+            :label       (tr "workspace.tokens.token-value")
+            :name        :value
+            :token       token
+            :token-type  token-type
+            :tokens      tokens}])]
 
-         [:> input-component
-          {:placeholder (or input-value-placeholder
-                            (tr "workspace.tokens.token-value-enter"))
-           :label       (tr "workspace.tokens.token-value")
-           :name        :value
-           :token       token
-           :tokens      tokens}])]
+       [:div {:class (stl/css :input-row)}
+        [:> fc/form-input* {:id "token-description"
+                            :name :description
+                            :label (tr "workspace.tokens.token-description")
+                            :placeholder (tr "workspace.tokens.token-description")
+                            :max-length max-input-length
+                            :variant "comfortable"
+                            :is-optional true}]]
 
-      [:div {:class (stl/css :input-row)}
-       [:> fc/form-input* {:id "token-description"
-                           :name :description
-                           :label (tr "workspace.tokens.token-description")
-                           :placeholder (tr "workspace.tokens.token-description")
-                           :max-length max-input-length
-                           :variant "comfortable"
-                           :is-optional true}]]
+       [:div {:class (stl/css-case :button-row true
+                                   :with-delete (= action "edit"))}
+        (when (= action "edit")
+          [:> button* {:on-click on-delete-token
+                       :on-key-down handle-key-down-delete
+                       :class (stl/css :delete-btn)
+                       :type "button"
+                       :icon i/delete
+                       :variant "secondary"}
+           (tr "labels.delete")])
 
-      [:div {:class (stl/css-case :button-row true
-                                  :with-delete (= action "edit"))}
-       (when (= action "edit")
-         [:> button* {:on-click on-delete-token
-                      :on-key-down handle-key-down-delete
-                      :class (stl/css :delete-btn)
-                      :type "button"
-                      :icon i/delete
-                      :variant "secondary"}
-          (tr "labels.delete")])
+        [:> button* {:on-click on-cancel
+                     :on-key-down handle-key-down-cancel
+                     :type "button"
+                     :id "token-modal-cancel"
+                     :variant "secondary"}
+         (tr "labels.cancel")]
 
-       [:> button* {:on-click on-cancel
-                    :on-key-down handle-key-down-cancel
-                    :type "button"
-                    :id "token-modal-cancel"
-                    :variant "secondary"}
-        (tr "labels.cancel")]
-
-       [:> fc/form-submit* {:variant "primary"
-                            :on-submit on-submit}
-        (tr "labels.save")]]]]))
+        [:> fc/form-submit* {:variant "primary"
+                             :on-submit on-submit}
+         (tr "labels.save")]]]]]))

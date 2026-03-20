@@ -9,48 +9,35 @@
   modification of time offset (useful for testing and time adjustments)."
   (:require
    [app.common.logging :as l]
-   [app.common.time :as ct]
-   [app.setup :as-alias setup]
-   [integrant.core :as ig])
-  (:import
-   java.time.Clock
-   java.time.Duration
-   java.time.Instant
-   java.time.ZoneId))
+   [app.common.time :as ct]))
 
-(defonce current
-  (atom {:clock (Clock/systemDefaultZone)
-         :offset nil}))
+(defonce state
+  (atom {}))
 
-(defmethod ig/init-key ::setup/clock
-  [_ _]
-  (add-watch current ::common
-             (fn [_ _ _ {:keys [clock offset]}]
-               (let [clock (if (ct/duration? offset)
-                             (Clock/offset ^Clock clock
-                                           ^Duration offset)
-                             clock)]
-                 (l/wrn :hint "altering clock" :clock (str clock))
-                 (alter-var-root #'ct/*clock* (constantly clock))))))
+(defn assign-offset
+  "Assign virtual clock offset to a specific user. Is the responsability
+  of RPC module to properly bind the correct clock to the user
+  request."
+  [profile-id duration]
+  (swap! state (fn [state]
+                 (if (nil? duration)
+                   (dissoc state profile-id)
+                   (assoc state profile-id duration)))))
 
+(defn get-offset
+  [profile-id]
+  (get @state profile-id))
 
-(defmethod ig/halt-key! ::setup/clock
-  [_ _]
-  (remove-watch current ::common))
+(defn get-clock
+  [profile-id]
+  (if-let [offset (get-offset profile-id)]
+    (ct/offset-clock offset)
+    (ct/get-system-clock)))
 
-(defn fixed
-  "Get fixed clock, mainly used in tests"
-  [instant]
-  (Clock/fixed ^Instant (ct/inst instant)
-               ^ZoneId (ZoneId/of "Z")))
-
-(defn set-offset!
-  [duration]
-  (swap! current assoc :offset (some-> duration ct/duration)))
-
-(defn set-clock!
+(defn set-global-clock
   ([]
-   (swap! current assoc :clock (Clock/systemDefaultZone)))
+   (set-global-clock (ct/get-system-clock)))
   ([clock]
-   (when (instance? Clock clock)
-     (swap! current assoc :clock clock))))
+   (assert (ct/clock? clock) "expected valid clock instance")
+   (l/wrn :hint "altering clock" :clock (str clock))
+   (alter-var-root #'ct/*clock* (constantly clock))))

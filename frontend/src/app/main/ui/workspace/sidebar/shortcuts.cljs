@@ -18,8 +18,8 @@
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar*]]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.strings :refer [matches-search]]
@@ -483,24 +483,18 @@
            (reset! open-sections [[1]])
            (reset! filter-term "")))]
 
-    (mf/with-effect []
-      (dom/focus! (dom/get-element "shortcut-search")))
-
     [:div {:class (dm/str class " " (stl/css :shortcuts))}
-     [:div {:class (stl/css :shortcuts-header)}
-      [:div {:class (stl/css :shortcuts-title)} (tr "shortcuts.title")]
-      [:> icon-button* {:variant "ghost"
-                        :icon i/close
-                        :class (stl/css :shortcuts-close-button)
-                        :on-click close-fn
-                        :aria-label (tr "labels.close")}]]
+     [:> panel-title* {:class (stl/css :shortcuts-title)
+                       :text (tr "shortcuts.title")
+                       :on-close close-fn}]
 
      [:div {:class (stl/css :search-field)}
       [:> search-bar* {:on-change on-search-term-change-2
                        :on-clear on-search-clear-click
                        :value @filter-term
                        :placeholder (tr "shortcuts.title")
-                       :icon-id i/search}]]
+                       :icon-id i/search
+                       :auto-focus true}]]
 
      (if match-any?
        [:div {:class (stl/css :shortcuts-list)}

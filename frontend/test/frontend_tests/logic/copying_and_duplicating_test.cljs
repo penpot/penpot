@@ -162,17 +162,17 @@
       (let [;; ==== Setup
             file     (setup-file)
             store    (ths/setup-store file)
-         ;; ==== Action
+            ;; ==== Action
 
 
-         ;; For each main and first level copy:
-         ;; - Duplicate it two times with copy-paste.
+            ;; For each main and first level copy:
+            ;; - Duplicate it two times with copy-paste.
             events
             (concat
              (duplicate-each-main-and-first-level-copy file)
-           ;; - Change color of Simple1
+             ;; - Change color of Simple1
              (set-color-bottom-shape :frame-simple-1 file {:color "#111111"})
-            ;; - Change color of the nearest main and check propagation to duplicated.
+             ;; - Change color of the nearest main and check propagation to duplicated.
              (set-color-bottom-shape :frame-composed-1 file {:color "#222222"}))]
 
         (ths/run-store
@@ -188,17 +188,17 @@
       (let [;; ==== Setup
             file     (setup-file)
             store    (ths/setup-store file)
-         ;; ==== Action
+            ;; ==== Action
 
 
-         ;; For each main and first level copy:
-         ;; - Duplicate it two times with copy-paste.
+            ;; For each main and first level copy:
+            ;; - Duplicate it two times with copy-paste.
             events
             (concat
              (duplicate-each-main-and-first-level-copy file)
-           ;; - Change color of Simple1
+             ;; - Change color of Simple1
              (set-color-bottom-shape :frame-simple-1 file {:color "#111111"})
-            ;; - Change color of the nearest main and check propagation to duplicated.
+             ;; - Change color of the nearest main and check propagation to duplicated.
              (set-color-bottom-shape :frame-composed-1 file {:color "#222222"})
              (set-color-bottom-shape :frame-composed-2 file {:color "#333333"}))]
 
@@ -216,17 +216,17 @@
       (let [;; ==== Setup
             file     (setup-file)
             store    (ths/setup-store file)
-         ;; ==== Action
+            ;; ==== Action
 
 
-         ;; For each main and first level copy:
-         ;; - Duplicate it two times with copy-paste.
+            ;; For each main and first level copy:
+            ;; - Duplicate it two times with copy-paste.
             events
             (concat
              (duplicate-each-main-and-first-level-copy file)
-           ;; - Change color of Simple1
+             ;; - Change color of Simple1
              (set-color-bottom-shape :frame-simple-1 file {:color "#111111"})
-            ;; - Change color of the nearest main and check propagation to duplicated.
+             ;; - Change color of the nearest main and check propagation to duplicated.
              (set-color-bottom-shape :frame-composed-1 file {:color "#222222"})
              (set-color-bottom-shape :frame-composed-2 file {:color "#333333"})
              (set-color-bottom-shape :frame-composed-3 file {:color "#444444"}))]
@@ -251,14 +251,14 @@
             events
             (concat
              (duplicate-simple-nested-in-main-and-group file)
-              ;; - Change color of Simple1
+             ;; - Change color of Simple1
              (set-color-bottom-shape :frame-simple-1 file {:color "#111111"}))]
 
         (ths/run-store
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
-              ;; Check propagation to all copies.
+             ;; Check propagation to all copies.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 28)))))))))
 
 (t/deftest copy-nested-in-main-2
@@ -275,14 +275,14 @@
             events
             (concat
              (duplicate-simple-nested-in-main-and-group file)
-              ;; - Change color of the nearest main
+             ;; - Change color of the nearest main
              (set-color-bottom-shape :frame-composed-1 file {:color "#222222"}))]
 
         (ths/run-store
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
-              ;; Check propagation to duplicated.
+             ;; Check propagation to duplicated.
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 9)))))))))
 
 (t/deftest copy-nested-in-main-3
@@ -299,14 +299,14 @@
             events
             (concat
              (duplicate-simple-nested-in-main-and-group file)
-              ;; - Change color of the copy you duplicated from.
+             ;; - Change color of the copy you duplicated from.
              (set-color-bottom-shape :group-3 file {:color "#333333"}))]
 
         (ths/run-store
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
-              ;; Check that it's NOT PROPAGATED.
+             ;; Check that it's NOT PROPAGATED.
              (t/is (= (count-shapes file' "rect-simple-1" "#333333") 2)))))))))
 
 (t/deftest copy-nested-1
@@ -324,14 +324,14 @@
             events
             (concat
              (duplicate-copy-nested-and-group-out-of-the-main file)
-              ;; - Change color of Simple1
+             ;; - Change color of Simple1
              (set-color-bottom-shape :frame-simple-1 file {:color "#111111"}))]
 
         (ths/run-store
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
-              ;; Check propagation to all copies.
+             ;; Check propagation to all copies.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 20)))))))))
 
 
@@ -350,9 +350,9 @@
             events
             (concat
              (duplicate-copy-nested-and-group-out-of-the-main file)
-              ;; - Change color of Simple1
+             ;; - Change color of Simple1
              (set-color-bottom-shape :frame-simple-1 file {:color "#111111"})
-              ;; - Change color of the previous main
+             ;; - Change color of the previous main
              (set-color-bottom-shape :frame-composed-1 file {:color "#222222"})
              (set-color-bottom-shape :group-3 file {:color "#333333"}))]
 
@@ -360,7 +360,7 @@
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
-              ;; Check that it's NOT PROPAGATED.
+             ;; Check that it's NOT PROPAGATED.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 11))
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 7))
              (t/is (= (count-shapes file' "rect-simple-1" "#333333") 2)))))))))
@@ -380,9 +380,9 @@
             events
             (concat
              (duplicate-copy-nested-and-group-out-of-the-main file :target-page-label :page-2)
-              ;; - Change color of Simple1
+             ;; - Change color of Simple1
              (set-color-bottom-shape :frame-simple-1 file {:color "#111111"})
-              ;; - Change color of the previous main
+             ;; - Change color of the previous main
              (set-color-bottom-shape :frame-composed-1 file {:color "#222222"})
              (set-color-bottom-shape :group-3 file {:color "#333333"}))]
 
@@ -391,7 +391,7 @@
          (fn [new-state]
            (let [file' (-> (ths/get-file-from-state new-state)
                            (cthf/switch-to-page :page-2))]
-              ;; Check that it's NOT PROPAGATED.
+             ;; Check that it's NOT PROPAGATED.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 10))
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 4))
              (t/is (= (count-shapes file' "rect-simple-1" "#333333") 0)))))))))

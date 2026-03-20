@@ -124,33 +124,51 @@
 
 (defn adjust-to-viewport
   ([viewport srect] (adjust-to-viewport viewport srect nil))
-  ([viewport srect {:keys [padding] :or {padding 0}}]
+  ([viewport srect {:keys [padding min-zoom] :or {padding 0 min-zoom nil}}]
    (let [gprop  (/ (:width viewport)
                    (:height viewport))
-         srect  (-> srect
-                    (update :x #(- % padding))
-                    (update :y #(- % padding))
-                    (update :width #(+ % padding padding))
-                    (update :height #(+ % padding padding)))
-         width  (:width srect)
-         height (:height srect)
-         lprop  (/ width height)]
-     (cond
-       (> gprop lprop)
-       (let [width'  (* (/ width lprop) gprop)
-             padding (/ (- width' width) 2)]
-         (-> srect
-             (update :x #(- % padding))
-             (assoc :width width')
-             (grc/update-rect :position)))
+         srect-padded (-> srect
+                          (update :x #(- % padding))
+                          (update :y #(- % padding))
+                          (update :width #(+ % padding padding))
+                          (update :height #(+ % padding padding)))
+         width  (:width srect-padded)
+         height (:height srect-padded)
+         lprop  (/ width height)
+         adjusted-rect
+         (cond
+           (> gprop lprop)
+           (let [width'  (* (/ width lprop) gprop)
+                 padding (/ (- width' width) 2)]
+             (-> srect-padded
+                 (update :x #(- % padding))
+                 (assoc :width width')
+                 (grc/update-rect :position)))
 
-       (< gprop lprop)
-       (let [height' (/ (* height lprop) gprop)
-             padding (/ (- height' height) 2)]
-         (-> srect
-             (update :y #(- % padding))
-             (assoc :height height')
-             (grc/update-rect :position)))
+           (< gprop lprop)
+           (let [height' (/ (* height lprop) gprop)
+                 padding (/ (- height' height) 2)]
+             (-> srect-padded
+                 (update :y #(- % padding))
+                 (assoc :height height')
+                 (grc/update-rect :position)))
 
-       :else
-       (grc/update-rect srect :position)))))
+           :else
+           (grc/update-rect srect-padded :position))]
+     ;; If min-zoom is specified and the resulting zoom would be below it,
+     ;; return a rect with the original top-left corner centered in the viewport
+     ;; instead of using the aspect-ratio-adjusted rect (which can push coords
+     ;; extremely far with extreme aspect ratios).
+     (if (and (some? min-zoom)
+              (< (/ (:width viewport) (:width adjusted-rect)) min-zoom))
+       (let [anchor-x (:x srect)
+             anchor-y (:y srect)
+             vbox-width (/ (:width viewport) min-zoom)
+             vbox-height (/ (:height viewport) min-zoom)]
+         (-> adjusted-rect
+             (assoc :x (- anchor-x (/ vbox-width 2))
+                    :y (- anchor-y (/ vbox-height 2))
+                    :width vbox-width
+                    :height vbox-height)
+             (grc/update-rect :position)))
+       adjusted-rect))))

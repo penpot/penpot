@@ -10,14 +10,11 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.transit :as t]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
    [app.setup :as-alias setup]
-   [app.tokens :as tokens]
    [integrant.core :as ig]
-   [lambdaisland.uri :as u]
    [promesa.exec :as px]))
 
 ;; This is a task responsible to send the accumulated events to
@@ -52,19 +49,18 @@
 
 (defn- send!
   [{:keys [::uri] :as cfg} events]
-  (let [token   (tokens/generate cfg
-                                 {:iss "authentication"
-                                  :uid uuid/zero})
+  (let [skey    (-> cfg ::setup/shared-keys :nexus)
         body    (t/encode {:events events})
         headers {"content-type" "application/transit+json"
                  "origin" (str (cf/get :public-uri))
-                 "cookie" (u/map->query-string {:auth-token token})}
+                 "x-shared-key" (str "nexus " skey)}
         params  {:uri uri
                  :timeout 12000
                  :method :post
                  :headers headers
                  :body body}
         resp    (http/req! cfg params)]
+
     (if (= (:status resp) 204)
       true
       (do
@@ -109,7 +105,7 @@
 (def ^:private schema:handler-params
   [:map
    ::db/pool
-   ::setup/props
+   ::setup/shared-keys
    ::http/client])
 
 (defmethod ig/assert-key ::handler

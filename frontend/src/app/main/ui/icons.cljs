@@ -17,9 +17,9 @@
 (def ^:icon logo (icon-xref :penpot-logo))
 (def ^:icon logo-icon (icon-xref :penpot-logo-icon))
 (def ^:icon logo-error-screen (icon-xref :logo-error-screen))
-(def ^:icon login-illustration (icon-xref :login-illustration))
 (def ^:icon logo-subscription (icon-xref :logo-subscription))
 (def ^:icon logo-subscription-light (icon-xref :logo-subscription-light))
+(def ^:icon nitrate-welcome (icon-xref :nitrate-welcome))
 
 (def ^:icon brand-openid (icon-xref :brand-openid))
 (def ^:icon brand-github (icon-xref :brand-github))

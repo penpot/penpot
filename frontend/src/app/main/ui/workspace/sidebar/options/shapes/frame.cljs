@@ -100,6 +100,7 @@
     [:*
      [:> layer-menu* {:ids ids
                       :type shape-type
+                      :applied-tokens applied-tokens
                       :values layer-values}]
      [:> measures-menu* {:ids ids
                          :applied-tokens applied-tokens
@@ -134,6 +135,7 @@
          :is-flex-layout? is-flex-layout?
          :is-grid-layout? is-grid-layout?
          :is-layout-child? is-layout-child?
+         :applied-tokens applied-tokens
          :is-layout-container? is-layout-container?
          :shape shape}])
 

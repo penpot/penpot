@@ -12,43 +12,22 @@ Debug Main Page
 </nav>
 <main class="dashboard">
   <section class="widget">
-    <fieldset>
-      <legend>Error reports</legend>
-      <desc><a href="/dbg/error">CLICK HERE TO SEE THE ERROR REPORTS</a> </desc>
-    </fieldset>
 
     <fieldset>
-      <legend>Profile Management</legend>
-      <form method="post" action="/dbg/actions/resend-email-verification">
-        <div class="row">
-          <input type="email" name="email" placeholder="example@example.com" value="" />
-        </div>
-
-        <div class="row">
-          <label for="force-verify">Are you sure?</label>
-          <input id="force-verify" type="checkbox" name="force" />
-          <br />
-          <small>
-            This is a just a security double check for prevent non intentional submits.
-          </small>
-        </div>
-
-        <div class="row">
-          <input type="submit" name="resend" value="Resend Verification" />
-          <input type="submit" name="verify" value="Verify" />
-        </div>
-
-        <div class="row">
-          <input type="submit" class="danger" name="block" value="Block" />
-          <input type="submit" class="danger" name="unblock" value="Unblock" />
-        </div>
-      </form>
+      <legend>CURRENT PROFILE</legend>
+      <desc>
+        <p>
+          Name: <b>{{profile.fullname}}</b> <br />
+          Email: <b>{{profile.email}}</b>
+        </p>
+      </desc>
     </fieldset>
 
     <fieldset>
       <legend>VIRTUAL CLOCK</legend>
 
       <desc>
+        <p><b>IMPORTANT:</b> The virtual clock is profile based and only affects the currently logged-in profile.</p>
         <p>
           CURRENT CLOCK: <b>{{current-clock}}</b>
           <br />
@@ -81,7 +60,92 @@ Debug Main Page
       </form>
     </fieldset>
 
+    <fieldset>
+      <legend>ERROR REPORTS</legend>
+      <desc><a href="/dbg/error">CLICK HERE TO SEE THE ERROR REPORTS</a> </desc>
+    </fieldset>
   </section>
+
+
+  <section class="widget">
+    <fieldset>
+      <legend>Profile Management</legend>
+      <form method="post" action="/dbg/actions/resend-email-verification">
+        <div class="row">
+          <input type="email" name="email" placeholder="example@example.com" value="" />
+        </div>
+
+        <div class="row">
+          <label for="force-verify">Are you sure?</label>
+          <input id="force-verify" type="checkbox" name="force" />
+          <br />
+          <small>
+            This is a just a security double check for prevent non intentional submits.
+          </small>
+        </div>
+
+        <div class="row">
+          <input type="submit" name="resend" value="Resend Verification" />
+          <input type="submit" name="verify" value="Verify" />
+        </div>
+
+        <div class="row">
+          <input type="submit" class="danger" name="block" value="Block" />
+          <input type="submit" class="danger" name="unblock" value="Unblock" />
+        </div>
+      </form>
+    </fieldset>
+    
+
+    <fieldset>
+      <legend>Feature Flags for Team</legend>
+      <desc>Add a feature flag to a team</desc>
+      <form method="post" action="/dbg/actions/handle-team-features">
+        <div class="row">
+          <input type="text" style="width:300px" name="team-id" placeholder="team-id" />
+        </div>
+        <div class="row">
+          <select type="text" style="width:100px" name="feature">
+            {% for feature in supported-features %}
+              <option value="{{feature}}">{{feature}}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="row">
+          <select style="width:100px" name="action">
+            <option value="">Action...</option>
+            <option value="show">Show</option>
+            <option value="enable">Enable</option>
+            <option value="disable">Disable</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="check-feature">Skip feature check</label>
+          <input id="check-feature" type="checkbox" name="skip-check" />
+          <br />
+          <small>
+            Do not check if the feature is supported
+          </small>
+        </div>
+
+        <div class="row">
+          <label for="force-version">Are you sure?</label>
+          <input id="force-version" type="checkbox" name="force" />
+          <br />
+          <small>
+            This is a just a security double check for prevent non intentional submits.
+          </small>
+        </div>
+
+        <div class="row">
+          <input type="submit" value="Submit" />
+        </div>
+      </form>
+    </fieldset>
+  </section>
+
 
   <section class="widget">
 
@@ -169,56 +233,6 @@ Debug Main Page
 
         <div class="row">
           <input type="submit" name="upload" value="Upload" />
-        </div>
-      </form>
-    </fieldset>
-  </section>
-
-  <section class="widget">
-    <fieldset>
-      <legend>Feature Flags for Team</legend>
-      <desc>Add a feature flag to a team</desc>
-      <form method="post" action="/dbg/actions/handle-team-features">
-        <div class="row">
-          <input type="text" style="width:300px" name="team-id" placeholder="team-id" />
-        </div>
-        <div class="row">
-          <select type="text" style="width:100px" name="feature">
-            {% for feature in supported-features %}
-              <option value="{{feature}}">{{feature}}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="row">
-          <select style="width:100px" name="action">
-            <option value="">Action...</option>
-            <option value="show">Show</option>
-            <option value="enable">Enable</option>
-            <option value="disable">Disable</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <label for="check-feature">Skip feature check</label>
-          <input id="check-feature" type="checkbox" name="skip-check" />
-          <br />
-          <small>
-            Do not check if the feature is supported
-          </small>
-        </div>
-
-        <div class="row">
-          <label for="force-version">Are you sure?</label>
-          <input id="force-version" type="checkbox" name="force" />
-          <br />
-          <small>
-            This is a just a security double check for prevent non intentional submits.
-          </small>
-        </div>
-
-        <div class="row">
-          <input type="submit" value="Submit" />
         </div>
       </form>
     </fieldset>

@@ -50,6 +50,12 @@ services:
       - 4400:4400
       - 4401:4401
       - 4402:4402
+      - 4403:4403
+
+      # Plugins
+      - 4200:4200
+      - 4201:4201
+      - 4202:4202
 
     environment:
       - EXTERNAL_UID=${CURRENT_USER_ID}

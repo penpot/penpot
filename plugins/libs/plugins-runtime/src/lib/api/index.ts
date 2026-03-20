@@ -1,31 +1,32 @@
 import type {
-  Penpot,
-  EventsMap,
-  Page,
-  Shape,
-  Rectangle,
-  Board,
-  Group,
-  Viewport,
-  Text,
-  File,
-  Theme,
-  LibraryContext,
-  Ellipse,
-  Path,
-  BooleanType,
-  Boolean,
-  User,
   ActiveUser,
-  FontsContext,
-  SvgRaw,
+  Board,
+  Boolean,
+  BooleanType,
   Color,
   ColorShapeInfo,
+  Ellipse,
+  EventsMap,
+  File,
+  Flags,
+  FontsContext,
+  Group,
   HistoryContext,
-  LocalStorage,
-  VariantContainer,
   LibraryComponent,
+  LibraryContext,
   LibraryVariantComponent,
+  LocalStorage,
+  Page,
+  Path,
+  Penpot,
+  Rectangle,
+  Shape,
+  SvgRaw,
+  Text,
+  Theme,
+  User,
+  VariantContainer,
+  Viewport,
 } from '@penpot/plugin-types';
 
 import { Permissions } from '../models/manifest.model.js';
@@ -67,8 +68,21 @@ export function createApi(
       },
 
       sendMessage(message: unknown) {
+        let cloneableMessage: unknown;
+
+        try {
+          cloneableMessage = structuredClone(message);
+        } catch (err) {
+          console.error(
+            'plugin sendMessage: the message could not be cloned. ' +
+              'Ensure the message does not contain functions, DOM nodes, or other non-serializable values.',
+            err,
+          );
+          return;
+        }
+
         const event = new CustomEvent('message', {
-          detail: message,
+          detail: cloneableMessage,
         });
 
         plugin.getModal()?.dispatchEvent(event);
@@ -84,6 +98,7 @@ export function createApi(
     utils: {
       geometry: {
         center(shapes: Shape[]) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (window as any).app.plugins.public_utils.centerShapes(shapes);
         },
       },
@@ -191,6 +206,10 @@ export function createApi(
     get fonts(): FontsContext {
       checkPermission('content:read');
       return plugin.context.fonts;
+    },
+
+    get flags(): Flags {
+      return plugin.context.flags;
     },
 
     get currentUser(): User {
@@ -317,9 +336,9 @@ export function createApi(
       return plugin.context.createPage();
     },
 
-    openPage(page: Page, newWindow?: boolean): void {
+    openPage(page: Page | string, newWindow?: boolean): void {
       checkPermission('content:read');
-      plugin.context.openPage(page, newWindow ?? true);
+      plugin.context.openPage(page, newWindow ?? false);
     },
 
     alignHorizontal(
@@ -351,6 +370,11 @@ export function createApi(
     flatten(shapes: Shape[]): Path[] {
       checkPermission('content:write');
       return plugin.context.flatten(shapes);
+    },
+
+    createVariantFromComponents(shapes: Board[]): VariantContainer {
+      checkPermission('content:write');
+      return plugin.context.createVariantFromComponents(shapes);
     },
   };
 

@@ -169,3 +169,81 @@
            (let [end (timestamp)]
              (println (str "[" event "]" (- end start)))))
          #js {"priority" "user-blocking"})))))
+
+;; --- DEVTOOLS PERF LOGGING
+
+(defonce ^:private longtask-observer* (atom nil))
+(defonce ^:private stall-timer* (atom nil))
+(defonce ^:private current-op* (atom nil))
+
+(defn- install-long-task-observer
+  []
+  (when (and (some? (.-PerformanceObserver js/window)) (nil? @longtask-observer*))
+    (let [observer (js/PerformanceObserver.
+                    (fn [list _]
+                      (doseq [entry (.getEntries list)]
+                        (let [dur (.-duration entry)
+                              start (.-startTime entry)
+                              attrib (.-attribution entry)
+                              attrib-count (when attrib (.-length attrib))
+                              first-attrib (when (and attrib-count (> attrib-count 0)) (aget attrib 0))
+                              attrib-name (when first-attrib (.-name first-attrib))
+                              attrib-ctype (when first-attrib (.-containerType first-attrib))
+                              attrib-cid (when first-attrib (.-containerId first-attrib))
+                              attrib-csrc (when first-attrib (.-containerSrc first-attrib))]
+
+                          (.warn js/console (str "[perf] long task " (Math/round dur) "ms at " (Math/round start) "ms"
+                                                 (when first-attrib
+                                                   (str " attrib:name=" attrib-name
+                                                        " ctype=" attrib-ctype
+                                                        " cid=" attrib-cid
+                                                        " csrc=" attrib-csrc))))))))]
+      (.observe observer #js{:entryTypes #js["longtask"]})
+      (reset! longtask-observer* observer))))
+
+(defn- start-event-loop-stall-logger
+  "Log event loop stalls by measuring setInterval drift.
+
+  Params:
+    - interval-ms: base interval
+    - threshold-ms: drift over which we report
+  "
+  [interval-ms threshold-ms]
+  (when (nil? @stall-timer*)
+    (let [last (atom (.now js/performance))
+          id (js/setInterval
+              (fn []
+                (let [now (.now js/performance)
+                      expected (+ @last interval-ms)
+                      drift (- now expected)
+                      current-op @current-op*
+                      measures (.getEntriesByType js/performance "measure")
+                      mlen (.-length measures)
+                      last-measure (when (> mlen 0) (aget measures (dec mlen)))
+                      meas-name (when last-measure (.-name last-measure))
+                      meas-detail (when last-measure (.-detail last-measure))
+                      meas-count (when meas-detail (unchecked-get meas-detail "count"))]
+                  (reset! last now)
+                  (when (> drift threshold-ms)
+                    (.warn js/console
+                           (str "[perf] event loop stall: " (Math/round drift) "ms"
+                                (when current-op (str " op=" current-op))
+                                (when meas-name (str " last=" meas-name))
+                                (when meas-count (str " count=" meas-count)))))))
+              interval-ms)]
+      (reset! stall-timer* id))))
+
+(defn setup
+  "Install perf observers in dev builds. Safe to call multiple times.
+  Perf logs are disabled by default. Enable them with the :perf-logs
+  flag in config."
+  []
+  (install-long-task-observer)
+  (start-event-loop-stall-logger 50 100)
+  ;; Expose simple API on window for manual control in devtools
+  (let [api #js {:reset (fn []
+                          (try
+                            (.clearMarks js/performance)
+                            (.clearMeasures js/performance)
+                            (catch :default _ nil)))}]
+    (unchecked-set js/window "PenpotPerf" api)))

@@ -6,17 +6,19 @@
 
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
+@use "ds/z-index.scss" as *;
 @use "ds/typography.scss" as t;
 
 $arrow-side: 12px;
 
 .tooltip {
-  position: absolute;
+  position: fixed;
   max-inline-size: $sz-352;
   background-color: transparent;
   overflow: hidden;
   inline-size: fit-content;
   block-size: fit-content;
+  z-index: var(--z-index-notifications);
 }
 
 .tooltip-content-wrapper {
@@ -159,4 +161,6 @@ $arrow-side: 12px;
   block-size: fit-content;
   inline-size: fit-content;
   line-height: 0;
+  display: grid;
+  max-width: 100%;
 }

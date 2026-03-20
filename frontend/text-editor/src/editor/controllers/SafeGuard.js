@@ -1,47 +1,85 @@
 /**
- * Max. amount of time we should allow.
- *
- * @type {number}
+ * Safe guard.
  */
-const SAFE_GUARD_TIME = 1000;
+export class SafeGuard {
+  /**
+   * Maximum time.
+   *
+   * @readonly
+   * @type {number}
+   */
+  static MAX_TIME = 1000
 
-/**
- * Time at which the safeguard started.
- *
- * @type {number}
- */
-let startTime = Date.now();
+  /**
+   * Maximum time.
+   *
+   * @type {number}
+   */
+  #maxTime = SafeGuard.MAX_TIME
 
-/**
- * Marks the start of the safeguard.
- */
-export function start() {
-  startTime = Date.now();
-}
+  /**
+   * Start time.
+   *
+   * @type {number}
+   */
+  #startTime = 0
 
-/**
- * Checks if the safeguard should throw.
- */
-export function update() {
-  if (Date.now - startTime >= SAFE_GUARD_TIME) {
-    throw new Error("Safe guard timeout");
+  /**
+   * Context
+   *
+   * @type {string}
+   */
+  #context = ""
+
+  /**
+   * Constructor
+   *
+   * @param {string} [context]
+   * @param {number} [maxTime=SafeGuard.MAX_TIME]
+   * @param {number} [startTime=Date.now()]
+   */
+  constructor(context, maxTime = SafeGuard.MAX_TIME, startTime = Date.now()) {
+    this.#context = context
+    this.#maxTime = maxTime;
+    this.#startTime = startTime;
+  }
+
+  /**
+   * Safe guard context.
+   *
+   * @type {string}
+   */
+  get context() {
+    return this.#context
+  }
+
+  /**
+   * Time elapsed.
+   *
+   * @type {number}
+   */
+  get elapsed() {
+    return Date.now() - this.#startTime;
+  }
+
+  /**
+   * Starts the safe guard timer.
+   */
+  start() {
+    this.#startTime = Date.now();
+    return this
+  }
+
+  /**
+   * Updates the safe guard timer.
+   *
+   * @throws
+   */
+  update() {
+    if (this.elapsed >= this.#maxTime) {
+      throw new Error(`Safe guard timeout "${this.#context}"`);
+    }
   }
 }
 
-let timeoutId = 0;
-export function throwAfter(error, timeout = SAFE_GUARD_TIME) {
-  timeoutId = setTimeout(() => {
-    throw error;
-  }, timeout);
-}
-
-export function throwCancel() {
-  clearTimeout(timeoutId);
-}
-
-export default {
-  start,
-  update,
-  throwAfter,
-  throwCancel,
-};
+export default SafeGuard;

@@ -258,33 +258,39 @@
   #js {:decodeTransit t/decode-str
        :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")})
 
-(defn create-paste-from-blob
+(defn- create-paste-from-blob
   [in-viewport?]
   (fn [blob]
-    (let [type (.-type blob)
-          result (cond
-                   (= type "image/svg+xml")
-                   (->> (rx/from (.text blob))
-                        (rx/map paste-svg-text))
+    (let [type (.-type blob)]
+      (cond
+        (= type "image/svg+xml")
+        (->> (rx/from (.text blob))
+             (rx/map paste-svg-text))
 
-                   (some #(= type %) clipboard/image-types)
-                   (rx/of (paste-image blob))
+        (some #(= type %) clipboard/image-types)
+        (rx/of (paste-image blob))
 
-                   (= type "text/html")
-                   (->> (rx/from (.text blob))
-                        (rx/map paste-html-text))
+        (= type "text/html")
+        (->> (rx/from (.text blob))
+             (rx/map paste-html-text))
 
-                   (= type "application/transit+json")
-                   (->> (rx/from (.text blob))
-                        (rx/map (fn [text]
-                                  (let [transit-data (t/decode-str text)]
-                                    (assoc transit-data :in-viewport in-viewport?))))
-                        (rx/map paste-transit-shapes))
+        (= type "application/transit+json")
+        (->> (rx/from (.text blob))
+             (rx/map t/decode-str)
+             (rx/filter map?)
+             (rx/map
+              (fn [pdata]
+                (assoc pdata :in-viewport in-viewport?)))
+             (rx/mapcat
+              (fn [pdata]
+                (case (:type pdata)
+                  :copied-props  (rx/of (paste-transit-props pdata))
+                  :copied-shapes (rx/of (paste-transit-shapes pdata))
+                  (rx/empty)))))
 
-                   :else
-                   (->> (rx/from (.text blob))
-                        (rx/map paste-text)))]
-      result)))
+        :else
+        (->> (rx/from (.text blob))
+             (rx/map paste-text))))))
 
 (def default-paste-from-blob (create-paste-from-blob false))
 
@@ -1039,3 +1045,55 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (clipboard/to-clipboard (rt/get-current-href)))))
+
+(defn copy-as-image
+  []
+  (ptk/reify ::copy-as-image
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id  (:current-file-id state)
+            page-id  (:current-page-id state)
+            selected (first (dsh/lookup-selected state))
+
+            export {:file-id file-id
+                    :page-id page-id
+                    :object-id selected
+                    ;; webp would be preferrable, but PNG is the most supported image MIME type by clipboard APIs.
+                    :type :png
+                    ;; Always use 2 to ensure good enough quality for wireframes.
+                    :scale 2
+                    :suffix ""
+                    :enabled true
+                    :name ""}
+
+            params {:exports [export]
+                    :profile-id (:profile-id state)
+                    :cmd :export-shapes
+                    :wait true}]
+
+        (rx/concat
+         ;; Ensure current state persisted before exporting.
+         (rx/of ::dps/force-persist)
+         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+              (rx/filter #(or (nil? %) (= :saved %)))
+              (rx/first)
+              (rx/timeout 400 (rx/empty)))
+
+         ;; Exporting itself can time its time, better to notify that we are busy.
+         (rx/of (ntf/info (tr "workspace.clipboard.copying")))
+
+         ;; Call exporter to get image URI, then fetch and copy blob.
+         (->> (rp/cmd! :export params)
+              (rx/mapcat (fn [{:keys [uri]}]
+                           (http/send! {:method :get
+                                        :uri uri
+                                        :response-type :blob})))
+              (rx/map :body)
+              (rx/tap (fn [blob]
+                        (clipboard/to-clipboard-promise "image/png" (p/resolved blob))))
+              (rx/map (fn [_]
+                        (ntf/success (tr "workspace.clipboard.image-copied"))))
+              (rx/catch (fn [e]
+                          (js/console.error "clipboard blocked:" e)
+                          (ntf/error (tr "workspace.clipboard.image-copy-failed"))
+                          (rx/empty)))))))))

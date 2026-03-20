@@ -1,15 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/9042
 test("Bug 9042 - Measurement unit dropdowns for columns are cut off in grid layout edit mode", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
   await workspacePage.mockRPC(
@@ -37,7 +37,7 @@ test("[Taiga #9116] Copy CSS background color in the selected format in the INSP
   page,
   context,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
   await workspacePage.goToWorkspace();
 
@@ -87,7 +87,7 @@ test("[Taiga #10630] [INSPECT] Style assets not being displayed on info tab", as
   page,
   context,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
   await workspacePage.goToWorkspace();
   await workspacePage.mockRPC(

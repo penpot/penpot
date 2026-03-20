@@ -35,7 +35,7 @@ jobs:
           echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ steps.vars.outputs.gh_ref }}
@@ -60,7 +60,7 @@ jobs:
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-${{ hashFiles('plugins/pnpm-lock.yaml') }}
@@ -101,6 +101,23 @@ jobs:
         shell: bash
         run: |
           sed -i "s/WORKER_URI/${{ env.WORKER_URI }}/g" wrangler-penpot-plugins-styles-doc.toml
+
+      - name: Add noindex header and robots.txt files for non-production environments
+        if: ${{ steps.vars.outputs.gh_ref != 'main' }}
+        working-directory: plugins
+        shell: bash
+        run: |
+          ASSETS_DIR="dist/apps/example-styles"
+
+          cat > "${ASSETS_DIR}/_headers" << 'EOF'
+          /*
+            X-Robots-Tag: noindex, nofollow
+          EOF
+
+          cat > "${ASSETS_DIR}/robots.txt" << 'EOF'
+          User-agent: *
+          Disallow: /
+          EOF
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3

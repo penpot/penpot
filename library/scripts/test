@@ -3,7 +3,7 @@
 set -ex
 corepack enable;
 corepack install;
-yarn install;
+pnpm install;
 
-yarn run build:bundle;
-yarn run test;
+pnpm run build:bundle;
+pnpm run test;

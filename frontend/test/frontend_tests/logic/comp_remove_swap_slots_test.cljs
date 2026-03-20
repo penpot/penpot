@@ -100,7 +100,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           blue1    (cths/get-shape file :blue1)
           features #{"components/v2"}
@@ -121,12 +121,12 @@
                blue1'        (cths/get-shape file' :blue1)
                copied-blue1' (find-copied-shape blue1' page' uuid/zero)]
 
-          ;; ==== Check
+           ;; ==== Check
 
-          ;; blue1 has swap-id
+           ;; blue1 has swap-id
            (t/is (some? (ctk/get-swap-slot blue1')))
 
-          ;; copied-blue1 has not swap-id
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -138,7 +138,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           b1       (cths/get-shape file :frame-b1)
           blue1    (cths/get-shape file :blue1)
@@ -161,11 +161,11 @@
                blue1'        (cths/get-shape file' :blue1)
                copied-blue1' (find-copied-shape blue1' page' (:id b1'))]
 
-          ;; ==== Check
-          ;; blue1 has swap-id
+           ;; ==== Check
+           ;; blue1 has swap-id
            (t/is (some? (ctk/get-swap-slot blue1')))
 
-          ;; copied-blue1 has not swap-id
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -176,7 +176,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           yellow   (cths/get-shape file :frame-yellow)
           blue1    (cths/get-shape file :blue1)
@@ -199,11 +199,11 @@
                blue1'        (cths/get-shape file' :blue1)
                copied-blue1' (find-copied-shape blue1' page' (:id yellow'))]
 
-          ;; ==== Check
-          ;; blue1 has swap-id
+           ;; ==== Check
+           ;; blue1 has swap-id
            (t/is (some? (ctk/get-swap-slot blue1')))
 
-          ;; copied-blue1 has not swap-id
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -215,7 +215,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           b2       (cths/get-shape file :frame-b2)
           blue1    (cths/get-shape file :blue1)
@@ -238,11 +238,11 @@
                blue1'        (cths/get-shape file' :blue1)
                copied-blue1' (find-copied-shape blue1' page' (:id b2'))]
 
-          ;; ==== Check
-          ;; blue1 has swap-id
+           ;; ==== Check
+           ;; blue1 has swap-id
            (t/is (some? (ctk/get-swap-slot blue1')))
 
-          ;; copied-blue1 has not swap-id
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -254,7 +254,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           blue1    (cths/get-shape file :blue1)
           features #{"components/v2"}
@@ -276,8 +276,8 @@
                page'         (cthf/current-page file')
                copied-blue1' (find-copied-shape blue1 page' uuid/zero)]
 
-          ;; ==== Check
-          ;; copied-blue1 has not swap-id
+           ;; ==== Check
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -290,7 +290,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           yellow   (cths/get-shape file :frame-yellow)
           blue1    (cths/get-shape file :blue1)
@@ -314,8 +314,8 @@
                yellow'       (cths/get-shape file' :frame-yellow)
                copied-blue1' (find-copied-shape blue1 page' (:id yellow'))]
 
-          ;; ==== Check
-          ;; copied-blue1 has not swap-id
+           ;; ==== Check
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -327,7 +327,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           b2       (cths/get-shape file :frame-b2)
           blue1    (cths/get-shape file :blue1)
@@ -351,8 +351,8 @@
                b2'           (cths/get-shape file' :frame-b2)
                copied-blue1' (find-copied-shape blue1 page' (:id b2'))]
 
-          ;; ==== Check
-          ;; copied-blue1 has not swap-id
+           ;; ==== Check
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -364,7 +364,7 @@
           file     (setup-file-blue1-in-yellow)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           yellow   (cths/get-shape file :frame-yellow)
           features #{"components/v2"}
@@ -386,12 +386,12 @@
                blue1'         (cths/get-shape file' :blue1)
                copied-blue1'  (find-copied-shape blue1' page' (:id copied-yellow'))]
 
-          ;; ==== Check
+           ;; ==== Check
 
-          ;; blue1 has swap-id
+           ;; blue1 has swap-id
            (t/is (some? (ctk/get-swap-slot blue1')))
 
-          ;; copied-blue1 has not swap-id
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -402,7 +402,7 @@
           file     (setup-file-blue1-in-yellow)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           yellow   (cths/get-shape file :frame-yellow)
           b1       (cths/get-shape file :frame-b1)
@@ -426,12 +426,12 @@
                blue1'         (cths/get-shape file' :blue1)
                copied-blue1'  (find-copied-shape blue1' page' (:id copied-yellow'))]
 
-          ;; ==== Check
+           ;; ==== Check
 
-          ;; blue1 has swap-id
+           ;; blue1 has swap-id
            (t/is (some? (ctk/get-swap-slot blue1')))
 
-          ;; copied-blue1 has not swap-id
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -442,7 +442,7 @@
           file     (setup-file-blue1-in-yellow)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           yellow   (cths/get-shape file :frame-yellow)
           b2       (cths/get-shape file :frame-b2)
@@ -466,11 +466,11 @@
                blue1'         (cths/get-shape file' :blue1)
                copied-blue1'  (find-copied-shape blue1' page' (:id copied-yellow'))]
 
-          ;; ==== Check
+           ;; ==== Check
 
-          ;; blue1 has swap-id
+           ;; blue1 has swap-id
            (t/is (some? (ctk/get-swap-slot blue1')))
-          ;; copied-blue1 has not swap-id
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -482,7 +482,7 @@
           store    (ths/setup-store file)
           blue1    (cths/get-shape file :blue1)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           yellow   (cths/get-shape file :frame-yellow)
           features #{"components/v2"}
@@ -505,8 +505,8 @@
                copied-yellow' (find-copied-shape yellow page' uuid/zero)
                copied-blue1'  (find-copied-shape blue1 page' (:id copied-yellow'))]
 
-          ;; ==== Check
-          ;; copied-blue1 has not swap-id
+           ;; ==== Check
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -518,7 +518,7 @@
           store    (ths/setup-store file)
           blue1    (cths/get-shape file :blue1)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           yellow   (cths/get-shape file :frame-yellow)
           b1       (cths/get-shape file :frame-b1)
@@ -543,8 +543,8 @@
                copied-yellow' (find-copied-shape yellow page' (:id b1'))
                copied-blue1'  (find-copied-shape blue1 page' (:id copied-yellow'))]
 
-          ;; ==== Check
-          ;; copied-blue1 has not swap-id
+           ;; ==== Check
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -556,7 +556,7 @@
           store    (ths/setup-store file)
           blue1    (cths/get-shape file :blue1)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           yellow   (cths/get-shape file :frame-yellow)
           b2       (cths/get-shape file :frame-b2)
@@ -581,8 +581,8 @@
                copied-yellow' (find-copied-shape yellow page' (:id b2'))
                copied-blue1'  (find-copied-shape blue1 page' (:id copied-yellow'))]
 
-          ;; ==== Check
-          ;; copied-blue1 has not swap-id
+           ;; ==== Check
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -593,7 +593,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           green    (cths/get-shape file :green-copy)
           features #{"components/v2"}
@@ -615,12 +615,12 @@
                copied-green'  (find-copied-shape green page' uuid/zero)
                copied-blue2'  (find-copied-shape blue2' page' (:id copied-green'))]
 
-          ;; ==== Check
+           ;; ==== Check
 
-          ;; blue2 has swap-id
+           ;; blue2 has swap-id
            (t/is (some? (ctk/get-swap-slot blue2')))
 
-          ;; copied-blue2 also has swap-id
+           ;; copied-blue2 also has swap-id
            (t/is (some? copied-blue2'))
            (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
 
@@ -631,7 +631,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           b1       (cths/get-shape file :frame-b1)
           green    (cths/get-shape file :green-copy)
@@ -655,12 +655,12 @@
                copied-green'  (find-copied-shape green page' (:id b1'))
                copied-blue2'  (find-copied-shape blue2' page' (:id copied-green'))]
 
-          ;; ==== Check
+           ;; ==== Check
 
-          ;; blue1 has swap-id
+           ;; blue1 has swap-id
            (t/is (some? (ctk/get-swap-slot blue2')))
 
-          ;; copied-blue1 also has swap-id
+           ;; copied-blue1 also has swap-id
            (t/is (some? copied-blue2'))
            (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
 
@@ -671,7 +671,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           b2       (cths/get-shape file :frame-b2)
           green    (cths/get-shape file :green-copy)
@@ -695,12 +695,12 @@
                copied-green'  (find-copied-shape green page' (:id b2'))
                copied-blue2'  (find-copied-shape blue2' page' (:id copied-green'))]
 
-          ;; ==== Check
+           ;; ==== Check
 
-          ;; blue2 has swap-id
+           ;; blue2 has swap-id
            (t/is (some? (ctk/get-swap-slot blue2')))
 
-          ;; copied-blue1 also has swap-id
+           ;; copied-blue1 also has swap-id
            (t/is (some? copied-blue2'))
            (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
 
@@ -712,7 +712,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           green    (cths/get-shape file :green-copy)
           blue2    (cths/get-shape file :blue-copy-in-green-copy)
@@ -736,8 +736,8 @@
                copied-green'  (find-copied-shape green page' uuid/zero)
                copied-blue1'  (find-copied-shape blue2 page' (:id copied-green'))]
 
-          ;; ==== Check
-          ;; copied-blue1 has swap-id
+           ;; ==== Check
+           ;; copied-blue1 has swap-id
            (t/is (some? copied-blue1'))
            (t/is (some? (ctk/get-swap-slot copied-blue1')))))))))
 
@@ -748,7 +748,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           b1       (cths/get-shape file :frame-b1)
           green    (cths/get-shape file :green-copy)
@@ -774,8 +774,8 @@
                copied-green'  (find-copied-shape green page' (:id b1'))
                copied-blue2'  (find-copied-shape blue2 page' (:id copied-green'))]
 
-          ;; ==== Check
-          ;; copied-blue1 has swap-id
+           ;; ==== Check
+           ;; copied-blue1 has swap-id
            (t/is (some? copied-blue2'))
            (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
 
@@ -786,7 +786,7 @@
           file     (setup-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           b2       (cths/get-shape file :frame-b2)
           blue2    (cths/get-shape file :blue-copy-in-green-copy)
@@ -812,8 +812,8 @@
                copied-green'  (find-copied-shape green page' (:id b2'))
                copied-blue2'  (find-copied-shape blue2 page' (:id copied-green'))]
 
-          ;; ==== Check
-          ;; copied-blue1 has swap-id
+           ;; ==== Check
+           ;; copied-blue1 has swap-id
            (t/is (some? copied-blue2'))
            (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
 
@@ -823,10 +823,10 @@
   (t/async
     done
     (let [;; ==== Setup
-         ;; {:frame-red} [:name frame-blue]                    # [Component :red]
-         ;; {:frame-blue} [:name frame-blue]                   #[Component :blue]
-         ;; {:frame-green} [:name frame-green]                 #[Component :green]
-         ;;     :blue1 [:name frame-blue, :swap-slot-label :red-copy-green] @--> frame-blue
+          ;; {:frame-red} [:name frame-blue]                    # [Component :red]
+          ;; {:frame-blue} [:name frame-blue]                   #[Component :blue]
+          ;; {:frame-green} [:name frame-green]                 #[Component :green]
+          ;;     :blue1 [:name frame-blue, :swap-slot-label :red-copy-green] @--> frame-blue
 
           file     (-> (cthf/sample-file :file1)
                        (ctho/add-frame :frame-red :name "frame-blue")
@@ -839,7 +839,7 @@
                        (cthc/component-swap :red-copy-green :blue :blue1))
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           page     (cthf/current-page file)
           green    (cths/get-shape file :frame-green)
           features #{"components/v2"}
@@ -862,11 +862,11 @@
                copied-green' (find-copied-shape green' page' uuid/zero)
                copied-blue1' (find-copied-shape blue1' page' (:id copied-green'))]
 
-          ;; ==== Check
-          ;; blue1 has swap-id
+           ;; ==== Check
+           ;; blue1 has swap-id
            (t/is (some? (ctk/get-swap-slot blue1')))
 
-          ;; copied-blue1 has not swap-id
+           ;; copied-blue1 has not swap-id
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 

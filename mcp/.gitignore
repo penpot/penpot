@@ -1,6 +1,8 @@
 .idea
+.claude
 node_modules
 dist
+*.tgz
 *.bak
 *.orig
 temp

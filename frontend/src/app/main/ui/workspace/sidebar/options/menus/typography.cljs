@@ -346,17 +346,19 @@
                                                {:value (:id variant)
                                                 :key (pr-str variant)
                                                 :label (:name variant)})))
-             variant-options (if (= font-variant-id :multiple)
+             variant-options (if (or (= font-variant-id :multiple) (= font-variant-id "mixed"))
                                (conj basic-variant-options
                                      {:value ""
                                       :key :multiple-variants
                                       :label "--"})
-                               basic-variant-options)]
+                               basic-variant-options)
+             font-variant-value (attr->string font-variant-id)
+             font-variant-value (if (= font-variant-value "mixed") "" font-variant-value)]
 
          ;;  TODO Add disabled mode
          [:& select
           {:class (stl/css :font-variant-select)
-           :default-value (attr->string font-variant-id)
+           :default-value font-variant-value
            :options variant-options
            :on-change on-font-variant-change
            :on-blur on-blur}])]]]))

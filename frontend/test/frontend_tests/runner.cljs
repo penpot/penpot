@@ -15,7 +15,9 @@
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
+   [frontend-tests.tokens.logic.token-remapping-test]
    [frontend-tests.tokens.style-dictionary-test]
+   [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
@@ -27,6 +29,10 @@
   (if (cljs.test/successful? m)
     (.exit js/process 0)
     (.exit js/process 1)))
+
+;; FIXME: workaround, wasn is temporarily disabled for unit tests
+(set! app.main.features/global-enabled-features
+      (disj app.main.features/global-enabled-features "render-wasm/v1"))
 
 (defn init
   []
@@ -45,8 +51,10 @@
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
+   'frontend-tests.tokens.logic.token-remapping-test
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
+   'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.worker-snap-test))

@@ -4,50 +4,71 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
 
 .active-users,
 .active-users-opened {
-  @include deprecated.buttonStyle;
+  background: none;
+  cursor: pointer;
+
   display: flex;
   flex-direction: row-reverse;
   justify-content: flex-end;
   align-items: center;
   margin: 0;
-  padding: 0 deprecated.$s-4;
-  border-radius: deprecated.$br-8;
-  .active-users-list {
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: flex-end;
-    margin: 0;
+  padding: 0 var(--sp-xs);
+  border: none;
+  border-radius: $br-8;
+}
 
-    .users-num {
-      @extend .user-icon;
-      background-color: var(--user-count-background-color);
-      color: var(--user-count-foreground-color);
-      z-index: deprecated.$z-index-2;
-      border: deprecated.$s-2 solid var(--user-count-foreground-color);
-    }
-    .session-icon {
-      @extend .user-icon;
-    }
+.active-users-list {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  margin: 0;
+  gap: var(--user-list-gap, 0);
+}
+
+%user-icon {
+  @include t.use-typography("body-small");
+  display: grid;
+  place-content: center;
+  height: $sz-24;
+  width: $sz-24;
+  border-radius: $br-circle;
+  margin-inline-start: calc(-1 * var(--sp-xs));
+
+  img {
+    border-radius: $br-circle;
+    border: $b-2 solid var(--user-count-foreground-color);
   }
+}
+
+.users-num {
+  @extend %user-icon;
+  background-color: var(--user-count-background-color);
+  color: var(--user-count-foreground-color);
+  z-index: 3; // FIXME: this is hardcoded because of the way its component uses z-index from cljs
+  border: $b-2 solid var(--user-count-foreground-color);
+  margin-inline-start: var(--user-list-inline-margin, calc(-1 * var(--sp-xs)));
+}
+
+.session-icon {
+  @extend %user-icon;
+  margin-inline-start: var(--user-list-inline-margin, calc(-1 * var(--sp-xs)));
 }
 
 .active-users-opened {
   position: absolute;
-  right: calc(-1 * deprecated.$s-2);
-  top: calc(-1 * deprecated.$s-2);
-  padding: deprecated.$s-8;
-  margin: calc(-1 * deprecated.$s-2) calc(-1 * deprecated.$s-4) 0 0;
+  right: calc(-1 * var(--sp-xxs));
+  top: calc(-1 * var(--sp-xxs));
+  padding: var(--sp-s);
+  margin: calc(-1 * var(--sp-xxs)) calc(-1 * var(--sp-xs)) 0 0;
   background-color: var(--menu-background-color);
-  z-index: deprecated.$z-index-4;
-  .active-users-list {
-    gap: deprecated.$s-4;
-    .users-num,
-    .session-icon {
-      margin-left: 0;
-    }
-  }
+  z-index: 4; // FIXME: this is hardcoded because of the way its component uses z-index from cljs
+
+  --user-list-gap: var(--sp-xs);
+  --user-list-inline-margin: 0;
 }

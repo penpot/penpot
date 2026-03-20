@@ -1,5 +1,5 @@
 * {
-  font-family: "JetBrains Mono", monospace;
+  font-family: monospace;
   font-size: 12px;
 }
 
@@ -36,6 +36,10 @@ small {
   color: #888;
 }
 
+.strong {
+  font-weight: 900;
+}
+
 .not-important {
   color: #888;
   font-weight: 200;
@@ -57,14 +61,26 @@ nav {
 
 nav > .title {
   display: flex;
-  justify-content: center;
   width: 100%;
 }
 
+nav > .title > a {
+  color: black;
+  text-decoration: none;
+}
+
+nav > .title > a.strong {
+  text-decoration: underline;
+}
+
 nav > .title > h1 {
-  padding: 0px;
   margin: 0px;
   font-size: 11px;
+  display: block;
+}
+
+nav > .title > * {
+  padding: 0px 6px;
 }
 
 nav > div {

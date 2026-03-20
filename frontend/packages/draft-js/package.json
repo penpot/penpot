@@ -4,7 +4,7 @@
   "description": "Penpot Draft-JS Wrapper",
   "main": "index.js",
   "type": "module",
-  "packageManager": "yarn@4.3.1",
+  "packageManager": "pnpm@10.31.0+sha512.e3927388bfaa8078ceb79b748ffc1e8274e84d75163e67bc22e06c0d3aed43dd153151cbf11d7f8301ff4acb98c68bdc5cadf6989532801ffafe3b3e4a63c268",
   "author": "Andrey Antukh",
   "license": "MPL-2.0",
   "dependencies": {
@@ -16,6 +16,6 @@
     "react-dom": ">=0.17.0"
   },
   "devDependencies": {
-    "esbuild": "^0.24.0"
+    "esbuild": "^0.27.2"
   }
 }

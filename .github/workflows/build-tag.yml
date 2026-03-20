@@ -1,6 +1,7 @@
 name: _TAG
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - '*'

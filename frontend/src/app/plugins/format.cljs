@@ -164,8 +164,8 @@
     (obj/without-empty
      #js {:id (-> id format-id)
           :style (-> style format-key)
-          :offset-x offset-x
-          :offset-y offset-y
+          :offsetX offset-x
+          :offsetY offset-y
           :blur blur
           :spread spread
           :hidden hidden
@@ -598,3 +598,10 @@
   (case axis
     :y "horizontal"
     :x "vertical"))
+
+(defn format-geom-rect
+  [{:keys [x y width height]}]
+  #js {:x x
+       :y y
+       :width width
+       :height height})

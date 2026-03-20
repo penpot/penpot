@@ -50,17 +50,59 @@
         (set/union (get team :features))
         (setup-wasm-features state))))
 
+(defn enabled-by-flags?
+  [{:keys [features-runtime features]} feature]
+  (or (contains? features-runtime feature)
+      (contains? features feature)))
+
+(defn enabled-without-migration?
+  [{:keys [features-runtime features]} feature]
+  (or (contains? features-runtime feature)
+      (contains? global-enabled-features feature)
+      (contains? features feature)))
+
+(defn wasm-url-override
+  [state]
+  (case (get (rt/get-params state) :wasm)
+    "true"  true
+    "false" false
+    nil))
+
 (defn active-feature?
   "Given a state and feature, check if feature is enabled."
   [state feature]
-  (assert (contains? cfeat/supported-features feature) "feature not supported")
-  (let [runtime-features (get state :features-runtime)
-        enabled-features (get state :features)]
-    (or (contains? runtime-features feature)
-        (if (contains? cfeat/no-migration-features feature)
-          (or (contains? global-enabled-features feature)
-              (contains? enabled-features feature))
-          (contains? enabled-features feature)))))
+  (assert (contains? cfeat/supported-features feature)
+          "feature not supported")
+
+  (let [wasm-override (when (= feature "render-wasm/v1")
+                        (wasm-url-override state))]
+    (cond
+      (some? wasm-override)
+      wasm-override
+
+      (contains? cfeat/no-migration-features feature)
+      (enabled-without-migration? state feature)
+
+      :else
+      (enabled-by-flags? state feature))))
+
+(defn active-features?
+  "Given a state and a set of features, check if the features are all enabled."
+  ([state a]
+   (js/console.warn "Please, use active-feature? instead")
+   (active-feature? state a))
+  ([state a b]
+   (and ^boolean (active-feature? state a)
+        ^boolean (active-feature? state b)))
+  ([state a b c]
+   (and ^boolean (active-feature? state a)
+        ^boolean (active-feature? state b)
+        ^boolean (active-feature? state c)))
+  ([state a b c & others]
+   (and ^boolean (active-feature? state a)
+        ^boolean (active-feature? state b)
+        ^boolean (active-feature? state c)
+        ^boolean (every? #(active-feature? state %) others))))
 
 (def ^:private features-ref
   (l/derived (l/key :features) st/state))

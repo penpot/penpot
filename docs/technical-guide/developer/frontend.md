@@ -217,7 +217,7 @@ repository:
 
 ```bash
 # cd <repo>/frontend
-yarn run translations
+pnpm run translations
 ```
 
 At Penpot core team we maintain manually the english and spanish .po files. All
@@ -308,7 +308,7 @@ Ensure your development environment docker image is up to date.
 This is not required, but it may be convenient to compile Penpot in release mode before running the tests. This way they will be much quicker and stable. For this, go to the frontend window in the tmux session (<code class="language-bash">Ctrl + b 1</code>), interrupt the watch process with <code class="language-bash">Ctrl + C</code> and type:
 
 ```bash
-yarn run build:app
+./scripts/build
 ```
 
 Obviously, in this mode if you make changes to the source code, you will need to repeat the build manually each time. It may be useful to use wath mode when debugging a single test, and use release mode to run all the suite.
@@ -328,17 +328,17 @@ Here's how to run the tests with a headless browser (i.e. within the terminal, n
 cd penpot/frontend
 ```
 
-3. Run the tests with <code class="language-bash">yarn</code>:
+3. Run the tests with <code class="language-bash">pnpm</code>:
 
 ```bash
-yarn test:e2e
+pnpm run test:e2e
 ```
 
 > 💡 **TIP:** By default, the tests will _not_ run in parallel. You can set the amount of workers to run the tests with <code class="language-bash">--workers</code>. Note that, depending on your machine, this might make some tests flaky.
 
 ```bash
 # run in parallel with 4 workers
-yarn test:e2e --workers 4
+pnpm run test:e2e --workers 4
 ```
 
 #### Running the tests in Chromium
@@ -356,7 +356,7 @@ npx playwright test --ui
 
 > ❗️ **IMPORTANT**: You might need to [install Playwright's browsers and dependencies](https://playwright.dev/docs/intro) in your host machine with: <code class="language-bash">npx playwright install --with-deps</code>. In case you are using a Linux distribution other than Ubuntu, [you might need to install the dependencies manually](https://github.com/microsoft/playwright/issues/11122).
 
-> You will also need yarn in your host nodejs. For this, do <code class="language-bash">corepack enable</code> and then just <code class="language-bash">yarn</code>.
+> You will also need pnpm in your host nodejs. For this, do <code class="language-bash">corepack enable</code> and then just <code class="language-bash">pnpm</code>.
 
 ### How to write a test
 

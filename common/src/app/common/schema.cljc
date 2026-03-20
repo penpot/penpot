@@ -5,12 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema
-  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys])
+  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys select-keys])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
    #?(:clj [malli.dev.pretty :as mdp])
    #?(:clj [malli.dev.virhe :as v])
    [app.common.data :as d]
+   [app.common.json :as json]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
@@ -92,6 +93,36 @@
   [& items]
   (apply mu/merge (map schema items)))
 
+(defn select-keys
+  [s keys & {:as opts}]
+  (let [s (schema s)]
+    (mu/select-keys s keys opts)))
+
+(defn assoc-key
+  "Add a key & value to a schema of type [:map]. If the first level node of the schema
+   is not a map, will do a depth search to find the first map node and add the key there."
+  ([s k v]
+   (assoc-key s k {} v))
+  ([s k opts v]  ;; change order of opts and v to match static schema defintions (e.g. [:something {:optional true} ::sm/integer])
+   (let [s (schema s)
+         v (schema v)]
+     (if (= (m/type s) :map)
+       (mu/assoc s k v opts)
+       (if-let [path (mu/find-first s (fn [s' path _] (when (= (m/type s') :map) path)))]
+         (mu/assoc-in s (conj path k) v opts)
+         s)))))
+
+(defn dissoc-key
+  "Remove a key from a schema of type [:map]. If the first level node of the schema
+   is not a map, will do a depth search to find the first map node and remove the key there."
+  [s k]
+  (let [s (schema s)]
+    (if (= (m/type s) :map)
+      (mu/dissoc s k)
+      (if-let [path (mu/find-first s (fn [s' path _] (when (= (m/type s') :map) path)))]
+        (mu/update-in s path mu/dissoc k)
+        s))))
+
 (defn ref?
   [s]
   (m/-ref-schema? s))
@@ -112,10 +143,10 @@
    (mu/optional-keys schema keys default-options)))
 
 (defn required-keys
-  ([schema]
-   (mu/required-keys schema nil default-options))
-  ([schema keys]
-   (mu/required-keys schema keys default-options)))
+  ([s]
+   (mu/required-keys (schema s) nil default-options))
+  ([s keys]
+   (mu/required-keys (schema s) keys default-options)))
 
 (defn transformer
   [& transformers]
@@ -269,6 +300,13 @@
                       message "Validation Error"}}]
      (let [explain (fn [] (me/with-error-messages explain))]
        ((mdp/prettifier variant message explain default-options)))))
+
+(defn validation-errors
+  "Checks a value against a schema. If valid, returns nil. If not, returns a list
+   of english error messages."
+  [value schema]
+  (let [explainer (explainer schema)]
+    (-> value explainer simplify not-empty)))
 
 (defmacro ignoring
   [expr]
@@ -613,7 +651,7 @@
        {:title "set"
         :description "Set of Strings"
         :error/message "should be a set of strings"
-        :gen/gen (-> kind sg/generator sg/set)
+        :gen/gen (sg/mcat (fn [_] (sg/generator kind)) sg/int)
         :decode/string decode
         :decode/json decode
         :encode/string encode-string
@@ -830,7 +868,7 @@
 (defn parse-boolean
   [v]
   (if (string? v)
-    (case v
+    (case (str/lower v)
       ("true" "t" "1") true
       ("false" "f" "0") false
       v)
@@ -849,6 +887,32 @@
    :decode/json parse-boolean
    :encode/string str
    ::oapi/type "boolean"}})
+
+(defn parse-keyword
+  [v]
+  (if (string? v)
+    (-> v (json/read-kebab-key) (keyword))
+    v))
+
+(defn format-keyword
+  [v]
+  (if (keyword? v)
+    (-> v (name) (json/write-camel-key))
+    v))
+
+(register!
+ {:type ::keyword
+  :pred keyword?
+  :type-properties
+  {:title "keyword"
+   :description "keyword"
+   :error/message "expected keyword"
+   :error/code "errors.invalid-keyword"
+   :gen/gen sg/keyword
+   :decode/string parse-keyword
+   :decode/json parse-keyword
+   :encode/string format-keyword
+   ::oapi/type "string"}})
 
 (register!
  {:type ::contains-any

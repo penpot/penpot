@@ -1,0 +1,8 @@
+{
+  "name": "Create Palette from library",
+  "description": "Create a board with all the colors in the local library",
+  "code": "plugin.js",
+  "version": 2,
+  "icon": "assets/icon.png",
+  "permissions": ["content:read", "content:write", "library:read"]
+}

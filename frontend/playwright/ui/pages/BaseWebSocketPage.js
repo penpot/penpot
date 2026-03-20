@@ -2,13 +2,8 @@ import { MockWebSocketHelper } from "../../helpers/MockWebSocketHelper";
 import BasePage from "./BasePage";
 
 export class BaseWebSocketPage extends BasePage {
-  /**
-   * This should be called on `test.beforeEach`.
-   *
-   * @param {Page} page
-   * @returns
-   */
-  static async initWebSockets(page) {
+  static async init(page) {
+    await super.init(page);
     await MockWebSocketHelper.init(page);
   }
 

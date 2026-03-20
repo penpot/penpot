@@ -6,6 +6,7 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
+@use "ds/_utils.scss" as *;
 
 .element-set {
   display: grid;

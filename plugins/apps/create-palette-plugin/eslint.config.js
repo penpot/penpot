@@ -3,6 +3,7 @@ import baseConfig from '../../eslint.config.js';
 export default [
   ...baseConfig,
   {
+    files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
         project: './tsconfig.*?.json',
@@ -22,5 +23,5 @@ export default [
     files: ['**/*.js', '**/*.jsx'],
     rules: {},
   },
-  { ignores: ['vite.config.ts'] },
+  { ignores: ['**/assets/*.js', 'vite.config.ts'] },
 ];

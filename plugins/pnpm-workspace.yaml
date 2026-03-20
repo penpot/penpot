@@ -2,4 +2,4 @@ packages:
   - 'apps/**'
   - 'libs/**'
 
-storeDir: .pnpm-store
+linkWorkspacePackages: true

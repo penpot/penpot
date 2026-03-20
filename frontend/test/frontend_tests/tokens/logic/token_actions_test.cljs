@@ -118,9 +118,9 @@
                                        :token (toht/get-token file "borderRadius.sm")
                                        :shape-ids [(:id rect-1)]
                                        :on-update-shape dwta/update-shape-radius-all})
-                   ;; Apply single `:r1` attribute to same shape
-                   ;; while removing other attributes from the border-radius set
-                   ;; but keep `:r4` for testing purposes
+                    ;; Apply single `:r1` attribute to same shape
+                    ;; while removing other attributes from the border-radius set
+                    ;; but keep `:r4` for testing purposes
                     (dwta/apply-token {:attributes #{:r1 :r2 :r3}
                                        :token (toht/get-token file "borderRadius.md")
                                        :shape-ids [(:id rect-1)]
@@ -260,7 +260,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "dimensions.sm")
-                                       :on-update-shape dwta/update-shape-dimensions})]]
+                                       :on-update-shape dwta/apply-dimensions-token})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -333,7 +333,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "sizing.sm")
-                                       :on-update-shape dwta/update-shape-dimensions})]]
+                                       :on-update-shape dwta/apply-dimensions-token})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
