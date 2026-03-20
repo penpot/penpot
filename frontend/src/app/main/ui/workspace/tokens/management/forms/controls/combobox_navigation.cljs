@@ -32,7 +32,7 @@
       :up   (nth ids (mod (if (= idx -1) 0 (dec idx)) count) nil))))
 
 (defn use-navigation
-  [{:keys [is-open options nodes-ref is-open* toggle-dropdown on-enter]}]
+  [{:keys [is-open options nodes-ref is-open* toggle-dropdown on-enter get-selected-id]}]
 
   (let [focused-id* (mf/use-state nil)
         focused-id  (deref focused-id*)
@@ -66,6 +66,8 @@
                      (seq focusables)
                      (do
                        (toggle-dropdown event)
+                       (when get-selected-id
+                         (get-selected-id))
                        (reset! focused-id* (first-focusable-id focusables)))
 
                      :else nil)))

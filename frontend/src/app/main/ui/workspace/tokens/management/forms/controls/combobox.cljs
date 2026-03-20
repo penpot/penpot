@@ -84,6 +84,9 @@
         filter-term*      (mf/use-state "")
         filter-term       (deref filter-term*)
 
+        selected-id*  (mf/use-state nil)
+        selected-id   (deref selected-id*)
+
         options-ref       (mf/use-ref nil)
         dropdown-ref      (mf/use-ref nil)
         internal-ref      (mf/use-ref nil)
@@ -117,12 +120,28 @@
                  state (obj/set! state id node)]
              (mf/set-ref-val! nodes-ref state))))
 
+        get-selected-id
+        (mf/use-fn
+         (mf/deps dropdown-options)
+         (fn []
+           (let [input-node (mf/ref-val ref)
+                 value      (dom/get-input-value input-node)
+                 cursor     (dom/selection-start input-node)
+                 token-name (tp/token-at-cursor value cursor)
+                 options    (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+             (when token-name
+               (->> options
+                    (filter #(= (:name %) token-name))
+                    first
+                    :id)))))
+
         toggle-dropdown
         (mf/use-fn
          (mf/deps is-open)
          (fn [event]
            (dom/prevent-default event)
            (swap! is-open* not)
+           (reset! selected-id* (get-selected-id))
            (let [input-node (mf/ref-val ref)]
              (dom/focus! input-node))))
 
@@ -157,7 +176,8 @@
           :options dropdown-options
           :toggle-dropdown toggle-dropdown
           :is-open* is-open*
-          :on-enter on-option-enter})
+          :on-enter on-option-enter
+          :get-selected-id get-selected-id})
 
         on-change
         (mf/use-fn
@@ -221,7 +241,7 @@
                                 :aria-activedescendant focused-id
                                 :aria-controls listbox-id
                                 :aria-expanded is-open
-                                :data-option-focused (boolean focused-id) 
+                                :data-option-focused (boolean focused-id)
                                 :slot-end
                                 (when (some? @filtered-tokens-by-type)
                                   (mf/html
@@ -301,7 +321,7 @@
                                   :id listbox-id
                                   :options options
                                   :focused focused-id
-                                  :selected nil
+                                  :selected selected-id
                                   :align :right
                                   :empty-to-end empty-to-end
                                   :wrapper-ref dropdown-ref
