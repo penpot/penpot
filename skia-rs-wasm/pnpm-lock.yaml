@@ -79,34 +79,6 @@ importers:
         specifier: ^5.0.10
         version: 5.0.10(@types/react@19.2.9)(react@19.2.3)
 
-  packages/figma-adapter:
-    dependencies:
-      penpot-exporter:
-        specifier: workspace:*
-        version: link:../penpot-exporter-figma-plugin
-      skia-rs-wasm:
-        specifier: workspace:*
-        version: link:../..
-    devDependencies:
-      '@figma/plugin-typings':
-        specifier: ^1.123.0
-        version: 1.123.0
-      rollup:
-        specifier: ^4.0.0
-        version: 4.59.0
-      rollup-plugin-dts:
-        specifier: ^6.3.0
-        version: 6.3.0(rollup@4.59.0)(typescript@5.9.3)
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
-      vite:
-        specifier: ^7.2.4
-        version: 7.3.1(@types/node@24.10.9)
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@24.10.9)
-
   packages/penpot-exporter-figma-plugin:
     dependencies:
       '@create-figma-plugin/ui':

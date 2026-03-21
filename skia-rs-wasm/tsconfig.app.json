@@ -31,11 +31,12 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@skia-rs-wasm/common": ["./src/lib/common"],
-      "@skia-rs-wasm/common/*": ["./src/lib/common/*"],
-      "@penpot-exporter/transformers": ["./packages/penpot-exporter-figma-plugin/plugin-src/transformers"],
-      "@penpot-exporter/transformers/*": ["./packages/penpot-exporter-figma-plugin/plugin-src/transformers/*"],
-      "@penpot-exporter/common/*": ["./packages/penpot-exporter-figma-plugin/common/*"]
+      "@skia-rs-wasm/common": [
+        "./src/lib/common"
+      ],
+      "@skia-rs-wasm/common/*": [
+        "./src/lib/common/*"
+      ]
     }
   },
   "include": [
@@ -43,6 +44,12 @@
     "dev/node-factory.ts",
     "public/wasm"
   ],
-  "exclude": ["src/lib"],
-  "references": [{ "path": "./tsconfig.lib.json" }]
+  "exclude": [
+    "src/lib"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ]
 }
