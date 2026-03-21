@@ -242,10 +242,12 @@
 
 (mf/defc grid-item-metadata*
   [{:keys [file]}]
-  (let [time (ct/timeago (or (:will-be-deleted-at file)
-                             (:modified-at file)))]
+  (let [deleted-at (:will-be-deleted-at file)
+        time       (ct/timeago (or deleted-at (:modified-at file)))]
     [:span {:class (stl/css :date)
-            :title (tr "dashboard.deleted.will-be-deleted-at" time)}
+            :title (if deleted-at
+                     (tr "dashboard.deleted.will-be-deleted-at" time)
+                     time)}
      time]))
 
 (defn create-counter-element
