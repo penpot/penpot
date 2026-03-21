@@ -9,7 +9,7 @@
   [token]
   {:id (str (get token :id))
    :type :token
-   :resolved-value (get token :resolved-value)
+   :resolved-value (get token :value)
    :name (get token :name)})
 
 (defn- generate-dropdown-options

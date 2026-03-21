@@ -41,8 +41,19 @@
     --input-bg-color: var(--color-background-primary);
     --input-outline-color: var(--color-background-quaternary);
   }
+
+  &[data-option-focused="true"]:has(*:focus-visible) {
+    --input-bg-color: var(--color-background-tertiary);
+    --input-outline-color: none;
+  }
 }
 
+[data-option-focused="true"] {
+  .input-wrapper:has(*:focus-visible) {
+    --input-bg-color: var(--color-background-tertiary);
+    --input-outline-color: none;
+  }
+}
 .variant-dense,
 .variant-seamless {
   @include use-typography("body-small");
