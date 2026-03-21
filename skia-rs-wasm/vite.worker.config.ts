@@ -16,8 +16,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@skia-rs-wasm/common': resolve(__dirname, 'src/lib/common'),
-      '@penpot-exporter/transformers': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/plugin-src/transformers'),
-      '@penpot-exporter/common': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/common'),
     },
   },
   build: {

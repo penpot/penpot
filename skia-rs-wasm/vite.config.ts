@@ -9,6 +9,20 @@ import dts from 'rollup-plugin-dts'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+/** Mirrors `resolve.alias` for worker bundles (worker config has no `resolve` field). */
+function workerCommonAliasPlugin(): Plugin {
+  const commonEntry = resolve(__dirname, 'src/lib/common/index.ts')
+  return {
+    name: 'worker-skia-common-alias',
+    enforce: 'pre',
+    resolveId(id) {
+      if (id === '@skia-rs-wasm/common') {
+        return commonEntry
+      }
+    },
+  }
+}
+
 function dtsBundlePlugin(): Plugin {
   return {
     name: 'dts-bundle',
@@ -39,8 +53,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@skia-rs-wasm/common': resolve(__dirname, 'src/lib/common'),
-      '@penpot-exporter/transformers': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/plugin-src/transformers'),
-      '@penpot-exporter/common': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/common')
     }
   },
   build: {
@@ -101,13 +113,6 @@ export default defineConfig({
   },
   worker: {
     format: 'es',
-    plugins: () => [],
-    resolve: {
-      alias: {
-        '@skia-rs-wasm/common': resolve(__dirname, 'src/lib/common'),
-        '@penpot-exporter/transformers': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/plugin-src/transformers'),
-        '@penpot-exporter/common': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/common')
-      }
-    }
+    plugins: () => [workerCommonAliasPlugin()],
   },
 })
