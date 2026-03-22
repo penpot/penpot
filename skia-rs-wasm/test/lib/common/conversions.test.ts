@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { u32ToUUID } from './conversions'
+import { u32ToUUID } from '../../../src/lib/common/conversions'
 
 describe('u32ToUUID', () => {
   it('pads short buffers to four limbs (no literal undefined in output)', () => {
