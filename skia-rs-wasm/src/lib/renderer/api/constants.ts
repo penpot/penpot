@@ -33,4 +33,4 @@ export const MAX_GRADIENT_STOPS = 16
 // Text-related constants
 export const PARAGRAPH_ATTR_U8_SIZE = 12
 export const SPAN_ATTR_U8_SIZE = 64
-export const MAX_TEXT_FILLS = 16
+export const MAX_TEXT_FILLS = 8 // Must match Rust MAX_TEXT_FILLS = 8 in render-wasm/src/wasm/text.rs

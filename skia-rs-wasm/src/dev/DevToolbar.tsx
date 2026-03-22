@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType, ShapeGeomAttributes, ModObjChange, AddObjChange, DelObjChange } from 'penpot-exporter/types'
-import { createNode } from './node-factory'
+import { createNode, createFrame, createText } from './node-factory'
 import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Preset } from './presets'
 import { isColorFill, isLinearGradient, isRadialGradient, isAngularGradient, isImageFill } from '../lib/renderer/api/constants'
 import { FillEditor } from './components/FillEditor/FillEditor'
@@ -354,6 +354,62 @@ export function DevToolbar() {
     await applyChanges([addChange])
     useWorkspaceStore.getState().setSelectedIds(new Set([newNode.id]))
   }, [isPageReady])
+
+  const handleAddFrameWithText = useCallback(async () => {
+    if (!isPageReady) return
+    const state = useWorkspaceStore.getState()
+    const pageId = state.pageId
+    const page = pageId ? state.documentModel?.getPage(pageId) : undefined
+    if (!pageId || !page) return
+    const root = Object.values(page.objects).find((o) => o.parentId == null)
+    const rootId = root?.id ?? ROOT_UUID
+    const frameW = 280
+    const frameH = 140
+    const frameX = Math.max(0, (CANVAS_WIDTH - frameW) / 2)
+    const frameY = Math.max(0, (CANVAS_HEIGHT - frameH) / 2)
+    const pad = 16
+    const frame = createFrame({
+      x: frameX,
+      y: frameY,
+      width: frameW,
+      height: frameH,
+      parentId: rootId,
+      fillColor: '#E5E7EB',
+      fillOpacity: 0.92,
+    })
+    const textFill = addNodeFill.fillColor ?? '#111827'
+    const textNode = createText({
+      x: frameX + pad,
+      y: frameY + pad,
+      width: frameW - pad * 2,
+      height: 56,
+      text: textContent,
+      parentId: frame.id,
+      fillColor: textFill,
+    })
+    const index = root?.shapes?.length ?? 0
+    const pageOpts = pageId ? { pageId } : {}
+    const frameAdd: AddObjChange = {
+      type: 'add-obj',
+      id: frame.id,
+      obj: frame,
+      frameId: rootId,
+      parentId: rootId,
+      index,
+      ...pageOpts,
+    }
+    const textAdd: AddObjChange = {
+      type: 'add-obj',
+      id: textNode.id,
+      obj: textNode,
+      frameId: frame.id,
+      parentId: frame.id,
+      index: 0,
+      ...pageOpts,
+    }
+    await applyChanges([frameAdd, textAdd])
+    useWorkspaceStore.getState().setSelectedIds(new Set([frame.id]))
+  }, [isPageReady, textContent, addNodeFill])
 
   const handleExport = useCallback(() => {
     const data = JSON.stringify(nodes, null, 2)
@@ -854,6 +910,16 @@ export function DevToolbar() {
                   style={{ marginLeft: '0.5rem' }}
                 >
                   Add angular gradient (overlay demo)
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleAddFrameWithText}
+                  disabled={!isPageReady}
+                  title="Add a frame with a text shape as child (string from Add Node text state, default Hello World)"
+                  style={{ marginTop: '0.5rem', display: 'block' }}
+                >
+                  Add frame with text
                 </button>
               </div>
             </div>
