@@ -67,8 +67,6 @@ function bufferToHex(source: Uint8Array | ArrayBufferView | number[], isUuid: bo
     hexMap[src[i++]!]! +
     hexMap[src[i++]!]! +
     hexMap[src[i++]!]! +
-    hexMap[src[i++]!]! +
-    hexMap[src[i++]!]! +
     hexMap[src[i++]!]!
   )
 }

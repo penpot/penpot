@@ -11,6 +11,7 @@ import type { DocumentModel } from './document-model'
 import type { CommitChangesParams } from '../../changes/commit-types'
 import { useHistoryStore } from '../../history/history-store'
 import type { WorkerClient } from '../../worker/types'
+import { assertValidAddObjChange } from '../../common/shape-id'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -161,6 +162,12 @@ export async function commitChanges(params: CommitChangesParams): Promise<void> 
   } = params
 
   if (redoChanges.length === 0) return
+
+  for (const c of redoChanges) {
+    if (c.type === 'add-obj') {
+      assertValidAddObjChange(c)
+    }
+  }
 
   const state = useWorkspaceStore.getState()
   const { documentModel, workerClient } = state

@@ -10,7 +10,7 @@ import { applyChanges, setDocument, createNewDocument, undo, redo } from '../lib
 import './DevToolbar.css'
 import type { ShapeType } from '../lib/renderer/types'
 import { isFrameShape } from '../lib/worker/geometry/shapes'
-import { v8 } from '@skia-rs-wasm/common/uuid-impl'
+import { newShapeId } from '../lib/common/shape-id'
 
 function isImageColor(img: ImageColor | PartialImageColor): img is ImageColor {
   return 'width' in img && 'height' in img
@@ -468,7 +468,7 @@ export function DevToolbar() {
     if (isCreatingNew) {
       // Create new node via applyChanges
       const newNode = {
-        id: v8(),
+        id: newShapeId(),
         name: 'Shape',
         type: selectedType,
         x: advX,

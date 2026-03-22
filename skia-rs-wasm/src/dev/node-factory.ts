@@ -6,19 +6,9 @@
 import type { ShapeType } from '../lib/renderer/types'
 import type { PenpotNode, Selrect } from 'penpot-exporter/types'
 import type { Fill, Stroke } from 'penpot-exporter/types'
+import { newShapeId } from '../lib/common/shape-id'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
-
-/**
- * Generates a random UUID v4
- */
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    const v = c === 'x' ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
-}
 
 /**
  * Creates a selrect from position and size
@@ -65,7 +55,7 @@ export function createRect(
     opacity?: number
   } = {}
 ): PenpotNode {
-  const id = options.id || generateUUID()
+  const id = options.id || newShapeId()
   const x = options.x ?? 100
   const y = options.y ?? 100
   const width = options.width ?? 200
@@ -134,7 +124,7 @@ export function createCircle(
     opacity?: number
   } = {}
 ): PenpotNode {
-  const id = options.id || generateUUID()
+  const id = options.id || newShapeId()
   const radius = options.radius ?? 50
   const x = options.x ?? 100
   const y = options.y ?? 100
@@ -193,7 +183,7 @@ export function createText(
     opacity?: number
   } = {}
 ): PenpotNode {
-  const id = options.id || generateUUID()
+  const id = options.id || newShapeId()
   const x = options.x ?? 100
   const y = options.y ?? 100
   const width = options.width ?? 200
@@ -254,7 +244,7 @@ export function createFrame(
     opacity?: number
   } = {}
 ): PenpotNode {
-  const id = options.id || generateUUID()
+  const id = options.id || newShapeId()
   const x = options.x ?? 0
   const y = options.y ?? 0
   const width = options.width ?? 400
@@ -299,7 +289,7 @@ export function createGroup(
     opacity?: number
   } = {}
 ): PenpotNode {
-  const id = options.id || generateUUID()
+  const id = options.id || newShapeId()
   const x = options.x ?? 0
   const y = options.y ?? 0
   const width = options.width ?? 200
@@ -337,7 +327,7 @@ export function createPath(
     opacity?: number
   } = {}
 ): PenpotNode {
-  const id = options.id || generateUUID()
+  const id = options.id || newShapeId()
   const x = options.x ?? 100
   const y = options.y ?? 100
   const width = options.width ?? 200
@@ -407,7 +397,7 @@ export function createBool(
     opacity?: number
   } = {}
 ): PenpotNode {
-  const id = options.id || generateUUID()
+  const id = options.id || newShapeId()
   const x = options.x ?? 0
   const y = options.y ?? 0
   const width = options.width ?? 200
@@ -443,7 +433,7 @@ export function createImage(
     opacity?: number
   } = {}
 ): PenpotNode {
-  const id = options.id || generateUUID()
+  const id = options.id || newShapeId()
   const x = options.x ?? 100
   const y = options.y ?? 100
   const width = options.width ?? 200
@@ -491,7 +481,7 @@ export function createSvgRaw(
     opacity?: number
   } = {}
 ): PenpotNode {
-  const id = options.id || generateUUID()
+  const id = options.id || newShapeId()
   const x = options.x ?? 100
   const y = options.y ?? 100
   const width = options.width ?? 200
