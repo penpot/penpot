@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useHistoryStore } from './history-store'
+import { useHistoryStore } from '../../../src/lib/history/history-store'
 
 describe('useHistoryStore', () => {
   beforeEach(() => {

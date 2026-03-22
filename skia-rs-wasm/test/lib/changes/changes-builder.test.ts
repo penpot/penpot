@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { processChanges } from '../worker/process-changes'
-import type { IndexedPage } from '../worker/types'
+import { processChanges } from '../../../src/lib/worker/process-changes'
+import type { IndexedPage } from '../../../src/lib/worker/types'
 import {
   appendModObjPair,
   emptyChangesBuilder,
   mergeBundle,
   snapshotGeometryForUndo,
   toCommitBundle,
-} from './changes-builder'
+} from '../../../src/lib/changes/changes-builder'
 
 const ROOT = '00000000-0000-0000-0000-000000000000'
 const RECT_A = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
