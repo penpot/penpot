@@ -35,7 +35,9 @@
     "build:lib": "vite build",
     "build:worker": "vite build --config vite.worker.config.ts",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "rxjs": "^7.8.2",
@@ -47,25 +49,26 @@
     }
   },
   "devDependencies": {
-    "penpot-exporter": "workspace:*",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "zustand": "^5.0.10",
-    "rollup": "^4.0.0",
-    "rollup-plugin-dts": "^6.3.0",
     "@eslint/js": "^9.39.1",
     "@penpot/plugin-types": "^1.4.2",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/svg-path-parser": "^1.1.6",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "penpot-exporter": "workspace:*",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "rollup": "^4.0.0",
+    "rollup-plugin-dts": "^6.3.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
-    "@types/svg-path-parser": "^1.1.6"
+    "vitest": "3.2.4",
+    "zustand": "^5.0.10"
   }
 }

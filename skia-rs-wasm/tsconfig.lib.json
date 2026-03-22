@@ -41,5 +41,8 @@
   "include": [
     "src/index.ts",
     "src/lib/**/*"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
   ]
 }

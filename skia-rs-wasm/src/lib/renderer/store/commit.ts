@@ -1,11 +1,16 @@
 /**
- * Single commit pipeline: every page update goes through here so the worker (quadtree) and renderer stay in sync.
+ * Penpot-shaped commit pipeline: apply changes locally (document + renderer), then worker indexes.
+ * History frames are pushed when undo inverse is supplied (unless fromHistory / saveUndo false).
  */
 
 import type { IndexedPage, IndexedNode } from '../../worker/types'
 import type { Change } from 'penpot-exporter/types'
+import { processChanges } from '../../worker/process-changes'
 import { useWorkspaceStore } from './workspace-store'
 import type { DocumentModel } from './document-model'
+import type { CommitChangesParams } from '../../changes/commit-types'
+import { useHistoryStore } from '../../history/history-store'
+import type { WorkerClient } from '../../worker/types'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -47,7 +52,6 @@ async function syncRendererAfterUpdate(
       if (node) await renderer.addShape(node)
     }
     renderer.updateParentChildren(rootId, childIds)
-    // Update children for any non-root parent frames that received new children
     const subParentsToUpdate = new Set<string>()
     for (const id of added) {
       const node = newObjects[id]
@@ -77,6 +81,119 @@ async function syncRendererAfterUpdate(
   }
 }
 
+function changePageId(c: Change): string | undefined {
+  return (c as { pageId?: string }).pageId
+}
+
+/** Group changes by `pageId`, using fallback when absent on a change. */
+export function groupChangesByPageId(
+  changes: Change[],
+  fallbackPageId: string | null | undefined
+): Map<string, Change[]> {
+  const map = new Map<string, Change[]>()
+  for (const c of changes) {
+    const pid = changePageId(c) ?? fallbackPageId
+    if (!pid) continue
+    const list = map.get(pid) ?? []
+    list.push(c)
+    map.set(pid, list)
+  }
+  return map
+}
+
+export interface ApplyChangesLocallyParams {
+  pageId: string
+  redoChanges: Change[]
+  ignoreRendererSync?: boolean
+}
+
+/**
+ * Apply redo changes to the document model and optionally sync the renderer. Does not touch the worker.
+ */
+export async function applyChangesLocally(params: ApplyChangesLocallyParams): Promise<IndexedPage | undefined> {
+  const { pageId, redoChanges, ignoreRendererSync } = params
+  const state = useWorkspaceStore.getState()
+  const { documentModel, renderer } = state
+  if (!documentModel || redoChanges.length === 0) return undefined
+
+  const page = documentModel.getPage(pageId)
+  if (!page) return undefined
+
+  const oldPage = page
+  /** Clone so `processChanges` does not mutate live page shapes; stale renderer/worker diffs used ref/JSON on shared objects. */
+  const updatedPage = processChanges(structuredClone(page), redoChanges)
+  ;(documentModel as DocumentModel).applyPageUpdate(pageId, updatedPage)
+
+  if (renderer && !ignoreRendererSync) {
+    await syncRendererAfterUpdate(renderer, oldPage, updatedPage)
+  }
+  return updatedPage
+}
+
+/**
+ * Update worker spatial index for one page (incremental changes when non-empty).
+ */
+export async function updateWorkerIndexes(
+  workerClient: WorkerClient | null,
+  pageId: string,
+  changes: Change[],
+  updatedPage: IndexedPage
+): Promise<void> {
+  if (!workerClient) return
+  if (changes.length > 0) {
+    await workerClient.updatePageWithChanges(pageId, changes)
+  } else {
+    await workerClient.updatePage(pageId, updatedPage)
+  }
+}
+
+/**
+ * Orchestrate local apply, worker indexes, and optional history push.
+ */
+export async function commitChanges(params: CommitChangesParams): Promise<void> {
+  const {
+    redoChanges,
+    undoChanges = [],
+    pageId: explicitPageId,
+    saveUndo,
+    fromHistory,
+    ignoreRendererSync,
+  } = params
+
+  if (redoChanges.length === 0) return
+
+  const state = useWorkspaceStore.getState()
+  const { documentModel, workerClient } = state
+  if (!documentModel) return
+
+  const fallbackPageId =
+    explicitPageId ?? state.pageId ?? documentModel.getActiveOrSinglePageId()
+  const byPage = groupChangesByPageId(redoChanges, fallbackPageId)
+  if (byPage.size === 0) return
+
+  for (const [pageId, pageChanges] of byPage) {
+    await applyChangesLocally({
+      pageId,
+      redoChanges: pageChanges,
+      ignoreRendererSync,
+    })
+  }
+
+  for (const [pageId, pageChanges] of byPage) {
+    const updatedPage = documentModel.getPage(pageId)
+    if (!updatedPage) continue
+    await updateWorkerIndexes(workerClient, pageId, pageChanges, updatedPage)
+  }
+
+  const effectiveSaveUndo = saveUndo ?? undoChanges.length > 0
+  if (!fromHistory && effectiveSaveUndo && undoChanges.length > 0) {
+    useHistoryStore.getState().pushCommitFrame({
+      redoChanges,
+      undoChanges,
+    })
+  }
+}
+
 export interface PageCommitPayload {
   pageId: string
   updatedPage: IndexedPage
@@ -84,7 +201,6 @@ export interface PageCommitPayload {
 
 export interface PageCommitWithChangesPayload {
   pageId: string
-  updatedPage: IndexedPage
   changes: Change[]
 }
 
@@ -100,16 +216,10 @@ export async function commitPageUpdate(payload: PageCommitPayload): Promise<void
 }
 
 export async function commitPageUpdateWithChanges(payload: PageCommitWithChangesPayload): Promise<void> {
-  const { pageId, updatedPage, changes } = payload
-  const state = useWorkspaceStore.getState()
-  const { documentModel, workerClient, renderer } = state
-  if (!documentModel) return
-  const oldPage = documentModel.getPage(pageId)
-  ;(documentModel as DocumentModel).applyPageUpdate(pageId, updatedPage)
-  if (workerClient && changes.length > 0) {
-    await workerClient.updatePageWithChanges(pageId, changes)
-  } else if (workerClient) {
-    await workerClient.updatePage(pageId, updatedPage)
-  }
-  if (renderer) await syncRendererAfterUpdate(renderer, oldPage, updatedPage)
+  await commitChanges({
+    redoChanges: payload.changes,
+    undoChanges: [],
+    pageId: payload.pageId,
+    saveUndo: false,
+  })
 }

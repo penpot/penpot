@@ -7,6 +7,20 @@ import type { PenpotNode, PenpotPage } from 'penpot-exporter/types'
 import { ZERO_UUID } from '@skia-rs-wasm/common'
 import type { IndexedPage, IndexedShape } from './types'
 
+/**
+ * Truncate a UUID-like string to the standard 36-char format when it has extra garbage
+ * appended (e.g. "undefinedundefined" from a concatenation bug in callers).
+ * Only truncates when dashes are present at positions 8, 13, 18, 23.
+ */
+function normalizeUUID(id: string): string {
+  if (!id || id.length <= 36) return id
+  const prefix = id.slice(0, 36)
+  if (prefix[8] === '-' && prefix[13] === '-' && prefix[18] === '-' && prefix[23] === '-') {
+    return prefix
+  }
+  return id
+}
+
 function flattenChildrenRec(
   nodes: PenpotNode[] | undefined,
   parentId: string | undefined,
@@ -16,20 +30,22 @@ function flattenChildrenRec(
   if (!nodes?.length) return { objects }
 
   for (const node of nodes) {
+    const nodeId = normalizeUUID(node.id)
     const childList = (node as { children?: PenpotNode[] }).children
-    const childIds = childList?.map(c => c.id).filter((id): id is string => id != null) ?? []
+    const childIds = childList?.map(c => normalizeUUID(c.id)).filter((id): id is string => id != null) ?? []
 
     const indexed: IndexedShape = {
       ...node,
+      id: nodeId,
       parentId: parentId ?? node.parentId,
       frameId: frameId ?? parentId ?? node.frameId,
       shapes: childIds.length > 0 ? childIds : undefined,
     }
-    objects[node.id] = indexed
+    objects[nodeId] = indexed
 
     if (childList?.length) {
-      const resolvedFrameId = node.type === 'frame' ? node.id : frameId ?? parentId
-      const childResult = flattenChildrenRec(childList, node.id, resolvedFrameId)
+      const resolvedFrameId = node.type === 'frame' ? nodeId : frameId ?? parentId
+      const childResult = flattenChildrenRec(childList, nodeId, resolvedFrameId)
       Object.assign(objects, childResult.objects)
     }
   }
@@ -47,7 +63,6 @@ export function flattenPageToIndexed(page: PenpotPage): IndexedPage {
       objects: {},
     }
   }
-
   // Real Penpot pages have children[0].id === ZERO_UUID (the nil-UUID root frame).
   // Figma-exported pages only contain top-level frames as direct children, with no nil-UUID wrapper.
   // The WASM renderer requires tree.get(Uuid::nil()) to succeed, so inject a synthetic root when absent.
@@ -62,7 +77,7 @@ export function flattenPageToIndexed(page: PenpotPage): IndexedPage {
   const effectiveRoot = effectiveChildren[0]
   const rootChildIds = effectiveChildren
     .slice(1)
-    .map((n: PenpotNode) => n.id)
+    .map((n: PenpotNode) => normalizeUUID(n.id))
     .filter((id: string | undefined): id is string => id != null)
   const rootIndexed: IndexedShape = {
     ...effectiveRoot,
@@ -77,20 +92,22 @@ export function flattenPageToIndexed(page: PenpotPage): IndexedPage {
 
   for (let i = 1; i < effectiveChildren.length; i++) {
     const node = effectiveChildren[i]
+    const nodeId = normalizeUUID(node.id)
     const childList = (node as { children?: PenpotNode[] }).children
-    const childIds = childList?.map(c => c.id).filter((id): id is string => id != null) ?? []
+    const childIds = childList?.map(c => normalizeUUID(c.id)).filter((id): id is string => id != null) ?? []
 
     const indexed: IndexedShape = {
       ...node,
+      id: nodeId,
       parentId: effectiveRoot.id,
       frameId: effectiveRoot.id,
       shapes: childIds.length > 0 ? childIds : undefined,
     }
-    objects[node.id] = indexed
+    objects[nodeId] = indexed
 
     if (childList?.length) {
-      const resolvedFrameId = node.type === 'frame' ? node.id : effectiveRoot.id
-      const childResult = flattenChildrenRec(childList, node.id, resolvedFrameId)
+      const resolvedFrameId = node.type === 'frame' ? nodeId : effectiveRoot.id
+      const childResult = flattenChildrenRec(childList, nodeId, resolvedFrameId)
       Object.assign(objects, childResult.objects)
     }
   }

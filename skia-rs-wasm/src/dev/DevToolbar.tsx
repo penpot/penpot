@@ -6,7 +6,7 @@ import { isColorFill, isLinearGradient, isRadialGradient, isAngularGradient, isI
 import { FillEditor } from './components/FillEditor/FillEditor'
 import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
 import { useWorkspaceDevStore } from '../lib/renderer/store/workspace-dev-store'
-import { applyChanges, setDocument, createNewDocument } from '../lib/page-crud'
+import { applyChanges, setDocument, createNewDocument, undo, redo } from '../lib/page-crud'
 import './DevToolbar.css'
 import type { ShapeType } from '../lib/renderer/types'
 import { isFrameShape } from '../lib/worker/geometry/shapes'
@@ -148,6 +148,23 @@ export function DevToolbar() {
       setAdvGrowType(undefined)
     }
   }, [selectedNodeId, isCreatingNew, nodes])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t?.closest('input, textarea, select, [contenteditable="true"]')) return
+      const mod = e.metaKey || e.ctrlKey
+      if (mod && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        void undo()
+      } else if (mod && e.key === 'z' && e.shiftKey) {
+        e.preventDefault()
+        void redo()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const toggleSection = useCallback((section: string) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
@@ -435,7 +452,7 @@ export function DevToolbar() {
         try {
           JSON.parse(event.target?.result as string) as PenpotNode[] // validate JSON shape
           alert('Import functionality requires full scene replacement. Not implemented yet.')
-        } catch (error) {
+        } catch {
           alert('Failed to import nodes: Invalid JSON')
         }
       }

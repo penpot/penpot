@@ -55,7 +55,21 @@ export {
   addPage,
   deletePage,
   applyChanges,
+  commitChangesPublic as commitChanges,
+  undo,
+  redo,
 } from './lib/page-crud'
+
+export type { CommitChangesParams, CommitFrame } from './lib/changes/commit-types'
+export {
+  emptyChangesBuilder,
+  appendModObjPair,
+  snapshotGeometryForUndo,
+  buildTransformModObjPair,
+  mergeBundle,
+  toCommitBundle,
+} from './lib/changes/changes-builder'
+export { useHistoryStore } from './lib/history/history-store'
 
 // Workspace store (for plugin UI viewport sync, etc.)
 export { useWorkspaceStore } from './lib/renderer/store/workspace-store'

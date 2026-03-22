@@ -130,7 +130,8 @@ export function useViewportInteractions({
       const shift = e.shiftKey
       const store = useWorkspaceStore.getState()
       const { workerClient, pageId, viewport, lastAppliedViewport, documentModel, selectedIds } = store
-      const page = documentModel?.getPage(pageId ?? '')
+      const hitPageId = pageId ?? documentModel?.getActiveOrSinglePageId() ?? null
+      const page = hitPageId ? documentModel?.getPage(hitPageId) : undefined
       const viewportForHit = lastAppliedViewport ?? viewport
 
       if (mod) {
@@ -139,11 +140,11 @@ export function useViewportInteractions({
         return
       }
 
-      if (!workerClient || !viewportForHit || !pageId) {
+      if (!workerClient || !viewportForHit || !hitPageId) {
         setIsSelecting(true)
         return
       }
-      queryNodesAtPoint(workerClient, pageId, viewportForHit, screenX, screenY).then(
+      queryNodesAtPoint(workerClient, hitPageId, viewportForHit, screenX, screenY).then(
         (ids) => {
           const topId = pickTopmostNode(page, ids)
           if (topId) {

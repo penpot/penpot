@@ -5,9 +5,12 @@
 
 import { useWorkspaceStore } from './renderer/store/workspace-store'
 import { DocumentModel } from './renderer/store/document-model'
+import { commitChanges } from './renderer/store/commit'
+import { useHistoryStore } from './history/history-store'
 import type { IndexedPage } from './worker/types'
 import { flattenPageToIndexed } from './worker/types'
 import type { PenpotDocument, PenpotNode, PenpotPage, Change } from 'penpot-exporter/types'
+import type { CommitChangesParams } from './changes/commit-types'
 
 export function createNewDocument(): PenpotDocument {
   const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
@@ -68,8 +71,35 @@ export async function deletePage(pageId: string): Promise<void> {
 
 export async function applyChanges(
   changes: Change[],
-  options?: { pageId?: string }
+  options?: { pageId?: string; undoChanges?: Change[] }
 ): Promise<void> {
   const model = useWorkspaceStore.getState().documentModel
   if (model) await model.applyChanges(changes, options)
+}
+
+/** Full commit with optional undo vector (Penpot-shaped pipeline + history). */
+export async function commitChangesPublic(params: CommitChangesParams): Promise<void> {
+  await commitChanges(params)
+}
+
+export async function undo(): Promise<void> {
+  const frame = useHistoryStore.getState().popUndoFrame()
+  if (!frame) return
+  await commitChanges({
+    redoChanges: frame.undoChanges,
+    saveUndo: false,
+    fromHistory: true,
+  })
+  useHistoryStore.getState().pushRedoFrame(frame)
+}
+
+export async function redo(): Promise<void> {
+  const frame = useHistoryStore.getState().popRedoFrame()
+  if (!frame) return
+  await commitChanges({
+    redoChanges: frame.redoChanges,
+    saveUndo: false,
+    fromHistory: true,
+  })
+  useHistoryStore.getState().pushUndoFrame(frame)
 }

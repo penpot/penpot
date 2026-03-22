@@ -9,10 +9,10 @@ import type { PenpotDocument } from 'penpot-exporter/types'
 import type { Change } from 'penpot-exporter/types'
 import type { IndexedPage, IndexedNode } from '../../worker/types'
 import { flattenPageToIndexed, unflattenIndexedPageToPage } from '../../worker/types'
-import { processChanges } from '../../worker/process-changes'
 import { useWorkspaceStore, type IDocumentModel } from './workspace-store'
 import { useWorkspaceDevStore } from './workspace-dev-store'
-import { commitPageUpdateWithChanges } from './commit'
+import { commitChanges } from './commit'
+import { useHistoryStore } from '../../history/history-store'
 import { enrichPageWithPositionData } from './enrich-position-data'
 type DocumentMeta = Omit<PenpotDocument, 'children'>
 
@@ -64,6 +64,14 @@ export class DocumentModel implements IDocumentModel {
     return this.pageMap.get(id)
   }
 
+  getActiveOrSinglePageId(): string | null {
+    if (this.currentPageId) return this.currentPageId
+    if (this.pageMap.size === 1) {
+      return this.pageMap.keys().next().value ?? null
+    }
+    return null
+  }
+
   /**
    * Internal: used only by commit to write updated page into the model.
    * Not on IDocumentModel.
@@ -110,6 +118,7 @@ export class DocumentModel implements IDocumentModel {
   }
 
   async loadDocument(doc: PenpotDocument): Promise<void> {
+    useHistoryStore.getState().clearHistory()
     const { children, ...meta } = doc
     this.documentMeta = meta as DocumentMeta
     this.pageMap = buildPageMap(children)
@@ -142,6 +151,7 @@ export class DocumentModel implements IDocumentModel {
   }
 
   async setActivePage(pageId: string): Promise<void> {
+    useHistoryStore.getState().clearHistory()
     const page = this.pageMap.get(pageId)
     if (!page) return
     const state = useWorkspaceStore.getState()
@@ -177,6 +187,7 @@ export class DocumentModel implements IDocumentModel {
 
   async deletePage(pageId: string): Promise<void> {
     if (!this.documentMeta) return
+    useHistoryStore.getState().clearHistory()
     const state = useWorkspaceStore.getState()
     this.pageMap.delete(pageId)
     const nextPageId =
@@ -205,17 +216,22 @@ export class DocumentModel implements IDocumentModel {
     }
   }
 
-  async applyChanges(changes: Change[], options?: { pageId?: string }): Promise<void> {
+  async applyChanges(
+    changes: Change[],
+    options?: { pageId?: string; undoChanges?: Change[] }
+  ): Promise<void> {
     if (changes.length === 0) return
     const state = useWorkspaceStore.getState()
-    const pageId = options?.pageId ?? changes[0]?.pageId ?? state.pageId
-    const page = pageId ? this.pageMap.get(pageId) : undefined
-    if (!pageId || !page) return
-    const updatedPage = processChanges(page, changes)
-    await commitPageUpdateWithChanges({
+    const pageId =
+      options?.pageId ??
+      (changes[0] as { pageId?: string }).pageId ??
+      state.pageId ??
+      this.getActiveOrSinglePageId()
+    if (!pageId || !this.pageMap.get(pageId)) return
+    await commitChanges({
+      redoChanges: changes,
+      undoChanges: options?.undoChanges ?? [],
       pageId,
-      updatedPage,
-      changes,
     })
   }
 }

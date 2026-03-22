@@ -194,11 +194,13 @@ export function startResizeSelected(
       applyModifiersAndCommit(entries)
         .then(() => {
           renderer.cleanModifiers()
+          renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
           clearResizeState()
         })
         .catch(() => {
           renderer.cleanModifiers()
+          renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
           clearResizeState()
         })

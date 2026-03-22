@@ -18,7 +18,8 @@ export function handleAreaSelection(
   ignoreGroups?: boolean
 ): Observable<void> {
   const store = useWorkspaceStore.getState()
-  const { workerClient, pageId, viewport } = store
+  const { workerClient, pageId, viewport, documentModel } = store
+  const effectivePageId = pageId ?? documentModel?.getActiveOrSinglePageId() ?? null
 
   if (!workerClient || !viewport) return EMPTY
   
@@ -60,9 +61,9 @@ export function handleAreaSelection(
           )
         }),
         switchMap(rect => {
-          if (!pageId) return EMPTY
+          if (!effectivePageId) return EMPTY
           return askWorker$(workerClient, 'index/query-selection', {
-            pageId,
+            pageId: effectivePageId,
             rect,
             includeFrames: true,
             ignoreGroups: ignoreGroups ?? false,
