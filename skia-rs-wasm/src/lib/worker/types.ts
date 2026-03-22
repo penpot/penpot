@@ -4,7 +4,7 @@
 
 import type { PenpotNode, Selrect } from 'penpot-exporter/types'
 import type { Change } from 'penpot-exporter/types'
-import type { Point } from '@skia-rs-wasm/common'
+import type { Point } from '@skia-rs-wasm/common/types'
 import type { Quadtree } from './quadtree'
 
 /** Worker configuration (keys logged only; shape extensible). */
@@ -142,4 +142,4 @@ export interface WorkerClient {
 }
 
 export { flattenPageToIndexed, unflattenIndexedPageToPage } from './flatten'
-export { ZERO_UUID, makeSelrect } from '@skia-rs-wasm/common'
+export { ZERO_UUID, makeSelrect } from '@skia-rs-wasm/common/conversions'

@@ -31,9 +31,6 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@skia-rs-wasm/common": [
-        "./src/lib/common"
-      ],
       "@skia-rs-wasm/common/*": [
         "./src/lib/common/*"
       ]

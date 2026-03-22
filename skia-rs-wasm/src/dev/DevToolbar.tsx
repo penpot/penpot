@@ -10,7 +10,7 @@ import { applyChanges, setDocument, createNewDocument, undo, redo } from '../lib
 import './DevToolbar.css'
 import type { ShapeType } from '../lib/renderer/types'
 import { isFrameShape } from '../lib/worker/geometry/shapes'
-import { v8 } from '@skia-rs-wasm/common'
+import { v8 } from '@skia-rs-wasm/common/uuid-impl'
 
 function isImageColor(img: ImageColor | PartialImageColor): img is ImageColor {
   return 'width' in img && 'height' in img
