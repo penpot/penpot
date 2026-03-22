@@ -92,7 +92,7 @@ registerHandler('index/update', (message: WorkerMessage) => {
     let indexedNew: IndexedPage
 
     if (changes && changes.length > 0) {
-      indexedNew = processChanges(oldPage, changes)
+      indexedNew = processChanges(structuredClone(oldPage), changes)
       state.pagesIndex[pageId] = indexedNew
       state.selection = selection.updatePage(state.selection, oldPage, indexedNew)
     } else if (newPage) {

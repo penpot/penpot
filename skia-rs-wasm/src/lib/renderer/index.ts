@@ -269,6 +269,15 @@ export class Renderer {
   }
 
   /**
+   * Run a synchronous WASM render so geometry/selection queries match committed shape data.
+   * Call after shape updates and/or {@link cleanModifiers} before {@link getSelectionRect} — `updateShape` only schedules RAF by default.
+   */
+  flushRenderSync(): void {
+    if (!getContextInitialized() || !this.module) return
+    renderSync(this.module)
+  }
+
+  /**
    * Get the selection rectangle (bounds) for the given shape IDs from WASM.
    * When modifiers are set, returns the bounds of the modified shapes. Returns null if context is not initialized or entries are empty.
    */

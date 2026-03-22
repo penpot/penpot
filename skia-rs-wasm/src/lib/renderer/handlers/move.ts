@@ -28,7 +28,8 @@ function constrainDeltaByShift(delta: { x: number; y: number }): { x: number; y:
 
 export function startMoveSelected(initialPosition: Point): Observable<void> {
   const state = useWorkspaceStore.getState()
-  const { renderer, viewport, selectedIds, pageId, documentModel } = state
+  const { renderer, viewport, selectedIds, documentModel } = state
+  const pageId = state.pageId ?? documentModel?.getActiveOrSinglePageId() ?? null
 
   if (!renderer || !viewport || selectedIds.size === 0 || !pageId) return EMPTY
 
@@ -101,11 +102,13 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
       applyModifiersAndCommit(entries)
         .then(() => {
           renderer.cleanModifiers()
+          renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
           useWorkspaceStore.getState().setIsMoving(false)
         })
         .catch(() => {
           renderer.cleanModifiers()
+          renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
           useWorkspaceStore.getState().setIsMoving(false)
         })

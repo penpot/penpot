@@ -19,10 +19,15 @@ export interface IDocumentModel {
   getNode(id: string): IndexedNode | undefined
   getSelectedNodes(selectedIds: Set<string>): IndexedNode[]
   getPage(id: string): IndexedPage | undefined
+  /** Current page id, or the only page id when the document has a single page (for commits when workspace `pageId` is unset). */
+  getActiveOrSinglePageId(): string | null
   setActivePage(pageId: string): Promise<void>
   addPage(page: IndexedPage): Promise<void>
   deletePage(pageId: string): Promise<void>
-  applyChanges(changes: Change[], options?: { pageId?: string }): Promise<void>
+  applyChanges(
+    changes: Change[],
+    options?: { pageId?: string; undoChanges?: Change[] }
+  ): Promise<void>
 }
 
 export interface WorkspaceState {
