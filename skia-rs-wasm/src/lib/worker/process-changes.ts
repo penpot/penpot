@@ -20,19 +20,6 @@ import type { PenpotNode } from 'penpot-exporter/types'
 import { isFrameShape } from './geometry/shapes'
 import { assignHierarchy, ensureShapes, isIndexedShape } from './helpers'
 
-/**
- * Strip any garbage suffix from a UUID-like string, returning the canonical 36-char form.
- * Handles strings like "<uuid>undefinedundefined" produced by caller-side concatenation bugs.
- */
-function normalizeId(id: string): string {
-  if (!id || id.length <= 36) return id
-  const prefix = id.slice(0, 36)
-  if (prefix[8] === '-' && prefix[13] === '-' && prefix[18] === '-' && prefix[23] === '-') {
-    return prefix
-  }
-  return id
-}
-
 /** Normalize shapes to array (Penpot sends single id or array) */
 function normalizeShapes(shapes: unknown): string[] {
   if (Array.isArray(shapes)) {
@@ -116,9 +103,8 @@ function processOperation(shape: IndexedShape, op: Operation): IndexedShape {
 }
 
 function processAddObj(data: IndexedPage, change: AddObjChange): IndexedPage {
-  const rawId = change.id
-  const id = normalizeId(rawId)
-  const obj = rawId !== id ? { ...change.obj, id } : change.obj
+  const { id } = change
+  const obj = change.obj
   const parentId = getParentId(change) ?? getFrameId(change) ?? ZERO_UUID
   const frameId = getFrameId(change) ?? parentId
   const index = change.index ?? null

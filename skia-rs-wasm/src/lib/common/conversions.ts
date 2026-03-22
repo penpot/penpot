@@ -50,11 +50,18 @@ export function colorToU32ARGB(color: { color: string; opacity?: number }): numb
 }
 
 /**
- * Converts a Uint32Array (4 u32 values) back to UUID string format (8-4-4-4-12).
+ * Converts four u32 limbs back to UUID string format (8-4-4-4-12).
+ * Always pads to four limbs with zeros so missing heap slots never become the literal
+ * substring "undefined" in the output (template coerces undefined → "undefined").
  */
 export function u32ToUUID(buffer: Uint32Array | [number, number, number, number]): string {
-  const arr = Array.isArray(buffer) ? buffer : Array.from(buffer)
-  const parts = arr.map(val => val.toString(16).padStart(8, '0'))
+  const raw = Array.isArray(buffer) ? buffer : Array.from(buffer)
+  const limbs: number[] = [0, 0, 0, 0]
+  for (let i = 0; i < 4; i++) {
+    const v = raw[i]
+    limbs[i] = typeof v === 'number' && Number.isFinite(v) ? v >>> 0 : 0
+  }
+  const parts = limbs.map((val) => val.toString(16).padStart(8, '0'))
   return `${parts[0]}-${parts[1].slice(0, 4)}-${parts[1].slice(4)}-${parts[2].slice(0, 4)}-${parts[2].slice(4)}${parts[3]}`
 }
 
