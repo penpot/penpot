@@ -47,6 +47,21 @@ async function syncRendererAfterUpdate(
       if (node) await renderer.addShape(node)
     }
     renderer.updateParentChildren(rootId, childIds)
+    // Update children for any non-root parent frames that received new children
+    const subParentsToUpdate = new Set<string>()
+    for (const id of added) {
+      const node = newObjects[id]
+      if (node?.parentId && node.parentId !== rootId) {
+        subParentsToUpdate.add(node.parentId)
+      }
+    }
+    for (const parentId of subParentsToUpdate) {
+      const parentNode = newObjects[parentId]
+      const parentShapes = (parentNode as { shapes?: string[] })?.shapes
+      if (parentShapes) {
+        renderer.updateParentChildren(parentId, parentShapes)
+      }
+    }
   } else if (deleted.length > 0) {
     renderer.updateParentChildren(rootId, childIds)
   } else {

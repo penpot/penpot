@@ -199,19 +199,8 @@ export function createText(
   const width = options.width ?? 200
   const height = options.height ?? 50
 
-  const fills: Fill[] = options.fillColor
-    ? [
-        {
-          fillColor: options.fillColor,
-          fillOpacity: 1,
-        },
-      ]
-    : [
-        {
-          fillColor: '#000000',
-          fillOpacity: 1,
-        },
-      ]
+  const fillColor = options.fillColor ?? '#000000'
+  const spanFill: Fill = { fillColor, fillOpacity: 1 }
 
   return {
     id,
@@ -222,16 +211,23 @@ export function createText(
     height,
     parentId: options.parentId ?? ROOT_UUID,
     selrect: createSelRect(x, y, width, height),
-    fills,
+    fills: [spanFill],
     content: {
+      type: 'root',
       verticalAlign: 'top',
       children: [
         {
-          type: 'paragraph',
+          type: 'paragraph-set',
           children: [
             {
-              type: 'text',
-              text: options.text || 'Hello World',
+              type: 'paragraph',
+              children: [
+                {
+                  type: 'text',
+                  text: options.text || 'Hello World',
+                  fills: [spanFill],
+                },
+              ],
             },
           ],
         },
