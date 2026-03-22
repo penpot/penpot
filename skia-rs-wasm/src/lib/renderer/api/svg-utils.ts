@@ -4,6 +4,7 @@
 
 import type { SvgContent } from '../types'
 import type { Matrix } from 'penpot-exporter/types'
+import { newShapeId } from '@skia-rs-wasm/common/shape-id'
 import { isSvgContentTree } from '../verification'
 
 /**
@@ -57,7 +58,7 @@ export function generateIdMapping(content: SvgContent): Map<string, string> {
       const elementId = node.attrs?.id
       if (elementId && typeof elementId === 'string') {
         // Generate new UUID-like ID
-        const newId = generateUUID()
+        const newId = newShapeId()
         mapping.set(elementId, newId)
       }
 
@@ -72,17 +73,6 @@ export function generateIdMapping(content: SvgContent): Map<string, string> {
 
   visitNode(content)
   return mapping
-}
-
-/**
- * Generate a simple UUID-like string
- */
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    const v = c === 'x' ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
 }
 
 /**
