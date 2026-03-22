@@ -40,7 +40,7 @@ export {
   uuidToU32Tuple,
   hexToU32ARGB,
   colorToU32ARGB,
-} from '@skia-rs-wasm/common'
+} from '@skia-rs-wasm/common/conversions'
 export {
   getDPR,
   detectBrowser,

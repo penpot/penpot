@@ -5,7 +5,7 @@
 import type { CSSProperties } from 'react'
 import type { Matrix } from 'penpot-exporter/types'
 
-export type { Point } from '@skia-rs-wasm/common'
+export type { Point } from '@skia-rs-wasm/common/types'
 
 /** Resize handle position (matches frontend handler keywords) */
 export type ResizeHandlePosition =
@@ -184,4 +184,4 @@ export {
   hexToU32ARGB,
   colorToU32ARGB,
   u32ToUUID,
-} from '@skia-rs-wasm/common'
+} from '@skia-rs-wasm/common/conversions'

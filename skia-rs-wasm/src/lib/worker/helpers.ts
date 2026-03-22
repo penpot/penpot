@@ -4,7 +4,7 @@
 
 import type { PenpotNode } from 'penpot-exporter/types'
 import type { IndexedShape } from './types'
-import { ZERO_UUID } from '@skia-rs-wasm/common'
+import { ZERO_UUID } from '@skia-rs-wasm/common/conversions'
 import {
   isFrameShape,
   isBoolShape,

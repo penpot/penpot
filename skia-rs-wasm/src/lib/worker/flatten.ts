@@ -4,7 +4,7 @@
  */
 
 import type { PenpotNode, PenpotPage } from 'penpot-exporter/types'
-import { ZERO_UUID } from '@skia-rs-wasm/common'
+import { ZERO_UUID } from '@skia-rs-wasm/common/conversions'
 import type { IndexedPage, IndexedShape } from './types'
 
 /**

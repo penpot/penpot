@@ -9,20 +9,6 @@ import dts from 'rollup-plugin-dts'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-/** Mirrors `resolve.alias` for worker bundles (worker config has no `resolve` field). */
-function workerCommonAliasPlugin(): Plugin {
-  const commonEntry = resolve(__dirname, 'src/lib/common/index.ts')
-  return {
-    name: 'worker-skia-common-alias',
-    enforce: 'pre',
-    resolveId(id) {
-      if (id === '@skia-rs-wasm/common') {
-        return commonEntry
-      }
-    },
-  }
-}
-
 function dtsBundlePlugin(): Plugin {
   return {
     name: 'dts-bundle',
@@ -113,6 +99,5 @@ export default defineConfig({
   },
   worker: {
     format: 'es',
-    plugins: () => [workerCommonAliasPlugin()],
   },
 })

@@ -12,7 +12,7 @@ import type {
   Matrix,
 } from 'penpot-exporter/types'
 import type { Line } from '../types'
-import { makeSelrect } from '@skia-rs-wasm/common'
+import { makeSelrect } from '@skia-rs-wasm/common/conversions'
 import { rectToPoints } from './rect'
 import { point } from './point'
 
