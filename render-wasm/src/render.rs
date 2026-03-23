@@ -435,10 +435,10 @@ impl RenderState {
         shape.frame_clip_layer_blur()
     }
 
-    /// Renders background blur effect directly to the Current surface.
+    /// Renders background blur effect directly to the given target surface.
     /// Must be called BEFORE any save_layer for the shape's own opacity/blend,
     /// so that the backdrop blur is independent of the shape's visual properties.
-    fn render_background_blur(&mut self, shape: &Shape) {
+    fn render_background_blur(&mut self, shape: &Shape, target_surface: SurfaceId) {
         if self.options.is_fast_mode() {
             return;
         }
@@ -458,21 +458,22 @@ impl RenderState {
         let scaled_sigma = radius_to_sigma(blur.value * scale);
         // Cap sigma so the blur kernel (≈3σ) stays within the tile margin.
         // This prevents visible seams at tile boundaries when zoomed in.
-        let margin = self.surfaces.margins().width as f32;
-        let max_sigma = margin / 3.0;
-        let capped_sigma = scaled_sigma.min(max_sigma);
-
-        let blur_filter = match skia::image_filters::blur(
-            (capped_sigma, capped_sigma),
-            skia::TileMode::Clamp,
-            None,
-            None,
-        ) {
-            Some(filter) => filter,
-            None => return,
+        // During export there's no tiling, so skip the cap.
+        let sigma = if self.export_context.is_some() {
+            scaled_sigma
+        } else {
+            let margin = self.surfaces.margins().width as f32;
+            let max_sigma = margin / 3.0;
+            scaled_sigma.min(max_sigma)
         };
 
-        let snapshot = self.surfaces.snapshot(SurfaceId::Current);
+        let blur_filter =
+            match skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None) {
+                Some(filter) => filter,
+                None => return,
+            };
+
+        let target_surface_snapshot = self.surfaces.snapshot(target_surface);
         let translation = self
             .surfaces
             .get_render_context_translation(self.render_area, scale);
@@ -482,10 +483,10 @@ impl RenderState {
         matrix.post_translate(center);
         matrix.pre_translate(-center);
 
-        let canvas = self.surfaces.canvas(SurfaceId::Current);
+        let canvas = self.surfaces.canvas(target_surface);
         canvas.save();
 
-        // Current has no render context transform (identity canvas).
+        // Current/Export have no render context transform (identity canvas).
         // Apply scale + translate + shape transform so the clip maps
         // from shape-local coords to device pixels correctly.
         canvas.scale((scale, scale));
@@ -528,7 +529,7 @@ impl RenderState {
         let mut paint = skia::Paint::default();
         paint.set_image_filter(blur_filter);
         paint.set_blend_mode(skia::BlendMode::Src);
-        canvas.draw_image(&snapshot, (0, 0), Some(&paint));
+        canvas.draw_image(&target_surface_snapshot, (0, 0), Some(&paint));
 
         canvas.restore();
     }
@@ -1521,6 +1522,11 @@ impl RenderState {
     ) -> Result<(Vec<u8>, i32, i32)> {
         let target_surface = SurfaceId::Export;
 
+        // Reset focus mode so all shapes in the export tree are rendered.
+        // Without this, leftover focus_mode state from the workspace could
+        // cause shapes (and their background blur) to be skipped.
+        self.focus_mode.clear();
+
         self.surfaces
             .canvas(target_surface)
             .clear(skia::Color::TRANSPARENT);
@@ -1533,6 +1539,8 @@ impl RenderState {
             extrect.offset((margins.width as f32 / scale, margins.height as f32 / scale));
 
             self.surfaces.resize_export_surface(scale, extrect);
+            self.render_area = extrect;
+            self.render_area_with_margins = extrect;
             self.surfaces.update_render_context(extrect, scale);
 
             self.pending_nodes.push(NodeRenderState {
@@ -1545,6 +1553,9 @@ impl RenderState {
             });
             self.render_shape_tree_partial_uncached(tree, timestamp, false, true)?;
         }
+
+        // Clear export context so get_scale() returns to workspace zoom.
+        self.export_context = None;
 
         self.surfaces
             .flush_and_submit(&mut self.gpu_state, target_surface);
@@ -2334,13 +2345,7 @@ impl RenderState {
                 // Render background blur BEFORE save_layer so it modifies
                 // the backdrop independently of the shape's opacity.
                 if !node_render_state.is_root() && self.focus_mode.is_active() {
-                    self.render_background_blur(element);
-                }
-
-                // Render background blur BEFORE save_layer so it modifies
-                // the backdrop independently of the shape's opacity.
-                if !node_render_state.is_root() && self.focus_mode.is_active() {
-                    self.render_background_blur(element);
+                    self.render_background_blur(element, target_surface);
                 }
 
                 self.render_shape_enter(element, mask, target_surface);
@@ -2910,6 +2915,10 @@ impl RenderState {
     }
 
     pub fn get_scale(&self) -> f32 {
+        // During export, use the export scale instead of the workspace zoom.
+        if let Some((_, export_scale)) = self.export_context {
+            return export_scale;
+        }
         self.viewbox.zoom() * self.options.dpr()
     }
 
