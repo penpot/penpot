@@ -68,6 +68,7 @@ export class PluginBridge {
                 if (this.clientsByToken.has(userToken)) {
                     this.logger.warn("Duplicate connection for given user token; rejecting new connection");
                     ws.close(1008, "Duplicate connection for given user token; close previous connection first.");
+                    return;
                 }
 
                 this.clientsByToken.set(userToken, connection);

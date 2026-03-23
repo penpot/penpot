@@ -377,7 +377,7 @@
                       (rx/map deref)
                       (rx/mapcat (fn [value]
                                    (rx/of (mcp/update-mcp-connection value)
-                                          (mcp/disconnect-mcp))))))
+                                          (mcp/user-disconnect-mcp))))))
 
                (when (contains? cf/flags :mcp)
                  (->> mbc/stream
