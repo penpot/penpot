@@ -17,6 +17,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -113,12 +114,7 @@
                         :is-open? true
                         :rect rect))))))
 
-        container (mf/use-memo #(dom/create-element "div"))]
-
-    (mf/with-effect []
-      (let [body (dom/get-body)]
-        (dom/append-child! body container)
-        #(dom/remove-child! body container)))
+        container (hooks/use-portal-container)]
 
     [:div {:on-click on-open-dropdown
            :disabled (not can-edit?)

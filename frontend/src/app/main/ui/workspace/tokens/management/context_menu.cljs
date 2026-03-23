@@ -20,6 +20,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as timers]
@@ -516,12 +517,7 @@
         dropdown-direction-change* (mf/use-ref 0)
         top                 (+ (get-in mdata [:position :y]) 5)
         left                (+ (get-in mdata [:position :x]) 5)
-        container           (mf/use-memo #(dom/create-element "div"))]
-
-    (mf/with-effect []
-      (let [body (dom/get-body)]
-        (dom/append-child! body container)
-        #(dom/remove-child! body container)))
+        container           (hooks/use-portal-container)]
 
     (mf/use-effect
      (mf/deps is-open?)

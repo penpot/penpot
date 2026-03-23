@@ -19,6 +19,7 @@
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.forms :as fc]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.tokens.management.forms.controls.combobox-navigation :refer [use-navigation]]
    [app.main.ui.workspace.tokens.management.forms.controls.floating-dropdown :refer [use-floating-dropdown]]
    [app.main.ui.workspace.tokens.management.forms.controls.token-parsing :as tp]
@@ -92,7 +93,7 @@
         icon-button-ref   (mf/use-ref nil)
         ref               (or ref internal-ref)
 
-        container         (mf/use-memo #(dom/create-element "div"))
+        container         (hooks/use-portal-container)
 
         raw-tokens-by-type (mf/use-ctx muc/active-tokens-by-type)
 
@@ -268,11 +269,6 @@
 
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
-
-    (mf/with-effect []
-      (let [body (dom/get-body)]
-        (dom/append-child! body container)
-        #(dom/remove-child! body container)))
 
     (mf/with-effect [is-open* ref wrapper-ref]
       (when is-open

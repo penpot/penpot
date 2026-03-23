@@ -9,6 +9,7 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
@@ -159,7 +160,7 @@
 
         tooltip-ref (mf/use-ref nil)
 
-        container (mf/use-memo #(dom/create-element "div"))
+        container (hooks/use-portal-container)
 
         id
         (d/nilv id internal-id)
@@ -245,11 +246,6 @@
                           :aria-label (if (string? content)
                                         content
                                         aria-label)})]
-
-    (mf/with-effect []
-      (let [body (dom/get-body)]
-        (dom/append-child! body container)
-        #(dom/remove-child! body container)))
 
     (mf/use-effect
      (mf/deps tooltip-id)

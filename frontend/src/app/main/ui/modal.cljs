@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.keyboard :as k]
    [goog.events :as events]
@@ -83,11 +84,7 @@
 (mf/defc modal-container*
   {::mf/props :obj}
   []
-  (let [container (mf/use-memo #(dom/create-element "div"))]
-    (mf/with-effect []
-      (let [body (dom/get-body)]
-        (dom/append-child! body container)
-        #(dom/remove-child! body container)))
+  (let [container (hooks/use-portal-container)]
     (when-let [modal (mf/deref ref:modal)]
       (mf/portal
        (mf/html [:> modal-wrapper* {:data modal :key (dm/str (:id modal))}])
