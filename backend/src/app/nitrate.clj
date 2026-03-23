@@ -51,6 +51,11 @@
   (fn []
     (let [response (handler)
           status (:status response)]
+      (when-not status
+        (l/error :hint "could't do the nitrate request, it is probably down"
+                 :uri uri)
+        ;; TODO decide what to do when Nitrate is inaccesible
+        nil)
       (if (>= status 400)
         ;; For error status codes (4xx, 5xx), fail immediately without validation
         (do
