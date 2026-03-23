@@ -515,7 +515,13 @@
         dropdown-direction  (deref dropdown-direction*)
         dropdown-direction-change* (mf/use-ref 0)
         top                 (+ (get-in mdata [:position :y]) 5)
-        left                (+ (get-in mdata [:position :x]) 5)]
+        left                (+ (get-in mdata [:position :x]) 5)
+        container           (mf/use-memo #(dom/create-element "div"))]
+
+    (mf/with-effect []
+      (let [body (dom/get-body)]
+        (dom/append-child! body container)
+        #(dom/remove-child! body container)))
 
     (mf/use-effect
      (mf/deps is-open?)
@@ -554,4 +560,4 @@
                 :on-context-menu prevent-default}
           (when mdata
             [:& token-context-menu-tree (assoc mdata :width @width :on-delete-token on-delete-token)])]])
-       (dom/get-body)))))
+       container))))

@@ -159,6 +159,8 @@
 
         tooltip-ref (mf/use-ref nil)
 
+        container (mf/use-memo #(dom/create-element "div"))
+
         id
         (d/nilv id internal-id)
 
@@ -244,6 +246,11 @@
                                         content
                                         aria-label)})]
 
+    (mf/with-effect []
+      (let [body (dom/get-body)]
+        (dom/append-child! body container)
+        #(dom/remove-child! body container)))
+
     (mf/use-effect
      (mf/deps tooltip-id)
      (fn []
@@ -295,4 +302,4 @@
            [:div {:class (stl/css :tooltip-content)} content]
            [:div {:class (stl/css :tooltip-arrow)
                   :id "tooltip-arrow"}]]])
-        (.-body js/document)))]))
+        container))]))

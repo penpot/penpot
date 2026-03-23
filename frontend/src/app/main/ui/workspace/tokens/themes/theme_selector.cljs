@@ -111,7 +111,14 @@
                (let [rect (dom/get-bounding-rect node)]
                  (swap! state* assoc
                         :is-open? true
-                        :rect rect))))))]
+                        :rect rect))))))
+
+        container (mf/use-memo #(dom/create-element "div"))]
+
+    (mf/with-effect []
+      (let [body (dom/get-body)]
+        (dom/append-child! body container)
+        #(dom/remove-child! body container)))
 
     [:div {:on-click on-open-dropdown
            :disabled (not can-edit?)
@@ -140,4 +147,4 @@
            [:& theme-options {:active-theme-paths active-theme-paths
                               :themes themes
                               :on-close on-close-dropdown}]]])
-        (dom/get-body)))]))
+        container))]))

@@ -92,6 +92,8 @@
         icon-button-ref   (mf/use-ref nil)
         ref               (or ref internal-ref)
 
+        container         (mf/use-memo #(dom/create-element "div"))
+
         raw-tokens-by-type (mf/use-ctx muc/active-tokens-by-type)
 
         filtered-tokens-by-type
@@ -267,6 +269,11 @@
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
 
+    (mf/with-effect []
+      (let [body (dom/get-body)]
+        (dom/append-child! body container)
+        #(dom/remove-child! body container)))
+
     (mf/with-effect [is-open* ref wrapper-ref]
       (when is-open
         (let [handler (fn [event]
@@ -305,4 +312,4 @@
                                   :empty-to-end empty-to-end
                                   :wrapper-ref dropdown-ref
                                   :ref set-option-ref}])
-          (dom/get-body))))]))
+          container)))]))

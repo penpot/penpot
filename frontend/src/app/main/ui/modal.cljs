@@ -83,7 +83,12 @@
 (mf/defc modal-container*
   {::mf/props :obj}
   []
-  (when-let [modal (mf/deref ref:modal)]
-    (mf/portal
-     (mf/html [:> modal-wrapper* {:data modal :key (dm/str (:id modal))}])
-     (dom/get-body))))
+  (let [container (mf/use-memo #(dom/create-element "div"))]
+    (mf/with-effect []
+      (let [body (dom/get-body)]
+        (dom/append-child! body container)
+        #(dom/remove-child! body container)))
+    (when-let [modal (mf/deref ref:modal)]
+      (mf/portal
+       (mf/html [:> modal-wrapper* {:data modal :key (dm/str (:id modal))}])
+       container))))
