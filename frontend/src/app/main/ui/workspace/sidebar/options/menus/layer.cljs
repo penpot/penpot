@@ -211,9 +211,9 @@
     ;; https://tree.taiga.io/project/penpot/task/13704
 
     (if token-numeric-inputs
-      ;; TODO: Rename this section when duplicated code is deleted
+      ;; TODO: When duplicated code is remove rename this class removing the "token" reference from it
       [:section {:class (stl/css :element-set-content-token)
-                 :aria-label "layer-menu-section"}
+                 :aria-label (tr "workspace.options.layer-options.layer-section")}
        [:& select
         {:default-value selected-blend-mode
          :options options
@@ -274,7 +274,7 @@
 
       [:section {:class (stl/css-case :element-set-content true
                                       :hidden hidden?)
-                 :aria-label "layer-menu-section"}
+                 :aria-label (tr "workspace.options.layer-options.layer-section")}
        [:div {:class (stl/css :select)}
         [:& select
          {:default-value selected-blend-mode

@@ -60,7 +60,11 @@
   }
 }
 
-// This rule should be rename when numeric-input-tokens are activated
+// This code should remain when numeric-input-tokens are activated
+// https://tree.taiga.io/project/penpot/task/13704
+
+// This rule should be rename when numeric-input-tokens are
+// activated removing the token reference on the class
 .element-set-content-token {
   @include sidebar.option-grid-structure;
   block-size: $sz-32;

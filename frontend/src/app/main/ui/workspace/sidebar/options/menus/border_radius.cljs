@@ -166,7 +166,7 @@
 
     (if token-numeric-inputs
       [:section {:class (dm/str class " " (stl/css :radius-token))
-                 :aria-label "border-radius-section"}
+                 :aria-label (tr "workspace.options.radius.radius-section")}
        [:div {:class (stl/css :radius-first-row)}
         [:> numeric-input-wrapper*
          {:on-change on-all-radius-change
@@ -284,7 +284,7 @@
             :inner-class (stl/css :no-icon-input)
             :value (:r3 values)}]])]
       [:section {:class (dm/str class " " (stl/css :radius))
-                 :aria-label "border-radius-section"}
+                 :aria-label (tr "workspace.options.radius.radius-section")}
        (if (not radius-expanded)
          [:div {:class (stl/css :radius-1)
                 :title (tr "workspace.options.radius")}

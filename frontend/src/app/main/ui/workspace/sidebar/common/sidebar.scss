@@ -78,9 +78,9 @@ $seven-column-width: grid-width(7);
 //   -> 8 columns (32px each) + 7 gaps (4px each) = 284px
 //
 //   But two blocks don’t fit perfectly:
-//   First  (grid-exception-input)
+//   First  (grid-exception-input-width)
 //        |__________________|-|__________________|-|___|
-// We calculate the width of that grid-exception-input as:
+// We calculate the width of that grid-exception-input-width as:
 //
 //   - 3.5 columns of base grid width
 //   - + 3 inter-column gaps
@@ -89,10 +89,10 @@ $grid-exception-input-width: calc(#{$sz-32} * 3.5 + 3 * var(--sp-xs) - (var(--sp
 //
 //        |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|
 //
-//   Second  (grid-exception-input-small)
+//   Second  (grid-exception-input-width-small)
 //        |__________________|-|____________|-|___|-|___|
 //
-// We calculate the width of that grid-exception-input-small as:
+// We calculate the width of that grid-exception-input-width-small as:
 //
 //   - 2.5 columns of base grid width
 //   - + 2 inter-column gaps
