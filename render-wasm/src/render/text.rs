@@ -1,10 +1,10 @@
-use super::{filters, RenderState, Shape, SurfaceId};
+use super::{filters, RenderState, Shape, SurfaceId, DEFAULT_EMOJI_FONT};
 use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, Stroke, StrokeKind,
-        TextContent,
+        calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, ParagraphLayout, Stroke,
+        StrokeKind, TextContent,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -151,6 +151,62 @@ pub fn render_with_bounds_outset(
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
 ) -> Result<()> {
+    render_with_bounds_outset_inner(
+        render_state,
+        canvas,
+        shape,
+        paragraph_builders,
+        surface_id,
+        shadow,
+        blur,
+        stroke_bounds_outset,
+        fill_inset,
+        layer_opacity,
+        false,
+    )
+}
+
+/// Like [`render_with_bounds_outset`] but with emoji bitmap overlay for PDF/vector export.
+#[allow(clippy::too_many_arguments)]
+pub fn render_with_bounds_outset_overlay_emoji(
+    canvas: &Canvas,
+    shape: &Shape,
+    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    shadow: Option<&Paint>,
+    blur: Option<&ImageFilter>,
+    stroke_bounds_outset: f32,
+    fill_inset: Option<f32>,
+    layer_opacity: Option<f32>,
+) -> Result<()> {
+    render_with_bounds_outset_inner(
+        None,
+        Some(canvas),
+        shape,
+        paragraph_builders,
+        None,
+        shadow,
+        blur,
+        stroke_bounds_outset,
+        fill_inset,
+        layer_opacity,
+        true,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_with_bounds_outset_inner(
+    render_state: Option<&mut RenderState>,
+    canvas: Option<&Canvas>,
+    shape: &Shape,
+    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    surface_id: Option<SurfaceId>,
+    shadow: Option<&Paint>,
+    blur: Option<&ImageFilter>,
+    stroke_bounds_outset: f32,
+    fill_inset: Option<f32>,
+    layer_opacity: Option<f32>,
+    overlay_emoji: bool,
+) -> Result<()> {
     if let Some(render_state) = render_state {
         let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
 
@@ -179,6 +235,7 @@ pub fn render_with_bounds_outset(
                             Some(&blur_filter_clone),
                             fill_inset,
                             layer_opacity,
+                            false,
                         );
                         Ok(())
                     },
@@ -197,6 +254,7 @@ pub fn render_with_bounds_outset(
             blur,
             fill_inset,
             layer_opacity,
+            false,
         );
         return Ok(());
     }
@@ -210,6 +268,7 @@ pub fn render_with_bounds_outset(
             blur,
             fill_inset,
             layer_opacity,
+            overlay_emoji,
         );
     }
     Ok(())
@@ -241,6 +300,30 @@ pub fn render(
     )
 }
 
+/// Like [`render`] but rasterizes color emoji as bitmap overlays for PDF/vector export.
+#[allow(clippy::too_many_arguments)]
+pub fn render_overlay_emoji(
+    canvas: &Canvas,
+    shape: &Shape,
+    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    shadow: Option<&Paint>,
+    blur: Option<&ImageFilter>,
+    fill_inset: Option<f32>,
+    layer_opacity: Option<f32>,
+) -> Result<()> {
+    render_with_bounds_outset_overlay_emoji(
+        canvas,
+        shape,
+        paragraph_builders,
+        shadow,
+        blur,
+        0.0,
+        fill_inset,
+        layer_opacity,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
 fn render_text_on_canvas(
     canvas: &Canvas,
     shape: &Shape,
@@ -249,6 +332,7 @@ fn render_text_on_canvas(
     blur: Option<&ImageFilter>,
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
+    overlay_emoji: bool,
 ) {
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
@@ -260,7 +344,13 @@ fn render_text_on_canvas(
     if let Some(shadow_paint) = shadow {
         let layer_rec = SaveLayerRec::default().paint(shadow_paint);
         canvas.save_layer(&layer_rec);
-        draw_text(canvas, shape, paragraph_builders, layer_opacity);
+        draw_text(
+            canvas,
+            shape,
+            paragraph_builders,
+            layer_opacity,
+            overlay_emoji,
+        );
         canvas.restore();
     } else if let Some(eps) = fill_inset.filter(|&e| e > 0.0) {
         if let Some(erode) = skia_safe::image_filters::erode((eps, eps), None, None) {
@@ -268,13 +358,31 @@ fn render_text_on_canvas(
             layer_paint.set_image_filter(erode);
             let layer_rec = SaveLayerRec::default().paint(&layer_paint);
             canvas.save_layer(&layer_rec);
-            draw_text(canvas, shape, paragraph_builders, layer_opacity);
+            draw_text(
+                canvas,
+                shape,
+                paragraph_builders,
+                layer_opacity,
+                overlay_emoji,
+            );
             canvas.restore();
         } else {
-            draw_text(canvas, shape, paragraph_builders, layer_opacity);
+            draw_text(
+                canvas,
+                shape,
+                paragraph_builders,
+                layer_opacity,
+                overlay_emoji,
+            );
         }
     } else {
-        draw_text(canvas, shape, paragraph_builders, layer_opacity);
+        draw_text(
+            canvas,
+            shape,
+            paragraph_builders,
+            layer_opacity,
+            overlay_emoji,
+        );
     }
 
     if blur.is_some() {
@@ -290,12 +398,26 @@ fn paint_text(
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
 ) {
+    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, false);
+}
+
+fn paint_text_with_emoji_overlay(
+    canvas: &Canvas,
+    shape: &Shape,
+    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+    overlay_emoji: bool,
+) {
     let text_content = shape.get_text_content();
     let layout_info =
         calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
 
     for para in &layout_info.paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));
+
+        if overlay_emoji {
+            paint_emoji_overlay(canvas, para);
+        }
+
         for deco in &para.decorations {
             draw_text_decorations(
                 canvas,
@@ -309,11 +431,138 @@ fn paint_text(
     }
 }
 
+/// Detects emoji runs in a laid-out paragraph and rasterizes them as bitmap
+/// overlays on the canvas.  Skia's PDF backend cannot render color emoji
+/// glyphs (COLR/CBDT), so we render them to a small raster surface and draw
+/// the resulting image at the correct position.  The regular `paragraph.paint()`
+/// already wrote invisible/placeholder glyphs, keeping the text selectable
+/// in the PDF.
+fn paint_emoji_overlay(canvas: &Canvas, para: &ParagraphLayout) {
+    let line_metrics = para.paragraph.get_line_metrics();
+
+    // The bundled Noto Color Emoji is a vector color font (COLR/CPAL), so emoji
+    // rasterize crisply at any resolution. Skia's PDF backend can't embed those
+    // color tables, so we rasterize each emoji to an image overlay — rendered at
+    // a high effective DPI relative to its final on-page size so it stays sharp
+    // when the PDF is viewed or printed.
+    //
+    // PDF user space is 72 units per inch, so the design→raster scale that yields
+    // TARGET_DPI is output_scale * TARGET_DPI / PDF_POINTS_PER_INCH, where
+    // output_scale is the canvas CTM scale (export scale + any shape transform).
+    // The shape's font size is already folded in via the emoji rect (w/h) below.
+    // Capped by MAX_RASTER_PX so a huge font size can't allocate an unbounded
+    // surface.
+    const TARGET_DPI: f32 = 600.0;
+    const PDF_POINTS_PER_INCH: f32 = 72.0;
+    const MAX_RASTER_PX: f32 = 2048.0;
+
+    let ctm = canvas.local_to_device_as_3x3();
+    let sx = (ctm.scale_x().powi(2) + ctm.skew_y().powi(2)).sqrt();
+    let sy = (ctm.skew_x().powi(2) + ctm.scale_y().powi(2)).sqrt();
+    let output_scale = sx.max(sy).max(1.0);
+
+    for line in &line_metrics {
+        let style_runs = line.get_style_metrics(line.start_index..line.end_index);
+
+        // Build a list of (start, end, is_emoji) for each style run.
+        let mut run_info: Vec<(usize, usize, bool)> = Vec::new();
+        for (i, (start_idx, _style_metric)) in style_runs.iter().enumerate() {
+            let end_idx = style_runs.get(i + 1).map_or(line.end_index, |next| next.0);
+            if *start_idx >= end_idx {
+                continue;
+            }
+
+            let font = para.paragraph.get_font_at(*start_idx);
+            let family_name = font.typeface().family_name();
+
+            let normalized = family_name.to_lowercase().replace(' ', "-");
+            let is_emoji = normalized.contains(DEFAULT_EMOJI_FONT);
+            run_info.push((*start_idx, end_idx, is_emoji));
+        }
+
+        // Merge consecutive emoji runs into contiguous ranges.
+        // ZWJ emoji sequences (e.g. 👩🏿‍🚀) may be split into multiple
+        // style runs by Skia — one per codepoint — but the composed glyph
+        // is a single indivisible cluster.  Querying `get_rects_for_range`
+        // on a partial cluster returns empty results, so we must use the
+        // full cluster range.
+        let mut merged_emoji_ranges: Vec<(usize, usize)> = Vec::new();
+        for &(start, end, is_emoji) in &run_info {
+            if is_emoji {
+                if let Some(last) = merged_emoji_ranges.last_mut() {
+                    if last.1 == start {
+                        // Extend the previous range
+                        last.1 = end;
+                        continue;
+                    }
+                }
+                merged_emoji_ranges.push((start, end));
+            }
+        }
+
+        for (range_start, range_end) in &merged_emoji_ranges {
+            // Get the bounding rects for this (possibly merged) emoji run
+            let rects = para.paragraph.get_rects_for_range(
+                *range_start..*range_end,
+                skia::textlayout::RectHeightStyle::Tight,
+                skia::textlayout::RectWidthStyle::Tight,
+            );
+
+            for text_box in &rects {
+                let r = &text_box.rect;
+                let w = r.width();
+                let h = r.height();
+                if w <= 0.0 || h <= 0.0 {
+                    continue;
+                }
+
+                // Render at TARGET_DPI relative to the emoji's final on-page
+                // size, clamped so the surface stays within MAX_RASTER_PX.
+                let mut raster_scale = output_scale * (TARGET_DPI / PDF_POINTS_PER_INCH);
+                let max_dim = w.max(h) * raster_scale;
+                if max_dim > MAX_RASTER_PX {
+                    raster_scale *= MAX_RASTER_PX / max_dim;
+                }
+                let raster_w = (w * raster_scale).ceil() as i32;
+                let raster_h = (h * raster_scale).ceil() as i32;
+
+                let info = skia::ImageInfo::new_n32_premul((raster_w, raster_h), None);
+                let Some(mut raster) = skia::surfaces::raster(&info, None, None) else {
+                    continue;
+                };
+
+                let rc = raster.canvas();
+                rc.clear(skia::Color::TRANSPARENT);
+                rc.scale((raster_scale, raster_scale));
+                // Translate so the emoji rect origin maps to (0,0)
+                rc.translate((-r.left, -r.top));
+                para.paragraph.paint(rc, (0.0, 0.0));
+
+                let image = raster.image_snapshot();
+
+                // Draw the rasterized emoji onto the PDF canvas at the
+                // correct position (paragraph offset + emoji rect origin).
+                let dest = skia::Rect::from_xywh(para.x + r.left, para.y + r.top, w, h);
+
+                let sampling = skia::SamplingOptions::from(skia::CubicResampler::mitchell());
+                canvas.draw_image_rect_with_sampling_options(
+                    &image,
+                    None,
+                    dest,
+                    sampling,
+                    &Paint::default(),
+                );
+            }
+        }
+    }
+}
+
 fn draw_text(
     canvas: &Canvas,
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
     layer_opacity: Option<f32>,
+    overlay_emoji: bool,
 ) {
     if let Some(opacity) = layer_opacity {
         let mut opacity_paint = Paint::default();
@@ -324,7 +573,7 @@ fn draw_text(
         canvas.save_layer(&SaveLayerRec::default());
     }
 
-    paint_text(canvas, shape, paragraph_builder_groups);
+    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
 }
 
 /// Renders an inner stroke using mask + SrcIn + DstOver layer structure.

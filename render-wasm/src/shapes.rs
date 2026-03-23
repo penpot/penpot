@@ -1077,6 +1077,17 @@ impl Shape {
         self.selrect.center()
     }
 
+    /// Returns the shape's transform matrix centered around its selrect center,
+    /// so that rotations and scales happen around the shape's visual center
+    /// rather than the origin.
+    pub fn centered_transform(&self) -> Matrix {
+        let center = self.center();
+        let mut matrix = self.transform;
+        matrix.post_translate(center);
+        matrix.pre_translate(-center);
+        matrix
+    }
+
     pub fn clip(&self) -> bool {
         self.clip_content
     }
