@@ -485,21 +485,32 @@
        [:& shape-wrapper {:shape object}]]]]))
 
 (defn render-to-canvas
-  [objects canvas bounds scale object-id]
-  (try
-    (when (wasm.api/init-canvas-context canvas)
-      (wasm.api/initialize-viewport
-       objects scale bounds "#000000" 0
-       (fn []
-         (wasm.api/render-sync-shape object-id)
-         (dom/set-attribute! canvas "id" (dm/str "screenshot-" object-id)))))
-    (catch :default e
-      (js/console.error "Error initializing canvas context:" e)
-      false)))
+  [objects canvas bounds scale object-id on-render]
+  (let [width (.-width canvas)
+        height (.-height canvas)
+        os-canvas (js/OffscreenCanvas. width height)]
+    (try
+      (when (wasm.api/init-canvas-context os-canvas)
+        (wasm.api/initialize-viewport
+         objects scale bounds "#000000" 0
+         (fn []
+           (wasm.api/render-sync-shape object-id)
+           (ts/raf
+            (fn []
+              (let [bitmap (.transferToImageBitmap os-canvas)
+                    ctx2d (.getContext canvas "2d")]
+                (.clearRect ctx2d 0 0 width height)
+                (.drawImage ctx2d bitmap 0 0)
+                (dom/set-attribute! canvas "id" (dm/str "screenshot-" object-id))
+                (wasm.api/clear-canvas)
+                (on-render)))))))
+      (catch :default e
+        (js/console.error "Error initializing canvas context:" e)
+        false))))
 
 (mf/defc object-wasm
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object-id skip-children scale] :as props}]
+  [{:keys [objects object-id skip-children scale on-render] :as props}]
   (let [object  (get objects object-id)
         object (cond-> object
                  (:hide-fill-on-export object)
@@ -521,7 +532,7 @@
               (p/fmap
                (fn [ready?]
                  (when ready?
-                   (render-to-canvas objects canvas bounds scale object-id))))))))
+                   (render-to-canvas objects canvas bounds scale object-id on-render))))))))
 
     [:canvas {:ref canvas-ref
               :width (* scale width)
