@@ -190,7 +190,7 @@
                  [color-operations _] (retrieve-color-operations groups old-color prev-colors)]
              (mf/set-ref-val! prev-colors-ref
                               (conj prev-colors color))
-             (st/emit! (dwta/apply-token-on-selected color-operations token)))))]
+             (st/emit! (dwta/apply-token-on-color-selected color-operations token)))))]
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}

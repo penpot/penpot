@@ -84,11 +84,15 @@
         filter-term*      (mf/use-state "")
         filter-term       (deref filter-term*)
 
+        selected-id*  (mf/use-state nil)
+        selected-id   (deref selected-id*)
+
         options-ref       (mf/use-ref nil)
         dropdown-ref      (mf/use-ref nil)
         internal-ref      (mf/use-ref nil)
         nodes-ref         (mf/use-ref nil)
         wrapper-ref       (mf/use-ref nil)
+        input-wrapper-ref (mf/use-ref nil)
         icon-button-ref   (mf/use-ref nil)
         ref               (or ref internal-ref)
 
@@ -117,12 +121,28 @@
                  state (obj/set! state id node)]
              (mf/set-ref-val! nodes-ref state))))
 
+        get-selected-id
+        (mf/use-fn
+         (mf/deps dropdown-options)
+         (fn []
+           (let [input-node (mf/ref-val ref)
+                 value      (dom/get-input-value input-node)
+                 cursor     (dom/selection-start input-node)
+                 token-name (tp/token-at-cursor value cursor)
+                 options    (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+             (when token-name
+               (->> options
+                    (filter #(= (:name %) token-name))
+                    first
+                    :id)))))
+
         toggle-dropdown
         (mf/use-fn
          (mf/deps is-open)
          (fn [event]
            (dom/prevent-default event)
            (swap! is-open* not)
+           (reset! selected-id* (get-selected-id))
            (let [input-node (mf/ref-val ref)]
              (dom/focus! input-node))))
 
@@ -157,7 +177,8 @@
           :options dropdown-options
           :toggle-dropdown toggle-dropdown
           :is-open* is-open*
-          :on-enter on-option-enter})
+          :on-enter on-option-enter
+          :get-selected-id get-selected-id})
 
         on-change
         (mf/use-fn
@@ -216,11 +237,13 @@
                                 :hint-message (:message hint)
                                 :on-key-down on-key-down
                                 :hint-type (:type hint)
+                                :input-wrapper-ref input-wrapper-ref
                                 :ref ref
                                 :role "combobox"
                                 :aria-activedescendant focused-id
                                 :aria-controls listbox-id
                                 :aria-expanded is-open
+                                :data-option-focused (boolean focused-id)
                                 :slot-end
                                 (when (some? @filtered-tokens-by-type)
                                   (mf/html
@@ -241,7 +264,7 @@
           props)
 
 
-        {:keys [style ready?]} (use-floating-dropdown is-open wrapper-ref dropdown-ref)]
+        {:keys [style ready?]} (use-floating-dropdown is-open input-wrapper-ref wrapper-ref dropdown-ref)]
 
     (mf/with-effect [resolve-stream tokens token name token-name]
       (let [subs (->> resolve-stream
@@ -300,7 +323,7 @@
                                   :id listbox-id
                                   :options options
                                   :focused focused-id
-                                  :selected nil
+                                  :selected selected-id
                                   :align :right
                                   :empty-to-end empty-to-end
                                   :wrapper-ref dropdown-ref

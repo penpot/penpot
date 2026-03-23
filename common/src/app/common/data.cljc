@@ -1126,6 +1126,51 @@
        (let [value (format-precision value precision)]
          (str value))))))
 
+(defn- natural-sort-key
+  "Splits a string into a sequence of alternating string and number segments,
+   converting numeric segments to longs/ints so they compare by value rather
+   than lexicographically. e.g. \"size10b\" => (\"size\" 10 \"b\")"
+  [s]
+  (map (fn [part]
+         (if (re-matches #"\d+" part)
+           #?(:clj (Long/parseLong part)
+              :cljs (js/parseInt part))
+           part))
+       (re-seq #"\d+|\D+" s)))
+
+(defn- natural-compare
+  "Comparator that orders strings naturally, sorting numeric segments by value
+   rather than lexicographically. Returns a negative number, zero, or positive
+   number when a is before, equal to, or after b respectively.
+   e.g. \"size2\" < \"size10\" instead of \"size10\" < \"size2\"."
+  [a b]
+  (loop [ka (natural-sort-key a)
+         kb (natural-sort-key b)]
+    (cond
+      (and (empty? ka) (empty? kb)) 0
+      (empty? ka) -1
+      (empty? kb)  1
+      :else
+      (let [pa (first ka)
+            pb (first kb)
+            result (cond
+                     (and (number? pa) (number? pb)) (compare pa pb)
+                     (and (string? pa) (string? pb)) (compare pa pb)
+                     (number? pa) -1
+                     :else 1)]
+        (if (zero? result)
+          (recur (rest ka) (rest kb))
+          result)))))
+
+(defn natural-sort-by
+  "Sorts coll by extracting a string key with keyfn and ordering elements
+   using natural sort order, where embedded numbers are compared by value
+   rather than lexicographically.
+   e.g. (natural-sort-by :name [{:name \"size10\"} {:name \"size2\"}])
+        => [{:name \"size2\"} {:name \"size10\"}]"
+  [key coll]
+  (sort-by key natural-compare coll))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

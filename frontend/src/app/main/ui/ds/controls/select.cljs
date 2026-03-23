@@ -9,8 +9,10 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown* schema:option]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -50,15 +52,17 @@
   [:map
    [:options [:vector {:min 1} schema:option]]
    [:class {:optional true} :string]
+   [:wrapper-class {:optional true} :string]
    [:disabled {:optional true} :boolean]
    [:default-selected {:optional true} :string]
    [:empty-to-end {:optional true} [:maybe :boolean]]
    [:on-change {:optional true} fn?]
-   [:variant {:optional true} [:maybe [:enum "default" "ghost"]]]])
+   [:dropdown-alignment {:optional true} [:maybe [:enum :left :right]]]
+   [:variant {:optional true} [:maybe [:enum "default" "ghost" "icon-only"]]]])
 
 (mf/defc select*
   {::mf/schema schema:select}
-  [{:keys [options class disabled default-selected empty-to-end on-change variant] :rest props}]
+  [{:keys [options class disabled default-selected empty-to-end on-change variant wrapper-class dropdown-alignment] :rest props}]
   (let [;; NOTE: we use mfu/bean here for transparently handle
         ;; options provide as clojure data structures or javascript
         ;; plain objects and lists.
@@ -192,26 +196,40 @@
         (some? icon)
 
         dimmed?
-        (:dimmed selected-option)]
+        (:dimmed selected-option)
+
+        icon-ref (mf/use-ref nil)
+        icon-id (mf/use-id)]
 
     (mf/with-effect [options]
       (mf/set-ref-val! options-ref options))
 
-    [:div {:class (stl/css :select-wrapper)
+    [:div {:class [wrapper-class (stl/css :select-wrapper)]
            :on-click on-click
            :ref select-ref
            :on-blur on-blur}
 
      [:> :button props
       [:span {:class (stl/css-case :select-header true
-                                   :header-icon has-icon?)}
+                                   :header-icon has-icon?
+                                   :header-icon-only (= variant "icon-only"))}
        (when ^boolean has-icon?
-         [:> icon* {:icon-id icon
-                    :size "s"
-                    :aria-hidden true}])
-       [:span {:class (stl/css-case :header-label true
-                                    :header-label-dimmed (or empty-selected-id? dimmed?))}
-        (if ^boolean empty-selected-id? "--" label)]]
+         (if (= variant "icon-only")
+           [:> tooltip* {:content label
+                         :trigger-ref icon-ref
+                         :id (dm/str icon-id "-name")
+                         :class (stl/css :option-text)}
+            [:> icon* {:icon-id icon
+                       :ref icon-ref
+                       :aria-labelledby (dm/str icon-id "-name")}]]
+           [:> icon* {:icon-id icon
+                      :size "s"
+                      :aria-hidden true}]))
+
+       (when-not ^boolean (= variant "icon-only")
+         [:span {:class (stl/css-case :header-label true
+                                      :header-label-dimmed (or empty-selected-id? dimmed?))}
+          (if ^boolean empty-selected-id? "--" label)])]
 
       [:> icon* {:icon-id i/arrow-down
                  :class (stl/css :arrow)
@@ -224,5 +242,6 @@
                               :options options
                               :selected selected-id
                               :focused focused-id
+                              :align dropdown-alignment
                               :empty-to-end empty-to-end
                               :ref set-option-ref}])]))

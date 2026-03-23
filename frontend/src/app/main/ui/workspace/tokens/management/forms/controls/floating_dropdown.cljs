@@ -9,7 +9,7 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(defn use-floating-dropdown [is-open wrapper-ref dropdown-ref]
+(defn use-floating-dropdown [is-open input-wrapper-ref outer-wrapper-ref dropdown-ref]
   (let [position*   (mf/use-state nil)
         position    (deref position*)
         ready*      (mf/use-state false)
@@ -32,7 +32,7 @@
                               (> dropdown-height space-below))
 
                 position (if open-up?
-                           {:bottom (str (- windows-height (:top combobox-rect) 12) "px")
+                           {:bottom (str (- windows-height (:top combobox-rect) -8) "px")
                             :left   (str (:left combobox-rect) "px")
                             :width  (str (:width combobox-rect) "px")
                             :placement :top}
@@ -44,27 +44,41 @@
             (reset! ready* true)
             (reset! position* position)))]
 
-    (mf/with-effect [is-open  dropdown-ref wrapper-ref]
+    (mf/with-effect [is-open dropdown-ref input-wrapper-ref outer-wrapper-ref]
       (when is-open
-        (let [handler (fn [event]
-                        (let [dropdown-node (mf/ref-val dropdown-ref)
-                              target (dom/get-target event)]
-                          (when (or (nil? dropdown-node)
-                                    (not (instance? js/Node target))
-                                    (not (.contains dropdown-node target)))
-                            (js/requestAnimationFrame
-                             (fn []
-                               (let [wrapper-node  (mf/ref-val wrapper-ref)]
-                                 (reset! ready* true)
-                                 (calculate-position wrapper-node)))))))]
+        (let [recalculate
+              (fn []
+                (js/requestAnimationFrame
+                 (fn []
+                   (let [input-node (mf/ref-val input-wrapper-ref)]
+                     (calculate-position input-node)))))
+
+              handler
+              (fn [event]
+                (let [dropdown-node (mf/ref-val dropdown-ref)
+                      target (dom/get-target event)]
+                  (when (or (nil? dropdown-node)
+                            (not (instance? js/Node target))
+                            (not (.contains dropdown-node target)))
+                    (recalculate))))
+
+              resize-observer (js/ResizeObserver. (fn [_] (recalculate)))
+              outer-node      (mf/ref-val outer-wrapper-ref)
+              dropdown-node   (mf/ref-val dropdown-ref)]
+
           (handler nil)
 
           (.addEventListener js/window "resize" handler)
           (.addEventListener js/window "scroll" handler true)
+          (when outer-node
+            (.observe resize-observer outer-node))
+          (when dropdown-node
+            (.observe resize-observer dropdown-node))
 
           (fn []
             (.removeEventListener js/window "resize" handler)
-            (.removeEventListener js/window "scroll" handler true)))))
+            (.removeEventListener js/window "scroll" handler true)
+            (.disconnect resize-observer)))))
 
     {:style position
      :ready? ready
