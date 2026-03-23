@@ -111,6 +111,20 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
     [screenPositionFromEvent, setRotationCorner, setIsRotating]
   )
 
+  const shapeDrawPreview = useWorkspaceStore((state) => state.shapeDrawPreview)
+  const isDrawingShape = useWorkspaceStore((state) => state.isDrawingShape)
+  const showShapeDrawPreview =
+    isDrawingShape && shapeDrawPreview != null && viewport != null
+  const shapeDrawWorld =
+    showShapeDrawPreview && viewport && shapeDrawPreview
+      ? {
+          x: viewport.panX + (shapeDrawPreview.x ?? 0) / viewport.zoom,
+          y: viewport.panY + (shapeDrawPreview.y ?? 0) / viewport.zoom,
+          width: (shapeDrawPreview.width ?? 0) / viewport.zoom,
+          height: (shapeDrawPreview.height ?? 0) / viewport.zoom,
+        }
+      : null
+
   const showAreaMarquee = isSelecting && selectionRect != null && viewport != null
   const areaMarqueeWorld =
     showAreaMarquee && viewport && selectionRect
@@ -249,6 +263,9 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
             />
           )}
         </>
+      )}
+      {showShapeDrawPreview && shapeDrawWorld && (
+        <AreaMarquee world={shapeDrawWorld} zoom={zoom} />
       )}
       {showAreaMarquee && areaMarqueeWorld && (
         <AreaMarquee world={areaMarqueeWorld} zoom={zoom} />

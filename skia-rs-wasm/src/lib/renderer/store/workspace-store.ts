@@ -9,6 +9,9 @@ import type { WasmModule } from '../wasm-types'
 import type { ViewportData } from '../viewport'
 import { Renderer } from '../index'
 import type { Selrect, Change } from 'penpot-exporter/types'
+
+/** Active tool for creating shapes on the canvas (toolbar). `null` = select / default. */
+export type DrawTool = 'rect'
 import type { ResizeHandlePosition, SelectionRectResult } from '../types'
 import type { WorkerClient } from '../../worker/types'
 import type { IndexedPage, IndexedNode } from '../../worker/types'
@@ -53,6 +56,12 @@ export interface WorkspaceState {
   areaSelectionRemove: boolean
   /** True while the user is actively panning (e.g. middle-drag); used to defer Figma viewport sync until pan end. */
   isPanning: boolean
+  /** When set, next drag on the canvas creates a shape (e.g. rectangle) instead of selecting. */
+  drawTool: DrawTool | null
+  /** True while a shape drag is in progress (rubber-band). */
+  isDrawingShape: boolean
+  /** Rubber-band preview in screen space (same convention as area marquee). */
+  shapeDrawPreview: Selrect | null
   viewport: ViewportData | null
   /** Viewport used for hit-test; set one frame after apply so it matches the displayed frame. */
   lastAppliedViewport: ViewportData | null
@@ -80,6 +89,9 @@ export interface WorkspaceState {
   setRotationCorner: (corner: ResizeHandlePosition | null) => void
   setAreaSelectionMode: (append: boolean, remove: boolean) => void
   setIsPanning: (value: boolean) => void
+  setDrawTool: (tool: DrawTool | null) => void
+  setIsDrawingShape: (value: boolean) => void
+  setShapeDrawPreview: (rect: Selrect | null) => void
   updateViewport: (data: ViewportData) => void
   setLastAppliedViewport: (data: ViewportData | null) => void
   setRenderer: (renderer: Renderer) => void
@@ -111,6 +123,9 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   areaSelectionAppend: false,
   areaSelectionRemove: false,
   isPanning: false,
+  drawTool: null,
+  isDrawingShape: false,
+  shapeDrawPreview: null,
   viewport: null,
   lastAppliedViewport: null,
   renderer: null,
@@ -153,6 +168,9 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   setRotationCorner: (corner) => set({ rotationCorner: corner }),
   setAreaSelectionMode: (append, remove) => set({ areaSelectionAppend: append, areaSelectionRemove: remove }),
   setIsPanning: (value) => set({ isPanning: value }),
+  setDrawTool: (tool) => set({ drawTool: tool }),
+  setIsDrawingShape: (value) => set({ isDrawingShape: value }),
+  setShapeDrawPreview: (rect) => set({ shapeDrawPreview: rect }),
   updateViewport: (data) => set({ viewport: data, lastAppliedViewport: data }),
   setLastAppliedViewport: (data) => set({ lastAppliedViewport: data }),
   setRenderer: (renderer) => set({ renderer, wasmSelectionRect: null }),
