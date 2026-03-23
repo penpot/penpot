@@ -37,6 +37,8 @@
            has-hint hint-type
            max-length variant
            slot-start slot-end
+           data-option-focused
+           input-wrapper-ref
            aria-label] :rest props} ref]
   (let [input-ref (mf/use-ref)
         type  (d/nilv type "text")
@@ -74,7 +76,9 @@
              (dom/select-node input-node)
              (dom/focus! input-node))))]
 
-    [:div {:class [inside-class class]}
+    [:div {:class [inside-class class]
+           :ref input-wrapper-ref
+           :data-option-focused data-option-focused}
      (when (some? slot-start)
        slot-start)
      (when (some? icon)

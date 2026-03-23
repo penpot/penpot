@@ -26,14 +26,13 @@
   [focusables focused-id direction]
   (let [ids (vec (map :id focusables))
         idx (.indexOf (clj->js ids) focused-id)
-        idx (if (= idx -1) -1 idx)
-        next-idx (case direction
-                   :down (min (dec (count ids)) (inc idx))
-                   :up   (max 0 (dec (if (= idx -1) 0 idx))))]
-    (nth ids next-idx nil)))
+        count (count ids)]
+    (case direction
+      :down (nth ids (mod (inc idx) count) nil)
+      :up   (nth ids (mod (if (= idx -1) 0 (dec idx)) count) nil))))
 
 (defn use-navigation
-  [{:keys [is-open options nodes-ref is-open* toggle-dropdown on-enter]}]
+  [{:keys [is-open options nodes-ref is-open* toggle-dropdown on-enter get-selected-id]}]
 
   (let [focused-id* (mf/use-state nil)
         focused-id  (deref focused-id*)
@@ -46,6 +45,7 @@
                  down?          (kbd/down-arrow? event)
                  enter?         (kbd/enter? event)
                  esc?           (kbd/esc? event)
+                 tab?           (kbd/tab? event)
                  open-dropdown  (kbd/is-key? event "{")
                  close-dropdown (kbd/is-key? event "}")
                  options        (if (delay? options) @options options)]
@@ -56,18 +56,21 @@
                  (dom/prevent-default event)
                  (let [focusables (focusable-options options)]
                    (cond
+                     ;; Dropdown open: move focus to next option
                      is-open
                      (when (seq focusables)
                        (let [next-id (next-focus-id focusables focused-id :down)]
                          (reset! focused-id* next-id)))
 
+                     ;; Dropdown closed with options: open and focus first
                      (seq focusables)
                      (do
                        (toggle-dropdown event)
+                       (when get-selected-id
+                         (get-selected-id))
                        (reset! focused-id* (first-focusable-id focusables)))
 
-                     :else
-                     nil)))
+                     :else nil)))
 
                up?
                (when is-open
@@ -77,7 +80,9 @@
                    (reset! focused-id* next-id)))
 
                open-dropdown
-               (reset! is-open* true)
+               (do
+                 (reset! is-open* true)
+                 (reset! focused-id* nil))
 
                close-dropdown
                (reset! is-open* false)
@@ -89,21 +94,23 @@
                      (dom/prevent-default event)
                      (when (some #(= (:id %) focused-id) focusables)
                        (on-enter focused-id)))))
+
                esc?
-               (do
+               (when is-open
                  (dom/prevent-default event)
+                 (dom/stop-propagation event)
                  (reset! is-open* false))
+
+               tab?
+               (when is-open
+                 (reset! is-open* false)
+                 (reset! focused-id* nil))
+
                :else nil))))]
 
-    ;; Initial focus on first option
-    (mf/with-effect [is-open options]
-      (when is-open
-        (let [opts (if (delay? options) @options options)
-              focusables (focusable-options opts)
-              ids (set (map :id focusables))]
-          (when (and (seq focusables)
-                     (not (contains? ids focused-id)))
-            (reset! focused-id* (:id (first focusables)))))))
+    (mf/with-effect [is-open]
+      (when (not is-open)
+        (reset! focused-id* nil)))
 
     ;; auto scroll when key down
     (mf/with-effect [focused-id nodes-ref]
