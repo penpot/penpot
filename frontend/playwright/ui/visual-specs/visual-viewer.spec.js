@@ -103,7 +103,7 @@ test("User goes to the Viewer Inspect code", async ({ page }) => {
 
   await expect(
     viewerPage.page.getByRole("button", {
-      name: "Toggle panel Size & Position",
+      name: "Toggle panel Size and position",
     }),
   ).toBeVisible();
 
