@@ -72,7 +72,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Check if border radius sections is visible on right sidebar
     const borderRadiusSection = page.getByRole("region", {
-      name: "border-radius-section",
+      name: "Border radius section",
     });
     await expect(borderRadiusSection).toBeVisible();
 
@@ -135,7 +135,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Check if opacity sections is visible on right sidebar
     const layerMenuSection = page.getByRole("region", {
-      name: "layer-menu-section",
+      name: "Layer menu section",
     });
     await expect(layerMenuSection).toBeVisible();
 
@@ -688,7 +688,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Check if border radius sections is visible on right sidebar
     const borderRadiusSection = page.getByRole("region", {
-      name: "border-radius-section",
+      name: "Border radius section",
     });
     await expect(borderRadiusSection).toBeVisible();
 
@@ -897,7 +897,7 @@ test.describe("Tokens: Detach token", () => {
 
     // Check if border radius sections is visible on right sidebar
     const borderRadiusSection = page.getByRole("region", {
-      name: "border-radius-section",
+      name: "Border radius section",
     });
     await expect(borderRadiusSection).toBeVisible();
 

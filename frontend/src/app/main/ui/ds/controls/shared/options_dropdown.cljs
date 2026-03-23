@@ -28,6 +28,7 @@
    [:resolved-value {:optional true}
     [:or :int :string :float]]
    [:name {:optional true} :string]
+   [:value {:optional true} :keyword]
    [:icon {:optional true} schema:icon-list]
    [:label {:optional true} :string]
    [:aria-label {:optional true} :string]])

@@ -6845,6 +6845,10 @@ msgstr "Selected layers"
 msgid "workspace.options.layer-options.toggle-layer"
 msgstr "Toggle layer visibility"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:255
+msgid "workspace.options.layer-options.layer-section"
+msgstr "Layer menu section"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
 msgid "workspace.options.layout-item.advanced-ops"
@@ -7028,6 +7032,10 @@ msgstr "Collapse independent radius"
 #: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
 msgid "workspace.options.radius.show-single-corners"
 msgstr "Show independent radius"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
+msgid "workspace.options.radius.radius-section"
+msgstr "Border radius section"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:191
 msgid "workspace.options.recent-fonts"
