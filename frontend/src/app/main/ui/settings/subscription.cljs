@@ -385,7 +385,7 @@
           {:class (stl/css :primary-button)
            :type "button"
            :value "CREATE ORGANIZATION"
-           :on-click dnt/go-to-nitrate-cc}]]]]]]))
+           :on-click dnt/go-to-nitrate-cc-create-org}]]]]]]))
 
 (mf/defc subscription-page*
   [{:keys [profile]}]
