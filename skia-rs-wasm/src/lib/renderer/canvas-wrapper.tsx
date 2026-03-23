@@ -9,6 +9,7 @@ import { useViewportShortcutsStore } from './store/shortcuts-store'
 import { initRendererClient, cleanupRendererClient } from './renderer-init'
 import { SelectionOverlay } from '../components/selection-overlay/SelectionOverlay'
 import { useViewportInteractions } from './hooks/use-viewport-interactions'
+import { useDrawShape } from './hooks/use-draw-shape'
 import { useMove } from './hooks/use-move'
 import { useResize } from './hooks/use-resize'
 import { useRotate } from './hooks/use-rotate'
@@ -136,6 +137,7 @@ export function CanvasWrapper({
   }, [setModifierKeys])
 
   useStreams(canvasRef)
+  useDrawShape()
   useSelection()
   useWasmSelectionRect()
   useMove()

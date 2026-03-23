@@ -89,6 +89,10 @@ export function FillEditor({
   maxGradientStops = MAX_GRADIENT_STOPS,
   hideTypeSelector = false,
 }: FillEditorProps) {
+  const formGroupClass = 'mb-3 space-y-1'
+  const labelClass = 'block text-xs font-medium text-muted-foreground'
+  const inputClass = 'w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm'
+
   const [selectedStopIndex, setSelectedStopIndex] = useState<number | null>(null)
   const barRef = useRef<HTMLDivElement>(null)
   const [dragState, setDragState] = useState<{ sortedIndex: number; offset: number } | null>(null)
@@ -214,7 +218,7 @@ export function FillEditor({
   )
 
   return (
-    <div className="form-group" style={{ marginTop: 8 }}>
+    <div className={`${formGroupClass} mt-2`}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ fontSize: 12, fontWeight: 500, color: '#6B7280' }}>
           {isGradient ? 'Gradient' : 'Solid'}
@@ -235,12 +239,12 @@ export function FillEditor({
       </div>
 
       {!hideTypeSelector && (
-        <div className="form-group" style={{ marginBottom: 8 }}>
-          <label>Type</label>
+        <div className={formGroupClass}>
+          <label className={labelClass}>Type</label>
           <select
             value={mode}
             onChange={(e) => setMode(e.target.value as FillEditorMode)}
-            style={{ width: '100%', padding: '6px 8px' }}
+            className={inputClass}
           >
             <option value="solid">Solid color</option>
             <option value="linear">Linear</option>

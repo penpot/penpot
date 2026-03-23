@@ -30,6 +30,7 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
+      "@/*": ["./src/*"],
       "@skia-rs-wasm/common/*": [
         "./src/lib/common/*"
       ]
@@ -37,6 +38,7 @@
   },
   "include": [
     "src/index.ts",
-    "src/lib/**/*"
+    "src/lib/**/*",
+    "src/components/**/*"
   ]
 }

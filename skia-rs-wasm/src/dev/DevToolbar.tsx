@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, GrowType, ShapeGeomAttributes, ModObjChange, AddObjChange, DelObjChange } from 'penpot-exporter/types'
+import { ChevronDown, ChevronRight, Settings, X } from 'lucide-react'
 import { createNode, createFrame, createText } from './node-factory'
 import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Preset } from './presets'
 import { isColorFill, isLinearGradient, isRadialGradient, isAngularGradient, isImageFill } from '../lib/renderer/api/constants'
@@ -7,10 +8,10 @@ import { FillEditor } from './components/FillEditor/FillEditor'
 import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
 import { useWorkspaceDevStore } from '../lib/renderer/store/workspace-dev-store'
 import { applyChanges, setDocument, createNewDocument, undo, redo } from '../lib/page-crud'
-import './DevToolbar.css'
 import type { ShapeType } from '../lib/renderer/types'
 import { isFrameShape } from '../lib/worker/geometry/shapes'
 import { newShapeId } from '../lib/common/shape-id'
+import { cn } from '@/lib/utils'
 
 function isImageColor(img: ImageColor | PartialImageColor): img is ImageColor {
   return 'width' in img && 'height' in img
@@ -21,6 +22,89 @@ type Tab = 'add' | 'nodes' | 'advanced'
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 600
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
+
+const toolbarInputClass = cn(
+  'w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+)
+const toolbarSelectClass = cn(
+  'w-full rounded-md border border-input bg-background py-1.5 pl-2 pr-8 text-sm text-foreground',
+  'h-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+)
+const toolbarColorInputClass = cn(toolbarInputClass, 'h-9 cursor-pointer p-1')
+const toolbarLabelClass = 'mb-1 block text-xs font-medium text-muted-foreground'
+const toolbarCheckboxClass = 'size-4 shrink-0 rounded border border-input accent-primary'
+const toolbarInlineLabelClass = 'flex cursor-pointer items-center gap-2 text-sm font-normal text-foreground'
+const toolbarBtnPrimary = cn(
+  'w-full rounded-md border border-border bg-primary px-4 py-2 text-sm font-medium text-primary-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+  'hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50',
+)
+const toolbarBtnSecondary = cn(
+  'w-full rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+  'hover:bg-muted',
+)
+const toolbarBtnSmall = cn(
+  'mb-2 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium text-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+  'hover:bg-muted',
+)
+const toolbarBtnRemove = cn(
+  'inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-input bg-background text-muted-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+  'hover:bg-muted hover:text-foreground',
+)
+const toolbarBtnRemoveSmall = cn(
+  'inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-input bg-background text-muted-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+  'hover:bg-muted',
+)
+const toolbarTabBase = cn(
+  'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+)
+const toolbarTabActive = 'bg-background text-foreground shadow-sm'
+const toolbarTabInactive = 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+const toolbarPanelScroll = cn(
+  'overflow-y-auto [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]',
+)
+const advancedSectionClass = 'overflow-hidden rounded-lg border border-border bg-background'
+const advancedHeaderBtnClass = cn(
+  'flex w-full cursor-pointer items-center justify-between gap-2 bg-muted px-4 py-3 text-left',
+  'hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+)
+const advancedContentClass = 'space-y-2.5 p-4'
+const formGroupClass = 'mb-3 space-y-1.5 last:mb-0'
+const sectionBlockClass = 'mb-6 space-y-4 border-b border-border pb-6 last:mb-0 last:border-b-0 last:pb-0'
+const arrayItemClass = 'mb-3 rounded-md border border-border bg-muted/30 p-3 last:mb-0'
+const arrayItemHeaderClass = 'mb-3 flex items-center justify-between border-b border-border pb-2'
+const presetItemClass = cn(
+  'cursor-pointer rounded-lg border border-border bg-muted/30 p-2.5 transition-colors',
+  'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+)
+const presetListClass = cn(
+  'mt-3 max-h-[320px] space-y-2 overflow-y-auto [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]',
+)
+const presetHeaderClass = 'mb-1 flex items-center justify-between'
+const presetNameClass = 'text-xs font-semibold text-foreground'
+const presetSizeClass = 'rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground'
+const presetDescClass = 'mb-1.5 text-[11px] leading-relaxed text-muted-foreground'
+const presetIndicatorsClass = 'flex flex-wrap items-center gap-1.5'
+const presetIndicatorBase = 'inline-block h-4 w-4 rounded-sm border border-input'
+const presetIndicatorGradient = 'border-0 bg-[linear-gradient(135deg,#667eea_0%,#764ba2_100%)]'
+const presetIndicatorShadow =
+  'relative bg-muted-foreground after:absolute after:top-[2px] after:left-[2px] after:h-3 after:w-3 after:rounded-sm after:bg-muted'
+const presetIndicatorBlur = 'relative overflow-hidden bg-muted'
+const emptyStateClass = 'p-3 text-center text-xs text-muted-foreground'
+const nodeListClass = cn(
+  'max-h-[200px] space-y-1.5 overflow-y-auto [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]',
+)
+const nodeItemClass = 'flex items-center justify-between rounded-md border border-border bg-muted/50 px-2 py-2'
+const nodeInfoClass = 'font-mono text-xs text-muted-foreground'
+const buttonGroupClass = 'flex flex-col gap-2'
+const toolbarMatrixInputClass = cn(toolbarInputClass, 'py-1 text-center text-xs')
+const devAdvancedRootClass = 'flex flex-col gap-4'
 
 export function DevToolbar() {
   const nodes = useWorkspaceDevStore((state) => state.currentPageNodes)
@@ -663,20 +747,31 @@ export function DevToolbar() {
   const blendModes: BlendMode[] = ['normal', 'darken', 'multiply', 'color-burn', 'lighten', 'screen', 'color-dodge', 'overlay', 'soft-light', 'hard-light', 'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity']
   const constraintHOptions: (ConstraintH | '')[] = ['', 'left', 'right', 'leftright', 'center', 'scale']
   const constraintVOptions: (ConstraintV | '')[] = ['', 'top', 'bottom', 'topbottom', 'center', 'scale']
-
   return (
-    <div className={`dev-toolbar ${isExpanded ? 'expanded' : ''}`}>
-      <button className="dev-toolbar-toggle" onClick={() => setIsExpanded(!isExpanded)}>
-        {isExpanded ? '✕' : '⚙️'}
+    <div className="fixed top-5 right-5 z-1000 font-sans">
+      <button
+        type="button"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-input bg-background text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={() => setIsExpanded(!isExpanded)}
+        aria-label={isExpanded ? 'Close dev toolbar' : 'Open dev toolbar'}
+      >
+        {isExpanded ? <X className="h-5 w-5" /> : <Settings className="h-5 w-5" />}
       </button>
 
       {isExpanded && (
-        <div className="dev-toolbar-panel">
-          <h3>Dev Toolbar</h3>
+        <div
+          className={cn(
+            'absolute top-14 right-0 w-[400px] max-h-[calc(100vh-100px)] rounded-xl border border-border bg-card p-4 text-card-foreground shadow-md ring-1 ring-foreground/10',
+            'max-[480px]:w-[calc(100vw-40px)]',
+            toolbarPanelScroll,
+          )}
+        >
+          <h3 className="mb-4 text-base font-semibold tracking-tight">Dev Toolbar</h3>
 
-          <div className="dev-toolbar-section">
+          <div className={sectionBlockClass}>
             <button
-              className="btn-primary"
+              type="button"
+              className={toolbarBtnPrimary}
               onClick={() => setDocument(createNewDocument())}
               disabled={renderer === null}
               title="Create a new document with one page and one node"
@@ -685,22 +780,27 @@ export function DevToolbar() {
             </button>
           </div>
 
+          <div role="separator" className="mb-4 h-px bg-border" />
+
           {/* Tab Navigation */}
-          <div className="dev-toolbar-tabs">
+          <div className="mb-4 flex gap-0.5 rounded-lg border border-border bg-muted/50 p-1">
             <button
-              className={`dev-toolbar-tab ${activeTab === 'add' ? 'active' : ''}`}
+              type="button"
+              className={cn(toolbarTabBase, activeTab === 'add' ? toolbarTabActive : toolbarTabInactive)}
               onClick={() => setActiveTab('add')}
             >
               Add Node
             </button>
             <button
-              className={`dev-toolbar-tab ${activeTab === 'nodes' ? 'active' : ''}`}
+              type="button"
+              className={cn(toolbarTabBase, activeTab === 'nodes' ? toolbarTabActive : toolbarTabInactive)}
               onClick={() => setActiveTab('nodes')}
             >
               Nodes
             </button>
             <button
-              className={`dev-toolbar-tab ${activeTab === 'advanced' ? 'active' : ''}`}
+              type="button"
+              className={cn(toolbarTabBase, activeTab === 'advanced' ? toolbarTabActive : toolbarTabInactive)}
               onClick={() => setActiveTab('advanced')}
             >
               Advanced
@@ -709,12 +809,12 @@ export function DevToolbar() {
 
           {/* Add Node Tab */}
           {activeTab === 'add' && (
-            <div className="dev-toolbar-section">
-              <h4>Add Node</h4>
+            <div className={sectionBlockClass}>
+              <h4 className="mb-3 text-xs font-semibold text-muted-foreground">Add Node</h4>
 
-              <div className="form-group">
-                <label>Type:</label>
-                <select value={selectedType} onChange={(e) => setSelectedType(e.target.value as ShapeType)}>
+              <div className={formGroupClass}>
+                <label className={toolbarLabelClass}>Type:</label>
+                <select className={toolbarSelectClass} value={selectedType} onChange={(e) => setSelectedType(e.target.value as ShapeType)}>
                   {nodeTypes.map((type) => (
                     <option key={type} value={type}>
                       {type}
@@ -723,9 +823,9 @@ export function DevToolbar() {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Category:</label>
-                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value as Preset['category'])}>
+              <div className={formGroupClass}>
+                <label className={toolbarLabelClass}>Category:</label>
+                <select className={toolbarSelectClass} value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value as Preset['category'])}>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
@@ -736,44 +836,62 @@ export function DevToolbar() {
 
               {selectedCategory !== 'Custom' && (
                 <>
-                  <div className="form-group">
-                    <label>Search Presets:</label>
+                  <div className={formGroupClass}>
+                    <label className={toolbarLabelClass}>Search Presets:</label>
                     <input
                       type="text"
                       placeholder="Search presets..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="preset-search"
+                      className={toolbarInputClass}
                     />
                   </div>
 
-                  <div className="preset-list">
+                  <div className={presetListClass}>
                     {presets.length === 0 ? (
-                      <p className="empty-state">No presets found</p>
+                      <p className={emptyStateClass}>No presets found</p>
                     ) : (
                       presets.map((preset) => (
-                        <div key={preset.name} className="preset-item" onClick={() => applyPreset(preset)}>
-                          <div className="preset-header">
-                            <span className="preset-name">{preset.name}</span>
+                        <div
+                          key={preset.name}
+                          role="button"
+                          tabIndex={0}
+                          className={presetItemClass}
+                          onClick={() => applyPreset(preset)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              applyPreset(preset)
+                            }
+                          }}
+                        >
+                          <div className={presetHeaderClass}>
+                            <span className={presetNameClass}>{preset.name}</span>
                             {preset.width && preset.height && (
-                              <span className="preset-size">{preset.width}×{preset.height}</span>
+                              <span className={presetSizeClass}>
+                                {preset.width}×{preset.height}
+                              </span>
                             )}
                           </div>
                           {preset.description && (
-                            <div className="preset-description">{preset.description}</div>
+                            <div className={presetDescClass}>{preset.description}</div>
                           )}
-                          <div className="preset-indicators">
+                          <div className={presetIndicatorsClass}>
                             {preset.fillColor && (
-                              <span className="preset-indicator" style={{ backgroundColor: preset.fillColor }} title="Color" />
+                              <span
+                                className={presetIndicatorBase}
+                                style={{ backgroundColor: preset.fillColor }}
+                                title="Color"
+                              />
                             )}
                             {preset.fillGradient && (
-                              <span className="preset-indicator gradient" title="Gradient" />
+                              <span className={cn(presetIndicatorBase, presetIndicatorGradient)} title="Gradient" />
                             )}
                             {preset.shadow && preset.shadow.length > 0 && (
-                              <span className="preset-indicator shadow" title="Shadow" />
+                              <span className={cn(presetIndicatorBase, presetIndicatorShadow)} title="Shadow" />
                             )}
                             {preset.blur && (
-                              <span className="preset-indicator blur" title="Blur" />
+                              <span className={cn(presetIndicatorBase, presetIndicatorBlur)} title="Blur" />
                             )}
                           </div>
                         </div>
@@ -785,10 +903,11 @@ export function DevToolbar() {
 
               {selectedCategory === 'Custom' && (
                 <>
-                  <div className="form-group">
-                    <label>X:</label>
+                  <div className={formGroupClass}>
+                    <label className={toolbarLabelClass}>X:</label>
                     <input
                       type="number"
+                      className={toolbarInputClass}
                       value={x}
                       onChange={(e) => setX(Number(e.target.value))}
                       min={0}
@@ -796,10 +915,11 @@ export function DevToolbar() {
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label>Y:</label>
+                  <div className={formGroupClass}>
+                    <label className={toolbarLabelClass}>Y:</label>
                     <input
                       type="number"
+                      className={toolbarInputClass}
                       value={y}
                       onChange={(e) => setY(Number(e.target.value))}
                       min={0}
@@ -809,20 +929,22 @@ export function DevToolbar() {
 
                   {selectedType !== 'circle' && (
                     <>
-                      <div className="form-group">
-                        <label>Width:</label>
+                      <div className={formGroupClass}>
+                        <label className={toolbarLabelClass}>Width:</label>
                         <input
                           type="number"
+                          className={toolbarInputClass}
                           value={width}
                           onChange={(e) => setWidth(Number(e.target.value))}
                           min={1}
                         />
                       </div>
 
-                      <div className="form-group">
-                        <label>Height:</label>
+                      <div className={formGroupClass}>
+                        <label className={toolbarLabelClass}>Height:</label>
                         <input
                           type="number"
+                          className={toolbarInputClass}
                           value={height}
                           onChange={(e) => setHeight(Number(e.target.value))}
                           min={1}
@@ -832,10 +954,11 @@ export function DevToolbar() {
                   )}
 
                   {selectedType === 'circle' && (
-                    <div className="form-group">
-                      <label>Radius:</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Radius:</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={radius}
                         onChange={(e) => setRadius(Number(e.target.value))}
                         min={1}
@@ -847,19 +970,21 @@ export function DevToolbar() {
                     <>
                       <FillEditor fill={addNodeFill} onChange={setAddNodeFill} />
 
-                      <div className="form-group">
-                        <label>Stroke Color:</label>
+                      <div className={formGroupClass}>
+                        <label className={toolbarLabelClass}>Stroke Color:</label>
                         <input
                           type="color"
+                          className={toolbarColorInputClass}
                           value={strokeColor}
                           onChange={(e) => setStrokeColor(e.target.value)}
                         />
                       </div>
 
-                      <div className="form-group">
-                        <label>Stroke Width:</label>
+                      <div className={formGroupClass}>
+                        <label className={toolbarLabelClass}>Stroke Width:</label>
                         <input
                           type="number"
+                          className={toolbarInputClass}
                           value={strokeWidth}
                           onChange={(e) => setStrokeWidth(Number(e.target.value))}
                           min={0}
@@ -869,10 +994,11 @@ export function DevToolbar() {
                   )}
 
                   {selectedType === 'rect' && (
-                    <div className="form-group">
-                      <label>Border Radius:</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Border Radius:</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={borderRadius}
                         onChange={(e) => setBorderRadius(Number(e.target.value))}
                         min={0}
@@ -882,19 +1008,21 @@ export function DevToolbar() {
 
                   {selectedType === 'text' && (
                     <>
-                      <div className="form-group">
-                        <label>Text:</label>
+                      <div className={formGroupClass}>
+                        <label className={toolbarLabelClass}>Text:</label>
                         <input
                           type="text"
+                          className={toolbarInputClass}
                           value={textContent}
                           onChange={(e) => setTextContent(e.target.value)}
                         />
                       </div>
 
-                      <div className="form-group">
-                        <label>Text Color:</label>
+                      <div className={formGroupClass}>
+                        <label className={toolbarLabelClass}>Text Color:</label>
                         <input
                           type="color"
+                          className={toolbarColorInputClass}
                           value={addNodeFill.fillColor ?? '#3B82F6'}
                           onChange={(e) => setAddNodeFill({ ...addNodeFill, fillColor: e.target.value })}
                         />
@@ -904,14 +1032,14 @@ export function DevToolbar() {
                 </>
               )}
 
-              <button className="btn-primary" onClick={handleAddNode} disabled={!isPageReady}>
+              <button type="button" className={toolbarBtnPrimary} onClick={handleAddNode} disabled={!isPageReady}>
                 Add Node
               </button>
 
-              <div className="form-group" style={{ marginTop: '0.75rem' }}>
+              <div className="mt-3 flex flex-col gap-2">
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className={toolbarBtnSecondary}
                   onClick={handleAddGradientOverlayDemo}
                   disabled={!isPageReady}
                   title="Add a rect with linear gradient and select it to show the gradient overlay"
@@ -920,21 +1048,19 @@ export function DevToolbar() {
                 </button>
                 <button
                   type="button"
-                  className="btn-secondary"
                   onClick={handleAddAngularGradientOverlayDemo}
                   disabled={!isPageReady}
                   title="Add a rect with angular gradient and select it to show the gradient overlay"
-                  style={{ marginLeft: '0.5rem' }}
+                  className={cn(toolbarBtnSecondary, 'mt-2')}
                 >
                   Add angular gradient (overlay demo)
                 </button>
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className={cn(toolbarBtnSecondary, 'mt-2')}
                   onClick={handleAddFrameWithText}
                   disabled={!isPageReady}
                   title="Add a frame with a text shape as child (string from Add Node text state, default Hello World)"
-                  style={{ marginTop: '0.5rem', display: 'block' }}
                 >
                   Add frame with text
                 </button>
@@ -945,23 +1071,24 @@ export function DevToolbar() {
           {/* Nodes Tab */}
           {activeTab === 'nodes' && (
             <>
-              <div className="dev-toolbar-section">
-                <h4>Nodes ({nonRootNodes.length})</h4>
-                <div className="node-list">
+              <div className={sectionBlockClass}>
+                <h4 className="mb-3 text-xs font-semibold text-muted-foreground">Nodes ({nonRootNodes.length})</h4>
+                <div className={nodeListClass}>
                   {nonRootNodes.length === 0 ? (
-                    <p className="empty-state">No nodes added yet</p>
+                    <p className={emptyStateClass}>No nodes added yet</p>
                   ) : (
                     nonRootNodes.map((node) => (
-                      <div key={node.id} className="node-item">
-                        <span className="node-info">
+                      <div key={node.id} className={nodeItemClass}>
+                        <span className={nodeInfoClass}>
                           {node.type} ({node.id.slice(0, 8)}...)
                         </span>
                         <button
-                          className="btn-remove"
+                          type="button"
+                          className={toolbarBtnRemove}
                           onClick={() => handleRemoveNode(node.id)}
                           title="Remove node"
                         >
-                          ×
+                          <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ))
@@ -969,13 +1096,13 @@ export function DevToolbar() {
                 </div>
               </div>
 
-              <div className="dev-toolbar-section">
-                <h4>Export/Import</h4>
-                <div className="button-group">
-                  <button className="btn-secondary" onClick={handleExport}>
+              <div className={sectionBlockClass}>
+                <h4 className="mb-3 text-xs font-semibold text-muted-foreground">Export/Import</h4>
+                <div className={buttonGroupClass}>
+                  <button type="button" className={toolbarBtnSecondary} onClick={handleExport}>
                     Export JSON
                   </button>
-                  <button className="btn-secondary" onClick={handleImport}>
+                  <button type="button" className={toolbarBtnSecondary} onClick={handleImport}>
                     Import JSON
                   </button>
                 </div>
@@ -985,11 +1112,12 @@ export function DevToolbar() {
 
           {/* Advanced Tab */}
           {activeTab === 'advanced' && (
-            <div className="dev-toolbar-advanced">
+            <div className={devAdvancedRootClass}>
               {/* Node Selection */}
-              <div className="form-group">
-                <label>Node:</label>
+              <div className={formGroupClass}>
+                <label className={toolbarLabelClass}>Node:</label>
                 <select
+                  className={toolbarSelectClass}
                   value={isCreatingNew ? '' : selectedNodeId}
                   onChange={(e) => {
                     if (e.target.value === '') {
@@ -1011,9 +1139,9 @@ export function DevToolbar() {
               </div>
 
               {isCreatingNew && (
-                <div className="form-group">
-                  <label>Type:</label>
-                  <select value={selectedType} onChange={(e) => setSelectedType(e.target.value as ShapeType)}>
+                <div className={formGroupClass}>
+                  <label className={toolbarLabelClass}>Type:</label>
+                  <select className={toolbarSelectClass} value={selectedType} onChange={(e) => setSelectedType(e.target.value as ShapeType)}>
                     {nodeTypes.map((type) => (
                       <option key={type} value={type}>
                         {type}
@@ -1024,18 +1152,26 @@ export function DevToolbar() {
               )}
 
               {/* Effects Section */}
-              <div className="advanced-section">
-                <div className="advanced-section-header" onClick={() => toggleSection('effects')}>
-                  <h4>Effects</h4>
-                  <span className="section-toggle">{expandedSections.effects ? '−' : '+'}</span>
-                </div>
+              <div className={advancedSectionClass}>
+                <button
+                  type="button"
+                  className={advancedHeaderBtnClass}
+                  onClick={() => toggleSection('effects')}
+                  aria-expanded={expandedSections.effects}
+                >
+                  <span className="text-sm font-semibold text-foreground">Effects</span>
+                  <span className="inline-flex h-5 w-5 items-center justify-center text-muted-foreground" aria-hidden>
+                    {expandedSections.effects ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </span>
+                </button>
                 {expandedSections.effects && (
-                  <div className="advanced-section-content">
+                  <div className={advancedContentClass}>
                     {/* Blur */}
-                    <div className="form-group">
-                      <label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarInlineLabelClass}>
                         <input
                           type="checkbox"
+                          className={toolbarCheckboxClass}
                           checked={advBlur !== undefined}
                           onChange={(e) => {
                             if (e.target.checked) {
@@ -1050,6 +1186,7 @@ export function DevToolbar() {
                       {advBlur && (
                         <>
                           <select
+                            className={toolbarSelectClass}
                             value={advBlur.type}
                             onChange={(e) => setAdvBlur({ ...advBlur, type: e.target.value as 'layer-blur' })}
                           >
@@ -1057,15 +1194,17 @@ export function DevToolbar() {
                           </select>
                           <input
                             type="number"
+                            className={toolbarInputClass}
                             value={advBlur.value}
                             onChange={(e) => setAdvBlur({ ...advBlur, value: Number(e.target.value) })}
                             min={0}
                             step={0.1}
                             placeholder="Value"
                           />
-                          <label>
+                          <label className={toolbarInlineLabelClass}>
                             <input
                               type="checkbox"
+                              className={toolbarCheckboxClass}
                               checked={advBlur.hidden ?? false}
                               onChange={(e) => setAdvBlur({ ...advBlur, hidden: e.target.checked })}
                             />
@@ -1076,68 +1215,81 @@ export function DevToolbar() {
                     </div>
 
                     {/* Shadows */}
-                    <div className="form-group">
-                      <label>Shadows ({advShadows.length})</label>
-                      <button className="btn-small" onClick={addShadow}>+ Add Shadow</button>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Shadows ({advShadows.length})</label>
+                      <button type="button" className={toolbarBtnSmall} onClick={addShadow}>
+                        Add Shadow
+                      </button>
                       {advShadows.map((shadow, index) => (
-                        <div key={index} className="array-item">
-                          <div className="array-item-header">
-                            <span>Shadow {index + 1}</span>
-                            <button className="btn-remove-small" onClick={() => removeShadow(index)}>×</button>
+                        <div key={index} className={arrayItemClass}>
+                          <div className={arrayItemHeaderClass}>
+                            <span className="text-xs font-semibold text-muted-foreground">Shadow {index + 1}</span>
+                            <button type="button" className={toolbarBtnRemoveSmall} onClick={() => removeShadow(index)}>
+                              <X className="h-3 w-3" />
+                            </button>
                           </div>
-                          <div className="form-group">
-                            <label>Color:</label>
-                            <input
-                              type="color"
-                              value={shadow.color.color}
-                              onChange={(e) => updateShadow(index, { ...shadow, color: { ...shadow.color, color: e.target.value } })}
-                            />
+                          <div className={formGroupClass}>
+                            <label className={toolbarLabelClass}>Color:</label>
+                            <div className="flex gap-2">
+                              <input
+                                type="color"
+                                className={toolbarColorInputClass}
+                                value={shadow.color.color}
+                                onChange={(e) => updateShadow(index, { ...shadow, color: { ...shadow.color, color: e.target.value } })}
+                              />
+                              <input
+                                type="number"
+                                className={toolbarInputClass}
+                                value={shadow.color.opacity ?? 1}
+                                onChange={(e) => updateShadow(index, { ...shadow, color: { ...shadow.color, opacity: Number(e.target.value) } })}
+                                min={0}
+                                max={1}
+                                step={0.1}
+                                placeholder="Opacity"
+                              />
+                            </div>
+                          </div>
+                          <div className={formGroupClass}>
+                            <label className={toolbarLabelClass}>Blur:</label>
                             <input
                               type="number"
-                              value={shadow.color.opacity ?? 1}
-                              onChange={(e) => updateShadow(index, { ...shadow, color: { ...shadow.color, opacity: Number(e.target.value) } })}
-                              min={0}
-                              max={1}
-                              step={0.1}
-                              placeholder="Opacity"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Blur:</label>
-                            <input
-                              type="number"
+                              className={toolbarInputClass}
                               value={shadow.blur}
                               onChange={(e) => updateShadow(index, { ...shadow, blur: Number(e.target.value) })}
                               min={0}
                             />
                           </div>
-                          <div className="form-group">
-                            <label>Spread:</label>
+                          <div className={formGroupClass}>
+                            <label className={toolbarLabelClass}>Spread:</label>
                             <input
                               type="number"
+                              className={toolbarInputClass}
                               value={shadow.spread}
                               onChange={(e) => updateShadow(index, { ...shadow, spread: Number(e.target.value) })}
                             />
                           </div>
-                          <div className="form-group">
-                            <label>Offset X:</label>
+                          <div className={formGroupClass}>
+                            <label className={toolbarLabelClass}>Offset X:</label>
                             <input
                               type="number"
+                              className={toolbarInputClass}
                               value={shadow.offsetX}
                               onChange={(e) => updateShadow(index, { ...shadow, offsetX: Number(e.target.value) })}
                             />
                           </div>
-                          <div className="form-group">
-                            <label>Offset Y:</label>
+                          <div className={formGroupClass}>
+                            <label className={toolbarLabelClass}>Offset Y:</label>
                             <input
                               type="number"
+                              className={toolbarInputClass}
                               value={shadow.offsetY}
                               onChange={(e) => updateShadow(index, { ...shadow, offsetY: Number(e.target.value) })}
                             />
                           </div>
-                          <div className="form-group">
-                            <label>Style:</label>
+                          <div className={formGroupClass}>
+                            <label className={toolbarLabelClass}>Style:</label>
                             <select
+                              className={toolbarSelectClass}
                               value={shadow.style}
                               onChange={(e) => updateShadow(index, { ...shadow, style: e.target.value as 'drop-shadow' | 'inner-shadow' })}
                             >
@@ -1145,10 +1297,11 @@ export function DevToolbar() {
                               <option value="inner-shadow">Inner</option>
                             </select>
                           </div>
-                          <div className="form-group">
-                            <label>
+                          <div className={formGroupClass}>
+                            <label className={toolbarInlineLabelClass}>
                               <input
                                 type="checkbox"
+                                className={toolbarCheckboxClass}
                                 checked={shadow.hidden ?? false}
                                 onChange={(e) => updateShadow(index, { ...shadow, hidden: e.target.checked })}
                               />
@@ -1163,16 +1316,25 @@ export function DevToolbar() {
               </div>
 
               {/* Fills Section */}
-              <div className="advanced-section">
-                <div className="advanced-section-header" onClick={() => toggleSection('fills')}>
-                  <h4>Fills</h4>
-                  <span className="section-toggle">{expandedSections.fills ? '−' : '+'}</span>
-                </div>
+              <div className={advancedSectionClass}>
+                <button
+                  type="button"
+                  className={advancedHeaderBtnClass}
+                  onClick={() => toggleSection('fills')}
+                  aria-expanded={expandedSections.fills}
+                >
+                  <span className="text-sm font-semibold text-foreground">Fills</span>
+                  <span className="inline-flex h-5 w-5 items-center justify-center text-muted-foreground" aria-hidden>
+                    {expandedSections.fills ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </span>
+                </button>
                 {expandedSections.fills && (
-                  <div className="advanced-section-content">
-                    <div className="form-group">
-                      <label>Fills ({advFills.length})</label>
-                      <button className="btn-small" onClick={addFill}>+ Add Fill</button>
+                  <div className={advancedContentClass}>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Fills ({advFills.length})</label>
+                      <button type="button" className={toolbarBtnSmall} onClick={addFill}>
+                        Add Fill
+                      </button>
                       {advFills.map((fill, index) => {
                         const isColor = isColorFill(fill)
                         const isLinear = isLinearGradient(fill)
@@ -1182,14 +1344,17 @@ export function DevToolbar() {
                         const isSolidOrGradient = isColor || isLinear || isRadial || isAngular
 
                         return (
-                          <div key={index} className="array-item">
-                            <div className="array-item-header">
-                              <span>Fill {index + 1}</span>
-                              <button className="btn-remove-small" onClick={() => removeFill(index)}>×</button>
+                          <div key={index} className={arrayItemClass}>
+                            <div className={arrayItemHeaderClass}>
+                              <span className="text-xs font-semibold text-muted-foreground">Fill {index + 1}</span>
+                              <button type="button" className={toolbarBtnRemoveSmall} onClick={() => removeFill(index)}>
+                                <X className="h-3 w-3" />
+                              </button>
                             </div>
-                            <div className="form-group">
-                              <label>Type:</label>
+                            <div className={formGroupClass}>
+                              <label className={toolbarLabelClass}>Type:</label>
                               <select
+                                className={toolbarSelectClass}
                                 value={isColor ? 'color' : isLinear ? 'linear' : isRadial ? 'radial' : isAngular ? 'angular' : isImage ? 'image' : 'color'}
                                 onChange={(e) => {
                                   const type = e.target.value
@@ -1265,37 +1430,41 @@ export function DevToolbar() {
                               const imageColor = fill.fillImage
                               return (
                                 <>
-                                  <div className="form-group">
-                                    <label>Image ID:</label>
+                                  <div className={formGroupClass}>
+                                    <label className={toolbarLabelClass}>Image ID:</label>
                                     <input
                                       type="text"
+                                      className={toolbarInputClass}
                                       value={imageColor.id ?? ''}
                                       onChange={(e) => updateFill(index, { ...fill, fillImage: { ...imageColor, id: e.target.value } })}
                                       placeholder="Image ID"
                                     />
                                   </div>
-                                  <div className="form-group">
-                                    <label>Width:</label>
+                                  <div className={formGroupClass}>
+                                    <label className={toolbarLabelClass}>Width:</label>
                                     <input
                                       type="number"
+                                      className={toolbarInputClass}
                                       value={imageColor.width}
                                       onChange={(e) => updateFill(index, { ...fill, fillImage: { ...imageColor, width: Number(e.target.value) } })}
                                       min={1}
                                     />
                                   </div>
-                                  <div className="form-group">
-                                    <label>Height:</label>
+                                  <div className={formGroupClass}>
+                                    <label className={toolbarLabelClass}>Height:</label>
                                     <input
                                       type="number"
+                                      className={toolbarInputClass}
                                       value={imageColor.height}
                                       onChange={(e) => updateFill(index, { ...fill, fillImage: { ...imageColor, height: Number(e.target.value) } })}
                                       min={1}
                                     />
                                   </div>
-                                  <div className="form-group">
-                                    <label>Opacity:</label>
+                                  <div className={formGroupClass}>
+                                    <label className={toolbarLabelClass}>Opacity:</label>
                                     <input
                                       type="number"
+                                      className={toolbarInputClass}
                                       value={fill.fillOpacity ?? 1}
                                       onChange={(e) => updateFill(index, { ...fill, fillOpacity: Number(e.target.value) })}
                                       min={0}
@@ -1315,30 +1484,42 @@ export function DevToolbar() {
               </div>
 
               {/* Strokes Section */}
-              <div className="advanced-section">
-                <div className="advanced-section-header" onClick={() => toggleSection('strokes')}>
-                  <h4>Strokes</h4>
-                  <span className="section-toggle">{expandedSections.strokes ? '−' : '+'}</span>
-                </div>
+              <div className={advancedSectionClass}>
+                <button
+                  type="button"
+                  className={advancedHeaderBtnClass}
+                  onClick={() => toggleSection('strokes')}
+                  aria-expanded={expandedSections.strokes}
+                >
+                  <span className="text-sm font-semibold text-foreground">Strokes</span>
+                  <span className="inline-flex h-5 w-5 items-center justify-center text-muted-foreground" aria-hidden>
+                    {expandedSections.strokes ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </span>
+                </button>
                 {expandedSections.strokes && (
-                  <div className="advanced-section-content">
-                    <div className="form-group">
-                      <label>Strokes ({advStrokes.length})</label>
-                      <button className="btn-small" onClick={addStroke}>+ Add Stroke</button>
+                  <div className={advancedContentClass}>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Strokes ({advStrokes.length})</label>
+                      <button type="button" className={toolbarBtnSmall} onClick={addStroke}>
+                        Add Stroke
+                      </button>
                       {advStrokes.map((stroke, index) => {
                         const hasColor = stroke.strokeColor !== undefined
                         const hasGradient = stroke.strokeColorGradient !== undefined
                         const hasImage = stroke.strokeImage !== undefined
 
                         return (
-                          <div key={index} className="array-item">
-                            <div className="array-item-header">
-                              <span>Stroke {index + 1}</span>
-                              <button className="btn-remove-small" onClick={() => removeStroke(index)}>×</button>
+                          <div key={index} className={arrayItemClass}>
+                            <div className={arrayItemHeaderClass}>
+                              <span className="text-xs font-semibold text-muted-foreground">Stroke {index + 1}</span>
+                              <button type="button" className={toolbarBtnRemoveSmall} onClick={() => removeStroke(index)}>
+                                <X className="h-3 w-3" />
+                              </button>
                             </div>
-                            <div className="form-group">
-                              <label>Color Type:</label>
+                            <div className={formGroupClass}>
+                              <label className={toolbarLabelClass}>Color Type:</label>
                               <select
+                                className={toolbarSelectClass}
                                 value={hasColor ? 'color' : hasGradient ? 'gradient' : hasImage ? 'image' : 'color'}
                                 onChange={(e) => {
                                   const type = e.target.value
@@ -1377,38 +1558,44 @@ export function DevToolbar() {
 
                             {hasColor && stroke.strokeColor && (
                               <>
-                                <div className="form-group">
-                                  <label>Color:</label>
-                                  <input
-                                    type="color"
-                                    value={stroke.strokeColor}
-                                    onChange={(e) => updateStroke(index, { ...stroke, strokeColor: e.target.value })}
-                                  />
-                                  <input
-                                    type="number"
-                                    value={stroke.strokeOpacity ?? 1}
-                                    onChange={(e) => updateStroke(index, { ...stroke, strokeOpacity: Number(e.target.value) })}
-                                    min={0}
-                                    max={1}
-                                    step={0.1}
-                                    placeholder="Opacity"
-                                  />
+                                <div className={formGroupClass}>
+                                  <label className={toolbarLabelClass}>Color:</label>
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="color"
+                                      className={toolbarColorInputClass}
+                                      value={stroke.strokeColor}
+                                      onChange={(e) => updateStroke(index, { ...stroke, strokeColor: e.target.value })}
+                                    />
+                                    <input
+                                      type="number"
+                                      className={toolbarInputClass}
+                                      value={stroke.strokeOpacity ?? 1}
+                                      onChange={(e) => updateStroke(index, { ...stroke, strokeOpacity: Number(e.target.value) })}
+                                      min={0}
+                                      max={1}
+                                      step={0.1}
+                                      placeholder="Opacity"
+                                    />
+                                  </div>
                                 </div>
                               </>
                             )}
 
-                            <div className="form-group">
-                              <label>Width:</label>
+                            <div className={formGroupClass}>
+                              <label className={toolbarLabelClass}>Width:</label>
                               <input
                                 type="number"
+                                className={toolbarInputClass}
                                 value={stroke.strokeWidth}
                                 onChange={(e) => updateStroke(index, { ...stroke, strokeWidth: Number(e.target.value) })}
                                 min={0}
                               />
                             </div>
-                            <div className="form-group">
-                              <label>Style:</label>
+                            <div className={formGroupClass}>
+                              <label className={toolbarLabelClass}>Style:</label>
                               <select
+                                className={toolbarSelectClass}
                                 value={stroke.strokeStyle}
                                 onChange={(e) => updateStroke(index, { ...stroke, strokeStyle: e.target.value as 'solid' | 'dashed' | 'dotted' })}>
                                 <option value="solid">Solid</option>
@@ -1416,9 +1603,10 @@ export function DevToolbar() {
                                 <option value="dotted">Dotted</option>
                               </select>
                             </div>
-                            <div className="form-group">
-                              <label>Alignment:</label>
+                            <div className={formGroupClass}>
+                              <label className={toolbarLabelClass}>Alignment:</label>
                               <select
+                                className={toolbarSelectClass}
                                 value={stroke.strokeAlignment}
                                 onChange={(e) => updateStroke(index, { ...stroke, strokeAlignment: e.target.value as 'center' | 'inner' | 'outer' })}>
                                 <option value="center">Center</option>
@@ -1426,9 +1614,10 @@ export function DevToolbar() {
                                 <option value="outer">Outer</option>
                               </select>
                             </div>
-                            <div className="form-group">
-                              <label>Cap Start:</label>
+                            <div className={formGroupClass}>
+                              <label className={toolbarLabelClass}>Cap Start:</label>
                               <select
+                                className={toolbarSelectClass}
                                 value={stroke.strokeCapStart ?? 'none'}
                                 onChange={(e) => updateStroke(index, { ...stroke, strokeCapStart: e.target.value === 'none' ? undefined : (e.target.value as 'round' | 'square' | 'line-arrow' | 'triangle-arrow' | 'square-marker' | 'circle-marker' | 'diamond-marker') })}>
                                 <option value="none">None</option>
@@ -1436,9 +1625,10 @@ export function DevToolbar() {
                                 <option value="square">Square</option>
                               </select>
                             </div>
-                            <div className="form-group">
-                              <label>Cap End:</label>
+                            <div className={formGroupClass}>
+                              <label className={toolbarLabelClass}>Cap End:</label>
                               <select
+                                className={toolbarSelectClass}
                                 value={stroke.strokeCapEnd ?? 'none'}
                                 onChange={(e) => updateStroke(index, { ...stroke, strokeCapEnd: e.target.value === 'none' ? undefined : (e.target.value as 'round' | 'square' | 'line-arrow' | 'triangle-arrow' | 'square-marker' | 'circle-marker' | 'diamond-marker') })}>
                                 <option value="none">None</option>
@@ -1446,10 +1636,11 @@ export function DevToolbar() {
                                 <option value="square">Square</option>
                               </select>
                             </div>
-                            <div className="form-group">
-                              <label>Opacity:</label>
+                            <div className={formGroupClass}>
+                              <label className={toolbarLabelClass}>Opacity:</label>
                               <input
                                 type="number"
+                                className={toolbarInputClass}
                                 value={stroke.strokeOpacity ?? 1}
                                 onChange={(e) => updateStroke(index, { ...stroke, strokeOpacity: Number(e.target.value) })}
                                 min={0}
@@ -1466,61 +1657,74 @@ export function DevToolbar() {
               </div>
 
               {/* Transform Section */}
-              <div className="advanced-section">
-                <div className="advanced-section-header" onClick={() => toggleSection('transform')}>
-                  <h4>Transform</h4>
-                  <span className="section-toggle">{expandedSections.transform ? '−' : '+'}</span>
-                </div>
+              <div className={advancedSectionClass}>
+                <button
+                  type="button"
+                  className={advancedHeaderBtnClass}
+                  onClick={() => toggleSection('transform')}
+                  aria-expanded={expandedSections.transform}
+                >
+                  <span className="text-sm font-semibold text-foreground">Transform</span>
+                  <span className="inline-flex h-5 w-5 items-center justify-center text-muted-foreground" aria-hidden>
+                    {expandedSections.transform ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </span>
+                </button>
                 {expandedSections.transform && (
-                  <div className="advanced-section-content">
-                    <div className="form-group">
-                      <label>X:</label>
+                  <div className={advancedContentClass}>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>X:</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advX}
                         onChange={(e) => setAdvX(Number(e.target.value))}
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Y:</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Y:</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advY}
                         onChange={(e) => setAdvY(Number(e.target.value))}
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Width:</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Width:</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advWidth}
                         onChange={(e) => setAdvWidth(Number(e.target.value))}
                         min={1}
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Height:</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Height:</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advHeight}
                         onChange={(e) => setAdvHeight(Number(e.target.value))}
                         min={1}
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Rotation (degrees):</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Rotation (degrees):</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advRotation}
                         onChange={(e) => setAdvRotation(Number(e.target.value))}
                         step={0.1}
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Transform Matrix (Advanced):</label>
-                      <div className="transform-matrix">
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Transform Matrix (Advanced):</label>
+                      <div className="mt-2 grid grid-cols-3 gap-1.5">
                         <input
                           type="number"
+                          className={toolbarMatrixInputClass}
                           value={advTransform.a}
                           onChange={(e) => setAdvTransform({ ...advTransform, a: Number(e.target.value) })}
                           step={0.01}
@@ -1528,6 +1732,7 @@ export function DevToolbar() {
                         />
                         <input
                           type="number"
+                          className={toolbarMatrixInputClass}
                           value={advTransform.b}
                           onChange={(e) => setAdvTransform({ ...advTransform, b: Number(e.target.value) })}
                           step={0.01}
@@ -1535,6 +1740,7 @@ export function DevToolbar() {
                         />
                         <input
                           type="number"
+                          className={toolbarMatrixInputClass}
                           value={advTransform.c}
                           onChange={(e) => setAdvTransform({ ...advTransform, c: Number(e.target.value) })}
                           step={0.01}
@@ -1542,6 +1748,7 @@ export function DevToolbar() {
                         />
                         <input
                           type="number"
+                          className={toolbarMatrixInputClass}
                           value={advTransform.d}
                           onChange={(e) => setAdvTransform({ ...advTransform, d: Number(e.target.value) })}
                           step={0.01}
@@ -1549,6 +1756,7 @@ export function DevToolbar() {
                         />
                         <input
                           type="number"
+                          className={toolbarMatrixInputClass}
                           value={advTransform.e}
                           onChange={(e) => setAdvTransform({ ...advTransform, e: Number(e.target.value) })}
                           step={0.01}
@@ -1556,6 +1764,7 @@ export function DevToolbar() {
                         />
                         <input
                           type="number"
+                          className={toolbarMatrixInputClass}
                           value={advTransform.f}
                           onChange={(e) => setAdvTransform({ ...advTransform, f: Number(e.target.value) })}
                           step={0.01}
@@ -1568,16 +1777,24 @@ export function DevToolbar() {
               </div>
 
               {/* Layout Section */}
-              <div className="advanced-section">
-                <div className="advanced-section-header" onClick={() => toggleSection('layout')}>
-                  <h4>Layout</h4>
-                  <span className="section-toggle">{expandedSections.layout ? '−' : '+'}</span>
-                </div>
+              <div className={advancedSectionClass}>
+                <button
+                  type="button"
+                  className={advancedHeaderBtnClass}
+                  onClick={() => toggleSection('layout')}
+                  aria-expanded={expandedSections.layout}
+                >
+                  <span className="text-sm font-semibold text-foreground">Layout</span>
+                  <span className="inline-flex h-5 w-5 items-center justify-center text-muted-foreground" aria-hidden>
+                    {expandedSections.layout ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </span>
+                </button>
                 {expandedSections.layout && (
-                  <div className="advanced-section-content">
-                    <div className="form-group">
-                      <label>Constraints Horizontal:</label>
+                  <div className={advancedContentClass}>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Constraints Horizontal:</label>
                       <select
+                        className={toolbarSelectClass}
                         value={advConstraintsH ?? ''}
                         onChange={(e) => setAdvConstraintsH(e.target.value === '' ? undefined : e.target.value as ConstraintH)}
                       >
@@ -1586,9 +1803,10 @@ export function DevToolbar() {
                         ))}
                       </select>
                     </div>
-                    <div className="form-group">
-                      <label>Constraints Vertical:</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Constraints Vertical:</label>
                       <select
+                        className={toolbarSelectClass}
                         value={advConstraintsV ?? ''}
                         onChange={(e) => setAdvConstraintsV(e.target.value === '' ? undefined : e.target.value as ConstraintV)}
                       >
@@ -1597,29 +1815,32 @@ export function DevToolbar() {
                         ))}
                       </select>
                     </div>
-                    <div className="form-group">
-                      <label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarInlineLabelClass}>
                         <input
                           type="checkbox"
+                          className={toolbarCheckboxClass}
                           checked={advClipContent}
                           onChange={(e) => setAdvClipContent(e.target.checked)}
                         />
                         Clip Content
                       </label>
                     </div>
-                    <div className="form-group">
-                      <label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarInlineLabelClass}>
                         <input
                           type="checkbox"
+                          className={toolbarCheckboxClass}
                           checked={advMaskedGroup}
                           onChange={(e) => setAdvMaskedGroup(e.target.checked)}
                         />
                         Masked Group
                       </label>
                     </div>
-                    <div className="form-group">
-                      <label>Grow Type:</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Grow Type:</label>
                       <select
+                        className={toolbarSelectClass}
                         value={advGrowType ?? ''}
                         onChange={(e) => setAdvGrowType(e.target.value === '' ? undefined : (e.target.value as GrowType))}
                       >
@@ -1634,17 +1855,25 @@ export function DevToolbar() {
               </div>
 
               {/* Appearance Section */}
-              <div className="advanced-section">
-                <div className="advanced-section-header" onClick={() => toggleSection('appearance')}>
-                  <h4>Appearance</h4>
-                  <span className="section-toggle">{expandedSections.appearance ? '−' : '+'}</span>
-                </div>
+              <div className={advancedSectionClass}>
+                <button
+                  type="button"
+                  className={advancedHeaderBtnClass}
+                  onClick={() => toggleSection('appearance')}
+                  aria-expanded={expandedSections.appearance}
+                >
+                  <span className="text-sm font-semibold text-foreground">Appearance</span>
+                  <span className="inline-flex h-5 w-5 items-center justify-center text-muted-foreground" aria-hidden>
+                    {expandedSections.appearance ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </span>
+                </button>
                 {expandedSections.appearance && (
-                  <div className="advanced-section-content">
-                    <div className="form-group">
-                      <label>Opacity:</label>
+                  <div className={advancedContentClass}>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Opacity:</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advOpacity}
                         onChange={(e) => setAdvOpacity(Number(e.target.value))}
                         min={0}
@@ -1652,9 +1881,10 @@ export function DevToolbar() {
                         step={0.1}
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Blend Mode:</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Blend Mode:</label>
                       <select
+                        className={toolbarSelectClass}
                         value={advBlendMode}
                         onChange={(e) => setAdvBlendMode(e.target.value as BlendMode)}
                       >
@@ -1663,10 +1893,11 @@ export function DevToolbar() {
                         ))}
                       </select>
                     </div>
-                    <div className="form-group">
-                      <label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarInlineLabelClass}>
                         <input
                           type="checkbox"
+                          className={toolbarCheckboxClass}
                           checked={advHidden}
                           onChange={(e) => setAdvHidden(e.target.checked)}
                         />
@@ -1678,54 +1909,66 @@ export function DevToolbar() {
               </div>
 
               {/* Border Radius Section */}
-              <div className="advanced-section">
-                <div className="advanced-section-header" onClick={() => toggleSection('borderRadius')}>
-                  <h4>Border Radius</h4>
-                  <span className="section-toggle">{expandedSections.borderRadius ? '−' : '+'}</span>
-                </div>
+              <div className={advancedSectionClass}>
+                <button
+                  type="button"
+                  className={advancedHeaderBtnClass}
+                  onClick={() => toggleSection('borderRadius')}
+                  aria-expanded={expandedSections.borderRadius}
+                >
+                  <span className="text-sm font-semibold text-foreground">Border Radius</span>
+                  <span className="inline-flex h-5 w-5 items-center justify-center text-muted-foreground" aria-hidden>
+                    {expandedSections.borderRadius ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </span>
+                </button>
                 {expandedSections.borderRadius && (
-                  <div className="advanced-section-content">
-                    <div className="form-group">
-                      <label>
+                  <div className={advancedContentClass}>
+                    <div className={formGroupClass}>
+                      <label className={toolbarInlineLabelClass}>
                         <input
                           type="checkbox"
+                          className={toolbarCheckboxClass}
                           checked={advLinkCorners}
                           onChange={(e) => setAdvLinkCorners(e.target.checked)}
                         />
                         Link Corners
                       </label>
                     </div>
-                    <div className="form-group">
-                      <label>Top Left (r1):</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Top Left (r1):</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advR1}
                         onChange={(e) => handleBorderRadiusChange('r1', Number(e.target.value))}
                         min={0}
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Top Right (r2):</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Top Right (r2):</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advR2}
                         onChange={(e) => handleBorderRadiusChange('r2', Number(e.target.value))}
                         min={0}
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Bottom Right (r3):</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Bottom Right (r3):</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advR3}
                         onChange={(e) => handleBorderRadiusChange('r3', Number(e.target.value))}
                         min={0}
                       />
                     </div>
-                    <div className="form-group">
-                      <label>Bottom Left (r4):</label>
+                    <div className={formGroupClass}>
+                      <label className={toolbarLabelClass}>Bottom Left (r4):</label>
                       <input
                         type="number"
+                        className={toolbarInputClass}
                         value={advR4}
                         onChange={(e) => handleBorderRadiusChange('r4', Number(e.target.value))}
                         min={0}
@@ -1735,7 +1978,7 @@ export function DevToolbar() {
                 )}
               </div>
 
-              <button className="btn-primary" onClick={handleUpdateNode} disabled={!isPageReady}>
+              <button type="button" className={toolbarBtnPrimary} onClick={handleUpdateNode} disabled={!isPageReady}>
                 {isCreatingNew ? 'Create Node' : 'Update Node'}
               </button>
             </div>

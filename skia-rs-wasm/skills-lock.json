@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "critique": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "computedHash": "a5dbfaf2d62a4012205323a45844171a9971fb1b418201592ba5039e78069d82"
+    },
+    "polish": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "computedHash": "ff757399bae6ac3a3de92ad34deec6ac18bc778633320522bf09031df6a6a8b7"
+    }
+  }
+}

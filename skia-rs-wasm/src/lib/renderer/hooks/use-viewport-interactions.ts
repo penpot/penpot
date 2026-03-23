@@ -124,6 +124,13 @@ export function useViewportInteractions({
       const rect = canvasElement.getBoundingClientRect()
       const screenX = e.clientX - rect.left
       const screenY = e.clientY - rect.top
+
+      if (useWorkspaceStore.getState().drawTool === 'rect') {
+        mousePosition$.next({ x: screenX, y: screenY })
+        useWorkspaceStore.getState().setIsDrawingShape(true)
+        return
+      }
+
       mousePosition$.next({ x: screenX, y: screenY })
 
       const mod = e.ctrlKey || e.metaKey
@@ -195,7 +202,12 @@ export function useViewportInteractions({
         const halfFlip = wasmSelectionRect != null ? matrixHasHalfFlip(wasmSelectionRect.transform) : false
         canvasElement.style.cursor = getResizeCursor(resizeHandle, rotation, halfFlip)
       } else if (e.target === canvasElement) {
-        canvasElement.style.cursor = hasPanModifier(e, shortcuts.panWithModifier) ? 'grab' : 'default'
+        const drawTool = useWorkspaceStore.getState().drawTool
+        if (drawTool === 'rect') {
+          canvasElement.style.cursor = 'crosshair'
+        } else {
+          canvasElement.style.cursor = hasPanModifier(e, shortcuts.panWithModifier) ? 'grab' : 'default'
+        }
       }
     }
 
@@ -265,7 +277,8 @@ export function useViewportInteractions({
   const handleMouseEnter = useCallback(() => {
     const canvas = canvasRef.current
     if (canvas && !isPanningRef.current) {
-      canvas.style.cursor = 'default'
+      const drawTool = useWorkspaceStore.getState().drawTool
+      canvas.style.cursor = drawTool === 'rect' ? 'crosshair' : 'default'
     }
   }, [canvasRef])
 
@@ -287,6 +300,29 @@ export function useViewportInteractions({
 
   // Handle keyboard for panning and zooming
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.code === 'Escape' && useWorkspaceStore.getState().drawTool != null) {
+      e.preventDefault()
+      useWorkspaceStore.getState().setDrawTool(null)
+      const canvasElement = canvasRef.current
+      if (canvasElement) canvasElement.style.cursor = 'default'
+      return
+    }
+
+    if (e.code === 'KeyR' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const el = e.target as HTMLElement | null
+      if (!el?.closest('input, textarea, select, [contenteditable="true"]')) {
+        e.preventDefault()
+        const state = useWorkspaceStore.getState()
+        const next = state.drawTool === 'rect' ? null : 'rect'
+        state.setDrawTool(next)
+        const canvasElement = canvasRef.current
+        if (canvasElement) {
+          canvasElement.style.cursor = next === 'rect' ? 'crosshair' : 'default'
+        }
+        return
+      }
+    }
+
     if (!viewport || !renderer) return
 
     const canvasElement = canvasRef.current
