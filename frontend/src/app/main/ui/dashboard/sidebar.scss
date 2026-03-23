@@ -548,15 +548,14 @@
   height: calc(2 * var(--sp-xxxl));
   max-height: calc(2 * var(--sp-xxxl));
   justify-content: space-between;
-  padding: var(--sp-xs) var(--sp-l) var(--sp-xs) var(--sp-s);
-  // border-block-end: $b-1 solid var(--color-background-quaternary);
+  padding: 0 var(--sp-l);
 }
 
 .nitrate-selected-org {
   @include t.use-typography("body-medium");
   color: var(--color-foreground-primary);
   width: 100%;
-  margin: var(--sp-xs) 0 var(--sp-xs) var(--sp-l);
+  padding-inline-start: var(--sp-s);
   display: flex;
   align-items: center;
   gap: var(--sp-s);
@@ -612,5 +611,9 @@
   gap: var(--sp-s);
   height: 100%;
   width: 100%;
-  padding: 0 var(--sp-m);
+  padding: 0 var(--sp-s);
+}
+
+.current-org .arrow-icon {
+  margin-inline-end: var(--sp-xs);
 }
