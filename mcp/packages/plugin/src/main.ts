@@ -105,8 +105,12 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         updateConnectionStatus("connecting", "Connecting...");
 
         ws.onopen = () => {
-            console.log("Connected to MCP server");
-            updateConnectionStatus("connected", "Connected");
+            setTimeout(() => {
+                if (ws) {
+                    console.log("Connected to MCP server");
+                    updateConnectionStatus("connected", "Connected");
+                }
+            }, 100);
         };
 
         ws.onmessage = (event) => {

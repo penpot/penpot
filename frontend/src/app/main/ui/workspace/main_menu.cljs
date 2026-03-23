@@ -750,7 +750,7 @@
         workspace-local (mf/deref refs/workspace-local)
 
         mcp-enabled?    (true? (-> profile :props :mcp-enabled))
-        mcp-connected?  (true? (-> workspace-local :mcp :connection))
+        mcp-connected?  (= "connected" (-> workspace-local :mcp :connection))
 
         on-nav-to-integrations
         (mf/use-fn
@@ -769,7 +769,7 @@
         (mf/use-fn
          (fn []
            (if mcp-connected?
-             (st/emit! (mcp/disconnect-mcp)
+             (st/emit! (mcp/user-disconnect-mcp)
                        (ptk/event ::ev/event {::ev/name "disconnect-mcp-plugin"
                                               ::ev/origin "workspace-menu"}))
              (st/emit! (mcp/connect-mcp)
@@ -980,8 +980,8 @@
       (when (contains? cf/flags :mcp)
         (let [mcp-enabled?   (true? (-> profile :props :mcp-enabled))
               mcp-connection (-> workspace-local :mcp :connection)
-              mcp-connected? (true? mcp-connection)
-              mcp-error?     (nil? mcp-connection)]
+              mcp-connected? (= mcp-connection "connected")
+              mcp-error?     (= mcp-connection "error")]
           [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
                                    :on-click    on-menu-click
                                    :on-key-down (fn [event]
