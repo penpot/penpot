@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
@@ -42,8 +43,12 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
+   [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
+
+(def tokens-ref
+  (l/derived :access-tokens st/state))
 
 (mf/defc shortcuts*
   {::mf/private true}
@@ -978,10 +983,21 @@
                     :class (stl/css :item-arrow)}]])
 
       (when (contains? cf/flags :mcp)
-        (let [mcp-enabled?   (true? (-> profile :props :mcp-enabled))
+        (let [tokens   (mf/deref tokens-ref)
+              expired? (some->> tokens
+                                (some #(when (= (:type %) "mcp") %))
+                                :expires-at
+                                (> (ct/now)))
+
+              mcp-enabled?   (true? (-> profile :props :mcp-enabled))
               mcp-connection (-> workspace-local :mcp :connection)
               mcp-connected? (= mcp-connection "connected")
-              mcp-error?     (= mcp-connection "error")]
+              mcp-error?     (= mcp-connection "error")
+
+              active?  (and mcp-enabled? mcp-connected?)
+              failed?  (or (and mcp-enabled? mcp-error?)
+                           (true? expired?))]
+
           [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
                                    :on-click    on-menu-click
                                    :on-key-down (fn [event]
@@ -993,8 +1009,8 @@
            [:span {:class (stl/css :item-name)}
             (tr "workspace.header.menu.option.mcp")]
            [:span {:class (stl/css-case :item-indicator true
-                                        :active (and mcp-enabled? mcp-connected?)
-                                        :failed (and mcp-enabled? mcp-error?))}]
+                                        :active active?
+                                        :failed failed?)}]
            [:> icon* {:icon-id i/arrow-right
                       :class (stl/css :item-arrow)}]]))
 

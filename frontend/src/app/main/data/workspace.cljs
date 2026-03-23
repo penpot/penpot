@@ -340,7 +340,10 @@
                  (rx/of (ntf/hide)
                         (dcmt/retrieve-comment-threads file-id)
                         (dcmt/fetch-profiles)
-                        (df/fetch-fonts team-id)))
+                        (df/fetch-fonts team-id))
+
+                 (when (contains? cf/flags :mcp)
+                   (rx/of (du/fetch-access-tokens))))
 
                 ;; Once the essential data is fetched, lets proceed to
                 ;; fetch teh file bunldle
