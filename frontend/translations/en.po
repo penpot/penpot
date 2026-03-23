@@ -1609,6 +1609,18 @@ msgstr "WebGL has stopped working. Please reload the page to reset it"
 msgid "errors.webgl-context-lost.main-message"
 msgstr "Oops! The canvas context was lost"
 
+#: src/app/main/ui/static.cljs
+msgid "errors.webgl-not-supported.desc-message"
+msgstr "WebGL is not available, which is required for Penpot to work. Please, check your browser settings or close heavy applications."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.webgl-not-supported.main-message"
+msgstr "Oops! WebGL is not available"
+
+#: src/app/main/ui/static.cljs
+msgid "errors.webgl-not-supported.troubleshooting-link"
+msgstr "Read the troubleshooting guide"
+
 #: src/app/main/ui/dashboard/team.cljs:1051
 msgid "errors.webhooks.connection"
 msgstr "Connection error, URL not reacheable"
