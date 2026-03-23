@@ -48,259 +48,259 @@
    (assert (uuid? id))
 
    (obj/reify {:name "LibraryColorProxy"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$id {:enumerable false :get (constantly id)}
-    :$file {:enumerable false :get (constantly file-id)}
+     :$plugin {:enumerable false :get (constantly plugin-id)}
+     :$id {:enumerable false :get (constantly id)}
+     :$file {:enumerable false :get (constantly file-id)}
 
-    :id {:get (fn [] (dm/str id))}
-    :fileId {:get #(dm/str file-id)}
+     :id {:get (fn [] (dm/str id))}
+     :fileId {:get #(dm/str file-id)}
 
-    :name
-    {:this true
-     :get (fn [self]
-            (let [color (u/proxy->library-color self)]
-              (if (some? color)
-                (:name color)
-                (:name initial-color))))
-     :set
-     (fn [self value]
+     :name
+     {:this true
+      :get (fn [self]
+             (let [color (u/proxy->library-color self)]
+               (if (some? color)
+                 (:name color)
+                 (:name initial-color))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :name value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :name "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [color (u/proxy->library-color self)]
+            (let [value (dm/str (d/nilv (:path color) "") " / " value)]
+              (st/emit! (dwl/rename-color file-id id value))))))}
+
+     :path
+     {:this true
+      :get (fn [self]
+             (let [color (u/proxy->library-color self)]
+               (if (some? color)
+                 (:path color)
+                 (:path initial-color))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :path value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :path "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [color (u/proxy->library-color self)]
+            (let [color (update color :name #(str value " / " %))]
+              (st/emit! (dwl/update-color color file-id))))))}
+
+     :color
+     {:this true
+      :get (fn [self]
+             (let [color (u/proxy->library-color self)]
+               (if (some? color)
+                 (:color color)
+                 (:color initial-color))))
+      :set
+      (fn [self value]
+        (cond
+          (or (not (string? value)) (not (clr/valid-hex-color? value)))
+          (u/not-valid plugin-id :color value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :color "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [color (u/proxy->library-color self)]
+            (let [color (assoc color :color value)]
+              (st/emit! (dwl/update-color-data color file-id))))))}
+
+     :opacity
+     {:this true
+      :get (fn [self]
+             (let [color (u/proxy->library-color self)]
+               (if (some? color)
+                 (:opacity color)
+                 (:opacity initial-color))))
+      :set
+      (fn [self value]
+        (cond
+          (or (not (number? value)) (< value 0) (> value 1))
+          (u/not-valid plugin-id :opacity value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :opacity "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [color (u/proxy->library-color self)]
+            (let [color (assoc color :opacity value)]
+              (st/emit! (dwl/update-color-data color file-id))))))}
+
+     :gradient
+     {:this true
+      :get (fn [self]
+             (let [color (u/proxy->library-color self)]
+               (-> (if (some? color) color initial-color) :gradient format/format-gradient)))
+      :set
+      (fn [self value]
+        (let [value (parser/parse-gradient value)]
+          (cond
+            (not (sm/validate clr/schema:gradient value))
+            (u/not-valid plugin-id :gradient value)
+
+            (not (r/check-permission plugin-id "library:write"))
+            (u/not-valid plugin-id :gradient "Plugin doesn't have 'library:write' permission")
+
+            :else
+            (when-let [color (u/proxy->library-color self)]
+              (let [color (assoc color :gradient value)]
+                (st/emit! (dwl/update-color-data color file-id)))))))}
+
+     :image
+     {:this true
+      :get (fn [self]
+             (let [color (u/proxy->library-color self)]
+               (-> (if (some? color) color initial-color) :image format/format-image)))
+      :set
+      (fn [self value]
+        (let [value (parser/parse-image-data value)]
+          (cond
+            (not (sm/validate clr/schema:image value))
+            (u/not-valid plugin-id :image value)
+
+            (not (r/check-permission plugin-id "library:write"))
+            (u/not-valid plugin-id :image "Plugin doesn't have 'library:write' permission")
+
+            :else
+            (when-let [color (u/proxy->library-color self)]
+              (let [color (assoc color :image value)]
+                (st/emit! (dwl/update-color-data color file-id)))))))}
+
+     :remove
+     (fn []
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :name value)
-
          (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :name "Plugin doesn't have 'library:write' permission")
+         (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
 
          :else
-         (when-let [color (u/proxy->library-color self)]
-           (let [value (dm/str (d/nilv (:path color) "") " / " value)]
-             (st/emit! (dwl/rename-color file-id id value))))))}
+         (st/emit! (dwl/delete-color {:id id}))))
 
-    :path
-    {:this true
-     :get (fn [self]
-            (let [color (u/proxy->library-color self)]
-              (if (some? color)
-                (:path color)
-                (:path initial-color))))
-     :set
-     (fn [self value]
+     :clone
+     (fn []
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :path value)
-
          (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :path "Plugin doesn't have 'library:write' permission")
+         (u/not-valid plugin-id :clone "Plugin doesn't have 'library:write' permission")
 
          :else
-         (when-let [color (u/proxy->library-color self)]
-           (let [color (update color :name #(str value " / " %))]
-             (st/emit! (dwl/update-color color file-id))))))}
+         (let [color-id (uuid/next)
+               color (-> (u/locate-library-color file-id id)
+                         (assoc :id color-id))]
+           (st/emit! (dwl/add-color color {:rename? false}))
+           (lib-color-proxy plugin-id id color-id color))))
 
-    :color
-    {:this true
-     :get (fn [self]
-            (let [color (u/proxy->library-color self)]
-              (if (some? color)
-                (:color color)
-                (:color initial-color))))
-     :set
-     (fn [self value]
+     :asFill
+     (fn []
+       (let [color (u/locate-library-color file-id id)]
+         (format/format-fill
+          {:fill-color (:color color)
+           :fill-opacity (:opacity color)
+           :fill-color-gradient (:gradient color)
+           :fill-color-ref-file file-id
+           :fill-color-ref-id id
+           :fill-image (:image color)})))
+
+     :asStroke
+     (fn []
+       (let [color (u/locate-library-color file-id id)]
+         (format/format-stroke
+          {:stroke-color (:color color)
+           :stroke-opacity (:opacity color)
+           :stroke-color-gradient (:gradient color)
+           :stroke-color-ref-file file-id
+           :stroke-color-ref-id id
+           :stroke-image (:image color)
+           :stroke-style :solid
+           :stroke-alignment :inner})))
+
+     :getPluginData
+     (fn [key]
        (cond
-         (or (not (string? value)) (not (clr/valid-hex-color? value)))
-         (u/not-valid plugin-id :color value)
-
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :color "Plugin doesn't have 'library:write' permission")
+         (not (string? key))
+         (u/not-valid plugin-id :getPluginData-key key)
 
          :else
-         (when-let [color (u/proxy->library-color self)]
-           (let [color (assoc color :color value)]
-             (st/emit! (dwl/update-color-data color file-id))))))}
+         (let [color (u/locate-library-color file-id id)]
+           (dm/get-in color [:plugin-data (keyword "plugin" (str plugin-id)) key]))))
 
-    :opacity
-    {:this true
-     :get (fn [self]
-            (let [color (u/proxy->library-color self)]
-              (if (some? color)
-                (:opacity color)
-                (:opacity initial-color))))
-     :set
-     (fn [self value]
+     :setPluginData
+     (fn [key value]
        (cond
-         (or (not (number? value)) (< value 0) (> value 1))
-         (u/not-valid plugin-id :opacity value)
+         (not= file-id (:current-file-id @st/state))
+         (u/not-valid plugin-id :setPluginData-non-local-library file-id)
+
+         (not (string? key))
+         (u/not-valid plugin-id :setPluginData-key key)
+
+         (and (some? value) (not (string? value)))
+         (u/not-valid plugin-id :setPluginData-value value)
 
          (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :opacity "Plugin doesn't have 'library:write' permission")
+         (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'library:write' permission")
 
          :else
-         (when-let [color (u/proxy->library-color self)]
-           (let [color (assoc color :opacity value)]
-             (st/emit! (dwl/update-color-data color file-id))))))}
+         (st/emit! (dp/set-plugin-data file-id :color id (keyword "plugin" (str plugin-id)) key value))))
 
-    :gradient
-    {:this true
-     :get (fn [self]
-            (let [color (u/proxy->library-color self)]
-              (-> (if (some? color) color initial-color) :gradient format/format-gradient)))
-     :set
-     (fn [self value]
-       (let [value (parser/parse-gradient value)]
-         (cond
-           (not (sm/validate clr/schema:gradient value))
-           (u/not-valid plugin-id :gradient value)
+     :getPluginDataKeys
+     (fn []
+       (let [color (u/locate-library-color file-id id)]
+         (apply array (keys (dm/get-in color [:plugin-data (keyword "plugin" (str plugin-id))])))))
 
-           (not (r/check-permission plugin-id "library:write"))
-           (u/not-valid plugin-id :gradient "Plugin doesn't have 'library:write' permission")
+     :getSharedPluginData
+     (fn [namespace key]
+       (cond
+         (not (string? namespace))
+         (u/not-valid plugin-id :getSharedPluginData-namespace namespace)
 
-           :else
-           (when-let [color (u/proxy->library-color self)]
-             (let [color (assoc color :gradient value)]
-               (st/emit! (dwl/update-color-data color file-id)))))))}
+         (not (string? key))
+         (u/not-valid plugin-id :getSharedPluginData-key key)
 
-    :image
-    {:this true
-     :get (fn [self]
-            (let [color (u/proxy->library-color self)]
-              (-> (if (some? color) color initial-color) :image format/format-image)))
-     :set
-     (fn [self value]
-       (let [value (parser/parse-image-data value)]
-         (cond
-           (not (sm/validate clr/schema:image value))
-           (u/not-valid plugin-id :image value)
+         :else
+         (let [color (u/locate-library-color file-id id)]
+           (dm/get-in color [:plugin-data (keyword "shared" namespace) key]))))
 
-           (not (r/check-permission plugin-id "library:write"))
-           (u/not-valid plugin-id :image "Plugin doesn't have 'library:write' permission")
+     :setSharedPluginData
+     (fn [namespace key value]
+       (cond
+         (not= file-id (:current-file-id @st/state))
+         (u/not-valid plugin-id :setSharedPluginData-non-local-library file-id)
 
-           :else
-           (when-let [color (u/proxy->library-color self)]
-             (let [color (assoc color :image value)]
-               (st/emit! (dwl/update-color-data color file-id)))))))}
+         (not (string? namespace))
+         (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
 
-    :remove
-    (fn []
-      (cond
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
+         (not (string? key))
+         (u/not-valid plugin-id :setSharedPluginData-key key)
 
-        :else
-        (st/emit! (dwl/delete-color {:id id}))))
+         (and (some? value) (not (string? value)))
+         (u/not-valid plugin-id :setSharedPluginData-value value)
 
-    :clone
-    (fn []
-      (cond
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :clone "Plugin doesn't have 'library:write' permission")
+         (not (r/check-permission plugin-id "library:write"))
+         (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
-        :else
-        (let [color-id (uuid/next)
-              color (-> (u/locate-library-color file-id id)
-                        (assoc :id color-id))]
-          (st/emit! (dwl/add-color color {:rename? false}))
-          (lib-color-proxy plugin-id id color-id color))))
+         :else
+         (st/emit! (dp/set-plugin-data file-id :color id (keyword "shared" namespace) key value))))
 
-    :asFill
-    (fn []
-      (let [color (u/locate-library-color file-id id)]
-        (format/format-fill
-         {:fill-color (:color color)
-          :fill-opacity (:opacity color)
-          :fill-color-gradient (:gradient color)
-          :fill-color-ref-file file-id
-          :fill-color-ref-id id
-          :fill-image (:image color)})))
+     :getSharedPluginDataKeys
+     (fn [namespace]
+       (cond
+         (not (string? namespace))
+         (u/not-valid plugin-id :getSharedPluginDataKeys-namespace namespace)
 
-    :asStroke
-    (fn []
-      (let [color (u/locate-library-color file-id id)]
-        (format/format-stroke
-         {:stroke-color (:color color)
-          :stroke-opacity (:opacity color)
-          :stroke-color-gradient (:gradient color)
-          :stroke-color-ref-file file-id
-          :stroke-color-ref-id id
-          :stroke-image (:image color)
-          :stroke-style :solid
-          :stroke-alignment :inner})))
-
-    :getPluginData
-    (fn [key]
-      (cond
-        (not (string? key))
-        (u/not-valid plugin-id :getPluginData-key key)
-
-        :else
-        (let [color (u/locate-library-color file-id id)]
-          (dm/get-in color [:plugin-data (keyword "plugin" (str plugin-id)) key]))))
-
-    :setPluginData
-    (fn [key value]
-      (cond
-        (not= file-id (:current-file-id @st/state))
-        (u/not-valid plugin-id :setPluginData-non-local-library file-id)
-
-        (not (string? key))
-        (u/not-valid plugin-id :setPluginData-key key)
-
-        (and (some? value) (not (string? value)))
-        (u/not-valid plugin-id :setPluginData-value value)
-
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'library:write' permission")
-
-        :else
-        (st/emit! (dp/set-plugin-data file-id :color id (keyword "plugin" (str plugin-id)) key value))))
-
-    :getPluginDataKeys
-    (fn []
-      (let [color (u/locate-library-color file-id id)]
-        (apply array (keys (dm/get-in color [:plugin-data (keyword "plugin" (str plugin-id))])))))
-
-    :getSharedPluginData
-    (fn [namespace key]
-      (cond
-        (not (string? namespace))
-        (u/not-valid plugin-id :getSharedPluginData-namespace namespace)
-
-        (not (string? key))
-        (u/not-valid plugin-id :getSharedPluginData-key key)
-
-        :else
-        (let [color (u/locate-library-color file-id id)]
-          (dm/get-in color [:plugin-data (keyword "shared" namespace) key]))))
-
-    :setSharedPluginData
-    (fn [namespace key value]
-      (cond
-        (not= file-id (:current-file-id @st/state))
-        (u/not-valid plugin-id :setSharedPluginData-non-local-library file-id)
-
-        (not (string? namespace))
-        (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
-
-        (not (string? key))
-        (u/not-valid plugin-id :setSharedPluginData-key key)
-
-        (and (some? value) (not (string? value)))
-        (u/not-valid plugin-id :setSharedPluginData-value value)
-
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'library:write' permission")
-
-        :else
-        (st/emit! (dp/set-plugin-data file-id :color id (keyword "shared" namespace) key value))))
-
-    :getSharedPluginDataKeys
-    (fn [namespace]
-      (cond
-        (not (string? namespace))
-        (u/not-valid plugin-id :getSharedPluginDataKeys-namespace namespace)
-
-        :else
-        (let [color (u/locate-library-color file-id id)]
-          (apply array (keys (dm/get-in color [:plugin-data (keyword "shared" namespace)])))))))))
+         :else
+         (let [color (u/locate-library-color file-id id)]
+           (apply array (keys (dm/get-in color [:plugin-data (keyword "shared" namespace)])))))))))
 
 (defn lib-typography-proxy? [p]
   (obj/type-of? p "LibraryTypographyProxy"))
@@ -313,375 +313,375 @@
    (assert (uuid? id))
 
    (obj/reify {:name "LibraryTypographyProxy"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$id {:enumerable false :get (constantly id)}
-    :$file {:enumerable false :get (constantly file-id)}
-    :id {:get (fn [] (dm/str id))}
+     :$plugin {:enumerable false :get (constantly plugin-id)}
+     :$id {:enumerable false :get (constantly id)}
+     :$file {:enumerable false :get (constantly file-id)}
+     :id {:get (fn [] (dm/str id))}
 
-    :name
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:name typo)
-                (:name initial-typo))))
-     :set
-     (fn [self value]
+     :name
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:name typo)
+                 (:name initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :name value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :name "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [value (dm/str (d/nilv (:path typo) "") " / " value)]
+              (st/emit! (dwl/rename-typography file-id id value))))))}
+
+     :path
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:path typo)
+                 (:path initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :path value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :path "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (update typo :name #(str value " / " %))]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :fontId
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:font-id typo)
+                 (:font-id initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :fontId value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :fontId "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (assoc typo :font-id value)]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :fontFamily
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:font-family typo)
+                 (:font-family initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :fontFamily value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :fontFamily "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (assoc typo :font-family value)]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :fontVariantId
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:font-variant-id typo)
+                 (:font-variant-id initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :fontVariantId value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :fontVariantId "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (assoc typo :font-variant-id value)]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :fontSize
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:font-size typo)
+                 (:font-size initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :fontSize value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :fontSize "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (assoc typo :font-size value)]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :fontWeight
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:font-weight typo)
+                 (:font-weight initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :fontWeight value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :fontWeight "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (assoc typo :font-weight value)]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :fontStyle
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:font-style typo)
+                 (:font-style initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :fontStyle value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :fontStyle "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (assoc typo :font-style value)]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :lineHeight
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:font-height typo)
+                 (:font-height initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :lineHeight value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :lineHeight "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (assoc typo :font-height value)]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :letterSpacing
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:letter-spacing typo)
+                 (:letter-spacing initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :letterSpacing value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :letterSpacing "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (assoc typo :letter-spacing value)]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :textTransform
+     {:this true
+      :get (fn [self]
+             (let [typo (u/proxy->library-typography self)]
+               (if (some? typo)
+                 (:text-transform typo)
+                 (:text-transform initial-typo))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :textTransform value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :textTransform "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [typo (u/proxy->library-typography self)]
+            (let [typo (assoc typo :text-transform value)]
+              (st/emit! (dwl/update-typography typo file-id))))))}
+
+     :remove
+     (fn []
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :name value)
-
          (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :name "Plugin doesn't have 'library:write' permission")
+         (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
 
          :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [value (dm/str (d/nilv (:path typo) "") " / " value)]
-             (st/emit! (dwl/rename-typography file-id id value))))))}
+         (st/emit! (dwl/delete-typography {:id id}))))
 
-    :path
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:path typo)
-                (:path initial-typo))))
-     :set
-     (fn [self value]
+     :clone
+     (fn []
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :path value)
-
          (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :path "Plugin doesn't have 'library:write' permission")
+         (u/not-valid plugin-id :clone "Plugin doesn't have 'library:write' permission")
 
          :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (update typo :name #(str value " / " %))]
-             (st/emit! (dwl/update-typography typo file-id))))))}
+         (let [typo-id (uuid/next)
+               typo (-> (u/locate-library-typography file-id id)
+                        (assoc :id typo-id))]
+           (st/emit! (dwl/add-typography typo false))
+           (lib-typography-proxy plugin-id id typo-id typo))))
 
-    :fontId
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:font-id typo)
-                (:font-id initial-typo))))
-     :set
-     (fn [self value]
+     :applyToText
+     (fn [shape]
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :fontId value)
+         (not (shape/shape-proxy? shape))
+         (u/not-valid plugin-id :applyToText shape)
 
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :fontId "Plugin doesn't have 'library:write' permission")
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
 
          :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (assoc typo :font-id value)]
-             (st/emit! (dwl/update-typography typo file-id))))))}
+         (let [shape-id   (obj/get shape "$id")
+               typography (u/locate-library-typography file-id id)]
+           (st/emit! (dwt/apply-typography #{shape-id} typography file-id)))))
 
-    :fontFamily
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:font-family typo)
-                (:font-family initial-typo))))
-     :set
-     (fn [self value]
+     :applyToTextRange
+     (fn [range]
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :fontFamily value)
+         (not (text/text-range-proxy? range))
+         (u/not-valid plugin-id :applyToText range)
 
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :fontFamily "Plugin doesn't have 'library:write' permission")
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
 
          :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (assoc typo :font-family value)]
-             (st/emit! (dwl/update-typography typo file-id))))))}
+         (let [shape-id (obj/get range "$id")
+               start    (obj/get range "start")
+               end      (obj/get range "end")
+               typography (u/locate-library-typography file-id id)
+               attrs (-> typography
+                         (assoc :typography-ref-file file-id)
+                         (assoc :typography-ref-id (:id typography))
+                         (dissoc :id :name))]
+           (st/emit! (dwt/update-text-range shape-id start end attrs)))))
 
-    :fontVariantId
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:font-variant-id typo)
-                (:font-variant-id initial-typo))))
-     :set
-     (fn [self value]
+     ;; PLUGIN DATA
+     :getPluginData
+     (fn [key]
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :fontVariantId value)
-
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :fontVariantId "Plugin doesn't have 'library:write' permission")
+         (not (string? key))
+         (u/not-valid plugin-id :typography-plugin-data-key key)
 
          :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (assoc typo :font-variant-id value)]
-             (st/emit! (dwl/update-typography typo file-id))))))}
+         (let [typography (u/locate-library-typography file-id id)]
+           (dm/get-in typography [:plugin-data (keyword "plugin" (str plugin-id)) key]))))
 
-    :fontSize
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:font-size typo)
-                (:font-size initial-typo))))
-     :set
-     (fn [self value]
+     :setPluginData
+     (fn [key value]
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :fontSize value)
+         (not= file-id (:current-file-id @st/state))
+         (u/not-valid plugin-id :setPluginData-non-local-library file-id)
+
+         (not (string? key))
+         (u/not-valid plugin-id :setPluginData-key key)
+
+         (and (some? value) (not (string? value)))
+         (u/not-valid plugin-id :setPluginData-value value)
 
          (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :fontSize "Plugin doesn't have 'library:write' permission")
+         (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'library:write' permission")
 
          :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (assoc typo :font-size value)]
-             (st/emit! (dwl/update-typography typo file-id))))))}
+         (st/emit! (dp/set-plugin-data file-id :typography id (keyword "plugin" (str plugin-id)) key value))))
 
-    :fontWeight
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:font-weight typo)
-                (:font-weight initial-typo))))
-     :set
-     (fn [self value]
+     :getPluginDataKeys
+     (fn []
+       (let [typography (u/locate-library-typography file-id id)]
+         (apply array (keys (dm/get-in typography [:plugin-data (keyword "plugin" (str plugin-id))])))))
+
+     :getSharedPluginData
+     (fn [namespace key]
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :fontWeight value)
+         (not (string? namespace))
+         (u/not-valid plugin-id :getSharedPluginData-namespace namespace)
+
+         (not (string? key))
+         (u/not-valid plugin-id :getSharedPluginData-key key)
+
+         :else
+         (let [typography (u/locate-library-typography file-id id)]
+           (dm/get-in typography [:plugin-data (keyword "shared" namespace) key]))))
+
+     :setSharedPluginData
+     (fn [namespace key value]
+       (cond
+         (not= file-id (:current-file-id @st/state))
+         (u/not-valid plugin-id :setSharedPluginData-non-local-library file-id)
+
+         (not (string? namespace))
+         (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
+
+         (not (string? key))
+         (u/not-valid plugin-id :setSharedPluginData-key key)
+
+         (and (some? value) (not (string? value)))
+         (u/not-valid plugin-id :setSharedPluginData-value value)
 
          (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :fontWeight "Plugin doesn't have 'library:write' permission")
+         (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
          :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (assoc typo :font-weight value)]
-             (st/emit! (dwl/update-typography typo file-id))))))}
+         (st/emit! (dp/set-plugin-data file-id :typography id (keyword "shared" namespace) key value))))
 
-    :fontStyle
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:font-style typo)
-                (:font-style initial-typo))))
-     :set
-     (fn [self value]
+     :getSharedPluginDataKeys
+     (fn [namespace]
        (cond
-         (not (string? value))
-         (u/not-valid plugin-id :fontStyle value)
-
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :fontStyle "Plugin doesn't have 'library:write' permission")
+         (not (string? namespace))
+         (u/not-valid plugin-id :getSharedPluginDataKeys-namespace namespace)
 
          :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (assoc typo :font-style value)]
-             (st/emit! (dwl/update-typography typo file-id))))))}
-
-    :lineHeight
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:font-height typo)
-                (:font-height initial-typo))))
-     :set
-     (fn [self value]
-       (cond
-         (not (string? value))
-         (u/not-valid plugin-id :lineHeight value)
-
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :lineHeight "Plugin doesn't have 'library:write' permission")
-
-         :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (assoc typo :font-height value)]
-             (st/emit! (dwl/update-typography typo file-id))))))}
-
-    :letterSpacing
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:letter-spacing typo)
-                (:letter-spacing initial-typo))))
-     :set
-     (fn [self value]
-       (cond
-         (not (string? value))
-         (u/not-valid plugin-id :letterSpacing value)
-
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :letterSpacing "Plugin doesn't have 'library:write' permission")
-
-         :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (assoc typo :letter-spacing value)]
-             (st/emit! (dwl/update-typography typo file-id))))))}
-
-    :textTransform
-    {:this true
-     :get (fn [self]
-            (let [typo (u/proxy->library-typography self)]
-              (if (some? typo)
-                (:text-transform typo)
-                (:text-transform initial-typo))))
-     :set
-     (fn [self value]
-       (cond
-         (not (string? value))
-         (u/not-valid plugin-id :textTransform value)
-
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :textTransform "Plugin doesn't have 'library:write' permission")
-
-         :else
-         (when-let [typo (u/proxy->library-typography self)]
-           (let [typo (assoc typo :text-transform value)]
-             (st/emit! (dwl/update-typography typo file-id))))))}
-
-    :remove
-    (fn []
-      (cond
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
-
-        :else
-        (st/emit! (dwl/delete-typography {:id id}))))
-
-    :clone
-    (fn []
-      (cond
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :clone "Plugin doesn't have 'library:write' permission")
-
-        :else
-        (let [typo-id (uuid/next)
-              typo (-> (u/locate-library-typography file-id id)
-                       (assoc :id typo-id))]
-          (st/emit! (dwl/add-typography typo false))
-          (lib-typography-proxy plugin-id id typo-id typo))))
-
-    :applyToText
-    (fn [shape]
-      (cond
-        (not (shape/shape-proxy? shape))
-        (u/not-valid plugin-id :applyToText shape)
-
-        (not (r/check-permission plugin-id "content:write"))
-        (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
-
-        :else
-        (let [shape-id   (obj/get shape "$id")
-              typography (u/locate-library-typography file-id id)]
-          (st/emit! (dwt/apply-typography #{shape-id} typography file-id)))))
-
-    :applyToTextRange
-    (fn [range]
-      (cond
-        (not (text/text-range-proxy? range))
-        (u/not-valid plugin-id :applyToText range)
-
-        (not (r/check-permission plugin-id "content:write"))
-        (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
-
-        :else
-        (let [shape-id (obj/get range "$id")
-              start    (obj/get range "start")
-              end      (obj/get range "end")
-              typography (u/locate-library-typography file-id id)
-              attrs (-> typography
-                        (assoc :typography-ref-file file-id)
-                        (assoc :typography-ref-id (:id typography))
-                        (dissoc :id :name))]
-          (st/emit! (dwt/update-text-range shape-id start end attrs)))))
-
-    ;; PLUGIN DATA
-    :getPluginData
-    (fn [key]
-      (cond
-        (not (string? key))
-        (u/not-valid plugin-id :typography-plugin-data-key key)
-
-        :else
-        (let [typography (u/locate-library-typography file-id id)]
-          (dm/get-in typography [:plugin-data (keyword "plugin" (str plugin-id)) key]))))
-
-    :setPluginData
-    (fn [key value]
-      (cond
-        (not= file-id (:current-file-id @st/state))
-        (u/not-valid plugin-id :setPluginData-non-local-library file-id)
-
-        (not (string? key))
-        (u/not-valid plugin-id :setPluginData-key key)
-
-        (and (some? value) (not (string? value)))
-        (u/not-valid plugin-id :setPluginData-value value)
-
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'library:write' permission")
-
-        :else
-        (st/emit! (dp/set-plugin-data file-id :typography id (keyword "plugin" (str plugin-id)) key value))))
-
-    :getPluginDataKeys
-    (fn []
-      (let [typography (u/locate-library-typography file-id id)]
-        (apply array (keys (dm/get-in typography [:plugin-data (keyword "plugin" (str plugin-id))])))))
-
-    :getSharedPluginData
-    (fn [namespace key]
-      (cond
-        (not (string? namespace))
-        (u/not-valid plugin-id :getSharedPluginData-namespace namespace)
-
-        (not (string? key))
-        (u/not-valid plugin-id :getSharedPluginData-key key)
-
-        :else
-        (let [typography (u/locate-library-typography file-id id)]
-          (dm/get-in typography [:plugin-data (keyword "shared" namespace) key]))))
-
-    :setSharedPluginData
-    (fn [namespace key value]
-      (cond
-        (not= file-id (:current-file-id @st/state))
-        (u/not-valid plugin-id :setSharedPluginData-non-local-library file-id)
-
-        (not (string? namespace))
-        (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
-
-        (not (string? key))
-        (u/not-valid plugin-id :setSharedPluginData-key key)
-
-        (and (some? value) (not (string? value)))
-        (u/not-valid plugin-id :setSharedPluginData-value value)
-
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'library:write' permission")
-
-        :else
-        (st/emit! (dp/set-plugin-data file-id :typography id (keyword "shared" namespace) key value))))
-
-    :getSharedPluginDataKeys
-    (fn [namespace]
-      (cond
-        (not (string? namespace))
-        (u/not-valid plugin-id :getSharedPluginDataKeys-namespace namespace)
-
-        :else
-        (let [typography (u/locate-library-typography file-id id)]
-          (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)])))))))))
+         (let [typography (u/locate-library-typography file-id id)]
+           (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)])))))))))
 
 (defn get-variant-components
   [file-id variant-id]
@@ -773,221 +773,221 @@
    (assert (uuid? id))
 
    (obj/reify {:name "LibraryComponentProxy"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$id {:enumerable false :get (constantly id)}
-    :$file {:enumerable false :get (constantly file-id)}
-    :id {:get (fn [] (dm/str id))}
+     :$plugin {:enumerable false :get (constantly plugin-id)}
+     :$id {:enumerable false :get (constantly id)}
+     :$file {:enumerable false :get (constantly file-id)}
+     :id {:get (fn [] (dm/str id))}
 
-    :name
-    {:this true
-     :get (fn [self]
-            (let [component (u/proxy->library-component self)]
-              (if (some? component)
-                (:name component)
-                (:name initial-component))))
-     :set
-     (fn [self value]
+     :name
+     {:this true
+      :get (fn [self]
+             (let [component (u/proxy->library-component self)]
+               (if (some? component)
+                 (:name component)
+                 (:name initial-component))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :name value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :name "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [component (u/proxy->library-component self)]
+            (let [value (dm/str (d/nilv (:path component) "") " / " value)]
+              (st/emit! (dwv/rename-comp-or-variant-and-main id value))))))}
+
+     :path
+     {:this true
+      :get (fn [self]
+             (let [component (u/proxy->library-component self)]
+               (if (some? component)
+                 (:path component)
+                 (:path initial-component))))
+      :set
+      (fn [self value]
+        (cond
+          (not (string? value))
+          (u/not-valid plugin-id :path value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :path "Plugin doesn't have 'library:write' permission")
+
+          :else
+          (when-let [component (u/proxy->library-component self)]
+            (let [value (dm/str value " / " (:name component))]
+              (st/emit! (dwl/rename-component id value))))))}
+
+     :remove
+     (fn []
        (cond
+         (not (r/check-permission plugin-id "library:write"))
+         (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
+
+         :else
+         (st/emit! (dwl/delete-component {:id id}))))
+
+     :instance
+     (fn []
+       (cond
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :instance "Plugin doesn't have 'content:write' permission")
+
+         :else
+         (let [id-ref (atom nil)]
+           (st/emit! (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin"}))
+           (shape/shape-proxy plugin-id @id-ref))))
+
+     :getPluginData
+     (fn [key]
+       (cond
+         (not (string? key))
+         (u/not-valid plugin-id :component-plugin-data-key key)
+
+         :else
+         (let [component (u/locate-library-component file-id id)]
+           (dm/get-in component [:plugin-data (keyword "plugin" (str plugin-id)) key]))))
+
+     :setPluginData
+     (fn [key value]
+       (cond
+         (not= file-id (:current-file-id @st/state))
+         (u/not-valid plugin-id :setPluginData-non-local-library file-id)
+
+         (not (string? key))
+         (u/not-valid plugin-id :setPluginData-key key)
+
+         (and (some? value) (not (string? value)))
+         (u/not-valid plugin-id :setPluginData-value value)
+
+         (not (r/check-permission plugin-id "library:write"))
+         (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'library:write' permission")
+
+         :else
+         (st/emit! (dp/set-plugin-data file-id :component id (keyword "plugin" (str plugin-id)) key value))))
+
+     :getPluginDataKeys
+     (fn []
+       (let [component (u/locate-library-component file-id id)]
+         (apply array (keys (dm/get-in component [:plugin-data (keyword "plugin" (str plugin-id))])))))
+
+     :getSharedPluginData
+     (fn [namespace key]
+       (cond
+         (not (string? namespace))
+         (u/not-valid plugin-id :component-plugin-data-namespace namespace)
+
+         (not (string? key))
+         (u/not-valid plugin-id :component-plugin-data-key key)
+
+         :else
+         (let [component (u/locate-library-component file-id id)]
+           (dm/get-in component [:plugin-data (keyword "shared" namespace) key]))))
+
+     :setSharedPluginData
+     (fn [namespace key value]
+       (cond
+         (not= file-id (:current-file-id @st/state))
+         (u/not-valid plugin-id :setSharedPluginData-non-local-library file-id)
+
+         (not (string? namespace))
+         (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
+
+         (not (string? key))
+         (u/not-valid plugin-id :setSharedPluginData-key key)
+
+         (and (some? value) (not (string? value)))
+         (u/not-valid plugin-id :setSharedPluginData-value value)
+
+         (not (r/check-permission plugin-id "library:write"))
+         (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'library:write' permission")
+
+         :else
+         (st/emit! (dp/set-plugin-data file-id :component id (keyword "shared" namespace) key value))))
+
+     :getSharedPluginDataKeys
+     (fn [namespace]
+       (cond
+         (not (string? namespace))
+         (u/not-valid plugin-id :component-plugin-data-namespace namespace)
+
+         :else
+         (let [component (u/locate-library-component file-id id)]
+           (apply array (keys (dm/get-in component [:plugin-data (keyword "shared" namespace)]))))))
+
+     :mainInstance
+     (fn []
+       (let [file (u/locate-file file-id)
+             component (u/locate-library-component file-id id)
+             root (ctf/get-component-root (:data file) component)]
+         (when (some? root)
+           (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))
+
+     :isVariant
+     (fn []
+       (let [component (u/locate-library-component file-id id)]
+         (ctk/is-variant? component)))
+
+     :variants
+     {:enumerable false
+      :get
+      (fn []
+        (let [component (u/locate-library-component file-id id)]
+          (when (ctk/is-variant? component)
+            (variant-proxy plugin-id file-id (:variant-id component)))))}
+
+     :variantProps
+     {:get
+      (fn []
+        (let [component (u/locate-library-component file-id id)]
+          (when (ctk/is-variant? component)
+            (->> (:variant-properties component)
+                 (reduce
+                  (fn [acc {:keys [name value]}]
+                    (obj/set! acc name value))
+                  #js {})))))}
+
+     :variantError
+     {:get (fn []
+             (let [file (u/locate-file file-id)
+                   component (u/locate-library-component file-id id)
+                   root (ctf/get-component-root (:data file) component)]
+               (when (ctk/is-variant? component)
+                 (:variant-error root))))}
+
+     :transformInVariant
+     (fn []
+       (let [component (u/locate-library-component file-id id)]
+         (when (and component
+                    (not (ctk/is-variant? component)))
+           (st/emit!
+            (ev/event {::ev/name "transform-in-variant"  ::ev/origin "plugin:transform-in-variant"})
+            (dwv/transform-in-variant (:main-instance-id component))))))
+
+     :addVariant
+     (fn []
+       (let [component (u/locate-library-component file-id id)]
+         (when (and component
+                    (ctk/is-variant? component))
+           (st/emit!
+            (ev/event {::ev/name "add-new-variant" ::ev/origin "plugin:add-variant-from-component"})
+            (dwv/add-new-variant (:main-instance-id component))))))
+
+     :setVariantProperty
+     (fn [pos value]
+       (cond
+         (not (nat-int? pos))
+         (u/not-valid plugin-id :pos (str pos))
+
          (not (string? value))
          (u/not-valid plugin-id :name value)
 
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :name "Plugin doesn't have 'library:write' permission")
-
          :else
-         (when-let [component (u/proxy->library-component self)]
-           (let [value (dm/str (d/nilv (:path component) "") " / " value)]
-             (st/emit! (dwv/rename-comp-or-variant-and-main id value))))))}
-
-    :path
-    {:this true
-     :get (fn [self]
-            (let [component (u/proxy->library-component self)]
-              (if (some? component)
-                (:path component)
-                (:path initial-component))))
-     :set
-     (fn [self value]
-       (cond
-         (not (string? value))
-         (u/not-valid plugin-id :path value)
-
-         (not (r/check-permission plugin-id "library:write"))
-         (u/not-valid plugin-id :path "Plugin doesn't have 'library:write' permission")
-
-         :else
-         (when-let [component (u/proxy->library-component self)]
-           (let [value (dm/str value " / " (:name component))]
-             (st/emit! (dwl/rename-component id value))))))}
-
-    :remove
-    (fn []
-      (cond
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
-
-        :else
-        (st/emit! (dwl/delete-component {:id id}))))
-
-    :instance
-    (fn []
-      (cond
-        (not (r/check-permission plugin-id "content:write"))
-        (u/not-valid plugin-id :instance "Plugin doesn't have 'content:write' permission")
-
-        :else
-        (let [id-ref (atom nil)]
-          (st/emit! (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin"}))
-          (shape/shape-proxy plugin-id @id-ref))))
-
-    :getPluginData
-    (fn [key]
-      (cond
-        (not (string? key))
-        (u/not-valid plugin-id :component-plugin-data-key key)
-
-        :else
-        (let [component (u/locate-library-component file-id id)]
-          (dm/get-in component [:plugin-data (keyword "plugin" (str plugin-id)) key]))))
-
-    :setPluginData
-    (fn [key value]
-      (cond
-        (not= file-id (:current-file-id @st/state))
-        (u/not-valid plugin-id :setPluginData-non-local-library file-id)
-
-        (not (string? key))
-        (u/not-valid plugin-id :setPluginData-key key)
-
-        (and (some? value) (not (string? value)))
-        (u/not-valid plugin-id :setPluginData-value value)
-
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'library:write' permission")
-
-        :else
-        (st/emit! (dp/set-plugin-data file-id :component id (keyword "plugin" (str plugin-id)) key value))))
-
-    :getPluginDataKeys
-    (fn []
-      (let [component (u/locate-library-component file-id id)]
-        (apply array (keys (dm/get-in component [:plugin-data (keyword "plugin" (str plugin-id))])))))
-
-    :getSharedPluginData
-    (fn [namespace key]
-      (cond
-        (not (string? namespace))
-        (u/not-valid plugin-id :component-plugin-data-namespace namespace)
-
-        (not (string? key))
-        (u/not-valid plugin-id :component-plugin-data-key key)
-
-        :else
-        (let [component (u/locate-library-component file-id id)]
-          (dm/get-in component [:plugin-data (keyword "shared" namespace) key]))))
-
-    :setSharedPluginData
-    (fn [namespace key value]
-      (cond
-        (not= file-id (:current-file-id @st/state))
-        (u/not-valid plugin-id :setSharedPluginData-non-local-library file-id)
-
-        (not (string? namespace))
-        (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
-
-        (not (string? key))
-        (u/not-valid plugin-id :setSharedPluginData-key key)
-
-        (and (some? value) (not (string? value)))
-        (u/not-valid plugin-id :setSharedPluginData-value value)
-
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'library:write' permission")
-
-        :else
-        (st/emit! (dp/set-plugin-data file-id :component id (keyword "shared" namespace) key value))))
-
-    :getSharedPluginDataKeys
-    (fn [namespace]
-      (cond
-        (not (string? namespace))
-        (u/not-valid plugin-id :component-plugin-data-namespace namespace)
-
-        :else
-        (let [component (u/locate-library-component file-id id)]
-          (apply array (keys (dm/get-in component [:plugin-data (keyword "shared" namespace)]))))))
-
-    :mainInstance
-    (fn []
-      (let [file (u/locate-file file-id)
-            component (u/locate-library-component file-id id)
-            root (ctf/get-component-root (:data file) component)]
-        (when (some? root)
-          (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))
-
-    :isVariant
-    (fn []
-      (let [component (u/locate-library-component file-id id)]
-        (ctk/is-variant? component)))
-
-    :variants
-    {:enumerable false
-     :get
-     (fn []
-       (let [component (u/locate-library-component file-id id)]
-         (when (ctk/is-variant? component)
-           (variant-proxy plugin-id file-id (:variant-id component)))))}
-
-    :variantProps
-    {:get
-     (fn []
-       (let [component (u/locate-library-component file-id id)]
-         (when (ctk/is-variant? component)
-           (->> (:variant-properties component)
-                (reduce
-                 (fn [acc {:keys [name value]}]
-                   (obj/set! acc name value))
-                 #js {})))))}
-
-    :variantError
-    {:get (fn []
-            (let [file (u/locate-file file-id)
-                  component (u/locate-library-component file-id id)
-                  root (ctf/get-component-root (:data file) component)]
-              (when (ctk/is-variant? component)
-                (:variant-error root))))}
-
-    :transformInVariant
-    (fn []
-      (let [component (u/locate-library-component file-id id)]
-        (when (and component
-                   (not (ctk/is-variant? component)))
-          (st/emit!
-           (ev/event {::ev/name "transform-in-variant"  ::ev/origin "plugin:transform-in-variant"})
-           (dwv/transform-in-variant (:main-instance-id component))))))
-
-    :addVariant
-    (fn []
-      (let [component (u/locate-library-component file-id id)]
-        (when (and component
-                   (ctk/is-variant? component))
-          (st/emit!
-           (ev/event {::ev/name "add-new-variant" ::ev/origin "plugin:add-variant-from-component"})
-           (dwv/add-new-variant (:main-instance-id component))))))
-
-    :setVariantProperty
-    (fn [pos value]
-      (cond
-        (not (nat-int? pos))
-        (u/not-valid plugin-id :pos (str pos))
-
-        (not (string? value))
-        (u/not-valid plugin-id :name value)
-
-        :else
-        (st/emit!
-         (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "plugin:edit-property-value"})
-         (dwv/update-property-value id pos value)))))))
+         (st/emit!
+          (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "plugin:edit-property-value"})
+          (dwv/update-property-value id pos value)))))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))
