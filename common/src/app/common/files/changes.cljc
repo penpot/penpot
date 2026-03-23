@@ -1191,9 +1191,9 @@
                        ; Check if the shape has changed any
                        ; attribute that participates in components synchronization.
                        (and (= (:type operation) :set)
-                            (get ctk/sync-attrs (:attr operation))))
-          any-sync? (some need-sync? operations)]
-      (when any-sync?
+                            (contains? ctk/sync-attrs (:attr operation))))]
+
+      (when (some need-sync? operations)
         (parents-frames id (:objects page))))))
 
 (defmethod frames-changed :mov-objects
