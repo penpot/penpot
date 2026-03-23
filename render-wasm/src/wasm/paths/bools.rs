@@ -18,7 +18,7 @@ pub enum RawBoolType {
     Union = 0,
     Difference = 1,
     Intersection = 2,
-    Exclusion = 3,
+    Exclude = 3,
 }
 
 impl From<u8> for RawBoolType {
@@ -33,7 +33,7 @@ impl From<RawBoolType> for BoolType {
             RawBoolType::Union => BoolType::Union,
             RawBoolType::Difference => BoolType::Difference,
             RawBoolType::Intersection => BoolType::Intersection,
-            RawBoolType::Exclusion => BoolType::Exclusion,
+            RawBoolType::Exclude => BoolType::Exclusion,
         }
     }
 }
