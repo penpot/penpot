@@ -7,6 +7,7 @@
 (ns app.main.ui.components.numeric-input
   (:require
    [app.common.data :as d]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
@@ -60,6 +61,11 @@
 
         ;; Last value input by the user we need to store to save on unmount
         last-value*  (mf/use-var value)
+
+        ;; Drag scrubbing state
+        drag-state*     (mf/use-ref :idle)
+        drag-start-x*   (mf/use-ref 0)
+        drag-start-val* (mf/use-ref 0)
 
         parse-value
         (mf/use-fn
@@ -213,16 +219,80 @@
         (mf/use-callback
          (mf/deps on-focus select-on-focus?)
          (fn [event]
-           (reset! last-value* (parse-value))
-           (let [target (dom/get-target event)]
-             (when on-focus
-               (mf/set-ref-val! dirty-ref true)
-               (on-focus event))
+           (when-not (= :dragging (mf/ref-val drag-state*))
+             (reset! last-value* (parse-value))
+             (let [target (dom/get-target event)]
+               (when on-focus
+                 (mf/set-ref-val! dirty-ref true)
+                 (on-focus event))
 
-             (when select-on-focus?
-               (dom/select-text! target)
-               ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
-               (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
+               (when select-on-focus?
+                 (dom/select-text! target)
+                 ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
+                 (.addEventListener target "mouseup" dom/prevent-default #js {:once true}))))))
+
+        on-scrub-pointer-down
+        (mf/use-fn
+         (mf/deps value value-str min-value max-value default)
+         (fn [event]
+           (let [disabled? (unchecked-get props "disabled")
+                 node      (mf/ref-val ref)
+                 is-focused (and (some? node) (dom/active? node))]
+             (when-not (or disabled? is-focused (= :multiple value-str))
+               (let [client-x  (.-clientX event)
+                     start-val (or value default 0)]
+                 (mf/set-ref-val! drag-state* :maybe-dragging)
+                 (mf/set-ref-val! drag-start-x* client-x)
+                 (mf/set-ref-val! drag-start-val* start-val)
+                 (dom/capture-pointer event))))))
+
+        on-scrub-pointer-move
+        (mf/use-fn
+         (mf/deps apply-value update-input step-value min-value max-value)
+         (fn [event]
+           (let [state (mf/ref-val drag-state*)]
+             (when (or (= state :maybe-dragging) (= state :dragging))
+               (let [client-x (.-clientX event)
+                     start-x  (mf/ref-val drag-start-x*)
+                     delta-x  (- client-x start-x)]
+                 (when (and (= state :maybe-dragging)
+                            (>= (js/Math.abs delta-x) 3))
+                   (mf/set-ref-val! drag-state* :dragging)
+                   (dom/add-class! (dom/get-body) "cursor-drag-scrub"))
+                 (when (= (mf/ref-val drag-state*) :dragging)
+                   (let [effective-step (cond
+                                          (.-shiftKey event) (* step-value 10)
+                                          (.-ctrlKey event)  (* step-value 0.1)
+                                          :else              step-value)
+                         steps   (js/Math.round (/ delta-x 1))
+                         new-val (+ (mf/ref-val drag-start-val*)
+                                    (* steps effective-step))
+                         new-val (cond-> new-val
+                                   (d/num? min-value) (mth/max min-value)
+                                   (d/num? max-value) (mth/min max-value))]
+                     (update-input new-val)
+                     (apply-value event new-val))))))))
+
+        on-scrub-pointer-up
+        (mf/use-fn
+         (mf/deps ref)
+         (fn [event]
+           (let [state (mf/ref-val drag-state*)]
+             (when (= state :maybe-dragging)
+               (mf/set-ref-val! drag-state* :idle)
+               (dom/release-pointer event)
+               (when-let [node (mf/ref-val ref)]
+                 (dom/focus! node)))
+             (when (= state :dragging)
+               (mf/set-ref-val! drag-state* :idle)
+               (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
+               (dom/release-pointer event)))))
+
+        on-scrub-lost-pointer-capture
+        (mf/use-fn
+         (fn [_event]
+           (mf/set-ref-val! drag-state* :idle)
+           (dom/remove-class! (dom/get-body) "cursor-drag-scrub")))
 
         props (-> (obj/clone props)
                   (obj/unset! "selectOnFocus")
@@ -236,7 +306,11 @@
                   (obj/set! "title" title)
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur)
-                  (obj/set! "onFocus" handle-focus))]
+                  (obj/set! "onFocus" handle-focus)
+                  (obj/set! "onPointerDown" on-scrub-pointer-down)
+                  (obj/set! "onPointerMove" on-scrub-pointer-move)
+                  (obj/set! "onPointerUp" on-scrub-pointer-up)
+                  (obj/set! "onLostPointerCapture" on-scrub-lost-pointer-capture))]
 
     (mf/with-effect [value]
       (when-let [input-node (mf/ref-val ref)]
