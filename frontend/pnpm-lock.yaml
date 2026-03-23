@@ -20,8 +20,8 @@ importers:
         specifier: workspace:./packages/mousetrap
         version: link:packages/mousetrap
       '@penpot/plugins-runtime':
-        specifier: link:../plugins/dist/plugins-runtime
-        version: link:../plugins/dist/plugins-runtime
+        specifier: link:../plugins/libs/plugins-runtime
+        version: link:../plugins/libs/plugins-runtime
       '@penpot/svgo':
         specifier: penpot/svgo#v3.2
         version: svgo@https://codeload.github.com/penpot/svgo/tar.gz/8c9b0e32e9cb5f106085260bd9375f3c91a5010b

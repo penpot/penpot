@@ -1362,7 +1362,7 @@ msgstr "Token trennen"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "%s ist nicht Teil eines aktiven Sets oder ungültig."
+msgstr "{%s} ist nicht Teil eines aktiven Sets oder ungültig."
 
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
@@ -3661,7 +3661,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Eine neue Version ist verfügbar, bitte aktualisieren Sie die Seite"
+msgstr "Eine neue Version ist verfügbar."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"

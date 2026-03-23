@@ -2,6 +2,7 @@
 
 export PENPOT_NITRATE_SHARED_KEY=super-secret-nitrate-api-key
 export PENPOT_EXPORTER_SHARED_KEY=super-secret-exporter-api-key
+export PENPOT_NEXUS_SHARED_KEY=super-secret-nexus-api-key
 export PENPOT_SECRET_KEY=super-secret-devenv-key
 
 # DEPRECATED: only used for subscriptions

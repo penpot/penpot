@@ -16,29 +16,37 @@
   [id]
   (when wasm/context-initialized?
     (let [buffer (uuid/get-u32 id)]
-      (h/call wasm/internal-module "_text_editor_start"
-              (aget buffer 0)
-              (aget buffer 1)
-              (aget buffer 2)
-              (aget buffer 3)))))
+      (when-not (h/call wasm/internal-module "_text_editor_start"
+                        (aget buffer 0)
+                        (aget buffer 1)
+                        (aget buffer 2)
+                        (aget buffer 3))
+        (throw (js/Error. "TextEditor initialization failed"))))))
+
+(defn text-editor-set-cursor-from-offset
+  "Sets caret position from shape relative coordinates"
+  [{:keys [x y]}]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_set_cursor_from_offset" x y)))
 
 (defn text-editor-set-cursor-from-point
-  [x y]
+  "Sets caret position from screen (canvas) coordinates"
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_set_cursor_from_point" x y)))
 
 (defn text-editor-pointer-down
-  [x y]
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_pointer_down" x y)))
 
 (defn text-editor-pointer-move
-  [x y]
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_pointer_move" x y)))
 
 (defn text-editor-pointer-up
-  [x y]
+  [{:keys [x y]}]
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_pointer_up" x y)))
 
@@ -58,44 +66,87 @@
     (let [res (h/call wasm/internal-module "_text_editor_poll_event")]
       res)))
 
-(defn text-editor-insert-text
+(defn text-editor-encode-text-pre
   [text]
-  (when wasm/context-initialized?
+  (when (and (not (empty? text))
+             wasm/context-initialized?)
     (let [encoder (js/TextEncoder.)
           buf (.encode encoder text)
           heapu8 (mem/get-heap-u8)
           size (mem/size buf)
           offset (mem/alloc size)]
-      (mem/write-buffer offset heapu8 buf)
-      (h/call wasm/internal-module "_text_editor_insert_text")
-      (mem/free))))
+      (mem/write-buffer offset heapu8 buf))))
 
-(defn text-editor-delete-backward []
-  (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_delete_backward")))
+(defn text-editor-encode-text-post
+  [text]
+  (when (and (not (empty? text))
+             wasm/context-initialized?)
+    (mem/free)))
 
-(defn text-editor-delete-forward []
+(defn text-editor-composition-start
+  []
   (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_delete_forward")))
+    (h/call wasm/internal-module "_text_editor_composition_start")))
+
+(defn text-editor-composition-update
+  [text]
+  (when wasm/context-initialized?
+    (text-editor-encode-text-pre text)
+    (h/call wasm/internal-module "_text_editor_composition_update")
+    (text-editor-encode-text-post text)))
+
+(defn text-editor-composition-end
+  [text]
+  (when wasm/context-initialized?
+    (text-editor-encode-text-pre text)
+    (h/call wasm/internal-module "_text_editor_composition_end")
+    (text-editor-encode-text-post text)))
+
+(defn text-editor-insert-text
+  [text]
+  (when wasm/context-initialized?
+    (text-editor-encode-text-pre text)
+    (h/call wasm/internal-module "_text_editor_insert_text")
+    (text-editor-encode-text-post text)))
+
+(defn text-editor-delete-backward
+  ([]
+   (text-editor-delete-backward false))
+  ([word-boundary]
+   (when wasm/context-initialized?
+     (h/call wasm/internal-module "_text_editor_delete_backward" word-boundary))))
+
+(defn text-editor-delete-forward
+  ([]
+   (text-editor-delete-forward false))
+  ([word-boundary]
+   (when wasm/context-initialized?
+     (h/call wasm/internal-module "_text_editor_delete_forward" word-boundary))))
 
 (defn text-editor-insert-paragraph []
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_insert_paragraph")))
 
 (defn text-editor-move-cursor
-  [direction extend-selection]
+  [direction word-boundary extend-selection]
   (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_move_cursor" direction (if extend-selection 1 0))))
+    (h/call wasm/internal-module "_text_editor_move_cursor" direction word-boundary (if extend-selection 1 0))))
 
 (defn text-editor-select-all
   []
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_select_all")))
 
+(defn text-editor-select-word-boundary
+  [{:keys [x y]}]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_select_word_boundary" x y)))
+
 (defn text-editor-stop
   []
   (when wasm/context-initialized?
-    (h/call wasm/internal-module "_text_editor_stop")))
+    (when-not (h/call wasm/internal-module "_text_editor_stop")
+      (throw (js/Error. "TextEditor finalization failed")))))
 
 (defn text-editor-is-active?
   ([id]
@@ -160,6 +211,7 @@
         (finally
           (mem/free))))))
 
+;; This is used as a intermediate cache between Clojure global state and WASM state.
 (def ^:private shape-text-contents (atom {}))
 
 (defn- merge-exported-texts-into-content

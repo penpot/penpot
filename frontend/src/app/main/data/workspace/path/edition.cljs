@@ -59,8 +59,8 @@
                 content      (get shape :content)
                 new-content  (path/apply-content-modifiers content content-modifiers)
 
-                old-points   (path.segment/get-points content)
-                new-points   (path.segment/get-points new-content)
+                old-points   (path/get-points content)
+                new-points   (path/get-points new-content)
                 point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
             (when (and (some? new-content) (some? shape))
@@ -162,7 +162,7 @@
             start-position (apply min-key #(gpt/distance start-position %) selected-points)
 
             content (st/get-path state :content)
-            points  (path.segment/get-points content)]
+            points  (path/get-points content)]
 
         (rx/concat
          ;; This stream checks the consecutive mouse positions to do the dragging
@@ -255,7 +255,7 @@
             start-delta-y (dm/get-in modifiers [index cy] 0)
 
             content (st/get-path state :content)
-            points  (path.segment/get-points content)
+            points  (path/get-points content)
 
             point (-> content (nth (if (= prefix :c1) (dec index) index)) (path.helpers/segment->point))
             handler (-> content (nth index) (path.segment/get-handler prefix))

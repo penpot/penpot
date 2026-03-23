@@ -30,6 +30,7 @@
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
+   [app.main.ui.workspace.shapes.text.v3-editor :as editor-v3]
    [app.main.ui.workspace.top-toolbar :refer [top-toolbar*]]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
@@ -54,9 +55,9 @@
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.text-editor-input :refer [text-editor-input]]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
+   [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -361,9 +362,9 @@
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)
-        (if (empty? focus)
-          (wasm.api/clear-focus-mode)
-          (wasm.api/set-focus-mode focus))))
+        (ts/asap #(if (empty? focus)
+                    (wasm.api/clear-focus-mode)
+                    (wasm.api/set-focus-mode focus)))))
 
     (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
@@ -417,14 +418,7 @@
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
-                                               :canvas-ref canvas-ref}])
-
-      ;; WASM text editor contenteditable (must be outside SVG to work)
-      (when (and show-text-editor?
-                 (features/active-feature? @st/state "text-editor-wasm/v1"))
-        [:& text-editor-input {:shape editing-shape
-                               :zoom zoom
-                               :vbox vbox}])]
+                                               :canvas-ref canvas-ref}])]
 
      [:canvas {:id "render"
                :data-testid "canvas-wasm-shapes"
@@ -471,14 +465,20 @@
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        ;; Text editor handling:
        ;; - When text-editor-wasm/v1 is active, contenteditable is rendered in viewport-overlays (HTML DOM)
-       (when (and show-text-editor?
-                  (not (features/active-feature? @st/state "text-editor-wasm/v1")))
-         (if (features/active-feature? @st/state "text-editor/v2")
+       (when show-text-editor?
+         (cond
+           (features/active-feature? @st/state "text-editor-wasm/v1")
+           [:& editor-v3/text-editor {:shape editing-shape
+                                      :canvas-ref canvas-ref
+                                      :ref text-editor-ref}]
+
+           (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
                                       :canvas-ref canvas-ref
                                       :ref text-editor-ref}]
-           [:& editor-v1/text-editor-svg {:shape editing-shape
-                                          :ref text-editor-ref}]))
+
+           :else [:& editor-v1/text-editor-svg {:shape editing-shape
+                                                :ref text-editor-ref}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id

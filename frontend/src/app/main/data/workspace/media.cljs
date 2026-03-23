@@ -251,9 +251,8 @@
 
 (defn upload-fill-image
   [file on-success]
-  (dm/assert!
-   "expected a valid blob for `file` param"
-   (dmm/blob? file))
+  (assert (dmm/blob? file) "expected a valid blob for `file` param")
+
   (ptk/reify ::upload-fill-image
     ptk/WatchEvent
     (watch [_ state _]

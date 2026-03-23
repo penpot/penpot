@@ -19,6 +19,7 @@
 (def ^:icon logo-error-screen (icon-xref :logo-error-screen))
 (def ^:icon logo-subscription (icon-xref :logo-subscription))
 (def ^:icon logo-subscription-light (icon-xref :logo-subscription-light))
+(def ^:icon nitrate-welcome (icon-xref :nitrate-welcome))
 
 (def ^:icon brand-openid (icon-xref :brand-openid))
 (def ^:icon brand-github (icon-xref :brand-github))

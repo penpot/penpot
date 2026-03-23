@@ -41,21 +41,34 @@ pub fn render_debug_cache_surface(render_state: &mut RenderState) {
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
+    if !render_state.options.show_wasm_info() {
+        return;
+    }
+
     let canvas = render_state.surfaces.canvas(SurfaceId::Target);
     let skia::ISize { width, height } = canvas.base_layer_size();
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::GRAY);
 
-    let str = if render_state.options.is_debug_visible() {
+    let mut str = if render_state.options.is_debug_visible() {
         "WASM RENDERER (DEBUG)"
     } else {
         "WASM RENDERER"
     };
     let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
-    let p = skia::Point::new(width as f32 - 25.0 - scalar, height as f32 - 25.0);
+    let mut p = skia::Point::new(width as f32 - 25.0 - scalar, height as f32 - 25.0);
 
     let debug_font = render_state.fonts.debug_font();
     canvas.draw_str(str, p, debug_font, &paint);
+
+    if render_state.options.is_text_editor_v3() {
+        str = "TEXT EDITOR / V3";
+
+        let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
+        p.x = width as f32 - 25.0 - scalar;
+        p.y -= 20.0;
+        canvas.draw_str(str, p, debug_font, &paint);
+    }
 }
 
 #[allow(dead_code)]
@@ -170,9 +183,12 @@ pub fn render_debug_shape(
 #[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
 pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
-    let base64_image = render_state.surfaces.base64_snapshot(id);
+    let base64_image = render_state
+        .surfaces
+        .base64_snapshot(id)
+        .expect("Failed to get base64 image");
 
-    run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
+    run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"));
 }
 
 #[allow(dead_code)]
@@ -185,7 +201,10 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
         rect.bottom as i32,
     );
 
-    let base64_image = render_state.surfaces.base64_snapshot_rect(id, int_rect);
+    let base64_image = render_state
+        .surfaces
+        .base64_snapshot_rect(id, int_rect)
+        .expect("Failed to get base64 image");
 
     if let Some(base64_image) = base64_image {
         run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))

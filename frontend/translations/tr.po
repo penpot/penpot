@@ -3673,7 +3673,7 @@ msgstr "Bakım arası: 5 dakika içinde kısa bir bakım için kapalı olacağı
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Yeni bir sürüm mevcut, lütfen sayfayı yenileyin"
+msgstr "Yeni bir sürüm mevcut."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"

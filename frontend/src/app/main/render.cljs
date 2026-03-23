@@ -45,6 +45,7 @@
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.text.fontfaces :as ff]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.strings :as ust]
@@ -53,6 +54,7 @@
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (def ^:const viewbox-decimal-precision 3)
@@ -171,6 +173,8 @@
             ;; Don't wrap svg elements inside a <g> otherwise some can break
             [:> svg-raw-wrapper {:shape shape :frame frame}]))))))
 
+(set! wasm.api/shape-wrapper-factory shape-wrapper-factory)
+
 (defn format-viewbox
   "Format a viewbox given a rectangle"
   [{:keys [x y width height] :or {x 0 y 0 width 100 height 100}}]
@@ -196,7 +200,7 @@
         ;; Replace the previous object with the new one
         objects  (assoc objects object-id object)
 
-        vector (-> (gpt/point (:x object) (:y object))
+        vector (-> (gpt/point (-> object :selrect :x) (-> object :selrect :y))
                    (gpt/negate))
 
         mod-ids  (cons object-id (cfh/get-children-ids objects object-id))
@@ -479,6 +483,50 @@
 
        [:& ff/fontfaces-style {:fonts fonts}]
        [:& shape-wrapper {:shape object}]]]]))
+
+(defn render-to-canvas
+  [objects canvas bounds scale object-id]
+  (try
+    (when (wasm.api/init-canvas-context canvas)
+      (wasm.api/initialize-viewport
+       objects scale bounds "#000000" 0
+       (fn []
+         (wasm.api/render-sync-shape object-id)
+         (dom/set-attribute! canvas "id" (dm/str "screenshot-" object-id)))))
+    (catch :default e
+      (js/console.error "Error initializing canvas context:" e)
+      false)))
+
+(mf/defc object-wasm
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects object-id skip-children scale] :as props}]
+  (let [object  (get objects object-id)
+        object (cond-> object
+                 (:hide-fill-on-export object)
+                 (assoc :fills [])
+
+                 skip-children
+                 (assoc :shapes []))
+
+        {:keys [width height] :as bounds}
+        (gsb/get-object-bounds objects object {:ignore-margin? false})
+
+        scale (or scale 1)
+        canvas-ref (mf/use-ref nil)]
+
+    (mf/use-effect
+     (fn []
+       (let [canvas (mf/ref-val canvas-ref)]
+         (->> @wasm.api/module
+              (p/fmap
+               (fn [ready?]
+                 (when ready?
+                   (render-to-canvas objects canvas bounds scale object-id))))))))
+
+    [:canvas {:ref canvas-ref
+              :width (* scale width)
+              :height (* scale height)
+              :style {:background "transparent"}}]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SPRITES (DEBUG)

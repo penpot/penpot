@@ -129,7 +129,14 @@ export class PluginModalElement extends HTMLElement {
         return;
       }
 
-      iframe.contentWindow.postMessage((e as CustomEvent).detail, '*');
+      try {
+        iframe.contentWindow.postMessage((e as CustomEvent).detail, '*');
+      } catch (err) {
+        console.error(
+          'plugin modal: failed to send message to iframe via postMessage.',
+          err,
+        );
+      }
     });
 
     this.shadowRoot.appendChild(this.wrapper);

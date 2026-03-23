@@ -19,13 +19,11 @@
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.sidebar.assets.components :as wsac]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.wasm :as wasm.wasm]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.dom.normalize-wheel :as nw]
@@ -74,7 +72,6 @@
                shift? (kbd/shift? native-event)
                alt?   (kbd/alt? native-event)
                mod?   (kbd/mod? native-event)
-               off-pt (dom/get-offset-position native-event)
 
                left-click?   (and (not panning) (dom/left-mouse? event))
                middle-click? (and (not panning) (dom/middle-mouse? event))]
@@ -94,23 +91,8 @@
                (st/emit! (mse/->MouseEvent :down ctrl? shift? alt? meta?)
                          ::dwsp/interrupt)
 
-               (when (wasm.api/text-editor-is-active?)
-                 (wasm.api/text-editor-pointer-down (.-x off-pt) (.-y off-pt)))
-
                (when (and (not= edition id) (or text-editing? grid-editing?))
-                 (st/emit! (dw/clear-edition-mode))
-                 ;; FIXME: I think this is not completely correct because this
-                 ;; is going to happen even when clicking or selecting text.
-                 ;; Sync and stop WASM text editor when exiting edit mode
-                 #_(when (and text-editing?
-                              (features/active-feature? @st/state "render-wasm/v1")
-                              wasm.wasm/context-initialized?)
-                     (when-let [{:keys [shape-id content]} (wasm.api/text-editor-sync-content)]
-                       (st/emit! (dwt/v2-update-text-shape-content
-                                  shape-id content
-                                  :update-name? true
-                                  :finalize? true)))
-                     (wasm.api/text-editor-stop)))
+                 (st/emit! (dw/clear-edition-mode)))
 
                (when (and (not text-editing?)
                           (not blocked)
@@ -192,8 +174,6 @@
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
              hovering? (some? @hover)
-             native-event (dom/event->native-event event)
-             off-pt (dom/get-offset-position native-event)
              raw-pt (dom/get-client-position event)
              pt     (uwvv/point->viewport raw-pt)]
          (st/emit! (mse/->MouseEvent :click ctrl? shift? alt? meta?))
@@ -206,20 +186,6 @@
                     (not drawing-path?)
                     (not drawing-tool))
            (st/emit! (dw/select-shape (:id @hover) shift?)))
-
-         ;; FIXME: Maybe we can move into a function of the kind
-         ;; "text-editor-on-click"
-         ;; If clicking on a text shape and wasm render is enabled, forward cursor position
-         (when (and hovering?
-                    (not @space?)
-                    edition  ;; Only when already in edit mode
-                    (not drawing-path?)
-                    (not drawing-tool))
-           (let [hover-shape @hover]
-             (when (and (= :text (:type hover-shape))
-                        (features/active-feature? @st/state "text-editor-wasm/v1")
-                        wasm.wasm/context-initialized?)
-               (wasm.api/text-editor-set-cursor-from-point (.-x off-pt) (.-y off-pt)))))
 
          (when (and @z?
                     (not @space?)
@@ -262,19 +228,7 @@
                 (and editable? (not= id edition) (not read-only?))
                 (do
                   (st/emit! (dw/select-shape id)
-                            (dw/start-editing-selected))
-                  ;; If using wasm text-editor, notify WASM to start editing this shape
-                  ;; and set cursor position from the double-click location
-                  (when (and (= type :text)
-                             (features/active-feature? @st/state "text-editor-wasm/v1")
-                             wasm.wasm/context-initialized?)
-                    (wasm.api/text-editor-start id)))
-
-                (and editable? (= id edition) (not read-only?)
-                     (= type :text)
-                     (features/active-feature? @st/state "text-editor-wasm/v1")
-                     wasm.wasm/context-initialized?)
-                (wasm.api/text-editor-select-all)
+                            (dw/start-editing-selected)))
 
                 (some? selected-shape)
                 (do

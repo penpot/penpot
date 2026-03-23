@@ -45,6 +45,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
   * `name` - Shape name
   * `fills: Fill[]`, `strokes: Stroke[]`, `shadows: Shadow[]` - Styling properties
     - Setting fills: `shape.fills = [{ fillColor: "#FF0000", fillOpacity: 1 }]`; no fill (transparent): `shape.fills = []`; 
+    - Reusing objects in another shape: `targetShape.fills = sourceShape.fills` or more granular `targetShape.fills = [{ fillOpacity: 1, fillImage: sourceShape.fills[0].fillImage }]`
+      The objects are not shared references; you can modify properties of the fills in the target shape without affecting the source shape.
     - Colors: Use hex strings with caps only (e.g. '#FF5533')
     - IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them!  
   * `borderRadius` - Uniform border radius for all corners
@@ -80,6 +82,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
 
 Cloning: Use `shape.clone(): Shape` to create an exact duplicate (including all properties and children) of a shape; same position as original.
 
+Annotations: Don't add text elements to the design that just repeat a shape's name. In the Penpot UI, the name is displayed anyway.
+
 # Images
 
 The `Image` type is a legacy type. Images are now typically embedded in a `Fill`, with `fillImage` set to an
@@ -91,10 +95,10 @@ Use the `export_shape` and `import_image` tools to export and import images.
 Boards can have layout systems that automatically control the positioning and spacing of their children:
 
   * If a board has a layout system, then child positions are controlled by the layout system.
-    For every child, key properties of the child within the layout are stored in `child.layoutChild: LayoutChildProperties`:
+    After adding a shape to the layout as a child, key properties of the child within the layout are controlled in `child.layoutChild: LayoutChildProperties`:
     - `absolute: boolean` - if true, child position is not controlled by layout system. x/y will set *relative* position within parent!
     - margins (`topMargin`, `rightMargin`, `bottomMargin`, `leftMargin` or combined `verticalMargin`, `horizontalMargin`)
-    - sizing (`verticalSizing`, `horizontalSizing`: "fill" | "auto" | "fix")
+    - sizing (`verticalSizing`, `horizontalSizing`: "fix" | "auto" | "fill") - controls child resizing depending on the layout's sizing mode (see below)
     - min/max sizes (`minWidth`, `maxWidth`, `minHeight`, `maxHeight`)
     - `zIndex: number` (higher numbers on top)
 
@@ -104,11 +108,9 @@ Boards can have layout systems that automatically control the positioning and sp
        - Padding: `topPadding`, `rightPadding`, `bottomPadding`, `leftPadding`, or combined `verticalPadding`, `horizontalPadding`
        - To modify spacing: adjust `rowGap` and `columnGap` properties, not individual child positions.
          Optionally, adjust individual child margins via `child.layoutChild`.
-       - Sizing: `verticalSizing` and `horizontalSizing` are NOT functional. You need to size manually for the time being.
     - When a board has flex layout, child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
       appending or inserting children automatically positions them according to the layout rules.
-    - CRITICAL: The FlexLayout method `board.flex.appendChild` is BROKEN. To append children to a flex layout board such that
-      they appear visually at the end, ALWAYS use the Board's method `board.appendChild(shape)`. So call it in the order of visual appearance.
+    - To append children to a flex layout board such that they appear visually at the end, use the Board's method `board.appendChild(shape)`, i.e. call it in the order of visual appearance.
       To insert at a specific index, use `board.insertChild(index, shape)`.
     - Add to a board with `board.addFlexLayout(): FlexLayout`; instance then accessible via `board.flex`.
       IMPORTANT: When adding a flex layout to a container that already has children,
@@ -121,8 +123,13 @@ Boards can have layout systems that automatically control the positioning and sp
       Check with: `if (board.grid) { ... }`
     - Properties: `rows`, `columns`, `rowGap`, `columnGap`
     - Children are positioned via 1-based row/column indices
-        - Add to grid via `board.flex.appendChild(shape, row, column)`
+        - Add to grid via `board.grid.appendChild(shape, row, column)`
         - Modify grid positioning after the fact via `shape.layoutCell: LayoutCellProperties`
+
+  * Auto-sizing: both types of layouts have properties `verticalSizing`, `horizontalSizing`: "fix" | "auto" | "fill"
+    - `fix` (default): no resizing (size determined by shape's own width/height)
+    - `auto`: size determined by content (container will resize depending on children's dimensions); ALWAYS set this if you want the container size to adapt to contents/margins/spacings!
+    - `fill`: resize children to fill the container's size (child resizing is controlled by each child's `layoutChild` properties)
 
   * When working with boards:
     - ALWAYS check if the board has a layout system before attempting to reposition children
@@ -275,7 +282,7 @@ Variants are a system for grouping related component versions along named proper
   - check with `isVariantContainer()`
   - property `variants: Variants`.
 * `Variants`: Defines the combinations of property values for which component variants can exist and manages the concrete component variants. 
-  - `properties: string[]` (ordered list of property names); `addProperty()`, `renameProperty(pos, name)`, `currentValues(property)`
+  - `properties: string[]` (ordered list of property names); `addProperty(): void`, `renameProperty(pos, name)`, `currentValues(property)`
   - `variantComponents(): LibraryVariantComponent[]` 
 * `LibraryVariantComponent` (extends `LibraryComponent`): full library component with metadata, for which `isVariant()` returns true.
   - `variantProps: { [property: string]: string }` (this component's value for each property)
@@ -285,11 +292,11 @@ Variants are a system for grouping related component versions along named proper
 Properties are often addressed positionally: `pos` parameter in various methods = index in `Variants.properties`.
 
 **Creating a variant group**:
-- `component.transformInVariant(): null`: Converts a standard component into a variant group, creating a `VariantContainer` and a second duplicate variant. 
-  Both start with a default property `Property 1` with values `Value 1` / `Value 2`; there is no name-based auto-parsing.
-- `board.combineAsVariants(ids: string[]): null`: Combines the board (a main component instance) with other main components (referenced via IDs) into a new variant group. 
-  All components end up inside a single new `VariantContainer` on the canvas.
-- In both cases, look for the created `VariantContainer` on the page, and then edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
+- `penpot.createVariantFromComponents(mainInstances: Board[]): VariantContainer`: Combines several main component instances into a new variant group. 
+  All components end up inside a single new container on the canvas.
+  NOTE: The returned instance `variantContainer` is not usable but has an usable id; use `penpot.findShapeById(variantContainer.id)` to get the actual instance you can work with.
+  The container's `Variants` instance is initialised with one property `Property 1`, with the property values set to the respective component's name.
+- After creation, edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
 
 **Adding a variant to an existing group**:
 Use `variantContainer.appendChild(mainInstance)` to move a component's main instance into the container, then set its position manually and assign property values via `setVariantProperty`.
@@ -305,18 +312,18 @@ Design tokens are reusable design values (colors, dimensions, typography, etc.) 
 The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
   * `sets: TokenSet[]` - Token collections (order matters for precedence)
   * `themes: TokenTheme[]` - Presets that activate specific sets
-  * `addSet(name: string): TokenSet` - Create new set
+  * `addSet({name: string}): TokenSet` - Create new set
   * `addTheme(group: string, name: string): TokenTheme` - Create new theme
 
 `TokenSet` contains tokens with unique names:
   * `active: boolean` - Only active sets affect shapes; use `set.toggleActive()` to change: `if (!set.active) set.toggleActive();`
   * `tokens: Token[]` - All tokens in set
-  * `addToken(type: TokenType, name: string, value: TokenValueString): Token` - Creates a token, adding it to the set.
+  * `addToken({type: TokenType, name: string, value: TokenValueString}): Token` - Creates a token, adding it to the set.
      - `TokenType`: "color" | "dimension" | "spacing" | "typography" | "shadow" | "opacity" | "borderRadius" | "borderWidth" | "fontWeights" | "fontSizes" | "fontFamilies" | "letterSpacing" | "textDecoration" | "textCase"
      - `value`: depends on the type of token (inspect `Token` and related types)
      - Examples:
-       const token = set.addToken("color", "color.primary", "#0066FF"); // direct value
-       const token2 = set.addToken("color", "color.accent", "{color.primary}"); // reference to another token
+       const token = set.addToken({type: "color", name: "color.primary", value: "#0066FF"}); // direct value
+       const token2 = set.addToken({type: "color", name: "color.accent", value: "{color.primary}"}); // reference to another token
 
 `Token`: union type encompassing various token types, with common properties:
   * `name: string` - Token name (typically structured, e.g. "color.base.white")
@@ -335,7 +342,7 @@ Applying tokens:
     (if properties is undefined, use a default property based on the token type - not usually recommended).
     `TokenProperty` is a union type; possible values are:
     - "all": applies the token to all properties it can control
-    - TokenBorderRadiusProps: "r1", "r2", "r3", "r4"
+    - TokenBorderRadiusProps: "borderRadiusTopLeft", "borderRadiusTopRight", "borderRadiusBottomRight", "borderRadiusBottomLeft"
     - TokenShadowProps: "shadow"
     - TokenColorProps: "fill", "strokeColor"
     - TokenDimensionProps: "x", "y", "strokeWidth"
@@ -346,7 +353,7 @@ Applying tokens:
     - TokenNumberProps: "rotation"
     - TokenOpacityProps: "opacity"
     - TokenSizingProps: "width", "height", "layoutItemMinW", "layoutItemMaxW", "layoutItemMinH", "layoutItemMaxH"
-    - TokenSpacingProps: "rowGap", "columnGap", "p1", "p2", "p3", "p4", "m1", "m2", "m3", "m4"
+    - TokenSpacingProps: "rowGap", "columnGap", "paddingLeft", "paddingTop", "paddingRight", "paddingBottom", "marginLeft", "marginTop", "marginRight", "marginBottom"
     - TokenBorderWidthProps: "strokeWidth"
     - TokenTextCaseProps: "textCase"
     - TokenTextDecorationProps: "textDecoration"

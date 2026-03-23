@@ -33,6 +33,27 @@
 ;; Will contain last uncaught exception
 (def last-exception nil)
 
+;; --- Stale-asset error detection and auto-reload
+;;
+;; When the browser loads JS modules from different builds (e.g.  shared.js from
+;; build A and main-dashboard.js from build B because you loaded it in the
+;; middle of a deploy per example), keyword constants referenced across modules
+;; will be undefined. This manifests as TypeError messages containing
+;; "$cljs$cst$" and "is undefined" or "is null".
+
+(defn stale-asset-error?
+  "Returns true if the error matches the signature of a cross-build
+  module mismatch: accessing a ClojureScript keyword constant that
+  doesn't exist on the shared $APP object."
+  [cause]
+  (when (some? cause)
+    (let [message (ex-message cause)]
+      (and (string? message)
+           (str/includes? message "$cljs$cst$")
+           (or (str/includes? message "is undefined")
+               (str/includes? message "is null")
+               (str/includes? message "is not a function"))))))
+
 (defn exception->error-data
   [cause]
   (let [data (ex-data cause)]
@@ -72,7 +93,6 @@
         (when-let [file-id (or (:file-id data) file-id)]
           (println "File ID: " (str file-id)))
         (println "Version: " (:full cf/version))
-        (println "URI:     " (str cf/public-uri))
         (println "HREF:    " (rt/get-current-href))
         (println)
 
@@ -88,24 +108,36 @@
       (.error js/console "error on generating report" cause)
       nil)))
 
-(defn- show-not-blocking-error
-  "Show a non user blocking error notification"
-  [cause]
-  (let [data (ex-data cause)
-        hint (or (some-> (:hint data) ex/first-line)
-                 (ex-message cause))]
-
+(defn submit-report
+  "Report the error report to the audit log subsystem"
+  [& {:keys [event-name report hint] :or {event-name "unhandled-exception"}}]
+  (when (and (not (str/empty? hint))
+             (string? report)
+             (string? event-name))
     (st/emit!
-     (ev/event {::ev/name "unhandled-exception"
+     (ev/event {::ev/name event-name
                 :hint hint
                 :href (rt/get-current-href)
-                :type (get data :type :unknown)
-                :report (generate-report cause)})
+                :report report}))))
 
-     (ntf/show {:content (tr "errors.unexpected-exception" hint)
-                :type :toast
-                :level :error
-                :timeout 3000}))))
+(defn flash
+  "Show error notification banner and emit error report"
+  [& {:keys [type hint cause] :or {type :handled}}]
+  (when (ex/exception? cause)
+    (when-let [event-name (case type
+                            :handled "handled-exception"
+                            :unhandled "unhandled-exception"
+                            :silent nil)]
+      (let [report (generate-report cause)]
+        (submit-report :event-name event-name
+                       :report report
+                       :hint (ex/get-hint cause)))))
+
+  (st/emit!
+   (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
+              :type :toast
+              :level :error
+              :timeout 5000})))
 
 (defmethod ptk/handle-error :default
   [error]
@@ -114,7 +146,17 @@
     (ptk/handle-error (assoc error :type :assertion))
     (when-let [cause (::instance error)]
       (ex/print-throwable cause :prefix "Unexpected Error")
-      (show-not-blocking-error cause))))
+      (flash :cause cause :type :unhandled))))
+
+(defmethod ptk/handle-error :wasm-error
+  [error]
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause)
+    (let [code (get error :code)]
+      (if (or (= code :panic)
+              (= code :webgl-context-lost))
+        (st/emit! (rt/assign-exception error))
+        (flash :type :handled :cause cause)))))
 
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
@@ -203,7 +245,7 @@
 (defmethod ptk/handle-error :assertion
   [error]
   (when-let [cause (::instance error)]
-    (show-not-blocking-error cause)
+    (flash :cause cause :type :handled)
     (ex/print-throwable cause :prefix "Assertion Error")))
 
 ;; ;; All the errors that happens on worker are handled here.
@@ -307,7 +349,7 @@
     :else
     (when-let [cause (::instance error)]
       (ex/print-throwable cause :prefix "Restriction Error")
-      (show-not-blocking-error cause))))
+      (flash :cause cause :type :unhandled))))
 
 ;; This happens when the backed server fails to process the
 ;; request. This can be caused by an internal assertion or any other
@@ -320,27 +362,60 @@
   (st/async-emit! (rt/assign-exception error)))
 
 (defonce uncaught-error-handler
-  (letfn [(is-ignorable-exception? [cause]
+  (letfn [(from-extension? [cause]
+            (let [stack (.-stack cause)]
+              (and (string? stack)
+                   (or (str/includes? stack "chrome-extension://")
+                       (str/includes? stack "moz-extension://")))))
+
+          (from-posthog? [cause]
+            (let [stack (.-stack cause)]
+              (and (string? stack)
+                   (str/includes? stack "posthog"))))
+
+          (is-ignorable-exception? [cause]
             (let [message (ex-message cause)]
-              (or (= message "Possible side-effect in debug-evaluate")
+              (or (from-extension? cause)
+                  (from-posthog? cause)
+                  (= message "Possible side-effect in debug-evaluate")
                   (= message "Unexpected end of input")
                   (str/starts-with? message "invalid props on component")
-                  (str/starts-with? message "Unexpected token "))))
+                  (str/starts-with? message "Unexpected token ")
+                  ;; Abort errors are expected when an in-flight HTTP request is
+                  ;; cancelled (e.g. via RxJS unsubscription / take-until).  They
+                  ;; are handled gracefully inside app.util.http/fetch and must
+                  ;; NOT be surfaced as application errors.
+                  (= (.-name ^js cause) "AbortError"))))
 
           (on-unhandled-error [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
-              (set! last-exception cause)
               (when-not (is-ignorable-exception? cause)
-                (ex/print-throwable cause :prefix "Uncaught Exception")
-                (ts/schedule #(show-not-blocking-error cause)))))
+                (if (stale-asset-error? cause)
+                  (cf/throttled-reload :reason (ex-message cause))
+                  (let [data (ex-data cause)
+                        type (get data :type)]
+                    (set! last-exception cause)
+                    (if (= :wasm-error type)
+                      (on-error cause)
+                      (do
+                        (ex/print-throwable cause :prefix "Uncaught Exception")
+                        (ts/asap #(flash :cause cause :type :unhandled)))))))))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "reason")]
-              (set! last-exception cause)
-              (ex/print-throwable cause :prefix "Uncaught Rejection")
-              (ts/schedule #(show-not-blocking-error cause))))]
+              (when-not (is-ignorable-exception? cause)
+                (if (stale-asset-error? cause)
+                  (cf/throttled-reload :reason (ex-message cause))
+                  (let [data (ex-data cause)
+                        type (get data :type)]
+                    (set! last-exception cause)
+                    (if (= :wasm-error type)
+                      (on-error cause)
+                      (do
+                        (ex/print-throwable cause :prefix "Uncaught Rejection")
+                        (ts/asap #(flash :cause cause :type :unhandled)))))))))]
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)

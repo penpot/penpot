@@ -377,7 +377,15 @@
 (defn- parse-single-shadow
   "Parses a single shadow map with properties: x, y, blur, spread, color, type."
   [shadow-map shadow-index]
-  (let [add-keyed-errors (fn [shadow-result k errors]
+  (let [shadow-map (merge {:offset-x nil   ;; Ensure that all keys are processed, even if missing in the original token
+                           :offset-y nil
+                           :blur nil
+                           :spread nil
+                           :color nil
+                           :inset false}
+                          shadow-map)
+
+        add-keyed-errors (fn [shadow-result k errors]
                            (update shadow-result :errors concat
                                    (map #(assoc % :shadow-key k :shadow-index shadow-index) errors)))
         parsers {:offset-x parse-sd-token-general-value

@@ -41,6 +41,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.errors]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -258,33 +259,39 @@
   #js {:decodeTransit t/decode-str
        :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")})
 
-(defn create-paste-from-blob
+(defn- create-paste-from-blob
   [in-viewport?]
   (fn [blob]
-    (let [type (.-type blob)
-          result (cond
-                   (= type "image/svg+xml")
-                   (->> (rx/from (.text blob))
-                        (rx/map paste-svg-text))
+    (let [type (.-type blob)]
+      (cond
+        (= type "image/svg+xml")
+        (->> (rx/from (.text blob))
+             (rx/map paste-svg-text))
 
-                   (some #(= type %) clipboard/image-types)
-                   (rx/of (paste-image blob))
+        (some #(= type %) clipboard/image-types)
+        (rx/of (paste-image blob))
 
-                   (= type "text/html")
-                   (->> (rx/from (.text blob))
-                        (rx/map paste-html-text))
+        (= type "text/html")
+        (->> (rx/from (.text blob))
+             (rx/map paste-html-text))
 
-                   (= type "application/transit+json")
-                   (->> (rx/from (.text blob))
-                        (rx/map (fn [text]
-                                  (let [transit-data (t/decode-str text)]
-                                    (assoc transit-data :in-viewport in-viewport?))))
-                        (rx/map paste-transit-shapes))
+        (= type "application/transit+json")
+        (->> (rx/from (.text blob))
+             (rx/map t/decode-str)
+             (rx/filter map?)
+             (rx/map
+              (fn [pdata]
+                (assoc pdata :in-viewport in-viewport?)))
+             (rx/mapcat
+              (fn [pdata]
+                (case (:type pdata)
+                  :copied-props  (rx/of (paste-transit-props pdata))
+                  :copied-shapes (rx/of (paste-transit-shapes pdata))
+                  (rx/empty)))))
 
-                   :else
-                   (->> (rx/from (.text blob))
-                        (rx/map paste-text)))]
-      result)))
+        :else
+        (->> (rx/from (.text blob))
+             (rx/map paste-text))))))
 
 (def default-paste-from-blob (create-paste-from-blob false))
 
@@ -964,10 +971,11 @@
             text    (.-textContent root)
             content (tc/dom->cljs root)]
         (when (types.text/valid-content? content)
-          (let [id     (uuid/next)
-                width  (max 8 (min (* 7 (count text)) 700))
-                height 16
+          (let [id            (uuid/next)
+                width         (max 8 (min (* 7 (count text)) 700))
+                height        16
                 {:keys [x y]} (calculate-paste-position state)
+                skip-edition? (features/active-feature? state "text-editor-wasm/v1")
 
                 shape {:id id
                        :type :text
@@ -979,9 +987,14 @@
                        :grow-type (if (> (count text) 100) :auto-height :auto-width)
                        :content content}
                 undo-id (js/Symbol)]
-            (rx/of (dwu/start-undo-transaction undo-id)
-                   (dwsh/create-and-add-shape :text x y shape)
-                   (dwu/commit-undo-transaction undo-id))))))))
+            (rx/concat
+             (rx/of (dwu/start-undo-transaction undo-id)
+                    (dwsh/create-and-add-shape :text x y shape
+                                               (when skip-edition? {:skip-edition? true})))
+             (if skip-edition?
+               (rx/of (dwwt/resize-wasm-text-debounce id {:undo-group id
+                                                          :undo-id undo-id}))
+               (rx/of (dwu/commit-undo-transaction undo-id))))))))))
 
 (defn- paste-text
   [text]
@@ -989,10 +1002,11 @@
   (ptk/reify ::paste-text
     ptk/WatchEvent
     (watch [_ state _]
-      (let [id (uuid/next)
-            width (max 8 (min (* 7 (count text)) 700))
-            height 16
+      (let [id            (uuid/next)
+            width         (max 8 (min (* 7 (count text)) 700))
+            height        16
             {:keys [x y]} (calculate-paste-position state)
+            skip-edition? (features/active-feature? state "text-editor-wasm/v1")
 
             shape {:id id
                    :type :text
@@ -1005,9 +1019,14 @@
                    :content (as-content text)}
             undo-id (js/Symbol)]
 
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dwsh/create-and-add-shape :text x y shape)
-               (dwu/commit-undo-transaction undo-id))))))
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dwsh/create-and-add-shape :text x y shape
+                                           (when skip-edition? {:skip-edition? true})))
+         (if skip-edition?
+           (rx/of (dwwt/resize-wasm-text-debounce id {:undo-group id
+                                                      :undo-id undo-id}))
+           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 ;; TODO: why not implement it in terms of upload-media-workspace?
 (defn- paste-svg-text

@@ -9,11 +9,14 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.http.client :as http]
+   [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [datoteka.fs :as fs]))
+   [datoteka.fs :as fs]
+   [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -278,3 +281,100 @@
           error-data (ex-data error)]
       (t/is (th/ex-info? error))
       (t/is (= (:type error-data) :not-found)))))
+
+
+(t/deftest download-image-connection-error
+  (t/testing "connection refused raises validation error"
+    (with-mocks [http-mock {:target 'app.http.client/req!
+                            :throw (java.net.ConnectException. "Connection refused")}]
+      (let [cfg {::http/client :mock-client}
+            err (try
+                  (media/download-image cfg "http://unreachable.invalid/image.png")
+                  nil
+                  (catch clojure.lang.ExceptionInfo e e))]
+        (t/is (some? err))
+        (t/is (= :validation (:type (ex-data err))))
+        (t/is (= :unable-to-download-image (:code (ex-data err)))))))
+
+  (t/testing "connection timeout raises validation error"
+    (with-mocks [http-mock {:target 'app.http.client/req!
+                            :throw (java.net.http.HttpConnectTimeoutException. "Connect timed out")}]
+      (let [cfg {::http/client :mock-client}
+            err (try
+                  (media/download-image cfg "http://unreachable.invalid/image.png")
+                  nil
+                  (catch clojure.lang.ExceptionInfo e e))]
+        (t/is (some? err))
+        (t/is (= :validation (:type (ex-data err))))
+        (t/is (= :unable-to-download-image (:code (ex-data err)))))))
+
+  (t/testing "request timeout raises validation error"
+    (with-mocks [http-mock {:target 'app.http.client/req!
+                            :throw (java.net.http.HttpTimeoutException. "Request timed out")}]
+      (let [cfg {::http/client :mock-client}
+            err (try
+                  (media/download-image cfg "http://unreachable.invalid/image.png")
+                  nil
+                  (catch clojure.lang.ExceptionInfo e e))]
+        (t/is (some? err))
+        (t/is (= :validation (:type (ex-data err))))
+        (t/is (= :unable-to-download-image (:code (ex-data err)))))))
+
+  (t/testing "I/O error raises validation error"
+    (with-mocks [http-mock {:target 'app.http.client/req!
+                            :throw (java.io.IOException. "Stream closed")}]
+      (let [cfg {::http/client :mock-client}
+            err (try
+                  (media/download-image cfg "http://unreachable.invalid/image.png")
+                  nil
+                  (catch clojure.lang.ExceptionInfo e e))]
+        (t/is (some? err))
+        (t/is (= :validation (:type (ex-data err))))
+        (t/is (= :unable-to-download-image (:code (ex-data err))))))))
+
+
+(t/deftest download-image-status-code-error
+  (t/testing "404 status raises validation error"
+    (with-mocks [http-mock {:target 'app.http.client/req!
+                            :return {:status 404
+                                     :headers {"content-type" "text/html"
+                                               "content-length" "0"}
+                                     :body nil}}]
+      (let [cfg {::http/client :mock-client}
+            err (try
+                  (media/download-image cfg "http://example.com/not-found.png")
+                  nil
+                  (catch clojure.lang.ExceptionInfo e e))]
+        (t/is (some? err))
+        (t/is (= :validation (:type (ex-data err))))
+        (t/is (= :unable-to-download-image (:code (ex-data err)))))))
+
+  (t/testing "500 status raises validation error"
+    (with-mocks [http-mock {:target 'app.http.client/req!
+                            :return {:status 500
+                                     :headers {"content-type" "text/html"
+                                               "content-length" "0"}
+                                     :body nil}}]
+      (let [cfg {::http/client :mock-client}
+            err (try
+                  (media/download-image cfg "http://example.com/server-error.png")
+                  nil
+                  (catch clojure.lang.ExceptionInfo e e))]
+        (t/is (some? err))
+        (t/is (= :validation (:type (ex-data err))))
+        (t/is (= :unable-to-download-image (:code (ex-data err)))))))
+
+  (t/testing "302 status raises validation error"
+    (with-mocks [http-mock {:target 'app.http.client/req!
+                            :return {:status 302
+                                     :headers {"content-type" "text/html"
+                                               "content-length" "0"}
+                                     :body nil}}]
+      (let [cfg {::http/client :mock-client}
+            err (try
+                  (media/download-image cfg "http://example.com/redirect.png")
+                  nil
+                  (catch clojure.lang.ExceptionInfo e e))]
+        (t/is (some? err))
+        (t/is (= :validation (:type (ex-data err))))
+        (t/is (= :unable-to-download-image (:code (ex-data err))))))))

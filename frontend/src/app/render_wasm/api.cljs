@@ -23,7 +23,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.refs :as refs]
-   [app.main.render :as render]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
    [app.main.worker :as mw]
@@ -52,6 +51,14 @@
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
+
+(defn text-editor-wasm?
+  []
+  (or (contains? cf/flags :feature-text-editor-wasm)
+      (let [runtime-features (get @st/state :features-runtime)
+            enabled-features (get @st/state :features)]
+        (or (contains? runtime-features "text-editor-wasm/v1")
+            (contains? enabled-features "text-editor-wasm/v1")))))
 
 (def ^:const UUID-U8-SIZE 16)
 (def ^:const UUID-U32-SIZE (/ UUID-U8-SIZE 4))
@@ -86,12 +93,14 @@
 ;; Re-export public text editor functions
 (def text-editor-start text-editor/text-editor-start)
 (def text-editor-stop text-editor/text-editor-stop)
+(def text-editor-set-cursor-from-offset text-editor/text-editor-set-cursor-from-offset)
 (def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
 (def text-editor-pointer-down text-editor/text-editor-pointer-down)
 (def text-editor-pointer-move text-editor/text-editor-pointer-move)
 (def text-editor-pointer-up text-editor/text-editor-pointer-up)
 (def text-editor-is-active? text-editor/text-editor-is-active?)
 (def text-editor-select-all text-editor/text-editor-select-all)
+(def text-editor-select-word-boundary text-editor/text-editor-select-word-boundary)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
 
 (def dpr
@@ -99,6 +108,9 @@
 
 (def noop-fn
   (constantly nil))
+
+;;
+(def shape-wrapper-factory nil)
 
 (defn- yield-to-browser
   "Returns a promise that resolves after yielding to the browser's event loop.
@@ -115,7 +127,7 @@
   (let [objects (mf/deref refs/workspace-page-objects)
         shape-wrapper
         (mf/with-memo [shape]
-          (render/shape-wrapper-factory objects))]
+          (shape-wrapper-factory objects))]
 
     [:svg {:version "1.1"
            :xmlns "http://www.w3.org/2000/svg"
@@ -147,11 +159,8 @@
         ;; Determine if text-editor-wasm feature is active without requiring
         ;; app.main.features to avoid circular dependency: check runtime and
         ;; persisted feature sets in the store state.
-        (let [runtime-features (get @st/state :features-runtime)
-              enabled-features (get @st/state :features)]
-          (when (or (contains? runtime-features "text-editor-wasm/v1")
-                    (contains? enabled-features "text-editor-wasm/v1"))
-            (text-editor/text-editor-render-overlay)))
+        (when (text-editor-wasm?)
+          (text-editor/text-editor-render-overlay))
         ;; Poll for editor events; if any event occurs, trigger a re-render
         (let [ev (text-editor/text-editor-poll-event)]
           (when (and ev (not= ev 0))
@@ -945,14 +954,14 @@
     (= result 1)))
 
 (def render-finish
-  (letfn [(do-render [ts]
+  (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when wasm/context-initialized?
               (perf/begin-measure "render-finish")
               (h/call wasm/internal-module "_set_view_end")
-              (render ts)
-              (perf/end-measure "render-finish")))]
+              (perf/end-measure "render-finish")
+              (render (js/performance.now))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan
@@ -1003,62 +1012,62 @@
 (defn set-object
   [shape]
   (perf/begin-measure "set-object")
-  (let [shape        (svg-filters/apply-svg-derived shape)
-        id           (dm/get-prop shape :id)
-        type         (dm/get-prop shape :type)
+  (when shape
+    (let [shape        (svg-filters/apply-svg-derived shape)
+          id           (dm/get-prop shape :id)
+          type         (dm/get-prop shape :type)
 
-        masked       (get shape :masked-group)
+          masked       (get shape :masked-group)
 
-        fills        (get shape :fills)
-        strokes      (if (= type :group)
-                       [] (get shape :strokes))
-        children     (get shape :shapes)
-        content      (let [content (get shape :content)]
-                       (if (= type :text)
-                         (ensure-text-content content)
-                         content))
-        bool-type    (get shape :bool-type)
-        grow-type    (get shape :grow-type)
-        blur         (get shape :blur)
-        svg-attrs    (get shape :svg-attrs)
-        shadows      (get shape :shadow)]
+          fills        (get shape :fills)
+          strokes      (if (= type :group)
+                         [] (get shape :strokes))
+          children     (get shape :shapes)
+          content      (let [content (get shape :content)]
+                         (if (= type :text)
+                           (ensure-text-content content)
+                           content))
+          bool-type    (get shape :bool-type)
+          grow-type    (get shape :grow-type)
+          blur         (get shape :blur)
+          svg-attrs    (get shape :svg-attrs)
+          shadows      (get shape :shadow)]
 
-    (shapes/set-shape-base-props shape)
+      (shapes/set-shape-base-props shape)
 
-    ;; Remaining properties that need separate calls (variable-length or conditional)
-    (set-shape-children children)
-    (set-shape-blur blur)
-    (when (= type :group)
-      (set-masked (boolean masked)))
-    (when (= type :bool)
-      (set-shape-bool-type bool-type))
-    (when (and (some? content)
-               (or (= type :path)
-                   (= type :bool)))
-      (set-shape-path-content content))
-    (when (some? svg-attrs)
-      (set-shape-svg-attrs svg-attrs))
-    (when (and (some? content) (= type :svg-raw))
-      (set-shape-svg-raw-content (get-static-markup shape)))
-    (set-shape-shadows shadows)
-    (when (= type :text)
-      (set-shape-grow-type grow-type))
+      ;; Remaining properties that need separate calls (variable-length or conditional)
+      (set-shape-children children)
+      (set-shape-blur blur)
+      (when (= type :group)
+        (set-masked (boolean masked)))
+      (when (= type :bool)
+        (set-shape-bool-type bool-type))
+      (when (and (some? content)
+                 (or (= type :path)
+                     (= type :bool)))
+        (set-shape-path-content content))
+      (when (some? svg-attrs)
+        (set-shape-svg-attrs svg-attrs))
+      (when (and (some? content) (= type :svg-raw))
+        (set-shape-svg-raw-content (get-static-markup shape)))
+      (set-shape-shadows shadows)
+      (when (= type :text)
+        (set-shape-grow-type grow-type))
 
-    (set-shape-layout shape)
-    (set-layout-data shape)
-
-    (let [pending_thumbnails (into [] (concat
-                                       (set-shape-text-content id content)
-                                       (set-shape-text-images id content true)
-                                       (set-shape-fills id fills true)
-                                       (set-shape-strokes id strokes true)))
-          pending_full (into [] (concat
-                                 (set-shape-text-images id content false)
-                                 (set-shape-fills id fills false)
-                                 (set-shape-strokes id strokes false)))]
-      (perf/end-measure "set-object")
-      {:thumbnails pending_thumbnails
-       :full pending_full})))
+      (set-shape-layout shape)
+      (set-layout-data shape)
+      (let [pending_thumbnails (into [] (concat
+                                         (set-shape-text-content id content)
+                                         (set-shape-text-images id content true)
+                                         (set-shape-fills id fills true)
+                                         (set-shape-strokes id strokes true)))
+            pending_full (into [] (concat
+                                   (set-shape-text-images id content false)
+                                   (set-shape-fills id fills false)
+                                   (set-shape-strokes id strokes false)))]
+        (perf/end-measure "set-object")
+        {:thumbnails pending_thumbnails
+         :full pending_full}))))
 
 (defn update-text-layouts
   [shapes]
@@ -1368,9 +1377,11 @@
 
 (defn initialize-viewport
   ([base-objects zoom vbox background]
-   (initialize-viewport base-objects zoom vbox background nil))
+   (initialize-viewport base-objects zoom vbox background 1 nil))
   ([base-objects zoom vbox background callback]
-   (let [rgba         (sr-clr/hex->u32argb background 1)
+   (initialize-viewport base-objects zoom vbox background 1 callback))
+  ([base-objects zoom vbox background background-opacity callback]
+   (let [rgba         (sr-clr/hex->u32argb background background-opacity)
          shapes       (into [] (vals base-objects))
          total-shapes (count shapes)]
      (h/call wasm/internal-module "_set_canvas_background" rgba)
@@ -1393,7 +1404,11 @@
   []
   (cond-> 0
     (dbg/enabled? :wasm-viewbox)
-    (bit-or 2r00000000000000000000000000000001)))
+    (bit-or 2r00000000000000000000000000000001)
+    (text-editor-wasm?)
+    (bit-or 2r00000000000000000000000000000100)
+    (contains? cf/flags :render-wasm-info)
+    (bit-or 2r00000000000000000000000000001000)))
 
 (defn set-canvas-size
   [canvas]
@@ -1402,25 +1417,13 @@
     (set! (.-width canvas) (* dpr width))
     (set! (.-height canvas) (* dpr height))))
 
-(defn- get-browser
-  []
-  (when (exists? js/navigator)
-    (let [user-agent (.-userAgent js/navigator)]
-      (when user-agent
-        (cond
-          (re-find #"(?i)firefox" user-agent) :firefox
-          (re-find #"(?i)chrome" user-agent) :chrome
-          (re-find #"(?i)safari" user-agent) :safari
-          (re-find #"(?i)edge" user-agent) :edge
-          :else :unknown)))))
-
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
   (reset! wasm/context-lost? true)
-  (log/warn :hint "WebGL context lost")
-  (ex/raise :type :webgl-context-lost
-            :hint "WebGL context lost"))
+  (ex/raise :type :wasm-error
+            :code :webgl-context-lost
+            :hint "WASM Error: WebGL context lost"))
 
 (defn init-canvas-context
   [canvas]
@@ -1429,8 +1432,7 @@
         context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
         context (.getContext ^js canvas context-id default-context-options)
         context-init? (not (nil? context))
-        browser (get-browser)
-        browser (sr/translate-browser browser)]
+        browser (sr/translate-browser cf/browser)]
     (when-not (nil? context)
       (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
         (.makeContextCurrent ^js gl handle)
@@ -1656,6 +1658,24 @@
   (let [controls-to-blur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
     (run! #(dom/set-style! % "filter" "blur(4px)") controls-to-blur)))
 
+(defn render-shape-pixels
+  [shape-id scale]
+  (let [buffer (uuid/get-u32 shape-id)
+
+        offset
+        (h/call wasm/internal-module "_render_shape_pixels"
+                (aget buffer 0)
+                (aget buffer 1)
+                (aget buffer 2)
+                (aget buffer 3)
+                scale)
+
+        heap (mem/get-heap-u8)
+        heapu32 (mem/get-heap-u32)
+        length (aget heapu32 (mem/->offset-32 offset))
+        result (dr/read-image-bytes heap (+ offset 12) length)]
+    (mem/free)
+    result))
 
 (defn init-wasm-module
   [module]

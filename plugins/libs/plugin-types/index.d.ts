@@ -243,11 +243,17 @@ export interface Board extends ShapeBase {
 
   /**
    * The horizontal sizing behavior of the board.
+   * It can be one of the following values:
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'auto': The container fits the content.
    */
   horizontalSizing?: 'auto' | 'fix';
 
   /**
    * The vertical sizing behavior of the board.
+   * It can be one of the following values:
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'auto': The container fits the content.
    */
   verticalSizing?: 'auto' | 'fix';
 
@@ -738,19 +744,19 @@ export interface CommonLayout {
   /**
    * The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
    * It can be one of the following values:
-   * - 'fit-content': The container fits the content.
-   * - 'fill': The container fills the available space.
-   * - 'auto': The container size is determined automatically.
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fill': The container fills the available space. Only can be set if it's inside another layout.
+   * - 'auto': The container fits the content.
    */
-  horizontalSizing: 'fit-content' | 'fill' | 'auto';
+  horizontalSizing: 'fix' | 'fill' | 'auto';
   /**
    * The `verticalSizing` property specifies the vertical sizing behavior of the container.
    * It can be one of the following values:
-   * - 'fit-content': The container fits the content.
-   * - 'fill': The container fills the available space.
-   * - 'auto': The container size is determined automatically.
+   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fill': The container fills the available space. Only can be set if it's inside another layout.
+   * - 'auto': The container fits the content.
    */
-  verticalSizing: 'fit-content' | 'fill' | 'auto';
+  verticalSizing: 'fix' | 'fill' | 'auto';
 
   /**
    * The `remove` method removes the layout.
@@ -762,6 +768,11 @@ export interface CommonLayout {
  * Represents the context of Penpot, providing access to various Penpot functionalities and data.
  */
 export interface Context {
+  /**
+   * Returns the current penpot version.
+   */
+  readonly version: string;
+
   /**
    * The root shape in the current Penpot context. Requires `content:read` permission.
    *
@@ -1250,15 +1261,15 @@ export interface Context {
 
   /**
    * Changes the current open page to given page. Requires `content:read` permission.
-   * @param page the page to open
-   * @param newWindow if true opens the page in a new window
+   * @param page the page to open (a Page object or a page UUID string)
+   * @param newWindow if true opens the page in a new window, defaults to false
    *
    * @example
    * ```js
    * context.openPage(page);
    * ```
    */
-  openPage(page: Page, newWindow?: boolean): void;
+  openPage(page: Page | string, newWindow?: boolean): void;
 
   /**
    * Aligning will move all the selected layers to a position relative to one
@@ -1297,6 +1308,15 @@ export interface Context {
    * @param shapes to flatten
    */
   flatten(shapes: Shape[]): Path[];
+
+  /**
+   * Combine several standard Components into a VariantComponent. Similar to doing it
+   * with the contextual menu on the Penpot interface.
+   * All the shapes passed as arguments should be main instances.
+   * @param shapes A list of main instances of the components to combine.
+   * @return The variant container created
+   */
+  createVariantFromComponents(shapes: Board[]): VariantContainer;
 }
 
 /**
@@ -1695,6 +1715,13 @@ export interface Flags {
    * Defaults to false
    */
   naturalChildOrdering: boolean;
+
+  /**
+   * If `true` the validation errors will throw an exception instead of displaying an
+   * error in the debugger console.
+   * Defaults to false
+   */
+  throwValidationErrors: boolean;
 }
 
 /**
@@ -3818,8 +3845,9 @@ export interface ShapeBase extends PluginData {
    * on the Penpot interface.
    * The current shape must be a component main instance.
    * @param ids A list of ids of the main instances of the components to combine with this one.
+   * @return The variant container created
    */
-  combineAsVariants(ids: string[]): void;
+  combineAsVariants(ids: string[]): VariantContainer;
 
   /**
    * @return Returns true when the current shape is the head of a components tree nested structure,
@@ -5215,7 +5243,11 @@ export interface TokenTheme {
 /**
  * The properties that a BorderRadius token can be applied to.
  */
-type TokenBorderRadiusProps = 'r1' | 'r2' | 'r3' | 'r4';
+type TokenBorderRadiusProps =
+  | 'borderRadiusTopLeft'
+  | 'borderRadiusTopRight'
+  | 'borderRadiusBottomRight'
+  | 'borderRadiusBottomLeft';
 
 /**
  * The properties that a Shadow token can be applied to.
@@ -5291,16 +5323,16 @@ type TokenSpacingProps =
   | 'columnGap'
 
   // Spacing / Padding
-  | 'p1'
-  | 'p2'
-  | 'p3'
-  | 'p4'
+  | 'paddingLeft'
+  | 'paddingTop'
+  | 'paddingRight'
+  | 'paddingBottom'
 
   // Spacing / Margin
-  | 'm1'
-  | 'm2'
-  | 'm3'
-  | 'm4';
+  | 'marginLeft'
+  | 'marginTop'
+  | 'marginRight'
+  | 'marginBottom';
 
 /**
  * The properties that a BorderWidth token can be applied to.

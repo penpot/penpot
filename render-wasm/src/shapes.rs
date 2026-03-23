@@ -30,7 +30,7 @@ pub mod text_paths;
 mod transform;
 
 pub use blend::*;
-pub use blurs::*;
+pub use blurs::{radius_to_sigma, Blur, BlurType};
 pub use bools::*;
 pub use corners::*;
 pub use fills::*;
@@ -705,9 +705,8 @@ impl Shape {
         self.invalidate_extrect();
     }
 
-    pub fn set_svg_raw_content(&mut self, content: String) -> Result<(), String> {
+    pub fn set_svg_raw_content(&mut self, content: String) {
         self.shape_type = Type::SVGRaw(SVGRaw::from_content(content));
-        Ok(())
     }
 
     pub fn set_blend_mode(&mut self, mode: BlendMode) {
@@ -1005,7 +1004,8 @@ impl Shape {
             }
         }
 
-        let blur = skia::image_filters::blur((children_blur, children_blur), None, None, None);
+        let sigma = radius_to_sigma(children_blur);
+        let blur = skia::image_filters::blur((sigma, sigma), None, None, None);
         if let Some(image_filter) = blur {
             let blur_bounds = image_filter.compute_fast_bounds(rect);
             rect.join(blur_bounds);
@@ -1237,12 +1237,11 @@ impl Shape {
         self.blur
             .filter(|blur| !blur.hidden)
             .and_then(|blur| match blur.blur_type {
-                BlurType::LayerBlur => skia::image_filters::blur(
-                    (blur.value * scale, blur.value * scale),
-                    None,
-                    None,
-                    None,
-                ),
+                BlurType::LayerBlur => {
+                    let sigma = radius_to_sigma(blur.value * scale);
+                    skia::image_filters::blur((sigma, sigma), None, None, None)
+                }
+                BlurType::BackgroundBlur => None,
             })
     }
 
@@ -1252,8 +1251,10 @@ impl Shape {
             .filter(|blur| !blur.hidden)
             .and_then(|blur| match blur.blur_type {
                 BlurType::LayerBlur => {
-                    skia::MaskFilter::blur(skia::BlurStyle::Normal, blur.value * scale, Some(true))
+                    let sigma = radius_to_sigma(blur.value * scale);
+                    skia::MaskFilter::blur(skia::BlurStyle::Normal, sigma, Some(true))
                 }
+                BlurType::BackgroundBlur => None,
             })
     }
 

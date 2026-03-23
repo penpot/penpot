@@ -1,0 +1,737 @@
+{
+  "~:features": {
+    "~#set": [
+      "fdata/path-data",
+      "design-tokens/v1",
+      "variants/v1",
+      "layout/grid",
+      "fdata/pointer-map",
+      "fdata/objects-map",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:team-id": "~u0b5bcbca-32ab-81eb-8005-a15fc4484678",
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "holadios",
+  "~:revn": 54,
+  "~:modified-at": "~m1773136426990",
+  "~:vern": 0,
+  "~:id": "~ueffcbebc-b8c8-802f-8007-b0ebecd7ebf4",
+  "~:is-shared": false,
+  "~:migrations": {
+    "~#ordered-set": [
+      "legacy-2",
+      "legacy-3",
+      "legacy-5",
+      "legacy-6",
+      "legacy-7",
+      "legacy-8",
+      "legacy-9",
+      "legacy-10",
+      "legacy-11",
+      "legacy-12",
+      "legacy-13",
+      "legacy-14",
+      "legacy-16",
+      "legacy-17",
+      "legacy-18",
+      "legacy-19",
+      "legacy-25",
+      "legacy-26",
+      "legacy-27",
+      "legacy-28",
+      "legacy-29",
+      "legacy-31",
+      "legacy-32",
+      "legacy-33",
+      "legacy-34",
+      "legacy-36",
+      "legacy-37",
+      "legacy-38",
+      "legacy-39",
+      "legacy-40",
+      "legacy-41",
+      "legacy-42",
+      "legacy-43",
+      "legacy-44",
+      "legacy-45",
+      "legacy-46",
+      "legacy-47",
+      "legacy-48",
+      "legacy-49",
+      "legacy-50",
+      "legacy-51",
+      "legacy-52",
+      "legacy-53",
+      "legacy-54",
+      "legacy-55",
+      "legacy-56",
+      "legacy-57",
+      "legacy-59",
+      "legacy-62",
+      "legacy-65",
+      "legacy-66",
+      "legacy-67",
+      "0001-remove-tokens-from-groups",
+      "0002-normalize-bool-content-v2",
+      "0002-clean-shape-interactions",
+      "0003-fix-root-shape",
+      "0003-convert-path-content-v2",
+      "0004-clean-shadow-color",
+      "0005-deprecate-image-type",
+      "0006-fix-old-texts-fills",
+      "0008-fix-library-colors-v4",
+      "0009-clean-library-colors",
+      "0009-add-partial-text-touched-flags",
+      "0010-fix-swap-slots-pointing-non-existent-shapes",
+      "0011-fix-invalid-text-touched-flags",
+      "0012-fix-position-data",
+      "0013-fix-component-path",
+      "0013-clear-invalid-strokes-and-fills",
+      "0014-fix-tokens-lib-duplicate-ids",
+      "0014-clear-components-nil-objects",
+      "0015-fix-text-attrs-blank-strings",
+      "0016-copy-fills-from-position-data-to-text-node",
+      "0015-clean-shadow-color"
+    ]
+  },
+  "~:version": 67,
+  "~:project-id": "~u0b5bcbca-32ab-81eb-8005-a15fc448f334",
+  "~:created-at": "~m1773127290716",
+  "~:backend": "legacy-db",
+  "~:data": {
+    "~:pages": [
+      "~u3e9e17c3-fc57-80ce-8007-101743996fe9"
+    ],
+    "~:pages-index": {
+      "~u3e9e17c3-fc57-80ce-8007-101743996fe9": {
+        "~:id": "~u3e9e17c3-fc57-80ce-8007-101743996fe9",
+        "~:name": "Page 1",
+        "~:objects": {
+          "~u00000000-0000-0000-0000-000000000000": {
+            "~#shape": {
+              "~:y": 0,
+              "~:hide-fill-on-export": false,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:name": "Root Frame",
+              "~:width": 0.01,
+              "~:type": "~:frame",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0.01
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0.01
+                  }
+                }
+              ],
+              "~:r2": 0,
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:page-id": "~u3e9e17c3-fc57-80ce-8007-101743996fe9",
+              "~:r3": 0,
+              "~:r1": 0,
+              "~:id": "~u00000000-0000-0000-0000-000000000000",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 0,
+              "~:proportion": 1,
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 0,
+                  "~:y": 0,
+                  "~:width": 0.01,
+                  "~:height": 0.01,
+                  "~:x1": 0,
+                  "~:y1": 0,
+                  "~:x2": 0.01,
+                  "~:y2": 0.01
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#FFFFFF",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 0.01,
+              "~:flip-y": null,
+              "~:shapes": [
+                "~u7d004cdb-8305-806a-8007-b0f01ee65230",
+                "~u2ae0abdc-99ff-8009-8007-b0f7f123b5ea",
+                "~u2ae0abdc-99ff-8009-8007-b0f7f45177dc"
+              ]
+            }
+          },
+          "~u7d004cdb-8305-806a-8007-b0f01ee65230": {
+            "~#shape": {
+              "~:y": -161.000001410182,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:auto-width",
+              "~:content": {
+                "~:type": "root",
+                "~:key": "6hv3a5x8wb",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:typography-ref-id": null,
+                            "~:text-transform": "none",
+                            "~:font-id": "sourcesanspro",
+                            "~:key": "219sqyfv11",
+                            "~:font-size": "250",
+                            "~:font-weight": "400",
+                            "~:typography-ref-file": null,
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#000000",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "sourcesanspro",
+                            "~:text": "HELLO WORLD"
+                          }
+                        ],
+                        "~:typography-ref-id": null,
+                        "~:text-transform": "none",
+                        "~:text-align": "left",
+                        "~:font-id": "sourcesanspro",
+                        "~:key": "21rct71nkal",
+                        "~:font-size": "250",
+                        "~:font-weight": "400",
+                        "~:typography-ref-file": null,
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#000000",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "sourcesanspro"
+                      }
+                    ]
+                  }
+                ],
+                "~:vertical-align": "top"
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "HELLO WORLD",
+              "~:width": 1529.00000393592,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 109.999998223851,
+                    "~:y": -161.000001410182
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1639.00000215977,
+                    "~:y": -161.000001410182
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1639.00000215977,
+                    "~:y": 138.999988970841
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 109.999998223851,
+                    "~:y": 138.999988970841
+                  }
+                }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u7d004cdb-8305-806a-8007-b0f01ee65230",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:position-data": [
+                {
+                  "~:y": 150.869995117188,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "250",
+                  "~:font-weight": "400",
+                  "~:text-direction": "ltr",
+                  "~:width": 1528.56005859375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0",
+                  "~:x": 110,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 323.739990234375,
+                  "~:text": "HELLO WORLD"
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:center",
+                  "~:stroke-width": 50,
+                  "~:stroke-color": "#43e50b",
+                  "~:stroke-opacity": 0.6
+                }
+              ],
+              "~:x": 109.999998223851,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 109.999998223851,
+                  "~:y": -161.000001410182,
+                  "~:width": 1529.00000393592,
+                  "~:height": 299.999990381022,
+                  "~:x1": 109.999998223851,
+                  "~:y1": -161.000001410182,
+                  "~:x2": 1639.00000215977,
+                  "~:y2": 138.999988970841
+                }
+              },
+              "~:flip-x": null,
+              "~:height": 299.999990381022,
+              "~:flip-y": null
+            }
+          },
+          "~u2ae0abdc-99ff-8009-8007-b0f7f123b5ea": {
+            "~#shape": {
+              "~:y": -462.000004970439,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:auto-width",
+              "~:content": {
+                "~:type": "root",
+                "~:key": "6hv3a5x8wb",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:text-transform": "none",
+                            "~:font-id": "sourcesanspro",
+                            "~:key": "219sqyfv11",
+                            "~:font-size": "250",
+                            "~:font-weight": "400",
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#000000",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "sourcesanspro",
+                            "~:text": "HELLO WORLD"
+                          }
+                        ],
+                        "~:text-transform": "none",
+                        "~:text-align": "left",
+                        "~:font-id": "sourcesanspro",
+                        "~:key": "21rct71nkal",
+                        "~:font-size": "250",
+                        "~:font-weight": "400",
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#000000",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "sourcesanspro"
+                      }
+                    ]
+                  }
+                ],
+                "~:vertical-align": "top"
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "HELLO WORLD",
+              "~:width": 1529.00000393592,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 92.9999982852505,
+                    "~:y": -462.000004970439
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1622.00000222117,
+                    "~:y": -462.000004970439
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1622.00000222117,
+                    "~:y": -162.000040815452
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 92.9999982852505,
+                    "~:y": -162.000040815452
+                  }
+                }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u2ae0abdc-99ff-8009-8007-b0f7f123b5ea",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:position-data": [
+                {
+                  "~:y": -150.130004882813,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "250",
+                  "~:font-weight": "400",
+                  "~:text-direction": "ltr",
+                  "~:width": 1528.56005859375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0",
+                  "~:x": 93,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 323.739990234375,
+                  "~:text": "HELLO WORLD"
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner",
+                  "~:stroke-width": 50,
+                  "~:stroke-color": "#43e50b",
+                  "~:stroke-opacity": 0.6
+                }
+              ],
+              "~:x": 92.9999982852505,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 92.9999982852505,
+                  "~:y": -462.000004970439,
+                  "~:width": 1529.00000393592,
+                  "~:height": 299.999964154987,
+                  "~:x1": 92.9999982852505,
+                  "~:y1": -462.000004970439,
+                  "~:x2": 1622.00000222117,
+                  "~:y2": -162.000040815452
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": 299.999964154987,
+              "~:flip-y": null
+            }
+          },
+          "~u2ae0abdc-99ff-8009-8007-b0f7f45177dc": {
+            "~#shape": {
+              "~:y": 169.999996321908,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:auto-width",
+              "~:content": {
+                "~:type": "root",
+                "~:key": "6hv3a5x8wb",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:text-transform": "none",
+                            "~:font-id": "sourcesanspro",
+                            "~:key": "219sqyfv11",
+                            "~:font-size": "250",
+                            "~:font-weight": "400",
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#000000",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "sourcesanspro",
+                            "~:text": "HELLO WORLD"
+                          }
+                        ],
+                        "~:text-transform": "none",
+                        "~:text-align": "left",
+                        "~:font-id": "sourcesanspro",
+                        "~:key": "21rct71nkal",
+                        "~:font-size": "250",
+                        "~:font-weight": "400",
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#000000",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "sourcesanspro"
+                      }
+                    ]
+                  }
+                ],
+                "~:vertical-align": "top"
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "HELLO WORLD",
+              "~:width": 1529.00000393592,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 92.9999984013972,
+                    "~:y": 169.999996321908
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1622.00000233732,
+                    "~:y": 169.999996321908
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1622.00000233732,
+                    "~:y": 470.000003392238
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 92.9999984013972,
+                    "~:y": 470.000003392238
+                  }
+                }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u2ae0abdc-99ff-8009-8007-b0f7f45177dc",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:position-data": [
+                {
+                  "~:y": 481.869995117188,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "250",
+                  "~:font-weight": "400",
+                  "~:text-direction": "ltr",
+                  "~:width": 1528.56005859375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0",
+                  "~:x": 93,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 323.739990234375,
+                  "~:text": "HELLO WORLD"
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:outer",
+                  "~:stroke-width": 50,
+                  "~:stroke-color": "#43e50b",
+                  "~:stroke-opacity": 0.6
+                }
+              ],
+              "~:x": 92.9999984013973,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 92.9999984013973,
+                  "~:y": 169.999996321908,
+                  "~:width": 1529.00000393592,
+                  "~:height": 300.00000707033,
+                  "~:x1": 92.9999984013973,
+                  "~:y1": 169.999996321908,
+                  "~:x2": 1622.00000233732,
+                  "~:y2": 470.000003392238
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": 300.00000707033,
+              "~:flip-y": null
+            }
+          }
+        }
+      }
+    },
+    "~:id": "~ueffcbebc-b8c8-802f-8007-b0ebecd7ebf4",
+    "~:options": {
+      "~:components-v2": true,
+      "~:base-font-size": "16px"
+    }
+  }
+}

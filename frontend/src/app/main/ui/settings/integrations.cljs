@@ -7,11 +7,11 @@
 (ns app.main.ui.settings.integrations
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
+   [app.main.broadcast :as mbc]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -272,12 +272,13 @@
         on-created
         (mf/use-fn
          (fn []
-           (st/emit! (du/update-profile-props {:mcp-status true})
+           (st/emit! (du/update-profile-props {:mcp-enabled true})
                      (ev/event {::ev/name "generate-mcp-key"
                                 ::ev/origin "integrations"})
                      (ev/event {::ev/name "enable-mcp"
                                 ::ev/origin "integrations"
                                 :source "key-creation"}))
+           (mbc/emit! :mcp-enabled-change-status true)
            (reset! created? true)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -315,9 +316,10 @@
         (mf/use-fn
          (fn []
            (st/emit! (du/delete-access-token {:id mcp-key-id})
-                     (du/update-profile-props {:mcp-status true})
+                     (du/update-profile-props {:mcp-enabled true})
                      (ev/event {::ev/name "regenerate-mcp-key"
                                 ::ev/origin "integrations"}))
+           (mbc/emit! :mcp-enabled-change-status true)
            (reset! created? true)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -406,8 +408,8 @@
   (let [tokens  (mf/deref tokens-ref)
         profile (mf/deref refs/profile)
 
-        mcp-key     (some #(when (= (:type %) "mcp") %) tokens)
-        mcp-active? (d/nilv (-> profile :props :mcp-status) false)
+        mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
+        mcp-enabled? (true? (-> profile :props :mcp-enabled))
 
         expires-at  (:expires-at mcp-key)
         expired?    (and (some? expires-at) (> (ct/now) expires-at))
@@ -415,21 +417,22 @@
         tooltip-id
         (mf/use-id)
 
-        handle-mcp-status-change
+        handle-mcp-change
         (mf/use-fn
-         (fn [mcp-status]
-           (st/emit! (du/update-profile-props {:mcp-status mcp-status})
+         (fn [value]
+           (st/emit! (du/update-profile-props {:mcp-enabled value})
                      (ntf/show {:level :info
                                 :type :toast
-                                :content (if (true? mcp-status)
+                                :content (if (true? value)
                                            (tr "integrations.notification.success.mcp-server-enabled")
                                            (tr "integrations.notification.success.mcp-server-disabled"))
                                 :timeout notification-timeout})
-                     (ev/event {::ev/name (if (true? mcp-status) "enable-mcp" "disable-mcp")
+                     (ev/event {::ev/name (if (true? value) "enable-mcp" "disable-mcp")
                                 ::ev/origin "integrations"
-                                :source "toggle"}))))
+                                :source "toggle"}))
+           (mbc/emit! :mcp-enabled-change-status value)))
 
-        handle-initial-mcp-status
+        handle-generate-mcp-key
         (mf/use-fn
          #(st/emit! (modal/show {:type :generate-mcp-key})))
 
@@ -444,7 +447,8 @@
            (let [params {:id (:id mcp-key)}
                  mdata  {:on-success #(st/emit! (du/fetch-access-tokens))}]
              (st/emit! (du/delete-access-token (with-meta params mdata))
-                       (du/update-profile-props {:mcp-status false})))))
+                       (du/update-profile-props {:mcp-enabled false}))
+             (mbc/emit! :mcp-enabled-change-status false))))
 
         on-copy-to-clipboard
         (mf/use-fn
@@ -497,14 +501,14 @@
             (tr "integrations.mcp-server.status.expired.1")]]])
 
        [:div {:class (stl/css :mcp-server-switch)}
-        [:> switch* {:label (if mcp-active?
+        [:> switch* {:label (if mcp-enabled?
                               (tr "integrations.mcp-server.status.enabled")
                               (tr "integrations.mcp-server.status.disabled"))
-                     :default-checked mcp-active?
-                     :on-change handle-mcp-status-change}]
-        (when (and (false? mcp-active?) (nil? mcp-key))
+                     :default-checked mcp-enabled?
+                     :on-change handle-mcp-change}]
+        (when (and (false? mcp-enabled?) (nil? mcp-key))
           [:div {:class (stl/css :mcp-server-switch-cover)
-                 :on-click handle-initial-mcp-status}])]]]
+                 :on-click handle-generate-mcp-key}])]]]
 
      (when (some? mcp-key)
        [:div {:class (stl/css :mcp-server-key)}

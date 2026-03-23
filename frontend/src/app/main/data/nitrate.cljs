@@ -17,12 +17,21 @@
     (watch [_ _ _]
       (->> (rp/cmd! ::get-nitrate-connectivity {})
            (rx/map (fn [connectivity]
-                     (prn "connectivity" connectivity)
                      (modal/show popup-type (or connectivity {}))))))))
 
 (defn go-to-nitrate-cc
+  ([]
+   (st/emit! (rt/nav-raw :href "/control-center/")))
+  ([{:keys [organization-id organization-slug]}]
+   (let [href (dm/str "/control-center/org/"
+                      (u/percent-encode organization-slug)
+                      "/"
+                      (u/percent-encode (str organization-id)))]
+     (st/emit! (rt/nav-raw :href href)))))
+
+(defn go-to-nitrate-cc-create-org
   []
-  (st/emit! (rt/nav-raw :href "/control-center/")))
+  (st/emit! (rt/nav-raw :href "/control-center/?action=create-org")))
 
 (defn go-to-nitrate-billing
   []
@@ -38,5 +47,12 @@
      (st/emit! (rt/nav-raw :href href)))))
 
 (def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
+
+(defn is-valid-license?
+  [profile]
+  (and (contains? cf/flags :nitrate)
+       ;; Possible values: "active" "canceled" "incomplete" "incomplete_expired" "past_due" "paused" "trialing" "unpaid"
+       (contains? #{"active" "past_due" "trialing"}
+                  (dm/get-in profile [:subscription :status]))))
 
 

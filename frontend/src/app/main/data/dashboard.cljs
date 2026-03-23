@@ -362,7 +362,7 @@
   (ptk/reify ::toggle-project-pin
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:projects id :is-pinned] (not is-pinned)))
+      (d/update-in-when state [:projects id] assoc :is-pinned (not is-pinned)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -379,7 +379,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:projects id :name] (constantly name))
+          (d/update-in-when [:projects id] assoc :name name)
           (update :dashboard-local dissoc :project-for-edit)))
 
     ptk/WatchEvent
@@ -409,7 +409,7 @@
   (ptk/reify ::file-deleted
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:projects project-id :count] dec))))
+      (d/update-in-when state [:projects project-id :count] dec))))
 
 (defn delete-file
   [{:keys [id project-id] :as params}]
@@ -514,7 +514,7 @@
         (-> state
             (assoc-in [:files id] file)
             (assoc-in [:recent-files id] file)
-            (update-in [:projects project-id :count] inc))))))
+            (d/update-in-when [:projects project-id :count] inc))))))
 
 (defn create-file
   [{:keys [project-id name] :as params}]
@@ -685,14 +685,27 @@
              (modal/hide)))))
 
 (defn handle-change-team-org
-  [{:keys [team-id organization-id organization-name]}]
+  [{:keys [team-id team-name organization-id organization-name notification]}]
   (ptk/reify ::handle-change-team-org
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [current-team-id (:current-team-id state)]
+        (when (and (contains? cf/flags :nitrate)
+                   notification
+                   (= team-id current-team-id))
+          (rx/of (ntf/show {:content (tr notification organization-name)
+                            :type :toast
+                            :level :info
+                            :timeout nil})))))
     ptk/UpdateEvent
     (update [_ state]
       (if (contains? cf/flags :nitrate)
-        (d/update-in-when state [:teams team-id] assoc
-                          :organization-id organization-id
-                          :organization-name organization-name)
+        (d/update-in-when state [:teams team-id]
+                          (fn [team]
+                            (cond-> (assoc team
+                                           :organization-id organization-id
+                                           :organization-name organization-name)
+                              team-name (assoc :name team-name))))
         state))))
 
 

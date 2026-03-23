@@ -161,7 +161,7 @@
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
      [:& frame-grid {:shape shape}]
-     [:> exports-menu* {:type type
+     [:> exports-menu* {:type shape-type
                         :ids ids
                         :shapes shapes
                         :values (select-keys shape exports-attrs)

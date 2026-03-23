@@ -103,6 +103,7 @@
 
     [:exporter-shared-key {:optional true} :string]
     [:nitrate-shared-key {:optional true} :string]
+    [:nexus-shared-key {:optional true} :string]
     [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]

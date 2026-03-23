@@ -1369,7 +1369,7 @@ msgstr "Détacher le token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "%s n'est pas disponible dans la collection ou le thème actif."
+msgstr "{%s} n'est pas disponible dans la collection ou le thème actif."
 
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
@@ -3717,7 +3717,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Il y a une nouvelle version disponible. Rafraîchissez la page"
+msgstr "Il y a une nouvelle version disponible."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"

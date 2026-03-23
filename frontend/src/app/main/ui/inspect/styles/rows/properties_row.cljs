@@ -37,6 +37,7 @@
         copiable-value (if (some? token)
                          (:name token)
                          property)
+        row-ref (mf/use-ref nil)
 
         copy-attr
         (mf/use-fn
@@ -54,6 +55,7 @@
           (let [token-type (:type token)]
             [:> tooltip* {:id (:name token)
                           :class (stl/css :tooltip-token-wrapper)
+                          :trigger-ref row-ref
                           :content #(mf/html
                                      [:div {:class (stl/css :tooltip-token)}
                                       [:div {:class (stl/css :tooltip-token-title)}
@@ -75,6 +77,7 @@
                                          (:resolved-value token))]])}
              [:> property-detail-copiable* {:token token
                                             :copied copied
+                                            :ref row-ref
                                             :on-click copy-attr} detail]])
           [:> property-detail-copiable* {:copied copied
                                          :on-click copy-attr} detail])

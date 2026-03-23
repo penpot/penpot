@@ -45,10 +45,10 @@
        (fn [value]
          (cond
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :label "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :label "Plugin doesn't have 'content:write' permission")
 
            (or (not (string? value)) (empty? value))
-           (u/display-not-valid :label value)
+           (u/not-valid plugin-id :label value)
 
            :else
            (do (swap! data assoc :label value :created-by "user")
@@ -145,7 +145,7 @@
     (fn [key]
       (cond
         (not (string? key))
-        (u/display-not-valid :getPluginData-key key)
+        (u/not-valid plugin-id :getPluginData-key key)
 
         :else
         (let [file (u/locate-file id)]
@@ -155,13 +155,13 @@
     (fn [key value]
       (cond
         (or (not (string? key)) (empty? key))
-        (u/display-not-valid :setPluginData-key key)
+        (u/not-valid plugin-id :setPluginData-key key)
 
         (not (string? value))
-        (u/display-not-valid :setPluginData-value value)
+        (u/not-valid plugin-id :setPluginData-value value)
 
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
+        (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'content:write' permission")
 
         :else
         (st/emit! (dp/set-plugin-data id :file (keyword "plugin" (str plugin-id)) key value))))
@@ -175,10 +175,10 @@
     (fn [namespace key]
       (cond
         (not (string? namespace))
-        (u/display-not-valid :getSharedPluginData-namespace namespace)
+        (u/not-valid plugin-id :getSharedPluginData-namespace namespace)
 
         (not (string? key))
-        (u/display-not-valid :getSharedPluginData-key key)
+        (u/not-valid plugin-id :getSharedPluginData-key key)
 
         :else
         (let [file (u/locate-file id)]
@@ -188,16 +188,16 @@
     (fn [namespace key value]
       (cond
         (or (not (string? namespace)) (empty? namespace))
-        (u/display-not-valid :setSharedPluginData-namespace namespace)
+        (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
 
         (or (not (string? key)) (empty? key))
-        (u/display-not-valid :setSharedPluginData-key key)
+        (u/not-valid plugin-id :setSharedPluginData-key key)
 
         (not (string? value))
-        (u/display-not-valid :setSharedPluginData-value value)
+        (u/not-valid plugin-id :setSharedPluginData-value value)
 
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
+        (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'content:write' permission")
 
         :else
         (st/emit! (dp/set-plugin-data id :file (keyword "shared" namespace) key value))))
@@ -206,7 +206,7 @@
     (fn [namespace]
       (cond
         (not (string? namespace))
-        (u/display-not-valid :getSharedPluginDataKeys namespace)
+        (u/not-valid plugin-id :getSharedPluginDataKeys namespace)
 
         :else
         (let [file (u/locate-file id)]
@@ -216,7 +216,7 @@
     (fn []
       (cond
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :createPage "Plugin doesn't have 'content:write' permission")
+        (u/not-valid plugin-id :createPage "Plugin doesn't have 'content:write' permission")
 
         :else
         (let [page-id (uuid/next)]

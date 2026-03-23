@@ -13,30 +13,21 @@
 
 (mf/defc title-bar*
   [{:keys [class collapsable collapsed title children
-           btn-icon btn-title all-clickable add-icon-gap
+           btn-icon btn-title add-icon-gap
            title-class on-collapsed on-btn-click]}]
-  [:div {:class [(stl/css-case :title-bar true
-                               :all-clickable all-clickable)
+  [:div {:class [(stl/css :title-bar)
                  class]}
 
    (if ^boolean collapsable
      [:div {:class [(stl/css :title-wrapper) title-class]}
 
       (let [icon-id (if collapsed "arrow-right" "arrow-down")]
-        (if ^boolean all-clickable
-          [:button {:class (stl/css :icon-text-btn)
-                    :on-click on-collapsed}
-           [:> icon* {:icon-id icon-id
-                      :size "s"
-                      :class (stl/css :icon)}]
-           [:div {:class (stl/css :title)} title]]
-          [:*
-           [:button {:class (stl/css :icon-btn)
-                     :on-click on-collapsed}
-            [:> icon* {:icon-id icon-id
-                       :size "s"
-                       :class (stl/css :icon)}]]
-           [:div {:class (stl/css :title)} title]]))]
+        [:button {:class (stl/css :icon-text-btn)
+                  :on-click on-collapsed}
+         [:> icon* {:icon-id icon-id
+                    :size "s"
+                    :class (stl/css :icon)}]
+         [:div {:class (stl/css :title)} title]])]
 
      [:div {:class [(stl/css-case :title-only true
                                   :title-only-icon-gap add-icon-gap)

@@ -2151,10 +2151,6 @@ msgstr ""
 msgid "modals.update-remote-component.message"
 msgstr "Mú ẹ̀yà iyàrá ìkàwé pípín kan dójú ìwọ̀n"
 
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "Ẹ̀yà tuntun ti wà, jọ̀wọ́ tún sọ ọ́ jí"
-
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "Ìfipè tí a fi ránńṣẹ́ ti lọ dáadáa"

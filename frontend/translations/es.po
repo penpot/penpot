@@ -347,6 +347,9 @@ msgstr "Vas a restaurar %s."
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restaurar archivo"
 
+msgid "dashboard.org-deleted"
+msgstr "La organización %s se ha borrado."
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Añadir archivo"
@@ -368,8 +371,14 @@ msgid "dashboard.copy-suffix"
 msgstr "(copia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
-msgid "dashboard.create-new-org"
+msgid "dashboard.plus-create-new-org"
 msgstr "+ Crear org"
+
+msgid "dashboard.create-new-org"
+msgstr "Crear org"
+
+msgid "dashboard.go-to-control-center"
+msgstr "Ir al centro de control"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
@@ -1274,7 +1283,11 @@ msgstr "Desvincular token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "%s no está disponible en ningún set o tiene un valor inválido."
+msgstr "{%s} no está disponible en ningún set o tiene un valor inválido."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "ds.inputs.token-field.no-active-color.token-option"
+msgstr "Este token no está disponible en ningún set o tiene un valor inválido."
 
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
@@ -2167,7 +2180,7 @@ msgstr "La clave MCP utilizada para conectarse al servidor MCP ha expirado. Como
 
 #: src/app/main/ui/settings/integrations.cljs:368
 msgid "integrations.mcp-server.status.expired.1"
-msgstr "Por favor, regenera la clave MCP y actualiza la configuración de tu cliente con la nueva clave." 
+msgstr "Por favor, regenera la clave MCP y actualiza la configuración de tu cliente con la nueva clave."
 
 #: src/app/main/ui/settings/integrations.cljs:415
 msgid "integrations.mcp-server.mcp-keys.copy"
@@ -2460,6 +2473,9 @@ msgstr "Director"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:211
 msgid "labels.discard"
 msgstr "Descartar"
+
+msgid "labels.dismiss"
+msgstr "Cancelar"
 
 #: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:409
 msgid "labels.download"
@@ -3763,7 +3779,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Una nueva versión está disponible, por favor actualiza la página"
+msgstr "Una nueva versión está disponible."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"
@@ -3776,6 +3792,12 @@ msgstr "Invitación enviada con éxito"
 #: src/app/main/ui/dashboard/team.cljs:635
 msgid "notifications.invitation-link-copied"
 msgstr "Enlace de invitacion copiado"
+
+msgid "notifications.mcp.active-in-another-tab"
+msgstr "MCP está activo en otra pestaña. ¿Cambiar a esta?"
+
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP está ahora activo en esta pestaña."
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
@@ -5682,6 +5704,18 @@ msgstr "Ocultar reglas"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Ocultar paleta de textos"
 
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Conectar"
+
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Desconectar"
+
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Gestionar (estado: habilitado)"
+
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Gestionar (estado: deshabilitado)"
+
 #: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "Editar"
@@ -5693,6 +5727,9 @@ msgstr "Archivo"
 #: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "Ayuda e información"
+
+msgid "workspace.header.menu.option.mcp"
+msgstr "Servidor MCP"
 
 #: src/app/main/ui/workspace/main_menu.cljs:906
 msgid "workspace.header.menu.option.preferences"
@@ -6027,6 +6064,14 @@ msgstr "Eliminar desenfoque"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.title"
 msgstr "Desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Desenfoque de capa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Desenfoque de fondo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"
@@ -6717,6 +6762,10 @@ msgstr "Capas seleccionadas"
 msgid "workspace.options.layer-options.toggle-layer"
 msgstr "Mostrar/ocultar capa"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:255
+msgid "workspace.options.layer-options.layer-section"
+msgstr "Sección del menú de capas"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
 msgid "workspace.options.layout-item.advanced-ops"
@@ -6900,6 +6949,10 @@ msgstr "Colapsar radios individuales"
 #: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
 msgid "workspace.options.radius.show-single-corners"
 msgstr "Mostrar radios individuales"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
+msgid "workspace.options.radius.radius-section"
+msgstr "Sección de radios de borde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:191
 msgid "workspace.options.recent-fonts"
@@ -7835,6 +7888,10 @@ msgstr "Borrar theme"
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicar token"
 
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:350
+msgid "workspace.tokens.copy-name"
+msgstr "Copiar ruta de token"
+
 #: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "copiar"
@@ -8144,11 +8201,13 @@ msgstr "Actualizar tokens"
 msgid "workspace.tokens.remap-token-references-title"
 msgstr "¿Actualizar todas las referencias de `%s` a `%s`?"
 
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-node-references-title"
+msgstr "¿Renombrar `%s` to `%s` y remapear todos los tokens de este grupo?"
+
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
 msgid "workspace.tokens.remap-warning-effects"
-msgstr ""
-"Esta acción actualizará todas las capas y referencias que usen el token "
-"antiguo"
+msgstr "Esta acción actualizará todas las capas y referencias que usen el token antiguo"
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
 msgid "workspace.tokens.remap-warning-time"
@@ -8372,6 +8431,14 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/application.cljs
 msgid "workspace.tokens.error-text-edition"
 msgstr "No se pueden aplicar tokens mientras se edita texto. Seleccione la capa de texto en su lugar."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group"
+msgstr "Renombrar grupo de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr "Tus tokens serán automáticamente renombrados a %s.(sufijo).(token)"
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"

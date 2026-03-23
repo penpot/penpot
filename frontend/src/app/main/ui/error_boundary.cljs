@@ -9,18 +9,17 @@
   (:require
    ["react-error-boundary" :as reb]
    [app.common.exceptions :as ex]
+   [app.config :as cf]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [goog.functions :as gfn]
    [rumext.v2 :as mf]))
 
 (mf/defc error-boundary*
-  {::mf/props :obj}
   [{:keys [fallback children]}]
   (let [fallback-wrapper
         (mf/with-memo [fallback]
           (mf/fnc fallback-wrapper*
-            {::mf/props :obj}
             [{:keys [error reset-error-boundary]}]
             (let [route (mf/deref refs/route)
                   data  (errors/exception->error-data error)]
@@ -35,13 +34,19 @@
           ;; very small amount of time, so we debounce for 100ms for
           ;; avoid duplicate and redundant reports
           (gfn/debounce (fn [error info]
-                          (set! errors/last-exception error)
-                          (ex/print-throwable error)
-                          (js/console.error
-                           "Component trace: \n"
-                           (unchecked-get info "componentStack")
-                           "\n"
-                           error))
+                          ;; If the error is a stale-asset error (cross-build
+                          ;; module mismatch), force a hard page reload instead
+                          ;; of showing the error page to the user.
+                          (if (errors/stale-asset-error? error)
+                            (cf/throttled-reload :reason (ex-message error))
+                            (do
+                              (set! errors/last-exception error)
+                              (ex/print-throwable error)
+                              (js/console.error
+                               "Component trace: \n"
+                               (unchecked-get info "componentStack")
+                               "\n"
+                               error))))
                         100))]
 
     [:> reb/ErrorBoundary

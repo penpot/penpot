@@ -5,12 +5,11 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 export default defineConfig({
   root: __dirname,
   server: {
-    port: 4305,
+    port: 4202,
     host: '0.0.0.0',
   },
-
   preview: {
-    port: 4305,
+    port: 4202,
     host: '0.0.0.0',
   },
   plugins: [tsconfigPaths()],

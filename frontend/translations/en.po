@@ -338,6 +338,9 @@ msgstr "You're going to restore %s."
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restore file"
 
+msgid "dashboard.org-deleted"
+msgstr "The %s organization has been deleted."
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Add file"
@@ -359,8 +362,14 @@ msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
-msgid "dashboard.create-new-org"
+msgid "dashboard.plus-create-new-org"
 msgstr "+ Create org"
+
+msgid "dashboard.create-new-org"
+msgstr "Create org"
+
+msgid "dashboard.go-to-control-center"
+msgstr "Go to Control Center"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
@@ -1284,7 +1293,11 @@ msgstr "Detach token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "%s is not in any active set or has an invalid value."
+msgstr "{%s} is not in any active set or has an invalid value."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "ds.inputs.token-field.no-active-color.token-option"
+msgstr "This token is not in any active set or has an invalid value."
 
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
@@ -2503,6 +2516,9 @@ msgstr "Director"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:211
 msgid "labels.discard"
 msgstr "Discard"
+
+msgid "labels.dismiss"
+msgstr "Dismiss"
 
 #: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:409
 msgid "labels.download"
@@ -3806,7 +3822,7 @@ msgstr "Maintenance break: we will be down for a short maintenance within 5 minu
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "A new version is available, please refresh the page"
+msgstr "A new version is available."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"
@@ -3819,6 +3835,12 @@ msgstr "Invitation sent successfully"
 #: src/app/main/ui/dashboard/team.cljs:635
 msgid "notifications.invitation-link-copied"
 msgstr "Invitation link copied"
+
+msgid "notifications.mcp.active-in-another-tab"
+msgstr "MCP is active in another tab. Switch here?"
+
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP is now active in this tab."
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
@@ -5573,6 +5595,15 @@ msgstr "Create board"
 msgid "workspace.context-menu.grid-cells.merge"
 msgstr "Merge cells"
 
+msgid "workspace.context-menu.grid-cells.copy-rows"
+msgstr "Copy rows"
+
+msgid "workspace.context-menu.grid-cells.copy-columns"
+msgstr "Copy columns"
+
+msgid "workspace.context-menu.grid-cells.paste-tracks"
+msgstr "Paste"
+
 #: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Add 1 column to the right"
@@ -5715,6 +5746,18 @@ msgstr "Hide rulers"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Hide fonts palette"
 
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Connect"
+
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Disconnect"
+
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Manage (Status: enabled)"
+
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Manage (Status: disabled)"
+
 #: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "Edit"
@@ -5726,6 +5769,9 @@ msgstr "File"
 #: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "Help & info"
+
+msgid "workspace.header.menu.option.mcp"
+msgstr "MCP server"
 
 #: src/app/main/ui/workspace/main_menu.cljs:916
 #, unused
@@ -6065,6 +6111,14 @@ msgstr "Remove blur"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.title"
 msgstr "Blur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Layer blur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Background blur"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"
@@ -6791,6 +6845,10 @@ msgstr "Selected layers"
 msgid "workspace.options.layer-options.toggle-layer"
 msgstr "Toggle layer visibility"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:255
+msgid "workspace.options.layer-options.layer-section"
+msgstr "Layer menu section"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
 msgid "workspace.options.layout-item.advanced-ops"
@@ -6974,6 +7032,10 @@ msgstr "Collapse independent radius"
 #: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
 msgid "workspace.options.radius.show-single-corners"
 msgstr "Show independent radius"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
+msgid "workspace.options.radius.radius-section"
+msgstr "Border radius section"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:191
 msgid "workspace.options.recent-fonts"
@@ -7915,6 +7977,10 @@ msgstr "Delete theme"
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicate token"
 
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:350
+msgid "workspace.tokens.copy-name"
+msgstr "Copy token path"
+
 #: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "copy"
@@ -8261,11 +8327,19 @@ msgstr "Remap tokens"
 msgid "workspace.tokens.remap-token-references-title"
 msgstr "Remap all tokens that use `%s` to `%s`?"
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
-msgid "workspace.tokens.remap-warning-effects"
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-node-references-title"
+msgstr "Rename `%s` to `%s` and remap all tokens in this group?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-token-warning-effects"
 msgstr "This will change all layers and references that use the old token name."
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-node-warning-effects"
+msgstr "This will update all tokens and references that use the old tokens name."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
 msgid "workspace.tokens.remap-warning-time"
 msgstr "This action could take a while."
 
@@ -8506,6 +8580,14 @@ msgstr "Renaming this token will break any reference to its old name"
 #: src/app/main/data/workspace/tokens/application.cljs
 msgid "workspace.tokens.error-text-edition"
 msgstr "Tokens can't be applied while editing text. Select the text layer instead."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group"
+msgstr "Rename Tokens Group"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr "Your tokens will automatically be renamed to %s.(suffix).(tokenName)"
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"

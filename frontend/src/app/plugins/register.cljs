@@ -82,6 +82,7 @@
         (d/without-nils
          {:plugin-id plugin-id
           :url (str plugin-url)
+          :version vers
           :name name
           :description desc
           :host origin

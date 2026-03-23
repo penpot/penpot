@@ -101,7 +101,6 @@
                    :open is-open)}
      [:> title-bar* {:collapsable    true
                      :collapsed      (not is-open)
-                     :all-clickable  true
                      :on-collapsed   toggle-open
                      :title          (if is-local
                                        (mf/html [:div {:class (stl/css :special-title)}

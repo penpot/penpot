@@ -172,6 +172,14 @@
   height: $sz-40;
 }
 
+.org-dropdown-item {
+  @extend .menu-item-base;
+  display: grid;
+  grid-template-columns: var(--sp-xxxl) 1fr auto;
+  gap: var(--sp-s);
+  height: $sz-40;
+}
+
 .action {
   --sidebar-action-icon-color: var(--icon-foreground);
   --sidebar-icon-backgroun-color: var(--color-background-secondary);
@@ -492,6 +500,20 @@
   stroke: var(--icon-foreground);
 }
 
+.add-org-icon {
+  @extend .button-icon;
+  width: var(--sp-l);
+  height: var(--sp-l);
+  stroke: var(--sidebar-action-icon-color);
+}
+
+.arrow-up-right-icon {
+  @extend .button-icon;
+  width: var(--sp-m);
+  height: var(--sp-m);
+  stroke: var(--sidebar-action-icon-color);
+}
+
 .upgrade-plan-section {
   @include deprecated.buttonStyle;
   display: flex;
@@ -530,7 +552,7 @@
   // border-block-end: $b-1 solid var(--color-background-quaternary);
 }
 
-.nitrate-orgs-empty {
+.nitrate-selected-org {
   @include t.use-typography("body-medium");
   color: var(--color-foreground-primary);
   width: 100%;
@@ -559,4 +581,36 @@
     width: var(--sp-xxl);
     height: var(--sp-xxl);
   }
+}
+
+.nitrate-org-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+  background-color: var(--color-foreground-primary);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xl);
+    height: var(--sp-xl);
+  }
+}
+
+.sidebar-org-switch {
+  position: relative;
+  width: 100%;
+}
+
+.current-org {
+  @include deprecated.buttonStyle;
+  display: grid;
+  align-items: center;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-s);
+  height: 100%;
+  width: 100%;
+  padding: 0 var(--sp-m);
 }

@@ -72,7 +72,7 @@ test("BUG 13468 - Fix problem with flex propagation", async ({ page }) => {
     fileId: "3a4d7ec7-c391-8146-8007-9a05c41da6b9",
     pageId: "95b23c15-79f9-81ba-8007-99d81b5290dd",
   });
-0
+
   await workspacePage.clickToggableLayer("Parent");
   await workspacePage.clickToggableLayer("Container");
 
@@ -82,4 +82,33 @@ test("BUG 13468 - Fix problem with flex propagation", async ({ page }) => {
   await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("76");
 });
 
+test("BUG 13272 - Fix problem with snap to pixel", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13272.json");
 
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-13272-fragment.json",
+  );
+
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+
+  await workspacePage.goToWorkspace({
+    fileId: "3b9773cc-d4f1-81e1-8007-b3f8dcaba770",
+    pageId: "3b9773cc-d4f1-81e1-8007-b3f8dcaba771",
+  });
+
+  await workspacePage.clickToggableLayer("Group");
+  await workspacePage.clickLeafLayer("Group");
+
+  await workspacePage.page.locator('g:nth-child(11) > .cursor-resize-nesw-0').hover();
+  await workspacePage.page.mouse.down();
+
+  await workspacePage.page.mouse.move(1200, 800);
+  await workspacePage.page.mouse.up();
+
+  await workspacePage.clickLeafLayer("Rectangle");
+  await expect(workspacePage.rightSidebar.getByTitle("Width").getByRole("textbox")).toHaveValue("197.5");
+  await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("128.28");
+});

@@ -25,6 +25,7 @@
 (defonce context-initialized? false)
 (defonce context-lost? (atom false))
 
+
 (defonce serializers
   #js {:blur-type shared/RawBlurType
        :blend-mode shared/RawBlendMode

@@ -19,7 +19,13 @@
 .modal-dialog {
   @extend .modal-container-base;
   max-block-size: initial;
-  min-inline-size: px2rem(648);
+  min-inline-size: px2rem(1021);
+  padding: px2rem(80);
+
+  @media (max-width: 1024px) {
+    min-inline-size: px2rem(712);
+    padding: var(--sp-xxxl);
+  }
 }
 
 .close-btn {
@@ -66,14 +72,14 @@
 .modal-start {
   display: flex;
   justify-content: center;
-  max-inline-size: $sz-224;
+  min-inline-size: $sz-284;
 
   svg {
     inline-size: 100%;
     block-size: auto;
   }
 
-  @media (max-inline-size: 992px) {
+  @media (max-width: 992px) {
     display: none;
   }
 }

@@ -137,12 +137,13 @@
          (fn [value]
            (on-blur)
            (let [uid (js/Symbol)
-                 grow-type (keyword value)
-                 content (when editor-instance
-                           (content/dom->cljs (dwt/get-editor-root editor-instance)))]
+                 grow-type (keyword value)]
              (st/emit! (dwu/start-undo-transaction uid))
-             (when (some? content)
-               (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))
+             (when (features/active-feature? @st/state "text-editor/v2")
+               (let [content (when editor-instance
+                               (content/dom->cljs (dwt/get-editor-root editor-instance)))]
+                 (when (some? content)
+                   (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))))
              (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
 
              (when (features/active-feature? @st/state "render-wasm/v1")

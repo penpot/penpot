@@ -1766,6 +1766,26 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0017-fix-layout-flex-dir"
+  [data _]
+  (let [fix-layout-flex-dir
+        (fn [value]
+          (if (= value :reverse-row)
+            :row-reverse
+            value))
+
+        update-object
+        (fn [object]
+          (d/update-when object :layout-flex-dir fix-layout-flex-dir))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1839,4 +1859,5 @@
          "0014-clear-components-nil-objects"
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
-         "0016-copy-fills-from-position-data-to-text-node"]))
+         "0016-copy-fills-from-position-data-to-text-node"
+         "0017-fix-layout-flex-dir"]))

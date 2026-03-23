@@ -2,6 +2,7 @@
 
 use crate::shapes::{TextContent, TextPositionWithAffinity};
 use crate::uuid::Uuid;
+use crate::wasm::text::helpers as text_helpers;
 use skia_safe::{
     textlayout::{Affinity, PositionWithAffinity},
     Color,
@@ -31,6 +32,11 @@ impl TextSelection {
 
     pub fn is_selection(&self) -> bool {
         !self.is_collapsed()
+    }
+
+    pub fn reset(&mut self) {
+        self.anchor.reset();
+        self.focus.reset();
     }
 
     pub fn set_caret(&mut self, cursor: TextPositionWithAffinity) {
@@ -86,7 +92,7 @@ pub enum TextEditorEvent {
 }
 
 /// FIXME: It should be better to get these constants from the frontend through the API.
-const SELECTION_COLOR: Color = Color::from_argb(255, 0, 209, 184);
+const SELECTION_COLOR: Color = Color::from_argb(127, 0, 209, 184);
 const CURSOR_WIDTH: f32 = 1.5;
 const CURSOR_COLOR: Color = Color::BLACK;
 const CURSOR_BLINK_INTERVAL_MS: f64 = 530.0;
@@ -97,9 +103,68 @@ pub struct TextEditorTheme {
     pub cursor_color: Color,
 }
 
+pub struct TextComposition {
+    pub previous: String,
+    pub current: String,
+    pub is_composing: bool,
+}
+
+impl TextComposition {
+    pub fn new() -> Self {
+        Self {
+            previous: String::new(),
+            current: String::new(),
+            is_composing: false,
+        }
+    }
+
+    pub fn start(&mut self) -> bool {
+        if self.is_composing {
+            return false;
+        }
+        self.is_composing = true;
+        self.previous = String::new();
+        self.current = String::new();
+        true
+    }
+
+    pub fn update(&mut self, text: &str) -> bool {
+        if !self.is_composing {
+            self.is_composing = true;
+        }
+        self.previous = self.current.clone();
+        self.current = text.to_owned();
+        true
+    }
+
+    pub fn end(&mut self) -> bool {
+        if !self.is_composing {
+            return false;
+        }
+        self.is_composing = false;
+        true
+    }
+
+    pub fn get_selection(&self, selection: &TextSelection) -> TextSelection {
+        if self.previous.is_empty() {
+            return *selection;
+        }
+
+        let focus = selection.focus;
+        let previous_len = self.previous.chars().count();
+        let anchor = TextPositionWithAffinity::new_without_affinity(
+            focus.paragraph,
+            focus.offset + previous_len,
+        );
+
+        TextSelection { anchor, focus }
+    }
+}
+
 pub struct TextEditorState {
     pub theme: TextEditorTheme,
     pub selection: TextSelection,
+    pub composition: TextComposition,
     pub is_active: bool,
     // This property indicates that we've started
     // selecting something with the pointer.
@@ -119,6 +184,7 @@ impl TextEditorState {
                 cursor_color: CURSOR_COLOR,
             },
             selection: TextSelection::new(),
+            composition: TextComposition::new(),
             is_active: false,
             is_pointer_selection_active: false,
             active_shape_id: None,
@@ -133,7 +199,7 @@ impl TextEditorState {
         self.active_shape_id = Some(shape_id);
         self.cursor_visible = true;
         self.last_blink_time = 0.0;
-        self.selection = TextSelection::new();
+        self.selection.reset();
         self.is_pointer_selection_active = false;
         self.pending_events.clear();
     }
@@ -142,9 +208,10 @@ impl TextEditorState {
         self.is_active = false;
         self.active_shape_id = None;
         self.cursor_visible = false;
+        self.last_blink_time = 0.0;
+        self.selection.reset();
         self.is_pointer_selection_active = false;
         self.pending_events.clear();
-        self.reset_blink();
     }
 
     pub fn start_pointer_selection(&mut self) -> bool {
@@ -193,15 +260,86 @@ impl TextEditorState {
         true
     }
 
+    pub fn select_word_boundary(
+        &mut self,
+        content: &TextContent,
+        position: &TextPositionWithAffinity,
+    ) {
+        self.is_pointer_selection_active = false;
+
+        let paragraphs = content.paragraphs();
+        if paragraphs.is_empty() || position.paragraph >= paragraphs.len() {
+            return;
+        }
+
+        let paragraph = &paragraphs[position.paragraph];
+        let paragraph_text: String = paragraph
+            .children()
+            .iter()
+            .map(|span| span.text.as_str())
+            .collect();
+
+        let chars: Vec<char> = paragraph_text.chars().collect();
+        if chars.is_empty() {
+            self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+                position.paragraph,
+                0,
+            ));
+            self.reset_blink();
+            self.push_event(TextEditorEvent::SelectionChanged);
+            return;
+        }
+
+        let mut offset = position.offset.min(chars.len());
+
+        if offset == chars.len() {
+            offset = offset.saturating_sub(1);
+        } else if !text_helpers::is_word_char(chars[offset])
+            && offset > 0
+            && text_helpers::is_word_char(chars[offset - 1])
+        {
+            offset -= 1;
+        }
+
+        if !text_helpers::is_word_char(chars[offset]) {
+            self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+                position.paragraph,
+                position.offset.min(chars.len()),
+            ));
+            self.reset_blink();
+            self.push_event(TextEditorEvent::SelectionChanged);
+            return;
+        }
+
+        let mut start = offset;
+        while start > 0 && text_helpers::is_word_char(chars[start - 1]) {
+            start -= 1;
+        }
+
+        let mut end = offset + 1;
+        while end < chars.len() && text_helpers::is_word_char(chars[end]) {
+            end += 1;
+        }
+
+        self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+            position.paragraph,
+            start,
+        ));
+        self.extend_selection_from_position(&TextPositionWithAffinity::new_without_affinity(
+            position.paragraph,
+            end,
+        ));
+        self.reset_blink();
+        self.push_event(TextEditorEvent::SelectionChanged);
+    }
+
     pub fn set_caret_from_position(&mut self, position: &TextPositionWithAffinity) {
         self.selection.set_caret(*position);
-        self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
     }
 
     pub fn extend_selection_from_position(&mut self, position: &TextPositionWithAffinity) {
         self.selection.extend_to(*position);
-        self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
     }
 
@@ -241,4 +379,8 @@ impl TextEditorState {
     pub fn has_pending_events(&self) -> bool {
         !self.pending_events.is_empty()
     }
+}
+
+fn is_word_char(c: char) -> bool {
+    c.is_alphanumeric() || c == '_'
 }

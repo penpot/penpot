@@ -23,11 +23,12 @@
 
 (mf/defc property-detail-copiable*
   {::mf/schema schema:property-detail-copiable}
-  [{:keys [color token copied on-click children]}]
+  [{:keys [color token copied on-click children ref]}]
   [:button {:class (stl/css-case :property-detail-copiable true
                                  :property-detail-copied copied
                                  :property-detail-copiable-color (some? color))
-            :on-click on-click}
+            :on-click on-click
+            :ref ref}
    (when color
      [:> swatch* {:background color
                   :size "small"}])

@@ -137,16 +137,16 @@
   (ptk/reify ::pin-version
     ptk/WatchEvent
     (watch [_ state _]
-      (let [version (->> (dm/get-in state [:workspace-versions :data])
-                         (d/seek #(= (:id %) id)))
-            params  {:id id
-                     :label (ct/format-inst (:created-at version) :localized-date)}]
+      (when-let [version (->> (dm/get-in state [:workspace-versions :data])
+                              (d/seek #(= (:id %) id)))]
+        (let [params {:id id
+                      :label (ct/format-inst (:created-at version) :localized-date)}]
 
-        (->> (rp/cmd! :update-file-snapshot params)
-             (rx/mapcat (fn [_]
-                          (rx/of (update-versions-state {:editing id})
-                                 (fetch-versions)
-                                 (ptk/event ::ev/event {::ev/name "pin-version"})))))))))
+          (->> (rp/cmd! :update-file-snapshot params)
+               (rx/mapcat (fn [_]
+                            (rx/of (update-versions-state {:editing id})
+                                   (fetch-versions)
+                                   (ptk/event ::ev/event {::ev/name "pin-version"}))))))))))
 
 (defn lock-version
   [id]

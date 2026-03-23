@@ -277,6 +277,16 @@
   (when (and (some? node) (some? (unchecked-get node "select")))
     (.select ^js node)))
 
+(defn selection-start
+  [^js node]
+  (when (some? node)
+    (.-selectionStart node)))
+
+(defn set-selection-range!
+  [^js node start end]
+  (when (some? node)
+    (.setSelectionRange node start end)))
+
 (defn ^boolean equals?
   [^js node-a ^js node-b]
 

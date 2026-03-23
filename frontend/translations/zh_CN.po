@@ -3140,10 +3140,6 @@ msgstr "要访问此项目，您可以询问团队拥有者。"
 msgid "notifications.by-code.maintenance"
 msgstr "维护中断：我们将在5分钟内进行短暂维护。"
 
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "有新版本可用，请刷新页面"
-
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "成功发送邀请"

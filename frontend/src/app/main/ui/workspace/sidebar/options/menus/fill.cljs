@@ -174,10 +174,10 @@
          (mf/deps ids)
          (fn [_ token]
            (st/emit!
-            (dwta/toggle-token {:token token
-                                :attrs #{:fill}
-                                :shape-ids ids
-                                :expand-with-children true}))))
+            (dwta/apply-token-from-input {:token token
+                                          :attrs #{:fill}
+                                          :shape-ids ids
+                                          :expand-with-children true}))))
 
         on-detach-token
         (mf/use-fn
@@ -195,7 +195,7 @@
           (dom/set-attribute! checkbox "indeterminate" true)
           (dom/remove-attribute! checkbox "indeterminate"))))
 
-    [:div {:class (stl/css :fill-section)}
+    [:div {:class (stl/css :fill-section) :data-testid "fill-section"}
      [:div {:class (stl/css :fill-title)}
       [:> title-bar* {:collapsable  has-fills?
                       :collapsed    (not open?)

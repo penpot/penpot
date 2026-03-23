@@ -7,6 +7,7 @@
 (ns app.common.types.token
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
@@ -135,6 +136,9 @@
 (def token-name-validation-regex
   #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$")
 
+(def token-node-name-validation-regex
+  #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$")
+
 (def schema:token-name
   "A token name can contains letters, numbers, underscores the character $ and dots, but
    not start with $ or end with a dot. The $ character does not have any special meaning,
@@ -151,6 +155,14 @@
   [:re {:title "TokenRef"
         :gen/gen sg/text}
    token-ref-validation-regex])
+
+(def schema:token-node-name
+  "A token node name can contains letters, numbers, underscores and the character $, but
+   not start with $ or a dot, or end with a dot. The $ character does not have any special meaning,
+   but dots separate token groups (e.g. color.primary.background)."
+  [:re {:title "TokenNodeName"
+        :gen/gen sg/text}
+   token-node-name-validation-regex])
 
 (def schema:token-type
   [::sm/one-of {:decode/json (fn [type]
@@ -521,31 +533,31 @@
 
 (def tokens-by-input
   "A map from input name to applicable token for that input."
-  {:width #{:sizing :dimensions}
-   :height #{:sizing :dimensions}
-   :max-width #{:sizing :dimensions}
-   :max-height #{:sizing :dimensions}
-   :min-width #{:sizing :dimensions}
-   :min-height #{:sizing :dimensions}
-   :x #{:dimensions}
-   :y #{:dimensions}
-   :rotation #{:number :rotation}
-   :border-radius #{:border-radius :dimensions}
-   :row-gap #{:spacing :dimensions}
-   :column-gap #{:spacing :dimensions}
-   :horizontal-padding #{:spacing :dimensions}
-   :vertical-padding #{:spacing :dimensions}
-   :sided-paddings #{:spacing :dimensions}
-   :horizontal-margin #{:spacing :dimensions}
-   :vertical-margin #{:spacing :dimensions}
-   :sided-margins #{:spacing :dimensions}
-   :line-height #{:line-height :number}
-   :opacity #{:opacity}
-   :stroke-width #{:stroke-width :dimensions}
-   :font-size #{:font-size}
-   :letter-spacing #{:letter-spacing}
-   :fill #{:color}
-   :stroke-color #{:color}})
+  {:width              [:sizing :dimensions]
+   :height             [:sizing :dimensions]
+   :max-width          [:sizing :dimensions]
+   :max-height         [:sizing :dimensions]
+   :min-width          [:sizing :dimensions]
+   :min-height         [:sizing :dimensions]
+   :x                  [:dimensions]
+   :y                  [:dimensions]
+   :rotation           [:rotation :number]
+   :border-radius      [:border-radius :dimensions]
+   :row-gap            [:spacing :dimensions]
+   :column-gap         [:spacing :dimensions]
+   :horizontal-padding [:spacing :dimensions]
+   :vertical-padding   [:spacing :dimensions]
+   :sided-paddings     [:spacing :dimensions]
+   :horizontal-margin  [:spacing :dimensions]
+   :vertical-margin    [:spacing :dimensions]
+   :sided-margins      [:spacing :dimensions]
+   :line-height        [:line-height :number]
+   :opacity            [:opacity]
+   :stroke-width       [:stroke-width :dimensions]
+   :font-size          [:font-size]
+   :letter-spacing     [:letter-spacing]
+   :fill               [:color]
+   :stroke-color       [:color]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS for tokens application
@@ -637,3 +649,107 @@
     (when (font-weight-values weight)
       (cond-> {:weight weight}
         italic? (assoc :style "italic")))))
+
+
+;;;;;; Combobox token parsing
+
+(defn- inside-ref?
+  "Returns true if `position` in `value` is inside an open reference block (i.e. after a `{`
+   that has no matching `}` to its left).
+   A reference block is considered open when the last `{` appears after the last `}`,
+   or when there is a `{` but no `}` at all to the left of `position`."
+  [value position]
+  (let [left        (str/slice value 0 position)
+        last-open   (str/last-index-of left "{")
+        last-close  (str/last-index-of left "}")]
+    (and (some? last-open)
+         (or (nil? last-close)
+             (< last-close last-open)))))
+
+(defn- block-open-start
+  "Returns the index of the leftmost `{` in the run of consecutive `{` characters
+   that contains the last `{` before `position` in `value`.
+   Used to find where a reference block truly starts when multiple braces are stacked."
+  [value position]
+  (let [left      (str/slice value 0 position)
+        last-open (str/last-index-of left "{")]
+    (loop [i last-open]
+      (if (and i
+               (> i 0)
+               (= (nth left (dec i)) \{))
+        (recur (dec i))
+        i))))
+
+(defn- start-ref-position
+  "Returns the position where the current token (reference candidate) starts,
+   relative to `position` in `value`.
+   The start is determined by whichever comes last: the opening `{` of the current
+   reference block or the character after the last space before `position`."
+  [value position]
+  (let [left      (str/slice value 0 position)
+        open-pos  (block-open-start value position)
+        space-pos (some-> (str/last-index-of left " ") inc)]
+    (->> [open-pos space-pos]
+         (remove nil?)
+         sort
+         last)))
+
+(defn- inside-closed-ref?
+  "Returns true if `position` falls inside a complete (closed) reference block,
+     i.e. there is a `{` to the left and a `}` to the right with no spaces between
+     either delimiter and the position.
+     Returns nil (falsy) when not inside a closed reference."
+  [value position]
+  (let [left              (str/slice value 0 position)
+        right             (str/slice value position)
+
+        open-pos          (d/nth-last-index-of left "{" 1)
+        close-pos         (d/nth-index-of right "}" 1)
+        last-space-left   (d/nth-last-index-of left " " 1)
+        first-space-right (d/nth-index-of right " " 1)]
+
+    (boolean
+     (and (number? open-pos)
+          (number? close-pos)
+          (or (nil? last-space-left)   (> (dm/number open-pos) (dm/number last-space-left)))
+          (or (nil? first-space-right) (< (dm/number close-pos) (dm/number first-space-right)))))))
+
+(defn- build-result
+  "Builds the result map for `insert-ref` by replacing the substring of `value`
+   between `prefix-end` and `suffix-start` with a formatted reference `{name}`.
+   Returns a map with:
+     :value  — the updated string
+     :cursor — the index immediately after the inserted reference"
+  [value prefix-end suffix-start name]
+  (let [ref         (str "{" name "}")
+        first-part  (str/slice value 0 prefix-end)
+        second-part (str/slice value suffix-start)]
+    {:value  (str first-part ref second-part)
+     :cursor (+ (count first-part) (count ref))}))
+
+(defn insert-ref
+  "Inserts a reference `{name}` into `value` at `position`, respecting the context:
+
+   - Outside any reference block: inserts `{name}` at the cursor position.
+   - Inside an open reference block (no closing `}`): replaces from the block's
+     start up to the cursor with `{name}`.
+   - Inside a closed reference block (has both `{` and `}`): replaces the entire
+     existing reference with `{name}`.
+
+   Returns a map with:
+     :value  — the resulting string after insertion
+     :cursor — the index immediately after the inserted reference"
+  [value position name]
+  (if (inside-ref? value position)
+    (if (inside-closed-ref? value position)
+      (let [open-pos  (-> (str/slice value 0 position)
+                          (d/nth-last-index-of  "{" 1))
+            close-pos (-> (str/slice value position)
+                          (d/nth-index-of "}" 1))
+            close-pos (if (number? close-pos)
+                        (+ position close-pos 1)
+                        position)]
+        (build-result value open-pos close-pos name))
+
+      (build-result value (start-ref-position value position) position name))
+    (build-result value position position name)))

@@ -385,17 +385,14 @@
           {:class (stl/css :primary-button)
            :type "button"
            :value "CREATE ORGANIZATION"
-           :on-click dnt/go-to-nitrate-cc}]]]]]]))
+           :on-click dnt/go-to-nitrate-cc-create-org}]]]]]]))
 
 (mf/defc subscription-page*
   [{:keys [profile]}]
-  (let [route          (mf/deref refs/route)
-        authenticated? (da/is-authenticated? profile)
-
-        nitrate-license (dm/get-in profile [:props :nitrate-license])
-
-        nitrate? (and (contains? cf/flags :nitrate)
-                      (:valid nitrate-license))
+  (let [route           (mf/deref refs/route)
+        authenticated?  (da/is-authenticated? profile)
+        nitrate-license (:subscription profile)
+        nitrate?        (dnt/is-valid-license? profile)
 
         params-subscription
         (-> route :params :query :subscription)

@@ -264,7 +264,7 @@ export class AppComponent {
         type: 'apply-token',
         setId: this.currentSetId,
         tokenId,
-        // properties: ['strokeColor']   // Uncomment to choose attribute to apply
+        // properties: ['borderRadiusTopRight']   // Uncomment to choose attribute to apply
       }); // (incompatible attributes will have no effect)
     }
   }

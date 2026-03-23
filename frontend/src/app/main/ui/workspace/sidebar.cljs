@@ -119,7 +119,7 @@
 
 (mf/defc left-sidebar*
   {::mf/memo true}
-  [{:keys [layout file page-id tokens-lib active-tokens resolved-active-tokens]}]
+  [{:keys [layout file tokens-lib active-tokens resolved-active-tokens]}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         project        (mf/deref refs/project)
         file-id        (get file :id)
@@ -185,12 +185,10 @@
               :class aside-class
               :style {:--left-sidebar-width (dm/str width "px")}}
 
-      [:> left-header*
-       {:file file
-        :layout layout
-        :project project
-        :page-id page-id
-        :class (stl/css :left-header)}]
+      [:> left-header* {:file file
+                        :layout layout
+                        :project project
+                        :class (stl/css :left-header)}]
 
       [:div {:on-pointer-down on-pointer-down
              :on-lost-pointer-capture on-lost-pointer-capture

@@ -12,7 +12,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/contrast-plugin",
+            "outputPath": {
+              "base": "dist/apps/contrast-plugin",
+              "browser": ""
+            },
             "index": "apps/contrast-plugin/src/index.html",
             "browser": "apps/contrast-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -20,6 +23,7 @@
             "assets": [
               "apps/contrast-plugin/src/_headers",
               "apps/contrast-plugin/src/favicon.ico",
+              "apps/contrast-plugin/src/manifest.json",
               "apps/contrast-plugin/src/assets"
             ],
             "styles": [
@@ -88,6 +92,7 @@
             "assets": [
               "apps/icons-plugin/src/_headers",
               "apps/icons-plugin/src/favicon.ico",
+              "apps/icons-plugin/src/manifest.json",
               "apps/icons-plugin/src/assets"
             ],
             "styles": [
@@ -156,6 +161,7 @@
             "assets": [
               "apps/lorem-ipsum-plugin/src/_headers",
               "apps/lorem-ipsum-plugin/src/favicon.ico",
+              "apps/lorem-ipsum-plugin/src/manifest.json",
               "apps/lorem-ipsum-plugin/src/assets"
             ],
             "styles": [
@@ -218,7 +224,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/table-plugin",
+            "outputPath": {
+              "base": "dist/apps/table-plugin",
+              "browser": ""
+            },
             "index": "apps/table-plugin/src/index.html",
             "browser": "apps/table-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -226,6 +235,7 @@
             "assets": [
               "apps/table-plugin/src/_headers",
               "apps/table-plugin/src/favicon.ico",
+              "apps/table-plugin/src/manifest.json",
               "apps/table-plugin/src/assets"
             ],
             "styles": [
@@ -294,6 +304,7 @@
             "assets": [
               "apps/rename-layers-plugin/src/_headers",
               "apps/rename-layers-plugin/src/favicon.ico",
+              "apps/rename-layers-plugin/src/manifest.json",
               "apps/rename-layers-plugin/src/assets"
             ],
             "styles": [
@@ -356,7 +367,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/colors-to-tokens-plugin",
+            "outputPath": {
+              "base": "dist/apps/colors-to-tokens-plugin",
+              "browser": ""
+            },
             "index": "apps/colors-to-tokens-plugin/src/index.html",
             "browser": "apps/colors-to-tokens-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -364,6 +378,7 @@
             "assets": [
               "apps/colors-to-tokens-plugin/src/_headers",
               "apps/colors-to-tokens-plugin/src/favicon.ico",
+              "apps/colors-to-tokens-plugin/src/manifest.json",
               "apps/colors-to-tokens-plugin/src/assets"
             ],
             "styles": [
@@ -433,6 +448,7 @@
             "tsConfig": "apps/poc-state-plugin/tsconfig.app.json",
             "assets": [
               "apps/poc-state-plugin/src/favicon.ico",
+              "apps/poc-state-plugin/src/manifest.json",
               "apps/poc-state-plugin/src/assets"
             ],
             "styles": [
@@ -503,6 +519,7 @@
             "assets": [
               "apps/poc-tokens-plugin/src/_headers",
               "apps/poc-tokens-plugin/src/favicon.ico",
+              "apps/poc-tokens-plugin/src/manifest.json",
               "apps/poc-tokens-plugin/src/assets"
             ],
             "styles": [

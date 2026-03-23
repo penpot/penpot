@@ -270,7 +270,7 @@
     block-size: auto;
   }
 
-  @media (max-inline-size: 992px) {
+  @media (max-width: 992px) {
     display: none;
   }
 }

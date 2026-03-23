@@ -235,6 +235,19 @@
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token-theme"
                             (ctob/make-token-theme params)))))
 
+(t/deftest make-token-theme-strips-nil-from-sets
+  (t/testing "make-token-theme strips nil values from :sets"
+    (let [theme (ctob/make-token-theme :name "test" :sets #{"valid-set" nil})]
+      (t/is (= (:sets theme) #{"valid-set"}))))
+  (t/testing "enable-set with nil set-name does not add nil to :sets"
+    (let [theme  (ctob/make-token-theme :name "test" :sets #{"existing-set"})
+          theme' (ctob/enable-set theme nil)]
+      (t/is (= (:sets theme') #{"existing-set"}))))
+  (t/testing "toggle-set with nil set-name does not add nil to :sets"
+    (let [theme  (ctob/make-token-theme :name "test" :sets #{})
+          theme' (ctob/toggle-set theme nil)]
+      (t/is (= (:sets theme') #{})))))
+
 (t/deftest make-tokens-lib
   (let [tokens-lib (ctob/make-tokens-lib)]
     (t/is (= (ctob/set-count tokens-lib) 0))))

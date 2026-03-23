@@ -867,6 +867,52 @@
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
+(t/deftest permissions-checks-unlink-library
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})]
+
+
+    (let [data     {::th/type :unlink-file-from-library
+                    ::rpc/profile-id (:id profile2)
+                    :file-id (:id file2)
+                    :library-id (:id file1)}
+
+          out      (th/command! data)
+          error    (:error out)]
+
+      ;; (th/print-result! out)
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :not-found)))))
+
+
+(t/deftest permissions-checks-update-file-library-status
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})]
+
+
+    (let [data     {::th/type :update-file-library-sync-status
+                    ::rpc/profile-id (:id profile2)
+                    :file-id (:id file2)
+                    :library-id (:id file1)}
+
+          out      (th/command! data)
+          error    (:error out)]
+
+      ;; (th/print-result! out)
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :not-found)))))
+
+
 (t/deftest deletion
   (let [profile1 (th/create-profile* 1)
         file     (th/create-file* 1 {:project-id (:default-project-id profile1)

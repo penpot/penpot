@@ -6,6 +6,7 @@ use crate::shapes::{
 use skia_safe::{self as skia, ImageFilter, RRect};
 
 use super::{filters, RenderState, SurfaceId};
+use crate::error::{Error, Result};
 use crate::render::filters::compose_filters;
 use crate::render::{get_dest_rect, get_source_rect};
 
@@ -41,8 +42,8 @@ fn draw_stroke_on_rect(
         }
     };
 
-    // By default just draw the rect. Only dotted inner/outer strokes need
-    // clipping to prevent the dotted pattern from appearing in wrong areas.
+    // Dotted inner/outer strokes need clipping to prevent the dotted
+    // pattern from appearing in wrong areas.
     if let Some(clip_op) = stroke.clip_op() {
         // Use a neutral layer (no extra paint) so opacity and filters
         // come solely from the stroke paint. This avoids applying
@@ -59,6 +60,35 @@ fn draw_stroke_on_rect(
             }
         }
         draw_stroke();
+        canvas.restore();
+    } else if stroke.kind == StrokeKind::Inner
+        && (stroke.width >= rect.width() || stroke.width >= rect.height())
+    {
+        // When the inner stroke width exceeds a shape dimension, the inset
+        // rect goes negative and the stroke overflows outside the shape.
+        // Fall back to the same approach as the SVG renderer: draw with
+        // doubled width centered on the original shape and clip to it.
+        canvas.save();
+        match corners {
+            Some(radii) => {
+                let rrect = RRect::new_rect_radii(*rect, radii);
+                canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+            }
+            None => {
+                canvas.clip_rect(*rect, skia::ClipOp::Intersect, antialias);
+            }
+        }
+        let mut inner_paint = paint.clone();
+        inner_paint.set_stroke_width(stroke.width * 2.0);
+        match corners {
+            Some(radii) => {
+                let rrect = RRect::new_rect_radii(*rect, radii);
+                canvas.draw_rrect(rrect, &inner_paint);
+            }
+            None => {
+                canvas.draw_rect(*rect, &inner_paint);
+            }
+        }
         canvas.restore();
     } else {
         draw_stroke();
@@ -83,8 +113,8 @@ fn draw_stroke_on_circle(
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
-    // By default just draw the circle. Only dotted inner/outer strokes need
-    // clipping to prevent the dotted pattern from appearing in wrong areas.
+    // Dotted inner/outer strokes need clipping to prevent the dotted
+    // pattern from appearing in wrong areas.
     if let Some(clip_op) = stroke.clip_op() {
         // Use a neutral layer (no extra paint) so opacity and filters
         // come solely from the stroke paint. This avoids applying
@@ -98,6 +128,24 @@ fn draw_stroke_on_circle(
         };
         canvas.clip_path(&clip_path, clip_op, antialias);
         canvas.draw_oval(stroke_rect, &paint);
+        canvas.restore();
+    } else if stroke.kind == StrokeKind::Inner
+        && (stroke.width >= rect.width() || stroke.width >= rect.height())
+    {
+        // When the inner stroke width exceeds a shape dimension, the inset
+        // rect goes negative and the stroke overflows outside the shape.
+        // Fall back to the same approach as the SVG renderer: draw with
+        // doubled width centered on the original shape and clip to it.
+        canvas.save();
+        let clip_path = {
+            let mut pb = skia::PathBuilder::new();
+            pb.add_oval(rect, None, None);
+            pb.detach()
+        };
+        canvas.clip_path(&clip_path, skia::ClipOp::Intersect, antialias);
+        let mut inner_paint = paint.clone();
+        inner_paint.set_stroke_width(stroke.width * 2.0);
+        canvas.draw_oval(*rect, &inner_paint);
         canvas.restore();
     } else {
         canvas.draw_oval(stroke_rect, &paint);
@@ -164,15 +212,24 @@ fn draw_stroke_on_path(
     blur: Option<&ImageFilter>,
     antialias: bool,
 ) {
-    let skia_path = path
-        .to_skia_path()
-        .make_transform(path_transform.unwrap_or(&Matrix::default()));
-
     let is_open = path.is_open();
 
     let mut draw_paint = paint.clone();
     let filter = compose_filters(blur, shadow);
     draw_paint.set_image_filter(filter);
+
+    // Move path_transform from the path geometry to the canvas so the
+    // stroke width is not distorted by non-uniform shape scaling.
+    // The path coordinates are already in world space, so we draw the
+    // raw path on a canvas where the shape transform has been undone:
+    //   canvas * path_transform = View × parents (no shape scale/rotation)
+    // This matches the SVG renderer, which bakes the transform into path
+    // coordinates and never sets a transform attribute on the element.
+    let save_count = canvas.save();
+    if let Some(pt) = path_transform {
+        canvas.concat(pt);
+    }
+    let skia_path = path.to_skia_path();
 
     match stroke.render_kind(is_open) {
         StrokeKind::Inner => {
@@ -187,6 +244,8 @@ fn draw_stroke_on_path(
     }
 
     handle_stroke_caps(&skia_path, stroke, canvas, is_open, paint, blur, antialias);
+
+    canvas.restore_to_count(save_count);
 }
 
 fn handle_stroke_cap(
@@ -236,16 +295,16 @@ fn handle_stroke_caps(
     blur: Option<&ImageFilter>,
     _antialias: bool,
 ) {
-    let mut points = path.points().to_vec();
-    // Curves can have duplicated points, so let's remove consecutive duplicated points
-    points.dedup();
-    let c_points = points.len();
-
     // Closed shapes don't have caps
-    if c_points >= 2 && is_open {
-        let first_point = points.first().unwrap();
-        let last_point = points.last().unwrap();
+    if !is_open {
+        return;
+    }
 
+    // Curves can have duplicated points, so let's remove consecutive duplicated points
+    let mut points = path.points().to_vec();
+    points.dedup();
+
+    if let [first_point, .., last_point] = points.as_slice() {
         let mut paint_stroke = paint.clone();
 
         if let Some(filter) = blur {
@@ -270,7 +329,7 @@ fn handle_stroke_caps(
                 stroke.width,
                 &mut paint_stroke,
                 last_point,
-                &points[c_points - 2],
+                &points[points.len() - 2],
             );
         }
     }
@@ -398,14 +457,13 @@ fn draw_image_stroke_in_container(
     image_fill: &ImageFill,
     antialias: bool,
     surface_id: SurfaceId,
-) {
+) -> Result<()> {
     let scale = render_state.get_scale();
-    let image = render_state.images.get(&image_fill.id());
-    if image.is_none() {
-        return;
-    }
+    let Some(image) = render_state.images.get(&image_fill.id()) else {
+        return Ok(());
+    };
 
-    let size = image.unwrap().dimensions();
+    let size = image.dimensions();
     let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
@@ -451,7 +509,10 @@ fn draw_image_stroke_in_container(
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
             if let Some(p) = shape_type.path() {
                 canvas.save();
-                let path = p.to_skia_path().make_transform(&path_transform.unwrap());
+
+                let path = p.to_skia_path().make_transform(
+                    &path_transform.ok_or(Error::CriticalError("No path transform".to_string()))?,
+                );
                 let stroke_kind = stroke.render_kind(p.is_open());
                 match stroke_kind {
                     StrokeKind::Inner => {
@@ -503,7 +564,7 @@ fn draw_image_stroke_in_container(
 
     canvas.clip_rect(dest_rect, skia::ClipOp::Intersect, antialias);
     canvas.draw_image_rect_with_sampling_options(
-        image.unwrap(),
+        image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
         render_state.sampling_options,
@@ -513,7 +574,9 @@ fn draw_image_stroke_in_container(
     // Clear outer stroke for paths if necessary. When adding an outer stroke we need to empty the stroke added too in the inner area.
     if let Type::Path(p) = &shape.shape_type {
         if stroke.render_kind(p.is_open()) == StrokeKind::Outer {
-            let path = p.to_skia_path().make_transform(&path_transform.unwrap());
+            let path = p.to_skia_path().make_transform(
+                &path_transform.ok_or(Error::CriticalError("No path transform".to_string()))?,
+            );
             let mut clear_paint = skia::Paint::default();
             clear_paint.set_blend_mode(skia::BlendMode::Clear);
             clear_paint.set_anti_alias(antialias);
@@ -523,6 +586,7 @@ fn draw_image_stroke_in_container(
 
     // Restore canvas state
     canvas.restore();
+    Ok(())
 }
 
 /// Renders all strokes for a shape. Merges strokes that share the same
@@ -535,9 +599,9 @@ pub fn render(
     surface_id: Option<SurfaceId>,
     antialias: bool,
     outset: Option<f32>,
-) {
+) -> Result<()> {
     if strokes.is_empty() {
-        return;
+        return Ok(());
     }
 
     let has_image_fills = strokes.iter().any(|s| matches!(s.fill, Fill::Image(_)));
@@ -597,13 +661,14 @@ pub fn render(
                             true,
                             true,
                             outset,
-                        );
+                        )?;
                     }
 
                     state.surfaces.canvas(temp_surface).restore();
+                    Ok(())
                 },
-            ) {
-                return;
+            )? {
+                return Ok(());
             }
         }
 
@@ -617,9 +682,9 @@ pub fn render(
                 None,
                 antialias,
                 outset,
-            );
+            )?;
         }
-        return;
+        return Ok(());
     }
 
     render_merged(
@@ -630,7 +695,7 @@ pub fn render(
         antialias,
         false,
         outset,
-    );
+    )
 }
 
 fn strokes_share_geometry(strokes: &[&Stroke]) -> bool {
@@ -651,7 +716,7 @@ fn render_merged(
     antialias: bool,
     bypass_filter: bool,
     outset: Option<f32>,
-) {
+) -> Result<()> {
     let representative = *strokes
         .last()
         .expect("render_merged expects at least one stroke");
@@ -703,14 +768,15 @@ fn render_merged(
                         antialias,
                         true,
                         outset,
-                    );
+                    )?;
 
                     state.surfaces.apply_mut(temp_surface as u32, |surface| {
                         surface.canvas().restore();
                     });
+                    Ok(())
                 },
-            ) {
-                return;
+            )? {
+                return Ok(());
             }
         }
     }
@@ -786,6 +852,7 @@ fn render_merged(
         }
         _ => unreachable!("This shape should not have strokes"),
     }
+    Ok(())
 }
 
 /// Renders a single stroke. Used by the shadow module which needs per-stroke
@@ -799,7 +866,7 @@ pub fn render_single(
     shadow: Option<&ImageFilter>,
     antialias: bool,
     outset: Option<f32>,
-) {
+) -> Result<()> {
     render_single_internal(
         render_state,
         shape,
@@ -810,7 +877,7 @@ pub fn render_single(
         false,
         false,
         outset,
-    );
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -824,7 +891,7 @@ fn render_single_internal(
     bypass_filter: bool,
     skip_blur: bool,
     outset: Option<f32>,
-) {
+) -> Result<()> {
     if !bypass_filter {
         if let Some(image_filter) = shape.image_filter(1.) {
             let mut content_bounds = shape.selrect;
@@ -858,10 +925,10 @@ fn render_single_internal(
                         true,
                         true,
                         outset,
-                    );
+                    )
                 },
-            ) {
-                return;
+            )? {
+                return Ok(());
             }
         }
     }
@@ -891,7 +958,7 @@ fn render_single_internal(
                 image_fill,
                 antialias,
                 target_surface,
-            );
+            )?;
         }
     } else {
         match &shape.shape_type {
@@ -956,6 +1023,7 @@ fn render_single_internal(
             _ => unreachable!("This shape should not have strokes"),
         }
     }
+    Ok(())
 }
 
 // Render text paths (unused)

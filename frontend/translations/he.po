@@ -3465,10 +3465,6 @@ msgstr "כדי לגשת למיזם הזה, אפשר לבקש מבעלי הצוו
 msgid "notifications.by-code.maintenance"
 msgstr "הפסקת תחזוקה: המערכת תושבת לעבודת תחזוקה קצרה תוך 5 דקות."
 
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "יש גרסה חדשה, נא לרענן את העמוד"
-
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"
 msgstr "ההזמנה נמחקה בהצלחה"

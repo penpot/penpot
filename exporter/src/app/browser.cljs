@@ -100,14 +100,12 @@
 
 (def browser-pool-factory
   (letfn [(create []
-            (-> (p/let [opts    #js {:args #js ["--allow-insecure-localhost" "--font-render-hinting=none"]}
-                        browser (.launch pw/chromium opts)
-                        id      (swap! pool-browser-id inc)]
-                  (l/info :origin "factory" :action "create" :browser-id id)
-                  (unchecked-set browser "__id" id)
-                  browser)
-                (p/catch (fn [cause]
-                           (l/error :hint "Cannot launch the headless browser" :cause cause)))))
+            (p/let [opts    #js {:args #js ["--allow-insecure-localhost" "--font-render-hinting=none"]}
+                    browser (.launch pw/chromium opts)
+                    id      (swap! pool-browser-id inc)]
+              (l/info :origin "factory" :action "create" :browser-id id)
+              (unchecked-set browser "__id" id)
+              browser))
 
           (destroy [obj]
             (let [id (unchecked-get obj "__id")]

@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:watch": "vite build --watch --mode development",
-    "preview": "vite preview",
-    "init": "concurrently --kill-others --names build,serve \"pnpm run build:watch\" \"pnpm run preview\"",
+    "build": "vite build --emptyOutDir",
+    "watch": "vite build --watch --mode development",
+    "serve": "vite preview",
+    "init": "concurrently --kill-others --names build,serve \"pnpm run watch\" \"pnpm run serve\"",
     "lint": "eslint .",
     "test": "vitest"
   }

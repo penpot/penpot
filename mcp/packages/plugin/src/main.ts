@@ -1,14 +1,8 @@
 import "./style.css";
 
-const KEEP_ALIVE_TIME = 30000; // 30 seconds
-
 // get the current theme from the URL
 const searchParams = new URLSearchParams(window.location.search);
 document.body.dataset.theme = searchParams.get("theme") ?? "light";
-
-// Determine whether multi-user mode is enabled based on URL parameters
-const isMultiUserMode = searchParams.get("multiUser") === "true";
-console.log("Penpot MCP multi-user mode:", isMultiUserMode);
 
 // WebSocket connection management
 let ws: WebSocket | null = null;
@@ -61,7 +55,9 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
 
     try {
         let wsUrl = baseUrl || PENPOT_MCP_WEBSOCKET_URL;
-        if (isMultiUserMode && token) {
+        let wsError: unknown | undefined;
+
+        if (token) {
             wsUrl += `?userToken=${encodeURIComponent(token)}`;
         }
 
@@ -75,10 +71,6 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
 
         ws.onmessage = (event) => {
             try {
-                if (event.data === "keep-alive") {
-                    // Keep alive response, ignore it
-                    return;
-                }
                 console.log("Received from MCP server:", event.data);
                 const request = JSON.parse(event.data);
                 // Forward the task request to the plugin for execution
@@ -88,18 +80,19 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
             }
         };
 
-        const interval = setInterval(() => ws?.send("keep-alive"), KEEP_ALIVE_TIME);
-
         ws.onclose = (event: CloseEvent) => {
-            console.log("Disconnected from MCP server");
-            clearInterval(interval);
-            const message = event.reason || undefined;
-            updateConnectionStatus("disconnected", "Disconnected", false, message);
+            // If we've send the error update we don't send the disconnect as well
+            if (!wsError) {
+                console.log("Disconnected from MCP server");
+                const message = event.reason || undefined;
+                updateConnectionStatus("disconnected", "Disconnected", false, message);
+            }
             ws = null;
         };
 
         ws.onerror = (error) => {
             console.error("WebSocket error:", error);
+            wsError = error;
             // note: WebSocket error events typically don't contain detailed error messages
             updateConnectionStatus("error", "Connection error", false);
         };

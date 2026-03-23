@@ -141,13 +141,16 @@
          (fn [event token]
            (let [token (ctob/get-token tokens-lib selected-token-set-id (:id token))]
              (dom/stop-propagation event)
-             (if (and not-editing? (seq selected-shapes) (not= (:type token) :number))
-               (st/emit! (dwta/toggle-token {:token token
-                                             :shape-ids selected-ids}))
-               (st/emit! (ntf/show {:content (tr "workspace.tokens.error-text-edition")
-                                    :type :toast
-                                    :level :warning
-                                    :timeout 3000}))))))]
+             ;; Number tokens can't be applied via button click
+             (when (not= (:type token) :number)
+               (if (and not-editing? (seq selected-shapes))
+                 (st/emit! (dwta/toggle-token {:token token
+                                               :shape-ids selected-ids}))
+                 (when (seq selected-shapes)
+                   (st/emit! (ntf/show {:content (tr "workspace.tokens.error-text-edition")
+                                        :type :toast
+                                        :level :warning
+                                        :timeout 3000}))))))))]
 
     [:div {:class (stl/css :token-section-wrapper)
            :data-testid (dm/str "section-" (name type))}

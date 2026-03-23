@@ -41,6 +41,7 @@
         color-image-name (:name color-image)
         color-image-url (when (some? color-image)
                           (cfg/resolve-file-media color-image))
+        row-ref (mf/use-ref nil)
         color-opacity (mf/use-memo
                        (mf/deps color)
                        #(dm/str (-> color
@@ -83,7 +84,7 @@
                              :else "none")))
         copy-attr
         (mf/use-fn
-         (mf/deps copied formatted-color-value)
+         (mf/deps copied copiable-value)
          (fn []
            (reset! copied* true)
            (clipboard/to-clipboard copiable-value)
@@ -96,6 +97,7 @@
        (if token
          [:> tooltip* {:id (:name token)
                        :class (stl/css :tooltip-token-wrapper)
+                       :trigger-ref row-ref
                        :content #(mf/html
                                   [:div {:class (stl/css :tooltip-token)}
                                    [:div {:class (stl/css :tooltip-token-title)}
@@ -104,6 +106,7 @@
                                     (:resolved-value token)]])}
           [:> property-detail-copiable* {:color color
                                          :token token
+                                         :ref row-ref
                                          :copied copied
                                          :on-click copy-attr} formatted-color-value]]
 

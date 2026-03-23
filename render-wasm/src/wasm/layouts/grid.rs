@@ -1,4 +1,4 @@
-use macros::ToJs;
+use macros::{wasm_error, ToJs};
 
 use crate::mem;
 use crate::shapes::{GridCell, GridDirection, GridTrack, GridTrackType};
@@ -6,6 +6,9 @@ use crate::uuid::Uuid;
 use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state, with_state_mut, STATE};
 
 use super::align;
+
+#[allow(unused_imports)]
+use crate::error::{Error, Result};
 
 #[derive(Debug)]
 #[repr(C, align(1))]
@@ -168,54 +171,72 @@ pub extern "C" fn set_grid_layout_data(
 }
 
 #[no_mangle]
-pub extern "C" fn set_grid_columns() {
+#[wasm_error]
+pub extern "C" fn set_grid_columns() -> Result<()> {
     let bytes = mem::bytes();
 
     let entries: Vec<GridTrack> = bytes
         .chunks(size_of::<RawGridTrack>())
-        .map(|data| data.try_into().unwrap())
-        .map(|data: [u8; size_of::<RawGridTrack>()]| RawGridTrack::from(data).into())
-        .collect();
+        .map(|data| {
+            let track_bytes: [u8; size_of::<RawGridTrack>()] = data
+                .try_into()
+                .map_err(|_| Error::CriticalError("Invalid bytes for grid track".to_string()))?;
+            Ok(RawGridTrack::from(track_bytes).into())
+        })
+        .collect::<Result<Vec<_>>>()?;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_grid_columns(entries);
     });
 
-    mem::free_bytes();
+    mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]
-pub extern "C" fn set_grid_rows() {
+#[wasm_error]
+pub extern "C" fn set_grid_rows() -> Result<()> {
     let bytes = mem::bytes();
 
     let entries: Vec<GridTrack> = bytes
         .chunks(size_of::<RawGridTrack>())
-        .map(|data| data.try_into().unwrap())
-        .map(|data: [u8; size_of::<RawGridTrack>()]| RawGridTrack::from(data).into())
-        .collect();
+        .map(|data| {
+            let track_bytes: [u8; size_of::<RawGridTrack>()] = data
+                .try_into()
+                .map_err(|_| Error::CriticalError("Invalid bytes for grid track".to_string()))?;
+            Ok(RawGridTrack::from(track_bytes).into())
+        })
+        .collect::<Result<Vec<_>>>()?;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_grid_rows(entries);
     });
 
-    mem::free_bytes();
+    mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]
-pub extern "C" fn set_grid_cells() {
+#[wasm_error]
+pub extern "C" fn set_grid_cells() -> Result<()> {
     let bytes = mem::bytes();
 
     let cells: Vec<RawGridCell> = bytes
         .chunks(size_of::<RawGridCell>())
-        .map(|data| data.try_into().expect("Invalid grid cell data"))
-        .map(|data: [u8; size_of::<RawGridCell>()]| RawGridCell::from(data))
-        .collect();
+        .map(|data| {
+            let cell_bytes: [u8; size_of::<RawGridCell>()] = data
+                .try_into()
+                .map_err(|_| Error::CriticalError("Invalid bytes for grid cell".to_string()))?;
+            Ok(RawGridCell::from(cell_bytes))
+        })
+        .collect::<Result<Vec<_>>>()?;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_grid_cells(cells.into_iter().map(|raw| raw.into()).collect());
     });
 
-    mem::free_bytes();
+    mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]

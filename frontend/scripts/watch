@@ -4,8 +4,6 @@ TARGET=${1:-app};
 
 set -ex
 
-rm -rf node_modules;
-
 corepack enable;
 corepack install;
 pnpm install;

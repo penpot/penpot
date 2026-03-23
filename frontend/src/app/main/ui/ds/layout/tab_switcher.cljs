@@ -103,6 +103,7 @@
   [:map
    [:tabs [:vector {:min 1} schema:tab]]
    [:class {:optional true} :string]
+   [:scrollable-panel {:optional true} :boolean]
    [:on-change fn?]
    [:selected :string]
    [:action-button {:optional true} some?]
@@ -111,14 +112,14 @@
 
 (mf/defc tab-switcher*
   {::mf/schema schema:tab-switcher}
-  [{:keys [tabs class on-change selected action-button-position action-button children] :rest props}]
+  [{:keys [tabs class on-change selected action-button-position action-button children scrollable-panel] :rest props}]
   (let [nodes-ref (mf/use-ref nil)
+        scrollable-panel (d/nilv scrollable-panel false)
 
         tabs
         (if (array? tabs)
           (mfu/bean tabs)
           tabs)
-
 
         on-click
         (mf/use-fn
@@ -186,7 +187,8 @@
                     :on-key-down on-key-down
                     :on-click on-click}]]
 
-     [:section {:class (stl/css :tab-panel)
+     [:section {:class (stl/css-case :tab-panel true
+                                     :scrollable-panel scrollable-panel)
                 :tab-index 0
                 :role "tabpanel"
                 :aria-labelledby selected}

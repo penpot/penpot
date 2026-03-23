@@ -9,6 +9,7 @@ pub mod grid_layout;
 use crate::math::{self as math, bools, identitish, is_close_to, Bounds, Matrix, Point};
 use common::GetBounds;
 
+use crate::error::Result;
 use crate::shapes::{
     ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, TransformEntry,
     TransformEntrySource, Type,
@@ -24,9 +25,9 @@ fn propagate_children(
     parent_bounds_after: &Bounds,
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
-) -> VecDeque<Modifier> {
+) -> Result<VecDeque<Modifier>> {
     if identitish(&transform) {
-        return VecDeque::new();
+        return Ok(VecDeque::new());
     }
 
     let mut result = VecDeque::new();
@@ -74,12 +75,12 @@ fn propagate_children(
             constraint_v,
             transform,
             child.ignore_constraints,
-        );
+        )?;
 
         result.push_back(Modifier::transform_propagate(*child_id, transform));
     }
 
-    result
+    Ok(result)
 }
 
 fn calculate_group_bounds(
@@ -133,21 +134,21 @@ fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
     let width = bounds.width();
     let height = bounds.height();
 
+    let target_width = bounds.width().round();
+    let target_height = bounds.height().round();
+
     let scale_width = if width > 0.1 {
-        f32::max(0.01, bounds.width().round() / bounds.width())
+        f32::max(0.01, target_width / width)
     } else {
         1.0
     };
     let scale_height = if height > 0.1 {
-        f32::max(0.01, bounds.height().round() / bounds.height())
+        f32::max(0.01, target_height / height)
     } else {
         1.0
     };
 
-    if f32::is_finite(scale_width)
-        && f32::is_finite(scale_height)
-        && (!math::is_close_to(scale_width, 1.0) || !math::is_close_to(scale_height, 1.0))
-    {
+    if f32::is_finite(scale_width) && f32::is_finite(scale_height) {
         let mut round_transform = Matrix::scale((scale_width, scale_height));
         round_transform.post_concat(&tr);
         round_transform.pre_concat(&tr_inv);
@@ -172,9 +173,9 @@ fn propagate_transform(
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
     modifiers: &mut HashMap<Uuid, Matrix>,
-) {
+) -> Result<()> {
     let Some(shape) = state.shapes.get(&entry.id) else {
-        return;
+        return Ok(());
     };
 
     let shapes = &state.shapes;
@@ -249,7 +250,7 @@ fn propagate_transform(
             &shape_bounds_after,
             transform,
             bounds,
-        );
+        )?;
         entries.append(&mut children);
     }
 
@@ -275,6 +276,7 @@ fn propagate_transform(
             entries.push_back(Modifier::reflow(parent.id, false));
         }
     }
+    Ok(())
 }
 
 fn propagate_reflow(
@@ -338,34 +340,35 @@ fn reflow_shape(
     reflown: &mut HashSet<Uuid>,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
-) {
+) -> Result<()> {
     let Some(shape) = state.shapes.get(id) else {
-        return;
+        return Ok(());
     };
 
     let shapes = &state.shapes;
 
     let Type::Frame(frame_data) = &shape.shape_type else {
-        return;
+        return Ok(());
     };
 
     if let Some(Layout::FlexLayout(layout_data, flex_data)) = &frame_data.layout {
         let mut children =
-            flex_layout::reflow_flex_layout(shape, layout_data, flex_data, shapes, bounds);
+            flex_layout::reflow_flex_layout(shape, layout_data, flex_data, shapes, bounds)?;
         entries.append(&mut children);
     } else if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
         let mut children =
-            grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, bounds);
+            grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, bounds)?;
         entries.append(&mut children);
     }
     reflown.insert(*id);
+    Ok(())
 }
 
 pub fn propagate_modifiers(
     state: &State,
     modifiers: &[TransformEntry],
     pixel_precision: bool,
-) -> Vec<TransformEntry> {
+) -> Result<Vec<TransformEntry>> {
     let mut entries: VecDeque<_> = modifiers
         .iter()
         .map(|entry| {
@@ -373,7 +376,7 @@ pub fn propagate_modifiers(
             if math::identitish(&entry.transform) {
                 Modifier::Reflow(entry.id, false)
             } else {
-                Modifier::Transform(*entry)
+                Modifier::Transform(*entry, pixel_precision)
             }
         })
         .collect();
@@ -392,14 +395,14 @@ pub fn propagate_modifiers(
     while !entries.is_empty() {
         while let Some(modifier) = entries.pop_front() {
             match modifier {
-                Modifier::Transform(entry) => propagate_transform(
+                Modifier::Transform(entry, pixel) => propagate_transform(
                     entry,
-                    pixel_precision,
+                    pixel,
                     state,
                     &mut entries,
                     &mut bounds,
                     &mut modifiers,
-                ),
+                )?,
                 Modifier::Reflow(id, force_reflow) => {
                     if force_reflow {
                         reflown.remove(&id);
@@ -437,16 +440,16 @@ pub fn propagate_modifiers(
             if reflown.contains(id) {
                 continue;
             }
-            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp);
+            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp)?;
         }
         layout_reflows = HashSet::new();
     }
 
-    #[allow(dead_code)]
-    modifiers
+    // #[allow(dead_code)]
+    Ok(modifiers
         .iter()
         .map(|(key, val)| TransformEntry::from_input(*key, *val))
-        .collect()
+        .collect())
 }
 
 #[cfg(test)]
@@ -494,7 +497,8 @@ mod tests {
             &bounds_after,
             transform,
             &HashMap::new(),
-        );
+        )
+        .unwrap();
 
         assert_eq!(result.len(), 1);
     }

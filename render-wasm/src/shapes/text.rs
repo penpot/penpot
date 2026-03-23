@@ -161,6 +161,13 @@ impl TextPositionWithAffinity {
             offset,
         }
     }
+
+    pub fn reset(&mut self) {
+        self.position_with_affinity.position = 0;
+        self.position_with_affinity.affinity = Affinity::Downstream;
+        self.paragraph = 0;
+        self.offset = 0;
+    }
 }
 
 #[derive(Debug)]
@@ -473,8 +480,12 @@ impl TextContent {
             };
 
             if matches {
+                // Skia's get_glyph_position_at_coordinate expects coordinates relative to
+                // the paragraph's top-left. For multi-paragraph or wrapped text, each
+                // paragraph has its own origin; subtract start_y so we pass paragraph-local coords.
+                let para_pt = Point::new(point.x, point.y - start_y);
                 let position_with_affinity =
-                    layout_paragraph.get_glyph_position_at_coordinate(*point);
+                    layout_paragraph.get_glyph_position_at_coordinate((para_pt.x, para_pt.y));
                 if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
                     // Computed position keeps the current position in terms
                     // of number of characters of text. This is used to know
@@ -569,6 +580,7 @@ impl TextContent {
         for paragraph in self.paragraphs() {
             let paragraph_style = paragraph.paragraph_to_style();
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            let mut has_text = false;
             for span in paragraph.children() {
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
                 let text_style = span.to_style(
@@ -578,8 +590,14 @@ impl TextContent {
                     paragraph.line_height(),
                 );
                 let text: String = span.apply_text_transform();
+                if !text.is_empty() {
+                    has_text = true;
+                }
                 builder.push_style(&text_style);
                 builder.add_text(&text);
+            }
+            if !has_text {
+                builder.add_text(" ");
             }
             paragraph_group.push(vec![builder]);
         }
@@ -659,7 +677,7 @@ impl TextContent {
             });
 
         let size = TextContentSize::new_with_normalized_line_height(
-            width,
+            width.ceil(),
             paragraph_height.ceil(),
             DEFAULT_TEXT_CONTENT_SIZE,
             normalized_line_height,
@@ -694,12 +712,12 @@ impl TextContent {
     pub fn set_layout_from_result(
         &mut self,
         result: TextContentLayoutResult,
-        default_height: f32,
         default_width: f32,
+        default_height: f32,
     ) {
         self.layout.set(result.0, result.1);
         self.size
-            .copy_finite_size(result.2, default_height, default_width);
+            .copy_finite_size(result.2, default_width, default_height);
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
@@ -1121,7 +1139,11 @@ impl TextSpan {
     fn process_ignored_chars(text: &str, browser: u8) -> String {
         text.chars()
             .filter_map(|c| {
-                if c < '\u{0020}' || c == '\u{2028}' || c == '\u{2029}' {
+                // Preserve line breaks: \n (U+000A), \r (U+000D), and Unicode separators
+                if c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
+                    return Some(c);
+                }
+                if c < '\u{0020}' {
                     if browser == Browser::Firefox as u8 {
                         None
                     } else {
@@ -1137,7 +1159,7 @@ impl TextSpan {
     pub fn apply_text_transform(&self) -> String {
         let browser = crate::with_state!(state, { state.current_browser });
         let text = Self::process_ignored_chars(&self.text, browser);
-        let transformed_text = match self.text_transform {
+        match self.text_transform {
             Some(TextTransform::Uppercase) => text.to_uppercase(),
             Some(TextTransform::Lowercase) => text.to_lowercase(),
             Some(TextTransform::Capitalize) => text
@@ -1152,9 +1174,7 @@ impl TextSpan {
                 .collect::<Vec<_>>()
                 .join(" "),
             None => text,
-        };
-
-        transformed_text.replace("/", "/\u{200B}")
+        }
     }
 
     pub fn scale_content(&mut self, value: f32) {

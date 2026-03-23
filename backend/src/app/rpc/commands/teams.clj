@@ -193,7 +193,7 @@
   (dm/with-open [conn (db/open pool)]
     (cond->> (get-teams conn profile-id)
       (contains? cf/flags :nitrate)
-      (map #(nitrate/add-org-to-team cfg % params)))))
+      (map #(nitrate/add-org-info-to-team cfg % params)))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
@@ -499,7 +499,9 @@
   [:map {:title "create-team"}
    [:name [:string {:max 250}]]
    [:features {:optional true} ::cfeat/features]
-   [:id {:optional true} ::sm/uuid]])
+   [:id {:optional true} ::sm/uuid]
+   [:organization-id {:optional true} ::sm/uuid]
+   [:is-default {:optional true} :boolean]])
 
 (sv/defmethod ::create-team
   {::doc/added "1.17"
@@ -531,6 +533,9 @@
                        :role :owner)
         project (create-team-default-project conn params)]
     (create-team-role conn params)
+    ;; Set team organization in Nitrate if organization-id is provided
+    (when (and (contains? cf/flags :nitrate) (:organization-id params))
+      (nitrate/set-team-organization cfg-or-conn team params))
     (assoc team :default-project-id (:id project))))
 
 (defn- create-team*
