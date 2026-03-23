@@ -168,8 +168,16 @@ impl State {
                 }
             }
 
-            if let Some(shape_to_delete) = self.shapes.get_mut(&id) {
-                shape_to_delete.set_deleted(true);
+            if let Some(shape_to_delete) = self.shapes.get(&id) {
+                let to_delete = shape_to_delete.all_children(&self.shapes, true, true);
+                for shape_id in to_delete {
+                    if let Some(shape_to_delete) = self.shapes.get_mut(&shape_id) {
+                        shape_to_delete.set_deleted(true);
+                    }
+                    if self.render_state.show_grid == Some(shape_id) {
+                        self.render_state.show_grid = None;
+                    }
+                }
             }
         }
     }
