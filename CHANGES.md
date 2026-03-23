@@ -19,6 +19,7 @@
 - Copy and paste entire rows in existing table (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8498)
 - Rename token group [Taiga #13137](https://tree.taiga.io/project/penpot/us/13137)
 - Copy token name from contextual menu [Taiga #13568](https://tree.taiga.io/project/penpot/issue/13568)
+- Add natural sorting on token names [Taiga #13713](https://tree.taiga.io/project/penpot/issue/13713)
 
 ### :bug: Bugs fixed
 
