@@ -251,3 +251,92 @@
     (t/is (= (d/reorder v 3 -1) ["d" "a" "b" "c"]))
     (t/is (= (d/reorder v 5 -1) ["d" "a" "b" "c"]))
     (t/is (= (d/reorder v -1 5) ["b" "c" "d" "a"]))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lazy / sequence helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest concat-all-test
+  (t/is (= [1 2 3 4 5 6]
+           (d/concat-all [[1 2] [3 4] [5 6]])))
+  (t/is (= [] (d/concat-all [])))
+  (t/is (= [1 2 3]
+           (d/concat-all [[1] [2] [3]])))
+  ;; It's lazy — works with infinite-ish inner seqs truncated by outer limit
+  (t/is (= [0 1 2]
+           (take 3 (d/concat-all (map list (range)))))))
+
+(t/deftest mapcat-test
+  (t/is (= [0 1 1 2 2 3]
+           (d/mapcat (fn [x] [x (inc x)]) [0 1 2])))
+  ;; fully lazy — can operate on infinite sequences
+  (t/is (= [0 0 1 1 2 2]
+           (take 6 (d/mapcat (fn [x] [x x]) (range))))))
+
+(t/deftest zip-test
+  (t/is (= [[1 :a] [2 :b] [3 :c]]
+           (d/zip [1 2 3] [:a :b :c])))
+  (t/is (= [] (d/zip [] []))))
+
+(t/deftest zip-all-test
+  ;; same length
+  (t/is (= [[1 :a] [2 :b]]
+           (d/zip-all [1 2] [:a :b])))
+  ;; col1 longer — col2 padded with nils
+  (t/is (= [[1 :a] [2 nil] [3 nil]]
+           (d/zip-all [1 2 3] [:a])))
+  ;; col2 longer — col1 padded with nils
+  (t/is (= [[1 :a] [nil :b] [nil :c]]
+           (d/zip-all [1] [:a :b :c]))))
+
+(t/deftest enumerate-test
+  (t/is (= [[0 :a] [1 :b] [2 :c]]
+           (d/enumerate [:a :b :c])))
+  (t/is (= [[5 :a] [6 :b]]
+           (d/enumerate [:a :b] 5)))
+  (t/is (= [] (d/enumerate []))))
+
+(t/deftest interleave-all-test
+  (t/is (= [] (d/interleave-all)))
+  (t/is (= [1 2 3] (d/interleave-all [1 2 3])))
+  (t/is (= [1 :a 2 :b 3 :c]
+           (d/interleave-all [1 2 3] [:a :b :c])))
+  ;; unequal lengths — longer seq is not truncated
+  (t/is (= [1 :a 2 :b 3]
+           (d/interleave-all [1 2 3] [:a :b])))
+  (t/is (= [1 :a 2 :b :c]
+           (d/interleave-all [1 2] [:a :b :c]))))
+
+(t/deftest add-at-index-test
+  (t/is (= [:a :x :b :c] (d/add-at-index [:a :b :c] 1 :x)))
+  (t/is (= [:x :a :b :c] (d/add-at-index [:a :b :c] 0 :x)))
+  (t/is (= [:a :b :c :x] (d/add-at-index [:a :b :c] 3 :x))))
+
+(t/deftest take-until-test
+  ;; stops (inclusive) when predicate is true
+  (t/is (= [1 2 3] (d/take-until #(= % 3) [1 2 3 4 5])))
+  ;; if predicate never true, returns whole collection
+  (t/is (= [1 2 3] (d/take-until #(= % 9) [1 2 3])))
+  ;; first element matches
+  (t/is (= [1] (d/take-until #(= % 1) [1 2 3]))))
+
+(t/deftest safe-subvec-test
+  ;; normal range
+  (t/is (= [2 3] (d/safe-subvec [1 2 3 4] 1 3)))
+  ;; single arg — from index to end
+  (t/is (= [2 3 4] (d/safe-subvec [1 2 3 4] 1)))
+  ;; out-of-range returns nil
+  (t/is (nil? (d/safe-subvec [1 2 3] 5)))
+  (t/is (nil? (d/safe-subvec [1 2 3] 0 5)))
+  ;; nil v returns nil
+  (t/is (nil? (d/safe-subvec nil 0 1))))
+
+(t/deftest domap-test
+  (let [side-effects (atom [])
+        result       (d/domap #(swap! side-effects conj %) [1 2 3])]
+    (t/is (= [1 2 3] result))
+    (t/is (= [1 2 3] @side-effects)))
+  ;; transducer arity
+  (let [side-effects (atom [])]
+    (into [] (d/domap #(swap! side-effects conj %)) [4 5])
+    (t/is (= [4 5] @side-effects))))
