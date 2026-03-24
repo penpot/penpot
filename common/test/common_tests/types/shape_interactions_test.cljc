@@ -890,5 +890,88 @@
         (t/is (= (:id frame4) (:destination (get new-interactions 0))))
         (t/is (= (:id frame5) (:destination (get new-interactions 1))))
         (t/is (= (:id frame3) (:destination (get new-interactions 2))))
-        (t/is (nil? (:destination (get new-interactions 3))))))))
+        (t/is (nil? (:destination (get new-interactions 3))))))
 
+    ;; `nil` interactions is a valid input when a shape has no prototype links yet.
+    (t/testing "Remap nil interactions"
+      (t/is (nil? (ctsi/remap-interactions nil ids-map objects))))))
+
+(t/deftest destination-predicates
+  (let [frame-id            (uuid/next)
+        other-frame-id      (uuid/next)
+        navigate            (ctsi/set-destination ctsi/default-interaction frame-id)
+        open-overlay        (-> ctsi/default-interaction
+                                (ctsi/set-action-type :open-overlay)
+                                (ctsi/set-destination frame-id))
+        close-overlay       (-> ctsi/default-interaction
+                                (ctsi/set-action-type :close-overlay)
+                                (ctsi/set-destination frame-id))
+        prev-screen         (ctsi/set-action-type ctsi/default-interaction :prev-screen)
+        navigate-without-id (assoc ctsi/default-interaction :destination nil)]
+
+    ;; These helpers are consumed by flow code, so we verify both capability and exact target checks.
+    (t/testing "Destination helpers distinguish optional and concrete targets"
+      (t/is (ctsi/destination? navigate))
+      (t/is (ctsi/destination? open-overlay))
+      (t/is (ctsi/destination? close-overlay))
+      (t/is (not (ctsi/destination? navigate-without-id)))
+      (t/is (not (ctsi/destination? prev-screen))))
+
+    (t/testing "Destination match helpers are action aware"
+      (t/is (ctsi/dest-to? navigate frame-id))
+      (t/is (ctsi/dest-to? open-overlay frame-id))
+      (t/is (not (ctsi/dest-to? prev-screen frame-id)))
+      (t/is (not (ctsi/dest-to? navigate other-frame-id)))
+      (t/is (ctsi/navs-to? navigate frame-id))
+      (t/is (not (ctsi/navs-to? open-overlay frame-id)))
+      (t/is (not (ctsi/navs-to? navigate other-frame-id))))))
+
+(t/deftest collection-predicates
+  (let [frame-id       (uuid/next)
+        other-frame-id (uuid/next)
+        click-nav      (ctsi/set-destination ctsi/default-interaction frame-id)
+        delayed-nav    (-> ctsi/default-interaction
+                           (assoc :destination frame-id)
+                           (assoc :event-type :after-delay)
+                           (assoc :delay 600))
+        overlay-flow   (-> ctsi/default-interaction
+                           (ctsi/set-action-type :open-overlay)
+                           (ctsi/set-destination other-frame-id))
+        open-url       (-> ctsi/default-interaction
+                           (ctsi/set-action-type :open-url)
+                           (ctsi/set-url "https://example.com"))
+        close-no-dest  (ctsi/set-action-type ctsi/default-interaction :close-overlay)]
+
+    ;; `actionable?` is intentionally narrow: only click interactions should mark the shape as clickable.
+    (t/testing "Actionable only considers click events"
+      (t/is (ctsi/actionable? [click-nav delayed-nav]))
+      (t/is (not (ctsi/actionable? [delayed-nav (assoc overlay-flow :event-type :mouse-enter)])))
+      (t/is (nil? (ctsi/actionable? nil))))
+
+    ;; Flow helpers should only report interactions that can continue a prototype flow and have a destination.
+    (t/testing "Flow helpers only include destination based interactions"
+      (t/is (ctsi/flow-origin? [click-nav open-url]))
+      (t/is (ctsi/flow-origin? [overlay-flow close-no-dest click-nav]))
+      (t/is (not (ctsi/flow-origin? [open-url close-no-dest])))
+      (t/is (ctsi/flow-to? [click-nav overlay-flow] frame-id))
+      (t/is (ctsi/flow-to? [click-nav overlay-flow] other-frame-id))
+      (t/is (not (ctsi/flow-to? [open-url close-no-dest] frame-id)))
+      (t/is (nil? (ctsi/flow-to? nil frame-id))))))
+
+(t/deftest remove-interactions-test
+  (let [frame-id      (uuid/next)
+        keep-nav      (ctsi/set-destination ctsi/default-interaction frame-id)
+        remove-url    (-> ctsi/default-interaction
+                          (ctsi/set-action-type :open-url)
+                          (ctsi/set-url "https://example.com"))
+        remove-prev   (ctsi/set-action-type ctsi/default-interaction :prev-screen)
+        interactions  [keep-nav remove-url remove-prev]]
+
+    ;; The helper should preserve vector semantics and normalize an empty result back to nil.
+    (t/testing "Remove only matching interactions"
+      (let [new-interactions (ctsi/remove-interactions #(= :open-url (:action-type %)) interactions)]
+        (t/is (= 2 (count new-interactions)))
+        (t/is (= [:navigate :prev-screen] (mapv :action-type new-interactions)))))
+
+    (t/testing "Remove all interactions returns nil"
+      (t/is (nil? (ctsi/remove-interactions (constantly true) interactions))))))
