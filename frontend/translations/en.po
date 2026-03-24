@@ -7348,7 +7348,7 @@ msgstr "Underline (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.convert-to-typography"
-msgstr "Convert to typography"
+msgstr "Create typography style"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-section"

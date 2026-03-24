@@ -50,20 +50,10 @@
 
         handle-click
         (mf/use-fn
-         (mf/deps selected on-change allow-empty)
-         (fn [event]
-           (let [target    (dom/get-target event)
-                 label     (dom/get-parent-with-data target "label")
-                 input     (dom/query label "input")
-                 value     (dom/get-value input)
-                 selected-str (when selected (d/name selected))
-                 new-value (if (and allow-empty (= value selected-str))
-                             nil
-                             value)]
-             (dom/prevent-default event)
-             (dom/stop-propagation event)
-             (when (fn? on-change)
-               (on-change new-value event)))))
+         (fn [e]
+           (let [label (dom/get-parent-with-data (dom/get-target e) "label")
+                 input (dom/query label "input")]
+             (dom/click input))))
 
         handle-change
         (mf/use-fn

@@ -7263,7 +7263,7 @@ msgstr "Subrayado (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.convert-to-typography"
-msgstr "Convertir a tipografía"
+msgstr "Crear estilo de tipografía"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-section"
