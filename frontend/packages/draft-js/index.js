@@ -375,6 +375,10 @@ function splitTextIntoTextBlocks(text) {
 export function insertText(state, text, attrs, inlineStyles) {
   const blocks = splitTextIntoTextBlocks(text);
 
+  if (blocks.length === 0) {
+    return state;
+  }
+
   const character = CharacterMetadata.create({style: OrderedSet(inlineStyles)});
 
   let blockArray = DraftPasteProcessor.processText(
