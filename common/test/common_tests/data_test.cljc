@@ -780,3 +780,128 @@
   (t/is (= "foo bar" (d/append-class "foo" "bar")))
   (t/is (= "bar" (d/append-class nil "bar")))
   (t/is (= " bar" (d/append-class "" "bar"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Additional helpers (5th batch)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest not-empty-predicate
+  (t/is (d/not-empty? [1 2 3]))
+  (t/is (d/not-empty? {:a 1}))
+  (t/is (d/not-empty? "abc"))
+  (t/is (not (d/not-empty? [])))
+  (t/is (not (d/not-empty? {})))
+  (t/is (not (d/not-empty? nil))))
+
+(t/deftest editable-collection-predicate
+  (t/is (d/editable-collection? []))
+  (t/is (d/editable-collection? [1 2 3]))
+  (t/is (d/editable-collection? {}))
+  (t/is (d/editable-collection? {:a 1}))
+  (t/is (not (d/editable-collection? nil)))
+  (t/is (not (d/editable-collection? "hello")))
+  (t/is (not (d/editable-collection? 42))))
+
+(t/deftest num-predicate
+  (t/is (d/num? 1))
+  (t/is (d/num? 0))
+  (t/is (d/num? -3.14))
+  (t/is (not (d/num? ##NaN)))
+  (t/is (not (d/num? ##Inf)))
+  (t/is (not (d/num? nil)))
+  ;; In CLJS, js/isFinite coerces strings → (d/num? "1") is true on CLJS, false on JVM
+  #?(:clj (t/is (not (d/num? "1"))))
+  ;; multi-arity
+  (t/is (d/num? 1 2))
+  (t/is (d/num? 1 2 3))
+  (t/is (d/num? 1 2 3 4))
+  (t/is (d/num? 1 2 3 4 5))
+  (t/is (not (d/num? 1 ##NaN)))
+  (t/is (not (d/num? 1 2 ##Inf)))
+  (t/is (not (d/num? 1 2 3 ##NaN)))
+  (t/is (not (d/num? 1 2 3 4 ##Inf))))
+
+(t/deftest num-string-predicate
+  ;; num-string? returns true for strings that represent valid numbers
+  (t/is (d/num-string? "42"))
+  (t/is (d/num-string? "3.14"))
+  (t/is (d/num-string? "-7"))
+  (t/is (not (d/num-string? "hello")))
+  (t/is (not (d/num-string? nil)))
+  ;; In CLJS, js/isNaN("") → false (empty string coerces to 0), so "" is numeric
+  #?(:clj (t/is (not (d/num-string? ""))))
+  #?(:cljs (t/is (d/num-string? ""))))
+
+(t/deftest percent-predicate
+  (t/is (d/percent? "50%"))
+  (t/is (d/percent? "100%"))
+  (t/is (d/percent? "0%"))
+  (t/is (d/percent? "3.5%"))
+  ;; percent? uses str/rtrim which strips the trailing % then checks numeric,
+  ;; so a plain numeric string without % also returns true
+  (t/is (d/percent? "50"))
+  (t/is (not (d/percent? "abc%")))
+  (t/is (not (d/percent? "abc"))))
+
+(t/deftest parse-percent-test
+  (t/is (= 0.5 (d/parse-percent "50%")))
+  (t/is (= 1.0 (d/parse-percent "100%")))
+  (t/is (= 0.0 (d/parse-percent "0%")))
+  ;; falls back to parse-double when no % suffix
+  (t/is (= 0.75 (d/parse-percent "0.75")))
+  ;; invalid value returns default
+  (t/is (nil? (d/parse-percent "abc%")))
+  (t/is (= 0.0 (d/parse-percent "abc%" 0.0))))
+
+(t/deftest lazy-map-test
+  (let [calls (atom 0)
+        m     (d/lazy-map [:a :b :c]
+                          (fn [k]
+                            (swap! calls inc)
+                            (name k)))]
+    ;; The map has the right keys
+    (t/is (= #{:a :b :c} (set (keys m))))
+    ;; Values are delays — force them
+    (t/is (= "a" @(get m :a)))
+    (t/is (= "b" @(get m :b)))
+    (t/is (= "c" @(get m :c)))))
+
+(t/deftest oreorder-before-test
+  ;; No ks path: insert k v before before-k in a flat ordered-map
+  (let [om (d/ordered-map :a 1 :b 2 :c 3)
+        result (d/oreorder-before om [] :d 4 :b)]
+    (t/is (= [:a :d :b :c] (vec (keys result)))))
+  ;; before-k not found → appended at end
+  (let [om (d/ordered-map :a 1 :b 2)
+        result (d/oreorder-before om [] :c 3 :z)]
+    (t/is (= [:a :b :c] (vec (keys result)))))
+  ;; nil before-k → appended at end
+  (let [om (d/ordered-map :a 1 :b 2)
+        result (d/oreorder-before om [] :c 3 nil)]
+    (t/is (= [:a :b :c] (vec (keys result)))))
+  ;; existing key k is removed from its old position
+  (let [om (d/ordered-map :a 1 :b 2 :c 3)
+        result (d/oreorder-before om [] :c 99 :a)]
+    (t/is (= [:c :a :b] (vec (keys result))))))
+
+(t/deftest oassoc-in-before-test
+  ;; Simple case: add a new key before an existing key
+  (let [om (d/ordered-map :a 1 :b 2 :c 3)
+        result (d/oassoc-in-before om [:b] [:x] 99)]
+    (t/is (= [:a :x :b :c] (vec (keys result))))
+    (t/is (= 99 (get result :x))))
+  ;; before-k not found → oassoc-in behaviour (append)
+  (let [om (d/ordered-map :a 1 :b 2)
+        result (d/oassoc-in-before om [:z] [:x] 99)]
+    (t/is (= 99 (get result :x)))))
+
+(t/deftest reorder-test
+  ;; Move element from index 0 to position between index 2 and 3
+  (t/is (= [:b :c :a :d] (d/reorder [:a :b :c :d] 0 3)))
+  ;; Move last element to the front
+  (t/is (= [:d :a :b :c] (d/reorder [:a :b :c :d] 3 0)))
+  ;; No-op: same logical position (from-pos == to-space-between-pos)
+  (t/is (= [:a :b :c :d] (d/reorder [:a :b :c :d] 1 1)))
+  ;; Clamp out-of-range positions
+  (t/is (= [:b :c :d :a] (d/reorder [:a :b :c :d] 0 100)))
+  (t/is (= [:a :b :c :d] (d/reorder [:a :b :c :d] -5 0))))
