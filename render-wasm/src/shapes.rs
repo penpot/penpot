@@ -1212,6 +1212,7 @@ impl Shape {
         matrix
     }
 
+    #[allow(dead_code)]
     pub fn get_concatenated_matrix(&self, shapes: ShapesPoolRef) -> Matrix {
         let mut matrix = Matrix::new_identity();
         let mut current_id = self.id;
