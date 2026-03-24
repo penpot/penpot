@@ -7346,6 +7346,14 @@ msgstr "Title case"
 msgid "workspace.options.text-options.underline"
 msgstr "Underline (%s)"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.convert-to-typography"
+msgstr "Convert to typography"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-section"
+msgstr "Text section"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
 msgid "workspace.options.text-options.uppercase"

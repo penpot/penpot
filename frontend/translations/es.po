@@ -7261,6 +7261,14 @@ msgstr "Título"
 msgid "workspace.options.text-options.underline"
 msgstr "Subrayado (%s)"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.convert-to-typography"
+msgstr "Convertir a tipografía"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-section"
+msgstr "Sección de textos"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
 msgid "workspace.options.text-options.uppercase"

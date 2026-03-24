@@ -533,8 +533,7 @@
                           (dom/focus! node)))))
 
     [:section {:class (stl/css :element-set)
-               ;; TODO: Add translation
-               :aria-label "Text section"}
+               :aria-label (tr "workspace.options.text-options.text-section")}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  true
                       :collapsed    (not main-menu-open?)
@@ -545,15 +544,13 @@
         ;; TODO: Check multiple, and with typography
         (when (and token-row (some? tokens) (not typography))
           [:> icon-button* {:variant "ghost"
-                            ;; TODO: ask for confimation to this copy and add translation
-                            :aria-label "Toggle token list"
+                            :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                             :on-click toggle-tokens-dropdown
                             :tooltip-placement "top-left"
                             :icon i/tokens}])
         (when (and (not typography) (not multiple?))
           [:> icon-button* {:variant "ghost"
-                            ;; TODO: ask for confimation to this copy and add translation
-                            :aria-label "Convert to typography"
+                            :aria-label (tr "workspace.options.convert-to-typography")
                             :on-click on-convert-to-typography
                             :tooltip-placement "top-left"
                             :icon i/add}])]]]
