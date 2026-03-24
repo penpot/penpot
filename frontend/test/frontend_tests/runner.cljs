@@ -17,6 +17,7 @@
    [frontend-tests.tokens.logic.token-data-test]
    [frontend-tests.tokens.logic.token-remapping-test]
    [frontend-tests.tokens.style-dictionary-test]
+   [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
@@ -49,6 +50,7 @@
    'frontend-tests.tokens.logic.token-data-test
    'frontend-tests.tokens.logic.token-remapping-test
    'frontend-tests.tokens.style-dictionary-test
+   'frontend-tests.tokens.token-errors-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test

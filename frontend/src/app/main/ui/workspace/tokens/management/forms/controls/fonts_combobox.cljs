@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.fonts :as fonts]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
@@ -168,11 +169,7 @@
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
-                                (d/update-when result :error
-                                               (fn [error]
-                                                 (if-let [f (:error/fn error)]
-                                                   (f (:error/value error))
-                                                   (:message error))))))
+                                (d/update-when result :error wte/resolve-error-message)))
                       (rx/subs! (fn [{:keys [error value]}]
                                   (when touched?
                                     (if error
@@ -293,11 +290,7 @@
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
-                                (d/update-when result :error
-                                               (fn [error]
-                                                 (if-let [f (:error/fn error)]
-                                                   (f (:error/value error))
-                                                   (:message error))))))
+                                (d/update-when result :error wte/resolve-error-message)))
                       (rx/subs!
                        (fn [{:keys [error value]}]
                          (cond

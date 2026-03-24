@@ -241,11 +241,7 @@
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
-                                (d/update-when result :error
-                                               (fn [error]
-                                                 (if-let [f (:error/fn error)]
-                                                   (f (:error/value error))
-                                                   (:message error))))))
+                                (d/update-when result :error wte/resolve-error-message)))
                       (rx/subs! (fn [{:keys [error value]}]
                                   (let [touched? (get-in @form [:touched input-name])]
                                     (when touched?
@@ -335,11 +331,7 @@
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
-                                (d/update-when result :error
-                                               (fn [error]
-                                                 (if-let [f (:error/fn error)]
-                                                   (assoc error :message (f (:error/value error)))
-                                                   error)))))
+                                (d/update-when result :error wte/resolve-error-assoc-message)))
 
                       (rx/subs!
                        (fn [{:keys [error value]}]
@@ -449,11 +441,7 @@
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
-                                (d/update-when result :error
-                                               (fn [error]
-                                                 (if-let [f (:error/fn error)]
-                                                   (assoc error :message (f (:error/value error)))
-                                                   error)))))
+                                (d/update-when result :error wte/resolve-error-assoc-message)))
 
                       (rx/subs!
                        (fn [{:keys [error value]}]
