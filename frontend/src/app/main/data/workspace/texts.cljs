@@ -1026,10 +1026,15 @@
               :stack-undo? effective-stack-undo?
               :undo-group (when new-shape? id)})
 
-            ;; When we don't update the shape (no new-size), still update WASM display
-            (when-not (some? new-size)
+            ;; When `get-wasm-text-new-size` reports a change, `update-shapes` above resizes the
+            ;; shape data; the WASM renderer still needs matching modifiers. While editing, use
+            ;; `set-wasm-modifiers` for a temporary preview; on `finalize?`, `apply-wasm-modifiers`
+            ;; commits layout (flex parents, sidebar width, etc.) like other transform flows.
+            (when (some? new-size)
               (when-let [modifiers (dwwt/resize-wasm-text-modifiers shape content)]
-                (dwm/set-wasm-modifiers modifiers {:undo-group (when new-shape? id)}))))
+                (if finalize?
+                  (dwm/apply-wasm-modifiers modifiers {:undo-group (when new-shape? id)})
+                  (dwm/set-wasm-modifiers modifiers {:undo-group (when new-shape? id)})))))
 
            (when finalize?
              (rx/concat
