@@ -6,6 +6,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
@@ -35,6 +36,7 @@
         dropdown-direction-change* (mf/use-ref 0)
         top                 (+ (get-in mdata [:position :y]) 5)
         left                (+ (get-in mdata [:position :x]) 5)
+        container           (hooks/use-portal-container)
 
         delete-node          (mf/use-fn
                               (mf/deps mdata)
@@ -80,4 +82,4 @@
                         :type "button"
                         :on-click delete-node}
                (tr "labels.delete")]]])]])
-       (dom/get-body)))))
+       container))))
