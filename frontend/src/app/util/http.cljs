@@ -106,10 +106,10 @@
            (p/catch
             (fn [cause]
               (vreset! abortable? false)
-              (when-not @unsubscribed?
+              (when-not (or @unsubscribed? (= (.-name ^js cause) "AbortError"))
                 (let [error (ex-info (ex-message cause)
                                      {:type :internal
-                                      :code :unable-to-fetch
+                                      :code :fetch-error
                                       :hint "unable to perform fetch operation"
                                       :uri uri
                                       :headers headers}
