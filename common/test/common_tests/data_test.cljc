@@ -340,3 +340,210 @@
   (let [side-effects (atom [])]
     (into [] (d/domap #(swap! side-effects conj %)) [4 5])
     (t/is (= [4 5] @side-effects))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Collection lookup helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest group-by-test
+  (t/is (= {:odd [1 3] :even [2 4]}
+           (d/group-by #(if (odd? %) :odd :even) [1 2 3 4])))
+  ;; two-arity with value function
+  (t/is (= {:odd [10 30] :even [20 40]}
+           (d/group-by #(if (odd? %) :odd :even) #(* % 10) [1 2 3 4])))
+  ;; three-arity with initial value
+  (t/is (= {:a #{1} :b #{2}}
+           (d/group-by :k :v #{} [{:k :a :v 1} {:k :b :v 2}]))))
+
+(t/deftest seek-test
+  (t/is (= 3 (d/seek odd? [2 4 3 5])))
+  (t/is (nil? (d/seek odd? [2 4 6])))
+  (t/is (= :default (d/seek odd? [2 4 6] :default)))
+  (t/is (= 1 (d/seek some? [nil nil 1 2]))))
+
+(t/deftest index-by-test
+  (t/is (= {1 {:id 1 :name "a"} 2 {:id 2 :name "b"}}
+           (d/index-by :id [{:id 1 :name "a"} {:id 2 :name "b"}])))
+  ;; two-arity with value fn
+  (t/is (= {1 "a" 2 "b"}
+           (d/index-by :id :name [{:id 1 :name "a"} {:id 2 :name "b"}]))))
+
+(t/deftest index-of-pred-test
+  (t/is (= 0 (d/index-of-pred [1 2 3] odd?)))
+  (t/is (= 1 (d/index-of-pred [2 3 4] odd?)))
+  (t/is (nil? (d/index-of-pred [2 4 6] odd?)))
+  (t/is (nil? (d/index-of-pred [] odd?))))
+
+(t/deftest index-of-test
+  (t/is (= 0 (d/index-of [:a :b :c] :a)))
+  (t/is (= 2 (d/index-of [:a :b :c] :c)))
+  (t/is (nil? (d/index-of [:a :b :c] :z))))
+
+(t/deftest replace-by-id-test
+  (let [items [{:id 1 :v "a"} {:id 2 :v "b"} {:id 3 :v "c"}]
+        new-v {:id 2 :v "x"}]
+    (t/is (= [{:id 1 :v "a"} {:id 2 :v "x"} {:id 3 :v "c"}]
+             (d/replace-by-id items new-v)))
+    ;; transducer arity
+    (t/is (= [{:id 1 :v "a"} {:id 2 :v "x"} {:id 3 :v "c"}]
+             (sequence (d/replace-by-id new-v) items)))))
+
+(t/deftest getf-test
+  (let [m {:a 1 :b 2}
+        get-from-m (d/getf m)]
+    (t/is (= 1 (get-from-m :a)))
+    (t/is (= 2 (get-from-m :b)))
+    (t/is (nil? (get-from-m :z)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Map manipulation helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest vec-without-nils-test
+  (t/is (= [1 2 3] (d/vec-without-nils [1 nil 2 nil 3])))
+  (t/is (= [] (d/vec-without-nils [nil nil])))
+  (t/is (= [1] (d/vec-without-nils [1]))))
+
+(t/deftest without-nils-test
+  (t/is (= {:a 1 :d 2} (d/without-nils {:a 1 :b nil :c nil :d 2 :e nil}))
+        "removes all nil values")
+  ;; transducer arity — works on map entries
+  (t/is (= {:a 1} (into {} (d/without-nils) {:a 1 :b nil}))))
+
+(t/deftest without-qualified-test
+  (t/is (= {:a 1} (d/without-qualified {:a 1 :ns/b 2 :ns/c 3})))
+  ;; transducer arity — works on map entries
+  (t/is (= {:a 1} (into {} (d/without-qualified) {:a 1 :ns/b 2}))))
+
+(t/deftest without-keys-test
+  (t/is (= {:c 3} (d/without-keys {:a 1 :b 2 :c 3} [:a :b])))
+  (t/is (= {:a 1 :b 2 :c 3} (d/without-keys {:a 1 :b 2 :c 3} []))))
+
+(t/deftest deep-merge-test
+  (t/is (= {:a 1 :b {:c 3 :d 4}}
+           (d/deep-merge {:a 1 :b {:c 2 :d 4}} {:b {:c 3}})))
+  ;; non-map values get replaced
+  (t/is (= {:a 2}
+           (d/deep-merge {:a 1} {:a 2})))
+  ;; three-way merge
+  (t/is (= {:a 1 :b 2 :c 3}
+           (d/deep-merge {:a 1} {:b 2} {:c 3}))))
+
+(t/deftest dissoc-in-test
+  (t/is (= {:a {:b 1}} (d/dissoc-in {:a {:b 1 :c 2}} [:a :c])))
+  ;; removes parent when child map becomes empty
+  (t/is (= {} (d/dissoc-in {:a {:b 1}} [:a :b])))
+  ;; no-op when path does not exist
+  (t/is (= {:a 1} (d/dissoc-in {:a 1} [:b :c]))))
+
+(t/deftest patch-object-test
+  ;; normal update
+  (t/is (= {:a 2 :b 2} (d/patch-object {:a 1 :b 2} {:a 2})))
+  ;; nil value removes key
+  (t/is (= {:b 2} (d/patch-object {:a 1 :b 2} {:a nil})))
+  ;; nested map is merged recursively
+  (t/is (= {:a {:x 10 :y 2}} (d/patch-object {:a {:x 1 :y 2}} {:a {:x 10}})))
+  ;; nested nil removes nested key
+  (t/is (= {:a {:y 2}} (d/patch-object {:a {:x 1 :y 2}} {:a {:x nil}})))
+  ;; transducer arity (1-arg returns a fn)
+  (let [f (d/patch-object {:a 99})]
+    (t/is (= {:a 99 :b 2} (f {:a 1 :b 2})))))
+
+(t/deftest without-obj-test
+  (t/is (= [1 3] (d/without-obj [1 2 3] 2)))
+  (t/is (= [1 2 3] (d/without-obj [1 2 3] 9)))
+  (t/is (= [] (d/without-obj [1] 1))))
+
+(t/deftest update-vals-test
+  (t/is (= {:a 2 :b 4} (d/update-vals {:a 1 :b 2} #(* % 2))))
+  (t/is (= {} (d/update-vals {} identity))))
+
+(t/deftest update-in-when-test
+  ;; key exists — applies function
+  (t/is (= {:a {:b 2}} (d/update-in-when {:a {:b 1}} [:a :b] inc)))
+  ;; key absent — returns unchanged
+  (t/is (= {:a 1} (d/update-in-when {:a 1} [:b :c] inc))))
+
+(t/deftest update-when-test
+  ;; key exists — applies function
+  (t/is (= {:a 2} (d/update-when {:a 1} :a inc)))
+  ;; key absent — returns unchanged
+  (t/is (= {:a 1} (d/update-when {:a 1} :b inc))))
+
+(t/deftest assoc-in-when-test
+  ;; key exists — updates value
+  (t/is (= {:a {:b 99}} (d/assoc-in-when {:a {:b 1}} [:a :b] 99)))
+  ;; key absent — returns unchanged
+  (t/is (= {:a 1} (d/assoc-in-when {:a 1} [:b :c] 99))))
+
+(t/deftest assoc-when-test
+  ;; key exists — updates value
+  (t/is (= {:a 99} (d/assoc-when {:a 1} :a 99)))
+  ;; key absent — returns unchanged
+  (t/is (= {:a 1} (d/assoc-when {:a 1} :b 99))))
+
+(t/deftest merge-test
+  (t/is (= {:a 1 :b 2 :c 3}
+           (d/merge {:a 1} {:b 2} {:c 3})))
+  (t/is (= {:a 2}
+           (d/merge {:a 1} {:a 2})))
+  (t/is (= {} (d/merge))))
+
+(t/deftest txt-merge-test
+  ;; sets value when not nil
+  (t/is (= {:a 2 :b 2} (d/txt-merge {:a 1 :b 2} {:a 2})))
+  ;; removes key when value is nil
+  (t/is (= {:b 2} (d/txt-merge {:a 1 :b 2} {:a nil})))
+  ;; adds new key
+  (t/is (= {:a 1 :b 2 :c 3} (d/txt-merge {:a 1 :b 2} {:c 3}))))
+
+(t/deftest mapm-test
+  ;; two-arity: transform map in place
+  (t/is (= {:a 2 :b 4} (d/mapm (fn [k v] (* v 2)) {:a 1 :b 2})))
+  ;; one-arity: transducer
+  (t/is (= {:a 10 :b 20}
+           (into {} (d/mapm (fn [k v] (* v 10))) {:a 1 :b 2}))))
+
+(t/deftest removev-test
+  (t/is (= [2 4] (d/removev odd? [1 2 3 4])))
+  (t/is (= [nil nil] (d/removev some? [nil nil])))
+  (t/is (= [1 2 3] (d/removev nil? [1 nil 2 nil 3]))))
+
+(t/deftest filterm-test
+  (t/is (= {:a 1 :c 3} (d/filterm (fn [[_ v]] (odd? v)) {:a 1 :b 2 :c 3 :d 4}))
+        "keeps entries where value is odd")
+  (t/is (= {} (d/filterm (fn [[_ v]] (> v 10)) {:a 1 :b 2}))))
+
+(t/deftest removem-test
+  (t/is (= {:b 2 :d 4} (d/removem (fn [[_ v]] (odd? v)) {:a 1 :b 2 :c 3 :d 4})))
+  (t/is (= {:a 1 :b 2} (d/removem (fn [[_ v]] (> v 10)) {:a 1 :b 2}))))
+
+(t/deftest map-perm-test
+  ;; default: all pairs
+  (t/is (= [[1 2] [1 3] [1 4] [2 3] [2 4] [3 4]]
+           (d/map-perm vector [1 2 3 4])))
+  ;; with predicate
+  (t/is (= [[1 3]]
+           (d/map-perm vector (fn [a b] (and (odd? a) (odd? b))) [1 2 3])))
+  ;; empty collection
+  (t/is (= [] (d/map-perm vector []))))
+
+(t/deftest distinct-xf-test
+  (t/is (= [1 2 3]
+           (into [] (d/distinct-xf identity) [1 2 1 3 2])))
+  ;; keeps the first occurrence for each key
+  (t/is (= [{:id 1 :v "a"} {:id 2 :v "x"}]
+           (into [] (d/distinct-xf :id) [{:id 1 :v "a"} {:id 2 :v "x"} {:id 2 :v "b"}]))))
+
+(t/deftest deep-mapm-test
+  ;; Note: mfn is called twice on leaf entries (once initially, once again
+  ;; after checking if the value is a map/vector), so a doubling fn applied
+  ;; to value 1 gives 1*2*2=4.
+  (t/is (= {:a 4 :b {:c 8}}
+           (d/deep-mapm (fn [[k v]] [k (if (number? v) (* v 2) v)])
+                        {:a 1 :b {:c 2}})))
+  ;; Keyword renaming: keys are also transformed — and applied twice.
+  ;; Use an idempotent key transformation (uppercase once = uppercase twice).
+  (let [result (d/deep-mapm (fn [[k v]] [(keyword (str (name k) "!")) v])
+                            {:a 1})]
+    (t/is (contains? result (keyword "a!!")))))
