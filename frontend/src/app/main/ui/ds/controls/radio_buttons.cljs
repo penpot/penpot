@@ -50,21 +50,33 @@
 
         handle-click
         (mf/use-fn
+         (mf/deps selected on-change allow-empty)
          (fn [event]
-           (let [target (dom/get-target event)
-                 label  (dom/get-parent-with-data target "label")]
+           (let [target    (dom/get-target event)
+                 label     (dom/get-parent-with-data target "label")
+                 input     (dom/query label "input")
+                 value     (dom/get-value input)
+                 selected-str (when selected (d/name selected))
+                 new-value (if (and allow-empty (= value selected-str))
+                             nil
+                             value)]
              (dom/prevent-default event)
              (dom/stop-propagation event)
-             (dom/click label))))
+             (when (fn? on-change)
+               (on-change new-value event)))))
 
         handle-change
         (mf/use-fn
-         (mf/deps selected on-change)
+         (mf/deps selected on-change allow-empty)
          (fn [event]
-           (let [input (dom/get-target event)
-                 value (dom/get-target-val event)]
+           (let [input     (dom/get-target event)
+                 value     (dom/get-target-val event)
+                 selected-str (when selected (d/name selected))
+                 new-value (if (and allow-empty (= value selected-str))
+                             nil
+                             value)]
              (when (fn? on-change)
-               (on-change value event))
+               (on-change new-value event))
              (dom/blur! input))))
 
         props
@@ -74,7 +86,9 @@
 
     [:> :div props
      (for [[idx {:keys [id class value label icon disabled]}] (d/enumerate options)]
-       (let [checked? (= selected value)]
+       (let [value-str (d/name value)
+             selected-str (when selected (d/name selected))
+             checked? (= selected-str value-str)]
          [:label {:key idx
                   :html-for id
                   :data-label true
@@ -104,4 +118,4 @@
                    :name name
                    :disabled disabled
                    :value value
-                   :default-checked checked?}]]))]))
+                   :checked checked?}]]))]))

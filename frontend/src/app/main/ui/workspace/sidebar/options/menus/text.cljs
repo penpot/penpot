@@ -10,10 +10,12 @@
    [app.common.data :as d]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
@@ -23,13 +25,18 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
+   [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options
                                                                    typography-entry]]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [app.util.text.content :as content]
    [app.util.text.ui :as txu]
    [app.util.timers :as ts]
@@ -171,48 +178,229 @@
 
 (mf/defc text-decoration-options
   [{:keys [values on-change on-blur] :as props}]
-  (let [text-decoration (or (:text-decoration values) "none")
+  (let [text-decoration (or (d/name (:text-decoration values)) "none")
+
         handle-change
         (mf/use-fn
-         (mf/deps on-change on-blur text-decoration)
+         (mf/deps on-change on-blur)
          (fn [value]
-           (let [decoration (if (= value text-decoration)
-                              "none"
-                              value)]
+           (let [decoration (or value "none")]
              (on-change {:text-decoration decoration})
-             (when (some? on-blur) (on-blur)))))]
-    [:div {:class (stl/css :text-decoration-options)}
-     [:& radio-buttons {:selected text-decoration
-                        :on-change handle-change
-                        :name "text-decoration-options"}
-      [:& radio-button {:value "underline"
-                        :type "checkbox"
-                        :id "underline-text-decoration"
-                        :title (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
-                        :icon i/text-underlined}]
-      [:& radio-button {:value "line-through"
-                        :type "checkbox"
-                        :id "line-through-text-decoration"
-                        :title (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
-                        :icon i/text-stroked}]]]))
+             (when (some? on-blur)
+               (on-blur)))))]
 
-(mf/defc text-menu
-  {::mf/wrap [mf/memo]}
-  [{:keys [ids type values] :as props}]
+    [:div {:class (stl/css :text-decoration-options)}
+     [:> radio-buttons* {:selected text-decoration
+                         :on-change handle-change
+                         :name "text-decoration-options"
+                         :allow-empty true
+                         :options [{:value "underline"
+                                    :id "underline-text-decoration"
+                                    :label (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
+                                    :icon i/text-underlined}
+                                   {:value "line-through"
+                                    :id "line-through-text-decoration"
+                                    :label (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
+                                    :icon i/text-stroked}]}]]))
+
+(defn- get-option-by-name
+  [options name]
+  (let [options (if (delay? options) (deref options) options)]
+    (d/seek #(= name (get % :name)) options)))
+
+(defn- check-props
+  [n-props o-props]
+  (let [ids-same?    (identical? (unchecked-get n-props "ids")
+                                 (unchecked-get o-props "ids"))
+        tokens-same? (identical? (unchecked-get o-props "appliedTokens")
+                                 (unchecked-get n-props "appliedTokens"))
+        o-vals  (unchecked-get o-props "values")
+        n-vals  (unchecked-get n-props "values")
+        o-typography-id      (:typography-ref-id o-vals)
+        n-typography-id      (:typography-ref-id n-vals)
+        typo-same? (identical? o-typography-id n-typography-id)
+        result (and ids-same? tokens-same? typo-same?)]
+    result))
+(defn- focusable-option?
+  [option]
+  (and (:id option)
+       (not= :group (:type option))
+       (not= :separator (:type option))))
+
+(defn- first-focusable-id
+  [options]
+  (some #(when (focusable-option? %) (:id %)) options))
+
+(defn next-focus-id
+  [focusables focused-id direction]
+  (let [ids     (vec (map :id focusables))
+        idx     (.indexOf (clj->js ids) focused-id)
+        idx     (if (= idx -1) -1 idx)
+        next-idx (case direction
+                   :down (mod (inc idx) (count ids))
+                   :up   (mod (dec (if (= idx -1) 0 idx)) (count ids)))]
+    (nth ids next-idx nil)))
+
+(defn use-dropdown-navigation
+  [{:keys [is-open is-open* options nodes-ref on-enter]}]
+
+  (let [focused-id* (mf/use-state nil)
+        focused-id  (deref focused-id*)
+
+        on-key-down
+        (mf/use-fn
+         (mf/deps is-open focused-id)
+         (fn [event]
+           (let [up?    (kbd/up-arrow? event)
+                 down?  (kbd/down-arrow? event)
+                 enter? (kbd/enter? event)
+                 esc?   (kbd/esc? event)
+                 tab?   (kbd/tab? event)
+                 options (if (delay? options) @options options)]
+
+             (cond
+               down?
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (when is-open
+                   (let [focusables (csu/focusable-options options)
+                         next-id    (next-focus-id focusables focused-id :down)]
+                     (reset! focused-id* next-id))))
+
+               up?
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (when is-open
+                   (let [focusables (csu/focusable-options options)
+                         next-id    (next-focus-id focusables focused-id :up)]
+                     (reset! focused-id* next-id))))
+
+               enter?
+               (when (and is-open focused-id)
+                 (dom/prevent-default event)
+                 (on-enter focused-id))
+
+               (or esc? tab?)
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (reset! is-open* false)
+                 (reset! focused-id* nil))))))]
+
+    (mf/with-effect [is-open options]
+      (when is-open
+        (let [opts       (if (delay? options) @options options)
+              focusables (csu/focusable-options opts)
+              ids        (set (map :id focusables))]
+          (when (and (seq focusables)
+                     (not (contains? ids focused-id)))
+            (reset! focused-id* (:id (first focusables)))))))
+
+    (mf/with-effect [focused-id nodes-ref]
+      (when focused-id
+        (let [nodes (mf/ref-val nodes-ref)
+              node  (obj/get nodes focused-id)]
+          (when node
+            (dom/scroll-into-view-if-needed!
+             node {:block "nearest"
+                   :inline "nearest"})))))
+
+    {:focused-id focused-id
+     :on-key-down on-key-down}))
+
+(mf/defc text-menu*
+  {::mf/wrap [#(mf/memo' % check-props)]}
+  [{:keys [ids type values applied-tokens] :rest props}]
 
   (let [file-id        (mf/use-ctx ctx/current-file-id)
         typographies   (mf/deref refs/workspace-file-typography)
         libraries      (mf/deref refs/files)
+        token-row      (contains? cf/flags :token-typography-row)
+
+        state*             (mf/use-state {:main-menu true
+                                          :more-options false})
+        state              (deref state*)
+
+        main-menu-open?    (:main-menu state)
+        more-options-open? (:more-options  state)
+
+        open-tokens* (mf/use-state false)
+        open-tokens? (deref open-tokens*)
+
+        applied-token (:typography applied-tokens)
+
+        token-applied-name*  (mf/use-state applied-token)
+        token-applied-name   (deref token-applied-name*)
+
+        tokens
+        (mf/use-ctx ctx/active-tokens-by-type)
+
+        tokens
+        (mf/with-memo [tokens]
+          (csu/filter-tokens-for-input tokens :typography))
+
+        listbox-id           (mf/use-id)
+        nodes-ref            (mf/use-ref nil)
+        dropdown-ref (mf/use-ref nil)
+
+        detach-token
+        (mf/use-fn
+         (mf/deps)
+         (fn [token-name]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{:typography}
+                                          :shape-ids ids}))))
+
+        set-option-ref
+        (mf/use-fn
+         (fn [node]
+           (let [state (mf/ref-val nodes-ref)
+                 state (d/nilv state #js {})
+                 id    (dom/get-data node "id")
+                 state (obj/set! state id node)]
+             (mf/set-ref-val! nodes-ref state)
+             (fn []
+               (let [state (mf/ref-val nodes-ref)
+                     state (d/nilv state #js {})
+                     id    (dom/get-data node "id")
+                     state (obj/unset! state id)]
+                 (mf/set-ref-val! nodes-ref state))))))
+
+        dropdown-options
+        (mf/with-memo [tokens]
+          (csu/get-token-dropdown-options tokens nil))
+
+        selected-id*
+        (mf/use-state
+         (fn []
+           (if token-applied-name
+             (:id (get-option-by-name dropdown-options token-applied-name))
+             nil)))
+        selected-id (deref selected-id*)
+
         label          (case type
                          :multiple (tr "workspace.options.text-options.title-selection")
                          :group (tr "workspace.options.text-options.title-group")
                          (tr "workspace.options.text-options.title"))
 
-        state*             (mf/use-state {:main-menu true
-                                          :more-options false})
-        state              (deref state*)
-        main-menu-open?    (:main-menu state)
-        more-options-open? (:more-options  state)
+        {:keys [focused-id on-key-down]}
+        (use-dropdown-navigation
+         {:is-open   open-tokens?
+          :is-open*  open-tokens*
+          :options   dropdown-options
+          :nodes-ref nodes-ref
+          :on-enter  (fn [id]
+                       (let [token (->> (:typography @tokens)
+                                        (d/seek #(= (:id %) (uuid/uuid id))))]
+                         (reset! selected-id* id)
+                         (reset! open-tokens* false)
+                         (st/emit!
+                          (dwta/apply-token {:shape-ids ids
+                                             :attributes #{:typography}
+                                             :token token
+                                             :on-update-shape dwta/update-typography}))))})
 
         toggle-main-menu
         (mf/use-fn
@@ -224,8 +412,28 @@
          (mf/deps more-options-open?)
          #(swap! state* assoc-in [:more-options] (not more-options-open?)))
 
-        typography-id      (:typography-ref-id values)
-        typography-file-id (:typography-ref-file values)
+        toggle-tokens-dropdown
+        (mf/use-fn
+         #(swap! open-tokens* not))
+
+
+        on-option-click
+        (mf/use-fn
+         (mf/deps ids tokens)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [node  (dom/get-current-target event)
+                 id    (dom/get-data node "id")
+                 token (->> (:typography @tokens)
+                            (d/seek #(= (:id %) (uuid/uuid id))))]
+             (reset! selected-id* id)
+             (swap! state* assoc :open-tokens false)
+             (reset! open-tokens* false)
+             (st/emit!
+              (dwta/apply-token {:shape-ids ids
+                                 :attributes #{:typography}
+                                 :token token
+                                 :on-update-shape dwta/update-typography})))))
 
         emit-update!
         (mf/use-fn
@@ -241,8 +449,12 @@
          (fn [attrs]
            (emit-update! ids attrs)))
 
+
+        typography-id      (:typography-ref-id values)
+        typography-file-id (:typography-ref-file values)
+
         typography
-        (mf/with-memo [values file-id libraries]
+        (mf/with-memo [typography-id typography-file-id file-id libraries]
           (cond
             (and typography-id
                  (not= typography-id :multiple)
@@ -307,22 +519,51 @@
      expand-stream
      #(swap! state* assoc-in [:more-options] true))
 
-    [:div {:class (stl/css :element-set)}
+    (mf/with-effect [applied-token]
+      (reset! token-applied-name* applied-token))
+
+    (mf/with-effect [applied-token dropdown-options]
+      (if applied-token
+        (reset! selected-id* (:id (get-option-by-name dropdown-options applied-token)))
+        (reset! selected-id* nil)))
+
+    (mf/with-effect [open-tokens?]
+      (when open-tokens?
+        (ts/schedule 0 #(when-let [node (mf/ref-val dropdown-ref)]
+                          (dom/focus! node)))))
+
+    [:section {:class (stl/css :element-set)
+               ;; TODO: Add translation
+               :aria-label "Text section"}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  true
                       :collapsed    (not main-menu-open?)
                       :on-collapsed toggle-main-menu
                       :title        label
                       :class        (stl/css :title-spacing-text)}
-       (when (and (not typography) (not multiple?))
-         [:> icon-button* {:variant "ghost"
-                           :aria-label (tr "labels.options")
-                           :on-click on-convert-to-typography
-                           :icon i/add}])]]
+       [:*
+        ;; TODO: Check multiple, and with typography
+        (when (and token-row (some? tokens) (not typography))
+          [:> icon-button* {:variant "ghost"
+                            ;; TODO: ask for confimation to this copy and add translation
+                            :aria-label "Toggle token list"
+                            :on-click toggle-tokens-dropdown
+                            :tooltip-placement "top-left"
+                            :icon i/tokens}])
+        (when (and (not typography) (not multiple?))
+          [:> icon-button* {:variant "ghost"
+                            ;; TODO: ask for confimation to this copy and add translation
+                            :aria-label "Convert to typography"
+                            :on-click on-convert-to-typography
+                            :tooltip-placement "top-left"
+                            :icon i/add}])]]]
 
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
         (cond
+          (and token-row token-applied-name)
+          [:> token-typography-row* {:token-name token-applied-name :detach-token detach-token :tokens @tokens}]
+
           typography
           [:& typography-entry {:file-id typography-file-id
                                 :typography typography
@@ -333,10 +574,10 @@
           (= typography-id :multiple)
           [:div {:class (stl/css :multiple-typography)}
            [:span {:class (stl/css :multiple-text)} (tr "workspace.libraries.text.multiple-typography")]
-           [:div  {:class (stl/css :multiple-typography-button)
-                   :on-click handle-detach-typography
-                   :title (tr "workspace.libraries.text.multiple-typography-tooltip")}
-            deprecated-icon/detach]]
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "workspace.libraries.text.multiple-typography-tooltip")
+                             :on-click handle-detach-typography
+                             :icon i/detach}]]
 
           :else
           [:> text-options opts])
@@ -354,4 +595,18 @@
           [:div  {:class (stl/css :text-decoration-options)}
            [:> vertical-align opts]
            [:> text-decoration-options opts]
-           [:> text-direction-options opts]])])]))
+           [:> text-direction-options opts]])])
+     ;; TODO; add search bar on dropdown
+     (when (and token-row open-tokens?)
+       (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+         [:div {:on-key-down on-key-down
+                :ref dropdown-ref
+                :tab-index 0}
+          [:> options-dropdown* {:on-click on-option-click
+                                 :id listbox-id
+                                 :options options
+                                 :selected selected-id
+                                 :focused focused-id
+                                 :align "right"
+                                 :empty-to-end false
+                                 :ref set-option-ref}]]))]))

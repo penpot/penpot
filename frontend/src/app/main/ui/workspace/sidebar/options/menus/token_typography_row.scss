@@ -1,0 +1,96 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.token-typography-row {
+  --token-typography-rowd-background-color: var(--color-background-tertiary);
+  --token-typography-rowd-foreground-color: var(--color-token-foreground);
+  --token-typography-rowd-border-color: var(--color-token-border);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  min-inline-size: 0;
+  inline-size: 100%;
+  padding: 8px;
+  margin-inline-end: 0;
+  background: var(--token-typography-rowd-background-color);
+  border: $b-1 solid var(--token-typography-rowd-border-color);
+  border-radius: $br-8;
+  min-width: 0;
+  &:hover {
+    --token-typography-rowd-background-color: var(--color-token-background);
+    --token-typography-rowd-foreground-color: var(--color-foreground-primary);
+    --token-typography-rowd-border-color: var(--color-token-accent);
+  }
+}
+
+.token-typography-row-with-errors,
+.token-typography-row-not-active {
+  --token-typography-rowd-background-color: var(--color-background-primary);
+  --token-typography-rowd-foreground-color: var(--color-foreground-secondary);
+  --token-typography-rowd-border-color: var(--color-token-border);
+  &:hover {
+    --token-typography-rowd-background-color: var(--color-background-primary);
+    --token-typography-rowd-foreground-color: var(--color-foreground-secondary);
+    --token-typography-rowd-border-color: var(--color-token-background);
+  }
+}
+.icon {
+  display: block;
+  min-inline-size: $sz-16;
+  color: var(--token-typography-rowd-foreground-color);
+}
+
+.token-name {
+  @include t.use-typography("body-small");
+  @include textEllipsis;
+  color: var(--token-typography-rowd-foreground-color);
+  block-size: $sz-32;
+  line-height: $sz-32;
+  flex: 1;
+}
+
+.token-tooltip {
+  min-inline-size: 0;
+  inline-size: inherit;
+}
+
+.token-name-tooltip {
+  color: var(--color-foreground-primary);
+}
+
+.detach-button {
+  flex-shrink: 0;
+  inline-size: 0;
+  max-inline-size: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.token-typography-row:hover .detach-button {
+  inline-size: auto;
+  opacity: 1;
+  pointer-events: auto;
+  max-inline-size: $sz-32;
+}
+
+.error-dot {
+  inline-size: px2rem(4);
+  block-size: px2rem(4);
+  border-radius: 50%;
+  background-color: var(--color-foreground-error);
+  margin-inline-start: var(--sp-xs);
+  position: absolute;
+  inset-inline-end: px2rem(1);
+  inset-block-start: px2rem(5);
+}
