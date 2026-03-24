@@ -199,7 +199,7 @@ msgid "auth.work-email"
 msgstr "ایمیلِ کار"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "این توکن وجود ندارد یا حذف شده است."
 
 #: src/app/main/ui/workspace/libraries.cljs:323

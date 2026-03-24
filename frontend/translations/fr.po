@@ -206,7 +206,7 @@ msgid "branding-illustrations-marketing-pieces"
 msgstr "...image de marque, illustrations, supports marketing, etc."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "Ce token n'existe pas ou a été supprimé."
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
@@ -1364,7 +1364,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Ouvrir la liste des tokens"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
+msgid "token-actions.detach-token"
 msgstr "Détacher le token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
