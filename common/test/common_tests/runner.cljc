@@ -12,6 +12,7 @@
    [common-tests.data-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-test]
+   [common-tests.geom-bounds-map-test]
    [common-tests.geom-point-test]
    [common-tests.geom-shapes-test]
    [common-tests.geom-test]
@@ -66,6 +67,7 @@
    'common-tests.data-test
    'common-tests.files-changes-test
    'common-tests.files-migrations-test
+   'common-tests.geom-bounds-map-test
    'common-tests.geom-point-test
    'common-tests.geom-shapes-test
    'common-tests.geom-test
