@@ -39,7 +39,6 @@
   grid-column: span 2;
 
   @extend %input-element;
-
   @include t.use-typography("body-small");
 
   padding-inline-start: var(--sp-xs);
@@ -61,15 +60,16 @@
 
 .stroke-options-tokens {
   @include sidebar.option-grid-structure;
-  grid-template-columns: var(--3-columns-width) var(--grid-exception-input-width-small) var(
+
+  grid-template-columns: var(--three-columns-width) var(--grid-exception-input-width-small) var(
       --grid-exception-input-width-small
     );
 }
 
 .stroke-align-icon-select {
-  --dropdown-width: var(--4-columns-width);
+  --dropdown-width: var(--four-columns-width);
 }
 
 .stroke-style-icon-select {
-  --dropdown-width: var(--4-columns-width);
+  --dropdown-width: var(--four-columns-width);
 }

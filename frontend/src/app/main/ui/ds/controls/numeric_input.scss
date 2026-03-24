@@ -25,6 +25,7 @@
   &:not(:focus-within) {
     cursor: ew-resize;
   }
+
   &:hover {
     --opacity-button: 1;
   }
@@ -41,7 +42,9 @@
 
 .text-icon {
   color: var(--color-foreground-secondary);
+
   @include t.use-typography("body-small");
+
   inline-size: fit-content;
   min-inline-size: px2rem(46);
   padding-inline-start: var(--sp-xs);
