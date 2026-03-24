@@ -53,7 +53,7 @@
     :or {is-active true}}]
   (some-> (get-current-system)
           (db/tx-run!
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [system]
              (let [password (derive-password password)
                    params   {:id (uuid/next)
                              :email email
@@ -62,7 +62,7 @@
                              :password password
                              :props {}}]
                (->> (cmd.auth/create-profile system params)
-                    (cmd.auth/create-profile-rels conn)))))))
+                    (cmd.auth/create-profile-rels system)))))))
 
 (defmethod exec-command "update-profile"
   [{:keys [fullname email password is-active]}]

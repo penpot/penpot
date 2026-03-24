@@ -8,7 +8,6 @@
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
   organization management and token validation endpoints."
   (:require
-   [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
@@ -21,9 +20,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as doc]
-   [app.rpc.quotes :as quotes]
    [app.util.services :as sv]
-   [clojure.set :as set]
    [cuerdas.core :as str]))
 
 ;; ---- API: authenticate
@@ -116,25 +113,15 @@
    [:organization-id ::sm/uuid]
    [:role ::sm/text]])
 
+
+
 (sv/defmethod ::notify-user-added-to-organization
   "Notify to Penpot that an user has joined an org from nitrate"
   {::doc/added "2.14"
    ::sm/params schema:notify-user-added-to-organization
    ::rpc/auth false}
   [cfg {:keys [profile-id organization-id]}]
-  (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
-                      ::quotes/profile-id profile-id})
-
-  (let [features (-> (cfeat/get-enabled-features cf/flags)
-                     (set/difference cfeat/frontend-only-features)
-                     (set/difference cfeat/no-team-inheritable-features))
-        params   {:profile-id profile-id
-                  :name "Default"
-                  :features features
-                  :organization-id organization-id
-                  :is-default true}
-        team     (db/tx-run! cfg teams/create-team params)]
-    (select-keys team [:id])))
+  (db/tx-run! cfg teams/create-default-org-team profile-id organization-id))
 
 
 ;; ---- API: get-managed-profiles

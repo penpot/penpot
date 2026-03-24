@@ -186,10 +186,10 @@
                         :is-demo false}
                        params)]
      (db/run! system
-              (fn [{:keys [::db/conn] :as cfg}]
+              (fn [cfg]
                 (->> params
                      (cmd.auth/create-profile cfg)
-                     (cmd.auth/create-profile-rels conn)))))))
+                     (cmd.auth/create-profile-rels cfg)))))))
 
 (defn create-project*
   ([i params] (create-project* *system* i params))
@@ -234,10 +234,10 @@
    (dm/with-open [conn (db/open system)]
      (let [id       (mk-uuid "team" i)
            features (cfeat/get-enabled-features cf/flags)]
-       (teams/create-team conn {:id id
-                                :profile-id profile-id
-                                :features features
-                                :name (str "team" i)})))))
+       (teams/create-team {::db/conn conn} {:id id
+                                            :profile-id profile-id
+                                            :features features
+                                            :name (str "team" i)})))))
 
 (defn create-file-media-object*
   ([params] (create-file-media-object* *system* params))
@@ -283,9 +283,10 @@
   ([params] (create-team-role* *system* params))
   ([system {:keys [team-id profile-id role] :or {role :owner}}]
    (dm/with-open [conn (db/open system)]
-     (#'teams/create-team-role conn {:team-id team-id
-                                     :profile-id profile-id
-                                     :role role}))))
+     (#'teams/create-team-role {::db/conn conn}
+                               {:team-id team-id
+                                :profile-id profile-id
+                                :role role}))))
 
 (defn create-project-role*
   ([params] (create-project-role* *system* params))

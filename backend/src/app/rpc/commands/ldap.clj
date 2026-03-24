@@ -84,5 +84,5 @@
                              (profile/get-profile-by-email conn))
                     (->> (assoc info :is-active true :is-demo false)
                          (auth/create-profile cfg)
-                         (auth/create-profile-rels conn)
+                         (auth/create-profile-rels cfg)
                          (profile/strip-private-attrs))))))
