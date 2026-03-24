@@ -138,13 +138,23 @@ Boards can have layout systems that automatically control the positioning and sp
 
 # Text Elements
 
-The rendered content of a `Text` element is given by the `characters` property.
-
-To change the size of the text, change the `fontSize` property; applying `resize()` does NOT change the font size,
-it only changes the formal bounding box; if the text does not fit it, it will overflow; use `textBounds` for the actual bounding box of the rendered text.
-The bounding box is sized automatically as long as the `growType` property is set to "auto-width" or "auto-height".
-`resize` always sets `growType` to "fixed", so ALWAYS set it back to "auto-*" if you want automatic sizing!
-The auto-sizing is not immediate; sleep for a short time (100ms) if you want to read the updated bounding box.
+`Text` elements:
+  * The text to be rendered is given by the `characters` property.
+  * To change the size of the text, change the `fontSize` property; applying `resize()` does NOT change the font size,
+    it only changes the formal bounding box; if the text does not fit it, it will overflow; use `textBounds` for the actual bounding box of the rendered text.
+  * Property `bounds` is sized automatically (in one dimension) if the `growType` property is set to "auto-width" or "auto-height".
+    `resize` always sets `growType` to "fixed", so ALWAYS set it back to "auto-width" or "auto-height" if you want automatic sizing!
+    The auto-sizing is not immediate; sleep for a short time (100ms) if you want to read the updated bounding box.
+  * Method `getRange(start, end): TextRange` to reference a range of characters as a `TextRange` object, which can be styled separately from the rest of the text; `start` index inclusive, `end` exclusive
+  * Other Writable font properties: `fontId`, `fontFamily`, `fontWeight`, `fontVariant`, `fontStyle`
+     - To discover valid values, check available fonts in `penpot.fonts: FontContext`
+         - `FontContext` provides `Font` instances; each font has property `variants: FontVariant[]` 
+         - Example: Determine available weights for a font using `penpot.fonts.findByName("Laila").variants.map(v => v.fontWeight)`
+     - To apply a `Font` to a `Text` instance and set all font properties at once:
+         - `font.applyToText(text: Text, variant?: FontVariant)`
+         - `applyToRange(range: TextRange, variant?: FontVariant)`
+  * Further writable properties: `align`, `verticalAlign`, `lineHeight`, `letterSpacing`, `textTransform`, `textDecoration` (see API info)
+  * Method `applyTypography(typography: LibraryTypography)`
 
 # The `penpot` and `penpotUtils` Objects, Exploring Designs
 

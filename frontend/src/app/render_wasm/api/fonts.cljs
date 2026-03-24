@@ -124,29 +124,35 @@
             fallback?)
     true))
 
-;; This variable will store the fonts that are currently being fetched
-;; so we don't fetch more than once the same font
-(def fetching (atom #{}))
+;; Tracks fonts currently being fetched: {url -> fallback?}
+;; When the same font is requested as both primary and fallback,
+;; the fallback flag is upgraded to true so it gets registered
+;; in WASM's fallback_fonts set.
+(def fetching (atom {}))
 
 (defn- fetch-font
   [font-data font-url emoji? fallback?]
-  (when-not (contains? @fetching font-url)
-    (swap! fetching conj font-url)
-    {:key font-url
-     :callback
-     (fn []
-       (->> (http/send! {:method :get
-                         :uri font-url
-                         :response-type :buffer})
-            (rx/map (fn [{:keys [body]}]
-                      (swap! fetching disj font-url)
-                      (store-font-buffer font-data body emoji? fallback?)))
-            (rx/catch (fn [cause]
-                        (swap! fetching disj font-url)
-                        (log/error :hint "Could not fetch font"
-                                   :font-url font-url
-                                   :cause cause)
-                        (rx/empty)))))}))
+  (if (contains? @fetching font-url)
+    (do (when fallback? (swap! fetching assoc font-url true))
+        nil)
+    (do
+      (swap! fetching assoc font-url fallback?)
+      {:key font-url
+       :callback
+       (fn []
+         (->> (http/send! {:method :get
+                           :uri font-url
+                           :response-type :buffer})
+              (rx/map (fn [{:keys [body]}]
+                        (let [fallback? (get @fetching font-url fallback?)]
+                          (swap! fetching dissoc font-url)
+                          (store-font-buffer font-data body emoji? fallback?))))
+              (rx/catch (fn [cause]
+                          (swap! fetching dissoc font-url)
+                          (log/error :hint "Could not fetch font"
+                                     :font-url font-url
+                                     :cause cause)
+                          (rx/empty)))))})))
 
 (defn- google-font-ttf-url
   [font-id font-variant-id font-weight font-style]

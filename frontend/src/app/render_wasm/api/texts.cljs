@@ -166,7 +166,7 @@
     (h/call wasm/internal-module "_set_shape_text_content")))
 
 (def ^:private emoji-pattern
-  #"(?:\uD83C[\uDDE6-\uDDFF]\uD83C[\uDDE6-\uDDFF])|(?:\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDEFF])|(?:\uD83E[\uDD00-\uDDFF])|(?:\uD83D[\uDE80-\uDEFF]|\uD83E[\uDC00-\uDCFF])|(?:\uD83E[\uDE70-\uDEFF])|[\u2600-\u26FF\u2700-\u27BF\u2300-\u23FF\u2B00-\u2BFF]")
+  #"(?:\uD83C[\uDDE6-\uDDFF]\uD83C[\uDDE6-\uDDFF])|(?:\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDEFF])|(?:\uD83E[\uDD00-\uDDFF])|(?:\uD83D[\uDE80-\uDEFF]|\uD83E[\uDC00-\uDCFF])|(?:\uD83E[\uDE70-\uDFFF])|[\u2600-\u26FF\u2700-\u27BF\u2300-\u23FF\u2B00-\u2BFF]")
 
 (def ^:private unicode-ranges
   {:japanese    #"[\u3040-\u30FF\u31F0-\u31FF\uFF66-\uFF9F]"
@@ -215,9 +215,12 @@
    :meroitic    #"\uD802[\uDD80-\uDD9F]"
    ;; Arrows, Mathematical Operators, Misc Technical, Geometric Shapes, Misc Symbols, Dingbats, Supplemental Arrows, etc.
    :symbols     #"[\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF]"
-   ;; Additional arrows, math, technical, geometric, and symbol blocks
-   :symbols-2     #"[\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF]"
-   :music     #"[\u2669-\u267B]|\uD834[\uDD00-\uDD1F]"})
+   ;; Additional symbol blocks covered by Noto Sans Symbols 2:
+   ;; BMP: same as :symbols (arrows, math, misc symbols, dingbats, etc.)
+   ;; SMP: Mahjong/Domino/Playing Cards (U+1F000-1F0FF), Supplemental Arrows-C (U+1F800-1F8FF),
+   ;;      Legacy Computing Symbols (U+1FB00-1FBFF)
+   :symbols-2   #"[\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF]|\uD83C[\uDC00-\uDCFF]|\uD83E[\uDC00-\uDCFF\uDF00-\uDFFF]"
+   :music       #"[\u2669-\u267B]|\uD834[\uDD00-\uDD1F]"})
 
 (defn contains-emoji? [text]
   (let [result (re-find emoji-pattern text)]

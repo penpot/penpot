@@ -9,6 +9,7 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
@@ -159,6 +160,8 @@
 
         tooltip-ref (mf/use-ref nil)
 
+        container (hooks/use-portal-container)
+
         id
         (d/nilv id internal-id)
 
@@ -198,6 +201,14 @@
                                (reset! active-tooltip {:id tooltip-id :trigger trigger-el})
                                (reset! visible* true)))))))
 
+        on-show-focus
+        (mf/use-fn
+         (mf/deps on-show)
+         (fn [event]
+           (let [related (dom/get-related-target event)]
+             (when (some? related)
+               (on-show event)))))
+
         on-hide
         (mf/use-fn
          (mf/deps tooltip-id)
@@ -234,7 +245,7 @@
         (mf/spread-props props
                          {:on-mouse-enter on-show
                           :on-mouse-leave on-hide
-                          :on-focus on-show
+                          :on-focus on-show-focus
                           :on-blur on-hide
                           :ref internal-trigger-ref
                           :on-key-down handle-key-down
@@ -243,17 +254,6 @@
                           :aria-label (if (string? content)
                                         content
                                         aria-label)})]
-
-    (mf/use-effect
-     (mf/deps tooltip-id)
-     (fn []
-       (let [handle-visibility-change
-             (fn []
-               (when (.-hidden js/document)
-                 (on-hide)))]
-         (js/document.addEventListener "visibilitychange" handle-visibility-change)
-         ;; cleanup
-         #(js/document.removeEventListener "visibilitychange" handle-visibility-change))))
 
     (mf/use-effect
      (mf/deps visible placement offset)
@@ -295,4 +295,4 @@
            [:div {:class (stl/css :tooltip-content)} content]
            [:div {:class (stl/css :tooltip-arrow)
                   :id "tooltip-arrow"}]]])
-        (.-body js/document)))]))
+        container))]))

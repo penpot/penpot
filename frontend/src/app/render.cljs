@@ -7,6 +7,7 @@
 (ns app.render
   "The main entry point for UI part needed by the exporter."
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
    [app.common.math :as mth]
@@ -95,25 +96,34 @@
 (mf/defc objects-svg
   {::mf/wrap-props false}
   [{:keys [object-ids embed skip-children wasm scale]}]
-  (when-let [objects (mf/deref ref:objects)]
-    (for [object-id object-ids]
-      (let [objects (render/adapt-objects-for-shape objects object-id)]
-        (if wasm
-          [:& render/object-wasm
-           {:objects objects
-            :key (str object-id)
-            :object-id object-id
-            :embed embed
-            :scale scale
-            :skip-children skip-children}]
+  (let [limit
+        (mf/use-state (if wasm (min 1 (count object-ids)) (count object-ids)))
 
-          [:& (mf/provider ctx/is-render?) {:value true}
-           [:& render/object-svg
-            {:objects objects
-             :key (str object-id)
-             :object-id object-id
-             :embed embed
-             :skip-children skip-children}]])))))
+        cb-fn
+        (mf/use-fn
+         (fn []
+           (swap! limit #(min (count object-ids) (inc %)))))]
+    (when-let [objects (mf/deref ref:objects)]
+      ;;Limit
+      (for [object-id (take @limit object-ids)]
+        (let [objects (render/adapt-objects-for-shape objects object-id)]
+          (if wasm
+            [:& render/object-wasm
+             {:objects objects
+              :key (str object-id)
+              :object-id object-id
+              :embed embed
+              :scale (d/parse-integer scale)
+              :skip-children skip-children
+              :on-render cb-fn}]
+
+            [:& (mf/provider ctx/is-render?) {:value true}
+             [:& render/object-svg
+              {:objects objects
+               :key (str object-id)
+               :object-id object-id
+               :embed embed
+               :skip-children skip-children}]]))))))
 
 (defn- fetch-objects-bundle
   [& {:keys [file-id page-id share-id object-id] :as options}]

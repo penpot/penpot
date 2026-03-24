@@ -82,7 +82,7 @@
         on-color-detach
         (mf/use-fn
          (mf/deps index on-color-detach)
-         (fn [color]
+         (fn [_ color]
            (on-color-detach index color)))
 
         on-remove

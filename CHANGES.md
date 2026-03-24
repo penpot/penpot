@@ -48,7 +48,7 @@
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 
 
-## 2.14.0 (Unreleased)
+## 2.14.0
 
 ### :boom: Breaking changes & Deprecations
 

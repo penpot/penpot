@@ -2,6 +2,8 @@ use macros::{wasm_error, ToJs};
 
 use crate::math::{Matrix, Point, Rect};
 use crate::mem;
+use crate::render::text_editor as text_editor_render;
+use crate::render::SurfaceId;
 use crate::shapes::{Shape, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
 use crate::state::TextSelection;
 use crate::utils::uuid_from_u32_quartet;
@@ -841,21 +843,13 @@ pub extern "C" fn text_editor_render_overlay() {
             return;
         };
 
-        let transform = shape.get_concatenated_matrix(&state.shapes);
-
-        use crate::render::text_editor as te_render;
-        use crate::render::SurfaceId;
-
         let canvas = state.render_state.surfaces.canvas(SurfaceId::Target);
-
         canvas.save();
         let viewbox = state.render_state.viewbox;
         let zoom = viewbox.zoom * state.render_state.options.dpr();
         canvas.scale((zoom, zoom));
         canvas.translate((-viewbox.area.left, -viewbox.area.top));
-
-        te_render::render_overlay(canvas, &state.text_editor_state, shape, &transform);
-
+        text_editor_render::render_overlay(canvas, &state.text_editor_state, shape);
         canvas.restore();
         state.render_state.flush_and_submit();
     });

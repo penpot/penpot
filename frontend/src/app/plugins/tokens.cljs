@@ -294,15 +294,19 @@
      :addToken
      {:enumerable false
       :schema (fn [args]
-                [:tuple (-> (cfo/make-token-schema
-                             (-> (u/locate-tokens-lib file-id) (ctob/get-tokens id))
-                             (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
-                            ;; Don't allow plugins to set the id
-                            (sm/dissoc-key :id)
-                            ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)
-                            ;; and set a converter that changes DTCG types to internal types (:decode/json).
-                            ;; E.g. "FontFamilies" -> :font-family or "BorderWidth" -> :stroke-width
-                            (sm/update-properties assoc :decode/json cfo/convert-dtcg-token))])
+                (let [tokens-tree (-> (u/locate-tokens-lib file-id)
+                                      (ctob/get-tokens id)
+                                      ;; Convert to the adecuate format for schema
+                                      (ctob/tokens-tree))]
+                  [:tuple (-> (cfo/make-token-schema
+                               tokens-tree
+                               (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
+                              ;; Don't allow plugins to set the id
+                              (sm/dissoc-key :id)
+                              ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)
+                              ;; and set a converter that changes DTCG types to internal types (:decode/json).
+                              ;; E.g. "FontFamilies" -> :font-family or "BorderWidth" -> :stroke-width
+                              (sm/update-properties assoc :decode/json cfo/convert-dtcg-token))]))
       :decode/options {:key-fn identity}
       :fn (fn [attrs]
             (let [tokens-lib (u/locate-tokens-lib file-id)

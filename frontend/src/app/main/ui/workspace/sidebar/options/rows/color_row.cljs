@@ -202,10 +202,10 @@
 
         detach-value
         (mf/use-fn
-         (mf/deps on-detach index)
+         (mf/deps on-detach index color)
          (fn [_]
            (when on-detach
-             (on-detach index))))
+             (on-detach index color))))
 
         handle-select
         (mf/use-fn

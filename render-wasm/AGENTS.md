@@ -59,4 +59,4 @@ parent/child relationships are tracked separately.
 The WASM module is loaded by `app.render-wasm.*` namespaces in the
 frontend. ClojureScript calls exported Rust functions to push shape
 data, then calls `render_frame`. Do not change export function
-signatures without updating the ClojureScript bridge.
+signatures without updating the corresponding ClojureScript bridge.

@@ -17,8 +17,11 @@
    [app.main.store :as st]
    [app.plugins.register :refer [mcp-plugin-id]]
    [app.util.i18n :refer [tr]]
+   [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(def retry-interval 10000)
 
 (log/set-level! :info)
 
@@ -34,13 +37,53 @@
      "comment:read" "comment:write"
      "content:write" "content:read"}})
 
+(defonce interval-sub (atom nil))
+
 (defn finalize-workspace?
   [event]
   (= (ptk/type event) :app.main.data.workspace/finalize-workspace))
 
-(defn disconnect-mcp
+(defn set-mcp-active
+  [value]
+  (ptk/reify ::set-mcp-active
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :mcp :active] value))))
+
+(defn start-reconnect-watcher!
   []
-  (st/emit! (ptk/data-event ::disconnect)))
+  (st/emit! (set-mcp-active true))
+  (when (nil? @interval-sub)
+    (reset!
+     interval-sub
+     (ts/interval
+      retry-interval
+      (fn []
+        ;; Try to reconnect if active and not connected
+        (when-not (contains? #{"connecting" "connected"}
+                             (-> @st/state :workspace-local :mcp :connection))
+          (.log js/console "Reconnecting to MCP...")
+          (st/emit! (ptk/data-event ::connect))))))))
+
+(defn stop-reconnect-watcher!
+  []
+  (st/emit! (set-mcp-active false))
+  (when @interval-sub
+    (rx/dispose! @interval-sub)
+    (reset! interval-sub nil)))
+
+;; This event will arrive when the user selects disconnect on the menu
+;; or there is a broadcast message for disconnection
+(defn user-disconnect-mcp
+  []
+  (ptk/reify ::remote-disconnect-mcp
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (ptk/data-event ::disconnect)))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (stop-reconnect-watcher!))))
 
 (defn connect-mcp
   []
@@ -58,12 +101,13 @@
   (ptk/reify ::manage-mcp-notification
     ptk/WatchEvent
     (watch [_ state _]
-      (let [mcp-connected? (true? (-> state :workspace-local :mcp :connection))
+      (let [mcp-connected? (= "connected" (-> state :workspace-local :mcp :connection))
             mcp-enabled?   (true? (-> state :profile :props :mcp-enabled))
             num-sessions   (-> state :workspace-presence count)
-            multi-session? (> num-sessions 1)]
+            multi-session? (> num-sessions 1)
+            mcp-active?    (-> state :workspace-local :mcp :active)]
         (if (and mcp-enabled? multi-session?)
-          (if mcp-connected?
+          (if (or mcp-connected? mcp-active?)
             (rx/of (ntf/hide))
             (rx/of (ntf/dialog :content (tr "notifications.mcp.active-in-another-tab")
                                :cancel {:label (tr "labels.dismiss")
@@ -76,6 +120,7 @@
                                                                                     ::ev/origin "workspace-notification"}))})))
           (rx/of (ntf/hide)))))))
 
+;; This event will arrive when the mcp is enabled in the main menu
 (defn update-mcp-status
   [value]
   (ptk/reify ::update-mcp-status
@@ -121,13 +166,10 @@
                     :getServerUrl #(str cf/mcp-ws-uri)
                     :setMcpStatus
                     (fn [status]
-                      (let [mcp-connection (case status
-                                             "connected"    true
-                                             "disconnected" false
-                                             "error"        nil
-                                             "")]
-                        (st/emit! (update-mcp-connection mcp-connection))
-                        (log/info :hint "MCP STATUS" :status status)))
+                      (when (= status "connected")
+                        (start-reconnect-watcher!))
+                      (st/emit! (update-mcp-connection status))
+                      (log/info :hint "MCP STATUS" :status status))
 
                     :on
                     (fn [event cb]

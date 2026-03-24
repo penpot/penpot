@@ -6,6 +6,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
@@ -43,13 +44,15 @@
                                      type (get mdata :type)]
                                  (when node
                                    (on-rename-node node type)))))
-        delete-node          (mf/use-fn
-                              (mf/deps mdata)
-                              (fn []
-                                (let [node (get mdata :node)
-                                      type (get mdata :type)]
-                                  (when node
-                                    (on-delete-node node type)))))]
+
+        container           (hooks/use-portal-container)
+        delete-node         (mf/use-fn
+                             (mf/deps mdata)
+                             (fn []
+                               (let [node (get mdata :node)
+                                     type (get mdata :type)]
+                                 (when node
+                                   (on-delete-node node type)))))]
 
     (mf/with-effect [is-open?]
       (when (and (not= 0 (mf/ref-val dropdown-direction-change*)) (= false is-open?))
@@ -92,4 +95,4 @@
                         :type "button"
                         :on-click delete-node}
                (tr "labels.delete")]]])]])
-       (dom/get-body)))))
+       container))))

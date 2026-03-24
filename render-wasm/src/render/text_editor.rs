@@ -1,14 +1,9 @@
 use crate::shapes::{Shape, TextContent, Type, VerticalAlign};
 use crate::state::{TextEditorState, TextSelection};
 use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-use skia_safe::{BlendMode, Canvas, Matrix, Paint, Rect};
+use skia_safe::{BlendMode, Canvas, Paint, Rect};
 
-pub fn render_overlay(
-    canvas: &Canvas,
-    editor_state: &TextEditorState,
-    shape: &Shape,
-    transform: &Matrix,
-) {
+pub fn render_overlay(canvas: &Canvas, editor_state: &TextEditorState, shape: &Shape) {
     if !editor_state.is_active {
         return;
     }
@@ -18,16 +13,12 @@ pub fn render_overlay(
     };
 
     canvas.save();
-    canvas.concat(transform);
-
     if editor_state.selection.is_selection() {
         render_selection(canvas, editor_state, text_content, shape);
     }
-
     if editor_state.cursor_visible {
         render_cursor(canvas, editor_state, text_content, shape);
     }
-
     canvas.restore();
 }
 
