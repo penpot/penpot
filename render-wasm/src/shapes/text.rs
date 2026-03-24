@@ -1002,6 +1002,49 @@ impl Paragraph {
     }
 }
 
+/// Capitalize the first letter of each word, preserving all original whitespace.
+/// Matches CSS `text-transform: capitalize` behavior: a "word" starts after
+/// any non-letter character (whitespace, punctuation, digits, symbols).
+fn capitalize_words(text: &str) -> String {
+    let mut result = String::with_capacity(text.len());
+    let mut capitalize_next = true;
+    for c in text.chars() {
+        if c.is_alphabetic() {
+            if capitalize_next {
+                result.extend(c.to_uppercase());
+            } else {
+                result.push(c);
+            }
+            capitalize_next = false;
+        } else {
+            result.push(c);
+            capitalize_next = true;
+        }
+    }
+    result
+}
+
+/// Filter control characters below U+0020, preserving line breaks.
+/// Browser-dependent: Firefox drops them, others replace with space.
+fn process_ignored_chars(text: &str, browser: u8) -> String {
+    text.chars()
+        .filter_map(|c| {
+            if c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
+                return Some(c);
+            }
+            if c < '\u{0020}' {
+                if browser == Browser::Firefox as u8 {
+                    None
+                } else {
+                    Some(' ')
+                }
+            } else {
+                Some(c)
+            }
+        })
+        .collect()
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextSpan {
     pub text: String,
@@ -1136,43 +1179,13 @@ impl TextSpan {
         format!("{}", self.font_family)
     }
 
-    fn process_ignored_chars(text: &str, browser: u8) -> String {
-        text.chars()
-            .filter_map(|c| {
-                // Preserve line breaks: \n (U+000A), \r (U+000D), and Unicode separators
-                if c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
-                    return Some(c);
-                }
-                if c < '\u{0020}' {
-                    if browser == Browser::Firefox as u8 {
-                        None
-                    } else {
-                        Some(' ')
-                    }
-                } else {
-                    Some(c)
-                }
-            })
-            .collect()
-    }
-
     pub fn apply_text_transform(&self) -> String {
         let browser = crate::with_state!(state, { state.current_browser });
-        let text = Self::process_ignored_chars(&self.text, browser);
+        let text = process_ignored_chars(&self.text, browser);
         match self.text_transform {
             Some(TextTransform::Uppercase) => text.to_uppercase(),
             Some(TextTransform::Lowercase) => text.to_lowercase(),
-            Some(TextTransform::Capitalize) => text
-                .split_whitespace()
-                .map(|word| {
-                    let mut chars = word.chars();
-                    match chars.next() {
-                        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                        None => String::new(),
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(" "),
+            Some(TextTransform::Capitalize) => capitalize_words(&text),
             None => text,
         }
     }
@@ -1463,4 +1476,96 @@ pub fn calculate_position_data(
     );
 
     layout_info.position_data
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn capitalize_basic_words() {
+        assert_eq!(capitalize_words("hello world"), "Hello World");
+    }
+
+    #[test]
+    fn capitalize_preserves_leading_whitespace() {
+        assert_eq!(capitalize_words(" hello"), " Hello");
+    }
+
+    #[test]
+    fn capitalize_preserves_trailing_whitespace() {
+        assert_eq!(capitalize_words("hello "), "Hello ");
+    }
+
+    #[test]
+    fn capitalize_preserves_multiple_spaces() {
+        assert_eq!(capitalize_words("hello  world"), "Hello  World");
+    }
+
+    #[test]
+    fn capitalize_whitespace_only() {
+        assert_eq!(capitalize_words(" "), " ");
+        assert_eq!(capitalize_words("  "), "  ");
+    }
+
+    #[test]
+    fn capitalize_empty_string() {
+        assert_eq!(capitalize_words(""), "");
+    }
+
+    #[test]
+    fn capitalize_single_char() {
+        assert_eq!(capitalize_words("a"), "A");
+    }
+
+    #[test]
+    fn capitalize_already_uppercase() {
+        assert_eq!(capitalize_words("HELLO WORLD"), "HELLO WORLD");
+    }
+
+    #[test]
+    fn capitalize_preserves_tabs_and_newlines() {
+        assert_eq!(capitalize_words("hello\tworld"), "Hello\tWorld");
+        assert_eq!(capitalize_words("hello\nworld"), "Hello\nWorld");
+    }
+
+    #[test]
+    fn capitalize_after_punctuation() {
+        assert_eq!(capitalize_words("(readonly)"), "(Readonly)");
+        assert_eq!(capitalize_words("hello-world"), "Hello-World");
+        assert_eq!(capitalize_words("one/two/three"), "One/Two/Three");
+    }
+
+    #[test]
+    fn capitalize_after_digits() {
+        assert_eq!(capitalize_words("item1name"), "Item1Name");
+    }
+
+    #[test]
+    fn process_ignored_chars_preserves_spaces() {
+        assert_eq!(process_ignored_chars("hello world", 0), "hello world");
+    }
+
+    #[test]
+    fn process_ignored_chars_preserves_line_breaks() {
+        assert_eq!(process_ignored_chars("hello\nworld", 0), "hello\nworld");
+        assert_eq!(process_ignored_chars("hello\rworld", 0), "hello\rworld");
+    }
+
+    #[test]
+    fn process_ignored_chars_replaces_control_chars_chrome() {
+        // U+0001 (SOH) should become space in non-Firefox
+        assert_eq!(
+            process_ignored_chars("a\x01b", Browser::Chrome as u8),
+            "a b"
+        );
+    }
+
+    #[test]
+    fn process_ignored_chars_removes_control_chars_firefox() {
+        assert_eq!(
+            process_ignored_chars("a\x01b", Browser::Firefox as u8),
+            "ab"
+        );
+    }
 }
