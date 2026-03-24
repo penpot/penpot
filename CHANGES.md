@@ -26,7 +26,9 @@
 
 - Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
 - Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
-
+- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
+- Update copy on penpot update message [Taiga #12924](https://tree.taiga.io/project/penpot/issue/12924)
+- Fix scroll on library modal [Taiga #13639](https://tree.taiga.io/project/penpot/issue/13639)
 
 ## 2.15.0 (Unreleased)
 
@@ -43,10 +45,6 @@
 
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
-- Fix scroll on library modal [Taiga #13639](https://tree.taiga.io/project/penpot/issue/13639)
-- Update copy on penpot update message [Taiga #12924](https://tree.taiga.io/project/penpot/issue/12924)
-- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
-- Fix tooltip shown on tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 
 
