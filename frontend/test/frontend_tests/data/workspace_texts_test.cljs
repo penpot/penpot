@@ -6,7 +6,7 @@
 
 (ns frontend-tests.data.workspace-texts-test
   (:require
-   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.types.shape :as cts]
    [app.main.data.workspace.texts :as dwt]
    [cljs.test :as t :include-macros true]))
@@ -26,6 +26,24 @@
                             :height height})
     (some? position-data)
     (assoc :position-data position-data)))
+
+(defn- make-degenerate-text-shape
+  "Simulate a text shape decoded from the server via map->Rect (which bypasses
+  make-rect's 0.01 minimum enforcement), giving it a zero-width / zero-height
+  selrect.  This is the exact condition that triggered the original crash:
+  change-dimensions-modifiers divided by sr-width (== 0), producing an Infinity
+  scale factor that propagated through the transform pipeline until
+  calculate-selrect / center->rect returned nil, and then gpt/point threw
+  'invalid arguments (on pointer constructor)'."
+  [& {:keys [x y width height]
+      :or   {x 10 y 20 width 0 height 0}}]
+  (-> (make-text-shape :x x :y y :width 100 :height 50)
+      ;; Bypass make-rect by constructing the Rect record directly, the same
+      ;; way decode-rect does during JSON deserialization from the backend.
+      (assoc :selrect (grc/map->Rect {:x x :y y
+                                      :width  width :height  height
+                                      :x1 x :y1 y
+                                      :x2 (+ x width) :y2 (+ y height)}))))
 
 (defn- sample-position-data
   "Return a minimal position-data vector with the supplied coords."
@@ -145,28 +163,60 @@
       (t/is (nil? (:position-data result))))))
 
 ;; ---------------------------------------------------------------------------
-;; Tests: shape with nil selrect (defensive guard for gpt/point delta path)
+;; Tests: degenerate selrect (zero width or height decoded from the server)
+;;
+;; Root cause of the original crash:
+;;   change-dimensions-modifiers divided by (:width selrect) or (:height selrect)
+;;   which is 0 when the shape was decoded via map->Rect (bypassing make-rect's
+;;   0.01 minimum), producing Infinity → transform pipeline returned nil selrect
+;;   → gpt/point threw "invalid arguments (on pointer constructor)".
 ;; ---------------------------------------------------------------------------
 
-(t/deftest apply-text-modifier-nil-selrect-nil-modifier-does-not-throw
-  (t/testing "nil selrect + nil modifier returns shape unchanged without throwing"
-    ;; The nil-modifier guard fires first, so even a stripped shape is safe.
-    (let [shape  (-> (make-text-shape)
-                     (dissoc :selrect))
-          result (dwt/apply-text-modifier shape nil)]
-      (t/is (= shape result)))))
-
-(t/deftest apply-text-modifier-only-position-data-nil-selrects-safe
-  (t/testing "position-data-only modifier with nil selrects does not throw"
-    ;; When only position-data is set, transform-shape is NOT called, so
-    ;; the selrect-nil guard in the delta calculation is exercised directly.
-    (let [pd       (sample-position-data 5 10)
-          shape    (-> (make-text-shape :x 0 :y 0 :width 100 :height 50)
-                       (dissoc :selrect))
-          modifier {:position-data pd}
+(t/deftest apply-text-modifier-zero-width-selrect-does-not-throw
+  (t/testing "width modifier on a shape with zero selrect width does not throw"
+    ;; Simulates a shape received from the server whose selrect has width=0
+    ;; (map->Rect bypasses the 0.01 floor of make-rect).
+    (let [shape    (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 50)
+          modifier {:width 200}
           result   (dwt/apply-text-modifier shape modifier)]
-      ;; Should not throw; position-data is updated on the result
-      (t/is (= pd (:position-data result))))))
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))
+
+(t/deftest apply-text-modifier-zero-height-selrect-does-not-throw
+  (t/testing "height modifier on a shape with zero selrect height does not throw"
+    (let [shape    (make-degenerate-text-shape :x 0 :y 0 :width 100 :height 0)
+          modifier {:height 80}
+          result   (dwt/apply-text-modifier shape modifier)]
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))
+
+(t/deftest apply-text-modifier-zero-width-and-height-selrect-does-not-throw
+  (t/testing "both modifiers on a fully-degenerate selrect do not throw"
+    (let [shape    (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 0)
+          modifier {:width 150 :height 60}
+          result   (dwt/apply-text-modifier shape modifier)]
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))
+
+(t/deftest apply-text-modifier-zero-width-selrect-result-has-correct-width
+  (t/testing "applying width modifier to a zero-width shape yields the requested width"
+    (let [shape    (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 50)
+          modifier {:width 200}
+          result   (dwt/apply-text-modifier shape modifier)]
+      (t/is (= 200.0 (-> result :selrect :width))))))
+
+(t/deftest apply-text-modifier-zero-height-selrect-result-has-correct-height
+  (t/testing "applying height modifier to a zero-height shape yields the requested height"
+    (let [shape    (make-degenerate-text-shape :x 0 :y 0 :width 100 :height 0)
+          modifier {:height 80}
+          result   (dwt/apply-text-modifier shape modifier)]
+      (t/is (= 80.0 (-> result :selrect :height))))))
+
+(t/deftest apply-text-modifier-nil-modifier-on-degenerate-shape-returns-unchanged
+  (t/testing "nil modifier on a zero-selrect shape returns the same shape"
+    (let [shape  (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 0)
+          result (dwt/apply-text-modifier shape nil)]
+      (t/is (identical? shape result)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Tests: shape origin is preserved when there is no dimension change

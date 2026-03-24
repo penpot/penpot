@@ -633,14 +633,9 @@
             (some? position-data)
             (assoc :position-data position-data))
 
-          selrect-new (:selrect new-shape)
-          selrect-old (:selrect shape)
-
           delta-move
-          (if (and (some? selrect-new) (some? selrect-old))
-            (gpt/subtract (gpt/point selrect-new)
-                          (gpt/point selrect-old))
-            (gpt/point 0 0))
+          (gpt/subtract (gpt/point (:selrect new-shape))
+                        (gpt/point (:selrect shape)))
 
           new-shape
           (update new-shape :position-data gsh/move-position-data delta-move)]

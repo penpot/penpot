@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.corners :as gsc]
    [app.common.geom.shapes.effects :as gse]
@@ -116,6 +117,16 @@
   [vector]
   (or (not ^boolean (mth/almost-zero? (- (dm/get-prop vector :x) 1)))
       (not ^boolean (mth/almost-zero? (- (dm/get-prop vector :y) 1)))))
+
+(defn- safe-size-rect
+  [{:keys [selrect points]}]
+  (let [{selrect-width :width selrect-height :height} selrect]
+    (if (and (d/num? selrect-width selrect-height)
+             (pos? selrect-width)
+             (pos? selrect-height))
+      selrect
+      (or (grc/points->rect points)
+          selrect))))
 
 (defn- mergeable-move?
   [op1 op2]
@@ -447,9 +458,10 @@
       (scale-content value)))
 
 (defn change-size
-  [{:keys [selrect points transform transform-inverse] :as shape} width height]
-  (let [old-width  (-> selrect :width)
-        old-height (-> selrect :height)
+  [{:keys [points transform transform-inverse] :as shape} width height]
+  (let [size-rect   (safe-size-rect shape)
+        old-width   (:width size-rect)
+        old-height  (:height size-rect)
         width      (or width old-width)
         height     (or height old-height)
         origin     (first points)
@@ -472,7 +484,11 @@
                  value)
 
          {:keys [proportion proportion-lock]} shape
-         size (select-keys (:selrect shape) [:width :height])
+         size-rect (safe-size-rect shape)
+         sr-width  (:width size-rect)
+         sr-height (:height size-rect)
+
+         size {:width sr-width :height sr-height}
          new-size (if-not (and (not ignore-lock?) proportion-lock)
                     (assoc size attr value)
                     (if (= attr :width)
@@ -485,8 +501,6 @@
 
          width (:width new-size)
          height (:height new-size)
-
-         {sr-width :width sr-height :height} (:selrect shape)
 
          origin (-> shape :points first)
          scalex (/ width sr-width)
