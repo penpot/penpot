@@ -11,52 +11,53 @@
 @use "ds/_utils.scss" as *;
 
 .token-typography-row {
-  --token-typography-rowd-background-color: var(--color-background-tertiary);
-  --token-typography-rowd-foreground-color: var(--color-token-foreground);
-  --token-typography-rowd-border-color: var(--color-token-border);
+  --token-typography-row-background-color: var(--color-background-tertiary);
+  --token-typography-row-foreground-color: var(--color-token-foreground);
+  --token-typography-row-border-color: var(--color-token-border);
   display: flex;
   align-items: center;
+  position: relative;
   gap: var(--sp-xs);
   block-size: $sz-32;
   min-inline-size: 0;
   inline-size: 100%;
   padding: 8px;
   margin-inline-end: 0;
-  background: var(--token-typography-rowd-background-color);
-  border: $b-1 solid var(--token-typography-rowd-border-color);
+  background: var(--token-typography-row-background-color);
+  border: $b-1 solid var(--token-typography-row-border-color);
   border-radius: $br-8;
-  min-width: 0;
   &:hover {
-    --token-typography-rowd-background-color: var(--color-token-background);
-    --token-typography-rowd-foreground-color: var(--color-foreground-primary);
-    --token-typography-rowd-border-color: var(--color-token-accent);
+    --token-typography-row-background-color: var(--color-token-background);
+    --token-typography-row-foreground-color: var(--color-foreground-primary);
+    --token-typography-row-border-color: var(--color-token-accent);
   }
 }
 
 .token-typography-row-with-errors,
 .token-typography-row-not-active {
-  --token-typography-rowd-background-color: var(--color-background-primary);
-  --token-typography-rowd-foreground-color: var(--color-foreground-secondary);
-  --token-typography-rowd-border-color: var(--color-token-border);
+  --token-typography-row-background-color: var(--color-background-primary);
+  --token-typography-row-foreground-color: var(--color-foreground-secondary);
+  --token-typography-row-border-color: var(--color-token-border);
   &:hover {
-    --token-typography-rowd-background-color: var(--color-background-primary);
-    --token-typography-rowd-foreground-color: var(--color-foreground-secondary);
-    --token-typography-rowd-border-color: var(--color-token-background);
+    --token-typography-row-background-color: var(--color-background-primary);
+    --token-typography-row-foreground-color: var(--color-foreground-secondary);
+    --token-typography-row-border-color: var(--color-token-background);
   }
 }
+
 .icon {
   display: block;
   min-inline-size: $sz-16;
-  color: var(--token-typography-rowd-foreground-color);
+  color: var(--token-typography-row-foreground-color);
 }
 
 .token-name {
   @include t.use-typography("body-small");
   @include textEllipsis;
-  color: var(--token-typography-rowd-foreground-color);
+  color: var(--token-typography-row-foreground-color);
   block-size: $sz-32;
-  line-height: $sz-32;
   flex: 1;
+  line-height: $sz-32;
 }
 
 .token-tooltip {
