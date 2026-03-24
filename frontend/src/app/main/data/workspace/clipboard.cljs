@@ -295,6 +295,22 @@
 
 (def default-paste-from-blob (create-paste-from-blob false))
 
+(defn- clipboard-permission-error?
+  "Check if the given error is a clipboard permission error
+  (NotAllowedError DOMException)."
+  [cause]
+  (and (instance? js/DOMException cause)
+       (= (.-name cause) "NotAllowedError")))
+
+(defn- on-clipboard-permission-error
+  [cause]
+  (if (clipboard-permission-error? cause)
+    (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+                      :type :toast
+                      :level :warning
+                      :timeout 5000}))
+    (rx/throw cause)))
+
 (defn paste-from-clipboard
   "Perform a `paste` operation using the Clipboard API."
   []
@@ -303,7 +319,8 @@
     (watch [_ _ _]
       (->> (clipboard/from-navigator default-options)
            (rx/mapcat default-paste-from-blob)
-           (rx/take 1)))))
+           (rx/take 1)
+           (rx/catch on-clipboard-permission-error)))))
 
 (defn paste-from-event
   "Perform a `paste` operation from user emmited event."
@@ -483,11 +500,20 @@
                   (-> entry t/decode-str paste-transit-props))
 
                 (on-error [cause]
-                  (let [data (ex-data cause)]
-                    (if (:not-implemented data)
-                      (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
-                      (js/console.error "Clipboard error:" cause))
-                    (rx/empty)))]
+                  (cond
+                    (clipboard-permission-error? cause)
+                    (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+                                      :type :toast
+                                      :level :warning
+                                      :timeout 5000}))
+
+                    (:not-implemented (ex-data cause))
+                    (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
+
+                    :else
+                    (do
+                      (js/console.error "Clipboard error:" cause)
+                      (rx/empty))))]
 
           (->> (clipboard/from-navigator default-options)
                (rx/mapcat #(.text %))
