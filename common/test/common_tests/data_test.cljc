@@ -9,6 +9,144 @@
    [app.common.data :as d]
    [clojure.test :as t]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Basic Predicates
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest boolean-or-nil-predicate
+  (t/is (d/boolean-or-nil? nil))
+  (t/is (d/boolean-or-nil? true))
+  (t/is (d/boolean-or-nil? false))
+  (t/is (not (d/boolean-or-nil? 0)))
+  (t/is (not (d/boolean-or-nil? "")))
+  (t/is (not (d/boolean-or-nil? :kw))))
+
+(t/deftest in-range-predicate
+  (t/is (d/in-range? 5 0))
+  (t/is (d/in-range? 5 4))
+  (t/is (not (d/in-range? 5 5)))
+  (t/is (not (d/in-range? 5 -1)))
+  (t/is (not (d/in-range? 0 0))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Ordered Data Structures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest ordered-set-creation
+  (let [s (d/ordered-set)]
+    (t/is (d/ordered-set? s))
+    (t/is (empty? s)))
+  (let [s (d/ordered-set :a)]
+    (t/is (d/ordered-set? s))
+    (t/is (contains? s :a)))
+  (let [s (d/ordered-set :a :b :c)]
+    (t/is (d/ordered-set? s))
+    (t/is (= (seq s) [:a :b :c]))))
+
+(t/deftest ordered-set-preserves-order
+  (let [s (d/ordered-set :c :a :b)]
+    (t/is (= (seq s) [:c :a :b])))
+  ;; Duplicates are ignored; order of first insertion is kept
+  (let [s (-> (d/ordered-set) (conj :a) (conj :b) (conj :a))]
+    (t/is (= (seq s) [:a :b]))))
+
+(t/deftest ordered-map-creation
+  (let [m (d/ordered-map)]
+    (t/is (d/ordered-map? m))
+    (t/is (empty? m)))
+  (let [m (d/ordered-map :a 1)]
+    (t/is (d/ordered-map? m))
+    (t/is (= (get m :a) 1)))
+  (let [m (d/ordered-map :a 1 :b 2)]
+    (t/is (d/ordered-map? m))
+    (t/is (= (keys m) [:a :b]))))
+
+(t/deftest ordered-map-preserves-insertion-order
+  (let [m (-> (d/ordered-map)
+              (assoc :c 3)
+              (assoc :a 1)
+              (assoc :b 2))]
+    (t/is (= (keys m) [:c :a :b]))))
+
+(t/deftest oassoc-test
+  ;; oassoc on nil creates a new ordered-map
+  (let [m (d/oassoc nil :a 1 :b 2)]
+    (t/is (d/ordered-map? m))
+    (t/is (= (get m :a) 1))
+    (t/is (= (get m :b) 2)))
+  ;; oassoc on existing ordered-map updates it
+  (let [m (d/oassoc (d/ordered-map :x 10) :y 20)]
+    (t/is (= (get m :x) 10))
+    (t/is (= (get m :y) 20))))
+
+(t/deftest oassoc-in-test
+  (let [m (d/oassoc-in nil [:a :b] 42)]
+    (t/is (d/ordered-map? m))
+    (t/is (= (get-in m [:a :b]) 42)))
+  (let [m (-> (d/ordered-map)
+              (d/oassoc-in [:x :y] 1)
+              (d/oassoc-in [:x :z] 2))]
+    (t/is (= (get-in m [:x :y]) 1))
+    (t/is (= (get-in m [:x :z]) 2))))
+
+(t/deftest oupdate-in-test
+  (let [m (-> (d/ordered-map)
+              (d/oassoc-in [:a :b] 10)
+              (d/oupdate-in [:a :b] + 5))]
+    (t/is (= (get-in m [:a :b]) 15))))
+
+(t/deftest oassoc-before-test
+  (let [m (-> (d/ordered-map)
+              (assoc :a 1)
+              (assoc :b 2)
+              (assoc :c 3))
+        m2 (d/oassoc-before m :b :x 99)]
+    ;; :x should be inserted just before :b
+    (t/is (= (keys m2) [:a :x :b :c]))
+    (t/is (= (get m2 :x) 99)))
+  ;; When before-k does not exist, assoc at the end
+  (let [m  (-> (d/ordered-map) (assoc :a 1))
+        m2 (d/oassoc-before m :z :x 99)]
+    (t/is (= (get m2 :x) 99))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Ordered Set / Map Index Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest adds-at-index-test
+  (let [s (d/ordered-set :a :b :c)
+        s2 (d/adds-at-index s 1 :x)]
+    (t/is (= (seq s2) [:a :x :b :c])))
+  (let [s  (d/ordered-set :a :b :c)
+        s2 (d/adds-at-index s 0 :x)]
+    (t/is (= (seq s2) [:x :a :b :c])))
+  (let [s  (d/ordered-set :a :b :c)
+        s2 (d/adds-at-index s 3 :x)]
+    (t/is (= (seq s2) [:a :b :c :x]))))
+
+(t/deftest inserts-at-index-test
+  (let [s  (d/ordered-set :a :b :c)
+        s2 (d/inserts-at-index s 1 [:x :y])]
+    (t/is (= (seq s2) [:a :x :y :b :c])))
+  (let [s  (d/ordered-set :a :b :c)
+        s2 (d/inserts-at-index s 0 [:x])]
+    (t/is (= (seq s2) [:x :a :b :c]))))
+
+(t/deftest addm-at-index-test
+  (let [m  (-> (d/ordered-map) (assoc :a 1) (assoc :b 2) (assoc :c 3))
+        m2 (d/addm-at-index m 1 :x 99)]
+    (t/is (= (keys m2) [:a :x :b :c]))
+    (t/is (= (get m2 :x) 99))))
+
+(t/deftest insertm-at-index-test
+  (let [m  (-> (d/ordered-map) (assoc :a 1) (assoc :b 2) (assoc :c 3))
+        m2 (d/insertm-at-index m 1 (d/ordered-map :x 10 :y 20))]
+    (t/is (= (keys m2) [:a :x :y :b :c]))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Concat / remove helpers (pre-existing tests preserved)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (t/deftest concat-vec
   (t/is (= []    (d/concat-vec)))
   (t/is (= [1]   (d/concat-vec [1])))
