@@ -170,7 +170,9 @@
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]
-                                                 ((:error/fn error) (:error/value error))))))
+                                                 (if-let [f (:error/fn error)]
+                                                   (f (:error/value error))
+                                                   (:message error))))))
                       (rx/subs! (fn [{:keys [error value]}]
                                   (when touched?
                                     (if error
@@ -293,7 +295,9 @@
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]
-                                                 ((:error/fn error) (:error/value error))))))
+                                                 (if-let [f (:error/fn error)]
+                                                   (f (:error/value error))
+                                                   (:message error))))))
                       (rx/subs!
                        (fn [{:keys [error value]}]
                          (cond

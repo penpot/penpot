@@ -279,7 +279,9 @@
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]
-                                                 ((:error/fn error) (:error/value error))))))
+                                                 (if-let [f (:error/fn error)]
+                                                   (f (:error/value error))
+                                                   (:message error))))))
                       (rx/subs! (fn [{:keys [error value]}]
                                   (let [touched? (get-in @form [:touched input-name])]
                                     (when touched?
@@ -441,7 +443,9 @@
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]
-                                                 (assoc error :message ((:error/fn error) (:error/value error)))))))
+                                                 (if-let [f (:error/fn error)]
+                                                   (assoc error :message (f (:error/value error)))
+                                                   error)))))
 
                       (rx/subs!
                        (fn [{:keys [error value]}]
