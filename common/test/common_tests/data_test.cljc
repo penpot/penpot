@@ -547,3 +547,236 @@
   (let [result (d/deep-mapm (fn [[k v]] [(keyword (str (name k) "!")) v])
                             {:a 1})]
     (t/is (contains? result (keyword "a!!")))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Numeric helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest nan-test
+  ;; Note: nan? behaves differently per platform:
+  ;; - CLJS: uses js/isNaN, returns true for ##NaN
+  ;; - CLJ: uses (not= v v); Clojure's = uses .equals on doubles,
+  ;;   so (= ##NaN ##NaN) is true and nan? returns false for ##NaN.
+  ;; Either way, nan? returns false for regular numbers and nil.
+  (t/is (not (d/nan? 0)))
+  (t/is (not (d/nan? 1)))
+  (t/is (not (d/nan? nil)))
+  ;; Platform-specific: JS nan? correctly detects NaN
+  #?(:cljs (t/is (d/nan? ##NaN))))
+
+(t/deftest safe-plus-test
+  (t/is (= 5 (d/safe+ 3 2)))
+  ;; when first arg is not finite, return it unchanged
+  (t/is (= ##Inf (d/safe+ ##Inf 10))))
+
+(t/deftest max-test
+  (t/is (= 3 (d/max 3)))
+  (t/is (= 5 (d/max 3 5)))
+  (t/is (= 9 (d/max 1 9 4)))
+  (t/is (= 10 (d/max 1 2 3 4 5 6 7 8 9 10))))
+
+(t/deftest min-test
+  (t/is (= 3 (d/min 3)))
+  (t/is (= 3 (d/min 3 5)))
+  (t/is (= 1 (d/min 1 9 4)))
+  (t/is (= 1 (d/min 10 9 8 7 6 5 4 3 2 1))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Parsing helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest parse-integer-test
+  (t/is (= 42 (d/parse-integer "42")))
+  (t/is (= -1 (d/parse-integer "-1")))
+  (t/is (nil? (d/parse-integer "abc")))
+  (t/is (= 0 (d/parse-integer "abc" 0)))
+  (t/is (nil? (d/parse-integer nil))))
+
+(t/deftest parse-double-test
+  (t/is (= 3.14 (d/parse-double "3.14")))
+  (t/is (= -1.0 (d/parse-double "-1.0")))
+  (t/is (nil? (d/parse-double "abc")))
+  (t/is (= 0.0 (d/parse-double "abc" 0.0)))
+  (t/is (nil? (d/parse-double nil))))
+
+(t/deftest parse-uuid-test
+  (let [uuid-str "550e8400-e29b-41d4-a716-446655440000"]
+    (t/is (some? (d/parse-uuid uuid-str))))
+  (t/is (nil? (d/parse-uuid "not-a-uuid")))
+  (t/is (nil? (d/parse-uuid nil))))
+
+(t/deftest coalesce-str-test
+  ;; On JVM: nan? uses (not= v v), which is false for all normal values.
+  ;; On CLJS: nan? uses js/isNaN, which is true for non-numeric strings.
+  ;; coalesce-str returns default when value is nil or nan?.
+  (t/is (= "default" (d/coalesce-str nil "default")))
+  ;; Numbers always stringify on both platforms
+  (t/is (= "42" (d/coalesce-str 42 "default")))
+  ;; ##NaN: nan? is true in CLJS, returns default;
+  ;;        nan? is false in CLJ, so str(##NaN)="NaN" is returned.
+  #?(:cljs (t/is (= "default" (d/coalesce-str ##NaN "default"))))
+  #?(:clj  (t/is (= "NaN" (d/coalesce-str ##NaN "default"))))
+  ;; Strings: in CLJS js/isNaN("hello")=true so "default" is returned;
+  ;;          in CLJ nan? is false so (str "hello")="hello" is returned.
+  #?(:cljs (t/is (= "default" (d/coalesce-str "hello" "default"))))
+  #?(:clj  (t/is (= "hello" (d/coalesce-str "hello" "default")))))
+
+(t/deftest coalesce-test
+  (t/is (= "hello" (d/coalesce "hello" "default")))
+  (t/is (= "default" (d/coalesce nil "default")))
+  ;; coalesce uses `or`, so false is falsy and returns the default
+  (t/is (= "default" (d/coalesce false "default")))
+  (t/is (= 42 (d/coalesce 42 0))))
+
+(t/deftest read-string-test
+  (t/is (= {:a 1} (d/read-string "{:a 1}")))
+  (t/is (= [1 2 3] (d/read-string "[1 2 3]")))
+  (t/is (= :keyword (d/read-string ":keyword"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; String / keyword helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest name-test
+  (t/is (= "foo" (d/name :foo)))
+  (t/is (= "foo" (d/name "foo")))
+  (t/is (nil? (d/name nil)))
+  (t/is (= "42" (d/name 42))))
+
+(t/deftest prefix-keyword-test
+  (t/is (= :prefix-test (d/prefix-keyword "prefix-" :test)))
+  (t/is (= :ns-id (d/prefix-keyword :ns- :id)))
+  (t/is (= :ab (d/prefix-keyword "a" "b"))))
+
+(t/deftest kebab-keys-test
+  (t/is (= {:foo-bar 1 :baz-qux 2}
+           (d/kebab-keys {"fooBar" 1 "bazQux" 2})))
+  (t/is (= {:my-key {:nested-key 1}}
+           (d/kebab-keys {:myKey {:nestedKey 1}}))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Utility helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest regexp-test
+  (t/is (d/regexp? #"foo"))
+  (t/is (not (d/regexp? "foo")))
+  (t/is (not (d/regexp? nil))))
+
+(t/deftest nilf-test
+  (let [safe-inc (d/nilf inc)]
+    (t/is (nil? (safe-inc nil)))
+    (t/is (= 2 (safe-inc 1))))
+  (let [safe-add (d/nilf +)]
+    (t/is (nil? (safe-add 1 nil)))
+    (t/is (= 3 (safe-add 1 2)))))
+
+(t/deftest nilv-test
+  (t/is (= "default" (d/nilv nil "default")))
+  (t/is (= "value" (d/nilv "value" "default")))
+  (t/is (= false (d/nilv false "default")))
+  ;; transducer arity
+  (t/is (= ["a" "default" "b"]
+           (into [] (d/nilv "default") ["a" nil "b"]))))
+
+(t/deftest any-key-test
+  (t/is (d/any-key? {:a 1 :b 2} :a))
+  (t/is (d/any-key? {:a 1 :b 2} :z :b))
+  (t/is (not (d/any-key? {:a 1} :z :x))))
+
+(t/deftest tap-test
+  (let [received (atom nil)]
+    (t/is (= [1 2 3] (d/tap #(reset! received %) [1 2 3])))
+    (t/is (= [1 2 3] @received))))
+
+(t/deftest tap-r-test
+  (let [received (atom nil)]
+    (t/is (= [1 2 3] (d/tap-r [1 2 3] #(reset! received %))))
+    (t/is (= [1 2 3] @received))))
+
+(t/deftest map-diff-test
+  ;; identical maps produce empty diff
+  (t/is (= {} (d/map-diff {:a 1} {:a 1})))
+  ;; changed value
+  (t/is (= {:a [1 2]} (d/map-diff {:a 1} {:a 2})))
+  ;; removed key
+  (t/is (= {:b [2 nil]} (d/map-diff {:a 1 :b 2} {:a 1})))
+  ;; added key
+  (t/is (= {:c [nil 3]} (d/map-diff {:a 1} {:a 1 :c 3})))
+  ;; nested diff
+  (t/is (= {:b {:c [1 2]}} (d/map-diff {:b {:c 1}} {:b {:c 2}}))))
+
+(t/deftest unique-name-test
+  ;; name not in used set — returned as-is
+  (t/is (= "foo" (d/unique-name "foo" #{})))
+  ;; name already used — append counter
+  (t/is (= "foo-1" (d/unique-name "foo" #{"foo"})))
+  (t/is (= "foo-2" (d/unique-name "foo" #{"foo" "foo-1"})))
+  ;; name already has numeric suffix
+  (t/is (= "foo-2" (d/unique-name "foo-1" #{"foo-1"})))
+  ;; prefix-first? mode — skips foo-1 (counter=1 returns bare prefix)
+  ;; so with #{} not used, still returns "foo"
+  (t/is (= "foo" (d/unique-name "foo" #{} true)))
+  ;; with prefix-first? and "foo" used, counter=1 produces "foo" again (used),
+  ;; so jumps to counter=2 → "foo-2"
+  (t/is (= "foo-2" (d/unique-name "foo" #{"foo"} true))))
+
+(t/deftest toggle-selection-test
+  ;; without toggle, always returns set with just the value
+  (let [s (d/ordered-set :a :b)]
+    (t/is (= (d/ordered-set :c) (d/toggle-selection s :c))))
+  ;; with toggle=true, adds if not present
+  (let [s (d/ordered-set :a)]
+    (t/is (contains? (d/toggle-selection s :b true) :b)))
+  ;; with toggle=true, removes if already present
+  (let [s (d/ordered-set :a :b)]
+    (t/is (not (contains? (d/toggle-selection s :a true) :a)))))
+
+(t/deftest invert-map-test
+  (t/is (= {1 :a 2 :b} (d/invert-map {:a 1 :b 2})))
+  (t/is (= {} (d/invert-map {}))))
+
+(t/deftest obfuscate-string-test
+  ;; short string (< 10) — all stars
+  (t/is (= "****" (d/obfuscate-string "abcd")))
+  ;; long string — first 5 chars kept
+  (t/is (= "hello*****" (d/obfuscate-string "helloworld")))
+  ;; full? mode
+  (t/is (= "***" (d/obfuscate-string "abc" true)))
+  ;; empty string
+  (t/is (= "" (d/obfuscate-string ""))))
+
+(t/deftest unstable-sort-test
+  (t/is (= [1 2 3 4] (d/unstable-sort [3 1 4 2])))
+  ;; In CLJS, garray/sort requires a comparator returning -1/0/1 (not boolean).
+  ;; Use compare with reversed args for descending sort on both platforms.
+  (t/is (= [4 3 2 1] (d/unstable-sort #(compare %2 %1) [3 1 4 2])))
+  ;; Empty collection: CLJ returns '(), CLJS returns nil (from seq on [])
+  (t/is (empty? (d/unstable-sort []))))
+
+(t/deftest opacity-to-hex-test
+  ;; opacity-to-hex uses JavaScript number methods (.toString 16 / .padStart)
+  ;; so it only produces output in CLJS environments.
+  #?(:cljs (t/is (= "ff" (d/opacity-to-hex 1))))
+  #?(:cljs (t/is (= "00" (d/opacity-to-hex 0))))
+  #?(:cljs (t/is (= "80" (d/opacity-to-hex (/ 128 255)))))
+  #?(:clj (t/is true "opacity-to-hex is CLJS-only")))
+
+(t/deftest format-precision-test
+  (t/is (= "12" (d/format-precision 12.0123 0)))
+  (t/is (= "12" (d/format-precision 12.0123 1)))
+  (t/is (= "12.01" (d/format-precision 12.0123 2)))
+  (t/is (= "12.012" (d/format-precision 12.0123 3)))
+  (t/is (= "0.1" (d/format-precision 0.1 2))))
+
+(t/deftest format-number-test
+  (t/is (= "3.14" (d/format-number 3.14159)))
+  (t/is (= "3" (d/format-number 3.0)))
+  (t/is (= "3.14" (d/format-number "3.14159")))
+  (t/is (nil? (d/format-number nil)))
+  (t/is (= "3.1416" (d/format-number 3.14159 {:precision 4}))))
+
+(t/deftest append-class-test
+  (t/is (= "foo bar" (d/append-class "foo" "bar")))
+  (t/is (= "bar" (d/append-class nil "bar")))
+  (t/is (= " bar" (d/append-class "" "bar"))))
