@@ -49,9 +49,9 @@
                   :deleted-at (ct/in-future (cf/get-deletion-delay))
                   :password (derive-password password)
                   :props {}}
-        profile  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+        profile  (db/tx-run! cfg (fn [cfg]
                                    (->> (auth/create-profile cfg params)
-                                        (auth/create-profile-rels conn))))]
+                                        (auth/create-profile-rels cfg))))]
     (with-meta {:email email
                 :password password}
       {::audit/profile-id (:id profile)})))

@@ -85,7 +85,8 @@
 (defn- create-invitation
   [{:keys [::db/conn] :as cfg} {:keys [team profile role email] :as params}]
 
-  (assert (db/connection? conn) "expected valid connection on cfg parameter")
+  (assert (db/connection-map? cfg)
+          "expected cfg with valid connection")
   (assert (check-create-invitation-params params))
 
   (let [email  (profile/clean-email email)
@@ -104,8 +105,7 @@
                           (get types.team/permissions-for-role role))]
 
         ;; Insert the invited member to the team
-        (db/insert! conn :team-profile-rel params
-                    {::db/on-conflict-do-nothing? true})
+        (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
 
         ;; If profile is not yet verified, mark it as verified because
         ;; accepting an invitation link serves as verification.
@@ -166,7 +166,9 @@
           itoken)))))
 
 (defn- add-member-to-team
-  [conn profile team role member]
+  [{:keys [::db/conn] :as cfg} profile team role member]
+  (assert (db/connection-map? cfg)
+          "expected cfg with valid connection")
 
   (let [team-id (:id team)
         params  (merge
@@ -186,7 +188,7 @@
       ::quotes/team-id team-id})
 
     ;; Insert the member to the team
-    (db/insert! conn :team-profile-rel params {::db/on-conflict-do-nothing? true})
+    (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
 
     ;; Delete any request
     (db/delete! conn :team-access-request
@@ -268,7 +270,7 @@
          (filter #(contains? invitation-emails (key %)))
          (map (fn [[email member]]
                 (let [role (:role (first (filter #(= (:email %) email) invitation-data)))]
-                  (add-member-to-team conn profile team role member))))
+                  (add-member-to-team cfg profile team role member))))
          (doall))
 
     invitations))

@@ -371,9 +371,11 @@
 
 
 (defn create-profile-rels
-  [conn {:keys [id] :as profile}]
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as profile}]
+  (assert (db/connection-map? cfg)
+          "expected cfg with valid connection")
   (let [features (cfeat/get-enabled-features cf/flags)
-        team     (teams/create-team conn
+        team     (teams/create-team cfg
                                     {:profile-id id
                                      :name "Default"
                                      :features features
@@ -426,7 +428,7 @@
                                              (assoc :is-active is-active)
                                              (update :password auth/derive-password))
                                profile   (->> (create-profile cfg params)
-                                              (create-profile-rels conn))]
+                                              (create-profile-rels cfg))]
                            (vary-meta profile assoc :created true))))
 
         created?   (-> profile meta :created true?)

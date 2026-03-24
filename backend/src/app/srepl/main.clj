@@ -905,5 +905,4 @@
                       (let [params (-> rel
                                        (assoc :id (uuid/next))
                                        (assoc :team-id (:id team)))]
-                        (db/insert! conn :team-profile-rel params
-                                    {::db/return-keys false}))))))))
+                        (teams/add-profile-to-team! cfg params {::db/return-keys false}))))))))
