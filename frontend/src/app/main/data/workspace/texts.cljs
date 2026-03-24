@@ -618,27 +618,35 @@
           (assoc-in [:workspace-global :default-font] data))))))
 
 (defn apply-text-modifier
-  [shape {:keys [width height position-data]}]
+  [shape text-modifier]
 
-  (let [new-shape
-        (cond-> shape
-          (some? width)
-          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width width {:ignore-lock? true}))
+  (if (some? text-modifier)
+    (let [{:keys [width height position-data]} text-modifier
+          new-shape
+          (cond-> shape
+            (some? width)
+            (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width width {:ignore-lock? true}))
 
-          (some? height)
-          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height height {:ignore-lock? true}))
+            (some? height)
+            (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height height {:ignore-lock? true}))
 
-          (some? position-data)
-          (assoc :position-data position-data))
+            (some? position-data)
+            (assoc :position-data position-data))
 
-        delta-move
-        (gpt/subtract (gpt/point (:selrect new-shape))
-                      (gpt/point (:selrect shape)))
+          selrect-new (:selrect new-shape)
+          selrect-old (:selrect shape)
 
-        new-shape
-        (update new-shape :position-data gsh/move-position-data delta-move)]
+          delta-move
+          (if (and (some? selrect-new) (some? selrect-old))
+            (gpt/subtract (gpt/point selrect-new)
+                          (gpt/point selrect-old))
+            (gpt/point 0 0))
 
-    new-shape))
+          new-shape
+          (update new-shape :position-data gsh/move-position-data delta-move)]
+
+      new-shape)
+    shape))
 
 (defn commit-update-text-modifier
   []
