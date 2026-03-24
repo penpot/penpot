@@ -221,15 +221,6 @@
         typo-same? (identical? o-typography-id n-typography-id)
         result (and ids-same? tokens-same? typo-same?)]
     result))
-(defn- focusable-option?
-  [option]
-  (and (:id option)
-       (not= :group (:type option))
-       (not= :separator (:type option))))
-
-(defn- first-focusable-id
-  [options]
-  (some #(when (focusable-option? %) (:id %)) options))
 
 (defn next-focus-id
   [focusables focused-id direction]
@@ -251,11 +242,11 @@
         (mf/use-fn
          (mf/deps is-open focused-id)
          (fn [event]
-           (let [up?    (kbd/up-arrow? event)
-                 down?  (kbd/down-arrow? event)
-                 enter? (kbd/enter? event)
-                 esc?   (kbd/esc? event)
-                 tab?   (kbd/tab? event)
+           (let [up?     (kbd/up-arrow? event)
+                 down?   (kbd/down-arrow? event)
+                 enter?  (kbd/enter? event)
+                 esc?    (kbd/esc? event)
+                 tab?    (kbd/tab? event)
                  options (if (delay? options) @options options)]
 
              (cond
@@ -280,6 +271,7 @@
                enter?
                (when (and is-open focused-id)
                  (dom/prevent-default event)
+                 (dom/stop-propagation event)
                  (on-enter focused-id))
 
                (or esc? tab?)
@@ -559,7 +551,11 @@
        [:div {:class (stl/css :element-content)}
         (cond
           (and token-row token-applied-name)
-          [:> token-typography-row* {:token-name token-applied-name :detach-token detach-token :tokens @tokens}]
+          [:> token-typography-row* {:token-name (or token-applied-name applied-token)
+                                     :detach-token detach-token
+                                     :active-tokens (if (delay? tokens)
+                                                      @tokens
+                                                      tokens)}]
 
           typography
           [:& typography-entry {:file-id typography-file-id
