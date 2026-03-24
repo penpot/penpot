@@ -170,8 +170,17 @@
   [^js node name]
   (let [name (str/camel name)]
     (loop [current node]
-      (if (or (nil? current) (obj/in? (.-dataset current) name))
+      (cond
+        (nil? current)
+        nil
+
+        (not= (.-nodeType current) js/Node.ELEMENT_NODE)
+        (recur (.-parentElement current))
+
+        (obj/in? (.-dataset current) name)
         current
+
+        :else
         (recur (.-parentElement current))))))
 
 (defn get-parent-with-selector
