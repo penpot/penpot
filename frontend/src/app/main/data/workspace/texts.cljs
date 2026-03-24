@@ -927,23 +927,25 @@
         final-shape-fn   (fn [shape] (merge shape final-geom))]
     (-> base
         (pcb/with-objects objects-with-old)
-        (pcb/update-shapes [id] final-shape-fn {:attrs attrs})
-        (pcb/set-stack-undo? true))))
+        (pcb/update-shapes [id] final-shape-fn {:attrs attrs}))))
 
 (defn- build-finalize-commit-changes
   "Builds the commit changes for text finalization (content + geometry undo).
-  For auto-width text, include geometry so undo restores e.g. width."
-  [it state id {:keys [new-shape? content-has-text? content original-content undo-group]}]
+  For auto-width text, include geometry so undo restores e.g. width.
+  Includes :name when update-name? so we can skip save-undo on the preceding
+  update-shapes for finalize without losing name undo."
+  [it state id {:keys [new-shape? content-has-text? content original-content
+                       update-name? name]}]
   (let [page-id    (:current-page-id state)
         objects    (dsh/lookup-page-objects state page-id)
         shape*     (get objects id)
         base       (-> (pcb/empty-changes it page-id)
+                       (pcb/with-objects objects)
                        (pcb/set-text-content id content original-content)
+                       (cond-> (and update-name? (some? name) (not= (:name shape*) name))
+                         (pcb/update-shapes [id] (fn [s] (assoc s :name name)) {:attrs [:name]}))
                        (cond-> new-shape?
                          (-> (pcb/set-undo-group id)
-                             (pcb/set-stack-undo? true)))
-                       (cond-> (and (not new-shape?) (some? undo-group))
-                         (-> (pcb/set-undo-group undo-group)
                              (pcb/set-stack-undo? true))))
         final-geom (select-keys shape* [:selrect :points :width :height])
         geom-keys  (if new-shape? [:selrect :points] [:selrect :points :width :height])
@@ -987,7 +989,13 @@
               ;; New shapes: single undo on finalize only (no per-keystroke undo)
               effective-save-undo? (if new-shape? finalize? save-undo?)
               effective-stack-undo? (and new-shape? finalize?)
-              finalize-undo-group (when (and finalize? (not new-shape?)) (uuid/next))]
+              ;; No save-undo on first update when finalizing: either build-finalize
+              ;; holds undo (non-new), or we delete empty text and only delete-shapes
+              ;; should record undo.
+              finalize-save-undo-first?
+              (if (and finalize? (or (not new-shape?) (not content-has-text?)))
+                false
+                effective-save-undo?)]
 
           (rx/concat
            (rx/of
@@ -1006,16 +1014,17 @@
                      (dissoc :prev-content))
                    (cond-> (and (not new-shape?)
                                 prev-content-has-text?
-                                (not content-has-text?))
+                                (not content-has-text?)
+                                (not finalize?))
                      (assoc :prev-content prev-content))
                    (cond-> (and update-name? (some? name))
                      (assoc :name name))
                    (cond-> (some? new-size)
                      (gsh/transform-shape
                       (ctm/change-size shape (:width new-size) (:height new-size))))))
-             {:save-undo? effective-save-undo?
+             {:save-undo? finalize-save-undo-first?
               :stack-undo? effective-stack-undo?
-              :undo-group (or finalize-undo-group (when new-shape? id))})
+              :undo-group (when new-shape? id)})
 
             ;; When we don't update the shape (no new-size), still update WASM display
             (when-not (some? new-size)
@@ -1024,28 +1033,35 @@
 
            (when finalize?
              (rx/concat
-              (when (and (not content-has-text?) (some? id))
-                (rx/of
-                 (when has-prev-content?
-                   (dwsh/update-shapes
-                    [id]
-                    (fn [shape] (assoc shape :content (:prev-content shape)))
-                    {:save-undo? false}))
-                 (dws/deselect-shape id)
-                 (dwsh/delete-shapes #{id})))
-              (rx/of
-               (dch/commit-changes
-                (build-finalize-commit-changes it state id
-                                               {:new-shape? new-shape?
-                                                :content-has-text? content-has-text?
-                                                :content content
-                                                :original-content original-content
-                                                :undo-group finalize-undo-group}))
-               (dwt/finish-transform)
-               (fn [state]
-                 (-> state
-                     (update :workspace-new-text-shapes disj id)
-                     (update :workspace-text-session-geom (fnil dissoc {}) id))))))))
+              (if (and (not content-has-text?) (some? id))
+                (rx/concat
+                 (if (and (some? original-content) (v2-content-has-text? original-content))
+                   (rx/of
+                    (dwsh/update-shapes
+                     [id]
+                     (fn [s] (-> s (assoc :content original-content) (dissoc :prev-content)))
+                     {:save-undo? false}))
+                   (rx/empty))
+                 (rx/of (dws/deselect-shape id)
+                        (dwsh/delete-shapes #{id})))
+                (rx/empty))
+              (rx/concat
+               (if content-has-text?
+                 (rx/of
+                  (dch/commit-changes
+                   (build-finalize-commit-changes it state id
+                                                  {:new-shape? new-shape?
+                                                   :content-has-text? content-has-text?
+                                                   :content content
+                                                   :original-content original-content
+                                                   :update-name? update-name?
+                                                   :name name})))
+                 (rx/empty))
+               (rx/of (dwt/finish-transform)
+                      (fn [state]
+                        (-> state
+                            (update :workspace-new-text-shapes disj id)
+                            (update :workspace-text-session-geom (fnil dissoc {}) id)))))))))
 
         (let [modifiers    (get-in state [:workspace-text-modifier id])
               new-shape?   (contains? (:workspace-new-text-shapes state) id)]
