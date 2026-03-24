@@ -9,6 +9,7 @@
 
 .element-set {
   @include sidebar.option-grid-structure;
+  position: relative;
 }
 
 .element-title {

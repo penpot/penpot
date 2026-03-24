@@ -194,7 +194,7 @@ msgid "branding-illustrations-marketing-pieces"
 msgstr "…מיתוג, איורים, חומרים שיווקיים ועוד."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "האסימון הזה לא קיים או שנמחק."
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
@@ -1182,7 +1182,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "פתיחת רשימת אסימונים"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
+msgid "token-actions.detach-token"
 msgstr "ניתוק אסימון"
 
 #: src/app/main/data/auth.cljs:339

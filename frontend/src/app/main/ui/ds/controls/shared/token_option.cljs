@@ -18,7 +18,7 @@
   [:map
    [:id {:optiona true} :string]
    [:ref some?]
-   [:resolved {:optional true} [:or :int :string :float]]
+   [:resolved {:optional true} [:or :int :string :float :map]]
    [:name {:optional true} :string]
    [:on-click {:optional true} fn?]
    [:selected {:optional true} :boolean]
@@ -59,6 +59,8 @@
       [:span {:aria-labelledby (dm/str id "-name")
               :ref element-ref}
        name]]
-     (when resolved
-       [:> :span {:class (stl/css :option-pill)}
-        resolved])]))
+     ;; TODO: show resolved when is not a map
+     ;; (when resolved
+     ;;   [:> :span {:class (stl/css :option-pill)}
+     ;;    resolved])
+     ]))
