@@ -176,6 +176,7 @@
                                          text-decoration)
                          :on-change    handle-change
                          :name         "text-decoration-options"
+                         :disabled     (and token-row (some? token-applied))
                          :allow-empty  true
                          :options      [{:value "underline"
                                          :id "underline-text-decoration"
