@@ -30,7 +30,6 @@
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctsht]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctst]
