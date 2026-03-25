@@ -195,13 +195,17 @@
   padding-inline-start: calc(var(--sp-xxl) + var(--sp-s));
 }
 
-.item-name {
+%item-name {
   @include t.use-typography("body-large");
   @include text-ellipsis;
 
   margin: 0;
   max-width: px2rem(236);
   color: var(--library-name-foreground-color);
+}
+
+.item-name {
+  @extend %item-name;
 }
 
 .item-name-short {

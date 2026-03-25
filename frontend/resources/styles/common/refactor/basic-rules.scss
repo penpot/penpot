@@ -298,7 +298,7 @@
 // INPUTS
 %input-base {
   @include removeInputStyle;
-  @include text-ellipsis;
+  @include textEllipsis;
   height: $s-28;
   width: 100%;
   flex-grow: 1;
@@ -770,7 +770,7 @@
   height: $s-32;
   :global(.attr-label) {
     @include bodySmallTypography;
-    @include two-line-text-ellipsis;
+    @include twoLineTextEllipsis;
     width: $s-92;
     margin: auto 0;
     color: var(--entry-foreground-color);
@@ -841,7 +841,7 @@
 
   span {
     @include flexCenter;
-    @include text-ellipsis;
+    @include textEllipsis;
     svg {
       @extend %button-icon-small;
       stroke: var(--icon-foreground);
