@@ -179,13 +179,6 @@
 
 ;; ─── safe-size-rect fallbacks ─────────────────────────────────────────────────
 
-(defn- shape-with-selrect
-  "Return a bare shape map with a hand-crafted selrect and matching points."
-  [selrect]
-  (let [pts (grc/rect->points selrect)]
-    {:selrect selrect :points pts :x (:x selrect) :y (:y selrect)
-     :width (:width selrect) :height (:height selrect)}))
-
 (t/deftest safe-size-rect-fallbacks
   (t/testing "valid selrect is returned as-is"
     (let [shape (make-shape 100 50)
@@ -196,12 +189,13 @@
       (t/is (mth/close? 2.0 (-> op :vector :y)))))
 
   (t/testing "zero-width selrect falls back to points, producing a valid rect"
-    ;; Manually corrupt just the selrect dimensions while keeping valid points.
-    (let [base  (make-shape 100 50)
+    ;; Corrupt only the selrect dimensions; the shape's points remain valid.
+    (let [base        (make-shape 100 50)
           bad-selrect (assoc (:selrect base) :width 0 :height 0)
-          shape (assoc base :selrect bad-selrect)
-          mods  (ctm/change-size shape 200 100)
-          op    (resize-op mods)]
+          shape       (assoc base :selrect bad-selrect)
+          mods        (ctm/change-size shape 200 100)
+          op          (resize-op mods)]
+      (t/is (cts/shape? shape))
       (t/is (mth/close? 2.0 (-> op :vector :x)))
       (t/is (mth/close? 2.0 (-> op :vector :y)))))
 
@@ -211,6 +205,7 @@
           shape       (assoc base :selrect bad-selrect)
           mods        (ctm/change-size shape 200 100)
           op          (resize-op mods)]
+      (t/is (cts/shape? shape))
       (t/is (mth/close? 2.0 (-> op :vector :x)))
       (t/is (mth/close? 2.0 (-> op :vector :y)))))
 
@@ -220,22 +215,32 @@
           shape       (assoc base :selrect bad-selrect)
           mods        (ctm/change-size shape 200 100)
           op          (resize-op mods)]
+      (t/is (cts/shape? shape))
       (t/is (mth/close? 2.0 (-> op :vector :x)))
       (t/is (mth/close? 2.0 (-> op :vector :y)))))
 
   (t/testing "invalid selrect and no points falls back to top-level shape fields"
-    (let [shape {:selrect nil :points nil :x 0 :y 0 :width 100 :height 50}
+    ;; Null out both selrect and points; the top-level :x/:y/:width/:height
+    ;; fields on the Shape record are still valid and serve as fallback 3.
+    (let [shape (-> (make-shape 100 50)
+                    (assoc :selrect nil)
+                    (assoc :points  nil))
           mods  (ctm/change-size shape 200 100)
           op    (resize-op mods)]
+      (t/is (cts/shape? shape))
       (t/is (mth/close? 2.0 (-> op :vector :x)))
       (t/is (mth/close? 2.0 (-> op :vector :y)))))
 
   (t/testing "all geometry missing: falls back to empty-rect (0.01 x 0.01)"
-    ;; change-size with explicit target dimensions must not throw; the result
-    ;; uses empty-rect as the denominator, so the scale will be very large but finite.
-    (let [shape {:selrect nil :points nil :x nil :y nil :width nil :height nil
-                 :transform nil :transform-inverse nil}
+    ;; Null out selrect, points and the top-level dimension fields so that
+    ;; every fallback is exhausted and empty-rect (0.01×0.01) is used.
+    (let [shape (-> (make-shape 100 50)
+                    (assoc :selrect nil)
+                    (assoc :points  nil)
+                    (assoc :width   nil)
+                    (assoc :height  nil))
           mods  (ctm/change-size shape 200 100)
           op    (resize-op mods)]
+      (t/is (cts/shape? shape))
       (t/is (mth/close? (/ 200 0.01) (-> op :vector :x)))
       (t/is (mth/close? (/ 100 0.01) (-> op :vector :y))))))
