@@ -11,7 +11,7 @@
    [app.common.geom.shapes.text :as gst]
    [app.common.record :as crc]
    [app.common.schema :as sm]
-   [app.common.types.shape :as cts]
+   [app.common.types.fills :as types.fills]
    [app.common.types.text :as txt]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
@@ -370,7 +370,7 @@
      (fn [_ value]
        (let [value (parser/parse-fills value)]
          (cond
-           (not (sm/validate [:vector ::cts/fill] value))
+           (not (sm/validate [:vector types.fills/schema:fill] value))
            (u/not-valid plugin-id :fills value)
 
            (not (r/check-permission plugin-id "content:write"))
