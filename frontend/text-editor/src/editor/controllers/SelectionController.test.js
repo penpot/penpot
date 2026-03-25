@@ -1626,6 +1626,23 @@ describe("SelectionController", () => {
     );
   });
 
+  test("`applyStyles` sets paragraph styles when selection is on <br> (empty paragraph)", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithText("");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    const lineBreak = root.firstChild.firstChild.firstChild;
+    expect(lineBreak.nodeName).toBe("BR");
+    focus(selection, textEditorMock, lineBreak, 0, lineBreak, 0);
+    selectionController.applyStyles({
+      "text-align": "center",
+    });
+    expect(root.firstChild.style.textAlign).toBe("center");
+  });
+
   test("`selectAll` should select everything", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
       createParagraphWith(["Hello, "], {
