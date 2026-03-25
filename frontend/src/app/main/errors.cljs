@@ -140,10 +140,20 @@
               :timeout 5000})))
 
 (defmethod ptk/handle-error :internal
-  [error]
-  (st/emit! (rt/assign-exception error))
-  (when-let [cause (::instance error)]
-    (ex/print-throwable cause :prefix "Internal Error")))
+  [{:keys [code] :as error}]
+  (if (= :fetch-error code)
+    ;; Transient network errors (e.g. lost connectivity, DNS failure)
+    ;; should not replace the entire page with an error screen. Show a
+    ;; non-intrusive toast instead and let the user continue working.
+    (do
+      (when-let [cause (::instance error)]
+        (ex/print-throwable cause :prefix "Network Error"))
+      (flash :cause (::instance error) :type :handled))
+    ;; For all other internal errors, show the full error page
+    (do
+      (st/emit! (rt/assign-exception error))
+      (when-let [cause (::instance error)]
+        (ex/print-throwable cause :prefix "Internal Error")))))
 
 (defmethod ptk/handle-error :default
   [error]
