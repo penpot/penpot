@@ -45,35 +45,38 @@
              (= :fetch-error (:code data))
              true)))))
 
-(def ^:private max-retries
-  "Maximum number of automatic retries for idempotent requests."
-  3)
+(def default-retry-config
+  "Default configuration for the retry mechanism on idempotent requests."
+  {:max-retries    3
+   :base-delay-ms  1000})
 
-(def ^:private retry-base-delay-ms
-  "Base delay (in ms) before the first retry.  Subsequent retries use
-  exponential back-off: base * 2^attempt  (1 s → 2 s → 4 s)."
-  1000)
-
-(defn- with-retry
+(defn with-retry
   "Wrap `observable-fn` (a zero-arg function returning an Observable) so
-  that retryable errors are retried up to `max-retries` times with
-  exponential back-off.  Non-retryable errors propagate immediately."
+  that retryable errors are retried up to `:max-retries` times with
+  exponential back-off.  Non-retryable errors propagate immediately.
+
+  Accepts an optional `config` map with:
+    :max-retries   – maximum number of retries (default 3)
+    :base-delay-ms – base delay in ms; doubles each attempt (default 1000)"
   ([observable-fn]
-   (with-retry observable-fn 0))
-  ([observable-fn attempt]
-   (->> (observable-fn)
-        (rx/catch
-         (fn [cause]
-           (if (and (retryable-error? cause)
-                    (< attempt max-retries))
-             (let [delay-ms (* retry-base-delay-ms (bit-shift-left 1 attempt))]
-               (log/wrn :hint "retrying request"
-                        :attempt (inc attempt)
-                        :delay delay-ms
-                        :error (ex-message cause))
-               (->> (rx/timer delay-ms)
-                    (rx/mapcat (fn [_] (with-retry observable-fn (inc attempt))))))
-             (rx/throw cause)))))))
+   (with-retry observable-fn default-retry-config))
+  ([observable-fn config]
+   (with-retry observable-fn config 0))
+  ([observable-fn config attempt]
+   (let [{:keys [max-retries base-delay-ms]} (merge default-retry-config config)]
+     (->> (observable-fn)
+          (rx/catch
+           (fn [cause]
+             (if (and (retryable-error? cause)
+                      (< attempt max-retries))
+               (let [delay-ms (* base-delay-ms (bit-shift-left 1 attempt))]
+                 (log/wrn :hint "retrying request"
+                          :attempt (inc attempt)
+                          :delay delay-ms
+                          :error (ex-message cause))
+                 (->> (rx/timer delay-ms)
+                      (rx/mapcat (fn [_] (with-retry observable-fn config (inc attempt))))))
+               (rx/throw cause))))))))
 
 ;; -- Response handling -------------------------------------------------------
 
