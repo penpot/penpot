@@ -429,9 +429,7 @@
   padding: deprecated.$s-8;
   color: var(--input-foreground-color-rest);
   border: deprecated.$s-1 solid transparent;
-
-  &:focus,
-  &:focus-within {
+  &:has(:focus-visible) {
     outline: none;
     border: deprecated.$s-1 solid var(--input-border-color-active);
   }
