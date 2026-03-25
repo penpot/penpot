@@ -2030,6 +2030,18 @@ export class SelectionController extends EventTarget {
 
         this.#textNodeIterator.nextNode();
       } while (this.#textNodeIterator.currentNode);
+    } else {
+      // Empty paragraph uses a text span with <br> only (no text node). The
+      // selection is then on the line-break element, not a TEXT_NODE, so none
+      // of the branches above run — only setRootStyles applied. Paragraph
+      // styles (e.g. text-align) must still be applied before the user types.
+      const paragraph = this.startParagraph;
+      if (paragraph) {
+        setParagraphStyles(paragraph, newStyles);
+        for (const textSpan of paragraph.children) {
+          setTextSpanStyles(textSpan, newStyles);
+        }
+      }
     }
     return this.#notifyStyleChange();
   }
