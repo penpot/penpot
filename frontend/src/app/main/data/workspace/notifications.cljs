@@ -12,6 +12,7 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dc]
    [app.main.data.helpers :as dsh]
@@ -217,7 +218,8 @@
 
       ptk/WatchEvent
       (watch [_ _ _]
-        (rx/of (mcp/manage-mcp-notification))))))
+        (when (contains? cf/flags :mcp)
+          (rx/of (mcp/manage-mcp-notification)))))))
 
 (defn handle-pointer-update
   [{:keys [page-id session-id position zoom zoom-inverse vbox vport] :as msg}]
