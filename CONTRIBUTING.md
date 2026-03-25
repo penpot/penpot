@@ -102,11 +102,12 @@ Commit messages must follow this format:
 
 ### Rules
 
-- Use the **imperative mood** in the subject (e.g. "Fix", not "Fixed").
-- Capitalize the first letter of the subject.
-- Do not end the subject with a period.
-- Keep the subject to **65 characters** or fewer.
-- Separate the subject from the body with a **blank line**.
+- Use the **imperative mood** in the subject (e.g. "Fix", not "Fixed")
+- Capitalize the first letter of the subject
+- Add clear and concise description on the body
+- Do not end the subject with a period
+- Keep the subject to **70 characters** or fewer
+- Separate the subject from the body with a **blank line**
 
 ### Examples
 
