@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-17 10:09+0000\n"
-"Last-Translator: nautilusx <translate@disroot.org>\n"
+"PO-Revision-Date: 2026-03-26 19:09+0000\n"
+"Last-Translator: Marius <hi@mariusscheel.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.16\n"
+"X-Generator: Weblate 5.17-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -1408,11 +1408,11 @@ msgstr ""
 
 #: src/app/main/errors.cljs:305
 msgid "errors.deprecated.contact.after"
-msgstr "damit wir Ihnen helfen können."
+msgstr ", damit wir Ihnen helfen können."
 
 #: src/app/main/errors.cljs:304
 msgid "errors.deprecated.contact.text"
-msgstr "kontaktieren Sie uns"
+msgstr "kontaktieren"
 
 #: src/app/main/data/workspace/tokens/library_edit.cljs:338
 msgid "errors.drop-token-set-parent-to-child"
@@ -6704,6 +6704,7 @@ msgid "workspace.options.shadow-options.remove-shadow"
 msgstr "Schatten entfernen"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:191, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:193
+#, fuzzy
 msgid "workspace.options.shadow-options.spread"
 msgstr "Streuung"
 
@@ -8398,3 +8399,54 @@ msgstr "Etwas Schlimmes ist passiert."
 #: src/app/main/ui/static.cljs:318
 msgid "labels.reload-page"
 msgstr "Seite neu laden"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:347
+msgid "dashboard.create-new-org"
+msgstr "Neue Organisation erstellen"
+
+#: src/app/main/ui/dashboard/deleted.cljs:52
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"Wollen Sie wirklich das Projekt %s löschen? Diese Aktion kann nicht "
+"rückgängig gemacht werden."
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "In Arbeitsbereich bearbeiten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
+msgid "workspace.layout-grid.editor.margin.expand"
+msgstr "Optionen für Abstände anzeigen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
+msgid "workspace.layout-item.fit-content-horizontal"
+msgstr "Inhalt horizontal anpassen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
+msgid "workspace.layout-item.fit-content-vertical"
+msgstr "Inhalt vertikal anpassen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
+msgid "workspace.layout-item.height-100"
+msgstr "Gesamte Höhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
+msgid "workspace.layout-item.width-100"
+msgstr "Gesamte Breite"
+
+#: src/app/main/ui/workspace/libraries.cljs:338
+msgid "workspace.libraries.connected-to"
+msgstr "Verbunden mit"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "Werkzeuge zur Fehlersuche"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:287
+#, fuzzy, unused
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "Der Wert für die Streuung darf nicht negativ sein"
+
+#: src/app/main/errors.cljs:303
+msgid "errors.deprecated.contact.before"
+msgstr "Penpot unterstützt diese Assets nicht mehr. Sie können uns allerdings"
