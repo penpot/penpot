@@ -646,9 +646,11 @@
                        component (u/locate-library-component file-id (:component-id shape))]
                    (not (ctk/is-variant? component))))
                ids)]
-          (when valid?
+          (if valid?
             (let [variant-id (uuid/next)]
               (st/emit! (dwv/combine-as-variants
                          ids
                          {:trigger "plugin:combine-as-variants" :variant-id variant-id}))
-              (library/variant-proxy plugin-id file-id variant-id))))))))
+              (shape/shape-proxy plugin-id variant-id))
+
+            (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))))

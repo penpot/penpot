@@ -1383,17 +1383,25 @@
                (u/not-valid plugin-id :ids ids)
 
                :else
-               (let [shape     (u/locate-shape file-id page-id id)
-                     component (u/locate-library-component file-id (:component-id shape))
-                     ids (->> ids
+               (let [ids (->> ids
                               (map uuid/uuid)
-                              (into #{id}))]
-                 (when (and component (not (ctk/is-variant? component)))
+                              (into #{id}))
+                     valid?
+                     (every?
+                      (fn [id]
+                        (let [shape     (u/locate-shape file-id page-id id)
+                              component (u/locate-library-component file-id (:component-id shape))]
+                          (not (ctk/is-variant? component))))
+                      ids)]
+
+                 (if valid?
                    (let [variant-id (uuid/next)]
                      (st/emit! (dwv/combine-as-variants
                                 ids
                                 {:trigger "plugin:combine-as-variants" :variant-id variant-id}))
-                     (variant-proxy plugin-id file-id variant-id)))))))
+                     (shape-proxy plugin-id variant-id))
+
+                   (u/not-valid plugin-id :ids "One of the components is not on the same page or is already a variant"))))))
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!

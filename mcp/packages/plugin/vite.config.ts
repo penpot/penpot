@@ -7,9 +7,9 @@ let SERVER_HOST = process.env.PENPOT_MCP_PLUGIN_SERVER_HOST ?? "localhost";
 console.log("Will define PENPOT_MCP_WEBSOCKET_URL as:", JSON.stringify(WS_URI));
 
 export default defineConfig({
-  base: "./",
-  plugins: [
-    livePreview({
+    base: "./",
+    plugins: [
+        livePreview({
             reload: true,
             config: {
                 build: {
