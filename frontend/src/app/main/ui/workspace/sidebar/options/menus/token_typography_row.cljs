@@ -35,7 +35,7 @@
 
 (mf/defc token-typography-row*
   [{:keys [token-name active-tokens detach-token] :rest props}]
-  (let [ element-ref (mf/use-ref nil)
+  (let [element-ref (mf/use-ref nil)
         id (mf/use-id)
 
         token (->> (:typography active-tokens)
@@ -59,8 +59,8 @@
                           has-errors
                           (tr "options.deleted-token")
                           :else
-                           (mf/html [:> resolved-value-tooltip* {:token-name token-name
-                                                                 :resolved-value resolved-value}]))]
+                          (mf/html [:> resolved-value-tooltip* {:token-name token-name
+                                                                :resolved-value resolved-value}]))]
 
     [:div {:class (stl/css-case :token-typography-row true
                                 :token-typography-row-with-errors has-errors
