@@ -31,6 +31,7 @@
 - Update copy on penpot update message [Taiga #12924](https://tree.taiga.io/project/penpot/issue/12924)
 - Fix scroll on library modal [Taiga #13639](https://tree.taiga.io/project/penpot/issue/13639)
 - Fix dates to avoid show them in english when browser is in auto [Taiga #13786](https://tree.taiga.io/project/penpot/issue/13786)
+- Fix focus radio button [Taiga #13841](https://tree.taiga.io/project/penpot/issue/13841)
 
 ## 2.15.0 (Unreleased)
 
