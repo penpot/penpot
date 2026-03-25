@@ -549,6 +549,8 @@
                   :typography t/body-medium
                   :class (stl/css :color-secondary)}
         [:a {:href cf/mcp-help-center-uri
+             :target "_blank"
+             :rel "noopener noreferrer"
              :class (stl/css :mcp-server-notification-link)}
          (tr "integrations.mcp-server.mcp-keys.help") [:> icon* {:icon-id i/open-link}]]]]]]))
 
