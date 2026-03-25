@@ -147,6 +147,7 @@ export class DashboardPage extends BaseWebSocketPage {
       "get-projects?team-id=*",
       "dashboard/get-projects-full.json",
     );
+
     await this.mockRPC(
       "get-project-files?project-id=*",
       "dashboard/get-project-files.json",

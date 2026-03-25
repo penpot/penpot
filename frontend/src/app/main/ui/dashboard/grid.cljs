@@ -413,6 +413,7 @@
        :ref node-ref
        :role "button"
        :title (:name file)
+       :aria-label (:name file)
        :draggable (dm/str can-edit)
        :on-click on-select
        :on-key-down on-key-down
