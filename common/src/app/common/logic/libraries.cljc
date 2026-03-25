@@ -773,14 +773,6 @@
 ;;         is different than the one in the near component (Shape-2-2-1)
 ;;         but it's not touched.
 
-(defn- redirect-shaperef ;;Set the :shape-ref of a shape pointing to the :id of its remote-shape
-  ([container libraries shape]
-   (redirect-shaperef nil nil shape (ctf/find-remote-shape container libraries shape)))
-  ([_ _ shape remote-shape]
-   (if (some? (:shape-ref shape))
-     (assoc shape :shape-ref (:id remote-shape))
-     shape)))
-
 (defn generate-sync-shape-direct
   "Generate changes to synchronize one shape that is the root of a component
   instance, and all its children, from the given component."
@@ -792,17 +784,11 @@
         component  (ctkl/get-component library (:component-id shape-inst) true)]
     (if (and (ctk/in-component-copy? shape-inst)
              (or (ctf/direct-copy? shape-inst component container nil libraries) reset?)) ; In a normal sync, we don't want to sync remote mains, only direct/near
-      (let [redirect-shaperef (partial redirect-shaperef container libraries)
-
-            shape-main (when component
+      (let [shape-main (when component
                          (if reset?
                            ;; the reset is against the ref-shape, not against the original shape of the component
                            (ctf/find-ref-shape file container libraries shape-inst)
                            (ctf/get-ref-shape library component shape-inst)))
-
-            shape-inst (if reset?
-                         (redirect-shaperef shape-inst shape-main)
-                         shape-inst)
 
             initial-root?  (:component-root shape-inst)
 
@@ -821,8 +807,8 @@
                                                 root-inst
                                                 root-main
                                                 reset?
-                                                initial-root?
-                                                redirect-shaperef)
+                                                initial-root?)
+
           ;; If the component is not found, because the master component has been
           ;; deleted or the library unlinked, do nothing.
           changes))
@@ -846,7 +832,7 @@
             nil))))))
 
 (defn- generate-sync-shape-direct-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? redirect-shaperef]
+  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root?]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
@@ -892,9 +878,6 @@
 
           children-inst       (vec (ctn/get-direct-children container shape-inst))
           children-main       (vec (ctn/get-direct-children component-container shape-main))
-
-          children-inst (if reset?
-                          (map #(redirect-shaperef %) children-inst) children-inst)
 
           only-inst (fn [changes child-inst]
                       (shape-log :trace (:id child-inst) container
@@ -944,8 +927,7 @@
                                                        root-inst
                                                        root-main
                                                        reset?
-                                                       initial-root?
-                                                       redirect-shaperef))
+                                                       initial-root?))
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
@@ -1010,15 +992,12 @@
   the values in the shape and all its children."
   [changes file libraries container shape-id]
   (shape-log :debug shape-id container :msg "Sync shape inverse" :shape (str shape-id))
-  (let [redirect-shaperef (partial redirect-shaperef container libraries)
-        shape-inst     (ctn/get-shape container shape-id)
+  (let [shape-inst     (ctn/get-shape container shape-id)
         library        (dm/get-in libraries [(:component-file shape-inst) :data])
         component      (ctkl/get-component library (:component-id shape-inst))
 
         shape-main     (when component
                          (ctf/find-remote-shape container libraries shape-inst))
-
-        shape-inst     (redirect-shaperef shape-inst shape-main)
 
         initial-root?  (:component-root shape-inst)
 
@@ -1040,12 +1019,11 @@
                                              shape-main
                                              root-inst
                                              root-main
-                                             initial-root?
-                                             redirect-shaperef)
+                                             initial-root?)
       changes)))
 
 (defn- generate-sync-shape-inverse-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root? redirect-shaperef]
+  [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root?]
   (shape-log :trace (:id shape-inst) container
              :msg "Sync shape inverse recursive"
              :shape (str (:name shape-inst))
@@ -1102,8 +1080,6 @@
           children-main   (mapv #(ctn/get-shape component-container %)
                                 (:shapes shape-main))
 
-          children-inst (map #(redirect-shaperef %) children-inst)
-
           only-inst (fn [changes child-inst]
                       (add-shape-to-main changes
                                          child-inst
@@ -1132,8 +1108,7 @@
                                                         child-main
                                                         root-inst
                                                         root-main
-                                                        initial-root?
-                                                        redirect-shaperef))
+                                                        initial-root?))
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
