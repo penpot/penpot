@@ -459,54 +459,47 @@
 
 (defn change-size
   [{:keys [points transform transform-inverse] :as shape} width height]
-  (let [size-rect   (safe-size-rect shape)
-        old-width   (:width size-rect)
-        old-height  (:height size-rect)
-        width      (or width old-width)
-        height     (or height old-height)
-        origin     (first points)
-        scalex     (/ width old-width)
-        scaley     (/ height old-height)]
+  (let [{sr-width :width sr-height :height} (safe-size-rect shape)
+        width   (or width sr-width)
+        height  (or height sr-height)
+        origin  (first points)
+        scalex  (/ width sr-width)
+        scaley  (/ height sr-height)]
     (resize-modifiers (gpt/point scalex scaley) origin transform transform-inverse)))
 
 (defn change-dimensions-modifiers
   ([shape attr value]
    (change-dimensions-modifiers shape attr value nil))
 
-  ([{:keys [transform transform-inverse] :as shape} attr value {:keys [ignore-lock?] :or {ignore-lock? false}}]
+  ([shape attr value {:keys [ignore-lock?] :or {ignore-lock? false}}]
    (dm/assert! (map? shape))
    (dm/assert! (#{:width :height} attr))
    (dm/assert! (number? value))
 
-   (let [;; Avoid havig shapes with zero size
-         value (if (< (mth/abs value) 0.01)
-                 0.01
-                 value)
+   (let [;; Avoid having shapes with zero size
+         value (if (< (mth/abs value) 0.01) 0.01 value)
 
          {:keys [proportion proportion-lock]} shape
-         size-rect (safe-size-rect shape)
-         sr-width  (:width size-rect)
-         sr-height (:height size-rect)
+         {sr-width :width sr-height :height} (safe-size-rect shape)
+         locked? (and (not ignore-lock?) proportion-lock)
 
-         size {:width sr-width :height sr-height}
-         new-size (if-not (and (not ignore-lock?) proportion-lock)
-                    (assoc size attr value)
-                    (if (= attr :width)
-                      (-> size
-                          (assoc :width value)
-                          (assoc :height (/ value proportion)))
-                      (-> size
-                          (assoc :height value)
-                          (assoc :width (* value proportion)))))
+         width  (if (= attr :width)
+                  value
+                  (if locked? (* value proportion) sr-width))
 
-         width (:width new-size)
-         height (:height new-size)
+         height (if (= attr :height)
+                  value
+                  (if locked? (/ value proportion) sr-height))
 
          origin (-> shape :points first)
          scalex (/ width sr-width)
          scaley (/ height sr-height)]
 
-     (resize-modifiers (gpt/point scalex scaley) origin transform transform-inverse))))
+     (resize-modifiers
+      (gpt/point scalex scaley)
+      origin
+      (:transform shape)
+      (:transform-inverse shape)))))
 
 (defn change-orientation-modifiers
   [shape orientation]
