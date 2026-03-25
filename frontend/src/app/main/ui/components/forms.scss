@@ -5,6 +5,13 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/mixins.scss" as *;
 
 // INPUT
 .input-wrapper {
@@ -17,44 +24,44 @@
 
   &.valid {
     input {
-      border: deprecated.$s-1 solid var(--input-border-color-success);
-
       @extend %disabled-input;
+
+      border: $b-1 solid var(--input-border-color-success);
 
       &:hover,
       &:focus {
-        border: deprecated.$s-1 solid var(--input-border-color-success);
+        border: $b-1 solid var(--input-border-color-success);
       }
     }
   }
 
   &.invalid {
     input {
-      border: deprecated.$s-1 solid var(--input-border-color-error);
-
       @extend %disabled-input;
+
+      border: $b-1 solid var(--input-border-color-error);
 
       &:hover,
       &:focus {
-        border: deprecated.$s-1 solid var(--input-border-color-error);
+        border: $b-1 solid var(--input-border-color-error);
       }
     }
   }
 
   &.valid .help-icon,
   &.invalid .help-icon {
-    right: deprecated.$s-40;
+    inset-inline-end: $sz-40;
   }
 }
 
 .input-with-label-form {
-  @include deprecated.flexColumn;
-
-  gap: deprecated.$s-8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
   justify-content: flex-start;
   align-items: flex-start;
-  height: 100%;
-  width: 100%;
+  block-size: 100%;
+  inline-size: 100%;
   padding: 0;
   cursor: pointer;
   color: var(--modal-title-foreground-color);
@@ -64,16 +71,16 @@
     @extend %input-element;
 
     color: var(--input-foreground-color-active);
-    margin-top: 0;
-    width: 100%;
-    max-width: 100%;
-    height: 100%;
-    padding: 0 deprecated.$s-8;
+    margin-block-start: 0;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    block-size: 100%;
+    padding: 0 var(--sp-s);
 
     &:focus {
       outline: none;
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
-      border-radius: deprecated.$br-8;
+      border: $b-1 solid var(--input-border-color-focus);
+      border-radius: var(--sp-s);
     }
   }
 
@@ -84,7 +91,7 @@
   input:-webkit-autofill:active {
     -webkit-text-fill-color: var(--input-foreground-color-active);
     box-shadow: inset 0 0 20px 20px var(--input-background-color);
-    border: deprecated.$s-1 solid var(--input-border-color);
+    border: $b-1 solid var(--input-border-color);
     background-clip: text;
     transition: background-color 5000s ease-in-out 0s;
     caret-color: var(--input-foreground-color-active);
@@ -93,60 +100,60 @@
 
 .input-and-icon {
   position: relative;
-  width: var(--input-width, calc(100% - deprecated.$s-1));
-  min-width: var(--input-min-width);
-  height: var(--input-height, deprecated.$s-32);
+  inline-size: var(--input-width, calc(100% - deprecated.$s-1));
+  min-inline-size: var(--input-min-width);
+  block-size: var(--input-height, $sz-32);
 }
 
 .help-icon {
   cursor: pointer;
   position: absolute;
-  right: deprecated.$s-16;
-  top: calc(50% - deprecated.$s-8);
+  inset-inline-end: var(--sp-l);
+  inset-block-start: calc(50% - var(--sp-s));
 
   svg {
     @extend %button-icon-small;
 
     stroke: var(--color-foreground-secondary);
-    width: deprecated.$s-16;
-    height: deprecated.$s-16;
+    inline-size: $sz-16;
+    block-size: $sz-16;
   }
 }
 
 .invalid-icon {
-  width: deprecated.$s-16;
-  height: deprecated.$s-16;
+  inline-size: $sz-16;
+  block-size: $sz-16;
   background: var(--input-border-color-error);
-  border-radius: 50%;
+  border-radius: $br-circle;
   display: flex;
   align-items: center;
   justify-content: center;
   position: absolute;
-  right: var(--input-icon-padding);
-  top: calc(50% - deprecated.$s-8);
+  inset-inline-end: var(--input-icon-padding);
+  inset-block-start: calc(50% - var(--sp-s));
 
   svg {
-    width: deprecated.$s-12;
-    height: deprecated.$s-12;
+    inline-size: $sz-12;
+    block-size: $sz-12;
     stroke: var(--input-background-color);
   }
 }
 
 .valid-icon {
-  width: deprecated.$s-16;
-  height: deprecated.$s-16;
+  inline-size: $sz-16;
+  block-size: $sz-16;
   background: var(--input-border-color-success);
-  border-radius: 50%;
+  border-radius: $br-circle;
   display: flex;
   align-items: center;
   justify-content: center;
   position: absolute;
-  right: deprecated.$s-16;
-  top: calc(50% - deprecated.$s-8);
+  inset-inline-end: var(--sp-l);
+  inset-block-start: calc(50% - var(--sp-s));
 
   svg {
-    width: deprecated.$s-12;
-    height: deprecated.$s-12;
+    inline-size: $sz-12;
+    block-size: $sz-12;
     fill: var(--input-border-color-success);
     stroke: var(--input-background-color);
   }
@@ -154,15 +161,15 @@
 
 .error {
   color: var(--input-border-color-error);
-  width: 100%;
+  inline-size: 100%;
   font-size: deprecated.$fs-14;
 }
 
 .hint {
-  @include deprecated.bodySmallTypography;
+  @include t.use-typography("body-small");
 
-  width: 99%;
-  margin-block-start: deprecated.$s-8;
+  inline-size: 99%;
+  margin-block-start: var(--sp-s);
   color: var(--modal-text-foreground-color);
 }
 
@@ -170,13 +177,13 @@
   @extend %input-checkbox;
 
   .checkbox-label {
-    @include deprecated.bodySmallTypography;
+    @include t.use-typography("body-small");
 
     display: flex;
     align-items: center;
     flex-direction: row-reverse;
-    gap: deprecated.$s-6;
-    min-height: deprecated.$s-32;
+    gap: px2rem(6);
+    min-block-size: var(--sp-xxxl);
     cursor: pointer;
 
     span {
@@ -204,34 +211,40 @@
 .custom-select {
   @extend %select-wrapper;
 
-  height: deprecated.$s-32;
+  block-size: $sz-32;
 
   .input-container {
-    @include deprecated.flexRow;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-xs);
+    block-size: $sz-32;
+    inline-size: 100%;
+    border-radius: var(--sp-s);
+    border: $b-1 solid var(--input-border-color);
 
-    height: deprecated.$s-32;
-    width: 100%;
-    border-radius: deprecated.$br-8;
-    border: deprecated.$s-1 solid var(--input-border-color);
+    @extend %select-wrapper;
+
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color);
 
     .main-content {
-      @include deprecated.flexColumn;
-      @include deprecated.bodySmallTypography;
+      @include t.use-typography("body-small");
 
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-xs);
       position: relative;
       justify-content: center;
       flex-grow: 1;
-      height: 100%;
-      padding: deprecated.$s-8;
+      block-size: 100%;
+      padding: var(--sp-s);
 
       .label {
         color: var(--input-foreground-color);
       }
 
       .value {
-        width: 100%;
+        inline-size: 100%;
         padding: 0;
         margin: 0;
         border: 0;
@@ -240,10 +253,11 @@
     }
 
     .icon {
-      @include deprecated.flexCenter;
-
-      height: deprecated.$s-32;
-      width: deprecated.$s-24;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      block-size: $sz-32;
+      inline-size: $sz-24;
       pointer-events: none;
 
       svg {
@@ -256,7 +270,7 @@
 
     &.disabled {
       background-color: var(--input-background-color-disabled);
-      border: deprecated.$s-1 solid var(--input-border-color-disabled);
+      border: $b-1 solid var(--input-border-color-disabled);
       color: var(--input-foreground-color-disabled);
     }
 
@@ -264,36 +278,36 @@
       outline: none;
       color: var(--input-foreground-color-active);
       background-color: var(--input-background-color-active);
-      border: deprecated.$s-1 solid var(--input-border-color-active);
+      border: $b-1 solid var(--input-border-color-active);
     }
   }
 
   select {
     @extend %menu-dropdown;
-    @include deprecated.bodySmallTypography;
+    @include t.use-typography("body-small");
 
     box-sizing: border-box;
     position: absolute;
-    top: 0;
-    left: 0;
-    min-height: deprecated.$s-32;
-    height: auto;
-    width: calc(100% - 1px);
-    padding: 0 deprecated.$s-12;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    min-block-size: $sz-32;
+    block-size: auto;
+    inline-size: calc(100% - 1px);
+    padding: 0 var(--sp-m);
     margin: 0;
     border: none;
     opacity: 0;
-    z-index: deprecated.$z-index-10;
+    z-index: var(--z-index-dropdown);
     background-color: transparent;
     cursor: pointer;
 
     option {
-      @include deprecated.bodySmallTypography;
+      @include t.use-typography("body-small");
 
       color: var(--title-foreground-color-hover);
       background-color: var(--menu-background-color);
       appearance: none;
-      height: deprecated.$s-32;
+      block-size: $sz-32;
     }
   }
 }
@@ -305,7 +319,7 @@
   &:disabled {
     @extend %button-disabled;
 
-    min-height: deprecated.$s-32;
+    min-block-size: $sz-32;
   }
 }
 
@@ -314,37 +328,38 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  min-height: deprecated.$s-40;
-  max-height: deprecated.$s-180;
-  width: 100%;
+  min-block-size: $sz-40;
+  max-block-size: px2rem(180);
+  inline-size: 100%;
   overflow-y: hidden;
 
   .inside-input {
     @include deprecated.removeInputStyle;
-    @include deprecated.bodySmallTypography;
-    @include deprecated.textEllipsis;
+    @include t.use-typography("body-small");
+    @include text-ellipsis;
 
-    width: 100%;
-    max-width: calc(100% - deprecated.$s-1);
-    min-height: deprecated.$s-32;
-    height: deprecated.$s-32;
-    padding: deprecated.$s-8;
+    inline-size: 100%;
+    max-inline-size: calc(100% - deprecated.$s-1);
+    min-block-size: $sz-32;
+    padding-block-start: 0;
+    block-size: $sz-32;
+    padding: var(--sp-s);
     margin: 0;
-    border-radius: deprecated.$br-8;
+    border-radius: var(--sp-s);
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color);
 
     &:focus {
       outline: none;
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
+      border: $b-1 solid var(--input-border-color-focus);
     }
 
     &.invalid {
-      border: deprecated.$s-1 solid var(--input-border-color-error);
+      border: $b-1 solid var(--input-border-color-error);
 
       &:hover,
       &:focus {
-        border: deprecated.$s-1 solid var(--input-border-color-error);
+        border: $b-1 solid var(--input-border-color-error);
       }
     }
   }
@@ -356,36 +371,40 @@
   .selected-items {
     display: flex;
     flex-wrap: wrap;
-    gap: deprecated.$s-4;
-    max-height: deprecated.$s-136;
-    padding: deprecated.$s-4 0;
+    gap: var(--sp-xs);
+    max-block-size: px2rem(136);
+    padding: var(--sp-xs) 0;
     overflow-y: auto;
 
     .selected-item {
       .around {
-        @include deprecated.flexRow;
-
-        height: deprecated.$s-24;
-        width: fit-content;
-        padding-left: deprecated.$s-6;
-        border-radius: deprecated.$br-6;
+        display: flex;
+        align-items: center;
+        gap: var(--sp-xs);
+        block-size: $sz-24;
+        inline-size: fit-content;
+        padding-inline-start: px2rem(6);
+        border-radius: $br-6;
         background-color: var(--pill-background-color);
-        border: deprecated.$s-1 solid var(--pill-background-color);
+        border: $b-1 solid var(--pill-background-color);
         box-sizing: border-box;
 
         .text {
-          @include deprecated.bodySmallTypography;
+          @include t.use-typography("body-small");
 
-          padding-right: deprecated.$s-8;
+          padding-inline-end: var(--sp-s);
           color: var(--pill-foreground-color);
         }
 
         .icon {
-          @include deprecated.flexCenter;
-          @include deprecated.buttonStyle;
-
-          height: deprecated.$s-32;
-          width: deprecated.$s-24;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border: none;
+          background: none;
+          cursor: pointer;
+          block-size: $sz-32;
+          inline-size: $sz-24;
 
           svg {
             @extend %button-icon-small;
@@ -414,92 +433,95 @@
 .custom-radio {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: deprecated.$s-16;
+  gap: var(--sp-l);
 }
 
 .radio-label {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.flexRow;
+  @include t.use-typography("body-small");
 
+  display: flex;
+  align-items: center;
   align-items: flex-start;
-  gap: deprecated.$s-8;
-  min-height: deprecated.$s-32;
-  height: fit-content;
-  border-radius: deprecated.$br-8;
-  padding: deprecated.$s-8;
+  gap: var(--sp-s);
+  min-block-size: $sz-32;
+  block-size: fit-content;
+  border-radius: var(--sp-s);
+  padding: var(--sp-s);
   color: var(--input-foreground-color-rest);
-  border: deprecated.$s-1 solid transparent;
+  border: $b-1 solid transparent;
+
   &:has(:focus-visible) {
     outline: none;
-    border: deprecated.$s-1 solid var(--input-border-color-active);
+    border: $b-1 solid var(--input-border-color-active);
   }
 }
 
 .radio-dot {
-  height: deprecated.$s-8;
-  width: deprecated.$s-8;
-  border-radius: deprecated.$br-circle;
+  block-size: var(--sp-s);
+  inline-size: var(--sp-s);
+  border-radius: $br-circle;
   background-color: var(--color-background-tertiary);
 }
 
 .radio-input {
-  width: 0;
+  inline-size: 0;
   margin: 0;
 }
 
 .radio-icon {
   @extend %checkbox-icon;
 
-  border-radius: deprecated.$br-circle;
+  border-radius: $br-circle;
 }
 
 .radio-label-image {
-  @include deprecated.smallTitleTipography;
+  @include t.use-typography("body-medium");
 
   display: grid;
   grid-template-rows: auto auto 0;
   justify-items: center;
   gap: 0;
-  border-radius: deprecated.$br-8;
+  border-radius: var(--sp-s);
   margin: 0;
-  border: 1px solid var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-tertiary);
   cursor: pointer;
 
   &:global(.checked) {
-    border: 1px solid var(--color-accent-primary);
+    border: $b-1 solid var(--color-accent-primary);
   }
 
   &:focus,
   &:focus-within {
     outline: none;
-    border: deprecated.$s-1 solid var(--input-border-color-active);
+    border: $b-1 solid var(--input-border-color-active);
   }
 
   .image-text {
     color: var(--input-foreground-color-rest);
     display: grid;
     align-self: center;
-    margin-bottom: deprecated.$s-16;
-    padding-inline: deprecated.$s-8;
+    margin-block-end: var(--sp-l);
+    padding-inline: var(--sp-s);
     text-align: center;
   }
 }
 
 .image-inside {
-  margin: deprecated.$s-16;
+  margin: var(--sp-l);
   background-size: 100%;
   background-repeat: no-repeat;
   background-position: center;
 }
 
 .icon-inside {
-  margin: deprecated.$s-16;
-
-  @include deprecated.flexCenter;
+  margin: var(--sp-l);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
   svg {
-    width: 40px;
-    height: 60px;
+    inline-size: 40px;
+    block-size: 60px;
     stroke: var(--icon-foreground);
     fill: none;
   }
@@ -508,11 +530,10 @@
 // TEXTAREA
 
 .textarea-label {
-  @include deprecated.uppercaseTitleTipography;
+  @include t.use-typography("headline-small");
 
   color: var(--modal-title-foreground-color);
-  text-transform: uppercase;
-  margin-bottom: deprecated.$s-8;
+  margin-block-end: var(--sp-s);
 }
 
 .textarea-wrapper {
