@@ -2801,10 +2801,14 @@ impl RenderState {
 
         self.rebuild_tile_index(tree);
 
-        // Invalidate the tile texture cache so all tiles are re-rendered, but
-        // preserve the cache canvas so render_from_cache can still show a scaled
-        // preview of old content while new tiles load progressively.
-        self.surfaces.invalidate_tile_cache();
+        // Zoom changes world tile size: a partial cache update would mix scales in the
+        // mosaic and glitch. Same zoom as last finished render (typical pan): drop only
+        // tile textures and keep the cache canvas for render_from_cache.
+        if self.zoom_changed() {
+            self.surfaces.remove_cached_tiles(self.background_color);
+        } else {
+            self.surfaces.invalidate_tile_cache();
+        }
 
         performance::end_measure!("rebuild_tiles_shallow");
     }
