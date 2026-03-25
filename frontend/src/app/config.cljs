@@ -205,7 +205,7 @@
     (when (fn? f) (f))))
 
 (def mcp-server-url (-> public-uri u/ensure-path-slash (u/join "mcp/stream") str))
-(def mcp-help-center-uri "https://help.penpot.app/technical-guide/")
+(def mcp-help-center-uri "https://help.penpot.app/mcp/")
 
 ;; --- Helper Functions
 
