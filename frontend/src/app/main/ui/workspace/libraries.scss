@@ -93,8 +93,12 @@
   border-radius: $br-8;
 }
 
-.section-list-item:first-child {
-  border: none;
+.section-list-item {
+  @extend %section-list-item-placeholder;
+
+  &:first-child {
+    border: none;
+  }
 }
 
 .section-list-item-double-icon {
