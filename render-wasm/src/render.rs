@@ -1855,13 +1855,6 @@ impl RenderState {
         });
 
         let use_low_zoom_path = scale <= 1.0 && combined_blur.is_none();
-
-        if use_low_zoom_path {
-            // Match pre-commit behavior: scale blur/spread with zoom for low zoom levels.
-            transformed_shadow.to_mut().blur = shadow.blur * scale;
-            transformed_shadow.to_mut().spread = shadow.spread * scale;
-        }
-
         let mut transform_matrix = shape.transform;
         let center = shape.center();
         // Re-center the matrix so rotations/scales happen around the shape center,
@@ -2129,17 +2122,11 @@ impl RenderState {
                         self.surfaces
                             .canvas(SurfaceId::DropShadows)
                             .save_layer(&layer_rec);
-                        self.surfaces
-                            .canvas(SurfaceId::DropShadows)
-                            .scale((scale, scale));
-                        self.surfaces
-                            .canvas(SurfaceId::DropShadows)
-                            .translate(translation);
 
                         let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
                         transformed_shadow.to_mut().color = skia::Color::BLACK;
-                        transformed_shadow.to_mut().blur = transformed_shadow.blur * scale;
-                        transformed_shadow.to_mut().spread = transformed_shadow.spread * scale;
+                        transformed_shadow.to_mut().blur = transformed_shadow.blur;
+                        transformed_shadow.to_mut().spread = transformed_shadow.spread;
 
                         let mut new_shadow_paint = skia::Paint::default();
                         new_shadow_paint
