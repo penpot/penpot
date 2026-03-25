@@ -173,8 +173,9 @@
                         :icon i/text-auto-height}]]]))
 
 (mf/defc text-decoration-options*
-  [{:keys [values on-change on-blur]}]
-  (let [text-decoration (some-> (:text-decoration values) d/name)
+  [{:keys [values on-change on-blur token-applied]}]
+  (let [token-row    (contains? cf/flags :token-typography-row)
+        text-decoration (some-> (:text-decoration values) d/name)
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)
@@ -192,10 +193,12 @@
                          :allow-empty  true
                          :options      [{:value "underline"
                                          :id "underline-text-decoration"
+                                         :disabled (and token-row (some? token-applied))
                                          :label (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
                                          :icon i/text-underlined}
                                         {:value "line-through"
                                          :id "line-through-text-decoration"
+                                         :disabled (and token-row (some? token-applied))
                                          :label (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
                                          :icon i/text-stroked}]}]]))
 
@@ -485,7 +488,7 @@
      #(swap! menu-state* assoc :more-options true))
 
     (mf/with-effect [applied-token-name]
-      (reset! applied-token-name* applied-token-name))
+      (reset! current-token-name* applied-token-name))
 
     (mf/with-effect [applied-token-name dropdown-options]
       (reset! selected-token-id*
@@ -557,14 +560,15 @@
           [:div {:class (stl/css :text-decoration-options)}
            [:> vertical-align opts]
            [:> text-decoration-options* {:values    values
-                                        :on-change on-change
-                                        :on-blur
-                                        (fn []
-                                          (ts/schedule
-                                           100
-                                           (fn []
-                                             (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                                               (dom/focus! (txu/get-text-editor-content))))))}]
+                                         :on-change on-change
+                                         :token-applied current-token-name
+                                         :on-blur
+                                         (fn []
+                                           (ts/schedule
+                                            100
+                                            (fn []
+                                              (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
+                                                (dom/focus! (txu/get-text-editor-content))))))}]
            [:> text-direction-options opts]])])
 
      (when (and token-row token-dropdown-open?)
