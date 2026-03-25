@@ -21,7 +21,6 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -203,7 +202,7 @@
                    :up   (mod (dec (if (= idx -1) 0 idx)) (count ids)))]
     (nth ids next-idx nil)))
 
-(defn use-dropdown-navigation
+(defn- use-dropdown-navigation
   [{:keys [is-open is-open* options nodes-ref on-enter]}]
   (let [focused-id* (mf/use-state nil)
         focused-id  (deref focused-id*)
@@ -279,9 +278,7 @@
        (identical? (unchecked-get n-props "appliedTokens")
                    (unchecked-get o-props "appliedTokens"))
        (identical? (unchecked-get n-props "values")
-                   (unchecked-get o-props "values"))
-       (identical? (:typography-ref-id (unchecked-get n-props "values"))
-                   (:typography-ref-id (unchecked-get o-props "values")))))
+                   (unchecked-get o-props "values"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main component
@@ -473,7 +470,21 @@
 
         expand-stream
         (mf/with-memo []
-          (->> st/stream (rx/filter (ptk/type? :expand-text-more-options))))]
+          (->> st/stream (rx/filter (ptk/type? :expand-text-more-options))))
+
+        on-text-blur
+        (mf/use-fn
+         (fn []
+           (ts/schedule
+            100
+            (fn []
+              (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
+                (dom/focus! (txu/get-text-editor-content)))))))
+
+        common-props
+        (mf/spread-props {} {:values    values
+                             :on-change on-change
+                             :on-blur   on-text-blur})]
 
     (hooks/use-stream
      expand-stream
@@ -550,24 +561,8 @@
                                         (dom/focus! (txu/get-text-editor-content))))))}])
 
         [:div {:class (stl/css :text-align-options)}
-         [:> text-align-options* {:values    values
-                                  :on-change on-change
-                                  :on-blur
-                                  (fn []
-                                    (ts/schedule
-                                     100
-                                     (fn []
-                                       (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                                         (dom/focus! (txu/get-text-editor-content))))))}]
-         [:> grow-options* {:values    values
-                            :on-change on-grow-type-change
-                            :on-blur
-                            (fn []
-                              (ts/schedule
-                               100
-                               (fn []
-                                 (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                                   (dom/focus! (txu/get-text-editor-content))))))}]
+         [:> text-align-options* common-props]
+         [:> grow-options* (mf/spread-props common-props {:on-change on-grow-type-change})]
          [:> icon-button* {:variant     "ghost"
                            :aria-label  (tr "labels.options")
                            :data-testid "text-align-options-button"
@@ -576,36 +571,9 @@
 
         (when more-options-open?
           [:div {:class (stl/css :text-decoration-options)}
-           [:> vertical-align* {:values    values
-                                :on-change on-change
-                                :ids ids
-                                :on-blur
-                                (fn []
-                                  (ts/schedule
-                                   100
-                                   (fn []
-                                     (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                                       (dom/focus! (txu/get-text-editor-content))))))}]
-           [:> text-decoration-options* {:values    values
-                                         :on-change on-change
-                                         :token-applied current-token-name
-                                         :on-blur
-                                         (fn []
-                                           (ts/schedule
-                                            100
-                                            (fn []
-                                              (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                                                (dom/focus! (txu/get-text-editor-content))))))}]
-           [:> text-direction-options* {:values    values
-                                        :on-change on-change
-                                        :ids ids
-                                        :on-blur
-                                        (fn []
-                                          (ts/schedule
-                                           100
-                                           (fn []
-                                             (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                                               (dom/focus! (txu/get-text-editor-content))))))}]])])
+           [:> vertical-align* common-props]
+           [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
+           [:> text-direction-options* common-props]])])
 
      (when (and token-row token-dropdown-open?)
        (let [options (resolve-delay dropdown-options)]
