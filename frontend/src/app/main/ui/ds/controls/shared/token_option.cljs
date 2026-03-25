@@ -55,12 +55,11 @@
                    :trigger-ref element-ref
                    :id (dm/str id "-name")
                    :class (stl/css :option-text)}
-      ;; Add ellipsis
+
       [:span {:aria-labelledby (dm/str id "-name")
+              :class (stl/css :option-name)
               :ref element-ref}
        name]]
-     ;; TODO: show resolved when is not a map
-     ;; (when resolved
-     ;;   [:> :span {:class (stl/css :option-pill)}
-     ;;    resolved])
-     ]))
+     (when (and resolved (not (map? resolved)))
+       [:> :span {:class (stl/css :option-pill)}
+        resolved])]))
