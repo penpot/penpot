@@ -224,7 +224,7 @@
              (conj item)))
          (conj operations op))))))
 
-(defn valid-vector?
+(defn- valid-vector?
   [vector]
   (let [x (dm/get-prop vector :x)
         y (dm/get-prop vector :y)]
@@ -338,11 +338,6 @@
   (-> (or modifiers (empty))
       (update :structure-child conj (scale-content-op value))))
 
-(defn change-recursive-property
-  [modifiers property value]
-  (-> (or modifiers (empty))
-      (update :structure-child conj (change-property-op property value))))
-
 (defn change-property
   [modifiers property value]
   (-> (or modifiers (empty))
@@ -377,7 +372,7 @@
 
           (recur result (rest operations)))))))
 
-(defn increase-order
+(defn- increase-order
   [operations last-order]
   (->> operations
        (mapv #(update % :order + last-order))))
@@ -419,26 +414,12 @@
   ([vector]
    (move (empty) vector)))
 
-(defn move-parent-modifiers
-  ([x y]
-   (move-parent (empty) (gpt/point x y)))
-
-  ([vector]
-   (move-parent (empty) vector)))
-
 (defn resize-modifiers
   ([vector origin]
    (resize (empty) vector origin))
 
   ([vector origin transform transform-inverse]
    (resize (empty) vector origin transform transform-inverse)))
-
-(defn resize-parent-modifiers
-  ([vector origin]
-   (resize-parent (empty) vector origin))
-
-  ([vector origin transform transform-inverse]
-   (resize-parent (empty) vector origin transform transform-inverse)))
 
 (defn rotation-modifiers
   [shape center angle]
@@ -455,25 +436,10 @@
         (rotation shape-center angle)
         (move move-vec))))
 
-(defn remove-children-modifiers
-  [shapes]
-  (-> (empty)
-      (remove-children shapes)))
-
-(defn add-children-modifiers
-  [shapes index]
-  (-> (empty)
-      (add-children shapes index)))
-
 (defn reflow-modifiers
   []
   (-> (empty)
       (reflow)))
-
-(defn scale-content-modifiers
-  [value]
-  (-> (empty)
-      (scale-content value)))
 
 (defn change-size
   [{:keys [points transform transform-inverse] :as shape} width height]
@@ -591,17 +557,13 @@
   [modifiers]
   (assoc (or modifiers (empty)) :geometry-child [] :structure-child []))
 
-(defn select-structure
+(defn- select-structure
   [modifiers]
   (assoc (or modifiers (empty)) :geometry-child [] :geometry-parent []))
 
 (defn select-geometry
   [modifiers]
   (assoc (or modifiers (empty)) :structure-child [] :structure-parent []))
-
-(defn select-child-geometry-modifiers
-  [modifiers]
-  (-> modifiers select-child select-geometry))
 
 (defn select-child-structre-modifiers
   [modifiers]
@@ -626,7 +588,7 @@
 
 ;; Main transformation functions
 
-(defn transform-move!
+(defn- transform-move!
   "Transforms a matrix by the translation modifier"
   [matrix modifier]
   (-> (dm/get-prop modifier :vector)
@@ -634,7 +596,7 @@
       (gmt/multiply! matrix)))
 
 
-(defn transform-resize!
+(defn- transform-resize!
   "Transforms a matrix by the resize modifier"
   [matrix modifier]
   (let [tf     (dm/get-prop modifier :transform)
@@ -656,7 +618,7 @@
            (gmt/multiply! tfi)))
      matrix)))
 
-(defn transform-rotate!
+(defn- transform-rotate!
   "Transforms a matrix by the rotation modifier"
   [matrix modifier]
   (let [center   (dm/get-prop modifier :center)
@@ -668,7 +630,7 @@
          (gmt/translate! (gpt/negate center)))
      matrix)))
 
-(defn transform!
+(defn- transform!
   "Returns a matrix transformed by the modifier"
   [matrix modifier]
   (let [type (dm/get-prop modifier :type)]
@@ -677,8 +639,7 @@
       :resize (transform-resize! matrix modifier)
       :rotation (transform-rotate! matrix modifier))))
 
-(defn modifiers->transform1
-  "A multiplatform version of modifiers->transform."
+(defn- modifiers->transform1
   [modifiers]
   (reduce transform! (gmt/matrix) modifiers))
 
@@ -690,80 +651,28 @@
         modifiers (sort-by #(dm/get-prop % :order) modifiers)]
     (modifiers->transform1 modifiers)))
 
-(defn modifiers->transform-old
-  "Given a set of modifiers returns its transformation matrix"
-  [modifiers]
-  (let [modifiers (->> (concat (dm/get-prop modifiers :geometry-parent)
-                               (dm/get-prop modifiers :geometry-child))
-                       (sort-by :order))]
-
-    (loop [matrix    (gmt/matrix)
-           modifiers (seq modifiers)]
-      (if (c/empty? modifiers)
-        matrix
-        (let [modifier (first modifiers)
-              type   (dm/get-prop modifier :type)
-
-              matrix
-              (case type
-                :move
-                (-> (dm/get-prop modifier :vector)
-                    (gmt/translate-matrix)
-                    (gmt/multiply! matrix))
-
-                :resize
-                (let [tf     (dm/get-prop modifier :transform)
-                      tfi    (dm/get-prop modifier :transform-inverse)
-                      vector (dm/get-prop modifier :vector)
-                      origin (dm/get-prop modifier :origin)
-                      origin (if ^boolean (some? tfi)
-                               (gpt/transform origin tfi)
-                               origin)]
-
-                  (gmt/multiply!
-                   (-> (gmt/matrix)
-                       (cond-> ^boolean (some? tf)
-                         (gmt/multiply! tf))
-                       (gmt/translate! origin)
-                       (gmt/scale! vector)
-                       (gmt/translate! (gpt/negate origin))
-                       (cond-> ^boolean (some? tfi)
-                         (gmt/multiply! tfi)))
-                   matrix))
-
-                :rotation
-                (let [center   (dm/get-prop modifier :center)
-                      rotation (dm/get-prop modifier :rotation)]
-                  (gmt/multiply!
-                   (-> (gmt/matrix)
-                       (gmt/translate! center)
-                       (gmt/multiply! (gmt/rotate-matrix rotation))
-                       (gmt/translate! (gpt/negate center)))
-                   matrix)))]
-          (recur matrix (next modifiers)))))))
-
-(defn transform-text-node [value attrs]
+(defn- transform-text-node [value attrs]
   (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)
         letter-spacing (-> (get attrs :letter-spacing 0) d/parse-double (* value) str)]
     (d/txt-merge attrs {:font-size font-size
                         :letter-spacing letter-spacing})))
 
-(defn transform-paragraph-node [value attrs]
+(defn- transform-paragraph-node [value attrs]
   (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)]
     (d/txt-merge attrs {:font-size font-size})))
 
 
-(defn update-text-content
+(defn- update-text-content
   [shape scale-text-content value]
   (update shape :content scale-text-content value))
 
-(defn scale-text-content
+(defn- scale-text-content
   [content value]
   (->> content
        (txt/transform-nodes txt/is-text-node? (partial transform-text-node value))
        (txt/transform-nodes txt/is-paragraph-node? (partial transform-paragraph-node value))))
 
-(defn apply-scale-content
+(defn- apply-scale-content
   [shape value]
   ;; Scale can only be positive
   (let [value (mth/abs value)]
@@ -792,7 +701,7 @@
       :always
       (ctl/update-flex-child value))))
 
-(defn remove-children-set
+(defn- remove-children-set
   [shapes children-to-remove]
   (let [remove? (set children-to-remove)]
     (d/removev remove? shapes)))
