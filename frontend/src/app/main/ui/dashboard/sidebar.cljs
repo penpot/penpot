@@ -25,6 +25,7 @@
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link]]
+   [app.main.ui.components.org-avatar :refer [org-avatar*]]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
@@ -346,10 +347,7 @@
                                 :data-value  (:id org-item)
                                 :class       (stl/css :org-dropdown-item)
                                 :key         (str (:id org-item))}
-        ;; TODO org pictures
-        [:img {:src (cf/resolve-team-photo-url org-item)
-               :class (stl/css :team-picture)
-               :alt (:name org-item)}]
+        [:> org-avatar* {:org org-item :size "xxl"}]
         [:span {:class (stl/css :team-text)
                 :title (:name org-item)} (:name org-item)]
         (when (= (:id org-item) (:id organization))
@@ -580,7 +578,7 @@
 
 
 (defn- team->org [team]
-  (assoc (dm/select-keys team [:id :organization-id :organization-slug :organization-owner-id])
+  (assoc (dm/select-keys team [:id :organization-id :organization-slug :organization-owner-id :organization-avatar-bg-url])
          :name (:organization-name team)))
 
 (mf/defc sidebar-org-switch*
@@ -659,11 +657,7 @@
             [:span {:class (stl/css :team-text)}
              "Penpot"]]
            [:*
-            [:span {:class (stl/css :nitrate-penpot-icon)}
-             ;; TODO org pictures
-             [:img {:src (cf/resolve-team-photo-url current-org)
-                    :class (stl/css :team-picture)
-                    :alt (:name current-org)}]]
+            [:> org-avatar* {:org current-org :size "xxxl"}]
             [:span {:class (stl/css :team-text)}
              (:name current-org)]])]
         arrow-icon]
