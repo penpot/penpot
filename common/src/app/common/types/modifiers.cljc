@@ -122,14 +122,14 @@
 (defn- safe-size-rect?
   "Returns true when `rect` has finite, in-range, positive width and height."
   [rect]
-  (when (some? rect)
-    (let [w (:width rect)
-          h (:height rect)]
-      (and (d/num? w h)
-           (pos? w)
-           (pos? h)
-           (<= w sm/max-safe-int)
-           (<= h sm/max-safe-int)))))
+  (and ^boolean (some? rect)
+       (let [w (dm/get-prop rect :width)
+             h (dm/get-prop rect :height)]
+         (and ^boolean (d/num? w h)
+              ^boolean (pos? w)
+              ^boolean (pos? h)
+              ^boolean (<= w sm/max-safe-int)
+              ^boolean (<= h sm/max-safe-int)))))
 
 (defn- safe-size-rect
   "Returns the best available size rect for a shape, trying several
@@ -139,11 +139,11 @@
    3. Top-level `:x :y :width :height` shape fields.
    4. `grc/empty-rect` — a unit rect (0,0,0.01,0.01) of last resort."
   [{:keys [selrect points x y width height]}]
-  (or (when (safe-size-rect? selrect) selrect)
+  (or (and ^boolean (safe-size-rect? selrect) selrect)
       (let [from-points (grc/points->rect points)]
-        (when (safe-size-rect? from-points) from-points))
+        (and ^boolean (safe-size-rect? from-points) from-points))
       (let [from-shape (grc/make-rect x y width height)]
-        (when (safe-size-rect? from-shape) from-shape))
+        (and ^boolean (safe-size-rect? from-shape) from-shape))
       grc/empty-rect))
 
 (defn- mergeable-move?
