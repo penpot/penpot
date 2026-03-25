@@ -8,8 +8,10 @@
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [clojure.test :as t]))
@@ -174,3 +176,66 @@
           result (gsh/transform-shape (assoc shape :modifiers mods))]
       (t/is (mth/close? 100.0 (-> result :selrect :width)))
       (t/is (mth/close? 200.0 (-> result :selrect :height))))))
+
+;; ─── safe-size-rect fallbacks ─────────────────────────────────────────────────
+
+(defn- shape-with-selrect
+  "Return a bare shape map with a hand-crafted selrect and matching points."
+  [selrect]
+  (let [pts (grc/rect->points selrect)]
+    {:selrect selrect :points pts :x (:x selrect) :y (:y selrect)
+     :width (:width selrect) :height (:height selrect)}))
+
+(t/deftest safe-size-rect-fallbacks
+  (t/testing "valid selrect is returned as-is"
+    (let [shape (make-shape 100 50)
+          mods  (ctm/change-size shape 200 100)
+          op    (resize-op mods)]
+      ;; scale 2,2 means the selrect was valid
+      (t/is (mth/close? 2.0 (-> op :vector :x)))
+      (t/is (mth/close? 2.0 (-> op :vector :y)))))
+
+  (t/testing "zero-width selrect falls back to points, producing a valid rect"
+    ;; Manually corrupt just the selrect dimensions while keeping valid points.
+    (let [base  (make-shape 100 50)
+          bad-selrect (assoc (:selrect base) :width 0 :height 0)
+          shape (assoc base :selrect bad-selrect)
+          mods  (ctm/change-size shape 200 100)
+          op    (resize-op mods)]
+      (t/is (mth/close? 2.0 (-> op :vector :x)))
+      (t/is (mth/close? 2.0 (-> op :vector :y)))))
+
+  (t/testing "NaN selrect falls back to points"
+    (let [base        (make-shape 100 50)
+          bad-selrect (assoc (:selrect base) :width ##NaN :height ##NaN)
+          shape       (assoc base :selrect bad-selrect)
+          mods        (ctm/change-size shape 200 100)
+          op          (resize-op mods)]
+      (t/is (mth/close? 2.0 (-> op :vector :x)))
+      (t/is (mth/close? 2.0 (-> op :vector :y)))))
+
+  (t/testing "selrect with dimensions exceeding max-safe-int falls back to points"
+    (let [base        (make-shape 100 50)
+          bad-selrect (assoc (:selrect base) :width (inc sm/max-safe-int) :height (inc sm/max-safe-int))
+          shape       (assoc base :selrect bad-selrect)
+          mods        (ctm/change-size shape 200 100)
+          op          (resize-op mods)]
+      (t/is (mth/close? 2.0 (-> op :vector :x)))
+      (t/is (mth/close? 2.0 (-> op :vector :y)))))
+
+  (t/testing "invalid selrect and no points falls back to top-level shape fields"
+    (let [shape {:selrect nil :points nil :x 0 :y 0 :width 100 :height 50}
+          mods  (ctm/change-size shape 200 100)
+          op    (resize-op mods)]
+      (t/is (mth/close? 2.0 (-> op :vector :x)))
+      (t/is (mth/close? 2.0 (-> op :vector :y)))))
+
+  (t/testing "all geometry missing: falls back to empty-rect (0.01 x 0.01)"
+    ;; change-size with explicit target dimensions must not throw; the result
+    ;; uses empty-rect as the denominator, so the scale will be very large but finite.
+    (let [shape {:selrect nil :points nil :x nil :y nil :width nil :height nil
+                 :transform nil :transform-inverse nil}
+          mods  (ctm/change-size shape 200 100)
+          op    (resize-op mods)]
+      (t/is (mth/close? (/ 200 0.01) (-> op :vector :x)))
+      (t/is (mth/close? (/ 100 0.01) (-> op :vector :y))))))

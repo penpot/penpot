@@ -18,6 +18,7 @@
    [app.common.geom.shapes.effects :as gse]
    [app.common.geom.shapes.strokes :as gss]
    [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
    [clojure.core :as c]))
@@ -118,15 +119,32 @@
   (or (not ^boolean (mth/almost-zero? (- (dm/get-prop vector :x) 1)))
       (not ^boolean (mth/almost-zero? (- (dm/get-prop vector :y) 1)))))
 
+(defn- safe-size-rect?
+  "Returns true when `rect` has finite, in-range, positive width and height."
+  [rect]
+  (when (some? rect)
+    (let [w (:width rect)
+          h (:height rect)]
+      (and (d/num? w h)
+           (pos? w)
+           (pos? h)
+           (<= w sm/max-safe-int)
+           (<= h sm/max-safe-int)))))
+
 (defn- safe-size-rect
-  [{:keys [selrect points]}]
-  (let [{selrect-width :width selrect-height :height} selrect]
-    (if (and (d/num? selrect-width selrect-height)
-             (pos? selrect-width)
-             (pos? selrect-height))
-      selrect
-      (or (grc/points->rect points)
-          selrect))))
+  "Returns the best available size rect for a shape, trying several
+   fallbacks in order:
+   1. `:selrect`  — if it has valid, in-range, positive dimensions.
+   2. `points->rect` — computed from the shape's corner points.
+   3. Top-level `:x :y :width :height` shape fields.
+   4. `grc/empty-rect` — a unit rect (0,0,0.01,0.01) of last resort."
+  [{:keys [selrect points x y width height]}]
+  (or (when (safe-size-rect? selrect) selrect)
+      (let [from-points (grc/points->rect points)]
+        (when (safe-size-rect? from-points) from-points))
+      (let [from-shape (grc/make-rect x y width height)]
+        (when (safe-size-rect? from-shape) from-shape))
+      grc/empty-rect))
 
 (defn- mergeable-move?
   [op1 op2]
