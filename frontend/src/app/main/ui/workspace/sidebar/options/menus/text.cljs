@@ -21,7 +21,6 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -47,130 +46,117 @@
 ;; Sub-components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc text-align-options
+(mf/defc text-align-options*
   [{:keys [values on-change on-blur]}]
   (let [handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)
          (fn [value]
            (on-change {:text-align value})
-           (when (some? on-blur)
-             (on-blur))))]
-    [:div {:class (stl/css :align-options)}
-     [:& radio-buttons {:selected (:text-align values)
-                        :on-change handle-change
-                        :name "align-text-options"}
-      [:& radio-button {:value "left"
-                        :id "text-align-left"
-                        :title (tr "workspace.options.text-options.text-align-left")
-                        :icon i/text-align-left}]
-      [:& radio-button {:value "center"
-                        :id "text-align-center"
-                        :title (tr "workspace.options.text-options.text-align-center")
-                        :icon i/text-align-center}]
-      [:& radio-button {:value "right"
-                        :id "text-align-right"
-                        :title (tr "workspace.options.text-options.text-align-right")
-                        :icon i/text-align-right}]
-      [:& radio-button {:value "justify"
-                        :id "text-align-justify"
-                        :title (tr "workspace.options.text-options.text-align-justify")
-                        :icon i/text-justify}]]]))
+           (when (some? on-blur) (on-blur))))]
 
-(mf/defc text-direction-options
+    [:div {:class (stl/css :align-options)}
+     [:> radio-buttons* {:selected  (:text-align values)
+                         :on-change handle-change
+                         :name      "align-text-options"
+                         :options   [{:value "left"
+                                      :id    "text-align-left"
+                                      :label (tr "workspace.options.text-options.text-align-left")
+                                      :icon  i/text-align-left}
+                                     {:value "center"
+                                      :id    "text-align-center"
+                                      :label (tr "workspace.options.text-options.text-align-center")
+                                      :icon  i/text-align-center}
+                                     {:value "right"
+                                      :id    "text-align-right"
+                                      :label (tr "workspace.options.text-options.text-align-right")
+                                      :icon  i/text-align-right}
+                                     {:value "justify"
+                                      :id    "text-align-justify"
+                                      :label (tr "workspace.options.text-options.text-align-justify")
+                                      :icon  i/text-justify}]}]]))
+
+(mf/defc text-direction-options*
   [{:keys [values on-change on-blur]}]
   (let [direction (:text-direction values)
+
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur direction)
          (fn [value]
-           (let [dir (if (= value direction)
-                       "none"
-                       value)]
-             (on-change {:text-direction dir})
-             (when (some? on-blur) (on-blur)))))]
-    [:div {:class (stl/css :text-direction-options)}
-     [:& radio-buttons {:selected direction
-                        :on-change handle-change
-                        :name "text-direction-options"}
-      [:& radio-button {:value "ltr"
-                        :type "checkbox"
-                        :id "ltr-text-direction"
-                        :title (tr "workspace.options.text-options.direction-ltr")
-                        :icon i/text-ltr}]
-      [:& radio-button {:value "rtl"
-                        :type "checkbox"
-                        :id "rtl-text-direction"
-                        :title (tr "workspace.options.text-options.direction-rtl")
-                        :icon i/text-rtl}]]]))
+           (on-change {:text-direction (if (= value direction) "none" value)})
+           (when (some? on-blur) (on-blur))))]
 
-(mf/defc vertical-align
+    [:div {:class (stl/css :text-direction-options)}
+     [:> radio-buttons* {:selected  direction
+                         :on-change handle-change
+                         :name      "text-direction-options"
+                         :options   [{:value "ltr"
+                                      :id    "ltr-text-direction"
+                                      :label (tr "workspace.options.text-options.direction-ltr")
+                                      :icon  i/text-ltr}
+                                     {:value "rtl"
+                                      :id    "rtl-text-direction"
+                                      :label (tr "workspace.options.text-options.direction-rtl")
+                                      :icon  i/text-rtl}]}]]))
+
+(mf/defc vertical-align*
   [{:keys [values on-change on-blur]}]
   (let [vertical-align (or (:vertical-align values) "top")
+
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)
          (fn [value]
            (on-change {:vertical-align value})
-           (when on-blur (on-blur))))]
-    [:div {:class (stl/css :vertical-align-options)}
-     [:& radio-buttons {:selected vertical-align
-                        :on-change handle-change
-                        :name "vertical-align-text-options"}
-      [:& radio-button {:value "top"
-                        :id "vertical-text-align-top"
-                        :title (tr "workspace.options.text-options.align-top")
-                        :icon i/text-top}]
-      [:& radio-button {:value "center"
-                        :id "vertical-text-align-center"
-                        :title (tr "workspace.options.text-options.align-middle")
-                        :icon i/text-middle}]
-      [:& radio-button {:value "bottom"
-                        :id "vertical-text-align-bottom"
-                        :title (tr "workspace.options.text-options.align-bottom")
-                        :icon i/text-bottom}]]]))
-
-(mf/defc grow-options
-  [{:keys [ids values on-blur]}]
-  (let [grow-type       (:grow-type values)
-        editor-instance (mf/deref refs/workspace-editor)
-        handle-change
-        (mf/use-fn
-         (mf/deps ids on-blur editor-instance)
-         (fn [value]
-           (on-blur)
-           (let [uid (js/Symbol)
-                 grow-type (keyword value)]
-             (st/emit! (dwu/start-undo-transaction uid))
-             (when (features/active-feature? @st/state "text-editor/v2")
-               (let [content (when editor-instance
-                               (content/dom->cljs (dwt/get-editor-root editor-instance)))]
-                 (when (some? content)
-                   (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))))
-             (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
-
-             (when (features/active-feature? @st/state "render-wasm/v1")
-               (st/emit! (dwwt/resize-wasm-text-all ids)))
-             ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
-             (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
            (when (some? on-blur) (on-blur))))]
 
+    [:div {:class (stl/css :vertical-align-options)}
+     [:> radio-buttons* {:selected  vertical-align
+                         :on-change handle-change
+                         :name      "vertical-align-text-options"
+                         :options   [{:value "top"
+                                      :id    "vertical-text-align-top"
+                                      :label (tr "workspace.options.text-options.align-top")
+                                      :icon  i/text-top}
+                                     {:value "center"
+                                      :id    "vertical-text-align-center"
+                                      :label (tr "workspace.options.text-options.align-middle")
+                                      :icon  i/text-middle}
+                                     {:value "bottom"
+                                      :id    "vertical-text-align-bottom"
+                                      :label (tr "workspace.options.text-options.align-bottom")
+                                      :icon  i/text-bottom}]}]]))
+
+(mf/defc grow-options*
+  [{:keys [ids values on-blur on-change]}]
+  (let [grow-type       (:grow-type values)
+        editor-instance (mf/deref refs/workspace-editor)
+
+        handle-change
+        (mf/use-fn
+         (mf/deps ids on-blur on-change editor-instance)
+         (fn [value]
+           (on-change {:grow-type (keyword value)})
+           (when (some? on-blur)
+             (on-blur))))]
+
     [:div {:class (stl/css :grow-options)}
-     [:& radio-buttons {:selected (d/name grow-type)
-                        :on-change handle-change
-                        :name "grow-text-options"}
-      [:& radio-button {:value "fixed"
-                        :id "text-fixed-grow"
-                        :title (tr "workspace.options.text-options.grow-fixed")
-                        :icon i/text-fixed}]
-      [:& radio-button {:value "auto-width"
-                        :id "text-auto-width-grow"
-                        :title (tr "workspace.options.text-options.grow-auto-width")
-                        :icon i/text-auto-width}]
-      [:& radio-button {:value "auto-height"
-                        :id "text-auto-height-grow"
-                        :title (tr "workspace.options.text-options.grow-auto-height")
-                        :icon i/text-auto-height}]]]))
+     [:> radio-buttons* {:selected  (d/name grow-type)
+                         :on-change handle-change
+                         :name      "grow-text-options"
+                         :options   [{:value "fixed"
+                                      :id    "text-fixed-grow"
+                                      :label (tr "workspace.options.text-options.grow-fixed")
+                                      :icon  i/text-fixed}
+                                     {:value "auto-width"
+                                      :id    "text-auto-width-grow"
+                                      :label (tr "workspace.options.text-options.grow-auto-width")
+                                      :icon  i/text-auto-width}
+                                     {:value "auto-height"
+                                      :id    "text-auto-height-grow"
+                                      :label (tr "workspace.options.text-options.grow-auto-height")
+                                      :icon  i/text-auto-height}]}]]))
 
 (mf/defc text-decoration-options*
   [{:keys [values on-change on-blur token-applied]}]
@@ -216,7 +202,7 @@
                    :up   (mod (dec (if (= idx -1) 0 idx)) (count ids)))]
     (nth ids next-idx nil)))
 
-(defn use-dropdown-navigation
+(defn- use-dropdown-navigation
   [{:keys [is-open is-open* options nodes-ref on-enter]}]
   (let [focused-id* (mf/use-state nil)
         focused-id  (deref focused-id*)
@@ -292,9 +278,7 @@
        (identical? (unchecked-get n-props "appliedTokens")
                    (unchecked-get o-props "appliedTokens"))
        (identical? (unchecked-get n-props "values")
-                   (unchecked-get o-props "values"))
-       (identical? (:typography-ref-id (unchecked-get n-props "values"))
-                   (:typography-ref-id (unchecked-get o-props "values")))))
+                   (unchecked-get o-props "values"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main component
@@ -304,10 +288,11 @@
   {::mf/wrap [#(mf/memo' % check-props)]}
   [{:keys [ids type values applied-tokens]}]
 
-  (let [file-id      (mf/use-ctx ctx/current-file-id)
-        typographies (mf/deref refs/workspace-file-typography)
-        libraries    (mf/deref refs/files)
-        token-row    (contains? cf/flags :token-typography-row)
+  (let [file-id         (mf/use-ctx ctx/current-file-id)
+        typographies    (mf/deref refs/workspace-file-typography)
+        editor-instance (mf/deref refs/workspace-editor)
+        libraries       (mf/deref refs/files)
+        token-row       (contains? cf/flags :token-typography-row)
 
         ;; --- UI state
         menu-state*         (mf/use-state {:main-menu true
@@ -321,8 +306,8 @@
 
         ;; --- Applied token
         applied-token-name   (:typography applied-tokens)
-        applied-token-name*  (mf/use-state applied-token-name)
-        current-token-name   (deref applied-token-name*)
+        current-token-name*  (mf/use-state applied-token-name)
+        current-token-name   (deref current-token-name*)
 
         ;; --- Available tokens
         active-tokens     (mf/use-ctx ctx/active-tokens-by-type)
@@ -449,6 +434,22 @@
              (st/emit! (dwl/add-typography (assoc typography :id id) false))
              (emit-update! ids {:typography-ref-id id :typography-ref-file file-id}))))
 
+        on-grow-type-change
+        (mf/use-fn
+         (mf/deps ids editor-instance)
+         (fn [{:keys [grow-type]}]
+           (let [uid (js/Symbol)]
+             (st/emit! (dwu/start-undo-transaction uid))
+             (when (features/active-feature? @st/state "text-editor/v2")
+               (let [content (when editor-instance
+                               (content/dom->cljs (dwt/get-editor-root editor-instance)))]
+                 (when (some? content)
+                   (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))))
+             (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
+             (when (features/active-feature? @st/state "render-wasm/v1")
+               (st/emit! (dwwt/resize-wasm-text-all ids)))
+             (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))))
+
         handle-detach-typography
         (mf/use-fn
          (mf/deps on-change)
@@ -471,17 +472,19 @@
         (mf/with-memo []
           (->> st/stream (rx/filter (ptk/type? :expand-text-more-options))))
 
-        opts #js {:ids       ids
-                  :values    values
-                  :on-change on-change
-                  :show-recent true
-                  :on-blur
-                  (fn []
-                    (ts/schedule
-                     100
-                     (fn []
-                       (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                         (dom/focus! (txu/get-text-editor-content))))))}]
+        on-text-blur
+        (mf/use-fn
+         (fn []
+           (ts/schedule
+            100
+            (fn []
+              (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
+                (dom/focus! (txu/get-text-editor-content)))))))
+
+        common-props
+        (mf/spread-props {} {:values    values
+                             :on-change on-change
+                             :on-blur   on-text-blur})]
 
     (hooks/use-stream
      expand-stream
@@ -545,11 +548,21 @@
                              :icon       i/detach}]]
 
           :else
-          [:> text-options opts])
+          [:> text-options  #js {:ids       ids
+                                 :values    values
+                                 :on-change on-change
+                                 :show-recent true
+                                 :on-blur
+                                 (fn []
+                                   (ts/schedule
+                                    100
+                                    (fn []
+                                      (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
+                                        (dom/focus! (txu/get-text-editor-content))))))}])
 
         [:div {:class (stl/css :text-align-options)}
-         [:> text-align-options opts]
-         [:> grow-options opts]
+         [:> text-align-options* common-props]
+         [:> grow-options* (mf/spread-props common-props {:on-change on-grow-type-change})]
          [:> icon-button* {:variant     "ghost"
                            :aria-label  (tr "labels.options")
                            :data-testid "text-align-options-button"
@@ -558,18 +571,9 @@
 
         (when more-options-open?
           [:div {:class (stl/css :text-decoration-options)}
-           [:> vertical-align opts]
-           [:> text-decoration-options* {:values    values
-                                         :on-change on-change
-                                         :token-applied current-token-name
-                                         :on-blur
-                                         (fn []
-                                           (ts/schedule
-                                            100
-                                            (fn []
-                                              (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                                                (dom/focus! (txu/get-text-editor-content))))))}]
-           [:> text-direction-options opts]])])
+           [:> vertical-align* common-props]
+           [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
+           [:> text-direction-options* common-props]])])
 
      (when (and token-row token-dropdown-open?)
        (let [options (resolve-delay dropdown-options)]
