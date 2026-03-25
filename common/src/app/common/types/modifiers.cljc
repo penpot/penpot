@@ -131,7 +131,7 @@
               ^boolean (<= w sm/max-safe-int)
               ^boolean (<= h sm/max-safe-int)))))
 
-(defn- safe-size-rect
+(defn safe-size-rect
   "Returns the best available size rect for a shape, trying several
    fallbacks in order:
    1. `:selrect`  — if it has valid, in-range, positive dimensions.

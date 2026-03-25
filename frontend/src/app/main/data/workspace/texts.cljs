@@ -634,8 +634,8 @@
             (assoc :position-data position-data))
 
           delta-move
-          (gpt/subtract (gpt/point (:selrect new-shape))
-                        (gpt/point (:selrect shape)))
+          (gpt/subtract (gpt/point (ctm/safe-size-rect new-shape))
+                        (gpt/point (ctm/safe-size-rect shape)))
 
           new-shape
           (update new-shape :position-data gsh/move-position-data delta-move)]

@@ -247,3 +247,28 @@
   (t/testing "nil modifier returns the exact same shape object (identity)"
     (let [shape (make-text-shape)]
       (t/is (identical? shape (dwt/apply-text-modifier shape nil))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: delta-move computation does not throw on degenerate selrect
+;;
+;; The delta-move in apply-text-modifier calls gpt/point on both the
+;; original and new shape selrects.  gpt/point throws when given a
+;; non-point-like value (nil, or a map with non-finite :x/:y).  Using
+;; ctm/safe-size-rect instead of raw (:selrect …) access ensures a valid
+;; rect is always available for that computation.
+;; ---------------------------------------------------------------------------
+
+(t/deftest apply-text-modifier-position-data-with-degenerate-selrect-does-not-throw
+  (t/testing "position-data modifier on a zero-selrect shape does not throw"
+    (let [pd     (sample-position-data 5 10)
+          shape  (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 0)
+          result (dwt/apply-text-modifier shape {:position-data pd})]
+      (t/is (some? result))
+      (t/is (= pd (:position-data result)))))
+
+  (t/testing "width + position-data modifier on a zero-selrect shape does not throw"
+    (let [pd     (sample-position-data 5 10)
+          shape  (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 0)
+          result (dwt/apply-text-modifier shape {:width 200 :position-data pd})]
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))
