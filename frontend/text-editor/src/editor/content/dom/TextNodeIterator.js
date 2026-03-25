@@ -291,6 +291,13 @@ export class TextNodeIterator {
         break;
       }
     }
+    // The loop exits when currentNode === endNode without yielding endNode.
+    // Callers (e.g. selection style merge) must visit every text/BR node in the
+    // range, including the last one, or the final span is omitted (e.g. empty
+    // paragraph with only <br>) and the sidebar shows "mixed" incorrectly.
+    if (this.#currentNode === endNode) {
+      yield this.#currentNode;
+    }
   }
 }
 

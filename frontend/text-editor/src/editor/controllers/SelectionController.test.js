@@ -1666,6 +1666,30 @@ describe("SelectionController", () => {
     expect(selectionController.focusAtEnd).toBeTruthy();
   })
 
+  test("`currentStyle` uses text span font-size when anchor is paragraph (Firefox-style word selection)", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
+      createParagraph([
+        createTextSpan(new Text("Hello World"), { "font-size": "36" }),
+      ]),
+    ]);
+    const root = textEditorMock.root;
+    const paragraph = root.firstChild;
+    const textNode = paragraph.firstChild.firstChild;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    textEditorMock.element.focus();
+    // Anchor on the paragraph (child offset 0) and focus in the text node — matches
+    // Firefox when double-click selects a word; anchor/focus are not both text nodes.
+    selection.setBaseAndExtent(paragraph, 0, textNode, 5);
+    document.dispatchEvent(new Event("selectionchange"));
+    expect(selectionController.currentStyle.getPropertyValue("font-size")).toBe(
+      "36px",
+    );
+  });
+
   test("`dispose` should release every held reference", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
       createParagraphWith(["Hello, "], {
