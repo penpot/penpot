@@ -220,12 +220,14 @@
                          (assoc :hint (ex-message error)))}))))
 
 (defmethod handle-exception java.io.IOException
-  [cause _ _]
-  (l/wrn :hint "io exception" :cause cause)
-  {::yres/status 500
-   ::yres/body {:type :server-error
-                :code :io-exception
-                :hint (ex-message cause)}})
+  [cause request _]
+  (binding [l/*context* (request->context request)]
+    (l/wrn :hint "io exception" :cause cause)
+    {::yres/status 500
+     ::yres/body {:type :server-error
+                  :code :io-exception
+                  :hint (ex-message cause)
+                  :path (:path request)}}))
 
 (defmethod handle-exception java.util.concurrent.CompletionException
   [cause request _]
