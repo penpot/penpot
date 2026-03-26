@@ -4,11 +4,24 @@ const PROFILE_REBUILD_TILES: u32 = 0x02;
 const TEXT_EDITOR_V3: u32 = 0x04;
 const SHOW_WASM_INFO: u32 = 0x08;
 
-#[derive(Debug, Copy, Clone, PartialEq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct RenderOptions {
     pub flags: u32,
     pub dpr: Option<f32>,
     fast_mode: bool,
+    /// Minimum on-screen size (CSS px at 1:1 zoom) above which vector antialiasing is enabled.
+    pub antialias_threshold: f32,
+}
+
+impl Default for RenderOptions {
+    fn default() -> Self {
+        Self {
+            flags: 0,
+            dpr: None,
+            fast_mode: false,
+            antialias_threshold: 15.0,
+        }
+    }
 }
 
 impl RenderOptions {
@@ -39,5 +52,11 @@ impl RenderOptions {
 
     pub fn show_wasm_info(&self) -> bool {
         self.flags & SHOW_WASM_INFO == SHOW_WASM_INFO
+    }
+
+    pub fn set_antialias_threshold(&mut self, value: f32) {
+        if value.is_finite() && value > 0.0 {
+            self.antialias_threshold = value;
+        }
     }
 }
