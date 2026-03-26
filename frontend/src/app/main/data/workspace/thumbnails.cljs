@@ -228,25 +228,25 @@
                                       instance-root?
                                       (conj ["component" id]))]
 
-                (swap! frame-id-cache assoc id {:status :in-progress
-                                                :result local-result})
+                (swap! frame-id-cache assoc id local-result)
 
                 (let [result
                       (cond-> local-result
                         (and (uuid? (:frame-id old-shape))
-                             (not= uuid/zero (:frame-id old-shape)))
+                             (not= uuid/zero (:frame-id old-shape))
+                             (not= id (:frame-id old-shape)))
                         (into (get-frame-ids-cached (:frame-id old-shape)))
 
                         (and (uuid? (:frame-id new-shape))
-                             (not= uuid/zero (:frame-id new-shape)))
+                             (not= uuid/zero (:frame-id new-shape))
+                             (not= id (:frame-id new-shape)))
                         (into (get-frame-ids-cached (:frame-id new-shape))))]
-                  (swap! frame-id-cache assoc id {:status :done
-                                                  :result result})
+                  (swap! frame-id-cache assoc id result)
                   result)))
 
             (get-frame-ids-cached [id]
-              (if-let [cached (get @frame-id-cache id)]
-                (:result cached)
+              (if (contains? @frame-id-cache id)
+                (get @frame-id-cache id)
                 (get-frame-ids id)))]
       (into #{}
             (comp (mapcat extract-ids)
