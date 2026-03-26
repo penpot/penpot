@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
@@ -95,8 +96,8 @@
 (mf/defc card-item
   {::mf/wrap-props false}
   [{:keys [item index is-visible collapsed on-import]}]
-  (let [id  (dm/str "card-container-" index)
-        thb (assoc cf/public-uri :path (dm/str "/images/thumbnails/template-" (:id item) ".jpg"))
+  (let [id     (dm/str "card-container-" index)
+        href   (u/join cf/public-uri (dm/str "images/thumbnails/template-" (:id item) ".jpg"))
         hover? (mf/use-state false)
 
         on-click
@@ -124,7 +125,7 @@
           :on-mouse-leave #(reset! hover? false)
           :on-key-down on-key-down}
       [:div {:class (stl/css :img-container)}
-       [:img {:src (dm/str thb)
+       [:img {:src (dm/str href)
               :alt (:name item)
               :loading "lazy"
               :decoding "async"}]]
