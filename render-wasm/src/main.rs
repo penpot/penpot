@@ -147,6 +147,15 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn set_antialias_threshold(threshold: f32) -> Result<()> {
+    with_state_mut!(state, {
+        state.render_state_mut().set_antialias_threshold(threshold);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
     with_state_mut!(state, {
         let color = skia::Color::new(raw_color);
