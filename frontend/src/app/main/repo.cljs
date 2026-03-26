@@ -26,24 +26,17 @@
 (def ^:private retryable-types
   "Set of error types that are considered transient and safe to retry
   for idempotent (GET) requests."
-  #{:bad-gateway            ; 502
-    :service-unavailable    ; 503
-    :offline                ; status 0 (browser offline)
-    :internal})             ; includes :fetch-error (network-level)
+  #{:network              ; js/fetch network-level failure
+    :bad-gateway          ; 502
+    :service-unavailable  ; 503
+    :offline})            ; status 0 (browser offline)
 
 (defn retryable-error?
   "Return true when `error` represents a transient failure that is safe
   to retry.  Only errors whose `ex-data` `:type` belongs to
-  `retryable-types` qualify.  For `:internal` errors we additionally
-  require `:code :fetch-error` so that genuine internal bugs are **not**
-  retried."
+  `retryable-types` qualify."
   [error]
-  (let [data (ex-data error)]
-    (when-let [tp (:type data)]
-      (and (contains? retryable-types tp)
-           (if (= :internal tp)
-             (= :fetch-error (:code data))
-             true)))))
+  (contains? retryable-types (:type (ex-data error))))
 
 (def default-retry-config
   "Default configuration for the retry mechanism on idempotent requests."

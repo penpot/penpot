@@ -108,8 +108,7 @@
               (vreset! abortable? false)
               (when-not (or @unsubscribed? (= (.-name ^js cause) "AbortError"))
                 (let [error (ex-info (ex-message cause)
-                                     {:type :internal
-                                      :code :fetch-error
+                                     {:type :network
                                       :hint "unable to perform fetch operation"
                                       :uri uri
                                       :headers headers}

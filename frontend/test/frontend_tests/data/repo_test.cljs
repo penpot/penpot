@@ -14,9 +14,9 @@
 ;; retryable-error? tests (synchronous)
 ;; ---------------------------------------------------------------------------
 
-(t/deftest retryable-error-fetch-error
-  (t/testing "fetch-error (network failure) is retryable"
-    (let [err (ex-info "network" {:type :internal :code :fetch-error})]
+(t/deftest retryable-error-network
+  (t/testing "network error (js/fetch failure) is retryable"
+    (let [err (ex-info "network" {:type :network})]
       (t/is (true? (repo/retryable-error? err))))))
 
 (t/deftest retryable-error-bad-gateway
@@ -34,9 +34,9 @@
     (let [err (ex-info "offline" {:type :offline})]
       (t/is (true? (repo/retryable-error? err))))))
 
-(t/deftest retryable-error-internal-non-fetch
-  (t/testing "internal error without :fetch-error code is NOT retryable"
-    (let [err (ex-info "internal" {:type :internal :code :something-else})]
+(t/deftest retryable-error-internal
+  (t/testing "internal error (genuine bug) is NOT retryable"
+    (let [err (ex-info "internal" {:type :internal :code :something})]
       (t/is (not (repo/retryable-error? err))))))
 
 (t/deftest retryable-error-validation
@@ -140,14 +140,14 @@
                 (t/is (= :authentication (:type (ex-data err))))
                 (done))))))))
 
-(t/deftest with-retry-fetch-error-retried
-  (t/testing "fetch-error (network failure) is retried"
+(t/deftest with-retry-network-error-retried
+  (t/testing "network error (js/fetch failure) is retried"
     (t/async done
       (let [call-count (atom 0)
             obs-fn     (fn []
                          (let [n (swap! call-count inc)]
                            (if (= n 1)
-                             (rx/throw (ex-info "net" {:type :internal :code :fetch-error}))
+                             (rx/throw (ex-info "net" {:type :network}))
                              (rx/of :ok))))]
         (->> (repo/with-retry obs-fn fast-config)
              (rx/subs!
@@ -159,14 +159,14 @@
                 (t/is false (str "unexpected error: " (ex-message err)))
                 (done))))))))
 
-(t/deftest with-retry-internal-non-fetch-not-retried
-  (t/testing "internal error that is NOT fetch-error is not retried"
+(t/deftest with-retry-internal-not-retried
+  (t/testing "internal error (genuine bug) is not retried"
     (t/async done
       (let [call-count (atom 0)
             obs-fn     (fn []
                          (swap! call-count inc)
                          (rx/throw (ex-info "bug" {:type :internal
-                                                   :code :something-else})))]
+                                                   :code :something})))]
         (->> (repo/with-retry obs-fn fast-config)
              (rx/subs!
               (fn [_val]
