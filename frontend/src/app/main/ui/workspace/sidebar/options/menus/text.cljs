@@ -500,10 +500,8 @@
 
      (when (and token-row token-dropdown-open?)
        [:> searchable-options-dropdown* {:on-click     on-option-click
-                              :id           listbox-id
-                              :options      (resolve-delay dropdown-options)
-                              :selected     selected-token-id
-                              :searchable   true
-                              :align        "right"
-                              :empty-to-end false
-                              :ref          set-option-ref}])]))
+                                         :id           listbox-id
+                                         :options      (resolve-delay dropdown-options)
+                                         :selected     selected-token-id
+                                         :align        "right"
+                                         :ref          set-option-ref}])]))

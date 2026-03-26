@@ -14,6 +14,7 @@
   --token-typography-row-background-color: var(--color-background-tertiary);
   --token-typography-row-foreground-color: var(--color-token-foreground);
   --token-typography-row-border-color: var(--color-token-border);
+
   display: flex;
   align-items: center;
   position: relative;
@@ -21,11 +22,12 @@
   block-size: $sz-32;
   min-inline-size: 0;
   inline-size: 100%;
-  padding: 8px;
+  padding: var(--sp-s);
   margin-inline-end: 0;
   background: var(--token-typography-row-background-color);
   border: $b-1 solid var(--token-typography-row-border-color);
   border-radius: $br-8;
+
   &:hover {
     --token-typography-row-background-color: var(--color-token-background);
     --token-typography-row-foreground-color: var(--color-foreground-primary);
@@ -38,6 +40,7 @@
   --token-typography-row-background-color: var(--color-background-primary);
   --token-typography-row-foreground-color: var(--color-foreground-secondary);
   --token-typography-row-border-color: var(--color-token-border);
+
   &:hover {
     --token-typography-row-background-color: var(--color-background-primary);
     --token-typography-row-foreground-color: var(--color-foreground-secondary);
@@ -54,6 +57,7 @@
 .token-name {
   @include t.use-typography("body-small");
   @include text-ellipsis;
+
   color: var(--token-typography-row-foreground-color);
   block-size: $sz-32;
   flex: 1;
