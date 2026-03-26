@@ -403,7 +403,12 @@ export class SelectionController extends EventTarget {
       this.#updateCurrentStyle(textSpan);
     } else {
       // SELECTION.
-      this.#updateCurrentStyleFrom(this.#anchorNode, this.#focusNode);
+      // Use range boundaries normalized to text nodes, not anchor/focus.
+      // Firefox may set anchorNode on the paragraph element and focusNode on a
+      // text node for word selection; passing those to #updateCurrentStyleFrom
+      // breaks TextNodeIterator and yields wrong styles (e.g. default 14px).
+      const { startNode, endNode } = this.getRanges();
+      this.#updateCurrentStyleFrom(startNode, endNode);
     }
     this.dispatchEvent(
       new CustomEvent("stylechange", {
