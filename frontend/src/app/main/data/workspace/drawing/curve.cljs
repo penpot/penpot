@@ -11,7 +11,7 @@
    [app.common.geom.shapes.flex-layout :as gslf]
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.types.container :as ctn]
-   [app.common.types.path.segment :as path.segment]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -33,7 +33,7 @@
     (update [_ state]
       (let [objects      (dsh/lookup-page-objects state)
             content      (dm/get-in state [:workspace-drawing :object :content])
-            position     (path.segment/get-handler-point content 0 nil)
+            position     (path/get-handler-point content 0 nil)
 
             frame-id     (->> (ctst/top-nested-frame objects position)
                               (ctn/get-first-valid-parent objects) ;; We don't want to change the structure of component copies
@@ -65,8 +65,8 @@
                  (fn [object]
                    (let [points  (-> (::points object)
                                      (conj point))
-                         content (path.segment/points->content points)
-                         selrect (path.segment/content->selrect content)
+                         content (path/points->content points)
+                         selrect (path/calc-selrect content)
                          points' (grc/rect->points selrect)]
                      (-> object
                          (assoc ::points points)
@@ -82,8 +82,8 @@
       (update-in state [:workspace-drawing :object]
                  (fn [{:keys [::points] :as shape}]
                    (let [points   (ups/simplify points simplify-tolerance)
-                         content  (path.segment/points->content points)
-                         selrect  (path.segment/content->selrect content)
+                         content  (path/points->content points)
+                         selrect  (path/calc-selrect content)
                          points   (grc/rect->points selrect)]
 
                      (-> shape

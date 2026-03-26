@@ -11,7 +11,6 @@
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
-   [app.common.types.path.segment :as path.segment]
    [app.main.data.workspace.path :as drp]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -251,8 +250,8 @@
 (defn- matching-handler? [content node handlers]
   (when (= 2 (count handlers))
     (let [[[i1 p1] [i2 p2]] handlers
-          p1 (path.segment/get-handler-point content i1 p1)
-          p2 (path.segment/get-handler-point content i2 p2)
+          p1 (path/get-handler-point content i1 p1)
+          p2 (path/get-handler-point content i2 p2)
 
           v1 (gpt/to-vec node p1)
           v2 (gpt/to-vec node p2)
@@ -309,7 +308,7 @@
 
         handlers
         (mf/with-memo [content]
-          (path.segment/get-handlers content))
+          (path/get-handlers content))
 
         is-path-start
         (not (some? last-point))
@@ -331,7 +330,7 @@
      ms/mouse-position
      (mf/deps base-content zoom)
      (fn [position]
-       (when-let [point (path.segment/closest-point base-content position (/ 0.01 zoom))]
+       (when-let [point (path/closest-point base-content position (/ 0.01 zoom))]
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
@@ -367,7 +366,7 @@
              (fn [[index prefix]]
                ;; FIXME: get-handler-point is executed twice for each
                ;; render, this can be optimized
-               (let [handler-position (path.segment/get-handler-point content index prefix)]
+               (let [handler-position (path/get-handler-point content index prefix)]
                  (not= position handler-position)))
 
              position-handlers
@@ -390,7 +389,7 @@
          [:g.path-node {:key (dm/str pos-x "-" pos-y)}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
            (for [[hindex prefix] position-handlers]
-             (let [handler-position  (path.segment/get-handler-point content hindex prefix)
+             (let [handler-position  (path/get-handler-point content hindex prefix)
                    handler-hover?    (contains? hover-handlers [hindex prefix])
                    moving-handler?   (= handler-position moving-handler)
                    matching-handler? (matching-handler? content position position-handlers)]
