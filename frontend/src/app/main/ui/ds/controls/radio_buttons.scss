@@ -20,8 +20,9 @@
     width: 100%;
     display: flex;
   }
+
   &[disabled] {
-    outline: 1px solid var(--color-background-quaternary);
+    outline: $b-1 solid var(--color-background-quaternary);
     background-color: transparent;
   }
 }

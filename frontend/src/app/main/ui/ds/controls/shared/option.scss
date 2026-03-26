@@ -63,3 +63,8 @@
   --options-fg-color: var(--color-accent-primary);
   --options-icon-fg-color: var(--color-accent-primary);
 }
+
+.option-check {
+  color: var(--token-options-icon-fg-color);
+  min-width: var(--sp-l);
+}

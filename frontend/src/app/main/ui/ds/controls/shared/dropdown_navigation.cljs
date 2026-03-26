@@ -46,7 +46,7 @@
                  (reset! focused-id* (first focusable-ids))
                  (let [idx           (or (first (keep-indexed #(when (= %2 focused-id) %1) focusable-ids)) -1)
                        next-idx      (mod (inc idx) (count focusable-ids))
-                       wrap-to-input? (and searchable
+                       wrap-to-input? (and ^boolean searchable
                                            (= next-idx 0)
                                            (= idx (dec (count focusable-ids))))]
                    (if wrap-to-input?
@@ -61,7 +61,7 @@
                  (reset! focused-id* (last focusable-ids))
                  (let [idx           (or (first (keep-indexed #(when (= %2 focused-id) %1) focusable-ids)) 0)
                        prev-idx      (dec idx)
-                       wrap-to-input? (and searchable (= prev-idx -1))]
+                       wrap-to-input? (and ^boolean searchable (= prev-idx -1))]
                    (if wrap-to-input?
                      (focus-input!)
                      (reset! focused-id* (nth focusable-ids (mod prev-idx (count focusable-ids)) nil))))))

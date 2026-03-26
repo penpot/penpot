@@ -28,9 +28,10 @@
   overflow: hidden auto;
   z-index: var(--z-index-dropdown);
   box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
-    &:focus {
-      outline: none;
-    }
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .left-align {
@@ -39,29 +40,6 @@
 
 .right-align {
   inset-inline-end: var(--dropdown-offset, 0);
-}
-
-.option-separator {
-  border: $b-1 solid var(--options-dropdown-border-color);
-  margin-block: var(--sp-xs) var(--sp-xs);
-}
-
-.group-option,
-.option-empty {
-  @include use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  color: var(--color-foreground-secondary);
-  padding-inline: var(--sp-s);
-  block-size: var(--sp-xxxl);
-}
-
-.option-empty {
-  justify-content: center;
-  text-align: center;
-  padding: 0 px2rem(40);
 }
 
 .option-search {
