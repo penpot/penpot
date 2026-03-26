@@ -179,12 +179,11 @@
   ([media]
    (resolve-file-media media false))
   ([{:keys [id data-uri] :as media} thumbnail?]
-   (if data-uri
-     data-uri
-     (dm/str
-      (cond-> (u/join public-uri "assets/by-file-media-id/")
-        (true? thumbnail?) (u/join (dm/str id "/thumbnail"))
-        (false? thumbnail?) (u/join (dm/str id)))))))
+   (or data-uri
+       (dm/str
+        (cond-> (u/join public-uri "assets/by-file-media-id/")
+          (true? thumbnail?) (u/join (dm/str id "/thumbnail"))
+          (false? thumbnail?) (u/join (dm/str id)))))))
 
 (defn resolve-href
   [resource]
