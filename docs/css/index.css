@@ -92,7 +92,8 @@ a[href]:visited {
 }
 
 /* href with code in the text */
-:not(pre) > a > code[class*="language-"] {
+:not(pre) > a > code[class*="language-"],
+:not(pre) > a > code {
   text-decoration: underline;
 }
 
@@ -669,6 +670,13 @@ a[href].post-tag:visited {
 .main-container .sidebar #toc > ul ol {
   padding-left: 1rem;
 }
+/* fallback for toc structures that render from ol->ul transform */
+.main-container .sidebar #toc ul ul,
+.main-container .sidebar #toc ul ol,
+.main-container .sidebar #toc ol ul,
+.main-container .sidebar #toc ol ol {
+  padding-left: 1rem;
+}
 /* first level */
 .main-container .sidebar ul li,
 .main-container .sidebar ul li a {
@@ -1138,7 +1146,8 @@ table tr:nth-child(odd) {
     z-index: 2;
     padding-right: 0;
   }
-  .main-container.with-sidebar .sidebar #toc > ul {
+  .main-container.with-sidebar .sidebar #toc > ul,
+  .main-container.with-sidebar .sidebar #toc > nav.toc {
     background: white;
     border: 1px solid var(--graylight);
     color: var(--graymedium);
@@ -1148,7 +1157,12 @@ table tr:nth-child(odd) {
     box-shadow: 2px 0 10px rgba(68, 68, 68, 0.1);
     display: none;
   }
-  .main-container.with-sidebar .sidebar #toc.open > ul{
+  .main-container.with-sidebar .sidebar #toc > nav.toc > ul {
+    margin: 0;
+    padding: 0;
+  }
+  .main-container.with-sidebar .sidebar #toc.open > ul,
+  .main-container.with-sidebar .sidebar #toc.open > nav.toc{
     display: block;
   }
   .main-container.with-sidebar .sidebar .open .header:before {

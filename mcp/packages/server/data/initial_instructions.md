@@ -304,7 +304,6 @@ Properties are often addressed positionally: `pos` parameter in various methods 
 **Creating a variant group**:
 - `penpot.createVariantFromComponents(mainInstances: Board[]): VariantContainer`: Combines several main component instances into a new variant group. 
   All components end up inside a single new container on the canvas.
-  NOTE: The returned instance `variantContainer` is not usable but has an usable id; use `penpot.findShapeById(variantContainer.id)` to get the actual instance you can work with.
   The container's `Variants` instance is initialised with one property `Property 1`, with the property values set to the respective component's name.
 - After creation, edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
 

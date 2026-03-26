@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import livePreview from "vite-live-preview";
 
 let WS_URI = process.env.WS_URI || "http://localhost:4402";
+let SERVER_HOST = process.env.PENPOT_MCP_PLUGIN_SERVER_HOST ?? "localhost";
 
 console.log("Will define PENPOT_MCP_WEBSOCKET_URL as:", JSON.stringify(WS_URI));
 
@@ -29,7 +30,7 @@ export default defineConfig({
         },
     },
     preview: {
-        host: "0.0.0.0",
+        host: SERVER_HOST,
         port: 4400,
         cors: true,
         allowedHosts: [],

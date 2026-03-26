@@ -505,3 +505,19 @@ test("BUG 13415 - Grid layout overlay is not removed when deleting a board", asy
   await workspacePage.hideUI();
   await expect(workspacePage.canvas).toHaveScreenshot();
 });
+
+test("BUG 13822 - Problems with z-index", async({
+  page
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13822.json");
+
+  await workspacePage.goToWorkspace({
+    fileId: "7fd33337-c651-80ae-8007-c37410926e0f",
+    pageId: "af41758c-e196-8138-8007-c36f805c3f6d",
+  });
+
+  await workspacePage.waitForFirstRenderWithoutUI();
+  await expect(workspacePage.canvas).toHaveScreenshot();
+});

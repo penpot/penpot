@@ -1460,6 +1460,7 @@ impl Shape {
         }
     }
 
+    #[allow(dead_code)]
     pub fn has_z_index(&self) -> bool {
         matches!(
             &self.layout_item,

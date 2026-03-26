@@ -68,9 +68,10 @@
   [modif-tree children objects bounds parent transformed-parent-bounds]
 
   (letfn [(apply-modifiers [bounds child]
-            [(-> @(get bounds (:id child))
-                 (gpo/parent-coords-bounds @transformed-parent-bounds))
-             child])
+            (when-let [child-bounds (get bounds (:id child))]
+              [(-> @child-bounds
+                   (gpo/parent-coords-bounds @transformed-parent-bounds))
+               child]))
 
           (set-child-modifiers [[layout-line modif-tree] [child-bounds child]]
             (let [[modifiers layout-line]
@@ -83,7 +84,7 @@
           (->> children
                (keep (d/getf objects))
                (remove gco/invalid-geometry?)
-               (map (partial apply-modifiers bounds)))
+               (keep (partial apply-modifiers bounds)))
 
           layout-data  (gcfl/calc-layout-data parent @transformed-parent-bounds children bounds objects)
           children     (into [] (cond-> children (not (:reverse? layout-data)) reverse))
@@ -106,9 +107,10 @@
   [modif-tree objects bounds parent transformed-parent-bounds]
 
   (letfn [(apply-modifiers [bounds child]
-            [(-> @(get bounds (:id child))
-                 (gpo/parent-coords-bounds @transformed-parent-bounds))
-             child])
+            (when-let [child-bounds (get bounds (:id child))]
+              [(-> @child-bounds
+                   (gpo/parent-coords-bounds @transformed-parent-bounds))
+               child]))
 
           (set-child-modifiers [modif-tree grid-data cell-data [child-bounds child]]
             (let [modifiers
@@ -119,7 +121,7 @@
 
           children
           (->> (cfh/get-immediate-children objects (:id parent) {:remove-hidden true})
-               (map (partial apply-modifiers bounds)))
+               (keep (partial apply-modifiers bounds)))
           grid-data    (gcgl/calc-layout-data parent @transformed-parent-bounds children bounds objects)]
       (loop [modif-tree modif-tree
              bound+child (first children)
@@ -240,8 +242,10 @@
             (gcfl/layout-content-bounds bounds parent children objects)
 
             (ctl/grid-layout? parent)
-            (let [children (->>  children
-                                 (map (fn [child] [@(get bounds (:id child)) child])))
+            (let [children (->> children
+                                (keep (fn [child]
+                                        (when-let [child-bounds-ref (get bounds (:id child))]
+                                          [@child-bounds-ref child]))))
                   layout-data (gcgl/calc-layout-data parent @parent-bounds children bounds objects)]
               (gcgl/layout-content-bounds bounds parent layout-data))))
 

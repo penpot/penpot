@@ -24,7 +24,8 @@ pre[class*="language-"] {
 	margin: .5em 0;
 	overflow: auto;
 }
-:not(pre) > code[class*="language-"] {
+:not(pre) > code[class*="language-"],
+:not(pre) > code {
 	padding: .1em;
 	border-radius: .3em;
 }

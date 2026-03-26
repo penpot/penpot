@@ -258,7 +258,7 @@ The Penpot MCP server can be configured using environment variables.
 
 | Environment Variable               | Description                                                                | Default      |
 |------------------------------------|----------------------------------------------------------------------------|--------------|
-| `PENPOT_MCP_SERVER_LISTEN_ADDRESS` | Address on which the MCP server listens (binds to)                         | `localhost`  |
+| `PENPOT_MCP_SERVER_HOST`           | Address on which the MCP server listens (binds to)                         | `localhost`  |
 | `PENPOT_MCP_SERVER_PORT`           | Port for the HTTP/SSE server                                               | `4401`       |
 | `PENPOT_MCP_WEBSOCKET_PORT`        | Port for the WebSocket server (plugin connection)                          | `4402`       |
 | `PENPOT_MCP_REPL_PORT`             | Port for the REPL server (development/debugging)                           | `4403`       |
@@ -276,7 +276,7 @@ The Penpot MCP server can be configured using environment variables.
 
 | Environment Variable                      | Description                                                                             | Default      |
 |-------------------------------------------|-----------------------------------------------------------------------------------------|--------------|
-| `PENPOT_MCP_PLUGIN_SERVER_LISTEN_ADDRESS` | Address on which the plugin web server listens (single address or comma-separated list) | (local only) |
+| `PENPOT_MCP_PLUGIN_SERVER_HOST`           | Address on which the plugin web server listens (single address or comma-separated list) | (local only) |
 
 ## Beyond Local Execution
 

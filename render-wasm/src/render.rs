@@ -266,6 +266,30 @@ impl FocusMode {
     }
 }
 
+/*
+ * Sort by z_index descending (higher z renders on top).
+ * The sort is stable so if the values are equal the index for the children
+ * has preference.
+ * When changing this method check the benchmark
+ */
+fn sort_z_index(tree: ShapesPoolRef, element: &Shape, children_ids: Vec<Uuid>) -> Vec<Uuid> {
+    if element.has_layout() {
+        let mut ids = children_ids;
+
+        if element.is_flex() && !element.is_flex_reverse() {
+            ids.reverse();
+        }
+        ids.sort_by(|id1, id2| {
+            let z1 = tree.get(id1).map(|s| s.z_index()).unwrap_or(0);
+            let z2 = tree.get(id2).map(|s| s.z_index()).unwrap_or(0);
+            z2.cmp(&z1)
+        });
+        ids
+    } else {
+        children_ids
+    }
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
@@ -1831,13 +1855,6 @@ impl RenderState {
         });
 
         let use_low_zoom_path = scale <= 1.0 && combined_blur.is_none();
-
-        if use_low_zoom_path {
-            // Match pre-commit behavior: scale blur/spread with zoom for low zoom levels.
-            transformed_shadow.to_mut().blur = shadow.blur * scale;
-            transformed_shadow.to_mut().spread = shadow.spread * scale;
-        }
-
         let mut transform_matrix = shape.transform;
         let center = shape.center();
         // Re-center the matrix so rotations/scales happen around the shape center,
@@ -2105,17 +2122,11 @@ impl RenderState {
                         self.surfaces
                             .canvas(SurfaceId::DropShadows)
                             .save_layer(&layer_rec);
-                        self.surfaces
-                            .canvas(SurfaceId::DropShadows)
-                            .scale((scale, scale));
-                        self.surfaces
-                            .canvas(SurfaceId::DropShadows)
-                            .translate(translation);
 
                         let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
                         transformed_shadow.to_mut().color = skia::Color::BLACK;
-                        transformed_shadow.to_mut().blur = transformed_shadow.blur * scale;
-                        transformed_shadow.to_mut().spread = transformed_shadow.spread * scale;
+                        transformed_shadow.to_mut().blur = transformed_shadow.blur;
+                        transformed_shadow.to_mut().spread = transformed_shadow.spread;
 
                         let mut new_shadow_paint = skia::Paint::default();
                         new_shadow_paint
@@ -2436,30 +2447,7 @@ impl RenderState {
                     element.children_ids_iter(false).copied().collect()
                 };
 
-                // Z-index ordering
-                // For reverse flex layouts with custom z-indexes, we reverse the base order
-                // so that visual stacking matches visual position
-                let children_ids = if element.has_layout() {
-                    let mut ids = children_ids;
-                    let has_z_index = ids
-                        .iter()
-                        .any(|id| tree.get(id).map(|s| s.has_z_index()).unwrap_or(false));
-                    if element.is_flex_reverse() && has_z_index {
-                        ids.reverse();
-                    }
-                    // Sort by z_index descending (higher z renders on top).
-                    // When z_index is equal, absolute children go above
-                    // non-absolute children
-                    ids.sort_by_key(|id| {
-                        let s = tree.get(id);
-                        let z = s.map(|s| s.z_index()).unwrap_or(0);
-                        let abs = s.map(|s| s.is_absolute()).unwrap_or(false);
-                        (std::cmp::Reverse(z), !abs)
-                    });
-                    ids
-                } else {
-                    children_ids
-                };
+                let children_ids = sort_z_index(tree, element, children_ids);
 
                 for child_id in children_ids.iter() {
                     self.pending_nodes.push(NodeRenderState {
@@ -2801,10 +2789,14 @@ impl RenderState {
 
         self.rebuild_tile_index(tree);
 
-        // Invalidate the tile texture cache so all tiles are re-rendered, but
-        // preserve the cache canvas so render_from_cache can still show a scaled
-        // preview of old content while new tiles load progressively.
-        self.surfaces.invalidate_tile_cache();
+        // Zoom changes world tile size: a partial cache update would mix scales in the
+        // mosaic and glitch. Same zoom as last finished render (typical pan): drop only
+        // tile textures and keep the cache canvas for render_from_cache.
+        if self.zoom_changed() {
+            self.surfaces.remove_cached_tiles(self.background_color);
+        } else {
+            self.surfaces.invalidate_tile_cache();
+        }
 
         performance::end_measure!("rebuild_tiles_shallow");
     }

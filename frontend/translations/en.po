@@ -2194,8 +2194,13 @@ msgid "integrations.info.mcp-server"
 msgstr "The Penpot MCP Server enables MCP clients to interact directly with Penpot design files."
 
 #: src/app/main/ui/settings/integrations.cljs:131
-msgid "integrations.info.non-recuperable"
+msgid "integrations.token.info.non-recuperable"
 msgstr "This unique token is non-recuperable. If you lose it, you will need to create a new one."
+
+#: src/app/main/ui/settings/integrations.cljs:131
+#: src/app/main/ui/settings/integrations.cljs:131
+msgid "integrations.mcp-key.info.non-recuperable"
+msgstr "This unique MCP key is non-recoverable. If you lose it, you will need to create a new one."
 
 #: src/app/main/ui/settings/integrations.cljs:336
 msgid "integrations.mcp-server.title"
@@ -2262,8 +2267,13 @@ msgid "integrations.name.placeholder"
 msgstr "The name can help to know what's the token for"
 
 #: src/app/main/ui/settings/integrations.cljs:103
-msgid "integrations.notification.success.copied"
+msgid "integrations.notification.success.token-copied"
 msgstr "Copied token"
+
+#: src/app/main/ui/settings/integrations.cljs:103
+#: src/app/main/ui/settings/integrations.cljs:103
+msgid "integrations.notification.success.mcp-key-copied"
+msgstr "MCP key copied"
 
 #: src/app/main/ui/settings/integrations.cljs:64
 msgid "integrations.notification.success.created"
@@ -2283,7 +2293,7 @@ msgstr "MCP server enabled"
 
 #: src/app/main/ui/settings/integrations.cljs:317
 msgid "integrations.regenerate-mcp-key.info"
-msgstr "Regenerating the key will immediately revoke the current one. Any application using it will stop working."
+msgstr "Regenerating the MCP key will immediately revoke the current one. Any application using it will stop working."
 
 #: src/app/main/ui/settings/integrations.cljs:317
 msgid "integrations.regenerate-mcp-key.title"
@@ -2298,12 +2308,22 @@ msgid "integrations.title"
 msgstr "Integrations"
 
 #: src/app/main/ui/settings/integrations.cljs:142
-msgid "integrations.token-will-expire"
+msgid "integrations.token.will-expire"
 msgstr "The token will expire on %s"
 
+#: src/app/main/ui/settings/integrations.cljs:142
+#: src/app/main/ui/settings/integrations.cljs:142
+msgid "integrations.mcp-key.will-expire"
+msgstr "The MCP key will expire on %s"
+
 #: src/app/main/ui/settings/integrations.cljs:143
-msgid "integrations.token-will-not-expire"
+msgid "integrations.token.will-not-expire"
 msgstr "The token has no expiration date"
+
+#: src/app/main/ui/settings/integrations.cljs:143
+#: src/app/main/ui/settings/integrations.cljs:143
+msgid "integrations.mcp-key.will-not-expire"
+msgstr "The MCP key has no expiration date"
 
 #: src/app/main/ui/dashboard/comments.cljs:96
 msgid "label.mark-all-as-read"
