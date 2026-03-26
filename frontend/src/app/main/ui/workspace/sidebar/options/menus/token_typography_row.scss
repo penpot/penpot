@@ -53,7 +53,7 @@
 
 .token-name {
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
   color: var(--token-typography-row-foreground-color);
   block-size: $sz-32;
   flex: 1;

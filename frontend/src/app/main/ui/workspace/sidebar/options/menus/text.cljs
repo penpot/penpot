@@ -25,7 +25,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
-   [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
+   [app.main.ui.ds.controls.shared.searchable-options-dropdown :refer [searchable-options-dropdown*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
@@ -33,7 +33,6 @@
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.text.content :as content]
    [app.util.text.ui :as txu]
@@ -190,75 +189,6 @@
                                          :icon i/text-stroked}]}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Token dropdown navigation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- next-focus-id
-  [focusables focused-id direction]
-  (let [ids      (vec (map :id focusables))
-        idx      (.indexOf (clj->js ids) focused-id)
-        idx      (if (= idx -1) -1 idx)
-        next-idx (case direction
-                   :down (mod (inc idx) (count ids))
-                   :up   (mod (dec (if (= idx -1) 0 idx)) (count ids)))]
-    (nth ids next-idx nil)))
-
-(defn- use-dropdown-navigation
-  [{:keys [is-open is-open* options nodes-ref on-enter]}]
-  (let [focused-id* (mf/use-state nil)
-        focused-id  (deref focused-id*)
-
-        on-key-down
-        (mf/use-fn
-         (mf/deps is-open focused-id)
-         (fn [event]
-           (let [options (if (delay? options) @options options)]
-             (cond
-               (kbd/down-arrow? event)
-               (do
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (when is-open
-                   (reset! focused-id* (next-focus-id (csu/focusable-options options) focused-id :down))))
-
-               (kbd/up-arrow? event)
-               (do
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (when is-open
-                   (reset! focused-id* (next-focus-id (csu/focusable-options options) focused-id :up))))
-
-               (kbd/enter? event)
-               (when (and is-open focused-id)
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (on-enter focused-id))
-
-               (or (kbd/esc? event) (kbd/tab? event))
-               (do
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (reset! is-open* false)
-                 (reset! focused-id* nil))))))]
-
-    (mf/with-effect [is-open options]
-      (when is-open
-        (let [opts       (if (delay? options) @options options)
-              focusables (csu/focusable-options opts)
-              ids        (set (map :id focusables))]
-          (when (and (seq focusables) (not (contains? ids focused-id)))
-            (reset! focused-id* (:id (first focusables)))))))
-
-    (mf/with-effect [focused-id nodes-ref]
-      (when focused-id
-        (let [node (obj/get (mf/ref-val nodes-ref) focused-id)]
-          (when node
-            (dom/scroll-into-view-if-needed! node {:block "nearest" :inline "nearest"})))))
-
-    {:focused-id  focused-id
-     :on-key-down on-key-down}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -374,14 +304,6 @@
              (fn []
                (let [state (d/nilv (mf/ref-val nodes-ref) #js {})]
                  (mf/set-ref-val! nodes-ref (obj/unset! state id)))))))
-
-        {:keys [focused-id on-key-down]}
-        (use-dropdown-navigation
-         {:is-open   token-dropdown-open?
-          :is-open*  token-dropdown-open*
-          :options   dropdown-options
-          :nodes-ref nodes-ref
-          :on-enter  apply-token!})
 
         ;; --- Toggles
         toggle-main-menu
@@ -518,7 +440,7 @@
                             :on-click          toggle-token-dropdown
                             :tooltip-placement "top-left"
                             :icon              i/tokens}])
-        (when (and (not typography) (not multiple?))
+        (when (and (not typography) (not multiple?) (not applied-token-name))
           [:> icon-button* {:variant           "ghost"
                             :aria-label        (tr "workspace.options.convert-to-typography")
                             :on-click          on-convert-to-typography
@@ -577,15 +499,11 @@
            [:> text-direction-options* common-props]])])
 
      (when (and token-row token-dropdown-open?)
-       (let [options (resolve-delay dropdown-options)]
-         [:div {:on-key-down on-key-down
-                :ref         dropdown-ref
-                :tab-index   0}
-          [:> options-dropdown* {:on-click      on-option-click
-                                 :id            listbox-id
-                                 :options       options
-                                 :selected      selected-token-id
-                                 :focused       focused-id
-                                 :align         "right"
-                                 :empty-to-end  false
-                                 :ref           set-option-ref}]]))]))
+       [:> searchable-options-dropdown* {:on-click     on-option-click
+                              :id           listbox-id
+                              :options      (resolve-delay dropdown-options)
+                              :selected     selected-token-id
+                              :searchable   true
+                              :align        "right"
+                              :empty-to-end false
+                              :ref          set-option-ref}])]))
