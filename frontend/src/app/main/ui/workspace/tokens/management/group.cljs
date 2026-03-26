@@ -27,8 +27,8 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ref:unfolded-token-paths
-  (l/derived (l/key :unfolded-token-paths) refs/workspace-tokens))
+(def ref:folded-token-paths
+  (l/derived (l/key :folded-token-paths) refs/workspace-tokens))
 
 (defn token-section-icon
   [type]
@@ -72,8 +72,8 @@
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
 
-        unfolded-token-paths (mf/deref ref:unfolded-token-paths)
-        is-type-unfolded (contains? (set unfolded-token-paths) (name type))
+        folded-token-paths (mf/deref ref:folded-token-paths)
+        is-type-unfolded (contains? (set folded-token-paths) (name type))
 
         editing-ref  (mf/deref refs/workspace-editor-state)
         edition      (mf/deref refs/selected-edition)
@@ -172,13 +172,12 @@
      (when is-type-unfolded
        [:> token-tree* {:tokens tokens
                         :type type
-                        :id (dm/str "token-tree-" (name type))
-                        :tokens-lib tokens-lib
-                        :unfolded-token-paths unfolded-token-paths
+                        :folded-token-paths folded-token-paths
                         :selected-shapes selected-shapes
+                        :is-selected-inside-layout is-selected-inside-layout
                         :active-theme-tokens active-theme-tokens
                         :selected-token-set-id selected-token-set-id
-                        :is-selected-inside-layout is-selected-inside-layout
+                        :tokens-lib tokens-lib
                         :on-token-pill-click on-token-pill-click
                         :on-pill-context-menu on-pill-context-menu
                         :on-node-context-menu on-node-context-menu}])]))

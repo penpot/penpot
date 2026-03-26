@@ -58,11 +58,10 @@ test.describe("Tokens: Apply token", () => {
     // Unfold border radius tokens
     await page.getByRole("button", { name: "Border Radius 3" }).click();
     await expect(
-      tokensSidebar.getByRole("button", { name: "borderRadius" }),
-    ).toBeVisible();
-    await tokensSidebar.getByRole("button", { name: "borderRadius" }).click();
-    await expect(
-      tokensSidebar.getByRole("button", { name: "borderRadius.sm" }),
+      tokensSidebar.getByRole("button", {
+        name: "borderRadius.sm",
+        exact: true,
+      }),
     ).toBeVisible();
 
     // Apply border radius token from token panels
@@ -120,12 +119,6 @@ test.describe("Tokens: Apply token", () => {
 
     // Unfold opacity tokens
     await page.getByRole("button", { name: "Opacity 3" }).click();
-    await expect(
-      tokensSidebar.getByRole("button", { name: "opacity", exact: true }),
-    ).toBeVisible();
-    await tokensSidebar
-      .getByRole("button", { name: "opacity", exact: true })
-      .click();
     await expect(
       tokensSidebar.getByRole("button", { name: "opacity.high" }),
     ).toBeVisible();

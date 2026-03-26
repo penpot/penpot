@@ -20,10 +20,8 @@ test.describe("Tokens - node tree", () => {
     await expect(tokensColorGroup).toBeVisible();
     await tokensColorGroup.click();
 
-    await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
-
     const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
     await expect(colorToken).toBeVisible();
     await tokensColorGroup.click();
