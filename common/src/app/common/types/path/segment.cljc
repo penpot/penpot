@@ -19,7 +19,7 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
-(defn update-handler
+(defn- update-handler
   [command prefix point]
   (let [[cox coy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])]
     (-> command
@@ -127,11 +127,6 @@
   (let [handler-vector (gpt/to-vec point handler)]
     (gpt/add point (gpt/negate handler-vector))))
 
-(defn opposite-handler
-  "Calculates the coordinates of the opposite handler"
-  [point handler]
-  (let [phv (gpt/to-vec point handler)]
-    (gpt/add point (gpt/negate phv))))
 
 (defn get-points
   "Returns points for the given segment, faster version of
@@ -177,8 +172,6 @@
                point))
 
       (conj result [prev-point last-start]))))
-
-(def ^:const path-closest-point-accuracy 0.01)
 
 ;; FIXME: move to helpers?, this function need performance review, it
 ;; is executed so many times on path edition
@@ -787,7 +780,7 @@
   (let [transform (gmt/translate-matrix move-vec)]
     (transform-content content transform)))
 
-(defn calculate-extremities
+(defn- calculate-extremities
   "Calculate extremities for the provided content"
   [content]
   (loop [points  (transient #{})

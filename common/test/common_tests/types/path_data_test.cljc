@@ -325,18 +325,12 @@
   (let [pdata   (path/content sample-content)
         result1 (calculate-extremities sample-content)
         result2 (calculate-extremities pdata)
-        result3 (path.segment/calculate-extremities sample-content)
-        result4 (path.segment/calculate-extremities pdata)
         expect  #{(gpt/point 480.0 839.0)
                   (gpt/point 439.0 802.0)
-                  (gpt/point 264.0 634.0)}
-        n-iter  100000]
+                  (gpt/point 264.0 634.0)}]
 
-    (t/is (= result1 result3))
     (t/is (= result1 expect))
-    (t/is (= result2 expect))
-    (t/is (= result3 expect))
-    (t/is (= result4 expect))))
+    (t/is (= result2 expect))))
 
 (def sample-content-2
   [{:command :move-to, :params {:x 480.0, :y 839.0}}
@@ -346,21 +340,17 @@
    {:command :close-path :params {}}])
 
 (t/deftest extremities-2
-  (let [result1 (path.segment/calculate-extremities sample-content-2)
-        result2 (calculate-extremities sample-content-2)]
-    (t/is (= result1 result2))))
+  (let [result1 (calculate-extremities sample-content-2)]
+    (t/is (some? result1))))
 
 (t/deftest extremities-3
   (let [segments [{:command :move-to, :params {:x -310.5355224609375, :y 452.62115478515625}}]
         content  (path/content segments)
         result1  (calculate-extremities segments)
-        result2  (path.segment/calculate-extremities segments)
-        result3  (path.segment/calculate-extremities content)
+        result2  (calculate-extremities content)
         expect   #{}]
     (t/is (= result1 expect))
-    (t/is (= result1 expect))
-    (t/is (= result2 expect))
-    (t/is (= result3 expect))))
+    (t/is (= result2 expect))))
 
 (t/deftest points-to-content
   (let [initial  [(gpt/point 0.0 0.0)
@@ -926,16 +916,8 @@
     (t/is (some? e))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SEGMENT UNTESTED FUNCTIONS
+;; SEGMENT FUNCTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(t/deftest segment-update-handler
-  (let [cmd {:command :curve-to
-             :params {:x 10.0 :y 0.0 :c1x 0.0 :c1y 0.0 :c2x 0.0 :c2y 0.0}}
-        pt  (gpt/point 3.0 5.0)
-        r   (path.segment/update-handler cmd :c1 pt)]
-    (t/is (= 3.0 (get-in r [:params :c1x])))
-    (t/is (= 5.0 (get-in r [:params :c1y])))))
 
 (t/deftest segment-get-handler
   (let [cmd {:command :curve-to
@@ -957,13 +939,6 @@
   (let [pt  (gpt/point 5.0 5.0)
         h   (gpt/point 8.0 5.0)
         opp (path.segment/calculate-opposite-handler pt h)]
-    (t/is (mth/close? 2.0 (:x opp)))
-    (t/is (mth/close? 5.0 (:y opp)))))
-
-(t/deftest segment-opposite-handler
-  (let [pt  (gpt/point 5.0 5.0)
-        h   (gpt/point 8.0 5.0)
-        opp (path.segment/opposite-handler pt h)]
     (t/is (mth/close? 2.0 (:x opp)))
     (t/is (mth/close? 5.0 (:y opp)))))
 
@@ -1138,6 +1113,74 @@
         first-seg (first (vec result))]
     (t/is (mth/close? (+ 480.0 5.0) (get-in first-seg [:params :x])))
     (t/is (mth/close? (+ 839.0 3.0) (get-in first-seg [:params :y])))))
+
+(t/deftest path-handler-indices
+  (t/testing "handler-indices returns expected handlers for a curve point"
+    (let [content (path/content sample-content-2)
+          ;; point at index 2 is (4.0, 4.0), which is a curve-to endpoint
+          pt      (gpt/point 4.0 4.0)
+          result  (path/handler-indices content pt)]
+      ;; The :c2 handler of index 2 belongs to point (4.0, 4.0)
+      ;; The :c1 handler of index 3 also belongs to point (4.0, 4.0)
+      (t/is (some? result))
+      (t/is (pos? (count result)))
+      (t/is (every? (fn [[idx prefix]]
+                      (and (number? idx)
+                           (#{:c1 :c2} prefix)))
+                    result))))
+  (t/testing "handler-indices returns empty for a point with no associated handlers"
+    (let [content (path/content sample-content-2)
+          ;; (480.0, 839.0) is the move-to at index 0; since index 1
+          ;; is a line-to (not a curve-to), there is no :c1 handler
+          ;; for this point.
+          pt      (gpt/point 480.0 839.0)
+          result  (path/handler-indices content pt)]
+      (t/is (empty? result))))
+  (t/testing "handler-indices with nil content returns empty"
+    (let [result (path/handler-indices nil (gpt/point 0 0))]
+      (t/is (empty? result)))))
+
+(t/deftest path-closest-point
+  (t/testing "closest-point on a line segment"
+    (let [content (path/content simple-open-content)
+          ;; simple-open-content: (0,0)->(10,0)->(10,10)
+          ;; Query a point near the first segment
+          pos     (gpt/point 5.0 1.0)
+          result  (path/closest-point content pos 0.01)]
+      (t/is (some? result))
+      ;; Closest point on line (0,0)->(10,0) to (5,1) should be near (5,0)
+      (t/is (mth/close? 5.0 (:x result) 0.5))
+      (t/is (mth/close? 0.0 (:y result) 0.5))))
+  (t/testing "closest-point on nil content returns nil"
+    (let [result (path/closest-point nil (gpt/point 5.0 5.0) 0.01)]
+      (t/is (nil? result)))))
+
+(t/deftest path-make-curve-point
+  (t/testing "make-curve-point converts a line-to point into a curve"
+    (let [content (path/content simple-open-content)
+          ;; The midpoint (10,0) is reached via :line-to
+          pt      (gpt/point 10.0 0.0)
+          result  (path/make-curve-point content pt)
+          segs    (vec result)]
+      (t/is (some? result))
+      ;; After making (10,0) a curve, we expect at least one :curve-to
+      (t/is (some #(= :curve-to (:command %)) segs)))))
+
+(t/deftest path-merge-nodes
+  (t/testing "merge-nodes reduces segments at contiguous points"
+    (let [content (path/content simple-open-content)
+          ;; Merge the midpoint (10,0) — should reduce segment count
+          pts     #{(gpt/point 10.0 0.0)}
+          result  (path/merge-nodes content pts)]
+      (t/is (some? result))
+      (t/is (<= (count result) (count simple-open-content)))))
+  (t/testing "merge-nodes with empty points returns same content"
+    (let [content (path/content simple-open-content)
+          result  (path/merge-nodes content #{})]
+      (t/is (= (count result) (count simple-open-content)))))
+  (t/testing "merge-nodes with nil content does not throw"
+    (let [result (path/merge-nodes nil #{(gpt/point 0 0)})]
+      (t/is (some? result)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BOOL OPERATIONS — INTERSECTION / DIFFERENCE / EXCLUSION

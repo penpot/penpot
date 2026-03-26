@@ -270,7 +270,8 @@
   "Returns the closest point in the path to position, at a given precision."
   [content position precision]
   (let [content (impl/path-data content)]
-    (segment/closest-point content position precision)))
+    (when (pos? (count content))
+      (segment/closest-point content position precision))))
 
 (defn make-corner-point
   "Changes the content to make a point a corner."
