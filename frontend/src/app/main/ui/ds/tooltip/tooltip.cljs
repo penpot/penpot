@@ -9,6 +9,7 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
@@ -159,6 +160,8 @@
 
         tooltip-ref (mf/use-ref nil)
 
+        container (hooks/use-portal-container)
+
         id
         (d/nilv id internal-id)
 
@@ -283,4 +286,4 @@
            [:div {:class (stl/css :tooltip-content)} content]
            [:div {:class (stl/css :tooltip-arrow)
                   :id "tooltip-arrow"}]]])
-        (.-body js/document)))]))
+        container))]))
