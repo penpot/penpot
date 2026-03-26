@@ -1830,14 +1830,9 @@
 
 (defmethod migrate-data "0019-remove-unneeded-objects-from-components"
   [data _]
-  ;; Some components have an `:objects` attribute, despite not being
-  ;; deleted. This migration removes it.
-  (letfn [(check-component [component]
-            (if (and (not (:deleted component))
-                     (contains? component :objects))
-              (dissoc component :objects)
-              component))]
-    (d/update-when data :components check-component)))
+  (let [file {:id (:id data) :data data}]
+    (-> (cfcp/remove-unneeded-objects-in-components file)
+        :data)))
 
 (defmethod migrate-data "0020-fix-missing-swap-slots"
   [data _]

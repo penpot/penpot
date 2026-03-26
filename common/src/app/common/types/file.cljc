@@ -204,7 +204,8 @@
 
 (defn update-file-data
   [file f]
-  (update file :data f))
+  (when file
+    (update file :data f)))
 
 (defn containers-seq
   "Generate a sequence of all pages and all components, wrapped as containers"

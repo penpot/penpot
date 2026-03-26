@@ -14,7 +14,105 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
    [clojure.test :as t]))
+
+(t/deftest test-remove-unneeded-objects-in-components
+
+  (t/testing "nil file should return nil"
+    (let [file  nil
+          file' (cfcp/remove-unneeded-objects-in-components file)]
+      (t/is (nil? file'))))
+
+  (t/testing "empty file should not need any action"
+    (let [file  (thf/sample-file :file1)
+          file' (cfcp/remove-unneeded-objects-in-components file)]
+      (t/is (empty? (d/map-diff file file')))))
+
+  (t/testing "file without components should not need any action"
+    (let [file
+          (-> (thf/sample-file :file1)
+              (tho/add-frame-with-child :frame1 :shape1))
+
+          file' (cfcp/remove-unneeded-objects-in-components file)]
+
+      (t/is (empty? (d/map-diff file file')))))
+
+  (t/testing "file with non deleted components should not need any action"
+    (let [file
+          (-> (thf/sample-file :file1)
+              (tho/add-simple-component :component1 :frame1 :shape1))
+
+          file' (cfcp/remove-unneeded-objects-in-components file)]
+
+      (t/is (empty? (d/map-diff file file')))))
+
+  (t/testing "file with deleted components should not need any action"
+    (let [file
+          (-> (thf/sample-file :file1)
+              (tho/add-simple-component :component1 :frame1 :shape1)
+              (tho/delete-shape :frame1))
+
+          file' (cfcp/remove-unneeded-objects-in-components file)]
+
+      (t/is (empty? (d/map-diff file file')))))
+
+  (t/testing "file with non deleted components with :objects nil should remove it"
+    (let [file
+          (-> (thf/sample-file :file1)
+              (tho/add-simple-component :component1 :frame1 :shape1)
+              (thc/update-component :component1 {:objects nil}))
+
+          file' (cfcp/remove-unneeded-objects-in-components file)
+
+          diff (d/map-diff file file')
+
+          expected-diff {:data
+                         {:components
+                          {(thi/id :component1)
+                           {}}}}]
+
+      (t/is (= diff expected-diff))))
+
+  (t/testing "file with non deleted components with :objects should remove it"
+    (let [file
+          (-> (thf/sample-file :file1)
+              (tho/add-simple-component :component1 :frame1 :shape1)
+              (thc/update-component :component1 {:objects {:sample 777}}))
+
+          file' (cfcp/remove-unneeded-objects-in-components file)
+
+          diff (d/map-diff file file')
+
+          expected-diff {:data
+                         {:components
+                          {(thi/id :component1)
+                           {:objects
+                            [{:sample 777} nil]}}}}]
+
+      (t/is (= diff expected-diff))))
+
+  (t/testing "file with deleted components without :objects should add an empty one"
+    (let [file
+          (-> (thf/sample-file :file1)
+              (tho/add-simple-component :component1 :frame1 :shape1)
+              (tho/delete-shape :frame1)
+              (ctf/update-file-data
+               (fn [file-data]
+                 (ctkl/update-component file-data (thi/id :component1) #(dissoc % :objects)))))
+
+          file' (cfcp/remove-unneeded-objects-in-components file)
+
+          diff (d/map-diff file file')
+
+          expected-diff {:data
+                         {:components
+                          {(thi/id :component1)
+                           {:objects
+                            [nil {}]}}}}]
+
+      (t/is (= diff expected-diff)))))
 
 (t/deftest test-fix-missing-swap-slots
 
