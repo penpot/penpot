@@ -88,7 +88,9 @@
            (clipboard/to-clipboard (:token token-created))
            (st/emit! (ntf/show {:level :info
                                 :type :toast
-                                :content (tr "integrations.notification.success.copied")
+                                :content (if mcp-key?
+                                           (tr "integrations.notification.success.mcp-key-copied")
+                                           (tr "integrations.notification.success.token-copied"))
                                 :timeout notification-timeout}))))]
 
     [:div {:class (stl/css :modal-form)}
@@ -102,7 +104,9 @@
       [:> text* {:as "div"
                  :typography t/body-small
                  :class (stl/css :color-primary)}
-       (tr "integrations.info.non-recuperable")]]
+       (if mcp-key?
+         (tr "integrations.mcp-key.info.non-recuperable")
+         (tr "integrations.token.info.non-recuperable"))]]
 
      [:div {:class (stl/css :modal-content)}
       [:> input-copy* {:value (:token token-created "")
@@ -112,8 +116,12 @@
                  :typography t/body-small
                  :class (stl/css :color-secondary)}
        (if (:expires-at token-created)
-         (tr "integrations.token-will-expire" (ct/format-inst (:expires-at token-created) "PPP"))
-         (tr "integrations.token-will-not-expire"))]]
+         (if mcp-key?
+           (tr "integrations.mcp-key.will-expire" (ct/format-inst (:expires-at token-created) "PPP"))
+           (tr "integrations.token.will-expire" (ct/format-inst (:expires-at token-created) "PPP")))
+         (if mcp-key?
+           (tr "integrations.mcp-key.will-not-expire")
+           (tr "integrations.token.will-not-expire")))]]
 
      (when mcp-key?
        [:div {:class (stl/css :modal-content)}
