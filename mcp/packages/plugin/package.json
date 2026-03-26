@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "cross-env PENPOT_MCP_PLUGIN_SERVER_HOST=0.0.0.0 vite build --watch --config vite.config.ts",
+    "start": "vite build --watch --config vite.config.ts",
     "start:multi-user": "pnpm run start",
     "build": "tsc && vite build --config vite.release.config.ts",
     "types:check": "tsc --noEmit",
