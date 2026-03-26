@@ -355,10 +355,11 @@
                   (= message "Unexpected end of input")
                   (str/starts-with? message "invalid props on component")
                   (str/starts-with? message "Unexpected token ")
-                  ;; Abort errors are expected when an in-flight HTTP request is
-                  ;; cancelled (e.g. via RxJS unsubscription / take-until).  They
-                  ;; are handled gracefully inside app.util.http/fetch and must
-                  ;; NOT be surfaced as application errors.
+                  ;; Native AbortError DOMException: raised when an in-flight
+                  ;; HTTP fetch is cancelled via AbortController (e.g. by an
+                  ;; RxJS unsubscription / take-until chain).  These are
+                  ;; handled gracefully inside app.util.http/fetch and must NOT
+                  ;; be surfaced as application errors.
                   (= (.-name ^js cause) "AbortError"))))
 
           (on-unhandled-error [event]
