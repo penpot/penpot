@@ -115,6 +115,7 @@ impl NodeRenderState {
         &self,
         element: &Shape,
         offset: Option<(f32, f32)>,
+        clip_inset: Option<f32>,
     ) -> Option<ClipStack> {
         if self.id.is_nil() || !element.clip() {
             return self.clip_bounds.clone();
@@ -137,6 +138,10 @@ impl NodeRenderState {
             Type::Frame(data) => data.corners,
             _ => None,
         };
+
+        if let Some(clip_inset) = clip_inset.filter(|&e| e > 0.0) {
+            bounds.inset((clip_inset, clip_inset));
+        }
 
         Self::append_clip(self.clip_bounds.clone(), (bounds, corners, transform))
     }
@@ -2436,8 +2441,18 @@ impl RenderState {
             });
 
             if element.is_recursive() {
-                let children_clip_bounds =
-                    node_render_state.get_children_clip_bounds(element, None);
+                // Shrink the child clip by ~1 device px when the frame has an inner stroke, same
+                // epsilon as `fills::render` inset, so clipped overflow does not sit under the
+                // stroke band drawn later in `render_shape_exit`.
+                let clip_inset_for_children = (matches!(element.shape_type, Type::Frame(_))
+                    && element.clip()
+                    && element.has_inner_stroke())
+                .then_some(1.0 / scale);
+                let children_clip_bounds = node_render_state.get_children_clip_bounds(
+                    element,
+                    None,
+                    clip_inset_for_children,
+                );
 
                 let children_ids: Vec<_> = if can_flatten {
                     // Container was flattened: get simplified children (which skip this level)

@@ -1605,6 +1605,13 @@ impl Shape {
             .count()
     }
 
+    /// True when the shape has at least one visible inner stroke (open paths render strokes as center).
+    pub fn has_inner_stroke(&self) -> bool {
+        let is_open = self.is_open();
+        self.visible_strokes()
+            .any(|s| s.render_kind(is_open) == StrokeKind::Inner)
+    }
+
     pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {
         let drop_shadows: Vec<&Shadow> = self.drop_shadows_visible().collect();
 
