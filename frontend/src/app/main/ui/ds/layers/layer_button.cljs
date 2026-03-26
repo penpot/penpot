@@ -27,7 +27,6 @@
   [{:keys [label description class is-expandable expanded icon on-toggle-expand on-context-menu children] :rest props}]
   (let [button-props (mf/spread-props props
                                       {:class [class (stl/css-case :layer-button true
-                                                                   :layer-button--expandable is-expandable
                                                                    :layer-button-expanded expanded)]
                                        :type "button"
                                        :on-click on-toggle-expand
