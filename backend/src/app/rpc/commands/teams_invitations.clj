@@ -21,6 +21,7 @@
    [app.email :as eml]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
@@ -154,14 +155,18 @@
             (audit/submit! cfg event))
 
           (when (allow-invitation-emails? member)
-            (eml/send! {::eml/conn conn
-                        ::eml/factory eml/invite-to-team
-                        :public-uri (cf/get :public-uri)
-                        :to email
-                        :invited-by (:fullname profile)
-                        :team (:name team)
-                        :token itoken
-                        :extra-data ptoken}))
+            (let [team (if (contains? cf/flags :nitrate)
+                         (nitrate/add-org-info-to-team cfg team {})
+                         team)]
+              (eml/send! {::eml/conn conn
+                          ::eml/factory eml/invite-to-team
+                          :public-uri (cf/get :public-uri)
+                          :to email
+                          :invited-by (:fullname profile)
+                          :team (:name team)
+                          :organization (:organization-name team)
+                          :token itoken
+                          :extra-data ptoken})))
 
           itoken)))))
 
