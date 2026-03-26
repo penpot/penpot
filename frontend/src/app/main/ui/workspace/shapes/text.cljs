@@ -27,7 +27,7 @@
         text-modifier
         (mf/deref text-modifier-ref)
 
-        shape (if (some? shape)
+        shape (if (and (some? shape) (some? text-modifier))
                 (dwt/apply-text-modifier shape text-modifier)
                 shape)]
 
