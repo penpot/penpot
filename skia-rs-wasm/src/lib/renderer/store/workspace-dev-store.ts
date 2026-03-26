@@ -1,7 +1,7 @@
 /**
  * Zustand store for dev-only state (e.g. current page nodes).
  * DocumentModel pushes here when the current page or its nodes change.
- * DevToolbar and other dev UI subscribe to this store.
+ * Dev tooling and document updates can subscribe to this store for page node lists.
  */
 
 import { create } from 'zustand'

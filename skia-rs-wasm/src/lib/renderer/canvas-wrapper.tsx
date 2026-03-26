@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
 import type { CanvasWrapperProps } from './types'
 import { useWorkspaceStore } from './store/workspace-store'
 import { useViewportShortcutsStore } from './store/shortcuts-store'
@@ -26,6 +27,9 @@ export function CanvasWrapper({
   className,
   containerStyle,
   containerClassName,
+  startSlot,
+  endSlot,
+  workspaceClassName,
   rendererOptions,
   shortcuts: initialViewportShortcuts,
   wasmPath = '/wasm/render-wasm.js',
@@ -154,10 +158,12 @@ export function CanvasWrapper({
     },
   })
 
-  return (
+  const hasSlots = startSlot != null || endSlot != null
+
+  const canvasColumn = (
     <div
       ref={containerRef}
-      className={containerClassName}
+      className={cn('relative min-h-0 min-w-0', hasSlots ? 'flex-1' : 'h-full w-full', containerClassName)}
       style={{
         width: '100%',
         height: '100%',
@@ -175,6 +181,20 @@ export function CanvasWrapper({
         style={{ display: 'block', width: '100%', height: '100%', border: 'none', boxSizing: 'content-box' }}
       />
       <SelectionOverlay canvasSize={canvasSize} canvasRef={canvasRef} />
+    </div>
+  )
+
+  if (!hasSlots) {
+    return canvasColumn
+  }
+
+  return (
+    <div
+      className={cn('flex h-full min-h-0 min-w-0 w-full flex-row', workspaceClassName)}
+    >
+      {startSlot}
+      {canvasColumn}
+      {endSlot}
     </div>
   )
 }
