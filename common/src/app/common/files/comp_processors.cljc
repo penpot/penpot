@@ -11,6 +11,24 @@
 
 "Repair, migration or transformation utilities for components."
 
+(defn remove-unneeded-objects-in-components
+  "Some components have an :objects attribute, despite not being deleted. This removes it.
+   It also adds an empty :objects if it's deleted and does not have it."
+  [file]
+  (ctf/update-file-data
+   file
+   (fn [file-data]
+     (ctf/update-components
+      file-data
+      (fn [component]
+        (if (:deleted component)
+          (if (nil? (:objects component))
+            (assoc component :objects {})
+            component)
+          (if (contains? component :objects)
+            (dissoc component :objects)
+            component)))))))
+
 (defn fix-missing-swap-slots
   "Locate shapes that have been swapped (i.e. their shape-ref does not point to the near match) but
    they don't have a swap slot. In this case, add one pointing to the near match."
