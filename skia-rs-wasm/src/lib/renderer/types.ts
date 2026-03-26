@@ -2,7 +2,7 @@
  * Renderer-specific types. Point re-exported from common; worker types from worker.
  */
 
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { Matrix } from 'penpot-exporter/types'
 
 export type { Point } from '@skia-rs-wasm/common/types'
@@ -163,6 +163,12 @@ export interface CanvasWrapperProps {
   containerStyle?: CSSProperties
   /** Class name applied to the container div that wraps the canvas and overlay. */
   containerClassName?: string
+  /** Optional content before the canvas column (e.g. left rail). Omitted = no outer flex wrapper. */
+  startSlot?: ReactNode
+  /** Optional content after the canvas column (e.g. right rail). */
+  endSlot?: ReactNode
+  /** Classes for the outer flex row when `startSlot` or `endSlot` is set. */
+  workspaceClassName?: string
   rendererOptions?: RendererOptions
   onError?: (error: Error) => void
   /** Initial viewport shortcuts (merged with defaults). Applied on mount when provided. */
