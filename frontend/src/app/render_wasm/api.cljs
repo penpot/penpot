@@ -1631,45 +1631,42 @@
                        (+ offset POSITION-DATA-U32-SIZE)))
               (persistent! result)))
 
-          result
-          (into []
-                (keep
-                 (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
-                   (let [content (:content shape)
-                         element (-> content :children
-                                     (get 0) :children ;; paragraph-set
-                                     (get paragraph) :children ;; paragraph
-                                     (get span))
-                         element-text (:text element)]
+          content (:content shape)]
 
-                     ;; Add comprehensive nil-safety checks
-                     (when (and element
-                                element-text
-                                (>= start-pos 0)
-                                (<= end-pos (count element-text))
-                                (<= start-pos end-pos))
-                       (let [text (subs element-text start-pos end-pos)]
-                         (d/patch-object
-                          txt/default-text-attrs
-                          (d/without-nils
-                           {:x x
-                            :y (+ y height)
-                            :width width
-                            :height height
-                            :direction       (dr/translate-direction direction)
-                            :font-family     (get element :font-family)
-                            :font-size       (get element :font-size)
-                            :font-weight     (get element :font-weight)
-                            :text-transform  (get element :text-transform)
-                            :text-decoration (get element :text-decoration)
-                            :letter-spacing  (get element :letter-spacing)
-                            :font-style      (get element :font-style)
-                            :fills           (get element :fills)
-                            :text            text})))))))
-                result)]
       (mem/free)
 
-      result)))
+      (into []
+            (keep
+             (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
+               (let [element (-> content :children
+                                 (get 0) :children ;; paragraph-set
+                                 (get paragraph) :children ;; paragraph
+                                 (get span))
+                     element-text (:text element)]
+
+                 ;; Add comprehensive nil-safety checks
+                 ;; Be aware that for RTL texts `start-pos` can be greatert han `end-pos`
+                 (when (and element element-text)
+                   (let [text (subs element-text start-pos end-pos)]
+                     (d/patch-object
+                      txt/default-text-attrs
+                      (d/without-nils
+                       {:x x
+                        :y (+ y height)
+                        :width width
+                        :height height
+                        :direction       (dr/translate-direction direction)
+                        :font-id         (get element :font-id)
+                        :font-family     (get element :font-family)
+                        :font-size       (get element :font-size)
+                        :font-weight     (get element :font-weight)
+                        :text-transform  (get element :text-transform)
+                        :text-decoration (get element :text-decoration)
+                        :letter-spacing  (get element :letter-spacing)
+                        :font-style      (get element :font-style)
+                        :fills           (get element :fills)
+                        :text            text})))))))
+            result))))
 
 (defn apply-canvas-blur
   []
