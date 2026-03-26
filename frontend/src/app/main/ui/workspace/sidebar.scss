@@ -9,11 +9,7 @@
 
 .left-settings-bar {
   display: grid;
-  grid-template-areas:
-    "header header"
-    "content resize";
-  grid-template-rows: deprecated.$s-52 1fr;
-  grid-template-columns: 1fr 0;
+  grid-template: "header header" deprecated.$s-52 "content resize" 1fr / 1fr 0;
   position: relative;
   grid-area: left-sidebar;
   min-width: var(--left-sidebar-width);
@@ -65,9 +61,11 @@
   width: var(--right-sidebar-width);
   background-color: var(--panel-background-color);
   z-index: deprecated.$z-index-1;
+
   &.not-expand {
     max-width: var(--right-sidebar-width);
   }
+
   &.expanded {
     width: var(--right-sidebar-width, var(--right-sidebar-width));
   }
@@ -76,7 +74,6 @@
     display: grid;
     grid-template-columns: 100%;
     grid-template-rows: 100%;
-
     height: calc(100vh - deprecated.$s-52);
     overflow: hidden;
   }
@@ -104,13 +101,16 @@
 
 .collapse-sidebar-button {
   --collapse-icon-color: var(--color-foreground-secondary);
+
   @include deprecated.flexCenter;
   @include deprecated.buttonStyle;
+
   height: 100%;
   width: deprecated.$s-24;
   border-radius: deprecated.$br-5;
   color: var(--collapse-icon-color);
   transform: rotate(180deg);
+
   &:hover {
     --collapse-icon-color: var(--color-foreground-primary);
   }
@@ -118,6 +118,7 @@
 
 .collapsed-sidebar {
   @include deprecated.flexCenter;
+
   position: absolute;
   top: deprecated.$s-48;
   left: 0;
@@ -126,27 +127,34 @@
   background: var(--color-background-primary);
   margin-inline-start: var(--sp-m);
 }
+
 .collapsed-title {
   @include deprecated.flexCenter;
+
   height: deprecated.$s-36;
   width: deprecated.$s-24;
   border-radius: deprecated.$br-8;
   background: var(--color-background-secondary);
 }
+
 .collapsed-button {
   @include deprecated.buttonStyle;
+
   height: deprecated.$s-24;
   width: deprecated.$s-16;
   padding: 0;
   border-radius: deprecated.$br-5;
+
   svg {
     @include deprecated.flexCenter;
+
     height: deprecated.$s-16;
     width: deprecated.$s-16;
     color: transparent;
     fill: none;
     stroke: var(--icon-foreground);
   }
+
   &:hover {
     svg {
       stroke: var(--icon-foreground-hover);

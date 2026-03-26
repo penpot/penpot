@@ -15,8 +15,7 @@
   max-height: calc(100vh - px2rem(128)); // TODO: Fix this hardcoded value
   padding-top: var(--sp-s);
   padding-inline: var(--sp-m);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   scrollbar-gutter: stable;
   background-color: var(--low-emphasis-background);
 }

@@ -14,7 +14,7 @@
   padding: deprecated.$s-12 0;
 
   &.libs {
-    background-image: url(/images/ph-left.svg), url(/images/ph-right.svg);
+    background-image: url("/images/ph-left.svg"), url("/images/ph-right.svg");
     background-position:
       15% bottom,
       85% top;
@@ -47,7 +47,6 @@
     border-radius: deprecated.$br-8;
     color: var(--color-foreground-primary);
     cursor: pointer;
-    height: deprecated.$s-160;
     margin: deprecated.$s-8;
     border: deprecated.$s-2 solid transparent;
     width: var(--th-width, #{g.$thumbnail-default-width});
@@ -113,9 +112,11 @@
 
 .empty-project-card {
   @include t.use-typography("body-small");
+
   --color-card-background: var(--color-background-tertiary);
   --color-card-title: var(--color-foreground-primary);
   --color-card-subtitle: var(--color-foreground-secondary);
+
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -129,6 +130,7 @@
     --color-card-background: var(--color-accent-primary);
     --color-card-title: var(--color-background-secondary);
     --color-card-subtitle: var(--color-background-secondary);
+
     cursor: pointer;
 
     .empty-project-card-title {

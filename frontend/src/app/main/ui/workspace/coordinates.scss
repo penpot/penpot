@@ -11,7 +11,7 @@ $width-settings-bar: 256px;
 .container {
   background-color: var(--color-background-primary);
   border-radius: deprecated.$br-4;
-  bottom: 0px;
+  bottom: 0;
   padding: deprecated.$s-2 deprecated.$s-8;
   position: fixed;
   right: calc(#{$width-settings-bar} + #{deprecated.$s-24});

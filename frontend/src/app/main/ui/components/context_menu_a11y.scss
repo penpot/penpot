@@ -25,6 +25,7 @@
 
   .context-menu-items {
     @include deprecated.menuShadow;
+
     position: absolute;
     top: deprecated.$s-12;
     left: calc(-1 * deprecated.$s-6);
@@ -50,6 +51,7 @@
 
       .context-menu-action {
         @include deprecated.bodySmallTypography;
+
         display: flex;
         align-items: center;
         justify-content: flex-start;
@@ -69,7 +71,8 @@
             margin-left: 0.5rem;
 
             svg {
-              @extend .button-icon-small;
+              @extend %button-icon-small;
+
               stroke: var(--menu-foreground-color);
             }
           }
@@ -84,7 +87,8 @@
           cursor: pointer;
 
           .submenu-icon-back svg {
-            @extend .button-icon-small;
+            @extend %button-icon-small;
+
             stroke: var(--menu-foreground-color);
             transform: rotate(180deg);
           }
@@ -140,12 +144,14 @@
         }
 
         .selected-icon {
-          @extend .button-tag;
+          @extend %button-tag;
+
           border-radius: deprecated.$br-8;
           height: 100%;
 
           svg {
-            @extend .button-icon-small;
+            @extend %button-icon-small;
+
             stroke: var(--menu-foreground-color-focus);
           }
         }
@@ -154,7 +160,7 @@
 
     .is-selected .context-menu-action {
       padding-left: deprecated.$s-28;
-      background-image: url(/images/icons/tick.svg);
+      background-image: url("/images/icons/tick.svg");
       background-repeat: no-repeat;
       background-position: 5% 48%;
       background-size: deprecated.$s-12;

@@ -7,11 +7,12 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-dialog {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   user-select: none;
 }
 

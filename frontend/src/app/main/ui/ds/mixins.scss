@@ -8,7 +8,7 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 
-@mixin textEllipsis {
+@mixin text-ellipsis {
   display: block;
   max-width: 99%;
   overflow: hidden;
@@ -16,7 +16,7 @@
   white-space: nowrap;
 }
 
-@mixin twoLineTextEllipsis {
+@mixin two-line-text-ellipsis {
   max-width: 99%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -33,6 +33,7 @@
 /// @param {Length} $border - Inner transparent border size
 /// @param {Bool} $include-selection - Include ::selection styles
 /// @param {Bool} $include-placeholder - Include placeholder styles
+
 @mixin custom-scrollbar(
   $thumb-color: #aab5ba4d,
   $thumb-hover-color: #aab5bab3,
@@ -84,12 +85,7 @@
   @if $include-placeholder {
     &::placeholder {
       @include t.use-typography("body-small");
-      color: var(--color-foreground-secondary);
-    }
 
-    // Legacy webkit
-    &::-webkit-input-placeholder {
-      @include t.use-typography("body-small");
       color: var(--color-foreground-secondary);
     }
   }

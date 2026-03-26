@@ -14,14 +14,11 @@
   --input-checkbox-border-color-hover: var(--color-accent-primary-muted);
   --input-checkbox-foreground-color: var(--color-foreground-primary);
   --input-checkbox-background-color: var(--color-background-quaternary);
-
   --input-checkbox-border-color-checked: var(--color-background-quaternary);
   --input-checkbox-foreground-color-checked: var(--color-background-primary);
   --input-checkbox-background-color-checked: var(--color-accent-primary);
-
   --input-checkbox-foreground-color-disabled: var(--color-background-primary);
   --input-checkbox-background-color-disabled: var(--color-foreground-secondary);
-
   --input-checkbox-text-color: var(--color-foreground-secondary);
 }
 
@@ -73,6 +70,7 @@
 
 .checkbox-text {
   @include use-typography("body-small");
+
   padding-inline-start: var(--sp-s);
   color: var(--input-checkbox-text-color);
 }

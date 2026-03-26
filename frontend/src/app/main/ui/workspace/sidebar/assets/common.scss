@@ -8,6 +8,7 @@
 
 .title-name {
   @include deprecated.uppercaseTitleTipography;
+
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -16,6 +17,7 @@
 
 .title-tokens {
   @include deprecated.bodySmallTypography;
+
   text-transform: capitalize;
 }
 
@@ -25,13 +27,16 @@
 
 .section-icon {
   @include deprecated.flexCenter;
+
   padding-right: deprecated.$s-2;
+
   svg {
     @include deprecated.flexCenter;
+
     height: deprecated.$s-16;
     width: deprecated.$s-16;
     fill: none;
-    stroke: currentColor;
+    stroke: currentcolor;
   }
 }
 
@@ -43,6 +48,7 @@
 
 .num-assets {
   @include deprecated.flexCenter;
+
   height: 100%;
   padding-left: deprecated.$s-8;
 }
@@ -58,6 +64,7 @@
 .drag-counter {
   @include deprecated.bodySmallTypography;
   @include deprecated.textEllipsis;
+
   position: absolute;
   bottom: 0;
   left: 0;

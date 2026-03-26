@@ -42,6 +42,7 @@
 
 .dashboard-project-row {
   --actions-opacity: 0;
+
   margin-block-end: var(--sp-xxl);
   position: relative;
 
@@ -84,8 +85,9 @@
 }
 
 .project-name {
-  @include textEllipsis;
+  @include text-ellipsis;
   @include t.use-typography("body-large");
+
   color: var(--title-foreground-color-hover);
   cursor: pointer;
   block-size: $sz-16;
@@ -102,8 +104,10 @@
 .info,
 .recent-files-row-title-info {
   @include t.use-typography("body-medium");
+
   color: var(--title-foreground-color);
-  @media (max-width: 760px) {
+
+  @media (width <= 760px) {
     display: none;
   }
 }
@@ -116,7 +120,8 @@
 
 .add-file-btn,
 .options-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   block-size: $sz-32;
   inline-size: $sz-32;
   margin: 0 var(--sp-s);
@@ -125,7 +130,8 @@
 
 .add-icon,
 .menu-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
 }
 
@@ -140,7 +146,9 @@
 
 .show-more {
   --show-more-color: var(--button-secondary-foreground-color-rest);
+
   @include t.use-typography("body-medium");
+
   border: none;
   background: none;
   cursor: pointer;
@@ -179,7 +187,7 @@
     border-radius: $br-4;
     inline-size: auto;
 
-    @media (max-width: 1200px) {
+    @media (width <= 1200px) {
       display: none;
       inline-size: 0;
     }
@@ -202,18 +210,22 @@
 .info {
   flex: 1;
   font-size: $sz-16;
+
   span {
     color: var(--color-foreground-secondary);
     display: block;
   }
+
   a {
     color: var(--color-accent-primary);
   }
+
   padding: var(--sp-s) 0;
 }
 
 .close {
   --close-icon-foreground-color: var(--icon-foreground);
+
   position: absolute;
   top: var(--sp-xl);
   inset-inline-end: var(--sp-xxl);
@@ -221,13 +233,15 @@
   background-color: transparent;
   border: none;
   cursor: pointer;
+
   &:hover {
     --close-icon-foreground-color: var(--button-icon-foreground-color-selected);
   }
 }
 
 .close-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--close-icon-foreground-color);
 }
 
@@ -244,7 +258,8 @@
   block-size: var(--sp-xl) 0;
   overflow: hidden;
   border-radius: $br-4;
-  @media (max-width: 1200px) {
+
+  @media (width <= 1200px) {
     display: none;
     inline-size: 0;
   }

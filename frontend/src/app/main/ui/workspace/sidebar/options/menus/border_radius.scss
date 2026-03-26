@@ -16,7 +16,7 @@
 
 .radius-1,
 .small-input {
-  @extend .input-element;
+  @extend %input-element;
   @include t.use-typography("body-small");
 }
 

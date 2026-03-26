@@ -7,6 +7,7 @@
 @use "sass:math";
 
 @function px2rem($value) {
-  $remValue: math.div($value, 16) * 1rem;
-  @return $remValue;
+  $rem-value: math.div($value, 16) * 1rem;
+
+  @return $rem-value;
 }

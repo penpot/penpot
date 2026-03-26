@@ -7,24 +7,20 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .workspace {
-  @extend .new-scrollbar;
+  @extend %new-scrollbar;
+
   width: 100vw;
   height: 100vh;
   max-height: 100vh;
   user-select: none;
   display: grid;
-  grid-template-areas: "left-sidebar viewport right-sidebar";
-  grid-template-rows: 1fr;
-  grid-template-columns: auto 1fr auto;
+  grid-template: "left-sidebar viewport right-sidebar" 1fr / auto 1fr auto;
   overflow: hidden;
 }
 
 .workspace-loader {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: var(--z-index-loaders);
   background-color: var(--color-background-primary);
 }

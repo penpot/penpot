@@ -8,8 +8,8 @@
 
 .assets-bar {
   display: grid;
-  height: 100%;
   grid-auto-rows: max-content;
+
   // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
   height: calc(100vh - deprecated.$s-92);
   scrollbar-gutter: stable;
@@ -18,8 +18,9 @@
 }
 
 .libraries-button {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include deprecated.uppercaseTitleTipography;
+
   gap: deprecated.$s-2;
   height: deprecated.$s-32;
   width: 100%;
@@ -40,8 +41,9 @@
 }
 
 .add-library-button {
-  @extend .button-primary;
+  @extend %button-primary;
   @include deprecated.uppercaseTitleTipography;
+
   gap: deprecated.$s-2;
   height: deprecated.$s-32;
   width: 100%;
@@ -52,6 +54,7 @@
 .section-button {
   @include deprecated.flexCenter;
   @include deprecated.buttonStyle;
+
   height: deprecated.$s-32;
   width: deprecated.$s-32;
   margin: 0;
@@ -98,13 +101,14 @@
   }
 
   &.opened {
-    @extend .button-icon-selected;
+    @extend %button-icon-selected;
   }
 }
 
 .sections-container {
   @include deprecated.menuShadow;
   @include deprecated.flexColumn;
+
   position: absolute;
   top: deprecated.$s-84;
   left: deprecated.$s-12;
@@ -117,6 +121,7 @@
 
 .section-item {
   @include deprecated.bodySmallTypography;
+
   display: flex;
   align-items: center;
   justify-content: space-between;

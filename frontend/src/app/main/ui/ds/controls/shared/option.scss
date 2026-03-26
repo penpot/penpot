@@ -14,8 +14,7 @@
   --options-empty: var(--color-canvas);
 
   display: grid;
-  align-items: center;
-  justify-items: start;
+  place-items: center start;
   grid-template-columns: 1fr auto;
   gap: var(--sp-xs);
   width: 100%;
@@ -56,6 +55,7 @@
 
 .option-current {
   --options-outline-color: var(--color-accent-primary);
+
   outline: $b-1 solid var(--options-outline-color);
 }
 

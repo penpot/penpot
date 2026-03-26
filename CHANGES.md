@@ -21,6 +21,7 @@
 - Copy token name from contextual menu [Taiga #13568](https://tree.taiga.io/project/penpot/issue/13568)
 - Add natural sorting on token names [Taiga #13713](https://tree.taiga.io/project/penpot/issue/13713)
 - Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
+- Add CSS linter [Taiga #13790](https://tree.taiga.io/project/penpot/us/13790)
 
 ### :bug: Bugs fixed
 
@@ -47,7 +48,6 @@
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
-
 
 ## 2.14.0
 
@@ -116,6 +116,7 @@
 ## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
+
 - Add 'page' special shapeId to MCP export_shape tool for full-page snapshots [Github #8689](https://github.com/penpot/penpot/issues/8689)
 
 - Fix mask issues with component swap (by @dfelinto) [Github #7675](https://github.com/penpot/penpot/issues/7675)

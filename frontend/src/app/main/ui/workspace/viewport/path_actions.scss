@@ -39,7 +39,9 @@
 
 .topbar-btn {
   --pathbar-icon-color: var(--color-foreground-secondary);
-  @extend .button-tertiary;
+
+  @extend %button-tertiary;
+
   height: deprecated.$s-36;
   width: deprecated.$s-36;
   flex-shrink: 0;
@@ -50,11 +52,13 @@
 
   &.is-toggled {
     --pathbar-icon-color: var(--button-radio-foreground-color-active);
+
     background-color: var(--button-radio-background-color-active);
   }
 
   .pathbar-icon {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--pathbar-icon-color);
   }
 }

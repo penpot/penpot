@@ -19,6 +19,7 @@
 
 .panel-title-text {
   @include t.use-typography("headline-small");
+
   flex-grow: 1;
   text-align: center;
   color: var(--color-foreground-primary);

@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
-@use "./common.scss";
+@use "./common";
 
 .accept-terms-and-privacy-wrapper {
   :global(a) {
@@ -25,6 +25,7 @@
 
 .register-success {
   gap: deprecated.$s-24;
+
   .auth-title {
     @include deprecated.medTitleTipography;
   }
@@ -35,6 +36,7 @@
   display: flex;
   justify-content: center;
   margin-bottom: deprecated.$s-32;
+
   svg {
     width: deprecated.$s-92;
     height: deprecated.$s-92;
@@ -43,11 +45,13 @@
 
 .notification-text {
   @include deprecated.bodyMediumTypography;
+
   color: var(--title-foreground-color);
 }
 
 .notification-text-email {
   @include deprecated.medTitleTipography;
+
   font-size: deprecated.$fs-20;
   color: var(--register-confirmation-color);
   margin-inline: deprecated.$s-36;
@@ -55,6 +59,7 @@
 
 .logo-btn {
   height: deprecated.$s-40;
+
   svg {
     width: deprecated.$s-120;
     height: deprecated.$s-40;
@@ -71,6 +76,7 @@
 
 .terms-register {
   @include deprecated.bodySmallTypography;
+
   display: flex;
   gap: deprecated.$s-4;
   justify-content: center;
@@ -84,6 +90,7 @@
 
 .auth-link {
   color: var(--link-foreground-color);
+
   &:hover {
     text-decoration: underline;
   }

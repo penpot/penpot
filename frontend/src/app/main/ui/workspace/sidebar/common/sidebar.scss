@@ -52,6 +52,7 @@ $two-column-width: grid-width(2);
 $three-column-width: grid-width(3);
 $four-column-width: grid-width(4);
 $seven-column-width: grid-width(7);
+
 // ------------------------------------------------------------
 // Grid mixin — applies the standard structure to any container
 // ------------------------------------------------------------
@@ -86,6 +87,7 @@ $seven-column-width: grid-width(7);
 //   - + 3 inter-column gaps
 //   - − half a gap (because it’s visually shared with the next block)
 $grid-exception-input-width: calc(#{$sz-32} * 3.5 + 3 * var(--sp-xs) - (var(--sp-xs) / 2));
+
 //
 //        |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|
 //
@@ -111,10 +113,10 @@ $grid-exception-input-width-small: calc(#{$sz-32} * 2.5 + 2 * var(--sp-xs) - (va
   --left-sidebar-width-max: #{$left-sidebar-width-max};
   --right-sidebar-width: #{$right-sidebar-width};
   --right-sidebar-width-max: #{$right-sidebar-width-max};
-  --2-columns-width: #{$two-column-width};
-  --3-columns-width: #{$three-column-width};
-  --4-columns-width: #{$four-column-width};
-  --7-columns-width: #{$seven-column-width};
+  --two-columns-width: #{$two-column-width};
+  --three-columns-width: #{$three-column-width};
+  --four-columns-width: #{$four-column-width};
+  --seven-columns-width: #{$seven-column-width};
   --options-width: #{$options-width};
   --grid-exception-input-width: #{$grid-exception-input-width};
   --grid-exception-input-width-small: #{$grid-exception-input-width-small};
