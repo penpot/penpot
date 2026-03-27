@@ -890,5 +890,191 @@
         (t/is (= (:id frame4) (:destination (get new-interactions 0))))
         (t/is (= (:id frame5) (:destination (get new-interactions 1))))
         (t/is (= (:id frame3) (:destination (get new-interactions 2))))
-        (t/is (nil? (:destination (get new-interactions 3))))))))
+        (t/is (nil? (:destination (get new-interactions 3))))))
 
+    ;; `nil` interactions is a valid input when a shape has no prototype links yet.
+    (t/testing "Remap nil interactions"
+      (t/is (nil? (ctsi/remap-interactions nil ids-map objects))))))
+
+(t/deftest destination-predicates
+  (let [frame-id            (uuid/next)
+        other-frame-id      (uuid/next)
+        navigate            (ctsi/set-destination ctsi/default-interaction frame-id)
+        open-overlay        (-> ctsi/default-interaction
+                                (ctsi/set-action-type :open-overlay)
+                                (ctsi/set-destination frame-id))
+        close-overlay       (-> ctsi/default-interaction
+                                (ctsi/set-action-type :close-overlay)
+                                (ctsi/set-destination frame-id))
+        prev-screen         (ctsi/set-action-type ctsi/default-interaction :prev-screen)
+        navigate-without-id (assoc ctsi/default-interaction :destination nil)]
+
+    ;; These helpers are consumed by flow code, so we verify both capability and exact target checks.
+    (t/testing "Destination helpers distinguish optional and concrete targets"
+      (t/is (ctsi/destination? navigate))
+      (t/is (ctsi/destination? open-overlay))
+      (t/is (ctsi/destination? close-overlay))
+      (t/is (not (ctsi/destination? navigate-without-id)))
+      (t/is (not (ctsi/destination? prev-screen))))
+
+    (t/testing "Destination match helpers are action aware"
+      (t/is (ctsi/dest-to? navigate frame-id))
+      (t/is (ctsi/dest-to? open-overlay frame-id))
+      (t/is (not (ctsi/dest-to? prev-screen frame-id)))
+      (t/is (not (ctsi/dest-to? navigate other-frame-id)))
+      (t/is (ctsi/navs-to? navigate frame-id))
+      (t/is (not (ctsi/navs-to? open-overlay frame-id)))
+      (t/is (not (ctsi/navs-to? navigate other-frame-id))))))
+
+(t/deftest collection-predicates
+  (let [frame-id       (uuid/next)
+        other-frame-id (uuid/next)
+        click-nav      (ctsi/set-destination ctsi/default-interaction frame-id)
+        delayed-nav    (-> ctsi/default-interaction
+                           (assoc :destination frame-id)
+                           (assoc :event-type :after-delay)
+                           (assoc :delay 600))
+        overlay-flow   (-> ctsi/default-interaction
+                           (ctsi/set-action-type :open-overlay)
+                           (ctsi/set-destination other-frame-id))
+        open-url       (-> ctsi/default-interaction
+                           (ctsi/set-action-type :open-url)
+                           (ctsi/set-url "https://example.com"))
+        close-no-dest  (ctsi/set-action-type ctsi/default-interaction :close-overlay)]
+
+    ;; `actionable?` is intentionally narrow: only click interactions should mark the shape as clickable.
+    (t/testing "Actionable only considers click events"
+      (t/is (ctsi/actionable? [click-nav delayed-nav]))
+      (t/is (not (ctsi/actionable? [delayed-nav (assoc overlay-flow :event-type :mouse-enter)])))
+      (t/is (nil? (ctsi/actionable? nil))))
+
+    ;; Flow helpers should only report interactions that can continue a prototype flow and have a destination.
+    (t/testing "Flow helpers only include destination based interactions"
+      (t/is (ctsi/flow-origin? [click-nav open-url]))
+      (t/is (ctsi/flow-origin? [overlay-flow close-no-dest click-nav]))
+      (t/is (not (ctsi/flow-origin? [open-url close-no-dest])))
+      (t/is (ctsi/flow-to? [click-nav overlay-flow] frame-id))
+      (t/is (ctsi/flow-to? [click-nav overlay-flow] other-frame-id))
+      (t/is (not (ctsi/flow-to? [open-url close-no-dest] frame-id)))
+      (t/is (nil? (ctsi/flow-to? nil frame-id))))))
+
+(t/deftest remove-interactions-test
+  (let [frame-id      (uuid/next)
+        keep-nav      (ctsi/set-destination ctsi/default-interaction frame-id)
+        remove-url    (-> ctsi/default-interaction
+                          (ctsi/set-action-type :open-url)
+                          (ctsi/set-url "https://example.com"))
+        remove-prev   (ctsi/set-action-type ctsi/default-interaction :prev-screen)
+        interactions  [keep-nav remove-url remove-prev]]
+
+    ;; The helper should preserve vector semantics and normalize an empty result back to nil.
+    (t/testing "Remove only matching interactions"
+      (let [new-interactions (ctsi/remove-interactions #(= :open-url (:action-type %)) interactions)]
+        (t/is (= 2 (count new-interactions)))
+        (t/is (= [:navigate :prev-screen] (mapv :action-type new-interactions)))))
+
+    (t/testing "Remove all interactions returns nil"
+      (t/is (nil? (ctsi/remove-interactions (constantly true) interactions))))))
+
+(t/deftest validation-guards
+  (let [frame            (cts/setup-shape {:type :frame})
+        rect             (cts/setup-shape {:type :rect})
+        frame-id         (uuid/next)
+        overlay-frame    (cts/setup-shape {:type :frame :width 30 :height 20})
+        base-frame       (cts/setup-shape {:type :frame :width 100 :height 100})
+        objects          {(:id base-frame) base-frame
+                          (:id overlay-frame) overlay-frame}
+        after-delay      (ctsi/set-event-type ctsi/default-interaction :after-delay frame)
+        overlay          (-> ctsi/default-interaction
+                             (ctsi/set-action-type :open-overlay)
+                             (ctsi/set-destination (:id overlay-frame)))
+        open-url         (ctsi/set-action-type ctsi/default-interaction :open-url)
+        dissolve         (ctsi/set-animation-type ctsi/default-interaction :dissolve)
+        slide            (ctsi/set-animation-type ctsi/default-interaction :slide)
+        push             (ctsi/set-animation-type ctsi/default-interaction :push)]
+
+    ;; These checks protect editor state from invalid combinations, so every public mutator should reject bad input.
+    (t/testing "Reject invalid event and action updates"
+      (t/is (ex/exception? (ex/try! (ctsi/set-event-type ctsi/default-interaction :bad-event rect))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-action-type ctsi/default-interaction :bad-action)))))
+
+    (t/testing "Reject invalid delay, destination and preserve-scroll updates"
+      (t/is (ex/exception? (ex/try! (ctsi/set-delay ctsi/default-interaction 10))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-delay after-delay :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-destination (ctsi/set-action-type ctsi/default-interaction :prev-screen) frame-id))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-preserve-scroll (ctsi/set-action-type ctsi/default-interaction :prev-screen) true))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-preserve-scroll ctsi/default-interaction :bad)))))
+
+    (t/testing "Reject invalid url and overlay option updates"
+      (t/is (ex/exception? (ex/try! (ctsi/set-url ctsi/default-interaction "https://example.com"))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-url open-url :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-overlay-pos-type ctsi/default-interaction :center base-frame objects))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-overlay-pos-type overlay :bad base-frame objects))))
+      (t/is (ex/exception? (ex/try! (ctsi/toggle-overlay-pos-type ctsi/default-interaction :center base-frame objects))))
+      (t/is (ex/exception? (ex/try! (ctsi/toggle-overlay-pos-type overlay :bad base-frame objects))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-overlay-position ctsi/default-interaction (gpt/point 1 2)))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-overlay-position overlay {:x 1 :y 2}))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-close-click-outside ctsi/default-interaction true))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-close-click-outside overlay :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-background-overlay ctsi/default-interaction true))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-background-overlay overlay :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-position-relative-to ctsi/default-interaction frame-id))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-position-relative-to overlay :bad)))))
+
+    (t/testing "Reject invalid animation updates"
+      (t/is (ex/exception? (ex/try! (ctsi/set-animation-type (ctsi/set-action-type ctsi/default-interaction :open-overlay) :push))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-animation-type ctsi/default-interaction :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-animation-type (ctsi/set-action-type ctsi/default-interaction :prev-screen) :dissolve))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-duration ctsi/default-interaction 100))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-duration dissolve :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-easing ctsi/default-interaction :ease-in))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-easing dissolve :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-way ctsi/default-interaction :in))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-way slide :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-direction ctsi/default-interaction :left))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-direction push :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-offset-effect ctsi/default-interaction true))))
+      (t/is (ex/exception? (ex/try! (ctsi/set-offset-effect slide :bad))))
+      (t/is (ex/exception? (ex/try! (ctsi/invert-direction {:direction :left})))))))
+
+(t/deftest calc-overlay-position-edge-cases
+  (let [root-frame     (cts/setup-shape {:id uuid/zero :type :frame :width 500 :height 500})
+        base-frame     (cts/setup-shape {:type :frame :width 120 :height 120 :frame-id uuid/zero})
+        popup-frame    (cts/setup-shape {:type :frame :width 80 :height 70 :x 20 :y 15 :frame-id (:id base-frame)})
+        trigger        (cts/setup-shape {:type :rect :width 40 :height 30 :x 25 :y 35 :frame-id (:id popup-frame) :parent-id (:id popup-frame)})
+        overlay-frame  (cts/setup-shape {:type :frame :width 30 :height 20})
+        objects        {uuid/zero root-frame
+                        (:id base-frame) base-frame
+                        (:id popup-frame) popup-frame
+                        (:id trigger) trigger
+                        (:id overlay-frame) overlay-frame}
+        interaction    (-> ctsi/default-interaction
+                           (ctsi/set-action-type :open-overlay)
+                           (ctsi/set-destination (:id overlay-frame))
+                           (ctsi/set-position-relative-to (:id popup-frame)))
+        frame-offset   (gpt/point 7 9)]
+
+    ;; When the destination is missing we should return a harmless fallback instead of trying to measure a nil frame.
+    (t/testing "Missing destination frame falls back to origin"
+      (let [[overlay-pos snap] (ctsi/calc-overlay-position interaction trigger objects popup-frame base-frame nil frame-offset)]
+        (t/is (= (gpt/point 0 0) overlay-pos))
+        (t/is (= [:top :left] snap))))
+
+    ;; Manual positions inside nested frames must include the parent frame offset to match the rendered viewport coordinates.
+    (t/testing "Nested frame manual positions add parent frame offset"
+      (let [manual-interaction (-> interaction
+                                   (ctsi/set-overlay-pos-type :manual trigger objects)
+                                   (ctsi/set-overlay-position (gpt/point 12 18)))
+            [overlay-pos snap] (ctsi/calc-overlay-position manual-interaction trigger objects popup-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (gpt/point 59 57) overlay-pos))
+        (t/is (= [:top :left] snap))))
+
+    ;; If the trigger itself is a frame, manual coordinates are already expressed in the correct local space and should not be adjusted.
+    (t/testing "Frame relative manual positions keep their local coordinates"
+      (let [frame-relative (-> interaction
+                               (ctsi/set-position-relative-to (:id base-frame))
+                               (ctsi/set-overlay-pos-type :manual base-frame objects)
+                               (ctsi/set-overlay-position (gpt/point 11 13)))
+            [overlay-pos snap] (ctsi/calc-overlay-position frame-relative base-frame objects base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (gpt/point 18 22) overlay-pos))
+        (t/is (= [:top :left] snap))))))
