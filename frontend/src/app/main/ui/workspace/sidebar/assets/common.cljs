@@ -24,6 +24,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
@@ -299,7 +300,8 @@
              (inc retry))))]
 
     (if (and (some? thumbnail-uri)
-             (contains? cf/flags :component-thumbnails))
+             (or (contains? cf/flags :component-thumbnails)
+                 (features/active-feature? @st/state "render-wasm/v1")))
       [:& component-svg-thumbnail
        {:thumbnail-uri thumbnail-uri
         :class class
