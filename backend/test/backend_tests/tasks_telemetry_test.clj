@@ -42,4 +42,6 @@
         (t/is (contains? data :avg-files-on-project))
         (t/is (contains? data :max-projects-on-team))
         (t/is (contains? data :avg-files-on-project))
-        (t/is (contains? data :version))))))
+        (t/is (contains? data :version))
+        (t/is (contains? data :email-domains))
+        (t/is (= ["nodomain.com"] (:email-domains data)))))))
