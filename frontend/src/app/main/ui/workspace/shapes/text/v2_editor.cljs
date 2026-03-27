@@ -33,6 +33,7 @@
    [app.util.object :as obj]
    [app.util.text.content :as content]
    [app.util.text.content.styles :as styles]
+   [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -47,6 +48,20 @@
     (let [editor-root (.-root editor)
           result (.-textContent editor-root)]
       (when (not= result "") result))))
+
+(defn coalesce-per-tick
+  "Return a function that runs `f` at most once per JS tick.
+  Rationale: `needslayout` can fire on every input (including key repeat). We want
+  to break nested store update loops."
+  [f]
+  (let [scheduled?* (atom false)]
+    (fn []
+      (when-not @scheduled?*
+        (reset! scheduled?* true)
+        (ts/asap
+         (fn []
+           (reset! scheduled?* false)
+           (f)))))))
 
 (defn- get-fonts
   [content]
@@ -136,14 +151,16 @@
             (st/emit! (dwt/v2-update-text-editor-styles shape-id styles))))
 
         on-needs-layout
-        (fn []
-          (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content
-                                                        :update-name? true
-                                                        :save-undo? false)))
-          ;; FIXME: We need to find a better way to trigger layout changes.
-          #_(st/emit!
-             (dwt/v2-update-text-shape-position-data shape-id [])))
+        (coalesce-per-tick
+         (fn []
+           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
+             ;; For WASM renderer, use the dedicated layout sync to avoid touching shape content
+             ;; during `needslayout` bursts. For non-wasm, keep existing behavior.
+             (if (features/active-feature? @st/state "render-wasm/v1")
+               (st/emit! (dwt/v2-sync-wasm-text-layout shape-id content))
+               (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                           :update-name? true
+                                                           :save-undo? false))))))
 
         on-change
         (fn []

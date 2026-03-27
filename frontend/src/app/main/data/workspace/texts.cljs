@@ -55,6 +55,7 @@
 
 (declare v2-update-text-shape-content)
 (declare v2-update-text-editor-styles)
+(declare v2-sync-wasm-text-layout)
 
 ;; -- Content helpers
 
@@ -907,10 +908,43 @@
   (ptk/reify ::v2-update-text-editor-styles
     ptk/UpdateEvent
     (update [_ state]
+      ;; `stylechange` can fire on every `selectionchange` while typing.
+      ;; Avoid swapping the global store when the computed styles are unchanged,
+      ;; otherwise we can end up in store->rerender->selectionchange loops.
       (let [merged-styles (merge (txt/get-default-text-attrs)
                                  (get-in state [:workspace-global :default-font])
-                                 new-styles)]
-        (update-in state [:workspace-v2-editor-state id] (fnil merge {}) merged-styles)))))
+                                 new-styles)
+            prev (get-in state [:workspace-v2-editor-state id])]
+        (if (= merged-styles prev)
+          state
+          (assoc-in state [:workspace-v2-editor-state id] merged-styles))))))
+
+(defn v2-sync-wasm-text-layout
+  "Live-sync WASM text layout from the DOM editor without writing shape :content.
+  Intended to be called from Text Editor v2 `needslayout` events (coalesced)."
+  [id content]
+  (ptk/reify ::v2-sync-wasm-text-layout
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            shape   (get objects id)]
+        (if-not (and (some? shape) (cfh/text-shape? shape))
+          (rx/empty)
+          (let [new-size  (dwwt/get-wasm-text-new-size shape content)
+                modifiers (when (and (some? new-size)
+                                     (not= :fixed (:grow-type shape)))
+                            (dwwt/resize-wasm-text-modifiers shape content))]
+            ;; `get-wasm-text-new-size` has the side effect of syncing WASM's internal text
+            ;; content/layout. Only non-fixed grow-types need geometry modifiers updates.
+            (if (some? modifiers)
+              (rx/of (dwm/set-wasm-modifiers modifiers))
+              (rx/empty))))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      ;; While typing, v2 only commits shape :content on debounced `change`.
+      ;; We still need to repaint the WASM canvas for live preview.
+      (wasm.api/request-render "text-editor-v2-needslayout"))))
 
 (defn v2-update-text-shape-position-data
   [shape-id position-data]
