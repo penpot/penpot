@@ -169,6 +169,18 @@ details[open] > .collapsible-header .collapsible-arrow {
     border-color: var(--accent-primary);
 }
 
+/* ── Version warning ─────────────────────────────────────────────── */
+
+.version-warning {
+    align-items: flex-start;
+    padding: var(--spacing-8) var(--spacing-12);
+    border-radius: var(--spacing-8);
+    border: 1px solid var(--warning-500, #f59e0b);
+    color: var(--warning-500, #f59e0b);
+    width: 100%;
+    box-sizing: border-box;
+}
+
 /* ── Action buttons ──────────────────────────────────────────────── */
 
 #connect-btn,

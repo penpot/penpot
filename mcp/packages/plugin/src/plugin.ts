@@ -1,6 +1,17 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 
+/**
+ * Extracts the major.minor.patch prefix from a version string.
+ *
+ * @param version - a version string starting with major.minor.patch
+ * @returns the major.minor.patch prefix, or the original string if it does not match
+ */
+function extractVersionPrefix(version: string): string {
+    const match = version.match(/^(\d+\.\d+\.\d+)/);
+    return match ? match[1] : version;
+}
+
 mcp?.setMcpStatus("connecting");
 
 /**
@@ -15,18 +26,32 @@ penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
     hidden: !!mcp,
 } as any);
 
-// Handle messages
+// Register message handlers
 penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task: string; params: any }>((message) => {
-    // Handle plugin task requests
-    if (mcp && typeof message === "object" && message.type === "ui-initialized") {
-        penpot.ui.sendMessage({
-            type: "start-server",
-            url: mcp?.getServerUrl(),
-            token: mcp?.getToken(),
-        });
+    if (typeof message === "object" && message.type === "ui-initialized") {
+        // Check Penpot version compatibility
+        const penpotVersionPrefix = penpot.version ? extractVersionPrefix(penpot.version) : "<2.15"; // pre-2.15 versions don't have version info
+        const mcpVersionPrefix = extractVersionPrefix(PENPOT_MCP_VERSION);
+        console.log(`Penpot version: ${penpotVersionPrefix}, MCP version: ${mcpVersionPrefix}`);
+        if (penpotVersionPrefix !== mcpVersionPrefix) {
+            penpot.ui.sendMessage({
+                type: "version-mismatch",
+                mcpVersion: mcpVersionPrefix,
+                penpotVersion: penpotVersionPrefix,
+            });
+        }
+        // Initiate connection to remote MCP server (if enabled)
+        if (mcp) {
+            penpot.ui.sendMessage({
+                type: "start-server",
+                url: mcp?.getServerUrl(),
+                token: mcp?.getToken(),
+            });
+        }
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown");
     } else if (typeof message === "object" && message.task && message.id) {
+        // Handle plugin tasks submitted by the MCP server
         handlePluginTaskRequest(message).catch((error) => {
             console.error("Error in handlePluginTaskRequest:", error);
         });
