@@ -94,7 +94,7 @@ version of Penpot you want to use the MCP server with.
   * For the latest development version of Penpot (including the MCP beta-test), use the `develop` branch:
 
     ```shell
-    git clone https://github.com/penpot/penpot.git --branch develop --depth 1
+    git clone https://github.com/penpot/penpot.git --branch staging --depth 1
     ```
 
 Then change into the `mcp` directory:
