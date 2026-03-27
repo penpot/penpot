@@ -5,6 +5,9 @@ EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh;
 export PATH="/home/penpot/.cargo/bin:/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 export CARGO_HOME="/home/penpot/.cargo"
 
+export PENPOT_MCP_PLUGIN_SERVER_HOST=0.0.0.0
+export PENPOT_MCP_SERVER_HOST=0.0.0.0
+
 alias l='ls --color -GFlh'
 alias ll='ls --color -GFlh'
 alias rm='rm -rf'

@@ -165,7 +165,8 @@
     :nitrate
 
     :mcp
-    :background-blur})
+    :background-blur
+    :stroke-path})
 
 (def all-flags
   (set/union email login varia))

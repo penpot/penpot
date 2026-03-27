@@ -23,6 +23,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
    [app.main.worker :as mw]
@@ -1410,6 +1411,15 @@
     (contains? cf/flags :render-wasm-info)
     (bit-or 2r00000000000000000000000000001000)))
 
+(defn- wasm-aa-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:aa_threshold p))]
+    (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
 (defn set-canvas-size
   [canvas]
   (let [width (or (.-clientWidth ^js canvas) (.-width ^js canvas))
@@ -1445,6 +1455,8 @@
         ;; Initialize Wasm Render Engine
         (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
         (h/call wasm/internal-module "_set_render_options" flags dpr)
+        (when-let [t (wasm-aa-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_antialias_threshold" t))
 
         ;; Set browser and canvas size only after initialization
         (h/call wasm/internal-module "_set_browser" browser)
@@ -1539,6 +1551,25 @@
         content (path/from-bytes data)]
     (mem/free)
     content))
+
+(defn stroke-to-path
+  "Converts a shape's stroke at the given index into a filled path.
+   Returns the stroke outline as PathData content."
+  [id stroke-index]
+  (use-shape id)
+  (let [offset (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
+                   (mem/->offset-32))
+        heap   (mem/get-heap-u32)
+        length (aget heap offset)]
+    (if (pos? length)
+      (let [data    (mem/slice heap
+                               (+ offset 1)
+                               (* length path.impl/SEGMENT-U32-SIZE))
+            content (path/from-bytes data)]
+        (mem/free)
+        content)
+      (do (mem/free)
+          nil))))
 
 (defn calculate-bool*
   [bool-type ids]

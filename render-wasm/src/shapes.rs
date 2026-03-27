@@ -22,6 +22,7 @@ mod paths;
 mod rects;
 mod shadows;
 mod shape_to_path;
+mod stroke_paths;
 mod strokes;
 mod svg_attrs;
 mod svgraw;
@@ -43,6 +44,7 @@ pub use paths::*;
 pub use rects::*;
 pub use shadows::*;
 pub use shape_to_path::*;
+pub use stroke_paths::*;
 pub use strokes::*;
 pub use svg_attrs::*;
 pub use svgraw::*;
@@ -54,7 +56,6 @@ use crate::math::{self, Bounds, Matrix, Point};
 use crate::state::ShapesPoolRef;
 
 const MIN_VISIBLE_SIZE: f32 = 2.0;
-const ANTIALIAS_THRESHOLD: f32 = 15.0;
 const MIN_STROKE_WIDTH: f32 = 0.001;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -766,9 +767,8 @@ impl Shape {
         extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
-    pub fn should_use_antialias(&self, scale: f32) -> bool {
-        self.selrect.width() * scale > ANTIALIAS_THRESHOLD
-            || self.selrect.height() * scale > ANTIALIAS_THRESHOLD
+    pub fn should_use_antialias(&self, scale: f32, threshold: f32) -> bool {
+        self.selrect.width() * scale > threshold || self.selrect.height() * scale > threshold
     }
 
     pub fn calculate_bounds(&self, apply_transform: bool) -> Bounds {

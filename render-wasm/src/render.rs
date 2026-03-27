@@ -617,6 +617,10 @@ impl RenderState {
         Ok(())
     }
 
+    pub fn set_antialias_threshold(&mut self, value: f32) {
+        self.options.set_antialias_threshold(value);
+    }
+
     pub fn set_background_color(&mut self, color: skia::Color) {
         self.background_color = color;
     }
@@ -798,7 +802,8 @@ impl RenderState {
             });
         }
 
-        let antialias = shape.should_use_antialias(self.get_scale());
+        let antialias =
+            shape.should_use_antialias(self.get_scale(), self.options.antialias_threshold);
         let fast_mode = self.options.is_fast_mode();
         let has_nested_fills = self
             .nested_fills
@@ -2164,7 +2169,7 @@ impl RenderState {
         }
 
         if let Some(clips) = clip_bounds.as_ref() {
-            let antialias = element.should_use_antialias(scale);
+            let antialias = element.should_use_antialias(scale, self.options.antialias_threshold);
             self.surfaces.canvas(target_surface).save();
             for (bounds, corners, transform) in clips.iter() {
                 if target_surface == SurfaceId::Export {
