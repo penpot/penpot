@@ -21,6 +21,61 @@
 
 (log/set-level! :info)
 
+;; -- Retry helpers -----------------------------------------------------------
+
+(def ^:private retryable-types
+  "Set of error types that are considered transient and safe to retry
+  for idempotent (GET) requests."
+  #{:network              ; js/fetch network-level failure
+    :bad-gateway          ; 502
+    :service-unavailable  ; 503
+    :offline})            ; status 0 (browser offline)
+
+(defn retryable-error?
+  "Return true when `error` represents a transient failure that is safe
+  to retry.  Only errors whose `ex-data` `:type` belongs to
+  `retryable-types` qualify."
+  [error]
+  (contains? retryable-types (:type (ex-data error))))
+
+(def default-retry-config
+  "Default configuration for the retry mechanism on idempotent requests."
+  {:max-retries    3
+   :base-delay-ms  1000})
+
+(defn with-retry
+  "Wrap `observable-fn` (a zero-arg function returning an Observable) so
+  that retryable errors are retried up to `:max-retries` times with
+  exponential back-off.  Non-retryable errors propagate immediately.
+
+  Accepts an optional `config` map with:
+    :max-retries   – maximum number of retries (default 3)
+    :base-delay-ms – base delay in ms; doubles each attempt (default 1000)"
+  ([observable-fn]
+   (with-retry observable-fn default-retry-config))
+  ([observable-fn config]
+   (with-retry observable-fn config 0))
+  ([observable-fn config attempt]
+   (let [{:keys [max-retries base-delay-ms]} (merge default-retry-config config)]
+     (->> (observable-fn)
+          (rx/catch
+           (fn [cause]
+             (if (and (retryable-error? cause)
+                      (< attempt max-retries))
+               ;; bit-shift-left 1 N is equivalent to 2^N: shift the bits of the
+               ;; number 1 to the left N positions (e.g. 1 -> 2 -> 4 -> 8 -> 16),
+               ;; producing exponential backoff delays of 1x, 2x, 4x, 8x, 16x.
+               (let [delay-ms (* base-delay-ms (bit-shift-left 1 attempt))]
+                 (log/wrn :hint "retrying request"
+                          :attempt (inc attempt)
+                          :delay delay-ms
+                          :error (ex-message cause))
+                 (->> (rx/timer delay-ms)
+                      (rx/mapcat (fn [_] (with-retry observable-fn config (inc attempt))))))
+               (rx/throw cause))))))))
+
+;; -- Response handling -------------------------------------------------------
+
 (defn handle-response
   [{:keys [status body headers uri] :as response}]
   (cond
@@ -146,32 +201,41 @@
 
     (log/trc :hint "make request" :id id)
 
-    (->> (http/fetch request)
-         (rx/map http/response->map)
-         (rx/mapcat (fn [{:keys [headers body] :as response}]
-                      (log/trc :hint "response received" :id id :elapsed (tpoint))
+    (let [make-request
+          (fn []
+            (->> (http/fetch request)
+                 (rx/map http/response->map)
+                 (rx/mapcat (fn [{:keys [headers body] :as response}]
+                              (log/trc :hint "response received" :id id :elapsed (tpoint))
 
-                      (let [ctype (get headers "content-type")
-                            response-stream? (str/starts-with? ctype "text/event-stream")
-                            tpoint (ct/tpoint-ms)]
+                              (let [ctype (get headers "content-type")
+                                    response-stream? (str/starts-with? ctype "text/event-stream")
+                                    tpoint (ct/tpoint-ms)]
 
-                        (when (and response-stream? (not stream?))
-                          (ex/raise :type :assertion
-                                    :code :unexpected-response
-                                    :hint "expected normal response, received sse stream"
-                                    :uri (:uri response)
-                                    :status (:status response)))
+                                (when (and response-stream? (not stream?))
+                                  (ex/raise :type :assertion
+                                            :code :unexpected-response
+                                            :hint "expected normal response, received sse stream"
+                                            :uri (:uri response)
+                                            :status (:status response)))
 
-                        (if response-stream?
-                          (-> (sse/create-stream body)
-                              (sse/read-stream t/decode-str))
+                                (if response-stream?
+                                  (-> (sse/create-stream body)
+                                      (sse/read-stream t/decode-str))
 
-                          (->> response
-                               (http/process-response-type response-type)
-                               (rx/map decode-fn)
-                               (rx/tap (fn [_]
-                                         (log/trc :hint "response decoded" :id id :elapsed (tpoint))))
-                               (rx/mapcat handle-response)))))))))
+                                  (->> response
+                                       (http/process-response-type response-type)
+                                       (rx/map decode-fn)
+                                       (rx/tap (fn [_]
+                                                 (log/trc :hint "response decoded" :id id :elapsed (tpoint))))
+                                       (rx/mapcat handle-response))))))))]
+
+      ;; Idempotent (GET) requests are automatically retried on
+      ;; transient network / server errors.  Mutations are never
+      ;; retried to avoid unintended side-effects.
+      (if (= :get method)
+        (with-retry make-request)
+        (make-request)))))
 
 (defmulti cmd! (fn [id _] id))
 
