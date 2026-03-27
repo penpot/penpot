@@ -593,9 +593,8 @@
                      (map team->org)
                      (d/index-by :id)))
 
-        ;; There is always at least one default organization
-        ;; so no-orgs? is true when only that default one exists (count <= 1).
-        no-orgs? (<= (count orgs) 1)
+        show-dropdown? (or (dnt/is-valid-license? profile)
+                           (> (count orgs) 1))
 
         current-org (team->org team)
 
@@ -632,16 +631,7 @@
            (if (dnt/is-valid-license? profile)
              (dnt/go-to-nitrate-cc-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
-    (if no-orgs?
-      [:div {:class (stl/css :nitrate-selected-org)}
-       [:span {:class (stl/css :nitrate-penpot-icon)}
-        [:> raw-svg* {:id penpot-logo-icon}]]
-       "Penpot"
-       [:> button* {:variant "ghost"
-                    :type "button"
-                    :class (stl/css :nitrate-create-org)
-                    :on-click on-create-org-click} (tr "dashboard.plus-create-new-org")]]
-
+    (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
 
        [:button {:class (stl/css :current-org)
@@ -669,7 +659,15 @@
                                              :class (stl/css :dropdown :teams-dropdown)
                                              :organization current-org
                                              :profile profile
-                                             :organizations orgs}]])))
+                                             :organizations orgs}]]
+      [:div {:class (stl/css :nitrate-selected-org)}
+       [:span {:class (stl/css :nitrate-penpot-icon)}
+        [:> raw-svg* {:id penpot-logo-icon}]]
+       "Penpot"
+       [:> button* {:variant "ghost"
+                    :type "button"
+                    :class (stl/css :nitrate-create-org)
+                    :on-click on-create-org-click} (tr "dashboard.plus-create-new-org")]])))
 
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
