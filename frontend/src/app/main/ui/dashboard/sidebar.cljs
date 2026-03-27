@@ -516,14 +516,19 @@
 
         on-delete-clicked
         (mf/use-fn
-         (mf/deps delete-fn)
-         #(st/emit!
-           (modal/show
-            {:type :confirm
-             :title (tr "modals.delete-team-confirm.title")
-             :message (tr "modals.delete-team-confirm.message")
-             :accept-label (tr "modals.delete-team-confirm.accept")
-             :on-accept delete-fn})))]
+         (mf/deps team delete-fn)
+         (fn []
+           (let [is-org-team? (some? (:organization-id team))
+                 message (if is-org-team?
+                           (tr "modals.delete-org-team-confirm.message" (:organization-name team))
+                           (tr "modals.delete-team-confirm.message"))]
+             (st/emit!
+              (modal/show
+               {:type :confirm
+                :title (tr "modals.delete-team-confirm.title")
+                :message message
+                :accept-label (tr "modals.delete-team-confirm.accept")
+                :on-accept delete-fn})))))]
     [:> dropdown-menu* props
 
      [:> dropdown-menu-item* {:on-click    go-members
