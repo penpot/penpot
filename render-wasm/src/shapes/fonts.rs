@@ -33,6 +33,7 @@ impl FontFamily {
     pub fn alias(&self) -> String {
         format!("{}", self)
     }
+
 }
 
 impl fmt::Display for FontFamily {
