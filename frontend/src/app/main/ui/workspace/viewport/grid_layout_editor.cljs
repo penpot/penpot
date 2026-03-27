@@ -162,7 +162,7 @@
            (let [raw-pt (mf/ref-val current-pos-ref)
                  position (uwvv/point->viewport raw-pt)
                  start (mf/ref-val start-pos-ref)
-                 delta (gpt/to-vec start (dom/get-client-position event))]
+                 delta (gpt/to-vec start raw-pt)]
              (dom/release-pointer event)
              (mf/set-ref-val! dragging-ref false)
              (mf/set-ref-val! start-pos-ref nil)
