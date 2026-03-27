@@ -55,6 +55,10 @@
   [page-or-component type]
   (assoc page-or-component :type type))
 
+(defn unmake-container
+  [container]
+  (dissoc container :type))
+
 (defn page?
   [container]
   (= (:type container) :page))

@@ -60,8 +60,9 @@
      :cljs (uuid (impl/v4))))
 
 (defn custom
-  ([a] #?(:clj (UUID. 0 a) :cljs (uuid (impl/custom 0 a))))
-  ([b a] #?(:clj (UUID. b a) :cljs (uuid (impl/custom b a)))))
+  "Generate a uuid using directly the given number (specified as two long integers)"
+  ([low] #?(:clj (UUID. 0 low) :cljs (uuid (impl/custom 0 low))))
+  ([high low] #?(:clj (UUID. high low) :cljs (uuid (impl/custom high low)))))
 
 (def zero (uuid "00000000-0000-0000-0000-000000000000"))
 
@@ -136,6 +137,17 @@
            b (.getLeastSignificantBits ^UUID id)]
        (+ (clojure.lang.Murmur3/hashLong a)
           (clojure.lang.Murmur3/hashLong b)))))
+
+;; Fake uuids generator
+(def ^:private fake-ids (atom 0))
+
+(defn next-fake
+  "When you need predictable uuids, for example when debugging a failing test, wrap the code with
+     (with-redefs [uuid/next uuid/next-fake]
+       ...tested code...)"
+  []
+  (-> (swap! fake-ids inc)
+      (custom)))
 
 ;; Commented code used for debug
 ;; #?(:cljs

@@ -51,6 +51,7 @@
     :ref-shape-is-head
     :ref-shape-is-not-head
     :shape-ref-in-main
+    :component-id-mismatch
     :root-main-not-allowed
     :nested-main-not-allowed
     :root-copy-not-allowed
@@ -59,6 +60,7 @@
     :not-head-copy-not-allowed
     :not-component-not-allowed
     :component-nil-objects-not-allowed
+    :non-deleted-component-cannot-have-objects
     :instance-head-not-frame
     :invalid-text-touched
     :misplaced-slot
@@ -326,6 +328,20 @@
                     :component-file (:component-file ref-shape)
                     :component-id (:component-id ref-shape)))))
 
+(defn- check-ref-component-id
+  "Validate that if the copy has not been swwpped, the component-id and component-file are
+   the same as in the referenced shape in the near main."
+  [shape file page libraries]
+  (when (nil? (ctk/get-swap-slot shape))
+    (when-let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
+      (when (or (not= (:component-id shape) (:component-id ref-shape))
+                (not= (:component-file shape) (:component-file ref-shape)))
+        (report-error :component-id-mismatch
+                      "Nested copy component-id and component-file must be the same as the near main"
+                      shape file page
+                      :component-id (:component-id ref-shape)
+                      :component-file (:component-file ref-shape))))))
+
 (defn- check-empty-swap-slot
   "Validate that this shape does not have any swap slot."
   [shape file page]
@@ -349,6 +365,19 @@
     (report-error :duplicate-slot
                   "This shape has children with the same swap slot"
                   shape file page)))
+
+(defn- check-required-swap-slot
+  "Validate that the shape has swap-slot if it's a subinstance head and the ref shape is not the
+   matching shape by position in the near main."
+  [shape file page libraries]
+  (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
+    (when (and (some? near-match)
+               (not= (:shape-ref shape) (:id near-match))
+               (nil? (ctk/get-swap-slot shape)))
+      (report-error :missing-slot
+                    "Shape has been swapped, should have swap slot"
+                    shape file page
+                    :swap-slot (or (ctk/get-swap-slot near-match) (:id shape))))))
 
 (defn- check-valid-touched
   "Validate that the text touched flags are coherent."
@@ -418,6 +447,8 @@
   (check-component-not-main-head shape file page libraries)
   (check-component-not-root shape file page)
   (check-valid-touched shape file page)
+  (check-ref-component-id shape file page libraries)
+  (check-required-swap-slot shape file page libraries)
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
   ;; so we only validate the shape-ref if the ancestor is from a valid library
   (when library-exists
@@ -648,6 +679,13 @@
                     "Component main not allowed inside other component"
                     main-instance file component-page))))
 
+(defn- check-not-objects
+  [component file]
+  (when (d/not-empty? (:objects component))
+    (report-error :non-deleted-component-cannot-have-objects
+                  "A non-deleted component cannot have shapes inside"
+                  component file nil)))
+
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
   [component file]
@@ -656,7 +694,8 @@
                   "Objects list cannot be nil"
                   component file nil))
   (when-not (:deleted component)
-    (check-main-inside-main component file))
+    (check-main-inside-main component file)
+    (check-not-objects component file))
   (when (:deleted component)
     (check-component-duplicate-swap-slot component file)
     (check-ref-cycles component file))
@@ -674,8 +713,6 @@
 ;; PUBLIC API: VALIDATION FUNCTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare check-swap-slots)
-
 (defn validate-file
   "Validate full referential integrity and semantic coherence on file data.
 
@@ -686,8 +723,6 @@
 
       (doseq [page (filter :id (ctpl/pages-seq data))]
         (check-shape uuid/zero file page libraries)
-        (when (str/includes? (:name file) "check-swap-slot")
-          (check-swap-slots uuid/zero file page libraries))
         (->> (get-orphan-shapes page)
              (run! #(check-shape % file page libraries))))
 
@@ -728,40 +763,3 @@
               :hint "error on validating file referential integrity"
               :file-id (:id file)
               :details errors)))
-
-(declare compare-slots)
-
-;; Optional check to look for missing swap slots.
-;; Search for copies that do not point the shape-ref to the near component but don't have swap slot
-;; (looking for position relative to the parent, in the copy and the main).
-;;
-;; This check cannot be generally enabled, because files that have been migrated from components v1
-;; may have copies with shapes that do not match by position, but have not been swapped. So we enable
-;; it for specific files only. To activate the check, you need to add the string "check-swap-slot" to
-;; the name of the file.
-(defn- check-swap-slots
-  [shape-id file page libraries]
-  (let [shape (ctst/get-shape page shape-id)]
-    (if (and (ctk/instance-root? shape) (ctk/in-component-copy? shape))
-      (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true :with-context? true)
-            container (:container (meta ref-shape))]
-        (when (some? ref-shape)
-          (compare-slots shape ref-shape file page container)))
-      (doall (for [child-id (:shapes shape)]
-               (check-swap-slots child-id file page libraries))))))
-
-(defn- compare-slots
-  [shape-copy shape-main file container-copy container-main]
-  (if (and (not= (:shape-ref shape-copy) (:id shape-main))
-           (nil? (ctk/get-swap-slot shape-copy)))
-    (report-error :missing-slot
-                  "Shape has been swapped, should have swap slot"
-                  shape-copy file container-copy
-                  :swap-slot (or (ctk/get-swap-slot shape-main) (:id shape-main)))
-    (when (nil? (ctk/get-swap-slot shape-copy))
-      (let [children-id-pairs (d/zip-all (:shapes shape-copy) (:shapes shape-main))]
-        (doall (for [[child-copy-id child-main-id] children-id-pairs]
-                 (let [child-copy (ctst/get-shape container-copy child-copy-id)
-                       child-main (ctst/get-shape container-main child-main-id)]
-                   (when (and (some? child-copy) (some? child-main))
-                     (compare-slots child-copy child-main file container-copy container-main)))))))))

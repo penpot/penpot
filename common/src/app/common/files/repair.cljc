@@ -334,6 +334,31 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defmethod repair-error :component-id-mismatch
+  [_ {:keys [shape page-id args] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ; Set the component-id and component-file to the ones of the near main
+          (log/debug :hint (str "  -> set component-id to " (:component-id args)))
+          (log/debug :hint (str "  -> set component-file to " (:component-file args)))
+          (cond-> shape
+            (some? (:component-id args))
+            (assoc :component-id (:component-id args))
+
+            (nil? (:component-id args))
+            (dissoc :component-id)
+
+            (some? (:component-file args))
+            (assoc :component-file (:component-file args))
+
+            (nil? (:component-file args))
+            (dissoc :component-file)))]
+
+    (log/dbg :hint "repairing shape :component-id-mismatch" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :ref-shape-is-head
   [_ {:keys [shape page-id args] :as error} file-data _]
   (let [repair-shape
@@ -501,7 +526,7 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :component-nil-objects-not-allowed
-  [_ {:keys [shape] :as error} file-data _]
+  [_ {component :shape} file-data _]   ; in this error the :shape argument is the component
   (let [repair-component
         (fn [component]
           ;; Remove the objects key, or set it to {} if the component is deleted
@@ -513,10 +538,26 @@
               (log/debug :hint "  -> remove :objects")
               (dissoc component :objects))))]
 
-    (log/dbg :hint "repairing component :component-nil-objects-not-allowed" :id (:id shape) :name (:name shape))
+    (log/dbg :hint "repairing component :component-nil-objects-not-allowed" :id (:id component) :name (:name component))
     (-> (pcb/empty-changes nil)
         (pcb/with-library-data file-data)
-        (pcb/update-component (:id shape) repair-component))))
+        (pcb/update-component (:id component) repair-component))))
+
+(defmethod repair-error :non-deleted-component-cannot-have-objects
+  [_ {component :shape} file-data _]   ; in this error the :shape argument is the component
+  (let [repair-component
+        (fn [component]
+          ; Remove the :objects field
+          (if-not (:deleted component)
+            (do
+              (log/debug :hint "  -> remove :objects")
+              (dissoc component :objects))
+            component))]
+
+    (log/dbg :hint "repairing component :non-deleted-component-cannot-have-objects" :id (:id component) :name (:name component))
+    (-> (pcb/empty-changes nil)
+        (pcb/with-library-data file-data)
+        (pcb/update-component (:id component) repair-component))))
 
 (defmethod repair-error :invalid-text-touched
   [_ {:keys [shape page-id] :as error} file-data _]
