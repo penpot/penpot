@@ -62,6 +62,9 @@
            (fn [cause]
              (if (and (retryable-error? cause)
                       (< attempt max-retries))
+               ;; bit-shift-left 1 N is equivalent to 2^N: shift the bits of the
+               ;; number 1 to the left N positions (e.g. 1 -> 2 -> 4 -> 8 -> 16),
+               ;; producing exponential backoff delays of 1x, 2x, 4x, 8x, 16x.
                (let [delay-ms (* base-delay-ms (bit-shift-left 1 attempt))]
                  (log/wrn :hint "retrying request"
                           :attempt (inc attempt)
