@@ -371,33 +371,63 @@ impl TextContent {
     }
 
     pub fn calculate_bounds(&self, shape: &Shape, apply_transform: bool) -> Bounds {
-        let (x, mut y, transform, center) = (
-            shape.selrect.x(),
-            shape.selrect.y(),
-            &shape.transform,
-            &shape.center(),
-        );
+        let transform = &shape.transform;
+        let center = &shape.center();
 
-        let width = if self.grow_type() == GrowType::AutoWidth {
-            self.size.width
+        // Use the same layout pipeline as position data to get paragraph layouts
+        let mut text_content = self.clone();
+        text_content.update_layout(shape.selrect);
+        let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
+        let layout_data =
+            calculate_text_layout_data(shape, &text_content, &mut paragraph_builders, false);
+
+        // Compute the bounding rect using FontMetrics.top/bottom from line style metrics.
+        // These represent the actual rendered glyph extent beyond ascent/descent,
+        // which is needed for glyphs that overshoot (e.g. musical notation, diacritics).
+        // Use position data rects for accurate horizontal extent (left/right).
+        let text_rect = if !layout_data.paragraphs.is_empty() {
+            let mut min_x = f32::MAX;
+            let mut min_y = f32::MAX;
+            let mut max_x = f32::MIN;
+            let mut max_y = f32::MIN;
+            let mut has_lines = false;
+
+            for para_layout in &layout_data.paragraphs {
+                let line_metrics = para_layout.paragraph.get_line_metrics();
+                for line in &line_metrics {
+                    let line_baseline = para_layout.y + line.baseline as f32;
+
+                    // For top: use fm.top (max glyph extent above baseline) to capture
+                    // glyphs that overshoot ascent (e.g. tall musical symbols, diacritics)
+                    let style_metrics = line.get_style_metrics(line.start_index..line.end_index);
+                    for (_start, style_metric) in &style_metrics {
+                        let fm = &style_metric.font_metrics;
+                        // fm.top is negative (above baseline)
+                        min_y = min_y.min(line_baseline + fm.top);
+                    }
+
+                    // For bottom: use line descent (computed for the actual runs in this
+                    // line) rather than fm.bottom (max extent of any glyph in the font)
+                    max_y = max_y.max(line_baseline + line.descent as f32);
+                    has_lines = true;
+                }
+            }
+
+            // Use position data rects for left and right
+            for pd in &layout_data.position_data {
+                min_x = min_x.min(pd.x);
+                max_x = max_x.max(pd.x + pd.width);
+            }
+
+            if has_lines && !layout_data.position_data.is_empty() {
+                Rect::from_ltrb(min_x, min_y, max_x, max_y)
+            } else {
+                layout_data.content_rect
+            }
         } else {
-            shape.selrect().width()
+            layout_data.content_rect
         };
 
-        let height = if self.size.width.round() != width.round() {
-            self.get_height(width)
-        } else {
-            self.size.height
-        };
-
-        let offset_y = match shape.vertical_align() {
-            VerticalAlign::Center => (shape.selrect().height() - height) / 2.0,
-            VerticalAlign::Bottom => shape.selrect().height() - height,
-            _ => 0.0,
-        };
-        y += offset_y;
-
-        let text_rect = Rect::from_xywh(x, y, width, height);
         let mut bounds = Bounds::new(
             Point::new(text_rect.x(), text_rect.y()),
             Point::new(text_rect.x() + text_rect.width(), text_rect.y()),
