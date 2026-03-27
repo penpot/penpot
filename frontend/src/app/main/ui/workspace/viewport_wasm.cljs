@@ -74,9 +74,10 @@
         objects)))
 
 (mf/defc viewport*
-  [{:keys [selected wglobal wlocal layout file page palete-size file-version-id]}]
+  [{:keys [selected wglobal layout file page palete-size file-version-id]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
+
         {:keys [edit-path
                 panning
                 selrect
@@ -86,17 +87,18 @@
                 vport
                 zoom
                 zoom-inverse
-                edition]} wlocal
+                edition]}
+        (mf/deref refs/workspace-local)
 
         {:keys [options-mode
                 tooltip
                 show-distances?
-                picking-color?]} wglobal
+                picking-color?]}
+        wglobal
 
         permissions       (mf/use-ctx ctx/permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
 
-        ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
         wasm-modifiers    (mf/deref refs/workspace-wasm-modifiers)
