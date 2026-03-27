@@ -1378,67 +1378,45 @@ pub fn calculate_text_layout_data(
             let current_y = para_layout.y;
             let text_paragraph = text_paragraphs.get(paragraph_index);
             if let Some(text_para) = text_paragraph {
-                let mut span_ranges: Vec<(usize, usize, usize, String, String)> = vec![];
+                let mut span_ranges: Vec<(usize, usize, usize)> = vec![];
                 let mut cur = 0;
                 for (span_index, span) in text_para.children().iter().enumerate() {
-                    let transformed_text: String = span.apply_text_transform();
-                    let original_text = span.text.clone();
-                    let text = transformed_text.clone();
-                    let text_len = text.len();
-                    span_ranges.push((cur, cur + text_len, span_index, text, original_text));
+                    let text: String = span.apply_text_transform();
+                    let text_len = text.encode_utf16().count();
+                    span_ranges.push((cur, cur + text_len + 1, span_index));
                     cur += text_len;
                 }
-                for (start, end, span_index, transformed_text, original_text) in span_ranges {
-                    // Skip empty spans to avoid invalid rect calculations
-                    if start >= end {
-                        continue;
-                    }
+                for (start, end, span_index) in span_ranges {
                     let rects = para_layout.paragraph.get_rects_for_range(
                         start..end,
                         RectHeightStyle::Tight,
                         RectWidthStyle::Tight,
                     );
+
                     for textbox in rects {
                         let direction = textbox.direct;
                         let mut rect = textbox.rect;
                         let cy = rect.top + rect.height() / 2.0;
 
                         // Get byte positions from Skia's transformed text layout
-                        let glyph_start = para_layout
+                        let start_pos = para_layout
                             .paragraph
                             .get_glyph_position_at_coordinate((rect.left + 0.1, cy))
-                            .position as usize;
-                        let glyph_end = para_layout
+                            .position as usize
+                            - start;
+
+                        let end_pos = para_layout
                             .paragraph
                             .get_glyph_position_at_coordinate((rect.right - 0.1, cy))
-                            .position as usize;
-
-                        // Convert to byte positions relative to this span
-                        let byte_start = glyph_start.saturating_sub(start);
-                        let byte_end = glyph_end.saturating_sub(start);
-
-                        // Convert byte positions to character positions in ORIGINAL text
-                        // This handles multi-byte UTF-8 and text transform differences
-                        let char_start = transformed_text
-                            .char_indices()
-                            .position(|(i, _)| i >= byte_start)
-                            .unwrap_or(0);
-                        let char_end = transformed_text
-                            .char_indices()
-                            .position(|(i, _)| i >= byte_end)
-                            .unwrap_or_else(|| transformed_text.chars().count());
-
-                        // Clamp to original text length for safety
-                        let original_char_count = original_text.chars().count();
-                        let final_start = char_start.min(original_char_count);
-                        let final_end = char_end.min(original_char_count);
+                            .position as usize
+                            - start;
 
                         rect.offset((x, current_y));
                         position_data.push(PositionData {
                             paragraph: paragraph_index as u32,
                             span: span_index as u32,
-                            start_pos: final_start as u32,
-                            end_pos: final_end as u32,
+                            start_pos: start_pos as u32,
+                            end_pos: end_pos as u32,
                             x: rect.x(),
                             y: rect.y(),
                             width: rect.width(),
