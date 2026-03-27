@@ -36,45 +36,55 @@
    [:selected {:optional true}
     [:maybe [:or :keyword :string]]]
    [:allow-empty {:optional true} :boolean]
+   [:disabled {:optional true} :boolean]
    [:options [:vector {:min 1} schema:radio-button]]
    [:on-change {:optional true} fn?]])
 
 (mf/defc radio-buttons*
   {::mf/schema schema:radio-buttons}
-  [{:keys [class variant extended name selected allow-empty options on-change] :rest props}]
+  [{:keys [class variant extended name selected allow-empty options on-change disabled] :rest props}]
   (let [options (if (array? options)
                   (mfu/bean options)
                   options)
-        type    (if allow-empty "checkbox" "radio")
-        variant (d/nilv variant "secondary")
+        type             (if allow-empty "checkbox" "radio")
+        variant          (d/nilv variant "secondary")
+        wrapper-disabled (d/nilv disabled false)
 
         handle-click
         (mf/use-fn
          (fn [event]
            (let [target (dom/get-target event)
-                 label  (dom/get-parent-with-data target "label")]
-             (dom/prevent-default event)
-             (dom/stop-propagation event)
-             (dom/click label))))
+                 label  (dom/get-parent-with-data target "label")
+                 input  (dom/query label "input")
+                 disabled? (dom/get-attribute target "disabled")]
+             (when-not disabled?
+               (dom/click input)))))
 
         handle-change
         (mf/use-fn
-         (mf/deps selected on-change)
+         (mf/deps selected on-change allow-empty)
          (fn [event]
-           (let [input (dom/get-target event)
-                 value (dom/get-target-val event)]
+           (let [input     (dom/get-target event)
+                 value     (dom/get-target-val event)
+                 selected-str (when selected (d/name selected))
+                 new-value (if (and allow-empty (= value selected-str))
+                             nil
+                             value)]
              (when (fn? on-change)
-               (on-change value event))
+               (on-change new-value event))
              (dom/blur! input))))
 
         props
         (mf/spread-props props {:key (dm/str name "-" selected)
                                 :class [class (stl/css-case :wrapper true
+                                                            :disabled disabled
                                                             :extended extended)]})]
 
     [:> :div props
      (for [[idx {:keys [id class value label icon disabled]}] (d/enumerate options)]
-       (let [checked? (= selected value)]
+       (let [value-str (d/name value)
+             selected-str (when selected (d/name selected))
+             checked? (= selected-str value-str)]
          [:label {:key idx
                   :html-for id
                   :data-label true
@@ -88,13 +98,13 @@
                               :aria-pressed checked?
                               :aria-label label
                               :icon icon
-                              :disabled disabled}]
+                              :disabled (or disabled wrapper-disabled)}]
             [:> button* {:variant variant
                          :on-click handle-click
                          :aria-pressed checked?
                          :class (stl/css-case :button true
                                               :extended extended)
-                         :disabled disabled}
+                         :disabled (or disabled wrapper-disabled)}
              label])
 
           [:input {:id id
@@ -102,6 +112,6 @@
                    :on-change handle-change
                    :type type
                    :name name
-                   :disabled disabled
+                   :disabled (or disabled wrapper-disabled)
                    :value value
-                   :default-checked checked?}]]))]))
+                   :checked checked?}]]))]))
