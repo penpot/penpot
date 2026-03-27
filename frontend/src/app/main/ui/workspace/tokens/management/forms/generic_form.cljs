@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.tokens.management.forms.generic-form
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
    [app.common.types.tokens-lib :as ctob]
@@ -186,7 +185,6 @@
          (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
-                 path (str (d/name token-type) "." name)
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
                  value-for-validation (get-value-for-validator active-tab value value-subfield value-type)]
@@ -221,7 +219,7 @@
                                                {:name name
                                                 :value (:value valid-token)
                                                 :description description}))
-                          (dwtl/toggle-token-path path)
+                          (dwtl/toggle-token-type (:type token) false)
                           (dwtp/propagate-workspace-tokens)
                           (modal/hide!)))))
                    ;; WORKAROUND:  display validation errors in the form instead of crashing

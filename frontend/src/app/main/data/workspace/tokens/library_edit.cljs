@@ -95,6 +95,20 @@
                        (remove-path path paths)
                        (add-path path paths))))))))
 
+;; Toggle token type folder (e.g. color, typography) in the tree view
+;; If `allow-close-type-folder` is false, it will only allow opening the folder, but not closing it.
+(defn toggle-token-type
+  [type allow-close-type-folder]
+  (ptk/reify ::toggle-token-type
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-tokens :unfolded-token-types]
+                 (fn [types]
+                   (let [types (or types #{})]
+                     (if (and (contains? types type) allow-close-type-folder)
+                       (disj types type)
+                       (conj types type))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
-import { setupTokensFileRender, unfoldTokenTree } from "./helpers";
+import { setupTokensFileRender } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);

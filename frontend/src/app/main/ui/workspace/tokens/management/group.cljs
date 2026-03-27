@@ -30,6 +30,9 @@
 (def ref:folded-token-paths
   (l/derived (l/key :folded-token-paths) refs/workspace-tokens))
 
+(def ref:unfolded-token-types
+  (l/derived (l/key :unfolded-token-types) refs/workspace-tokens))
+
 (defn token-section-icon
   [type]
   (case type
@@ -73,7 +76,9 @@
         (get dwta/token-properties type)
 
         folded-token-paths (mf/deref ref:folded-token-paths)
-        is-type-unfolded (contains? (set folded-token-paths) (name type))
+        unfolded-token-types (mf/deref ref:unfolded-token-types)
+
+        is-type-unfolded (contains? (set unfolded-token-types) type)
 
         editing-ref  (mf/deref refs/workspace-editor-state)
         edition      (mf/deref refs/selected-edition)
@@ -117,7 +122,7 @@
          (mf/deps type expandable?)
          (fn []
            (when expandable?
-             (st/emit! (dwtl/toggle-token-path (name type))))))
+             (st/emit! (dwtl/toggle-token-type type true)))))
 
         on-popover-open-click
         (mf/use-fn

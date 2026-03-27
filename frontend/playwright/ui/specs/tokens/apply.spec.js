@@ -4,7 +4,7 @@ import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import {
   setupTokensFileRender,
   setupTypographyTokensFileRender,
-  unfoldTokenTree,
+  unfoldTokenType,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -24,10 +24,9 @@ test.describe("Tokens: Apply token", () => {
       .filter({ hasText: "Button" })
       .click();
 
-    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
-    await tokensTabButton.click();
+    await page.getByRole("tab", { name: "Tokens" }).click();
 
-    unfoldTokenTree(tokensSidebar, "color", "colors.black");
+    await unfoldTokenType(tokensSidebar, "color");
 
     await tokensSidebar
       .getByRole("button", { name: "black" })
@@ -52,11 +51,10 @@ test.describe("Tokens: Apply token", () => {
     await workspacePage.layers.getByTestId("layer-row").nth(1).click();
 
     // Open tokens sections on left sidebar
-    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
-    await tokensTabButton.click();
 
-    // Unfold border radius tokens
-    await page.getByRole("button", { name: "Border Radius 3" }).click();
+    await page.getByRole("tab", { name: "Tokens" }).click();
+
+    await unfoldTokenType(tokensSidebar, "border radius");
     await expect(
       tokensSidebar.getByRole("button", {
         name: "borderRadius.sm",
@@ -118,7 +116,7 @@ test.describe("Tokens: Apply token", () => {
     await tokensTabButton.click();
 
     // Unfold opacity tokens
-    await page.getByRole("button", { name: "Opacity 3" }).click();
+    await unfoldTokenType(tokensSidebar, "opacity");
     await expect(
       tokensSidebar.getByRole("button", { name: "opacity.high" }),
     ).toBeVisible();
@@ -196,12 +194,8 @@ test.describe("Tokens: Apply token", () => {
   test("User adds shadow token with multiple shadows and applies it to shape", async ({
     page,
   }) => {
-    const {
-      tokensUpdateCreateModal,
-      tokensSidebar,
-      workspacePage,
-      tokenContextMenuForToken,
-    } = await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
+    const { tokensUpdateCreateModal, tokensSidebar, workspacePage } =
+      await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -469,8 +463,6 @@ test.describe("Tokens: Apply token", () => {
       await submitButton.click();
       await expect(tokensUpdateCreateModal).not.toBeVisible();
 
-      unfoldTokenTree(tokensSidebar, "shadow", "primary");
-
       // Verify token appears in sidebar
       const shadowToken = tokensSidebar.getByRole("button", {
         name: "primary",
@@ -505,7 +497,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
 
-    unfoldTokenTree(tokensSidebar, "dimensions", "dimension.dimension.sm");
+    await unfoldTokenType(tokensSidebar, "dimensions");
 
     // Apply token to width and height token from token panel
     await tokensSidebar.getByRole("button", { name: "dimension.sm" }).click();
@@ -558,7 +550,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
 
-    unfoldTokenTree(tokensSidebar, "dimensions", "dimension.dimension.sm");
+    await unfoldTokenType(tokensSidebar, "dimensions");
 
     // Apply token to width and height token from token panel
     await tokensSidebar
@@ -614,7 +606,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
 
-    unfoldTokenTree(tokensSidebar, "dimensions", "dimension.dimension.sm");
+    await unfoldTokenType(tokensSidebar, "dimensions");
 
     // Apply token to width and height token from token panel
     await tokensSidebar
@@ -670,7 +662,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
 
-    unfoldTokenTree(tokensSidebar, "dimensions", "dimension.dimension.xs");
+    await unfoldTokenType(tokensSidebar, "dimensions");
 
     // Apply token to width and height token from token panel
     await tokensSidebar
@@ -802,8 +794,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTab = page.getByRole("tab", { name: "Tokens" });
     await expect(tokensTab).toBeVisible();
     await tokensTab.click();
-    await page.getByRole("button", { name: "Dimensions 4" }).click();
-    await page.getByRole("button", { name: "dim", exact: true }).click();
+    await unfoldTokenType(workspace.tokensSidebar, "dimensions");
     const tokensSidebar = workspace.tokensSidebar;
     await expect(
       tokensSidebar.getByRole("button", { name: "dim.md" }),
@@ -874,11 +865,7 @@ test.describe("Tokens: Detach token", () => {
     await tokensTabButton.click();
 
     // Unfold border radius tokens
-    await page.getByRole("button", { name: "Border Radius 3" }).click();
-    await expect(
-      tokensSidebar.getByRole("button", { name: "borderRadius" }),
-    ).toBeVisible();
-    await tokensSidebar.getByRole("button", { name: "borderRadius" }).click();
+    await unfoldTokenType(tokensSidebar, "Border Radius");
     await expect(
       tokensSidebar.getByRole("button", { name: "borderRadius.sm" }),
     ).toBeVisible();

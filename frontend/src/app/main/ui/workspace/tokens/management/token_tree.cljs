@@ -21,7 +21,7 @@
   [:map
    [:node :any]
    [:type :keyword]
-   [:folded-token-paths {:optional true} [:vector :string]]
+   [:folded-token-paths {:optional true} [:maybe [:vector :string]]]
    [:selected-shapes :any]
    [:is-selected-inside-layout {:optional true} :boolean]
    [:active-theme-tokens {:optional true} :any]
@@ -100,7 +100,7 @@
   [:map
    [:tokens :any]
    [:type :keyword]
-   [:folded-token-paths {:optional true} [:vector :string]]
+   [:folded-token-paths {:optional true} [:maybe [:vector :string]]]
    [:selected-shapes :any]
    [:is-selected-inside-layout {:optional true} :boolean]
    [:active-theme-tokens {:optional true} :any]
