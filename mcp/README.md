@@ -302,5 +302,9 @@ you may set the following environment variables to configure the two servers
 * The [contribution guidelines for Penpot](../CONTRIBUTING.md) apply
 * Auto-formatting: Use `pnpm run fmt`
 * Generating API type data: See [types-generator/README.md](types-generator/README.md)
+* Versioning: Use `bash scripts/version` to set the version for the MCP package (in `package.json`).
+  - Ensure that at least the major, minor and patch components of the version are always up-to-date.
+  - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API) 
+    indicates incompatibility, resulting in the display of a warning message in the plugin UI.
 * Packaging and publishing:
   - Create npm package: `bash scripts/pack` (sets version and then calls `npm pack`)
