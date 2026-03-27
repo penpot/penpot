@@ -118,7 +118,7 @@
                     (rx/ignore))))
            (rx/empty)))))))
 
-(defn- assoc-thumbnail
+(defn assoc-thumbnail
   [object-id uri]
   (let [prev-uri* (volatile! nil)]
     (ptk/reify ::assoc-thumbnail

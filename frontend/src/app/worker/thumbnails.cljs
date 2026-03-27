@@ -214,3 +214,4 @@
                        (rx/end! subs))))]
        (rx/push! thumbnails-queue (assoc message :id id))
        #(rx/dispose! sid)))))
+
