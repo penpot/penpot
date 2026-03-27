@@ -8783,3 +8783,6 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "modals.delete-org-team-confirm.message"
+msgstr "¿Estás seguro de que deseas eliminar este equipo que forma parte de la organización %s?"
