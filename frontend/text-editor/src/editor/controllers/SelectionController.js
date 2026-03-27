@@ -961,7 +961,7 @@ export class SelectionController extends EventTarget {
    * @type {boolean}
    */
   get isTextFocus() {
-    return this.focusNode.nodeType === Node.TEXT_NODE;
+    return this.focusNode != null && this.focusNode.nodeType === Node.TEXT_NODE;
   }
 
   /**
@@ -970,7 +970,9 @@ export class SelectionController extends EventTarget {
    * @type {boolean}
    */
   get isTextAnchor() {
-    return this.anchorNode.nodeType === Node.TEXT_NODE;
+    return (
+      this.anchorNode != null && this.anchorNode.nodeType === Node.TEXT_NODE
+    );
   }
 
   /**
