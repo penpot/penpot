@@ -3,15 +3,7 @@ use skia_safe::{self as skia, Paint, RRect};
 use super::{filters, RenderState, SurfaceId};
 use crate::error::Result;
 use crate::render::get_source_rect;
-use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, StrokeKind, Type};
-
-/// True when the shape has at least one visible inner stroke.
-fn has_inner_stroke(shape: &Shape) -> bool {
-    let is_open = shape.is_open();
-    shape
-        .visible_strokes()
-        .any(|s| s.render_kind(is_open) == StrokeKind::Inner)
-}
+use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, Type};
 
 fn draw_image_fill(
     render_state: &mut RenderState,
@@ -113,7 +105,7 @@ pub fn render(
     }
 
     let scale = render_state.get_scale().max(1e-6);
-    let inset = if has_inner_stroke(shape) {
+    let inset = if shape.has_inner_stroke() {
         Some(1.0 / scale)
     } else {
         None
