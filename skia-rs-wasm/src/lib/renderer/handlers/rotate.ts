@@ -13,6 +13,7 @@ import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
+import { getSelectedIdsSet } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getCurrentPage } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
@@ -34,7 +35,8 @@ function angleDegFromCenter(cx: number, cy: number, wx: number, wy: number): num
 
 export function startRotateSelected(initialPosition: Point): Observable<void> {
   let state = useWorkspaceStore.getState()
-  const { renderer, viewport, selectedIds, wasmSelectionRect } = state
+  const { renderer, viewport, wasmSelectionRect } = state
+  const selectedIds = getSelectedIdsSet()
 
   if (!renderer || !viewport || selectedIds.size < 1) {
     return EMPTY

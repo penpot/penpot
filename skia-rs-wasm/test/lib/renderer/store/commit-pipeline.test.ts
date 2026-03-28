@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Change } from 'penpot-exporter/types'
 import type { IndexedPage } from '../../../../src/lib/worker/types'
-import type { DocumentModel } from '../../../../src/lib/renderer/store/document-model'
 import { useWorkspaceStore } from '../../../../src/lib/renderer/store/workspace-store'
+import { docProxy } from '../../../../src/lib/renderer/store/doc-proxy'
 import { useHistoryStore } from '../../../../src/lib/history/history-store'
 import { commitChanges } from '../../../../src/lib/renderer/store/commit'
 
@@ -65,29 +65,27 @@ describe('commitChanges pipeline', () => {
     page = structuredClone(makePage())
     useHistoryStore.setState({ undoStack: [], redoStack: [] })
 
-    const mockModel = {
-      getPage: (id: string) => (id === PAGE_ID ? page : undefined),
-      getActiveOrSinglePageId: () => PAGE_ID,
-      applyPageUpdate: (_id: string, updated: IndexedPage) => {
-        order.push('local')
-        page = updated
-      },
-    } as unknown as DocumentModel
+    docProxy.pageMap.clear()
+    docProxy.pageMap.set(PAGE_ID, page)
+    docProxy.currentPageId = PAGE_ID
+    docProxy.selectedIds.clear()
 
     const workerClient = {
       updatePageWithChanges: vi.fn(async () => {
         order.push('worker')
+        const updated = docProxy.pageMap.get(PAGE_ID)
+        if (updated) page = updated
       }),
       updatePage: vi.fn(async () => {
         order.push('worker-full')
+        const updated = docProxy.pageMap.get(PAGE_ID)
+        if (updated) page = updated
       }),
     }
 
     useWorkspaceStore.setState({
-      documentModel: mockModel,
       workerClient: workerClient as never,
       renderer: null,
-      pageId: PAGE_ID,
     })
   })
 
@@ -100,7 +98,7 @@ describe('commitChanges pipeline', () => {
       },
     ]
     await commitChanges({ redoChanges: redo, pageId: PAGE_ID, saveUndo: false })
-    expect(order).toEqual(['local', 'worker'])
+    expect(order).toEqual(['worker'])
     expect(page.objects[RECT].x).toBe(5)
   })
 
@@ -148,8 +146,8 @@ describe('commitChanges pipeline', () => {
     expect(useHistoryStore.getState().undoStack[0].redoChanges).toEqual(redo)
   })
 
-  it('applies commits when workspace pageId is null but document exposes active page', async () => {
-    useWorkspaceStore.setState({ pageId: null })
+  it('applies commits when explicit pageId omitted but document exposes active page', async () => {
+    docProxy.currentPageId = null
     const redo: Change[] = [
       {
         type: 'mod-obj',
@@ -158,7 +156,7 @@ describe('commitChanges pipeline', () => {
       },
     ]
     await commitChanges({ redoChanges: redo, saveUndo: false })
-    expect(order).toEqual(['local', 'worker'])
+    expect(order).toEqual(['worker'])
     expect(page.objects[RECT].x).toBe(9)
   })
 })

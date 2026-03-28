@@ -7,9 +7,9 @@ import type { IndexedNode } from '../../lib/worker/types'
 const MAX_IDS_SHOWN = 5
 
 export function SelectionInfo(): JSX.Element {
-  const selectedIds = useWorkspaceStore((state) => state.selectedIds)
   const selectionRect = useWorkspaceStore((state) => state.selectionRect)
   const doc = useSnapshot(docProxy)
+  const selectedIds = new Set(doc.selectedIds)
   const page = doc.currentPageId ? doc.pageMap.get(doc.currentPageId) : undefined
   const selectedNodes = Array.from(selectedIds)
     .map((id) => page?.objects[id])

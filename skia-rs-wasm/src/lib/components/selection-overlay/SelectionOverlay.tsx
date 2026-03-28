@@ -28,8 +28,8 @@ export interface SelectionOverlayProps {
 }
 
 export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProps) {
-  const selectedIds = useWorkspaceStore((state) => state.selectedIds)
   const doc = useSnapshot(docProxy)
+  const selectedIds = useMemo(() => new Set(doc.selectedIds), [doc.selectedIds])
   const wasmSelectionRect = useWorkspaceStore((state) => state.wasmSelectionRect)
   const viewport = useWorkspaceStore((state) => state.viewport)
   const zoom = useWorkspaceStore((state) => state.viewport?.zoom ?? 1)

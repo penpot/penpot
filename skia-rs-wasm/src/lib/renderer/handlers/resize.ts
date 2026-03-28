@@ -7,6 +7,7 @@ import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
+import { getSelectedIdsSet } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getCurrentPage } from '../store/doc-proxy'
 import { getModifierKeys } from '../store/shortcuts-store'
@@ -81,7 +82,8 @@ export function startResizeSelected(
   handle: ResizeHandlePosition
 ): Observable<void> {
   const state = useWorkspaceStore.getState()
-  const { renderer, viewport, selectedIds, wasmSelectionRect } = state
+  const { renderer, viewport, wasmSelectionRect } = state
+  const selectedIds = getSelectedIdsSet()
   if (!renderer || !viewport || selectedIds.size < 1 || !wasmSelectionRect) return EMPTY
 
   const x = wasmSelectionRect.center.x - wasmSelectionRect.width / 2

@@ -20,7 +20,7 @@ export async function applyModifiersAndCommit(
   const { renderer } = state
   const module = renderer?.getModule?.()
   if (!module) return
-  const pageId = state.pageId ?? getActiveOrSinglePageId() ?? undefined
+  const pageId = getActiveOrSinglePageId() ?? undefined
 
   // snapshot() produces plain non-proxy objects so structuredClone inside
   // snapshotGeometryForUndo does not fail on Valtio proxy sub-objects.
@@ -45,7 +45,7 @@ export async function applyModifiersAndCommit(
     await commitChanges({
       redoChanges: bundle.redoChanges,
       undoChanges: bundle.undoChanges,
-      pageId: bundle.pageId ?? state.pageId ?? getActiveOrSinglePageId() ?? undefined,
+      pageId: bundle.pageId ?? getActiveOrSinglePageId() ?? undefined,
     })
   }
 }

@@ -11,14 +11,12 @@ import type { Selrect } from 'penpot-exporter/types'
 /** Active tool for creating shapes on the canvas (toolbar). `null` = select / default. */
 export type DrawTool = 'rect'
 import type { ResizeHandlePosition, SelectionRectResult } from '../types'
-import type { WorkerClient, IndexedNode } from '../../worker/types'
-import { getCurrentPage } from './doc-proxy'
-import { getSelectionBounds, type Rect } from '../selection-bounds'
+import type { WorkerClient } from '../../worker/types'
+import { docProxy } from './doc-proxy'
+import { type Rect } from '../selection-bounds'
 
 export interface WorkspaceState {
   // State
-  pageId: string | null
-  selectedIds: Set<string>
   /** Union of selected nodes' selrects; set when selection changes. */
   selectionBounds: Rect | null
   selectionRect: Selrect | null
@@ -58,8 +56,6 @@ export interface WorkspaceState {
   wasmModuleError: Error | null
 
   // Actions
-  setPageId: (id: string | null) => void
-  setSelectedIds: (ids: Set<string>) => void
   setSelectionRect: (rect: Selrect | null) => void
   setWasmSelectionRect: (value: SelectionRectResult | null) => void
   refreshWasmSelectionRect: () => void
@@ -80,16 +76,11 @@ export interface WorkspaceState {
   setLastAppliedViewport: (data: ViewportData | null) => void
   setRenderer: (renderer: Renderer) => void
   setWorkerClient: (client: WorkerClient | null) => void
-  clearSelection: () => void
 
   // WASM Module actions
   setWasmModule: (module: WasmModule | null) => void
   setIsWasmModuleLoading: (loading: boolean) => void
   setWasmModuleError: (error: Error | null) => void
-}
-
-function isIndexedNode(value: IndexedNode | undefined): value is IndexedNode {
-  return value !== undefined
 }
 
 function isFiniteSelectionRect(value: SelectionRectResult | null): value is SelectionRectResult {
@@ -109,8 +100,6 @@ function isFiniteSelectionRect(value: SelectionRectResult | null): value is Sele
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
-  pageId: null,
-  selectedIds: new Set(),
   selectionBounds: null,
   selectionRect: null,
   wasmSelectionRect: null,
@@ -136,20 +125,11 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   isWasmModuleLoading: false,
   wasmModuleError: null,
 
-  setPageId: (id) => set({ pageId: id }),
-  setSelectedIds: (ids) => {
-    const page = getCurrentPage()
-    const objects = page?.objects
-    const selectedNodes = objects ? Array.from(ids).map((id) => objects[id]).filter(isIndexedNode) : []
-    set({
-      selectedIds: ids,
-      selectionBounds: getSelectionBounds(selectedNodes),
-    })
-  },
   setSelectionRect: (rect) => set({ selectionRect: rect }),
   setWasmSelectionRect: (value) => set({ wasmSelectionRect: value }),
   refreshWasmSelectionRect: () => {
-    const { renderer, selectedIds } = get()
+    const { renderer } = get()
+    const selectedIds = docProxy.selectedIds
     if (!renderer || selectedIds.size === 0) {
       set({ wasmSelectionRect: null })
       return
@@ -179,14 +159,6 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   setLastAppliedViewport: (data) => set({ lastAppliedViewport: data }),
   setRenderer: (renderer) => set({ renderer, wasmSelectionRect: null }),
   setWorkerClient: (client) => set({ workerClient: client }),
-  clearSelection: () => set({
-    selectedIds: new Set(),
-    selectionBounds: null,
-    selectionRect: null,
-    wasmSelectionRect: null,
-    rotatePreviewDeltaDeg: 0,
-    movePreviewWorldDelta: { x: 0, y: 0 },
-  }),
   setWasmModule: (module) => set({ wasmModule: module }),
   setIsWasmModuleLoading: (loading) => set({ isWasmModuleLoading: loading }),
   setWasmModuleError: (error) => set({ wasmModuleError: error }),

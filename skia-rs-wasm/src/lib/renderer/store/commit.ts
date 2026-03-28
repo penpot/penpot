@@ -180,8 +180,7 @@ export async function commitChanges(params: CommitChangesParams): Promise<void> 
   const state = useWorkspaceStore.getState()
   const { workerClient } = state
 
-  const fallbackPageId =
-    explicitPageId ?? state.pageId ?? getActiveOrSinglePageId()
+  const fallbackPageId = explicitPageId ?? getActiveOrSinglePageId()
   const byPage = groupChangesByPageId(redoChanges, fallbackPageId)
   if (byPage.size === 0) return
 

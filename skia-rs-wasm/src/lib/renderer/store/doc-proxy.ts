@@ -1,5 +1,5 @@
 import { proxy } from 'valtio'
-import { proxyMap } from 'valtio/utils'
+import { proxyMap, proxySet } from 'valtio/utils'
 import type { PenpotDocument } from 'penpot-exporter/types'
 import type { IndexedNode, IndexedPage } from '../../worker/types'
 
@@ -9,12 +9,15 @@ export interface DocState {
   meta: DocumentMeta | null
   pageMap: Map<string, IndexedPage>
   currentPageId: string | null
+  /** Reactive Set of selected shape ids (Valtio proxySet). */
+  selectedIds: ReturnType<typeof proxySet<string>>
 }
 
 export const docProxy = proxy<DocState>({
   meta: null,
   pageMap: proxyMap<string, IndexedPage>(),
   currentPageId: null,
+  selectedIds: proxySet<string>(),
 })
 
 export function getActiveOrSinglePageId(): string | null {

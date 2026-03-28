@@ -8,6 +8,7 @@ import { map, filter, scan, takeUntil, take, bufferTime, tap, distinctUntilChang
 import { mousePosition$ } from '../streams'
 import { askWorker$ } from '../streams/worker-streams'
 import { dragStopper } from '../streams/drag-stopper'
+import { clearSelection, getSelectedIdsSet, setSelectedIds } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getActiveOrSinglePageId } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
@@ -19,13 +20,13 @@ export function handleAreaSelection(
   ignoreGroups?: boolean
 ): Observable<void> {
   const store = useWorkspaceStore.getState()
-  const { workerClient, pageId, viewport } = store
-  const effectivePageId = pageId ?? getActiveOrSinglePageId()
+  const { workerClient, viewport } = store
+  const effectivePageId = getActiveOrSinglePageId()
 
   if (!workerClient || !viewport) return EMPTY
-  
+
   const stopper = dragStopper()
-  const initialSet = append || remove ? store.selectedIds : new Set<string>()
+  const initialSet = append || remove ? getSelectedIdsSet() : new Set<string>()
   
   // Get initial position from current mouse position or wait for first value
   return mousePosition$.pipe(
@@ -76,14 +77,14 @@ export function handleAreaSelection(
           const newIds = remove 
             ? new Set([...initialSet].filter(id => !ids?.includes(id)))
             : new Set([...initialSet, ...(ids ?? [])])
-          useWorkspaceStore.getState().setSelectedIds(newIds)
+          setSelectedIds(newIds)
           return ids
         })
       )
       
       return concat(
         append || remove ? EMPTY : of(null).pipe(
-          tap(() => useWorkspaceStore.getState().clearSelection()),
+          tap(() => clearSelection()),
           map(() => undefined)
         ),
         merge(
