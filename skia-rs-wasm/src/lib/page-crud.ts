@@ -1,10 +1,9 @@
 /**
  * CRUD operations for document and pages.
- * Delegates to DocumentModel; updates are pushed by the model to workspace store and dev store.
+ * Delegates to DocumentModel orchestration backed by Valtio document state.
  */
 
-import { useWorkspaceStore } from './renderer/store/workspace-store'
-import { DocumentModel } from './renderer/store/document-model'
+import { documentModel } from './renderer/store/document-model'
 import { commitChanges } from './renderer/store/commit'
 import { useHistoryStore } from './history/history-store'
 import type { IndexedPage } from './worker/types'
@@ -47,34 +46,28 @@ export function createNewDocument(): PenpotDocument {
 }
 
 export async function setDocument(document: PenpotDocument): Promise<void> {
-  const model = new DocumentModel()
-  await model.loadDocument(document)
+  await documentModel.loadDocument(document)
 }
 
 export async function setActivePage(pageId: string): Promise<void> {
-  const model = useWorkspaceStore.getState().documentModel
-  if (model) await model.setActivePage(pageId)
+  await documentModel.setActivePage(pageId)
 }
 
 export async function addPage(page: IndexedPage | PenpotPage): Promise<void> {
-  const model = useWorkspaceStore.getState().documentModel
-  if (!model) return
   const indexed: IndexedPage =
     'objects' in page && page.objects ? (page as IndexedPage) : flattenPageToIndexed(page as PenpotPage)
-  await model.addPage(indexed)
+  await documentModel.addPage(indexed)
 }
 
 export async function deletePage(pageId: string): Promise<void> {
-  const model = useWorkspaceStore.getState().documentModel
-  if (model) await model.deletePage(pageId)
+  await documentModel.deletePage(pageId)
 }
 
 export async function applyChanges(
   changes: Change[],
   options?: { pageId?: string; undoChanges?: Change[] }
 ): Promise<void> {
-  const model = useWorkspaceStore.getState().documentModel
-  if (model) await model.applyChanges(changes, options)
+  await documentModel.applyChanges(changes, options)
 }
 
 /** Full commit with optional undo vector (Penpot-shaped pipeline + history). */

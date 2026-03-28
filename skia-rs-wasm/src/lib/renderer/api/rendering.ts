@@ -35,7 +35,10 @@ export function renderSyncShape(module: WasmModule, id: string): void {
  * Request async render via requestAnimationFrame
  */
 export function requestRender(module: WasmModule, _requester: string): void {
-  if (!getContextInitialized() || getPendingRender() || getContextLost()) {
+  if (!getContextInitialized() || getContextLost()) {
+    return
+  }
+  if (getPendingRender()) {
     return
   }
 

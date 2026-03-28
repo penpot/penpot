@@ -1,12 +1,19 @@
 import type { JSX } from 'react'
 import { useWorkspaceStore } from '../../lib/renderer/store/workspace-store'
+import { useSnapshot } from 'valtio'
+import { docProxy } from '../../lib/renderer/store/doc-proxy'
+import type { IndexedNode } from '../../lib/worker/types'
 
 const MAX_IDS_SHOWN = 5
 
 export function SelectionInfo(): JSX.Element {
   const selectedIds = useWorkspaceStore((state) => state.selectedIds)
   const selectionRect = useWorkspaceStore((state) => state.selectionRect)
-  const selectedNodes = useWorkspaceStore((state) => state.selectedNodes)
+  const doc = useSnapshot(docProxy)
+  const page = doc.currentPageId ? doc.pageMap.get(doc.currentPageId) : undefined
+  const selectedNodes = Array.from(selectedIds)
+    .map((id) => page?.objects[id])
+    .filter((node): node is IndexedNode => node !== undefined)
 
   const count = selectedIds.size
   const idList = Array.from(selectedIds)

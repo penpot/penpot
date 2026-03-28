@@ -1,42 +1,22 @@
 /**
- * Zustand store for workspace state management.
- * Holds app state: selectedNodes, pageId, selectedIds, selection, viewport, renderer, worker.
- * Document/page data lives in DocumentModel; it pushes selectedNodes here and (for dev) currentPageNodes to workspace-dev-store.
+ * Zustand store for workspace/editor interaction state.
  */
 
 import { create } from 'zustand'
 import type { WasmModule } from '../wasm-types'
 import type { ViewportData } from '../viewport'
 import { Renderer } from '../index'
-import type { Selrect, Change } from 'penpot-exporter/types'
+import type { Selrect } from 'penpot-exporter/types'
 
 /** Active tool for creating shapes on the canvas (toolbar). `null` = select / default. */
 export type DrawTool = 'rect'
 import type { ResizeHandlePosition, SelectionRectResult } from '../types'
-import type { WorkerClient } from '../../worker/types'
-import type { IndexedPage, IndexedNode } from '../../worker/types'
+import type { WorkerClient, IndexedNode } from '../../worker/types'
+import { getCurrentPage } from './doc-proxy'
 import { getSelectionBounds, type Rect } from '../selection-bounds'
-
-/** Implemented by DocumentModel; used so the store and page-crud can call methods without importing the class. */
-export interface IDocumentModel {
-  getNode(id: string): IndexedNode | undefined
-  getSelectedNodes(selectedIds: Set<string>): IndexedNode[]
-  getPage(id: string): IndexedPage | undefined
-  /** Current page id, or the only page id when the document has a single page (for commits when workspace `pageId` is unset). */
-  getActiveOrSinglePageId(): string | null
-  setActivePage(pageId: string): Promise<void>
-  addPage(page: IndexedPage): Promise<void>
-  deletePage(pageId: string): Promise<void>
-  applyChanges(
-    changes: Change[],
-    options?: { pageId?: string; undoChanges?: Change[] }
-  ): Promise<void>
-}
 
 export interface WorkspaceState {
   // State
-  documentModel: IDocumentModel | null
-  selectedNodes: IndexedNode[]
   pageId: string | null
   selectedIds: Set<string>
   /** Union of selected nodes' selrects; set when selection changes. */
@@ -51,6 +31,10 @@ export interface WorkspaceState {
   isRotating: boolean
   /** Corner that started the rotation drag; used to keep the same rotation cursor during drag. */
   rotationCorner: ResizeHandlePosition | null
+  /** Delta (deg) applied during active rotate drag; properties panel adds this to committed rotation for live display. */
+  rotatePreviewDeltaDeg: number
+  /** World-space translation during move drag (same as WASM modifier); drives live X/Y in the properties panel. */
+  movePreviewWorldDelta: { x: number; y: number }
   /** When starting area selection with modifier: append (shift) or remove (shift+mod). */
   areaSelectionAppend: boolean
   areaSelectionRemove: boolean
@@ -74,8 +58,6 @@ export interface WorkspaceState {
   wasmModuleError: Error | null
 
   // Actions
-  setDocumentModel: (model: IDocumentModel | null) => void
-  setSelectedNodes: (nodes: IndexedNode[]) => void
   setPageId: (id: string | null) => void
   setSelectedIds: (ids: Set<string>) => void
   setSelectionRect: (rect: Selrect | null) => void
@@ -87,6 +69,8 @@ export interface WorkspaceState {
   setResizeHandle: (handle: ResizeHandlePosition | null) => void
   setIsRotating: (is: boolean) => void
   setRotationCorner: (corner: ResizeHandlePosition | null) => void
+  setRotatePreviewDeltaDeg: (deg: number) => void
+  setMovePreviewWorldDelta: (d: { x: number; y: number }) => void
   setAreaSelectionMode: (append: boolean, remove: boolean) => void
   setIsPanning: (value: boolean) => void
   setDrawTool: (tool: DrawTool | null) => void
@@ -104,11 +88,27 @@ export interface WorkspaceState {
   setWasmModuleError: (error: Error | null) => void
 }
 
-const EMPTY_NODES: IndexedNode[] = []
+function isIndexedNode(value: IndexedNode | undefined): value is IndexedNode {
+  return value !== undefined
+}
+
+function isFiniteSelectionRect(value: SelectionRectResult | null): value is SelectionRectResult {
+  if (!value) return false
+  return (
+    Number.isFinite(value.width) &&
+    Number.isFinite(value.height) &&
+    Number.isFinite(value.center.x) &&
+    Number.isFinite(value.center.y) &&
+    Number.isFinite(value.transform.a) &&
+    Number.isFinite(value.transform.b) &&
+    Number.isFinite(value.transform.c) &&
+    Number.isFinite(value.transform.d) &&
+    Number.isFinite(value.transform.e) &&
+    Number.isFinite(value.transform.f)
+  )
+}
 
 export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
-  documentModel: null,
-  selectedNodes: EMPTY_NODES,
   pageId: null,
   selectedIds: new Set(),
   selectionBounds: null,
@@ -120,6 +120,8 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   resizeHandle: null as ResizeHandlePosition | null,
   isRotating: false,
   rotationCorner: null as ResizeHandlePosition | null,
+  rotatePreviewDeltaDeg: 0,
+  movePreviewWorldDelta: { x: 0, y: 0 },
   areaSelectionAppend: false,
   areaSelectionRemove: false,
   isPanning: false,
@@ -134,18 +136,13 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   isWasmModuleLoading: false,
   wasmModuleError: null,
 
-  setDocumentModel: (model) => set({ documentModel: model }),
-  setSelectedNodes: (nodes) => set({
-    selectedNodes: nodes,
-    selectionBounds: getSelectionBounds(nodes),
-  }),
   setPageId: (id) => set({ pageId: id }),
   setSelectedIds: (ids) => {
-    const { documentModel } = get()
-    const selectedNodes = documentModel ? documentModel.getSelectedNodes(ids) : EMPTY_NODES
+    const page = getCurrentPage()
+    const objects = page?.objects
+    const selectedNodes = objects ? Array.from(ids).map((id) => objects[id]).filter(isIndexedNode) : []
     set({
       selectedIds: ids,
-      selectedNodes,
       selectionBounds: getSelectionBounds(selectedNodes),
     })
   },
@@ -158,14 +155,21 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
       return
     }
     const result = renderer.getSelectionRect(Array.from(selectedIds))
-    set({ wasmSelectionRect: result })
+    set({ wasmSelectionRect: isFiniteSelectionRect(result) ? result : null })
   },
   setIsSelecting: (is) => set({ isSelecting: is }),
-  setIsMoving: (is) => set({ isMoving: is }),
+  setIsMoving: (is) =>
+    set(
+      is
+        ? { isMoving: true }
+        : { isMoving: false, movePreviewWorldDelta: { x: 0, y: 0 } },
+    ),
   setIsResizing: (is) => set({ isResizing: is }),
   setResizeHandle: (handle) => set({ resizeHandle: handle }),
   setIsRotating: (is) => set({ isRotating: is }),
   setRotationCorner: (corner) => set({ rotationCorner: corner }),
+  setRotatePreviewDeltaDeg: (deg) => set({ rotatePreviewDeltaDeg: deg }),
+  setMovePreviewWorldDelta: (d) => set({ movePreviewWorldDelta: d }),
   setAreaSelectionMode: (append, remove) => set({ areaSelectionAppend: append, areaSelectionRemove: remove }),
   setIsPanning: (value) => set({ isPanning: value }),
   setDrawTool: (tool) => set({ drawTool: tool }),
@@ -180,7 +184,8 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
     selectionBounds: null,
     selectionRect: null,
     wasmSelectionRect: null,
-    selectedNodes: EMPTY_NODES,
+    rotatePreviewDeltaDeg: 0,
+    movePreviewWorldDelta: { x: 0, y: 0 },
   }),
   setWasmModule: (module) => set({ wasmModule: module }),
   setIsWasmModuleLoading: (loading) => set({ isWasmModuleLoading: loading }),

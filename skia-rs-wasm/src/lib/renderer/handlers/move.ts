@@ -2,6 +2,11 @@
  * Move handler
  * Ported from frontend/src/app/main/data/workspace/transforms.cljs start-move-selected
  * Uses WASM modifiers for preview during drag; commits on pointer up. Shift constrains to one axis.
+ *
+ * Architecture (matching Penpot frontend):
+ * - Overlay (selection rect SVG) is updated SYNCHRONOUSLY from each pointer event
+ * - WASM canvas render is scheduled ASYNC via requestRender (RAF-coalesced)
+ * - This ensures the overlay is always responsive even when _render blocks (~55ms)
  */
 
 import { Observable, EMPTY, merge } from 'rxjs'
@@ -10,13 +15,17 @@ import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
+import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { applyModifiersAndCommit } from './utils'
+import { DRAG_RENDER_INTERVAL_MS } from './drag-render-interval'
+import {
+  cloneSelectionRect,
+  finiteSelectionRect,
+  translateSelectionRectWorld,
+} from './selection-rect-helpers'
+import { translateMatrix } from '../geom/matrix'
 import type { Point } from '../types'
 import type { Matrix } from 'penpot-exporter/types'
-
-function translateMatrix(dx: number, dy: number): Matrix {
-  return { a: 1, b: 0, c: 0, d: 1, e: dx, f: dy }
-}
 
 function constrainDeltaByShift(delta: { x: number; y: number }): { x: number; y: number } {
   const keys = getModifierKeys()
@@ -28,22 +37,29 @@ function constrainDeltaByShift(delta: { x: number; y: number }): { x: number; y:
 
 export function startMoveSelected(initialPosition: Point): Observable<void> {
   const state = useWorkspaceStore.getState()
-  const { renderer, viewport, selectedIds, documentModel } = state
-  const pageId = state.pageId ?? documentModel?.getActiveOrSinglePageId() ?? null
+  const { renderer, viewport, selectedIds } = state
+  const pageId = state.pageId ?? getActiveOrSinglePageId()
 
   if (!renderer || !viewport || selectedIds.size === 0 || !pageId) return EMPTY
 
-  const page = documentModel?.getPage(pageId)
+  const page = getPage(pageId)
   if (!page) return EMPTY
+
+  useWorkspaceStore.getState().setMovePreviewWorldDelta({ x: 0, y: 0 })
 
   const stopper = dragStopper()
   const zoom = viewport.zoom
 
-  const latestWorldDeltaRef = { current: { x: 0, y: 0 } }
-  const rafScheduledRef = { current: false }
   const modifiersAppliedRef = { current: false }
+  let lastRenderRequestTs = 0
 
-  /** Activation threshold (min 1px): drag starts after pointer moves past this; once activated, all deltas apply including back inside this zone. */
+  // Pre-drag WASM selection rect captured at drag start (for overlay positioning).
+  const baselineRect = finiteSelectionRect(state.wasmSelectionRect)
+    ? cloneSelectionRect(state.wasmSelectionRect)
+    : null
+
+  const lastEventDeltaRef = { current: { x: 0, y: 0 } }
+
   const DRAG_THRESHOLD_SCREEN_PX = 5
   const moveStream = mousePosition$.pipe(
     filter((pos): pos is NonNullable<typeof pos> => pos !== null),
@@ -66,21 +82,33 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
     })),
     map(constrainDeltaByShift),
     tap((worldDelta) => {
-      latestWorldDeltaRef.current = worldDelta
-      if (!rafScheduledRef.current) {
-        rafScheduledRef.current = true
-        requestAnimationFrame(() => {
-          rafScheduledRef.current = false
-          const delta = latestWorldDeltaRef.current
-          modifiersAppliedRef.current = true
-          const entries: Array<[string, Matrix]> = []
-          selectedIds.forEach((id) => {
-            entries.push([id, translateMatrix(delta.x, delta.y)])
-          })
-          renderer.setMoveModifiersAndRender(entries)
-          useWorkspaceStore.getState().refreshWasmSelectionRect()
-        })
+      modifiersAppliedRef.current = true
+      lastEventDeltaRef.current = { x: worldDelta.x, y: worldDelta.y }
+      useWorkspaceStore.getState().setMovePreviewWorldDelta(worldDelta)
+
+      // 1. Update overlay SYNCHRONOUSLY (like Penpot frontend's set-temporary-selrect).
+      //    This runs inside the pointer event microtask, BEFORE any RAF fires.
+      if (baselineRect) {
+        const preview = translateSelectionRectWorld(baselineRect, worldDelta.x, worldDelta.y)
+        useWorkspaceStore.getState().setWasmSelectionRect(preview)
       }
+
+      // 2. Clean + propagate + set WASM modifiers (every event, ~0.1ms).
+      //    Matches the frontend's set-wasm-modifiers pattern.
+      renderer.cleanModifiers()
+      const entries: Array<[string, Matrix]> = Array.from(selectedIds, (id) => [
+        id,
+        translateMatrix(worldDelta.x, worldDelta.y),
+      ])
+      renderer.setMoveModifiersNoRender(entries)
+
+      // 3. Throttle canvas render (~60 Hz); overlay still updates every pointer event.
+      const now = performance.now()
+      if (now - lastRenderRequestTs >= DRAG_RENDER_INTERVAL_MS) {
+        lastRenderRequestTs = now
+        renderer.requestRenderFrame()
+      }
+
     }),
     map(() => undefined),
     takeUntil(stopper)
@@ -94,7 +122,7 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
         store.setIsMoving(false)
         return
       }
-      const delta = latestWorldDeltaRef.current
+      const delta = lastEventDeltaRef.current
       const entries: Array<[string, Matrix]> = Array.from(selectedIds).map((id) => [
         id,
         translateMatrix(delta.x, delta.y),
@@ -118,5 +146,3 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
 
   return merge(moveStream, commitOnRelease) as Observable<void>
 }
-
-

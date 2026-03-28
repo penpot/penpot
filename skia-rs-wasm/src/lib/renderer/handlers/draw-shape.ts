@@ -7,6 +7,7 @@ import { filter, map, scan, switchMap, take, takeUntil, tap } from 'rxjs/operato
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
+import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
 import { makeSelrect } from '../../worker/types'
 import { applyChanges } from '../../page-crud'
@@ -19,9 +20,9 @@ const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 const MIN_DRAW_SCREEN_PX = 3
 
 export function handleDrawRect(): Observable<void> {
-  const { viewport, pageId, documentModel } = useWorkspaceStore.getState()
-  const effectivePageId = pageId ?? documentModel?.getActiveOrSinglePageId() ?? null
-  const page = effectivePageId ? documentModel?.getPage(effectivePageId) : undefined
+  const { viewport, pageId } = useWorkspaceStore.getState()
+  const effectivePageId = pageId ?? getActiveOrSinglePageId()
+  const page = effectivePageId ? getPage(effectivePageId) : undefined
 
   if (!viewport || !effectivePageId || !page) {
     useWorkspaceStore.getState().setIsDrawingShape(false)
@@ -77,8 +78,7 @@ export function handleDrawRect(): Observable<void> {
             const h = lastRect.height / vp.zoom
             if (w < 1e-6 || h < 1e-6) return
 
-            const dm = useWorkspaceStore.getState().documentModel
-            const currentPage = effectivePageId && dm ? dm.getPage(effectivePageId) : undefined
+            const currentPage = effectivePageId ? getPage(effectivePageId) : undefined
             if (!currentPage) return
 
             const root = Object.values(currentPage.objects).find((o) => o.parentId == null)

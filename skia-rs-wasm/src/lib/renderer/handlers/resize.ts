@@ -8,6 +8,7 @@ import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
+import { getCurrentPage } from '../store/doc-proxy'
 import { getModifierKeys } from '../store/shortcuts-store'
 import { applyModifiersAndCommit } from './utils'
 import type { Point } from '../types'
@@ -80,7 +81,7 @@ export function startResizeSelected(
   handle: ResizeHandlePosition
 ): Observable<void> {
   const state = useWorkspaceStore.getState()
-  const { renderer, viewport, selectedIds, wasmSelectionRect, selectedNodes } = state
+  const { renderer, viewport, selectedIds, wasmSelectionRect } = state
   if (!renderer || !viewport || selectedIds.size < 1 || !wasmSelectionRect) return EMPTY
 
   const x = wasmSelectionRect.center.x - wasmSelectionRect.width / 2
@@ -92,7 +93,8 @@ export function startResizeSelected(
   const zoom = viewport.zoom
   const mult = getHandlerMultiplier(handle)
 
-  const singleNode = selectedIds.size === 1 ? (selectedNodes?.[0] ?? null) : null
+  const selectedId = selectedIds.size === 1 ? Array.from(selectedIds)[0] : null
+  const singleNode = selectedId ? getCurrentPage()?.objects[selectedId] ?? null : null
   const nodeSr = singleNode ? singleNode.selrect : null
 
   const T = singleNode?.transform ?? IDENTITY_MATRIX
@@ -113,6 +115,7 @@ export function startResizeSelected(
   const latestMatrixRef = { current: IDENTITY_MATRIX }
   const rafScheduledRef = { current: false }
   const modifiersAppliedRef = { current: false }
+  const commitDoneRef = { current: false }
 
   const RESIZE_THRESHOLD_SCREEN_PX = 5
   const resizeStream = mousePosition$.pipe(
@@ -160,6 +163,7 @@ export function startResizeSelected(
         rafScheduledRef.current = true
         requestAnimationFrame(() => {
           rafScheduledRef.current = false
+          if (commitDoneRef.current) return
           modifiersAppliedRef.current = true
           const entries: Array<[string, Matrix]> = Array.from(selectedIds).map((id) => [
             id,
@@ -193,6 +197,7 @@ export function startResizeSelected(
       ])
       applyModifiersAndCommit(entries)
         .then(() => {
+          commitDoneRef.current = true
           renderer.cleanModifiers()
           renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()

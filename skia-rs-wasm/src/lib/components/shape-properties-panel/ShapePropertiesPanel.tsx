@@ -2,10 +2,14 @@
  * Canvas-driven properties: floating Design rail; empty hint when nothing selected.
  */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { snapshot, useSnapshot } from 'valtio'
 import type { Fill, PenpotNode } from 'penpot-exporter/types'
+import { applyTransformToNode } from '../../renderer/geom/apply-transform-to-node'
+import { rotationMatrixAroundPoint, translateMatrix } from '../../renderer/geom/matrix'
 import type { IndexedPage } from '../../worker/types'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
+import { docProxy, getActiveOrSinglePageId } from '../../renderer/store/doc-proxy'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,37 +41,33 @@ function normalizeHex(input: string): string {
 type RectLikeNode = PenpotNode & { x?: number; y?: number; width?: number; height?: number }
 
 function PagePropertiesForm({ pageId, initialPage }: { pageId: string; initialPage: IndexedPage }) {
-  const documentModel = useWorkspaceStore((s) => s.documentModel)
   const [pageName, setPageName] = useState(() => initialPage.name ?? 'Page')
   const [pageBg, setPageBg] = useState(() => initialPage.background ?? '#FFFFFF')
 
   const commitPageName = useCallback(async () => {
-    if (!documentModel) return
-    const page = documentModel.getPage(pageId)
+    const page = docProxy.pageMap.get(pageId)
     if (!page) return
     const trimmed = pageName.trim()
     if (trimmed === (page.name ?? '')) return
     await commitPageMetadataUpdate(pageId, page, { name: trimmed || 'Page' })
-  }, [documentModel, pageName, pageId])
+  }, [pageName, pageId])
 
   const commitPageBackground = useCallback(async () => {
-    if (!documentModel) return
-    const page = documentModel.getPage(pageId)
+    const page = docProxy.pageMap.get(pageId)
     if (!page) return
     const next = normalizeHex(pageBg)
     if (next === (page.background ?? '#FFFFFF')) return
     await commitPageMetadataUpdate(pageId, page, { background: next })
-  }, [documentModel, pageBg, pageId])
+  }, [pageBg, pageId])
 
   const onPageBgColorPick = useCallback(
     (hex: string) => {
       setPageBg(hex)
-      if (!documentModel) return
-      const page = documentModel.getPage(pageId)
+      const page = docProxy.pageMap.get(pageId)
       if (!page) return
       void commitPageMetadataUpdate(pageId, page, { background: hex })
     },
-    [documentModel, pageId],
+    [pageId],
   )
 
   return (
@@ -114,9 +114,10 @@ function ShapePropertiesForm({
   initialNode: RectLikeNode
   readOnly: boolean
 }) {
-  const documentModel = useWorkspaceStore((s) => s.documentModel)
-  const selectedNodes = useWorkspaceStore((s) => s.selectedNodes)
-  const pageIdFromStore = useWorkspaceStore((s) => s.pageId)
+  const isMoving = useWorkspaceStore((s) => s.isMoving)
+  const isRotating = useWorkspaceStore((s) => s.isRotating)
+  const rotatePreviewDeltaDeg = useWorkspaceStore((s) => s.rotatePreviewDeltaDeg)
+  const movePreviewWorldDelta = useWorkspaceStore((s) => s.movePreviewWorldDelta)
 
   const [name, setName] = useState(() => initialNode.name ?? '')
   const [x, setX] = useState(() => initialNode.x ?? 0)
@@ -128,14 +129,77 @@ function ShapePropertiesForm({
     initialNode.fills ? [...initialNode.fills] : [],
   )
 
+  useEffect(() => {
+    setName(initialNode.name ?? '')
+    setX(initialNode.x ?? 0)
+    setY(initialNode.y ?? 0)
+    setWidth(initialNode.width ?? 100)
+    setHeight(initialNode.height ?? 100)
+    setRotation(initialNode.rotation ?? 0)
+    setFills(initialNode.fills ? [...initialNode.fills] : [])
+  }, [initialNode])
+
+  const liveLayoutPartial = useMemo((): Partial<PenpotNode> | null => {
+    if (readOnly) return null
+    const node = initialNode as PenpotNode
+    if (isRotating) {
+      const sr = node.selrect as
+        | { x?: number; y?: number; width?: number; height?: number }
+        | undefined
+      if (!sr) return null
+      const x0 = sr.x ?? 0
+      const y0 = sr.y ?? 0
+      const w0 = sr.width ?? 0
+      const h0 = sr.height ?? 0
+      if (w0 <= 0 || h0 <= 0) return null
+      const cx = x0 + w0 / 2
+      const cy = y0 + h0 / 2
+      return applyTransformToNode(node, rotationMatrixAroundPoint(cx, cy, rotatePreviewDeltaDeg))
+    }
+    if (isMoving) {
+      return applyTransformToNode(
+        node,
+        translateMatrix(movePreviewWorldDelta.x, movePreviewWorldDelta.y),
+      )
+    }
+    return null
+  }, [
+    readOnly,
+    initialNode,
+    isRotating,
+    isMoving,
+    rotatePreviewDeltaDeg,
+    movePreviewWorldDelta,
+  ])
+
+  const xDisplay =
+    liveLayoutPartial != null && typeof liveLayoutPartial.x === 'number' ? liveLayoutPartial.x : x
+  const yDisplay =
+    liveLayoutPartial != null && typeof liveLayoutPartial.y === 'number' ? liveLayoutPartial.y : y
+  const widthDisplay =
+    liveLayoutPartial != null && typeof liveLayoutPartial.width === 'number'
+      ? liveLayoutPartial.width
+      : width
+  const heightDisplay =
+    liveLayoutPartial != null && typeof liveLayoutPartial.height === 'number'
+      ? liveLayoutPartial.height
+      : height
+  const rotationDisplay =
+    liveLayoutPartial != null && typeof liveLayoutPartial.rotation === 'number'
+      ? liveLayoutPartial.rotation
+      : rotation
+
+  const layoutFieldsDisabled = readOnly || isMoving || isRotating
+
   const resolvePageId = useCallback((): string | null => {
-    return pageIdFromStore ?? documentModel?.getActiveOrSinglePageId() ?? null
-  }, [pageIdFromStore, documentModel])
+    return getActiveOrSinglePageId()
+  }, [])
 
   const getNodeBefore = useCallback((): PenpotNode | null => {
-    const n = documentModel?.getNode(nodeId) ?? (selectedNodes[0] as PenpotNode | undefined)
-    return n ?? null
-  }, [nodeId, documentModel, selectedNodes])
+    const snap = snapshot(docProxy)
+    const page = snap.currentPageId ? snap.pageMap.get(snap.currentPageId) : undefined
+    return (page?.objects[nodeId] as PenpotNode | undefined) ?? null
+  }, [nodeId])
 
   const commitLayout = useCallback(async () => {
     if (readOnly) return
@@ -221,8 +285,8 @@ function ShapePropertiesForm({
           <Input
             id="sp-x"
             type="number"
-            disabled={readOnly}
-            value={Number.isFinite(x) ? x : 0}
+            disabled={layoutFieldsDisabled}
+            value={Number.isFinite(xDisplay) ? xDisplay : 0}
             onChange={(e) => setX(parseFloat(e.target.value) || 0)}
             onBlur={() => void commitLayout()}
           />
@@ -232,8 +296,8 @@ function ShapePropertiesForm({
           <Input
             id="sp-y"
             type="number"
-            disabled={readOnly}
-            value={Number.isFinite(y) ? y : 0}
+            disabled={layoutFieldsDisabled}
+            value={Number.isFinite(yDisplay) ? yDisplay : 0}
             onChange={(e) => setY(parseFloat(e.target.value) || 0)}
             onBlur={() => void commitLayout()}
           />
@@ -243,8 +307,8 @@ function ShapePropertiesForm({
           <Input
             id="sp-w"
             type="number"
-            disabled={readOnly}
-            value={Number.isFinite(width) ? width : 0}
+            disabled={layoutFieldsDisabled}
+            value={Number.isFinite(widthDisplay) ? widthDisplay : 0}
             onChange={(e) => setWidth(Math.max(1, parseFloat(e.target.value) || 1))}
             onBlur={() => void commitLayout()}
           />
@@ -254,8 +318,8 @@ function ShapePropertiesForm({
           <Input
             id="sp-h"
             type="number"
-            disabled={readOnly}
-            value={Number.isFinite(height) ? height : 0}
+            disabled={layoutFieldsDisabled}
+            value={Number.isFinite(heightDisplay) ? heightDisplay : 0}
             onChange={(e) => setHeight(Math.max(1, parseFloat(e.target.value) || 1))}
             onBlur={() => void commitLayout()}
           />
@@ -267,8 +331,8 @@ function ShapePropertiesForm({
         <Input
           id="sp-rot"
           type="number"
-          disabled={readOnly}
-          value={Number.isFinite(rotation) ? rotation : 0}
+          disabled={layoutFieldsDisabled}
+          value={Number.isFinite(rotationDisplay) ? rotationDisplay : 0}
           onChange={(e) => setRotation(parseFloat(e.target.value) || 0)}
           onBlur={() => void commitLayout()}
         />
@@ -308,9 +372,7 @@ export interface ShapePropertiesPanelProps {
 
 export function ShapePropertiesPanel({ className }: ShapePropertiesPanelProps) {
   const selectedIds = useWorkspaceStore((s) => s.selectedIds)
-  const selectedNodes = useWorkspaceStore((s) => s.selectedNodes)
-  const pageId = useWorkspaceStore((s) => s.pageId)
-  const documentModel = useWorkspaceStore((s) => s.documentModel)
+  const doc = useSnapshot(docProxy)
 
   const [collapsed, setCollapsed] = useState(false)
 
@@ -319,12 +381,12 @@ export function ShapePropertiesPanel({ className }: ShapePropertiesPanelProps) {
   const isRoot = singleId === ROOT_UUID
 
   const resolvePageId = useCallback((): string | null => {
-    return pageId ?? documentModel?.getActiveOrSinglePageId() ?? null
-  }, [pageId, documentModel])
+    return getActiveOrSinglePageId()
+  }, [])
 
   if (count === 0) {
     const pid = resolvePageId()
-    const page = pid && documentModel ? documentModel.getPage(pid) : undefined
+    const page = pid ? doc.pageMap.get(pid) : undefined
 
     return (
       <FloatingEditorRail
@@ -373,7 +435,8 @@ export function ShapePropertiesPanel({ className }: ShapePropertiesPanelProps) {
   }
 
   const readOnly = isRoot
-  const node = (documentModel?.getNode(singleId) ?? selectedNodes[0]) as RectLikeNode | undefined
+  const currentPage = doc.currentPageId ? doc.pageMap.get(doc.currentPageId) : undefined
+  const node = currentPage?.objects[singleId] as RectLikeNode | undefined
 
   return (
     <FloatingEditorRail

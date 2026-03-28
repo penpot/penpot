@@ -1,20 +1,17 @@
 /**
- * DocumentModel holds document meta, pageMap, and current page id.
- * All node/page data lives in pageMap (IndexedPage); lookups use pageMap.get(pageId)?.objects[nodeId].
- * Pushes selectedNodes to workspace store and currentPageNodes/currentPageNodesMap to dev store.
- * Implements IDocumentModel for use by the workspace store.
+ * DocumentModel orchestrates document/page lifecycle and sync with worker/renderer.
+ * Persistent document state lives in docProxy (Valtio).
  */
 
 import type { PenpotDocument } from 'penpot-exporter/types'
 import type { Change } from 'penpot-exporter/types'
 import type { IndexedPage, IndexedNode } from '../../worker/types'
 import { flattenPageToIndexed, unflattenIndexedPageToPage } from '../../worker/types'
-import { useWorkspaceStore, type IDocumentModel } from './workspace-store'
-import { useWorkspaceDevStore } from './workspace-dev-store'
+import { useWorkspaceStore } from './workspace-store'
 import { commitChanges } from './commit'
 import { useHistoryStore } from '../../history/history-store'
 import { enrichPageWithPositionData } from './enrich-position-data'
-type DocumentMeta = Omit<PenpotDocument, 'children'>
+import { docProxy, getActiveOrSinglePageId, type DocumentMeta } from './doc-proxy'
 
 function buildPageMap(children: PenpotDocument['children']): Map<string, IndexedPage> {
   const map = new Map<string, IndexedPage>()
@@ -27,49 +24,22 @@ function buildPageMap(children: PenpotDocument['children']): Map<string, Indexed
   return map
 }
 
-/** Ordered list of node ids for current page (root first, then depth-first). Used for dev store. */
-function orderedNodeIdsFromPage(page: IndexedPage): string[] {
-  const ids: string[] = []
-  const root = Object.values(page.objects).find((o) => o.parentId == null)
-  if (!root) return ids
-  ids.push(root.id)
-  function walk(shapeIds: string[] | undefined) {
-    if (!shapeIds?.length) return
-    for (const id of shapeIds) {
-      const obj = page.objects[id]
-      if (obj) {
-        ids.push(id)
-        walk(obj.shapes)
-      }
-    }
-  }
-  walk(root.shapes)
-  return ids
-}
-
-export class DocumentModel implements IDocumentModel {
-  private documentMeta: DocumentMeta | null = null
-  private pageMap: Map<string, IndexedPage> = new Map()
-  private currentPageId: string | null = null
+export class DocumentModel {
 
   getDocument(): PenpotDocument | null {
-    if (!this.documentMeta) return null
+    if (!docProxy.meta) return null
     return {
-      ...this.documentMeta,
-      children: Array.from(this.pageMap.values()).map(unflattenIndexedPageToPage),
+      ...docProxy.meta,
+      children: Array.from(docProxy.pageMap.values()).map(unflattenIndexedPageToPage),
     }
   }
 
   getPage(id: string): IndexedPage | undefined {
-    return this.pageMap.get(id)
+    return docProxy.pageMap.get(id)
   }
 
   getActiveOrSinglePageId(): string | null {
-    if (this.currentPageId) return this.currentPageId
-    if (this.pageMap.size === 1) {
-      return this.pageMap.keys().next().value ?? null
-    }
-    return null
+    return getActiveOrSinglePageId()
   }
 
   /**
@@ -77,18 +47,15 @@ export class DocumentModel implements IDocumentModel {
    * Not on IDocumentModel.
    */
   applyPageUpdate(pageId: string, updatedPage: IndexedPage): void {
-    this.pageMap.set(pageId, updatedPage)
-    if (this.currentPageId === pageId) {
-      this.pushToStores()
-    }
+    docProxy.pageMap.set(pageId, updatedPage)
   }
 
   getNode(id: string): IndexedNode | undefined {
-    return this.pageMap.get(this.currentPageId ?? '')?.objects[id]
+    return docProxy.pageMap.get(docProxy.currentPageId ?? '')?.objects[id]
   }
 
   getSelectedNodes(selectedIds: Set<string>): IndexedNode[] {
-    const objects = this.pageMap.get(this.currentPageId ?? '')?.objects
+    const objects = docProxy.pageMap.get(docProxy.currentPageId ?? '')?.objects
     if (!objects) return []
     const result: IndexedNode[] = []
     for (const id of selectedIds) {
@@ -98,44 +65,29 @@ export class DocumentModel implements IDocumentModel {
     return result
   }
 
-  private pushToStores(): void {
-    const workspace = useWorkspaceStore.getState()
-    const dev = useWorkspaceDevStore.getState()
-    const currentPage = this.currentPageId ? this.pageMap.get(this.currentPageId) : undefined
-    if (currentPage) {
-      const orderedIds = orderedNodeIdsFromPage(currentPage)
-      const currentPageNodes = orderedIds.map((id) => currentPage.objects[id]).filter(Boolean)
-      const currentPageNodesMap = currentPage.objects
-      dev.setCurrentPageData({
-        currentPageNodes,
-        currentPageNodesMap,
-      })
-    } else {
-      dev.setCurrentPageData({ currentPageNodes: [], currentPageNodesMap: {} })
-    }
-    const selectedNodes = this.getSelectedNodes(workspace.selectedIds)
-    workspace.setSelectedNodes(selectedNodes)
-  }
-
   async loadDocument(doc: PenpotDocument): Promise<void> {
     useHistoryStore.getState().clearHistory()
     const { children, ...meta } = doc
-    this.documentMeta = meta as DocumentMeta
-    this.pageMap = buildPageMap(children)
+    docProxy.meta = meta as DocumentMeta
+    const pageMap = buildPageMap(children)
+    docProxy.pageMap.clear()
+    for (const [pageId, page] of pageMap) {
+      docProxy.pageMap.set(pageId, page)
+    }
     const firstPageId =
-      children?.[0]?.id ?? (this.pageMap.size ? this.pageMap.keys().next().value ?? null : null)
-    this.currentPageId = firstPageId
+      children?.[0]?.id ?? (docProxy.pageMap.size ? docProxy.pageMap.keys().next().value ?? null : null)
+    docProxy.currentPageId = firstPageId
 
-    useWorkspaceStore.setState({ documentModel: this, pageId: firstPageId })
-    this.pushToStores()
+    useWorkspaceStore.setState({ pageId: firstPageId })
 
     const state = useWorkspaceStore.getState()
+    state.setSelectedIds(new Set())
 
-    for (const page of this.pageMap.values()) {
+    for (const page of docProxy.pageMap.values()) {
       await state.workerClient?.addPage(page)
     }
     if (firstPageId && state.renderer) {
-      const page = this.pageMap.get(firstPageId)
+      const page = docProxy.pageMap.get(firstPageId)
       if (page) {
         await state.renderer.initPage(page)
         state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
@@ -143,7 +95,7 @@ export class DocumentModel implements IDocumentModel {
           const penpotPage = unflattenIndexedPageToPage(page)
           const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
           const enrichedIndexed = flattenPageToIndexed(enrichedPenpot)
-          this.pageMap.set(firstPageId, enrichedIndexed)
+          docProxy.pageMap.set(firstPageId, enrichedIndexed)
           await state.workerClient.updatePage(firstPageId, enrichedIndexed)
         }
       }
@@ -152,14 +104,14 @@ export class DocumentModel implements IDocumentModel {
 
   async setActivePage(pageId: string): Promise<void> {
     useHistoryStore.getState().clearHistory()
-    const page = this.pageMap.get(pageId)
+    const page = docProxy.pageMap.get(pageId)
     if (!page) return
     const state = useWorkspaceStore.getState()
     if (!state.workerClient || !state.renderer) return
 
-    this.currentPageId = pageId
+    docProxy.currentPageId = pageId
     state.setPageId(pageId)
-    this.pushToStores()
+    state.setSelectedIds(new Set())
 
     await state.renderer.initPage(page)
     state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
@@ -167,17 +119,17 @@ export class DocumentModel implements IDocumentModel {
       const penpotPage = unflattenIndexedPageToPage(page)
       const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
       const enrichedIndexed = flattenPageToIndexed(enrichedPenpot)
-      this.pageMap.set(pageId, enrichedIndexed)
+      docProxy.pageMap.set(pageId, enrichedIndexed)
       await state.workerClient.updatePage(pageId, enrichedIndexed)
     }
   }
 
   async addPage(page: IndexedPage): Promise<void> {
-    if (!this.documentMeta) return
+    if (!docProxy.meta) return
     const state = useWorkspaceStore.getState()
     const key = page.id ?? crypto.randomUUID()
     const pageWithId = { ...page, id: page.id ?? key }
-    this.pageMap.set(key, pageWithId)
+    docProxy.pageMap.set(key, pageWithId)
 
     if (state.workerClient) await state.workerClient.addPage(pageWithId)
     if (state.pageId == null && state.renderer?.isInitialized()) {
@@ -186,20 +138,20 @@ export class DocumentModel implements IDocumentModel {
   }
 
   async deletePage(pageId: string): Promise<void> {
-    if (!this.documentMeta) return
+    if (!docProxy.meta) return
     useHistoryStore.getState().clearHistory()
     const state = useWorkspaceStore.getState()
-    this.pageMap.delete(pageId)
+    docProxy.pageMap.delete(pageId)
     const nextPageId =
-      this.currentPageId === pageId
-        ? this.pageMap.keys().next().value ?? null
-        : this.currentPageId
+      docProxy.currentPageId === pageId
+        ? docProxy.pageMap.keys().next().value ?? null
+        : docProxy.currentPageId
 
-    if (this.currentPageId === pageId && nextPageId) {
-      this.currentPageId = nextPageId
-      const page = this.pageMap.get(nextPageId)
+    if (docProxy.currentPageId === pageId && nextPageId) {
+      docProxy.currentPageId = nextPageId
+      const page = docProxy.pageMap.get(nextPageId)
       state.setPageId(nextPageId)
-      this.pushToStores()
+      state.setSelectedIds(new Set())
       if (state.renderer?.isInitialized() && page) {
         await state.renderer.initPage(page)
         state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
@@ -207,7 +159,7 @@ export class DocumentModel implements IDocumentModel {
           const penpotPage = unflattenIndexedPageToPage(page)
           const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
           const enrichedIndexed = flattenPageToIndexed(enrichedPenpot)
-          this.pageMap.set(nextPageId, enrichedIndexed)
+          docProxy.pageMap.set(nextPageId, enrichedIndexed)
           await state.workerClient.updatePage(nextPageId, enrichedIndexed)
         }
       }
@@ -227,7 +179,7 @@ export class DocumentModel implements IDocumentModel {
       (changes[0] as { pageId?: string }).pageId ??
       state.pageId ??
       this.getActiveOrSinglePageId()
-    if (!pageId || !this.pageMap.get(pageId)) return
+    if (!pageId || !docProxy.pageMap.get(pageId)) return
     await commitChanges({
       redoChanges: changes,
       undoChanges: options?.undoChanges ?? [],
@@ -235,3 +187,5 @@ export class DocumentModel implements IDocumentModel {
     })
   }
 }
+
+export const documentModel = new DocumentModel()

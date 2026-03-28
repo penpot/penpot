@@ -7,6 +7,7 @@ import type { RefObject } from 'react'
 import { useEffect, useRef, useCallback } from 'react'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { useViewportShortcutsStore } from '../store/shortcuts-store'
+import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { Viewport, screenToWorld } from '../viewport'
 import type { ViewportPanModifier, SelectionRectResult } from '../types'
 import { mousePosition$ } from '../streams'
@@ -136,9 +137,9 @@ export function useViewportInteractions({
       const mod = e.ctrlKey || e.metaKey
       const shift = e.shiftKey
       const store = useWorkspaceStore.getState()
-      const { workerClient, pageId, viewport, lastAppliedViewport, documentModel, selectedIds } = store
-      const hitPageId = pageId ?? documentModel?.getActiveOrSinglePageId() ?? null
-      const page = hitPageId ? documentModel?.getPage(hitPageId) : undefined
+      const { workerClient, pageId, viewport, lastAppliedViewport, selectedIds } = store
+      const hitPageId = pageId ?? getActiveOrSinglePageId()
+      const page = hitPageId ? getPage(hitPageId) : undefined
       const viewportForHit = lastAppliedViewport ?? viewport
 
       if (mod) {

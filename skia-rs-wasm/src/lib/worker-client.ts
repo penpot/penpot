@@ -20,6 +20,14 @@ interface RawWorkerMessage {
   error?: unknown
 }
 
+function cloneForWorker<T>(value: T): T {
+  try {
+    return structuredClone(value)
+  } catch {
+    return JSON.parse(JSON.stringify(value)) as T
+  }
+}
+
 /**
  * Worker client that provides promise-based communication
  */
@@ -52,7 +60,7 @@ export class WorkerClient implements WorkerClientInterface {
       const message: WorkerMessage = {
         cmd,
         replyTo,
-        payload,
+        payload: payload === undefined ? undefined : cloneForWorker(payload),
       }
 
       // Store pending request
