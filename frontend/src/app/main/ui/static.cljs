@@ -316,6 +316,24 @@
       [:> button* {:variant "primary" :on-click on-reload}
        (tr "labels.reload-page")]]]))
 
+(def ^:const webgl-support-guide-url "https://example.com/TODO")
+
+(mf/defc webgl-not-supported*
+  []
+  (let [on-dashboard (mf/use-fn
+                      (fn []
+                        (st/emit! (rt/assign-exception nil))
+                        (st/emit! (dcm/go-to-dashboard-recent))))]
+    [:> error-container* {}
+     [:div {:class (stl/css :main-message)} (tr "errors.webgl-not-supported.main-message")]
+     [:div {:class (stl/css :desc-message)} (tr "errors.webgl-not-supported.desc-message")]
+     [:div {:class (stl/css :buttons-container)}
+      (when (seq webgl-support-guide-url)
+        [:> button* {:variant "primary" :to webgl-support-guide-url :target "_blank"}
+         (tr "errors.webgl-not-supported.troubleshooting-link")])
+      [:> button* {:variant "secondary" :on-click on-dashboard}
+       (tr "labels.go-back")]]]))
+
 (defn- generate-report
   [data]
   (try
@@ -481,6 +499,9 @@
       (case (get data :code)
         :webgl-context-lost
         [:> webgl-context-lost*]
+
+        :webgl-not-supported
+        [:> webgl-not-supported*]
 
         [:> internal-error* props])
 

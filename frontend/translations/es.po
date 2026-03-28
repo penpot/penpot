@@ -1582,6 +1582,18 @@ msgstr "WebGL ha dejado de funcionar. Por favor, recarga la página para restaur
 msgid "errors.webgl-context-lost.main-message"
 msgstr "Ups! Se ha perdido el contexto del canvas"
 
+#: src/app/main/ui/static.cljs
+msgid "errors.webgl-not-supported.desc-message"
+msgstr "WebGL no está disponible, y es necesario para que Penpot funcione. Cierra otras aplicaciones o comprueba los ajustes de tu navegador."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.webgl-not-supported.main-message"
+msgstr "¡Vaya! WebGL no está soportado"
+
+#: src/app/main/ui/static.cljs
+msgid "errors.webgl-not-supported.troubleshooting-link"
+msgstr "Consulta la guía"
+
 #: src/app/main/ui/dashboard/team.cljs:1051
 msgid "errors.webhooks.connection"
 msgstr "Error de conexion, la url no es alcanzable"
