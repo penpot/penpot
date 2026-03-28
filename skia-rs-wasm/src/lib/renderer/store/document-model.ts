@@ -11,6 +11,7 @@ import { useWorkspaceStore } from './workspace-store'
 import { commitChanges } from './commit'
 import { useHistoryStore } from '../../history/history-store'
 import { enrichPageWithPositionData } from './enrich-position-data'
+import { setSelectedIds } from './document-selection'
 import { docProxy, getActiveOrSinglePageId, type DocumentMeta } from './doc-proxy'
 
 function buildPageMap(children: PenpotDocument['children']): Map<string, IndexedPage> {
@@ -78,10 +79,8 @@ export class DocumentModel {
       children?.[0]?.id ?? (docProxy.pageMap.size ? docProxy.pageMap.keys().next().value ?? null : null)
     docProxy.currentPageId = firstPageId
 
-    useWorkspaceStore.setState({ pageId: firstPageId })
-
     const state = useWorkspaceStore.getState()
-    state.setSelectedIds(new Set())
+    setSelectedIds(new Set())
 
     for (const page of docProxy.pageMap.values()) {
       await state.workerClient?.addPage(page)
@@ -110,8 +109,7 @@ export class DocumentModel {
     if (!state.workerClient || !state.renderer) return
 
     docProxy.currentPageId = pageId
-    state.setPageId(pageId)
-    state.setSelectedIds(new Set())
+    setSelectedIds(new Set())
 
     await state.renderer.initPage(page)
     state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
@@ -132,7 +130,7 @@ export class DocumentModel {
     docProxy.pageMap.set(key, pageWithId)
 
     if (state.workerClient) await state.workerClient.addPage(pageWithId)
-    if (state.pageId == null && state.renderer?.isInitialized()) {
+    if (getActiveOrSinglePageId() == null && state.renderer?.isInitialized()) {
       await this.setActivePage(key)
     }
   }
@@ -150,8 +148,7 @@ export class DocumentModel {
     if (docProxy.currentPageId === pageId && nextPageId) {
       docProxy.currentPageId = nextPageId
       const page = docProxy.pageMap.get(nextPageId)
-      state.setPageId(nextPageId)
-      state.setSelectedIds(new Set())
+      setSelectedIds(new Set())
       if (state.renderer?.isInitialized() && page) {
         await state.renderer.initPage(page)
         state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
@@ -164,7 +161,7 @@ export class DocumentModel {
         }
       }
     } else {
-      state.setPageId(nextPageId)
+      docProxy.currentPageId = nextPageId
     }
   }
 
@@ -173,11 +170,9 @@ export class DocumentModel {
     options?: { pageId?: string; undoChanges?: Change[] }
   ): Promise<void> {
     if (changes.length === 0) return
-    const state = useWorkspaceStore.getState()
     const pageId =
       options?.pageId ??
       (changes[0] as { pageId?: string }).pageId ??
-      state.pageId ??
       this.getActiveOrSinglePageId()
     if (!pageId || !docProxy.pageMap.get(pageId)) return
     await commitChanges({

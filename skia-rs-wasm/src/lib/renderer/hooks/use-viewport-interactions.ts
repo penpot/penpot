@@ -5,6 +5,7 @@
 
 import type { RefObject } from 'react'
 import { useEffect, useRef, useCallback } from 'react'
+import { getSelectedIdsSet, setSelectedIds } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { useViewportShortcutsStore } from '../store/shortcuts-store'
 import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
@@ -69,7 +70,6 @@ export function useViewportInteractions({
   const renderer = useWorkspaceStore((state) => state.renderer)
   const setIsSelecting = useWorkspaceStore((state) => state.setIsSelecting)
   const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
-  const setSelectedIds = useWorkspaceStore((state) => state.setSelectedIds)
   const setIsPanning = useWorkspaceStore((state) => state.setIsPanning)
   const shortcuts = useViewportShortcutsStore((state) => state.viewportShortcuts)
   // Refs for panning state
@@ -137,8 +137,9 @@ export function useViewportInteractions({
       const mod = e.ctrlKey || e.metaKey
       const shift = e.shiftKey
       const store = useWorkspaceStore.getState()
-      const { workerClient, pageId, viewport, lastAppliedViewport, selectedIds } = store
-      const hitPageId = pageId ?? getActiveOrSinglePageId()
+      const { workerClient, viewport, lastAppliedViewport } = store
+      const selectedIds = getSelectedIdsSet()
+      const hitPageId = getActiveOrSinglePageId()
       const page = hitPageId ? getPage(hitPageId) : undefined
       const viewportForHit = lastAppliedViewport ?? viewport
 
@@ -171,7 +172,8 @@ export function useViewportInteractions({
           } else {
             // Fallback: click in empty space (e.g. inside stroke-only shape) but inside selection bounds → start move
             const store = useWorkspaceStore.getState()
-            const { selectedIds: currentIds, wasmSelectionRect } = store
+            const currentIds = getSelectedIdsSet()
+            const { wasmSelectionRect } = store
             if (
               currentIds.size > 0 &&
               wasmSelectionRect != null &&
@@ -188,7 +190,7 @@ export function useViewportInteractions({
         }
       )
     }
-  }, [canvasRef, setIsSelecting, setIsMoving, setSelectedIds, setIsPanning, shortcuts.panMouseButton, shortcuts.panWithModifier])
+  }, [canvasRef, setIsSelecting, setIsMoving, setIsPanning, shortcuts.panMouseButton, shortcuts.panWithModifier])
 
   // Handle mouse move for panning and cursor (grab only when pan modifier held; resize cursor when resizing)
   const handleMouseMove = useCallback((e: MouseEvent) => {

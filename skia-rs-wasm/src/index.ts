@@ -75,6 +75,6 @@ export { useHistoryStore } from './lib/history/history-store'
 export { useWorkspaceStore } from './lib/renderer/store/workspace-store'
 export type { WorkspaceState } from './lib/renderer/store/workspace-store'
 
-export { ShapePropertiesPanel } from './lib/components/shape-properties-panel'
-export type { ShapePropertiesPanelProps } from './lib/components/shape-properties-panel'
+export { RightSidePanel, ShapePropertiesPanel } from './lib/components/RightSidePanel'
+export type { RightSidePanelProps, ShapePropertiesPanelProps } from './lib/components/RightSidePanel'
 

@@ -15,6 +15,7 @@ import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
+import { getSelectedIdsSet } from '../store/document-selection'
 import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { applyModifiersAndCommit } from './utils'
 import { DRAG_RENDER_INTERVAL_MS } from './drag-render-interval'
@@ -37,8 +38,9 @@ function constrainDeltaByShift(delta: { x: number; y: number }): { x: number; y:
 
 export function startMoveSelected(initialPosition: Point): Observable<void> {
   const state = useWorkspaceStore.getState()
-  const { renderer, viewport, selectedIds } = state
-  const pageId = state.pageId ?? getActiveOrSinglePageId()
+  const { renderer, viewport } = state
+  const selectedIds = getSelectedIdsSet()
+  const pageId = getActiveOrSinglePageId()
 
   if (!renderer || !viewport || selectedIds.size === 0 || !pageId) return EMPTY
 

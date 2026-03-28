@@ -3,7 +3,7 @@ import { Undo2, Redo2, FilePlus } from 'lucide-react'
 import { CanvasWrapper } from './lib/renderer/canvas-wrapper'
 import { ShapeToolbar } from './lib/components/ShapeToolbar'
 import { LayersPanel } from './lib/components/layers-panel'
-import { ShapePropertiesPanel } from './lib/components/shape-properties-panel'
+import { RightSidePanel } from './lib/components/RightSidePanel'
 import { createNewDocument, setDocument, undo, redo } from './lib/page-crud'
 import { Button } from '@/components/ui/button'
 
@@ -60,7 +60,7 @@ function App() {
 
       {/* Fixed floating panels */}
       <LayersPanel />
-      <ShapePropertiesPanel />
+      <RightSidePanel />
       <ShapeToolbar />
 
       {/* Document actions chip — absolute inside root, above canvas, below panels */}

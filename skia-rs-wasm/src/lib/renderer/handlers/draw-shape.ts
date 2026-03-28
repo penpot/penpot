@@ -6,6 +6,7 @@ import { Observable, EMPTY, concat, of } from 'rxjs'
 import { filter, map, scan, switchMap, take, takeUntil, tap } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
+import { setSelectedIds } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
@@ -20,8 +21,8 @@ const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 const MIN_DRAW_SCREEN_PX = 3
 
 export function handleDrawRect(): Observable<void> {
-  const { viewport, pageId } = useWorkspaceStore.getState()
-  const effectivePageId = pageId ?? getActiveOrSinglePageId()
+  const { viewport } = useWorkspaceStore.getState()
+  const effectivePageId = getActiveOrSinglePageId()
   const page = effectivePageId ? getPage(effectivePageId) : undefined
 
   if (!viewport || !effectivePageId || !page) {
@@ -105,7 +106,7 @@ export function handleDrawRect(): Observable<void> {
               pageId: effectivePageId,
             }
             void applyChanges([addChange])
-            useWorkspaceStore.getState().setSelectedIds(new Set([newNode.id]))
+            setSelectedIds(new Set([newNode.id]))
           }),
           map(() => undefined)
         )

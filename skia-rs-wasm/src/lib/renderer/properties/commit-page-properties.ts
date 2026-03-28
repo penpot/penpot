@@ -3,8 +3,8 @@
  */
 
 import type { IndexedPage } from '../../worker/types'
-import { commitPageUpdate } from '../../renderer/store/commit'
-import { useWorkspaceStore } from '../../renderer/store/workspace-store'
+import { commitPageUpdate } from '../store/commit'
+import { useWorkspaceStore } from '../store/workspace-store'
 
 export async function commitPageMetadataUpdate(
   pageId: string,

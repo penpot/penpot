@@ -4,9 +4,9 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import type { IndexedNode, IndexedPage } from '../../worker/types'
-import { useWorkspaceStore } from '../../renderer/store/workspace-store'
 import { useSnapshot } from 'valtio'
 import { docProxy, getActiveOrSinglePageId } from '../../renderer/store/doc-proxy'
+import { setSelectedIds } from '../../renderer/store/document-selection'
 import { orderedNodesFromPage } from '../../renderer/store/ordered-page-nodes'
 import { FloatingEditorRail } from '../editor-shell/floating-editor-rail'
 import { cn } from '@/lib/utils'
@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { ChevronRight, Layers } from 'lucide-react'
-import { commitPageMetadataUpdate } from '../shape-properties-panel/commit-page-properties'
+import { commitPageMetadataUpdate } from '../../renderer/properties/commit-page-properties'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -38,19 +38,15 @@ export interface LayersPanelProps {
 }
 
 export function LayersPanel({ className }: LayersPanelProps) {
-  const pageId = useWorkspaceStore((s) => s.pageId)
-  const setSelectedIds = useWorkspaceStore((s) => s.setSelectedIds)
-  const selectedIds = useWorkspaceStore((s) => s.selectedIds)
   const doc = useSnapshot(docProxy)
+  const selectedIds = useMemo(() => new Set(doc.selectedIds), [doc.selectedIds])
 
   const [collapsed, setCollapsed] = useState(false)
   const [pageSectionOpen, setPageSectionOpen] = useState(true)
   const [pageNameDraft, setPageNameDraft] = useState<string | null>(null)
   const [pageBgDraft, setPageBgDraft] = useState<string | null>(null)
 
-  const resolvePageId = useCallback((): string | null => {
-    return pageId ?? getActiveOrSinglePageId()
-  }, [pageId])
+  const resolvePageId = useCallback((): string | null => getActiveOrSinglePageId(), [])
 
   const pid = resolvePageId()
   const page: IndexedPage | undefined = pid ? doc.pageMap.get(pid) : undefined
@@ -104,12 +100,9 @@ export function LayersPanel({ className }: LayersPanelProps) {
     [pid],
   )
 
-  const onLayerRowClick = useCallback(
-    (id: string) => {
-      setSelectedIds(new Set([id]))
-    },
-    [setSelectedIds],
-  )
+  const onLayerRowClick = useCallback((id: string) => {
+    setSelectedIds(new Set([id]))
+  }, [])
 
   const footer =
     layerCount === 1 ? '1 layer' : `${layerCount} layers`
