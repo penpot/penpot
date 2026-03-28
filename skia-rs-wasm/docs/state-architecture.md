@@ -13,9 +13,9 @@ Four complementary tools handle distinct concerns:
 | Tool | Role |
 |------|------|
 | **Valtio** | Reactive *document data* — the source-of-truth proxy that React components subscribe to for shape geometry, fills, page metadata, and selection IDs. |
-| **Zustand** | Transient *workspace interaction state* — flags and scalars (isMoving, viewport, wasmSelectionRect, drag preview deltas) that must survive across renders but do not belong in the document. |
+| **Zustand** | Transient *workspace data* — viewport, renderer/worker handles, WASM loading, and *drag previews* (`wasmSelectionRect`, move/rotate preview deltas, marquee/shape rubber-band rects). Interaction *modes* (moving vs resizing vs idle) live in XState, not here. |
 | **Signals** (TC39 / `@preact/signals`) | High-frequency *per-frame derived values* — current-frame pointer position, zoom level, modifier-key booleans — that must update at pointer rate without causing React re-renders. |
-| **XState** | Complex *interaction state machines* — move, rotate, resize, area-select, draw-shape — each modeled as an explicit state machine with guards, actions, and effects rather than scattered `isMoving/isResizing/isRotating` booleans. |
+| **XState** | Canvas *interaction modes* — `canvasMachine` (v5) with states `idle` \| `moving` \| `rotating` \| `resizing` \| `selecting` \| `drawingShape` \| `panning`; RxJS handlers run as `fromObservable` invoked actors; mounted from `CanvasWrapper`. |
 
 ---
 
@@ -44,20 +44,17 @@ that depend on changed properties.
 
 ---
 
-## 2. Workspace interaction state — Zustand ✅ Done
+## 2. Workspace store — Zustand ✅ Done (previews + runtime; modes in XState)
 
 ```
 useWorkspaceStore (zustand)
-  ├── Drag preview
+  ├── Selection / drag visuals (updated by handlers at pointer rate)
   │   ├── wasmSelectionRect: SelectionRectResult | null
-  │   ├── movePreviewWorldDelta: { x, y }         ← drives live X/Y in panel
-  │   ├── rotatePreviewDeltaDeg: number            ← drives live Rotation in panel
+  │   ├── movePreviewWorldDelta: { x, y }         ← live X/Y in panel during move
+  │   ├── rotatePreviewDeltaDeg: number           ← live Rotation during rotate drag
+  │   ├── selectionRect: Selrect | null           ← area marquee (screen space)
+  │   ├── shapeDrawPreview: Selrect | null        ← draw-rect rubber band
   │   └── selectionBounds: Rect | null
-  ├── Interaction flags (interim — will move to XState)
-  │   ├── isMoving / isResizing / isRotating / isSelecting
-  │   ├── resizeHandle / rotationCorner
-  │   ├── isPanning / isDrawingShape
-  │   └── drawTool / shapeDrawPreview
   ├── Viewport
   │   ├── viewport: ViewportData | null
   │   └── lastAppliedViewport: ViewportData | null
@@ -68,12 +65,11 @@ useWorkspaceStore (zustand)
       └── isWasmModuleLoading / wasmModuleError
 ```
 
-**Status: complete (core); partially refactorable toward XState.**
+**Status: complete.** Interaction booleans (`isMoving`, `drawTool`, `resizeHandle`, …) were removed; they are represented by **`canvasMachine`** state and context (see §4).
 
 Drag preview fields (`movePreviewWorldDelta`, `rotatePreviewDeltaDeg`,
-`wasmSelectionRect`) are updated synchronously on every pointer event
-so the SVG overlay and property panel always reflect the latest pointer
-position without waiting for a WASM frame.
+`wasmSelectionRect`) are still updated synchronously on every pointer event
+so the SVG overlay and property panel reflect the cursor without waiting for a WASM frame.
 
 ```
 useHistoryStore (zustand)
@@ -143,76 +139,55 @@ export const worldPointerPos = computed(() => {
 
 ---
 
-## 4. Interaction state machines — XState (partially done)
+## 4. Interaction state machine — XState ✅ Done (canvas)
 
-Each tool is an explicit state machine. Today the logic lives in
-**RxJS pipelines** inside handler files; the hooks activate them by
-toggling Zustand flags:
+**Implementation:** [`src/lib/renderer/machine/canvas-machine.ts`](../src/lib/renderer/machine/canvas-machine.ts)
+
+- Single **`canvasMachine`** (XState v5) replaces scattered Zustand flags
+  (`isMoving`, `isResizing`, `isRotating`, `isSelecting`, `isDrawingShape`,
+  `drawTool`, `resizeHandle`, `rotationCorner`, area-select mode, …).
+- **Invoked actors** use `fromObservable` over the existing handlers (still
+  **RxJS** inside): `move.ts`, `rotate.ts`, `resize.ts`, `selection.ts`,
+  `draw-shape.ts`. Pointer-up / completion is driven by each handler’s
+  `dragStopper()` pipeline; the machine returns to `idle` on actor **`onDone`**
+  / **`onError`**.
+- **Context** holds `drawTool`, `resizeHandle`, `rotationCorner`,
+  `areaSelectionAppend`, `areaSelectionRemove` when relevant.
+- **Library entry:** [`CanvasWrapper`](../src/lib/renderer/canvas-wrapper.tsx) calls
+  `useActorRef(canvasMachine)` and wraps the canvas column in
+  **`CanvasActorProvider`**. UI that must call **`useCanvasActor`** or
+  **`useSelector(actor, …)`** but sits *outside* the canvas DOM subtree should
+  be passed as **`overlays?: ReactNode`** on `CanvasWrapper` (same React
+  subtree as the provider). Advanced embeds can still use **`CanvasActorProvider`**
+  manually (exported from the package).
+
+**State chart (summary):**
 
 ```
-useRotate / useMove / useResize / useSelection / useDrawShape
-  ↓ reads isRotating/isMoving/... from Zustand
-  ↓ subscribes to BehaviorSubject streams
-  ↓ handler emits Observable<void>
-  ↓ on pointer-up: applyModifiersAndCommit
+canvasMachine
+  idle
+    POINTER_DOWN_ON_SELECTION → moving     (invoke moveActor)
+    POINTER_DOWN_ON_CORNER    → resizing   (invoke resizeActor; context.resizeHandle)
+    POINTER_DOWN_ON_ROTATION  → rotating   (invoke rotateActor; context.rotationCorner)
+    POINTER_DOWN_ON_CANVAS    → selecting  (invoke selectActor; append/remove in context)
+    POINTER_DOWN_DRAW         → drawingShape (invoke drawActor)
+    PAN_START                 → panning
+    DRAW_TOOL_ACTIVATE / DRAW_TOOL_DEACTIVATE → context.drawTool (root-level)
+
+  moving | rotating | resizing | selecting | drawingShape
+    → idle on invoked actor onDone / onError (clear handle/corner where needed)
+
+  panning
+    PAN_END → idle
 ```
 
-**What is done today (RxJS + Zustand flags):**
+Viewport pan deltas still run in **`use-viewport-interactions.ts`**; only
+**mode** `panning` is represented on the machine (`PAN_START` / `PAN_END`).
 
-- ✅ `move.ts` — translate matrix + overlay preview + throttled render
-- ✅ `rotate.ts` — rotation matrix + overlay preview + live angle
-- ✅ `resize.ts` — scale matrix + overlay preview
-- ✅ `draw-shape.ts` — rubber-band rect preview
-- ✅ `selection.ts` — area marquee + single click pick
-
-**Target with XState:**
-
-```
-canvasMachine (XState v5)
-  states:
-    idle
-      on POINTER_DOWN_ON_SELECTION → moving
-      on POINTER_DOWN_ON_CORNER    → resizing
-      on POINTER_DOWN_ON_ROTATION  → rotating
-      on POINTER_DOWN_ON_CANVAS    → selecting (area marquee)
-      on DRAW_TOOL_ACTIVE + POINTER_DOWN → drawingShape
-
-    moving (entry: captureBaseline)
-      on POINTER_MOVE → [action: updateOverlay, action: setWasmModifiers]
-      on POINTER_UP   → [action: commit] → idle
-
-    rotating (entry: captureBaseline)
-      on POINTER_MOVE → [action: updateOverlay, action: setWasmModifiers]
-      on POINTER_UP   → [action: commit] → idle
-
-    resizing (entry: captureBaseline)
-      on POINTER_MOVE → [action: updateOverlay, action: setWasmModifiers]
-      on POINTER_UP   → [action: commit] → idle
-
-    selecting
-      on POINTER_MOVE → [action: updateMarquee]
-      on POINTER_UP   → [action: applyAreaSelection] → idle
-
-    drawingShape
-      on POINTER_MOVE → [action: updateRubberBand]
-      on POINTER_UP   → [action: createShape] → idle
-
-    panning
-      on POINTER_MOVE → [action: pan viewport]
-      on POINTER_UP   → idle
-```
-
-**Benefits of XState here:**
-- One authoritative place to see every transition and guard.
-- Impossible states are structurally impossible (can't be
-  `isMoving && isRotating` simultaneously).
-- Devtools visualization for free.
-- Testable without a browser or canvas.
-
-**Migration path:** The RxJS handlers are pure functions
-(`Observable<void>`) — they can be wrapped as XState actors
-(`fromObservable(startMoveSelected)`) with minimal changes. The Zustand
-flags become XState context/state and can be removed one by one.
+**Benefits (as intended):**
+- One place for transitions; impossible combos like `moving` ∧ `rotating` are ruled out.
+- Devtools-friendly; actors are testable in isolation.
+- Handlers stay thin RxJS pipelines; XState owns lifecycle and mode.
 
 ---
 
@@ -234,15 +209,18 @@ applyModifiersAndCommit(entries)
 **Live preview (status: done):**
 
 During drag, the properties panel shows geometry derived from the same
-matrices that will be committed:
+matrices that will be committed. **`NodePropertyPanel`** uses XState
+`matches('moving')` / `matches('rotating')` (via `useSelector` on the canvas
+actor) together with Zustand preview deltas:
 
 ```
-isMoving  → applyTransformToNode(node, translateMatrix(dx, dy))
-isRotating → applyTransformToNode(node, rotationMatrixAroundPoint(cx, cy, Δdeg))
+moving    → applyTransformToNode(node, translateMatrix(dx, dy))   ← movePreviewWorldDelta
+rotating  → applyTransformToNode(node, rotationMatrixAroundPoint(…)) ← rotatePreviewDeltaDeg
 ```
 
-Values are computed in a `useMemo` on every store update so X, Y, W,
-H, and Rotation track the cursor in real time without a commit round-trip.
+Values are computed in a `useMemo` when preview fields or machine-derived
+flags change so X, Y, W, H, and Rotation track the cursor without a commit
+round-trip.
 
 ---
 
@@ -282,20 +260,17 @@ results are used by the viewport interaction layer to pick shapes.
 |---------|-------|------|
 | Document proxy (Valtio) | ✅ `docProxy` with `proxyMap`/`proxySet` | — |
 | Selected IDs in Valtio | ✅ `docProxy.selectedIds` | — |
-| Workspace flags (Zustand) | ✅ `useWorkspaceStore` | Fold into XState context |
+| Workspace store (Zustand) | ✅ Previews, viewport, renderer/worker/WASM | — |
+| Canvas interaction modes | ✅ `canvasMachine` + `CanvasWrapper` / `overlays` | — |
 | History (Zustand) | ✅ `useHistoryStore` | — |
 | Shortcuts/modifiers (Zustand) | ✅ `useViewportShortcutsStore` | Move modifier state to Signals |
 | Pointer streams | ⚠️ `BehaviorSubject` (works) | Migrate to Signals |
 | Live drag preview (overlay) | ✅ Synchronous per-event | — |
-| Live drag preview (panel) | ✅ `useMemo` via `applyTransformToNode` | — |
-| Move handler | ✅ RxJS + WASM modifiers | Wrap as XState actor |
-| Rotate handler | ✅ RxJS + WASM modifiers | Wrap as XState actor |
-| Resize handler | ✅ RxJS + WASM modifiers | Wrap as XState actor |
-| Draw-shape handler | ✅ RxJS rubber-band | Wrap as XState actor |
-| Area-select handler | ✅ RxJS marquee | Wrap as XState actor |
-| Panning | ✅ `useViewportInteractions` | Wrap as XState actor |
+| Live drag preview (panel) | ✅ `useMemo` + XState mode + Zustand deltas | — |
+| Move / rotate / resize / select / draw handlers | ✅ RxJS + `fromObservable` actors | — |
+| Panning | ✅ Deltas in `useViewportInteractions`; mode `panning` on machine | Optional: unify more in machine |
 | Commit pipeline | ✅ Full undo/redo via `Change[]` | — |
 | WASM modifier throttle | ✅ 60 Hz gate + sync overlay | — |
 | Web Worker spatial index | ✅ Quadtree, incremental updates | — |
-| XState canvas machine | ❌ Not started | Replace scattered boolean flags |
+| XState canvas machine | ✅ `canvas-machine.ts`, context in `canvas-actor-context.tsx` | — |
 | Signals for pointer/modifiers | ❌ Not started | Replace BehaviorSubject |
