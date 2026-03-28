@@ -304,6 +304,7 @@
             index   (some-> (:index params) parse-long)
 
             frames  (dm/get-in state [:viewer :pages page-id :frames])
+            index   (min (or index 0) (max 0 (dec (count frames))))
             srect   (-> (nth frames index)
                         (get :selrect))
             osize   (dm/get-in state [:viewer-local :viewport-size])
@@ -327,6 +328,7 @@
             index   (some-> (:index params) parse-long)
 
             frames  (dm/get-in state [:viewer :pages page-id :frames])
+            index   (min (or index 0) (max 0 (dec (count frames))))
             srect   (-> (nth frames index)
                         (get :selrect))
 
