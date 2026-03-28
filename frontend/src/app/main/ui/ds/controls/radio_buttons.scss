@@ -20,6 +20,11 @@
     width: 100%;
     display: flex;
   }
+
+  &[disabled] {
+    outline: $b-1 solid var(--color-background-quaternary);
+    background-color: transparent;
+  }
 }
 
 .label {

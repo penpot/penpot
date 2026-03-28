@@ -97,16 +97,16 @@
         token-name-ref (mf/use-ref nil)
         swatch-tooltip-content (cond
                                  not-active
-                                 (tr "ds.inputs.token-field.no-active-color.token-option")
+                                 (tr "not-active-token.no-name")
                                  has-errors
-                                 (tr "color-row.token-color-row.deleted-token")
+                                 (tr "options.deleted-token")
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
         name-tooltip-content (cond
                                not-active
-                               (tr "ds.inputs.token-field.no-active-color.token-option")
+                               (tr "not-active-token.no-name")
                                has-errors
-                               (tr "color-row.token-color-row.deleted-token")
+                               (tr "options.deleted-token")
                                :else
                                #(mf/html
                                  [:div
@@ -137,7 +137,7 @@
       [:div {:class (stl/css :token-actions)}
        [:> icon-button*
         {:variant "action"
-         :aria-label (tr "ds.inputs.token-field.detach-token")
+         :aria-label (tr "token-actions.detach-token")
          :on-click on-detach-token
          :icon i/detach}]
        [:> icon-button*

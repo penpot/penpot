@@ -18,7 +18,7 @@
   [:map
    [:id {:optiona true} :string]
    [:ref some?]
-   [:resolved {:optional true} [:or :int :string :float]]
+   [:resolved {:optional true} [:or :int :string :float :map]]
    [:name {:optional true} :string]
    [:on-click {:optional true} fn?]
    [:selected {:optional true} :boolean]
@@ -55,10 +55,11 @@
                    :trigger-ref element-ref
                    :id (dm/str id "-name")
                    :class (stl/css :option-text)}
-      ;; Add ellipsis
+
       [:span {:aria-labelledby (dm/str id "-name")
+              :class (stl/css :option-name)
               :ref element-ref}
        name]]
-     (when resolved
+     (when (and resolved (not (map? resolved)))
        [:> :span {:class (stl/css :option-pill)}
         resolved])]))

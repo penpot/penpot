@@ -97,5 +97,5 @@
                           :tooltip-placement tooltip-placement
                           :icon i/broken-link
                           :ref token-detach-btn-ref
-                          :aria-label (tr "ds.inputs.token-field.detach-token")
+                          :aria-label (tr "token-actions.detach-token")
                           :on-click detach-token}])]]))

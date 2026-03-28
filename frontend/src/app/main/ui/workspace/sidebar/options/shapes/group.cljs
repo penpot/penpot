@@ -102,7 +102,7 @@
         [stroke-ids stroke-values stroke-tokens]
         (get-attrs shapes objects :stroke)
 
-        [text-ids text-values]
+        [text-ids text-values text-tokens]
         (get-attrs shapes objects :text)
 
         [layout-item-ids layout-item-values]
@@ -171,7 +171,10 @@
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
 
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+       [:> ot/text-menu* {:type type
+                          :ids text-ids
+                          :values text-values
+                          :applied-tokens text-tokens}])
 
      (when-not (empty? svg-values)
        [:& svg-attrs-menu {:ids ids :values svg-values}])

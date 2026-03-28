@@ -385,7 +385,7 @@
         [layer-ids layer-values layer-tokens]
         (get-attrs shapes objects :layer)
 
-        [text-ids text-values]
+        [text-ids text-values text-tokens]
         (get-attrs shapes objects :text)
 
         [constraint-ids constraint-values]
@@ -478,7 +478,11 @@
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+       [:> ot/text-menu*
+        {:type type
+         :ids text-ids
+         :values text-values
+         :applied-tokens text-tokens}])
 
      (when-not (empty? fill-ids)
        [:> fill/fill-menu* {:type type

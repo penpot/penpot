@@ -42,7 +42,6 @@
   inset-inline-end: var(--dropdown-offset, 0);
 }
 
-.option-separator {
-  border: $b-1 solid var(--options-dropdown-border-color);
-  margin-block: var(--sp-xs) var(--sp-xs);
+.option-search {
+  padding: var(--sp-xs);
 }
