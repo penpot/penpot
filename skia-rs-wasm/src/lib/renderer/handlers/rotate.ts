@@ -131,8 +131,6 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
       const store = useWorkspaceStore.getState()
       store.setRotatePreviewDeltaDeg(0)
       if (!modifiersAppliedRef.current) {
-        store.setRotationCorner(null)
-        store.setIsRotating(false)
         return
       }
       const deltaDeg = latestDeltaDegRef.current
@@ -146,8 +144,6 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
           renderer.flushRenderSync()
           storeAfter.refreshWasmSelectionRect()
           requestAnimationFrame(() => renderer.requestRenderFrame())
-          storeAfter.setRotationCorner(null)
-          storeAfter.setIsRotating(false)
         })
         .catch(() => {
           renderer.cleanModifiers()
@@ -155,8 +151,6 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
           const storeCatch = useWorkspaceStore.getState()
           storeCatch.refreshWasmSelectionRect()
           requestAnimationFrame(() => renderer.requestRenderFrame())
-          storeCatch.setRotationCorner(null)
-          storeCatch.setIsRotating(false)
         })
     }),
     map(() => undefined),

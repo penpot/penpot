@@ -167,6 +167,11 @@ export interface CanvasWrapperProps {
   startSlot?: ReactNode
   /** Optional content after the canvas column (e.g. right rail). */
   endSlot?: ReactNode
+  /**
+   * Sibling UI rendered inside the canvas XState provider (e.g. fixed toolbars/panels that call `useCanvasActor`).
+   * The canvas column does not include this; use for overlays that sit outside the canvas subtree in layout.
+   */
+  overlays?: ReactNode
   /** Classes for the outer flex row when `startSlot` or `endSlot` is set. */
   workspaceClassName?: string
   rendererOptions?: RendererOptions

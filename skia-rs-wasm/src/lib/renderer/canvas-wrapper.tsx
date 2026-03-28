@@ -1,8 +1,10 @@
 /**
- * React component wrapper that initializes both worker and canvas renderer
+ * React component wrapper that initializes both worker and canvas renderer.
+ * Mounts the canvas interaction actor (`canvasMachine`) here — library entry point for XState context.
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { useActorRef } from '@xstate/react'
 import { cn } from '@/lib/utils'
 import type { CanvasWrapperProps } from './types'
 import { useWorkspaceStore } from './store/workspace-store'
@@ -10,20 +12,17 @@ import { useViewportShortcutsStore } from './store/shortcuts-store'
 import { initRendererClient, cleanupRendererClient } from './renderer-init'
 import { SelectionOverlay } from '../components/selection-overlay/SelectionOverlay'
 import { useViewportInteractions } from './hooks/use-viewport-interactions'
-import { useDrawShape } from './hooks/use-draw-shape'
-import { useMove } from './hooks/use-move'
-import { useResize } from './hooks/use-resize'
-import { useRotate } from './hooks/use-rotate'
 import { useStreams } from './hooks/use-streams'
-import { useSelection } from './hooks/use-selection'
 import { useWasmSelectionRect } from './hooks/use-wasm-selection-rect'
 import { cleanupWorker, initWorker } from '../worker-init'
 import { initWasmModule } from '../wasm-init'
+import { canvasMachine } from './machine/canvas-machine'
+import { CanvasActorProvider } from './machine/canvas-actor-context'
 
 const DEFAULT_WIDTH = 800
 const DEFAULT_HEIGHT = 600
 
-export function CanvasWrapper({
+function CanvasWorkspace({
   className,
   containerStyle,
   containerClassName,
@@ -34,7 +33,7 @@ export function CanvasWrapper({
   shortcuts: initialViewportShortcuts,
   wasmPath = '/wasm/render-wasm.js',
   workerScriptUrl,
-}: CanvasWrapperProps) {
+}: Omit<CanvasWrapperProps, 'overlays'>) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [canvasSize, setCanvasSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT })
@@ -141,12 +140,7 @@ export function CanvasWrapper({
   }, [setModifierKeys])
 
   useStreams(canvasRef)
-  useDrawShape()
-  useSelection()
   useWasmSelectionRect()
-  useMove()
-  useResize()
-  useRotate()
   useViewportInteractions({
     canvasRef,
     onViewportUpdate: (next) => {
@@ -196,5 +190,15 @@ export function CanvasWrapper({
       {canvasColumn}
       {endSlot}
     </div>
+  )
+}
+
+export function CanvasWrapper({ overlays, ...workspaceProps }: CanvasWrapperProps) {
+  const canvasActorRef = useActorRef(canvasMachine)
+  return (
+    <CanvasActorProvider actorRef={canvasActorRef}>
+      <CanvasWorkspace {...workspaceProps} />
+      {overlays}
+    </CanvasActorProvider>
   )
 }

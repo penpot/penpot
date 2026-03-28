@@ -121,7 +121,7 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
     tap(() => {
       const store = useWorkspaceStore.getState()
       if (!modifiersAppliedRef.current) {
-        store.setIsMoving(false)
+        store.setMovePreviewWorldDelta({ x: 0, y: 0 })
         return
       }
       const delta = lastEventDeltaRef.current
@@ -134,13 +134,13 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
-          useWorkspaceStore.getState().setIsMoving(false)
+          useWorkspaceStore.getState().setMovePreviewWorldDelta({ x: 0, y: 0 })
         })
         .catch(() => {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
-          useWorkspaceStore.getState().setIsMoving(false)
+          useWorkspaceStore.getState().setMovePreviewWorldDelta({ x: 0, y: 0 })
         })
     }),
     map(() => undefined)

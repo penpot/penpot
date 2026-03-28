@@ -7,6 +7,7 @@ import type { RefObject } from 'react'
 import { useEffect, useRef, useCallback } from 'react'
 import { getSelectedIdsSet, setSelectedIds } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
+import { useCanvasActor } from '../machine/canvas-actor-context'
 import { useViewportShortcutsStore } from '../store/shortcuts-store'
 import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { Viewport, screenToWorld } from '../viewport'
@@ -65,12 +66,9 @@ export function useViewportInteractions({
   canvasRef,
   onViewportUpdate,
 }: UseViewportInteractionsParams) {
-  // Single state selectors (for useCallback deps)
+  const canvasActor = useCanvasActor()
   const viewport = useWorkspaceStore((state) => state.viewport)
   const renderer = useWorkspaceStore((state) => state.renderer)
-  const setIsSelecting = useWorkspaceStore((state) => state.setIsSelecting)
-  const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
-  const setIsPanning = useWorkspaceStore((state) => state.setIsPanning)
   const shortcuts = useViewportShortcutsStore((state) => state.viewportShortcuts)
   // Refs for panning state
   const isPanningRef = useRef<boolean>(false)
@@ -112,7 +110,7 @@ export function useViewportInteractions({
     if (panWithButton || panWithMod) {
       e.preventDefault()
       isPanningRef.current = true
-      setIsPanning(true)
+      canvasActor.send({ type: 'PAN_START' })
       lastPanPosRef.current = { x: e.clientX, y: e.clientY }
       canvasElement.style.cursor = 'grabbing'
       return
@@ -126,9 +124,9 @@ export function useViewportInteractions({
       const screenX = e.clientX - rect.left
       const screenY = e.clientY - rect.top
 
-      if (useWorkspaceStore.getState().drawTool === 'rect') {
+      if (canvasActor.getSnapshot().context.drawTool === 'rect') {
         mousePosition$.next({ x: screenX, y: screenY })
-        useWorkspaceStore.getState().setIsDrawingShape(true)
+        canvasActor.send({ type: 'POINTER_DOWN_DRAW' })
         return
       }
 
@@ -144,13 +142,12 @@ export function useViewportInteractions({
       const viewportForHit = lastAppliedViewport ?? viewport
 
       if (mod) {
-        store.setAreaSelectionMode(shift, shift && mod)
-        setIsSelecting(true)
+        canvasActor.send({ type: 'POINTER_DOWN_ON_CANVAS', append: shift, remove: shift && mod })
         return
       }
 
       if (!workerClient || !viewportForHit || !hitPageId) {
-        setIsSelecting(true)
+        canvasActor.send({ type: 'POINTER_DOWN_ON_CANVAS', append: false, remove: false })
         return
       }
       queryNodesAtPoint(workerClient, hitPageId, viewportForHit, screenX, screenY).then(
@@ -168,7 +165,7 @@ export function useViewportInteractions({
                 setSelectedIds(new Set([topId]))
               }
             }
-            setIsMoving(true)
+            canvasActor.send({ type: 'POINTER_DOWN_ON_SELECTION', position: { x: screenX, y: screenY } })
           } else {
             // Fallback: click in empty space (e.g. inside stroke-only shape) but inside selection bounds → start move
             const store = useWorkspaceStore.getState()
@@ -181,16 +178,16 @@ export function useViewportInteractions({
             ) {
               const world = screenToWorld(viewportForHit, screenX, screenY)
               if (isPointInSelectionBounds(world, wasmSelectionRect)) {
-                setIsMoving(true)
+                canvasActor.send({ type: 'POINTER_DOWN_ON_SELECTION', position: { x: screenX, y: screenY } })
                 return
               }
             }
-            setIsSelecting(true)
+            canvasActor.send({ type: 'POINTER_DOWN_ON_CANVAS', append: false, remove: false })
           }
         }
       )
     }
-  }, [canvasRef, setIsSelecting, setIsMoving, setIsPanning, shortcuts.panMouseButton, shortcuts.panWithModifier])
+  }, [canvasRef, canvasActor, shortcuts.panMouseButton, shortcuts.panWithModifier])
 
   // Handle mouse move for panning and cursor (grab only when pan modifier held; resize cursor when resizing)
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -198,14 +195,14 @@ export function useViewportInteractions({
     if (!canvasElement) return
 
     if (!isPanningRef.current) {
-      const store = useWorkspaceStore.getState()
-      const { isResizing, resizeHandle, wasmSelectionRect } = store
-      if (isResizing && resizeHandle) {
+      const snap = canvasActor.getSnapshot()
+      const { wasmSelectionRect } = useWorkspaceStore.getState()
+      if (snap.matches('resizing') && snap.context.resizeHandle) {
         const rotation = wasmSelectionRect != null ? matrixToRotationDeg(wasmSelectionRect.transform) : undefined
         const halfFlip = wasmSelectionRect != null ? matrixHasHalfFlip(wasmSelectionRect.transform) : false
-        canvasElement.style.cursor = getResizeCursor(resizeHandle, rotation, halfFlip)
+        canvasElement.style.cursor = getResizeCursor(snap.context.resizeHandle, rotation, halfFlip)
       } else if (e.target === canvasElement) {
-        const drawTool = useWorkspaceStore.getState().drawTool
+        const drawTool = snap.context.drawTool
         if (drawTool === 'rect') {
           canvasElement.style.cursor = 'crosshair'
         } else {
@@ -246,13 +243,13 @@ export function useViewportInteractions({
         })
       }
     }
-  }, [canvasRef, viewport, renderer, onViewportUpdate, shortcuts.panWithModifier])
+  }, [canvasRef, canvasActor, viewport, renderer, onViewportUpdate, shortcuts.panWithModifier])
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
     const canvas = canvasRef.current
     if (isPanningRef.current) {
-      setIsPanning(false)
+      canvasActor.send({ type: 'PAN_END' })
       isPanningRef.current = false
       lastPanPosRef.current = null
       if (pendingPanDeltaRef.current.dx !== 0 || pendingPanDeltaRef.current.dy !== 0) {
@@ -270,20 +267,16 @@ export function useViewportInteractions({
       }
     }
 
-    // End selection. isMoving and isResizing are cleared by their handlers after commit (so overlay uses updated bounds
-    // and a quick second resize sees the latest node). Do not clear isRotating here: the rotate handler clears it after
-    // applyChanges resolves; clearing here would dispose the subscription before commitOnRelease runs.
-    setIsSelecting(false)
-  }, [canvasRef, viewport, renderer, setIsSelecting, setIsPanning, onViewportUpdate])
+  }, [canvasRef, canvasActor, viewport, renderer, onViewportUpdate])
 
   // Handle mouse enter: normal cursor unless pan modifier is held (updated in mousemove)
   const handleMouseEnter = useCallback(() => {
     const canvas = canvasRef.current
     if (canvas && !isPanningRef.current) {
-      const drawTool = useWorkspaceStore.getState().drawTool
+      const drawTool = canvasActor.getSnapshot().context.drawTool
       canvas.style.cursor = drawTool === 'rect' ? 'crosshair' : 'default'
     }
-  }, [canvasRef])
+  }, [canvasRef, canvasActor])
 
   // Handle mouse leave to reset cursor
   const handleMouseLeave = useCallback(() => {
@@ -303,9 +296,9 @@ export function useViewportInteractions({
 
   // Handle keyboard for panning and zooming
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.code === 'Escape' && useWorkspaceStore.getState().drawTool != null) {
+    if (e.code === 'Escape' && canvasActor.getSnapshot().context.drawTool != null) {
       e.preventDefault()
-      useWorkspaceStore.getState().setDrawTool(null)
+      canvasActor.send({ type: 'DRAW_TOOL_DEACTIVATE' })
       const canvasElement = canvasRef.current
       if (canvasElement) canvasElement.style.cursor = 'default'
       return
@@ -315,12 +308,15 @@ export function useViewportInteractions({
       const el = e.target as HTMLElement | null
       if (!el?.closest('input, textarea, select, [contenteditable="true"]')) {
         e.preventDefault()
-        const state = useWorkspaceStore.getState()
-        const next = state.drawTool === 'rect' ? null : 'rect'
-        state.setDrawTool(next)
+        const active = canvasActor.getSnapshot().context.drawTool === 'rect'
+        if (active) {
+          canvasActor.send({ type: 'DRAW_TOOL_DEACTIVATE' })
+        } else {
+          canvasActor.send({ type: 'DRAW_TOOL_ACTIVATE', tool: 'rect' })
+        }
         const canvasElement = canvasRef.current
         if (canvasElement) {
-          canvasElement.style.cursor = next === 'rect' ? 'crosshair' : 'default'
+          canvasElement.style.cursor = active ? 'default' : 'crosshair'
         }
         return
       }
@@ -393,7 +389,7 @@ export function useViewportInteractions({
       renderer.applyViewport(next)
       onViewportUpdate?.(next)
     }
-  }, [canvasRef, viewport, renderer, onViewportUpdate, shortcuts])
+  }, [canvasRef, canvasActor, viewport, renderer, onViewportUpdate, shortcuts])
 
   // Set up event listeners (read ref inside effect, not during render)
   useEffect(() => {
