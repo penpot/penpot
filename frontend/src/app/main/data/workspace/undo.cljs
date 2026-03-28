@@ -60,7 +60,9 @@
    [:undo-changes [:vector cpc/schema:change]]
    [:redo-changes [:vector cpc/schema:change]]
    [:undo-group ::sm/uuid]
-   [:tags [:set :keyword]]])
+   [:tags [:set :keyword]]
+   [:selected-before {:optional true} [:maybe [:set ::sm/uuid]]]
+   [:selected-after {:optional true} [:maybe [:set ::sm/uuid]]]])
 
 (def check-undo-entry
   (sm/check-fn schema:undo-entry))
@@ -103,24 +105,28 @@
 (defn- stack-undo-entry
   "Extends the current undo entry in the workspace with new changes if it
    exists, or creates a new entry if it doesn't."
-  [state {:keys [undo-changes redo-changes] :as entry}]
+  [state {:keys [undo-changes redo-changes selected-after] :as entry}]
   (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)
       (update-in state [:workspace-undo :items index]
                  (fn [item]
                    (-> item
                        (update :undo-changes #(into undo-changes %))
-                       (update :redo-changes #(into % redo-changes)))))
+                       (update :redo-changes #(into % redo-changes))
+                       (assoc :selected-after selected-after))))
       (add-undo-entry state entry))))
 
 (defn- accumulate-undo-entry
   "Extends the current undo transaction with new changes."
-  [state {:keys [undo-changes redo-changes undo-group tags]}]
+  [state {:keys [undo-changes redo-changes undo-group tags selected-before selected-after]}]
   (-> state
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))
       (cond-> (nil? (get-in state [:workspace-undo :transaction :undo-group]))
         (assoc-in [:workspace-undo :transaction :undo-group] undo-group))
+      (cond-> (nil? (get-in state [:workspace-undo :transaction :selected-before]))
+        (assoc-in [:workspace-undo :transaction :selected-before] selected-before))
+      (assoc-in [:workspace-undo :transaction :selected-after] selected-after)
       (assoc-in [:workspace-undo :transaction :tags] tags)))
 
 (defn append-undo
@@ -137,18 +143,20 @@
   (ptk/reify ::append-undo
     ptk/UpdateEvent
     (update [_ state]
-      (cond
-        (and (get-in state [:workspace-undo :transaction])
-             (or (not stack?)
-                 (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
-                 (d/not-empty? (get-in state [:workspace-undo :transaction :redo-changes]))))
-        (accumulate-undo-entry state entry)
+      (let [selected-after (dm/get-in state [:workspace-local :selected])
+            entry          (assoc entry :selected-after selected-after)]
+        (cond
+          (and (get-in state [:workspace-undo :transaction])
+               (or (not stack?)
+                   (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
+                   (d/not-empty? (get-in state [:workspace-undo :transaction :redo-changes]))))
+          (accumulate-undo-entry state entry)
 
-        stack?
-        (stack-undo-entry state entry)
+          stack?
+          (stack-undo-entry state entry)
 
-        :else
-        (add-undo-entry state entry)))))
+          :else
+          (add-undo-entry state entry))))))
 
 (def empty-tx
   {:undo-changes [] :redo-changes []})
@@ -234,6 +242,16 @@
              (rx/map first)
              (rx/map commit-undo-transaction))))))
 
+(defn- restore-selection
+  "Restores the selection state from an undo entry."
+  [selected-ids]
+  (ptk/reify ::restore-selection
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (some? selected-ids)
+        (assoc-in state [:workspace-local :selected] selected-ids)
+        state))))
+
 (defn undo-to-index
   "Repeat undoing or redoing until dest-index is reached."
   [dest-index]
@@ -302,12 +320,15 @@
                       (find-first-group-idx index))]
 
                 (if undo-group
-                  (rx/of (undo-to-index (dec undo-group-index)))
+                  (let [first-item (get items undo-group-index)]
+                    (rx/of (undo-to-index (dec undo-group-index))
+                           (restore-selection (:selected-before first-item))))
                   (rx/of (materialize-undo changes (dec index))
                          (dch/commit-changes {:redo-changes changes
                                               :undo-changes []
                                               :save-undo? false
                                               :origin it})
+                         (restore-selection (:selected-before item))
                          (assure-valid-current-page)))))))))))
 
 (def redo
@@ -337,12 +358,15 @@
                     redo-group-index (when undo-group
                                        (find-last-group-idx (inc index)))]
                 (if undo-group
-                  (rx/of (undo-to-index redo-group-index))
+                  (let [last-item (get items redo-group-index)]
+                    (rx/of (undo-to-index redo-group-index)
+                           (restore-selection (:selected-after last-item))))
                   (rx/of (materialize-undo changes (inc index))
                          (dch/commit-changes {:redo-changes changes
                                               :undo-changes []
                                               :origin it
-                                              :save-undo? false})))))))))))
+                                              :save-undo? false})
+                         (restore-selection (:selected-after item))))))))))))
 
 (defn- assure-valid-current-page
   []
