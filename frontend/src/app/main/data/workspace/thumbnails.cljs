@@ -217,31 +217,37 @@
 
                     root-frame-old? (cfh/root-frame? old-objects old-frame-id)
                     root-frame-new? (cfh/root-frame? new-objects new-frame-id)
-                    instance-root?  (ctc/instance-root? new-shape)]
+                    instance-root?  (ctc/instance-root? new-shape)
+                    local-result    (cond-> #{}
+                                      root-frame-old?
+                                      (conj ["frame" old-frame-id])
 
-                (cond-> #{}
-                  root-frame-old?
-                  (conj ["frame" old-frame-id])
+                                      root-frame-new?
+                                      (conj ["frame" new-frame-id])
 
-                  root-frame-new?
-                  (conj ["frame" new-frame-id])
+                                      instance-root?
+                                      (conj ["component" id]))]
 
-                  instance-root?
-                  (conj ["component" id])
+                (swap! frame-id-cache assoc id {:status :in-progress
+                                                :result local-result})
 
-                  (and (uuid? (:frame-id old-shape))
-                       (not= uuid/zero (:frame-id old-shape)))
-                  (into (get-frame-ids (:frame-id old-shape)))
+                (let [result
+                      (cond-> local-result
+                        (and (uuid? (:frame-id old-shape))
+                             (not= uuid/zero (:frame-id old-shape)))
+                        (into (get-frame-ids-cached (:frame-id old-shape)))
 
-                  (and (uuid? (:frame-id new-shape))
-                       (not= uuid/zero (:frame-id new-shape)))
-                  (into (get-frame-ids (:frame-id new-shape))))))
+                        (and (uuid? (:frame-id new-shape))
+                             (not= uuid/zero (:frame-id new-shape)))
+                        (into (get-frame-ids-cached (:frame-id new-shape))))]
+                  (swap! frame-id-cache assoc id {:status :done
+                                                  :result result})
+                  result)))
 
             (get-frame-ids-cached [id]
-              (or (get @frame-id-cache id)
-                  (let [result (get-frame-ids id)]
-                    (swap! frame-id-cache assoc id result)
-                    result)))]
+              (if-let [cached (get @frame-id-cache id)]
+                (:result cached)
+                (get-frame-ids id)))]
       (into #{}
             (comp (mapcat extract-ids)
                   (filter (fn [[page-id']] (= page-id page-id')))

@@ -3,6 +3,7 @@
    [cljs.test :as t]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.data.workspace-colors-test]
+   [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.helpers-shapes-test]
    [frontend-tests.logic.comp-remove-swap-slots-test]
    [frontend-tests.logic.components-and-tokens]
@@ -35,6 +36,7 @@
   []
   (t/run-tests
    'frontend-tests.basic-shapes-test
+   'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.helpers-shapes-test
    'frontend-tests.logic.comp-remove-swap-slots-test
