@@ -1,9 +1,10 @@
 /**
  * Bottom pill tool strip for creation tools (reference editor UI).
- * Extend `DrawTool` in workspace-store when adding new shape icons.
+ * Extend `DrawTool` in canvas-machine when adding new shape icons.
  */
 
 import { useCallback, type ReactNode } from 'react'
+import { useSelector } from '@xstate/react'
 import {
   Circle,
   Hexagon,
@@ -15,7 +16,7 @@ import {
   Triangle,
   Type,
 } from 'lucide-react'
-import { useWorkspaceStore } from '../renderer/store/workspace-store'
+import { useCanvasActor } from '../renderer/machine/canvas-actor-context'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -50,8 +51,8 @@ function IconRect({ className }: { className?: string }) {
 const placeholderTitle = 'Coming soon'
 
 export function ShapeToolbar() {
-  const drawTool = useWorkspaceStore((s) => s.drawTool)
-  const setDrawTool = useWorkspaceStore((s) => s.setDrawTool)
+  const canvasActor = useCanvasActor()
+  const drawTool = useSelector(canvasActor, (s) => s.context.drawTool)
 
   const syncCanvasCursor = useCallback((tool: 'rect' | null) => {
     const canvas = document.querySelector('.canvas-container canvas') as HTMLCanvasElement | null
@@ -59,16 +60,20 @@ export function ShapeToolbar() {
   }, [])
 
   const onSelect = useCallback(() => {
-    setDrawTool(null)
+    canvasActor.send({ type: 'DRAW_TOOL_DEACTIVATE' })
     syncCanvasCursor(null)
-  }, [setDrawTool, syncCanvasCursor])
+  }, [canvasActor, syncCanvasCursor])
 
   const onRect = useCallback(() => {
-    const current = useWorkspaceStore.getState().drawTool
-    const next = current === 'rect' ? null : 'rect'
-    setDrawTool(next)
-    syncCanvasCursor(next)
-  }, [setDrawTool, syncCanvasCursor])
+    const active = canvasActor.getSnapshot().context.drawTool === 'rect'
+    if (active) {
+      canvasActor.send({ type: 'DRAW_TOOL_DEACTIVATE' })
+      syncCanvasCursor(null)
+    } else {
+      canvasActor.send({ type: 'DRAW_TOOL_ACTIVATE', tool: 'rect' })
+      syncCanvasCursor('rect')
+    }
+  }, [canvasActor, syncCanvasCursor])
 
   const toolBtn = (
     pressed: boolean,

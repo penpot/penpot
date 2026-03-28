@@ -26,7 +26,6 @@ export function handleDrawRect(): Observable<void> {
   const page = effectivePageId ? getPage(effectivePageId) : undefined
 
   if (!viewport || !effectivePageId || !page) {
-    useWorkspaceStore.getState().setIsDrawingShape(false)
     useWorkspaceStore.getState().setShapeDrawPreview(null)
     return EMPTY
   }
@@ -65,7 +64,6 @@ export function handleDrawRect(): Observable<void> {
         of(null).pipe(
           tap(() => {
             useWorkspaceStore.getState().setShapeDrawPreview(null)
-            useWorkspaceStore.getState().setIsDrawingShape(false)
 
             if (lastRect.width < MIN_DRAW_SCREEN_PX || lastRect.height < MIN_DRAW_SCREEN_PX) {
               return

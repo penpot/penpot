@@ -41,85 +41,79 @@ function App() {
   }, [])
 
   return (
-    /**
-     * Root: fills the entire viewport. The canvas is an absolute fill layer.
-     * All panels/toolbars are `fixed`, overlaying on top of the canvas.
-     */
     <div
       className="canvas-container relative font-sans"
       style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: 'var(--editor-canvas-chrome)' }}
     >
-      {/* Canvas — fills the whole root */}
       <div style={{ position: 'absolute', inset: 0 }}>
         <CanvasWrapper
           rendererOptions={rendererOptions}
           onError={handleError}
           containerStyle={{ cursor: 'crosshair', width: '100%', height: '100%' }}
+          overlays={
+            <>
+              <LayersPanel />
+              <RightSidePanel />
+              <ShapeToolbar />
+              <div
+                className="pointer-events-auto absolute top-3 z-10 flex gap-0.5 rounded-lg border border-border/80 bg-white p-1 shadow-md"
+                style={{ right: 'calc(0.75rem + var(--properties-panel-width, 280px) + 0.75rem)' }}
+                role="toolbar"
+                aria-label="Document actions"
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  aria-label="New document"
+                  title="New document"
+                  onClick={() => void setDocument(createNewDocument())}
+                >
+                  <FilePlus className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  aria-label="Undo"
+                  title="Undo"
+                  onClick={() => void undo()}
+                >
+                  <Undo2 className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  aria-label="Redo"
+                  title="Redo"
+                  onClick={() => void redo()}
+                >
+                  <Redo2 className="size-4" />
+                </Button>
+              </div>
+              {error && (
+                <div
+                  className="pointer-events-auto fixed bottom-24 left-1/2 z-70 max-w-lg -translate-x-1/2 rounded-lg border border-destructive/40 bg-destructive/15 px-4 py-2 text-sm text-destructive shadow-lg backdrop-blur-sm"
+                  role="alert"
+                >
+                  <span className="font-medium">Error:</span> {error}
+                  <button
+                    type="button"
+                    className="ml-3 rounded text-xs underline"
+                    onClick={() => setError(null)}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+            </>
+          }
         />
       </div>
-
-      {/* Fixed floating panels */}
-      <LayersPanel />
-      <RightSidePanel />
-      <ShapeToolbar />
-
-      {/* Document actions chip — absolute inside root, above canvas, below panels */}
-      <div
-        className="pointer-events-auto absolute top-3 z-10 flex gap-0.5 rounded-lg border border-border/80 bg-white p-1 shadow-md"
-        style={{ right: 'calc(0.75rem + var(--properties-panel-width, 280px) + 0.75rem)' }}
-        role="toolbar"
-        aria-label="Document actions"
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9"
-          aria-label="New document"
-          title="New document"
-          onClick={() => void setDocument(createNewDocument())}
-        >
-          <FilePlus className="size-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9"
-          aria-label="Undo"
-          title="Undo"
-          onClick={() => void undo()}
-        >
-          <Undo2 className="size-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9"
-          aria-label="Redo"
-          title="Redo"
-          onClick={() => void redo()}
-        >
-          <Redo2 className="size-4" />
-        </Button>
-      </div>
-
-      {error && (
-        <div
-          className="pointer-events-auto fixed bottom-24 left-1/2 z-70 max-w-lg -translate-x-1/2 rounded-lg border border-destructive/40 bg-destructive/15 px-4 py-2 text-sm text-destructive shadow-lg backdrop-blur-sm"
-          role="alert"
-        >
-          <span className="font-medium">Error:</span> {error}
-          <button
-            type="button"
-            className="ml-3 rounded text-xs underline"
-            onClick={() => setError(null)}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
     </div>
   )
 }

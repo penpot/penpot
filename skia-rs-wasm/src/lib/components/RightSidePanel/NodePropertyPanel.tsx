@@ -3,7 +3,9 @@ import { snapshot } from 'valtio'
 import type { Fill, PenpotNode, Stroke } from 'penpot-exporter/types'
 import { applyTransformToNode } from '../../renderer/geom/apply-transform-to-node'
 import { rotationMatrixAroundPoint, translateMatrix } from '../../renderer/geom/matrix'
+import { useSelector } from '@xstate/react'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
+import { useCanvasActor } from '../../renderer/machine/canvas-actor-context'
 import { docProxy, getActiveOrSinglePageId } from '../../renderer/store/doc-proxy'
 import {
   commitNodePartialUpdate,
@@ -23,8 +25,9 @@ export interface NodePropertyPanelProps {
 }
 
 export function NodePropertyPanel({ nodeId, initialNode, readOnly }: NodePropertyPanelProps) {
-  const isMoving = useWorkspaceStore((s) => s.isMoving)
-  const isRotating = useWorkspaceStore((s) => s.isRotating)
+  const canvasActor = useCanvasActor()
+  const isMoving = useSelector(canvasActor, (s) => s.matches('moving'))
+  const isRotating = useSelector(canvasActor, (s) => s.matches('rotating'))
   const rotatePreviewDeltaDeg = useWorkspaceStore((s) => s.rotatePreviewDeltaDeg)
   const movePreviewWorldDelta = useWorkspaceStore((s) => s.movePreviewWorldDelta)
 

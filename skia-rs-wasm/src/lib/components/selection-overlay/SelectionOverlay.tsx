@@ -5,7 +5,9 @@
 
 import type { RefObject } from 'react'
 import { useCallback, useMemo } from 'react'
+import { useSelector } from '@xstate/react'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
+import { useCanvasActor } from '../../renderer/machine/canvas-actor-context'
 import { useSnapshot } from 'valtio'
 import { docProxy } from '../../renderer/store/doc-proxy'
 import { mousePosition$ } from '../../renderer/streams'
@@ -28,23 +30,19 @@ export interface SelectionOverlayProps {
 }
 
 export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProps) {
+  const canvasActor = useCanvasActor()
   const doc = useSnapshot(docProxy)
   const selectedIds = useMemo(() => new Set(doc.selectedIds), [doc.selectedIds])
   const wasmSelectionRect = useWorkspaceStore((state) => state.wasmSelectionRect)
   const viewport = useWorkspaceStore((state) => state.viewport)
   const zoom = useWorkspaceStore((state) => state.viewport?.zoom ?? 1)
-  const isSelecting = useWorkspaceStore((state) => state.isSelecting)
   const selectionRect = useWorkspaceStore((state) => state.selectionRect)
-  const isMoving = useWorkspaceStore((state) => state.isMoving)
-  const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
-  const isResizing = useWorkspaceStore((state) => state.isResizing)
-  const resizeHandle = useWorkspaceStore((state) => state.resizeHandle)
-  const setIsResizing = useWorkspaceStore((state) => state.setIsResizing)
-  const setResizeHandle = useWorkspaceStore((state) => state.setResizeHandle)
-  const isRotating = useWorkspaceStore((state) => state.isRotating)
-  const rotationCorner = useWorkspaceStore((state) => state.rotationCorner)
-  const setIsRotating = useWorkspaceStore((state) => state.setIsRotating)
-  const setRotationCorner = useWorkspaceStore((state) => state.setRotationCorner)
+  const isSelecting = useSelector(canvasActor, (s) => s.matches('selecting'))
+  const isMoving = useSelector(canvasActor, (s) => s.matches('moving'))
+  const isResizing = useSelector(canvasActor, (s) => s.matches('resizing'))
+  const resizeHandle = useSelector(canvasActor, (s) => s.context.resizeHandle)
+  const isRotating = useSelector(canvasActor, (s) => s.matches('rotating'))
+  const rotationCorner = useSelector(canvasActor, (s) => s.context.rotationCorner)
 
   const safeZoom = Number.isFinite(zoom) && zoom > 0 ? zoom : 1
   const hasFiniteSelectionRect =
@@ -83,12 +81,12 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       const pos = screenPositionFromEvent(e)
       if (pos) {
         mousePosition$.next(pos)
-        setIsMoving(true)
+        canvasActor.send({ type: 'POINTER_DOWN_ON_SELECTION', position: pos })
       }
       const target = e.currentTarget
       if (target instanceof Element) target.setPointerCapture(e.pointerId)
     },
-    [screenPositionFromEvent, setIsMoving]
+    [screenPositionFromEvent, canvasActor]
   )
 
   const onResizeHandlePointerDown = useCallback(
@@ -99,13 +97,12 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       const pos = screenPositionFromEvent(e)
       if (pos) {
         mousePosition$.next(pos)
-        setIsResizing(true)
-        setResizeHandle(position)
+        canvasActor.send({ type: 'POINTER_DOWN_ON_CORNER', handle: position, position: pos })
       }
       const target = e.currentTarget
       if (target instanceof Element) target.setPointerCapture(e.pointerId)
     },
-    [screenPositionFromEvent, setIsResizing, setResizeHandle]
+    [screenPositionFromEvent, canvasActor]
   )
 
   const onRotationPointerDown = useCallback(
@@ -116,17 +113,16 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       const pos = screenPositionFromEvent(e)
       if (pos) {
         mousePosition$.next(pos)
-        setRotationCorner(position)
-        setIsRotating(true)
+        canvasActor.send({ type: 'POINTER_DOWN_ON_ROTATION', corner: position, position: pos })
       }
       const target = e.currentTarget
       if (target instanceof Element) target.setPointerCapture(e.pointerId)
     },
-    [screenPositionFromEvent, setRotationCorner, setIsRotating]
+    [screenPositionFromEvent, canvasActor]
   )
 
   const shapeDrawPreview = useWorkspaceStore((state) => state.shapeDrawPreview)
-  const isDrawingShape = useWorkspaceStore((state) => state.isDrawingShape)
+  const isDrawingShape = useSelector(canvasActor, (s) => s.matches('drawingShape'))
   const showShapeDrawPreview =
     isDrawingShape &&
     shapeDrawPreview != null &&

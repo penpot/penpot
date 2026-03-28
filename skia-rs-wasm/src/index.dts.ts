@@ -63,5 +63,10 @@ export { useHistoryStore } from './lib/history/history-store'
 export { useWorkspaceStore } from './lib/renderer/store/workspace-store'
 export type { WorkspaceState } from './lib/renderer/store/workspace-store'
 
+export { canvasMachine } from './lib/renderer/machine/canvas-machine'
+export type { CanvasContext, CanvasEvent, DrawTool } from './lib/renderer/machine/canvas-machine'
+export { CanvasActorProvider, useCanvasActor } from './lib/renderer/machine/canvas-actor-context'
+export type { CanvasActorRef } from './lib/renderer/machine/canvas-actor-context'
+
 export { RightSidePanel, ShapePropertiesPanel } from './lib/components/RightSidePanel'
 export type { RightSidePanelProps, ShapePropertiesPanelProps } from './lib/components/RightSidePanel'

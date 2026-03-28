@@ -180,17 +180,10 @@ export function startResizeSelected(
     takeUntil(stopper)
   )
 
-  function clearResizeState(): void {
-    const store = useWorkspaceStore.getState()
-    store.setIsResizing(false)
-    store.setResizeHandle(null)
-  }
-
   const commitOnRelease = stopper.pipe(
     take(1),
     tap(() => {
       if (!modifiersAppliedRef.current) {
-        clearResizeState()
         return
       }
       const entries: Array<[string, Matrix]> = Array.from(selectedIds).map((id) => [
@@ -203,13 +196,11 @@ export function startResizeSelected(
           renderer.cleanModifiers()
           renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
-          clearResizeState()
         })
         .catch(() => {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
-          clearResizeState()
         })
     }),
     map(() => undefined)
