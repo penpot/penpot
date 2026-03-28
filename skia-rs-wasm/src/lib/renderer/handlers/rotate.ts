@@ -3,6 +3,10 @@
  * When the user drags from the rotation hit area, the selected shape rotates so its angle follows
  * the cursor (angle from selection center to cursor). Preview via setMoveModifiers(rotation matrix);
  * commit node.rotation on pointer up.
+ *
+ * Overlay + property panel stay in sync with the pointer (same pattern as move.ts): synchronous
+ * `setWasmSelectionRect` from a baseline rect each event; WASM uses `setMoveModifiersNoRender` +
+ * throttled `requestRenderFrame` so `_render` does not block overlay updates.
  */
 
 import { Observable, EMPTY, merge } from 'rxjs'
@@ -10,53 +14,53 @@ import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
+import { getCurrentPage } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
 import { applyModifiersAndCommit } from './utils'
+import { DRAG_RENDER_INTERVAL_MS } from './drag-render-interval'
+import {
+  cloneSelectionRect,
+  finiteSelectionRect,
+  rotateSelectionRectAroundPivot,
+} from './selection-rect-helpers'
+import { rotationMatrixAroundPoint } from '../geom/matrix'
 import type { Point } from '../types'
 import type { Matrix } from 'penpot-exporter/types'
+import type { IndexedNode } from '../../worker/types'
 
 function angleDegFromCenter(cx: number, cy: number, wx: number, wy: number): number {
   return Math.atan2(wy - cy, wx - cx) * (180 / Math.PI)
 }
 
-/** Build 2D affine rotation matrix around center (cx, cy). Angle in degrees. Used for drag modifier. */
-function rotationMatrix(cx: number, cy: number, angleDeg: number): Matrix {
-  const theta = (angleDeg * Math.PI) / 180
-  const cos = Math.cos(theta)
-  const sin = Math.sin(theta)
-  return {
-    a: cos,
-    b: sin,
-    c: -sin,
-    d: cos,
-    e: cx * (1 - cos) + cy * sin,
-    f: cy * (1 - cos) - cx * sin,
-  }
-}
-
 export function startRotateSelected(initialPosition: Point): Observable<void> {
-  const state = useWorkspaceStore.getState()
-  const { renderer, viewport, selectedIds, selectedNodes, wasmSelectionRect } = state
+  let state = useWorkspaceStore.getState()
+  const { renderer, viewport, selectedIds, wasmSelectionRect } = state
 
   if (!renderer || !viewport || selectedIds.size < 1) {
     return EMPTY
   }
 
+  if (!finiteSelectionRect(wasmSelectionRect)) {
+    state.refreshWasmSelectionRect()
+    state = useWorkspaceStore.getState()
+  }
+
   const ids = Array.from(selectedIds)
   const isSingle = ids.length === 1
-  const singleNode = selectedNodes?.[0]
+  const pageObjects = getCurrentPage()?.objects
+  const selectedNodes = ids
+    .map((id) => pageObjects?.[id])
+    .filter((node): node is IndexedNode => node !== undefined)
+  const singleNode = selectedNodes[0]
 
-  // Single selection: require valid node with selrect (current behavior)
   if (isSingle) {
     if (!singleNode || singleNode.id !== ids[0] || !singleNode.selrect) {
       return EMPTY
     }
   }
 
-  // Rotation center: selection rect center (works for single and group)
   let cx: number
   let cy: number
-  const startRotations = new Map<string, number>()
 
   if (isSingle && singleNode?.selrect) {
     const sr = singleNode.selrect
@@ -66,24 +70,25 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
     const h = (sr as { height?: number }).height ?? 0
     cx = x + w / 2
     cy = y + h / 2
-    startRotations.set(ids[0], (singleNode as { rotation?: number }).rotation ?? 0)
   } else {
-    if (!wasmSelectionRect) return EMPTY
-    cx = wasmSelectionRect.center.x
-    cy = wasmSelectionRect.center.y
-    selectedNodes?.forEach((n) => {
-      if (n && ids.includes(n.id))
-        startRotations.set(n.id, (n as { rotation?: number }).rotation ?? 0)
-    })
+    const wr = useWorkspaceStore.getState().wasmSelectionRect
+    if (!wr) return EMPTY
+    cx = wr.center.x
+    cy = wr.center.y
   }
+
+  const baselineRect = finiteSelectionRect(useWorkspaceStore.getState().wasmSelectionRect)
+    ? cloneSelectionRect(useWorkspaceStore.getState().wasmSelectionRect!)
+    : null
 
   const initialWorld = screenToWorld(viewport, initialPosition.x, initialPosition.y)
   const initialAngleDeg = angleDegFromCenter(cx, cy, initialWorld.x, initialWorld.y)
 
   const stopper = dragStopper()
   const latestDeltaDegRef = { current: 0 }
-  const rafScheduledRef = { current: false }
   const modifiersAppliedRef = { current: false }
+  const commitDoneRef = { current: false }
+  let lastRenderRequestTs = 0
 
   const rotateStream = mousePosition$.pipe(
     filter((pos): pos is NonNullable<typeof pos> => pos !== null),
@@ -91,38 +96,49 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
     map((world) => angleDegFromCenter(cx, cy, world.x, world.y)),
     map((currentAngleDeg) => currentAngleDeg - initialAngleDeg),
     tap((deltaDeg) => {
+      if (commitDoneRef.current) return
       latestDeltaDegRef.current = deltaDeg
-      if (!rafScheduledRef.current) {
-        rafScheduledRef.current = true
-        requestAnimationFrame(() => {
-          rafScheduledRef.current = false
-          modifiersAppliedRef.current = true
-          const delta = latestDeltaDegRef.current
-          const matrix = rotationMatrix(cx, cy, delta)
-          const entries: Array<[string, Matrix]> = ids.map((id) => [id, matrix])
-          renderer.setMoveModifiersAndRender(entries)
-          useWorkspaceStore.getState().refreshWasmSelectionRect()
-        })
+      modifiersAppliedRef.current = true
+
+      const store = useWorkspaceStore.getState()
+      store.setRotatePreviewDeltaDeg(deltaDeg)
+
+      if (baselineRect) {
+        const preview = rotateSelectionRectAroundPivot(baselineRect, cx, cy, deltaDeg)
+        store.setWasmSelectionRect(preview)
+      }
+
+      renderer.cleanModifiers()
+      const matrix = rotationMatrixAroundPoint(cx, cy, deltaDeg)
+      const entries: Array<[string, Matrix]> = ids.map((id) => [id, matrix])
+      renderer.setMoveModifiersNoRender(entries)
+
+      const now = performance.now()
+      if (now - lastRenderRequestTs >= DRAG_RENDER_INTERVAL_MS) {
+        lastRenderRequestTs = now
+        renderer.requestRenderFrame()
       }
     }),
     map(() => undefined),
-    takeUntil(stopper)
+    takeUntil(stopper),
   )
 
   const commitOnRelease = stopper.pipe(
     take(1),
     tap(() => {
+      const store = useWorkspaceStore.getState()
+      store.setRotatePreviewDeltaDeg(0)
       if (!modifiersAppliedRef.current) {
-        const store = useWorkspaceStore.getState()
         store.setRotationCorner(null)
         store.setIsRotating(false)
         return
       }
       const deltaDeg = latestDeltaDegRef.current
-      const matrix = rotationMatrix(cx, cy, deltaDeg)
+      const matrix = rotationMatrixAroundPoint(cx, cy, deltaDeg)
       const entries: Array<[string, Matrix]> = ids.map((id) => [id, matrix])
       applyModifiersAndCommit(entries)
         .then(() => {
+          commitDoneRef.current = true
           const storeAfter = useWorkspaceStore.getState()
           renderer.cleanModifiers()
           renderer.flushRenderSync()
@@ -141,7 +157,7 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
           storeCatch.setIsRotating(false)
         })
     }),
-    map(() => undefined)
+    map(() => undefined),
   )
 
   return merge(rotateStream, commitOnRelease) as Observable<void>

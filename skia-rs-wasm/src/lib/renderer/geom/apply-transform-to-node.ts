@@ -73,6 +73,7 @@ export function applyTransformToNode(
     points,
     transform: newTransform,
     transformInverse: newTransformInverse ?? undefined,
+    rotation: Math.atan2(hvy, hvx) * (180 / Math.PI),
   }
   if (typeof node.x === 'number') updates.x = newX
   if (typeof node.y === 'number') updates.y = newY

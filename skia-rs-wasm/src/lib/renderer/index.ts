@@ -247,8 +247,9 @@ export class Renderer {
   }
 
   /**
-   * Set modifiers and render synchronously in the same frame.
-   * Propagates to children in WASM first so the whole subtree moves together; then sets the propagated result.
+   * Preview move/rotate/resize like Penpot frontend `set-wasm-modifiers`: propagate, `_set_modifiers`, then
+   * {@link requestRender} (async RAF). Overlay tracks geometry via {@link getSelectionRect} + `refreshWasmSelectionRect`
+   * in the same frame — no `renderSync` per pointer sample.
    */
   setMoveModifiersAndRender(entries: Array<[string, Matrix]>): void {
     if (!getContextInitialized() || !this.module) return
@@ -256,8 +257,21 @@ export class Renderer {
     const propagated = propagateModifiers(this.module, entries, 0)
     if (propagated.length === 0) return
     const toSet = propagated.map((p) => [p.id, p.transform] as [string, Matrix])
-    setModifiers(this.module, toSet, true)
-    renderSync(this.module)
+    setModifiers(this.module, toSet)
+    requestRender(this.module, 'setMoveModifiersAndRender')
+  }
+
+  /**
+   * Propagate + set modifiers WITHOUT scheduling a render.
+   * Use when the caller manages render timing separately (e.g. throttled drag renders).
+   */
+  setMoveModifiersNoRender(entries: Array<[string, Matrix]>): void {
+    if (!getContextInitialized() || !this.module) return
+    if (entries.length === 0) return
+    const propagated = propagateModifiers(this.module, entries, 0)
+    if (propagated.length === 0) return
+    const toSet = propagated.map((p) => [p.id, p.transform] as [string, Matrix])
+    setModifiers(this.module, toSet)
   }
 
   /**

@@ -9,6 +9,7 @@ import { mousePosition$ } from '../streams'
 import { askWorker$ } from '../streams/worker-streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
+import { getActiveOrSinglePageId } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
 import { makeSelrect } from '../../worker/types'
 
@@ -18,8 +19,8 @@ export function handleAreaSelection(
   ignoreGroups?: boolean
 ): Observable<void> {
   const store = useWorkspaceStore.getState()
-  const { workerClient, pageId, viewport, documentModel } = store
-  const effectivePageId = pageId ?? documentModel?.getActiveOrSinglePageId() ?? null
+  const { workerClient, pageId, viewport } = store
+  const effectivePageId = pageId ?? getActiveOrSinglePageId()
 
   if (!workerClient || !viewport) return EMPTY
   

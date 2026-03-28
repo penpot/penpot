@@ -6,6 +6,8 @@
 import type { RefObject } from 'react'
 import { useCallback, useMemo } from 'react'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
+import { useSnapshot } from 'valtio'
+import { docProxy } from '../../renderer/store/doc-proxy'
 import { mousePosition$ } from '../../renderer/streams'
 import type { ResizeHandlePosition } from '../../renderer/types'
 import { HANDLE_SIZE_WORLD, MIN_SELRECT_SIDE_SCREEN, getResizeCursor, getRotationCursor, matrixHasHalfFlip, matrixToRotationDeg, SELECTION_OVERLAY_GLOW } from './constants'
@@ -27,7 +29,7 @@ export interface SelectionOverlayProps {
 
 export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProps) {
   const selectedIds = useWorkspaceStore((state) => state.selectedIds)
-  const selectedNodes = useWorkspaceStore((state) => state.selectedNodes)
+  const doc = useSnapshot(docProxy)
   const wasmSelectionRect = useWorkspaceStore((state) => state.wasmSelectionRect)
   const viewport = useWorkspaceStore((state) => state.viewport)
   const zoom = useWorkspaceStore((state) => state.viewport?.zoom ?? 1)
@@ -44,10 +46,22 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
   const setIsRotating = useWorkspaceStore((state) => state.setIsRotating)
   const setRotationCorner = useWorkspaceStore((state) => state.setRotationCorner)
 
-  const showSelectionRect = selectedIds.size > 0 && wasmSelectionRect != null && viewport != null && !isMoving
-  const showHandles = selectedIds.size >= 1 && wasmSelectionRect != null && viewport != null && !isMoving
+  const safeZoom = Number.isFinite(zoom) && zoom > 0 ? zoom : 1
+  const hasFiniteSelectionRect =
+    wasmSelectionRect != null &&
+    Number.isFinite(wasmSelectionRect.width) &&
+    Number.isFinite(wasmSelectionRect.height) &&
+    Number.isFinite(wasmSelectionRect.center.x) &&
+    Number.isFinite(wasmSelectionRect.center.y) &&
+    Number.isFinite(wasmSelectionRect.transform.a) &&
+    Number.isFinite(wasmSelectionRect.transform.b) &&
+    Number.isFinite(wasmSelectionRect.transform.c) &&
+    Number.isFinite(wasmSelectionRect.transform.d)
+  /** Show bounds during move/resize/rotate — `wasmSelectionRect` is refreshed each RAF (Penpot-style temp selrect). Handles stay off while moving to avoid hit-target churn. */
+  const showSelectionRect = selectedIds.size > 0 && hasFiniteSelectionRect && viewport != null
+  const showHandles = selectedIds.size >= 1 && hasFiniteSelectionRect && viewport != null && !isMoving
 
-  const hitSize = (HANDLE_SIZE_WORLD / zoom) / 2 * 2
+  const hitSize = HANDLE_SIZE_WORLD / safeZoom
 
   const screenPositionFromEvent = useCallback(
     (e: React.PointerEvent): { x: number; y: number } | null => {
@@ -114,18 +128,27 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
   const shapeDrawPreview = useWorkspaceStore((state) => state.shapeDrawPreview)
   const isDrawingShape = useWorkspaceStore((state) => state.isDrawingShape)
   const showShapeDrawPreview =
-    isDrawingShape && shapeDrawPreview != null && viewport != null
+    isDrawingShape &&
+    shapeDrawPreview != null &&
+    viewport != null &&
+    Number.isFinite(viewport.zoom) &&
+    viewport.zoom > 0
   const shapeDrawWorld =
     showShapeDrawPreview && viewport && shapeDrawPreview
       ? {
-          x: viewport.panX + (shapeDrawPreview.x ?? 0) / viewport.zoom,
-          y: viewport.panY + (shapeDrawPreview.y ?? 0) / viewport.zoom,
-          width: (shapeDrawPreview.width ?? 0) / viewport.zoom,
-          height: (shapeDrawPreview.height ?? 0) / viewport.zoom,
-        }
+        x: viewport.panX + (shapeDrawPreview.x ?? 0) / viewport.zoom,
+        y: viewport.panY + (shapeDrawPreview.y ?? 0) / viewport.zoom,
+        width: (shapeDrawPreview.width ?? 0) / viewport.zoom,
+        height: (shapeDrawPreview.height ?? 0) / viewport.zoom,
+      }
       : null
 
-  const showAreaMarquee = isSelecting && selectionRect != null && viewport != null
+  const showAreaMarquee =
+    isSelecting &&
+    selectionRect != null &&
+    viewport != null &&
+    Number.isFinite(viewport.zoom) &&
+    viewport.zoom > 0
   const areaMarqueeWorld =
     showAreaMarquee && viewport && selectionRect
       ? {
@@ -136,7 +159,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       }
       : null
   const viewBox =
-    viewport && canvasSize.width > 0 && canvasSize.height > 0
+    viewport && canvasSize.width > 0 && canvasSize.height > 0 && Number.isFinite(viewport.zoom) && viewport.zoom > 0
       ? `${viewport.panX} ${viewport.panY} ${canvasSize.width / viewport.zoom} ${canvasSize.height / viewport.zoom}`
       : '0 0 100 100'
 
@@ -168,18 +191,20 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
     [wasmSelectionRect]
   )
 
-  const thresholdTinyWorld = MIN_SELRECT_SIDE_SCREEN / zoom
+  const thresholdTinyWorld = MIN_SELRECT_SIDE_SCREEN / safeZoom
   const showCornerHandles =
     wasmSelectionRect != null &&
     wasmSelectionRect.width > thresholdTinyWorld &&
     wasmSelectionRect.height > thresholdTinyWorld
 
   const gradientFill = useMemo(() => {
-    if (selectedIds.size !== 1 || selectedNodes.length === 0) return null
-    const fills = selectedNodes[0]?.fills
+    if (selectedIds.size !== 1) return null
+    const singleId = Array.from(selectedIds)[0]
+    const page = doc.currentPageId ? doc.pageMap.get(doc.currentPageId) : undefined
+    const fills = singleId ? page?.objects[singleId]?.fills : undefined
     if (!fills?.length) return null
     return fills.find((f: Fill) => isLinearGradient(f) || isRadialGradient(f) || isAngularGradient(f)) ?? null
-  }, [selectedIds.size, selectedNodes])
+  }, [doc, selectedIds])
 
   const gradientForOverlay =
     gradientFill?.fillColorGradient != null
@@ -234,7 +259,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
                 />
                 <RotationHitArea
                   bounds={rect}
-                  zoom={zoom}
+                  zoom={safeZoom}
                   rotationDeg={rotationDeg}
                   halfFlip={halfFlip}
                   overrideCursor={overrideCursor}
@@ -248,14 +273,14 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
               <GradientOverlay
                 wasmSelectionRect={wasmSelectionRect}
                 gradient={gradientForOverlay}
-                zoom={zoom}
+                zoom={safeZoom}
               />
             </g>
           )}
           {showHandles && showCornerHandles && worldCorners != null && (
             <CornerHandles
               worldCorners={worldCorners}
-              zoom={zoom}
+              zoom={safeZoom}
               rotationDeg={rotationDeg}
               halfFlip={halfFlip}
               overrideCursor={overrideCursor}
@@ -265,10 +290,10 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
         </>
       )}
       {showShapeDrawPreview && shapeDrawWorld && (
-        <AreaMarquee world={shapeDrawWorld} zoom={zoom} />
+        <AreaMarquee world={shapeDrawWorld} zoom={safeZoom} />
       )}
       {showAreaMarquee && areaMarqueeWorld && (
-        <AreaMarquee world={areaMarqueeWorld} zoom={zoom} />
+        <AreaMarquee world={areaMarqueeWorld} zoom={safeZoom} />
       )}
     </svg>
   )

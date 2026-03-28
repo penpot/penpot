@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 function App() {
   const [error, setError] = useState<string | null>(null)
   const rendererOptions = useMemo(
-    () => ({ dpr: window.devicePixelRatio || 1, debug: false }),
+    () => ({ debug: false }),
     []
   )
 

@@ -69,10 +69,12 @@ export function writeU32ToHeap(offset: number, heap: Uint32Array, value: number)
 /**
  * Gets the device pixel ratio, defaulting to 1
  */
+/**
+ * Match the Penpot frontend's default DPR=1 (the `:render-wasm-dpr` flag is off by default).
+ * Native DPR (2 on Retina) renders 4× more pixels; the GPU-side cost alone adds ~5ms per
+ * `_render`, and Skia's surface allocations scale with pixel area.
+ */
 export function getDPR(): number {
-  if (typeof window !== 'undefined' && window.devicePixelRatio) {
-    return window.devicePixelRatio
-  }
   return 1
 }
 

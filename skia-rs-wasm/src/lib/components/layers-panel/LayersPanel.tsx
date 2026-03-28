@@ -2,10 +2,12 @@
  * Left rail: page / layer tree, page metadata, layer selection.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { IndexedNode, IndexedPage } from '../../worker/types'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
-import { useWorkspaceDevStore } from '../../renderer/store/workspace-dev-store'
+import { useSnapshot } from 'valtio'
+import { docProxy, getActiveOrSinglePageId } from '../../renderer/store/doc-proxy'
+import { orderedNodesFromPage } from '../../renderer/store/ordered-page-nodes'
 import { FloatingEditorRail } from '../editor-shell/floating-editor-rail'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -37,67 +39,69 @@ export interface LayersPanelProps {
 
 export function LayersPanel({ className }: LayersPanelProps) {
   const pageId = useWorkspaceStore((s) => s.pageId)
-  const documentModel = useWorkspaceStore((s) => s.documentModel)
   const setSelectedIds = useWorkspaceStore((s) => s.setSelectedIds)
   const selectedIds = useWorkspaceStore((s) => s.selectedIds)
-  const currentPageNodes = useWorkspaceDevStore((s) => s.currentPageNodes)
+  const doc = useSnapshot(docProxy)
 
   const [collapsed, setCollapsed] = useState(false)
   const [pageSectionOpen, setPageSectionOpen] = useState(true)
-  const [pageName, setPageName] = useState('')
-  const [pageBg, setPageBg] = useState('#FFFFFF')
+  const [pageNameDraft, setPageNameDraft] = useState<string | null>(null)
+  const [pageBgDraft, setPageBgDraft] = useState<string | null>(null)
 
   const resolvePageId = useCallback((): string | null => {
-    return pageId ?? documentModel?.getActiveOrSinglePageId() ?? null
-  }, [pageId, documentModel])
+    return pageId ?? getActiveOrSinglePageId()
+  }, [pageId])
 
-  useEffect(() => {
-    const pid = resolvePageId()
-    if (!pid || !documentModel) return
-    const page = documentModel.getPage(pid)
+  const pid = resolvePageId()
+  const page: IndexedPage | undefined = pid ? doc.pageMap.get(pid) : undefined
+
+  const currentPageNodes = useMemo(() => {
     if (!page) return
-    setPageName(page.name ?? 'Page')
-    setPageBg(page.background ?? '#FFFFFF')
-  }, [documentModel, pageId, resolvePageId, currentPageNodes])
+    return orderedNodesFromPage(page)
+  }, [page])
 
   const shapeLayers = useMemo(
-    () => currentPageNodes.filter((n) => n.id !== ROOT_UUID),
+    () => (currentPageNodes ?? []).filter((n) => n.id !== ROOT_UUID),
     [currentPageNodes],
   )
 
   const layerCount = shapeLayers.length
 
-  const pid = resolvePageId()
-  const page: IndexedPage | undefined = pid && documentModel ? documentModel.getPage(pid) : undefined
-  const displayPageName = page?.name ?? pageName ?? 'Page'
+  const pageName = pageNameDraft ?? page?.name ?? 'Page'
+  const pageBg = pageBgDraft ?? page?.background ?? '#FFFFFF'
+  const displayPageName = page?.name ?? 'Page'
 
   const commitPageName = useCallback(async () => {
-    if (!pid || !documentModel) return
-    const p = documentModel.getPage(pid)
+    if (!pid) return
+    const p = docProxy.pageMap.get(pid)
     if (!p) return
     const trimmed = pageName.trim()
-    if (trimmed === (p.name ?? '')) return
-    await commitPageMetadataUpdate(pid, p, { name: trimmed || 'Page' })
-  }, [documentModel, pageName, pid])
+    if (trimmed !== (p.name ?? '')) {
+      await commitPageMetadataUpdate(pid, p, { name: trimmed || 'Page' })
+    }
+    setPageNameDraft(null)
+  }, [pageName, pid])
 
   const commitPageBackground = useCallback(async () => {
-    if (!pid || !documentModel) return
-    const p = documentModel.getPage(pid)
+    if (!pid) return
+    const p = docProxy.pageMap.get(pid)
     if (!p) return
     const next = normalizeHex(pageBg)
-    if (next === (p.background ?? '#FFFFFF')) return
-    await commitPageMetadataUpdate(pid, p, { background: next })
-  }, [documentModel, pageBg, pid])
+    if (next !== (p.background ?? '#FFFFFF')) {
+      await commitPageMetadataUpdate(pid, p, { background: next })
+    }
+    setPageBgDraft(null)
+  }, [pageBg, pid])
 
   const onPageBgColorPick = useCallback(
     (hex: string) => {
-      setPageBg(hex)
-      if (!pid || !documentModel) return
-      const p = documentModel.getPage(pid)
+      setPageBgDraft(hex)
+      if (!pid) return
+      const p = docProxy.pageMap.get(pid)
       if (!p) return
       void commitPageMetadataUpdate(pid, p, { background: hex })
     },
-    [documentModel, pid],
+    [pid],
   )
 
   const onLayerRowClick = useCallback(
@@ -177,7 +181,7 @@ export function LayersPanel({ className }: LayersPanelProps) {
                       <Input
                         id="layers-page-name"
                         value={pageName}
-                        onChange={(e) => setPageName(e.target.value)}
+                        onChange={(e) => setPageNameDraft(e.target.value)}
                         onBlur={() => void commitPageName()}
                         className="h-8 text-sm"
                       />
@@ -198,7 +202,7 @@ export function LayersPanel({ className }: LayersPanelProps) {
                         <Input
                           className="h-8 min-w-0 flex-1 font-mono text-xs"
                           value={pageBg}
-                          onChange={(e) => setPageBg(e.target.value)}
+                          onChange={(e) => setPageBgDraft(e.target.value)}
                           onBlur={() => void commitPageBackground()}
                           placeholder="#FFFFFF"
                         />

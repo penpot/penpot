@@ -7,13 +7,21 @@ import type { IndexedPage, IndexedNode } from '../../worker/types'
 import type { Change } from 'penpot-exporter/types'
 import { processChanges } from '../../worker/process-changes'
 import { useWorkspaceStore } from './workspace-store'
-import type { DocumentModel } from './document-model'
 import type { CommitChangesParams } from '../../changes/commit-types'
 import { useHistoryStore } from '../../history/history-store'
 import type { WorkerClient } from '../../worker/types'
 import { assertValidAddObjChange } from '../../common/shape-id'
+import { docProxy, getActiveOrSinglePageId } from './doc-proxy'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
+
+function toPlainPage(page: IndexedPage): IndexedPage {
+  try {
+    return structuredClone(page)
+  } catch {
+    return JSON.parse(JSON.stringify(page)) as IndexedPage
+  }
+}
 
 function getRootFrameId(page: IndexedPage): string | undefined {
   const root = Object.values(page.objects).find((o) => o.parentId == null)
@@ -114,16 +122,16 @@ export interface ApplyChangesLocallyParams {
 export async function applyChangesLocally(params: ApplyChangesLocallyParams): Promise<IndexedPage | undefined> {
   const { pageId, redoChanges, ignoreRendererSync } = params
   const state = useWorkspaceStore.getState()
-  const { documentModel, renderer } = state
-  if (!documentModel || redoChanges.length === 0) return undefined
+  const { renderer } = state
+  if (redoChanges.length === 0) return undefined
 
-  const page = documentModel.getPage(pageId)
+  const page = docProxy.pageMap.get(pageId)
   if (!page) return undefined
 
-  const oldPage = page
+  const oldPage = toPlainPage(page)
   /** Clone so `processChanges` does not mutate live page shapes; stale renderer/worker diffs used ref/JSON on shared objects. */
-  const updatedPage = processChanges(structuredClone(page), redoChanges)
-  ;(documentModel as DocumentModel).applyPageUpdate(pageId, updatedPage)
+  const updatedPage = processChanges(toPlainPage(page), redoChanges)
+  docProxy.pageMap.set(pageId, updatedPage)
 
   if (renderer && !ignoreRendererSync) {
     await syncRendererAfterUpdate(renderer, oldPage, updatedPage)
@@ -170,11 +178,10 @@ export async function commitChanges(params: CommitChangesParams): Promise<void> 
   }
 
   const state = useWorkspaceStore.getState()
-  const { documentModel, workerClient } = state
-  if (!documentModel) return
+  const { workerClient } = state
 
   const fallbackPageId =
-    explicitPageId ?? state.pageId ?? documentModel.getActiveOrSinglePageId()
+    explicitPageId ?? state.pageId ?? getActiveOrSinglePageId()
   const byPage = groupChangesByPageId(redoChanges, fallbackPageId)
   if (byPage.size === 0) return
 
@@ -186,10 +193,13 @@ export async function commitChanges(params: CommitChangesParams): Promise<void> 
     })
   }
 
+  // Fire worker index update in background — don't block visual commit.
+  // cleanModifiers() fires as soon as commitChanges returns; the worker
+  // spatial-index update is only needed for hit-testing and can lag behind.
   for (const [pageId, pageChanges] of byPage) {
-    const updatedPage = documentModel.getPage(pageId)
+    const updatedPage = docProxy.pageMap.get(pageId)
     if (!updatedPage) continue
-    await updateWorkerIndexes(workerClient, pageId, pageChanges, updatedPage)
+    updateWorkerIndexes(workerClient, pageId, pageChanges, updatedPage).catch(console.error)
   }
 
   const effectiveSaveUndo = saveUndo ?? undoChanges.length > 0
@@ -214,12 +224,12 @@ export interface PageCommitWithChangesPayload {
 export async function commitPageUpdate(payload: PageCommitPayload): Promise<void> {
   const { pageId, updatedPage } = payload
   const state = useWorkspaceStore.getState()
-  const { documentModel, workerClient, renderer } = state
-  if (!documentModel) return
-  const oldPage = documentModel.getPage(pageId)
-  ;(documentModel as DocumentModel).applyPageUpdate(pageId, updatedPage)
-  if (workerClient) await workerClient.updatePage(pageId, updatedPage)
-  if (renderer) await syncRendererAfterUpdate(renderer, oldPage, updatedPage)
+  const { workerClient, renderer } = state
+  const oldPage = docProxy.pageMap.get(pageId)
+  const plainUpdatedPage = toPlainPage(updatedPage)
+  docProxy.pageMap.set(pageId, plainUpdatedPage)
+  if (workerClient) await workerClient.updatePage(pageId, plainUpdatedPage)
+  if (renderer) await syncRendererAfterUpdate(renderer, oldPage ? toPlainPage(oldPage) : undefined, plainUpdatedPage)
 }
 
 export async function commitPageUpdateWithChanges(payload: PageCommitWithChangesPayload): Promise<void> {
