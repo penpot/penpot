@@ -11,7 +11,7 @@
 
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
-import { pointerPos, signalToObservable } from '../signals/pointer'
+import { movePreviewWorldDelta, pointerPos, signalToObservable } from '../signals/pointer'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
@@ -47,7 +47,7 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
   const page = getPage(pageId)
   if (!page) return EMPTY
 
-  useWorkspaceStore.getState().setMovePreviewWorldDelta({ x: 0, y: 0 })
+  movePreviewWorldDelta.value = { x: 0, y: 0 }
 
   const stopper = dragStopper()
   const zoom = viewport.zoom
@@ -86,7 +86,7 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
     tap((worldDelta) => {
       modifiersAppliedRef.current = true
       lastEventDeltaRef.current = { x: worldDelta.x, y: worldDelta.y }
-      useWorkspaceStore.getState().setMovePreviewWorldDelta(worldDelta)
+      movePreviewWorldDelta.value = worldDelta
 
       // 1. Update overlay SYNCHRONOUSLY (like Penpot frontend's set-temporary-selrect).
       //    This runs inside the pointer event microtask, BEFORE any RAF fires.
@@ -119,9 +119,8 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
   const commitOnRelease = stopper.pipe(
     take(1),
     tap(() => {
-      const store = useWorkspaceStore.getState()
       if (!modifiersAppliedRef.current) {
-        store.setMovePreviewWorldDelta({ x: 0, y: 0 })
+        movePreviewWorldDelta.value = { x: 0, y: 0 }
         return
       }
       const delta = lastEventDeltaRef.current
@@ -134,13 +133,13 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
-          useWorkspaceStore.getState().setMovePreviewWorldDelta({ x: 0, y: 0 })
+          movePreviewWorldDelta.value = { x: 0, y: 0 }
         })
         .catch(() => {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
-          useWorkspaceStore.getState().setMovePreviewWorldDelta({ x: 0, y: 0 })
+          movePreviewWorldDelta.value = { x: 0, y: 0 }
         })
     }),
     map(() => undefined)

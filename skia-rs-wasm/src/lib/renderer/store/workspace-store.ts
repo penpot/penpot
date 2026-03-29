@@ -20,10 +20,6 @@ export interface WorkspaceState {
   selectionRect: Selrect | null
   /** Selection rect from WASM (getSelectionRect); overlay reads only this. Updated when modifiers or selection change. */
   wasmSelectionRect: SelectionRectResult | null
-  /** Delta (deg) applied during active rotate drag; properties panel adds this to committed rotation for live display. */
-  rotatePreviewDeltaDeg: number
-  /** World-space translation during move drag (same as WASM modifier); drives live X/Y in the properties panel. */
-  movePreviewWorldDelta: { x: number; y: number }
   /** Rubber-band preview in screen space (same convention as area marquee). */
   shapeDrawPreview: Selrect | null
   viewport: ViewportData | null
@@ -41,8 +37,6 @@ export interface WorkspaceState {
   setSelectionRect: (rect: Selrect | null) => void
   setWasmSelectionRect: (value: SelectionRectResult | null) => void
   refreshWasmSelectionRect: () => void
-  setRotatePreviewDeltaDeg: (deg: number) => void
-  setMovePreviewWorldDelta: (d: { x: number; y: number }) => void
   setShapeDrawPreview: (rect: Selrect | null) => void
   updateViewport: (data: ViewportData) => void
   setLastAppliedViewport: (data: ViewportData | null) => void
@@ -75,8 +69,6 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   selectionBounds: null,
   selectionRect: null,
   wasmSelectionRect: null,
-  rotatePreviewDeltaDeg: 0,
-  movePreviewWorldDelta: { x: 0, y: 0 },
   shapeDrawPreview: null,
   viewport: null,
   lastAppliedViewport: null,
@@ -98,8 +90,6 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
     const result = renderer.getSelectionRect(Array.from(selectedIds))
     set({ wasmSelectionRect: isFiniteSelectionRect(result) ? result : null })
   },
-  setRotatePreviewDeltaDeg: (deg) => set({ rotatePreviewDeltaDeg: deg }),
-  setMovePreviewWorldDelta: (d) => set({ movePreviewWorldDelta: d }),
   setShapeDrawPreview: (rect) => set({ shapeDrawPreview: rect }),
   updateViewport: (data) => {
     viewportSignal.value = data

@@ -1,6 +1,6 @@
 /**
- * Per-frame pointer and modifier state (see docs/state-architecture.md §3).
- * Handlers read `.value`; React does not subscribe here for these hot paths.
+ * Per-frame pointer, modifier, and drag-preview state (see docs/state-architecture.md §3).
+ * Handlers write `.value` at pointer rate; React reads hot values via `useSignalCoalesced`.
  */
 
 import { computed, effect, signal } from '@preact/signals-core'
@@ -21,6 +21,12 @@ export const keyboardSpace = signal(false)
 
 /** Mirrors workspace `viewport`; kept in sync inside `updateViewport`. */
 export const viewportSignal = signal<ViewportData | null>(null)
+
+/** Delta (deg) during active rotate drag; property panel reads via `useSignalCoalesced`. */
+export const rotatePreviewDeltaDeg = signal(0)
+
+/** World-space translation during move drag; property panel reads via `useSignalCoalesced`. */
+export const movePreviewWorldDelta = signal<Point>({ x: 0, y: 0 })
 
 export const worldPointerPos = computed(() => {
   const pos = pointerPos.value

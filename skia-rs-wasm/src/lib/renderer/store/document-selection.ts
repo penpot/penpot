@@ -5,6 +5,7 @@
 import type { IndexedNode } from '../../worker/types'
 import { getSelectionBounds } from '../selection-bounds'
 import { docProxy, getCurrentPage } from './doc-proxy'
+import { movePreviewWorldDelta, rotatePreviewDeltaDeg } from '../signals/pointer'
 import { useWorkspaceStore } from './workspace-store'
 
 function isIndexedNode(value: IndexedNode | undefined): value is IndexedNode {
@@ -36,12 +37,12 @@ export function setSelectedIds(ids: Set<string>): void {
 
 export function clearSelection(): void {
   docProxy.selectedIds.clear()
+  rotatePreviewDeltaDeg.value = 0
+  movePreviewWorldDelta.value = { x: 0, y: 0 }
   useWorkspaceStore.setState({
     selectionBounds: null,
     selectionRect: null,
     wasmSelectionRect: null,
-    rotatePreviewDeltaDeg: 0,
-    movePreviewWorldDelta: { x: 0, y: 0 },
   })
 }
 

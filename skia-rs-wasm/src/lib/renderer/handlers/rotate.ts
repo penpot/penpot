@@ -11,7 +11,7 @@
 
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
-import { pointerPos, signalToObservable } from '../signals/pointer'
+import { pointerPos, rotatePreviewDeltaDeg, signalToObservable } from '../signals/pointer'
 import { dragStopper } from '../streams/drag-stopper'
 import { getSelectedIdsSet } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
@@ -103,7 +103,7 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
       modifiersAppliedRef.current = true
 
       const store = useWorkspaceStore.getState()
-      store.setRotatePreviewDeltaDeg(deltaDeg)
+      rotatePreviewDeltaDeg.value = deltaDeg
 
       if (baselineRect) {
         const preview = rotateSelectionRectAroundPivot(baselineRect, cx, cy, deltaDeg)
@@ -128,8 +128,7 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
   const commitOnRelease = stopper.pipe(
     take(1),
     tap(() => {
-      const store = useWorkspaceStore.getState()
-      store.setRotatePreviewDeltaDeg(0)
+      rotatePreviewDeltaDeg.value = 0
       if (!modifiersAppliedRef.current) {
         return
       }
