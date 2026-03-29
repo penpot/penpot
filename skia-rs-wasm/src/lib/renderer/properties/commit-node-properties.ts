@@ -2,7 +2,9 @@
  * Commit partial node updates with paired undo for history (mod-obj assign).
  */
 
+import { snapshot } from 'valtio'
 import type { PenpotNode } from 'penpot-exporter/types'
+import { docProxy } from '../store/doc-proxy'
 import { appendModObjPair, emptyChangesBuilder, toCommitBundle } from '../../changes/changes-builder'
 import { commitChangesPublic } from '../../page-crud'
 
@@ -50,6 +52,13 @@ export function rectLayoutPartial(
     points,
     rotation: rotation !== 0 ? rotation : undefined,
   }
+}
+
+/** Latest committed node on the current page (same page key as `docProxy.currentPageId`). */
+export function getCommittedNodeOnActivePage(nodeId: string): PenpotNode | null {
+  const snap = snapshot(docProxy)
+  const page = snap.currentPageId ? snap.pageMap.get(snap.currentPageId) : undefined
+  return (page?.objects[nodeId] as PenpotNode | undefined) ?? null
 }
 
 export async function commitNodePartialUpdate(
