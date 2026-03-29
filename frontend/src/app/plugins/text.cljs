@@ -625,6 +625,7 @@
           (st/emit! (dwt/update-attrs id {:text-direction value})))))}
 
    {:name "align"
+    :writable true
     :get #(-> % u/proxy->shape text-props :text-align format/format-mixed)
     :set
     (fn [self value]
@@ -640,6 +641,7 @@
           (st/emit! (dwt/update-attrs id {:text-align value})))))}
 
    {:name "verticalAlign"
+    :writable true
     :get #(-> % u/proxy->shape text-props :vertical-align)
     :set
     (fn [self value]
