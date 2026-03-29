@@ -34,10 +34,11 @@ function dtsBundlePlugin(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  define: {
-    'process.env.NODE_ENV': '"production"',
-  },
+export default defineConfig(({ command }) => ({
+  define:
+    command === 'build'
+      ? { 'process.env.NODE_ENV': '"production"' }
+      : {},
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -105,4 +106,4 @@ export default defineConfig({
   worker: {
     format: 'es',
   },
-})
+}))

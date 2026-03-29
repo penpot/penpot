@@ -4,8 +4,8 @@
  */
 
 import type { RendererOptions } from './types'
-import type { Renderer } from './index'
-import { Renderer as RendererClass } from './index'
+import type { Renderer } from './renderer'
+import { Renderer as RendererClass } from './renderer'
 import { useWorkspaceStore } from './store/workspace-store'
 
 export class RendererClientManager {

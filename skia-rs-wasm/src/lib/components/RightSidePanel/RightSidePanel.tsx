@@ -8,7 +8,7 @@ import { docProxy, getActiveOrSinglePageId } from '../../renderer/store/doc-prox
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { FloatingEditorRail } from '../editor-shell/floating-editor-rail'
+import { FloatingEditorRail } from '../EditorShell/floating-editor-rail'
 import { ROOT_UUID, type RectLikeNode } from '../../renderer/properties/panel-utils'
 import { PagePropertyPanel } from './PagePropertyPanel'
 import { NodePropertyPanel } from './NodePropertyPanel'

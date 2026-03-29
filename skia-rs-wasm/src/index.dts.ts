@@ -1,4 +1,4 @@
-export { Renderer } from './lib/renderer/index'
+export { Renderer } from './lib/renderer/renderer'
 export { Viewport, screenToWorld, worldToScreen } from './lib/renderer/viewport'
 export type { ViewportData } from './lib/renderer/viewport'
 export { setPan, setZoom, zoomAt, resetViewport } from './lib/renderer/hooks/viewport-actions'
@@ -70,5 +70,5 @@ export type { CanvasContext, CanvasEvent, DrawTool } from './lib/renderer/machin
 export { CanvasActorProvider, useCanvasActor } from './lib/renderer/machine/canvas-actor-context'
 export type { CanvasActorRef } from './lib/renderer/machine/canvas-actor-context'
 
-export { RightSidePanel, ShapePropertiesPanel } from './lib/components/RightSidePanel'
-export type { RightSidePanelProps, ShapePropertiesPanelProps } from './lib/components/RightSidePanel'
+export { RightSidePanel, ShapePropertiesPanel } from './lib/components/RightSidePanel/RightSidePanel'
+export type { RightSidePanelProps, ShapePropertiesPanelProps } from './lib/components/RightSidePanel/RightSidePanel'

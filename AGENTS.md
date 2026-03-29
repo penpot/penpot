@@ -54,6 +54,7 @@ components separated in modules and subdirectories:
 | `common/` | Cljc (shared Clojure/ClojureScript) | Data types, geometry, schemas, utilities | @common/AGENTS.md |
 | `exporter/` | ClojureScript (Node.js) | Headless Playwright-based export (SVG/PDF) | @exporter/AGENTS.md |
 | `render-wasm/` | Rust → WebAssembly | High-performance canvas renderer using Skia | @render-wasm/AGENTS.md |
+| `skia-rs-wasm/` | TypeScript + WASM | Skia WASM renderer package (React, worker, page CRUD) | @skia-rs-wasm/AGENTS.md |
 | `mcp/` | TypeScript | Model Context Protocol integration | @mcp/AGENTS.md |
 | `plugins/` | TypeScript | Plugin runtime and example plugins | @plugins/AGENTS.md |
 

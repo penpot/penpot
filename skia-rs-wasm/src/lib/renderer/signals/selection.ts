@@ -5,7 +5,7 @@
 
 import { signal } from '@preact/signals-core'
 import type { Selrect } from 'penpot-exporter/types'
-import type { Renderer } from '../index'
+import type { Renderer } from '../renderer'
 import type { SelectionRectResult } from '../types'
 
 export const wasmSelectionRect = signal<SelectionRectResult | null>(null)

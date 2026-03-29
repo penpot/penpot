@@ -15,7 +15,7 @@ import type { ViewportPanModifier, SelectionRectResult } from '../types'
 import { pointerPos, viewport } from '../signals/pointer'
 import { wasmSelectionRect } from '../signals/selection'
 import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
-import { getResizeCursor, matrixHasHalfFlip, matrixToRotationDeg } from '../../components/selection-overlay/constants'
+import { getResizeCursor, matrixHasHalfFlip, matrixToRotationDeg } from '../../components/SelectionOverlay/constants'
 
 function hasPanModifier(e: MouseEvent, mod: ViewportPanModifier): boolean {
   if (mod === null) return false
