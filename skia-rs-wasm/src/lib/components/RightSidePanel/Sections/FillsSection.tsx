@@ -1,24 +1,71 @@
+import { useCallback, useEffect, useState } from 'react'
 import type { Fill } from 'penpot-exporter/types'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { FillEditor } from '../../fill-editor/FillEditor'
+import {
+  commitNodePartialUpdate,
+  getCommittedNodeOnActivePage,
+} from '../../../renderer/properties/commit-node-properties'
+import { DEFAULT_FILL, type RectLikeNode } from '../../../renderer/properties/panel-utils'
+import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
 
 export interface FillsSectionProps {
+  nodeId: string
   readOnly: boolean
-  fills: Fill[]
-  onFillChange: (fill: Fill) => void
-  onAddFill: () => void
-  onClearFills: () => void
+  initialNode: RectLikeNode
 }
 
-export function FillsSection({
-  readOnly,
-  fills,
-  onFillChange,
-  onAddFill,
-  onClearFills,
-}: FillsSectionProps) {
+export function FillsSection({ nodeId, readOnly, initialNode }: FillsSectionProps) {
+  const [fills, setFills] = useState<Fill[]>(() =>
+    initialNode.fills ? [...initialNode.fills] : [],
+  )
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- mirrors external document updates */
+    setFills(initialNode.fills ? [...initialNode.fills] : [])
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [initialNode])
+
+  const commitFills = useCallback(
+    async (next: Fill[]) => {
+      if (readOnly) return
+      const before = getCommittedNodeOnActivePage(nodeId)
+      const pid = getActiveOrSinglePageId()
+      if (!before || !pid) return
+      await commitNodePartialUpdate(
+        nodeId,
+        before,
+        { fills: next.length > 0 ? next : undefined },
+        pid,
+      )
+    },
+    [readOnly, nodeId],
+  )
+
+  const onFillChange = useCallback(
+    (fill: Fill) => {
+      const next = [...fills]
+      if (next.length === 0) next.push(fill)
+      else next[0] = fill
+      setFills(next)
+      void commitFills(next)
+    },
+    [fills, commitFills],
+  )
+
+  const addFill = useCallback(() => {
+    const next = [...fills, DEFAULT_FILL]
+    setFills(next)
+    void commitFills(next)
+  }, [fills, commitFills])
+
+  const removeFills = useCallback(() => {
+    setFills([])
+    void commitFills([])
+  }, [commitFills])
+
   return (
     <>
       <Separator />
@@ -28,11 +75,11 @@ export function FillsSection({
           {!readOnly && (
             <div className="flex gap-1">
               {fills.length === 0 ? (
-                <Button type="button" variant="outline" size="sm" onClick={onAddFill}>
+                <Button type="button" variant="outline" size="sm" onClick={addFill}>
                   Add fill
                 </Button>
               ) : (
-                <Button type="button" variant="ghost" size="sm" onClick={onClearFills}>
+                <Button type="button" variant="ghost" size="sm" onClick={removeFills}>
                   Clear
                 </Button>
               )}
