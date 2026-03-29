@@ -17,7 +17,7 @@ TypeScript package: Skia WASM renderer wrapper, React canvas UI, worker index, a
 
 ## Component folder naming
 
-Under [src/lib/components/](src/lib/components/), directories that group React feature UI (parents of `.tsx` components) use **PascalCase**, not kebab-case (e.g. `LayersPanel/`, `SelectionOverlay/`).
+Under [src/lib/components/](src/lib/components/), directories that group React feature UI (parents of `.tsx` components) use **PascalCase**, not kebab-case (e.g. `LayersPanel/`, `Overlay/` for selection SVG overlay).
 
 **Exception:** keep [src/components/ui/](src/components/ui/) lowercase — it matches shadcn’s default path in [components.json](components.json) (`@/components/ui`). Other feature folders under `src/components/` should still use PascalCase.
 

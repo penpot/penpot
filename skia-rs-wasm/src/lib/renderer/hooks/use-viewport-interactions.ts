@@ -15,7 +15,7 @@ import type { ViewportPanModifier, SelectionRectResult } from '../types'
 import { pointerPos, viewport } from '../signals/pointer'
 import { wasmSelectionRect } from '../signals/selection'
 import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
-import { getResizeCursor, matrixHasHalfFlip, matrixToRotationDeg } from '../../components/SelectionOverlay/constants'
+import { getResizeCursor, matrixHasHalfFlip, matrixToRotationDeg } from '../../components/Overlay/constants'
 
 function hasPanModifier(e: MouseEvent, mod: ViewportPanModifier): boolean {
   if (mod === null) return false
@@ -74,7 +74,6 @@ export function useViewportInteractions({
   const isPanningRef = useRef<boolean>(false)
   const lastPanPosRef = useRef<{ x: number; y: number } | null>(null)
   const pendingPanUpdateRef = useRef<boolean>(false)
-  const pendingPanDeltaRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 })
 
   // Handle mouse wheel for zooming
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -214,31 +213,23 @@ export function useViewportInteractions({
       e.preventDefault()
       const dx = e.clientX - lastPanPosRef.current.x
       const dy = e.clientY - lastPanPosRef.current.y
-
-      // Update last position immediately
       lastPanPosRef.current = { x: e.clientX, y: e.clientY }
 
-      // Accumulate delta (clientX/clientY are in CSS pixels per DOM spec)
-      pendingPanDeltaRef.current.dx += dx
-      pendingPanDeltaRef.current.dy += dy
+      const current = viewport.value
+      if (!current) return
 
-      // Schedule update on next animation frame if not already scheduled
+      const next = Viewport.from(current)
+      next.pan(dx, dy)
+      onViewportUpdate?.(next)
+
       if (!pendingPanUpdateRef.current) {
         pendingPanUpdateRef.current = true
-        const vpData = viewport.value
-        const rdr = renderer
         requestAnimationFrame(() => {
-          if (vpData && rdr && isPanningRef.current) {
-            const { dx, dy } = pendingPanDeltaRef.current
-            if (dx !== 0 || dy !== 0) {
-              const next = Viewport.from(vpData)
-              next.pan(dx, dy)
-              rdr.applyViewport(next)
-              onViewportUpdate?.(next)
-              pendingPanDeltaRef.current = { dx: 0, dy: 0 }
-            }
-          }
           pendingPanUpdateRef.current = false
+          const latest = viewport.value
+          if (latest && renderer && isPanningRef.current) {
+            renderer.applyViewport(Viewport.from(latest))
+          }
         })
       }
     }
@@ -251,22 +242,16 @@ export function useViewportInteractions({
       canvasActor.send({ type: 'PAN_END' })
       isPanningRef.current = false
       lastPanPosRef.current = null
-      if (pendingPanDeltaRef.current.dx !== 0 || pendingPanDeltaRef.current.dy !== 0) {
-        if (viewport.value && renderer) {
-          const { dx, dy } = pendingPanDeltaRef.current
-          const next = Viewport.from(viewport.value)
-          next.pan(dx, dy)
-          renderer.applyViewport(next)
-          onViewportUpdate?.(next)
-          pendingPanDeltaRef.current = { dx: 0, dy: 0 }
-        }
+      const vp = viewport.value
+      if (vp && renderer) {
+        renderer.applyViewport(Viewport.from(vp))
       }
       if (canvas) {
         canvas.style.cursor = 'default'
       }
     }
 
-  }, [canvasRef, canvasActor, renderer, onViewportUpdate])
+  }, [canvasRef, canvasActor, renderer])
 
   // Handle mouse enter: normal cursor unless pan modifier is held (updated in mousemove)
   const handleMouseEnter = useCallback(() => {

@@ -12,6 +12,9 @@ export const wasmSelectionRect = signal<SelectionRectResult | null>(null)
 export const selectionRect = signal<Selrect | null>(null)
 export const shapeDrawPreview = signal<Selrect | null>(null)
 
+/** Synced from React: showHandles && showCornerHandles. Drives imperative corner-square `effect()`. */
+export const selectionCornerHandlesVisible = signal(false)
+
 function isFiniteSelectionRect(value: SelectionRectResult | null): value is SelectionRectResult {
   if (!value) return false
   return (
