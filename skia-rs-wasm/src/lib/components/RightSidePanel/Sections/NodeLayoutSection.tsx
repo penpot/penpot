@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useSelector } from '@xstate/react'
 import type { PenpotNode } from 'penpot-exporter/types'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,11 @@ import {
 } from '../../../renderer/properties/commit-node-properties'
 import type { RectLikeNode } from '../../../renderer/properties/panel-utils'
 import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
-import { useWorkspaceStore } from '../../../renderer/store/workspace-store'
+import {
+  movePreviewWorldDelta as movePreviewWorldDeltaSignal,
+  rotatePreviewDeltaDeg as rotatePreviewDeltaDegSignal,
+} from '../../../renderer/signals/pointer'
+import { useSignalCoalesced } from '../../../renderer/signals/use-signal-coalesced'
 
 export interface NodeLayoutSectionProps {
   nodeId: string
@@ -49,37 +53,8 @@ export function NodeLayoutSection({
   const canvasActor = useCanvasActor()
   const isMoving = useSelector(canvasActor, (s) => s.matches('moving'))
   const isRotating = useSelector(canvasActor, (s) => s.matches('rotating'))
-  const rotatePreviewDeltaDeg = useWorkspaceStore((s) => s.rotatePreviewDeltaDeg)
-
-  /** Coalesced to one React update per frame during move (store still updates every pointer event). */
-  const [movePreviewCoalesced, setMovePreviewCoalesced] = useState({ x: 0, y: 0 })
-  const movePreviewRafRef = useRef(0)
-
-  useEffect(() => {
-    if (!isMoving) {
-      setMovePreviewCoalesced({ x: 0, y: 0 })
-      return
-    }
-    const d0 = useWorkspaceStore.getState().movePreviewWorldDelta
-    setMovePreviewCoalesced({ x: d0.x, y: d0.y })
-    const unsub = useWorkspaceStore.subscribe(() => {
-      if (movePreviewRafRef.current !== 0) return
-      movePreviewRafRef.current = requestAnimationFrame(() => {
-        movePreviewRafRef.current = 0
-        const d = useWorkspaceStore.getState().movePreviewWorldDelta
-        setMovePreviewCoalesced((prev) =>
-          prev.x === d.x && prev.y === d.y ? prev : { x: d.x, y: d.y },
-        )
-      })
-    })
-    return () => {
-      unsub()
-      if (movePreviewRafRef.current !== 0) {
-        cancelAnimationFrame(movePreviewRafRef.current)
-        movePreviewRafRef.current = 0
-      }
-    }
-  }, [isMoving])
+  const rotatePreviewDeltaDeg = useSignalCoalesced(rotatePreviewDeltaDegSignal)
+  const movePreviewCoalesced = useSignalCoalesced(movePreviewWorldDeltaSignal)
 
   const liveLayoutPartial = useMemo((): Partial<PenpotNode> | null => {
     if (readOnly) return null

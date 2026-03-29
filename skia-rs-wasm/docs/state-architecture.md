@@ -13,8 +13,8 @@ Four complementary tools handle distinct concerns:
 | Tool | Role |
 |------|------|
 | **Valtio** | Reactive *document data* — the source-of-truth proxy that React components subscribe to for shape geometry, fills, page metadata, and selection IDs. |
-| **Zustand** | Transient *workspace data* — viewport, renderer/worker handles, WASM loading, and *drag previews* (`wasmSelectionRect`, move/rotate preview deltas, marquee/shape rubber-band rects). Interaction *modes* (moving vs resizing vs idle) live in XState, not here. |
-| **Signals** (TC39 / `@preact/signals`) | High-frequency *per-frame derived values* — current-frame pointer position, zoom level, modifier-key booleans — that must update at pointer rate without causing React re-renders. |
+| **Zustand** | Transient *workspace data* — viewport, renderer/worker handles, WASM loading, and *drag previews* (`wasmSelectionRect`, marquee/shape rubber-band rects). Interaction *modes* (moving vs resizing vs idle) live in XState, not here. |
+| **Signals** (TC39 / `@preact/signals`) | High-frequency *per-frame values* — pointer position, modifier keys, move/rotate preview deltas (`movePreviewWorldDelta`, `rotatePreviewDeltaDeg`), zoom — updated at pointer rate; React reads hot values via `useSignalCoalesced` (RAF-batched) where needed. |
 | **XState** | Canvas *interaction modes* — `canvasMachine` (v5) with states `idle` \| `moving` \| `rotating` \| `resizing` \| `selecting` \| `drawingShape` \| `panning`; RxJS handlers run as `fromObservable` invoked actors; mounted from `CanvasWrapper`. |
 
 ---
@@ -50,8 +50,6 @@ that depend on changed properties.
 useWorkspaceStore (zustand)
   ├── Selection / drag visuals (updated by handlers at pointer rate)
   │   ├── wasmSelectionRect: SelectionRectResult | null
-  │   ├── movePreviewWorldDelta: { x, y }         ← live X/Y in panel during move
-  │   ├── rotatePreviewDeltaDeg: number           ← live Rotation during rotate drag
   │   ├── selectionRect: Selrect | null           ← area marquee (screen space)
   │   ├── shapeDrawPreview: Selrect | null        ← draw-rect rubber band
   │   └── selectionBounds: Rect | null
@@ -67,9 +65,10 @@ useWorkspaceStore (zustand)
 
 **Status: complete.** Interaction booleans (`isMoving`, `drawTool`, `resizeHandle`, …) were removed; they are represented by **`canvasMachine`** state and context (see §4).
 
-Drag preview fields (`movePreviewWorldDelta`, `rotatePreviewDeltaDeg`,
-`wasmSelectionRect`) are still updated synchronously on every pointer event
-so the SVG overlay and property panel reflect the cursor without waiting for a WASM frame.
+Move/rotate preview deltas live in **signals** (see §3). `wasmSelectionRect`
+is still updated synchronously on every pointer event so the SVG overlay
+reflects the cursor without waiting for a WASM frame; the property panel
+reads preview deltas via `useSignalCoalesced` (one React update per frame).
 
 ```
 useHistoryStore (zustand)
@@ -100,6 +99,11 @@ reads those signals.
   canvas/overlay pointerdown sites.
 - **`viewportSignal`** — kept in sync with workspace `viewport` inside
   `updateViewport` in [`workspace-store.ts`](../src/lib/renderer/store/workspace-store.ts).
+- **`movePreviewWorldDelta`**, **`rotatePreviewDeltaDeg`** — written by `move.ts` /
+  `rotate.ts` on every pointer event during drag; reset on release and in
+  `clearSelection`. React UI (e.g. layout fields) subscribes via
+  [`useSignalCoalesced`](../src/lib/renderer/signals/use-signal-coalesced.ts)
+  so updates are RAF-batched.
 - **`worldPointerPos`** — `computed()` from `pointerPos` + `viewportSignal`.
 - **`signalToObservable`** — bridges a signal into RxJS so drag handlers still return
   `Observable<void>` for XState `fromObservable` without keeping `BehaviorSubject`
@@ -116,6 +120,8 @@ export const modCtrl = signal(false)
 export const modMeta = signal(false)
 export const keyboardSpace = signal(false)
 export const viewportSignal = signal<ViewportData | null>(null)
+export const movePreviewWorldDelta = signal<Point>({ x: 0, y: 0 })
+export const rotatePreviewDeltaDeg = signal(0)
 
 export const worldPointerPos = computed(() => { /* screenToWorld */ })
 ```
@@ -197,14 +203,14 @@ applyModifiersAndCommit(entries)
 During drag, the properties panel shows geometry derived from the same
 matrices that will be committed. **`NodePropertyPanel`** uses XState
 `matches('moving')` / `matches('rotating')` (via `useSelector` on the canvas
-actor) together with Zustand preview deltas:
+actor) together with signal preview deltas (via `useSignalCoalesced`):
 
 ```
-moving    → applyTransformToNode(node, translateMatrix(dx, dy))   ← movePreviewWorldDelta
-rotating  → applyTransformToNode(node, rotationMatrixAroundPoint(…)) ← rotatePreviewDeltaDeg
+moving    → applyTransformToNode(node, translateMatrix(dx, dy))   ← movePreviewWorldDelta (signal)
+rotating  → applyTransformToNode(node, rotationMatrixAroundPoint(…)) ← rotatePreviewDeltaDeg (signal)
 ```
 
-Values are computed in a `useMemo` when preview fields or machine-derived
+Values are computed in a `useMemo` when coalesced preview values or machine-derived
 flags change so X, Y, W, H, and Rotation track the cursor without a commit
 round-trip.
 
