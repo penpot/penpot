@@ -12,7 +12,7 @@ import { useViewportShortcutsStore } from '../store/shortcuts-store'
 import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { Viewport, screenToWorld } from '../viewport'
 import type { ViewportPanModifier, SelectionRectResult } from '../types'
-import { mousePosition$ } from '../streams'
+import { pointerPos } from '../signals/pointer'
 import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
 import { getResizeCursor, matrixHasHalfFlip, matrixToRotationDeg } from '../../components/selection-overlay/constants'
 
@@ -125,12 +125,12 @@ export function useViewportInteractions({
       const screenY = e.clientY - rect.top
 
       if (canvasActor.getSnapshot().context.drawTool === 'rect') {
-        mousePosition$.next({ x: screenX, y: screenY })
+        pointerPos.value = { x: screenX, y: screenY }
         canvasActor.send({ type: 'POINTER_DOWN_DRAW' })
         return
       }
 
-      mousePosition$.next({ x: screenX, y: screenY })
+      pointerPos.value = { x: screenX, y: screenY }
 
       const mod = e.ctrlKey || e.metaKey
       const shift = e.shiftKey

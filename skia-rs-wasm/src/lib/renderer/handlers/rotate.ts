@@ -11,7 +11,7 @@
 
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
-import { mousePosition$ } from '../streams'
+import { pointerPos, signalToObservable } from '../signals/pointer'
 import { dragStopper } from '../streams/drag-stopper'
 import { getSelectedIdsSet } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
@@ -92,7 +92,7 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
   const commitDoneRef = { current: false }
   let lastRenderRequestTs = 0
 
-  const rotateStream = mousePosition$.pipe(
+  const rotateStream = signalToObservable(pointerPos).pipe(
     filter((pos): pos is NonNullable<typeof pos> => pos !== null),
     map((pos) => screenToWorld(viewport, pos.x, pos.y)),
     map((world) => angleDegFromCenter(cx, cy, world.x, world.y)),

@@ -10,7 +10,7 @@ import { useWorkspaceStore } from '../../renderer/store/workspace-store'
 import { useCanvasActor } from '../../renderer/machine/canvas-actor-context'
 import { useSnapshot } from 'valtio'
 import { docProxy } from '../../renderer/store/doc-proxy'
-import { mousePosition$ } from '../../renderer/streams'
+import { pointerPos } from '../../renderer/signals/pointer'
 import type { ResizeHandlePosition } from '../../renderer/types'
 import { HANDLE_SIZE_WORLD, MIN_SELRECT_SIDE_SCREEN, getResizeCursor, getRotationCursor, matrixHasHalfFlip, matrixToRotationDeg, SELECTION_OVERLAY_GLOW } from './constants'
 import { SelectionRect } from './SelectionRect'
@@ -80,7 +80,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       e.preventDefault()
       const pos = screenPositionFromEvent(e)
       if (pos) {
-        mousePosition$.next(pos)
+        pointerPos.value = pos
         canvasActor.send({ type: 'POINTER_DOWN_ON_SELECTION', position: pos })
       }
       const target = e.currentTarget
@@ -96,7 +96,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       e.stopPropagation()
       const pos = screenPositionFromEvent(e)
       if (pos) {
-        mousePosition$.next(pos)
+        pointerPos.value = pos
         canvasActor.send({ type: 'POINTER_DOWN_ON_CORNER', handle: position, position: pos })
       }
       const target = e.currentTarget
@@ -112,7 +112,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       e.stopPropagation()
       const pos = screenPositionFromEvent(e)
       if (pos) {
-        mousePosition$.next(pos)
+        pointerPos.value = pos
         canvasActor.send({ type: 'POINTER_DOWN_ON_ROTATION', corner: position, position: pos })
       }
       const target = e.currentTarget

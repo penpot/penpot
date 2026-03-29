@@ -3,10 +3,10 @@
  * Provides factory functions to create PenpotNode instances with proper defaults
  */
 
-import type { ShapeType } from '../lib/renderer/types'
+import type { ShapeType } from './types'
 import type { PenpotNode, Selrect } from 'penpot-exporter/types'
 import type { Fill, Stroke } from 'penpot-exporter/types'
-import { newShapeId } from '../lib/common/shape-id'
+import { newShapeId } from '../common/shape-id'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 

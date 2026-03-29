@@ -81,61 +81,47 @@ useHistoryStore (zustand)
 
 ```
 useViewportShortcutsStore (zustand)
-  ├── viewportShortcuts: ShortcutsConfig
-  └── modifierKeys: { shift, alt, ctrl, meta }
+  └── viewportShortcuts: ShortcutsConfig
 ```
 
-**Status: complete.**
+**Status: complete.** Live modifier keys (`shift`, `alt`, `ctrl`, `meta`) live in
+[`signals/pointer.ts`](../src/lib/renderer/signals/pointer.ts), not Zustand;
+`getModifierKeys()` in [`shortcuts-store.ts`](../src/lib/renderer/store/shortcuts-store.ts)
+reads those signals.
 
 ---
 
-## 3. Per-frame pointer/modifier signals — TODO
+## 3. Per-frame pointer/modifier signals — Done
 
-The current approach uses **RxJS BehaviorSubjects** as a poor-man's
-signals:
+**Implementation:** [`src/lib/renderer/signals/pointer.ts`](../src/lib/renderer/signals/pointer.ts)
 
-```ts
-// src/lib/renderer/streams/index.ts — today
-export const mousePosition$          = new BehaviorSubject<Point | null>(null)
-export const mousePositionShift$     = new BehaviorSubject<boolean>(false)
-export const mousePositionAlt$       = new BehaviorSubject<boolean>(false)
-export const mousePositionMod$       = new BehaviorSubject<boolean>(false)
-export const keyboardSpace$          = new BehaviorSubject<boolean>(false)
-```
-
-These are piped through RxJS operators inside every drag handler
-(`move.ts`, `rotate.ts`, `resize.ts`), which works but leaks
-subscription management into handler code.
-
-**Target with Signals:**
+- **`pointerPos`**, **`modShift`**, **`modAlt`**, **`modCtrl`**, **`modMeta`**, **`keyboardSpace`**
+  — updated from `use-streams`, `canvas-wrapper` (keyboard modifiers), and
+  canvas/overlay pointerdown sites.
+- **`viewportSignal`** — kept in sync with workspace `viewport` inside
+  `updateViewport` in [`workspace-store.ts`](../src/lib/renderer/store/workspace-store.ts).
+- **`worldPointerPos`** — `computed()` from `pointerPos` + `viewportSignal`.
+- **`signalToObservable`** — bridges a signal into RxJS so drag handlers still return
+  `Observable<void>` for XState `fromObservable` without keeping `BehaviorSubject`
+  sources.
 
 ```ts
-// signals/pointer.ts (planned)
+// signals/pointer.ts — summary
 import { signal, computed } from '@preact/signals-core'
 
-export const pointerPos      = signal<{ x: number; y: number } | null>(null)
-export const modShift        = signal(false)
-export const modAlt          = signal(false)
-export const modCtrl         = signal(false)
-export const keyboardSpace   = signal(false)
+export const pointerPos = signal<Point | null>(null)
+export const modShift = signal(false)
+export const modAlt = signal(false)
+export const modCtrl = signal(false)
+export const modMeta = signal(false)
+export const keyboardSpace = signal(false)
+export const viewportSignal = signal<ViewportData | null>(null)
 
-// Derived — zero-cost if nobody reads them
-export const worldPointerPos = computed(() => {
-  const pos = pointerPos.value
-  const vp  = viewportSignal.value
-  if (!pos || !vp) return null
-  return screenToWorld(vp, pos.x, pos.y)
-})
+export const worldPointerPos = computed(() => { /* screenToWorld */ })
 ```
 
-**Benefits:**
-- Handlers read `.value` instead of subscribing; no `subscribe` /
-  `unsubscribe` in every handler.
-- `computed()` values are lazy and automatically cached — world
-  position only recomputes when either `pointerPos` or `viewport`
-  changes.
-- React components that display pointer position can subscribe without
-  triggering a full Zustand re-render cycle.
+**RxJS** remains for operator pipelines (`scan`, `takeUntil`, …) and `dragStopper`;
+only the previous `BehaviorSubject` holders were replaced.
 
 ---
 
@@ -263,8 +249,9 @@ results are used by the viewport interaction layer to pick shapes.
 | Workspace store (Zustand) | ✅ Previews, viewport, renderer/worker/WASM | — |
 | Canvas interaction modes | ✅ `canvasMachine` + `CanvasWrapper` / `overlays` | — |
 | History (Zustand) | ✅ `useHistoryStore` | — |
-| Shortcuts/modifiers (Zustand) | ✅ `useViewportShortcutsStore` | Move modifier state to Signals |
-| Pointer streams | ⚠️ `BehaviorSubject` (works) | Migrate to Signals |
+| Shortcuts (Zustand) | ✅ `useViewportShortcutsStore` (config only) | — |
+| Modifier keys | ✅ Signals in `signals/pointer.ts` | — |
+| Pointer position / per-frame input | ✅ Signals + `signalToObservable` → RxJS handlers | — |
 | Live drag preview (overlay) | ✅ Synchronous per-event | — |
 | Live drag preview (panel) | ✅ `useMemo` + XState mode + Zustand deltas | — |
 | Move / rotate / resize / select / draw handlers | ✅ RxJS + `fromObservable` actors | — |
@@ -273,4 +260,4 @@ results are used by the viewport interaction layer to pick shapes.
 | WASM modifier throttle | ✅ 60 Hz gate + sync overlay | — |
 | Web Worker spatial index | ✅ Quadtree, incremental updates | — |
 | XState canvas machine | ✅ `canvas-machine.ts`, context in `canvas-actor-context.tsx` | — |
-| Signals for pointer/modifiers | ❌ Not started | Replace BehaviorSubject |
+| Signals for pointer/modifiers | ✅ `signals/pointer.ts` | — |
