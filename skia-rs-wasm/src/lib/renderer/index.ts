@@ -248,8 +248,8 @@ export class Renderer {
 
   /**
    * Preview move/rotate/resize like Penpot frontend `set-wasm-modifiers`: propagate, `_set_modifiers`, then
-   * {@link requestRender} (async RAF). Overlay tracks geometry via {@link getSelectionRect} + `refreshWasmSelectionRect`
-   * in the same frame — no `renderSync` per pointer sample.
+   * {@link requestRender} (async RAF). Overlay tracks geometry via {@link getSelectionRect} and
+   * `querySelectionRect` in `signals/selection.ts` in the same frame — no `renderSync` per pointer sample.
    */
   setMoveModifiersAndRender(entries: Array<[string, Matrix]>): void {
     if (!getContextInitialized() || !this.module) return

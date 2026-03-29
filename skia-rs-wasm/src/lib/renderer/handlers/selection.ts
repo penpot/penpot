@@ -9,7 +9,7 @@ import { pointerPos, signalToObservable } from '../signals/pointer'
 import { askWorker$ } from '../streams/worker-streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { clearSelection, getSelectedIdsSet, setSelectedIds } from '../store/document-selection'
-import { useWorkspaceStore } from '../store/workspace-store'
+import { selectionRect as selectionRectSignal } from '../signals/selection'
 import { getActiveOrSinglePageId } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
 import { makeSelrect } from '../../worker/types'
@@ -89,7 +89,9 @@ export function handleAreaSelection(
         ),
         merge(
           selrectStream.pipe(
-            tap(rect => useWorkspaceStore.getState().setSelectionRect(rect)),
+            tap((rect) => {
+              selectionRectSignal.value = rect
+            }),
             map(() => undefined)
           ),
           queryStream.pipe(
@@ -101,7 +103,9 @@ export function handleAreaSelection(
           )
         ),
         of(null).pipe(
-          tap(() => useWorkspaceStore.getState().setSelectionRect(null)),
+          tap(() => {
+            selectionRectSignal.value = null
+          }),
           map(() => undefined)
         )
       )

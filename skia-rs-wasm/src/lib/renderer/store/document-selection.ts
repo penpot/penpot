@@ -1,30 +1,20 @@
 /**
- * Document selection lives on docProxy; this module syncs Zustand-derived UI state (bounds, WASM rect).
+ * Document selection lives on docProxy; this module syncs WASM selection overlay when selection changes.
  */
 
-import type { IndexedNode } from '../../worker/types'
-import { getSelectionBounds } from '../selection-bounds'
-import { docProxy, getCurrentPage } from './doc-proxy'
 import { movePreviewWorldDelta, rotatePreviewDeltaDeg } from '../signals/pointer'
+import { querySelectionRect, selectionRect, wasmSelectionRect } from '../signals/selection'
+import { docProxy } from './doc-proxy'
 import { useWorkspaceStore } from './workspace-store'
 
-function isIndexedNode(value: IndexedNode | undefined): value is IndexedNode {
-  return value !== undefined
-}
-
 function syncSelectionDerived(): void {
-  const ids = new Set(docProxy.selectedIds)
-  const page = getCurrentPage()
-  const objects = page?.objects
-  const selectedNodes = objects
-    ? Array.from(ids)
-        .map((id) => objects[id])
-        .filter(isIndexedNode)
-    : []
-  useWorkspaceStore.setState({
-    selectionBounds: getSelectionBounds(selectedNodes),
-  })
-  useWorkspaceStore.getState().refreshWasmSelectionRect()
+  const ids = docProxy.selectedIds
+  const renderer = useWorkspaceStore.getState().renderer
+  if (ids.size === 0 || !renderer) {
+    wasmSelectionRect.value = null
+    return
+  }
+  wasmSelectionRect.value = querySelectionRect(renderer, ids)
 }
 
 export function setSelectedIds(ids: Set<string>): void {
@@ -39,11 +29,8 @@ export function clearSelection(): void {
   docProxy.selectedIds.clear()
   rotatePreviewDeltaDeg.value = 0
   movePreviewWorldDelta.value = { x: 0, y: 0 }
-  useWorkspaceStore.setState({
-    selectionBounds: null,
-    selectionRect: null,
-    wasmSelectionRect: null,
-  })
+  wasmSelectionRect.value = null
+  selectionRect.value = null
 }
 
 export function getSelectedIdsSet(): Set<string> {

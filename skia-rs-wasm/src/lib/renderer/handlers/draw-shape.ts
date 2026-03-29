@@ -7,6 +7,7 @@ import { filter, map, scan, switchMap, take, takeUntil, tap } from 'rxjs/operato
 import { pointerPos, signalToObservable } from '../signals/pointer'
 import { dragStopper } from '../streams/drag-stopper'
 import { setSelectedIds } from '../store/document-selection'
+import { shapeDrawPreview as shapeDrawPreviewSignal } from '../signals/selection'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
@@ -26,7 +27,7 @@ export function handleDrawRect(): Observable<void> {
   const page = effectivePageId ? getPage(effectivePageId) : undefined
 
   if (!viewport || !effectivePageId || !page) {
-    useWorkspaceStore.getState().setShapeDrawPreview(null)
+    shapeDrawPreviewSignal.value = null
     return EMPTY
   }
 
@@ -57,13 +58,13 @@ export function handleDrawRect(): Observable<void> {
         selrectStream.pipe(
           tap((rect) => {
             lastRect = rect
-            useWorkspaceStore.getState().setShapeDrawPreview(rect)
+            shapeDrawPreviewSignal.value = rect
           }),
           map(() => undefined)
         ),
         of(null).pipe(
           tap(() => {
-            useWorkspaceStore.getState().setShapeDrawPreview(null)
+            shapeDrawPreviewSignal.value = null
 
             if (lastRect.width < MIN_DRAW_SCREEN_PX || lastRect.height < MIN_DRAW_SCREEN_PX) {
               return

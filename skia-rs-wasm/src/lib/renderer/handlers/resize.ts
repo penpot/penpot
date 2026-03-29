@@ -6,6 +6,7 @@
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
 import { pointerPos, signalToObservable } from '../signals/pointer'
+import { querySelectionRect, wasmSelectionRect as wasmSelRect } from '../signals/selection'
 import { dragStopper } from '../streams/drag-stopper'
 import { getSelectedIdsSet } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
@@ -81,9 +82,9 @@ export function startResizeSelected(
   initialPosition: Point,
   handle: ResizeHandlePosition
 ): Observable<void> {
-  const state = useWorkspaceStore.getState()
-  const { renderer, viewport, wasmSelectionRect } = state
+  const { renderer, viewport } = useWorkspaceStore.getState()
   const selectedIds = getSelectedIdsSet()
+  const wasmSelectionRect = wasmSelRect.peek()
   if (!renderer || !viewport || selectedIds.size < 1 || !wasmSelectionRect) return EMPTY
 
   const x = wasmSelectionRect.center.x - wasmSelectionRect.width / 2
@@ -172,7 +173,7 @@ export function startResizeSelected(
             latestMatrixRef.current,
           ])
           renderer.setMoveModifiersAndRender(entries)
-          useWorkspaceStore.getState().refreshWasmSelectionRect()
+          wasmSelRect.value = querySelectionRect(renderer, selectedIds)
         })
       }
     }),
@@ -195,12 +196,12 @@ export function startResizeSelected(
           commitDoneRef.current = true
           renderer.cleanModifiers()
           renderer.flushRenderSync()
-          useWorkspaceStore.getState().refreshWasmSelectionRect()
+          wasmSelRect.value = querySelectionRect(renderer, selectedIds)
         })
         .catch(() => {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
-          useWorkspaceStore.getState().refreshWasmSelectionRect()
+          wasmSelRect.value = querySelectionRect(renderer, selectedIds)
         })
     }),
     map(() => undefined)
