@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import type { CanvasWrapperProps } from './types'
 import { useWorkspaceStore } from './store/workspace-store'
 import { useViewportShortcutsStore } from './store/shortcuts-store'
+import { modAlt, modCtrl, modMeta, modShift } from './signals/pointer'
 import { initRendererClient, cleanupRendererClient } from './renderer-init'
 import { SelectionOverlay } from '../components/selection-overlay/SelectionOverlay'
 import { useViewportInteractions } from './hooks/use-viewport-interactions'
@@ -38,7 +39,6 @@ function CanvasWorkspace({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [canvasSize, setCanvasSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT })
   const setViewportShortcuts = useViewportShortcutsStore((state) => state.setViewportShortcuts)
-  const setModifierKeys = useViewportShortcutsStore((state) => state.setModifierKeys)
 
   // Apply initial shortcuts when provided (e.g. on mount or when prop changes)
   useEffect(() => {
@@ -121,14 +121,17 @@ function CanvasWorkspace({
   // Update modifier keys on window keydown/keyup for move Shift constrain, etc.
   useEffect(() => {
     const update = (e: KeyboardEvent) => {
-      setModifierKeys({
-        shift: e.shiftKey,
-        alt: e.altKey,
-        ctrl: e.ctrlKey,
-        meta: e.metaKey,
-      })
+      modShift.value = e.shiftKey
+      modAlt.value = e.altKey
+      modCtrl.value = e.ctrlKey
+      modMeta.value = e.metaKey
     }
-    const reset = () => setModifierKeys({ shift: false, alt: false, ctrl: false, meta: false })
+    const reset = () => {
+      modShift.value = false
+      modAlt.value = false
+      modCtrl.value = false
+      modMeta.value = false
+    }
     window.addEventListener('keydown', update)
     window.addEventListener('keyup', update)
     window.addEventListener('blur', reset)
@@ -137,7 +140,7 @@ function CanvasWorkspace({
       window.removeEventListener('keyup', update)
       window.removeEventListener('blur', reset)
     }
-  }, [setModifierKeys])
+  }, [])
 
   useStreams(canvasRef)
   useWasmSelectionRect()

@@ -5,7 +5,7 @@
 
 import { Observable, concat, merge, of, EMPTY } from 'rxjs'
 import { map, filter, scan, takeUntil, take, bufferTime, tap, distinctUntilChanged, switchMap } from 'rxjs/operators'
-import { mousePosition$ } from '../streams'
+import { pointerPos, signalToObservable } from '../signals/pointer'
 import { askWorker$ } from '../streams/worker-streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { clearSelection, getSelectedIdsSet, setSelectedIds } from '../store/document-selection'
@@ -29,14 +29,14 @@ export function handleAreaSelection(
   const initialSet = append || remove ? getSelectedIdsSet() : new Set<string>()
   
   // Get initial position from current mouse position or wait for first value
-  return mousePosition$.pipe(
+  return signalToObservable(pointerPos).pipe(
     filter(pos => pos !== null),
     take(1),
     switchMap(initialPosition => {
       if (!initialPosition) return EMPTY
 
       // Calculate selection rectangle stream
-      const selrectStream = mousePosition$.pipe(
+      const selrectStream = signalToObservable(pointerPos).pipe(
         filter(pos => pos !== null),
         map(pos => pos!),
         scan((_acc, pos) => {

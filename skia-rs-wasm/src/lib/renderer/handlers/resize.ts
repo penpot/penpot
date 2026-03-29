@@ -5,7 +5,7 @@
 
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
-import { mousePosition$ } from '../streams'
+import { pointerPos, signalToObservable } from '../signals/pointer'
 import { dragStopper } from '../streams/drag-stopper'
 import { getSelectedIdsSet } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
@@ -120,7 +120,7 @@ export function startResizeSelected(
   const commitDoneRef = { current: false }
 
   const RESIZE_THRESHOLD_SCREEN_PX = 5
-  const resizeStream = mousePosition$.pipe(
+  const resizeStream = signalToObservable(pointerPos).pipe(
     filter((pos): pos is NonNullable<typeof pos> => pos !== null),
     map((pos) => {
       const deltaScreen = { x: pos.x - initialPosition.x, y: pos.y - initialPosition.y }

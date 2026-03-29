@@ -12,6 +12,7 @@ import type { SelectionRectResult } from '../types'
 import type { WorkerClient } from '../../worker/types'
 import { docProxy } from './doc-proxy'
 import { type Rect } from '../selection-bounds'
+import { viewportSignal } from '../signals/pointer'
 
 export interface WorkspaceState {
   /** Union of selected nodes' selrects; set when selection changes. */
@@ -100,7 +101,10 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   setRotatePreviewDeltaDeg: (deg) => set({ rotatePreviewDeltaDeg: deg }),
   setMovePreviewWorldDelta: (d) => set({ movePreviewWorldDelta: d }),
   setShapeDrawPreview: (rect) => set({ shapeDrawPreview: rect }),
-  updateViewport: (data) => set({ viewport: data, lastAppliedViewport: data }),
+  updateViewport: (data) => {
+    viewportSignal.value = data
+    set({ viewport: data, lastAppliedViewport: data })
+  },
   setLastAppliedViewport: (data) => set({ lastAppliedViewport: data }),
   setRenderer: (renderer) => set({ renderer, wasmSelectionRect: null }),
   setWorkerClient: (client) => set({ workerClient: client }),

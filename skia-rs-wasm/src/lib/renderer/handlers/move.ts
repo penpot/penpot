@@ -11,7 +11,7 @@
 
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
-import { mousePosition$ } from '../streams'
+import { pointerPos, signalToObservable } from '../signals/pointer'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
@@ -63,7 +63,7 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
   const lastEventDeltaRef = { current: { x: 0, y: 0 } }
 
   const DRAG_THRESHOLD_SCREEN_PX = 5
-  const moveStream = mousePosition$.pipe(
+  const moveStream = signalToObservable(pointerPos).pipe(
     filter((pos): pos is NonNullable<typeof pos> => pos !== null),
     map((pos) => ({
       x: pos.x - initialPosition.x,
