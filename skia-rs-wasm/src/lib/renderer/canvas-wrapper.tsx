@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import type { CanvasWrapperProps } from './types'
 import { useWorkspaceStore } from './store/workspace-store'
 import { useViewportShortcutsStore } from './store/shortcuts-store'
-import { modAlt, modCtrl, modMeta, modShift } from './signals/pointer'
+import { modAlt, modCtrl, modMeta, modShift, viewport } from './signals/pointer'
 import { initRendererClient, cleanupRendererClient } from './renderer-init'
 import { SelectionOverlay } from '../components/selection-overlay/SelectionOverlay'
 import { useViewportInteractions } from './hooks/use-viewport-interactions'
@@ -145,11 +145,7 @@ function CanvasWorkspace({
   useViewportInteractions({
     canvasRef,
     onViewportUpdate: (next) => {
-      const data = { panX: next.panX, panY: next.panY, zoom: next.zoom }
-      useWorkspaceStore.getState().updateViewport(data)
-      requestAnimationFrame(() => {
-        useWorkspaceStore.getState().setLastAppliedViewport(data)
-      })
+      viewport.value = { panX: next.panX, panY: next.panY, zoom: next.zoom }
     },
   })
 

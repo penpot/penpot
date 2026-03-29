@@ -11,7 +11,7 @@
 
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
-import { movePreviewWorldDelta, pointerPos, signalToObservable } from '../signals/pointer'
+import { movePreviewWorldDelta, pointerPos, signalToObservable, viewport } from '../signals/pointer'
 import { querySelectionRect, wasmSelectionRect as wasmSelRect } from '../signals/selection'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
@@ -38,12 +38,12 @@ function constrainDeltaByShift(delta: { x: number; y: number }): { x: number; y:
 }
 
 export function startMoveSelected(initialPosition: Point): Observable<void> {
-  const state = useWorkspaceStore.getState()
-  const { renderer, viewport } = state
+  const { renderer } = useWorkspaceStore.getState()
+  const vp = viewport.value
   const selectedIds = getSelectedIdsSet()
   const pageId = getActiveOrSinglePageId()
 
-  if (!renderer || !viewport || selectedIds.size === 0 || !pageId) return EMPTY
+  if (!renderer || !vp || selectedIds.size === 0 || !pageId) return EMPTY
 
   const page = getPage(pageId)
   if (!page) return EMPTY
@@ -51,7 +51,7 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
   movePreviewWorldDelta.value = { x: 0, y: 0 }
 
   const stopper = dragStopper()
-  const zoom = viewport.zoom
+  const zoom = vp.zoom
 
   const modifiersAppliedRef = { current: false }
   let lastRenderRequestTs = 0

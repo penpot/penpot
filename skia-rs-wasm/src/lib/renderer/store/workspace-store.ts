@@ -1,21 +1,16 @@
 /**
- * Zustand store for workspace/editor state: previews, viewport, renderer handles.
- * Canvas interaction modes (move/resize/…) live in `canvasMachine` (XState).
+ * Zustand store for workspace/editor state: renderer handles, WASM loading.
+ * Viewport pan/zoom lives in `signals/pointer.ts` (`viewport`). Canvas interaction modes live in XState.
  */
 
 import { create } from 'zustand'
 import type { WasmModule } from '../wasm-types'
-import type { ViewportData } from '../viewport'
 import { Renderer } from '../index'
 import type { WorkerClient } from '../../worker/types'
 import { docProxy } from './doc-proxy'
-import { viewportSignal } from '../signals/pointer'
 import { querySelectionRect, wasmSelectionRect } from '../signals/selection'
 
 export interface WorkspaceState {
-  viewport: ViewportData | null
-  /** Viewport used for hit-test; set one frame after apply so it matches the displayed frame. */
-  lastAppliedViewport: ViewportData | null
   renderer: Renderer | null
   workerClient: WorkerClient | null
 
@@ -25,8 +20,6 @@ export interface WorkspaceState {
   wasmModuleError: Error | null
 
   // Actions
-  updateViewport: (data: ViewportData) => void
-  setLastAppliedViewport: (data: ViewportData | null) => void
   setRenderer: (renderer: Renderer) => void
   setWorkerClient: (client: WorkerClient | null) => void
 
@@ -37,19 +30,12 @@ export interface WorkspaceState {
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
-  viewport: null,
-  lastAppliedViewport: null,
   renderer: null,
   workerClient: null,
   wasmModule: null,
   isWasmModuleLoading: false,
   wasmModuleError: null,
 
-  updateViewport: (data) => {
-    viewportSignal.value = data
-    set({ viewport: data, lastAppliedViewport: data })
-  },
-  setLastAppliedViewport: (data) => set({ lastAppliedViewport: data }),
   setRenderer: (renderer) => {
     set({ renderer })
     const ids = docProxy.selectedIds

@@ -19,8 +19,8 @@ export const modMeta = signal(false)
 
 export const keyboardSpace = signal(false)
 
-/** Mirrors workspace `viewport`; kept in sync inside `updateViewport`. */
-export const viewportSignal = signal<ViewportData | null>(null)
+/** Canonical pan/zoom for the canvas; writers set `.value` (see `canvas-wrapper`, `viewport-actions`). */
+export const viewport = signal<ViewportData | null>(null)
 
 /** Delta (deg) during active rotate drag; property panel reads via `useSignalCoalesced`. */
 export const rotatePreviewDeltaDeg = signal(0)
@@ -30,7 +30,7 @@ export const movePreviewWorldDelta = signal<Point>({ x: 0, y: 0 })
 
 export const worldPointerPos = computed(() => {
   const pos = pointerPos.value
-  const vp = viewportSignal.value
+  const vp = viewport.value
   if (!pos || !vp) return null
   return screenToWorld(vp, pos.x, pos.y)
 })

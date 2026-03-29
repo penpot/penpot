@@ -5,7 +5,7 @@
 
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
-import { pointerPos, signalToObservable } from '../signals/pointer'
+import { pointerPos, signalToObservable, viewport } from '../signals/pointer'
 import { querySelectionRect, wasmSelectionRect as wasmSelRect } from '../signals/selection'
 import { dragStopper } from '../streams/drag-stopper'
 import { getSelectedIdsSet } from '../store/document-selection'
@@ -82,10 +82,11 @@ export function startResizeSelected(
   initialPosition: Point,
   handle: ResizeHandlePosition
 ): Observable<void> {
-  const { renderer, viewport } = useWorkspaceStore.getState()
+  const { renderer } = useWorkspaceStore.getState()
+  const vp = viewport.value
   const selectedIds = getSelectedIdsSet()
   const wasmSelectionRect = wasmSelRect.peek()
-  if (!renderer || !viewport || selectedIds.size < 1 || !wasmSelectionRect) return EMPTY
+  if (!renderer || !vp || selectedIds.size < 1 || !wasmSelectionRect) return EMPTY
 
   const x = wasmSelectionRect.center.x - wasmSelectionRect.width / 2
   const y = wasmSelectionRect.center.y - wasmSelectionRect.height / 2
@@ -93,7 +94,7 @@ export function startResizeSelected(
   const height = wasmSelectionRect.height <= 0 ? MIN_SIZE : wasmSelectionRect.height
 
   const stopper = dragStopper()
-  const zoom = viewport.zoom
+  const zoom = vp.zoom
   const mult = getHandlerMultiplier(handle)
 
   const selectedId = selectedIds.size === 1 ? Array.from(selectedIds)[0] : null

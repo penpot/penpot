@@ -5,7 +5,7 @@
 
 import type { Point, ViewportOptions, ViewBox } from './types'
 
-/** Plain viewport state stored in the workspace store (immutable data). */
+/** Plain viewport state for pan/zoom (immutable data); live value is `signals/pointer` `viewport`. */
 export interface ViewportData {
   panX: number
   panY: number

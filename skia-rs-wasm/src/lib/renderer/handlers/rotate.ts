@@ -11,7 +11,7 @@
 
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
-import { pointerPos, rotatePreviewDeltaDeg, signalToObservable } from '../signals/pointer'
+import { pointerPos, rotatePreviewDeltaDeg, signalToObservable, viewport } from '../signals/pointer'
 import { querySelectionRect, wasmSelectionRect as wasmSelRect } from '../signals/selection'
 import { dragStopper } from '../streams/drag-stopper'
 import { getSelectedIdsSet } from '../store/document-selection'
@@ -35,10 +35,11 @@ function angleDegFromCenter(cx: number, cy: number, wx: number, wy: number): num
 }
 
 export function startRotateSelected(initialPosition: Point): Observable<void> {
-  const { renderer, viewport } = useWorkspaceStore.getState()
+  const { renderer } = useWorkspaceStore.getState()
+  const vp = viewport.value
   const selectedIds = getSelectedIdsSet()
 
-  if (!renderer || !viewport || selectedIds.size < 1) {
+  if (!renderer || !vp || selectedIds.size < 1) {
     return EMPTY
   }
 
@@ -81,7 +82,7 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
     ? cloneSelectionRect(wasmSelRect.peek()!)
     : null
 
-  const initialWorld = screenToWorld(viewport, initialPosition.x, initialPosition.y)
+  const initialWorld = screenToWorld(vp, initialPosition.x, initialPosition.y)
   const initialAngleDeg = angleDegFromCenter(cx, cy, initialWorld.x, initialWorld.y)
 
   const stopper = dragStopper()
@@ -92,7 +93,7 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
 
   const rotateStream = signalToObservable(pointerPos).pipe(
     filter((pos): pos is NonNullable<typeof pos> => pos !== null),
-    map((pos) => screenToWorld(viewport, pos.x, pos.y)),
+    map((pos) => screenToWorld(vp, pos.x, pos.y)),
     map((world) => angleDegFromCenter(cx, cy, world.x, world.y)),
     map((currentAngleDeg) => currentAngleDeg - initialAngleDeg),
     tap((deltaDeg) => {

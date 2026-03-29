@@ -8,6 +8,7 @@ import type { Change } from 'penpot-exporter/types'
 import type { IndexedPage, IndexedNode } from '../../worker/types'
 import { flattenPageToIndexed, unflattenIndexedPageToPage } from '../../worker/types'
 import { useWorkspaceStore } from './workspace-store'
+import { viewport } from '../signals/pointer'
 import { commitChanges } from './commit'
 import { useHistoryStore } from '../../history/history-store'
 import { enrichPageWithPositionData } from './enrich-position-data'
@@ -89,7 +90,7 @@ export class DocumentModel {
       const page = docProxy.pageMap.get(firstPageId)
       if (page) {
         await state.renderer.initPage(page)
-        state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
+        viewport.value = { panX: 0, panY: 0, zoom: 1 }
         if (state.wasmModule && state.workerClient) {
           const penpotPage = unflattenIndexedPageToPage(page)
           const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
@@ -112,7 +113,7 @@ export class DocumentModel {
     setSelectedIds(new Set())
 
     await state.renderer.initPage(page)
-    state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
+    viewport.value = { panX: 0, panY: 0, zoom: 1 }
     if (state.wasmModule && state.workerClient) {
       const penpotPage = unflattenIndexedPageToPage(page)
       const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)
@@ -151,7 +152,7 @@ export class DocumentModel {
       setSelectedIds(new Set())
       if (state.renderer?.isInitialized() && page) {
         await state.renderer.initPage(page)
-        state.updateViewport({ panX: 0, panY: 0, zoom: 1 })
+        viewport.value = { panX: 0, panY: 0, zoom: 1 }
         if (state.wasmModule && state.workerClient) {
           const penpotPage = unflattenIndexedPageToPage(page)
           const enrichedPenpot = enrichPageWithPositionData(state.wasmModule, penpotPage)

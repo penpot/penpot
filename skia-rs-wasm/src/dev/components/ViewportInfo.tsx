@@ -1,7 +1,8 @@
-import { useWorkspaceStore } from '../../lib/renderer/store/workspace-store'
+import { viewport as viewportSignal } from '../../lib/renderer/signals/pointer'
+import { useSignalCoalesced } from '../../lib/renderer/signals/use-signal-coalesced'
 
 export function ViewportInfo() {
-  const viewport = useWorkspaceStore((state) => state.viewport)
+  const viewport = useSignalCoalesced(viewportSignal)
   const viewportInfo = viewport
     ? { zoom: viewport.zoom, panX: viewport.panX, panY: viewport.panY }
     : { zoom: 1, panX: 0, panY: 0 }
