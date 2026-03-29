@@ -5,13 +5,14 @@
  * commit node.rotation on pointer up.
  *
  * Overlay + property panel stay in sync with the pointer (same pattern as move.ts): synchronous
- * `setWasmSelectionRect` from a baseline rect each event; WASM uses `setMoveModifiersNoRender` +
+ * `wasmSelRect` from a baseline rect each event; WASM uses `setMoveModifiersNoRender` +
  * throttled `requestRenderFrame` so `_render` does not block overlay updates.
  */
 
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
 import { pointerPos, rotatePreviewDeltaDeg, signalToObservable } from '../signals/pointer'
+import { querySelectionRect, wasmSelectionRect as wasmSelRect } from '../signals/selection'
 import { dragStopper } from '../streams/drag-stopper'
 import { getSelectedIdsSet } from '../store/document-selection'
 import { useWorkspaceStore } from '../store/workspace-store'
@@ -34,20 +35,17 @@ function angleDegFromCenter(cx: number, cy: number, wx: number, wy: number): num
 }
 
 export function startRotateSelected(initialPosition: Point): Observable<void> {
-  let state = useWorkspaceStore.getState()
-  const { renderer, viewport, wasmSelectionRect } = state
+  const { renderer, viewport } = useWorkspaceStore.getState()
   const selectedIds = getSelectedIdsSet()
 
   if (!renderer || !viewport || selectedIds.size < 1) {
     return EMPTY
   }
 
-  if (!finiteSelectionRect(wasmSelectionRect)) {
-    state.refreshWasmSelectionRect()
-    state = useWorkspaceStore.getState()
-  }
-
   const ids = Array.from(selectedIds)
+  if (!finiteSelectionRect(wasmSelRect.peek())) {
+    wasmSelRect.value = querySelectionRect(renderer, ids)
+  }
   const isSingle = ids.length === 1
   const pageObjects = getCurrentPage()?.objects
   const selectedNodes = ids
@@ -73,14 +71,14 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
     cx = x + w / 2
     cy = y + h / 2
   } else {
-    const wr = useWorkspaceStore.getState().wasmSelectionRect
+    const wr = wasmSelRect.peek()
     if (!wr) return EMPTY
     cx = wr.center.x
     cy = wr.center.y
   }
 
-  const baselineRect = finiteSelectionRect(useWorkspaceStore.getState().wasmSelectionRect)
-    ? cloneSelectionRect(useWorkspaceStore.getState().wasmSelectionRect!)
+  const baselineRect = finiteSelectionRect(wasmSelRect.peek())
+    ? cloneSelectionRect(wasmSelRect.peek()!)
     : null
 
   const initialWorld = screenToWorld(viewport, initialPosition.x, initialPosition.y)
@@ -102,12 +100,11 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
       latestDeltaDegRef.current = deltaDeg
       modifiersAppliedRef.current = true
 
-      const store = useWorkspaceStore.getState()
       rotatePreviewDeltaDeg.value = deltaDeg
 
       if (baselineRect) {
         const preview = rotateSelectionRectAroundPivot(baselineRect, cx, cy, deltaDeg)
-        store.setWasmSelectionRect(preview)
+        wasmSelRect.value = preview
       }
 
       renderer.cleanModifiers()
@@ -138,17 +135,15 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
       applyModifiersAndCommit(entries)
         .then(() => {
           commitDoneRef.current = true
-          const storeAfter = useWorkspaceStore.getState()
           renderer.cleanModifiers()
           renderer.flushRenderSync()
-          storeAfter.refreshWasmSelectionRect()
+          wasmSelRect.value = querySelectionRect(renderer, ids)
           requestAnimationFrame(() => renderer.requestRenderFrame())
         })
         .catch(() => {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
-          const storeCatch = useWorkspaceStore.getState()
-          storeCatch.refreshWasmSelectionRect()
+          wasmSelRect.value = querySelectionRect(renderer, ids)
           requestAnimationFrame(() => renderer.requestRenderFrame())
         })
     }),

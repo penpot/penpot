@@ -13,8 +13,8 @@ Four complementary tools handle distinct concerns:
 | Tool | Role |
 |------|------|
 | **Valtio** | Reactive *document data* — the source-of-truth proxy that React components subscribe to for shape geometry, fills, page metadata, and selection IDs. |
-| **Zustand** | Transient *workspace data* — viewport, renderer/worker handles, WASM loading, and *drag previews* (`wasmSelectionRect`, marquee/shape rubber-band rects). Interaction *modes* (moving vs resizing vs idle) live in XState, not here. |
-| **Signals** (TC39 / `@preact/signals`) | High-frequency *per-frame values* — pointer position, modifier keys, move/rotate preview deltas (`movePreviewWorldDelta`, `rotatePreviewDeltaDeg`), zoom — updated at pointer rate; React reads hot values via `useSignalCoalesced` (RAF-batched) where needed. |
+| **Zustand** | Transient *workspace data* — viewport, renderer/worker handles, WASM loading. Interaction *modes* (moving vs resizing vs idle) live in XState, not here. |
+| **Signals** (TC39 / `@preact/signals`) | High-frequency *per-frame values* — pointer position, modifier keys, move/rotate preview deltas, overlay rects (`wasmSelectionRect`, area marquee `selectionRect`, draw rubber-band `shapeDrawPreview`). React reads hot values via `useSignalCoalesced` (RAF-batched). |
 | **XState** | Canvas *interaction modes* — `canvasMachine` (v5) with states `idle` \| `moving` \| `rotating` \| `resizing` \| `selecting` \| `drawingShape` \| `panning`; RxJS handlers run as `fromObservable` invoked actors; mounted from `CanvasWrapper`. |
 
 ---
@@ -34,7 +34,7 @@ docProxy (valtio/proxy)
 - `docProxy` is the single mutable document object.
 - React components call `useSnapshot(docProxy)` to subscribe.
 - `selectedIds` lives here as a `proxySet`; `document-selection.ts`
-  syncs derived state (bounds, WASM selection rect) whenever it changes.
+  syncs the WASM selection overlay signal (`querySelectionRect` → `wasmSelectionRect`) whenever selection changes.
 - Mutations go through the commit pipeline (`commitChanges` →
   `applyChangesLocally` → `processChanges` → `docProxy.pageMap.set`).
 
@@ -44,15 +44,10 @@ that depend on changed properties.
 
 ---
 
-## 2. Workspace store — Zustand ✅ Done (previews + runtime; modes in XState)
+## 2. Workspace store — Zustand ✅ Done (viewport + runtime; modes in XState)
 
 ```
 useWorkspaceStore (zustand)
-  ├── Selection / drag visuals (updated by handlers at pointer rate)
-  │   ├── wasmSelectionRect: SelectionRectResult | null
-  │   ├── selectionRect: Selrect | null           ← area marquee (screen space)
-  │   ├── shapeDrawPreview: Selrect | null        ← draw-rect rubber band
-  │   └── selectionBounds: Rect | null
   ├── Viewport
   │   ├── viewport: ViewportData | null
   │   └── lastAppliedViewport: ViewportData | null
@@ -65,10 +60,7 @@ useWorkspaceStore (zustand)
 
 **Status: complete.** Interaction booleans (`isMoving`, `drawTool`, `resizeHandle`, …) were removed; they are represented by **`canvasMachine`** state and context (see §4).
 
-Move/rotate preview deltas live in **signals** (see §3). `wasmSelectionRect`
-is still updated synchronously on every pointer event so the SVG overlay
-reflects the cursor without waiting for a WASM frame; the property panel
-reads preview deltas via `useSignalCoalesced` (one React update per frame).
+`setRenderer` queries WASM (`querySelectionRect`) and writes `wasmSelectionRect` when a renderer is set and there is a non-empty selection, so the overlay stays in sync without a React hook.
 
 ```
 useHistoryStore (zustand)
@@ -128,6 +120,17 @@ export const worldPointerPos = computed(() => { /* screenToWorld */ })
 
 **RxJS** remains for operator pipelines (`scan`, `takeUntil`, …) and `dragStopper`;
 only the previous `BehaviorSubject` holders were replaced.
+
+### Overlay rect signals — Done
+
+**Implementation:** [`src/lib/renderer/signals/selection.ts`](../src/lib/renderer/signals/selection.ts)
+
+- **`wasmSelectionRect`** — selection bounds from WASM (`Renderer.getSelectionRect`). Updated on selection change (`document-selection`), `setRenderer`, move/rotate preview during drag, and `querySelectionRect` after resize/move/rotate commits.
+- **`selectionRect`** — area marquee in screen space (`selection.ts`).
+- **`shapeDrawPreview`** — draw-rect rubber band (`draw-shape.ts`).
+- **`querySelectionRect(renderer, ids)`** — stateless helper; call sites assign `wasmSelectionRect.value` with the result (no Zustand `refresh` action).
+
+`SelectionOverlay` and dev `SelectionInfo` subscribe via `useSignalCoalesced` (one React commit per animation frame).
 
 ---
 
@@ -225,10 +228,10 @@ WASM canvas  ←  setMoveModifiersNoRender  ←  handler (every pointer event)
              ←  cleanModifiers             ←  after commit / on cancel
 ```
 
-The SVG overlay is updated **synchronously** on every pointer event
-from a pre-computed baseline rect (`translateSelectionRectWorld` /
-`rotateSelectionRectAroundPivot`), keeping the overlay at full pointer
-rate while WASM renders up to ~60 fps.
+Move/rotate update the overlay signal on every pointer event from a baseline rect
+(`translateSelectionRectWorld` / `rotateSelectionRectAroundPivot`); React reads via
+`useSignalCoalesced` (RAF-batched). WASM renders up to ~60 fps. Resize uses
+`querySelectionRect` after each throttled `setMoveModifiersAndRender`.
 
 ---
 
@@ -252,18 +255,19 @@ results are used by the viewport interaction layer to pick shapes.
 |---------|-------|------|
 | Document proxy (Valtio) | ✅ `docProxy` with `proxyMap`/`proxySet` | — |
 | Selected IDs in Valtio | ✅ `docProxy.selectedIds` | — |
-| Workspace store (Zustand) | ✅ Previews, viewport, renderer/worker/WASM | — |
+| Workspace store (Zustand) | ✅ Viewport, renderer/worker/WASM | — |
 | Canvas interaction modes | ✅ `canvasMachine` + `CanvasWrapper` / `overlays` | — |
 | History (Zustand) | ✅ `useHistoryStore` | — |
 | Shortcuts (Zustand) | ✅ `useViewportShortcutsStore` (config only) | — |
 | Modifier keys | ✅ Signals in `signals/pointer.ts` | — |
 | Pointer position / per-frame input | ✅ Signals + `signalToObservable` → RxJS handlers | — |
-| Live drag preview (overlay) | ✅ Synchronous per-event | — |
-| Live drag preview (panel) | ✅ `useMemo` + XState mode + Zustand deltas | — |
+| Live drag preview (overlay) | ✅ Signals + `useSignalCoalesced` | — |
+| Live drag preview (panel) | ✅ `useMemo` + XState mode + signal deltas | — |
 | Move / rotate / resize / select / draw handlers | ✅ RxJS + `fromObservable` actors | — |
 | Panning | ✅ Deltas in `useViewportInteractions`; mode `panning` on machine | Optional: unify more in machine |
 | Commit pipeline | ✅ Full undo/redo via `Change[]` | — |
-| WASM modifier throttle | ✅ 60 Hz gate + sync overlay | — |
+| WASM modifier throttle | ✅ 60 Hz gate + overlay signals | — |
 | Web Worker spatial index | ✅ Quadtree, incremental updates | — |
 | XState canvas machine | ✅ `canvas-machine.ts`, context in `canvas-actor-context.tsx` | — |
 | Signals for pointer/modifiers | ✅ `signals/pointer.ts` | — |
+| Signals for overlay rects | ✅ `signals/selection.ts` + `querySelectionRect` | — |

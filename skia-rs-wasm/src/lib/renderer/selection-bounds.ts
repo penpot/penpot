@@ -1,8 +1,6 @@
 /**
- * Selection bounds: union of selected nodes' selrects for overlay drawing.
+ * Axis-aligned rect type for selection overlay drawing helpers.
  */
-
-import type { PenpotNode } from 'penpot-exporter/types'
 
 export interface Rect {
   x: number
@@ -44,42 +42,6 @@ export function getAABBOfRotatedRect(
   const minY = Math.min(...corners.map((p) => p.y))
   const maxX = Math.max(...corners.map((p) => p.x))
   const maxY = Math.max(...corners.map((p) => p.y))
-  return {
-    x: minX,
-    y: minY,
-    width: maxX - minX,
-    height: maxY - minY,
-  }
-}
-
-/**
- * Compute the union rect of all nodes' selrects. Handles both { x, y, width, height } and { x1, y1, x2, y2 }.
- * When a node has rotation, uses the AABB of the rotated selrect so the selection box encompasses the shape.
- * Returns null if no valid bounds (no nodes or no valid selrects).
- */
-export function getSelectionBounds(nodes: PenpotNode[]): Rect | null {
-  if (!nodes.length) return null
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-  let hasAny = false
-  for (const node of nodes) {
-    const rect = node.selrect
-    if (!rect) continue
-    hasAny = true
-    const x = rect.x ?? 0
-    const y = rect.y ?? 0
-    const w = rect.width ?? 0
-    const h = rect.height ?? 0
-    const rotation = (node as { rotation?: number }).rotation
-    const effective = getAABBOfRotatedRect(x, y, w, h, rotation)
-    minX = Math.min(minX, effective.x)
-    minY = Math.min(minY, effective.y)
-    maxX = Math.max(maxX, effective.x + effective.width)
-    maxY = Math.max(maxY, effective.y + effective.height)
-  }
-  if (!hasAny) return null
   return {
     x: minX,
     y: minY,

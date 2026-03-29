@@ -13,6 +13,7 @@ import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { Viewport, screenToWorld } from '../viewport'
 import type { ViewportPanModifier, SelectionRectResult } from '../types'
 import { pointerPos } from '../signals/pointer'
+import { wasmSelectionRect } from '../signals/selection'
 import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
 import { getResizeCursor, matrixHasHalfFlip, matrixToRotationDeg } from '../../components/selection-overlay/constants'
 
@@ -168,16 +169,15 @@ export function useViewportInteractions({
             canvasActor.send({ type: 'POINTER_DOWN_ON_SELECTION', position: { x: screenX, y: screenY } })
           } else {
             // Fallback: click in empty space (e.g. inside stroke-only shape) but inside selection bounds → start move
-            const store = useWorkspaceStore.getState()
             const currentIds = getSelectedIdsSet()
-            const { wasmSelectionRect } = store
+            const wasmRect = wasmSelectionRect.peek()
             if (
               currentIds.size > 0 &&
-              wasmSelectionRect != null &&
+              wasmRect != null &&
               viewportForHit != null
             ) {
               const world = screenToWorld(viewportForHit, screenX, screenY)
-              if (isPointInSelectionBounds(world, wasmSelectionRect)) {
+              if (isPointInSelectionBounds(world, wasmRect)) {
                 canvasActor.send({ type: 'POINTER_DOWN_ON_SELECTION', position: { x: screenX, y: screenY } })
                 return
               }
@@ -196,10 +196,10 @@ export function useViewportInteractions({
 
     if (!isPanningRef.current) {
       const snap = canvasActor.getSnapshot()
-      const { wasmSelectionRect } = useWorkspaceStore.getState()
+      const wasmRect = wasmSelectionRect.peek()
       if (snap.matches('resizing') && snap.context.resizeHandle) {
-        const rotation = wasmSelectionRect != null ? matrixToRotationDeg(wasmSelectionRect.transform) : undefined
-        const halfFlip = wasmSelectionRect != null ? matrixHasHalfFlip(wasmSelectionRect.transform) : false
+        const rotation = wasmRect != null ? matrixToRotationDeg(wasmRect.transform) : undefined
+        const halfFlip = wasmRect != null ? matrixHasHalfFlip(wasmRect.transform) : false
         canvasElement.style.cursor = getResizeCursor(snap.context.resizeHandle, rotation, halfFlip)
       } else if (e.target === canvasElement) {
         const drawTool = snap.context.drawTool

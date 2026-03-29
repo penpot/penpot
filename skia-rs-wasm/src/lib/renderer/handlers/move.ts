@@ -12,6 +12,7 @@
 import { Observable, EMPTY, merge } from 'rxjs'
 import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
 import { movePreviewWorldDelta, pointerPos, signalToObservable } from '../signals/pointer'
+import { querySelectionRect, wasmSelectionRect as wasmSelRect } from '../signals/selection'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
@@ -56,8 +57,8 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
   let lastRenderRequestTs = 0
 
   // Pre-drag WASM selection rect captured at drag start (for overlay positioning).
-  const baselineRect = finiteSelectionRect(state.wasmSelectionRect)
-    ? cloneSelectionRect(state.wasmSelectionRect)
+  const baselineRect = finiteSelectionRect(wasmSelRect.peek())
+    ? cloneSelectionRect(wasmSelRect.peek()!)
     : null
 
   const lastEventDeltaRef = { current: { x: 0, y: 0 } }
@@ -92,7 +93,7 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
       //    This runs inside the pointer event microtask, BEFORE any RAF fires.
       if (baselineRect) {
         const preview = translateSelectionRectWorld(baselineRect, worldDelta.x, worldDelta.y)
-        useWorkspaceStore.getState().setWasmSelectionRect(preview)
+        wasmSelRect.value = preview
       }
 
       // 2. Clean + propagate + set WASM modifiers (every event, ~0.1ms).
@@ -132,13 +133,13 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
         .then(() => {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
-          useWorkspaceStore.getState().refreshWasmSelectionRect()
+          wasmSelRect.value = querySelectionRect(renderer, selectedIds)
           movePreviewWorldDelta.value = { x: 0, y: 0 }
         })
         .catch(() => {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
-          useWorkspaceStore.getState().refreshWasmSelectionRect()
+          wasmSelRect.value = querySelectionRect(renderer, selectedIds)
           movePreviewWorldDelta.value = { x: 0, y: 0 }
         })
     }),

@@ -1,13 +1,14 @@
 import type { JSX } from 'react'
-import { useWorkspaceStore } from '../../lib/renderer/store/workspace-store'
 import { useSnapshot } from 'valtio'
+import { selectionRect as selectionRectSignal } from '../../lib/renderer/signals/selection'
+import { useSignalCoalesced } from '../../lib/renderer/signals/use-signal-coalesced'
 import { docProxy } from '../../lib/renderer/store/doc-proxy'
 import type { IndexedNode } from '../../lib/worker/types'
 
 const MAX_IDS_SHOWN = 5
 
 export function SelectionInfo(): JSX.Element {
-  const selectionRect = useWorkspaceStore((state) => state.selectionRect)
+  const selectionRect = useSignalCoalesced(selectionRectSignal)
   const doc = useSnapshot(docProxy)
   const selectedIds = new Set(doc.selectedIds)
   const page = doc.currentPageId ? doc.pageMap.get(doc.currentPageId) : undefined

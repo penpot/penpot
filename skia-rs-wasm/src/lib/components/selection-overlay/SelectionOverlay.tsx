@@ -1,6 +1,6 @@
 /**
  * SVG overlay for selection bounds, resize handles, and area marquee.
- * Reads wasmSelectionRect from store (updated whenever modifiers or selection change).
+ * Reads wasmSelectionRect from signals (RAF-coalesced into React).
  */
 
 import type { RefObject } from 'react'
@@ -11,6 +11,12 @@ import { useCanvasActor } from '../../renderer/machine/canvas-actor-context'
 import { useSnapshot } from 'valtio'
 import { docProxy } from '../../renderer/store/doc-proxy'
 import { pointerPos } from '../../renderer/signals/pointer'
+import {
+  selectionRect as selectionRectSignal,
+  shapeDrawPreview as shapeDrawPreviewSignal,
+  wasmSelectionRect as wasmSelectionRectSignal,
+} from '../../renderer/signals/selection'
+import { useSignalCoalesced } from '../../renderer/signals/use-signal-coalesced'
 import type { ResizeHandlePosition } from '../../renderer/types'
 import { HANDLE_SIZE_WORLD, MIN_SELRECT_SIDE_SCREEN, getResizeCursor, getRotationCursor, matrixHasHalfFlip, matrixToRotationDeg, SELECTION_OVERLAY_GLOW } from './constants'
 import { SelectionRect } from './SelectionRect'
@@ -33,10 +39,10 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
   const canvasActor = useCanvasActor()
   const doc = useSnapshot(docProxy)
   const selectedIds = useMemo(() => new Set(doc.selectedIds), [doc.selectedIds])
-  const wasmSelectionRect = useWorkspaceStore((state) => state.wasmSelectionRect)
+  const wasmSelectionRect = useSignalCoalesced(wasmSelectionRectSignal)
   const viewport = useWorkspaceStore((state) => state.viewport)
   const zoom = useWorkspaceStore((state) => state.viewport?.zoom ?? 1)
-  const selectionRect = useWorkspaceStore((state) => state.selectionRect)
+  const selectionRect = useSignalCoalesced(selectionRectSignal)
   const isSelecting = useSelector(canvasActor, (s) => s.matches('selecting'))
   const isMoving = useSelector(canvasActor, (s) => s.matches('moving'))
   const isResizing = useSelector(canvasActor, (s) => s.matches('resizing'))
@@ -121,7 +127,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
     [screenPositionFromEvent, canvasActor]
   )
 
-  const shapeDrawPreview = useWorkspaceStore((state) => state.shapeDrawPreview)
+  const shapeDrawPreview = useSignalCoalesced(shapeDrawPreviewSignal)
   const isDrawingShape = useSelector(canvasActor, (s) => s.matches('drawingShape'))
   const showShapeDrawPreview =
     isDrawingShape &&

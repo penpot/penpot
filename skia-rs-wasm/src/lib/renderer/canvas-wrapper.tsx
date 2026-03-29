@@ -14,7 +14,6 @@ import { initRendererClient, cleanupRendererClient } from './renderer-init'
 import { SelectionOverlay } from '../components/selection-overlay/SelectionOverlay'
 import { useViewportInteractions } from './hooks/use-viewport-interactions'
 import { useStreams } from './hooks/use-streams'
-import { useWasmSelectionRect } from './hooks/use-wasm-selection-rect'
 import { cleanupWorker, initWorker } from '../worker-init'
 import { initWasmModule } from '../wasm-init'
 import { canvasMachine } from './machine/canvas-machine'
@@ -143,7 +142,6 @@ function CanvasWorkspace({
   }, [])
 
   useStreams(canvasRef)
-  useWasmSelectionRect()
   useViewportInteractions({
     canvasRef,
     onViewportUpdate: (next) => {
