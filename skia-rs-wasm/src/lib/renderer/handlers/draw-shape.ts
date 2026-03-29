@@ -4,11 +4,10 @@
 
 import { Observable, EMPTY, concat, of } from 'rxjs'
 import { filter, map, scan, switchMap, take, takeUntil, tap } from 'rxjs/operators'
-import { pointerPos, signalToObservable } from '../signals/pointer'
+import { pointerPos, signalToObservable, viewport } from '../signals/pointer'
 import { dragStopper } from '../streams/drag-stopper'
 import { setSelectedIds } from '../store/document-selection'
 import { shapeDrawPreview as shapeDrawPreviewSignal } from '../signals/selection'
-import { useWorkspaceStore } from '../store/workspace-store'
 import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
 import { makeSelrect } from '../../worker/types'
@@ -22,11 +21,11 @@ const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 const MIN_DRAW_SCREEN_PX = 3
 
 export function handleDrawRect(): Observable<void> {
-  const { viewport } = useWorkspaceStore.getState()
+  const initialVp = viewport.value
   const effectivePageId = getActiveOrSinglePageId()
   const page = effectivePageId ? getPage(effectivePageId) : undefined
 
-  if (!viewport || !effectivePageId || !page) {
+  if (!initialVp || !effectivePageId || !page) {
     shapeDrawPreviewSignal.value = null
     return EMPTY
   }
@@ -70,7 +69,7 @@ export function handleDrawRect(): Observable<void> {
               return
             }
 
-            const vp = useWorkspaceStore.getState().viewport ?? viewport
+            const vp = viewport.value
             if (!vp) return
 
             const worldOrigin = screenToWorld(vp, lastRect.x, lastRect.y)

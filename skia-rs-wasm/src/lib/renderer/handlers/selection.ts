@@ -5,11 +5,12 @@
 
 import { Observable, concat, merge, of, EMPTY } from 'rxjs'
 import { map, filter, scan, takeUntil, take, bufferTime, tap, distinctUntilChanged, switchMap } from 'rxjs/operators'
-import { pointerPos, signalToObservable } from '../signals/pointer'
+import { pointerPos, signalToObservable, viewport } from '../signals/pointer'
 import { askWorker$ } from '../streams/worker-streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { clearSelection, getSelectedIdsSet, setSelectedIds } from '../store/document-selection'
 import { selectionRect as selectionRectSignal } from '../signals/selection'
+import { useWorkspaceStore } from '../store/workspace-store'
 import { getActiveOrSinglePageId } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
 import { makeSelrect } from '../../worker/types'
@@ -19,11 +20,11 @@ export function handleAreaSelection(
   remove?: boolean,
   ignoreGroups?: boolean
 ): Observable<void> {
-  const store = useWorkspaceStore.getState()
-  const { workerClient, viewport } = store
+  const { workerClient } = useWorkspaceStore.getState()
+  const vp = viewport.value
   const effectivePageId = getActiveOrSinglePageId()
 
-  if (!workerClient || !viewport) return EMPTY
+  if (!workerClient || !vp) return EMPTY
 
   const stopper = dragStopper()
   const initialSet = append || remove ? getSelectedIdsSet() : new Set<string>()
@@ -54,12 +55,12 @@ export function handleAreaSelection(
       // Convert to world coordinates and query worker
       const queryStream = selrectStream.pipe(
         map(rect => {
-          const worldRect = screenToWorld(viewport, rect.x, rect.y)
+          const worldRect = screenToWorld(vp, rect.x, rect.y)
           return makeSelrect(
             worldRect.x,
             worldRect.y,
-            rect.width / viewport.zoom,
-            rect.height / viewport.zoom
+            rect.width / vp.zoom,
+            rect.height / vp.zoom
           )
         }),
         switchMap(rect => {

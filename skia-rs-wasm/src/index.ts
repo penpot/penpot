@@ -74,6 +74,8 @@ export { useHistoryStore } from './lib/history/history-store'
 // Workspace store (for plugin UI viewport sync, etc.)
 export { useWorkspaceStore } from './lib/renderer/store/workspace-store'
 export type { WorkspaceState } from './lib/renderer/store/workspace-store'
+export { viewport } from './lib/renderer/signals/pointer'
+export { useSignalCoalesced } from './lib/renderer/signals/use-signal-coalesced'
 
 /** Canvas interaction (XState); `CanvasWrapper` mounts the actor. Use `overlays` for UI that calls `useCanvasActor`, or `CanvasActorProvider` for custom wiring. */
 export { canvasMachine } from './lib/renderer/machine/canvas-machine'

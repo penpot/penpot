@@ -13,8 +13,8 @@ Four complementary tools handle distinct concerns:
 | Tool | Role |
 |------|------|
 | **Valtio** | Reactive *document data* — the source-of-truth proxy that React components subscribe to for shape geometry, fills, page metadata, and selection IDs. |
-| **Zustand** | Transient *workspace data* — viewport, renderer/worker handles, WASM loading. Interaction *modes* (moving vs resizing vs idle) live in XState, not here. |
-| **Signals** (TC39 / `@preact/signals`) | High-frequency *per-frame values* — pointer position, modifier keys, move/rotate preview deltas, overlay rects (`wasmSelectionRect`, area marquee `selectionRect`, draw rubber-band `shapeDrawPreview`). React reads hot values via `useSignalCoalesced` (RAF-batched). |
+| **Zustand** | Transient *workspace data* — renderer/worker handles, WASM loading. Interaction *modes* (moving vs resizing vs idle) live in XState, not here. |
+| **Signals** (TC39 / `@preact/signals`) | High-frequency *per-frame values* — pointer position, modifier keys, viewport pan/zoom (`viewport`), move/rotate preview deltas, overlay rects (`wasmSelectionRect`, area marquee `selectionRect`, draw rubber-band `shapeDrawPreview`). React reads hot values via `useSignalCoalesced` (RAF-batched). |
 | **XState** | Canvas *interaction modes* — `canvasMachine` (v5) with states `idle` \| `moving` \| `rotating` \| `resizing` \| `selecting` \| `drawingShape` \| `panning`; RxJS handlers run as `fromObservable` invoked actors; mounted from `CanvasWrapper`. |
 
 ---
@@ -44,13 +44,10 @@ that depend on changed properties.
 
 ---
 
-## 2. Workspace store — Zustand ✅ Done (viewport + runtime; modes in XState)
+## 2. Workspace store — Zustand ✅ Done (runtime handles; modes in XState)
 
 ```
 useWorkspaceStore (zustand)
-  ├── Viewport
-  │   ├── viewport: ViewportData | null
-  │   └── lastAppliedViewport: ViewportData | null
   └── Runtime handles
       ├── renderer: Renderer | null
       ├── workerClient: WorkerClient | null
@@ -89,14 +86,16 @@ reads those signals.
 - **`pointerPos`**, **`modShift`**, **`modAlt`**, **`modCtrl`**, **`modMeta`**, **`keyboardSpace`**
   — updated from `use-streams`, `canvas-wrapper` (keyboard modifiers), and
   canvas/overlay pointerdown sites.
-- **`viewportSignal`** — kept in sync with workspace `viewport` inside
-  `updateViewport` in [`workspace-store.ts`](../src/lib/renderer/store/workspace-store.ts).
+- **`viewport`** — canonical pan/zoom (`ViewportData | null`); writers include
+  [`canvas-wrapper.tsx`](../src/lib/renderer/canvas-wrapper.tsx) (`onViewportUpdate`),
+  [`viewport-actions.ts`](../src/lib/renderer/hooks/viewport-actions.ts), and
+  [`document-model.ts`](../src/lib/renderer/store/document-model.ts) on page init.
 - **`movePreviewWorldDelta`**, **`rotatePreviewDeltaDeg`** — written by `move.ts` /
   `rotate.ts` on every pointer event during drag; reset on release and in
   `clearSelection`. React UI (e.g. layout fields) subscribes via
   [`useSignalCoalesced`](../src/lib/renderer/signals/use-signal-coalesced.ts)
   so updates are RAF-batched.
-- **`worldPointerPos`** — `computed()` from `pointerPos` + `viewportSignal`.
+- **`worldPointerPos`** — `computed()` from `pointerPos` + `viewport`.
 - **`signalToObservable`** — bridges a signal into RxJS so drag handlers still return
   `Observable<void>` for XState `fromObservable` without keeping `BehaviorSubject`
   sources.
@@ -111,7 +110,7 @@ export const modAlt = signal(false)
 export const modCtrl = signal(false)
 export const modMeta = signal(false)
 export const keyboardSpace = signal(false)
-export const viewportSignal = signal<ViewportData | null>(null)
+export const viewport = signal<ViewportData | null>(null)
 export const movePreviewWorldDelta = signal<Point>({ x: 0, y: 0 })
 export const rotatePreviewDeltaDeg = signal(0)
 
@@ -255,7 +254,7 @@ results are used by the viewport interaction layer to pick shapes.
 |---------|-------|------|
 | Document proxy (Valtio) | ✅ `docProxy` with `proxyMap`/`proxySet` | — |
 | Selected IDs in Valtio | ✅ `docProxy.selectedIds` | — |
-| Workspace store (Zustand) | ✅ Viewport, renderer/worker/WASM | — |
+| Workspace store (Zustand) | ✅ Renderer/worker/WASM | — |
 | Canvas interaction modes | ✅ `canvasMachine` + `CanvasWrapper` / `overlays` | — |
 | History (Zustand) | ✅ `useHistoryStore` | — |
 | Shortcuts (Zustand) | ✅ `useViewportShortcutsStore` (config only) | — |
@@ -269,5 +268,5 @@ results are used by the viewport interaction layer to pick shapes.
 | WASM modifier throttle | ✅ 60 Hz gate + overlay signals | — |
 | Web Worker spatial index | ✅ Quadtree, incremental updates | — |
 | XState canvas machine | ✅ `canvas-machine.ts`, context in `canvas-actor-context.tsx` | — |
-| Signals for pointer/modifiers | ✅ `signals/pointer.ts` | — |
+| Signals for pointer/modifiers/viewport | ✅ `signals/pointer.ts` | — |
 | Signals for overlay rects | ✅ `signals/selection.ts` + `querySelectionRect` | — |

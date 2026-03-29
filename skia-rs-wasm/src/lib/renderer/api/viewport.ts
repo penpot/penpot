@@ -35,8 +35,7 @@ const renderPan = throttle((module: WasmModule, timestamp: number) => {
 
 /**
  * Set view box with pan and zoom.
- * Flush an immediate render so the canvas updates before the next interaction; hit-test uses
- * lastAppliedViewport (updated next frame) so it matches the displayed frame.
+ * Flush an immediate render so the canvas updates before the next interaction.
  */
 export function setViewBox(
   module: WasmModule,

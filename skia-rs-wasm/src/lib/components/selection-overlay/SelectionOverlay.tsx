@@ -6,11 +6,10 @@
 import type { RefObject } from 'react'
 import { useCallback, useMemo } from 'react'
 import { useSelector } from '@xstate/react'
-import { useWorkspaceStore } from '../../renderer/store/workspace-store'
 import { useCanvasActor } from '../../renderer/machine/canvas-actor-context'
 import { useSnapshot } from 'valtio'
 import { docProxy } from '../../renderer/store/doc-proxy'
-import { pointerPos } from '../../renderer/signals/pointer'
+import { pointerPos, viewport as viewportSignal } from '../../renderer/signals/pointer'
 import {
   selectionRect as selectionRectSignal,
   shapeDrawPreview as shapeDrawPreviewSignal,
@@ -40,8 +39,8 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
   const doc = useSnapshot(docProxy)
   const selectedIds = useMemo(() => new Set(doc.selectedIds), [doc.selectedIds])
   const wasmSelectionRect = useSignalCoalesced(wasmSelectionRectSignal)
-  const viewport = useWorkspaceStore((state) => state.viewport)
-  const zoom = useWorkspaceStore((state) => state.viewport?.zoom ?? 1)
+  const viewport = useSignalCoalesced(viewportSignal)
+  const zoom = viewport?.zoom ?? 1
   const selectionRect = useSignalCoalesced(selectionRectSignal)
   const isSelecting = useSelector(canvasActor, (s) => s.matches('selecting'))
   const isMoving = useSelector(canvasActor, (s) => s.matches('moving'))

@@ -62,6 +62,8 @@ export { useHistoryStore } from './lib/history/history-store'
 
 export { useWorkspaceStore } from './lib/renderer/store/workspace-store'
 export type { WorkspaceState } from './lib/renderer/store/workspace-store'
+export { viewport } from './lib/renderer/signals/pointer'
+export { useSignalCoalesced } from './lib/renderer/signals/use-signal-coalesced'
 
 export { canvasMachine } from './lib/renderer/machine/canvas-machine'
 export type { CanvasContext, CanvasEvent, DrawTool } from './lib/renderer/machine/canvas-machine'
