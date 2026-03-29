@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { snapshot } from 'valtio'
 import type { Fill, PenpotNode, Stroke } from 'penpot-exporter/types'
 import { applyTransformToNode } from '../../renderer/geom/apply-transform-to-node'
@@ -29,7 +29,36 @@ export function NodePropertyPanel({ nodeId, initialNode, readOnly }: NodePropert
   const isMoving = useSelector(canvasActor, (s) => s.matches('moving'))
   const isRotating = useSelector(canvasActor, (s) => s.matches('rotating'))
   const rotatePreviewDeltaDeg = useWorkspaceStore((s) => s.rotatePreviewDeltaDeg)
-  const movePreviewWorldDelta = useWorkspaceStore((s) => s.movePreviewWorldDelta)
+
+  /** Coalesced to one React update per frame during move (store still updates every pointer event). */
+  const [movePreviewCoalesced, setMovePreviewCoalesced] = useState({ x: 0, y: 0 })
+  const movePreviewRafRef = useRef(0)
+
+  useEffect(() => {
+    if (!isMoving) {
+      setMovePreviewCoalesced({ x: 0, y: 0 })
+      return
+    }
+    const d0 = useWorkspaceStore.getState().movePreviewWorldDelta
+    setMovePreviewCoalesced({ x: d0.x, y: d0.y })
+    const unsub = useWorkspaceStore.subscribe(() => {
+      if (movePreviewRafRef.current !== 0) return
+      movePreviewRafRef.current = requestAnimationFrame(() => {
+        movePreviewRafRef.current = 0
+        const d = useWorkspaceStore.getState().movePreviewWorldDelta
+        setMovePreviewCoalesced((prev) =>
+          prev.x === d.x && prev.y === d.y ? prev : { x: d.x, y: d.y },
+        )
+      })
+    })
+    return () => {
+      unsub()
+      if (movePreviewRafRef.current !== 0) {
+        cancelAnimationFrame(movePreviewRafRef.current)
+        movePreviewRafRef.current = 0
+      }
+    }
+  }, [isMoving])
 
   const [name, setName] = useState(() => initialNode.name ?? '')
   const [x, setX] = useState(() => initialNode.x ?? 0)
@@ -78,11 +107,11 @@ export function NodePropertyPanel({ nodeId, initialNode, readOnly }: NodePropert
     if (isMoving) {
       return applyTransformToNode(
         node,
-        translateMatrix(movePreviewWorldDelta.x, movePreviewWorldDelta.y),
+        translateMatrix(movePreviewCoalesced.x, movePreviewCoalesced.y),
       )
     }
     return null
-  }, [readOnly, initialNode, isRotating, isMoving, rotatePreviewDeltaDeg, movePreviewWorldDelta])
+  }, [readOnly, initialNode, isRotating, isMoving, rotatePreviewDeltaDeg, movePreviewCoalesced])
 
   const xDisplay =
     liveLayoutPartial != null && typeof liveLayoutPartial.x === 'number' ? liveLayoutPartial.x : x
