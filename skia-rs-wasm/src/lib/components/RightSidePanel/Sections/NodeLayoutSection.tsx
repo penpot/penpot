@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from '@xstate/react'
 import type { PenpotNode } from 'penpot-exporter/types'
 import { Input } from '@/components/ui/input'
@@ -23,33 +23,25 @@ export interface NodeLayoutSectionProps {
   nodeId: string
   initialNode: RectLikeNode
   readOnly: boolean
-  x: number
-  y: number
-  width: number
-  height: number
-  rotation: number
-  onXChange: (v: number) => void
-  onYChange: (v: number) => void
-  onWidthChange: (v: number) => void
-  onHeightChange: (v: number) => void
-  onRotationChange: (v: number) => void
 }
 
-export function NodeLayoutSection({
-  nodeId,
-  initialNode,
-  readOnly,
-  x,
-  y,
-  width,
-  height,
-  rotation,
-  onXChange,
-  onYChange,
-  onWidthChange,
-  onHeightChange,
-  onRotationChange,
-}: NodeLayoutSectionProps) {
+export function NodeLayoutSection({ nodeId, initialNode, readOnly }: NodeLayoutSectionProps) {
+  const [x, setX] = useState(() => initialNode.x ?? 0)
+  const [y, setY] = useState(() => initialNode.y ?? 0)
+  const [width, setWidth] = useState(() => initialNode.width ?? 100)
+  const [height, setHeight] = useState(() => initialNode.height ?? 100)
+  const [rotation, setRotation] = useState(() => initialNode.rotation ?? 0)
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- mirrors external document updates into layout fields */
+    setX(initialNode.x ?? 0)
+    setY(initialNode.y ?? 0)
+    setWidth(initialNode.width ?? 100)
+    setHeight(initialNode.height ?? 100)
+    setRotation(initialNode.rotation ?? 0)
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [initialNode])
+
   const canvasActor = useCanvasActor()
   const isMoving = useSelector(canvasActor, (s) => s.matches('moving'))
   const isRotating = useSelector(canvasActor, (s) => s.matches('rotating'))
@@ -120,7 +112,7 @@ export function NodeLayoutSection({
             type="number"
             disabled={layoutFieldsDisabled}
             value={Number.isFinite(xDisplay) ? xDisplay : 0}
-            onChange={(e) => onXChange(parseFloat(e.target.value) || 0)}
+            onChange={(e) => setX(parseFloat(e.target.value) || 0)}
             onBlur={() => void commitLayout()}
           />
         </div>
@@ -131,7 +123,7 @@ export function NodeLayoutSection({
             type="number"
             disabled={layoutFieldsDisabled}
             value={Number.isFinite(yDisplay) ? yDisplay : 0}
-            onChange={(e) => onYChange(parseFloat(e.target.value) || 0)}
+            onChange={(e) => setY(parseFloat(e.target.value) || 0)}
             onBlur={() => void commitLayout()}
           />
         </div>
@@ -142,7 +134,7 @@ export function NodeLayoutSection({
             type="number"
             disabled={layoutFieldsDisabled}
             value={Number.isFinite(widthDisplay) ? widthDisplay : 0}
-            onChange={(e) => onWidthChange(Math.max(1, parseFloat(e.target.value) || 1))}
+            onChange={(e) => setWidth(Math.max(1, parseFloat(e.target.value) || 1))}
             onBlur={() => void commitLayout()}
           />
         </div>
@@ -153,7 +145,7 @@ export function NodeLayoutSection({
             type="number"
             disabled={layoutFieldsDisabled}
             value={Number.isFinite(heightDisplay) ? heightDisplay : 0}
-            onChange={(e) => onHeightChange(Math.max(1, parseFloat(e.target.value) || 1))}
+            onChange={(e) => setHeight(Math.max(1, parseFloat(e.target.value) || 1))}
             onBlur={() => void commitLayout()}
           />
         </div>
@@ -166,7 +158,7 @@ export function NodeLayoutSection({
           type="number"
           disabled={layoutFieldsDisabled}
           value={Number.isFinite(rotationDisplay) ? rotationDisplay : 0}
-          onChange={(e) => onRotationChange(parseFloat(e.target.value) || 0)}
+          onChange={(e) => setRotation(parseFloat(e.target.value) || 0)}
           onBlur={() => void commitLayout()}
         />
       </div>
