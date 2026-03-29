@@ -23,7 +23,7 @@ export default defineConfig({
     emptyOutDir: false,
     lib: false,
     rollupOptions: {
-      input: resolve(__dirname, 'src/lib/worker/index.ts'),
+      input: resolve(__dirname, 'src/lib/worker/worker-entry.ts'),
       output: {
         format: 'es',
         entryFileNames: 'worker.js',

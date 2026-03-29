@@ -3,7 +3,7 @@ import type { Fill } from 'penpot-exporter/types'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { FillEditor } from '../../fill-editor/FillEditor'
+import { FillEditor } from '../../FillEditor/FillEditor'
 import {
   commitNodePartialUpdate,
   getCommittedNodeOnActivePage,

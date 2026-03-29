@@ -5,7 +5,7 @@
 
 import { create } from 'zustand'
 import type { WasmModule } from '../wasm-types'
-import { Renderer } from '../index'
+import { Renderer } from '../renderer'
 import type { WorkerClient } from '../../worker/types'
 import { docProxy } from './doc-proxy'
 import { querySelectionRect, wasmSelectionRect } from '../signals/selection'

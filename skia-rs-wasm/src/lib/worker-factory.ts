@@ -4,7 +4,7 @@
  */
 
 import { WorkerClient } from './worker-client'
-import worker from './worker/index.ts?worker'
+import worker from './worker/worker-entry.ts?worker'
 
 /**
  * Creates a Web Worker from the library's worker code or from a script URL.
