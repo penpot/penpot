@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
 import { isColorFill } from '../../../renderer/api/constants'
 import { normalizeHex } from '../../../renderer/properties/panel-utils'
-import { useStrokeEditor } from '../StrokeEditorContext'
+import { useColorEditorFor } from '../use-color-editor'
 
 const ALIGN_OPTIONS = ['center', 'inner', 'outer'] as const
 const STYLE_OPTIONS = ['solid', 'dotted', 'dashed', 'mixed'] as const
@@ -42,8 +42,7 @@ export interface StrokeRowProps {
 }
 
 export function StrokeRow({ stroke, index, readOnly, onChange, onRemove }: StrokeRowProps) {
-  const { activeStrokeIndex, openEditor, closeEditor } = useStrokeEditor()
-  const expanded = activeStrokeIndex === index
+  const { isActive: expanded, openEditor, closeEditor } = useColorEditorFor('stroke', index)
 
   const fill = strokeToFill(stroke)
   const isSolid = isColorFill(fill)
@@ -82,12 +81,12 @@ export function StrokeRow({ stroke, index, readOnly, onChange, onRemove }: Strok
         closeEditor()
       } else {
         const y = (e.currentTarget as HTMLElement).getBoundingClientRect().top
-        openEditor(index, fill, y, (nextFill) => {
+        openEditor(fill, y, `Stroke ${index + 1} color`, (nextFill) => {
           onChange(fillToStrokeColor(nextFill, stroke), index)
         })
       }
     },
-    [readOnly, expanded, closeEditor, openEditor, index, fill, stroke, onChange],
+    [readOnly, expanded, closeEditor, openEditor, fill, index, stroke, onChange],
   )
 
   if (readOnly) {
