@@ -242,17 +242,19 @@
   (update-token- [this token-id f]
     (assert (uuid? token-id) "expected uuid for `token-id`")
     (if-let [token (get-token- this token-id)]
-      (let [token' (-> (make-token (f token))
-                       (assoc :modified-at (ct/now)))]
-        (TokenSet. id
-                   name
-                   description
-                   (ct/now)
-                   (if (= (:name token) (:name token'))
-                     (assoc tokens (:name token') token')
-                     (-> tokens
-                         (d/oassoc-before (:name token) (:name token') token')
-                         (dissoc (:name token))))))
+      (let [token' (f token)]
+        (if (not= token token')
+          (let [token' (assoc token' :modified-at (ct/now))]
+            (TokenSet. id
+                       name
+                       description
+                       (ct/now)
+                       (if (= (:name token) (:name token'))
+                         (assoc tokens (:name token') token')
+                         (-> tokens
+                             (d/oassoc-before (:name token) (:name token') token')
+                             (dissoc (:name token))))))
+          this))
       this))
 
   (delete-token- [this token-id]
@@ -2210,6 +2212,32 @@ Will return a value that matches this schema:
        (update params :sets d/update-vals migrate-set-node))))
 
 #?(:clj
+   (defn- migrate-to-v1-5
+     "Migrate the TokensLib data structure internals to v1.5 version; it
+     expects input from v1.4 version"
+     [params]
+     (let [migrate-token
+           (fn [token]
+             (let [new-name (-> (get-name token)
+                                (cto/clean-token-name))]
+               (if (= new-name (get-name token))
+                 token
+                 (rename token new-name))))
+
+           migrate-set-node
+           (fn recurse [node]
+             (if (token-set? node)
+               (let [tokens (get-tokens- node)]
+                 (reduce (fn [set token]
+
+                           (update-token- set (:id token) migrate-token))
+                         node
+                         (vals tokens)))
+               (d/update-vals node recurse)))]
+
+       (update params :sets d/update-vals migrate-set-node))))
+
+#?(:clj
    (defn- read-tokens-lib-v1-1
      "Reads the tokens lib data structure and ensures that hidden
      theme exists and adds missing ID on themes"
@@ -2224,6 +2252,7 @@ Will return a value that matches this schema:
            (migrate-to-v1-2)
            (migrate-to-v1-3)
            (migrate-to-v1-4)
+           (migrate-to-v1-5)
            (map->tokens-lib)))))
 
 #?(:clj
@@ -2239,6 +2268,7 @@ Will return a value that matches this schema:
             :active-themes active-themes}
            (migrate-to-v1-3)
            (migrate-to-v1-4)
+           (migrate-to-v1-5)
            (map->tokens-lib)))))
 
 #?(:clj
@@ -2254,6 +2284,21 @@ Will return a value that matches this schema:
             :themes themes
             :active-themes active-themes}
            (migrate-to-v1-4)
+           (migrate-to-v1-5)
+           (map->tokens-lib)))))
+
+#?(:clj
+   (defn- read-tokens-lib-v1-4
+     "Reads the tokens lib data structure and fixes token names."
+     [r]
+     (let [sets          (fres/read-object! r)
+           themes        (fres/read-object! r)
+           active-themes (fres/read-object! r)]
+
+       (-> {:sets sets
+            :themes themes
+            :active-themes active-themes}
+           (migrate-to-v1-5)
            (map->tokens-lib)))))
 
 #?(:clj
@@ -2315,8 +2360,11 @@ Will return a value that matches this schema:
     {:name "penpot/tokens-lib/v1.3"
      :rfn read-tokens-lib-v1-3}
 
-    ;; CURRENT TOKENS LIB READER & WRITTER
     {:name "penpot/tokens-lib/v1.4"
+     :rfn read-tokens-lib-v1-4}
+
+    ;; CURRENT TOKENS LIB READER & WRITTER
+    {:name "penpot/tokens-lib/v1.5"
      :class TokensLib
      :wfn write-tokens-lib
      :rfn read-tokens-lib}))

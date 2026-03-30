@@ -144,6 +144,19 @@
         :gen/gen sg/text}
    token-name-validation-regex])
 
+(defn clean-token-name
+  "Remove all forbidden characters from token name and return a valid token name.
+   This is used for repairing invalid token names in old versions of Penpot."
+  [name]
+  (-> name
+      (str/replace "/" ".")
+      (str/replace " " "")
+      (str/replace #"^\$+" "")
+      (str/replace #"^\.+" "")
+      (str/replace #"\.+$" "")
+      (str/replace #"\.\.+" ".")
+      (str/replace #"[^a-zA-Z0-9$._-]" "?")))
+
 (def token-ref-validation-regex
   #"^\{[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*\}$")
 
