@@ -13,7 +13,7 @@
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
-   [app.main.ui.auth.register :refer [register-page register-success-page register-validate-page terms-register]]
+   [app.main.ui.auth.register :refer [register-page* register-success-page* register-validate-page* terms-register*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -54,13 +54,13 @@
 
       (case section
         :auth-register
-        [:& register-page {:params params}]
+        [:> register-page* {:params params}]
 
         :auth-register-success
-        [:& register-success-page {:params params}]
+        [:> register-success-page* {:params params}]
 
         :auth-register-validate
-        [:& register-validate-page {:params params}]
+        [:> register-validate-page* {:params params}]
 
         :auth-login
         [:& login-page {:params params}]
@@ -72,7 +72,7 @@
         [:& recovery-page {:params params}])
 
       (when (= section :auth-register)
-        [:& terms-register])]]))
+        [:> terms-register*])]]))
 
 
 (mf/defc auth-page*
