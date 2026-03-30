@@ -10,6 +10,7 @@ import {
 import { DEFAULT_FILL, MAX_FILLS, type RectLikeNode } from '../../../renderer/properties/panel-utils'
 import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
 import { FillRow } from './FillRow'
+import { useFillEditor } from '../use-fill-editor'
 
 export interface FillsSectionProps {
   nodeId: string
@@ -18,6 +19,7 @@ export interface FillsSectionProps {
 }
 
 export function FillsSection({ nodeId, readOnly, initialNode }: FillsSectionProps) {
+  const { activeFillIndex, closeEditor } = useFillEditor()
   const [fills, setFills] = useState<Fill[]>(() =>
     initialNode.fills ? [...initialNode.fills] : [],
   )
@@ -65,11 +67,12 @@ export function FillsSection({ nodeId, readOnly, initialNode }: FillsSectionProp
 
   const removeFill = useCallback(
     (index: number) => {
+      if (activeFillIndex === index) closeEditor()
       const next = fills.filter((_, i) => i !== index)
       setFills(next)
       void commitFills(next)
     },
-    [fills, commitFills],
+    [fills, commitFills, activeFillIndex, closeEditor],
   )
 
   const hasFills = fills.length > 0

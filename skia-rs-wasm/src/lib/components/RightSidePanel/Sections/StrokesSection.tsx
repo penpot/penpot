@@ -1,14 +1,19 @@
 import { useCallback, useRef, useState } from 'react'
 import type { Stroke } from 'penpot-exporter/types'
-import { Label } from '@/components/ui/label'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { StrokeEditor } from '../../StrokeEditor/StrokeEditor'
 import {
   commitNodePartialUpdate,
   getCommittedNodeOnActivePage,
 } from '../../../renderer/properties/commit-node-properties'
-import type { RectLikeNode } from '../../../renderer/properties/panel-utils'
+import {
+  DEFAULT_STROKE,
+  MAX_STROKES,
+  type RectLikeNode,
+} from '../../../renderer/properties/panel-utils'
 import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
+import { StrokeRow } from './StrokeRow'
 
 export interface StrokesSectionProps {
   nodeId: string
@@ -20,6 +25,7 @@ export function StrokesSection({ nodeId, readOnly, initialNode }: StrokesSection
   const [strokes, setStrokes] = useState<Stroke[]>(() =>
     initialNode.strokes ? [...initialNode.strokes] : [],
   )
+  const [collapsed, setCollapsed] = useState(false)
 
   // Render-phase sync: when initialNode changes externally, reset optimistic local state.
   const prevNodeRef = useRef(initialNode)
@@ -44,27 +50,87 @@ export function StrokesSection({ nodeId, readOnly, initialNode }: StrokesSection
     [readOnly, nodeId],
   )
 
-  const onFirstStrokeChange = useCallback(
-    (stroke: Stroke) => {
+  const onStrokeChange = useCallback(
+    (stroke: Stroke, index: number) => {
       const next = [...strokes]
-      if (next.length === 0) next.push(stroke)
-      else next[0] = stroke
+      if (index < 0 || index >= next.length) return
+      next[index] = stroke
       setStrokes(next)
       void commitStrokes(next)
     },
     [strokes, commitStrokes],
   )
 
-  if (strokes.length === 0) return null
+  const addStroke = useCallback(() => {
+    if (strokes.length >= MAX_STROKES) return
+    const next = [...strokes, DEFAULT_STROKE]
+    setStrokes(next)
+    void commitStrokes(next)
+  }, [strokes, commitStrokes])
 
-  const first = strokes[0]!
+  const removeStroke = useCallback(
+    (index: number) => {
+      const next = strokes.filter((_, i) => i !== index)
+      setStrokes(next)
+      void commitStrokes(next)
+    },
+    [strokes, commitStrokes],
+  )
+
+  const hasStrokes = strokes.length > 0
+  const canAdd = !readOnly && strokes.length < MAX_STROKES
 
   return (
     <>
       <Separator />
-      <div className="space-y-2">
-        <Label>Stroke</Label>
-        <StrokeEditor stroke={first} readOnly={readOnly} onChange={onFirstStrokeChange} />
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2 py-0.5">
+          <button
+            type="button"
+            className="flex min-h-8 flex-1 items-center gap-1 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase hover:text-foreground"
+            onClick={() => setCollapsed((c) => !c)}
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? (
+              <ChevronRight className="size-3.5 shrink-0" aria-hidden />
+            ) : (
+              <ChevronDown className="size-3.5 shrink-0" aria-hidden />
+            )}
+            Stroke
+          </button>
+          {!readOnly && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={addStroke}
+              disabled={!canAdd}
+              aria-label="Add stroke"
+              title={canAdd ? 'Add stroke' : `Maximum ${MAX_STROKES} strokes`}
+            >
+              +
+            </Button>
+          )}
+        </div>
+
+        {!collapsed && hasStrokes && (
+          <div className="space-y-2 pl-0.5">
+            {strokes.map((stroke, i) => (
+              <StrokeRow
+                key={i}
+                stroke={stroke}
+                index={i}
+                readOnly={readOnly}
+                onChange={onStrokeChange}
+                onRemove={removeStroke}
+              />
+            ))}
+          </div>
+        )}
+
+        {!collapsed && !hasStrokes && !readOnly && (
+          <p className="text-xs text-muted-foreground">No strokes. Use + to add.</p>
+        )}
       </div>
     </>
   )
