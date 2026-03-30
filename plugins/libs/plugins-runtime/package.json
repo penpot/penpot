@@ -6,6 +6,9 @@
     "ses": "^1.1.0",
     "zod": "^3.22.4"
   },
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "module": "./dist/index.js",
   "typings": "./dist/index.d.ts",
   "type": "module",
