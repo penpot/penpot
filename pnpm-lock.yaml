@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@github/copilot':
-        specifier: ^1.0.11
-        version: 1.0.11
+        specifier: ^1.0.12
+        version: 1.0.12
       '@types/node':
         specifier: ^20.12.7
         version: 20.19.37
@@ -18,8 +18,8 @@ importers:
         specifier: ^0.27.4
         version: 0.27.4
       opencode-ai:
-        specifier: ^1.3.2
-        version: 1.3.2
+        specifier: ^1.3.7
+        version: 1.3.7
 
 packages:
 
@@ -179,44 +179,44 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@github/copilot-darwin-arm64@1.0.11':
-    resolution: {integrity: sha512-wdKimjtbsVeXqMqQSnGpGBPFEYHljxXNuWeH8EIJTNRgFpAsimcivsFgql3Twq4YOp0AxfsH36icG4IEen30mA==}
+  '@github/copilot-darwin-arm64@1.0.12':
+    resolution: {integrity: sha512-fjbwRIUZAH06Eyg5ZkfZXg8SVXpqI3HaFhtXZ803CZs9mfIgfOSR3URZxUnv7SIv6aI/7f6ws8RxKnPGavJ/tg==}
     cpu: [arm64]
     os: [darwin]
     hasBin: true
 
-  '@github/copilot-darwin-x64@1.0.11':
-    resolution: {integrity: sha512-VeuPv8rzBVGBB8uDwMEhcHBpldoKaq26yZ5YQm+G9Ka5QIF+1DMah8ZNRMVsTeNKkb1ji9G8vcuCsaPbnG3fKg==}
+  '@github/copilot-darwin-x64@1.0.12':
+    resolution: {integrity: sha512-/tJGJEEm8kpTW/sJRNnvhMSHKIHApNun14biuIkC5CXDqVgFakbKlckn/FlIkT48eEUysc0YbEatrHIDz/8XbA==}
     cpu: [x64]
     os: [darwin]
     hasBin: true
 
-  '@github/copilot-linux-arm64@1.0.11':
-    resolution: {integrity: sha512-/d8p6RlFYKj1Va2hekFIcYNMHWagcEkaxgcllUNXSyQLnmEtXUkaWtz62VKGWE+n/UMkEwCB6vI2xEwPTlUNBQ==}
+  '@github/copilot-linux-arm64@1.0.12':
+    resolution: {integrity: sha512-4977LVJi3/9Yc+ivj+VKDVtHg0kT5yqOrN8F35/jgqerx4Mdtk1pOMlWztXxLicBHN4y2V7/EY/wc0WqFW0Zvg==}
     cpu: [arm64]
     os: [linux]
     hasBin: true
 
-  '@github/copilot-linux-x64@1.0.11':
-    resolution: {integrity: sha512-UujTRO3xkPFC1CybchBbCnaTEAG6JrH0etIst07JvfekMWgvRxbiCHQPpDPSzBCPiBcGu0gba0/IT+vUCORuIw==}
+  '@github/copilot-linux-x64@1.0.12':
+    resolution: {integrity: sha512-9QevJZD29PVltYDV4xHWbdN6ud/966clERL5Frh2+9D3+spaVDO1hFllzoFiEwD/M4f2GkSh7/fT3hV0LKl9Ag==}
     cpu: [x64]
     os: [linux]
     hasBin: true
 
-  '@github/copilot-win32-arm64@1.0.11':
-    resolution: {integrity: sha512-EOW8HUM+EmnHEZEa+iUMl4pP1+2eZUk2XCbynYiMehwX9sidc4BxEHp2RuxADSzFPTieQEWzgjQmHWrtet8pQg==}
+  '@github/copilot-win32-arm64@1.0.12':
+    resolution: {integrity: sha512-RLAbAsLniI8vA2utgZdIsvD8slZpz1fb8l6cmIiQvDE/BwQb2zNV9VepZ+CwzYtNx9ifxBtgIwYwUJq5bxeSaQ==}
     cpu: [arm64]
     os: [win32]
     hasBin: true
 
-  '@github/copilot-win32-x64@1.0.11':
-    resolution: {integrity: sha512-fKGkSNamzs3h9AbmswNvPYJBORCb2Y8CbusijU3C7fT3ohvqnHJwKo5iHhJXLOKZNOpFZgq9YKha410u9sIs6Q==}
+  '@github/copilot-win32-x64@1.0.12':
+    resolution: {integrity: sha512-4SYV09F4Sw20DAib1do26+ALZmCZrghzo+5e6IZbQOsm4B7NhBFaLpKFU+kEijfmWacLlh/at5CpGGGKlwlbcg==}
     cpu: [x64]
     os: [win32]
     hasBin: true
 
-  '@github/copilot@1.0.11':
-    resolution: {integrity: sha512-cptVopko/tNKEXyBP174yBjHQBEwg6CqaKN2S0M3J+5LEB8u31bLL75ioOPd+5vubqBrA0liyTdcHeZ8UTRbmg==}
+  '@github/copilot@1.0.12':
+    resolution: {integrity: sha512-GpmoJbs1ECyLLKtY4PcFzO8Cz6GgDTOKkrzwNdkirNdfsB+o6x0OOlFyrOdNXNPII7pk9+GcpIjF87sLwWzpPQ==}
     hasBin: true
 
   '@types/node@20.19.37':
@@ -227,67 +227,67 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  opencode-ai@1.3.2:
-    resolution: {integrity: sha512-InyDAXKoh+fVxWrBMJZaf1xIYpASZ2zX4O/u7nwtiYzxy/kqHySvQe9jDVrhMgbMdb4CXzACid7M2HDUa+vz2Q==}
+  opencode-ai@1.3.7:
+    resolution: {integrity: sha512-AtqTOcPvHkAF/zPGs/08/8m2DeiWADCGhT/WAJ1drGem4WdPOt45jkJLPdOCheN1gqmLxTcNV0veKFVHmbjKKQ==}
     hasBin: true
 
-  opencode-darwin-arm64@1.3.2:
-    resolution: {integrity: sha512-/7V+J3XZGF/sCdMbEb5E3mUvuOIVvGkVjgYH1k/pnTfdGaPW/C7RgW2dU2HedXvkw4Y3CplUS+5VfA/F5kufXw==}
+  opencode-darwin-arm64@1.3.7:
+    resolution: {integrity: sha512-TRglBnrSzeR9pEFV8Z1ACqhD3r3WYl8v1y9TkgvHviTD/EXGL3Nu7f/fy3XOQprPGSLPyrlOwZXb1i9XrfTo1A==}
     cpu: [arm64]
     os: [darwin]
 
-  opencode-darwin-x64-baseline@1.3.2:
-    resolution: {integrity: sha512-jBusp8Vb1wsGKHD2AOD+Cr4qL4zSDut80Sy0CnMH8AwnSCNzaSVi2wnE/7vPrgCa44Xr0MknSE2S0wHQ5SbLaw==}
+  opencode-darwin-x64-baseline@1.3.7:
+    resolution: {integrity: sha512-YLl+peZIC1m295JNSMzM/NM5uNs2GVewZply2GV3P6WApS5JuRIaMNvzOk7jpL90yt6pur6oEwC8g0WWwP8G4A==}
     cpu: [x64]
     os: [darwin]
 
-  opencode-darwin-x64@1.3.2:
-    resolution: {integrity: sha512-J7HgNBUoDpsKHAiky18aUm4xMKmUIJqlvVMkvL9NVjwDRMuAKnbYcxpRK8O+NKzeVx29IWwX8zizUwCuqXAAlA==}
+  opencode-darwin-x64@1.3.7:
+    resolution: {integrity: sha512-Nsyh3vLAqqfVyWD4qrcyRJit+CmZZpm6IdXTk9wo1hUAE/RmYIBDz1To99ZBwA3SJB1fLrciYicMN2uq8r1XNw==}
     cpu: [x64]
     os: [darwin]
 
-  opencode-linux-arm64-musl@1.3.2:
-    resolution: {integrity: sha512-ZOB6+NvkZ19mzi6j4VAHtQDAeTXvQJqg4YtclT3wbMof8y3jn5S8vUmaXLk9d9FryEcdIoMK/oFLkcLkS1OXpA==}
+  opencode-linux-arm64-musl@1.3.7:
+    resolution: {integrity: sha512-D4gCn7oVLCc3xN0BSJOfYerCr1E1ktUkixfHQEmkoR1CLZ77Z/aHSgcm0Ln01Q+ie6MsVukvuyUQn9GEY1Dn/A==}
     cpu: [arm64]
     os: [linux]
 
-  opencode-linux-arm64@1.3.2:
-    resolution: {integrity: sha512-+q0PJ86LPitMIGf9sGXdtOcwpdiwbzdw91zXAHFe7rXZZm4Cvu9qjvt6WT/lKJqL8f6pyJs9Kbt4XJ/C20swQA==}
+  opencode-linux-arm64@1.3.7:
+    resolution: {integrity: sha512-72OnT20wIhkXMGclmw7S+d8JjIb9lx8pPIW8pkyI79+qxLTp6AuTHsmUG/qDhw3NMtVDs9efAb0C/FjLXATeAA==}
     cpu: [arm64]
     os: [linux]
 
-  opencode-linux-x64-baseline-musl@1.3.2:
-    resolution: {integrity: sha512-8XYcAqZBcUgYHfae9qoTT8erqFjd6AKTrSu60gRgzTN8cUybG4iPyAVt4GUcXCzUw44Qo++d/8I9hwpUTCoFYg==}
+  opencode-linux-x64-baseline-musl@1.3.7:
+    resolution: {integrity: sha512-DE8eqPF2benmdzUdMG+rnr0J3DtrP+x8sUzq7gecuNnU4iHo4s8Itx+gCLP978ZBdYwTkNRtNZ5BKN0ePT5KYQ==}
     cpu: [x64]
     os: [linux]
 
-  opencode-linux-x64-baseline@1.3.2:
-    resolution: {integrity: sha512-QXiF1+PJH5AOHMSTdYngOB7yWULFQKJpIbx77ZHM1MKyxiBweIrZ03nG86iXIZIVGBxEfH1CcKDU28lFGUJdNg==}
+  opencode-linux-x64-baseline@1.3.7:
+    resolution: {integrity: sha512-Aztdiq0U6H8Nww7mmARK/ZGkllTrePuyEEdzg2+0LWfUpDO5Cl/pMJ8btqVtTjfb/pLw+BU3JtYxw8oOhRkl/A==}
     cpu: [x64]
     os: [linux]
 
-  opencode-linux-x64-musl@1.3.2:
-    resolution: {integrity: sha512-o4aXgcWQidxQ6cJMsgLcCMv9MSKtLEqm3OAFm6eN7hVgHV9m7rz035BICNZ1YLltIEdQYAHXx5MGM21J4/vBdw==}
+  opencode-linux-x64-musl@1.3.7:
+    resolution: {integrity: sha512-L0ohQAbw1Ib1koawV/yJAYIGIel2zMPafbdeMXELIvpes3Sq9qIfCSRB/2ROu8gjN8P1TGnUU6Vx1F3MtJOvIA==}
     cpu: [x64]
     os: [linux]
 
-  opencode-linux-x64@1.3.2:
-    resolution: {integrity: sha512-/+OtuHr2O0/QKpBrZBnutr0ZLe+LmOx003Z99b21BgG9wsVo7gFuNpfLPVXnqcEY6D5DuWl4aEJW4+w+K0urYw==}
+  opencode-linux-x64@1.3.7:
+    resolution: {integrity: sha512-rCFXrgDLhPuHazomDgzBXGLE0wJ4VRHrIe26WCHm4iqmGu9O6ExZd612Y07/CGQm4bVBHlaalcWh7N/z6GOPkA==}
     cpu: [x64]
     os: [linux]
 
-  opencode-windows-arm64@1.3.2:
-    resolution: {integrity: sha512-3xJEjSLdk7I5Z6yyrT4LCQeK4VCj6mo/l4JdUa0zocV8wCzUtY1lSHeipDAaNr8TwD6NeTxr1iomIjuatKAFOA==}
+  opencode-windows-arm64@1.3.7:
+    resolution: {integrity: sha512-s6emZ28ORIMtKyrBKvo96q2qanRwbjPHK/rOMinZ22SW7DLzNKKf1p92JMkSni0dXXGL64jsy1se5IvELc7Mvg==}
     cpu: [arm64]
     os: [win32]
 
-  opencode-windows-x64-baseline@1.3.2:
-    resolution: {integrity: sha512-RVx9e1KBNTSWjrtfRpGIIcJDsM13OUY/lYqJXI1oj34lMOEj5G57fypjk9yBqUHBR+7tolGmewwJJU6SDgyPXQ==}
+  opencode-windows-x64-baseline@1.3.7:
+    resolution: {integrity: sha512-CGbhvn9rMXV4xEjw1lxPFbsWuOPf/xJ1AAblqKsF2VmSbqe25QG5VIf88hsJo8YmYIHz6U7tNGI4lTF1zVx9cw==}
     cpu: [x64]
     os: [win32]
 
-  opencode-windows-x64@1.3.2:
-    resolution: {integrity: sha512-pJMpptERqz8pjnW1pTQf5Ru2WbJz7P2BPM5De5gdUd10y0yUoGvY7uzyJYuGpsrCqeWrEYokERnbv8A/4V3Yaw==}
+  opencode-windows-x64@1.3.7:
+    resolution: {integrity: sha512-q7V9p10Q7BH03tnYMG4k6B1ZXLDriDMtXkkw+NW1p22F7dQ22WmaMoCWnv3d4b2vNyjMjIYuPm97q0v02QI08w==}
     cpu: [x64]
     os: [win32]
 
@@ -374,32 +374,32 @@ snapshots:
   '@esbuild/win32-x64@0.27.4':
     optional: true
 
-  '@github/copilot-darwin-arm64@1.0.11':
+  '@github/copilot-darwin-arm64@1.0.12':
     optional: true
 
-  '@github/copilot-darwin-x64@1.0.11':
+  '@github/copilot-darwin-x64@1.0.12':
     optional: true
 
-  '@github/copilot-linux-arm64@1.0.11':
+  '@github/copilot-linux-arm64@1.0.12':
     optional: true
 
-  '@github/copilot-linux-x64@1.0.11':
+  '@github/copilot-linux-x64@1.0.12':
     optional: true
 
-  '@github/copilot-win32-arm64@1.0.11':
+  '@github/copilot-win32-arm64@1.0.12':
     optional: true
 
-  '@github/copilot-win32-x64@1.0.11':
+  '@github/copilot-win32-x64@1.0.12':
     optional: true
 
-  '@github/copilot@1.0.11':
+  '@github/copilot@1.0.12':
     optionalDependencies:
-      '@github/copilot-darwin-arm64': 1.0.11
-      '@github/copilot-darwin-x64': 1.0.11
-      '@github/copilot-linux-arm64': 1.0.11
-      '@github/copilot-linux-x64': 1.0.11
-      '@github/copilot-win32-arm64': 1.0.11
-      '@github/copilot-win32-x64': 1.0.11
+      '@github/copilot-darwin-arm64': 1.0.12
+      '@github/copilot-darwin-x64': 1.0.12
+      '@github/copilot-linux-arm64': 1.0.12
+      '@github/copilot-linux-x64': 1.0.12
+      '@github/copilot-win32-arm64': 1.0.12
+      '@github/copilot-win32-x64': 1.0.12
 
   '@types/node@20.19.37':
     dependencies:
@@ -434,55 +434,55 @@ snapshots:
       '@esbuild/win32-ia32': 0.27.4
       '@esbuild/win32-x64': 0.27.4
 
-  opencode-ai@1.3.2:
+  opencode-ai@1.3.7:
     optionalDependencies:
-      opencode-darwin-arm64: 1.3.2
-      opencode-darwin-x64: 1.3.2
-      opencode-darwin-x64-baseline: 1.3.2
-      opencode-linux-arm64: 1.3.2
-      opencode-linux-arm64-musl: 1.3.2
-      opencode-linux-x64: 1.3.2
-      opencode-linux-x64-baseline: 1.3.2
-      opencode-linux-x64-baseline-musl: 1.3.2
-      opencode-linux-x64-musl: 1.3.2
-      opencode-windows-arm64: 1.3.2
-      opencode-windows-x64: 1.3.2
-      opencode-windows-x64-baseline: 1.3.2
+      opencode-darwin-arm64: 1.3.7
+      opencode-darwin-x64: 1.3.7
+      opencode-darwin-x64-baseline: 1.3.7
+      opencode-linux-arm64: 1.3.7
+      opencode-linux-arm64-musl: 1.3.7
+      opencode-linux-x64: 1.3.7
+      opencode-linux-x64-baseline: 1.3.7
+      opencode-linux-x64-baseline-musl: 1.3.7
+      opencode-linux-x64-musl: 1.3.7
+      opencode-windows-arm64: 1.3.7
+      opencode-windows-x64: 1.3.7
+      opencode-windows-x64-baseline: 1.3.7
 
-  opencode-darwin-arm64@1.3.2:
+  opencode-darwin-arm64@1.3.7:
     optional: true
 
-  opencode-darwin-x64-baseline@1.3.2:
+  opencode-darwin-x64-baseline@1.3.7:
     optional: true
 
-  opencode-darwin-x64@1.3.2:
+  opencode-darwin-x64@1.3.7:
     optional: true
 
-  opencode-linux-arm64-musl@1.3.2:
+  opencode-linux-arm64-musl@1.3.7:
     optional: true
 
-  opencode-linux-arm64@1.3.2:
+  opencode-linux-arm64@1.3.7:
     optional: true
 
-  opencode-linux-x64-baseline-musl@1.3.2:
+  opencode-linux-x64-baseline-musl@1.3.7:
     optional: true
 
-  opencode-linux-x64-baseline@1.3.2:
+  opencode-linux-x64-baseline@1.3.7:
     optional: true
 
-  opencode-linux-x64-musl@1.3.2:
+  opencode-linux-x64-musl@1.3.7:
     optional: true
 
-  opencode-linux-x64@1.3.2:
+  opencode-linux-x64@1.3.7:
     optional: true
 
-  opencode-windows-arm64@1.3.2:
+  opencode-windows-arm64@1.3.7:
     optional: true
 
-  opencode-windows-x64-baseline@1.3.2:
+  opencode-windows-x64-baseline@1.3.7:
     optional: true
 
-  opencode-windows-x64@1.3.2:
+  opencode-windows-x64@1.3.7:
     optional: true
 
   undici-types@6.21.0: {}

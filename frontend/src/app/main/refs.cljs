@@ -234,6 +234,9 @@
 (def inspect-expanded
   (l/derived :inspect-expanded workspace-local))
 
+(def workspace-vport
+  (l/derived :vport workspace-local))
+
 (def vbox
   (l/derived :vbox workspace-local))
 
