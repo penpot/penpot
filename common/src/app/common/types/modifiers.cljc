@@ -12,11 +12,13 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.corners :as gsc]
    [app.common.geom.shapes.effects :as gse]
    [app.common.geom.shapes.strokes :as gss]
    [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
    [clojure.core :as c]))
@@ -117,6 +119,33 @@
   (or (not ^boolean (mth/almost-zero? (- (dm/get-prop vector :x) 1)))
       (not ^boolean (mth/almost-zero? (- (dm/get-prop vector :y) 1)))))
 
+(defn- safe-size-rect?
+  "Returns true when `rect` has finite, in-range, positive width and height."
+  [rect]
+  (and ^boolean (some? rect)
+       (let [w (dm/get-prop rect :width)
+             h (dm/get-prop rect :height)]
+         (and ^boolean (d/num? w h)
+              ^boolean (pos? w)
+              ^boolean (pos? h)
+              ^boolean (<= w sm/max-safe-int)
+              ^boolean (<= h sm/max-safe-int)))))
+
+(defn safe-size-rect
+  "Returns the best available size rect for a shape, trying several
+   fallbacks in order:
+   1. `:selrect`  — if it has valid, in-range, positive dimensions.
+   2. `points->rect` — computed from the shape's corner points.
+   3. Top-level `:x :y :width :height` shape fields.
+   4. `grc/empty-rect` — a unit rect (0,0,0.01,0.01) of last resort."
+  [{:keys [selrect points x y width height]}]
+  (or (and ^boolean (safe-size-rect? selrect) selrect)
+      (let [from-points (grc/points->rect points)]
+        (and ^boolean (safe-size-rect? from-points) from-points))
+      (let [from-shape (grc/make-rect x y width height)]
+        (and ^boolean (safe-size-rect? from-shape) from-shape))
+      grc/empty-rect))
+
 (defn- mergeable-move?
   [op1 op2]
   (let [type-op1 (dm/get-prop op1 :type)
@@ -195,7 +224,7 @@
              (conj item)))
          (conj operations op))))))
 
-(defn valid-vector?
+(defn- valid-vector?
   [vector]
   (let [x (dm/get-prop vector :x)
         y (dm/get-prop vector :y)]
@@ -309,11 +338,6 @@
   (-> (or modifiers (empty))
       (update :structure-child conj (scale-content-op value))))
 
-(defn change-recursive-property
-  [modifiers property value]
-  (-> (or modifiers (empty))
-      (update :structure-child conj (change-property-op property value))))
-
 (defn change-property
   [modifiers property value]
   (-> (or modifiers (empty))
@@ -348,7 +372,7 @@
 
           (recur result (rest operations)))))))
 
-(defn increase-order
+(defn- increase-order
   [operations last-order]
   (->> operations
        (mapv #(update % :order + last-order))))
@@ -390,26 +414,12 @@
   ([vector]
    (move (empty) vector)))
 
-(defn move-parent-modifiers
-  ([x y]
-   (move-parent (empty) (gpt/point x y)))
-
-  ([vector]
-   (move-parent (empty) vector)))
-
 (defn resize-modifiers
   ([vector origin]
    (resize (empty) vector origin))
 
   ([vector origin transform transform-inverse]
    (resize (empty) vector origin transform transform-inverse)))
-
-(defn resize-parent-modifiers
-  ([vector origin]
-   (resize-parent (empty) vector origin))
-
-  ([vector origin transform transform-inverse]
-   (resize-parent (empty) vector origin transform transform-inverse)))
 
 (defn rotation-modifiers
   [shape center angle]
@@ -426,73 +436,54 @@
         (rotation shape-center angle)
         (move move-vec))))
 
-(defn remove-children-modifiers
-  [shapes]
-  (-> (empty)
-      (remove-children shapes)))
-
-(defn add-children-modifiers
-  [shapes index]
-  (-> (empty)
-      (add-children shapes index)))
-
 (defn reflow-modifiers
   []
   (-> (empty)
       (reflow)))
 
-(defn scale-content-modifiers
-  [value]
-  (-> (empty)
-      (scale-content value)))
-
 (defn change-size
-  [{:keys [selrect points transform transform-inverse] :as shape} width height]
-  (let [old-width  (-> selrect :width)
-        old-height (-> selrect :height)
-        width      (or width old-width)
-        height     (or height old-height)
-        origin     (first points)
-        scalex     (/ width old-width)
-        scaley     (/ height old-height)]
+  [{:keys [points transform transform-inverse] :as shape} width height]
+  (let [{sr-width :width sr-height :height} (safe-size-rect shape)
+        width   (or width sr-width)
+        height  (or height sr-height)
+        origin  (first points)
+        scalex  (/ width sr-width)
+        scaley  (/ height sr-height)]
     (resize-modifiers (gpt/point scalex scaley) origin transform transform-inverse)))
 
 (defn change-dimensions-modifiers
   ([shape attr value]
    (change-dimensions-modifiers shape attr value nil))
 
-  ([{:keys [transform transform-inverse] :as shape} attr value {:keys [ignore-lock?] :or {ignore-lock? false}}]
+  ([shape attr value {:keys [ignore-lock?] :or {ignore-lock? false}}]
    (dm/assert! (map? shape))
    (dm/assert! (#{:width :height} attr))
    (dm/assert! (number? value))
 
-   (let [;; Avoid havig shapes with zero size
-         value (if (< (mth/abs value) 0.01)
-                 0.01
-                 value)
+   (let [;; Avoid having shapes with zero size
+         value (if (< (mth/abs value) 0.01) 0.01 value)
 
          {:keys [proportion proportion-lock]} shape
-         size (select-keys (:selrect shape) [:width :height])
-         new-size (if-not (and (not ignore-lock?) proportion-lock)
-                    (assoc size attr value)
-                    (if (= attr :width)
-                      (-> size
-                          (assoc :width value)
-                          (assoc :height (/ value proportion)))
-                      (-> size
-                          (assoc :height value)
-                          (assoc :width (* value proportion)))))
+         {sr-width :width sr-height :height} (safe-size-rect shape)
+         locked? (and (not ignore-lock?) proportion-lock)
 
-         width (:width new-size)
-         height (:height new-size)
+         width  (if (= attr :width)
+                  value
+                  (if locked? (* value proportion) sr-width))
 
-         {sr-width :width sr-height :height} (:selrect shape)
+         height (if (= attr :height)
+                  value
+                  (if locked? (/ value proportion) sr-height))
 
          origin (-> shape :points first)
          scalex (/ width sr-width)
          scaley (/ height sr-height)]
 
-     (resize-modifiers (gpt/point scalex scaley) origin transform transform-inverse))))
+     (resize-modifiers
+      (gpt/point scalex scaley)
+      origin
+      (:transform shape)
+      (:transform-inverse shape)))))
 
 (defn change-orientation-modifiers
   [shape orientation]
@@ -566,17 +557,13 @@
   [modifiers]
   (assoc (or modifiers (empty)) :geometry-child [] :structure-child []))
 
-(defn select-structure
+(defn- select-structure
   [modifiers]
   (assoc (or modifiers (empty)) :geometry-child [] :geometry-parent []))
 
 (defn select-geometry
   [modifiers]
   (assoc (or modifiers (empty)) :structure-child [] :structure-parent []))
-
-(defn select-child-geometry-modifiers
-  [modifiers]
-  (-> modifiers select-child select-geometry))
 
 (defn select-child-structre-modifiers
   [modifiers]
@@ -601,7 +588,7 @@
 
 ;; Main transformation functions
 
-(defn transform-move!
+(defn- transform-move!
   "Transforms a matrix by the translation modifier"
   [matrix modifier]
   (-> (dm/get-prop modifier :vector)
@@ -609,7 +596,7 @@
       (gmt/multiply! matrix)))
 
 
-(defn transform-resize!
+(defn- transform-resize!
   "Transforms a matrix by the resize modifier"
   [matrix modifier]
   (let [tf     (dm/get-prop modifier :transform)
@@ -631,7 +618,7 @@
            (gmt/multiply! tfi)))
      matrix)))
 
-(defn transform-rotate!
+(defn- transform-rotate!
   "Transforms a matrix by the rotation modifier"
   [matrix modifier]
   (let [center   (dm/get-prop modifier :center)
@@ -643,7 +630,7 @@
          (gmt/translate! (gpt/negate center)))
      matrix)))
 
-(defn transform!
+(defn- transform!
   "Returns a matrix transformed by the modifier"
   [matrix modifier]
   (let [type (dm/get-prop modifier :type)]
@@ -652,8 +639,7 @@
       :resize (transform-resize! matrix modifier)
       :rotation (transform-rotate! matrix modifier))))
 
-(defn modifiers->transform1
-  "A multiplatform version of modifiers->transform."
+(defn- modifiers->transform1
   [modifiers]
   (reduce transform! (gmt/matrix) modifiers))
 
@@ -665,80 +651,28 @@
         modifiers (sort-by #(dm/get-prop % :order) modifiers)]
     (modifiers->transform1 modifiers)))
 
-(defn modifiers->transform-old
-  "Given a set of modifiers returns its transformation matrix"
-  [modifiers]
-  (let [modifiers (->> (concat (dm/get-prop modifiers :geometry-parent)
-                               (dm/get-prop modifiers :geometry-child))
-                       (sort-by :order))]
-
-    (loop [matrix    (gmt/matrix)
-           modifiers (seq modifiers)]
-      (if (c/empty? modifiers)
-        matrix
-        (let [modifier (first modifiers)
-              type   (dm/get-prop modifier :type)
-
-              matrix
-              (case type
-                :move
-                (-> (dm/get-prop modifier :vector)
-                    (gmt/translate-matrix)
-                    (gmt/multiply! matrix))
-
-                :resize
-                (let [tf     (dm/get-prop modifier :transform)
-                      tfi    (dm/get-prop modifier :transform-inverse)
-                      vector (dm/get-prop modifier :vector)
-                      origin (dm/get-prop modifier :origin)
-                      origin (if ^boolean (some? tfi)
-                               (gpt/transform origin tfi)
-                               origin)]
-
-                  (gmt/multiply!
-                   (-> (gmt/matrix)
-                       (cond-> ^boolean (some? tf)
-                         (gmt/multiply! tf))
-                       (gmt/translate! origin)
-                       (gmt/scale! vector)
-                       (gmt/translate! (gpt/negate origin))
-                       (cond-> ^boolean (some? tfi)
-                         (gmt/multiply! tfi)))
-                   matrix))
-
-                :rotation
-                (let [center   (dm/get-prop modifier :center)
-                      rotation (dm/get-prop modifier :rotation)]
-                  (gmt/multiply!
-                   (-> (gmt/matrix)
-                       (gmt/translate! center)
-                       (gmt/multiply! (gmt/rotate-matrix rotation))
-                       (gmt/translate! (gpt/negate center)))
-                   matrix)))]
-          (recur matrix (next modifiers)))))))
-
-(defn transform-text-node [value attrs]
+(defn- transform-text-node [value attrs]
   (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)
         letter-spacing (-> (get attrs :letter-spacing 0) d/parse-double (* value) str)]
     (d/txt-merge attrs {:font-size font-size
                         :letter-spacing letter-spacing})))
 
-(defn transform-paragraph-node [value attrs]
+(defn- transform-paragraph-node [value attrs]
   (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)]
     (d/txt-merge attrs {:font-size font-size})))
 
 
-(defn update-text-content
+(defn- update-text-content
   [shape scale-text-content value]
   (update shape :content scale-text-content value))
 
-(defn scale-text-content
+(defn- scale-text-content
   [content value]
   (->> content
        (txt/transform-nodes txt/is-text-node? (partial transform-text-node value))
        (txt/transform-nodes txt/is-paragraph-node? (partial transform-paragraph-node value))))
 
-(defn apply-scale-content
+(defn- apply-scale-content
   [shape value]
   ;; Scale can only be positive
   (let [value (mth/abs value)]
@@ -767,7 +701,7 @@
       :always
       (ctl/update-flex-child value))))
 
-(defn remove-children-set
+(defn- remove-children-set
   [shapes children-to-remove]
   (let [remove? (set children-to-remove)]
     (d/removev remove? shapes)))
