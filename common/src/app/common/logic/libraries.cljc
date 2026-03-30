@@ -2112,7 +2112,7 @@
 
                ;; If both variants (origin and destiny) don't have the same value
                ;; for that attribute, don't copy it.
-               ;; Exceptions: :points :selrect and :content can be different
+               ;; Exceptions: :points :selrect and path geometry attr can be different
                ;;
                ;; Sample:
                ;; 1. We have a variant with C1 (bg red) and C2 (bg blue).
@@ -2121,11 +2121,12 @@
                ;; 4. We switch Copy to use C2 as base.
                ;; 5. The bg of Copy now is blue (we ignore the override)
                (and
-                (not (contains? #{:points :selrect :content} attr))
+                (not (contains? #{:points :selrect :content :path-data} attr))
                 (not= (get origin-ref-shape attr) (get current-shape attr)))
 
-               ;; The :content attr cant't be copied to elements of different type
-               (and (= attr :content) (not= (:type previous-shape) (:type current-shape))))
+               ;; Content attrs can't be copied to elements of different type
+               (and (contains? #{:content :path-data} attr)
+                    (not= (:type previous-shape) (:type current-shape))))
 
               ;; On texts, both text (the actual letters)
               ;; and attrs (bold, font, etc) are in the same attr :content.
@@ -2140,7 +2141,7 @@
 
               path-change?
               (and (= :path (:type current-shape))
-                   (contains? #{:points :selrect :content} attr))
+                   (contains? #{:points :selrect :path-data} attr))
 
               ;; position-data is a special case because can be affected by :geometry-group and :content-group
               ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
