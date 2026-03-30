@@ -85,16 +85,16 @@ On Windows, use the Git Bash terminal to ensure compatibility with the provided 
 Clone the Penpot repository, using the proper branch depending on the
 version of Penpot you want to use the MCP server with.
 
-  * For the current Penpot release 2.14, use the `mcp-prod-2.14.0` branch:
+  * For the current Penpot release 2.14, use the `mcp-prod-2.14.1` branch:
 
     ```shell
-    git clone https://github.com/penpot/penpot.git --branch mcp-prod-2.14.0 --depth 1
+    git clone https://github.com/penpot/penpot.git --branch mcp-prod-2.14.1 --depth 1
     ```
 
-  * For the latest development version of Penpot (including the MCP beta-test), use the `develop` branch:
+  * For the MCP beta-test, use the `staging` branch:
 
     ```shell
-    git clone https://github.com/penpot/penpot.git --branch develop --depth 1
+    git clone https://github.com/penpot/penpot.git --branch staging --depth 1
     ```
 
 Then change into the `mcp` directory:
