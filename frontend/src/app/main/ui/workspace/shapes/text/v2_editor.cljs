@@ -364,7 +364,7 @@
         ;; NOTE: this teoretically breaks hooks rules, but in practice
         ;; it is imposible to really break it
         maybe-zoom
-        (when (or (cf/check-browser? :safari) (cf/check-browser? :safari-26) (cf/check-browser? :safari-18))
+        (when (cf/check-browser? :safari)
           (mf/deref refs/selected-zoom))
 
         shape (cond-> shape
@@ -424,7 +424,7 @@
           (obj/merge!
            #js {:transform (dm/fmt "translate(%px, %px)" (- (dm/get-prop shape :x) x) (- (dm/get-prop shape :y) y))})
 
-          (or (cf/check-browser? :safari-18) (cf/check-browser? :safari-26) (cf/check-browser? :safari-17))
+          (and (cf/check-browser? :safari) (not (cf/check-browser? :safari-16)))
           (obj/merge!
            #js {:height "100%"
                 :display "flex"
