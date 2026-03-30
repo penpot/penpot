@@ -31,7 +31,7 @@
 (defn- make-entry [state]
   (let [id (st/get-path-id state)
         shape (st/get-path state)]
-    {:content (:content shape)
+    {:content (:path-data shape)
      :selrect (:selrect shape)
      :points  (:points shape)
      :preview (get-in state [:workspace-local :edit-path id :preview])
@@ -40,9 +40,9 @@
 
 (defn- load-entry [state {:keys [content selrect points preview last-point prev-handler]}]
   (let [id (st/get-path-id state)
-        old-content (st/get-path state :content)]
+        old-content (st/get-path state :path-data)]
     (-> state
-        (d/assoc-in-when (st/get-path-location state :content) content)
+        (d/assoc-in-when (st/get-path-location state :path-data) content)
         (d/assoc-in-when (st/get-path-location state :selrect) selrect)
         (d/assoc-in-when (st/get-path-location state :points) points)
         (d/update-in-when
@@ -140,7 +140,7 @@
 
 (def path-content-ref
   (letfn [(selector [state]
-            (st/get-path state :content))]
+            (st/get-path state :path-data))]
     (l/derived selector store/state)))
 
 (defn start-path-undo

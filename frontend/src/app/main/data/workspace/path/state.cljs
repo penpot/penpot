@@ -36,5 +36,5 @@
 
 (defn set-content
   [state content]
-  (let [path-loc (get-path-location state :content)]
+  (let [path-loc (get-path-location state :path-data)]
     (assoc-in state path-loc content)))

@@ -29,7 +29,7 @@
         (update objects shape-id
                 (fn [shape]
                   (-> shape
-                      (assoc :content old-content)
+                      (assoc :path-data old-content)
                       (path/update-geometry))))
 
         changes
@@ -54,7 +54,7 @@
           (pcb/update-shapes [shape-id]
                              (fn [shape]
                                (-> shape
-                                   (assoc :content new-content)
+                                   (assoc :path-data new-content)
                                    (path/update-geometry))))
           (pcb/resize-parents [shape-id])))))
 
@@ -65,7 +65,7 @@
    (ptk/reify ::save-path-content
      ptk/UpdateEvent
      (update [_ state]
-       (let [content (st/get-path state :content)
+       (let [content (st/get-path state :path-data)
              content (if (and (not preserve-move-to)
                               (= (-> content last :command) :move-to))
                        (path/content (take (dec (count content)) content))
@@ -84,7 +84,7 @@
          ;; do nothing
          (when-let [shape (get objects id)]
            (when-let [old-content (dm/get-in local [:edit-path id :old-content])]
-             (let [new-content (get shape :content)
+             (let [new-content (get shape :path-data)
                    changes     (generate-path-changes it objects page-id shape old-content new-content)]
                (rx/of (dch/commit-changes changes))))))))))
 

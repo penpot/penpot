@@ -15,9 +15,9 @@
 (defn append-node
   "Creates a new node in the path. Usually used when drawing."
   [shape position prev-point prev-handler]
-  (let [segment (path.segment/next-node (:content shape) position prev-point prev-handler)]
+  (let [segment (path.segment/next-node (:path-data shape) position prev-point prev-handler)]
     (-> shape
-        (update :content path.segment/append-segment segment)
+        (update :path-data path.segment/append-segment segment)
         (path/update-geometry))))
 
 (defn angle-points [common p1 p2]

@@ -32,7 +32,7 @@
     ptk/UpdateEvent
     (update [_ state]
 
-      (let [content (st/get-path state :content)
+      (let [content (st/get-path state :path-data)
             modifiers (helpers/move-handler-modifiers content index prefix false match-opposite? dx dy)
             [cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
             point (gpt/point (+ (dm/get-in content [index :params cx]) dx)
@@ -56,7 +56,7 @@
           (let [page-id      (get state :current-page-id state)
                 objects      (dsh/lookup-page-objects state)
 
-                content      (get shape :content)
+                content      (get shape :path-data)
                 new-content  (path/apply-content-modifiers content content-modifiers)
 
                 old-points   (path/get-points content)
@@ -64,7 +64,7 @@
                 point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
             (when (and (some? new-content) (some? shape))
-              (let [changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
+              (let [changes (changes/generate-path-changes it objects page-id shape (:path-data shape) new-content)]
                 (if (empty? new-content)
                   (rx/of (dch/commit-changes changes)
                          (dwe/clear-edition-mode))
@@ -99,7 +99,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)
-            content (st/get-path state :content)
+            content (st/get-path state :path-data)
             modifiers-reducer (partial modify-content-point content move-modifier)
             content-modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers] {})
             content-modifiers (->> points
@@ -113,7 +113,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)
-            content (st/get-path state :content)
+            content (st/get-path state :path-data)
             to-point (cond-> to-point
                        (:shift? to-point) (path.helpers/position-fixed-angle from-point))
 
@@ -161,7 +161,7 @@
 
             start-position (apply min-key #(gpt/distance start-position %) selected-points)
 
-            content (st/get-path state :content)
+            content (st/get-path state :path-data)
             points  (path/get-points content)]
 
         (rx/concat
@@ -254,7 +254,7 @@
             start-delta-x (dm/get-in modifiers [index cx] 0)
             start-delta-y (dm/get-in modifiers [index cy] 0)
 
-            content (st/get-path state :content)
+            content (st/get-path state :path-data)
             points  (path/get-points content)
 
             point (-> content (nth (if (= prefix :c1) (dec index) index)) (path.helpers/segment->point))
@@ -298,7 +298,7 @@
             shape     (get objects id)]
 
         (-> state
-            (st/set-content (path/close-subpaths (:content shape)))
+            (st/set-content (path/close-subpaths (:path-data shape)))
             (update-in [:workspace-local :edit-path id]
                        (fn [state]
                          (let [state (if state
@@ -308,7 +308,7 @@
                                        {:edit-mode :move
                                         :selected #{}
                                         :snap-toggled false})]
-                           (assoc state :old-content (:content shape))))))))
+                           (assoc state :old-content (:path-data shape))))))))
 
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -340,7 +340,7 @@
   (ptk/reify ::split-segments
     ptk/UpdateEvent
     (update [_ state]
-      (let [content (st/get-path state :content)]
+      (let [content (st/get-path state :path-data)]
         (-> state
             (assoc-in [:workspace-local :edit-path id :old-content] content)
             (st/set-content (-> content

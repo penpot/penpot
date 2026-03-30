@@ -25,4 +25,4 @@
       (let [id (st/get-path-id state)]
         (-> state
             (update-in [:workspace-local :edit-path id] clean-edit-state)
-            (update-in (st/get-path-location state :content) path/close-subpaths))))))
+            (update-in (st/get-path-location state :path-data) path/close-subpaths))))))

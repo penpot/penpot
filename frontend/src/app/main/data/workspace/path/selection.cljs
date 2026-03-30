@@ -52,7 +52,7 @@
     (update [_ state]
       (let [selrect         (dm/get-in state [:workspace-local :selrect])
             id              (dm/get-in state [:workspace-local :edition])
-            content         (st/get-path state :content)
+            content         (st/get-path state :path-data)
 
             selected-point? (if (some? selrect)
                               (partial gsh/has-point-rect? selrect)

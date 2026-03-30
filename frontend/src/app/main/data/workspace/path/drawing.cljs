@@ -93,7 +93,7 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [id (st/get-path-id state)
-             content (st/get-path state :content)
+             content (st/get-path state :path-data)
 
              index (or index (count content))
              prefix (or prefix :c1)
@@ -123,7 +123,7 @@
       (let [id (st/get-path-id state)
 
             modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
-            content (-> (st/get-path state :content)
+            content (-> (st/get-path state :path-data)
                         (path/apply-content-modifiers modifiers))
 
             handler (get-in state [:workspace-local :edit-path id :drag-handler])]
@@ -147,7 +147,7 @@
   (ptk/reify ::close-path-drag-start
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [content  (st/get-path state :content)
+      (let [content  (st/get-path state :path-data)
             handlers (-> (path.segment/get-handlers content)
                          (get position))
 
@@ -279,7 +279,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects      (dsh/lookup-page-objects state)
-            content      (get-in state [:workspace-drawing :object :content] [])
+            content      (get-in state [:workspace-drawing :object :path-data] [])
 
             ;; FIXME: use native operation for retrieve the first position
             position     (-> (nth content 0)
@@ -305,7 +305,7 @@
   (ptk/reify ::handle-drawing-end
     ptk/UpdateEvent
     (update [_ state]
-      (let [content (some-> (dm/get-in state [:workspace-drawing :object :content])
+      (let [content (some-> (dm/get-in state [:workspace-drawing :object :path-data])
                             (path/check-content))]
         (if (> (count content) 1)
           (assoc-in state [:workspace-drawing :object :initialized?] true)
@@ -313,7 +313,7 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [content (dm/get-in state [:workspace-drawing :object :content])]
+      (when-let [content (dm/get-in state [:workspace-drawing :object :path-data])]
         (if (> (count content) 1)
           (rx/of (setup-frame)
                  (dwdc/handle-finish-drawing)
@@ -350,7 +350,7 @@
     (update [_ state]
       (let [id      (dm/get-in state [:workspace-local :edition])
             objects (dsh/lookup-page-objects state)
-            content (dm/get-in objects [id :content])]
+            content (dm/get-in objects [id :path-data])]
         (if content
           (update-in state [:workspace-local :edit-path id] assoc :old-content content)
           state)))
@@ -412,7 +412,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [id (st/get-path-id state)
-            content (st/get-path state :content)
+            content (st/get-path state :path-data)
             old-content (get-in state [:workspace-local :edit-path id :old-content])
             mode (get-in state [:workspace-local :edit-path id :edit-mode])
             empty-content? (empty? content)]

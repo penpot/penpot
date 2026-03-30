@@ -32,7 +32,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects      (dsh/lookup-page-objects state)
-            content      (dm/get-in state [:workspace-drawing :object :content])
+            content      (dm/get-in state [:workspace-drawing :object :path-data])
             position     (path.segment/get-handler-point content 0 nil)
 
             frame-id     (->> (ctst/top-nested-frame objects position)
@@ -70,7 +70,7 @@
                          points' (grc/rect->points selrect)]
                      (-> object
                          (assoc ::points points)
-                         (assoc :content content)
+                         (assoc :path-data content)
                          (assoc :selrect selrect)
                          (assoc :points points'))))))))
 
@@ -88,7 +88,7 @@
 
                      (-> shape
                          (dissoc ::points)
-                         (assoc :content content)
+                         (assoc :path-data content)
                          (assoc :selrect selrect)
                          (assoc :points points)
                          (cond-> (or (empty? points)

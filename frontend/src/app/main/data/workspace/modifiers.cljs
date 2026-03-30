@@ -53,6 +53,7 @@
     :width
     :height
     :content
+    :path-data
     :transform
     :transform-inverse
     :rotation
@@ -435,8 +436,8 @@
     [objects path-modifiers]
     (letfn [(apply-path-modifier
               [shape {:keys [content-modifiers]}]
-              (let [shape (update shape :content upc/apply-content-modifiers content-modifiers)
-                    [points selrect] (helpers/content->points+selrect shape (:content shape))]
+              (let [shape (update shape :path-data upc/apply-content-modifiers content-modifiers)
+                    [points selrect] (helpers/content->points+selrect shape (:path-data shape))]
                 (assoc shape :selrect selrect :points points)))]
       (loop [modifiers (seq path-modifiers)
              result objects]

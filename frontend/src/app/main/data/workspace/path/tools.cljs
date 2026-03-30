@@ -40,11 +40,11 @@
 
          (when (and (seq points) (some? shape))
            (let [new-content
-                 (-> (tool-fn (:content shape) points)
+                 (-> (tool-fn (:path-data shape) points)
                      (path/close-subpaths))
 
                  changes
-                 (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
+                 (changes/generate-path-changes it objects page-id shape (:path-data shape) new-content)]
 
              (rx/concat
               (rx/of (dwsh/update-shapes [id] path/convert-to-path)

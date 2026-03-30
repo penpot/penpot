@@ -112,7 +112,7 @@
                  :name      (str (:name shape) " (stroke)")
                  :parent-id parent-id
                  :frame-id  frame-id
-                 :content   content
+                 :path-data content
                  :fills     [(stroke->fill stroke)]
                  :strokes   []})))))
         (:strokes shape)))
