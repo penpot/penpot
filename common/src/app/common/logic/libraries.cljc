@@ -603,7 +603,7 @@
 (defmethod generate-sync-shape :components
   [_ changes _library-id container shape libraries current-file-id]
   (let [shape-id  (:id shape)
-        file      (get current-file-id libraries)]
+        file      (get libraries current-file-id)]
     (generate-sync-shape-direct changes file libraries container shape-id false)))
 
 (defmethod generate-sync-shape :colors
@@ -837,7 +837,7 @@
               shape-inst' (ctn/get-head-shape (:objects container-inst) parent)
               component' (or (ctkl/get-component library (:component-id shape-inst'))
                              (ctkl/get-deleted-component library (:component-id shape-inst')))]
-          (if (some? component)
+          (if (some? component')
             (recur shape-inst'
                    component')
             nil))))))
@@ -2241,7 +2241,7 @@
                  (contains? #{:auto :fix} (:layout-item-h-sizing shape-main))
                  (propagate-attrs shape-main #{:layout-item-h-sizing} omit-touched?)
 
-                 (contains? #{:auto :fix} (:layout-item-h-sizing shape-main))
+                 (contains? #{:auto :fix} (:layout-item-v-sizing shape-main))
                  (propagate-attrs shape-main #{:layout-item-v-sizing} omit-touched?)))
              {:ignore-touched true})
 
@@ -2271,7 +2271,7 @@
                  (contains? #{:auto :fix} (:layout-item-h-sizing shape-copy))
                  (propagate-attrs shape-copy #{:layout-item-h-sizing} omit-touched?)
 
-                 (contains? #{:auto :fix} (:layout-item-h-sizing shape-copy))
+                 (contains? #{:auto :fix} (:layout-item-v-sizing shape-copy))
                  (propagate-attrs shape-copy #{:layout-item-v-sizing} omit-touched?)))
              {:ignore-touched true})
 
