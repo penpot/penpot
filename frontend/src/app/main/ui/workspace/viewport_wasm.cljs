@@ -64,14 +64,19 @@
 
 ;; --- Viewport
 
+(defn- apply-modifiers-to-objects
+  [objects modifiers]
+  (->> modifiers
+       (reduce
+        (fn [objs [id t]]
+          (if (contains? objs id)
+            (update objs id gsh/apply-transform t)
+            objs))
+        objects)))
+
 (defn apply-modifiers-to-selected
   [selected objects modifiers]
-  (->> modifiers
-       (filter #(contains? selected (first %)))
-       (reduce
-        (fn [objects [id transform]]
-          (update objects id gsh/apply-transform transform))
-        objects)))
+  (apply-modifiers-to-objects objects (select-keys (into {} modifiers) selected)))
 
 (mf/defc viewport*
   [{:keys [selected wglobal wlocal layout file page palete-size file-version-id]}]
@@ -119,6 +124,11 @@
         selected-shapes   (->> selected
                                (into [] (keep (d/getf objects-modified)))
                                (not-empty))
+
+        objects-for-outlines
+        (mf/with-memo [base-objects wasm-modifiers]
+          (apply-modifiers-to-objects base-objects wasm-modifiers))
+
         ;; STATE
         alt?              (mf/use-state false)
         shift?            (mf/use-state false)
@@ -489,20 +499,20 @@
                outlined-frame (get objects outlined-frame-id)]
            [:*
             [:& outline/shape-outlines
-             {:objects base-objects
+             {:objects objects-for-outlines
               :hover #{outlined-frame-id}
               :zoom zoom}]
 
             (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline.blurrable
                [:& outline/shape-outlines
-                {:objects base-objects
+                {:objects objects-for-outlines
                  :selected selected
                  :zoom zoom}]])]))
 
        (when show-outlines?
          [:& outline/shape-outlines
-          {:objects base-objects
+          {:objects objects-for-outlines
            :selected selected
            :hover #{(:id @hover) @frame-hover}
            :highlighted highlighted
