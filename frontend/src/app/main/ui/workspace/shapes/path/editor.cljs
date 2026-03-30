@@ -283,7 +283,7 @@
         (or selected-points #{})
 
         base-content
-        (get shape :content)
+        (get shape :path-data)
 
         base-points
         (mf/with-memo [base-content]

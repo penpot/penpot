@@ -23,7 +23,7 @@
 
 (defn- apply-content-modifiers
   [shape content-modifiers]
-  (let [shape (update shape :content types.path/apply-content-modifiers content-modifiers)]
+  (let [shape (update shape :path-data types.path/apply-content-modifiers content-modifiers)]
     (types.path/update-geometry shape)))
 
 (mf/defc path-wrapper

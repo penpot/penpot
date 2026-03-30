@@ -25,7 +25,7 @@
 
           metadata? (mf/use-ctx use/include-metadata-ctx)
           content   (mf/with-memo [shape child-objs]
-                      (let [content (:content shape)]
+                      (let [content (:path-data shape)]
                         (cond
                           (some? content)
                           content
@@ -34,7 +34,7 @@
                           (path/calc-bool-content shape child-objs))))
 
           shape     (mf/with-memo [shape content]
-                      (assoc shape :content content))]
+                      (assoc shape :path-data content))]
 
       [:*
        (when (some? content)

@@ -27,7 +27,7 @@
 (mf/defc path-shape
   {::mf/props :obj}
   [{:keys [shape]}]
-  (let [content (get shape :content)
+  (let [content (get shape :path-data)
         pdata   (mf/with-memo [content]
                   (try
                     (content->string content)
