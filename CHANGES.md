@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 2.14.1
+
+### :sparkles: New features & Enhancements
+
+- Add automatic retry with backoff for idempotent RPC requests on network failures [Github #8792](https://github.com/penpot/penpot/pull/8792)
+- Add scroll and zoom throttling to one state update per animation frame [Github #8812](https://github.com/penpot/penpot/pull/8812)
+- Improve error handling and exception formatting [Github #8757](https://github.com/penpot/penpot/pull/8757)
+
+### :bug: Bugs fixed
+
+- Fix crash in apply-text-modifier with nil selrect or modifier [Github #8762](https://github.com/penpot/penpot/pull/8762)
+- Fix incorrect attrs references on generate-sync-shape [Github #8776](https://github.com/penpot/penpot/pull/8776)
+- Fix regression on subpath support [Github #8793](https://github.com/penpot/penpot/pull/8793)
+- Improve error reporting on request parsing failures [Github #8805](https://github.com/penpot/penpot/pull/8805)
+- Fix fetch abort errors escaping the unhandled exception handler [Github #8801](https://github.com/penpot/penpot/pull/8801)
+- Fix nil deref on missing bounds in layout modifier propagation [Github #8735](https://github.com/penpot/penpot/pull/8735)
+- Fix TypeError when token error map lacks :error/fn key [Github #8767](https://github.com/penpot/penpot/pull/8767)
+- Fix dissoc error when detaching stroke color from library [Github #8738](https://github.com/penpot/penpot/pull/8738)
+- Fix crash when pasting image into text editor
+- Fix null text crash on paste in text editor
+- Ensure path content is always PathData when saving
+- Fix error when get-parent-with-data encounters non-Element nodes
+
 ## 2.14.0
 
 ### :boom: Breaking changes & Deprecations
