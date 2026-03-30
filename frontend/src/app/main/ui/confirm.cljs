@@ -30,6 +30,7 @@
            on-accept
            on-cancel
            hint
+           error-msg
            items
            cancel-label
            accept-label
@@ -86,6 +87,9 @@
          [:> context-notification* {:level :info
                                     :appearance :ghost}
           hint])
+       (when (string? error-msg)
+         [:> context-notification* {:level :error}
+          error-msg])
        (when (> (count items) 0)
          [:*
           [:p {:class (stl/css :modal-subtitle)}

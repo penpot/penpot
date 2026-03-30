@@ -3,7 +3,9 @@
    [app.common.data.macros :as dm]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.main.data.common :as dcm]
    [app.main.data.modal :as modal]
+   [app.main.data.team :as dt]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -55,4 +57,24 @@
        (contains? #{"active" "past_due" "trialing"}
                   (dm/get-in profile [:subscription :status]))))
 
+(defn leave-org
+  [{:keys [org-id org-name default-team-id teams-to-delete teams-to-leave on-error] :as params}]
 
+  (ptk/reify ::leave-org
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile-team-id (dm/get-in state [:profile :default-team-id])]
+        (->> (rp/cmd! ::leave-org {:org-id org-id
+                                   :org-name org-name
+                                   :default-team-id default-team-id
+                                   :teams-to-delete teams-to-delete
+                                   :teams-to-leave teams-to-leave})
+
+
+             (rx/mapcat
+              (fn [_]
+                (rx/of
+                 (dt/fetch-teams)
+                 (dcm/go-to-dashboard-recent :team-id profile-team-id)
+                 (modal/hide))))
+             (rx/catch on-error))))))
