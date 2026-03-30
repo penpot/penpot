@@ -21,14 +21,19 @@
 
 (mf/defc auth*
   [{:keys [route]}]
-  (let [section (dm/get-in route [:data :name])
-        is-register (or
-                     (= section :auth-register)
-                     (= section :auth-register-validate)
-                     (= section :register-validate-page)
-                     (= section :auth-register-success))
-        params  (:query-params route)
-        error   (:error params)]
+  (let [section
+        (dm/get-in route [:data :name])
+
+        is-register
+        (or (= section :auth-register)
+            (= section :auth-register-validate)
+            (= section :register-validate-page)
+            (= section :auth-register-success))
+        params
+        (:query-params route)
+
+        error
+        (:error params)]
 
     (mf/with-effect []
       (dom/set-html-title (tr "title.default")))

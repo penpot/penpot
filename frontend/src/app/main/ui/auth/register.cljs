@@ -150,8 +150,7 @@
                    (assoc :create-welcome-file true))]
 
              (->> (rp/cmd! :prepare-register-profile cdata)
-                  (rx/finalize #(reset! submitted? false))
-                  (rx/subs! on-register-profile on-error)))))]
+                  (rx/subs! on-register-profile on-error #(reset! submitted? false))))))]
 
     [:& fm/form {:on-submit on-submit :form form}
      [:div {:class (stl/css :fields-row)}
@@ -239,7 +238,6 @@
       [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
      [:div {:class (stl/css :notification-text-email)} email]]))
 
-
 (mf/defc terms-register
   []
   (let [show-all?     (and cf/terms-of-service-uri cf/privacy-policy-uri)
@@ -267,13 +265,15 @@
    [:token ::sm/text]
    [:fullname [::sm/text {:max 250}]]
    [:accept-terms-and-privacy {:optional (not (contains? cf/flags :terms-and-privacy-checkbox))}
-    [:and :boolean [:= true]]]])
+    [:and :boolean [:= true]]]
+   [:accept-newsletter-updates {:optional true} :boolean]])
 
 (mf/defc register-validate-form
   {::mf/props :obj
    ::mf/private true}
   [{:keys [params on-success-callback]}]
-  (let [form       (fm/use-form :schema schema:register-validate-form :initial params)
+  (let [form
+        (fm/use-form :schema schema:register-validate-form :initial params)
 
         submitted?
         (mf/use-state false)
@@ -332,6 +332,8 @@
 
      (when (contains? cf/flags :terms-and-privacy-checkbox)
        [:& terms-and-privacy])
+
+     [:> newsletter-options*]
 
      [:> fm/submit-button*
       {:label (tr "auth.register-submit")
