@@ -40,19 +40,6 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
     onFillChangeRef.current = null
   }, [])
 
-  const openFillEditor = useCallback(
-    (index: number, fill: Fill, y: number, onChange: (fill: Fill) => void) => {
-      setActiveFillIndex(index)
-      setActiveFill(fill)
-      setFillAnchorY(y)
-      onFillChangeRef.current = (next: Fill) => {
-        setActiveFill(next)
-        onChange(next)
-      }
-    },
-    [],
-  )
-
   // Stroke editor floating panel state
   const [activeStrokeIndex, setActiveStrokeIndex] = useState<number | null>(null)
   const [activeStrokeFill, setActiveStrokeFill] = useState<Fill | null>(null)
@@ -65,8 +52,24 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
     onStrokeChangeRef.current = null
   }, [])
 
+  // Only one editor panel open at a time: each open closes the other
+  const openFillEditor = useCallback(
+    (index: number, fill: Fill, y: number, onChange: (fill: Fill) => void) => {
+      closeStrokeEditor()
+      setActiveFillIndex(index)
+      setActiveFill(fill)
+      setFillAnchorY(y)
+      onFillChangeRef.current = (next: Fill) => {
+        setActiveFill(next)
+        onChange(next)
+      }
+    },
+    [closeStrokeEditor],
+  )
+
   const openStrokeEditor = useCallback(
     (index: number, fill: Fill, y: number, onChange: (fill: Fill) => void) => {
+      closeFillEditor()
       setActiveStrokeIndex(index)
       setActiveStrokeFill(fill)
       setStrokeAnchorY(y)
@@ -75,7 +78,7 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
         onChange(next)
       }
     },
-    [],
+    [closeFillEditor],
   )
 
   // Close both editors when selection changes
