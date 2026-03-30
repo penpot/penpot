@@ -5,7 +5,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Fill, Gradient } from 'penpot-exporter/types'
-import { isColorFill, isLinearGradient, isRadialGradient, isAngularGradient } from '../../renderer/api/constants'
+import { isAngularGradient, isColorFill, isLinearGradient, isRadialGradient } from '../../renderer/api/constants'
 import { MAX_GRADIENT_STOPS } from '../../renderer/api/constants'
 
 export type FillEditorMode = 'solid' | 'linear' | 'radial' | 'angular'
@@ -81,6 +81,8 @@ export interface FillEditorProps {
   maxGradientStops?: number
   /** When true, the Type dropdown is hidden (e.g. when parent provides its own type selector). */
   hideTypeSelector?: boolean
+  /** Sidebar row shows swatch/hex; hide duplicate chrome and wrap in a bordered panel. */
+  embeddedInRow?: boolean
 }
 
 export function FillEditor({
@@ -88,6 +90,7 @@ export function FillEditor({
   onChange,
   maxGradientStops = MAX_GRADIENT_STOPS,
   hideTypeSelector = false,
+  embeddedInRow = false,
 }: FillEditorProps) {
   const formGroupClass = 'mb-3 space-y-1'
   const labelClass = 'block text-xs font-medium text-muted-foreground'
@@ -217,26 +220,32 @@ export function FillEditor({
     [fill, onChange]
   )
 
+  const shellClass = embeddedInRow
+    ? 'mt-1 rounded-md border border-border bg-muted/20 p-2'
+    : `${formGroupClass} mt-2`
+
   return (
-    <div className={`${formGroupClass} mt-2`}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 500, color: '#6B7280' }}>
-          {isGradient ? 'Gradient' : 'Solid'}
-        </span>
-        {!isGradient && (
-          <>
-            <label style={{ fontSize: 11, color: '#9CA3AF' }}>Opacity (%)</label>
-            <input
-              type="number"
-              value={Math.round(fillOpacity * 100)}
-              onChange={(e) => setFillOpacity(Number(e.target.value) / 100)}
-              min={0}
-              max={100}
-              style={{ width: 48, padding: '4px 6px', fontSize: 12 }}
-            />
-          </>
-        )}
-      </div>
+    <div className={shellClass}>
+      {!embeddedInRow && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: '#6B7280' }}>
+            {isGradient ? 'Gradient' : 'Solid'}
+          </span>
+          {!isGradient && (
+            <>
+              <label style={{ fontSize: 11, color: '#9CA3AF' }}>Opacity (%)</label>
+              <input
+                type="number"
+                value={Math.round(fillOpacity * 100)}
+                onChange={(e) => setFillOpacity(Number(e.target.value) / 100)}
+                min={0}
+                max={100}
+                style={{ width: 48, padding: '4px 6px', fontSize: 12 }}
+              />
+            </>
+          )}
+        </div>
+      )}
 
       {!hideTypeSelector && (
         <div className={formGroupClass}>
@@ -254,7 +263,7 @@ export function FillEditor({
         </div>
       )}
 
-      {mode === 'solid' && (
+      {mode === 'solid' && !embeddedInRow && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div
