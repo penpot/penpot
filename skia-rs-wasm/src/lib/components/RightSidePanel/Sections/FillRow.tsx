@@ -1,12 +1,12 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef } from 'react'
 import type { Fill } from 'penpot-exporter/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
-import { FillEditor } from '../../FillEditor/FillEditor'
 import { isColorFill, isImageFill } from '../../../renderer/api/constants'
 import { normalizeHex } from '../../../renderer/properties/panel-utils'
+import { useFillEditor } from '../use-fill-editor'
 
 export interface FillRowProps {
   fill: Fill
@@ -17,7 +17,9 @@ export interface FillRowProps {
 }
 
 export function FillRow({ fill, index, readOnly, onChange, onRemove }: FillRowProps) {
-  const [expanded, setExpanded] = useState(false)
+  const { activeFillIndex, openEditor, closeEditor } = useFillEditor()
+  const swatchRef = useRef<HTMLButtonElement>(null)
+  const expanded = activeFillIndex === index
 
   const isSolid = isColorFill(fill)
   const isImage = isImageFill(fill)
@@ -51,8 +53,13 @@ export function FillRow({ fill, index, readOnly, onChange, onRemove }: FillRowPr
 
   const toggleExpand = useCallback(() => {
     if (readOnly) return
-    setExpanded((e) => !e)
-  }, [readOnly])
+    if (expanded) {
+      closeEditor()
+    } else {
+      const y = swatchRef.current?.getBoundingClientRect().top ?? 12
+      openEditor(index, fill, y, (next) => onChange(next, index))
+    }
+  }, [readOnly, expanded, closeEditor, openEditor, index, fill, onChange])
 
   if (readOnly) {
     return (
@@ -71,6 +78,7 @@ export function FillRow({ fill, index, readOnly, onChange, onRemove }: FillRowPr
     <div className="space-y-1">
       <div className="flex min-h-8 items-center gap-1.5">
         <button
+          ref={swatchRef}
           type="button"
           onClick={toggleExpand}
           className={cn(
@@ -79,7 +87,7 @@ export function FillRow({ fill, index, readOnly, onChange, onRemove }: FillRowPr
             expanded && 'ring-2 ring-ring',
           )}
           style={{ background: swatchBg }}
-          title={expanded ? 'Collapse fill editor' : 'Expand fill editor'}
+          title={expanded ? 'Close fill editor' : 'Open fill editor'}
           aria-expanded={expanded}
           aria-label="Toggle fill editor"
         />
@@ -113,13 +121,6 @@ export function FillRow({ fill, index, readOnly, onChange, onRemove }: FillRowPr
           ×
         </Button>
       </div>
-      {expanded && (
-        <FillEditor
-          fill={fill}
-          embeddedInRow
-          onChange={(next) => onChange(next, index)}
-        />
-      )}
     </div>
   )
 }

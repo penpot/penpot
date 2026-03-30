@@ -167,6 +167,25 @@ h1 {
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    &:hover {
+      scrollbar-color: oklch(0.8 0 0 / 50%) transparent;
+    }
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: transparent;
+      border-radius: 9999px;
+    }
+    &:hover::-webkit-scrollbar-thumb {
+      background: oklch(0.8 0 0 / 50%);
+    }
   }
   html,
   body,
