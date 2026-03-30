@@ -1786,6 +1786,27 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0018-rename-path-content-to-path-data"
+  [data _]
+  (let [update-object
+        (fn [object]
+          (if (or (= :path (:type object))
+                  (= :bool (:type object)))
+            (let [content (get object :content)]
+              (cond-> object
+                (some? content)
+                (-> (assoc :path-data content)
+                    (dissoc :content))))
+            object))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1860,4 +1881,5 @@
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
          "0016-copy-fills-from-position-data-to-text-node"
-         "0017-fix-layout-flex-dir"]))
+         "0017-fix-layout-flex-dir"
+         "0018-rename-path-content-to-path-data"]))
