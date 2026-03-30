@@ -1654,9 +1654,10 @@
 
         applied-tokens
         (reduce (fn [applied-tokens attr]
-                  (let [sync-groups (ctk/resolve-sync-groups attr)
+                  (let [sync-group  (or (ctk/resolve-sync-group (:type origin-shape) attr)
+                                        (ctk/resolve-sync-group (:type dest-shape) attr))
                         token-attrs (cto/shape-attr->token-attrs attr)]
-                    (if  (and (or (not omit-touched?) (not (some touched sync-groups)))
+                    (if  (and (or (not omit-touched?) (not (touched sync-group)))
                               (or (empty? valid-attrs) (contains? valid-attrs attr)))
                       (into applied-tokens token-attrs)
                       applied-tokens)))
@@ -1817,8 +1818,9 @@
             :always
             (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))
 
-          (let [sync-groups
-                (ctk/resolve-sync-groups attr)
+          (let [sync-group
+                (or (ctk/resolve-sync-group (:type origin-shape) attr)
+                    (ctk/resolve-sync-group (:type dest-shape) attr))
 
                 ;; position-data is a special case because can be affected by
                 ;; :geometry-group and :content-group so, if the
@@ -1839,11 +1841,11 @@
                 (and omit-touched?
                      (cfh/text-shape? origin-shape)
                      (= :content attr)
-                     (some touched sync-groups))
+                     (touched sync-group))
 
                 skip-operations?
                 (or (= (get origin-shape attr) (get dest-shape attr))
-                    (and (some touched sync-groups)
+                    (and (touched sync-group)
                          omit-touched?
                          ;; When it is a text-partial-change, we should generate operations
                          ;; even when omit-touched? is true, but updating only the text or
@@ -2087,8 +2089,8 @@
            roperations [{:type :set-touched :touched (:touched previous-shape)}]
            uoperations (list {:type :set-touched :touched (:touched current-shape)})]
       (if-let [attr (first attrs)]
-        (let [sync-groups
-              (ctk/resolve-sync-groups attr)
+        (let [sync-group
+              (ctk/resolve-sync-group (:type previous-shape) attr)
 
               skip-operations?
               (or
@@ -2106,7 +2108,7 @@
                (= (get previous-shape attr) (get origin-ref-shape attr))
 
                ;; If the attr is not touched, don't copy it
-               (not (some touched sync-groups))
+               (not (touched sync-group))
 
                ;; If both variants (origin and destiny) don't have the same value
                ;; for that attribute, don't copy it.
@@ -2134,7 +2136,7 @@
                    (cfh/text-shape? current-shape)
                    (cfh/text-shape? previous-shape)
                    (= :content attr)
-                   (some touched sync-groups))
+                   (touched sync-group))
 
               path-change?
               (and (= :path (:type current-shape))
@@ -2227,9 +2229,11 @@
     (->> attrs
          (reduce
           (fn [dest attr]
-            (let [sync-groups (ctk/resolve-sync-groups attr)]
+            (let [sync-group
+                  (or (ctk/resolve-sync-group (:type origin) attr)
+                      (ctk/resolve-sync-group (:type dest) attr))]
               (cond-> dest
-                (or (not (some touched sync-groups))
+                (or (not (touched sync-group))
                     (not omit-touched?))
                 (assoc attr (get origin attr)))))
           dest))))
