@@ -48,11 +48,12 @@
 (def log-shape-ids #{})
 (def log-container-ids #{})
 
-(def updatable-attrs (->> (seq (keys ctk/sync-attrs))
-                          ;; We don't update the flex-child attrs
-                          (remove ctk/swap-keep-attrs)
-                          ;; We don't do automatic update of the `layout-grid-cells` property.
-                          (remove #(= :layout-grid-cells %))))
+(def updatable-attrs
+  (->> (keys ctk/sync-attrs)
+       ;; We don't update the flex-child attrs
+       (remove ctk/swap-keep-attrs)
+       ;; We don't do automatic update of the `layout-grid-cells` property.
+       (remove #(= :layout-grid-cells %))))
 
 (defn enabled-shape?
   [id container]
@@ -1646,19 +1647,22 @@
 (defn- generate-update-tokens
   [changes container dest-shape origin-shape touched omit-touched? valid-attrs]
   ;; valid-attrs is a set of attrs to consider on the update. If it is nil, it will consider all the attrs
-  (let [attrs (->> (seq (keys ctk/sync-attrs))
-                   ;; We don't update the flex-child attrs
-                   (remove #(= :layout-grid-cells %)))
+  (let [attrs
+        (->> (keys ctk/sync-attrs)
+             ;; We don't update the flex-child attrs
+             (remove #(= :layout-grid-cells %)))
 
-        applied-tokens (reduce (fn [applied-tokens attr]
-                                 (let [attr-group (get ctk/sync-attrs attr)
-                                       token-attrs (cto/shape-attr->token-attrs attr)]
-                                   (if  (and (or (not omit-touched?) (not (touched attr-group)))
-                                             (or (empty? valid-attrs) (contains? valid-attrs attr)))
-                                     (into applied-tokens token-attrs)
-                                     applied-tokens)))
-                               #{}
-                               attrs)]
+        applied-tokens
+        (reduce (fn [applied-tokens attr]
+                  (let [sync-group  (or (ctk/resolve-sync-group (:type origin-shape) attr)
+                                        (ctk/resolve-sync-group (:type dest-shape) attr))
+                        token-attrs (cto/shape-attr->token-attrs attr)]
+                    (if  (and (or (not omit-touched?) (not (touched sync-group)))
+                              (or (empty? valid-attrs) (contains? valid-attrs attr)))
+                      (into applied-tokens token-attrs)
+                      applied-tokens)))
+                #{}
+                attrs)]
     (cond-> changes
       (seq applied-tokens)
       (update-tokens container dest-shape origin-shape applied-tokens))))
@@ -1804,6 +1808,7 @@
            uoperations '()]
 
       (let [attr (first attrs)]
+
         (if (nil? attr)
           (cond-> changes
             (seq roperations)
@@ -1813,55 +1818,60 @@
             :always
             (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))
 
-          (let [attr-group        (get ctk/sync-attrs attr)
+          (let [sync-group
+                (or (ctk/resolve-sync-group (:type origin-shape) attr)
+                    (ctk/resolve-sync-group (:type dest-shape) attr))
+
                 ;; position-data is a special case because can be affected by
-                ;; :geometry-group and :content-group so, if the position-data
-                ;; changes but the geometry is touched we need to reset the position-data
-                ;; so it's calculated again
-                reset-pos-data? (and (cfh/text-shape? origin-shape)
-                                     (= attr :position-data)
-                                     (not= (:position-data origin-shape) (:position-data dest-shape))
-                                     (touched :geometry-group))
+                ;; :geometry-group and :content-group so, if the
+                ;; position-data changes but the geometry is touched
+                ;; we need to reset the position-data so it's
+                ;; calculated again
+                reset-pos-data?
+                (and (cfh/text-shape? origin-shape)
+                     (= attr :position-data)
+                     (not= (:position-data origin-shape) (:position-data dest-shape))
+                     (touched :geometry-group))
 
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
                 ;; and attrs (bold, font, etc) are in the same attr :content.
                 ;; If only one of them is touched, we want to adress this case and
                 ;; only update the untouched one
                 text-content-change?
-                (and
-                 omit-touched?
-                 (cfh/text-shape? origin-shape)
-                 (= :content attr)
-                 (touched attr-group))
+                (and omit-touched?
+                     (cfh/text-shape? origin-shape)
+                     (= :content attr)
+                     (touched sync-group))
 
                 skip-operations?
                 (or (= (get origin-shape attr) (get dest-shape attr))
-                    (and (touched attr-group)
+                    (and (touched sync-group)
                          omit-touched?
                          ;; When it is a text-partial-change, we should generate operations
                          ;; even when omit-touched? is true, but updating only the text or
                          ;; the attributes, omiting the other part
                          (not text-content-change?)))
 
-                attr-val (when-not skip-operations?
-                           (cond
-                             ;; If position data changes and the geometry group is touched
-                             ;; we need to put to nil so we can regenerate it
-                             reset-pos-data?
-                             nil
+                attr-val
+                (when-not skip-operations?
+                  (cond
+                    ;; If position data changes and the geometry group is touched
+                    ;; we need to put to nil so we can regenerate it
+                    reset-pos-data?
+                    nil
 
-                             text-content-change?
-                             (text-change-value (:content dest-shape)
-                                                (:content origin-shape)
-                                                touched)
+                    text-content-change?
+                    (text-change-value (:content dest-shape)
+                                       (:content origin-shape)
+                                       touched)
 
-                             :else
-                             (get origin-shape attr)))
+                    :else
+                    (get origin-shape attr)))
 
                 ;; If the final attr-value is the actual value, skip
-                skip-operations? (or skip-operations?
-                                     (= attr-val (get dest-shape attr)))
-
+                skip-operations?
+                (or skip-operations?
+                    (= attr-val (get dest-shape attr)))
 
                 ;; On a text-partial-change, we want to force a position-data reset
                 ;; so it's calculated again
@@ -2079,7 +2089,9 @@
            roperations [{:type :set-touched :touched (:touched previous-shape)}]
            uoperations (list {:type :set-touched :touched (:touched current-shape)})]
       (if-let [attr (first attrs)]
-        (let [attr-group (get ctk/sync-attrs attr)
+        (let [sync-group
+              (ctk/resolve-sync-group (:type previous-shape) attr)
+
               skip-operations?
               (or
                ;; For auto text, avoid copying geometry-driven attrs on switch.
@@ -2096,7 +2108,7 @@
                (= (get previous-shape attr) (get origin-ref-shape attr))
 
                ;; If the attr is not touched, don't copy it
-               (not (touched attr-group))
+               (not (touched sync-group))
 
                ;; If both variants (origin and destiny) don't have the same value
                ;; for that attribute, don't copy it.
@@ -2120,12 +2132,11 @@
               ;; If only one of them is touched, we want to adress this case and
               ;; only update the untouched one
               text-change?
-              (and
-               (not skip-operations?)
-               (cfh/text-shape? current-shape)
-               (cfh/text-shape? previous-shape)
-               (= :content attr)
-               (touched attr-group))
+              (and (not skip-operations?)
+                   (cfh/text-shape? current-shape)
+                   (cfh/text-shape? previous-shape)
+                   (= :content attr)
+                   (touched sync-group))
 
               path-change?
               (and (= :path (:type current-shape))
@@ -2218,9 +2229,12 @@
     (->> attrs
          (reduce
           (fn [dest attr]
-            (let [attr-group (get ctk/sync-attrs attr)]
+            (let [sync-group
+                  (or (ctk/resolve-sync-group (:type origin) attr)
+                      (ctk/resolve-sync-group (:type dest) attr))]
               (cond-> dest
-                (or (not (touched attr-group)) (not omit-touched?))
+                (or (not (touched sync-group))
+                    (not omit-touched?))
                 (assoc attr (get origin attr)))))
           dest))))
 
