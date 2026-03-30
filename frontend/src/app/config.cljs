@@ -216,7 +216,7 @@
 (defn ^boolean check-browser? [candidate]
   (dm/assert! (contains? valid-browsers candidate))
   (if (= candidate :safari)
-    (contains? #{:safari :safari-16 :safari-17} browser)
+    (contains? #{:safari :safari-16 :safari-17 :safari-18 :safari-26} browser)
     (= candidate browser)))
 
 (defn ^boolean check-platform? [candidate]
