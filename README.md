@@ -47,8 +47,6 @@ The latest updates take Penpot even further. It’s the first design tool to int
 With the [huge 2.0 release](https://penpot.app/dev-diaries), Penpot took the platform to a whole new level. This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/penpot-2.0), a complete UI redesign, a new Components system, and much more.
 For organizations that need extra service for its teams, [get in touch](https://cal.com/team/penpot/talk-to-us)
 
-🎇 Design, code, and Open Source meet at [Penpot Fest](https://penpot.app/penpotfest)! Be part of the 2025 edition in Madrid, Spain, on October 9-10.
-
 ## Table of contents ##
 
 - [Why Penpot](#why-penpot)
@@ -97,7 +95,7 @@ Learn how to install it with Docker, Kubernetes, Elestio or other options on [ou
 <br />
 
 <p align="center">
-  <img src="https://site-assets.plasmic.app/2168cf524dd543caeff32384eb9ea0a1.svg" alt="Open Source" style="width: 65%;">
+ <img src="https://github.com/user-attachments/assets/93578500-2dbd-4045-a180-e640ea5b3bd5"style="width: 65%;">
 </p>
 <br />
 
@@ -121,7 +119,7 @@ You will find the following categories:
 <br />
 
 <p align="center">
-  <img src="https://github.com/penpot/penpot/assets/5446186/6ac62220-a16c-46c9-ab21-d24ae357ed03" alt="Community" style="width: 65%;">
+  <img src="https://github.com/user-attachments/assets/7b7d0f6b-a579-4822-a9ae-d3d5a9fc9d19" alt="Community" style="width: 65%;">
 </p>
 <br />
 
