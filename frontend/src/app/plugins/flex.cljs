@@ -268,6 +268,7 @@
 
     :horizontalSizing
     {:this true
+     :writable true
      :get #(-> % u/proxy->shape :layout-item-h-sizing (d/nilv :fix) d/name)
      :set
      (fn [_ value]
@@ -284,6 +285,7 @@
 
     :verticalSizing
     {:this true
+     :writable true
      :get #(-> % u/proxy->shape :layout-item-v-sizing (d/nilv :fix) d/name)
      :set
      (fn [_ value]
