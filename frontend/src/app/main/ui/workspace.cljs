@@ -57,7 +57,7 @@
         selected    (mf/deref refs/selected-shapes)
         page-id     (get page :id)
 
-        {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
+        vport       (mf/deref refs/workspace-vport)
         {:keys [options-mode]} wglobal
 
 
@@ -106,7 +106,6 @@
        [:> viewport*
         {:file file
          :page page
-         :wlocal wlocal
          :wglobal wglobal
          :selected selected
          :layout layout

@@ -64,19 +64,25 @@
 
 ;; --- Viewport
 
-(defn apply-modifiers-to-selected
-  [selected objects modifiers]
+(defn- apply-modifiers-to-objects
+  [objects modifiers]
   (->> modifiers
-       (filter #(contains? selected (first %)))
        (reduce
-        (fn [objects [id transform]]
-          (update objects id gsh/apply-transform transform))
+        (fn [objs [id t]]
+          (if (contains? objs id)
+            (update objs id gsh/apply-transform t)
+            objs))
         objects)))
 
+(defn apply-modifiers-to-selected
+  [selected objects modifiers]
+  (apply-modifiers-to-objects objects (select-keys (into {} modifiers) selected)))
+
 (mf/defc viewport*
-  [{:keys [selected wglobal wlocal layout file page palete-size file-version-id]}]
+  [{:keys [selected wglobal layout file page palete-size file-version-id]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
+
         {:keys [edit-path
                 panning
                 selrect
@@ -86,17 +92,18 @@
                 vport
                 zoom
                 zoom-inverse
-                edition]} wlocal
+                edition]}
+        (mf/deref refs/workspace-local)
 
         {:keys [options-mode
                 tooltip
                 show-distances?
-                picking-color?]} wglobal
+                picking-color?]}
+        wglobal
 
         permissions       (mf/use-ctx ctx/permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
 
-        ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
         wasm-modifiers    (mf/deref refs/workspace-wasm-modifiers)
@@ -119,6 +126,11 @@
         selected-shapes   (->> selected
                                (into [] (keep (d/getf objects-modified)))
                                (not-empty))
+
+        objects-for-outlines
+        (mf/with-memo [base-objects wasm-modifiers]
+          (apply-modifiers-to-objects base-objects wasm-modifiers))
+
         ;; STATE
         alt?              (mf/use-state false)
         shift?            (mf/use-state false)
@@ -489,20 +501,20 @@
                outlined-frame (get objects outlined-frame-id)]
            [:*
             [:& outline/shape-outlines
-             {:objects base-objects
+             {:objects objects-for-outlines
               :hover #{outlined-frame-id}
               :zoom zoom}]
 
             (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline.blurrable
                [:& outline/shape-outlines
-                {:objects base-objects
+                {:objects objects-for-outlines
                  :selected selected
                  :zoom zoom}]])]))
 
        (when show-outlines?
          [:& outline/shape-outlines
-          {:objects base-objects
+          {:objects objects-for-outlines
            :selected selected
            :hover #{(:id @hover) @frame-hover}
            :highlighted highlighted

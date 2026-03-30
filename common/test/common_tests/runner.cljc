@@ -47,8 +47,10 @@
    [common-tests.types.path-data-test]
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
+   [common-tests.types.shape-layout-test]
    [common-tests.types.token-test]
    [common-tests.types.tokens-lib-test]
+   [common-tests.undo-stack-test]
    [common-tests.uuid-test]))
 
 #?(:cljs (enable-console-print!))
@@ -93,6 +95,7 @@
    'common-tests.svg-test
    'common-tests.text-test
    'common-tests.time-test
+   'common-tests.undo-stack-test
    'common-tests.types.absorb-assets-test
    'common-tests.types.components-test
    'common-tests.types.container-test
@@ -102,6 +105,7 @@
    'common-tests.types.path-data-test
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test
+   'common-tests.types.shape-layout-test
    'common-tests.types.tokens-lib-test
    'common-tests.types.token-test
    'common-tests.uuid-test))

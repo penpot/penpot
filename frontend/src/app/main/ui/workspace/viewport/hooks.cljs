@@ -44,9 +44,12 @@
 
 (defn setup-dom-events
   [zoom disable-paste-ref in-viewport-ref workspace-read-only? drawing-tool drawing-path?]
-  (let [on-key-down       (actions/on-key-down)
+  (let [zoom-ref          (mf/use-ref zoom)
+        _                 (mf/with-effect [zoom]
+                            (mf/set-ref-val! zoom-ref zoom))
+        on-key-down       (actions/on-key-down)
         on-key-up         (actions/on-key-up)
-        on-mouse-wheel    (actions/on-mouse-wheel zoom)
+        on-mouse-wheel    (actions/on-mouse-wheel zoom-ref)
         on-paste          (actions/on-paste disable-paste-ref in-viewport-ref workspace-read-only?)
         on-pointer-down   (mf/use-fn
                            (mf/deps drawing-tool drawing-path?)
@@ -67,7 +70,7 @@
 
         #(events/unlistenByKey key)))
 
-    (mf/with-layout-effect [on-key-down on-key-up on-mouse-wheel on-paste workspace-read-only?]
+    (mf/with-layout-effect [on-key-down on-key-up on-paste workspace-read-only?]
       (let [keys [(events/listen js/document EventType.KEYDOWN on-key-down)
                   (events/listen js/document EventType.KEYUP on-key-up)
                   ;; bind with passive=false to allow the event to be cancelled

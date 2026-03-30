@@ -5,10 +5,6 @@ architectural pieces.
 
 ## General Guidelines
 
-To ensure consistency across the Penpot stack, all contributions must adhere to
-these criteria:
-
-
 ### 1. Testing & Validation
 
 #### Unit Tests
@@ -70,6 +66,29 @@ Ensure everything is installed before executing tests with the `./scripts/setup`
 * **Logic vs. View:** If logic is embedded in a UI component, extract it into a
   function in the same namespace if it is only used locally, or look for a helper
   namespace to make it unit-testable.
+
+### 4. Stack Trace Analysis
+
+When analyzing production stack traces (minified code), you can generate a
+production bundle locally to map the minified code back to the source.
+
+**To build the production bundle:**
+
+Run: `pnpm run build:app`
+
+The compiled files and their corresponding source maps will be generated in
+`resources/public/js`.
+
+**Analysis Tips:**
+
+- **Source Maps:** Use the `.map` files generated in `resources/public/js` with
+  tools like `source-map-lookup` or browser dev tools to resolve minified
+  locations.
+- **Bundle Inspection:** If the issue is related to bundle size or unexpected
+  code inclusion, inspect the generated modules in `resources/public/js`.
+- **Shadow-CLJS Reports:** For more detailed analysis of what is included in the
+  bundle, you can run shadow-cljs build reports (consult `shadow-cljs.edn` for
+  build IDs like `main` or `worker`).
 
 
 ## Code Conventions

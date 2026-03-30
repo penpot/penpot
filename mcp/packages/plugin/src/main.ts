@@ -1,7 +1,7 @@
 import "./style.css";
 
 // get the current theme from the URL
-const searchParams = new URLSearchParams(window.location.search);
+const searchParams = new URLSearchParams(window.location.hash.split("?")[1]);
 document.body.dataset.theme = searchParams.get("theme") ?? "light";
 
 // WebSocket connection management
