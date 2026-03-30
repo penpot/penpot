@@ -108,7 +108,7 @@
                         :code :challenge-required}))
 
     (and (>= status 400) (map? body))
-    (rx/throw (ex-info "http error" body))
+    (rx/throw (ex-info "http error" (assoc body :uri uri :status status)))
 
     :else
     (rx/throw

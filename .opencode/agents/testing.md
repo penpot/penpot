@@ -31,3 +31,7 @@ Requirements:
   commands).
 * Make small and logical commits following the commit guideline described in
   `CONTRIBUTING.md`. Commit only when explicitly asked.
+- Do not guess or hallucinate git author information (Name or Email). Never include the
+  `--author` flag in git commands unless specifically instructed by the user for a unique
+  case; assume the local environment is already configured. Allow git commit to
+  automatically pull the identity from the local git config `user.name` and `user.email`.
