@@ -384,6 +384,53 @@
                                        (kbd/alt? event)
                                        (kbd/meta? event))))))))
 
+(defn- schedule-zoom!
+  "Accumulate a compound zoom scale and a cursor point into `state`, scheduling
+  a single requestAnimationFrame flush if one is not already pending.  On the
+  next frame the accumulated scale is applied via `dw/set-zoom` and the state
+  is reset to its idle values."
+  [^js state scale pt]
+  (let [pending? (pos? (.-zoomRafId state))]
+    (set! (.-scale state) (* (.-scale state) scale))
+    (set! (.-zoomPt state) pt)
+    (when-not pending?
+      (set! (.-zoomRafId state)
+            (ts/raf
+             (fn []
+               (let [s  (.-scale state)
+                     zp (.-zoomPt state)]
+                 (set! (.-scale state) 1)
+                 (set! (.-zoomPt state) nil)
+                 (set! (.-zoomRafId state) 0)
+                 (st/emit! (dw/set-zoom zp s)))))))))
+
+(defn- schedule-scroll!
+  "Accumulate scroll deltas into `state`, scheduling a single
+  requestAnimationFrame flush if one is not already pending.  On the next
+  frame the accumulated dx/dy are applied via `dw/update-viewport-position`
+  and the state is reset to its idle values."
+  [^js state zoom event delta-x delta-y]
+  (let [pending? (pos? (.-rafId state))]
+    (if (and (not (cfg/check-platform? :macos)) (kbd/shift? event))
+      ;; macOS sends delta-x automatically, so on other platforms we
+      ;; remap shift+scroll-y to horizontal panning.
+      (set! (.-dx state) (+ (.-dx state) (/ delta-y zoom)))
+      (do
+        (set! (.-dx state) (+ (.-dx state) (/ delta-x zoom)))
+        (set! (.-dy state) (+ (.-dy state) (/ delta-y zoom)))))
+    (when-not pending?
+      (set! (.-rafId state)
+            (ts/raf
+             (fn []
+               (let [dx (.-dx state)
+                     dy (.-dy state)]
+                 (set! (.-dx state) 0)
+                 (set! (.-dy state) 0)
+                 (set! (.-rafId state) 0)
+                 (st/emit! (dw/update-viewport-position
+                            {:x #(+ % dx)
+                             :y #(+ % dy)})))))))))
+
 (defn on-mouse-wheel [zoom]
   (let [;; Mutable accumulator for scroll/zoom deltas, throttled to one
         ;; state update per animation frame. This prevents rapid wheel
@@ -419,64 +466,13 @@
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (if (or ctrl? mod?)
-             ;; Zoom: accumulate compound scale, use latest point
-             (let [^js state (mf/ref-val scroll-state)
-                   pending?  (pos? (.-zoomRafId state))]
-               (set! (.-scale state) (* (.-scale state) scale))
-               (set! (.-zoomPt state) pt)
-               (when-not pending?
-                 (set! (.-zoomRafId state)
-                       (ts/raf
-                        (fn []
-                          (let [s  (.-scale state)
-                                zp (.-zoomPt state)]
-                            (set! (.-scale state) 1)
-                            (set! (.-zoomPt state) nil)
-                            (set! (.-zoomRafId state) 0)
-                            (st/emit! (dw/set-zoom zp s))))))))
-
-             ;; Scroll: accumulate deltas
-             (let [^js state (mf/ref-val scroll-state)
-                   pending?  (pos? (.-rafId state))]
-
-               (if (and (not (cfg/check-platform? :macos)) (kbd/shift? event))
-                 ;; macos sends delta-x automatically, don't need to do it
-                 (set! (.-dx state) (+ (.-dx state) (/ delta-y zoom)))
-                 (do
-                   (set! (.-dx state) (+ (.-dx state) (/ delta-x zoom)))
-                   (set! (.-dy state) (+ (.-dy state) (/ delta-y zoom)))))
-
-               ;; Schedule a single RAF to flush accumulated deltas
-               (when-not pending?
-                 (set! (.-rafId state)
-                       (ts/raf
-                        (fn []
-                          (let [dx (.-dx state)
-                                dy (.-dy state)]
-                            (set! (.-dx state) 0)
-                            (set! (.-dy state) 0)
-                            (set! (.-rafId state) 0)
-                            (st/emit! (dw/update-viewport-position
-                                       {:x #(+ % dx)
-                                        :y #(+ % dy)}))))))))))
+             (schedule-zoom! (mf/ref-val scroll-state) scale pt)
+             (schedule-scroll! (mf/ref-val scroll-state) zoom event delta-x delta-y)))
 
          (when (and comments-layer? (or ctrl? mod?))
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (let [^js state (mf/ref-val scroll-state)
-                 pending?  (pos? (.-zoomRafId state))]
-             (set! (.-scale state) (* (.-scale state) scale))
-             (set! (.-zoomPt state) pt)
-             (when-not pending?
-               (set! (.-zoomRafId state)
-                     (ts/raf
-                      (fn []
-                        (let [s  (.-scale state)
-                              zp (.-zoomPt state)]
-                          (set! (.-scale state) 1)
-                          (set! (.-zoomPt state) nil)
-                          (set! (.-zoomRafId state) 0)
-                          (st/emit! (dw/set-zoom zp s))))))))))))))
+           (schedule-zoom! (mf/ref-val scroll-state) scale pt)))))))
 
 (defn on-drag-enter
   [comp-inst-ref]
