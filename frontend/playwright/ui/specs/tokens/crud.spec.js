@@ -6,7 +6,7 @@ import {
   setupTokensFileRender,
   setupTypographyTokensFileRender,
   testTokenCreationFlow,
-  unfoldTokenTree,
+  unfoldTokenType,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -31,15 +31,9 @@ test.describe("Tokens - creation", () => {
   });
 
   test("User creates border radius token with combobox", async ({ page }) => {
-    const invalidValueError = "Invalid token value";
-    const emptyNameError = "Name should be at least 1 character";
-    const selfReferenceError = "Token has self reference";
-    const missingReferenceError = "Missing token references";
-
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFileRender(page, {
-        flags: ["enable-token-combobox", "enable-feature-token-input"],
-      });
+    const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page, {
+      flags: ["enable-token-combobox", "enable-feature-token-input"],
+    });
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -83,8 +77,10 @@ test.describe("Tokens - creation", () => {
 
     await submitButton.click();
 
+    await unfoldTokenType(tokensTabPanel, "border radius");
+
     await expect(
-      tokensTabPanel.getByRole('button', { name: 'my-token' }),
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
 
     // Create second token referencing the first one using the combobox options
@@ -310,7 +306,7 @@ test.describe("Tokens - creation", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await unfoldTokenTree(tokensSidebar, "color", "color.primary");
+    await unfoldTokenType(tokensSidebar, "color");
 
     // Create token referencing the previous one with keyboard
 
@@ -477,6 +473,8 @@ test.describe("Tokens - creation", () => {
 
     await submitButton.click();
 
+    await unfoldTokenType(tokensTabPanel, "font family");
+
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
@@ -631,6 +629,8 @@ test.describe("Tokens - creation", () => {
 
     await submitButton.click();
 
+    await unfoldTokenType(tokensTabPanel, "font weight");
+
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
@@ -767,6 +767,8 @@ test.describe("Tokens - creation", () => {
 
     await submitButton.click();
 
+    await unfoldTokenType(tokensTabPanel, "text case");
+
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
@@ -884,6 +886,8 @@ test.describe("Tokens - creation", () => {
     await expect(submitButton).toBeEnabled();
 
     await submitButton.click();
+
+    await unfoldTokenType(tokensTabPanel, "text decoration");
 
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token" }),
@@ -1051,6 +1055,8 @@ test.describe("Tokens - creation", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
+    await unfoldTokenType(tokensTabPanel, "shadow");
+
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token" }),
     ).toBeEnabled();
@@ -1088,6 +1094,8 @@ test.describe("Tokens - creation", () => {
 
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
+
+    await unfoldTokenType(tokensTabPanel, "shadow");
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
@@ -1109,7 +1117,9 @@ test.describe("Tokens - creation", () => {
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.fill("typography.empty");
 
-    const valueField = tokensUpdateCreateModal.getByRole("textbox", { name: "Font Size" });
+    const valueField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Font Size",
+    });
 
     // Insert a value and then delete it
     await valueField.fill("1");
@@ -1273,6 +1283,8 @@ test.describe("Tokens - creation", () => {
     await nameField.fill("my-token");
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
+
+    await unfoldTokenType(tokensTabPanel, "shadow");
 
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token" }),
@@ -1642,7 +1654,7 @@ test.describe("Tokens - creation", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await unfoldTokenTree(tokensSidebar, "color", "dark.primary");
+    await unfoldTokenType(tokensSidebar, "color");
 
     await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
   });
@@ -1681,10 +1693,10 @@ test.describe("Tokens - creation", () => {
 
     await expect(tokensSidebar).toBeVisible();
 
-    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+    await unfoldTokenType(tokensSidebar, "color");
 
     const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
 
     await colorToken.click({ button: "right" });
@@ -1724,7 +1736,7 @@ test("User creates grouped color token", async ({ page }) => {
   await expect(submitButton).toBeEnabled();
   await submitButton.click();
 
-  await unfoldTokenTree(tokensSidebar, "color", "dark.primary");
+  await unfoldTokenType(tokensSidebar, "color");
 
   await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
 });
@@ -1761,10 +1773,10 @@ test("User duplicate color token", async ({ page }) => {
 
   await expect(tokensSidebar).toBeVisible();
 
-  unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+  await unfoldTokenType(tokensSidebar, "color");
 
   const colorToken = tokensSidebar.getByRole("button", {
-    name: "100",
+    name: "colors.blue.100",
   });
 
   await colorToken.click({ button: "right" });
@@ -1809,7 +1821,9 @@ test.describe("Tokens tab - edition", () => {
     await fontFamilyField.fill("OneWord");
 
     // Invalidate incorrect values for font size
-    const fontSizeField = tokensUpdateCreateModal.getByRole("textbox", { name: "Font Size" });
+    const fontSizeField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Font Size",
+    });
     await fontSizeField.fill("invalid");
     await expect(
       tokensUpdateCreateModal.getByText(/Invalid token value:/),
@@ -1824,13 +1838,21 @@ test.describe("Tokens tab - edition", () => {
     await fontSizeField.fill("16");
     await expect(saveButton).toBeEnabled();
 
-    const fontWeightField = tokensUpdateCreateModal.getByRole("textbox", { name: "Font Weight" });
-    const letterSpacingField =
-      tokensUpdateCreateModal.getByRole("textbox", { name: "Letter Spacing" });
-    const lineHeightField = tokensUpdateCreateModal.getByRole("textbox", { name: "Line Height" });
-    const textCaseField = tokensUpdateCreateModal.getByRole("textbox", { name: "Text Case" });
-    const textDecorationField =
-      tokensUpdateCreateModal.getByRole("textbox", { name: "Text Decoration" });
+    const fontWeightField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Font Weight",
+    });
+    const letterSpacingField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Letter Spacing",
+    });
+    const lineHeightField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Line Height",
+    });
+    const textCaseField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Text Case",
+    });
+    const textDecorationField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Text Decoration",
+    });
 
     // Capture all values before switching tabs
     const originalValues = {
@@ -1883,10 +1905,10 @@ test.describe("Tokens tab - edition", () => {
 
     await expect(tokensSidebar).toBeVisible();
 
-    await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+    await unfoldTokenType(tokensSidebar, "color");
 
     const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
 
     await expect(colorToken).toBeVisible();
@@ -1904,7 +1926,7 @@ test.describe("Tokens tab - edition", () => {
 
     await expect(tokensUpdateCreateModal).not.toBeVisible();
 
-    await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100.changed");
+    await unfoldTokenType(tokensSidebar, "color");
 
     const colorTokenChanged = tokensSidebar.getByRole("button", {
       name: "changed",
@@ -1975,10 +1997,10 @@ test.describe("Tokens tab - delete", () => {
 
     await expect(tokensSidebar).toBeVisible();
 
-    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+    await unfoldTokenType(tokensSidebar, "color");
 
     const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
     await expect(colorToken).toBeVisible();
     await colorToken.click({ button: "right" });
@@ -1996,7 +2018,7 @@ test.describe("Tokens tab - delete", () => {
     await expect(tokensSidebar).toBeVisible();
 
     // Expand color tokens
-    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+    await unfoldTokenType(tokensSidebar, "color");
 
     // Verify that the node and child token are visible before deletion
     const colorNode = tokensSidebar.getByRole("button", {
@@ -2004,7 +2026,7 @@ test.describe("Tokens tab - delete", () => {
       exact: true,
     });
     const colorNodeToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
 
     // Select a node and right click on it to open context menu

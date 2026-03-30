@@ -207,7 +207,7 @@ const testTokenCreationFlow = async (
   const selfReferenceError = "Token has self reference";
   const missingReferenceError = "Missing token references";
 
-  const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+  const { tokensUpdateCreateModal, tokensSidebar } =
     await setupEmptyTokensFileRender(page);
 
   // Open modal
@@ -313,12 +313,11 @@ const testTokenCreationFlow = async (
   ).toBeEnabled();
 };
 
-const unfoldTokenTree = async (tokensTabPanel, type, tokenName) => {
-  const tokenSegments = tokenName.split(".");
-  const tokenFolderTree = tokenSegments.slice(0, -1);
-  const tokenLeafName = tokenSegments.pop();
-
-  const typeParentWrapper = tokensTabPanel.getByTestId(`section-${type}`);
+const unfoldTokenType = async (tokensTabPanel, type) => {
+  const kebabClaseType = type.toLocaleLowerCase().replace(/\s/g, "-");
+  const typeParentWrapper = tokensTabPanel.getByTestId(
+    `section-${kebabClaseType}`,
+  );
   const typeSectionButton = typeParentWrapper
     .getByRole("button", {
       name: type,
@@ -331,24 +330,6 @@ const unfoldTokenTree = async (tokensTabPanel, type, tokenName) => {
   if (isSectionExpanded === "false") {
     await typeSectionButton.click();
   }
-
-  for (const segment of tokenFolderTree) {
-    const segmentButton = typeParentWrapper
-      .getByRole("listitem")
-      .getByRole("button", { name: segment })
-      .first();
-
-    const isExpanded = await segmentButton.getAttribute("aria-expanded");
-    if (isExpanded === "false") {
-      await segmentButton.click();
-    }
-  }
-
-  await expect(
-    typeParentWrapper.getByRole("button", {
-      name: tokenLeafName,
-    }),
-  ).toBeEnabled();
 };
 
 export {
@@ -359,5 +340,5 @@ export {
   setupTypographyTokensFile,
   setupTypographyTokensFileRender,
   testTokenCreationFlow,
-  unfoldTokenTree,
+  unfoldTokenType,
 };

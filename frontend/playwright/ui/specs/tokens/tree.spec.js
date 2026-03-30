@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
-import { setupTokensFileRender, unfoldTokenTree } from "./helpers";
+import { setupTokensFileRender } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
@@ -20,10 +20,8 @@ test.describe("Tokens - node tree", () => {
     await expect(tokensColorGroup).toBeVisible();
     await tokensColorGroup.click();
 
-    await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
-
     const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
     await expect(colorToken).toBeVisible();
     await tokensColorGroup.click();

@@ -171,14 +171,11 @@
                   path (:name token)
                   tokens-by-type (ctob/group-by-type selected-token-set-tokens)
                   tokens-filtered-by-type (get tokens-by-type type)
-                  tokens-in-path-ids (filter-tokens-by-path-ids type path)
-                  remaining-tokens? (remaining-tokens-of-type-in-set? tokens-filtered-by-type tokens-in-path-ids)]
-              ;; Delete the token
+                  remaining-tokens? (remaining-tokens-of-type-in-set? tokens-filtered-by-type [id])]
               (st/emit! (dwtl/delete-token selected-token-set-id id))
-              ;; Remove from unfolded tree path
               (if remaining-tokens?
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
-                (st/emit! (dwtl/toggle-token-path (name type)))))))
+                (st/emit! (dwtl/close-token-type type))))))
 
         delete-node
         (mf/with-memo [selected-token-set-tokens selected-token-set-id]
@@ -193,7 +190,7 @@
               ;; Remove from unfolded tree path
               (if remaining-tokens?
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
-                (st/emit! (dwtl/toggle-token-path (name type)))))))
+                (st/emit! (dwtl/close-token-type type))))))
 
         bulk-rename-tokens-in-path
         ;; Rename tokens in bulk affected by a node rename.
