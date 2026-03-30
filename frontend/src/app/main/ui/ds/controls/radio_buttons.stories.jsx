@@ -68,9 +68,24 @@ export default {
   parameters: {
     controls: {
       exclude: ["options", "on-change"],
+      disabled: {
+        control: { type: "boolean" },
+      },
     },
   },
-  render: ({ ...args }) => <RadioButtons {...args} />,
+  render: (args) => {
+    const [selected, setSelected] = React.useState(args.selected);
+
+    return (
+      <RadioButtons
+        {...args}
+        selected={selected}
+        onChange={(value, event) => {
+          setSelected(value);
+        }}
+      />
+    );
+  },
 };
 
 export const Default = {};
