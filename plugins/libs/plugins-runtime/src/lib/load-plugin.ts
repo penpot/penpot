@@ -64,11 +64,10 @@ export const loadPlugin = async function (
       },
       apiExtensions,
     );
-
     plugins.push(plugin);
   } catch (error) {
     closeAllPlugins();
-    console.error(error);
+    throw error;
   }
 };
 
@@ -77,12 +76,12 @@ export const ɵloadPlugin = async function (
   closeCallback?: () => void,
   apiExtensions?: object,
 ) {
-  loadPlugin(manifest, closeCallback, apiExtensions);
+  await loadPlugin(manifest, closeCallback, apiExtensions);
 };
 
 export const ɵloadPluginByUrl = async function (manifestUrl: string) {
   const manifest = await loadManifest(manifestUrl);
-  ɵloadPlugin(manifest);
+  await ɵloadPlugin(manifest);
 };
 
 export const ɵunloadPlugin = function (id: Manifest['pluginId']) {

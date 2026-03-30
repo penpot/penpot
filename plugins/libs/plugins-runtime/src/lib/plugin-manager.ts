@@ -7,6 +7,7 @@ import { openUIApi } from './api/openUI.api.js';
 import { OpenUIOptions } from './models/open-ui-options.model.js';
 import { RegisterListener } from './models/plugin.model.js';
 import { openUISchema } from './models/open-ui-options.schema.js';
+import { markPluginError } from "./create-sandbox.js";
 
 export async function createPluginManager(
   context: Context,

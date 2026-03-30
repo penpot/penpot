@@ -1,7 +1,7 @@
 import type { Context } from '@penpot/plugin-types';
 import type { Manifest } from './models/manifest.model.js';
 import { createPluginManager } from './plugin-manager.js';
-import { createSandbox } from './create-sandbox.js';
+import { createSandbox, markPluginError } from './create-sandbox.js';
 
 export async function createPlugin(
   context: Context,
@@ -13,9 +13,9 @@ export async function createPlugin(
     try {
       sandbox.evaluate();
     } catch (error) {
-      console.error(error);
-
+      markPluginError(error);
       plugin.close();
+      throw error;
     }
   };
 
@@ -33,7 +33,7 @@ export async function createPlugin(
 
   const sandbox = createSandbox(plugin, apiExtensions);
 
-  evaluateSandbox();
+  await evaluateSandbox();
 
   return {
     plugin,

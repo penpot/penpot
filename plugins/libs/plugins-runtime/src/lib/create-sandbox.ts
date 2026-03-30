@@ -26,7 +26,7 @@ export function isPluginError(error: unknown): boolean {
  * Marks an error as originating from plugin code.
  * Uses a WeakMap so it works even if the error object is frozen.
  */
-function markPluginError(error: unknown): void {
+export function markPluginError(error: unknown): void {
   if (error !== null && typeof error === 'object') {
     pluginErrors.set(error as object, true);
   }
