@@ -158,15 +158,6 @@
       (get group type)
       group)))
 
-(defn resolve-sync-groups
-  "Resolve sync groups, return a set. The resulting set can contain more
-  than one element for attrs that belongs to different groups."
-  [attr]
-  (when-let [group (get sync-attrs attr)]
-    (if (map? group)
-      (into #{} (vals group))
-      #{group})))
-
 (defn component-attr?
   "Check if some attribute is one that is involved in component syncrhonization.
    Note that design tokens also are involved, although they go by an alternate
