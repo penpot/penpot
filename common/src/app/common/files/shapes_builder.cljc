@@ -356,7 +356,7 @@
            {:type :path
             :name name
             :frame-id frame-id
-            :content content
+            :path-data content
             :selrect selrect
             :points points
             :svg-viewbox selrect

@@ -132,7 +132,7 @@
 (defn update-geometry
   "Update shape with new geometry calculated from provided content"
   ([shape content]
-   (update-geometry (assoc shape :content content)))
+   (update-geometry (assoc shape :path-data content)))
   ([shape]
    (let [flip-x
          (get shape :flip-x)
@@ -143,7 +143,7 @@
          ;; NOTE: we ensure that content is PathData instance
          content
          (impl/path-data
-          (get shape :content))
+          (get shape :path-data))
 
          ;; Ensure plain format once
          transform
@@ -181,7 +181,7 @@
              (grc/points->rect))]
 
      (-> shape
-         (assoc :content content)
+         (assoc :path-data content)
          (assoc :points points)
          (assoc :selrect selrect)))))
 
@@ -214,7 +214,7 @@
               (remove :hidden)
               (remove cpf/svg-raw-shape?)
               (map #(stp/convert-to-path % objects))
-              (map :content))
+              (map :path-data))
 
         contents
         (sequence extract-content-xf (:shapes shape))]
@@ -229,7 +229,7 @@
                  :hint (str "unable to calculate bool content for shape " (:id shape))
                  :shapes (:shapes shape)
                  :type (:bool-type shape)
-                 :content (vec contents)
+                 :path-data (vec contents)
                  :cause cause)))))
 
 (def wasm:calc-bool-content
@@ -249,7 +249,7 @@
   (let [content (if (fn? wasm:calc-bool-content)
                   (wasm:calc-bool-content shape objects)
                   (calc-bool-content shape objects))
-        shape   (assoc shape :content content)]
+        shape   (assoc shape :path-data content)]
     (update-geometry shape)))
 
 (defn shape-with-open-path?
@@ -259,7 +259,7 @@
         maybe-close (if svg? identity subpath/close-subpaths)]
     (and (= :path (:type shape))
          (not (->> shape
-                   :content
+                   :path-data
                    (maybe-close)
                    (subpath/get-subpaths)
                    (every? subpath/is-closed?))))))
@@ -270,6 +270,6 @@
    (convert-to-path shape {}))
   ([shape objects]
    (-> (stp/convert-to-path shape objects)
-       (update :content impl/path-data))))
+       (update :path-data impl/path-data))))
 
 (dm/export impl/decode-segments)

@@ -148,8 +148,8 @@
 (defn path->lines
   "Given a path returns a list of lines that approximate the path"
   [shape]
-  (loop [command (first (:content shape))
-         pending (rest (:content shape))
+  (loop [command (first (:path-data shape))
+         pending (rest (:path-data shape))
          result []
          last-start nil
          prev-point nil]

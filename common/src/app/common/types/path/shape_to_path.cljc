@@ -162,13 +162,13 @@
         head-data (select-keys head bool/style-properties)
         content (into []
                       (comp (filter cfh/path-shape?)
-                            (map :content)
+                            (map :path-data)
                             (map vec)
                             (mapcat fix-first-relative))
                       child-as-paths)]
     (-> group
         (assoc :type :path)
-        (assoc :content (path.impl/path-data content))
+        (assoc :path-data (path.impl/path-data content))
         (merge head-data)
         (d/without-keys dissoc-attrs))))
 
@@ -184,12 +184,12 @@
         (:bool-type shape)
 
         content
-        (-> (bool/calculate-content bool-type (map :content children))
+        (-> (bool/calculate-content bool-type (map :path-data children))
             (path.impl/path-data))]
 
     (-> shape
         (assoc :type :path)
-        (assoc :content content)
+        (assoc :path-data content)
         (dissoc :bool-type)
         (d/without-keys dissoc-attrs))))
 
@@ -231,7 +231,7 @@
 
         (-> shape
             (assoc :type :path)
-            (assoc :content content)
+            (assoc :path-data content)
             (cond-> (= :image type)
               (assoc :fill-image (get shape :metadata)))
             (d/without-keys dissoc-attrs)))
