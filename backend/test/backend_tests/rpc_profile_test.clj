@@ -380,7 +380,9 @@
   (let [data  {::th/type :prepare-register-profile
                :email "user@example.com"
                :fullname "foobar"
-               :password "foobar"}
+               :password "foobar"
+               :utm_campaign "utma"
+               :mtm_campaign "mtma"}
         out   (th/command! data)
         token (get-in out [:result :token])]
     (t/is (string? token))
@@ -396,11 +398,9 @@
 
     ;; try correct register
     (let [data  {::th/type :register-profile
-                 :token token
-                 :utm_campaign "utma"
-                 :mtm_campaign "mtma"}]
-      (let [{:keys [result error]} (th/command! data)]
-        (t/is (nil? error))))
+                 :token token}
+          out   (th/command! data)]
+      (t/is (nil? (:error out))))
 
     (let [profile (some-> (th/db-get :profile {:email "user@example.com"})
                           (profile/decode-row))]
