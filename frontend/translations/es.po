@@ -8755,6 +8755,24 @@ msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
 
+msgid "webgl.modals.webgl-unavailable.title"
+msgstr "Vaya, WebGL no está disponible"
+
+msgid "webgl.modals.webgl-unavailable.message"
+msgstr "WebGL no está disponible en tu navegador, y es necesario para que Penpot funcione. Revisa la configuración de tu navegador y/o cierra pestañas con uso intensivo de gráficos."
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
+msgstr "Consulta nuestra "
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.link"
+msgstr "guía de solución de problemas de WebGL"
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr " para revisar la configuración del navegador, la aceleración por GPU, los drivers y problemas comunes del sistema."
+
+msgid "webgl.modals.webgl-unavailable.cta"
+msgstr "Ir al panel"
+
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
