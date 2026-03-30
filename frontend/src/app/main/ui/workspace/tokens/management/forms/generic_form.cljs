@@ -219,7 +219,7 @@
                                                {:name name
                                                 :value (:value valid-token)
                                                 :description description}))
-                          (dwtl/toggle-token-type (:type token) false)
+                          (dwtl/open-token-type (:type token))
                           (dwtp/propagate-workspace-tokens)
                           (modal/hide!)))))
                    ;; WORKAROUND:  display validation errors in the form instead of crashing

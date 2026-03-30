@@ -122,7 +122,7 @@
          (mf/deps type expandable?)
          (fn []
            (when expandable?
-             (st/emit! (dwtl/toggle-token-type type true)))))
+             (st/emit! (dwtl/toggle-token-type type)))))
 
         on-popover-open-click
         (mf/use-fn

@@ -61,9 +61,44 @@
       (watch [_ _ _]
         (rx/of (dwsh/update-shapes [id] #(merge % attrs)))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKENS TREE - Type folders
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn open-token-type
+  ([types type]
+   (conj (or types #{}) type))
+  ([type]
+   (ptk/reify ::open-token-type
+     ptk/UpdateEvent
+     (update [_ state]
+       (update-in state [:workspace-tokens :unfolded-token-types]
+                  #(open-token-type % type))))))
+
+(defn close-token-type
+  ([types type]
+   (disj (or types #{}) type))
+  ([type]
+   (ptk/reify ::close-token-type
+     ptk/UpdateEvent
+     (update [_ state]
+       (update-in state [:workspace-tokens :unfolded-token-types]
+                  #(close-token-type % type))))))
+
+(defn toggle-token-type
+  [type]
+  (ptk/reify ::toggle-token-type
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-tokens :unfolded-token-types]
+                 (fn [types]
+                   (if (contains? (or types #{}) type)
+                     (close-token-type types type)
+                     (open-token-type types type)))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Toggle tree nodes
+;; TOKENS TREE - Toggle tree nodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- remove-path
@@ -95,19 +130,7 @@
                        (remove-path path paths)
                        (add-path path paths))))))))
 
-;; Toggle token type folder (e.g. color, typography) in the tree view
-;; If `allow-close-type-folder` is false, it will only allow opening the folder, but not closing it.
-(defn toggle-token-type
-  [type allow-close-type-folder]
-  (ptk/reify ::toggle-token-type
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-tokens :unfolded-token-types]
-                 (fn [types]
-                   (let [types (or types #{})]
-                     (if (and (contains? types type) allow-close-type-folder)
-                       (disj types type)
-                       (conj types type))))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions

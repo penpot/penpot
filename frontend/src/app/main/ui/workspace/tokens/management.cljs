@@ -175,7 +175,7 @@
               (st/emit! (dwtl/delete-token selected-token-set-id id))
               (if remaining-tokens?
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
-                (st/emit! (dwtl/toggle-token-type type true))))))
+                (st/emit! (dwtl/close-token-type type))))))
 
         delete-node
         (mf/with-memo [selected-token-set-tokens selected-token-set-id]
@@ -190,7 +190,7 @@
               ;; Remove from unfolded tree path
               (if remaining-tokens?
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
-                (st/emit! (dwtl/toggle-token-type type true))))))
+                (st/emit! (dwtl/close-token-type type))))))
 
         bulk-rename-tokens-in-path
         ;; Rename tokens in bulk affected by a node rename.
