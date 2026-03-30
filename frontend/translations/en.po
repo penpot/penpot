@@ -767,6 +767,9 @@ msgstr "Invite people"
 msgid "dashboard.leave-team"
 msgstr "Leave team"
 
+msgid "dashboard.leave-org"
+msgstr "Leave org"
+
 #: src/app/main/ui/dashboard/templates.cljs:84, src/app/main/ui/dashboard/templates.cljs:169
 msgid "dashboard.libraries-and-templates"
 msgstr "Libraries & Templates"
@@ -3593,6 +3596,15 @@ msgstr ""
 "You are the owner of this team. Please select another member to promote to "
 "owner before you leave."
 
+msgid "modals.leave-org-and-reassign.hint"
+msgstr "You are the owner of some organization's teams. Please promote another member to become an owner."
+
+msgid "modals.leave-org-and-reassign.hint-delete"
+msgstr "You are the only member of some of the teams. Those teams will be deleted along with its projects and files."
+
+msgid "modals.leave-org-and-reassign.hint-promote"
+msgstr "Also, you are the owner of some organization's teams. Please promote another member to become an owner."
+
 #: src/app/main/ui/dashboard/change_owner.cljs:73
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Promote and leave"
@@ -3609,13 +3621,31 @@ msgstr "Before you leave"
 msgid "modals.leave-confirm.accept"
 msgstr "Leave team"
 
+msgid "modals.leave-org-confirm.accept"
+msgstr "Leave organization"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:409, src/app/main/ui/dashboard/team.cljs:449
 msgid "modals.leave-confirm.message"
 msgstr "Are you sure you want to leave this team?"
 
+msgid "modals.leave-org-confirm.message"
+msgstr "You will permanently lose access to all teams, projects, and files within it."
+
 #: src/app/main/ui/dashboard/sidebar.cljs:408, src/app/main/ui/dashboard/sidebar.cljs:429, src/app/main/ui/dashboard/team.cljs:425, src/app/main/ui/dashboard/team.cljs:448
 msgid "modals.leave-confirm.title"
 msgstr "Leaving team"
+
+msgid "modals.leave-org-confirm.title"
+msgstr "Leaving %s organization"
+
+msgid "modals.before-leave-org.title"
+msgstr "BEFORE YOU LEAVE THE ORGANIZATION"
+
+msgid "modals.before-leave-org.message"
+msgstr "You are the only member of some of the teams. Those teams will be deleted along with its projects and files."
+
+msgid "modals.before-leave-org.warning"
+msgstr "Any team where you’re the only member will be deleted."
 
 #: src/app/main/ui/delete_shared.cljs:56
 msgid "modals.move-shared-confirm.accept"
