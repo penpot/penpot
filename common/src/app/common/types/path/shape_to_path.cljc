@@ -184,7 +184,7 @@
         (:bool-type shape)
 
         content
-        (-> (bool/calculate-content bool-type (map :path-data children))
+        (-> (bool/calculate-path-data bool-type (map :path-data children))
             (path.impl/path-data))]
 
     (-> shape
@@ -227,7 +227,7 @@
             content
             (cond-> content
               (some? transform)
-              (segm/transform-content (gmt/transform-in (gco/shape->center shape) transform)))]
+              (segm/transform-path-data (gmt/transform-in (gco/shape->center shape) transform)))]
 
         (-> shape
             (assoc :type :path)

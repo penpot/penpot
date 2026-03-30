@@ -303,7 +303,7 @@
         (-> (get-handlers content)
             (get point))
 
-        transform-content
+        transform-path-data
         (fn [content [index prefix]]
           (let [cx (d/prefix-keyword prefix :x)
                 cy (d/prefix-keyword prefix :y)]
@@ -312,7 +312,7 @@
                 (assoc-in [index :params cy] (:y point)))))
 
         content
-        (reduce transform-content (vec content) handlers)
+        (reduce transform-path-data (vec content) handlers)
 
         content
         (remove-line-curves content)]
@@ -772,20 +772,20 @@
             (replace-points point->merge-point)))
       content)))
 
-(defn transform-content
-  "Applies a transformation matrix over content and returns a new
-  content as PathData instance."
-  [content transform]
+(defn transform-path-data
+  "Applies a transformation matrix over path-data and returns a new
+   path-data as PathData instance."
+  [path-data transform]
   (if (some? transform)
-    (impl/-transform (impl/path-data content) transform)
-    content))
+    (impl/-transform (impl/path-data path-data) transform)
+    path-data))
 
-(defn move-content
-  "Applies a displacement over content and returns a new content as
-  PathData instance. Implemented in function of `transform-content`."
-  [content move-vec]
+(defn move-path-data
+  "Applies a displacement over path-data and returns a new path-data as
+   PathData instance. Implemented in function of `transform-path-data`."
+  [path-data move-vec]
   (let [transform (gmt/translate-matrix move-vec)]
-    (transform-content content transform)))
+    (transform-path-data path-data transform)))
 
 (defn calculate-extremities
   "Calculate extremities for the provided content"
@@ -840,13 +840,13 @@
           (persistent! points)))
       (persistent! points))))
 
-(defn content->selrect
-  [content]
-  (let [extremities (calculate-extremities content)
+(defn path-data->selrect
+  [path-data]
+  (let [extremities (calculate-extremities path-data)
         ;; We haven't found any extremes so we turn the commands to points
         extremities
         (if (empty? extremities)
-          (->> content (keep helpers/segment->point))
+          (->> path-data (keep helpers/segment->point))
           extremities)]
 
     ;; If no points are returned we return an empty rect.
@@ -854,10 +854,10 @@
       (grc/points->rect extremities)
       (grc/make-rect))))
 
-(defn content-center
-  [content]
-  (-> content
-      content->selrect
+(defn path-data-center
+  [path-data]
+  (-> path-data
+      path-data->selrect
       grc/rect->center))
 
 (defn append-segment
@@ -873,11 +873,11 @@
                   content)]
     (conj content (impl/check-segment segment))))
 
-(defn points->content
-  "Given a vector of points generate a path content.
+(defn points->path-data
+  "Given a vector of points generate a path-data.
 
-  Mainly used for generate a path content from user drawing points
-  using curve drawing tool."
+   Mainly used for generate a path-data from user drawing points
+   using curve drawing tool."
   [points & {:keys [close]}]
   (let [initial (first points)
         point->params

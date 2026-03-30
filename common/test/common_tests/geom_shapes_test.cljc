@@ -31,7 +31,7 @@
    (if (= type :path)
      (cts/setup-shape
       (into {:type :path
-             :path-data (path/content (:path-data params default-path))}
+             :path-data (path/path-data (:path-data params default-path))}
             params))
      (cts/setup-shape
       (into {:type type

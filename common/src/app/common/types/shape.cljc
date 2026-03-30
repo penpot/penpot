@@ -238,7 +238,7 @@
   [:map {:title "BoolAttrs"}
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
    [:bool-type [::sm/one-of bool-types]]
-   [:path-data path/schema:content]])
+   [:path-data path/schema:path-data]])
 
 (def ^:private schema:rect-attrs
   [:map {:title "RectAttrs"}])
@@ -263,7 +263,7 @@
 
 (def ^:private schema:path-attrs
   [:map {:title "PathAttrs"}
-   [:path-data path/schema:content]])
+   [:path-data path/schema:path-data]])
 
 (def ^:private schema:text-attrs
   [:map {:title "TextAttrs"}
@@ -590,7 +590,7 @@
         points  (or points
                     (grc/rect->points selrect))
         ;; Ensure we hace correct type here for Path Data
-        path-data (path/content path-data)]
+        path-data (path/path-data path-data)]
     (-> shape
         (assoc :selrect selrect)
         (assoc :points points)

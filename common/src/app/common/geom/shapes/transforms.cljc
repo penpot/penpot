@@ -99,7 +99,7 @@
         (d/update-when :y d/safe+ dy)
         (d/update-when :position-data move-position-data mvec)
         (cond-> (or (= :bool type) (= :path type))
-          (update :path-data path/move-content mvec)))))
+          (update :path-data path/move-path-data mvec)))))
 
 ;; --- Absolute Movement
 
@@ -324,7 +324,7 @@
                   (update shape :position-data transform-position-data transform-mtx)
                   shape)
         shape   (if (or (= type :path) (= type :bool))
-                  (update shape :path-data path/transform-content transform-mtx)
+                  (update shape :path-data path/transform-path-data transform-mtx)
                   (assoc shape
                          :x (dm/get-prop selrect :x)
                          :y (dm/get-prop selrect :y)
@@ -360,7 +360,7 @@
                       360)
 
         shape    (if (or (= type :path) (= type :bool))
-                   (update shape :path-data path/transform-content transform-mtx)
+                   (update shape :path-data path/transform-path-data transform-mtx)
                    (assoc shape
                           :x (dm/get-prop selrect :x)
                           :y (dm/get-prop selrect :y)

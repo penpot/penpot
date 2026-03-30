@@ -45,9 +45,9 @@
 (def ^:private snap-nodes-icon
   (deprecated-icon/icon-xref :snap-nodes (stl/css :snap-nodes-icon :pathbar-icon)))
 
-(defn check-enabled [content selected-points]
-  (when content
-    (let [segments (path.segm/get-segments-with-points content selected-points)
+(defn check-enabled [path-data selected-points]
+  (when path-data
+    (let [segments (path.segm/get-segments-with-points path-data selected-points)
           num-segments (count segments)
           num-points (count selected-points)
           points-selected? (seq selected-points)
@@ -56,7 +56,7 @@
           max-segments (-> num-points
                            (* (- num-points 1))
                            (/ 2))
-          is-curve? (some #(path.segm/is-curve? content %) selected-points)]
+          is-curve? (some #(path.segm/is-curve? path-data %) selected-points)]
 
       {:make-corner (and points-selected? is-curve?)
        :make-curve (and points-selected? (not is-curve?))
@@ -70,12 +70,12 @@
   [{:keys [shape state]}]
   (let [{:keys [edit-mode selected-points snap-toggled]} state
 
-        content (:content shape)
+        path-data (:path-data shape)
 
         enabled-buttons
         (mf/use-memo
-         (mf/deps content selected-points)
-         #(check-enabled content selected-points))
+         (mf/deps path-data selected-points)
+         #(check-enabled path-data selected-points))
 
         on-select-draw-mode
         (mf/use-fn

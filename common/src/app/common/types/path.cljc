@@ -30,20 +30,20 @@
   []
   (bool/get-default-fills))
 
-(def schema:content impl/schema:content)
+(def schema:path-data impl/schema:path-data)
 (def schema:segments impl/schema:segments)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTRUCTORS & TYPE METHODS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn content?
+(defn path-data?
   [o]
   (impl/path-data? o))
 
-(defn content
-  "Create path content from plain data or bytes, returns itself if it
-  is already PathData instance"
+(defn path-data
+  "Create path data from plain data or bytes, returns itself if it
+   is already PathData instance"
   [data]
   (impl/path-data data))
 
@@ -59,48 +59,48 @@
   [data]
   (impl/from-plain data))
 
-(defn check-content
-  [content]
-  (impl/check-content content))
+(defn check-path-data
+  [path-data]
+  (impl/check-path-data path-data))
 
 (defn get-byte-size
-  "Get byte size of a path content"
-  [content]
-  (impl/-get-byte-size content))
+  "Get byte size of path data"
+  [path-data]
+  (impl/-get-byte-size path-data))
 
 (defn write-to
-  [content buffer offset]
-  (impl/-write-to content buffer offset))
+  [path-data buffer offset]
+  (impl/-write-to path-data buffer offset))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TRANSFORMATIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn close-subpaths
-  "Given a content, searches a path for possible subpaths that can
-  create closed loops and merge them; then return the transformed path
-  conten as PathData instance"
-  [content]
-  (-> (subpath/close-subpaths content)
+  "Given path-data, searches a path for possible subpaths that can
+   create closed loops and merge them; then return the transformed path
+   data as PathData instance"
+  [path-data]
+  (-> (subpath/close-subpaths path-data)
       (impl/from-plain)))
 
-(defn apply-content-modifiers
-  "Apply delta modifiers over the path content"
-  [content modifiers]
-  (assert (impl/check-content content))
+(defn apply-path-data-modifiers
+  "Apply delta modifiers over the path data"
+  [path-data modifiers]
+  (assert (impl/check-path-data path-data))
 
-  (letfn [(apply-to-index [content [index params]]
-            (if (contains? content index)
-              (cond-> content
+  (letfn [(apply-to-index [path-data [index params]]
+            (if (contains? path-data index)
+              (cond-> path-data
                 (and
                  (or (:c1x params) (:c1y params) (:c2x params) (:c2y params))
-                 (= :line-to (get-in content [index :command])))
+                 (= :line-to (get-in path-data [index :command])))
 
                 (-> (assoc-in [index :command] :curve-to)
                     (assoc-in [index :params]
                               (helpers/make-curve-params
-                               (get-in content [index :params])
-                               (get-in content [(dec index) :params]))))
+                               (get-in path-data [index :params])
+                               (get-in path-data [(dec index) :params]))))
 
                 (:x params) (update-in [index :params :x] + (:x params))
                 (:y params) (update-in [index :params :y] + (:y params))
@@ -110,29 +110,29 @@
 
                 (:c2x params) (update-in [index :params :c2x] + (:c2x params))
                 (:c2y params) (update-in [index :params :c2y] + (:c2y params)))
-              content))]
+              path-data))]
 
     (if (some? modifiers)
       (impl/path-data
-       (reduce apply-to-index (vec content) modifiers))
-      content)))
+       (reduce apply-to-index (vec path-data) modifiers))
+      path-data)))
 
-(defn transform-content
-  "Applies a transformation matrix over content and returns a new
-  content as PathData instance."
-  [content transform]
-  (segment/transform-content content transform))
+(defn transform-path-data
+  "Applies a transformation matrix over path-data and returns a new
+   path-data as PathData instance."
+  [path-data transform]
+  (segment/transform-path-data path-data transform))
 
-(defn move-content
-  [content move-vec]
+(defn move-path-data
+  [path-data move-vec]
   (if (gpt/zero? move-vec)
-    content
-    (segment/move-content content move-vec)))
+    path-data
+    (segment/move-path-data path-data move-vec)))
 
 (defn update-geometry
-  "Update shape with new geometry calculated from provided content"
-  ([shape content]
-   (update-geometry (assoc shape :path-data content)))
+  "Update shape with new geometry calculated from provided path-data"
+  ([shape path-data]
+   (update-geometry (assoc shape :path-data path-data)))
   ([shape]
    (let [flip-x
          (get shape :flip-x)
@@ -141,7 +141,7 @@
          (get shape :flip-y)
 
          ;; NOTE: we ensure that content is PathData instance
-         content
+         path-data
          (impl/path-data
           (get shape :path-data))
 
@@ -159,14 +159,14 @@
 
          center
          (or (some-> (dm/get-prop shape :selrect) grc/rect->center)
-             (segment/content-center content))
+             (segment/path-data-center path-data))
 
-         base-content
-         (segment/transform-content content (gmt/transform-in center transform-inverse))
+         base-path-data
+         (segment/transform-path-data path-data (gmt/transform-in center transform-inverse))
 
          ;; Calculates the new selrect with points given the old center
          points
-         (-> (segment/content->selrect base-content)
+         (-> (segment/path-data->selrect base-path-data)
              (grc/rect->points)
              (gco/transform-points center transform))
 
@@ -181,7 +181,7 @@
              (grc/points->rect))]
 
      (-> shape
-         (assoc :path-data content)
+         (assoc :path-data path-data)
          (assoc :points points)
          (assoc :selrect selrect)))))
 
@@ -190,66 +190,66 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-points
-  "Returns points for the given content. Accepts PathData instances or
-  plain segment vectors. Returns nil for nil content."
-  [content]
-  (when (some? content)
-    (let [content (if (impl/path-data? content)
-                    content
-                    (impl/path-data content))]
-      (segment/get-points content))))
+  "Returns points for the given path-data. Accepts PathData instances or
+   plain segment vectors. Returns nil for nil path-data."
+  [path-data]
+  (when (some? path-data)
+    (let [path-data (if (impl/path-data? path-data)
+                      path-data
+                      (impl/path-data path-data))]
+      (segment/get-points path-data))))
 
 (defn calc-selrect
-  "Calculate selrect from a content. The content can be in a PathData
-  instance or plain vector of segments."
-  [content]
-  (segment/content->selrect content))
+  "Calculate selrect from path-data. The path-data can be in a PathData
+   instance or plain vector of segments."
+  [path-data]
+  (segment/path-data->selrect path-data))
 
-(defn- calc-bool-content*
-  "Calculate the boolean content from shape and objects. Returns plain
-  vector of segments"
+(defn- calc-bool-path-data*
+  "Calculate the boolean path-data from shape and objects. Returns plain
+   vector of segments"
   [shape objects]
-  (let [extract-content-xf
+  (let [extract-path-data-xf
         (comp (map (d/getf objects))
               (remove :hidden)
               (remove cpf/svg-raw-shape?)
               (map #(stp/convert-to-path % objects))
               (map :path-data))
 
-        contents
-        (sequence extract-content-xf (:shapes shape))]
+        path-data-items
+        (sequence extract-path-data-xf (:shapes shape))]
 
     (ex/try!
-     (bool/calculate-content (:bool-type shape) contents)
+     (bool/calculate-path-data (:bool-type shape) path-data-items)
 
      :on-exception
      (fn [cause]
        (ex/raise :type :internal
                  :code :invalid-path-content
-                 :hint (str "unable to calculate bool content for shape " (:id shape))
+                 :hint (str "unable to calculate bool path-data for shape " (:id shape))
                  :shapes (:shapes shape)
                  :type (:bool-type shape)
-                 :path-data (vec contents)
+                 :path-data (vec path-data-items)
                  :cause cause)))))
 
-(def wasm:calc-bool-content
-  "A overwrite point for setup a WASM version of the `calc-bool-content*` function"
+(def wasm:calc-bool-path-data
+  "A overwrite point for setup a WASM version of the `calc-bool-path-data*` function"
   nil)
 
-(defn calc-bool-content
-  "Calculate the boolean content from shape and objects. Returns a
-  packed PathData instance"
+(defn calc-bool-path-data
+  "Calculate the boolean path-data from shape and objects. Returns a
+   packed PathData instance"
   [shape objects]
-  (let [content (calc-bool-content* shape objects)]
-    (impl/path-data content)))
+  (let [path-data (calc-bool-path-data* shape objects)]
+    (impl/path-data path-data)))
 
 (defn update-bool-shape
   "Calculates the selrect+points for the boolean shape"
   [shape objects]
-  (let [content (if (fn? wasm:calc-bool-content)
-                  (wasm:calc-bool-content shape objects)
-                  (calc-bool-content shape objects))
-        shape   (assoc shape :path-data content)]
+  (let [path-data (if (fn? wasm:calc-bool-path-data)
+                    (wasm:calc-bool-path-data shape objects)
+                    (calc-bool-path-data shape objects))
+        shape     (assoc shape :path-data path-data)]
     (update-geometry shape)))
 
 (defn shape-with-open-path?

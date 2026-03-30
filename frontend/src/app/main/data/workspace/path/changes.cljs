@@ -16,11 +16,11 @@
    [potok.v2.core :as ptk]))
 
 (defn generate-path-changes
-  "Generates changes to update the new content of the shape"
-  [it objects page-id shape old-content new-content]
+  "Generates changes to update the new path-data of the shape"
+  [it objects page-id shape old-path-data new-path-data]
 
-  (assert (path/content? old-content))
-  (assert (path/content? new-content))
+  (assert (path/path-data? old-path-data))
+  (assert (path/path-data? new-path-data))
 
   (let [shape-id (:id shape)
 
@@ -29,22 +29,22 @@
         (update objects shape-id
                 (fn [shape]
                   (-> shape
-                      (assoc :path-data old-content)
+                      (assoc :path-data old-path-data)
                       (path/update-geometry))))
 
         changes
         (-> (pcb/empty-changes it page-id)
             (pcb/with-objects objects))
 
-        new-content
-        (path/content new-content)]
+        new-path-data
+        (path/path-data new-path-data)]
 
     (cond
       ;; https://tree.taiga.io/project/penpot/issue/2366
       (nil? shape-id)
       changes
 
-      (empty? new-content)
+      (empty? new-path-data)
       (-> changes
           (pcb/remove-objects [shape-id])
           (pcb/resize-parents [shape-id]))
@@ -54,23 +54,23 @@
           (pcb/update-shapes [shape-id]
                              (fn [shape]
                                (-> shape
-                                   (assoc :path-data new-content)
+                                   (assoc :path-data new-path-data)
                                    (path/update-geometry))))
           (pcb/resize-parents [shape-id])))))
 
-(defn save-path-content
+(defn save-path-data
   ([]
-   (save-path-content {}))
+   (save-path-data {}))
   ([{:keys [preserve-move-to] :or {preserve-move-to false}}]
-   (ptk/reify ::save-path-content
+   (ptk/reify ::save-path-data
      ptk/UpdateEvent
      (update [_ state]
-       (let [content (st/get-path state :path-data)
-             content (if (and (not preserve-move-to)
-                              (= (-> content last :command) :move-to))
-                       (path/content (take (dec (count content)) content))
-                       (path/content content))]
-         (st/set-content state content)))
+       (let [path-data (st/get-path state :path-data)
+             path-data (if (and (not preserve-move-to)
+                                (= (-> path-data last :command) :move-to))
+                         (path/path-data (take (dec (count path-data)) path-data))
+                         (path/path-data path-data))]
+         (st/set-path-data state path-data)))
 
      ptk/WatchEvent
      (watch [it state _]
@@ -83,9 +83,7 @@
          ;; objects, if shape is a ephimeral drawing shape, we should
          ;; do nothing
          (when-let [shape (get objects id)]
-           (when-let [old-content (dm/get-in local [:edit-path id :old-content])]
-             (let [new-content (get shape :path-data)
-                   changes     (generate-path-changes it objects page-id shape old-content new-content)]
+           (when-let [old-path-data (dm/get-in local [:edit-path id :old-content])]
+             (let [new-path-data (get shape :path-data)
+                   changes       (generate-path-changes it objects page-id shape old-path-data new-path-data)]
                (rx/of (dch/commit-changes changes))))))))))
-
-

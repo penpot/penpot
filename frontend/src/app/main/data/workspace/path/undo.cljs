@@ -31,18 +31,18 @@
 (defn- make-entry [state]
   (let [id (st/get-path-id state)
         shape (st/get-path state)]
-    {:content (:path-data shape)
+    {:path-data (:path-data shape)
      :selrect (:selrect shape)
      :points  (:points shape)
      :preview (get-in state [:workspace-local :edit-path id :preview])
      :last-point (get-in state [:workspace-local :edit-path id :last-point])
      :prev-handler (get-in state [:workspace-local :edit-path id :prev-handler])}))
 
-(defn- load-entry [state {:keys [content selrect points preview last-point prev-handler]}]
+(defn- load-entry [state {:keys [path-data selrect points preview last-point prev-handler]}]
   (let [id (st/get-path-id state)
-        old-content (st/get-path state :path-data)]
+        old-path-data (st/get-path state :path-data)]
     (-> state
-        (d/assoc-in-when (st/get-path-location state :path-data) content)
+        (d/assoc-in-when (st/get-path-location state :path-data) path-data)
         (d/assoc-in-when (st/get-path-location state :selrect) selrect)
         (d/assoc-in-when (st/get-path-location state :points) points)
         (d/update-in-when
@@ -51,7 +51,7 @@
          :preview preview
          :last-point last-point
          :prev-handler prev-handler
-         :old-content old-content))))
+         :old-content old-path-data))))
 
 (defn undo-path []
   (ptk/reify ::undo-path
@@ -73,8 +73,8 @@
       (let [id (st/get-path-id state)
             undo-stack (get-in state [:workspace-local :edit-path id :undo-stack])]
         (if (> (:index undo-stack) 0)
-          (rx/of (changes/save-path-content {:preserve-move-to true}))
-          (rx/of (changes/save-path-content {:preserve-move-to true})
+          (rx/of (changes/save-path-data {:preserve-move-to true}))
+          (rx/of (changes/save-path-data {:preserve-move-to true})
                  (common/finish-path)
                  (dwc/show-toolbar)))))))
 
@@ -94,7 +94,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (changes/save-path-content)))))
+      (rx/of (changes/save-path-data)))))
 
 (defn merge-head
   "Joins the head with the previous undo in one. This is done so when the user changes a
@@ -138,7 +138,7 @@
     (or (= ::dwe/clear-edition-mode type)
         (= ::dwpg/finalize-page type))))
 
-(def path-content-ref
+(def path-data-ref
   (letfn [(selector [state]
             (st/get-path state :path-data))]
     (l/derived selector store/state)))
@@ -165,10 +165,9 @@
                                         (rx/filter stop-undo?)
                                         (rx/take 1))]
               (rx/concat
-               (->> (rx/from-atom path-content-ref {:emit-current-value? true})
+               (->> (rx/from-atom path-data-ref {:emit-current-value? true})
                     (rx/take-until stop-undo-stream)
                     (rx/filter (comp not nil?))
                     (rx/map #(add-undo-entry)))
 
                (rx/of (end-path-undo))))))))))
-

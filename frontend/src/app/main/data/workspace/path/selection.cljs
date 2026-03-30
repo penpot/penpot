@@ -52,7 +52,7 @@
     (update [_ state]
       (let [selrect         (dm/get-in state [:workspace-local :selrect])
             id              (dm/get-in state [:workspace-local :edition])
-            content         (st/get-path state :path-data)
+            path-data       (st/get-path state :path-data)
 
             selected-point? (if (some? selrect)
                               (partial gsh/has-point-rect? selrect)
@@ -62,8 +62,8 @@
                                   (map (comp gpt/point :params))
                                   (filter selected-point?))
             positions       (if remove?
-                              (apply disj initial-set (into #{} xform content))
-                              (into initial-set xform content))]
+                              (apply disj initial-set (into #{} xform path-data))
+                              (into initial-set xform path-data))]
 
         (cond-> state
           (some? id)

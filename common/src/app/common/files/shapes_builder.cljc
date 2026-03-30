@@ -343,11 +343,11 @@
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
     (let [transform (csvg/parse-transform (:transform attrs))
-          content   (cond-> (path/from-string (:d attrs))
+          path-data (cond-> (path/from-string (:d attrs))
                       (some? transform)
-                      (path.segm/transform-content transform))
+                      (path.segm/transform-path-data transform))
 
-          selrect    (path.segm/content->selrect content)
+          selrect    (path.segm/path-data->selrect path-data)
           points     (grc/rect->points selrect)
           origin     (gpt/negate (gpt/point svg-data))
           attrs      (-> (dissoc attrs :d :transform)
@@ -356,7 +356,7 @@
            {:type :path
             :name name
             :frame-id frame-id
-            :path-data content
+            :path-data path-data
             :selrect selrect
             :points points
             :svg-viewbox selrect

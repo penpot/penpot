@@ -113,10 +113,10 @@
      {:num 500})))
 
 (t/deftest shape-path-content-json-roundtrip
-  (let [encode (sm/encoder path/schema:content (sm/json-transformer))
-        decode (sm/decoder path/schema:content (sm/json-transformer))]
+  (let [encode (sm/encoder path/schema:path-data (sm/json-transformer))
+        decode (sm/decoder path/schema:path-data (sm/json-transformer))]
     (smt/check!
-     (smt/for [path-content (sg/generator path/schema:content)]
+     (smt/for [path-content (sg/generator path/schema:path-data)]
        (let [path-content-1 (encode path-content)
              path-content-2 (json-roundtrip path-content-1)
              path-content-3 (decode path-content-2)]

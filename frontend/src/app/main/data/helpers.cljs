@@ -179,7 +179,7 @@
                                   shape)
                       modifiers (dm/get-in content-modifiers [id :content-modifiers])
                       shape     (if (some? modifiers)
-                                  (update shape :content path/apply-content-modifiers modifiers)
+                                  (update shape :path-data path/apply-path-data-modifiers modifiers)
                                   shape)]
                   (assoc result id shape))
                 result))

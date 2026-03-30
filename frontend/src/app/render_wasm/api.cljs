@@ -583,12 +583,12 @@
 
 (defn set-shape-path-content
   "Upload path content in chunks to WASM."
-  [content]
+  [path-data]
   (let [chunk-size (quot MAX_BUFFER_CHUNK_SIZE 4)
-        buffer-size (path/get-byte-size content)
+        buffer-size (path/get-byte-size path-data)
         padded-size (* 4 (mth/ceil (/ buffer-size 4)))
         buffer (js/Uint8Array. padded-size)]
-    (path/write-to content (.-buffer buffer) 0)
+    (path/write-to path-data (.-buffer buffer) 0)
     (h/call wasm/internal-module "_start_shape_path_buffer")
     (let [heapu32 (mem/get-heap-u32)]
       (loop [offset 0]
@@ -1549,9 +1549,9 @@
         data   (mem/slice heap
                           (+ offset 1)
                           (* length path.impl/SEGMENT-U32-SIZE))
-        content (path/from-bytes data)]
+        path-data (path/from-bytes data)]
     (mem/free)
-    content))
+    path-data))
 
 (defn stroke-to-path
   "Converts a shape's stroke at the given index into a filled path.
@@ -1566,9 +1566,9 @@
       (let [data    (mem/slice heap
                                (+ offset 1)
                                (* length path.impl/SEGMENT-U32-SIZE))
-            content (path/from-bytes data)]
+            path-data (path/from-bytes data)]
         (mem/free)
-        content)
+        path-data)
       (do (mem/free)
           nil))))
 
@@ -1591,9 +1591,9 @@
           data    (mem/slice heap
                              (+ offset 1)
                              (* length path.impl/SEGMENT-U32-SIZE))
-          content (path/from-bytes data)]
+          path-data (path/from-bytes data)]
       (mem/free)
-      content)))
+      path-data)))
 
 (defn calculate-bool
   [shape objects]
@@ -1615,10 +1615,10 @@
     (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
     (run! set-object all-children)
 
-    (let [content (-> (calculate-bool* bool-type ids)
-                      (path.impl/path-data))]
+    (let [path-data (-> (calculate-bool* bool-type ids)
+                        (path.impl/path-data))]
       (h/call wasm/internal-module "_end_temp_objects")
-      content)))
+      path-data)))
 
 (def POSITION-DATA-U8-SIZE 36)
 (def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))

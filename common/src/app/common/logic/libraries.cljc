@@ -1890,19 +1890,19 @@
 
 (defn- set-path-new-values
   [current-shape prev-shape transform]
-  (let [new-content   (segment/transform-content
-                       (:content current-shape)
+  (let [new-path-data (segment/transform-path-data
+                       (:path-data current-shape)
                        (gmt/transform-in (gpt/point 0 0) transform))
-        new-points    (-> (segment/content->selrect new-content)
+        new-points    (-> (segment/path-data->selrect new-path-data)
                           (grc/rect->points))
         points-center (gco/points->center new-points)
         new-selrect   (gsh/calculate-selrect new-points points-center)
         shape         (assoc current-shape
-                             :content new-content
+                             :path-data new-path-data
                              :points new-points
                              :selrect new-selrect)
 
-        prev-center   (segment/content-center (:content prev-shape))
+        prev-center   (segment/path-data-center (:path-data prev-shape))
         delta         (gpt/subtract points-center (first new-points))
         new-pos       (gpt/subtract prev-center delta)]
     (gsh/absolute-move shape new-pos)))

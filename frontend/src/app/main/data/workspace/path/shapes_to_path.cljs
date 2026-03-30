@@ -53,7 +53,7 @@
                    (pcb/update-shapes
                     selected
                     (fn [shape]
-                      (let [content (wasm.api/shape-to-path (:id shape))]
+                      (let [path-data (wasm.api/shape-to-path (:id shape))]
                         (-> shape
                             (assoc :type :path)
                             (cond-> (cph/text-shape? shape)
@@ -64,7 +64,7 @@
                             (cond-> (cph/image-shape? shape)
                               (assoc :fill-image (get shape :metadata)))
                             (d/without-keys dissoc-attrs)
-                            (path/update-geometry content)))))
+                            (path/update-geometry path-data)))))
                    (pcb/remove-objects children-ids))]
            (rx/of (dch/commit-changes changes)))
 
@@ -104,15 +104,15 @@
   (into []
         (keep-indexed
          (fn [idx stroke]
-           (let [content (wasm.api/stroke-to-path (:id shape) idx)]
-             (when (some? content)
+           (let [path-data (wasm.api/stroke-to-path (:id shape) idx)]
+             (when (some? path-data)
                (cts/setup-shape
                 {:type      :path
                  :id        (uuid/next)
                  :name      (str (:name shape) " (stroke)")
                  :parent-id parent-id
                  :frame-id  frame-id
-                 :path-data content
+                 :path-data path-data
                  :fills     [(stroke->fill stroke)]
                  :strokes   []})))))
         (:strokes shape)))
