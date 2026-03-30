@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { Fill } from 'penpot-exporter/types'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -22,11 +22,14 @@ export function FillsSection({ nodeId, readOnly, initialNode }: FillsSectionProp
     initialNode.fills ? [...initialNode.fills] : [],
   )
 
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- mirrors external document updates */
+  // Render-phase sync: when initialNode changes externally, reset optimistic local state.
+  // React re-renders immediately when setState is called during render, and the ref
+  // prevents the condition from firing again on that follow-up render.
+  const prevNodeRef = useRef(initialNode)
+  if (prevNodeRef.current !== initialNode) {
+    prevNodeRef.current = initialNode
     setFills(initialNode.fills ? [...initialNode.fills] : [])
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [initialNode])
+  }
 
   const commitFills = useCallback(
     async (next: Fill[]) => {

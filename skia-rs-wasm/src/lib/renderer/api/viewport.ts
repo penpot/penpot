@@ -6,9 +6,8 @@ import type { WasmModule } from '../wasm-types'
 import type { PenpotNode } from 'penpot-exporter/types'
 import { hexToU32ARGB } from '../types'
 import { checkContext, getContextInitialized, getContextLost } from './context'
-import { throttle } from '../utils'
 import { debounce } from '../utils'
-import { DEBOUNCE_DELAY_MS, THROTTLE_DELAY_MS } from './constants'
+import { DEBOUNCE_DELAY_MS } from './constants'
 import { render } from './rendering'
 import { setObjects } from './orchestration'
 
@@ -22,16 +21,6 @@ export const renderFinish = debounce((module: WasmModule, timestamp: number) => 
     render(module, timestamp)
   }
 }, DEBOUNCE_DELAY_MS)
-
-/**
- * Render pan with throttle
- * Throttles render calls for pan operations
- */
-const renderPan = throttle((module: WasmModule, timestamp: number) => {
-  if (getContextInitialized() && !getContextLost()) {
-    render(module, timestamp)
-  }
-}, THROTTLE_DELAY_MS)
 
 /**
  * Set view box with pan and zoom.
@@ -54,7 +43,6 @@ export function setViewBox(
       module._set_view_end()
       render(module, performance.now())
     }
-    renderPan(module, performance.now())
     renderFinish(module, performance.now())
   } else {
     module._render_from_cache(0)

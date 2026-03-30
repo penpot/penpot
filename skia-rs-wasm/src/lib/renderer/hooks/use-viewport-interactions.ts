@@ -74,6 +74,8 @@ export function useViewportInteractions({
   const isPanningRef = useRef<boolean>(false)
   const lastPanPosRef = useRef<{ x: number; y: number } | null>(null)
   const pendingPanUpdateRef = useRef<boolean>(false)
+  /** Accumulates pan while the viewport signal + WASM apply are limited to one commit per animation frame. */
+  const pendingPanViewportRef = useRef<Viewport | null>(null)
 
   // Handle mouse wheel for zooming
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -109,6 +111,7 @@ export function useViewportInteractions({
     if (panWithButton || panWithMod) {
       e.preventDefault()
       isPanningRef.current = true
+      pendingPanViewportRef.current = null
       canvasActor.send({ type: 'PAN_START' })
       lastPanPosRef.current = { x: e.clientX, y: e.clientY }
       canvasElement.style.cursor = 'grabbing'
@@ -218,17 +221,20 @@ export function useViewportInteractions({
       const current = viewport.value
       if (!current) return
 
-      const next = Viewport.from(current)
+      const base = pendingPanViewportRef.current ?? Viewport.from(current)
+      const next = Viewport.from(base)
       next.pan(dx, dy)
-      onViewportUpdate?.(next)
+      pendingPanViewportRef.current = next
 
       if (!pendingPanUpdateRef.current) {
         pendingPanUpdateRef.current = true
         requestAnimationFrame(() => {
           pendingPanUpdateRef.current = false
-          const latest = viewport.value
+          const latest = pendingPanViewportRef.current
           if (latest && renderer && isPanningRef.current) {
             renderer.applyViewport(Viewport.from(latest))
+            onViewportUpdate?.(latest)
+            pendingPanViewportRef.current = null
           }
         })
       }
@@ -242,16 +248,18 @@ export function useViewportInteractions({
       canvasActor.send({ type: 'PAN_END' })
       isPanningRef.current = false
       lastPanPosRef.current = null
-      const vp = viewport.value
+      const vp = pendingPanViewportRef.current ?? viewport.value
+      pendingPanViewportRef.current = null
       if (vp && renderer) {
         renderer.applyViewport(Viewport.from(vp))
+        onViewportUpdate?.(Viewport.from(vp))
       }
       if (canvas) {
         canvas.style.cursor = 'default'
       }
     }
 
-  }, [canvasRef, canvasActor, renderer])
+  }, [canvasRef, canvasActor, renderer, onViewportUpdate])
 
   // Handle mouse enter: normal cursor unless pan modifier is held (updated in mousemove)
   const handleMouseEnter = useCallback(() => {

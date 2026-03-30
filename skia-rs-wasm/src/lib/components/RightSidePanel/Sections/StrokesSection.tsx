@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { Stroke } from 'penpot-exporter/types'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -21,11 +21,12 @@ export function StrokesSection({ nodeId, readOnly, initialNode }: StrokesSection
     initialNode.strokes ? [...initialNode.strokes] : [],
   )
 
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- mirrors external document updates */
+  // Render-phase sync: when initialNode changes externally, reset optimistic local state.
+  const prevNodeRef = useRef(initialNode)
+  if (prevNodeRef.current !== initialNode) {
+    prevNodeRef.current = initialNode
     setStrokes(initialNode.strokes ? [...initialNode.strokes] : [])
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [initialNode])
+  }
 
   const commitStrokes = useCallback(
     async (next: Stroke[]) => {

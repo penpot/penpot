@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useSelector } from '@xstate/react'
 import type { PenpotNode } from 'penpot-exporter/types'
 import { Input } from '@/components/ui/input'
@@ -19,6 +19,8 @@ import {
 } from '../../../renderer/signals/pointer'
 import { useSignalCoalesced } from '../../../renderer/signals/use-signal-coalesced'
 
+type LayoutDraft = { x: number; y: number; width: number; height: number; rotation: number }
+
 export interface NodeLayoutSectionProps {
   nodeId: string
   initialNode: RectLikeNode
@@ -26,21 +28,17 @@ export interface NodeLayoutSectionProps {
 }
 
 export function NodeLayoutSection({ nodeId, initialNode, readOnly }: NodeLayoutSectionProps) {
-  const [x, setX] = useState(() => initialNode.x ?? 0)
-  const [y, setY] = useState(() => initialNode.y ?? 0)
-  const [width, setWidth] = useState(() => initialNode.width ?? 100)
-  const [height, setHeight] = useState(() => initialNode.height ?? 100)
-  const [rotation, setRotation] = useState(() => initialNode.rotation ?? 0)
+  const [draft, setDraft] = useState<LayoutDraft | null>(null)
 
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- mirrors external document updates into layout fields */
-    setX(initialNode.x ?? 0)
-    setY(initialNode.y ?? 0)
-    setWidth(initialNode.width ?? 100)
-    setHeight(initialNode.height ?? 100)
-    setRotation(initialNode.rotation ?? 0)
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [initialNode])
+  const committed: LayoutDraft = {
+    x: initialNode.x ?? 0,
+    y: initialNode.y ?? 0,
+    width: initialNode.width ?? 100,
+    height: initialNode.height ?? 100,
+    rotation: initialNode.rotation ?? 0,
+  }
+
+  const { x, y, width, height, rotation } = draft ?? committed
 
   const canvasActor = useCanvasActor()
   const isMoving = useSelector(canvasActor, (s) => s.matches('moving'))
@@ -94,13 +92,21 @@ export function NodeLayoutSection({ nodeId, initialNode, readOnly }: NodeLayoutS
   const layoutFieldsDisabled = readOnly || isMoving || isRotating
 
   const commitLayout = useCallback(async () => {
-    if (readOnly) return
+    if (readOnly || !draft) return
     const before = getCommittedNodeOnActivePage(nodeId)
     const pid = getActiveOrSinglePageId()
     if (!before || !pid) return
-    const partial = rectLayoutPartial(x, y, width, height, rotation)
-    await commitNodePartialUpdate(nodeId, before, partial, pid)
-  }, [readOnly, nodeId, x, y, width, height, rotation])
+    await commitNodePartialUpdate(
+      nodeId,
+      before,
+      rectLayoutPartial(draft.x, draft.y, draft.width, draft.height, draft.rotation),
+      pid,
+    )
+    setDraft(null)
+  }, [readOnly, nodeId, draft])
+
+  const patchDraft = (patch: Partial<LayoutDraft>) =>
+    setDraft((d) => ({ ...(d ?? committed), ...patch }))
 
   return (
     <>
@@ -112,7 +118,7 @@ export function NodeLayoutSection({ nodeId, initialNode, readOnly }: NodeLayoutS
             type="number"
             disabled={layoutFieldsDisabled}
             value={Number.isFinite(xDisplay) ? xDisplay : 0}
-            onChange={(e) => setX(parseFloat(e.target.value) || 0)}
+            onChange={(e) => patchDraft({ x: parseFloat(e.target.value) || 0 })}
             onBlur={() => void commitLayout()}
           />
         </div>
@@ -123,7 +129,7 @@ export function NodeLayoutSection({ nodeId, initialNode, readOnly }: NodeLayoutS
             type="number"
             disabled={layoutFieldsDisabled}
             value={Number.isFinite(yDisplay) ? yDisplay : 0}
-            onChange={(e) => setY(parseFloat(e.target.value) || 0)}
+            onChange={(e) => patchDraft({ y: parseFloat(e.target.value) || 0 })}
             onBlur={() => void commitLayout()}
           />
         </div>
@@ -134,7 +140,7 @@ export function NodeLayoutSection({ nodeId, initialNode, readOnly }: NodeLayoutS
             type="number"
             disabled={layoutFieldsDisabled}
             value={Number.isFinite(widthDisplay) ? widthDisplay : 0}
-            onChange={(e) => setWidth(Math.max(1, parseFloat(e.target.value) || 1))}
+            onChange={(e) => patchDraft({ width: Math.max(1, parseFloat(e.target.value) || 1) })}
             onBlur={() => void commitLayout()}
           />
         </div>
@@ -145,7 +151,7 @@ export function NodeLayoutSection({ nodeId, initialNode, readOnly }: NodeLayoutS
             type="number"
             disabled={layoutFieldsDisabled}
             value={Number.isFinite(heightDisplay) ? heightDisplay : 0}
-            onChange={(e) => setHeight(Math.max(1, parseFloat(e.target.value) || 1))}
+            onChange={(e) => patchDraft({ height: Math.max(1, parseFloat(e.target.value) || 1) })}
             onBlur={() => void commitLayout()}
           />
         </div>
@@ -158,7 +164,7 @@ export function NodeLayoutSection({ nodeId, initialNode, readOnly }: NodeLayoutS
           type="number"
           disabled={layoutFieldsDisabled}
           value={Number.isFinite(rotationDisplay) ? rotationDisplay : 0}
-          onChange={(e) => setRotation(parseFloat(e.target.value) || 0)}
+          onChange={(e) => patchDraft({ rotation: parseFloat(e.target.value) || 0 })}
           onBlur={() => void commitLayout()}
         />
       </div>

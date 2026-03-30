@@ -81,7 +81,7 @@ export { useSignalCoalesced } from './lib/renderer/signals/use-signal-coalesced'
 export { canvasMachine } from './lib/renderer/machine/canvas-machine'
 export type { CanvasContext, CanvasEvent, DrawTool } from './lib/renderer/machine/canvas-machine'
 export { CanvasActorProvider, useCanvasActor } from './lib/renderer/machine/canvas-actor-context'
-export type { CanvasActorRef } from './lib/renderer/machine/canvas-actor-context'
+export type { CanvasActorRef } from './lib/renderer/machine/canvas-actor-types'
 
 export { RightSidePanel, ShapePropertiesPanel } from './lib/components/RightSidePanel/RightSidePanel'
 export type { RightSidePanelProps, ShapePropertiesPanelProps } from './lib/components/RightSidePanel/RightSidePanel'

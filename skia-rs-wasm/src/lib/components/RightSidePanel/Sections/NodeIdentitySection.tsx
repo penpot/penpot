@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -15,23 +15,21 @@ export interface NodeIdentitySectionProps {
 }
 
 export function NodeIdentitySection({ nodeId, readOnly, initialNode }: NodeIdentitySectionProps) {
-  const [name, setName] = useState(() => initialNode.name ?? '')
+  const [draftName, setDraftName] = useState<string | null>(null)
 
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- mirrors external document updates */
-    setName(initialNode.name ?? '')
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [initialNode])
+  const name = draftName ?? initialNode.name ?? ''
 
   const commitName = useCallback(async () => {
-    if (readOnly) return
+    if (readOnly || draftName === null) return
     const before = getCommittedNodeOnActivePage(nodeId)
     const pid = getActiveOrSinglePageId()
     if (!before || !pid) return
-    const trimmed = name.trim()
-    if (trimmed === (before.name ?? '')) return
-    await commitNodePartialUpdate(nodeId, before, { name: trimmed || 'Shape' }, pid)
-  }, [readOnly, name, nodeId])
+    const trimmed = draftName.trim()
+    if (trimmed !== (before.name ?? '')) {
+      await commitNodePartialUpdate(nodeId, before, { name: trimmed || 'Shape' }, pid)
+    }
+    setDraftName(null)
+  }, [readOnly, draftName, nodeId])
 
   return (
     <div className="space-y-2">
@@ -40,7 +38,7 @@ export function NodeIdentitySection({ nodeId, readOnly, initialNode }: NodeIdent
         id="rsp-name"
         value={name}
         disabled={readOnly}
-        onChange={(e) => setName(e.target.value)}
+        onChange={(e) => setDraftName(e.target.value)}
         onBlur={() => void commitName()}
       />
     </div>
