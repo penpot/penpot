@@ -81,10 +81,8 @@
    selected))
 
 (mf/defc viewport-classic*
-  [{:keys [selected wglobal wlocal layout file page palete-size]}]
-  (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
-        ;; that the new parameter is sent
-        {:keys [edit-path
+  [{:keys [selected wglobal layout file page palete-size]}]
+  (let [{:keys [edit-path
                 panning
                 selrect
                 transform
@@ -94,7 +92,7 @@
                 zoom
                 zoom-inverse
                 edition]}
-        wlocal
+        (mf/deref refs/workspace-local)
 
         {:keys [options-mode
                 tooltip
