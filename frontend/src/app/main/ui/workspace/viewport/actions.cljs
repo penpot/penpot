@@ -431,7 +431,7 @@
                             {:x #(+ % dx)
                              :y #(+ % dy)})))))))))
 
-(defn on-mouse-wheel [zoom]
+(defn on-mouse-wheel [zoom-ref]
   (let [;; Mutable accumulator for scroll/zoom deltas, throttled to one
         ;; state update per animation frame. This prevents rapid wheel
         ;; events from causing cascading synchronous React re-renders
@@ -439,7 +439,6 @@
         scroll-state (mf/use-ref #js {:dx 0 :dy 0 :rafId 0
                                       :scale 1 :zoomPt nil :zoomRafId 0})]
     (mf/use-callback
-     (mf/deps zoom)
      (fn [event]
        (let [event      (.getBrowserEvent ^js event)
 
@@ -467,7 +466,7 @@
            (dom/stop-propagation event)
            (if (or ctrl? mod?)
              (schedule-zoom! (mf/ref-val scroll-state) scale pt)
-             (schedule-scroll! (mf/ref-val scroll-state) zoom event delta-x delta-y)))
+             (schedule-scroll! (mf/ref-val scroll-state) (mf/ref-val zoom-ref) event delta-x delta-y)))
 
          (when (and comments-layer? (or ctrl? mod?))
            (dom/prevent-default event)
