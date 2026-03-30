@@ -1,6 +1,6 @@
 {
   "name": "@penpot/mcp",
-  "version": "2.14.0",
+  "version": "2.14.1",
   "description": "MCP server for Penpot integration",
   "bin": {
     "penpot-mcp": "./bin/mcp-local.js"
