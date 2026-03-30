@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
 import { useMemo } from 'react'
 import { pointerPos } from '../../renderer/signals/pointer'
-import type { CanvasActorRef } from '../../renderer/machine/canvas-actor-context'
+import type { CanvasActorRef } from '../../renderer/machine/canvas-actor-types'
 import type { ResizeHandlePosition } from '../../renderer/types'
 
 function screenPositionFromCanvas(

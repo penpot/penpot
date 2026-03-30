@@ -1,21 +1,20 @@
-/* eslint-disable react-refresh/only-export-components -- context module exports Provider + hook */
 /**
  * React context for the canvas interaction actor (XState machine).
  * Provider is mounted by `CanvasWrapper`; pass sibling UI via `CanvasWrapper`’s `overlays` prop when it must call `useCanvasActor`.
+ *
+ * Only exports components (Provider + hook) so this file is a valid React Fast Refresh boundary.
+ * The `CanvasActorRef` type lives in `canvas-actor-types.ts`.
  */
 
 import { createContext, useContext, type ReactNode } from 'react'
-import type { ActorRefFrom } from 'xstate'
-import { canvasMachine } from './canvas-machine'
+import type { CanvasActorRef } from './canvas-actor-types'
 
-export type CanvasActorRef = ActorRefFrom<typeof canvasMachine>
-
-export const CanvasActorContext = createContext<CanvasActorRef | null>(null)
+const CanvasActorContext = createContext<CanvasActorRef | null>(null)
 
 export function useCanvasActor(): CanvasActorRef {
   const ref = useContext(CanvasActorContext)
   if (ref == null) {
-    throw new Error('useCanvasActor must be used within CanvasActorContext.Provider')
+    throw new Error('useCanvasActor must be used within CanvasActorProvider')
   }
   return ref
 }
