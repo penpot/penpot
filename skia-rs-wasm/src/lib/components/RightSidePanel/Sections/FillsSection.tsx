@@ -1,15 +1,15 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Fill } from 'penpot-exporter/types'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { FillEditor } from '../../FillEditor/FillEditor'
 import {
   commitNodePartialUpdate,
   getCommittedNodeOnActivePage,
 } from '../../../renderer/properties/commit-node-properties'
-import { DEFAULT_FILL, type RectLikeNode } from '../../../renderer/properties/panel-utils'
+import { DEFAULT_FILL, MAX_FILLS, type RectLikeNode } from '../../../renderer/properties/panel-utils'
 import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
+import { FillRow } from './FillRow'
 
 export interface FillsSectionProps {
   nodeId: string
@@ -21,15 +21,13 @@ export function FillsSection({ nodeId, readOnly, initialNode }: FillsSectionProp
   const [fills, setFills] = useState<Fill[]>(() =>
     initialNode.fills ? [...initialNode.fills] : [],
   )
+  const [collapsed, setCollapsed] = useState(false)
 
-  // Render-phase sync: when initialNode changes externally, reset optimistic local state.
-  // React re-renders immediately when setState is called during render, and the ref
-  // prevents the condition from firing again on that follow-up render.
-  const prevNodeRef = useRef(initialNode)
-  if (prevNodeRef.current !== initialNode) {
-    prevNodeRef.current = initialNode
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- mirrors external document updates into controlled fields */
     setFills(initialNode.fills ? [...initialNode.fills] : [])
-  }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [initialNode])
 
   const commitFills = useCallback(
     async (next: Fill[]) => {
@@ -48,10 +46,10 @@ export function FillsSection({ nodeId, readOnly, initialNode }: FillsSectionProp
   )
 
   const onFillChange = useCallback(
-    (fill: Fill) => {
+    (fill: Fill, index: number) => {
       const next = [...fills]
-      if (next.length === 0) next.push(fill)
-      else next[0] = fill
+      if (index < 0 || index >= next.length) return
+      next[index] = fill
       setFills(next)
       void commitFills(next)
     },
@@ -59,39 +57,74 @@ export function FillsSection({ nodeId, readOnly, initialNode }: FillsSectionProp
   )
 
   const addFill = useCallback(() => {
+    if (fills.length >= MAX_FILLS) return
     const next = [...fills, DEFAULT_FILL]
     setFills(next)
     void commitFills(next)
   }, [fills, commitFills])
 
-  const removeFills = useCallback(() => {
-    setFills([])
-    void commitFills([])
-  }, [commitFills])
+  const removeFill = useCallback(
+    (index: number) => {
+      const next = fills.filter((_, i) => i !== index)
+      setFills(next)
+      void commitFills(next)
+    },
+    [fills, commitFills],
+  )
+
+  const hasFills = fills.length > 0
+  const canAdd = !readOnly && fills.length < MAX_FILLS
 
   return (
     <>
       <Separator />
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <Label>Fill</Label>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2 py-0.5">
+          <button
+            type="button"
+            className="flex min-h-8 flex-1 items-center gap-1 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase hover:text-foreground"
+            onClick={() => setCollapsed((c) => !c)}
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? (
+              <ChevronRight className="size-3.5 shrink-0" aria-hidden />
+            ) : (
+              <ChevronDown className="size-3.5 shrink-0" aria-hidden />
+            )}
+            Fill
+          </button>
           {!readOnly && (
-            <div className="flex gap-1">
-              {fills.length === 0 ? (
-                <Button type="button" variant="outline" size="sm" onClick={addFill}>
-                  Add fill
-                </Button>
-              ) : (
-                <Button type="button" variant="ghost" size="sm" onClick={removeFills}>
-                  Clear
-                </Button>
-              )}
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={addFill}
+              disabled={!canAdd}
+              aria-label="Add fill"
+              title={canAdd ? 'Add fill' : `Maximum ${MAX_FILLS} fills`}
+            >
+              +
+            </Button>
           )}
         </div>
-        {!readOnly && fills.length > 0 && <FillEditor fill={fills[0]!} onChange={onFillChange} />}
-        {readOnly && fills.length > 0 && (
-          <p className="text-xs text-muted-foreground">Fill present (read-only)</p>
+
+        {!collapsed && hasFills && (
+          <div className="space-y-2 pl-0.5">
+            {fills.map((fill, i) => (
+              <FillRow
+                key={i}
+                fill={fill}
+                index={i}
+                readOnly={readOnly}
+                onChange={onFillChange}
+                onRemove={removeFill}
+              />
+            ))}
+          </div>
+        )}
+
+        {!collapsed && !hasFills && !readOnly && (
+          <p className="text-xs text-muted-foreground">No fills. Use + to add.</p>
         )}
       </div>
     </>
