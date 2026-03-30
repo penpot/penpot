@@ -13,10 +13,13 @@ import { FloatingEditorRail } from '../EditorShell/floating-editor-rail'
 import { ROOT_UUID, type RectLikeNode } from '../../renderer/properties/panel-utils'
 import { PagePropertyPanel } from './PagePropertyPanel'
 import { NodePropertyPanel } from './NodePropertyPanel'
-import { FillEditorContext, type FillEditorContextValue } from './fill-editor-context'
-import { FloatingFillEditorPanel } from './FloatingFillEditorPanel'
-import { StrokeEditorContext, type StrokeEditorContextValue } from './StrokeEditorContext'
-import { FloatingStrokeEditorPanel } from './FloatingStrokeEditorPanel'
+import {
+  ColorEditorContext,
+  type ColorEditorContextValue,
+  type ColorEditorKind,
+  type ColorEditorTarget,
+} from './color-editor-context'
+import { FloatingColorEditorPanel } from './FloatingColorEditorPanel'
 
 export interface RightSidePanelProps {
   className?: string
@@ -28,99 +31,63 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
 
   const [collapsed, setCollapsed] = useState(false)
 
-  // Fill editor floating panel state
-  const [activeFillIndex, setActiveFillIndex] = useState<number | null>(null)
+  // Unified color editor state (fill or stroke)
+  const [activeTarget, setActiveTarget] = useState<ColorEditorTarget | null>(null)
   const [activeFill, setActiveFill] = useState<Fill | null>(null)
-  const [fillAnchorY, setFillAnchorY] = useState(12)
-  const onFillChangeRef = useRef<((fill: Fill) => void) | null>(null)
+  const [anchorY, setAnchorY] = useState(12)
+  const [title, setTitle] = useState('')
+  const onChangeRef = useRef<((fill: Fill) => void) | null>(null)
 
-  const closeFillEditor = useCallback(() => {
-    setActiveFillIndex(null)
+  const closeEditor = useCallback(() => {
+    setActiveTarget(null)
     setActiveFill(null)
-    onFillChangeRef.current = null
+    setTitle('')
+    onChangeRef.current = null
   }, [])
 
-  // Stroke editor floating panel state
-  const [activeStrokeIndex, setActiveStrokeIndex] = useState<number | null>(null)
-  const [activeStrokeFill, setActiveStrokeFill] = useState<Fill | null>(null)
-  const [strokeAnchorY, setStrokeAnchorY] = useState(12)
-  const onStrokeChangeRef = useRef<((fill: Fill) => void) | null>(null)
-
-  const closeStrokeEditor = useCallback(() => {
-    setActiveStrokeIndex(null)
-    setActiveStrokeFill(null)
-    onStrokeChangeRef.current = null
-  }, [])
-
-  // Only one editor panel open at a time: each open closes the other
-  const openFillEditor = useCallback(
-    (index: number, fill: Fill, y: number, onChange: (fill: Fill) => void) => {
-      closeStrokeEditor()
-      setActiveFillIndex(index)
+  const openEditor = useCallback(
+    (kind: ColorEditorKind, index: number, fill: Fill, y: number, t: string, onChange: (fill: Fill) => void) => {
+      setActiveTarget({ kind, index })
       setActiveFill(fill)
-      setFillAnchorY(y)
-      onFillChangeRef.current = (next: Fill) => {
+      setAnchorY(y)
+      setTitle(t)
+      onChangeRef.current = (next: Fill) => {
         setActiveFill(next)
         onChange(next)
       }
     },
-    [closeStrokeEditor],
+    [],
   )
 
-  const openStrokeEditor = useCallback(
-    (index: number, fill: Fill, y: number, onChange: (fill: Fill) => void) => {
-      closeFillEditor()
-      setActiveStrokeIndex(index)
-      setActiveStrokeFill(fill)
-      setStrokeAnchorY(y)
-      onStrokeChangeRef.current = (next: Fill) => {
-        setActiveStrokeFill(next)
-        onChange(next)
-      }
-    },
-    [closeFillEditor],
-  )
-
-  // Close both editors when selection changes
+  // Close editor when selection changes
   useEffect(() => {
-    closeFillEditor()
-    closeStrokeEditor()
-  }, [selectedIds, closeFillEditor, closeStrokeEditor])
+    /* eslint-disable react-hooks/set-state-in-effect -- close floating editor when selection changes externally */
+    closeEditor()
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [selectedIds, closeEditor])
 
-  // Close both editors when right panel collapses
+  // Close editor when right panel collapses
   const handleCollapsedChange = useCallback(
     (next: boolean) => {
       setCollapsed(next)
       if (next) {
-        closeFillEditor()
-        closeStrokeEditor()
+        closeEditor()
       }
     },
-    [closeFillEditor, closeStrokeEditor],
+    [closeEditor],
   )
 
-  const fillEditorCtx = useMemo<FillEditorContextValue>(
+  const colorEditorCtx = useMemo<ColorEditorContextValue>(
     () => ({
-      activeFillIndex,
+      activeTarget,
       activeFill,
-      anchorY: fillAnchorY,
-      openEditor: openFillEditor,
-      closeEditor: closeFillEditor,
-      onChangeRef: onFillChangeRef,
+      anchorY,
+      title,
+      openEditor,
+      closeEditor,
+      onChangeRef,
     }),
-    [activeFillIndex, activeFill, fillAnchorY, openFillEditor, closeFillEditor],
-  )
-
-  const strokeEditorCtx = useMemo<StrokeEditorContextValue>(
-    () => ({
-      activeStrokeIndex,
-      activeStrokeFill,
-      anchorY: strokeAnchorY,
-      openEditor: openStrokeEditor,
-      closeEditor: closeStrokeEditor,
-      onChangeRef: onStrokeChangeRef,
-    }),
-    [activeStrokeIndex, activeStrokeFill, strokeAnchorY, openStrokeEditor, closeStrokeEditor],
+    [activeTarget, activeFill, anchorY, title, openEditor, closeEditor],
   )
 
   const count = selectedIds.size
@@ -134,54 +101,48 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
     const page = pid ? doc.pageMap.get(pid) : undefined
 
     return (
-      <FillEditorContext.Provider value={fillEditorCtx}>
-        <StrokeEditorContext.Provider value={strokeEditorCtx}>
-          <FloatingFillEditorPanel />
-          <FloatingStrokeEditorPanel />
-          <FloatingEditorRail
-            side="right"
-            title="Design"
-            collapsed={collapsed}
-            onCollapsedChange={handleCollapsedChange}
-            data-right-side-panel
-            className={cn('min-h-0', className)}
-          >
-            <div className="flex min-h-0 flex-1 flex-col">
-              <ScrollArea className="min-h-0 flex-1">
-                <div className="space-y-4 p-3">
-                  {pid && page && <PagePropertyPanel key={pid} pageId={pid} initialPage={page} />}
-                  <Separator />
-                  <p className="text-sm text-muted-foreground">Select a layer to view shape properties.</p>
-                </div>
-              </ScrollArea>
-            </div>
-          </FloatingEditorRail>
-        </StrokeEditorContext.Provider>
-      </FillEditorContext.Provider>
+      <ColorEditorContext.Provider value={colorEditorCtx}>
+        <FloatingColorEditorPanel />
+        <FloatingEditorRail
+          side="right"
+          title="Design"
+          collapsed={collapsed}
+          onCollapsedChange={handleCollapsedChange}
+          data-right-side-panel
+          className={cn('min-h-0', className)}
+        >
+          <div className="flex min-h-0 flex-1 flex-col">
+            <ScrollArea className="min-h-0 flex-1">
+              <div className="space-y-4 p-3">
+                {pid && page && <PagePropertyPanel key={pid} pageId={pid} initialPage={page} />}
+                <Separator />
+                <p className="text-sm text-muted-foreground">Select a layer to view shape properties.</p>
+              </div>
+            </ScrollArea>
+          </div>
+        </FloatingEditorRail>
+      </ColorEditorContext.Provider>
     )
   }
 
   if (count > 1) {
     return (
-      <FillEditorContext.Provider value={fillEditorCtx}>
-        <StrokeEditorContext.Provider value={strokeEditorCtx}>
-          <FloatingFillEditorPanel />
-          <FloatingStrokeEditorPanel />
-          <FloatingEditorRail
-            side="right"
-            title="Design"
-            collapsed={collapsed}
-            onCollapsedChange={handleCollapsedChange}
-            data-right-side-panel
-            className={cn('min-h-0', className)}
-          >
-            <div className="p-3 text-sm">
-              <span className="font-medium">{count} items selected</span>
-              <p className="mt-2 text-muted-foreground">Edit one shape at a time.</p>
-            </div>
-          </FloatingEditorRail>
-        </StrokeEditorContext.Provider>
-      </FillEditorContext.Provider>
+      <ColorEditorContext.Provider value={colorEditorCtx}>
+        <FloatingColorEditorPanel />
+        <FloatingEditorRail
+          side="right"
+          title="Design"
+          collapsed={collapsed}
+          onCollapsedChange={handleCollapsedChange}
+          data-right-side-panel
+          className={cn('min-h-0', className)}
+        >
+          <div className="p-3 text-sm">
+            <span className="font-medium">{count} items selected</span>
+            <p className="mt-2 text-muted-foreground">Edit one shape at a time.</p>
+          </div>
+        </FloatingEditorRail>
+      </ColorEditorContext.Provider>
     )
   }
 
@@ -194,38 +155,35 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
   const node = currentPage?.objects[singleId] as RectLikeNode | undefined
 
   return (
-    <FillEditorContext.Provider value={fillEditorCtx}>
-      <StrokeEditorContext.Provider value={strokeEditorCtx}>
-        <FloatingFillEditorPanel />
-        <FloatingStrokeEditorPanel />
-        <FloatingEditorRail
-          side="right"
-          title="Design"
-          collapsed={collapsed}
-          onCollapsedChange={handleCollapsedChange}
-          data-right-side-panel
-          className={cn('min-h-0', className)}
-        >
-          <div className="flex min-h-0 flex-1 flex-col">
-            {singleId && !isRoot && (
-              <p
-                className="shrink-0 truncate border-b border-border px-3 py-1.5 text-xs text-muted-foreground"
-                title={singleId}
-              >
-                {singleId.slice(0, 8)}…
-              </p>
-            )}
-            <ScrollArea className="min-h-0 flex-1">
-              <div className="space-y-4 p-3">
-                {node ? (
-                  <NodePropertyPanel key={singleId} nodeId={singleId} initialNode={node} readOnly={readOnly} />
-                ) : null}
-              </div>
-            </ScrollArea>
-          </div>
-        </FloatingEditorRail>
-      </StrokeEditorContext.Provider>
-    </FillEditorContext.Provider>
+    <ColorEditorContext.Provider value={colorEditorCtx}>
+      <FloatingColorEditorPanel />
+      <FloatingEditorRail
+        side="right"
+        title="Design"
+        collapsed={collapsed}
+        onCollapsedChange={handleCollapsedChange}
+        data-right-side-panel
+        className={cn('min-h-0', className)}
+      >
+        <div className="flex min-h-0 flex-1 flex-col">
+          {singleId && !isRoot && (
+            <p
+              className="shrink-0 truncate border-b border-border px-3 py-1.5 text-xs text-muted-foreground"
+              title={singleId}
+            >
+              {singleId.slice(0, 8)}…
+            </p>
+          )}
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="space-y-4 p-3">
+              {node ? (
+                <NodePropertyPanel key={singleId} nodeId={singleId} initialNode={node} readOnly={readOnly} />
+              ) : null}
+            </div>
+          </ScrollArea>
+        </div>
+      </FloatingEditorRail>
+    </ColorEditorContext.Provider>
   )
 }
 

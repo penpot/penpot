@@ -3,25 +3,27 @@ import type { Fill } from 'penpot-exporter/types'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FillEditor } from '../FillEditor/FillEditor'
-import { useStrokeEditor } from './StrokeEditorContext'
+import { useColorEditor } from './use-color-editor'
 
-export function FloatingStrokeEditorPanel() {
-  const { activeStrokeIndex, activeStrokeFill, anchorY, closeEditor, onChangeRef } =
-    useStrokeEditor()
+export function FloatingColorEditorPanel() {
+  const { activeTarget, activeFill, anchorY, title, closeEditor, onChangeRef } = useColorEditor()
   const panelRef = useRef<HTMLDivElement>(null)
+
+  // Stable key for effect dependencies
+  const targetKey = activeTarget ? `${activeTarget.kind}-${activeTarget.index}` : null
 
   // Drag state
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null)
 
-  // Reset position when a new stroke editor opens
+  // Reset position when a new editor opens
   useEffect(() => {
     setPos(null)
-  }, [activeStrokeIndex])
+  }, [targetKey])
 
   // Close on click-outside (ignore clicks inside the right panel)
   useEffect(() => {
-    if (activeStrokeIndex === null) return
+    if (!targetKey) return
 
     function handleMouseDown(e: MouseEvent) {
       const target = e.target as Node
@@ -33,7 +35,7 @@ export function FloatingStrokeEditorPanel() {
 
     document.addEventListener('mousedown', handleMouseDown)
     return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [activeStrokeIndex, closeEditor])
+  }, [targetKey, closeEditor])
 
   const handleChange = useCallback(
     (next: Fill) => {
@@ -72,7 +74,7 @@ export function FloatingStrokeEditorPanel() {
     e.currentTarget.releasePointerCapture(e.pointerId)
   }, [])
 
-  if (activeStrokeIndex === null || !activeStrokeFill) return null
+  if (!activeTarget || !activeFill) return null
 
   const defaultTop = Math.max(12, Math.min(anchorY, window.innerHeight - 400))
 
@@ -102,14 +104,14 @@ export function FloatingStrokeEditorPanel() {
         onLostPointerCapture={onDragEnd}
       >
         <h2 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-foreground select-none">
-          Stroke {activeStrokeIndex + 1} color
+          {title}
         </h2>
         <Button
           type="button"
           variant="ghost"
           size="icon"
           className="h-8 w-8 shrink-0 text-muted-foreground"
-          aria-label="Close stroke color editor"
+          aria-label="Close color editor"
           onClick={closeEditor}
           onPointerDown={(e) => e.stopPropagation()}
         >
@@ -117,7 +119,7 @@ export function FloatingStrokeEditorPanel() {
         </Button>
       </div>
       <div className="overflow-y-auto p-3">
-        <FillEditor fill={activeStrokeFill} onChange={handleChange} />
+        <FillEditor fill={activeFill} onChange={handleChange} />
       </div>
     </div>
   )

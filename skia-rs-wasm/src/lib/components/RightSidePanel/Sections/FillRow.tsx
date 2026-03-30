@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
 import { isColorFill, isImageFill } from '../../../renderer/api/constants'
 import { normalizeHex } from '../../../renderer/properties/panel-utils'
-import { useFillEditor } from '../use-fill-editor'
+import { useColorEditorFor } from '../use-color-editor'
 
 export interface FillRowProps {
   fill: Fill
@@ -17,9 +17,8 @@ export interface FillRowProps {
 }
 
 export function FillRow({ fill, index, readOnly, onChange, onRemove }: FillRowProps) {
-  const { activeFillIndex, openEditor, closeEditor } = useFillEditor()
+  const { isActive: expanded, openEditor, closeEditor } = useColorEditorFor('fill', index)
   const swatchRef = useRef<HTMLButtonElement>(null)
-  const expanded = activeFillIndex === index
 
   const isSolid = isColorFill(fill)
   const isImage = isImageFill(fill)
@@ -57,9 +56,9 @@ export function FillRow({ fill, index, readOnly, onChange, onRemove }: FillRowPr
       closeEditor()
     } else {
       const y = swatchRef.current?.getBoundingClientRect().top ?? 12
-      openEditor(index, fill, y, (next) => onChange(next, index))
+      openEditor(fill, y, `Fill ${index + 1}`, (next) => onChange(next, index))
     }
-  }, [readOnly, expanded, closeEditor, openEditor, index, fill, onChange])
+  }, [readOnly, expanded, closeEditor, openEditor, fill, index, onChange])
 
   if (readOnly) {
     return (

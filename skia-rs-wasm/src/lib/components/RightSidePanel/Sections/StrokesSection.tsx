@@ -14,6 +14,7 @@ import {
 } from '../../../renderer/properties/panel-utils'
 import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
 import { StrokeRow } from './StrokeRow'
+import { useColorEditor } from '../use-color-editor'
 
 export interface StrokesSectionProps {
   nodeId: string
@@ -22,6 +23,7 @@ export interface StrokesSectionProps {
 }
 
 export function StrokesSection({ nodeId, readOnly, initialNode }: StrokesSectionProps) {
+  const { activeTarget, closeEditor } = useColorEditor()
   const [strokes, setStrokes] = useState<Stroke[]>(() =>
     initialNode.strokes ? [...initialNode.strokes] : [],
   )
@@ -70,11 +72,12 @@ export function StrokesSection({ nodeId, readOnly, initialNode }: StrokesSection
 
   const removeStroke = useCallback(
     (index: number) => {
+      if (activeTarget?.kind === 'stroke' && activeTarget.index === index) closeEditor()
       const next = strokes.filter((_, i) => i !== index)
       setStrokes(next)
       void commitStrokes(next)
     },
-    [strokes, commitStrokes],
+    [strokes, commitStrokes, activeTarget, closeEditor],
   )
 
   const hasStrokes = strokes.length > 0
