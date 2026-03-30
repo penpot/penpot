@@ -12,6 +12,7 @@
   "type": "module",
   "scripts": {
     "lint": "./scripts/lint",
+    "check-fmt": "./scripts/check-fmt",
     "fmt": "./scripts/fmt"
   },
   "devDependencies": {
