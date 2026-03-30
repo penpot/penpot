@@ -158,7 +158,7 @@
 ;; ---- API: get-teams-summary
 
 (def ^:private sql:get-teams-summary
-  "SELECT t.id, t.name
+  "SELECT t.id, t.name, t.is_default
      FROM team AS t
     WHERE t.id = ANY(?)
       AND t.deleted_at IS NULL;")
@@ -181,7 +181,8 @@
   [:map
    [:teams [:vector [:map
                      [:id ::sm/uuid]
-                     [:name ::sm/text]]]]
+                     [:name ::sm/text]
+                     [:is-default ::sm/boolean]]]]
    [:num-files ::sm/int]])
 
 (sv/defmethod ::get-teams-summary
@@ -204,7 +205,7 @@
                    (let [ids-array     (db/create-array conn "uuid" ids)
                          teams         (db/exec! conn [sql:get-teams-summary ids-array])
                          files-count   (-> (db/exec-one! conn [sql:get-files-count ids-array]) :count)]
-                     {:teams (mapv #(select-keys % [:id :name]) teams)
+                     {:teams teams
                       :num-files files-count})))))
 
 
