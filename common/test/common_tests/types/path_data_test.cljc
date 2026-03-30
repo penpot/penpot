@@ -1118,11 +1118,11 @@
 (t/deftest path-shape-with-open-path?
   (t/testing "path shape with open content is open"
     (let [shape {:type :path
-                 :content (path/content simple-open-content)}]
+                 :path-data (path/content simple-open-content)}]
       (t/is (path/shape-with-open-path? shape))))
   (t/testing "path shape with closed content is not open"
     (let [shape {:type :path
-                 :content (path/content simple-closed-content)}]
+                 :path-data (path/content simple-closed-content)}]
       (t/is (not (path/shape-with-open-path? shape))))))
 
 (t/deftest path-get-byte-size
@@ -1199,22 +1199,22 @@
                 :selrect (make-selrect 0.0 0.0 100.0 50.0)}
         result (path/convert-to-path shape {})]
     (t/is (= :path (:type result)))
-    (t/is (path/content? (:content result)))
+    (t/is (path/content? (:path-data result)))
     ;; A simple rect (no radius) produces an empty path in the current impl
     ;; so we just check it doesn't throw and returns a :path type
-    (t/is (some? (:content result)))))
+    (t/is (some? (:path-data result)))))
 
 (t/deftest shape-to-path-circle
   (let [shape  {:type :circle :x 0.0 :y 0.0 :width 100.0 :height 100.0
                 :selrect (make-selrect 0.0 0.0 100.0 100.0)}
         result (path/convert-to-path shape {})]
     (t/is (= :path (:type result)))
-    (t/is (path/content? (:content result)))
+    (t/is (path/content? (:path-data result)))
     ;; A circle converts to bezier curves — should have multiple segments
-    (t/is (> (count (vec (:content result))) 1))))
+    (t/is (> (count (vec (:path-data result))) 1))))
 
 (t/deftest shape-to-path-path
-  (let [shape  {:type :path :content (path/content sample-content)}
+  (let [shape  {:type :path :path-data (path/content sample-content)}
         result (path/convert-to-path shape {})]
     ;; A path shape stays a path shape unchanged
     (t/is (= :path (:type result)))))
@@ -1226,6 +1226,6 @@
         result (path/convert-to-path shape {})]
     (t/is (= :path (:type result)))
     ;; rounded rect should have curve-to segments
-    (let [segs (vec (:content result))
+    (let [segs (vec (:path-data result))
           curve-segs (filter #(= :curve-to (:command %)) segs)]
       (t/is (pos? (count curve-segs))))))
