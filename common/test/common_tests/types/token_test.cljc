@@ -10,20 +10,26 @@
    [app.common.types.token :as cto]
    [clojure.test :as t]))
 
-(t/deftest test-valid-token-name-schema
+(t/deftest test-valid-token-name
   ;; Allow regular namespace token names
   (t/is (true? (sm/validate cto/schema:token-name "Foo")))
   (t/is (true? (sm/validate cto/schema:token-name "foo")))
   (t/is (true? (sm/validate cto/schema:token-name "FOO")))
   (t/is (true? (sm/validate cto/schema:token-name "Foo.Bar.Baz")))
-  ;; Disallow trailing tokens
+  ;; Allow $ inside or at the end of the name, but not at the beginning
+  (t/is (true? (sm/validate cto/schema:token-name "Foo$Bar$Baz")))
+  (t/is (true? (sm/validate cto/schema:token-name "Foo$Bar$Baz$")))
+  (t/is (false? (sm/validate cto/schema:token-name "$Foo$Bar$Baz")))
+  ;; Disallow starting and trailing dots
+  (t/is (false? (sm/validate cto/schema:token-name "....Foo.Bar.Baz")))
   (t/is (false? (sm/validate cto/schema:token-name "Foo.Bar.Baz....")))
   ;; Disallow multiple separator dots
   (t/is (false? (sm/validate cto/schema:token-name "Foo..Bar.Baz")))
   ;; Disallow any special characters
   (t/is (false? (sm/validate cto/schema:token-name "Hey Foo.Bar")))
-  (t/is (false? (sm/validate cto/schema:token-name "Hey😈Foo.Bar")))
-  (t/is (false? (sm/validate cto/schema:token-name "Hey%Foo.Bar"))))
+  (t/is (false? (sm/validate cto/schema:token-name "HeyÅFoo.Bar")))
+  (t/is (false? (sm/validate cto/schema:token-name "Hey%Foo.Bar")))
+  (t/is (false? (sm/validate cto/schema:token-name "Hey / Foo/Bar"))))
 
 
 (t/deftest token-value-with-refs

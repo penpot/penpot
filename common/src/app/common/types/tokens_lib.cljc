@@ -305,6 +305,35 @@
      (-clj->js [this]
        (clj->js (datafy this)))))
 
+(def ^:private set-prefix "S-")
+
+(def ^:private set-group-prefix "G-")
+
+(def ^:private set-separator "/")
+
+(defn get-set-path
+  [token-set]
+  (cpn/split-path (get-name token-set) :separator set-separator))
+
+(defn split-set-name
+  [name]
+  (cpn/split-path name :separator set-separator))
+
+(defn join-set-path [path]
+  (cpn/join-path path :separator set-separator :with-spaces? false))
+
+(defn normalize-set-name
+  "Normalize a set name (ensure that there are no extra spaces, like ' group /  set' -> 'group/set').
+
+  If `relative-to` is provided, the normalized name will preserve the same group prefix as reference name."
+  ([name]
+   (-> (split-set-name name)
+       (cpn/join-path :separator set-separator :with-spaces? false)))
+  ([name relative-to]
+   (-> (concat (butlast (split-set-name relative-to))
+               (split-set-name name))
+       (cpn/join-path :separator set-separator :with-spaces? false))))
+
 (defn token-set?
   [o]
   (instance? TokenSet o))
@@ -359,6 +388,7 @@
 (def check-token-set
   (sm/check-fn schema:token-set :hint "expected valid token set"))
 
+
 (defn map->token-set
   [& {:as attrs}]
   (TokenSet. (:id attrs)
@@ -376,35 +406,6 @@
       (update :description d/nilv "")
       (check-token-set-attrs)
       (map->token-set)))
-
-(def ^:private set-prefix "S-")
-
-(def ^:private set-group-prefix "G-")
-
-(def ^:private set-separator "/")
-
-(defn get-set-path
-  [token-set]
-  (cpn/split-path (get-name token-set) :separator set-separator))
-
-(defn split-set-name
-  [name]
-  (cpn/split-path name :separator set-separator))
-
-(defn join-set-path [path]
-  (cpn/join-path path :separator set-separator :with-spaces? false))
-
-(defn normalize-set-name
-  "Normalize a set name (ensure that there are no extra spaces, like ' group /  set' -> 'group/set').
-
-  If `relative-to` is provided, the normalized name will preserve the same group prefix as reference name."
-  ([name]
-   (-> (split-set-name name)
-       (cpn/join-path :separator set-separator :with-spaces? false)))
-  ([name relative-to]
-   (-> (concat (butlast (split-set-name relative-to))
-               (split-set-name name))
-       (cpn/join-path :separator set-separator :with-spaces? false))))
 
 (defn normalized-set-name?
   "Check if a set name is normalized (no extra spaces)."
