@@ -434,7 +434,7 @@
                       :title        label
                       :class        (stl/css :title-spacing-text)}
        [:*
-        (when (and token-row (some? typography-tokens) (not typography))
+        (when (and token-row (some? (resolve-delay typography-tokens)) (not typography))
           [:> icon-button* {:variant           "ghost"
                             :aria-label        (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                             :on-click          toggle-token-dropdown
