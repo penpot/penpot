@@ -327,11 +327,11 @@
 
   If `relative-to` is provided, the normalized name will preserve the same group prefix as reference name."
   ([name]
-   (-> (split-set-name name)
+   (-> (split-set-name (str name))
        (cpn/join-path :separator set-separator :with-spaces? false)))
   ([name relative-to]
    (-> (concat (butlast (split-set-name relative-to))
-               (split-set-name name))
+               (split-set-name (str name)))
        (cpn/join-path :separator set-separator :with-spaces? false))))
 
 (defn token-set?
@@ -404,6 +404,7 @@
       (update :modified-at #(or % (ct/now)))
       (update :tokens #(into (d/ordered-map) %))
       (update :description d/nilv "")
+      (update :name normalize-set-name)
       (check-token-set-attrs)
       (map->token-set)))
 
