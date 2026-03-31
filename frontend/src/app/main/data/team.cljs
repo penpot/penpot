@@ -48,7 +48,7 @@
                                                                    :organization-slug
                                                                    :organization-owner-id
                                                                    :organization-avatar-bg-url))]
-                  (assoc-in state [:teams id] team-updated)))
+                  (update state :teams assoc id team-updated)))
               state
               teams))))
 

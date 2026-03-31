@@ -28,7 +28,7 @@
           is_default = FALSE
     WHERE id = ?;")
 
-(def ^:private schema:leave-org-schema
+(def ^:private schema:leave-org
   [:map
    [:org-id ::sm/uuid]
    [:org-name ::sm/text]
@@ -44,7 +44,7 @@
 (sv/defmethod ::leave-org
   {::rpc/auth false
    ::doc/added "2.15"
-   ::sm/params schema:leave-org-schema}
+   ::sm/params schema:leave-org}
   [cfg {:keys [::rpc/profile-id org-id org-name default-team-id teams-to-delete teams-to-leave] :as params}]
   (db/tx-run!
    cfg

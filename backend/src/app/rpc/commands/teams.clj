@@ -731,7 +731,7 @@
    ::sm/params schema:leave-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (db/tx-run! cfg leave-team (assoc params :profile-id profile-id)))
+  (leave-team cfg (assoc params :profile-id profile-id)))
 
 
 ;; --- Mutation: Delete Team
@@ -759,7 +759,8 @@
                             {::db/return-keys true})]
 
       ;; Api call to nitrate
-      (nitrate/call cfg :delete-team {:profile-id profile-id :team-id team-id})
+      (when (contains? cf/flags :nitrate)
+        (nitrate/call cfg :delete-team {:profile-id profile-id :team-id team-id}))
 
       (wrk/submit! {::db/conn conn
                     ::wrk/task :delete-object
@@ -777,7 +778,7 @@
    ::sm/params schema:delete-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id] :as params}]
-  (db/tx-run! cfg delete-team {:team-id id :profile-id profile-id})
+  (delete-team cfg {:team-id id :profile-id profile-id})
   nil)
 
 ;; --- Mutation: Team Update Role
