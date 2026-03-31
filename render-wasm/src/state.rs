@@ -286,11 +286,15 @@ impl State {
 
     pub fn touch_current(&mut self) {
         if let Some(current_id) = self.current_id {
+            self.render_state
+                .invalidate_top_level_frame_cache_for_shape(&self.shapes, &current_id);
             self.render_state.mark_touched(current_id);
         }
     }
 
     pub fn touch_shape(&mut self, id: Uuid) {
+        self.render_state
+            .invalidate_top_level_frame_cache_for_shape(&self.shapes, &id);
         self.render_state.mark_touched(id);
     }
 }

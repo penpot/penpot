@@ -15,7 +15,7 @@ mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use gpu_state::GpuState;
 
@@ -45,6 +45,21 @@ const NODE_BATCH_THRESHOLD: i32 = 3;
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct FrameCacheKey {
+    id: Uuid,
+    scale_bits: u32,
+}
+
+#[derive(Debug)]
+struct CachedTopLevelFrame {
+    image: skia::Image,
+    // World-space render area used when the cached image was produced (includes margins offset).
+    // Needed to position the image correctly in subsequent renders.
+    render_area: Rect,
+    cached_scale_bits: u32,
+}
 
 #[derive(Debug)]
 pub struct NodeRenderState {
@@ -330,6 +345,9 @@ pub(crate) struct RenderState {
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
     pub touched_ids: HashSet<Uuid>,
+    top_level_frame_cache: HashMap<FrameCacheKey, CachedTopLevelFrame>,
+    build_top_level_frame_cache_after_render: bool,
+    top_level_frames_pending_recache: HashSet<Uuid>,
     /// Temporary flag used for off-screen passes (drop-shadow masks, filter surfaces, etc.)
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
     /// `with_nested_blurs_suppressed` to ensure it's always restored.
@@ -359,6 +377,13 @@ pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
 }
 
 impl RenderState {
+    #[inline]
+    fn top_level_frame_cache_scale(&self) -> f32 {
+        // Cache top-level frames at 100% zoom (zoom=1.0) so the cached images are stable
+        // across viewport zoom changes. We still include DPR so the cache matches the
+        // device pixel ratio.
+        1.0 * self.options.dpr()
+    }
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::try_new()?;
@@ -408,6 +433,9 @@ impl RenderState {
             show_grid: None,
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
+            top_level_frame_cache: HashMap::new(),
+            build_top_level_frame_cache_after_render: false,
+            top_level_frames_pending_recache: HashSet::default(),
             ignore_nested_blurs: false,
             preview_mode: false,
             export_context: None,
@@ -1446,6 +1474,13 @@ impl RenderState {
         let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
 
+        // If this is the first full render (cache not yet valid), schedule top-level frame
+        // caching once the render completes. We do it at the end to reuse the final, stable
+        // render state (fonts ready, images decoded, etc.).
+        if self.cached_viewbox.area.width() <= 0.0 {
+            self.build_top_level_frame_cache_after_render = true;
+        }
+
         self.tile_viewbox.update(self.viewbox, scale);
         self.focus_mode.reset();
 
@@ -1453,6 +1488,13 @@ impl RenderState {
         performance::begin_measure!("start_render_loop");
 
         self.reset_canvas();
+
+        // Fallback pass to reduce "empty tiles" popping-in on heavy pan/zoom:
+        // draw cached top-level frames to the final target immediately, then the
+        // tile renderer progressively overwrites with accurate tiles.
+        if base_object.is_none() && !self.top_level_frame_cache.is_empty() && !sync_render {
+            self.draw_top_level_frame_cache_to_target(scale);
+        }
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::InnerShadows as u32
@@ -1507,6 +1549,59 @@ impl RenderState {
         performance::end_measure!("start_render_loop");
         performance::end_timed_log!("start_render_loop", _start);
         Ok(())
+    }
+
+    fn draw_top_level_frame_cache_to_target(&mut self, current_scale: f32) {
+        let margins = self.surfaces.margins;
+        let pan_x = self.viewbox.pan_x;
+        let pan_y = self.viewbox.pan_y;
+
+        // Pick the best cached entry per frame id for the current scale.
+        let mut best: HashMap<Uuid, (f32, &CachedTopLevelFrame)> = HashMap::new();
+        for (k, v) in self.top_level_frame_cache.iter() {
+            let cached_scale = f32::from_bits(v.cached_scale_bits);
+            if !cached_scale.is_finite() || cached_scale <= 0.0 {
+                continue;
+            }
+            let score = (cached_scale / current_scale - 1.0).abs();
+            match best.get(&k.id) {
+                Some((best_score, _)) if *best_score <= score => {}
+                _ => {
+                    best.insert(k.id, (score, v));
+                }
+            }
+        }
+
+        let canvas = self.surfaces.canvas(SurfaceId::Target);
+        canvas.save();
+        canvas.reset_matrix();
+
+        for (_frame_id, (_score, cached)) in best {
+            let cached_scale = f32::from_bits(cached.cached_scale_bits);
+            if !cached_scale.is_finite() || cached_scale <= 0.0 {
+                continue;
+            }
+
+            // cached.render_area == frame_extrect offset by (margins / cached_scale)
+            // So frame_extrect.left = cached.left - margins/cached_scale.
+            let margin_world_x = margins.width as f32 / cached_scale;
+            let margin_world_y = margins.height as f32 / cached_scale;
+            let world_left = cached.render_area.left() - margin_world_x;
+            let world_top = cached.render_area.top() - margin_world_y;
+
+            // world -> device using current viewbox pan/zoom+dpr scale.
+            let dx = (world_left + pan_x) * current_scale;
+            let dy = (world_top + pan_y) * current_scale;
+            let ratio = current_scale / cached_scale;
+
+            canvas.save();
+            canvas.translate((dx, dy));
+            canvas.scale((ratio, ratio));
+            canvas.draw_image(&cached.image, (0.0, 0.0), Some(&skia::Paint::default()));
+            canvas.restore();
+        }
+
+        canvas.restore();
     }
 
     pub fn process_animation_frame(
@@ -2328,6 +2423,18 @@ impl RenderState {
                 }
             }
 
+            // Fast path: if this is a top-level frame and we have a cached image for it
+            // at the current scale, draw it and skip traversing its subtree.
+            //
+            // Important: this keeps focus_mode enter/exit balanced so subsequent shapes
+            // render with correct focus state.
+            let scale = self.get_scale();
+            if !visited_children
+                && self.try_draw_top_level_frame_from_cache(element, target_surface, scale)
+            {
+                continue;
+            }
+
             let can_flatten = element.can_flatten() && !self.focus_mode.should_focus(&element.id);
 
             // Skip render_shape_enter/exit for flattened containers
@@ -2620,6 +2727,22 @@ impl RenderState {
         // Mark cache as valid for render_from_cache
         self.cached_viewbox = self.viewbox;
 
+        if self.build_top_level_frame_cache_after_render && base_object.is_none() {
+            // Only build it for full-scene renders (not subtree renders).
+            self.build_top_level_frame_cache_after_render = false;
+            self.populate_top_level_frame_cache(tree, timestamp)?;
+        }
+
+        // Rebuild invalidated top-level frame cache entries after a full-quality render.
+        // This handles async updates (e.g. text layout, image upload) that call `touch_shape`
+        // after the initial cache generation.
+        if base_object.is_none()
+            && !self.top_level_frames_pending_recache.is_empty()
+            && !self.options.is_fast_mode()
+        {
+            self.recache_pending_top_level_frames(tree, timestamp)?;
+        }
+
         if self.options.is_debug_visible() {
             debug::render(self);
         }
@@ -2628,6 +2751,288 @@ impl RenderState {
         debug::render_wasm_label(self);
 
         Ok(())
+    }
+
+    fn recache_pending_top_level_frames(
+        &mut self,
+        tree: ShapesPoolRef,
+        timestamp: i32,
+    ) -> Result<()> {
+        let scale = self.top_level_frame_cache_scale();
+        let scale_bits = scale.to_bits();
+
+        // Drain pending set so invalidations happening during recache are queued for next pass.
+        let pending = std::mem::take(&mut self.top_level_frames_pending_recache);
+
+        for frame_id in pending {
+            let Some(shape) = tree.get(&frame_id) else { continue };
+            if !matches!(shape.shape_type, Type::Frame(_)) {
+                continue;
+            }
+            if shape.parent_id != Some(Uuid::nil()) {
+                continue;
+            }
+
+            let key = FrameCacheKey {
+                id: frame_id,
+                scale_bits,
+            };
+
+            // Always overwrite: this is a refresh after async changes.
+            let (image, render_area) =
+                self.render_shape_image_to_export(&frame_id, tree, scale, timestamp)?;
+            self.top_level_frame_cache.insert(
+                key,
+                CachedTopLevelFrame {
+                    image,
+                    render_area,
+                    cached_scale_bits: scale_bits,
+                },
+            );
+        }
+
+        Ok(())
+    }
+
+    fn populate_top_level_frame_cache(&mut self, tree: ShapesPoolRef, timestamp: i32) -> Result<()> {
+        // Cache top-level frames at a fixed 100% zoom scale (includes DPR).
+        // This avoids exploding cache entries for different zoom levels.
+        let scale = self.top_level_frame_cache_scale();
+        let scale_bits = scale.to_bits();
+
+        let Some(root) = tree.get(&Uuid::nil()) else {
+            return Err(Error::CriticalError("Root shape not found".to_string()));
+        };
+
+        for child_id in root.children_ids_iter(false) {
+            let Some(shape) = tree.get(child_id) else { continue };
+            if !matches!(shape.shape_type, Type::Frame(_)) {
+                continue;
+            }
+
+            let key = FrameCacheKey {
+                id: *child_id,
+                scale_bits,
+            };
+            if self.top_level_frame_cache.contains_key(&key) {
+                continue;
+            }
+
+            let (image, render_area) =
+                self.render_shape_image_to_export(child_id, tree, scale, timestamp)?;
+            self.top_level_frame_cache.insert(
+                key,
+                CachedTopLevelFrame {
+                    image,
+                    render_area,
+                    cached_scale_bits: key.scale_bits,
+                },
+            );
+        }
+
+        Ok(())
+    }
+
+    fn render_shape_image_to_export(
+        &mut self,
+        id: &Uuid,
+        tree: ShapesPoolRef,
+        scale: f32,
+        timestamp: i32,
+    ) -> Result<(skia::Image, Rect)> {
+        // This is similar to `render_shape_pixels`, but returns a GPU-backed `Image` directly
+        // and carefully restores render state so it doesn't disturb subsequent renders.
+        let target_surface = SurfaceId::Export;
+
+        let old_focus_mode = std::mem::replace(&mut self.focus_mode, FocusMode::new());
+        let old_export_context = self.export_context.take();
+        let old_render_area = self.render_area;
+        let old_render_area_with_margins = self.render_area_with_margins;
+        let old_pending_nodes = std::mem::take(&mut self.pending_nodes);
+        let old_nested_fills = std::mem::take(&mut self.nested_fills);
+        let old_nested_blurs = std::mem::take(&mut self.nested_blurs);
+        let old_nested_shadows = std::mem::take(&mut self.nested_shadows);
+        let old_current_tile = self.current_tile;
+
+        self.current_tile = None;
+
+        self.surfaces
+            .canvas(target_surface)
+            .clear(skia::Color::TRANSPARENT);
+
+        let shape = tree
+            .get(id)
+            .ok_or_else(|| Error::CriticalError("Shape not found".to_string()))?;
+        let mut extrect = shape.extrect(tree, scale);
+        self.export_context = Some((extrect, scale));
+
+        let margins = self.surfaces.margins;
+        extrect.offset((margins.width as f32 / scale, margins.height as f32 / scale));
+
+        self.surfaces.resize_export_surface(scale, extrect);
+        self.render_area = extrect;
+        self.render_area_with_margins = extrect;
+        self.surfaces.update_render_context(extrect, scale);
+
+        self.pending_nodes.push(NodeRenderState {
+            id: *id,
+            visited_children: false,
+            clip_bounds: None,
+            visited_mask: false,
+            mask: false,
+            flattened: false,
+        });
+
+        self.render_shape_tree_partial_uncached(tree, timestamp, false, true)?;
+
+        // Ensure GPU work is done before snapshotting.
+        self.surfaces
+            .flush_and_submit(&mut self.gpu_state, target_surface);
+
+        let image = self.surfaces.snapshot(target_surface);
+        let cached_render_area = self.render_area;
+
+        // Restore state
+        self.focus_mode = old_focus_mode;
+        self.export_context = old_export_context;
+        self.render_area = old_render_area;
+        self.render_area_with_margins = old_render_area_with_margins;
+        self.pending_nodes = old_pending_nodes;
+        self.nested_fills = old_nested_fills;
+        self.nested_blurs = old_nested_blurs;
+        self.nested_shadows = old_nested_shadows;
+        self.current_tile = old_current_tile;
+
+        Ok((image, cached_render_area))
+    }
+
+    fn try_draw_top_level_frame_from_cache(
+        &mut self,
+        element: &Shape,
+        target_surface: SurfaceId,
+        scale: f32,
+    ) -> bool {
+        if target_surface == SurfaceId::Export {
+            return false;
+        }
+
+        // TODO: top level shapes
+        // if !matches!(element.shape_type, Type::Frame(_)) {
+        //     return false;
+        // }
+        // Top-level frame: must be a direct child of the root (Uuid::nil()).
+        if element.parent_id != Some(Uuid::nil()) {
+            return false;
+        }
+
+        // Keep focus_mode state consistent with the normal render path.
+        self.focus_mode.enter(&element.id);
+        let should_render = self.focus_mode.is_active();
+
+        if !should_render {
+            self.focus_mode.exit(&element.id);
+            return true; // handled: skipped due to focus mode
+        }
+
+        // Adapted "classic SVG" heuristic (subset) for WASM imposters:
+        // - If we are NOT interacting (fast_mode off) and zoom is high, render full quality.
+        // - We intentionally ignore selection-based activation (active frame / selected shapes),
+        //   and we can't replicate hover-based activation without extra frontend signals.
+        if !self.options.is_fast_mode() && self.viewbox.zoom() > 1.3 {
+            self.focus_mode.exit(&element.id);
+            return false;
+        }
+
+        // Pick best cached entry for this frame across scales.
+        let mut best: Option<(f32, &CachedTopLevelFrame)> = None;
+        for (k, v) in self.top_level_frame_cache.iter() {
+            if k.id != element.id {
+                continue;
+            }
+            let cached_scale = f32::from_bits(v.cached_scale_bits);
+            if !cached_scale.is_finite() || cached_scale <= 0.0 {
+                continue;
+            }
+            let score = (cached_scale / scale - 1.0).abs();
+            match best {
+                Some((best_score, _)) if best_score <= score => {}
+                _ => best = Some((score, v)),
+            }
+        }
+
+        let Some((_score, cached)) = best else {
+            self.focus_mode.exit(&element.id);
+            return false;
+        };
+
+        // Draw cached image in device coords to avoid interacting with the current
+        // render context matrix (scale/translate).
+        let cached_scale = f32::from_bits(cached.cached_scale_bits);
+        if !self.options.is_fast_mode()
+            && cached_scale.is_finite()
+            && cached_scale > 0.0
+            && cached_scale + f32::EPSILON < scale
+        {
+            // Stable render: avoid upscaling lower-res cached frames (blurry).
+            // We also do NOT schedule a recache here; recache remains strictly tied
+            // to actual modifications/invalidations (touch_shape).
+            self.focus_mode.exit(&element.id);
+            return false;
+        }
+        let ratio = scale / cached_scale;
+
+        // cached.render_area == frame_extrect offset by (margins / cached_scale)
+        // So frame_extrect.left = cached.left - margins/cached_scale.
+        let margins = self.surfaces.margins;
+        let margin_world_x = margins.width as f32 / cached_scale;
+        let margin_world_y = margins.height as f32 / cached_scale;
+        let world_left = cached.render_area.left() - margin_world_x;
+        let world_top = cached.render_area.top() - margin_world_y;
+
+        let translation = self
+            .surfaces
+            .get_render_context_translation(self.render_area, scale);
+        let dx = (world_left + translation.0) * scale;
+        let dy = (world_top + translation.1) * scale;
+
+        let canvas = self.surfaces.canvas(target_surface);
+        canvas.save();
+        canvas.reset_matrix();
+        canvas.translate((dx, dy));
+        canvas.scale((ratio, ratio));
+        canvas.draw_image(&cached.image, (0.0, 0.0), Some(&skia::Paint::default()));
+        canvas.restore();
+
+        self.focus_mode.exit(&element.id);
+        true
+    }
+
+    pub fn invalidate_top_level_frame_cache_for_shape(
+        &mut self,
+        tree: ShapesPoolRef,
+        id: &Uuid,
+    ) {
+        let Some(frame_id) = self.find_top_level_frame_for_shape(tree, id) else {
+            return;
+        };
+
+        self.top_level_frame_cache
+            .retain(|k, _| k.id != frame_id);
+        self.top_level_frames_pending_recache.insert(frame_id);
+    }
+
+    fn find_top_level_frame_for_shape(&self, tree: ShapesPoolRef, id: &Uuid) -> Option<Uuid> {
+        let mut cur = *id;
+        while cur != Uuid::nil() {
+            let shape = tree.get(&cur)?;
+            let parent = shape.parent_id.unwrap_or(Uuid::nil());
+            // && matches!(shape.shape_type, Type::Frame(_)) top level shapes
+            if parent == Uuid::nil() {
+                return Some(cur);
+            }
+            cur = parent;
+        }
+        None
     }
 
     /*
