@@ -255,6 +255,9 @@
                                   (cond
                                     (= attr-group :measure) (select-measure-keys shape)
                                     :else (select-keys shape editable-attrs)))
+                    shape-values (cond-> shape-values
+                                   (= attr-group :layer)
+                                   (update :hidden #(if (nil? %) false %)))
                     new-token-acc (merge-token-values token-acc editable-attrs applied-tokens)]
                 [(conj ids id)
                  (merge-attrs values shape-values)
