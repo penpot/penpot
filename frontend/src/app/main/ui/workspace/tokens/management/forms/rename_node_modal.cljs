@@ -42,36 +42,37 @@
                          (not (get-in @form [:touched :name]))
                          (= (get-in @form [:clean-data :name]) (:name node)))
 
-        new-path (mf/with-memo [@form node]
-                   (let [new-name (get-in @form [:clean-data :name])
-                         path (str (:path node))
-                         new-path (str/replace path (:name node) new-name)]
-                     new-path))]
+        hint-path (mf/with-memo [@form node]
+                    (let [new-name (get-in @form [:clean-data :name])
+                          path (str (:path node))
+                          new-path (str/replace path (:name node) new-name)]
+                      (if (get-in @form [:touched :name])
+                        new-path
+                        path)))]
 
-    [:*
+    [:> fc/form* {:class (stl/css :form-wrapper)
+                  :form form
+                  :on-submit on-submit}
      [:> heading* {:level 2
                    :typography "headline-medium"
                    :class (stl/css :form-modal-title)}
       (tr "workspace.tokens.rename-group")]
-     [:> fc/form* {:class (stl/css :form-wrapper)
-                   :form form
-                   :on-submit on-submit}
-      [:> fc/form-input* {:id "rename-node"
-                          :name :name
-                          :label (tr "workspace.tokens.token-name")
-                          :placeholder (tr "workspace.tokens.token-name")
-                          :max-length 255
-                          :variant "comfortable"
-                          :hint-type "hint"
-                          :hint-message (tr "workspace.tokens.rename-group-name-hint" new-path)
-                          :auto-focus true}]
-      [:div {:class (stl/css :form-actions)}
-       [:> button* {:variant "secondary"
-                    :name "cancel"
-                    :on-click on-close} (tr "labels.cancel")]
-       [:> fc/form-submit* {:variant "primary"
-                            :disabled is-disabled?
-                            :name "rename"} (tr "labels.rename")]]]]))
+     [:> fc/form-input* {:id "rename-node"
+                         :name :name
+                         :label (tr "workspace.tokens.token-name")
+                         :placeholder (tr "workspace.tokens.token-name")
+                         :max-length 255
+                         :variant "comfortable"
+                         :hint-type "hint"
+                         :hint-message (tr "workspace.tokens.rename-group-name-hint" hint-path)
+                         :auto-focus true}]
+     [:div {:class (stl/css :form-actions)}
+      [:> button* {:variant "secondary"
+                   :name "cancel"
+                   :on-click on-close} (tr "labels.cancel")]
+      [:> fc/form-submit* {:variant "primary"
+                           :disabled is-disabled?
+                           :name "rename"} (tr "labels.rename")]]]))
 
 (mf/defc rename-node-modal
   {::mf/register modal/components

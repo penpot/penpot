@@ -41,8 +41,20 @@
   position: relative;
 }
 
+.form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
 .form-modal-title {
   @include t.use-typography("headline-medium");
 
   color: var(--color-foreground-primary);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-m);
 }
