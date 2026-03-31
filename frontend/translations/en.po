@@ -1554,6 +1554,9 @@ msgstr "SVG is invalid or malformed"
 msgid "errors.team-feature-mismatch"
 msgstr "Detected incompatible feature '%s'"
 
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Only the owner of a team can delete it."
+
 #: src/app/main/ui/dashboard/sidebar.cljs:373, src/app/main/ui/dashboard/team.cljs:393
 msgid "errors.team-leave.insufficient-members"
 msgstr "Insufficient members to leave team, you probably want to delete it."
@@ -3636,7 +3639,7 @@ msgid "modals.leave-confirm.title"
 msgstr "Leaving team"
 
 msgid "modals.leave-org-confirm.title"
-msgstr "Leaving %s organization"
+msgstr "Leaving %s organization?"
 
 msgid "modals.before-leave-org.title"
 msgstr "BEFORE YOU LEAVE THE ORGANIZATION"
@@ -3646,6 +3649,9 @@ msgstr "You are the only member of some of the teams. Those teams will be delete
 
 msgid "modals.before-leave-org.warning"
 msgstr "Any team where you’re the only member will be deleted."
+
+msgid "dasboard.leave-org.toast"
+msgstr "You're no longer part of the %s organization."
 
 #: src/app/main/ui/delete_shared.cljs:56
 msgid "modals.move-shared-confirm.accept"

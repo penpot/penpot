@@ -670,3 +670,29 @@
   height: $sz-48;
   width: 100%;
 }
+
+.org-options-btn {
+  --icon-stroke: var(--icon-foreground);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: $sz-32;
+  height: $sz-32;
+
+  &:hover {
+    --icon-stroke: var(--color-accent-primary);
+  }
+}
+
+.org-menu-icon {
+  @extend %button-icon;
+
+  stroke: var(--icon-stroke);
+}
+
+.org-menu-icon-open {
+  @extend %button-icon;
+
+  stroke: var(--color-accent-primary);
+}

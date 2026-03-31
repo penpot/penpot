@@ -73,6 +73,12 @@
 (def ^:private menu-icon
   (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
+(def ^:private org-menu-icon
+  (deprecated-icon/icon-xref :menu (stl/css :org-menu-icon)))
+
+(def ^:private org-menu-icon-open
+  (deprecated-icon/icon-xref :menu (stl/css :org-menu-icon-open)))
+
 (def ^:private pin-icon
   (deprecated-icon/icon-xref :pin (stl/css :pin-icon)))
 
@@ -449,18 +455,22 @@
                    (modal/hide))))
 
         on-error
-        (fn [{:keys [code] :as error}]
-          (condp = code
-            :no-enough-members-for-leave
-            (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
+        (fn [error]
+          (let [code (-> error ex-data :code)]
+            (condp = code
+              :only-owner-can-delete-team
+              (rx/of (ntf/error (tr "errors.team-leave.only-owner-can-delete")))
 
-            :member-does-not-exist
-            (rx/of (ntf/error (tr "errors.team-leave.member-does-not-exists")))
+              :no-enough-members-for-leave
+              (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
 
-            :owner-cant-leave-team
-            (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
+              :member-does-not-exist
+              (rx/of (ntf/error (tr "errors.team-leave.member-does-not-exists")))
 
-            (rx/throw error)))
+              :owner-cant-leave-team
+              (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
+
+              (rx/throw error))))
 
         leave-fn
         (mf/use-fn
@@ -605,31 +615,33 @@
 
         on-error
         (mf/use-fn
-         (fn [{:keys [code] :as error}]
-           (condp = code
-             :no-enough-members-for-leave
-             (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
+         (fn [error]
+           (let [code (-> error ex-data :code)]
+             (condp = code
+               :only-owner-can-delete-team
+               (rx/of (ntf/error (tr "errors.team-leave.only-owner-can-delete")))
 
-             :member-does-not-exist
-             (rx/of (ntf/error (tr "errors.team-leave.member-does-not-exists")))
+               :no-enough-members-for-leave
+               (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
 
-             :owner-cant-leave-team
-             (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
+               :member-does-not-exist
+               (rx/of (ntf/error (tr "errors.team-leave.member-does-not-exists")))
 
-             (rx/throw error))))
+               :owner-cant-leave-team
+               (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
+
+               (rx/throw error)))))
 
         leave-fn
         (mf/use-fn
          (mf/deps on-error organization default-team-id not-owned-teams teams-to-delete)
-         (fn [teams-to-transfer]
+         (fn [{:keys [teams-to-transfer]}]
            (let [teams-to-leave (cond->> not-owned-teams
                                   :always
                                   (map #(select-keys % [:id]))
                                   (seq teams-to-transfer)
                                   (concat teams-to-transfer))
                  teams-to-delete (map :id teams-to-delete)]
-
-
 
              (st/emit! (dnt/leave-org {:org-id (:organization-id organization)
                                        :org-name (:name organization)
@@ -781,8 +793,9 @@
           [:div {:class (stl/css :org-options)}]
           [:> button* {:variant "ghost"
                        :type "button"
-                       :class (stl/css :org-options)
-                       :on-click on-show-options-click} menu-icon])]
+                       :class (stl/css :org-options-btn)
+                       :on-click on-show-options-click}
+           (if show-org-options-menu? org-menu-icon-open org-menu-icon)])]
 
 
        ;; Orgs Dropdown

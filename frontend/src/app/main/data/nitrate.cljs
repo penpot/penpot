@@ -5,10 +5,12 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.team :as dt]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -69,12 +71,13 @@
                                    :default-team-id default-team-id
                                    :teams-to-delete teams-to-delete
                                    :teams-to-leave teams-to-leave})
-
-
              (rx/mapcat
               (fn [_]
                 (rx/of
                  (dt/fetch-teams)
                  (dcm/go-to-dashboard-recent :team-id profile-team-id)
-                 (modal/hide))))
+                 (modal/hide)
+                 (ntf/show {:content (tr "dasboard.leave-org.toast" org-name)
+                            :type :toast
+                            :level :info}))))
              (rx/catch on-error))))))

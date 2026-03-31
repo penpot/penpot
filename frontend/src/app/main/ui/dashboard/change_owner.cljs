@@ -139,14 +139,14 @@
                     team-fields)
 
         on-accept (fn [_]
-                    (let [result (mapv (fn [{:keys [team field-name]}]
-                                         (let [val (get-in @form [:clean-data field-name])]
-                                           {:id (:id team)
-                                            :reassign-to (uuid/parse val)}))
-                                       team-fields)]
-                      (accept result)))]
+                    (let [teams-to-transfer (mapv (fn [{:keys [team field-name]}]
+                                                    (let [val (get-in @form [:clean-data field-name])]
+                                                      {:id (:id team)
+                                                       :reassign-to (uuid/parse val)}))
+                                                  team-fields)]
+                      (accept {:teams-to-transfer teams-to-transfer})))]
     [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-container)}
+     [:div {:class (stl/css :modal-org-container)}
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-org-title)} (tr "modals.before-leave-org.title")]
        [:button {:class (stl/css :modal-close-btn)

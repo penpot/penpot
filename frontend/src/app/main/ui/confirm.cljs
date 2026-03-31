@@ -88,7 +88,7 @@
                                     :appearance :ghost}
           hint])
        (when (string? error-msg)
-         [:> context-notification* {:level :error}
+         [:> context-notification* {:level :error :class (stl/css :modal-error-msg)}
           error-msg])
        (when (> (count items) 0)
          [:*
