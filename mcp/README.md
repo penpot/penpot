@@ -306,5 +306,7 @@ you may set the following environment variables to configure the two servers
   - Ensure that at least the major, minor and patch components of the version are always up-to-date.
   - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API) 
     indicates incompatibility, resulting in the display of a warning message in the plugin UI.
-* Packaging and publishing:
-  - Create npm package: `bash scripts/pack` (sets version and then calls `npm pack`)
+* Packaging and publishing: 
+  1. Ensure release version is set correctly in package.json (call `bash scripts/set-version` to update it automatically)
+  2. Create npm package: `bash scripts/pack` (creates `penpot-mcp-<version>.tgz` for publishing)
+  3. Publish to npm: `npm publish penpot-mcp-<version>.tgz --access public`
