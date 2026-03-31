@@ -1525,6 +1525,9 @@ msgstr "El SVG no es válido o está mal formado"
 msgid "errors.team-feature-mismatch"
 msgstr "Detectada funcionalidad incompatible '%s'"
 
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Sólo puede borrar un equipo su propietario."
+
 #: src/app/main/ui/dashboard/sidebar.cljs:373, src/app/main/ui/dashboard/team.cljs:393
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
@@ -3591,7 +3594,7 @@ msgid "modals.leave-confirm.title"
 msgstr "Abandonando el equipo"
 
 msgid "modals.leave-org-confirm.title"
-msgstr "Abandonando la organización %s"
+msgstr "¿Abandonando la organización %s?"
 
 msgid "modals.before-leave-org.title"
 msgstr "ANTES DE ABANDONAR LA ORGANIZACIÓN"
@@ -3601,6 +3604,9 @@ msgstr "Eres el único miembro de algunos equipos. Esos equipos se van a borrar,
 
 msgid "modals.before-leave-org.warning"
 msgstr "Se van a borrar todos los equipos en los que eres el único miembro."
+
+msgid "dasboard.leave-org.toast"
+msgstr "Ya no eres miembro de la organización %s."
 
 #: src/app/main/ui/delete_shared.cljs:56
 msgid "modals.move-shared-confirm.accept"
