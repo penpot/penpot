@@ -52,6 +52,7 @@
 
         handle-click
         (mf/use-fn
+         (mf/deps selected on-change allow-empty)
          (fn [event]
            (let [target (dom/get-target event)
                  label  (dom/get-parent-with-data target "label")

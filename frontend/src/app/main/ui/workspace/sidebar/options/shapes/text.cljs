@@ -25,7 +25,7 @@
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu*]]
    [rumext.v2 :as mf]))
 
 (mf/defc options*
@@ -162,9 +162,10 @@
         {:ids ids
          :values (select-keys shape constraint-attrs)}])
 
-     [:& text-menu
+     [:> text-menu*
       {:ids ids
        :type type
+       :applied-tokens applied-tokens
        :values text-values}]
 
      [:> fill/fill-menu*

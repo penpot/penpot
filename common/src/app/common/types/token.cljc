@@ -557,7 +557,8 @@
    :font-size          [:font-size]
    :letter-spacing     [:letter-spacing]
    :fill               [:color]
-   :stroke-color       [:color]})
+   :stroke-color       [:color]
+   :typography         [:typography]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS for tokens application
