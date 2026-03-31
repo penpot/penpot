@@ -242,17 +242,19 @@
   (update-token- [this token-id f]
     (assert (uuid? token-id) "expected uuid for `token-id`")
     (if-let [token (get-token- this token-id)]
-      (let [token' (-> (make-token (f token))
-                       (assoc :modified-at (ct/now)))]
-        (TokenSet. id
-                   name
-                   description
-                   (ct/now)
-                   (if (= (:name token) (:name token'))
-                     (assoc tokens (:name token') token')
-                     (-> tokens
-                         (d/oassoc-before (:name token) (:name token') token')
-                         (dissoc (:name token))))))
+      (let [token' (f token)]
+        (if (not= token token')
+          (let [token' (assoc token' :modified-at (ct/now))]
+            (TokenSet. id
+                       name
+                       description
+                       (ct/now)
+                       (if (= (:name token) (:name token'))
+                         (assoc tokens (:name token') token')
+                         (-> tokens
+                             (d/oassoc-before (:name token) (:name token') token')
+                             (dissoc (:name token))))))
+          this))
       this))
 
   (delete-token- [this token-id]
