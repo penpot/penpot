@@ -205,6 +205,19 @@
       (dwt/dispose! instance)
       (st/emit! (dwt/update-editor nil)))))
 
+(defn vertical-align-editor-classes
+  "Returns `[align-top? align-center? align-bottom?]` for the text editor root
+  flex layout. When `render-wasm?` is true, the `foreignObject` is already
+  positioned using the same vertical offset as Skia (`content_rect`); applying
+  `justify-content` center/end here would double the offset and misalign the DOM
+  editor with the rendered text, caret, and selection."
+  [content render-wasm?]
+  (if render-wasm?
+    [true false false]
+    [(= (:vertical-align content "top") "top")
+     (= (:vertical-align content) "center")
+     (= (:vertical-align content) "bottom")]))
+
 (defn get-color-from-content [content]
   (let [fills (->> (tree-seq map? :children content)
                    (mapcat :fills)
@@ -225,7 +238,7 @@
   "Text editor (HTML)"
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
-  [{:keys [shape canvas-ref]}]
+  [{:keys [shape canvas-ref render-wasm?] :or {render-wasm? false}}]
   (let [content          (:content shape)
         shape-id         (dm/get-prop shape :id)
         fill-color       (get-color-from-content content)
@@ -243,6 +256,9 @@
 
         text-color       (or fill-color (get-default-text-color {:frame frame
                                                                  :background-color background-color}) color/black)
+
+        [align-top? align-center? align-bottom?]
+        (vertical-align-editor-classes content render-wasm?)
 
         fonts
         (-> (mf/use-memo (mf/deps content) #(get-fonts content))
@@ -291,9 +307,9 @@
                 :grow-type-fixed (= (:grow-type shape) :fixed)
                 :grow-type-auto-width (= (:grow-type shape) :auto-width)
                 :grow-type-auto-height (= (:grow-type shape) :auto-height)
-                :align-top    (= (:vertical-align content "top") "top")
-                :align-center (= (:vertical-align content) "center")
-                :align-bottom (= (:vertical-align content) "bottom")))
+                :align-top    align-top?
+                :align-center align-center?
+                :align-bottom align-bottom?))
        :ref editor-ref
        :data-testid "text-editor-content"
        :data-x (dm/get-prop shape :x)
@@ -348,7 +364,7 @@
         ;; NOTE: this teoretically breaks hooks rules, but in practice
         ;; it is imposible to really break it
         maybe-zoom
-        (when (cf/check-browser? :safari-16)
+        (when (cf/check-browser? :safari)
           (mf/deref refs/selected-zoom))
 
         shape (cond-> shape
@@ -404,16 +420,22 @@
           ;; Transform is necessary when there is a text overflow and the vertical
           ;; aligment is center or bottom.
           (and (not render-wasm?)
-               (not (cf/check-browser? :safari)))
+               (not (cf/check-browser? :safari-16)))
           (obj/merge!
            #js {:transform (dm/fmt "translate(%px, %px)" (- (dm/get-prop shape :x) x) (- (dm/get-prop shape :y) y))})
 
-          (cf/check-browser? :safari-17)
+          (and (cf/check-browser? :safari) (not (cf/check-browser? :safari-16)))
           (obj/merge!
            #js {:height "100%"
                 :display "flex"
                 :flexDirection "column"
                 :justifyContent (shape->justify shape)})
+
+          (or (cf/check-browser? :safari-26) (cf/check-browser? :safari-18))
+          (obj/merge!
+           #js {:position "fixed"
+                :transform-origin "top left"
+                :transform (dm/fmt "scale(%)" maybe-zoom)})
 
           (cf/check-browser? :safari-16)
           (obj/merge!
@@ -435,4 +457,5 @@
       [:div {:style style}
        [:& text-editor-html {:shape shape
                              :canvas-ref canvas-ref
+                             :render-wasm? render-wasm?
                              :key (dm/str shape-id)}]]]]))

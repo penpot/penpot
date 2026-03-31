@@ -63,7 +63,7 @@
   (ptk/reify ::initialize-rasterizer
     ptk/EffectEvent
     (effect [_ state _]
-      (when (feat/active-feature? state "render-wasm/v1")
+      (when-not (feat/active-feature? state "render-wasm/v1")
         (thr/init!)))))
 
 (defn initialize
