@@ -3,8 +3,8 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        calculate_position_data, calculate_text_layout_data, merge_fills, set_paint_fill,
-        ParagraphBuilderGroup, Stroke, StrokeKind, TextContent,
+        calculate_position_data, calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup,
+        Stroke, StrokeKind, TextContent,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -19,7 +19,6 @@ pub fn stroke_paragraph_builder_group_from_text(
     text_content: &TextContent,
     stroke: &Stroke,
     bounds: &Rect,
-    count_inner_strokes: usize,
     use_shadow: Option<bool>,
 ) -> (Vec<ParagraphBuilderGroup>, Option<f32>) {
     let fallback_fonts = get_fallback_fonts();
@@ -33,14 +32,8 @@ pub fn stroke_paragraph_builder_group_from_text(
             std::collections::HashMap::new();
 
         for span in paragraph.children().iter() {
-            let text_paint: skia_safe::Handle<_> = merge_fills(span.fills(), *bounds);
-            let (stroke_paints, stroke_layer_opacity) = get_text_stroke_paints(
-                stroke,
-                bounds,
-                &text_paint,
-                count_inner_strokes,
-                remove_stroke_alpha,
-            );
+            let (stroke_paints, stroke_layer_opacity) =
+                get_text_stroke_paints(stroke, bounds, remove_stroke_alpha);
 
             if group_layer_opacity.is_none() {
                 group_layer_opacity = stroke_layer_opacity;
@@ -79,8 +72,6 @@ pub fn stroke_paragraph_builder_group_from_text(
 fn get_text_stroke_paints(
     stroke: &Stroke,
     bounds: &Rect,
-    text_paint: &Paint,
-    count_inner_strokes: usize,
     remove_stroke_alpha: bool,
 ) -> (Vec<Paint>, Option<f32>) {
     let mut paints = Vec::new();
@@ -104,56 +95,19 @@ fn get_text_stroke_paints(
 
     match stroke.kind {
         StrokeKind::Inner => {
-            let shader = text_paint.shader();
-            let mut is_opaque = true;
-
-            if let Some(shader) = shader {
-                is_opaque = shader.is_opaque();
-            }
-
-            if is_opaque && count_inner_strokes == 1 {
-                let mut paint = text_paint.clone();
-                paint.set_style(skia::PaintStyle::Fill);
-                paint.set_anti_alias(true);
-                paints.push(paint);
-
-                let mut paint = skia::Paint::default();
-                paint.set_style(skia::PaintStyle::Stroke);
-                paint.set_blend_mode(skia::BlendMode::SrcIn);
-                paint.set_anti_alias(true);
-                paint.set_stroke_width(stroke.width * 2.0);
-                fill_for_paint(&mut paint);
-                paints.push(paint);
-            } else {
-                let mut paint = skia::Paint::default();
-                if remove_stroke_alpha {
-                    paint.set_color(skia::Color::BLACK);
-                    paint.set_alpha(255);
-                } else {
-                    paint = text_paint.clone();
-                    if needs_opacity_layer {
-                        let opaque_fill = stroke.fill.with_full_opacity();
-                        set_paint_fill(&mut paint, &opaque_fill, bounds, false);
-                    } else {
-                        set_paint_fill(&mut paint, &stroke.fill, bounds, false);
-                    }
-                }
-
-                paint.set_style(skia::PaintStyle::Fill);
-                paint.set_anti_alias(false);
-                paints.push(paint);
-
-                let mut paint = skia::Paint::default();
-                let image_filter =
-                    skia_safe::image_filters::erode((stroke.width, stroke.width), None, None);
-
-                paint.set_image_filter(image_filter);
-                paint.set_anti_alias(false);
+            // Just the stroke paint — mask+SrcIn+DstOver layering is handled
+            // by render_inner_stroke_on_canvas.
+            let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Stroke);
+            paint.set_anti_alias(true);
+            paint.set_stroke_width(stroke.width * 2.0);
+            if remove_stroke_alpha {
                 paint.set_color(skia::Color::BLACK);
                 paint.set_alpha(255);
-                paint.set_blend_mode(skia::BlendMode::DstOut);
-                paints.push(paint);
+            } else {
+                fill_for_paint(&mut paint);
             }
+            paints.push(paint);
         }
         StrokeKind::Center => {
             let mut paint = skia::Paint::default();
@@ -330,24 +284,15 @@ fn render_text_on_canvas(
     canvas.restore();
 }
 
-fn draw_text(
+/// Lays out and paints paragraph builders without any layer management.
+fn paint_text(
     canvas: &Canvas,
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
-    layer_opacity: Option<f32>,
 ) {
     let text_content = shape.get_text_content();
     let layout_info =
         calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
-
-    if let Some(opacity) = layer_opacity {
-        let mut opacity_paint = Paint::default();
-        opacity_paint.set_alpha_f(opacity);
-        let layer_rec = SaveLayerRec::default().paint(&opacity_paint);
-        canvas.save_layer(&layer_rec);
-    } else {
-        canvas.save_layer(&SaveLayerRec::default());
-    }
 
     for para in &layout_info.paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));
@@ -362,6 +307,178 @@ fn draw_text(
             );
         }
     }
+}
+
+fn draw_text(
+    canvas: &Canvas,
+    shape: &Shape,
+    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+    layer_opacity: Option<f32>,
+) {
+    if let Some(opacity) = layer_opacity {
+        let mut opacity_paint = Paint::default();
+        opacity_paint.set_alpha_f(opacity);
+        let layer_rec = SaveLayerRec::default().paint(&opacity_paint);
+        canvas.save_layer(&layer_rec);
+    } else {
+        canvas.save_layer(&SaveLayerRec::default());
+    }
+
+    paint_text(canvas, shape, paragraph_builder_groups);
+}
+
+/// Renders an inner stroke using mask + SrcIn + DstOver layer structure.
+///
+/// Layer structure:
+///   saveLayer()           — outer layer
+///     saveLayer()         — mask group (isolation)
+///       paint mask        — opaque fill as clip mask
+///       saveLayer(SrcIn)  — clips stroke to mask shape
+///         paint stroke
+///       restore
+///     restore
+///     saveLayer(DstOver)  — fill behind the stroke
+///       paint fill
+///     restore
+///   restore
+#[allow(clippy::too_many_arguments)]
+fn render_inner_stroke_on_canvas(
+    canvas: &Canvas,
+    shape: &Shape,
+    mask_builders: &mut [Vec<ParagraphBuilder>],
+    stroke_builders: &mut [Vec<ParagraphBuilder>],
+    fill_builders: &mut [Vec<ParagraphBuilder>],
+    blur: Option<&ImageFilter>,
+    layer_opacity: Option<f32>,
+) {
+    if let Some(blur_filter) = blur {
+        let mut blur_paint = Paint::default();
+        blur_paint.set_image_filter(blur_filter.clone());
+        canvas.save_layer(&SaveLayerRec::default().paint(&blur_paint));
+    }
+
+    // Opacity layer wraps the entire composition
+    if let Some(opacity) = layer_opacity {
+        let mut opacity_paint = Paint::default();
+        opacity_paint.set_alpha_f(opacity);
+        canvas.save_layer(&SaveLayerRec::default().paint(&opacity_paint));
+    }
+
+    // Outer layer
+    canvas.save_layer(&SaveLayerRec::default());
+
+    // Mask group layer (isolates mask from parent surface content)
+    canvas.save_layer(&SaveLayerRec::default());
+
+    // Draw opaque mask (full alpha text shape)
+    paint_text(canvas, shape, mask_builders);
+
+    // SrcIn layer — only keeps stroke pixels where mask has alpha
+    let mut src_in_paint = Paint::default();
+    src_in_paint.set_blend_mode(skia::BlendMode::SrcIn);
+    canvas.save_layer(&SaveLayerRec::default().paint(&src_in_paint));
+
+    // Draw stroke
+    paint_text(canvas, shape, stroke_builders);
+
+    canvas.restore(); // SrcIn layer
+    canvas.restore(); // mask group layer
+
+    // Fill with DstOver (behind the stroke result)
+    let mut dst_over_paint = Paint::default();
+    dst_over_paint.set_blend_mode(skia::BlendMode::DstOver);
+    canvas.save_layer(&SaveLayerRec::default().paint(&dst_over_paint));
+
+    paint_text(canvas, shape, fill_builders);
+
+    canvas.restore(); // DstOver layer
+    canvas.restore(); // outer layer
+
+    if layer_opacity.is_some() {
+        canvas.restore(); // opacity layer
+    }
+
+    if blur.is_some() {
+        canvas.restore(); // blur layer
+    }
+}
+
+/// Public API for rendering inner strokes with mask+SrcIn+DstOver approach.
+#[allow(clippy::too_many_arguments)]
+pub fn render_inner_stroke(
+    render_state: Option<&mut RenderState>,
+    canvas: Option<&Canvas>,
+    shape: &Shape,
+    mask_builders: &mut [Vec<ParagraphBuilder>],
+    stroke_builders: &mut [Vec<ParagraphBuilder>],
+    fill_builders: &mut [Vec<ParagraphBuilder>],
+    surface_id: Option<SurfaceId>,
+    blur: Option<&ImageFilter>,
+    stroke_bounds_outset: f32,
+    layer_opacity: Option<f32>,
+) -> Result<()> {
+    if let Some(render_state) = render_state {
+        let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
+
+        if let Some(blur_filter) = blur {
+            let mut text_bounds = shape
+                .get_text_content()
+                .calculate_bounds(shape, false)
+                .to_rect();
+            if stroke_bounds_outset > 0.0 {
+                text_bounds.inset((-stroke_bounds_outset, -stroke_bounds_outset));
+            }
+            let bounds = blur_filter.compute_fast_bounds(text_bounds);
+            if bounds.is_finite() && bounds.width() > 0.0 && bounds.height() > 0.0 {
+                let blur_filter_clone = blur_filter.clone();
+                if filters::render_with_filter_surface(
+                    render_state,
+                    bounds,
+                    target_surface,
+                    |state, temp_surface| {
+                        let temp_canvas = state.surfaces.canvas(temp_surface);
+                        render_inner_stroke_on_canvas(
+                            temp_canvas,
+                            shape,
+                            mask_builders,
+                            stroke_builders,
+                            fill_builders,
+                            Some(&blur_filter_clone),
+                            layer_opacity,
+                        );
+                        Ok(())
+                    },
+                )? {
+                    return Ok(());
+                }
+            }
+        }
+
+        let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
+        render_inner_stroke_on_canvas(
+            canvas,
+            shape,
+            mask_builders,
+            stroke_builders,
+            fill_builders,
+            blur,
+            layer_opacity,
+        );
+        return Ok(());
+    }
+
+    if let Some(canvas) = canvas {
+        render_inner_stroke_on_canvas(
+            canvas,
+            shape,
+            mask_builders,
+            stroke_builders,
+            fill_builders,
+            blur,
+            layer_opacity,
+        );
+    }
+    Ok(())
 }
 
 fn draw_text_decorations(
