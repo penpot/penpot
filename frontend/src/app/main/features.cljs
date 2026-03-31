@@ -68,14 +68,16 @@
     "false" false
     nil))
 
+(def wasm-url-override-ref
+  (l/derived wasm-url-override st/state))
+
 (defn active-feature?
   "Given a state and feature, check if feature is enabled."
   [state feature]
   (assert (contains? cfeat/supported-features feature)
           "feature not supported")
 
-  (let [wasm-override (when (= feature "render-wasm/v1")
-                        (wasm-url-override state))]
+  (let [wasm-override (when (= feature "render-wasm/v1") (wasm-url-override state))]
     (cond
       (some? wasm-override)
       wasm-override
@@ -110,8 +112,15 @@
 (defn use-feature
   "A react hook that checks if feature is currently enabled"
   [feature]
-  (let [enabled-features (mf/deref features-ref)]
-    (contains? enabled-features feature)))
+  (let [enabled-features (mf/deref features-ref)
+        wasm-override (mf/deref wasm-url-override-ref)
+        wasm-override (when (= feature "render-wasm/v1") wasm-override)]
+    (cond
+      (some? wasm-override)
+      wasm-override
+
+      :else
+      (contains? enabled-features feature))))
 
 (defn toggle-feature
   "An event constructor for runtime feature toggle.
