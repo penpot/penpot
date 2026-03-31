@@ -26,7 +26,7 @@ use crate::error::{Error, Result};
 use crate::performance;
 use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
-    Stroke, Type,
+    Stroke, StrokeKind, Type,
 };
 use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
@@ -1030,6 +1030,8 @@ impl RenderState {
                 let text_stroke_blur_outset =
                     Stroke::max_bounds_width(shape.visible_strokes(), false);
                 let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
+                let stroke_kinds: Vec<StrokeKind> =
+                    shape.visible_strokes().rev().map(|s| s.kind).collect();
                 let (mut stroke_paragraphs_list, stroke_opacities): (Vec<_>, Vec<_>) = shape
                     .visible_strokes()
                     .rev()
@@ -1038,7 +1040,6 @@ impl RenderState {
                             &text_content,
                             stroke,
                             &shape.selrect(),
-                            count_inner_strokes,
                             None,
                         )
                     })
@@ -1057,22 +1058,41 @@ impl RenderState {
                         None,
                     )?;
 
-                    for (stroke_paragraphs, layer_opacity) in stroke_paragraphs_list
+                    for (i, (stroke_paragraphs, layer_opacity)) in stroke_paragraphs_list
                         .iter_mut()
                         .zip(stroke_opacities.iter())
+                        .enumerate()
                     {
-                        text::render_with_bounds_outset(
-                            Some(self),
-                            None,
-                            &shape,
-                            stroke_paragraphs,
-                            Some(strokes_surface_id),
-                            None,
-                            None,
-                            text_stroke_blur_outset,
-                            None,
-                            *layer_opacity,
-                        )?;
+                        if stroke_kinds[i] == StrokeKind::Inner {
+                            let mut mask_builders = text_content.paragraph_builder_group_opaque();
+                            let mut fill_builders =
+                                text_content.paragraph_builder_group_from_text(None);
+                            text::render_inner_stroke(
+                                Some(self),
+                                None,
+                                &shape,
+                                &mut mask_builders,
+                                stroke_paragraphs,
+                                &mut fill_builders,
+                                Some(strokes_surface_id),
+                                None,
+                                text_stroke_blur_outset,
+                                *layer_opacity,
+                            )?;
+                        } else {
+                            text::render_with_bounds_outset(
+                                Some(self),
+                                None,
+                                &shape,
+                                stroke_paragraphs,
+                                Some(strokes_surface_id),
+                                None,
+                                None,
+                                text_stroke_blur_outset,
+                                None,
+                                *layer_opacity,
+                            )?;
+                        }
                     }
                 } else {
                     let mut drop_shadows = shape.drop_shadow_paints();
@@ -1096,7 +1116,6 @@ impl RenderState {
                                 &text_content,
                                 stroke,
                                 &shape.selrect(),
-                                count_inner_strokes,
                                 Some(true),
                             )
                         })
@@ -1126,6 +1145,8 @@ impl RenderState {
                                 text_drop_shadows_surface_id.into(),
                                 &parent_shadows,
                                 &blur_filter,
+                                &stroke_kinds,
+                                &text_content,
                             )?;
                         }
                     } else {
@@ -1168,25 +1189,47 @@ impl RenderState {
                             text_drop_shadows_surface_id.into(),
                             &drop_shadows,
                             &blur_filter,
+                            &stroke_kinds,
+                            &text_content,
                         )?;
 
                         // 4. Stroke fills
-                        for (stroke_paragraphs, layer_opacity) in stroke_paragraphs_list
+                        for (i, (stroke_paragraphs, layer_opacity)) in stroke_paragraphs_list
                             .iter_mut()
                             .zip(stroke_opacities.iter())
+                            .enumerate()
                         {
-                            text::render_with_bounds_outset(
-                                Some(self),
-                                None,
-                                &shape,
-                                stroke_paragraphs,
-                                Some(strokes_surface_id),
-                                None,
-                                blur_filter.as_ref(),
-                                text_stroke_blur_outset,
-                                None,
-                                *layer_opacity,
-                            )?;
+                            if stroke_kinds[i] == StrokeKind::Inner {
+                                let mut mask_builders =
+                                    text_content.paragraph_builder_group_opaque();
+                                let mut fill_builders =
+                                    text_content.paragraph_builder_group_from_text(None);
+                                text::render_inner_stroke(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    &mut mask_builders,
+                                    stroke_paragraphs,
+                                    &mut fill_builders,
+                                    Some(strokes_surface_id),
+                                    blur_filter.as_ref(),
+                                    text_stroke_blur_outset,
+                                    *layer_opacity,
+                                )?;
+                            } else {
+                                text::render_with_bounds_outset(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    stroke_paragraphs,
+                                    Some(strokes_surface_id),
+                                    None,
+                                    blur_filter.as_ref(),
+                                    text_stroke_blur_outset,
+                                    None,
+                                    *layer_opacity,
+                                )?;
+                            }
                         }
 
                         // 5. Stroke inner shadows
@@ -1198,6 +1241,8 @@ impl RenderState {
                             Some(innershadows_surface_id),
                             &inner_shadows,
                             &blur_filter,
+                            &stroke_kinds,
+                            &text_content,
                         )?;
 
                         // 6. Fill Inner shadows
