@@ -11,11 +11,11 @@
    [app.common.data :as d]
    [app.main.ui.ds.controls.input :as ds]
    [app.main.ui.ds.controls.shared.dropdown-navigation :refer [use-dropdown-navigation]]
-
    [app.main.ui.ds.controls.shared.render-option :refer [render-option]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
@@ -43,6 +43,7 @@
    [:ref {:optional true} fn?]
    [:class {:optional true} :string]
    [:wrapper-ref {:optional true} :any]
+   [:placeholder {:optional true} :string]
    [:on-click fn?]
    [:options [:vector schema:option]]
    [:selected {:optional true} :any]
@@ -50,7 +51,7 @@
 
 (mf/defc searchable-options-dropdown*
   {::mf/schema schema:options-dropdown}
-  [{:keys [on-click options selected align class] :rest props}]
+  [{:keys [on-click options selected align class placeholder] :rest props}]
   (let [align             (d/nilv align :left)
 
         search*           (mf/use-state "")
@@ -136,8 +137,7 @@
     [:> :ul list-props
      [:li {:class (stl/css :option-search)
            :role  "presentation"}
-      ;; TODO; review this placeholder.
-      [:> ds/input* {:placeholder "Search..."
+      [:> ds/input* {:placeholder (or placeholder (tr "dashboard.search-placeholder"))
                      :value       search
                      :ref         search-input-ref
                      :variant     "comfortable"
