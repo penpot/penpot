@@ -8,7 +8,7 @@ localhost:3449 {
 	header -Strict-Transport-Security
 }
 
-http://localhost:3450 {
+:3450 {
 	# For subpath test
 	# handle_path /penpot/* {
 	# 	reverse_proxy localhost:4449
