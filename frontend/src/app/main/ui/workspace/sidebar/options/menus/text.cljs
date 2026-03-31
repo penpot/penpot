@@ -144,10 +144,12 @@
                                (content/dom->cljs (dwt/get-editor-root editor-instance)))]
                  (when (some? content)
                    (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))))
+
              (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
 
              (when (features/active-feature? @st/state "render-wasm/v1")
-               (st/emit! (dwwt/resize-wasm-text-all ids)))
+               (st/emit! (dwwt/resize-wasm-text-all ids)
+                         (ptk/data-event :layout/update {:ids ids})))
              ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
              (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
            (when (some? on-blur) (on-blur))))]
