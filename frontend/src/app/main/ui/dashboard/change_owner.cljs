@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.change-owner
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
@@ -127,10 +128,7 @@
                            :default-member-id default-member-id})))
 
         initial-values (mf/with-memo [team-fields]
-                         (into {}
-                               (map (fn [{:keys [field-name default-member-id]}]
-                                      [field-name default-member-id])
-                                    team-fields)))
+                         (d/index-by :field-name :default-member-id team-fields))
 
         form (fm/use-form :schema schema :initial initial-values)
 
