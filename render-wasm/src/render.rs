@@ -1395,16 +1395,16 @@ impl RenderState {
             }
 
             // Draw directly from cache surface, avoiding snapshot overhead
-            self.surfaces.draw_cache_to_target();
+            // self.surfaces.draw_cache_to_target();
 
             // Restore canvas state
             self.surfaces.canvas(SurfaceId::Target).restore();
 
-            // When zooming out, the cached surface (from a previous, more zoomed-in
-            // render) may not cover the newly visible world area. Fill those gaps
-            // with any cached tiles (exact zoom or cross-zoom fallback) so we don't
-            // show temporary empty squares.
-            if navigate_zoom < 1.0 {
+            // When zooming out OR panning, the cached surface (from a previous render)
+            // may not cover the newly visible world area. Fill those gaps with any
+            // cached tiles (exact zoom or cross-zoom fallback) so we don't show
+            // temporary empty squares while tiles for the new view are rendering.
+            // if navigate_zoom <= 1.0 {
                 let current_scale = self.get_scale();
                 let current_scale_bits = current_scale.to_bits();
                 let tiles::TileRect(vsx, vsy, vex, vey) =
@@ -1412,11 +1412,6 @@ impl RenderState {
 
                 let offset_x = self.viewbox.area.left * current_scale;
                 let offset_y = self.viewbox.area.top * current_scale;
-
-                let mut exact_hits: usize = 0;
-                let mut fallback_hits: usize = 0;
-                let mut fallback_blits: usize = 0;
-                let mut misses: usize = 0;
 
                 for x in vsx..=vex {
                     for y in vsy..=vey {
@@ -1427,17 +1422,19 @@ impl RenderState {
                             tiles::TILE_SIZE,
                             tiles::TILE_SIZE,
                         );
-                        if self.surfaces.has_cached_tile_surface(tile, current_scale_bits) {
+                        if self
+                            .surfaces
+                            .has_cached_tile_surface(tile, current_scale_bits)
+                        {
                             self.surfaces.draw_cached_tile_surface(
                                 tile,
                                 current_scale_bits,
                                 rect,
                                 self.background_color,
                             );
-                            exact_hits += 1;
                         } else {
                             let target_world_rect = tiles::get_tile_rect(tile, current_scale);
-                            let blits = self.surfaces.draw_tile_fallback_cross_zoom(
+                            let _ = self.surfaces.draw_tile_fallback_cross_zoom(
                                 &self.tile_viewbox,
                                 rect,
                                 self.background_color,
@@ -1446,21 +1443,10 @@ impl RenderState {
                                 current_scale_bits,
                                 true,
                             );
-                            if blits > 0 {
-                                fallback_hits += 1;
-                                fallback_blits += blits;
-                            } else {
-                                misses += 1;
-                            }
                         }
                     }
                 }
-
-                eprintln!(
-                    "render_from_cache zoom-out fill: exact_hits={} fallback_tiles={} fallback_blits={} misses={} scale={}",
-                    exact_hits, fallback_hits, fallback_blits, misses, current_scale
-                );
-            }
+            // }
 
             if self.options.is_debug_visible() {
                 debug::render(self);
@@ -2579,7 +2565,10 @@ impl RenderState {
             if let Some(current_tile) = self.current_tile {
                 let scale = self.get_scale();
                 let scale_bits = scale.to_bits();
-                if self.surfaces.has_cached_tile_surface(current_tile, scale_bits) {
+                if self
+                    .surfaces
+                    .has_cached_tile_surface(current_tile, scale_bits)
+                {
                     performance::begin_measure!("render_shape_tree::cached");
                     let tile_rect = self.get_current_tile_bounds()?;
                     self.surfaces.draw_cached_tile_surface(

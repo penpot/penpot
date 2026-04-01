@@ -676,35 +676,21 @@ impl Surfaces {
         target_scale_bits: u32,
         debug_trace: bool,
     ) -> usize {
-        let Some(candidate_scale_bits) =
-            self.tiles
-                .best_fallback_scale_bits(target_scale, target_scale_bits)
+        let Some(candidate_scale_bits) = self
+            .tiles
+            .best_fallback_scale_bits(target_scale, target_scale_bits)
         else {
             if debug_trace {
-                println!(
-                    "tile_fallback: no candidate scale (target_scale={})",
-                    target_scale
-                );
             }
             return 0;
         };
 
         let src_scale = f32::from_bits(candidate_scale_bits);
         if !src_scale.is_finite() || src_scale <= 0.0 {
-            if debug_trace {
-                println!(
-                    "tile_fallback: invalid candidate scale (bits={}, scale={})",
-                    candidate_scale_bits, src_scale
-                );
-            }
             return 0;
         }
 
         if debug_trace {
-            println!(
-                "tile_fallback: target_scale={} -> candidate_scale={}",
-                target_scale, src_scale
-            );
         }
 
         let tile_size_src_world = super::tiles::get_tile_size(src_scale);
@@ -721,7 +707,8 @@ impl Surfaces {
                 };
 
                 let src_world_rect = super::tiles::get_tile_rect(src_tile, src_scale);
-                let Some(overlap_world) = Self::rect_intersection(target_world_rect, src_world_rect)
+                let Some(overlap_world) =
+                    Self::rect_intersection(target_world_rect, src_world_rect)
                 else {
                     continue;
                 };
@@ -765,10 +752,6 @@ impl Surfaces {
         // Opportunistic cleanup in case we kept too much cross-zoom content.
         if blits > 0 && self.tiles.grid_len() > TEXTURES_CACHE_CAPACITY {
             self.tiles.free_tiles(tile_viewbox);
-        }
-
-        if debug_trace {
-            println!("tile_fallback: blits={}", blits);
         }
 
         blits
@@ -847,6 +830,7 @@ impl TileTextureCache {
     }
 
     fn gc(&mut self) {
+        println!("gc");
         // Make a real remove
         let removed = std::mem::take(&mut self.removed);
         for key in removed.iter() {
@@ -897,7 +881,6 @@ impl TileTextureCache {
         };
         self.scales.insert(scale_bits);
         self.grid.insert(key, image);
-        println!("add: {:?}", key);
         self.removed.remove(&key);
     }
 
@@ -931,7 +914,11 @@ impl TileTextureCache {
         self.grid.len()
     }
 
-    pub fn best_fallback_scale_bits(&self, target_scale: f32, target_scale_bits: u32) -> Option<u32> {
+    pub fn best_fallback_scale_bits(
+        &self,
+        target_scale: f32,
+        target_scale_bits: u32,
+    ) -> Option<u32> {
         let mut best: Option<(f32, u32)> = None;
         for bits in self.scales.iter().copied() {
             if bits == target_scale_bits {
