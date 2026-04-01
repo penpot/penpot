@@ -1525,6 +1525,12 @@ msgstr "El SVG no es válido o está mal formado"
 msgid "errors.team-feature-mismatch"
 msgstr "Detectada funcionalidad incompatible '%s'"
 
+msgid "errors.org-leave.org-owner-cannot-leave"
+msgstr "El dueño de la organización no puede abandonarla."
+
+msgid "errors.org-leave.no-valid-teams"
+msgstr "Ha habido un problema abandonando la organización. Intentalo de nuevo, por favor."
+
 msgid "errors.team-leave.only-owner-can-delete"
 msgstr "Sólo puede borrar un equipo su propietario."
 
