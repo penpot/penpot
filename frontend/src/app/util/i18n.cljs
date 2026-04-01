@@ -216,3 +216,4 @@
 ;; We set the real translation function in the common i18n namespace,
 ;; so that when common code calls (tr ...) it uses this function.
 (set! app.common.i18n/tr tr)
+(set! app.common.i18n/c c)
