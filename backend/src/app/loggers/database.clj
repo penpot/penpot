@@ -50,9 +50,9 @@
                (ex-data cause))
 
         ctx  (-> context
-                 (assoc :service/tenant (cf/get :tenant))
-                 (assoc :service/host (cf/get :host))
-                 (assoc :service/public-uri (str (cf/get :public-uri)))
+                 (assoc :backend/tenant (cf/get :tenant))
+                 (assoc :backend/host (cf/get :host))
+                 (assoc :backend/public-uri (str (cf/get :public-uri)))
                  (assoc :backend/version (:full cf/version))
                  (assoc :logger/name logger)
                  (assoc :logger/level level)
