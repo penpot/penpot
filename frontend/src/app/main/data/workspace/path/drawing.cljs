@@ -13,7 +13,6 @@
    [app.common.types.container :as ctn]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
-   [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -64,7 +63,7 @@
             {:keys [last-point prev-handler]}
             (get-in state [:workspace-local :edit-path id])
 
-            segment (path.segment/next-node shape position last-point prev-handler)]
+            segment (path/next-node shape position last-point prev-handler)]
         (assoc-in state [:workspace-local :edit-path id :preview] segment)))))
 
 (defn add-node
@@ -99,7 +98,7 @@
              prefix (or prefix :c1)
              position (or position (path.helpers/segment->point (nth content (dec index))))
 
-             old-handler (path.segment/get-handler-point content index prefix)
+             old-handler (path/get-handler-point content index prefix)
 
              handler-position (cond-> (gpt/point x y)
                                 shift? (path.helpers/position-fixed-angle position))
@@ -148,7 +147,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [content  (st/get-path state :content)
-            handlers (-> (path.segment/get-handlers content)
+            handlers (-> (path/get-handlers content)
                          (get position))
 
             [idx prefix] (when (= (count handlers) 1)
