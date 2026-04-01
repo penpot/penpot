@@ -6,20 +6,12 @@
 
 (ns common-tests.logic.swap-as-override-test
   (:require
-   [app.common.files.changes :as ch]
-   [app.common.files.changes-builder :as pcb]
-   [app.common.logic.libraries :as cll]
-   [app.common.logic.shapes :as cls]
-   [app.common.pprint :as pp]
+   [app.common.data :as d]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
-   [app.common.types.component :as ctk]
-   [app.common.types.container :as ctn]
-   [app.common.types.file :as  ctf]
-   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -27,23 +19,40 @@
 (defn- setup []
   (-> (thf/sample-file :file1)
 
-      (tho/add-simple-component :component-1 :frame-component-1 :child-component-1 :child-params {:name "child-component-1" :type :rect :fills (ths/sample-fills-color :fill-color "#111111")})
-      (tho/add-simple-component :component-2 :frame-component-2 :child-component-2 :child-params {:name "child-component-2" :type :rect :fills (ths/sample-fills-color :fill-color "#222222")})
-      (tho/add-simple-component :component-3 :frame-component-3 :child-component-3 :child-params {:name "child-component-3" :type :rect :fills (ths/sample-fills-color :fill-color "#333333")})
+      (tho/add-simple-component :component-1 :frame-component-1 :child-component-1
+                                :root-params {:name "component-1"}
+                                :child-params {:name "child-component-1"
+                                               :type :rect
+                                               :fills (ths/sample-fills-color :fill-color "#111111")})
+      (tho/add-simple-component :component-2 :frame-component-2 :child-component-2
+                                :root-params {:name "component-2"}
+                                :child-params {:name "child-component-2"
+                                               :type :rect
+                                               :fills (ths/sample-fills-color :fill-color "#222222")})
+      (tho/add-simple-component :component-3 :frame-component-3 :child-component-3
+                                :root-params {:name "component-3"}
+                                :child-params {:name "child-component-3"
+                                               :type :rect
+                                               :fills (ths/sample-fills-color :fill-color "#333333")})
 
-      (tho/add-frame :frame-icon-and-text)
-      (thc/instantiate-component :component-1 :copy-component-1 :parent-label :frame-icon-and-text :children-labels [:component-1-icon-and-text])
+      (tho/add-frame :frame-icon-and-text :name "copy-component-1")
+      (thc/instantiate-component :component-1 :copy-component-1
+                                 :parent-label :frame-icon-and-text
+                                 :children-labels [:component-1-icon-and-text])
       (ths/add-sample-shape :text
                             {:type :text
                              :name "icon+text"
                              :parent-label :frame-icon-and-text})
       (thc/make-component :icon-and-text :frame-icon-and-text)
 
-      (tho/add-frame :frame-panel)
-      (thc/instantiate-component :icon-and-text :copy-icon-and-text :parent-label :frame-panel :children-labels [:icon-and-text-panel])
+      (tho/add-frame :frame-panel :name "icon-and-text")
+      (thc/instantiate-component :icon-and-text :copy-icon-and-text
+                                 :parent-label :frame-panel
+                                 :children-labels [:icon-and-text-panel])
       (thc/make-component :panel :frame-panel)
 
-      (thc/instantiate-component :panel :copy-panel :children-labels [:copy-icon-and-text-panel])))
+      (thc/instantiate-component :panel :copy-panel
+                                 :children-labels [:copy-icon-and-text-panel])))
 
 (defn- propagate-all-component-changes [file]
   (-> file

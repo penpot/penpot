@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
+   [app.common.files.comp-processors :as cfcp]
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
@@ -1786,6 +1787,62 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0018-sync-component-id-with-near-main"
+  [data _]
+  (let [libs (some-> (:libs data) deref)]
+    (letfn [(fix-shape
+              [data page shape]
+              (if (and (ctk/subcopy-head? shape)
+                       (nil? (ctk/get-swap-slot shape)))
+                (let [file {:id (:id data) :data data}
+                      ref-shape  (ctf/find-ref-shape file page libs shape {:include-deleted? true :with-context? true})]
+                  (if (and (some? ref-shape)
+                           (or (not= (:component-id shape) (:component-id ref-shape))
+                               (not= (:component-file shape) (:component-file ref-shape))))
+                    (cond-> shape
+                      (some? (:component-id ref-shape))
+                      (assoc :component-id (:component-id ref-shape))
+
+                      (nil? (:component-id ref-shape))
+                      (dissoc :component-id)
+
+                      (some? (:component-file ref-shape))
+                      (assoc :component-file (:component-file ref-shape))
+
+                      (nil? (:component-file ref-shape))
+                      (dissoc :component-file))
+                    shape))
+                shape))
+
+            (update-page
+              [data page]
+              (d/update-when page :objects d/update-vals (partial fix-shape data page)))
+
+            (fix-data [data]
+              (loop [current-data data
+                     iteration    0]
+                (let [next-data (update current-data :pages-index d/update-vals (partial update-page current-data))]
+                  (if (or (= current-data next-data)
+                          (> iteration 20))     ;; safety bound
+                    next-data
+                    (recur next-data (inc iteration))))))]
+      (fix-data data))))
+
+(defmethod migrate-data "0019-remove-unneeded-objects-from-components"
+  [data _]
+  (let [file {:id (:id data) :data data}]
+    (-> (cfcp/remove-unneeded-objects-in-components file)
+        :data)))
+
+(defmethod migrate-data "0020-fix-missing-swap-slots"
+  [data _]
+  (let [file      {:id (:id data) :data data}
+        libraries (if (:libs data)
+                    (deref (:libs data))
+                    {})]
+    (-> (cfcp/fix-missing-swap-slots file libraries)
+        :data)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1860,4 +1917,7 @@
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
          "0016-copy-fills-from-position-data-to-text-node"
-         "0017-fix-layout-flex-dir"]))
+         "0017-fix-layout-flex-dir"
+         "0018-sync-component-id-with-near-main"
+         "0019-remove-unneeded-objects-from-components"
+         "0020-fix-missing-swap-slots"]))
