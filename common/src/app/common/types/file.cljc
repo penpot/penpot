@@ -280,7 +280,6 @@
                       :remove
                       (ctst/delete-shape container shape-id true)
 
-                      :else
                       (throw (ex-info "Invalid result from update function" {:result result})))]
 
                 (reduce update-shape-recursive
@@ -296,16 +295,13 @@
         container))))
 
 (defn update-all-shapes
-  "Update all shapes in the file, using the update-objects-tree function for each container"
-  [file f]
-  (when file
-    (update-file-data
-     file
-     (fn [file-data]
-       (update-containers
-        file-data
-        (fn [container]
-          (update-objects-tree container f)))))))
+  "Update all shapes in the file data, using the update-objects-tree function for each container"
+  [file-data f]
+  (when file-data
+    (update-containers
+     file-data
+     (fn [container]
+       (update-objects-tree container f)))))
 
 ;; Asset helpers
 (defn find-component-file
