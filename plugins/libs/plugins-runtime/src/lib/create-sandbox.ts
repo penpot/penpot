@@ -3,6 +3,61 @@ import type { createPluginManager } from './plugin-manager';
 import { createApi } from './api';
 import { ses } from './ses.js';
 
+/**
+ * WeakMap used to track errors originating from plugin code.
+ * Using a WeakMap is safer than extending error objects because:
+ * 1. It works even if the error object is frozen (SES hardened environment)
+ * 2. It doesn't require modifying the error object
+ * 3. It allows garbage collection of error objects when no longer referenced
+ */
+const pluginErrors = new WeakMap<object, true>();
+
+/**
+ * Checks if an error originated from plugin code.
+ */
+export function isPluginError(error: unknown): boolean {
+  if (error !== null && typeof error === 'object') {
+    return pluginErrors.has(error as object);
+  }
+  return false;
+}
+
+/**
+ * Marks an error as originating from plugin code.
+ * Uses a WeakMap so it works even if the error object is frozen.
+ */
+export function markPluginError(error: unknown): void {
+  if (error !== null && typeof error === 'object') {
+    pluginErrors.set(error as object, true);
+  }
+}
+
+/**
+ * Wraps a handler function to mark any thrown errors as plugin errors.
+ * Errors are marked and re-thrown so they propagate to the global error handler,
+ * where they can be identified and handled appropriately.
+ */
+function wrapHandler<T extends (...args: unknown[]) => unknown>(
+  handler: T,
+): (...args: Parameters<T>) => ReturnType<T> {
+  return function (...args: Parameters<T>) {
+    try {
+      const result = handler(...args);
+      // Handle async functions - mark errors in the returned promise
+      if (result instanceof Promise) {
+        return result.catch((error: unknown) => {
+          markPluginError(error);
+          throw error;
+        }) as ReturnType<T>;
+      }
+      return result as ReturnType<T>;
+    } catch (error) {
+      markPluginError(error);
+      throw error;
+    }
+  };
+}
+
 export function createSandbox(
   plugin: Awaited<ReturnType<typeof createPluginManager>>,
   apiExtensions?: object,
@@ -58,9 +113,10 @@ export function createSandbox(
     fetch: ses.harden(safeFetch),
     setTimeout: ses.harden(
       (...[handler, timeout]: Parameters<typeof setTimeout>) => {
-        const timeoutId = setTimeout(() => {
-          handler();
-        }, timeout);
+        const wrappedHandler = wrapHandler(
+          typeof handler === 'function' ? handler : () => {},
+        );
+        const timeoutId = setTimeout(wrappedHandler, timeout);
 
         plugin.timeouts.add(timeoutId);
 
@@ -71,6 +127,23 @@ export function createSandbox(
       clearTimeout(id);
 
       plugin.timeouts.delete(id);
+    }),
+    setInterval: ses.harden(
+      (...[handler, interval]: Parameters<typeof setInterval>) => {
+        const wrappedHandler = wrapHandler(
+          typeof handler === 'function' ? handler : () => {},
+        );
+        const intervalId = setInterval(wrappedHandler, interval);
+
+        plugin.intervals.add(intervalId);
+
+        return ses.safeReturn(intervalId);
+      },
+    ) as typeof setInterval,
+    clearInterval: ses.harden((id: ReturnType<typeof setInterval>) => {
+      clearInterval(id);
+
+      plugin.intervals.delete(id);
     }),
 
     /**

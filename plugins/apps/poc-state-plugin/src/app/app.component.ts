@@ -393,7 +393,7 @@ export class AppComponent {
   }
 
   #startDownload(name: string, data: Uint8Array) {
-    const blob = new Blob([data], { type: 'application/octet-stream' });
+    const blob = new Blob([data as any], { type: 'application/octet-stream' });
 
     // We need to start a download with this URL
     const downloadURL = URL.createObjectURL(blob);

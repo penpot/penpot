@@ -21,6 +21,7 @@ export async function createPluginManager(
   let modal: PluginModalElement | null = null;
   let uiMessagesCallbacks: ((message: unknown) => void)[] = [];
   const timeouts = new Set<ReturnType<typeof setTimeout>>();
+  const intervals = new Set<ReturnType<typeof setInterval>>();
 
   const allowDownloads = !!manifest.permissions.find(
     (s) => s === 'allow:downloads',
@@ -54,6 +55,9 @@ export async function createPluginManager(
 
     timeouts.forEach(clearTimeout);
     timeouts.clear();
+
+    intervals.forEach(clearInterval);
+    intervals.clear();
 
     if (modal) {
       modal.removeEventListener('close', closePlugin);
@@ -150,6 +154,9 @@ export async function createPluginManager(
     },
     get timeouts() {
       return timeouts;
+    },
+    get intervals() {
+      return intervals;
     },
     get code() {
       return code;

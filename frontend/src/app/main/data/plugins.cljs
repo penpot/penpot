@@ -7,12 +7,14 @@
 (ns app.main.data.plugins
   (:require
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.changes-builder :as pcb]
    [app.common.time :as ct]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.errors :as errors]
    [app.main.store :as st]
    [app.plugins.flags :as pflag]
    [app.plugins.register :as preg]
@@ -20,7 +22,8 @@
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]))
+   [potok.v2.core :as ptk]
+   [promesa.core :as p]))
 
 (defn save-plugin-permissions-peek
   [id permissions]
@@ -54,40 +57,45 @@
 
 (defn start-plugin!
   [{:keys [plugin-id name version description host code permissions allow-background]} ^js extensions]
-  (.ɵloadPlugin
-   ^js ug/global
-   #js {:pluginId plugin-id
-        :name name
-        :version version
-        :description description
-        :host host
-        :code code
-        :allowBackground (boolean allow-background)
-        :permissions (apply array permissions)}
-   nil
-   extensions))
+  (-> (.ɵloadPlugin
+       ^js ug/global
+       #js {:pluginId plugin-id
+            :name name
+            :version version
+            :description description
+            :host host
+            :code code
+            :allowBackground (boolean allow-background)
+            :permissions (apply array permissions)}
+       nil
+       extensions)
+
+      (p/catch (fn [cause]
+                 (ex/print-throwable cause :prefix "Plugin Error")
+                 (errors/flash :cause cause :type :handled)))))
 
 (defn- load-plugin!
   [{:keys [plugin-id name version description host code icon permissions]}]
-  (try
-    (st/emit! (pflag/clear plugin-id)
-              (save-current-plugin plugin-id))
+  (st/emit! (pflag/clear plugin-id)
+            (save-current-plugin plugin-id))
 
-    (.ɵloadPlugin ^js ug/global
-                  #js {:pluginId plugin-id
-                       :name name
-                       :description description
-                       :version version
-                       :host host
-                       :code code
-                       :icon icon
-                       :permissions (apply array permissions)}
-                  (fn []
-                    (st/emit! (remove-current-plugin plugin-id))))
+  (-> (.ɵloadPlugin
+       ^js ug/global
+       #js {:pluginId plugin-id
+            :name name
+            :description description
+            :version version
+            :host host
+            :code code
+            :icon icon
+            :permissions (apply array permissions)}
+       (fn []
+         (st/emit! (remove-current-plugin plugin-id))))
 
-    (catch :default e
-      (st/emit! (remove-current-plugin plugin-id))
-      (.error js/console "Error" e))))
+      (p/catch (fn [cause]
+                 (st/emit! (remove-current-plugin plugin-id))
+                 (ex/print-throwable cause :prefix "Plugin Error")
+                 (errors/flash :cause cause :type :handled)))))
 
 (defn open-plugin!
   [{:keys [url] :as manifest} user-can-edit?]
