@@ -5,5 +5,10 @@ corepack enable;
 corepack install;
 pnpm install;
 
+# Build render wasm binary
+pushd ../render-wasm;
+./build
+popd
+
 pnpm run lint:scss;
 pnpm run test;
