@@ -378,6 +378,9 @@
 (def workspace-modifiers
   (l/derived :workspace-modifiers st/state))
 
+(def workspace-wasm-editor-styles
+  (l/derived :workspace-wasm-editor-styles st/state))
+
 (def workspace-wasm-modifiers
   (l/derived :workspace-wasm-modifiers st/state))
 

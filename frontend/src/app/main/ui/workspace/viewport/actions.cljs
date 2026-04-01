@@ -292,7 +292,7 @@
        (when left-click?
          (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?))
 
-         (when (wasm.api/text-editor-is-active?)
+         (when (wasm.api/text-editor-has-focus?)
            (wasm.api/text-editor-pointer-up (.-x off-pt) (.-y off-pt))))
 
        (when middle-click?
