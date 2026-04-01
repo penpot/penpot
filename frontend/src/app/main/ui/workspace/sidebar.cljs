@@ -372,14 +372,26 @@
             (ctob/get-tokens-in-active-sets tokens-lib)
             {}))
 
+        selected-token-set-id
+        (mf/deref refs/selected-token-set-id)
+
+        active-tokens-force-set
+        (mf/with-memo [tokens-lib selected-token-set-id]
+          (if (and tokens-lib selected-token-set-id)
+            (ctob/get-tokens-in-active-sets-force tokens-lib selected-token-set-id)
+            {}))
+
         tokenscript? (contains? cf/flags :tokenscript)
 
-        tokenscript-resolved-active-tokens
-        (mf/with-memo [tokens-lib tokenscript?]
-          (when tokenscript? (ts/resolve-tokens active-tokens)))
-
         resolved-active-tokens
-        (sd/use-resolved-tokens* active-tokens)]
+        (sd/use-resolved-tokens* active-tokens)
+
+        tokenscript-resolved-active-tokens-force-set
+        (mf/with-memo [active-tokens-force-set tokenscript?]
+          (when tokenscript? (ts/resolve-tokens active-tokens-force-set)))
+
+        resolved-active-tokens-force-set
+        (sd/use-resolved-tokens* active-tokens-force-set)]
 
     [:*
      (if (:collapse-left-sidebar layout)
@@ -388,10 +400,10 @@
                           :file file
                           :page-id page-id
                           :tokens-lib tokens-lib
-                          :active-tokens active-tokens
-                          :resolved-active-tokens (if (contains? cf/flags :tokenscript)
-                                                    tokenscript-resolved-active-tokens
-                                                    resolved-active-tokens)}])
+                          :active-tokens active-tokens-force-set
+                          :resolved-active-tokens (if tokenscript?
+                                                    tokenscript-resolved-active-tokens-force-set
+                                                    resolved-active-tokens-force-set)}])
      [:> right-sidebar* {:section section
                          :selected selected
                          :drawing-tool drawing-tool
