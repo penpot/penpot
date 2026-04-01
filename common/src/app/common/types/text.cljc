@@ -108,6 +108,16 @@
    :text-decoration "none"
    :text-direction "ltr"})
 
+(def schema:text-attrs
+  [:map {:title "TextAttrs"}
+   [:font-family {:optional true} ::sm/text]
+   [:font-size {:optional true} ::sm/text]
+   [:font-style {:optional true} ::sm/text]
+   [:font-weight {:optional true} ::sm/text]
+   [:text-direction {:optional true} ::sm/text]
+   [:text-decoration {:optional true} ::sm/text]
+   [:text-transform {:optional true} ::sm/text]])
+
 (defn get-default-text-fills
   "Return calculated default text fills"
   []
@@ -122,6 +132,32 @@
   the activated flag for properly encode the fills"
   []
   (assoc default-text-attrs :fills (get-default-text-fills)))
+
+;; These are the text content attributes that use ::sm/text schema,
+;; which requires non-blank strings. Empty or blank string values for
+;; these attributes will cause schema validation failures.
+(def ^:private text-string-attrs
+  #{:font-family :font-size :font-style :font-weight
+    :direction :text-decoration :text-transform})
+
+(defn clean-text-node-attrs
+  "Removes blank string values from text content node attributes that
+  require non-blank strings (::sm/text schema). Blank values are
+  replaced with their defaults from `default-text-attrs`, or removed
+  if no default exists."
+  [node]
+  (reduce
+   (fn [node attr]
+     (let [v (get node attr ::not-found)]
+       (if (and (not= v ::not-found)
+                (string? v)
+                (str/blank? v))
+         (if-let [default (get default-text-attrs attr)]
+           (assoc node attr default)
+           (dissoc node attr))
+         node)))
+   node
+   text-string-attrs))
 
 (def typography-fields
   [:font-id
@@ -411,16 +447,18 @@
   (let [root-styles (select-keys content root-attrs)
 
         paragraph-style
-        (merge
-         default-text-attrs
-         styles
-         (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs))
+        (-> (merge
+             default-text-attrs
+             styles
+             (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs))
+            (clean-text-node-attrs))
 
         text-style
-        (merge
-         default-text-attrs
-         styles
-         (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs))
+        (-> (merge
+             default-text-attrs
+             styles
+             (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs))
+            (clean-text-node-attrs))
 
         paragraph-texts
         (str/split text "\n")

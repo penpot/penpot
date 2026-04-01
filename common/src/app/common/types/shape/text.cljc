@@ -7,6 +7,7 @@
 (ns app.common.types.shape.text
   (:require
    [app.common.schema :as sm]
+   [app.common.types.text :refer [schema:text-attrs]]
    [app.common.types.fills :refer [schema:fills]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -14,6 +15,30 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def node-types #{"root" "paragraph-set" "paragraph"})
+
+(def schema:text-node
+  (sm/merge
+   schema:text-attrs
+   [:map {:title "TextNode"}
+    [:text :string]
+    [:key {:optional true} :string]
+    [:fills {:optional true}
+     [:maybe schema:fills]]
+    [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
+    [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]))
+
+(def schema:paragraph
+  (sm/merge
+   schema:text-attrs
+   [:map
+    [:type [:= "paragraph"]]
+    [:key {:optional true} :string]
+    [:fills {:optional true}
+     [:maybe schema:fills]]
+    [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
+    [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
+    [:children
+     [:vector {:min 1 :gen/max 2 :gen/min 1} schema:text-node]]]))
 
 (def schema:content
   [:map
@@ -28,39 +53,7 @@
        [:key {:optional true} :string]
        [:children
         [:vector {:min 1 :gen/max 2 :gen/min 1}
-         [:map
-          [:type [:= "paragraph"]]
-          [:key {:optional true} :string]
-          [:fills {:optional true}
-           [:maybe schema:fills]]
-          [:font-family {:optional true} ::sm/text]
-          [:font-size {:optional true} ::sm/text]
-          [:font-style {:optional true} ::sm/text]
-          [:font-weight {:optional true} ::sm/text]
-          [:direction {:optional true} ::sm/text]
-          [:text-decoration {:optional true} ::sm/text]
-          [:text-transform {:optional true} ::sm/text]
-          [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
-          [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
-          [:children
-           [:vector {:min 1 :gen/max 2 :gen/min 1}
-            [:map
-             [:text :string]
-             [:key {:optional true} :string]
-             [:fills {:optional true}
-              [:maybe schema:fills]]
-             [:font-family {:optional true} ::sm/text]
-             [:font-size {:optional true} ::sm/text]
-             [:font-style {:optional true} ::sm/text]
-             [:font-weight {:optional true} ::sm/text]
-             [:direction {:optional true} ::sm/text]
-             [:text-decoration {:optional true} ::sm/text]
-             [:text-transform {:optional true} ::sm/text]
-             [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
-             [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]]]]]]]]]]])
-
-(def valid-content?
-  (sm/lazy-validator schema:content))
+         schema:paragraph]]]]]]])
 
 (def schema:position-data
   [:vector {:min 0 :gen/max 2}
@@ -78,3 +71,7 @@
     [:text {:optional true} :string]
     [:text-decoration {:optional true} ::sm/text]
     [:text-transform {:optional true} ::sm/text]]])
+
+(def valid-content?
+  (sm/lazy-validator schema:content))
+

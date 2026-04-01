@@ -50,8 +50,15 @@
   [node attrs defaults]
   (let [styles (reduce
                 (fn [acc key]
-                  (let [default-value (get defaults key)]
-                    (assoc acc key (get node key default-value)))) {} attrs)
+                  (let [default-value (get defaults key)
+                        value (get node key default-value)]
+                    ;; Skip blank string values for text attrs,
+                    ;; fall back to default instead
+                    (if (and (string? value)
+                             (= value "")
+                             (some? default-value))
+                      (assoc acc key default-value)
+                      (assoc acc key value)))) {} attrs)
         fills
         (cond
           ;; DEPRECATED: still here for backward compatibility with
