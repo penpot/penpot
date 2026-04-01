@@ -752,10 +752,10 @@
   (let [plugins? (features/active-feature? @st/state "plugins/runtime")
 
         profile         (mf/deref refs/profile)
-        workspace-local (mf/deref refs/workspace-local)
+        mcp             (mf/deref refs/mcp)
 
         mcp-enabled?    (true? (-> profile :props :mcp-enabled))
-        mcp-connected?  (= "connected" (-> workspace-local :mcp :connection))
+        mcp-connected?  (= "connected" (get mcp :connection-status))
 
         on-nav-to-integrations
         (mf/use-fn
@@ -815,8 +815,8 @@
 
 (mf/defc menu*
   [{:keys [layout file]}]
-  (let [profile         (mf/deref refs/profile)
-        workspace-local (mf/deref refs/workspace-local)
+  (let [profile            (mf/deref refs/profile)
+        mcp                (mf/deref refs/mcp)
 
         show-menu*         (mf/use-state false)
         show-menu?         (deref show-menu*)
@@ -990,7 +990,7 @@
                                 (> (ct/now)))
 
               mcp-enabled?   (true? (-> profile :props :mcp-enabled))
-              mcp-connection (-> workspace-local :mcp :connection)
+              mcp-connection (get mcp :connection-status)
               mcp-connected? (= mcp-connection "connected")
               mcp-error?     (= mcp-connection "error")
 

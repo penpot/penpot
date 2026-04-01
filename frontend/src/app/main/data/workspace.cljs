@@ -25,7 +25,6 @@
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.broadcast :as mbc]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
@@ -213,9 +212,11 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dp/check-open-plugin)
-             (fdf/fix-deleted-fonts-for-local-library file-id)
-             (mcp/init-mcp-connection)))))
+      (rx/merge
+       (rx/of (dp/check-open-plugin)
+              (fdf/fix-deleted-fonts-for-local-library file-id))
+       (when (contains? cf/flags :mcp)
+         (rx/of (mcp/init)))))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
@@ -319,180 +320,169 @@
                     :team-id (dm/str team-id)
                     :file-id (dm/str file-id))
 
-         (->> (rx/merge
-               (rx/concat
-                ;; Fetch all essential data that should be loaded before the file
-                (rx/merge
-                 (if ^boolean render-wasm?
-                   (->> (rx/from @wasm/module)
-                        (rx/filter true?)
-                        (rx/tap (fn [_]
-                                  (let [event (ug/event "penpot:wasm:loaded")]
-                                    (ug/dispatch! event))))
-                        (rx/ignore))
-                   (rx/empty))
+         (rx/concat
+          (->> (rx/merge
+                (rx/concat
+                 ;; Fetch all essential data that should be loaded before the file
+                 (rx/merge
+                  (if ^boolean render-wasm?
+                    (->> (rx/from @wasm/module)
+                         (rx/filter true?)
+                         (rx/tap (fn [_]
+                                   (let [event (ug/event "penpot:wasm:loaded")]
+                                     (ug/dispatch! event))))
+                         (rx/ignore))
+                    (rx/empty))
 
-                 (->> stream
-                      (rx/filter (ptk/type? ::df/fonts-loaded))
-                      (rx/take 1)
-                      (rx/ignore))
+                  (->> stream
+                       (rx/filter (ptk/type? ::df/fonts-loaded))
+                       (rx/take 1)
+                       (rx/ignore))
 
-                 (rx/of (ntf/hide)
-                        (dcmt/retrieve-comment-threads file-id)
-                        (dcmt/fetch-profiles)
-                        (df/fetch-fonts team-id))
+                  (rx/of (ntf/hide)
+                         (dcmt/retrieve-comment-threads file-id)
+                         (dcmt/fetch-profiles)
+                         (df/fetch-fonts team-id))
 
-                 (when (contains? cf/flags :mcp)
-                   (rx/of (du/fetch-access-tokens))))
+                  (when (contains? cf/flags :mcp)
+                    (rx/of (du/fetch-access-tokens))))
 
-                ;; Once the essential data is fetched, lets proceed to
-                ;; fetch teh file bunldle
-                (rx/of (fetch-bundle file-id features)))
+                 ;; Once the essential data is fetched, lets proceed to
+                 ;; fetch teh file bunldle
+                 (rx/of (fetch-bundle file-id features)))
 
-               (->> stream
-                    (rx/filter (ptk/type? ::bundle-fetched))
-                    (rx/take 1)
-                    (rx/map deref)
-                    (rx/mapcat
-                     (fn [{:keys [file]}]
-                       (log/debug :hint "bundle fetched"
-                                  :team-id (dm/str team-id)
-                                  :file-id (dm/str file-id))
+                (->> stream
+                     (rx/filter (ptk/type? ::bundle-fetched))
+                     (rx/take 1)
+                     (rx/map deref)
+                     (rx/mapcat
+                      (fn [{:keys [file]}]
+                        (log/debug :hint "bundle fetched"
+                                   :team-id (dm/str team-id)
+                                   :file-id (dm/str file-id))
 
-                       (rx/of (dpj/initialize-project (:project-id file))
-                              (dwn/initialize team-id file-id)
-                              (dwsl/initialize-shape-layout)
-                              (fetch-libraries file-id features)
-                              (-> (workspace-initialized file-id)
-                                  (with-meta {:team-id team-id
-                                              :file-id file-id}))))))
+                        (rx/of (dpj/initialize-project (:project-id file))
+                               (dwn/initialize team-id file-id)
+                               (dwsl/initialize-shape-layout)
+                               (fetch-libraries file-id features)
+                               (-> (workspace-initialized file-id)
+                                   (with-meta {:team-id team-id
+                                               :file-id file-id}))))))
 
-               ;; Install dev perf observers once the workspace is ready
-               (when (contains? cf/flags :perf-logs)
-                 (->> stream
-                      (rx/filter (ptk/type? ::workspace-initialized))
-                      (rx/take 1)
-                      (rx/tap (fn [_] (perf/setup)))))
+                ;; Install dev perf observers once the workspace is ready
+                (when (contains? cf/flags :perf-logs)
+                  (->> stream
+                       (rx/filter (ptk/type? ::workspace-initialized))
+                       (rx/take 1)
+                       (rx/tap (fn [_] (perf/setup)))))
 
-               (when (contains? cf/flags :mcp)
-                 (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp-enabled-change-connection))
-                      (rx/map deref)
-                      (rx/mapcat (fn [value]
-                                   (rx/of (mcp/update-mcp-connection value)
-                                          (mcp/user-disconnect-mcp))))))
+                (->> stream
+                     (rx/filter (ptk/type? ::dps/persistence-notification))
+                     (rx/take 1)
+                     (rx/map dwc/set-workspace-visited))
 
-               (when (contains? cf/flags :mcp)
-                 (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp-enabled-change-status))
-                      (rx/map deref)
-                      (rx/map mcp/update-mcp-status)))
+                (when-let [component-id (some-> rparams :component-id uuid/parse)]
+                  (->> stream
+                       (rx/filter (ptk/type? ::workspace-initialized))
+                       (rx/observe-on :async)
+                       (rx/take 1)
+                       (rx/map #(dwl/go-to-local-component :id component-id :update-layout? (:update-layout rparams)))))
 
-               (->> stream
-                    (rx/filter (ptk/type? ::dps/persistence-notification))
-                    (rx/take 1)
-                    (rx/map dwc/set-workspace-visited))
+                (when (:board-id rparams)
+                  (->> stream
+                       (rx/filter (ptk/type? ::dwv/initialize-viewport))
+                       (rx/take 1)
+                       (rx/map zoom-to-frame)))
 
-               (when-let [component-id (some-> rparams :component-id uuid/parse)]
-                 (->> stream
-                      (rx/filter (ptk/type? ::workspace-initialized))
-                      (rx/observe-on :async)
-                      (rx/take 1)
-                      (rx/map #(dwl/go-to-local-component :id component-id :update-layout? (:update-layout rparams)))))
+                (when-let [comment-id (some-> rparams :comment-id uuid/parse)]
+                  (->> stream
+                       (rx/filter (ptk/type? ::workspace-initialized))
+                       (rx/observe-on :async)
+                       (rx/take 1)
+                       (rx/map #(dwcm/navigate-to-comment-id comment-id))))
 
-               (when (:board-id rparams)
-                 (->> stream
-                      (rx/filter (ptk/type? ::dwv/initialize-viewport))
-                      (rx/take 1)
-                      (rx/map zoom-to-frame)))
+                (when render-wasm?
+                  (->> stream
+                       (rx/filter dch/commit?)
+                       (rx/map deref)
+                       (rx/mapcat
+                        (fn [{:keys [redo-changes]}]
+                          (let [added (->> redo-changes
+                                           (filter #(= (:type %) :add-obj))
+                                           (map :id))]
+                            (->> (rx/from added)
+                                 (rx/map process-wasm-object)))))))
 
-               (when-let [comment-id (some-> rparams :comment-id uuid/parse)]
-                 (->> stream
-                      (rx/filter (ptk/type? ::workspace-initialized))
-                      (rx/observe-on :async)
-                      (rx/take 1)
-                      (rx/map #(dwcm/navigate-to-comment-id comment-id))))
+                (when render-wasm?
+                  (let [local-commits-s
+                        (->> stream
+                             (rx/filter dch/commit?)
+                             (rx/map deref)
+                             (rx/filter #(and (= :local (:source %))
+                                              (not (contains? (:tags %) :position-data))))
+                             (rx/filter (complement empty?)))
 
-               (when render-wasm?
-                 (->> stream
-                      (rx/filter dch/commit?)
-                      (rx/map deref)
-                      (rx/mapcat
-                       (fn [{:keys [redo-changes]}]
-                         (let [added (->> redo-changes
-                                          (filter #(= (:type %) :add-obj))
-                                          (map :id))]
-                           (->> (rx/from added)
-                                (rx/map process-wasm-object)))))))
+                        notifier-s
+                        (rx/merge
+                         (->> local-commits-s (rx/debounce 1000))
+                         (->> stream (rx/filter dps/force-persist?)))
 
-               (when render-wasm?
-                 (let [local-commits-s
-                       (->> stream
-                            (rx/filter dch/commit?)
-                            (rx/map deref)
-                            (rx/filter #(and (= :local (:source %))
-                                             (not (contains? (:tags %) :position-data))))
-                            (rx/filter (complement empty?)))
+                        objects-s
+                        (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
 
-                       notifier-s
-                       (rx/merge
-                        (->> local-commits-s (rx/debounce 1000))
-                        (->> stream (rx/filter dps/force-persist?)))
+                        current-page-id-s
+                        (rx/from-atom refs/current-page-id {:emit-current-value? true})]
 
-                       objects-s
-                       (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
+                    (->> local-commits-s
+                         (rx/buffer-until notifier-s)
+                         (rx/with-latest-from objects-s)
+                         (rx/map
+                          (fn [[commits objects]]
+                            (->> commits
+                                 (mapcat :redo-changes)
+                                 (filter #(contains? #{:mod-obj :add-obj} (:type %)))
+                                 (filter #(cfh/text-shape? objects (:id %)))
+                                 (map #(vector
+                                        (:id %)
+                                        (wasm.api/calculate-position-data (get objects (:id %))))))))
 
-                       current-page-id-s
-                       (rx/from-atom refs/current-page-id {:emit-current-value? true})]
+                         (rx/with-latest-from current-page-id-s)
+                         (rx/map
+                          (fn [[text-position-data page-id]]
+                            (let [changes
+                                  (->> text-position-data
+                                       (mapv (fn [[id position-data]]
+                                               {:type :mod-obj
+                                                :id id
+                                                :page-id page-id
+                                                :operations
+                                                [{:type :set
+                                                  :attr :position-data
+                                                  :val position-data
+                                                  :ignore-touched true
+                                                  :ignore-geometry true}]})))]
+                              (when (d/not-empty? changes)
+                                (dch/commit-changes
+                                 {:redo-changes changes :undo-changes []
+                                  :save-undo? false
+                                  :tags #{:position-data}})))))
+                         (rx/take-until stoper-s))))
 
-                   (->> local-commits-s
-                        (rx/buffer-until notifier-s)
-                        (rx/with-latest-from objects-s)
-                        (rx/map
-                         (fn [[commits objects]]
-                           (->> commits
-                                (mapcat :redo-changes)
-                                (filter #(contains? #{:mod-obj :add-obj} (:type %)))
-                                (filter #(cfh/text-shape? objects (:id %)))
-                                (map #(vector
-                                       (:id %)
-                                       (wasm.api/calculate-position-data (get objects (:id %))))))))
+                (->> stream
+                     (rx/filter dch/commit?)
+                     (rx/map deref)
+                     (rx/mapcat
+                      (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
+                        (if (and save-undo? (seq undo-changes))
+                          (let [entry {:undo-changes undo-changes
+                                       :redo-changes redo-changes
+                                       :undo-group undo-group
+                                       :tags tags}]
+                            (rx/of (dwu/append-undo entry stack-undo?)))
+                          (rx/empty))))))
+               (rx/take-until stoper-s))
 
-                        (rx/with-latest-from current-page-id-s)
-                        (rx/map
-                         (fn [[text-position-data page-id]]
-                           (let [changes
-                                 (->> text-position-data
-                                      (mapv (fn [[id position-data]]
-                                              {:type :mod-obj
-                                               :id id
-                                               :page-id page-id
-                                               :operations
-                                               [{:type :set
-                                                 :attr :position-data
-                                                 :val position-data
-                                                 :ignore-touched true
-                                                 :ignore-geometry true}]})))]
-                             (when (d/not-empty? changes)
-                               (dch/commit-changes
-                                {:redo-changes changes :undo-changes []
-                                 :save-undo? false
-                                 :tags #{:position-data}})))))
-                        (rx/take-until stoper-s))))
-
-               (->> stream
-                    (rx/filter dch/commit?)
-                    (rx/map deref)
-                    (rx/mapcat
-                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
-                       (if (and save-undo? (seq undo-changes))
-                         (let [entry {:undo-changes undo-changes
-                                      :redo-changes redo-changes
-                                      :undo-group undo-group
-                                      :tags tags}]
-                           (rx/of (dwu/append-undo entry stack-undo?)))
-                         (rx/empty))))))
-              (rx/take-until stoper-s))))
+          (rx/of (mcp/notify-other-tabs-disconnect)))))
 
      ptk/EffectEvent
      (effect [_ _ _]

@@ -57,5 +57,6 @@
   [type data]
   (ptk/reify ::event
     ptk/EffectEvent
-    (effect [_ _ _]
-      (emit! type data))))
+    (effect [_ state _]
+      (let [session-id (get state :session-id)]
+        (emit! session-id type data)))))
