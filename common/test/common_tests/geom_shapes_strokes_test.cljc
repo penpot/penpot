@@ -28,18 +28,18 @@
 
 (t/deftest update-strokes-width-test
   (t/testing "Scale all strokes on a shape"
-    (let [shape {:strokes [{:stroke-width 2 :stroke-color "#aaa"}
-                           {:stroke-width 5 :stroke-color "#bbb"}]}
-          scaled (gss/update-strokes-width shape 3)]
-      (let [s1 (first (:strokes scaled))
-            s2 (second (:strokes scaled))]
-        (t/is (= 6 (:stroke-width s1)))
-        (t/is (= "#aaa" (:stroke-color s1)))
-        (t/is (= 15 (:stroke-width s2)))
-        (t/is (= "#bbb" (:stroke-color s2))))))
+    (let [shape  {:strokes [{:stroke-width 2 :stroke-color "#aaa"}
+                            {:stroke-width 5 :stroke-color "#bbb"}]}
+          scaled (gss/update-strokes-width shape 3)
+          s1     (first (:strokes scaled))
+          s2     (second (:strokes scaled))]
+      (t/is (= 6 (:stroke-width s1)))
+      (t/is (= "#aaa" (:stroke-color s1)))
+      (t/is (= 15 (:stroke-width s2)))
+      (t/is (= "#bbb" (:stroke-color s2)))))
 
   (t/testing "Empty strokes stays empty"
-    (let [shape {:strokes []}
+    (let [shape  {:strokes []}
           scaled (gss/update-strokes-width shape 2)]
       (t/is (empty? (:strokes scaled)))))
 

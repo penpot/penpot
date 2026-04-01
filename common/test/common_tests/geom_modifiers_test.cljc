@@ -8,7 +8,6 @@
   (:require
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
-   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -64,7 +63,6 @@
                       (add-rect-child :rect1 :frame1))
           page    (thf/current-page file)
           objects (:objects page)
-          frame-id (thi/id :frame1)
           rect-id  (thi/id :rect1)
 
           ;; Create a move modifier for the rectangle

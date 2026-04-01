@@ -6,7 +6,6 @@
 
 (ns common-tests.geom-shapes-intersect-test
   (:require
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.intersect :as gint]

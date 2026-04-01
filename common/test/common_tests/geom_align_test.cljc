@@ -7,7 +7,6 @@
 (ns common-tests.geom-align-test
   (:require
    [app.common.geom.align :as gal]
-   [app.common.geom.rect :as grc]
    [app.common.math :as mth]
    [clojure.test :as t]))
 

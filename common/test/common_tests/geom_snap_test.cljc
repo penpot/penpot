@@ -9,7 +9,6 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes.common :as gco]
    [app.common.geom.snap :as gsn]
    [app.common.math :as mth]
    [clojure.test :as t]))

@@ -63,7 +63,7 @@
 
 (defn- make-objects
   "Build an objects map from shapes. Sets parent-id on children."
-  [root-parent-id shapes]
+  [shapes]
   (let [shape-map (into {} (map (fn [s] [(:id s) s]) shapes))]
     ;; Set parent-id on children based on their container's :shapes list
     (reduce-kv (fn [m _id shape]
@@ -180,7 +180,7 @@
           group-id  (uuid/next)
           child     (make-rect child-id 10 10 20 20)
           group     (make-group group-id [child-id])
-          objects   (make-objects uuid/zero [child group])
+          objects   (make-objects [child group])
           bm        (gbm/objects->bounds-map objects)
           ;; Move child by (50, 50)
           modif-tree {child-id {:modifiers (ctm/move-modifiers (gpt/point 50 50))}}
@@ -203,7 +203,7 @@
           child1    (make-rect child1-id 0 0 10 10)
           child2    (make-rect child2-id 100 100 50 50)
           group     (make-masked-group group-id [child1-id child2-id])
-          objects   (make-objects uuid/zero [child1 child2 group])
+          objects   (make-objects [child1 child2 group])
           bm        (gbm/objects->bounds-map objects)
           result    (gbm/transform-bounds-map bm objects {})]
       ;; Even with empty modif-tree, the group should be resolved
@@ -269,7 +269,7 @@
           child      (make-rect child-id 0 0 20 20)
           inner      (make-group inner-grp [child-id])
           outer      (make-group outer-grp [inner-grp])
-          objects    (make-objects uuid/zero [child inner outer])
+          objects    (make-objects [child inner outer])
           bm         (gbm/objects->bounds-map objects)
           modif-tree {child-id {:modifiers (ctm/move-modifiers (gpt/point 100 100))}}
           result     (gbm/transform-bounds-map bm objects modif-tree)]
@@ -376,12 +376,12 @@
           bm      (gbm/objects->bounds-map objects)
           ;; Only modify id1
           modif-tree {id1 {:modifiers (ctm/move-modifiers (gpt/point 10 10))}}
-          result  (gbm/transform-bounds-map bm objects modif-tree)]
+          result  (gbm/transform-bounds-map bm objects modif-tree)
+          old-b1  @(get bm id1)
+          new-b1  @(get result id1)]
       ;; id1 should have different bounds
-      (let [old-b1 @(get bm id1)
-            new-b1 @(get result id1)]
-        (t/is (not (mth/close? (:x (gpo/origin old-b1))
-                               (:x (gpo/origin new-b1)))))))))
+      (t/is (not (mth/close? (:x (gpo/origin old-b1))
+                             (:x (gpo/origin new-b1))))))))
 
 (t/deftest transform-bounds-map-deep-nesting-test
   (t/testing "3-level nesting of groups with a leaf modification"
@@ -393,7 +393,7 @@
           grp1       (make-group grp1-id [leaf-id])
           grp2       (make-group grp2-id [grp1-id])
           grp3       (make-group grp3-id [grp2-id])
-          objects    (make-objects uuid/zero [leaf grp1 grp2 grp3])
+          objects    (make-objects [leaf grp1 grp2 grp3])
           bm         (gbm/objects->bounds-map objects)
           modif-tree {leaf-id {:modifiers (ctm/move-modifiers (gpt/point 5 5))}}
           result     (gbm/transform-bounds-map bm objects modif-tree)]

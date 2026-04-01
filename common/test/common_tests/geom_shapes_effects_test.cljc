@@ -7,7 +7,6 @@
 (ns common-tests.geom-shapes-effects-test
   (:require
    [app.common.geom.shapes.effects :as gef]
-   [app.common.math :as mth]
    [clojure.test :as t]))
 
 (t/deftest update-shadow-scale-test
