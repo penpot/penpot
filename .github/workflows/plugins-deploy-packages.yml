@@ -36,7 +36,7 @@ jobs:
       # [For new plugins]
       #   Add more outputs here
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: filter
         uses: dorny/paths-filter@v3
         with:
