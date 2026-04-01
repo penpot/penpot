@@ -85,16 +85,16 @@ On Windows, use the Git Bash terminal to ensure compatibility with the provided 
 Clone the Penpot repository, using the proper branch depending on the
 version of Penpot you want to use the MCP server with.
 
-  * For the current Penpot release 2.14, use the `mcp-prod-2.14.0` branch:
+  * For the current Penpot release 2.14, use the `mcp-prod-2.14.1` branch:
 
     ```shell
-    git clone https://github.com/penpot/penpot.git --branch mcp-prod-2.14.0 --depth 1
+    git clone https://github.com/penpot/penpot.git --branch mcp-prod-2.14.1 --depth 1
     ```
 
-  * For the latest development version of Penpot (including the MCP beta-test), use the `develop` branch:
+  * For the MCP beta-test, use the `staging` branch:
 
     ```shell
-    git clone https://github.com/penpot/penpot.git --branch develop --depth 1
+    git clone https://github.com/penpot/penpot.git --branch staging --depth 1
     ```
 
 Then change into the `mcp` directory:
@@ -302,5 +302,11 @@ you may set the following environment variables to configure the two servers
 * The [contribution guidelines for Penpot](../CONTRIBUTING.md) apply
 * Auto-formatting: Use `pnpm run fmt`
 * Generating API type data: See [types-generator/README.md](types-generator/README.md)
-* Packaging and publishing:
-  - Create npm package: `bash scripts/pack` (sets version and then calls `npm pack`)
+* Versioning: Use `bash scripts/set-version` to set the version for the MCP package (in `package.json`).
+  - Ensure that at least the major, minor and patch components of the version are always up-to-date.
+  - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API) 
+    indicates incompatibility, resulting in the display of a warning message in the plugin UI.
+* Packaging and publishing: 
+  1. Ensure release version is set correctly in package.json (call `bash scripts/set-version` to update it automatically)
+  2. Create npm package: `bash scripts/pack` (creates `penpot-mcp-<version>.tgz` for publishing)
+  3. Publish to npm: `npm publish penpot-mcp-<version>.tgz --access public`

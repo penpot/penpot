@@ -14,6 +14,8 @@ const executedCodeEl = document.getElementById("executed-code") as HTMLTextAreaE
 const copyCodeBtn = document.getElementById("copy-code-btn") as HTMLButtonElement;
 const connectBtn = document.getElementById("connect-btn") as HTMLButtonElement;
 const disconnectBtn = document.getElementById("disconnect-btn") as HTMLButtonElement;
+const versionWarningEl = document.getElementById("version-warning") as HTMLElement;
+const versionWarningTextEl = document.getElementById("version-warning-text") as HTMLElement;
 
 /**
  * Updates the status pill and button visibility based on connection state.
@@ -176,6 +178,15 @@ disconnectBtn?.addEventListener("click", () => {
 window.addEventListener("message", (event) => {
     if (event.data.type === "start-server") {
         connectToMcpServer(event.data.url, event.data.token);
+    }
+    if (event.data.type === "version-mismatch") {
+        if (versionWarningEl && versionWarningTextEl) {
+            versionWarningTextEl.innerHTML =
+                `<b>Version mismatch detected</b>: This version of the MCP server is intended for Penpot ` +
+                `${event.data.mcpVersion} while the current version is ${event.data.penpotVersion}. ` +
+                `Executions may not work or produce suboptimal results.`;
+            versionWarningEl.hidden = false;
+        }
     }
     if (event.data.type === "stop-server") {
         ws?.close();

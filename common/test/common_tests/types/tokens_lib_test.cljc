@@ -11,7 +11,6 @@
    #?(:clj [app.common.test-helpers.tokens :as tht])
    #?(:clj [clojure.datafy :refer [datafy]])
    [app.common.data :as d]
-   [app.common.path-names :as cpn]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.time :as ct]
    [app.common.transit :as tr]
@@ -2034,3 +2033,31 @@
   (t/is (true? (ctob/token-name-path-exists? "border-radius.sm.x" {"border-radius" {:name "sm"}})))
   (t/is (false? (ctob/token-name-path-exists? "other" {"border-radius" {:name "sm"}})))
   (t/is (false? (ctob/token-name-path-exists? "dark.border-radius.md" {"dark" {"border-radius" {"sm" {:name "sm"}}}}))))
+
+#?(:clj
+   (t/deftest token-set-encode-decode-roundtrip-with-invalid-set-name
+     (binding [ct/*clock* (ct/tick-millis-clock)]
+       (let [tokens-lib
+             (-> (ctob/make-tokens-lib)
+                 (ctob/add-set
+                  (ctob/map->token-set
+                   {:id (thi/new-id! :test-token-set)
+                    :name "foo / bar"
+                    :modified-at (ct/now)
+                    :description ""}))
+                 (ctob/add-token
+                  (thi/id :test-token-set)
+                  (ctob/make-token :name "test-token-1"
+                                   :type :boolean
+                                   :value true)))
+
+             encoded-tokens-lib
+             (fres/encode tokens-lib)
+
+             decoded-tokens-lib
+             (fres/decode encoded-tokens-lib)]
+
+         (let [tset-a (ctob/get-set tokens-lib (thi/id :test-token-set))
+               tset-b (ctob/get-set decoded-tokens-lib (thi/id :test-token-set))]
+           (t/is (= (ctob/get-name tset-a) "foo / bar"))
+           (t/is (= (ctob/get-name tset-b) "foo/bar")))))))
