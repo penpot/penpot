@@ -10,7 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
-   [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
+   [app.common.types.profile :refer [schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -25,18 +25,30 @@
 
 ;; ---- API: authenticate
 
+(def ^:private schema:nitrate-profile
+  [:map {:title "NitrateProfile"}
+   [:id ::sm/uuid]
+   [:name {:optional true} :string]
+   [:email {:optional true} :string]
+   [:photo-url {:optional true} :string]
+   [:theme {:optional true} :string]
+   [:can-use-trial ::sm/boolean]])
+
 (sv/defmethod ::authenticate
   "Authenticate the current user"
   {::doc/added "2.14"
    ::sm/params [:map]
-   ::sm/result schema:profile}
+   ::sm/result schema:nitrate-profile}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (let [profile (profile/get-profile cfg profile-id)]
-    {:id (get profile :id)
-     :name (get profile :fullname)
-     :email (get profile :email)
-     :photo-url (files/resolve-public-uri (get profile :photo-id))
-     :theme (get profile :theme)}))
+  (let [profile            (profile/get-profile cfg profile-id)
+        nitrate-subscription (:subscription profile)
+        can-use-nitrate-trial (nil? nitrate-subscription)]
+    {:id            (get profile :id)
+     :name          (get profile :fullname)
+     :email         (get profile :email)
+     :photo-url     (files/resolve-public-uri (get profile :photo-id))
+     :theme (get profile :theme)
+     :can-use-trial can-use-nitrate-trial}))
 
 ;; ---- API: get-teams
 
