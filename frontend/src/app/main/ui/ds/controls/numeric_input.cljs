@@ -95,9 +95,10 @@
   [options]
   (some #(when (focusable-option? %) (:id %)) options))
 
-(defn- next-focus-index
+(defn next-focus-index
   [options focused-id direction]
-  (let [len (count options)
+  (let [options (if (delay? options) @options options)
+        len (count options)
         start-index (or (d/index-of-pred options #(= focused-id (:id %))) -1)
         indices (case direction
                   :down (range (inc start-index) (+ len start-index))
@@ -593,6 +594,7 @@
                  up?        (kbd/up-arrow? event)
                  down?      (kbd/down-arrow? event)
                  options    (mf/ref-val options-ref)
+                 options    (if (delay? options) @options options)
                  detach-btn (mf/ref-val token-detach-btn-ref)
                  target     (dom/get-target event)]
 
