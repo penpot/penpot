@@ -1554,6 +1554,12 @@ msgstr "SVG is invalid or malformed"
 msgid "errors.team-feature-mismatch"
 msgstr "Detected incompatible feature '%s'"
 
+msgid "errors.org-leave.org-owner-cannot-leave"
+msgstr "The organization owner can't leave the organization."
+
+msgid "errors.org-leave.no-valid-teams"
+msgstr "There was a problem leaving the organization. Please try again."
+
 msgid "errors.team-leave.only-owner-can-delete"
 msgstr "Only the owner of a team can delete it."
 

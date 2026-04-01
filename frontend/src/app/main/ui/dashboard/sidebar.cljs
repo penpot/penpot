@@ -616,20 +616,19 @@
         on-error
         (mf/use-fn
          (fn [error]
-           (let [code (-> error ex-data :code)]
-             (condp = code
-               :only-owner-can-delete-team
-               (rx/of (ntf/error (tr "errors.team-leave.only-owner-can-delete")))
+           (let [code (-> error ex-data :code)
+                 ;; Map error codes to their translation keys
+                 error-map {:not-valid-teams             "errors.org-leave.no-valid-teams"
+                            :org-owner-cannot-leave      "errors.org-leave.org-owner-cannot-leave"
+                            :only-owner-can-delete-team  "errors.team-leave.only-owner-can-delete"
+                            :no-enough-members-for-leave "errors.team-leave.insufficient-members"
+                            :member-does-not-exist       "errors.team-leave.member-does-not-exists"
+                            :owner-cant-leave-team       "errors.team-leave.owner-cant-leave"}]
 
-               :no-enough-members-for-leave
-               (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
-
-               :member-does-not-exist
-               (rx/of (ntf/error (tr "errors.team-leave.member-does-not-exists")))
-
-               :owner-cant-leave-team
-               (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
-
+             (if-let [tr-key (get error-map code)]
+               (rx/of (dtm/fetch-teams)
+                      (modal/hide)
+                      (ntf/error (tr tr-key)))
                (rx/throw error)))))
 
         leave-fn
@@ -644,7 +643,6 @@
                  teams-to-delete (map :id teams-to-delete)]
 
              (st/emit! (dnt/leave-org {:org-id (:organization-id organization)
-                                       :org-name (:name organization)
                                        :default-team-id default-team-id
                                        :teams-to-delete teams-to-delete
                                        :teams-to-leave teams-to-leave

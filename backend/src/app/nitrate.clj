@@ -110,6 +110,17 @@
    [:owner-id ::sm/uuid]
    [:avatar-bg-url [::sm/text]]])
 
+(def ^:private schema:org-summary
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:owner-id ::sm/uuid]
+   [:teams
+    [:vector
+     [:map
+      [:id ::sm/uuid]
+      [:is-your-penpot :boolean]]]]])
+
 (def ^:private schema:team
   [:map
    [:id ::sm/uuid]
@@ -214,6 +225,18 @@
                              profile-id)
                         schema:profile-org params)))
 
+
+(defn- get-org-summary-api
+  [cfg {:keys [org-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/organizations/"
+                             org-id
+                             "/summary")
+                        schema:org-summary params)))
+
+
 (defn- set-team-org-api
   [cfg {:keys [organization-id team-id is-default] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
@@ -284,6 +307,7 @@
     {:get-team-org               (partial get-team-org-api cfg)
      :set-team-org               (partial set-team-org-api cfg)
      :get-org-membership-by-team (partial get-org-membership-by-team-api cfg)
+     :get-org-summary            (partial get-org-summary-api cfg)
      :add-profile-to-org         (partial add-profile-to-org-api cfg)
      :remove-profile-from-org    (partial remove-profile-from-org-api cfg)
      :delete-team                (partial delete-team-api cfg)

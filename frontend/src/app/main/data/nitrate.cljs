@@ -79,5 +79,5 @@
                  (modal/hide)
                  (ntf/show {:content (tr "dasboard.leave-org.toast" org-name)
                             :type :toast
-                            :level :info}))))
+                            :level :success}))))
              (rx/catch on-error))))))
