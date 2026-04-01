@@ -566,6 +566,10 @@ impl Surfaces {
         self.tiles.has(tile, scale_bits)
     }
 
+    pub fn cached_scale_bits(&self) -> Vec<u32> {
+        self.tiles.scale_bits().collect()
+    }
+
     pub fn remove_cached_tile_surface(&mut self, tile: Tile, scale_bits: u32) {
         // Mark tile as invalid
         // Old content stays visible until new tile overwrites it atomically,
@@ -912,6 +916,10 @@ impl TileTextureCache {
 
     pub fn grid_len(&self) -> usize {
         self.grid.len()
+    }
+
+    pub fn scale_bits(&self) -> impl Iterator<Item = u32> + '_ {
+        self.scales.iter().copied()
     }
 
     pub fn best_fallback_scale_bits(

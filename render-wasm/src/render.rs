@@ -15,7 +15,7 @@ mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use gpu_state::GpuState;
 
@@ -295,6 +295,12 @@ fn sort_z_index(tree: ShapesPoolRef, element: &Shape, children_ids: Vec<Uuid>) -
     }
 }
 
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+struct ShapeScaleKey {
+    shape_id: Uuid,
+    scale_bits: u32,
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
@@ -330,6 +336,7 @@ pub(crate) struct RenderState {
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
     pub touched_ids: HashSet<Uuid>,
+    shape_last_extrect_by_scale: HashMap<ShapeScaleKey, Rect>,
     /// Temporary flag used for off-screen passes (drop-shadow masks, filter surfaces, etc.)
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
     /// `with_nested_blurs_suppressed` to ensure it's always restored.
@@ -408,10 +415,51 @@ impl RenderState {
             show_grid: None,
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
+            shape_last_extrect_by_scale: HashMap::new(),
             ignore_nested_blurs: false,
             preview_mode: false,
             export_context: None,
         })
+    }
+
+    fn rect_union(a: Rect, b: Rect) -> Rect {
+        Rect::from_ltrb(
+            a.left().min(b.left()),
+            a.top().min(b.top()),
+            a.right().max(b.right()),
+            a.bottom().max(b.bottom()),
+        )
+    }
+
+    fn invalidate_shape_across_cached_scales(&mut self, shape: &Shape, tree: ShapesPoolRef) {
+        let scale_bits_list = self.surfaces.cached_scale_bits();
+        for scale_bits in scale_bits_list {
+            let scale = f32::from_bits(scale_bits);
+            if !scale.is_finite() || scale <= 0.0 {
+                continue;
+            }
+            let new_extrect = shape.extrect(tree, scale);
+            let key = ShapeScaleKey {
+                shape_id: shape.id,
+                scale_bits,
+            };
+            let rect = if let Some(old) = self.shape_last_extrect_by_scale.get(&key).copied() {
+                Self::rect_union(old, new_extrect)
+            } else {
+                new_extrect
+            };
+
+            let tile_size = tiles::get_tile_size(scale);
+            let TileRect(sx, sy, ex, ey) = tiles::get_tiles_for_rect(rect, tile_size);
+            for x in sx..=ex {
+                for y in sy..=ey {
+                    self.surfaces
+                        .remove_cached_tile_surface(tiles::Tile::from(x, y), scale_bits);
+                }
+            }
+
+            self.shape_last_extrect_by_scale.insert(key, new_extrect);
+        }
     }
 
     /// Combines every visible layer blur currently active (ancestors + shape)
@@ -2933,21 +2981,17 @@ impl RenderState {
     pub fn rebuild_touched_tiles(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_touched_tiles");
 
-        let mut all_tiles = HashSet::<tiles::Tile>::new();
-
         let ids = std::mem::take(&mut self.touched_ids);
 
         for shape_id in ids.iter() {
             if let Some(shape) = tree.get(shape_id) {
                 if shape_id != &Uuid::nil() {
-                    all_tiles.extend(self.update_shape_tiles(shape, tree));
+                    // Keep the shape->tile index updated for the current viewport.
+                    let _ = self.update_shape_tiles(shape, tree);
+                    // Invalidate cached tiles for this shape across all cached zoom levels.
+                    self.invalidate_shape_across_cached_scales(shape, tree);
                 }
             }
-        }
-
-        // Update the changed tiles
-        for tile in all_tiles {
-            self.remove_cached_tile(tile);
         }
 
         performance::end_measure!("rebuild_touched_tiles");
@@ -2967,14 +3011,11 @@ impl RenderState {
         tree: ShapesPoolMutRef<'_>,
     ) -> Result<()> {
         performance::begin_measure!("invalidate_and_update_tiles");
-        let mut all_tiles = HashSet::<tiles::Tile>::new();
         for shape_id in shape_ids {
             if let Some(shape) = tree.get(shape_id) {
-                all_tiles.extend(self.update_shape_tiles(shape, tree));
+                let _ = self.update_shape_tiles(shape, tree);
+                self.invalidate_shape_across_cached_scales(shape, tree);
             }
-        }
-        for tile in all_tiles {
-            self.remove_cached_tile(tile);
         }
         performance::end_measure!("invalidate_and_update_tiles");
         Ok(())
