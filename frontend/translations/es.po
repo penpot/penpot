@@ -771,6 +771,9 @@ msgstr "Invitar a la gente"
 msgid "dashboard.leave-team"
 msgstr "Abandonar equipo"
 
+msgid "dashboard.leave-org"
+msgstr "Abandonar organización"
+
 #: src/app/main/ui/dashboard/templates.cljs:84, src/app/main/ui/dashboard/templates.cljs:169
 msgid "dashboard.libraries-and-templates"
 msgstr "Bibliotecas y plantillas"
@@ -1521,6 +1524,15 @@ msgstr "El SVG no es válido o está mal formado"
 #: src/app/main/errors.cljs:270
 msgid "errors.team-feature-mismatch"
 msgstr "Detectada funcionalidad incompatible '%s'"
+
+msgid "errors.org-leave.org-owner-cannot-leave"
+msgstr "El dueño de la organización no puede abandonarla."
+
+msgid "errors.org-leave.no-valid-teams"
+msgstr "Ha habido un problema abandonando la organización. Intentalo de nuevo, por favor."
+
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Sólo puede borrar un equipo su propietario."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:373, src/app/main/ui/dashboard/team.cljs:393
 msgid "errors.team-leave.insufficient-members"
@@ -3544,6 +3556,19 @@ msgstr ""
 "Tienes la propiedad de este equipo. Por favor selecciona otra persona "
 "integrante para promover al rol Propiedad."
 
+msgid "modals.leave-org-and-reassign.hint"
+msgstr ""
+"Tienes la propiedad de algunos equipos de esta organización. "
+"Por favor selecciona otra persona integrante para promover al rol Propiedad."
+
+msgid "modals.leave-org-and-reassign.hint-delete"
+msgstr "Eres el único miembro de algunos equipos. Esos equipos se van a borrar, junto con sus proyectos y ficheros."
+
+msgid "modals.leave-org-and-reassign.hint-promote"
+msgstr ""
+"Además, tienes la propiedad de algunos equipos de esta organización. "
+"Por favor selecciona otra persona integrante para promover al rol Propiedad."
+
 #: src/app/main/ui/dashboard/change_owner.cljs:73
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Promocionar y abandonar"
@@ -3560,13 +3585,34 @@ msgstr "Antes de que abandones"
 msgid "modals.leave-confirm.accept"
 msgstr "Abandonar el equipo"
 
+msgid "modals.leave-org-confirm.accept"
+msgstr "Abandonar organización"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:409, src/app/main/ui/dashboard/team.cljs:449
 msgid "modals.leave-confirm.message"
 msgstr "¿Seguro que quieres abandonar este equipo?"
 
+msgid "modals.leave-org-confirm.message"
+msgstr "Perderás permanentemente el acceso a todos los equipos, proyectos y archivos en ella."
+
 #: src/app/main/ui/dashboard/sidebar.cljs:408, src/app/main/ui/dashboard/sidebar.cljs:429, src/app/main/ui/dashboard/team.cljs:425, src/app/main/ui/dashboard/team.cljs:448
 msgid "modals.leave-confirm.title"
 msgstr "Abandonando el equipo"
+
+msgid "modals.leave-org-confirm.title"
+msgstr "¿Abandonando la organización %s?"
+
+msgid "modals.before-leave-org.title"
+msgstr "ANTES DE ABANDONAR LA ORGANIZACIÓN"
+
+msgid "modals.before-leave-org.message"
+msgstr "Eres el único miembro de algunos equipos. Esos equipos se van a borrar, junto con sus proyectos y ficheros."
+
+msgid "modals.before-leave-org.warning"
+msgstr "Se van a borrar todos los equipos en los que eres el único miembro."
+
+msgid "dasboard.leave-org.toast"
+msgstr "Ya no eres miembro de la organización %s."
 
 #: src/app/main/ui/delete_shared.cljs:56
 msgid "modals.move-shared-confirm.accept"

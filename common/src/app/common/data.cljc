@@ -1171,6 +1171,16 @@
   [key coll]
   (sort-by key natural-compare coll))
 
+(defn sanitize-string [s]
+  (if s
+    (-> s
+        str
+        str/trim
+        (str/replace #"[^\w\s\-_()]+" "")
+        (str/replace #"\s+" " ")
+        str/trim)
+    ""))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
