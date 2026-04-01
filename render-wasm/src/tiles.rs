@@ -261,7 +261,7 @@ impl PendingTiles {
         result
     }
 
-    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces) {
+    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces, scale_bits: u32) {
         self.list.clear();
 
         // Generate spiral for the interest area (viewport + margin)
@@ -279,7 +279,7 @@ impl PendingTiles {
 
         for tile in spiral {
             let is_visible = tile_viewbox.visible_rect.contains(&tile);
-            let is_cached = surfaces.has_cached_tile_surface(tile);
+            let is_cached = surfaces.has_cached_tile_surface(tile, scale_bits);
 
             match (is_visible, is_cached) {
                 (true, true) => visible_cached.push(tile),

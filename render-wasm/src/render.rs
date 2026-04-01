@@ -666,17 +666,20 @@ impl RenderState {
 
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) -> Result<()> {
         let tile_rect = self.get_current_aligned_tile_bounds()?;
+        let scale_bits = self.get_scale().to_bits();
         self.surfaces.cache_current_tile_texture(
             &self.tile_viewbox,
             &self
                 .current_tile
                 .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
             &tile_rect,
+            scale_bits,
         );
 
         self.surfaces.draw_cached_tile_surface(
             self.current_tile
                 .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
+            scale_bits,
             rect,
             self.background_color,
         );
@@ -1397,6 +1400,68 @@ impl RenderState {
             // Restore canvas state
             self.surfaces.canvas(SurfaceId::Target).restore();
 
+            // When zooming out, the cached surface (from a previous, more zoomed-in
+            // render) may not cover the newly visible world area. Fill those gaps
+            // with any cached tiles (exact zoom or cross-zoom fallback) so we don't
+            // show temporary empty squares.
+            if navigate_zoom < 1.0 {
+                let current_scale = self.get_scale();
+                let current_scale_bits = current_scale.to_bits();
+                let tiles::TileRect(vsx, vsy, vex, vey) =
+                    tiles::get_tiles_for_viewbox(self.viewbox, current_scale);
+
+                let offset_x = self.viewbox.area.left * current_scale;
+                let offset_y = self.viewbox.area.top * current_scale;
+
+                let mut exact_hits: usize = 0;
+                let mut fallback_hits: usize = 0;
+                let mut fallback_blits: usize = 0;
+                let mut misses: usize = 0;
+
+                for x in vsx..=vex {
+                    for y in vsy..=vey {
+                        let tile = tiles::Tile::from(x, y);
+                        let rect = skia::Rect::from_xywh(
+                            (x as f32 * tiles::TILE_SIZE) - offset_x,
+                            (y as f32 * tiles::TILE_SIZE) - offset_y,
+                            tiles::TILE_SIZE,
+                            tiles::TILE_SIZE,
+                        );
+                        if self.surfaces.has_cached_tile_surface(tile, current_scale_bits) {
+                            self.surfaces.draw_cached_tile_surface(
+                                tile,
+                                current_scale_bits,
+                                rect,
+                                self.background_color,
+                            );
+                            exact_hits += 1;
+                        } else {
+                            let target_world_rect = tiles::get_tile_rect(tile, current_scale);
+                            let blits = self.surfaces.draw_tile_fallback_cross_zoom(
+                                &self.tile_viewbox,
+                                rect,
+                                self.background_color,
+                                target_world_rect,
+                                current_scale,
+                                current_scale_bits,
+                                true,
+                            );
+                            if blits > 0 {
+                                fallback_hits += 1;
+                                fallback_blits += blits;
+                            } else {
+                                misses += 1;
+                            }
+                        }
+                    }
+                }
+
+                eprintln!(
+                    "render_from_cache zoom-out fill: exact_hits={} fallback_tiles={} fallback_blits={} misses={} scale={}",
+                    exact_hits, fallback_hits, fallback_blits, misses, current_scale
+                );
+            }
+
             if self.options.is_debug_visible() {
                 debug::render(self);
             }
@@ -1477,8 +1542,9 @@ impl RenderState {
 
         let _tile_start = performance::begin_timed_log!("tile_cache_update");
         performance::begin_measure!("tile_cache");
+        let scale_bits = scale.to_bits();
         self.pending_tiles
-            .update(&self.tile_viewbox, &self.surfaces);
+            .update(&self.tile_viewbox, &self.surfaces, scale_bits);
         performance::end_measure!("tile_cache");
         performance::end_timed_log!("tile_cache_update", _tile_start);
 
@@ -2511,11 +2577,14 @@ impl RenderState {
 
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
-                if self.surfaces.has_cached_tile_surface(current_tile) {
+                let scale = self.get_scale();
+                let scale_bits = scale.to_bits();
+                if self.surfaces.has_cached_tile_surface(current_tile, scale_bits) {
                     performance::begin_measure!("render_shape_tree::cached");
                     let tile_rect = self.get_current_tile_bounds()?;
                     self.surfaces.draw_cached_tile_surface(
                         current_tile,
+                        scale_bits,
                         tile_rect,
                         self.background_color,
                     );
@@ -2530,6 +2599,19 @@ impl RenderState {
                         );
                     }
                 } else {
+                    // Cross-zoom fallback: draw any cached content from other scales so we
+                    // never show empty tiles while the exact tile is being regenerated.
+                    let tile_rect = self.get_current_tile_bounds()?;
+                    let target_world_rect = tiles::get_tile_rect(current_tile, scale);
+                    let _blits = self.surfaces.draw_tile_fallback_cross_zoom(
+                        &self.tile_viewbox,
+                        tile_rect,
+                        self.background_color,
+                        target_world_rect,
+                        scale,
+                        scale_bits,
+                        true,
+                    );
                     performance::begin_measure!("render_shape_tree::uncached");
                     // Only allow stopping (yielding) if the current tile is NOT visible.
                     // This ensures all visible tiles render synchronously before showing,
@@ -2574,7 +2656,9 @@ impl RenderState {
             if let Some(next_tile) = self.pending_tiles.pop() {
                 self.update_render_context(next_tile);
 
-                if !self.surfaces.has_cached_tile_surface(next_tile) {
+                let scale = self.get_scale();
+                let scale_bits = scale.to_bits();
+                if !self.surfaces.has_cached_tile_surface(next_tile, scale_bits) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
                         // Check if any shape on this tile has a background blur.
                         // If so, we need ALL root shapes rendered (not just those
@@ -2615,7 +2699,7 @@ impl RenderState {
 
         self.render_in_progress = false;
 
-        self.surfaces.gc();
+        // self.surfaces.gc();
 
         // Mark cache as valid for render_from_cache
         self.cached_viewbox = self.viewbox;
@@ -2776,7 +2860,9 @@ impl RenderState {
     }
 
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
-        self.surfaces.remove_cached_tile_surface(tile);
+        // Tile content changed: invalidate this tile across all cached scales so
+        // cross-zoom fallbacks never resurrect stale content.
+        self.surfaces.remove_cached_tile_surface_all_scales(tile);
     }
 
     /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.
@@ -2809,14 +2895,9 @@ impl RenderState {
 
         self.rebuild_tile_index(tree);
 
-        // Zoom changes world tile size: a partial cache update would mix scales in the
-        // mosaic and glitch. Same zoom as last finished render (typical pan): drop only
-        // tile textures and keep the cache canvas for render_from_cache.
-        if self.zoom_changed() {
-            self.surfaces.remove_cached_tiles(self.background_color);
-        } else {
-            self.surfaces.invalidate_tile_cache();
-        }
+        // IMPORTANT: Do not invalidate cached tile images on zoom/pan.
+        // We intentionally keep them so cross-zoom/pan fallbacks can reuse
+        // already-rendered tiles while the current zoom level is re-rendered.
 
         performance::end_measure!("rebuild_tiles_shallow");
     }

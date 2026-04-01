@@ -982,17 +982,30 @@
     (h/call wasm/internal-module "_set_view_start")
     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
 
-    (if is-pan
-      (do (perf/end-measure "set-view-box")
-          (perf/begin-measure "set-view-box::pan")
-          (render-pan)
-          (render-finish)
-          (perf/end-measure "set-view-box::pan"))
-      (do (perf/end-measure "set-view-box")
+    ;; (do (perf/end-measure "set-view-box")
+    ;;       (perf/begin-measure "set-view-box::pan")
+    ;;       (render-pan)
+    ;;       (render-finish)
+    ;;       (perf/end-measure "set-view-box::pan"))))
+
+    (do (perf/end-measure "set-view-box")
           (perf/begin-measure "set-view-box::zoom")
           (h/call wasm/internal-module "_render_from_cache" 0)
           (render-finish)
-          (perf/end-measure "set-view-box::zoom")))))
+          (perf/end-measure "set-view-box::zoom"))))
+
+    ;; (< zoom prev-zoom)
+    ;; (if (or is-pan)
+    ;;   (do (perf/end-measure "set-view-box")
+    ;;       (perf/begin-measure "set-view-box::pan")
+    ;;       (render-pan)
+    ;;       (render-finish)
+    ;;       (perf/end-measure "set-view-box::pan"))
+    ;;   (do (perf/end-measure "set-view-box")
+    ;;       (perf/begin-measure "set-view-box::zoom")
+    ;;       (h/call wasm/internal-module "_render_from_cache" 0)
+    ;;       (render-finish)
+    ;;       (perf/end-measure "set-view-box::zoom")))))
 
 (defn update-text-rect!
   [id]

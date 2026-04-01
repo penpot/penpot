@@ -2,7 +2,7 @@ use crate::error::{Error, Result};
 use crate::performance;
 use crate::shapes::Shape;
 
-use skia_safe::{self as skia, IRect, Paint, RRect};
+use skia_safe::{self as skia, IRect, Paint, RRect, Rect};
 
 use super::{gpu_state::GpuState, tiles::Tile, tiles::TileViewbox, tiles::TILE_SIZE};
 
@@ -538,6 +538,7 @@ impl Surfaces {
         tile_viewbox: &TileViewbox,
         tile: &Tile,
         tile_rect: &skia::Rect,
+        scale_bits: u32,
     ) {
         let rect = IRect::from_xywh(
             self.margins.width,
@@ -557,23 +558,33 @@ impl Surfaces {
                 &skia::Paint::default(),
             );
 
-            self.tiles.add(tile_viewbox, tile, tile_image);
+            self.tiles.add(tile_viewbox, tile, scale_bits, tile_image);
         }
     }
 
-    pub fn has_cached_tile_surface(&self, tile: Tile) -> bool {
-        self.tiles.has(tile)
+    pub fn has_cached_tile_surface(&self, tile: Tile, scale_bits: u32) -> bool {
+        self.tiles.has(tile, scale_bits)
     }
 
-    pub fn remove_cached_tile_surface(&mut self, tile: Tile) {
+    pub fn remove_cached_tile_surface(&mut self, tile: Tile, scale_bits: u32) {
         // Mark tile as invalid
         // Old content stays visible until new tile overwrites it atomically,
         // preventing flickering during tile re-renders.
-        self.tiles.remove(tile);
+        self.tiles.remove(tile, scale_bits);
     }
 
-    pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
-        if let Some(image) = self.tiles.get(tile) {
+    pub fn remove_cached_tile_surface_all_scales(&mut self, tile: Tile) {
+        self.tiles.remove_all_scales_for_tile(tile);
+    }
+
+    pub fn draw_cached_tile_surface(
+        &mut self,
+        tile: Tile,
+        scale_bits: u32,
+        rect: skia::Rect,
+        color: skia::Color,
+    ) {
+        if let Some(image) = self.tiles.get(tile, scale_bits) {
             let mut paint = skia::Paint::default();
             paint.set_color(color);
 
@@ -581,7 +592,7 @@ impl Surfaces {
 
             self.target
                 .canvas()
-                .draw_image_rect(&image, None, rect, &skia::Paint::default());
+                .draw_image_rect(image, None, rect, &skia::Paint::default());
         }
     }
 
@@ -642,6 +653,127 @@ impl Surfaces {
         self.tiles.clear();
     }
 
+    fn rect_intersection(a: Rect, b: Rect) -> Option<Rect> {
+        let l = a.left().max(b.left());
+        let t = a.top().max(b.top());
+        let r = a.right().min(b.right());
+        let btm = a.bottom().min(b.bottom());
+        if r > l && btm > t {
+            Some(Rect::from_ltrb(l, t, r, btm))
+        } else {
+            None
+        }
+    }
+
+    /// Draw a placeholder for a missing tile using cached tiles from other zoom levels.
+    pub fn draw_tile_fallback_cross_zoom(
+        &mut self,
+        tile_viewbox: &TileViewbox,
+        rect: Rect,
+        color: skia::Color,
+        target_world_rect: Rect,
+        target_scale: f32,
+        target_scale_bits: u32,
+        debug_trace: bool,
+    ) -> usize {
+        let Some(candidate_scale_bits) =
+            self.tiles
+                .best_fallback_scale_bits(target_scale, target_scale_bits)
+        else {
+            if debug_trace {
+                println!(
+                    "tile_fallback: no candidate scale (target_scale={})",
+                    target_scale
+                );
+            }
+            return 0;
+        };
+
+        let src_scale = f32::from_bits(candidate_scale_bits);
+        if !src_scale.is_finite() || src_scale <= 0.0 {
+            if debug_trace {
+                println!(
+                    "tile_fallback: invalid candidate scale (bits={}, scale={})",
+                    candidate_scale_bits, src_scale
+                );
+            }
+            return 0;
+        }
+
+        if debug_trace {
+            println!(
+                "tile_fallback: target_scale={} -> candidate_scale={}",
+                target_scale, src_scale
+            );
+        }
+
+        let tile_size_src_world = super::tiles::get_tile_size(src_scale);
+        let super::tiles::TileRect(sx, sy, ex, ey) =
+            super::tiles::get_tiles_for_rect(target_world_rect, tile_size_src_world);
+
+        let mut blits: usize = 0;
+
+        for x in sx..=ex {
+            for y in sy..=ey {
+                let src_tile = Tile::from(x, y);
+                let Some(src_image) = self.tiles.get(src_tile, candidate_scale_bits) else {
+                    continue;
+                };
+
+                let src_world_rect = super::tiles::get_tile_rect(src_tile, src_scale);
+                let Some(overlap_world) = Self::rect_intersection(target_world_rect, src_world_rect)
+                else {
+                    continue;
+                };
+
+                // Source pixel rect within the cached tile image.
+                let src_px_l = (overlap_world.left() - src_world_rect.left()) * src_scale;
+                let src_px_t = (overlap_world.top() - src_world_rect.top()) * src_scale;
+                let src_px_r = (overlap_world.right() - src_world_rect.left()) * src_scale;
+                let src_px_b = (overlap_world.bottom() - src_world_rect.top()) * src_scale;
+                let src_rect = Rect::from_ltrb(src_px_l, src_px_t, src_px_r, src_px_b);
+
+                // Destination rect in target device space.
+                let dst_px_l =
+                    rect.left() + (overlap_world.left() - target_world_rect.left()) * target_scale;
+                let dst_px_t =
+                    rect.top() + (overlap_world.top() - target_world_rect.top()) * target_scale;
+                let dst_px_r =
+                    rect.left() + (overlap_world.right() - target_world_rect.left()) * target_scale;
+                let dst_px_b =
+                    rect.top() + (overlap_world.bottom() - target_world_rect.top()) * target_scale;
+                let dst_rect = Rect::from_ltrb(dst_px_l, dst_px_t, dst_px_r, dst_px_b);
+                let Some(dst_rect) = Self::rect_intersection(dst_rect, rect) else {
+                    continue;
+                };
+
+                let mut paint = skia::Paint::default();
+                paint.set_color(color);
+                self.target.canvas().draw_rect(dst_rect, &paint);
+
+                self.target.canvas().draw_image_rect(
+                    src_image,
+                    Some((&src_rect, skia::canvas::SrcRectConstraint::Fast)),
+                    dst_rect,
+                    &skia::Paint::default(),
+                );
+
+                blits += 1;
+            }
+        }
+
+        // Opportunistic cleanup in case we kept too much cross-zoom content.
+        if blits > 0 && self.tiles.grid_len() > TEXTURES_CACHE_CAPACITY {
+            self.tiles.free_tiles(tile_viewbox);
+        }
+
+        if debug_trace {
+            println!("tile_fallback: blits={}", blits);
+        }
+
+        blits
+    }
+
     pub fn gc(&mut self) {
         self.tiles.gc();
     }
@@ -689,8 +821,15 @@ impl Surfaces {
 }
 
 pub struct TileTextureCache {
-    grid: HashMap<Tile, skia::Image>,
-    removed: HashSet<Tile>,
+    grid: HashMap<TileCacheKey, skia::Image>,
+    removed: HashSet<TileCacheKey>,
+    scales: HashSet<u32>,
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+struct TileCacheKey {
+    tile: Tile,
+    scale_bits: u32,
 }
 
 impl TileTextureCache {
@@ -698,27 +837,32 @@ impl TileTextureCache {
         Self {
             grid: HashMap::default(),
             removed: HashSet::default(),
+            scales: HashSet::default(),
         }
     }
 
-    pub fn has(&self, tile: Tile) -> bool {
-        self.grid.contains_key(&tile) && !self.removed.contains(&tile)
+    pub fn has(&self, tile: Tile, scale_bits: u32) -> bool {
+        let key = TileCacheKey { tile, scale_bits };
+        self.grid.contains_key(&key) && !self.removed.contains(&key)
     }
 
     fn gc(&mut self) {
         // Make a real remove
-        for tile in self.removed.iter() {
-            self.grid.remove(tile);
+        let removed = std::mem::take(&mut self.removed);
+        for key in removed.iter() {
+            self.grid.remove(key);
         }
     }
 
     fn free_tiles(&mut self, tile_viewbox: &TileViewbox) {
+        println!("free_tiles");
         let marked: Vec<_> = self
             .grid
             .iter_mut()
-            .filter_map(|(tile, _)| {
-                if !tile_viewbox.is_visible(tile) {
-                    Some(*tile)
+            .filter_map(|(key, _)| {
+                // Approximate visibility check: uses tile coords only.
+                if !tile_viewbox.is_visible(&key.tile) {
+                    Some(*key)
                 } else {
                     None
                 }
@@ -726,12 +870,18 @@ impl TileTextureCache {
             .take(TEXTURES_BATCH_DELETE)
             .collect();
 
-        for tile in marked.iter() {
-            self.grid.remove(tile);
+        for key in marked.iter() {
+            self.grid.remove(key);
         }
     }
 
-    pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile, image: skia::Image) {
+    pub fn add(
+        &mut self,
+        tile_viewbox: &TileViewbox,
+        tile: &Tile,
+        scale_bits: u32,
+        image: skia::Image,
+    ) {
         if self.grid.len() > TEXTURES_CACHE_CAPACITY {
             // First we try to remove the obsolete tiles
             self.gc();
@@ -741,27 +891,62 @@ impl TileTextureCache {
             self.free_tiles(tile_viewbox);
         }
 
-        self.grid.insert(*tile, image);
-
-        if self.removed.contains(tile) {
-            self.removed.remove(tile);
-        }
+        let key = TileCacheKey {
+            tile: *tile,
+            scale_bits,
+        };
+        self.scales.insert(scale_bits);
+        self.grid.insert(key, image);
+        println!("add: {:?}", key);
+        self.removed.remove(&key);
     }
 
-    pub fn get(&mut self, tile: Tile) -> Option<&mut skia::Image> {
-        if self.removed.contains(&tile) {
+    pub fn get(&self, tile: Tile, scale_bits: u32) -> Option<&skia::Image> {
+        let key = TileCacheKey { tile, scale_bits };
+        if self.removed.contains(&key) {
             return None;
         }
-        self.grid.get_mut(&tile)
+        self.grid.get(&key)
     }
 
-    pub fn remove(&mut self, tile: Tile) {
-        self.removed.insert(tile);
+    pub fn remove(&mut self, tile: Tile, scale_bits: u32) {
+        self.removed.insert(TileCacheKey { tile, scale_bits });
+    }
+
+    pub fn remove_all_scales_for_tile(&mut self, tile: Tile) {
+        for scale_bits in self.scales.iter().copied() {
+            self.removed.insert(TileCacheKey { tile, scale_bits });
+        }
     }
 
     pub fn clear(&mut self) {
-        for k in self.grid.keys() {
-            self.removed.insert(*k);
+        self.removed.extend(self.grid.keys().copied());
+        // After a full invalidation, we must also drop the list of known scales.
+        // Otherwise `best_fallback_scale_bits` may keep suggesting a scale that has
+        // no usable (non-removed) tiles, leading to confusing `blits=0` traces.
+        self.scales.clear();
+    }
+
+    pub fn grid_len(&self) -> usize {
+        self.grid.len()
+    }
+
+    pub fn best_fallback_scale_bits(&self, target_scale: f32, target_scale_bits: u32) -> Option<u32> {
+        let mut best: Option<(f32, u32)> = None;
+        for bits in self.scales.iter().copied() {
+            if bits == target_scale_bits {
+                continue;
+            }
+            let s = f32::from_bits(bits);
+            if !s.is_finite() || s <= 0.0 {
+                continue;
+            }
+            let score = (s / target_scale).ln().abs();
+            match best {
+                Some((best_score, _)) if best_score <= score => {}
+                _ => best = Some((score, bits)),
+            }
         }
+        best.map(|(_, bits)| bits)
     }
 }
