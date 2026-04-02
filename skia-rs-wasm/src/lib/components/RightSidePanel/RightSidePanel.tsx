@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSnapshot } from 'valtio'
 import type { Fill } from 'penpot-exporter/types'
 import { docProxy, getActiveOrSinglePageId } from '../../renderer/store/doc-proxy'
+import { activeEditorGradient, activeEditorOnChange, activeEditorTarget } from '../../renderer/signals/selection'
+import { MAX_GRADIENT_STOPS } from '../../renderer/api/constants'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -43,6 +45,7 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
     setActiveFill(null)
     setTitle('')
     onChangeRef.current = null
+    activeEditorTarget.value = null
   }, [])
 
   const openEditor = useCallback(
@@ -55,9 +58,29 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
         setActiveFill(next)
         onChange(next)
       }
+      activeEditorTarget.value = { kind, index }
     },
     [],
   )
+
+  // Sync active editor gradient + onChange callback to signals for SelectionOverlay.
+  // No cleanup here — the null-then-set pattern races with useSignalCoalesced's RAF batching.
+  useEffect(() => {
+    const g = activeFill?.fillColorGradient
+    activeEditorGradient.value = g
+      ? { ...g, stops: g.stops?.slice(0, MAX_GRADIENT_STOPS) ?? [] }
+      : null
+    activeEditorOnChange.value = onChangeRef.current
+  }, [activeFill])
+
+  // Clean up signals only on unmount
+  useEffect(() => {
+    return () => {
+      activeEditorGradient.value = null
+      activeEditorOnChange.value = null
+      activeEditorTarget.value = null
+    }
+  }, [])
 
   // Close editor when selection changes
   useEffect(() => {

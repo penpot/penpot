@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "skia-rs-wasm",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "skia-rs-wasm", "run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "figma_plugin_fe",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "figma_plugin_fe", "run", "dev"],
+      "port": 5174
+    }
+  ]
+}

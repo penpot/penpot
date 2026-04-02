@@ -119,7 +119,8 @@ impl Gradient {
         let mut transform = skia::Matrix::new_identity();
         transform.pre_translate((center.x, center.y));
         transform.pre_rotate(start_angle, skia::Point::new(0., 0.));
-        transform.pre_scale((aspect, 1.), None);
+        transform.pre_scale((1., aspect), None);
+        transform.pre_rotate(-start_angle, skia::Point::new(0., 0.));
         transform.pre_translate((-center.x, -center.y));
 
         skia::shader::Shader::sweep_gradient(

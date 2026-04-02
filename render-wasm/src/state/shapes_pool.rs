@@ -53,6 +53,8 @@ pub struct ShapesPoolImpl {
     structure: HashMap<usize, Vec<StructureEntry>>,
     /// Scale content values, keyed by index
     scale_content: HashMap<usize, f32>,
+    /// Temporary fill overrides for live preview (gradient drag). Keyed by UUID.
+    fill_modifiers: HashMap<Uuid, Vec<shapes::Fill>>,
 }
 
 // Type aliases - no longer need lifetimes!
@@ -71,6 +73,7 @@ impl ShapesPoolImpl {
             modifiers: HashMap::default(),
             structure: HashMap::default(),
             scale_content: HashMap::default(),
+            fill_modifiers: HashMap::default(),
         }
     }
 
@@ -151,7 +154,8 @@ impl ShapesPoolImpl {
         let needs_modification = shape.is_bool()
             || self.modifiers.contains_key(&idx)
             || self.structure.contains_key(&idx)
-            || self.scale_content.contains_key(&idx);
+            || self.scale_content.contains_key(&idx)
+            || self.fill_modifiers.contains_key(id);
 
         if needs_modification {
             // Check if we have a cached modified version
@@ -166,6 +170,10 @@ impl ShapesPoolImpl {
 
                     if let Some(scale) = self.scale_content.get(&idx) {
                         modified_shape.scale_content(*scale);
+                    }
+
+                    if let Some(fill_mod) = self.fill_modifiers.get(id) {
+                        modified_shape.fills = fill_mod.clone();
                     }
                     modified_shape
                 }))
@@ -278,11 +286,37 @@ impl ShapesPoolImpl {
         }
     }
 
+    pub fn set_fill_modifier(&mut self, id: Uuid, fills: Vec<shapes::Fill>) {
+        if let Some(&idx) = self.uuid_to_idx.get(&id) {
+            if fills.is_empty() {
+                self.fill_modifiers.remove(&id);
+            } else {
+                self.fill_modifiers.insert(id, fills);
+            }
+            self.modified_shape_cache.insert(idx, OnceCell::new());
+        }
+    }
+
+    /// Clears all fill modifiers and invalidates the modified-shape cache for each.
+    /// Returns the UUIDs of all shapes that had fill modifiers, so the caller can
+    /// mark them as touched in the render state.
+    pub fn clean_fill_modifiers(&mut self) -> Vec<Uuid> {
+        let uuids: Vec<Uuid> = self.fill_modifiers.keys().copied().collect();
+        for uuid in &uuids {
+            if let Some(&idx) = self.uuid_to_idx.get(uuid) {
+                self.modified_shape_cache.insert(idx, OnceCell::new());
+            }
+        }
+        self.fill_modifiers.clear();
+        uuids
+    }
+
     pub fn clean_all(&mut self) {
         self.clean_shape_cache();
         self.modifiers = HashMap::default();
         self.structure = HashMap::default();
         self.scale_content = HashMap::default();
+        self.fill_modifiers = HashMap::default();
     }
 
     pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl {
@@ -311,6 +345,7 @@ impl ShapesPoolImpl {
             modifiers: HashMap::default(),
             structure: HashMap::default(),
             scale_content: HashMap::default(),
+            fill_modifiers: HashMap::default(),
         }
     }
 

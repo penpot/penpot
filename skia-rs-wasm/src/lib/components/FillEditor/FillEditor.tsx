@@ -29,7 +29,7 @@ const defaultRadialGradient: Gradient = {
   startX: 0.5,
   startY: 0.5,
   endX: 0.5,
-  endY: 0.5,
+  endY: 0.2,
   width: 0.5,
   stops: [...defaultStops],
 }
@@ -129,13 +129,7 @@ export function FillEditor({
     [gradient, onChange]
   )
 
-  const updateGradientGeometry = useCallback(
-    (patch: Partial<Pick<Gradient, 'startX' | 'startY' | 'endX' | 'endY' | 'width'>>) => {
-      if (!gradient) return
-      onChange({ fillColorGradient: { ...gradient, ...patch } })
-    },
-    [gradient, onChange]
-  )
+
 
   const updateStop = useCallback(
     (sortedIndex: number, patch: Partial<{ offset: number; color: string; opacity: number }>) => {
@@ -328,160 +322,6 @@ export function FillEditor({
             </button>
           </div>
 
-          {mode === 'radial' && gradient && (
-            <div style={{ marginBottom: 8, padding: '8px 0', borderTop: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 6, fontWeight: 500 }}>
-                Position
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                <div>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    Center X (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={Math.round((gradient.startX ?? 0.5) * 100)}
-                    onChange={(e) => updateGradientGeometry({ startX: Number(e.target.value) / 100 })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    Center Y (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={Math.round((gradient.startY ?? 0.5) * 100)}
-                    onChange={(e) => updateGradientGeometry({ startY: Number(e.target.value) / 100 })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    Outer point X (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={Math.round((gradient.endX ?? 0.5) * 100)}
-                    onChange={(e) => updateGradientGeometry({ endX: Number(e.target.value) / 100 })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    Outer point Y (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={Math.round((gradient.endY ?? 0.5) * 100)}
-                    onChange={(e) => updateGradientGeometry({ endY: Number(e.target.value) / 100 })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                  />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    Stretch (1 = circle)
-                  </label>
-                  <input
-                    type="number"
-                    min={0.1}
-                    max={10}
-                    step={0.1}
-                    value={Number((gradient.width ?? 0.5).toFixed(2))}
-                    onChange={(e) => updateGradientGeometry({ width: Number(e.target.value) })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                    title="1 = circle, other = ellipse"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {mode === 'angular' && gradient && (
-            <div style={{ marginBottom: 8, padding: '8px 0', borderTop: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 6, fontWeight: 500 }}>
-                Position
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                <div>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    Center X (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={Math.round((gradient.startX ?? 0.5) * 100)}
-                    onChange={(e) => updateGradientGeometry({ startX: Number(e.target.value) / 100 })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    Center Y (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={Math.round((gradient.startY ?? 0.5) * 100)}
-                    onChange={(e) => updateGradientGeometry({ startY: Number(e.target.value) / 100 })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    0° direction X (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={Math.round((gradient.endX ?? 1) * 100)}
-                    onChange={(e) => updateGradientGeometry({ endX: Number(e.target.value) / 100 })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    0° direction Y (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={Math.round((gradient.endY ?? 0.5) * 100)}
-                    onChange={(e) => updateGradientGeometry({ endY: Number(e.target.value) / 100 })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                  />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 2 }}>
-                    Stretch (1 = circle)
-                  </label>
-                  <input
-                    type="number"
-                    min={0.1}
-                    max={10}
-                    step={0.1}
-                    value={gradient.width ?? 1}
-                    onChange={(e) => updateGradientGeometry({ width: Number(e.target.value) })}
-                    style={{ width: '100%', padding: '4px 6px', fontSize: 12 }}
-                    title="1 = circle, other = ellipse"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           <div style={{ marginBottom: 8 }}>
             <div
               ref={barRef}
@@ -530,6 +370,7 @@ export function FillEditor({
                         Math.min(1, Math.round((dragStartRef.current.startOffset + delta) * 100) / 100)
                       )
                       setDragState({ sortedIndex: i, offset: newOffset })
+                      updateStop(i, { offset: newOffset })
                     }}
                     onPointerUp={(e) => {
                       setDragState((current) => {

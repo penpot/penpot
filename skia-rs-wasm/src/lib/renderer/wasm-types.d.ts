@@ -147,6 +147,8 @@ export interface WasmModule {
   _set_shape_fills(): void
   _add_shape_fill(): void
   _clear_shape_fills(): void
+  _set_fill_modifier(): void
+  _clean_fill_modifiers(): void
 
   // Strokes
   _add_shape_center_stroke(width: number, style: number, cap_start: number, cap_end: number): void
