@@ -33,6 +33,7 @@
 - Fix dates to avoid show them in english when browser is in auto [Taiga #13786](https://tree.taiga.io/project/penpot/issue/13786)
 - Fix focus radio button [Taiga #13841](https://tree.taiga.io/project/penpot/issue/13841)
 - Token tree should be expanded by default [Taiga #13631](https://tree.taiga.io/project/penpot/issue/13631)
+- Fix plugin modal drag interactions over iframe and close-button behavior
 
 ## 2.15.0 (Unreleased)
 
