@@ -423,9 +423,8 @@
                :on-click on-type-change'}
       deprecated-icon/margin]]))
 
-(mf/defc element-behaviour-horizontal
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc element-behaviour-horizontal*
+  {::mf/private true}
   [{:keys [^boolean is-auto ^boolean has-fill value on-change]}]
   [:div {:class (stl/css-case
                  :horizontal-behaviour true
@@ -457,9 +456,8 @@
         :title "Fit content (Horizontal)"
         :id    "behaviour-h-auto"}])]])
 
-(mf/defc element-behaviour-vertical
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc element-behaviour-vertical*
+  {::mf/private true}
   [{:keys [^boolean is-auto ^boolean has-fill value on-change]}]
   [:div {:class (stl/css-case
                  :vertical-behaviour true
@@ -493,8 +491,7 @@
         :title      "Fit content (Vertical)"
         :id         "behaviour-v-auto"}])]])
 
-(mf/defc align-self-row
-  {::mf/props :obj}
+(mf/defc align-self-row*
   [{:keys [^boolean is-col value on-change]}]
   [:& radio-buttons {:selected (d/name value)
                      :decode-fn keyword
@@ -723,16 +720,15 @@
              :value (get values :layout-item-max-h)
              :nillable true}]])])]))
 
-(mf/defc layout-item-menu
-  {::mf/memo #{:ids :values :type :is-layout-child? :is-grid-parent :is-flex-parent? :is-grid-layout? :is-flex-layout? :applied-tokens}
-   ::mf/props :obj}
+(mf/defc layout-item-menu*
+  {::mf/wrap [mf/memo]}
   [{:keys [ids values
-           ^boolean is-layout-child?
-           ^boolean is-layout-container?
-           ^boolean is-grid-parent?
-           ^boolean is-flex-parent?
-           ^boolean is-flex-layout?
-           ^boolean is-grid-layout?
+           ^boolean is-layout-child
+           ^boolean is-layout-container
+           ^boolean is-grid-parent
+           ^boolean is-flex-parent
+           ^boolean is-flex-layout
+           ^boolean is-grid-layout
            applied-tokens]}]
 
   (let [selection-parents* (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
@@ -745,16 +741,16 @@
         is-col?            (every? ctl/col? selection-parents)
 
         ^boolean
-        is-layout-child?   (and is-layout-child? (not is-absolute?))
+        is-layout-child    (and is-layout-child (not is-absolute?))
 
         state*             (mf/use-state true)
         open?              (deref state*)
 
         toggle-content     (mf/use-fn #(swap! state* not))
-        has-content?       (or is-layout-child?
-                               is-flex-parent?
-                               is-grid-parent?
-                               is-layout-container?)
+        has-content?       (or is-layout-child
+                               is-flex-parent
+                               is-grid-parent
+                               is-layout-container)
 
         ;; Align self
         align-self         (:layout-item-align-self values)
@@ -763,24 +759,24 @@
 
         title
         (cond
-          (and is-layout-container?
-               is-flex-layout?
-               (not is-layout-child?))
+          (and is-layout-container
+               is-flex-layout
+               (not is-layout-child))
           "Flex board"
 
-          (and is-layout-container?
-               is-grid-layout?
-               (not is-layout-child?))
+          (and is-layout-container
+               is-grid-layout
+               (not is-layout-child))
           "Grid board"
 
-          (and is-layout-container?
-               (not is-layout-child?))
+          (and is-layout-container
+               (not is-layout-child))
           "Layout board"
 
-          is-flex-parent?
+          is-flex-parent
           "Flex element"
 
-          is-grid-parent?
+          is-grid-parent
           "Grid element"
 
           :else
@@ -855,7 +851,7 @@
                                                   :title-spacing-empty (not has-content?))}]]
      (when open?
        [:div {:class (stl/css :flex-element-menu)}
-        (when (or is-layout-child? is-absolute?)
+        (when (or is-layout-child is-absolute?)
           [:div {:class (stl/css :position-row)}
            [:div {:class (stl/css :position-options)}
             [:& radio-buttons {:selected (if is-absolute? "absolute" "static")
@@ -883,26 +879,26 @@
         [:div {:class (stl/css :behavior-row)}
          [:div {:class (stl/css-case
                         :behaviour-menu true
-                        :wrap (and ^boolean is-layout-child?
-                                   ^boolean is-layout-container?))}
-          [:& element-behaviour-horizontal
-           {:is-auto is-layout-container?
-            :has-fill is-layout-child?
+                        :wrap (and ^boolean is-layout-child
+                                   ^boolean is-layout-container))}
+          [:> element-behaviour-horizontal*
+           {:is-auto is-layout-container
+            :has-fill is-layout-child
             :value (:layout-item-h-sizing values)
             :on-change on-behaviour-h-change}]
-          [:& element-behaviour-vertical
-           {:is-auto is-layout-container?
-            :has-fill is-layout-child?
+          [:> element-behaviour-vertical*
+           {:is-auto is-layout-container
+            :has-fill is-layout-child
             :value (:layout-item-v-sizing values)
             :on-change on-behaviour-v-change}]]]
 
-        (when (and is-layout-child? is-flex-parent?)
+        (when (and is-layout-child is-flex-parent)
           [:div {:class (stl/css :align-row)}
-           [:& align-self-row {:is-col is-col?
-                               :value align-self
-                               :on-change on-align-self-change}]])
+           [:> align-self-row* {:is-col is-col?
+                                :value align-self
+                                :on-change on-align-self-change}]])
 
-        (when is-layout-child?
+        (when is-layout-child
           [:> margin-section* {:value (:layout-item-margin values)
                                :type (:layout-item-margin-type values)
                                :on-type-change on-margin-type-change
