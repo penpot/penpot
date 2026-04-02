@@ -142,7 +142,7 @@
 
    "Z"))
 
-(mf/defc rulers-text
+(mf/defc rulers-text*
   "Draws the text for the rulers in a specific axis"
   [{:keys [vbox step offset axis zoom-inverse]}]
   (let [clip-id (str "clip-ruler-" (d/name axis))
@@ -186,7 +186,7 @@
                   :style {:stroke font-color
                           :stroke-width rulers-width}}]]))]))
 
-(mf/defc viewport-frame
+(mf/defc viewport-frame*
   [{:keys [show-rulers? zoom zoom-inverse vbox offset-x offset-y]}]
 
   (let [{:keys [width height] x1 :x y1 :y} vbox
@@ -217,10 +217,10 @@
      (when show-rulers?
        (let [step (calculate-step-size zoom)]
          [:g.viewport-frame-rulers
-          [:& rulers-text {:vbox vbox :offset offset-x :step step :zoom-inverse zoom-inverse :axis :x}]
-          [:& rulers-text {:vbox vbox :offset offset-y :step step :zoom-inverse zoom-inverse :axis :y}]]))]))
+          [:> rulers-text* {:vbox vbox :offset offset-x :step step :zoom-inverse zoom-inverse :axis :x}]
+          [:> rulers-text* {:vbox vbox :offset offset-y :step step :zoom-inverse zoom-inverse :axis :y}]]))]))
 
-(mf/defc selection-area
+(mf/defc selection-area*
   [{:keys [vbox zoom-inverse selection-rect offset-x offset-y]}]
   ;; When using the format-number callls we consider if the guide is associated to a frame and we show the position relative to it with the offset
   [:g.selection-area
@@ -332,7 +332,7 @@
 
     (when (some? vbox)
       [:g.viewport-frame {:pointer-events "none"}
-       [:& viewport-frame
+       [:> viewport-frame*
         {:show-rulers? show-rulers?
          :zoom zoom
          :zoom-inverse zoom-inverse
@@ -341,7 +341,7 @@
          :offset-y offset-y}]
 
        (when (and show-rulers? (some? selection-rect))
-         [:& selection-area
+         [:> selection-area*
           {:zoom zoom
            :zoom-inverse zoom-inverse
            :vbox vbox
