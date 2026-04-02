@@ -462,25 +462,25 @@
       [:> spacing-options opts]
       [:> text-transform-options opts]]]))
 
-(mf/defc typography-advanced-options
+(mf/defc typography-advanced-options*
   {::mf/wrap [mf/memo]}
-  [{:keys [visible? typography editable? name-input-ref on-close on-change on-name-blur local? navigate-to-library on-key-down]}]
+  [{:keys [is-visible typography is-editable name-input-ref on-close on-change on-name-blur is-local navigate-to-library on-key-down]}]
   (let [ref       (mf/use-ref nil)
         font-data (fonts/get-font-data (:font-id typography))]
     (fonts/ensure-loaded! (:font-id typography))
 
     (mf/use-effect
-     (mf/deps visible?)
+     (mf/deps is-visible)
      (fn []
        (when-let [node (mf/ref-val ref)]
-         (when visible?
+         (when is-visible
            (dom/scroll-into-view-if-needed! node)))))
 
-    (when visible?
+    (when is-visible
       [:div {:ref ref
              :class (stl/css :advanced-options-wrapper)}
 
-       (if ^boolean editable?
+       (if ^boolean is-editable
          [:*
           [:div {:class (stl/css :font-name-wrapper)}
            [:div {:class (stl/css :typography-sample-input)
@@ -544,7 +544,7 @@
            [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.text-transform")]
            [:span {:class (stl/css :info-content)} (:text-transform typography)]]
 
-          (when-not local?
+          (when-not is-local
             [:a {:class (stl/css :link-btn)
                  :on-click navigate-to-library}
              (tr "workspace.assets.typography.go-to-edit")])])])))
@@ -658,14 +658,14 @@
                  :on-click on-open}
         deprecated-icon/menu]]]
 
-     [:& typography-advanced-options
-      {:visible? open?
+     [:> typography-advanced-options*
+      {:is-visible open?
        :on-close on-close
        :typography  typography
-       :editable? editable?
+       :is-editable editable?
        :name-input-ref  name-input-ref
        :on-change  on-change
        :on-name-blur on-name-blur
        :on-key-down on-key-down
-       :local?  local?
+       :is-local  local?
        :navigate-to-library navigate-to-library}]]))
