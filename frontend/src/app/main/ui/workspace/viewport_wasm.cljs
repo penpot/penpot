@@ -739,7 +739,7 @@
                   :disabled (or drawing-tool @space?)}])))
 
           (when show-prototypes?
-            [:& interactions/interactions
+            [:> interactions/interactions*
              {:selected selected
               :page-id page-id
               :zoom zoom
