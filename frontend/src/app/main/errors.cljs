@@ -390,7 +390,16 @@
                   ;; RxJS unsubscription / take-until chain).  These are
                   ;; handled gracefully inside app.util.http/fetch and must NOT
                   ;; be surfaced as application errors.
-                  (= (.-name ^js cause) "AbortError"))))
+                  (= (.-name ^js cause) "AbortError")
+                  ;; Zone.js (injected by browser extensions such as Angular
+                  ;; DevTools) wraps event listeners and assigns a custom
+                  ;; .toString to its wrapper functions using
+                  ;; Object.defineProperty.  When the wrapper was previously
+                  ;; defined with {writable: false}, a subsequent plain assignment
+                  ;; in strict mode (our libs.js uses "use strict") throws this
+                  ;; TypeError.  This is a known Zone.js / browser-extension
+                  ;; incompatibility and is NOT a Penpot bug.
+                  (str/starts-with? message "Cannot assign to read only property 'toString'"))))
 
           (on-unhandled-error [event]
             (.preventDefault ^js event)
