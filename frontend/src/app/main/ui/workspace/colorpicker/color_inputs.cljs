@@ -28,7 +28,7 @@
   [val]
   (* (/ val 255) 100))
 
-(mf/defc color-inputs [{:keys [type color disable-opacity on-change]}]
+(mf/defc color-inputs* [{:keys [type color disable-opacity on-change]}]
   (let [{red :r green :g blue :b
          hue :h saturation :s value :v
          hex :hex alpha :alpha} color
