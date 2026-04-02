@@ -23,7 +23,6 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.text.html-text :as html]
    [app.util.dom :as dom]
-   [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
    [app.util.text.content :as content]
@@ -116,14 +115,10 @@
                      props))))
        (p/fmap #(st/emit! (dwt/update-text-modifier id %)))))
 
-(mf/defc text-container
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
-  [props]
-  (let [shape       (obj/get props "shape")
-        on-update   (obj/get props "on-update")
-
-        handle-update
+(mf/defc text-container*
+  {::mf/wrap [mf/memo]}
+  [{:keys [shape on-update]}]
+  (let [handle-update
         (mf/use-callback
          (mf/deps shape on-update)
          (fn [node]
@@ -147,12 +142,9 @@
            (mth/close? (dm/get-prop shape :width) (dm/get-prop other :width))
            (mth/close? (dm/get-prop shape :height) (dm/get-prop other :height)))))
 
-(mf/defc text-changes-renderer
-  {::mf/wrap-props false}
-  [props]
-  (let [text-shapes      (unchecked-get props "text-shapes")
-
-        prev-text-shapes (hooks/use-previous text-shapes)
+(mf/defc text-changes-renderer*
+  [{:keys [text-shapes]}]
+  (let [prev-text-shapes (hooks/use-previous text-shapes)
 
         ;; We store in the state the texts still pending to be calculated so we can
         ;; get its position
@@ -191,15 +183,13 @@
 
     [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]
-       [:& text-container {:key (dm/str "text-container-" id)
-                           :shape shape
-                           :on-update handle-update-shape}])]))
+       [:> text-container* {:key (dm/str "text-container-" id)
+                            :shape shape
+                            :on-update handle-update-shape}])]))
 
-(mf/defc text-modifiers-renderer
-  {::mf/wrap-props false}
-  [props]
-  (let [text-shapes (-> (obj/get props "text-shapes")
-                        (update-vals fix-position))
+(mf/defc text-modifiers-renderer*
+  [{:keys [text-shapes]}]
+  (let [text-shapes      (update-vals text-shapes fix-position)
 
         prev-text-shapes (hooks/use-previous text-shapes)
 
@@ -223,16 +213,14 @@
 
     [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]
-       [:& text-container {:key (dm/str "text-container-" id)
-                           :shape shape
-                           :on-update handle-update-shape}])]))
+       [:> text-container* {:key (dm/str "text-container-" id)
+                            :shape shape
+                            :on-update handle-update-shape}])]))
 
-(mf/defc viewport-text-editing
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
-  [props]
-  (let [shape   (obj/get props "shape")
-        shape-id (:id shape)
+(mf/defc viewport-text-editing*
+  {::mf/wrap [mf/memo]}
+  [{:keys [shape]}]
+  (let [shape-id (:id shape)
 
         workspace-editor-state (mf/deref refs/workspace-editor-state)
         workspace-v2-editor-state (mf/deref refs/workspace-v2-editor-state)
@@ -271,8 +259,8 @@
      (fn []
        #(st/emit! (dwt/remove-text-modifier (:id shape)))))
 
-    [:& text-container {:shape shape
-                        :on-update handle-update-shape}]))
+    [:> text-container* {:shape shape
+                         :on-update handle-update-shape}]))
 
 (defn check-props
   [new-props old-props]
@@ -283,15 +271,10 @@
        (= (unchecked-get new-props "edition")
           (unchecked-get old-props "edition"))))
 
-(mf/defc viewport-texts
-  {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % check-props)]}
-  [props]
-  (let [objects   (obj/get props "objects")
-        edition   (obj/get props "edition")
-        modifiers (obj/get props "modifiers")
-
-        text-shapes
+(mf/defc viewport-texts*
+  {::mf/wrap [#(mf/memo' % check-props)]}
+  [{:keys [objects edition modifiers]}]
+  (let [text-shapes
         (mf/use-memo
          (mf/deps objects)
          (fn []
@@ -334,7 +317,7 @@
 
     [:*
      (when editing-shape
-       [:& viewport-text-editing {:shape editing-shape}])
+       [:> viewport-text-editing* {:shape editing-shape}])
 
-     [:& text-modifiers-renderer {:text-shapes text-shapes-modifiers}]
-     [:& text-changes-renderer {:text-shapes text-shapes-changes}]]))
+     [:> text-modifiers-renderer* {:text-shapes text-shapes-modifiers}]
+     [:> text-changes-renderer* {:text-shapes text-shapes-changes}]]))
