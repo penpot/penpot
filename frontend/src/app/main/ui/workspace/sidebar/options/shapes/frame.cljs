@@ -19,7 +19,7 @@
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid*]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
@@ -113,7 +113,7 @@
      (when is-variant?
        [:> component-variant-main* {:shapes shapes}])
 
-     [:& layout-container-menu
+     [:> layout-container-menu*
       {:type shape-type
        :ids ids
        :applied-tokens applied-tokens

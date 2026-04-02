@@ -15,7 +15,7 @@
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
@@ -93,7 +93,7 @@
                          :applied-tokens applied-tokens
                          :shapes shapes}]
 
-     [:& layout-container-menu
+     [:> layout-container-menu*
       {:type type
        :ids ids
        :values layout-container-values

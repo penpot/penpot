@@ -162,7 +162,7 @@
          :cells selected-cells}]
 
        edit-grid?
-       [:& layout-container/grid-layout-edition
+       [:> layout-container/grid-layout-edition*
         {:ids [edition]
          :values (get objects edition)}]
 
