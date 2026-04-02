@@ -27,6 +27,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:lib && npm run build:worker",
+    "build:wasm": "./scripts/build-wasm.sh",
     "build:lib": "vite build",
     "build:worker": "vite build --config vite.worker.config.ts",
     "lint": "eslint .",

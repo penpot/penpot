@@ -184,7 +184,7 @@ export function GradientOverlay({
   }, [gradient, selW, selH])
 
   const radialPoints = useMemo(() => {
-    if (gradient.type !== 'radial') return null
+    if (!(gradient.type === 'radial' || gradient.type === 'diamond')) return null
     const localCenter = {
       x: selW * (gradient.startX - 0.5),
       y: selH * (gradient.startY - 0.5),
@@ -308,7 +308,7 @@ export function GradientOverlay({
     )
   }
 
-  if (gradient.type === 'radial' && radialPoints != null) {
+  if (radialPoints != null) {
     const { localCenter, localTo, localWidth, stops } = radialPoints
     const vpCenter = toViewport(localCenter)
     const vpTo = toViewport(localTo)

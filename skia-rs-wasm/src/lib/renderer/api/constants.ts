@@ -9,6 +9,7 @@ export {
   isLinearGradient,
   isRadialGradient,
   isAngularGradient,
+  isDiamondGradient,
   isImageFill,
 } from '../verification'
 

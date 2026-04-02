@@ -53,6 +53,12 @@ export function isAngularGradient(
   return fill.fillColorGradient != null && fill.fillColorGradient.type === 'angular'
 }
 
+export function isDiamondGradient(
+  fill: Fill
+): fill is Fill & { fillColorGradient: Gradient & { type: 'diamond' } } {
+  return fill.fillColorGradient != null && fill.fillColorGradient.type === 'diamond'
+}
+
 export function isImageFill(
   fill: Fill
 ): fill is Fill & { fillImage: ImageColor } {

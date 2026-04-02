@@ -5,10 +5,10 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Fill, Gradient } from 'penpot-exporter/types'
-import { isAngularGradient, isColorFill, isLinearGradient, isRadialGradient } from '../../renderer/api/constants'
+import { isAngularGradient, isDiamondGradient, isColorFill, isLinearGradient, isRadialGradient } from '../../renderer/api/constants'
 import { MAX_GRADIENT_STOPS } from '../../renderer/api/constants'
 
-export type FillEditorMode = 'solid' | 'linear' | 'radial' | 'angular'
+export type FillEditorMode = 'solid' | 'linear' | 'radial' | 'angular' | 'diamond'
 
 const DEFAULT_SOLID: Fill = { fillColor: '#3B82F6', fillOpacity: 1 }
 const defaultStops = [
@@ -42,12 +42,22 @@ const defaultAngularGradient: Gradient = {
   width: 1,
   stops: [...defaultStops],
 }
+const defaultDiamondGradient: Gradient = {
+  type: 'diamond',
+  startX: 0.5,
+  startY: 0.5,
+  endX: 0.5,
+  endY: 0.2,
+  width: 0.5,
+  stops: [...defaultStops],
+}
 
 function getMode(fill: Fill): FillEditorMode {
   if (isColorFill(fill)) return 'solid'
   if (isLinearGradient(fill)) return 'linear'
   if (isRadialGradient(fill)) return 'radial'
   if (isAngularGradient(fill)) return 'angular'
+  if (isDiamondGradient(fill)) return 'diamond'
   return 'solid'
 }
 
@@ -102,7 +112,7 @@ export function FillEditor({
   const dragStartRef = useRef<{ startX: number; startOffset: number; origIndex: number } | null>(null)
 
   const mode = getMode(fill)
-  const isGradient = mode === 'linear' || mode === 'radial' || mode === 'angular'
+  const isGradient = mode === 'linear' || mode === 'radial' || mode === 'angular' || mode === 'diamond'
   const gradient = fill.fillColorGradient
   const stops = useMemo(() => fillToStops(fill), [fill])
   const sortedStops = useMemo(() => [...stops].sort((a, b) => a.offset - b.offset), [stops])
@@ -123,6 +133,7 @@ export function FillEditor({
       if (newMode === 'linear') onChange({ fillColorGradient: { ...defaultLinearGradient } })
       else if (newMode === 'radial') onChange({ fillColorGradient: { ...defaultRadialGradient } })
       else if (newMode === 'angular') onChange({ fillColorGradient: { ...defaultAngularGradient } })
+      else if (newMode === 'diamond') onChange({ fillColorGradient: { ...defaultDiamondGradient } })
     },
     [onChange]
   )
@@ -279,6 +290,7 @@ export function FillEditor({
             <option value="linear">Linear</option>
             <option value="radial">Radial</option>
             <option value="angular">Angular</option>
+            <option value="diamond">Diamond</option>
           </select>
         </div>
       )}

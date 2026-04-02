@@ -1955,7 +1955,7 @@ export type Gradient = {
    * const gradient: Gradient = { type: 'linear', startX: 0, startY: 0, endX: 100, endY: 100, width: 100, stops: [{ color: '#FF5733', offset: 0 }] };
    * ```
    */
-  type: 'linear' | 'radial' | 'angular';
+  type: 'linear' | 'radial' | 'angular' | 'diamond';
   /**
    * The X-coordinate of the starting point of the gradient.
    */

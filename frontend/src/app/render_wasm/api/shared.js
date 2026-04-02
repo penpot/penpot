@@ -33,6 +33,7 @@ export const RawFillData = {
   "radial": 2,
   "image": 3,
   "angular": 4,
+  "diamond": 5,
 };
 
 export const RawFontStyle = {

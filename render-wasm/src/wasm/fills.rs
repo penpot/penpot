@@ -23,6 +23,7 @@ pub enum RawFillData {
     Radial(gradient::RawGradientData) = 0x02,
     Image(image::RawImageFillData) = 0x03,
     Angular(gradient::RawGradientData) = 0x04,
+    Diamond(gradient::RawGradientData) = 0x05,
 }
 
 impl From<RawFillData> for shapes::Fill {
@@ -38,6 +39,9 @@ impl From<RawFillData> for shapes::Fill {
             RawFillData::Image(image_fill_data) => shapes::Fill::Image(image_fill_data.into()),
             RawFillData::Angular(angular_fill_data) => {
                 shapes::Fill::AngularGradient(angular_fill_data.into())
+            }
+            RawFillData::Diamond(diamond_fill_data) => {
+                shapes::Fill::DiamondGradient(diamond_fill_data.into())
             }
         }
     }

@@ -20,6 +20,7 @@ import {
   isLinearGradient,
   isRadialGradient,
   isAngularGradient,
+  isDiamondGradient,
   isImageFill,
 } from './constants'
 import { getWebGLContext } from './webgl-helpers'
@@ -299,6 +300,54 @@ export function writeAngularGradientFill(
 }
 
 /**
+ * Writes a diamond gradient fill to the heap.
+ * For diamond gradients: startX/startY = center, endX/endY = point on diamond edge, width = aspect ratio.
+ */
+export function writeDiamondGradientFill(
+  offset: number,
+  dataView: DataView,
+  gradient: Gradient,
+  opacity: number
+): void {
+  // Type byte: 0x05 for diamond gradient
+  dataView.setUint8(offset, 0x05)
+  // Padding (3 bytes) - already zeroed
+
+  // Center (offset + 4)
+  dataView.setFloat32(offset + 4, gradient.startX, true)
+  dataView.setFloat32(offset + 8, gradient.startY, true)
+
+  // End = point on diamond edge (offset + 12)
+  dataView.setFloat32(offset + 12, gradient.endX, true)
+  dataView.setFloat32(offset + 16, gradient.endY, true)
+
+  // Alpha (offset + 20)
+  const alpha = Math.floor(opacity * 0xff)
+  dataView.setUint8(offset + 20, alpha)
+
+  // Width (offset + 24) - aspect ratio
+  dataView.setFloat32(offset + 24, gradient.width, true)
+
+  // Stop count (offset + 28)
+  const stops = [...gradient.stops].sort((a, b) => a.offset - b.offset).slice(0, MAX_GRADIENT_STOPS)
+  dataView.setUint8(offset + 28, stops.length)
+
+  // Padding (3 bytes at offset + 29) - already zeroed
+
+  // Write stops (offset + 32)
+  let stopOffset = offset + 32
+  for (const stop of stops) {
+    const stopColor = colorToU32ARGB({
+      color: stop.color,
+      opacity: stop.opacity,
+    })
+    dataView.setUint32(stopOffset, stopColor, true)
+    dataView.setFloat32(stopOffset + 4, stop.offset, true)
+    stopOffset += GRADIENT_STOP_U8_SIZE
+  }
+}
+
+/**
  * Writes an image fill to the heap (exporter ImageColor: id?, width, height)
  */
 export function writeImageFill(
@@ -374,6 +423,8 @@ export function setShapeFills(
       writeRadialGradientFill(fillOffset, dataView, fill.fillColorGradient, fillOpacity)
     } else if (isAngularGradient(fill)) {
       writeAngularGradientFill(fillOffset, dataView, fill.fillColorGradient, fillOpacity)
+    } else if (isDiamondGradient(fill)) {
+      writeDiamondGradientFill(fillOffset, dataView, fill.fillColorGradient, fillOpacity)
     } else if (isImageFill(fill)) {
       writeImageFill(fillOffset, dataView, fill.fillImage, fillOpacity)
 
