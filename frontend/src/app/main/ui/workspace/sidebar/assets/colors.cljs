@@ -270,14 +270,14 @@
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))
 
-(mf/defc colors-group
-  [{:keys [file-id prefix groups open-groups force-open? local? selected
-           multi-colors? multi-assets? on-asset-click on-assets-delete
+(mf/defc colors-group*
+  [{:keys [file-id prefix groups open-groups is-force-open is-local selected
+           is-multi-colors is-multi-assets on-asset-click on-assets-delete
            on-clear-selection on-group on-rename-group on-ungroup colors
            selected-full]}]
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
-                         (or ^boolean force-open?
+                         (or ^boolean is-force-open
                              ^boolean (get open-groups prefix (if (= prefix "") true false))))
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
@@ -340,10 +340,10 @@
              [:& color-item {:key (dm/str (:id color))
                              :color color
                              :file-id file-id
-                             :local? local?
+                             :local? is-local
                              :selected selected
-                             :multi-colors? multi-colors?
-                             :multi-assets? multi-assets?
+                             :multi-colors? is-multi-colors
+                             :multi-assets? is-multi-assets
                              :on-asset-click on-asset-click
                              :on-assets-delete on-assets-delete
                              :on-clear-selection on-clear-selection
@@ -355,24 +355,24 @@
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)
-            [:& colors-group {:file-id file-id
-                              :prefix (cpn/merge-path-item prefix path-item)
-                              :key (dm/str "group-" path-item)
-                              :groups content
-                              :open-groups open-groups
-                              :force-open? force-open?
-                              :local? local?
-                              :selected selected
-                              :multi-colors? multi-colors?
-                              :multi-assets? multi-assets?
-                              :on-asset-click on-asset-click
-                              :on-assets-delete on-assets-delete
-                              :on-clear-selection on-clear-selection
-                              :on-group on-group
-                              :on-rename-group on-rename-group
-                              :on-ungroup on-ungroup
-                              :colors colors
-                              :selected-full selected-full}]))])]))
+            [:> colors-group* {:file-id file-id
+                               :prefix (cpn/merge-path-item prefix path-item)
+                               :key (dm/str "group-" path-item)
+                               :groups content
+                               :open-groups open-groups
+                               :is-force-open is-force-open
+                               :is-local is-local
+                               :selected selected
+                               :is-multi-colors is-multi-colors
+                               :is-multi-assets is-multi-assets
+                               :on-asset-click on-asset-click
+                               :on-assets-delete on-assets-delete
+                               :on-clear-selection on-clear-selection
+                               :on-group on-group
+                               :on-rename-group on-rename-group
+                               :on-ungroup on-ungroup
+                               :colors colors
+                               :selected-full selected-full}]))])]))
 
 (mf/defc colors-section*
   [{:keys [file-id colors open-status-ref selected
@@ -511,20 +511,20 @@
 
 
      [:> cmm/asset-section-block* {:role :content}
-      [:& colors-group {:file-id file-id
-                        :prefix ""
-                        :groups groups
-                        :open-groups open-groups
-                        :force-open? is-force-open
-                        :local? is-local
-                        :selected selected
-                        :multi-colors? multi-colors?
-                        :multi-assets? multi-assets?
-                        :on-asset-click on-asset-click
-                        :on-assets-delete on-assets-delete
-                        :on-clear-selection on-clear-selection
-                        :on-group on-group
-                        :on-rename-group on-rename-group
-                        :on-ungroup on-ungroup
-                        :colors colors
-                        :selected-full selected-full}]]]))
+      [:> colors-group* {:file-id file-id
+                         :prefix ""
+                         :groups groups
+                         :open-groups open-groups
+                         :is-force-open is-force-open
+                         :is-local is-local
+                         :selected selected
+                         :is-multi-colors multi-colors?
+                         :is-multi-assets multi-assets?
+                         :on-asset-click on-asset-click
+                         :on-assets-delete on-assets-delete
+                         :on-clear-selection on-clear-selection
+                         :on-group on-group
+                         :on-rename-group on-rename-group
+                         :on-ungroup on-ungroup
+                         :colors colors
+                         :selected-full selected-full}]]]))
