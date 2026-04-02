@@ -28,8 +28,7 @@
 ;; Sidebar
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc sidebar-options
-  {::mf/props :obj}
+(mf/defc sidebar-options*
   [{:keys [from-viewer]}]
   (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
         update-mode
@@ -140,7 +139,7 @@
 
      [:& dropdown {:show options?
                    :on-close #(reset! state* false)}
-      [:& sidebar-options {:local local :from-viewer from-viewer}]]
+      [:> sidebar-options* {:local local :from-viewer from-viewer}]]
 
      [:div {:class (stl/css :comments-section-content)}
 
