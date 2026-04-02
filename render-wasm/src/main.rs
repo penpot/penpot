@@ -141,6 +141,8 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) -> Result<()> {
         let render_state = state.render_state_mut();
         render_state.set_debug_flags(debug);
         render_state.set_dpr(dpr)?;
+
+        println!("rulers enabled? {:?}", render_state.options.are_rulers_enabled());
     });
     Ok(())
 }

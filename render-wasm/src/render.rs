@@ -607,7 +607,7 @@ impl RenderState {
     }
 
     pub fn set_debug_flags(&mut self, debug: u32) {
-        self.options.flags = debug;
+        self.options.set_flags(debug);
     }
 
     pub fn set_dpr(&mut self, dpr: f32) -> Result<()> {
