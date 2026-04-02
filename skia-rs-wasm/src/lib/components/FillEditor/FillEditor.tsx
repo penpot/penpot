@@ -98,14 +98,21 @@ export function FillEditor({
 
   const [selectedStopIndex, setSelectedStopIndex] = useState<number | null>(null)
   const barRef = useRef<HTMLDivElement>(null)
-  const [dragState, setDragState] = useState<{ sortedIndex: number; offset: number } | null>(null)
-  const dragStartRef = useRef<{ startX: number; startOffset: number; sortedIndex: number } | null>(null)
+  const [dragState, setDragState] = useState<{ origIndex: number; offset: number } | null>(null)
+  const dragStartRef = useRef<{ startX: number; startOffset: number; origIndex: number } | null>(null)
 
   const mode = getMode(fill)
   const isGradient = mode === 'linear' || mode === 'radial' || mode === 'angular'
   const gradient = fill.fillColorGradient
   const stops = useMemo(() => fillToStops(fill), [fill])
   const sortedStops = useMemo(() => [...stops].sort((a, b) => a.offset - b.offset), [stops])
+
+  // Maps sorted index → original (unsorted) index. Stable identity for drag tracking.
+  const sortIndexToOrigIndex = useMemo(() => {
+    const indexed = stops.map((s, i) => ({ s, i }))
+    indexed.sort((a, b) => a.s.offset - b.s.offset)
+    return indexed.map(item => item.i)
+  }, [stops])
 
   const setMode = useCallback(
     (newMode: FillEditorMode) => {
@@ -120,7 +127,17 @@ export function FillEditor({
     [onChange]
   )
 
-  const setStops = useCallback(
+  // Writes stops without sorting — used during drag to preserve array order
+  const setStopsUnsorted = useCallback(
+    (newStops: { offset: number; color: string; opacity?: number }[]) => {
+      if (!gradient) return
+      onChange({ fillColorGradient: { ...gradient, stops: newStops } })
+    },
+    [gradient, onChange]
+  )
+
+  // Sorts stops before writing — used on commit (pointer release, add, remove, etc.)
+  const setStopsAndSort = useCallback(
     (newStops: { offset: number; color: string; opacity?: number }[]) => {
       if (!gradient) return
       const sorted = [...newStops].sort((a, b) => a.offset - b.offset)
@@ -129,14 +146,23 @@ export function FillEditor({
     [gradient, onChange]
   )
 
+  // Updates a stop by its original (unsorted) index — used during drag
+  const updateStopByOrigIndex = useCallback(
+    (origIndex: number, patch: Partial<{ offset: number; color: string; opacity: number }>) => {
+      const newStops = stops.map((s, i) => (i === origIndex ? { ...s, ...patch } : s))
+      setStopsUnsorted(newStops)
+    },
+    [stops, setStopsUnsorted]
+  )
 
-
+  // Updates a stop by its sorted index — used for non-drag edits (color, opacity, manual offset input)
   const updateStop = useCallback(
     (sortedIndex: number, patch: Partial<{ offset: number; color: string; opacity: number }>) => {
-      const newStops = sortedStops.map((s, i) => (i === sortedIndex ? { ...s, ...patch } : s))
-      setStops(newStops)
+      const origIndex = sortIndexToOrigIndex[sortedIndex]
+      const newStops = stops.map((s, i) => (i === origIndex ? { ...s, ...patch } : s))
+      setStopsAndSort(newStops)
     },
-    [sortedStops, setStops]
+    [stops, sortIndexToOrigIndex, setStopsAndSort]
   )
 
   const addStop = useCallback(() => {
@@ -156,18 +182,18 @@ export function FillEditor({
       }
     }
     const newStop = { offset: Math.round(bestT * 100) / 100, color: '#6B7280', opacity: 1 }
-    setStops([...sortedStops, newStop])
+    setStopsAndSort([...sortedStops, newStop])
     setSelectedStopIndex(sortedStops.length)
-  }, [sortedStops, maxGradientStops, setStops])
+  }, [sortedStops, maxGradientStops, setStopsAndSort])
 
   const removeStop = useCallback(
     (index: number) => {
       if (sortedStops.length <= 1) return
       const newStops = sortedStops.filter((_, i) => i !== index)
-      setStops(newStops)
+      setStopsAndSort(newStops)
       setSelectedStopIndex(null)
     },
-    [sortedStops, setStops]
+    [sortedStops, setStopsAndSort]
   )
 
   const rotateStops = useCallback(() => {
@@ -175,14 +201,14 @@ export function FillEditor({
     const [first, ...rest] = sortedStops
     const rotated = [...rest, first]
     const reoffset = rotated.map((s, i) => ({ ...s, offset: i / (rotated.length - 1) }))
-    setStops(reoffset)
-  }, [sortedStops, setStops])
+    setStopsAndSort(reoffset)
+  }, [sortedStops, setStopsAndSort])
 
   const reverseStops = useCallback(() => {
     const reversed = [...sortedStops].reverse()
     const reoffset = reversed.map((s, i) => ({ ...s, offset: i / (reversed.length - 1) || 0 }))
-    setStops(reoffset)
-  }, [sortedStops, setStops])
+    setStopsAndSort(reoffset)
+  }, [sortedStops, setStopsAndSort])
 
   const handleBarClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -191,10 +217,10 @@ export function FillEditor({
       const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
       if (sortedStops.length >= maxGradientStops) return
       const newStop = { offset: Math.round(t * 100) / 100, color: '#6B7280', opacity: 1 }
-      setStops([...sortedStops, newStop])
+      setStopsAndSort([...sortedStops, newStop])
       setSelectedStopIndex(sortedStops.length)
     },
-    [sortedStops, maxGradientStops, setStops]
+    [sortedStops, maxGradientStops, setStopsAndSort]
   )
 
   const fillOpacity = isGradient ? 1 : (fill.fillOpacity ?? 1)
@@ -339,7 +365,8 @@ export function FillEditor({
               }}
             >
               {sortedStops.map((stop, i) => {
-                const isDragging = dragState?.sortedIndex === i
+                const origIndex = sortIndexToOrigIndex[i]
+                const isDragging = dragState?.origIndex === origIndex
                 const displayOffset = isDragging ? dragState.offset : stop.offset
                 return (
                   <div
@@ -356,12 +383,12 @@ export function FillEditor({
                       setSelectedStopIndex(i)
                       const bar = barRef.current?.getBoundingClientRect()
                       if (!bar) return
-                      dragStartRef.current = { startX: e.clientX, startOffset: stop.offset, sortedIndex: i }
-                      setDragState({ sortedIndex: i, offset: stop.offset })
+                      dragStartRef.current = { startX: e.clientX, startOffset: stop.offset, origIndex }
+                      setDragState({ origIndex, offset: stop.offset })
                         ; (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
                     }}
                     onPointerMove={(e) => {
-                      if (!dragStartRef.current || dragStartRef.current.sortedIndex !== i) return
+                      if (!dragStartRef.current || dragStartRef.current.origIndex !== origIndex) return
                       const bar = barRef.current?.getBoundingClientRect()
                       if (!bar) return
                       const delta = (e.clientX - dragStartRef.current.startX) / bar.width
@@ -369,27 +396,42 @@ export function FillEditor({
                         0,
                         Math.min(1, Math.round((dragStartRef.current.startOffset + delta) * 100) / 100)
                       )
-                      setDragState({ sortedIndex: i, offset: newOffset })
-                      updateStop(i, { offset: newOffset })
+                      setDragState({ origIndex, offset: newOffset })
+                      updateStopByOrigIndex(origIndex, { offset: newOffset })
                     }}
                     onPointerUp={(e) => {
-                      setDragState((current) => {
-                        if (current) {
-                          updateStop(current.sortedIndex, { offset: current.offset })
-                          dragStartRef.current = null
-                        }
-                        return null
-                      })
+                      if (dragStartRef.current) {
+                        const { origIndex: dragOrigIdx } = dragStartRef.current
+                        const finalOffset = dragState?.offset ?? stops[dragOrigIdx]?.offset ?? 0
+                        const finalStops = stops.map((s, idx) =>
+                          idx === dragOrigIdx ? { ...s, offset: finalOffset } : s
+                        )
+                        setStopsAndSort(finalStops)
+                        // Find the dragged stop's new position in sorted order
+                        const draggedStop = finalStops[dragOrigIdx]
+                        const sorted = [...finalStops].sort((a, b) => a.offset - b.offset)
+                        const newIdx = sorted.indexOf(draggedStop)
+                        if (newIdx >= 0) setSelectedStopIndex(newIdx)
+                        dragStartRef.current = null
+                      }
+                      setDragState(null)
                         ; (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId)
                     }}
                     onLostPointerCapture={() => {
-                      setDragState((current) => {
-                        if (current) {
-                          updateStop(current.sortedIndex, { offset: current.offset })
-                          dragStartRef.current = null
-                        }
-                        return null
-                      })
+                      if (dragStartRef.current) {
+                        const { origIndex: dragOrigIdx } = dragStartRef.current
+                        const finalOffset = dragState?.offset ?? stops[dragOrigIdx]?.offset ?? 0
+                        const finalStops = stops.map((s, idx) =>
+                          idx === dragOrigIdx ? { ...s, offset: finalOffset } : s
+                        )
+                        setStopsAndSort(finalStops)
+                        const draggedStop = finalStops[dragOrigIdx]
+                        const sorted = [...finalStops].sort((a, b) => a.offset - b.offset)
+                        const newIdx = sorted.indexOf(draggedStop)
+                        if (newIdx >= 0) setSelectedStopIndex(newIdx)
+                        dragStartRef.current = null
+                      }
+                      setDragState(null)
                     }}
                     style={{
                       position: 'absolute',
