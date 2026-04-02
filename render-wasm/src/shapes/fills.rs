@@ -4,6 +4,14 @@ pub use super::Color;
 use crate::utils::get_image;
 use crate::uuid::Uuid;
 
+fn lerp_color(a: Color, b: Color, t: f32) -> Color {
+    let r = (a.r() as f32 + (b.r() as f32 - a.r() as f32) * t).round() as u8;
+    let g = (a.g() as f32 + (b.g() as f32 - a.g() as f32) * t).round() as u8;
+    let bl = (a.b() as f32 + (b.b() as f32 - a.b() as f32) * t).round() as u8;
+    let alpha = (a.a() as f32 + (b.a() as f32 - a.a() as f32) * t).round() as u8;
+    Color::from_argb(alpha, r, g, bl)
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gradient {
     start: (f32, f32),
@@ -40,6 +48,71 @@ impl Gradient {
         let offsets = stops.iter().map(|(_, offset)| *offset);
         self.colors.extend(colors);
         self.offsets.extend(offsets);
+    }
+
+    /// Build wrapped stops for angular gradients so the sweep transitions
+    /// smoothly through the 0/1 seam instead of showing a hard color boundary.
+    /// Inserts an interpolated color at offsets 0.0 and 1.0 so the seam is invisible.
+    fn angular_wrapped_stops(&self) -> (Vec<Color>, Vec<f32>) {
+        if self.colors.len() < 2 {
+            return (self.colors.clone(), self.offsets.clone());
+        }
+
+        const EPSILON: f32 = 1e-6;
+
+        let first_color = self.colors[0];
+        let first_offset = self.offsets[0];
+        let last_color = *self.colors.last().unwrap();
+        let last_offset = *self.offsets.last().unwrap();
+
+        let needs_start = first_offset > EPSILON;
+        let needs_end = last_offset < 1.0 - EPSILON;
+
+        if !needs_start && !needs_end {
+            return (self.colors.clone(), self.offsets.clone());
+        }
+
+        // Gap is the angular region between last stop and first stop through the 0/1 boundary
+        let gap = if needs_start && needs_end {
+            (1.0 - last_offset) + first_offset
+        } else if needs_start {
+            first_offset
+        } else {
+            1.0 - last_offset
+        };
+
+        let mut colors = Vec::with_capacity(self.colors.len() + 2);
+        let mut offsets = Vec::with_capacity(self.offsets.len() + 2);
+
+        if needs_start {
+            let seam_color = if needs_end && gap > EPSILON {
+                // Interpolate between last and first colors proportional to the gap
+                let t = (1.0 - last_offset) / gap;
+                lerp_color(last_color, first_color, t)
+            } else {
+                // Last stop is already at 1.0, wrap from last color
+                last_color
+            };
+            colors.push(seam_color);
+            offsets.push(0.0);
+        }
+
+        colors.extend_from_slice(&self.colors);
+        offsets.extend_from_slice(&self.offsets);
+
+        if needs_end {
+            let seam_color = if needs_start && gap > EPSILON {
+                let t = (1.0 - last_offset) / gap;
+                lerp_color(last_color, first_color, t)
+            } else {
+                // First stop is already at 0.0, wrap to first color
+                first_color
+            };
+            colors.push(seam_color);
+            offsets.push(1.0);
+        }
+
+        (colors, offsets)
     }
 
     pub fn to_linear_shader(&self, rect: &Rect) -> Option<skia::Shader> {
@@ -123,11 +196,13 @@ impl Gradient {
         transform.pre_rotate(-start_angle, skia::Point::new(0., 0.));
         transform.pre_translate((-center.x, -center.y));
 
+        let (colors, offsets) = self.angular_wrapped_stops();
+
         skia::shader::Shader::sweep_gradient(
             center,
-            self.colors.as_slice(),
-            self.offsets.as_slice(),
-            skia::TileMode::Repeat,
+            colors.as_slice(),
+            offsets.as_slice(),
+            skia::TileMode::Clamp,
             Some((start_angle, end_angle)),
             None,
             Some(&transform),
