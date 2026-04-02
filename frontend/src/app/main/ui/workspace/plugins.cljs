@@ -56,7 +56,7 @@
             "/" "")
           icon))
 
-(mf/defc plugin-entry
+(mf/defc plugin-entry*
   [{:keys [index manifest user-can-edit on-open-plugin on-remove-plugin]}]
 
   (let [{:keys [plugin-id host icon name description permissions]} manifest
@@ -233,12 +233,12 @@
 
           [:div {:class (stl/css :plugins-list)}
            (for [[idx manifest] (d/enumerate plugins-state)]
-             [:& plugin-entry {:key (dm/str "plugin-" idx)
-                               :index idx
-                               :manifest manifest
-                               :user-can-edit user-can-edit?
-                               :on-open-plugin on-open-plugin
-                               :on-remove-plugin on-remove-plugin}])]])]]]))
+             [:> plugin-entry* {:key (dm/str "plugin-" idx)
+                                :index idx
+                                :manifest manifest
+                                :user-can-edit user-can-edit?
+                                :on-open-plugin on-open-plugin
+                                :on-remove-plugin on-remove-plugin}])]])]]]))
 
 (mf/defc plugins-permission-list*
   {::mf/private true}
