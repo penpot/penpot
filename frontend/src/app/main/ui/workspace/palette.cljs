@@ -23,7 +23,7 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.color-palette :refer [color-palette*]]
    [app.main.ui.workspace.color-palette-ctx-menu :refer [color-palette-ctx-menu*]]
-   [app.main.ui.workspace.text-palette :refer [text-palette]]
+   [app.main.ui.workspace.text-palette :refer [text-palette*]]
    [app.main.ui.workspace.text-palette-ctx-menu :refer [text-palette-ctx-menu]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -207,9 +207,9 @@
                                           :close-menu on-close-menu
                                           :on-select-palette on-select-text-palette-menu
                                           :selected selected-text}]
-               [:& text-palette {:size size
-                                 :selected selected-text
-                                 :width vport-width}]])
+               [:> text-palette* {:size size
+                                  :selected selected-text
+                                  :width vport-width}]])
             (when color-palette?
               [:*
                [:> color-palette-ctx-menu* {:show show-menu?
