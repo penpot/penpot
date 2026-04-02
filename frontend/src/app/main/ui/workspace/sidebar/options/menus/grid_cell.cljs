@@ -10,6 +10,7 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.grid-layout.editor :as dwge]
@@ -133,7 +134,10 @@
          (mf/deps column row (:id shape) (:id cell))
          (fn [field type value]
            (when-not multiple?
-             (let [[property value]
+             (let [value  (mth/round value)
+                   column (mth/round column)
+                   row    (mth/round row)
+                   [property value]
                    (cond
                      (and (= type :column) (or (= field :all) (= field :start)))
                      [:column value]
@@ -216,6 +220,7 @@
                :title "Column"
                :on-click #(dom/select-target %)
                :on-change (partial on-grid-coordinates :all :column)
+               :integer true
                :value column}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
@@ -226,6 +231,7 @@
                :title "Row"
                :on-click #(dom/select-target %)
                :on-change (partial on-grid-coordinates :all :row)
+               :integer true
                :value row}]]]])
 
         (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
@@ -237,12 +243,14 @@
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :start :column)
+               :integer true
                :value column}]]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :end :column)
+               :integer true
                :value column-end}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
@@ -252,12 +260,14 @@
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :start :row)
+               :integer true
                :value row}]]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :end :row)
+               :integer true
                :value row-end}]]]])
 
         [:div {:class (stl/css :row)}
