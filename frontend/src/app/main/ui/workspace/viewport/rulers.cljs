@@ -187,8 +187,8 @@
                           :stroke-width rulers-width}}]]))]))
 
 (mf/defc viewport-frame*
+  {::mf/private true}
   [{:keys [show-rulers zoom zoom-inverse vbox offset-x offset-y]}]
-
   (let [{:keys [width height] x1 :x y1 :y} vbox
         x2 (+ x1 width)
         y2 (+ y1 height)

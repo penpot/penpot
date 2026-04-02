@@ -101,6 +101,7 @@
                                         (hash-map coord fixedv (flip coord) maxv)]))))
 
 (mf/defc snap-feedback*
+  {::mf/private true}
   [{:keys [shapes remove-snap zoom modifiers page-id]}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
@@ -133,7 +134,7 @@
          #(rx/dispose! sub))))
 
     (mf/use-effect
-     (mf/deps shapes remove-snap modifiers)
+     (mf/deps shapes remove-snap modifiers page-id zoom)
      (fn []
        (rx/push! subject {:shapes shapes
                           :page-id page-id
