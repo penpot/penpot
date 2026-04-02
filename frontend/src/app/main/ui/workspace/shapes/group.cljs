@@ -33,5 +33,5 @@
           {:shape shape
            :childs childs}]
          (when *assert*
-           [:& wsd/shape-debug {:shape shape}])]))))
+           [:> wsd/shape-debug* {:shape shape}])]))))
 
