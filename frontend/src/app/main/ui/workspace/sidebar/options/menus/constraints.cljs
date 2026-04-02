@@ -28,7 +28,7 @@
                        :parent-id
                        :frame-id])
 
-(mf/defc constraints-menu
+(mf/defc constraints-menu*
   [{:keys [ids values] :as props}]
   (let [state*          (mf/use-state true)
         open?           (deref state*)
