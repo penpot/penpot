@@ -184,7 +184,7 @@ export function writeLinearGradientFill(
   dataView.setFloat32(offset + 24, 0, true)
 
   // Stop count (offset + 28)
-  const stops = gradient.stops.slice(0, MAX_GRADIENT_STOPS)
+  const stops = [...gradient.stops].sort((a, b) => a.offset - b.offset).slice(0, MAX_GRADIENT_STOPS)
   dataView.setUint8(offset + 28, stops.length)
 
   // Padding (3 bytes at offset + 29) - already zeroed
@@ -232,7 +232,7 @@ export function writeRadialGradientFill(
   dataView.setFloat32(offset + 24, gradient.width, true)
 
   // Stop count (offset + 28)
-  const stops = gradient.stops.slice(0, MAX_GRADIENT_STOPS)
+  const stops = [...gradient.stops].sort((a, b) => a.offset - b.offset).slice(0, MAX_GRADIENT_STOPS)
   dataView.setUint8(offset + 28, stops.length)
 
   // Padding (3 bytes at offset + 29) - already zeroed
@@ -280,7 +280,7 @@ export function writeAngularGradientFill(
   dataView.setFloat32(offset + 24, gradient.width, true)
 
   // Stop count (offset + 28)
-  const stops = gradient.stops.slice(0, MAX_GRADIENT_STOPS)
+  const stops = [...gradient.stops].sort((a, b) => a.offset - b.offset).slice(0, MAX_GRADIENT_STOPS)
   dataView.setUint8(offset + 28, stops.length)
 
   // Padding (3 bytes at offset + 29) - already zeroed

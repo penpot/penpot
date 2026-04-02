@@ -5,7 +5,8 @@
       "Bash(npx eslint:*)",
       "Bash(npx tsc:*)",
       "Bash(find /Users/I590608/IdeaProjects/penpot-ai -path */node_modules -prune -o -type f \\\\\\(-name *.rs -o -name *.cpp -o -name *.c \\\\\\) -print)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(grep -r 'export type Gradient' /Users/I590608/IdeaProjects/penpot-ai --include=*.ts --include=*.tsx)"
     ]
   }
 }

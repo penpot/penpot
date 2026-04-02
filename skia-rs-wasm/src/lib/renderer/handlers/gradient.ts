@@ -180,7 +180,12 @@ export function startGradientDrag(
         renderer.flushRenderSync()
       }
       const fn = activeEditorOnChange.peek()
-      if (fn && latestGradient) fn({ fillColorGradient: latestGradient })
+      if (fn && latestGradient) {
+        const sortedStops = latestGradient.stops
+          ? [...latestGradient.stops].sort((a, b) => a.offset - b.offset)
+          : []
+        fn({ fillColorGradient: { ...latestGradient, stops: sortedStops } })
+      }
     }),
     map(() => undefined as void),
   )
