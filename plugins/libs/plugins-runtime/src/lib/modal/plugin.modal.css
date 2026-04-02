@@ -42,6 +42,8 @@
   min-inline-size: 25px;
   min-block-size: 200px;
   resize: both;
+  user-select: none;
+  -webkit-user-select: none;
   &:after {
     content: '';
     cursor: se-resize;
@@ -58,12 +60,13 @@
 
 .inner {
   padding: 10px;
-  cursor: grab;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   block-size: 100%;
+  user-select: none;
+  -webkit-user-select: none;
   & > * {
     flex: 1;
   }
@@ -78,6 +81,13 @@
   justify-content: space-between;
   border-block-end: 2px solid var(--color-background-quaternary);
   padding-block-end: var(--spacing-4);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.wrapper.is-dragging .header {
+  cursor: grabbing;
 }
 
 button {
