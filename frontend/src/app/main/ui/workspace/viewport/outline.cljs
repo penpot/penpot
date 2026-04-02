@@ -19,14 +19,10 @@
    [clojure.set :as set]
    [rumext.v2 :as mf]))
 
-(mf/defc outline
-  {::mf/wrap-props false}
-  [props]
-  (let [shape     (unchecked-get props "shape")
-        modifier  (unchecked-get props "modifier")
-
-        zoom      (d/nilv (unchecked-get props "zoom") 1)
-        shape     (gsh/transform-shape shape (:modifiers modifier))
+(mf/defc outline*
+  [{:keys [shape modifier zoom]
+    :or   {zoom 1}}]
+  (let [shape     (gsh/transform-shape shape (:modifiers modifier))
         transform (gsh/transform-str shape)
 
         ;; NOTE: that we don't use mf/deref to avoid a repaint dependency here
@@ -95,35 +91,21 @@
 
     [:> outline-type props]))
 
-(mf/defc shape-outlines-render
-  {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "zoom" "modifiers"]))]}
-  [props]
-  (let [shapes    (unchecked-get props "shapes")
-        zoom      (unchecked-get props "zoom")
-        modifiers (unchecked-get props "modifiers")]
+(mf/defc shape-outlines-render*
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "zoom" "modifiers"]))]}
+  [{:keys [shapes zoom modifiers]}]
+  (for [shape shapes]
+    (let [shape-id (dm/get-prop shape :id)
+          modifier (get modifiers shape-id)]
+      [:> outline* {:key (dm/str "outline-" shape-id)
+                    :shape shape
+                    :modifier modifier
+                    :zoom zoom}])))
 
-    (for [shape shapes]
-      (let [shape-id (dm/get-prop shape :id)
-            modifier (get modifiers shape-id)]
-        [:& outline {:key (dm/str "outline-" shape-id)
-                     :shape shape
-                     :modifier modifier
-                     :zoom zoom}]))))
-
-(mf/defc shape-outlines
-  {::mf/wrap-props false}
-  [props]
-  (let [selected    (or (obj/get props "selected") #{})
-        hover       (or (obj/get props "hover") #{})
-        highlighted (or (obj/get props "highlighted") #{})
-
-        objects     (obj/get props "objects")
-        edition     (obj/get props "edition")
-        zoom        (obj/get props "zoom")
-        modifiers   (obj/get props "modifiers")
-
-        lookup      (d/getf objects)
+(mf/defc shape-outlines*
+  [{:keys [selected hover highlighted objects edition zoom modifiers]
+    :or   {selected #{} hover #{} highlighted #{}}}]
+  (let [lookup      (d/getf objects)
         edition?    (fn [o] (= edition o))
 
         shapes      (-> #{}
@@ -139,6 +121,6 @@
         shapes    (hooks/use-equal-memo shapes)]
 
     [:g.outlines.blurrable
-     [:& shape-outlines-render {:shapes shapes
-                                :zoom zoom
-                                :modifiers modifiers}]]))
+     [:> shape-outlines-render* {:shapes shapes
+                                 :zoom zoom
+                                 :modifiers modifiers}]]))

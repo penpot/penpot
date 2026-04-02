@@ -227,17 +227,9 @@
     (rx/combine-latest (query-side lt-side)
                        (query-side gt-side))))
 
-(mf/defc shape-distance
-  {::mf/wrap-props false}
-  [props]
-  (let [frame      (unchecked-get props "frame")
-        selrect    (unchecked-get props "selrect")
-        page-id    (unchecked-get props "page-id")
-        zoom       (unchecked-get props "zoom")
-        coord      (unchecked-get props "coord")
-        selected   (unchecked-get props "selected")
-
-        subject    (mf/use-memo #(rx/subject))
+(mf/defc shape-distance*
+  [{:keys [frame selrect page-id zoom coord selected]}]
+  (let [subject    (mf/use-memo #(rx/subject))
 
 
         lt-shapes* (mf/use-state nil)
@@ -279,27 +271,22 @@
         :coord coord
         :zoom zoom}])))
 
-(mf/defc snap-distances
-  {::mf/wrap-props false}
-  [props]
-  (let [page-id         (unchecked-get props "page-id")
-        zoom            (unchecked-get props "zoom")
-        selected        (unchecked-get props "selected")
-        selected-shapes (unchecked-get props "selected-shapes")
-        frame-id        (-> selected-shapes first :frame-id)
+(mf/defc snap-distances*
+  [{:keys [page-id zoom selected selected-shapes]}]
+  (let [frame-id        (-> selected-shapes first :frame-id)
         frame           (mf/deref (refs/object-by-id frame-id))
         selrect         (gsh/shapes->rect selected-shapes)]
 
     (when-not (ctl/any-layout? frame)
       [:g.distance
-       [:& shape-distance
+       [:> shape-distance*
         {:selrect selrect
          :page-id page-id
          :frame frame
          :zoom zoom
          :coord :x
          :selected selected}]
-       [:& shape-distance
+       [:> shape-distance*
         {:selrect selrect
          :page-id page-id
          :frame frame
