@@ -8907,6 +8907,24 @@ msgstr ""
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
 
+msgid "webgl.modals.webgl-unavailable.title"
+msgstr "Oops! WebGL is not available"
+
+msgid "webgl.modals.webgl-unavailable.message"
+msgstr "WebGL is not available in your browser, which is required for Penpot to work. Please check your browser settings and/or close graphics-heavy tabs."
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
+msgstr "Follow our "
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.link"
+msgstr "WebGL troubleshooting guide"
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr " to check browser settings, GPU acceleration, drivers, and common system issues."
+
+msgid "webgl.modals.webgl-unavailable.cta"
+msgstr "Go to dashboard"
+
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
