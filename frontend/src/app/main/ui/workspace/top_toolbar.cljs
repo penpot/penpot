@@ -27,7 +27,7 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc image-upload
+(mf/defc image-upload*
   {::mf/wrap [mf/memo]}
   []
   (let [ref            (mf/use-ref nil)
@@ -181,7 +181,7 @@
             :data-tool "text"}
            deprecated-icon/text]]
 
-         [:& image-upload]
+         [:> image-upload*]
 
          [:li
           [:button
