@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.schema.messages :as csm]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -269,7 +270,9 @@
   (fn [cause]
     (let [message
           (if-let [explain (-> cause ex-data ::sm/explain)]
-            (sm/humanize-explain explain)
+            (do
+              (js/console.error (sm/humanize-explain explain))
+              (csm/error-messages explain))
             (ex-data cause))]
       (js/console.log (.-stack cause))
       (not-valid plugin-id :error message))))
