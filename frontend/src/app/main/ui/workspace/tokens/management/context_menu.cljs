@@ -448,7 +448,7 @@
               :on-context-menu prevent-default}
          children]])]))
 
-(mf/defc menu-tree
+(mf/defc menu-tree*
   [{:keys [selected-shapes submenu-offset type errors] :as context-data}]
   (let [shape-types  (into #{} (map :type selected-shapes))
         editing-ref  (mf/deref refs/workspace-editor-state)
@@ -470,7 +470,7 @@
                                  :hint hint
                                  :no-selectable true
                                  :submenu-offset submenu-offset}
-                  [:& menu-tree (assoc context-data :type submenu)]]
+                  [:> menu-tree* (assoc context-data :type submenu)]]
          :else [:& menu-entry
                 {:title title
                  :on-click action
@@ -478,7 +478,7 @@
                  :no-selectable no-selectable
                  :selected? selected?}])])))
 
-(mf/defc token-context-menu-tree
+(mf/defc token-context-menu-tree*
   [{:keys [width errors on-delete-token] :as mdata}]
   (let [objects  (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
@@ -498,15 +498,15 @@
             (some #(ctsl/any-layout-immediate-child? objects %) selected-shapes)))]
 
     [:ul {:class (stl/css :context-list)}
-     [:& menu-tree {:submenu-offset width
-                    :token token
-                    :errors errors
-                    :selected-token-set-id selected-token-set-id
-                    :selected-shapes selected-shapes
-                    :is-selected-inside-layout is-selected-inside-layout
-                    :on-delete-token on-delete-token}]]))
+     [:> menu-tree* {:submenu-offset width
+                     :token token
+                     :errors errors
+                     :selected-token-set-id selected-token-set-id
+                     :selected-shapes selected-shapes
+                     :is-selected-inside-layout is-selected-inside-layout
+                     :on-delete-token on-delete-token}]]))
 
-(mf/defc token-context-menu
+(mf/defc token-context-menu*
   [{:keys [on-delete-token]}]
   (let [mdata               (mf/deref tokens-menu-ref)
         is-open?            (boolean mdata)
@@ -555,5 +555,5 @@
                         :left (dm/str left "px")}
                 :on-context-menu prevent-default}
           (when mdata
-            [:& token-context-menu-tree (assoc mdata :width @width :on-delete-token on-delete-token)])]])
+            [:> token-context-menu-tree* (assoc mdata :width @width :on-delete-token on-delete-token)])]])
        container))))
