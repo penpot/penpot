@@ -35,10 +35,10 @@
                  :justify-self
                  :area-name])
 
-(mf/defc set-self-alignment
-  [{:keys [is-col? alignment set-alignment] :as props}]
+(mf/defc set-self-alignment*
+  [{:keys [is-col alignment set-alignment]}]
   (let [alignment (or alignment :auto)
-        type (if is-col? "col" "row")
+        type (if is-col "col" "row")
 
         handle-set-alignment
         (mf/use-callback
@@ -52,37 +52,37 @@
                         :allow-empty true
                         :name (dm/str "flex-align-items-" type)}
       [:& radio-button {:value "start"
-                        :icon  (if is-col?
+                        :icon  (if is-col
                                  i/align-self-row-left
                                  i/align-self-column-top)
                         :title "Align self start"
                         :id     (dm/str "align-self-start-" type)}]
 
       [:& radio-button {:value "center"
-                        :icon  (if is-col?
+                        :icon  (if is-col
                                  i/align-self-row-center
                                  i/align-self-column-center)
                         :title "Align self center"
                         :id     (dm/str "align-self-center-" type)}]
 
       [:& radio-button {:value "end"
-                        :icon  (if is-col?
+                        :icon  (if is-col
                                  i/align-self-row-right
                                  i/align-self-column-bottom)
                         :title "Align self end"
                         :id     (dm/str "align-self-end-" type)}]
 
       [:& radio-button {:value "stretch"
-                        :icon  (if is-col?
+                        :icon  (if is-col
                                  i/align-self-row-stretch
                                  i/align-self-column-stretch)
                         :title "Align self stretch"
                         :id     (dm/str "align-self-stretch-" type)}]]]))
 
 
-(mf/defc options
+(mf/defc options*
   {::mf/wrap [mf/memo]}
-  [{:keys [shape cell cells] :as props}]
+  [{:keys [shape cell cells]}]
 
   (let [state* (mf/use-state {:open true})
         open?  (:open @state*)
@@ -261,12 +261,12 @@
                :value row-end}]]]])
 
         [:div {:class (stl/css :row)}
-         [:& set-self-alignment {:is-col? false
-                                 :alignment align-self
-                                 :set-alignment set-alignment}]
-         [:& set-self-alignment {:is-col? true
-                                 :alignment justify-self
-                                 :set-alignment set-justify-self}]]
+         [:> set-self-alignment* {:is-col false
+                                  :alignment align-self
+                                  :set-alignment set-alignment}]
+         [:> set-self-alignment* {:is-col true
+                                  :alignment justify-self
+                                  :set-alignment set-justify-self}]]
 
         [:div {:class (stl/css :row)}
          [:button
