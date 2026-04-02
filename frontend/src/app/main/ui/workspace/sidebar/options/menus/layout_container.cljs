@@ -1089,8 +1089,8 @@
   [_]
   (st/emit! (dom/open-new-window cf/grid-help-uri)))
 
-(mf/defc layout-container-menu
-  {::mf/memo #{:ids :values :multiple :shapes :applied-tokens}}
+(mf/defc layout-container-menu*
+  {::mf/wrap [mf/memo]}
   [{:keys [ids values multiple applied-tokens]}]
   (let [;; Display
         layout-type    (:layout values)
@@ -1402,8 +1402,8 @@
 
          nil))]))
 
-(mf/defc grid-layout-edition
-  {::mf/memo #{:ids :values :applied-tokens}}
+(mf/defc grid-layout-edition*
+  {::mf/wrap [mf/memo]}
   [{:keys [ids values applied-tokens]}]
   (let [;; Gap
         saved-grid-dir (:layout-grid-dir values)
