@@ -284,9 +284,8 @@
 
        nil)]))
 
-(mf/defc history-entry
-  {::mf/props :obj}
-  [{:keys [entry idx-entry disabled? current?]}]
+(mf/defc history-entry*
+  [{:keys [entry idx-entry is-disabled is-current]}]
   (let [hover?         (mf/use-state false)
         show-detail?   (mf/use-state false)
         toggle-show-detail
@@ -299,8 +298,8 @@
              (when has-entry?
                (swap! show-detail? not)))))]
     [:div {:class (stl/css-case :history-entry true
-                                :disabled disabled?
-                                :current current?
+                                :disabled is-disabled
+                                :current is-current
                                 :hover @hover?
                                 :show-detail @show-detail?)
            :on-pointer-enter #(reset! hover? true)
@@ -333,11 +332,11 @@
                           :text (tr "workspace.undo.empty")}]]
        [:ul {:class (stl/css :history-entries)}
         (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]
-             [:& history-entry {:key (str "entry-" idx-entry)
-                                :entry entry
-                                :idx-entry idx-entry
-                                :current? (= idx-entry index)
-                                :disabled? (> idx-entry index)}])])]))
+             [:> history-entry* {:key (str "entry-" idx-entry)
+                                 :entry entry
+                                 :idx-entry idx-entry
+                                 :is-current (= idx-entry index)
+                                 :is-disabled (> idx-entry index)}])])]))
 
 
 
