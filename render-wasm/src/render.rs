@@ -414,6 +414,10 @@ impl RenderState {
         })
     }
 
+    pub fn options(&self) -> RenderOptions {
+        self.options
+    }
+
     /// Combines every visible layer blur currently active (ancestors + shape)
     /// into a single equivalent blur. Layer blur radii compound by adding their
     /// variances (σ² = radius²), so we:
@@ -1446,7 +1450,8 @@ impl RenderState {
                 debug::render(self);
             }
 
-            ui::render(self, shapes);
+            // FIXME: get actual theme from options
+            ui::render(self, shapes, &ui::DarkTheme::default());
             debug::render_wasm_label(self);
 
             self.flush_and_submit();
@@ -2669,7 +2674,8 @@ impl RenderState {
             debug::render(self);
         }
 
-        ui::render(self, tree);
+        // FIXME: get actual theme from options
+        ui::render(self, tree, &ui::DarkTheme::default());
         debug::render_wasm_label(self);
 
         Ok(())

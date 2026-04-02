@@ -4,7 +4,14 @@ use super::{RenderState, ShapesPoolRef, SurfaceId};
 use crate::render::grid_layout;
 use crate::shapes::{Layout, Type};
 
-pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
+mod themes;
+use themes::UITheme;
+
+#[allow(unused_imports)]
+pub use themes::{DarkTheme, LightTheme};
+
+pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef, theme: &impl UITheme) {
+    let render_options = render_state.options();
     let canvas = render_state.surfaces.canvas(SurfaceId::UI);
 
     canvas.clear(Color4f::new(0.0, 0.0, 0.0, 0.0));
@@ -67,9 +74,18 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     }
 
     canvas.restore();
+
+    if render_options.are_rulers_enabled() {
+        render_rulers(canvas, theme);
+    }
+
     render_state.surfaces.draw_into(
         SurfaceId::UI,
         SurfaceId::Target,
         Some(&skia::Paint::default()),
     );
+}
+
+fn render_rulers(canvas: &skia::Canvas, _theme: &impl UITheme) {
+    canvas.draw_rect(skia::Rect::new(0.0, 0.0, 100.0, 100.0), &skia::Paint::default());
 }
