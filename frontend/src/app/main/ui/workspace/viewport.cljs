@@ -588,7 +588,7 @@
                                   :zoom zoom}])
 
        (when show-snap-points?
-         [:& snap-points/snap-points
+         [:> snap-points/snap-points*
           {:layout layout
            :transform transform
            :drawing drawing-obj
