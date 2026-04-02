@@ -28,7 +28,7 @@
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
@@ -464,15 +464,14 @@
        :multiple true}]
 
      (when (or is-layout-child? has-flex-layout-container?)
-       [:& layout-item-menu
-        {:type type
-         :ids layout-item-ids
-         :is-layout-child? all-layout-child?
-         :is-layout-container? all-flex-layout-container?
-         :is-flex-parent? is-flex-parent?
-         :is-grid-parent? is-grid-parent?
-         :applied-tokens layout-item-tokens
-         :values layout-item-values}])
+       [:> layout-item-menu* {:type type
+                              :ids layout-item-ids
+                              :is-layout-child all-layout-child?
+                              :is-layout-container all-flex-layout-container?
+                              :is-flex-parent is-flex-parent?
+                              :is-grid-parent is-grid-parent?
+                              :applied-tokens layout-item-tokens
+                              :values layout-item-values}])
 
      (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)
        [:> constraints-menu* {:ids constraint-ids :values constraint-values}])
