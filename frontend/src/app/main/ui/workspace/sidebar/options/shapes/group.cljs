@@ -23,7 +23,7 @@
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
    [app.main.ui.workspace.sidebar.options.shapes.multiple :refer [get-attrs]]
    [rumext.v2 :as mf]))
@@ -174,7 +174,7 @@
        [:> ot/text-menu* {:type type :ids text-ids :values text-values}])
 
      (when-not (empty? svg-values)
-       [:& svg-attrs-menu {:ids ids :values svg-values}])
+       [:> svg-attrs-menu* {:ids ids :values svg-values}])
 
      [:> exports-menu* {:type type
                         :ids ids

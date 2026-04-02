@@ -20,7 +20,7 @@
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu*]]
    [rumext.v2 :as mf]))
 
 (mf/defc options*
@@ -136,8 +136,8 @@
      [:> blur-menu* {:ids ids
                      :values (select-keys shape [:blur])}]
 
-     [:& svg-attrs-menu {:ids ids
-                         :values (select-keys shape [:svg-attrs])}]
+     [:> svg-attrs-menu* {:ids ids
+                          :values (select-keys shape [:svg-attrs])}]
      [:> exports-menu* {:type type
                         :ids ids
                         :shapes shapes

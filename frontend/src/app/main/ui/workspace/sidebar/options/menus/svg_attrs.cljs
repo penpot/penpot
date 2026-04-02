@@ -17,7 +17,8 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc attribute-value [{:keys [attr value on-change on-delete] :as props}]
+(mf/defc attribute-value*
+  [{:keys [attr value on-change on-delete]}]
   (let [last-value (mf/use-state value)
 
         handle-change*
@@ -56,13 +57,14 @@
          (str (d/name (last attr)))]
         (for [[key value] value]
           [:div {:class (stl/css :attr-row) :key key}
-           [:& attribute-value {:key key
-                                :attr (conj attr key)
-                                :value value
-                                :on-change on-change
-                                :on-delete on-delete}]])])]))
+           [:> attribute-value* {:key key
+                                 :attr (conj attr key)
+                                 :value value
+                                 :on-change on-change
+                                 :on-delete on-delete}]])])]))
 
-(mf/defc svg-attrs-menu [{:keys [ids values]}]
+(mf/defc svg-attrs-menu*
+  [{:keys [ids values]}]
   (let [state*          (mf/use-state true)
         open?           (deref state*)
         attrs           (:svg-attrs values)
@@ -103,8 +105,8 @@
        (when open?
          [:div {:class (stl/css :element-set-content)}
           (for [[attr-key attr-value] attrs]
-            [:& attribute-value {:key attr-key
-                                 :attr [attr-key]
-                                 :value attr-value
-                                 :on-change handle-change
-                                 :on-delete handle-delete}])])])))
+            [:> attribute-value* {:key attr-key
+                                  :attr [attr-key]
+                                  :value attr-value
+                                  :on-change handle-change
+                                  :on-delete handle-delete}])])])))
