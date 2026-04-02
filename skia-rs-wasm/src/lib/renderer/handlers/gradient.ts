@@ -20,7 +20,7 @@ import { DRAG_RENDER_INTERVAL_MS } from './drag-render-interval'
 import type { Point } from '../types'
 import type { Fill, Gradient, Matrix } from 'penpot-exporter/types'
 
-export type GradientHandleKind = 'start' | 'end' | 'width'
+export type GradientHandleKind = 'start' | 'end' | 'width' | { type: 'stop'; index: number }
 
 // Inverse of the shape's local-to-viewport affine transform.
 // Mirrors GradientOverlay.viewportToLocal — inlined here since it is only needed in this handler.
@@ -45,7 +45,32 @@ function computePatch(
   handle: GradientHandleKind,
   pt: { x: number; y: number }, // normalised gradient coords in [0, 1]
   current: Gradient,
-): Partial<Pick<Gradient, 'startX' | 'startY' | 'endX' | 'endY' | 'width'>> {
+): Partial<Pick<Gradient, 'startX' | 'startY' | 'endX' | 'endY' | 'width' | 'stops'>> {
+  if (typeof handle === 'object' && handle.type === 'stop') {
+    const { index } = handle
+    const stops = current.stops ? [...current.stops] : []
+    if (index < 0 || index >= stops.length) return {}
+
+    let offset: number
+    if (current.type === 'angular') {
+      const angle0 = Math.atan2(
+        current.endY - current.startY,
+        current.endX - current.startX,
+      )
+      const ptAngle = Math.atan2(pt.y - current.startY, pt.x - current.startX)
+      offset = ((ptAngle - angle0) / (2 * Math.PI) % 1 + 1) % 1
+    } else {
+      const gvx = current.endX - current.startX
+      const gvy = current.endY - current.startY
+      const gLen2 = gvx * gvx + gvy * gvy
+      if (gLen2 < 1e-12) return {}
+      const t = ((pt.x - current.startX) * gvx + (pt.y - current.startY) * gvy) / gLen2
+      offset = Math.max(0, Math.min(1, t))
+    }
+    stops[index] = { ...stops[index], offset }
+    return { stops }
+  }
+
   if (handle === 'start') {
     if (current.type === 'linear') {
       return { startX: pt.x, startY: pt.y }
