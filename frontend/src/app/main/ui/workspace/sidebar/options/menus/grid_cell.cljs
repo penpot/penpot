@@ -10,6 +10,7 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.grid-layout.editor :as dwge]
@@ -133,7 +134,10 @@
          (mf/deps column row (:id shape) (:id cell))
          (fn [field type value]
            (when-not multiple?
-             (let [[property value]
+             (let [value  (mth/round value)
+                   column (mth/round column)
+                   row    (mth/round row)
+                   [property value]
                    (cond
                      (and (= type :column) (or (= field :all) (= field :start)))
                      [:column value]
