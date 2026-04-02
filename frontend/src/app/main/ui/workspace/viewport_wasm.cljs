@@ -16,6 +16,7 @@
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.config :as cfg]
    [app.main.data.common :as dcm]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.variants :as dwv]
@@ -643,7 +644,7 @@
          [:& presence/active-cursors
           {:page-id page-id}])
 
-       (when-not hide-ui?
+       (when-not (or hide-ui? (contains? cfg/flags :render-wasm-rulers))
          [:& rulers/rulers
           {:zoom zoom
            :zoom-inverse zoom-inverse
