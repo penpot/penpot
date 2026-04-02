@@ -157,7 +157,7 @@
 
      (cond
        (and edit-grid? (d/not-empty? selected-cells))
-       [:& grid-cell/options
+       [:> grid-cell/options*
         {:shape (get objects edition)
          :cells selected-cells}]
 
