@@ -21,17 +21,10 @@
    [rumext.v2 :as mf]))
 
 ;; Helper to debug the bounds when set the "hug" content property
-(mf/defc debug-content-bounds
+(mf/defc debug-content-bounds*
   "Debug component to show the auto-layout drop areas"
-  {::mf/wrap-props false}
-  [props]
-
-  (let [objects            (unchecked-get props "objects")
-        zoom               (unchecked-get props "zoom")
-        selected-shapes    (unchecked-get props "selected-shapes")
-        hover-top-frame-id (unchecked-get props "hover-top-frame-id")
-
-        selected-frame
+  [{:keys [objects zoom selected-shapes hover-top-frame-id]}]
+  (let [selected-frame
         (when (and (= (count selected-shapes) 1) (= :frame (-> selected-shapes first :type)))
           (first selected-shapes))
 
@@ -72,17 +65,10 @@
                       :r (/ 4 zoom)
                       :style {:fill "red"}}])]]))))
 
-(mf/defc debug-layout-lines
+(mf/defc debug-layout-lines*
   "Debug component to show the auto-layout drop areas"
-  {::mf/wrap-props false}
-  [props]
-
-  (let [objects            (unchecked-get props "objects")
-        zoom               (unchecked-get props "zoom")
-        selected-shapes    (unchecked-get props "selected-shapes")
-        hover-top-frame-id (unchecked-get props "hover-top-frame-id")
-
-        selected-frame
+  [{:keys [objects zoom selected-shapes hover-top-frame-id]}]
+  (let [selected-frame
         (when (and (= (count selected-shapes) 1) (= :frame (-> selected-shapes first :type)))
           (first selected-shapes))
 
@@ -117,18 +103,11 @@
               [:polygon {:points (->> points (map #(dm/fmt "%, %" (:x %) (:y %))) (str/join " "))
                          :style {:stroke "red" :stroke-width (/ 2 zoom) :stroke-dasharray (dm/str (/ 10 zoom) " " (/ 5 zoom))}}]]))]))))
 
-(mf/defc debug-drop-zones
+(mf/defc debug-drop-zones*
   "Debug component to show the auto-layout drop areas"
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["objects" "selected-shapes" "hover-top-frame-id"]))]
-   ::mf/wrap-props false}
-  [props]
-
-  (let [objects            (unchecked-get props "objects")
-        zoom               (unchecked-get props "objects")
-        selected-shapes    (unchecked-get props "selected-shapes")
-        hover-top-frame-id (unchecked-get props "hover-top-frame-id")
-
-        selected-frame
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["objects" "selected-shapes" "hover-top-frame-id"]))]}
+  [{:keys [objects zoom selected-shapes hover-top-frame-id]}]
+  (let [selected-frame
         (when (and (= (count selected-shapes) 1) (= :frame (-> selected-shapes first :type)))
           (first selected-shapes))
 
@@ -159,15 +138,10 @@
                     :fill "black"}
              (:index drop-area)]])]))))
 
-(mf/defc shape-parent-bound
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "parent"]))]
-   ::mf/wrap-props false}
-  [props]
-
-  (let [shape (unchecked-get props "shape")
-        parent (unchecked-get props "parent")
-        zoom (unchecked-get props "zoom")
-        [i1 i2 i3 i4] (gpo/parent-coords-bounds (:points shape) (:points parent))]
+(mf/defc shape-parent-bound*
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "parent"]))]}
+  [{:keys [shape parent zoom]}]
+  (let [[i1 i2 i3 i4] (gpo/parent-coords-bounds (:points shape) (:points parent))]
     [:*
      [:polygon {:points (->> [i1 i2 i3 i4] (map #(dm/fmt "%,%" (:x %) (:y %))) (str/join ","))
                 :style {:fill "none" :stroke "red" :stroke-width (/ 1 zoom)}}]
@@ -183,16 +157,9 @@
              :y2 (:y i4)
              :style {:stroke "blue" :stroke-width (/ 1 zoom)}}]]))
 
-(mf/defc debug-parent-bounds
-  {::mf/wrap-props false}
-  [props]
-
-  (let [objects            (unchecked-get props "objects")
-        zoom               (unchecked-get props "zoom")
-        selected-shapes    (unchecked-get props "selected-shapes")
-        hover-top-frame-id (unchecked-get props "hover-top-frame-id")
-
-        selected-frame
+(mf/defc debug-parent-bounds*
+  [{:keys [objects zoom selected-shapes hover-top-frame-id]}]
+  (let [selected-frame
         (when (and (= (count selected-shapes) 1) (= :frame (-> selected-shapes first :type)))
           (first selected-shapes))
 
@@ -207,10 +174,10 @@
         [:g.debug-parent-bounds {:pointer-events "none"}
          (for [[idx child] (d/enumerate children)]
            [:*
-            [:> shape-parent-bound {:key (dm/str "bound-" idx)
-                                    :zoom zoom
-                                    :shape child
-                                    :parent parent}]
+            [:> shape-parent-bound* {:key (dm/str "bound-" idx)
+                                     :zoom zoom
+                                     :shape child
+                                     :parent parent}]
 
             (let [child-bounds (:points child)
                   points
@@ -223,16 +190,9 @@
                           :r (/ 2 zoom)
                           :style {:fill "red"}}]))])]))))
 
-(mf/defc debug-grid-layout
-  {::mf/wrap-props false}
-  [props]
-
-  (let [objects            (unchecked-get props "objects")
-        zoom               (unchecked-get props "zoom")
-        selected-shapes    (unchecked-get props "selected-shapes")
-        hover-top-frame-id (unchecked-get props "hover-top-frame-id")
-
-        selected-frame
+(mf/defc debug-grid-layout*
+  [{:keys [objects zoom selected-shapes hover-top-frame-id]}]
+  (let [selected-frame
         (when (and (= (count selected-shapes) 1) (= :frame (-> selected-shapes first :type)))
           (first selected-shapes))
 
@@ -277,13 +237,9 @@
                      :style {:stroke "red"
                              :stroke-width (/ 1 zoom)}}]))]))))
 
-(mf/defc debug-text-wasm-position-data
-  {::mf/wrap-props false}
-  [props]
-  (let [zoom               (unchecked-get props "zoom")
-        selected-shapes    (unchecked-get props "selected-shapes")
-
-        selected-text
+(mf/defc debug-text-wasm-position-data*
+  [{:keys [zoom selected-shapes]}]
+  (let [selected-text
         (when (and (= (count selected-shapes) 1) (= :text (-> selected-shapes first :type)))
           (first selected-shapes))
 
