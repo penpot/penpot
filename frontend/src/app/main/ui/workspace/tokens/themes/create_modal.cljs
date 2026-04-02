@@ -38,7 +38,7 @@
 
 ;; Form Component --------------------------------------------------------------
 
-(mf/defc empty-themes
+(mf/defc empty-themes*
   [{:keys [change-view]}]
   (let [create-theme
         (mf/use-fn
@@ -65,7 +65,7 @@
                     :on-click create-theme}
         (tr "workspace.tokens.add-new-theme")]]]]))
 
-(mf/defc themes-overview
+(mf/defc themes-overview*
   [{:keys [change-view]}]
   (let [active-theme-paths (mf/deref refs/workspace-active-theme-paths)
         themes-groups (mf/deref refs/workspace-token-theme-tree-no-hidden)
@@ -221,7 +221,7 @@
                   :on-change on-update-name}]]]))
 
 (mf/defc theme-modal-buttons*
-  [{:keys [close-modal on-save-form disabled?] :as props}]
+  [{:keys [close-modal on-save-form is-disabled] :as props}]
   (let [handle-key-down-cancel
         (mf/use-fn
          (mf/deps close-modal)
@@ -246,7 +246,7 @@
                   :type "submit"
                   :on-click on-save-form
                   :on-key-down handle-key-down-save
-                  :disabled disabled?}
+                  :disabled is-disabled}
       (tr "workspace.tokens.save-theme")]]))
 
 (defn- make-lib-with-theme
@@ -381,12 +381,12 @@
         [:div {:class (stl/css :button-footer)}
          [:> theme-modal-buttons* {:close-modal close-modal
                                    :on-save-form on-save-form
-                                   :disabled? disabled?}]]]]]]))
+                                   :is-disabled disabled?}]]]]]]))
 
 (defn has-prev-view [prev-view-type]
   (contains? #{:empty-themes :themes-overview} prev-view-type))
 
-(mf/defc edit-theme
+(mf/defc edit-theme*
   [{:keys [state change-view]}]
   (let [{:keys [theme-info]} state
         [theme-id _ _] theme-info
@@ -406,7 +406,7 @@
       :is-editing true
       :has-prev-view has-prev-view}]))
 
-(mf/defc create-theme
+(mf/defc create-theme*
   [{:keys [state change-view]}]
   (let [theme (ctob/make-token-theme :name "")
         on-save
@@ -440,11 +440,11 @@
                                          :theme-info (assoc :theme-info theme-info))))))
 
         component (case (:type state)
-                    :empty-themes empty-themes
-                    :themes-overview (if (empty? themes) empty-themes themes-overview)
-                    :edit-theme edit-theme
-                    :create-theme create-theme)]
-    [:& component {:state state
+                    :empty-themes empty-themes*
+                    :themes-overview (if (empty? themes) empty-themes* themes-overview*)
+                    :edit-theme edit-theme*
+                    :create-theme create-theme*)]
+    [:> component {:state state
                    :change-view change-view}]))
 
 (mf/defc token-themes-modal
