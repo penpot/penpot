@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu]]
+   [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu*]]
    [app.main.ui.workspace.tokens.management.group :refer [token-group*]]
    [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu*]]
    [app.util.array :as array]
@@ -189,7 +189,7 @@
             (st/emit! (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
 
     [:*
-     [:& token-context-menu {:on-delete-token delete-token}]
+     [:> token-context-menu* {:on-delete-token delete-token}]
      [:> token-node-context-menu* {:on-delete-node delete-node}]
 
      [:> selected-set-info* {:tokens-lib tokens-lib
