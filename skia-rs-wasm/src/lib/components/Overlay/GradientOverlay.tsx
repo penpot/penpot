@@ -271,7 +271,7 @@ export function GradientOverlay({
         {angularPoints.stops.map((stop, i) => {
           const vp = toViewport(stop.local)
           return (
-            <g key={i} style={{ pointerEvents: 'none' }}>
+            <g key={i}>
               <rect
                 x={vp.x + stopR}
                 y={vp.y - stopR * 2}
@@ -281,8 +281,17 @@ export function GradientOverlay({
                 fillOpacity={stop.opacity ?? 1}
                 stroke={HANDLE_FILL}
                 strokeWidth={lineStroke / 2}
+                style={{ pointerEvents: 'none' }}
               />
-              <circle cx={vp.x} cy={vp.y} r={stopR} fill={HANDLE_FILL} />
+              <circle cx={vp.x} cy={vp.y} r={stopR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+              <rect
+                x={vp.x + stopR - hitR / 2}
+                y={vp.y - stopR * 2 - hitR / 2}
+                width={stopR * 4 + hitR}
+                height={stopR * 4 + hitR}
+                fill="transparent"
+                {...handleProps({ type: 'stop', index: i })}
+              />
             </g>
           )
         })}
@@ -319,7 +328,7 @@ export function GradientOverlay({
         {stops.map((stop, i) => {
           const vp = toViewport(stop.local)
           return (
-            <g key={i} style={{ pointerEvents: 'none' }}>
+            <g key={i}>
               <rect
                 x={vp.x + stopR}
                 y={vp.y - stopR * 2}
@@ -329,8 +338,17 @@ export function GradientOverlay({
                 fillOpacity={stop.opacity ?? 1}
                 stroke={HANDLE_FILL}
                 strokeWidth={lineStroke / 2}
+                style={{ pointerEvents: 'none' }}
               />
-              <circle cx={vp.x} cy={vp.y} r={stopR} fill={HANDLE_FILL} />
+              <circle cx={vp.x} cy={vp.y} r={stopR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+              <rect
+                x={vp.x + stopR - hitR / 2}
+                y={vp.y - stopR * 2 - hitR / 2}
+                width={stopR * 4 + hitR}
+                height={stopR * 4 + hitR}
+                fill="transparent"
+                {...handleProps({ type: 'stop', index: i })}
+              />
             </g>
           )
         })}
@@ -360,7 +378,7 @@ export function GradientOverlay({
       {points.stops.map((stop, i) => {
         const vp = toViewport(stop.local)
         return (
-          <g key={i} style={{ pointerEvents: 'none' }}>
+          <g key={i}>
             <rect
               x={vp.x + stopR}
               y={vp.y - stopR * 2}
@@ -370,8 +388,17 @@ export function GradientOverlay({
               fillOpacity={stop.opacity ?? 1}
               stroke={HANDLE_FILL}
               strokeWidth={lineStroke / 2}
+              style={{ pointerEvents: 'none' }}
             />
-            <circle cx={vp.x} cy={vp.y} r={stopR} fill={HANDLE_FILL} />
+            <circle cx={vp.x} cy={vp.y} r={stopR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+            <rect
+              x={vp.x + stopR - hitR / 2}
+              y={vp.y - stopR * 2 - hitR / 2}
+              width={stopR * 4 + hitR}
+              height={stopR * 4 + hitR}
+              fill="transparent"
+              {...handleProps({ type: 'stop', index: i })}
+            />
           </g>
         )
       })}

@@ -55,7 +55,7 @@ export const GRADIENT_LINE_STROKE_WORLD = 2
 /** Gradient overlay: endpoint circle radius in world units */
 export const GRADIENT_ENDPOINT_RADIUS_WORLD = 4
 /** Gradient overlay: stop position dot radius in world units */
-export const GRADIENT_STOP_DOT_RADIUS_WORLD = 2
+export const GRADIENT_STOP_DOT_RADIUS_WORLD = 5
 
 /** Cursor for the rotation hit area (fallback when custom SVG not used) */
 export const ROTATION_CURSOR = 'grab'

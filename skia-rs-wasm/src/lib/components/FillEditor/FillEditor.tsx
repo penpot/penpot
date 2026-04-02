@@ -18,9 +18,9 @@ const defaultStops = [
 const defaultLinearGradient: Gradient = {
   type: 'linear',
   startX: 0,
-  startY: 0,
+  startY: 0.5,
   endX: 1,
-  endY: 0,
+  endY: 0.5,
   width: 0,
   stops: [...defaultStops],
 }
