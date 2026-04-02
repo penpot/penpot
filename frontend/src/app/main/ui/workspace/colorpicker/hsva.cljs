@@ -8,10 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.color :as cc]
-   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
+   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector*]]
    [rumext.v2 :as mf]))
 
-(mf/defc hsva-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
+(mf/defc hsva-selector* [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
   (let [{hue :h saturation :s value :v alpha :alpha} color
         handle-change-slider (fn [key]
                                (fn [new-value]
@@ -26,7 +26,7 @@
     [:div {:class (stl/css :hsva-selector)}
      [:div {:class (stl/css :hsva-row)}
       [:span {:class (stl/css :hsva-selector-label)} "H"]
-      [:& slider-selector
+      [:> slider-selector*
        {:class (stl/css :hsva-bar)
         :type :hue
         :max-value 360
@@ -36,7 +36,7 @@
         :on-finish-drag on-finish-drag}]]
      [:div {:class (stl/css :hsva-row)}
       [:span {:class (stl/css :hsva-selector-label)} "S"]
-      [:& slider-selector
+      [:> slider-selector*
        {:class (stl/css :hsva-bar)
         :type :saturation
         :max-value 1
@@ -46,10 +46,10 @@
         :on-finish-drag on-finish-drag}]]
      [:div {:class (stl/css :hsva-row)}
       [:span {:class (stl/css :hsva-selector-label)} "V"]
-      [:& slider-selector
+      [:> slider-selector*
        {:class (stl/css :hsva-bar)
         :type :value
-        :reverse? false
+        :is-reverse false
         :max-value 255
         :value value
         :on-change (handle-change-slider :v)
@@ -58,7 +58,7 @@
      (when (not disable-opacity)
        [:div {:class (stl/css :hsva-row)}
         [:span {:class (stl/css :hsva-selector-label)} "A"]
-        [:& slider-selector
+        [:> slider-selector*
          {:class (stl/css :hsva-bar)
           :type :opacity
           :max-value 1
