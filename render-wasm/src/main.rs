@@ -137,12 +137,11 @@ pub extern "C" fn clean_up() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_render_options(debug: u32, dpr: f32) -> Result<()> {
+    // TODO: add a theme selector here
     with_state_mut!(state, {
         let render_state = state.render_state_mut();
         render_state.set_debug_flags(debug);
         render_state.set_dpr(dpr)?;
-
-        println!("rulers enabled? {:?}", render_state.options.are_rulers_enabled());
     });
     Ok(())
 }

@@ -3,6 +3,7 @@ use skia_safe::{self as skia, Color4f};
 use super::{RenderState, ShapesPoolRef, SurfaceId};
 use crate::render::grid_layout;
 use crate::shapes::{Layout, Type};
+use crate::view::Viewbox;
 
 mod themes;
 use themes::UITheme;
@@ -76,7 +77,7 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef, theme: &imp
     canvas.restore();
 
     if render_options.are_rulers_enabled() {
-        render_rulers(canvas, theme);
+        render_rulers(canvas, theme, viewbox, render_options.dpr());
     }
 
     render_state.surfaces.draw_into(
@@ -86,6 +87,37 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef, theme: &imp
     );
 }
 
-fn render_rulers(canvas: &skia::Canvas, _theme: &impl UITheme) {
-    canvas.draw_rect(skia::Rect::new(0.0, 0.0, 100.0, 100.0), &skia::Paint::default());
+fn render_rulers(canvas: &skia::Canvas, theme: &impl UITheme, viewbox: Viewbox, dpr: f32) {
+    let width = viewbox.width;
+    let height = viewbox.height;
+
+    let offset_x = 22.0;
+    let offset_y = 25.0;
+
+    let mut paint = skia::Paint::default();
+    paint.set_color(theme.panel_background_color());
+
+    let full = skia::Rect::new(0.0, 0.0, width * dpr, height * dpr);
+    // bottom-right content rect; top/left strips remain as ruler chrome.
+    let inner = skia::Rect::new(offset_x * dpr, offset_y * dpr, width * dpr, height * dpr);
+    let rr = 8.0 * dpr;
+    let inner_radii = [
+        skia::Point::new(rr, rr),
+        skia::Point::new(rr, rr),
+        skia::Point::new(rr, rr),
+        skia::Point::new(rr, rr),
+    ];
+    let inner_rrect = skia::RRect::new_rect_radii(inner, &inner_radii);
+
+    // draw a clipped background to build the rulers
+    canvas.save();
+    canvas.clip_rrect(inner_rrect, skia::ClipOp::Difference, true);
+    canvas.draw_rect(full, &paint);
+    canvas.restore();
+
+    // paint the inner border on the clipping
+    paint.set_style(skia::PaintStyle::Stroke);
+    paint.set_stroke_width(2.0 * dpr);
+    paint.set_color(theme.panel_border_color());
+    canvas.draw_rrect(inner_rrect, &paint);
 }

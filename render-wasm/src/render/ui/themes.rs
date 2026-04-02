@@ -5,6 +5,7 @@ pub trait UITheme {
     fn panel_border_color(&self) -> Color;
 }
 
+#[allow(dead_code)]
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct LightTheme {}
 
