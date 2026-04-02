@@ -40,9 +40,8 @@
                    :default-checked false
                    :label updates-label}]]))
 
-(mf/defc terms-and-privacy
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc terms-and-privacy*
+  {::mf/private true}
   []
   (let [terms-label
         (mf/html
@@ -70,8 +69,7 @@
    [:accept-newsletter-updates {:optional true} :boolean]
    [:token {:optional true} ::sm/text]])
 
-(mf/defc register-form
-  {::mf/props :obj}
+(mf/defc register-form*
   [{:keys [params on-success-callback]}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
         form    (fm/use-form :schema schema:register-form
@@ -150,8 +148,7 @@
                    (assoc :create-welcome-file true))]
 
              (->> (rp/cmd! :prepare-register-profile cdata)
-                  (rx/finalize #(reset! submitted? false))
-                  (rx/subs! on-register-profile on-error)))))]
+                  (rx/subs! on-register-profile on-error #(reset! submitted? false))))))]
 
     [:& fm/form {:on-submit on-submit :form form}
      [:div {:class (stl/css :fields-row)}
@@ -177,7 +174,7 @@
                     :class (stl/css :form-field)}]]
 
      (when (contains? cf/flags :terms-and-privacy-checkbox)
-       [:& terms-and-privacy])
+       [:> terms-and-privacy*])
 
      [:> newsletter-options*]
 
@@ -187,8 +184,7 @@
        :data-testid "register-form-submit"
        :class (stl/css :register-btn)}]]))
 
-(mf/defc register-methods
-  {::mf/props :obj}
+(mf/defc register-methods*
   [{:keys [params hide-separator on-success-callback]}]
   [:*
    (when login/show-sso-login-buttons?
@@ -196,19 +192,18 @@
    (when (or login/show-sso-login-buttons? (false? hide-separator))
      [:hr {:class (stl/css :separator)}])
    (when (contains? cf/flags :login-with-password)
-     [:& register-form {:params params :on-success-callback on-success-callback}])])
+     [:> register-form* {:params params :on-success-callback on-success-callback}])])
 
-(mf/defc register-page
-  {::mf/props :obj}
+(mf/defc register-page*
   [{:keys [params]}]
   [:div {:class (stl/css :auth-form-wrapper :register-form)}
    [:h1 {:class (stl/css :auth-title)
          :data-testid "registration-title"} (tr "auth.register-title")]
 
    (when (contains? cf/flags :demo-warning)
-     [:& login/demo-warning])
+     [:> login/demo-warning*])
 
-   [:& register-methods {:params params}]
+   [:> register-methods* {:params params}]
 
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :account)}
@@ -228,8 +223,7 @@
 
 ;; --- PAGE: register success page
 
-(mf/defc register-success-page
-  {::mf/props :obj}
+(mf/defc register-success-page*
   [{:keys [params]}]
   (let [email (or (:email params) (::email storage/user))]
     [:div {:class (stl/css :auth-form-wrapper :register-success)}
@@ -239,8 +233,7 @@
       [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
      [:div {:class (stl/css :notification-text-email)} email]]))
 
-
-(mf/defc terms-register
+(mf/defc terms-register*
   []
   (let [show-all?     (and cf/terms-of-service-uri cf/privacy-policy-uri)
         show-terms?   (some? cf/terms-of-service-uri)
@@ -267,13 +260,14 @@
    [:token ::sm/text]
    [:fullname [::sm/text {:max 250}]]
    [:accept-terms-and-privacy {:optional (not (contains? cf/flags :terms-and-privacy-checkbox))}
-    [:and :boolean [:= true]]]])
+    [:and :boolean [:= true]]]
+   [:accept-newsletter-updates {:optional true} :boolean]])
 
-(mf/defc register-validate-form
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc register-validate-form*
+  {::mf/private true}
   [{:keys [params on-success-callback]}]
-  (let [form       (fm/use-form :schema schema:register-validate-form :initial params)
+  (let [form
+        (fm/use-form :schema schema:register-validate-form :initial params)
 
         submitted?
         (mf/use-state false)
@@ -331,7 +325,9 @@
                     :class (stl/css :form-field)}]]
 
      (when (contains? cf/flags :terms-and-privacy-checkbox)
-       [:& terms-and-privacy])
+       [:> terms-and-privacy*])
+
+     [:> newsletter-options*]
 
      [:> fm/submit-button*
       {:label (tr "auth.register-submit")
@@ -339,8 +335,7 @@
        :class (stl/css :register-btn)}]]))
 
 
-(mf/defc register-validate-page
-  {::mf/props :obj}
+(mf/defc register-validate-page*
   [{:keys [params]}]
   [:div {:class (stl/css :auth-form-wrapper :register-form)}
 
@@ -350,7 +345,7 @@
           :data-testid "register-title"} (tr "auth.register-account-title")]
     [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-account-tagline")]]
 
-   [:& register-validate-form {:params params}]
+   [:> register-validate-form* {:params params}]
 
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :go-back)}

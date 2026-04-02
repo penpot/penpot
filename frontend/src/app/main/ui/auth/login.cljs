@@ -20,7 +20,6 @@
    [app.main.ui.components.link :as lk]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.storage :as s]
@@ -34,10 +33,9 @@
          :login-with-gitlab
          :login-with-oidc]))
 
-(mf/defc demo-warning
-  {::mf/props :obj}
+(mf/defc demo-warning*
   []
-  [:& context-notification
+  [:> context-notification*
    {:level :warning
     :content (tr "auth.demo-warning")}])
 
@@ -274,7 +272,7 @@
       (tr "auth.login-tagline")]
 
      (when (contains? cf/flags :demo-warning)
-       [:& demo-warning])
+       [:> demo-warning*])
 
      [:> login-dialog* {:params params}]
 
