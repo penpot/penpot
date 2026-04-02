@@ -12,7 +12,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.workspace.tokens.themes.theme-selector :refer [theme-selector]]
+   [app.main.ui.workspace.tokens.themes.theme-selector :refer [theme-selector*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -44,7 +44,7 @@
            (tr "workspace.tokens.create-one")])]
        (if can-edit?
          [:div {:class (stl/css :theme-selector-wrapper)}
-          [:& theme-selector]
+          [:> theme-selector*]
           [:> button* {:variant "secondary"
                        :type "button"
                        :class (stl/css :edit-theme-button)
@@ -52,4 +52,4 @@
            (tr "labels.edit")]]
          [:div {:title (when-not can-edit?
                          (tr "workspace.tokens.no-permission-themes"))}
-          [:& theme-selector]]))]))
+          [:> theme-selector*]]))]))
