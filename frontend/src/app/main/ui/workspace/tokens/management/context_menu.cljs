@@ -384,8 +384,7 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
-(mf/defc menu-entry
-  {::mf/props :obj}
+(mf/defc menu-entry*
   [{:keys [title value hint on-click selected? children submenu-offset no-selectable]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
@@ -466,12 +465,12 @@
       [:* {:key (dm/str title " " index)}
        (cond
          (= :separator entry) [:li {:class (stl/css :separator)}]
-         submenu [:& menu-entry {:title title
-                                 :hint hint
-                                 :no-selectable true
-                                 :submenu-offset submenu-offset}
+         submenu [:> menu-entry* {:title title
+                                  :hint hint
+                                  :no-selectable true
+                                  :submenu-offset submenu-offset}
                   [:> menu-tree* (assoc context-data :type submenu)]]
-         :else [:& menu-entry
+         :else [:> menu-entry*
                 {:title title
                  :on-click action
                  :hint hint
