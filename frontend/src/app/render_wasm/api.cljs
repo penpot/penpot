@@ -1659,25 +1659,30 @@
                  ;; Add comprehensive nil-safety checks
                  ;; Be aware that for RTL texts `start-pos` can be greatert han `end-pos`
                  (when (and element element-text)
-                   (let [text (subs element-text start-pos end-pos)]
+                   (let [text (subs element-text start-pos end-pos)
+                         not-nil-or-blank?
+                         (fn [[_ v]]
+                           (and (some? v)
+                                (not (and (string? v) (identical? v "")))))]
                      (d/patch-object
                       txt/default-text-attrs
-                      (d/without-nils
-                       {:x x
-                        :y (+ y height)
-                        :width width
-                        :height height
-                        :direction       (dr/translate-direction direction)
-                        :font-id         (get element :font-id)
-                        :font-family     (get element :font-family)
-                        :font-size       (get element :font-size)
-                        :font-weight     (get element :font-weight)
-                        :text-transform  (get element :text-transform)
-                        :text-decoration (get element :text-decoration)
-                        :letter-spacing  (get element :letter-spacing)
-                        :font-style      (get element :font-style)
-                        :fills           (get element :fills)
-                        :text            text})))))))
+                      (into {}
+                            (filter not-nil-or-blank?)
+                            {:x x
+                             :y (+ y height)
+                             :width width
+                             :height height
+                             :direction       (dr/translate-direction direction)
+                             :font-id         (get element :font-id)
+                             :font-family     (get element :font-family)
+                             :font-size       (get element :font-size)
+                             :font-weight     (get element :font-weight)
+                             :text-transform  (get element :text-transform)
+                             :text-decoration (get element :text-decoration)
+                             :letter-spacing  (get element :letter-spacing)
+                             :font-style      (get element :font-style)
+                             :fills           (get element :fills)
+                             :text            text})))))))
             result))))
 
 (defn apply-canvas-blur

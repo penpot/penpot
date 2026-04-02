@@ -199,12 +199,20 @@
        (let [style-name (get-style-name-as-css-variable k)
              [_ style-decode] (get mapping k)
              style-value (.getPropertyValue style-declaration style-name)]
-         (when (or (not removed-mixed) (not (contains? mixed-values style-value)))
-           (assoc acc k (style-decode style-value))))
+         (if (or (not removed-mixed) (not (contains? mixed-values style-value)))
+           (let [decoded (style-decode style-value)]
+             (if (or (nil? decoded) (and (string? decoded) (str/blank? decoded)))
+               acc
+               (assoc acc k decoded)))
+           acc))
        (let [style-name (get-style-name k)
-             style-value (normalize-attr-value k (.getPropertyValue style-declaration style-name))]
-         (when (or (not removed-mixed) (not (contains? mixed-values style-value)))
-           (assoc acc k style-value))))) {} txt/text-style-attrs))
+             raw-value (.getPropertyValue style-declaration style-name)]
+         (if (and (some? raw-value) (not (str/blank? raw-value)))
+           (let [style-value (normalize-attr-value k raw-value)]
+             (if (or (not removed-mixed) (not (contains? mixed-values style-value)))
+               (assoc acc k style-value)
+               acc))
+           acc)))) {} txt/text-style-attrs))
 
 (defn get-styles-from-event
   "Returns a ClojureScript object compatible with text nodes"

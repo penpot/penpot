@@ -137,7 +137,7 @@
                 {:content {:data (chunk-array data default-chunk-size)
                            :name name
                            :type type}
-                 :font-family (or family "")
+                 :font-family (or family "Custom Font")
                  :font-weight (cm/parse-font-weight variant)
                  :font-style  (cm/parse-font-style variant)
                  :height-warning? height-warning?})

@@ -98,13 +98,13 @@
                                                  (dm/get-prop position :height)))]
               (into position (filter val)
                     {:direction       direction
-                     :font-family     (dm/str (get-prop styles "font-family"))
-                     :font-size       (dm/str (get-prop styles "font-size"))
-                     :font-weight     (dm/str (get-prop styles "font-weight"))
-                     :text-transform  (dm/str (get-prop styles "text-transform"))
-                     :text-decoration (dm/str (get-prop styles "text-decoration"))
-                     :letter-spacing  (dm/str (get-prop styles "letter-spacing"))
-                     :font-style      (dm/str (get-prop styles "font-style"))
+                     :font-family     (get-prop styles "font-family")
+                     :font-size       (get-prop styles "font-size")
+                     :font-weight     (get-prop styles "font-weight")
+                     :text-transform  (get-prop styles "text-transform")
+                     :text-decoration (get-prop styles "text-decoration")
+                     :letter-spacing  (get-prop styles "letter-spacing")
+                     :font-style      (get-prop styles "font-style")
                      :fills           (transit/decode-str (get-prop styles "--fills"))
                      :text            text})))]
 
