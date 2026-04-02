@@ -11,11 +11,11 @@
    [app.common.math :as mth]
    [app.common.types.color :as cc]
    [app.main.ui.components.color-bullet :as cb]
-   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
+   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector*]]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(mf/defc value-saturation-selector [{:keys [saturation value on-change on-start-drag on-finish-drag]}]
+(mf/defc value-saturation-selector* [{:keys [saturation value on-change on-start-drag on-finish-drag]}]
   (let [dragging?* (mf/use-state false)
         dragging? (deref dragging?*)
         calculate-pos
@@ -127,7 +127,7 @@
        (reset! internal-color* (enrich-color-map color))))
 
     [:*
-     [:& value-saturation-selector
+     [:> value-saturation-selector*
       {:hue h
        :saturation s
        :value v
@@ -140,17 +140,17 @@
       [:& cb/color-bullet {:color bullet-color
                            :area true}]
       [:div {:class (stl/css :sliders-wrapper)}
-       [:& slider-selector {:type :hue
-                            :max-value 360
-                            :value h
-                            :on-change on-change-hue
-                            :on-start-drag on-start-drag
-                            :on-finish-drag on-finish-drag}]
+       [:> slider-selector* {:type :hue
+                             :max-value 360
+                             :value h
+                             :on-change on-change-hue
+                             :on-start-drag on-start-drag
+                             :on-finish-drag on-finish-drag}]
 
        (when (not disable-opacity)
-         [:& slider-selector {:type :opacity
-                              :max-value 1
-                              :value alpha
-                              :on-change on-change-opacity
-                              :on-start-drag on-start-drag
-                              :on-finish-drag on-finish-drag}])]]]))
+         [:> slider-selector* {:type :opacity
+                               :max-value 1
+                               :value alpha
+                               :on-change on-change-opacity
+                               :on-start-drag on-start-drag
+                               :on-finish-drag on-finish-drag}])]]]))
