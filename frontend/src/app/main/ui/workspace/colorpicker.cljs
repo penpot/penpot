@@ -33,12 +33,12 @@
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
+   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs*]]
    [app.main.ui.workspace.colorpicker.color-tokens :refer [token-section*]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
-   [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
-   [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
-   [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]
+   [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector*]]
+   [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector*]]
+   [app.main.ui.workspace.colorpicker.libraries :refer [libraries*]]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.colorpicker.shortcuts :as sc]
    [app.util.dom :as dom]
@@ -511,27 +511,27 @@
                     :on-finish-drag on-finish-drag}]
 
                   "harmony"
-                  [:& harmony-selector
+                  [:> harmony-selector*
                    {:color current-color
                     :disable-opacity disable-opacity
                     :on-change handle-change-color
                     :on-start-drag on-start-drag}]
 
                   "hsva"
-                  [:& hsva-selector
+                  [:> hsva-selector*
                    {:color current-color
                     :disable-opacity disable-opacity
                     :on-change handle-change-color
                     :on-start-drag on-start-drag
                     :on-finish-drag on-finish-drag}]))]]
 
-            [:& color-inputs
+            [:> color-inputs*
              {:type type
               :disable-opacity disable-opacity
               :color current-color
               :on-change handle-change-color}]
 
-            [:& libraries
+            [:> libraries*
              {:state state
               :current-color current-color
               :disable-gradient disable-gradient
