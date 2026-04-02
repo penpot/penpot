@@ -17,12 +17,10 @@
 (defn group-wrapper-factory
   [shape-wrapper]
   (let [group-shape (group/group-shape shape-wrapper)]
-    (mf/fnc group-wrapper
-      {::mf/wrap [#(mf/memo' % check-shape-props)]
-       ::mf/wrap-props false}
-      [props]
-      (let [shape    (unchecked-get props "shape")
-            shape-id (dm/get-prop shape :id)
+    (mf/fnc group-wrapper*
+      {::mf/wrap [#(mf/memo' % check-shape-props)]}
+      [{:keys [shape]}]
+      (let [shape-id (dm/get-prop shape :id)
 
             childs*  (mf/with-memo [shape-id]
                        (refs/children-objects shape-id))

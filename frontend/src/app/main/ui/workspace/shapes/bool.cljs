@@ -17,12 +17,10 @@
 (defn bool-wrapper-factory
   [shape-wrapper]
   (let [bool-shape (bool/bool-shape shape-wrapper)]
-    (mf/fnc bool-wrapper
-      {::mf/wrap [#(mf/memo' % check-shape-props)]
-       ::mf/wrap-props false}
-      [props]
-      (let [shape      (unchecked-get props "shape")
-            shape-id   (dm/get-prop shape :id)
+    (mf/fnc bool-wrapper*
+      {::mf/wrap [#(mf/memo' % check-shape-props)]}
+      [{:keys [shape]}]
+      (let [shape-id   (dm/get-prop shape :id)
 
             child-sel* (mf/with-memo [shape-id]
                          (refs/is-child-selected? shape-id))

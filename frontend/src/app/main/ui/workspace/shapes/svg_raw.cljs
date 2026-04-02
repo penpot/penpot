@@ -16,12 +16,10 @@
 (defn svg-raw-wrapper-factory
   [shape-wrapper]
   (let [svg-raw-shape (svg-raw/svg-raw-shape shape-wrapper)]
-    (mf/fnc svg-raw-wrapper
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
-       ::mf/wrap-props false}
-      [props]
-      (let [shape      (unchecked-get props "shape")
-            childs-ref (mf/use-memo (mf/deps (:id shape)) #(refs/children-objects (:id shape)))
+    (mf/fnc svg-raw-wrapper*
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]}
+      [{:keys [shape]}]
+      (let [childs-ref (mf/use-memo (mf/deps (:id shape)) #(refs/children-objects (:id shape)))
             childs     (mf/deref childs-ref)
             svg-tag    (get-in shape [:content :tag])]
         (if (contains? csvg/svg-group-safe-tags svg-tag)

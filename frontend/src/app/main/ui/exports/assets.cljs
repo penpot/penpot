@@ -17,7 +17,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.shapes :refer [shape-wrapper]]
+   [app.main.ui.workspace.shapes :refer [shape-wrapper*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr c]]
    [app.util.strings :as ust]
@@ -140,7 +140,7 @@
                              :style {:-webkit-print-color-adjust :exact}
                              :fill "none"}
 
-                       [:& shape-wrapper {:shape shape}]])]
+                       [:> shape-wrapper* {:shape shape}]])]
 
                    [:div {:class (stl/css :selection-name)}
                     (cond-> (:name shape) suffix (str suffix))]

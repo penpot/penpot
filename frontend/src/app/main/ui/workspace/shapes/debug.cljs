@@ -48,11 +48,9 @@
                 :stroke-width 1
                 :stroke color}]]))
 
-(mf/defc debug-text-bounds
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")
-        zoom (mf/deref refs/selected-zoom)
+(mf/defc debug-text-bounds*
+  [{:keys [shape]}]
+  (let [zoom (mf/deref refs/selected-zoom)
         bounding-box (gst/shape->rect shape)
         ctx (js* "document.createElement(\"canvas\").getContext(\"2d\")")]
     [:g {:transform (gsh/transform-str shape)}
@@ -92,8 +90,7 @@
                   :style {:stroke "green"
                           :stroke-width (/ 2 zoom)}}]]))]))
 
-(mf/defc debug-bool-shape
-  {::mf/wrap-props false}
+(mf/defc debug-bool-shape*
   [{:keys [shape]}]
 
   (let [objects (mf/deref refs/workspace-page-objects)
@@ -181,9 +178,9 @@
 
    (when (and ^boolean (dbg/enabled? :bool-shapes)
               ^boolean (cfh/bool-shape? shape))
-     [:& debug-bool-shape {:shape shape}])
+     [:> debug-bool-shape* {:shape shape}])
 
    (when (and ^boolean (dbg/enabled? :text-outline)
               ^boolean (cfh/text-shape? shape)
               ^boolean (seq (:position-data shape)))
-     [:& debug-text-bounds {:shape shape}])])
+     [:> debug-text-bounds* {:shape shape}])])
