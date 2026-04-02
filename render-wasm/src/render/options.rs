@@ -3,10 +3,11 @@ const DEBUG_VISIBLE: u32 = 0x01;
 const PROFILE_REBUILD_TILES: u32 = 0x02;
 const TEXT_EDITOR_V3: u32 = 0x04;
 const SHOW_WASM_INFO: u32 = 0x08;
+const ENABLE_RULERS: u32 = 0x10;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct RenderOptions {
-    pub flags: u32,
+    flags: u32,
     pub dpr: Option<f32>,
     fast_mode: bool,
     /// Minimum on-screen size (CSS px at 1:1 zoom) above which vector antialiasing is enabled.
@@ -25,6 +26,14 @@ impl Default for RenderOptions {
 }
 
 impl RenderOptions {
+    pub fn set_flags(&mut self, flags: u32) {
+        self.flags = flags;
+    }
+
+    pub fn are_rulers_enabled(&self) -> bool {
+        self.flags & ENABLE_RULERS == ENABLE_RULERS
+    }
+
     pub fn is_debug_visible(&self) -> bool {
         self.flags & DEBUG_VISIBLE == DEBUG_VISIBLE
     }
