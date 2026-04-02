@@ -11,7 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.types.color :as cc]
-   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
+   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector*]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -58,7 +58,7 @@
         y (+ (/ canvas-side 2) (* comp-y (/ canvas-side 2)))]
     (gpt/point x y)))
 
-(mf/defc harmony-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
+(mf/defc harmony-selector* [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
   (let [canvas-ref     (mf/use-ref nil)
         canvas-side    192
         {hue :h saturation :s value :v alpha :alpha} color
@@ -134,24 +134,22 @@
            :style {"--hue-from" (dm/str "hsl(" h1 ", " (* s1 100) "%, " (* l1 100) "%)")
                    "--hue-to" (dm/str "hsl(" h2 ", " (* s2 100) "%, " (* l2 100) "%)")}}
      [:div {:class (stl/css :handlers-wrapper)}
-      [:& slider-selector {:type :value
-                           :vertical? true
-                           :reverse? false
-                           :value value
-                           :max-value 255
-                           :vertical true
-                           :on-change on-change-value
-                           :on-start-drag on-start-drag
-                           :on-finish-drag on-finish-drag}]
+      [:> slider-selector* {:type :value
+                            :is-vertical true
+                            :is-reverse false
+                            :value value
+                            :max-value 255
+                            :on-change on-change-value
+                            :on-start-drag on-start-drag
+                            :on-finish-drag on-finish-drag}]
       (when (not disable-opacity)
-        [[:& slider-selector {:type :opacity
-                              :vertical? true
-                              :value alpha
-                              :max-value 1
-                              :vertical true
-                              :on-change on-change-opacity
-                              :on-start-drag on-start-drag
-                              :on-finish-drag on-finish-drag}]])]
+        [[:> slider-selector* {:type :opacity
+                               :is-vertical true
+                               :value alpha
+                               :max-value 1
+                               :on-change on-change-opacity
+                               :on-start-drag on-start-drag
+                               :on-finish-drag on-finish-drag}]])]
 
      [:div {:class (stl/css :hue-wheel-wrapper)}
       [:canvas {:class (stl/css :hue-wheel)
