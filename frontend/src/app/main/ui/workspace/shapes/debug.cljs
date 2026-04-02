@@ -24,7 +24,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc debug-bounding-boxes
+(mf/defc debug-bounding-boxes*
   [{:keys [shape]}]
   (let [points (->> (:points shape)
                     (map #(dm/fmt "%,%" (dm/get-prop % :x) (dm/get-prop % :y)))
@@ -173,11 +173,11 @@
           (when hp
             [:circle {:data-i i :key (dm/str "c13-" i) :cx (:x hp) :cy (:y hp) :r radius :fill "green"}])]))]))
 
-(mf/defc shape-debug
+(mf/defc shape-debug*
   [{:keys [shape]}]
   [:*
    (when ^boolean (dbg/enabled? :bounding-boxes)
-     [:& debug-bounding-boxes {:shape shape}])
+     [:> debug-bounding-boxes* {:shape shape}])
 
    (when (and ^boolean (dbg/enabled? :bool-shapes)
               ^boolean (cfh/bool-shape? shape))

@@ -47,7 +47,7 @@
         [:& shape-container {:shape shape :ref ref}
          [:& frame-shape {:shape shape :childs childs}]
          (when *assert*
-           [:& wsd/shape-debug {:shape shape}])]))))
+           [:> wsd/shape-debug* {:shape shape}])]))))
 
 (defn check-props
   [new-props old-props]
@@ -230,5 +230,5 @@
              [:& frame-shape {:shape shape :ref content-ref}]])]
 
          (when *assert*
-           [:& wsd/shape-debug {:shape shape}])]))))
+           [:> wsd/shape-debug* {:shape shape}])]))))
 
