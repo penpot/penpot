@@ -439,9 +439,9 @@
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-text-editor?
          (if (features/active-feature? @st/state "text-editor/v2")
-           [:& editor-v2/text-editor {:shape editing-shape
-                                      :canvas-ref canvas-ref
-                                      :modifiers modifiers}]
+           [:> editor-v2/text-editor* {:shape editing-shape
+                                       :canvas-ref canvas-ref
+                                       :modifiers modifiers}]
            [:& editor-v1/text-editor-svg {:shape editing-shape
                                           :modifiers modifiers}]))
 
@@ -621,7 +621,7 @@
                                   :on-click add-variant}])
 
        (when show-presence?
-         [:& presence/active-cursors
+         [:> presence/active-cursors*
           {:page-id page-id}])
 
        (when-not hide-ui?
@@ -704,7 +704,7 @@
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
         (when (or show-grid-editor? hover-grid?)
-          [:& grid-layout/editor
+          [:> grid-layout/editor*
            {:zoom zoom
             :objects base-objects
             :modifiers modifiers
@@ -717,7 +717,7 @@
                      (empty? (:shapes frame))
                      (not= edition (:id frame))
                      (not= @hover-top-frame-id (:id frame)))
-            [:& grid-layout/editor
+            [:> grid-layout/editor*
              {:zoom zoom
               :key (dm/str (:id frame))
               :objects base-objects

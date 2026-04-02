@@ -234,11 +234,10 @@
         (get-contrast-color background-color)))
     (get-contrast-color background-color)))
 
-(mf/defc text-editor-html
+(mf/defc text-editor-html*
   "Text editor (HTML)"
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
-  [{:keys [shape canvas-ref render-wasm?] :or {render-wasm? false}}]
+  {::mf/wrap [mf/memo]}
+  [{:keys [shape canvas-ref is-render-wasm] :or {is-render-wasm false}}]
   (let [content          (:content shape)
         shape-id         (dm/get-prop shape :id)
         fill-color       (get-color-from-content content)
@@ -258,7 +257,7 @@
                                                                  :background-color background-color}) color/black)
 
         [align-top? align-center? align-bottom?]
-        (vertical-align-editor-classes content render-wasm?)
+        (vertical-align-editor-classes content is-render-wasm)
 
         fonts
         (-> (mf/use-memo (mf/deps content) #(get-fonts content))
@@ -336,12 +335,11 @@
 ;; Text Editor Wrapper
 ;; This is an SVG element that wraps the HTML editor.
 ;;
-(mf/defc text-editor
+(mf/defc text-editor*
   "Text editor wrapper component"
   {::mf/wrap [mf/memo]
-   ::mf/props :obj
    ::mf/forward-ref true}
-  [{:keys [shape modifiers canvas-ref] :as props} _]
+  [{:keys [shape modifiers canvas-ref]} _]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
 
@@ -455,7 +453,7 @@
 
      [:foreignObject {:x x :y y :width width :height height}
       [:div {:style style}
-       [:& text-editor-html {:shape shape
-                             :canvas-ref canvas-ref
-                             :render-wasm? render-wasm?
-                             :key (dm/str shape-id)}]]]]))
+       [:> text-editor-html* {:shape shape
+                              :canvas-ref canvas-ref
+                              :is-render-wasm render-wasm?
+                              :key (dm/str shape-id)}]]]]))
