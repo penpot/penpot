@@ -485,9 +485,9 @@
                                       :ref text-editor-ref}]
 
            (features/active-feature? @st/state "text-editor/v2")
-           [:& editor-v2/text-editor {:shape editing-shape
-                                      :canvas-ref canvas-ref
-                                      :ref text-editor-ref}]
+           [:> editor-v2/text-editor* {:shape editing-shape
+                                       :canvas-ref canvas-ref
+                                       :ref text-editor-ref}]
 
            :else [:& editor-v1/text-editor-svg {:shape editing-shape
                                                 :ref text-editor-ref}]))
@@ -640,7 +640,7 @@
                                       :zoom zoom}])
 
        (when show-presence?
-         [:& presence/active-cursors
+         [:> presence/active-cursors*
           {:page-id page-id}])
 
        (when-not hide-ui?
@@ -734,7 +734,7 @@
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
         (when show-grid-editor?
-          [:& grid-layout/editor
+          [:> grid-layout/editor*
            {:zoom zoom
             :objects objects-modified
             :shape (or (get objects-modified edition)
