@@ -50,8 +50,8 @@
           :style {:stroke line-color :stroke-width (str (/ line-width zoom))}
           :opacity line-opacity}])
 
-(defn get-snap
-  [coord {:keys [shapes page-id remove-snap zoom]}]
+(defn- get-snap
+  [coord shapes page-id remove-snap zoom]
   (let [bounds (gsh/shapes->rect shapes)
         frame-id  (snap/snap-frame-id shapes)]
 
@@ -74,7 +74,7 @@
   [coord]
   (if (= coord :x) :y :x))
 
-(defn add-point-to-snaps
+(defn- add-point-to-snaps
   [[point snaps coord]]
   (let [normalize-coord #(assoc % coord (get point coord))]
     (cons point (map normalize-coord snaps))))
@@ -101,7 +101,7 @@
                                         (hash-map coord fixedv (flip coord) maxv)]))))
 
 (mf/defc snap-feedback*
-  [{:keys [shapes remove-snap zoom modifiers] :as props}]
+  [{:keys [shapes remove-snap zoom modifiers page-id]}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
 
@@ -116,9 +116,9 @@
      (fn []
        (let [sub (->> subject
                       (rx/switch-map
-                       (fn [props]
-                         (->> (get-snap :y props)
-                              (rx/combine-latest (get-snap :x props)))))
+                       (fn [{:keys [shapes page-id remove-snap zoom]}]
+                         (->> (get-snap :y shapes page-id remove-snap zoom)
+                              (rx/combine-latest (get-snap :x shapes page-id remove-snap zoom)))))
 
                       (rx/map
                        (fn [result]
@@ -135,7 +135,10 @@
     (mf/use-effect
      (mf/deps shapes remove-snap modifiers)
      (fn []
-       (rx/push! subject props)))
+       (rx/push! subject {:shapes shapes
+                          :page-id page-id
+                          :remove-snap remove-snap
+                          :zoom zoom})))
 
     [:g.snap-feedback
      (for [[from-point to-point] snap-lines]
