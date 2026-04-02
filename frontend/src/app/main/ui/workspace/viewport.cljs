@@ -726,7 +726,7 @@
               :view-only true}]))]
 
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}
-        [:& scroll-bars/viewport-scrollbars
+        [:> scroll-bars/viewport-scrollbars*
          {:objects base-objects
           :zoom zoom
           :vbox vbox
