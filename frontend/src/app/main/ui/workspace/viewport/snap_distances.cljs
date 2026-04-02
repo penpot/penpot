@@ -50,7 +50,7 @@
 (def pill-text-border-radius 4)
 (def pill-text-padding 4)
 
-(mf/defc shape-distance-segment
+(mf/defc shape-distance-segment*
   "Displays a segment between two selrects with the distance between them"
   [{:keys [sr1 sr2 coord zoom]}]
   (let [from-c (mth/min (get sr1 (if (= :x coord) :x2 :y2))
@@ -268,7 +268,7 @@
      #(rx/push! subject [selrect selected frame]))
 
     (for [[sr1 sr2] segments-to-display]
-      [:& shape-distance-segment
+      [:> shape-distance-segment*
        {:key (str/ffmt "%-%-%-%"
                        (dm/get-prop sr1 :x)
                        (dm/get-prop sr1 :y)
