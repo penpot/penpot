@@ -60,6 +60,15 @@ export {
 } from './lib/changes/changes-builder'
 export { useHistoryStore } from './lib/history/history-store'
 
+// Document state (Valtio proxy)
+export { docProxy, getActiveOrSinglePageId, getCurrentPage, getPage } from './lib/renderer/store/doc-proxy'
+export type { DocState, DocumentMeta } from './lib/renderer/store/doc-proxy'
+export { useSnapshot } from 'valtio'
+
+// Document model singleton
+export { documentModel } from './lib/renderer/store/document-model'
+export type { DocumentModel } from './lib/renderer/store/document-model'
+
 export { useWorkspaceStore } from './lib/renderer/store/workspace-store'
 export type { WorkspaceState } from './lib/renderer/store/workspace-store'
 export { viewport } from './lib/renderer/signals/pointer'
