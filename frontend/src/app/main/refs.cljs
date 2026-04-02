@@ -150,6 +150,9 @@
 (def workspace-global
   (l/derived :workspace-global st/state))
 
+(def mcp
+  (l/derived :mcp st/state))
+
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 

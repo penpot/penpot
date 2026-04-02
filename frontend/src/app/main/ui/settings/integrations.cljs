@@ -285,8 +285,8 @@
                                 ::ev/origin "integrations"})
                      (ev/event {::ev/name "enable-mcp"
                                 ::ev/origin "integrations"
-                                :source "key-creation"}))
-           (mbc/emit! :mcp-enabled-change-status true)
+                                :source "key-creation"})
+                     (mbc/event :mcp/enable {}))
            (reset! created? true)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -326,8 +326,8 @@
            (st/emit! (du/delete-access-token {:id mcp-key-id})
                      (du/update-profile-props {:mcp-enabled true})
                      (ev/event {::ev/name "regenerate-mcp-key"
-                                ::ev/origin "integrations"}))
-           (mbc/emit! :mcp-enabled-change-status true)
+                                ::ev/origin "integrations"})
+                     (mbc/event :mcp/enable {}))
            (reset! created? true)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -437,8 +437,10 @@
                                 :timeout notification-timeout})
                      (ev/event {::ev/name (if (true? value) "enable-mcp" "disable-mcp")
                                 ::ev/origin "integrations"
-                                :source "toggle"}))
-           (mbc/emit! :mcp-enabled-change-status value)))
+                                :source "toggle"})
+                     (if value
+                       (mbc/event :mcp/enable {})
+                       (mbc/event :mcp/disable {})))))
 
         handle-generate-mcp-key
         (mf/use-fn
@@ -455,8 +457,8 @@
            (let [params {:id (:id mcp-key)}
                  mdata  {:on-success #(st/emit! (du/fetch-access-tokens))}]
              (st/emit! (du/delete-access-token (with-meta params mdata))
-                       (du/update-profile-props {:mcp-enabled false}))
-             (mbc/emit! :mcp-enabled-change-status false))))
+                       (du/update-profile-props {:mcp-enabled false})
+                       (mbc/event :mcp/disable {})))))
 
         on-copy-to-clipboard
         (mf/use-fn
