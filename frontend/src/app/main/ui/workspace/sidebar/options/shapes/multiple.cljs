@@ -20,10 +20,10 @@
    [app.common.types.token :as tt]
    [app.common.weak :as weak]
    [app.main.refs :as refs]
-   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
@@ -31,7 +31,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
    [rumext.v2 :as mf]))
 
@@ -475,7 +475,7 @@
          :values layout-item-values}])
 
      (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)
-       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
+       [:> constraints-menu* {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? text-ids)
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])
@@ -487,12 +487,12 @@
                             :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type
-                        :ids stroke-ids
-                        :show-caps show-caps?
-                        :values stroke-values
-                        :disable-stroke-style has-text?
-                        :applied-tokens stroke-tokens}])
+       [:> stroke-menu* {:type type
+                         :ids stroke-ids
+                         :show-caps show-caps?
+                         :values stroke-values
+                         :disable-stroke-style has-text?
+                         :applied-tokens stroke-tokens}])
 
      (when-not (empty? shapes)
        [:> color-selection-menu*
@@ -507,7 +507,7 @@
                          :values (get shadow-values :shadow)}])
 
      (when-not (empty? blur-ids)
-       [:& blur-menu {:type type :ids blur-ids :values blur-values}])
+       [:> blur-menu* {:type type :ids blur-ids :values blur-values}])
 
      (when-not (empty? exports-ids)
        [:> exports-menu* {:type type
