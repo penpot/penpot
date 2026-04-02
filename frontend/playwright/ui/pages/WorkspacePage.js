@@ -108,7 +108,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     }
 
     async waitForIdle() {
-      await this.page.evaluate(() => new Promise((resolve) => globalThis.requestIdleCallback(resolve)));
+      await this.page.evaluate(() => new Promise((resolve) => globalThis.requestIdleCallback(resolve, {
+       timeout: 5000,
+      })));
     }
   };
 
