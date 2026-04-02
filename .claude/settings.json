@@ -6,7 +6,23 @@
       "Bash(npx tsc:*)",
       "Bash(find /Users/I590608/IdeaProjects/penpot-ai -path */node_modules -prune -o -type f \\\\\\(-name *.rs -o -name *.cpp -o -name *.c \\\\\\) -print)",
       "Bash(xargs grep:*)",
-      "Bash(grep -r 'export type Gradient' /Users/I590608/IdeaProjects/penpot-ai --include=*.ts --include=*.tsx)"
+      "Bash(grep -r 'export type Gradient' /Users/I590608/IdeaProjects/penpot-ai --include=*.ts --include=*.tsx)",
+      "Bash(grep -A 10 -B 5 gradient /Users/I590608/IdeaProjects/penpot-ai/.cursor/plans/*.md)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(find /Users/I590608/IdeaProjects/penpot-ai -path */penpot-exporter/types* -type f)",
+      "Bash(grep -r \"PenpotNode\\\\|interface.*Node\" /Users/I590608/IdeaProjects/penpot-ai --include=\"*.d.ts\" --include=\"*.ts\" --path \"*/penpot-exporter/types*\")",
+      "Bash(find /Users/I590608/IdeaProjects/penpot-ai -name types.ts -path *penpot*exporter*)",
+      "Bash(ls /Users/I590608/IdeaProjects/penpot-ai/render-wasm/src/*.rs)",
+      "Bash(grep -r \"export.*type Fill\\\\|export.*type Gradient\" /Users/I590608/IdeaProjects/penpot-ai --include=*.ts --include=*.tsx --exclude-dir=node_modules)",
+      "Bash(ls /Users/I590608/IdeaProjects/penpot-ai/skia-rs-wasm/packages/penpot-exporter-figma-plugin/plugin-src/utils/calculate*)",
+      "Bash(find /Users/I590608/IdeaProjects/penpot-ai -path */skia-safe-*/Cargo.toml -maxdepth 10)",
+      "Bash(find /Users/I590608/IdeaProjects/penpot-ai -path */skia-safe*/src/*runtime* -maxdepth 15)",
+      "Bash(find /Users/I590608/IdeaProjects/penpot-ai -path */cargo/registry/src/*/skia-safe-* -maxdepth 10 -type d)",
+      "Read(//Users/I590608/**)",
+      "Bash(ls /Users/I590608/IdeaProjects/penpot-ai/render-wasm/src/wasm/fills*)",
+      "WebFetch(domain:shopify.github.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }
