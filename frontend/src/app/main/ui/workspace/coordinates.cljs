@@ -11,10 +11,10 @@
    [app.main.ui.hooks :as hooks]
    [rumext.v2 :as mf]))
 
-(mf/defc coordinates
-  [{:keys [colorpalette?]}]
+(mf/defc coordinates*
+  [{:keys [is-colorpalette]}]
   (let [coords (hooks/use-rxsub ms/mouse-position)]
-    [:div {:class (stl/css-case :container-color-palette-open colorpalette?
+    [:div {:class (stl/css-case :container-color-palette-open is-colorpalette
                                 :container true)}
      [:span {:alt "x" :class (stl/css :coordinate)}
       (str "X: " (:x coords "-"))]
