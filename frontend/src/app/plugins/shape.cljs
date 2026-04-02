@@ -841,7 +841,8 @@
 
                  :else
                  (do (st/emit! (dws/duplicate-shapes #{id} :change-selection? false :return-ref ret-v))
-                     (shape-proxy plugin-id (deref ret-v))))))
+                     (when-let [new-id (deref ret-v)]
+                       (shape-proxy plugin-id new-id))))))
 
            :remove
            (fn []
@@ -1230,7 +1231,6 @@
                          {:cmd :export-shapes
                           :profile-id (:profile-id @st/state)
                           :wait true
-                          :is-wasm false
                           :exports [{:file-id   file-id
                                      :page-id   page-id
                                      :object-id id

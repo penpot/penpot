@@ -203,6 +203,12 @@
   (obj/type-of? p "TokenSetProxy"))
 
 (defn token-set-proxy
+  ;; `initial-name` — optional fallback for the :name getter. When a set is
+  ;; freshly created via `catalog.addSet()`, `st/emit!` is async so the new set
+  ;; is not yet in `@st/state`. Without this fallback, `locate-token-set`
+  ;; returns nil and the :name getter returns nil, which cascades into
+  ;; `theme.addSet()` sending `:sets #{nil}` to the backend → 400 → workspace
+  ;; crash. Passing the known name at construction time avoids the race.
   ([plugin-id file-id id]
    (token-set-proxy plugin-id file-id id nil))
   ([plugin-id file-id id initial-name]
@@ -294,19 +300,15 @@
      :addToken
      {:enumerable false
       :schema (fn [args]
-                (let [tokens-tree (-> (u/locate-tokens-lib file-id)
-                                      (ctob/get-tokens id)
-                                      ;; Convert to the adecuate format for schema
-                                      (ctob/tokens-tree))]
-                  [:tuple (-> (cfo/make-token-schema
-                               tokens-tree
-                               (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
-                              ;; Don't allow plugins to set the id
-                              (sm/dissoc-key :id)
-                              ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)
-                              ;; and set a converter that changes DTCG types to internal types (:decode/json).
-                              ;; E.g. "FontFamilies" -> :font-family or "BorderWidth" -> :stroke-width
-                              (sm/update-properties assoc :decode/json cfo/convert-dtcg-token))]))
+                [:tuple (-> (cfo/make-token-schema
+                             (-> (u/locate-tokens-lib file-id) (ctob/get-tokens id))
+                             (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
+                            ;; Don't allow plugins to set the id
+                            (sm/dissoc-key :id)
+                            ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)
+                            ;; and set a converter that changes DTCG types to internal types (:decode/json).
+                            ;; E.g. "FontFamilies" -> :font-family or "BorderWidth" -> :stroke-width
+                            (sm/update-properties assoc :decode/json cfo/convert-dtcg-token))])
       :decode/options {:key-fn identity}
       :fn (fn [attrs]
             (let [tokens-lib (u/locate-tokens-lib file-id)
