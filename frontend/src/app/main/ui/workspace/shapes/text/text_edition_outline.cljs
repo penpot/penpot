@@ -16,7 +16,7 @@
    [app.render-wasm.api :as wasm.api]
    [rumext.v2 :as mf]))
 
-(mf/defc text-edition-outline
+(mf/defc text-edition-outline*
   [{:keys [shape zoom modifiers]}]
   (if (features/active-feature? @st/state "render-wasm/v1")
     (let [selrect-transform (mf/deref refs/workspace-selrect)
