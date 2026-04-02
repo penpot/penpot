@@ -10,10 +10,10 @@
    [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
-   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu* component-variant-main*]]
-   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
@@ -23,7 +23,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [rumext.v2 :as mf]))
 
 (mf/defc options*
@@ -140,8 +140,8 @@
          :shape shape}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:& constraints-menu {:ids ids
-                             :values constraint-values}])
+       [:> constraints-menu* {:ids ids
+                              :values constraint-values}])
 
      [:> fill/fill-menu*
       {:ids ids
@@ -149,17 +149,17 @@
        :values shape
        :applied-tokens applied-tokens}]
 
-     [:& stroke-menu {:ids ids
-                      :type shape-type
-                      :values stroke-values
-                      :applied-tokens applied-tokens}]
+     [:> stroke-menu* {:ids ids
+                       :type shape-type
+                       :values stroke-values
+                       :applied-tokens applied-tokens}]
      [:> color-selection-menu* {:type shape-type
                                 :shapes shapes-with-children
                                 :file-id file-id
                                 :libraries libraries}]
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
-     [:& blur-menu {:ids ids
-                    :values (select-keys shape [:blur])}]
+     [:> blur-menu* {:ids ids
+                     :values (select-keys shape [:blur])}]
      [:& frame-grid {:shape shape}]
      [:> exports-menu* {:type shape-type
                         :ids ids

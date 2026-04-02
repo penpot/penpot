@@ -9,8 +9,8 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
-   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
@@ -19,7 +19,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
    [rumext.v2 :as mf]))
 
@@ -117,8 +117,8 @@
                              :shape shape}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:& constraints-menu {:ids ids
-                             :values constraint-values}])
+       [:> constraints-menu* {:ids ids
+                              :values constraint-values}])
 
      [:> fill/fill-menu*
       {:ids ids
@@ -126,14 +126,14 @@
        :values shape
        :applied-tokens applied-tokens}]
 
-     [:& stroke-menu {:ids ids
-                      :type type
-                      :show-caps true
-                      :values stroke-values
-                      :applied-tokens applied-tokens}]
+     [:> stroke-menu* {:ids ids
+                       :type type
+                       :show-caps true
+                       :values stroke-values
+                       :applied-tokens applied-tokens}]
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
-     [:& blur-menu {:ids ids
-                    :values (select-keys shape [:blur])}]
+     [:> blur-menu* {:ids ids
+                     :values (select-keys shape [:blur])}]
      [:& svg-attrs-menu {:ids ids
                          :values (select-keys shape [:svg-attrs])}]
      [:> exports-menu* {:type type

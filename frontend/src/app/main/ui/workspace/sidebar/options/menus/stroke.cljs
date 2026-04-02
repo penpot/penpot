@@ -37,7 +37,7 @@
    :stroke-cap-start
    :stroke-cap-end])
 
-(mf/defc stroke-menu
+(mf/defc stroke-menu*
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "show-caps" "applied-tokens"]))]}
   [{:keys [ids type values show-caps disable-stroke-style applied-tokens shapes objects] :as props}]
   (let [label (case type
