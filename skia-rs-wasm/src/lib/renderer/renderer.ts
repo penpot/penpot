@@ -7,7 +7,7 @@ import type { WasmModule } from './wasm-types'
 import type { RendererOptions, SelectionRectResult } from './types'
 import type { PenpotNode } from 'penpot-exporter/types'
 import type { IndexedPage } from '../worker/types'
-import type { Matrix } from 'penpot-exporter/types'
+import type { Matrix, Fill } from 'penpot-exporter/types'
 import { getDPR } from './utils'
 import { Viewport } from './viewport'
 import {
@@ -24,6 +24,7 @@ import { processObject } from './api/orchestration'
 import { requestRender, renderSync } from './api/rendering'
 import { moduleUseShape, setShapeChildren } from './api/shape'
 import { setModifiers, cleanModifiers as cleanModifiersApi, propagateModifiers } from './api/modifiers'
+import { setShapeFillModifier, cleanFillModifiers as cleanFillModifiersApi } from './api/fill-modifiers'
 
 function defaultOptions(options?: RendererOptions): Required<RendererOptions> {
   return {
@@ -280,6 +281,32 @@ export class Renderer {
   cleanModifiers(): void {
     if (!getContextInitialized() || !this.module) return
     cleanModifiersApi(this.module)
+  }
+
+  /**
+   * Set fill override for one shape without scheduling a render. Use during gradient drag
+   * combined with requestRenderFrame() for throttled ~60 Hz updates.
+   */
+  setFillModifierNoRender(shapeId: string, fills: Fill[]): void {
+    if (!getContextInitialized() || !this.module) return
+    setShapeFillModifier(this.module, shapeId, fills, true)
+  }
+
+  /**
+   * Set fill override for one shape and immediately schedule a render.
+   */
+  setFillModifierAndRender(shapeId: string, fills: Fill[]): void {
+    if (!getContextInitialized() || !this.module) return
+    setShapeFillModifier(this.module, shapeId, fills, false)
+  }
+
+  /**
+   * Remove all fill overrides and invalidate the modified-shape cache for affected shapes.
+   * Call after gradient drag ends (before committing to document).
+   */
+  cleanFillModifiers(): void {
+    if (!getContextInitialized() || !this.module) return
+    cleanFillModifiersApi(this.module)
   }
 
   /**

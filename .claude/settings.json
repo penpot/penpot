@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(tsx?\\)$\")",
+      "Bash(npx eslint:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find /Users/I590608/IdeaProjects/penpot-ai -path */node_modules -prune -o -type f \\\\\\(-name *.rs -o -name *.cpp -o -name *.c \\\\\\) -print)",
+      "Bash(xargs grep:*)"
+    ]
+  }
+}

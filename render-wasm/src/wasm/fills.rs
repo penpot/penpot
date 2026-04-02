@@ -1,8 +1,11 @@
 use macros::{wasm_error, ToJs};
 
+use crate::error::Error;
 use crate::mem;
 use crate::shapes;
+use crate::utils::uuid_from_u32_quartet;
 use crate::with_current_shape_mut;
+use crate::with_state_mut;
 use crate::STATE;
 
 mod gradient;
@@ -98,6 +101,55 @@ pub extern "C" fn add_shape_fill() {
 pub extern "C" fn clear_shape_fills() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.clear_fills();
+    });
+}
+
+/// Set a temporary fill override for one shape (used for gradient drag preview).
+/// Heap layout: [16 bytes UUID as 4×u32 LE] [4 bytes fill_count u32 LE] [fills…]
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_fill_modifier() -> Result<()> {
+    let bytes = mem::bytes();
+
+    let a = u32::from_le_bytes(
+        bytes[0..4].try_into().map_err(|_| Error::RecoverableError("uuid[0]".into()))?,
+    );
+    let b = u32::from_le_bytes(
+        bytes[4..8].try_into().map_err(|_| Error::RecoverableError("uuid[1]".into()))?,
+    );
+    let c = u32::from_le_bytes(
+        bytes[8..12].try_into().map_err(|_| Error::RecoverableError("uuid[2]".into()))?,
+    );
+    let d = u32::from_le_bytes(
+        bytes[12..16].try_into().map_err(|_| Error::RecoverableError("uuid[3]".into()))?,
+    );
+    let uuid = uuid_from_u32_quartet(a, b, c, d);
+
+    let num_fills = u32::from_le_bytes(
+        bytes[16..20]
+            .try_into()
+            .map_err(|_| Error::RecoverableError("fill count".into()))?,
+    ) as usize;
+    let fills = parse_fills_from_bytes(&bytes[20..], num_fills);
+
+    with_state_mut!(state, {
+        state.shapes.set_fill_modifier(uuid, fills);
+        state.touch_shape(uuid);
+    });
+
+    mem::free_bytes()?;
+    Ok(())
+}
+
+/// Remove all fill overrides, invalidate tile caches for affected shapes, and
+/// mark them as touched so the next render re-draws them without the modifier.
+#[no_mangle]
+pub extern "C" fn clean_fill_modifiers() {
+    with_state_mut!(state, {
+        let uuids = state.shapes.clean_fill_modifiers();
+        for uuid in uuids {
+            state.touch_shape(uuid);
+        }
     });
 }
 

@@ -9,6 +9,8 @@ import { startRotateSelected } from '../handlers/rotate'
 import { startResizeSelected } from '../handlers/resize'
 import { handleAreaSelection } from '../handlers/selection'
 import { handleDrawRect } from '../handlers/draw-shape'
+import { startGradientDrag } from '../handlers/gradient'
+import type { GradientHandleKind } from '../handlers/gradient'
 import type { Point, ResizeHandlePosition } from '../types'
 
 export type DrawTool = 'rect'
@@ -26,6 +28,7 @@ export type CanvasEvent =
   | { type: 'POINTER_DOWN_ON_CORNER'; handle: ResizeHandlePosition; position: Point }
   | { type: 'POINTER_DOWN_ON_ROTATION'; corner: ResizeHandlePosition; position: Point }
   | { type: 'POINTER_DOWN_ON_CANVAS'; append: boolean; remove: boolean }
+  | { type: 'POINTER_DOWN_ON_GRADIENT_HANDLE'; handle: GradientHandleKind; position: Point }
   | { type: 'POINTER_DOWN_DRAW' }
   | { type: 'PAN_START' }
   | { type: 'PAN_END' }
@@ -50,6 +53,10 @@ const canvasMachineSetup = setup({
         handleAreaSelection(input.append, input.remove, input.ignoreGroups),
     ),
     drawActor: fromObservable(() => handleDrawRect()),
+    gradientActor: fromObservable(
+      ({ input }: { input: { handle: GradientHandleKind; position: Point } }) =>
+        startGradientDrag(input.handle, input.position),
+    ),
   },
 })
 
@@ -90,6 +97,7 @@ export const canvasMachine = canvasMachineSetup.createMachine({
             areaSelectionRemove: ({ event }) => event.remove,
           }),
         },
+        POINTER_DOWN_ON_GRADIENT_HANDLE: { target: 'draggingGradient' },
         POINTER_DOWN_DRAW: { target: 'drawingShape' },
         PAN_START: { target: 'panning' },
       },
@@ -153,6 +161,17 @@ export const canvasMachine = canvasMachineSetup.createMachine({
     drawingShape: {
       invoke: {
         src: 'drawActor',
+        onDone: { target: 'idle' },
+        onError: { target: 'idle' },
+      },
+    },
+    draggingGradient: {
+      invoke: {
+        src: 'gradientActor',
+        input: ({ event }) =>
+          event.type === 'POINTER_DOWN_ON_GRADIENT_HANDLE'
+            ? { handle: event.handle, position: event.position }
+            : { handle: 'start' as GradientHandleKind, position: { x: 0, y: 0 } },
         onDone: { target: 'idle' },
         onError: { target: 'idle' },
       },

@@ -1,12 +1,15 @@
 /**
- * Read-only gradient overlay: line, endpoints, angular center/circle, and stop positions.
+ * Interactive gradient overlay: line, endpoints, angular center/circle, and stop positions.
  * Drawn in viewport space (same as frontend): local geometry is converted to viewport
  * and all sizes use zoom only (no shape scale factor).
+ * Endpoint circles are draggable — pointer-down events are forwarded to the canvas machine
+ * via `onHandlePointerDown`, which routes them through the XState → RxJS gradient handler.
  */
 
 import { useMemo } from 'react'
 import type { Gradient, Matrix } from 'penpot-exporter/types'
 import type { SelectionRectResult } from '../../renderer/types'
+import type { GradientHandleKind } from '../../renderer/handlers/gradient'
 import {
   HANDLE_FILL,
   GRADIENT_LINE_STROKE_WORLD,
@@ -18,6 +21,7 @@ export interface GradientOverlayProps {
   wasmSelectionRect: SelectionRectResult
   gradient: Gradient
   zoom: number
+  onHandlePointerDown: (e: React.PointerEvent, kind: GradientHandleKind) => void
 }
 
 function localToViewport(
@@ -33,21 +37,16 @@ function localToViewport(
 }
 
 /**
- * Affine transform of ellipse: compute perpendicular semi-axes and rotation in viewport.
- * Given local ellipse (radiusX, radiusY, angle0) and 2x2 linear part {a,b,c,d}, returns
- * { rx, ry, rotationRad } for the transformed ellipse (exact under shear).
+ * Decompose a parametric ellipse P(t) = center + cos(t)*V1 + sin(t)*V2,
+ * after applying `transform`, into SVG-compatible (rx, ry, rotation).
+ * V1 and V2 need not be perpendicular — the decomposition handles any pair.
  */
 function ellipseAffineTransform(
-  radiusX: number,
-  radiusY: number,
-  angle0: number,
+  V1: { x: number; y: number },
+  V2: { x: number; y: number },
   transform: Matrix
 ): { rx: number; ry: number; rotationRad: number } {
   const { a, b, c, d } = transform
-  const cos0 = Math.cos(angle0)
-  const sin0 = Math.sin(angle0)
-  const V1 = { x: radiusX * cos0, y: radiusX * sin0 }
-  const V2 = { x: radiusY * -sin0, y: radiusY * cos0 }
   const W1 = { x: a * V1.x + c * V1.y, y: b * V1.x + d * V1.y }
   const W2 = { x: a * V2.x + c * V2.y, y: b * V2.x + d * V2.y }
   const w1w2 = W1.x * W2.x + W1.y * W2.y
@@ -97,6 +96,7 @@ export function GradientOverlay({
   wasmSelectionRect,
   gradient,
   zoom,
+  onHandlePointerDown,
 }: GradientOverlayProps) {
   const { width: selW, height: selH, center, transform } = wasmSelectionRect
 
@@ -105,6 +105,11 @@ export function GradientOverlay({
       localToViewport(local, center, transform),
     [center, transform]
   )
+
+  const handleProps = (kind: GradientHandleKind) => ({
+    style: { pointerEvents: 'auto' as const, cursor: 'grab' },
+    onPointerDown: (e: React.PointerEvent) => onHandlePointerDown(e, kind),
+  })
 
   const points = useMemo(() => {
     const localFrom = {
@@ -123,11 +128,7 @@ export function GradientOverlay({
         return { ...stop, local: { x, y } }
       }) ?? []
 
-    return {
-      localFrom,
-      localTo,
-      stops,
-    }
+    return { localFrom, localTo, stops }
   }, [gradient, selW, selH])
 
   const angularPoints = useMemo(() => {
@@ -140,38 +141,45 @@ export function GradientOverlay({
       x: selW * (gradient.endX - 0.5),
       y: selH * (gradient.endY - 0.5),
     }
-    const angle0 = Math.atan2(
-      localAngleZero.y - localCenter.y,
-      localAngleZero.x - localCenter.x
-    )
-    const radiusX = selW * 0.4 * (gradient.width ?? 1)
-    const radiusY = selH * 0.4
+    // V1 = vector from center to end dot (gradient direction axis)
+    const V1 = {
+      x: localAngleZero.x - localCenter.x,
+      y: localAngleZero.y - localCenter.y,
+    }
+    // V2 = vector from center to width dot (perpendicular axis, same approach as radial)
+    const normGradientVec = {
+      x: gradient.endX - gradient.startX,
+      y: gradient.endY - gradient.startY,
+    }
+    const normLen = Math.hypot(normGradientVec.x, normGradientVec.y)
+    const isDegenerate = normLen < 1e-6
+    const normPerp = isDegenerate
+      ? { x: 1, y: 0 }
+      : { x: -normGradientVec.y / normLen, y: normGradientVec.x / normLen }
+    const normWidthDist = (isDegenerate ? 1 : normLen) * (gradient.width ?? 1)
+    const localWidthPoint = {
+      x: localCenter.x + normPerp.x * normWidthDist * selW,
+      y: localCenter.y + normPerp.y * normWidthDist * selH,
+    }
+    const V2 = {
+      x: localWidthPoint.x - localCenter.x,
+      y: localWidthPoint.y - localCenter.y,
+    }
 
     const stops =
       gradient.stops?.slice(0, 16).map((stop) => {
-        const angle = angle0 + stop.offset * 2 * Math.PI
-        const lx = radiusX * Math.cos(angle)
-        const ly = radiusY * Math.sin(angle)
-        const x = localCenter.x + lx * Math.cos(angle0) - ly * Math.sin(angle0)
-        const y = localCenter.y + lx * Math.sin(angle0) + ly * Math.cos(angle0)
+        const t = stop.offset * 2 * Math.PI
+        const x = localCenter.x + Math.cos(t) * V1.x + Math.sin(t) * V2.x
+        const y = localCenter.y + Math.cos(t) * V1.y + Math.sin(t) * V2.y
         return { ...stop, local: { x, y } }
       }) ?? []
-    const localAngle0OnEllipse = {
-      x: localCenter.x + radiusX * Math.cos(angle0),
-      y: localCenter.y + radiusX * Math.sin(angle0),
-    }
-    const localAngle90OnEllipse = {
-      x: localCenter.x - radiusY * Math.sin(angle0),
-      y: localCenter.y + radiusY * Math.cos(angle0),
-    }
     return {
       localCenter,
-      radiusX,
-      radiusY,
-      angle0,
+      localAngleZero,
+      localWidthPoint,
+      V1,
+      V2,
       stops,
-      localAngle0OnEllipse,
-      localAngle90OnEllipse,
     }
   }, [gradient, selW, selH])
 
@@ -190,12 +198,14 @@ export function GradientOverlay({
       x: gradient.endX - gradient.startX,
       y: gradient.endY - gradient.startY,
     }
-    const normLen = Math.hypot(normGradientVec.x, normGradientVec.y) || 1
-    const normPerp = {
-      x: normGradientVec.y / normLen,
-      y: -normGradientVec.x / normLen,
-    }
-    const normWidthDist = normLen * (gradient.width ?? 1)
+    const normLen = Math.hypot(normGradientVec.x, normGradientVec.y)
+    const isDegenerate = normLen < 1e-6
+    // Perpendicular to gradient direction. Fall back to (1, 0) when vector is zero-length
+    // so the width handle is still visible and draggable.
+    const normPerp = isDegenerate
+      ? { x: 1, y: 0 }
+      : { x: normGradientVec.y / normLen, y: -normGradientVec.x / normLen }
+    const normWidthDist = (isDegenerate ? 1 : normLen) * (gradient.width ?? 1)
     const localWidth = {
       x: localCenter.x + normPerp.x * normWidthDist * selW,
       y: localCenter.y + normPerp.y * normWidthDist * selH,
@@ -206,12 +216,7 @@ export function GradientOverlay({
         const y = localCenter.y + gradientVec.y * stop.offset
         return { ...stop, local: { x, y } }
       }) ?? []
-    return {
-      localCenter,
-      localTo,
-      localWidth,
-      stops,
-    }
+    return { localCenter, localTo, localWidth, stops }
   }, [gradient, selW, selH])
 
   // Zoom-only sizing (viewport space; no scale factor)
@@ -219,54 +224,38 @@ export function GradientOverlay({
   const endpointR = GRADIENT_ENDPOINT_RADIUS_WORLD / zoom
   const stopR = GRADIENT_STOP_DOT_RADIUS_WORLD / zoom
   const lineStroke = GRADIENT_LINE_STROKE_WORLD / zoom
+  // Larger hit area for easier grabbing
+  const hitR = Math.max(endpointR * 2, 6 / zoom)
 
   if (gradient.type === 'angular' && angularPoints != null) {
     const {
       localCenter,
-      radiusX,
-      radiusY,
-      angle0,
-      localAngle0OnEllipse,
-      localAngle90OnEllipse,
+      localAngleZero,
+      localWidthPoint,
+      V1,
+      V2,
     } = angularPoints
     const vpCenter = toViewport(localCenter)
-    const vpAngle0 = toViewport(localAngle0OnEllipse)
-    const vpAngle90 = toViewport(localAngle90OnEllipse)
+    const vpAngle0 = toViewport(localAngleZero)
+    const vpAngle90 = toViewport(localWidthPoint)
     const { rx, ry, rotationRad } = ellipseAffineTransform(
-      radiusX,
-      radiusY,
-      angle0,
+      V1,
+      V2,
       transform
     )
     const ellipseRotationDeg = (rotationRad * 180) / Math.PI
 
     return (
-      <g aria-hidden style={{ pointerEvents: 'none' }}>
-        <circle
-          cx={vpCenter.x}
-          cy={vpCenter.y}
-          r={endpointR}
-          fill={HANDLE_FILL}
-        />
+      <g aria-hidden>
         <polygon
           points={lineSegmentToPolygonPoints(vpCenter, vpAngle0, sc)}
           fill={HANDLE_FILL}
+          style={{ pointerEvents: 'none' }}
         />
         <polygon
           points={lineSegmentToPolygonPoints(vpCenter, vpAngle90, sc)}
           fill={HANDLE_FILL}
-        />
-        <circle
-          cx={vpAngle0.x}
-          cy={vpAngle0.y}
-          r={endpointR}
-          fill={HANDLE_FILL}
-        />
-        <circle
-          cx={vpAngle90.x}
-          cy={vpAngle90.y}
-          r={endpointR}
-          fill={HANDLE_FILL}
+          style={{ pointerEvents: 'none' }}
         />
         <ellipse
           cx={vpCenter.x}
@@ -277,11 +266,12 @@ export function GradientOverlay({
           stroke={HANDLE_FILL}
           strokeWidth={lineStroke}
           transform={`rotate(${ellipseRotationDeg} ${vpCenter.x} ${vpCenter.y})`}
+          style={{ pointerEvents: 'none' }}
         />
         {angularPoints.stops.map((stop, i) => {
           const vp = toViewport(stop.local)
           return (
-            <g key={i}>
+            <g key={i} style={{ pointerEvents: 'none' }}>
               <rect
                 x={vp.x + stopR}
                 y={vp.y - stopR * 2}
@@ -296,6 +286,15 @@ export function GradientOverlay({
             </g>
           )
         })}
+        {/* Draggable: center */}
+        <circle cx={vpCenter.x} cy={vpCenter.y} r={endpointR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+        <circle cx={vpCenter.x} cy={vpCenter.y} r={hitR} fill="transparent" {...handleProps('start')} />
+        {/* Draggable: angle-0 */}
+        <circle cx={vpAngle0.x} cy={vpAngle0.y} r={endpointR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+        <circle cx={vpAngle0.x} cy={vpAngle0.y} r={hitR} fill="transparent" {...handleProps('end')} />
+        {/* Draggable: angle-90 (width) */}
+        <circle cx={vpAngle90.x} cy={vpAngle90.y} r={endpointR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+        <circle cx={vpAngle90.x} cy={vpAngle90.y} r={hitR} fill="transparent" {...handleProps('width')} />
       </g>
     )
   }
@@ -306,22 +305,21 @@ export function GradientOverlay({
     const vpTo = toViewport(localTo)
     const vpWidth = toViewport(localWidth)
     return (
-      <g aria-hidden style={{ pointerEvents: 'none' }}>
+      <g aria-hidden>
         <polygon
           points={lineSegmentToPolygonPoints(vpCenter, vpTo, sc)}
           fill={HANDLE_FILL}
+          style={{ pointerEvents: 'none' }}
         />
         <polygon
           points={lineSegmentToPolygonPoints(vpCenter, vpWidth, sc)}
           fill={HANDLE_FILL}
+          style={{ pointerEvents: 'none' }}
         />
-        <circle cx={vpCenter.x} cy={vpCenter.y} r={endpointR} fill={HANDLE_FILL} />
-        <circle cx={vpTo.x} cy={vpTo.y} r={endpointR} fill={HANDLE_FILL} />
-        <circle cx={vpWidth.x} cy={vpWidth.y} r={endpointR} fill={HANDLE_FILL} />
         {stops.map((stop, i) => {
           const vp = toViewport(stop.local)
           return (
-            <g key={i}>
+            <g key={i} style={{ pointerEvents: 'none' }}>
               <rect
                 x={vp.x + stopR}
                 y={vp.y - stopR * 2}
@@ -336,6 +334,15 @@ export function GradientOverlay({
             </g>
           )
         })}
+        {/* Draggable: center */}
+        <circle cx={vpCenter.x} cy={vpCenter.y} r={endpointR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+        <circle cx={vpCenter.x} cy={vpCenter.y} r={hitR} fill="transparent" {...handleProps('start')} />
+        {/* Draggable: outer */}
+        <circle cx={vpTo.x} cy={vpTo.y} r={endpointR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+        <circle cx={vpTo.x} cy={vpTo.y} r={hitR} fill="transparent" {...handleProps('end')} />
+        {/* Draggable: width */}
+        <circle cx={vpWidth.x} cy={vpWidth.y} r={endpointR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+        <circle cx={vpWidth.x} cy={vpWidth.y} r={hitR} fill="transparent" {...handleProps('width')} />
       </g>
     )
   }
@@ -344,17 +351,16 @@ export function GradientOverlay({
   const vpFrom = toViewport(points.localFrom)
   const vpTo = toViewport(points.localTo)
   return (
-    <g aria-hidden style={{ pointerEvents: 'none' }}>
+    <g aria-hidden>
       <polygon
         points={lineSegmentToPolygonPoints(vpFrom, vpTo, sc)}
         fill={HANDLE_FILL}
+        style={{ pointerEvents: 'none' }}
       />
-      <circle cx={vpFrom.x} cy={vpFrom.y} r={endpointR} fill={HANDLE_FILL} />
-      <circle cx={vpTo.x} cy={vpTo.y} r={endpointR} fill={HANDLE_FILL} />
       {points.stops.map((stop, i) => {
         const vp = toViewport(stop.local)
         return (
-          <g key={i}>
+          <g key={i} style={{ pointerEvents: 'none' }}>
             <rect
               x={vp.x + stopR}
               y={vp.y - stopR * 2}
@@ -369,6 +375,12 @@ export function GradientOverlay({
           </g>
         )
       })}
+      {/* Draggable: start */}
+      <circle cx={vpFrom.x} cy={vpFrom.y} r={endpointR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+      <circle cx={vpFrom.x} cy={vpFrom.y} r={hitR} fill="transparent" {...handleProps('start')} />
+      {/* Draggable: end */}
+      <circle cx={vpTo.x} cy={vpTo.y} r={endpointR} fill={HANDLE_FILL} style={{ pointerEvents: 'none' }} />
+      <circle cx={vpTo.x} cy={vpTo.y} r={hitR} fill="transparent" {...handleProps('end')} />
     </g>
   )
 }

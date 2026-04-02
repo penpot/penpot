@@ -4,11 +4,25 @@
  */
 
 import { signal } from '@preact/signals-core'
-import type { Selrect } from 'penpot-exporter/types'
+import type { Fill, Gradient, Selrect } from 'penpot-exporter/types'
 import type { Renderer } from '../renderer'
 import type { SelectionRectResult } from '../types'
 
 export const wasmSelectionRect = signal<SelectionRectResult | null>(null)
+
+/** Gradient from the active color editor (fill or stroke). Written by RightSidePanel, read by SelectionOverlay. */
+export const activeEditorGradient = signal<Gradient | null>(null)
+
+/** Callback to push gradient changes from the overlay back to the editor. */
+export const activeEditorOnChange = signal<((fill: Fill) => void) | null>(null)
+
+export interface ActiveEditorTarget {
+  kind: 'fill' | 'stroke'
+  index: number
+}
+
+/** Fill or stroke target being edited in the active color editor. Written by RightSidePanel. */
+export const activeEditorTarget = signal<ActiveEditorTarget | null>(null)
 export const selectionRect = signal<Selrect | null>(null)
 export const shapeDrawPreview = signal<Selrect | null>(null)
 

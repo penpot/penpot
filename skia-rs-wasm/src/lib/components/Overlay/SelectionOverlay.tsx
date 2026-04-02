@@ -87,7 +87,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
 
   const hitSize = HANDLE_SIZE_WORLD / safeZoom
 
-  const { onSelectionRectPointerDown, onResizeHandlePointerDown, onRotationPointerDown } =
+  const { onSelectionRectPointerDown, onResizeHandlePointerDown, onRotationPointerDown, onGradientHandlePointerDown } =
     usePointerDownFactory(canvasRef, canvasActor)
 
   const shapeDrawPreview = useSignalCoalesced(shapeDrawPreviewSignal)
@@ -167,7 +167,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
     selectionCornerHandlesVisible.value = showHandles && showCornerHandles
   }, [showHandles, showCornerHandles])
 
-  const gradientForOverlay = useGradientFill(selectedIds, doc)
+  const gradientForOverlay = useGradientFill()
 
   return (
     <svg
@@ -269,7 +269,7 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
           </g>
           {gradientForOverlay != null && (
             <g style={{ filter: 'url(#selection-line-glow)' }}>
-              <GradientOverlay wasmSelectionRect={wasmSelectionRect} gradient={gradientForOverlay} zoom={safeZoom} />
+              <GradientOverlay wasmSelectionRect={wasmSelectionRect} gradient={gradientForOverlay} zoom={safeZoom} onHandlePointerDown={onGradientHandlePointerDown} />
             </g>
           )}
         </>

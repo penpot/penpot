@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { pointerPos } from '../../renderer/signals/pointer'
 import type { CanvasActorRef } from '../../renderer/machine/canvas-actor-types'
 import type { ResizeHandlePosition } from '../../renderer/types'
+import type { GradientHandleKind } from '../../renderer/handlers/gradient'
 
 function screenPositionFromCanvas(
   canvasRef: RefObject<HTMLCanvasElement | null>,
@@ -54,6 +55,18 @@ export function usePointerDownFactory(
         if (pos) {
           pointerPos.value = pos
           canvasActor.send({ type: 'POINTER_DOWN_ON_ROTATION', corner: position, position: pos })
+        }
+        const target = e.currentTarget
+        if (target instanceof Element) target.setPointerCapture(e.pointerId)
+      },
+      onGradientHandlePointerDown(e: React.PointerEvent, handle: GradientHandleKind) {
+        if (e.button !== 0) return
+        e.preventDefault()
+        e.stopPropagation()
+        const pos = screenPositionFromCanvas(canvasRef, e)
+        if (pos) {
+          pointerPos.value = pos
+          canvasActor.send({ type: 'POINTER_DOWN_ON_GRADIENT_HANDLE', handle, position: pos })
         }
         const target = e.currentTarget
         if (target instanceof Element) target.setPointerCapture(e.pointerId)
