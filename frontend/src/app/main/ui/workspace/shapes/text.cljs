@@ -15,8 +15,7 @@
    [rumext.v2 :as mf]))
 
 ;; --- Text Wrapper for workspace
-(mf/defc text-wrapper
-  {::mf/wrap-props false}
+(mf/defc text-wrapper*
   [{:keys [shape]}]
   (let [shape-id (dm/get-prop shape :id)
 

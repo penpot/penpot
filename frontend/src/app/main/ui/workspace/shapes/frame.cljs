@@ -31,14 +31,12 @@
 (defn frame-shape-factory
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
-    (mf/fnc frame-shape-inner
+    (mf/fnc frame-shape-inner*
       {::mf/wrap [#(mf/memo' % check-shape-props)]
-       ::mf/wrap-props false
        ::mf/forward-ref true}
-      [props ref]
+      [{:keys [shape]} ref]
 
-      (let [shape      (unchecked-get props "shape")
-            shape-id   (dm/get-prop shape :id)
+      (let [shape-id   (dm/get-prop shape :id)
 
             childs-ref (mf/with-memo [shape-id]
                          (refs/children-objects shape-id))
@@ -65,12 +63,10 @@
   [shape-wrapper]
 
   (let [frame-shape (frame-shape-factory shape-wrapper)]
-    (mf/fnc frame-wrapper
-      {::mf/wrap [#(mf/memo' % check-props)]
-       ::mf/wrap-props false}
-      [props]
-      (let [shape      (unchecked-get props "shape")
-            objects    (dsh/lookup-page-objects @st/state)
+    (mf/fnc frame-wrapper*
+      {::mf/wrap [#(mf/memo' % check-props)]}
+      [{:keys [shape]}]
+      (let [objects    (dsh/lookup-page-objects @st/state)
 
             frame-id   (dm/get-prop shape :id)
 
@@ -113,16 +109,11 @@
 (defn root-frame-wrapper-factory
   [shape-wrapper]
   (let [frame-shape (frame-shape-factory shape-wrapper)]
-    (mf/fnc frame-wrapper
-      {::mf/wrap [#(mf/memo' % check-props)]
-       ::mf/wrap-props false}
-      [props]
+    (mf/fnc frame-wrapper*
+      {::mf/wrap [#(mf/memo' % check-props)]}
+      [{:keys [shape thumbnail? objects]}]
 
-      (let [shape          (unchecked-get props "shape")
-            thumbnail?     (unchecked-get props "thumbnail?")
-            objects        (unchecked-get props "objects")
-
-            file-id        (mf/use-ctx ctx/current-file-id)
+      (let [file-id        (mf/use-ctx ctx/current-file-id)
             page-id        (mf/use-ctx ctx/current-page-id)
             frame-id       (dm/get-prop shape :id)
 

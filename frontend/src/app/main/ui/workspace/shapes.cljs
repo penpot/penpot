@@ -30,10 +30,9 @@
    [app.main.ui.workspace.shapes.path :as path]
    [app.main.ui.workspace.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.shapes.text :as text]
-   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
-(declare shape-wrapper)
+(declare shape-wrapper*)
 (declare group-wrapper)
 (declare svg-raw-wrapper)
 (declare bool-wrapper)
@@ -55,14 +54,11 @@
             (dm/get-prop shape :selrect))]
       (grc/overlaps-rects? vbox bounds))))
 
-(mf/defc root-shape
+(mf/defc root-shape*
   "Draws the root shape of the viewport and recursively all the shapes"
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [props]
-  (let [objects        (obj/get props "objects")
-        active-frames  (obj/get props "active-frames")
-        shapes         (cfh/get-immediate-children objects)
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects active-frames]}]
+  (let [shapes         (cfh/get-immediate-children objects)
         vbox           (mf/use-ctx ctx/current-vbox)
 
         frame-overlap? (mf/with-memo [vbox objects]
@@ -90,14 +86,12 @@
              {:shape shape
               :objects objects
               :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
-            [:& shape-wrapper {:shape shape}])])]]]))
+            [:> shape-wrapper* {:shape shape}])])]]]))
 
-(mf/defc shape-wrapper
-  {::mf/wrap [#(mf/memo' % common/check-shape-props)]
-   ::mf/wrap-props false}
-  [props]
-  (let [shape      (unchecked-get props "shape")
-        shape-type (dm/get-prop shape :type)
+(mf/defc shape-wrapper*
+  {::mf/wrap [#(mf/memo' % common/check-shape-props)]}
+  [{:keys [shape]}]
+  (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
         ;; FIXME: WARN: this breaks react rule of hooks (hooks can't be under conditional)
@@ -121,8 +115,8 @@
                (not ^boolean (:hidden shape)))
       [:> wrapper-elem wrapper-props
        (case shape-type
-         :path    [:> path/path-wrapper props]
-         :text    [:> text/text-wrapper props]
+         :path    [:> path/path-wrapper* props]
+         :text    [:> text/text-wrapper* props]
          :group   [:> group-wrapper props]
          :rect    [:> rect-wrapper props]
          :image   [:> image-wrapper props]
@@ -133,8 +127,8 @@
 
          nil)])))
 
-(def group-wrapper (group/group-wrapper-factory shape-wrapper))
-(def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))
-(def bool-wrapper (bool/bool-wrapper-factory shape-wrapper))
-(def nested-frame-wrapper (frame/nested-frame-wrapper-factory shape-wrapper))
-(def root-frame-wrapper (frame/root-frame-wrapper-factory shape-wrapper))
+(def group-wrapper (group/group-wrapper-factory shape-wrapper*))
+(def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper*))
+(def bool-wrapper (bool/bool-wrapper-factory shape-wrapper*))
+(def nested-frame-wrapper (frame/nested-frame-wrapper-factory shape-wrapper*))
+(def root-frame-wrapper (frame/root-frame-wrapper-factory shape-wrapper*))
