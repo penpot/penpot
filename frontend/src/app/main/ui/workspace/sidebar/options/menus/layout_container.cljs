@@ -162,9 +162,8 @@
         :space-between i/align-content-row-between
         :stretch       i/align-content-row-stretch))))
 
-(mf/defc direction-row-flex
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc direction-row-flex*
+  {::mf/private true}
   [{:keys [value on-change]}]
   [:& radio-buttons {:class (stl/css :direction-row-flex)
                      :selected (d/name value)
@@ -188,8 +187,7 @@
                      :title "Column reverse"
                      :icon (dir-icons-refactor :column-reverse)}]])
 
-(mf/defc wrap-row
-  {::mf/props :obj}
+(mf/defc wrap-row*
   [{:keys [wrap-type on-click]}]
   [:button {:class (stl/css-case :wrap-button true
                                  :selected (= wrap-type :wrap))
@@ -199,8 +197,7 @@
             :on-click on-click}
    deprecated-icon/wrap])
 
-(mf/defc align-row
-  {::mf/props :obj}
+(mf/defc align-row*
   [{:keys [is-column value on-change]}]
   [:& radio-buttons {:class (stl/css :align-row)
                      :selected (d/name value)
@@ -220,8 +217,7 @@
                      :title "Align items end"
                      :id    "align-items-end"}]])
 
-(mf/defc align-content-row
-  {::mf/props :obj}
+(mf/defc align-content-row*
   [{:keys [is-column value on-change]}]
   [:& radio-buttons {:class (stl/css :align-content-row)
                      :selected (d/name value)
@@ -253,8 +249,7 @@
                      :title "Align content space-evenly"
                      :id    "align-content-space-evenly"}]])
 
-(mf/defc justify-content-row
-  {::mf/props :obj}
+(mf/defc justify-content-row*
   [{:keys [is-column justify-content on-change]}]
   [:& radio-buttons {:class (stl/css :justify-content-row)
                      :selected (d/name justify-content)
@@ -836,8 +831,7 @@
 
 ;; GRID COMPONENTS
 
-(mf/defc direction-row-grid
-  {::mf/props :obj}
+(mf/defc direction-row-grid*
   [{:keys [value on-change] :as props}]
   [:& radio-buttons {:class (stl/css :direction-row-grid)
                      :selected (d/name value)
@@ -853,8 +847,7 @@
                      :title "Column"
                      :icon (dir-icons-refactor :column)}]])
 
-(mf/defc grid-edit-mode
-  {::mf/props :obj}
+(mf/defc grid-edit-mode*
   [{:keys [id]}]
   (let [edition (mf/deref refs/selected-edition)
         active? (= id edition)
@@ -872,9 +865,8 @@
       :on-click toggle-edit-mode}
      (tr "workspace.layout-grid.editor.options.edit-grid")]))
 
-(mf/defc align-grid-row
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc align-grid-row*
+  {::mf/private true}
   [{:keys [is-column value on-change]}]
   (let [type (if ^boolean is-column "column" "row")]
     [:& radio-buttons {:class (stl/css :align-grid-row)
@@ -895,9 +887,7 @@
                        :title "Align items end"
                        :id    (dm/str "align-items-end-" type)}]]))
 
-(mf/defc justify-grid-row
-  {::mf/props :obj
-   ::mf/private :obj}
+(mf/defc justify-grid-row*
   [{:keys [is-column value on-change]}]
   (let [type (if ^boolean is-column "column" "row")]
     [:& radio-buttons {:class (stl/css :justify-grid-row)
@@ -951,8 +941,7 @@
     :fixed   (fmt/format-pixels value)
     value))
 
-(mf/defc grid-track-info
-  {::mf/props :obj}
+(mf/defc grid-track-info*
   [{:keys [is-column
            type
            index
@@ -1035,8 +1024,7 @@
                        :data-index index
                        :icon i/remove}]]))
 
-(mf/defc grid-columns-row
-  {::mf/props :obj}
+(mf/defc grid-columns-row*
   [{:keys [is-column expanded? column-values toggle add-new-element set-column-value set-column-type
            remove-element reorder-track hover-track on-select-track]}]
   (let [column-num (count column-values)
@@ -1067,17 +1055,17 @@
        [:> h/sortable-container* {}
         [:div {:class (stl/css :grid-tracks-info-container)}
          (for [[index column] (d/enumerate column-values)]
-           [:& grid-track-info {:key (dm/str index "-" (d/name type))
-                                :type type
-                                :is-column is-column
-                                :index index
-                                :column column
-                                :set-column-value set-column-value
-                                :set-column-type set-column-type
-                                :remove-element remove-element
-                                :reorder-track reorder-track
-                                :hover-track hover-track
-                                :on-select-track on-select-track}])]])]))
+           [:> grid-track-info* {:key (dm/str index "-" (d/name type))
+                                 :type type
+                                 :is-column is-column
+                                 :index index
+                                 :column column
+                                 :set-column-value set-column-value
+                                 :set-column-type set-column-type
+                                 :remove-element remove-element
+                                 :reorder-track reorder-track
+                                 :hover-track hover-track
+                                 :on-select-track on-select-track}])]])]))
 
 ;; LAYOUT COMPONENT
 
@@ -1319,20 +1307,20 @@
          :flex
          [:div  {:class (stl/css :flex-layout-menu)}
           [:div {:class (stl/css :first-row)}
-           [:& align-row {:is-column is-column
-                          :value align-items
-                          :on-change set-align-items}]
+           [:> align-row* {:is-column is-column
+                           :value align-items
+                           :on-change set-align-items}]
 
-           [:& direction-row-flex {:on-change on-direction-change
-                                   :value saved-dir}]
+           [:> direction-row-flex* {:on-change on-direction-change
+                                    :value saved-dir}]
 
-           [:& wrap-row {:wrap-type wrap-type
-                         :on-click toggle-wrap}]]
+           [:> wrap-row* {:wrap-type wrap-type
+                          :on-click toggle-wrap}]]
 
           [:div {:class (stl/css :second-row :help-button-wrapper)}
-           [:& justify-content-row {:is-column is-column
-                                    :justify-content justify-content
-                                    :on-change set-justify-content}]
+           [:> justify-content-row* {:is-column is-column
+                                     :justify-content justify-content
+                                     :on-change set-justify-content}]
 
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.help-center")
@@ -1340,9 +1328,9 @@
                              :icon i/help}]]
           (when (= :wrap wrap-type)
             [:div {:class (stl/css :third-row)}
-             [:& align-content-row {:is-column is-column
-                                    :value align-content
-                                    :on-change on-align-content-change}]])
+             [:> align-content-row* {:is-column is-column
+                                     :value align-content
+                                     :on-change on-align-content-change}]])
           [:div {:class (stl/css :forth-row)}
            [:> gap-section* {:is-column is-column
                              :wrap-type wrap-type
@@ -1361,7 +1349,7 @@
          [:div {:class (stl/css :grid-layout-menu)}
           (when (= 1 (count ids))
             [:div {:class (stl/css :edit-grid-wrapper)}
-             [:& grid-edit-mode {:id (first ids)}]
+             [:> grid-edit-mode* {:id (first ids)}]
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "labels.help-center")
                                :on-click open-grid-help
@@ -1370,23 +1358,23 @@
           [:div {:class (stl/css :first-row)}
            [:div {:class (stl/css :direction-edit)}
             [:div {:class (stl/css :direction)}
-             [:& direction-row-grid {:value saved-grid-dir
-                                     :on-change on-direction-change}]]]
+             [:> direction-row-grid* {:value saved-grid-dir
+                                      :on-change on-direction-change}]]]
 
-           [:& align-grid-row {:is-column false
-                               :value align-items-row
-                               :on-change on-row-align-change}]
-           [:& align-grid-row {:is-column true
-                               :value align-items-column
-                               :on-change on-column-align-change}]]
+           [:> align-grid-row* {:is-column false
+                                :value align-items-row
+                                :on-change on-row-align-change}]
+           [:> align-grid-row* {:is-column true
+                                :value align-items-column
+                                :on-change on-column-align-change}]]
 
           [:div {:class (stl/css :row :grid-layout-align)}
-           [:& justify-grid-row {:is-column true
-                                 :value grid-justify-content-column
-                                 :on-change on-column-justify-change}]
-           [:& justify-grid-row {:is-column false
-                                 :value grid-justify-content-row
-                                 :on-change on-row-justify-change}]]
+           [:> justify-grid-row* {:is-column true
+                                  :value grid-justify-content-column
+                                  :on-change on-column-justify-change}]
+           [:> justify-grid-row* {:is-column false
+                                  :value grid-justify-content-row
+                                  :on-change on-row-justify-change}]]
 
           [:div {:class (stl/css :gap-row)}
            [:> gap-section* {:on-change on-gap-change
@@ -1561,24 +1549,24 @@
      [:div {:class (stl/css :row :first-row)}
       [:div {:class (stl/css :direction-edit)}
        [:div {:class (stl/css :direction)}
-        [:& direction-row-grid {:value saved-grid-dir
-                                :on-change on-direction-change}]]]
+        [:> direction-row-grid* {:value saved-grid-dir
+                                 :on-change on-direction-change}]]]
 
-      [:& align-grid-row {:is-column false
-                          :value align-items-row
-                          :on-change on-row-align-change}]
+      [:> align-grid-row* {:is-column false
+                           :value align-items-row
+                           :on-change on-row-align-change}]
 
-      [:& align-grid-row {:is-column true
-                          :value align-items-column
-                          :on-change on-column-align-change}]]
+      [:> align-grid-row* {:is-column true
+                           :value align-items-column
+                           :on-change on-column-align-change}]]
 
      [:div {:class (stl/css :row :grid-layout-align)}
-      [:& justify-grid-row {:is-column true
-                            :value grid-justify-content-column
-                            :on-change on-column-justify-change}]
-      [:& justify-grid-row {:is-column false
-                            :value grid-justify-content-row
-                            :on-change on-row-justify-change}]
+      [:> justify-grid-row* {:is-column true
+                             :value grid-justify-content-column
+                             :on-change on-column-justify-change}]
+      [:> justify-grid-row* {:is-column false
+                             :value grid-justify-content-row
+                             :on-change on-row-justify-change}]
 
       [:> icon-button* {:variant "ghost"
                         :class (stl/css :locate-button)
@@ -1599,26 +1587,26 @@
                             :on-change on-padding-change}]]
 
      [:div {:class (stl/css :grid-tracks-row)}
-      [:& grid-columns-row {:is-column true
-                            :expanded? @columns-open?
-                            :toggle toggle-columns-open
-                            :column-values column-values
-                            :add-new-element add-new-element
-                            :set-column-value set-column-value
-                            :set-column-type set-column-type
-                            :remove-element remove-element
-                            :reorder-track reorder-track
-                            :hover-track hover-track
-                            :on-select-track handle-select-track}]
+      [:> grid-columns-row* {:is-column true
+                             :expanded? @columns-open?
+                             :toggle toggle-columns-open
+                             :column-values column-values
+                             :add-new-element add-new-element
+                             :set-column-value set-column-value
+                             :set-column-type set-column-type
+                             :remove-element remove-element
+                             :reorder-track reorder-track
+                             :hover-track hover-track
+                             :on-select-track handle-select-track}]
 
-      [:& grid-columns-row {:is-column false
-                            :expanded? @rows-open?
-                            :toggle toggle-rows-open
-                            :column-values rows-values
-                            :add-new-element add-new-element
-                            :set-column-value set-column-value
-                            :set-column-type set-column-type
-                            :remove-element remove-element
-                            :reorder-track reorder-track
-                            :hover-track hover-track
-                            :on-select-track handle-select-track}]]]))
+      [:> grid-columns-row* {:is-column false
+                             :expanded? @rows-open?
+                             :toggle toggle-rows-open
+                             :column-values rows-values
+                             :add-new-element add-new-element
+                             :set-column-value set-column-value
+                             :set-column-type set-column-type
+                             :remove-element remove-element
+                             :reorder-track reorder-track
+                             :hover-track hover-track
+                             :on-select-track handle-select-track}]]]))
