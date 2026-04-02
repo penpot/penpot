@@ -36,6 +36,7 @@
 - Token tree should be expanded by default [Taiga #13631](https://tree.taiga.io/project/penpot/issue/13631)
 - Fix opacity incorrectly disabled for visible shapes [Taiga #13906](https://tree.taiga.io/project/penpot/issue/13906)
 - Update onboarding image [Taiga #13864](https://tree.taiga.io/project/penpot/issue/13864)
+- Fix plugin modal drag interactions over iframe and close-button behavior (by @marekhrabe) [Github #8871](https://github.com/penpot/penpot/pull/8871)
 
 ## 2.15.0 (Unreleased)
 
