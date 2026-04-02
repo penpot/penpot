@@ -23,9 +23,8 @@
           "11.78,1.82,11.05L11.58,1.30ZL11.58,1.30ZM1.37,12.15L2.90,"
           "13.68L1.67,13.89L1.165,13.39L1.37,12.15ZL1.37,12.15Z"))
 
-(mf/defc session-cursor
-  {::mf/props :obj
-   ::mf/memo true}
+(mf/defc session-cursor*
+  {::mf/wrap [mf/memo]}
   [{:keys [session profile zoom]}]
   (let [point     (:point session)
         bg-color  (:color session)
@@ -52,8 +51,7 @@
               :style {:background-color bg-color :color fg-color}}
         fullname]]]]))
 
-(mf/defc active-cursors
-  {::mf/props :obj}
+(mf/defc active-cursors*
   [{:keys [page-id]}]
   (let [counter  (mf/use-state 0)
         profiles (mf/deref refs/profiles)
@@ -70,7 +68,7 @@
         (fn [] (rx/dispose! sem))))
 
     (for [session sessions]
-      [:& session-cursor
+      [:> session-cursor*
        {:session session
         :zoom zoom
         :profile (get profiles (:profile-id session))

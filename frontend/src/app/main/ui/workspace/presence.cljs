@@ -15,9 +15,8 @@
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
 
-(mf/defc session-widget
-  {::mf/props :obj
-   ::mf/memo true}
+(mf/defc session-widget*
+  {::mf/wrap [mf/memo]}
   [{:keys [color profile index]}]
   (let [profile       (assoc profile :color color)
         full-name     (:fullname profile)]
@@ -60,7 +59,7 @@
                  :on-blur on-close}
         [:ul {:class (stl/css :active-users-list) :data-testid "active-users-list"}
          (for [session sessions]
-           [:& session-widget
+           [:> session-widget*
             {:color (:color session)
              :index 0
              :profile (get profiles (:profile-id session))
@@ -73,7 +72,7 @@
          [:li {:class (stl/css :users-num)} (dm/str "+" (+ 1 (- num-sessions max-avatar-count)))])
 
        (for [[index session] (d/enumerate (take avatar-count sessions))]
-         [:& session-widget
+         [:> session-widget*
           {:color (:color session)
            :index index
            :profile (get profiles (:profile-id session))
