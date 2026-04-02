@@ -230,12 +230,14 @@
                   (conj ["component" id])
 
                   (and (uuid? (:frame-id old-shape))
-                       (not= uuid/zero (:frame-id old-shape)))
-                  (into (get-frame-ids (:frame-id old-shape)))
+                       (not= uuid/zero (:frame-id old-shape))
+                       (not= id (:frame-id old-shape)))
+                  (into (get-frame-ids-cached (:frame-id old-shape)))
 
                   (and (uuid? (:frame-id new-shape))
-                       (not= uuid/zero (:frame-id new-shape)))
-                  (into (get-frame-ids (:frame-id new-shape))))))
+                       (not= uuid/zero (:frame-id new-shape))
+                       (not= id (:frame-id new-shape)))
+                  (into (get-frame-ids-cached (:frame-id new-shape))))))
 
             (get-frame-ids-cached [id]
               (or (get @frame-id-cache id)
