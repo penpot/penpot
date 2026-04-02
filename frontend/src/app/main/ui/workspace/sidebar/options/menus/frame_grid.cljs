@@ -33,7 +33,7 @@
    :separator
    18 12 10 8 6 4 3 2])
 
-(mf/defc grid-options
+(mf/defc grid-options*
   {::mf/wrap [mf/memo]}
   [{:keys [shape-id index grid frame-width frame-height default-grid-params]}]
   (let [on-change           (mf/use-fn (mf/deps shape-id index) #(st/emit! (dw/set-frame-grid shape-id index %)))
@@ -296,7 +296,7 @@
                [:button {:class (stl/css :option-btn)
                          :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]])]])])]))
 
-(mf/defc frame-grid
+(mf/defc frame-grid*
   [{:keys [shape]}]
   (let [state*              (mf/use-state true)
         open?               (deref state*)
@@ -331,12 +331,12 @@
      (when (and open? (seq frame-grids))
        [:div  {:class (stl/css :element-set-content)}
         (for [[index grid] (map-indexed vector frame-grids)]
-          [:& grid-options {:key (str id "-" index)
-                            :shape-id id
-                            :grid grid
-                            :index index
-                            :frame-width (:width shape)
-                            :frame-height (:height shape)
-                            :default-grid-params default-grid-params}])])]))
+          [:> grid-options* {:key (str id "-" index)
+                             :shape-id id
+                             :grid grid
+                             :index index
+                             :frame-width (:width shape)
+                             :frame-height (:height shape)
+                             :default-grid-params default-grid-params}])])]))
 
 
