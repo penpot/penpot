@@ -220,6 +220,7 @@
                :title "Column"
                :on-click #(dom/select-target %)
                :on-change (partial on-grid-coordinates :all :column)
+               :integer true
                :value column}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
@@ -230,6 +231,7 @@
                :title "Row"
                :on-click #(dom/select-target %)
                :on-change (partial on-grid-coordinates :all :row)
+               :integer true
                :value row}]]]])
 
         (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
@@ -241,12 +243,14 @@
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :start :column)
+               :integer true
                :value column}]]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :end :column)
+               :integer true
                :value column-end}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
@@ -256,12 +260,14 @@
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :start :row)
+               :integer true
                :value row}]]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :end :row)
+               :integer true
                :value row-end}]]]])
 
         [:div {:class (stl/css :row)}
