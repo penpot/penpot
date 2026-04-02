@@ -6,6 +6,7 @@
 
 (ns common-tests.runner
   (:require
+   #?(:clj [common-tests.fressian-test])
    [clojure.test :as t]
    [common-tests.buffer-test]
    [common-tests.colors-test]
@@ -67,6 +68,7 @@
    'common-tests.buffer-test
    'common-tests.colors-test
    'common-tests.data-test
+   #?(:clj 'common-tests.fressian-test)
    'common-tests.files-changes-test
    'common-tests.files-migrations-test
    'common-tests.geom-modifiers-test
