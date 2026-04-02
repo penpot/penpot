@@ -313,10 +313,9 @@
                      :text-anchor "middle"}}
       text]]))
 
-(mf/defc grid-cell
-  {::mf/memo #{:shape :cell :layout-data :zoom :hover? :selected? :on-set-modifiers :on-clear-modifiers}
-   ::mf/props :obj}
-  [{:keys [shape cell layout-data zoom hover? selected? on-set-modifiers on-clear-modifiers]}]
+(mf/defc grid-cell*
+  {::mf/wrap [mf/memo]}
+  [{:keys [shape cell layout-data zoom is-hover is-selected on-set-modifiers on-clear-modifiers]}]
   (let [cell-bounds (gsg/cell-bounds layout-data cell)
         cell-origin (gpo/origin cell-bounds)
         cell-width  (gpo/width-points cell-bounds)
@@ -338,17 +337,17 @@
 
         handle-pointer-down
         (mf/use-fn
-         (mf/deps (:id shape) (:id cell) selected?)
+         (mf/deps (:id shape) (:id cell) is-selected)
          (fn [event]
            (when (dom/left-mouse? event)
              (cond
-               (and selected? (or (kbd/mod? event) (kbd/shift? event)))
+               (and is-selected (or (kbd/mod? event) (kbd/shift? event)))
                (st/emit! (dwge/remove-selection (:id shape) (:id cell)))
 
-               (and (not selected?) (kbd/mod? event))
+               (and (not is-selected) (kbd/mod? event))
                (st/emit! (dwge/add-to-selection (:id shape) (:id cell)))
 
-               (and (not selected?) (kbd/shift? event))
+               (and (not is-selected) (kbd/shift? event))
                (st/emit! (dwge/add-to-selection (:id shape) (:id cell) true))
 
                :else
@@ -356,12 +355,12 @@
 
         handle-context-menu
         (mf/use-fn
-         (mf/deps (:id shape) (:id cell) selected?)
+         (mf/deps (:id shape) (:id cell) is-selected)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (let [position (dom/get-client-position event)]
-             (if selected?
+             (if is-selected
                (st/emit! (dw/show-grid-cell-context-menu {:position position :grid-id (:id shape)}))
 
                ;; If right-click on a non-selected cell we select the cell and then open the menu
@@ -395,8 +394,8 @@
      [:rect
       {:transform (dm/str (gmt/transform-in cell-center (:transform shape)))
        :class (dom/classnames (stl/css :grid-cell-outline) true
-                              (stl/css :hover) hover?
-                              (stl/css :selected) selected?)
+                              (stl/css :hover) is-hover
+                              (stl/css :selected) is-selected)
        :x (:x cell-origin)
        :y (:y cell-origin)
        :width cell-width
@@ -413,7 +412,7 @@
                                  :zoom zoom
                                  :text (:area-name cell)}])
 
-     (when selected?
+     (when is-selected
        (let [handlers
              ;; Handlers positions, size and cursor
              [[:top (:x cell-origin) (+ (:y cell-origin) (/ -10 zoom)) cell-width (/ 20 zoom) :row]
@@ -948,15 +947,10 @@
        :on-set-modifiers on-set-modifiers
        :on-clear-modifiers on-clear-modifiers}]]))
 
-(mf/defc editor
-  {::mf/memo true
-   ::mf/props :obj}
-  [props]
-  (let [base-shape (unchecked-get props "shape")
-        objects    (unchecked-get props "objects")
-        modifiers  (unchecked-get props "modifiers")
-        zoom       (unchecked-get props "zoom")
-        view-only  (unchecked-get props "view-only")
+(mf/defc editor*
+  {::mf/wrap [mf/memo]}
+  [{:keys [shape objects modifiers zoom view-only]}]
+  (let [base-shape shape
 
         st-modif   (mf/use-state nil)
 
@@ -1116,15 +1110,15 @@
                        :on-pointer-down handle-pointer-down}
        [:g.cells
         (for [cell (ctl/get-cells shape {:sort? true})]
-          [:& grid-cell {:key (dm/str "cell-" (:id cell))
-                         :shape base-shape
-                         :layout-data layout-data
-                         :cell cell
-                         :zoom zoom
-                         :hover? (contains? hover-cells (:id cell))
-                         :selected? (contains? selected-cells (:id cell))
-                         :on-set-modifiers handle-set-modifiers
-                         :on-clear-modifiers handle-clear-modifiers}])]
+          [:> grid-cell* {:key (dm/str "cell-" (:id cell))
+                          :shape base-shape
+                          :layout-data layout-data
+                          :cell cell
+                          :zoom zoom
+                          :is-hover (contains? hover-cells (:id cell))
+                          :is-selected (contains? selected-cells (:id cell))
+                          :on-set-modifiers handle-set-modifiers
+                          :on-clear-modifiers handle-clear-modifiers}])]
 
        (when-not ^boolean view-only
          [:*
