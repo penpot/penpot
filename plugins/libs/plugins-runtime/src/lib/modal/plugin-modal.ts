@@ -67,11 +67,6 @@ export class PluginModalElement extends HTMLElement {
     this.wrapper.style.maxInlineSize = '90vw';
     this.wrapper.style.maxBlockSize = '90vh';
 
-    // move modal to the top
-    this.#dragEvents = dragHandler(this.#inner, this.wrapper, () => {
-      this.calculateZIndex();
-    });
-
     const header = document.createElement('div');
     header.classList.add('header');
 
@@ -123,6 +118,23 @@ export class PluginModalElement extends HTMLElement {
         }),
       );
     });
+
+    // move modal to the top
+    this.#dragEvents = dragHandler(
+      header,
+      this.wrapper,
+      () => {
+        this.calculateZIndex();
+      },
+      {
+        start: () => {
+          this.wrapper.classList.add('is-dragging');
+        },
+        end: () => {
+          this.wrapper.classList.remove('is-dragging');
+        },
+      },
+    );
 
     this.addEventListener('message', (e: Event) => {
       if (!iframe.contentWindow) {
