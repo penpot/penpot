@@ -203,6 +203,12 @@
   (obj/type-of? p "TokenSetProxy"))
 
 (defn token-set-proxy
+  ;; `initial-name` — optional fallback for the :name getter. When a set is
+  ;; freshly created via `catalog.addSet()`, `st/emit!` is async so the new set
+  ;; is not yet in `@st/state`. Without this fallback, `locate-token-set`
+  ;; returns nil and the :name getter returns nil, which cascades into
+  ;; `theme.addSet()` sending `:sets #{nil}` to the backend → 400 → workspace
+  ;; crash. Passing the known name at construction time avoids the race.
   ([plugin-id file-id id]
    (token-set-proxy plugin-id file-id id nil))
   ([plugin-id file-id id initial-name]
