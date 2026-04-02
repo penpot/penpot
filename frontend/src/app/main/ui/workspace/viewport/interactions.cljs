@@ -139,7 +139,7 @@
 
 
 (mf/defc interaction-path*
-  [{:keys [index level orig-shape dest-shape dest-point selected? action-type zoom]}]
+  [{:keys [index level orig-shape dest-shape dest-point is-selected action-type zoom]}]
   (let [[orig-pos orig-x orig-y dest-pos dest-x dest-y]
         (cond
           dest-shape
@@ -162,7 +162,7 @@
 
         arrow-dir (if (= dest-pos :left) :right :left)]
 
-    (if-not selected?
+    (if-not is-selected
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
        [:path {:stroke "var(--df-secondary)"
                :fill "none"
@@ -219,7 +219,7 @@
 
 
 (mf/defc overlay-marker*
-  [{:keys [page-id index orig-shape dest-shape position objects hover-disabled?]}]
+  [{:keys [page-id index orig-shape dest-shape position objects is-hover-disabled]}]
   (let [start-move-position
         (fn [_]
           (st/emit! (dw/start-move-overlay-pos index)))]
@@ -250,8 +250,8 @@
                          (some? thumbnail-data)
                          (assoc :thumbnail thumbnail-data))]
         [:g {:on-pointer-down start-move-position
-             :on-pointer-enter #(reset! hover-disabled? true)
-             :on-pointer-leave #(reset! hover-disabled? false)}
+             :on-pointer-enter #(reset! is-hover-disabled true)
+             :on-pointer-leave #(reset! is-hover-disabled false)}
          [:g {:transform (gmt/translate-matrix (gpt/point (- marker-x dest-x) (- marker-y dest-y)))}
           [:& (mf/provider muc/render-thumbnails) {:value true}
            [:& (mf/provider embed/context) {:value false}
@@ -274,7 +274,7 @@
                    :fill "var(--color-accent-tertiary)"}]]))))
 
 (mf/defc interactions*
-  [{:keys [current-transform objects zoom selected hover-disabled? page-id]}]
+  [{:keys [current-transform objects zoom selected is-hover-disabled page-id]}]
   (let [active-shapes (into []
                             (comp (filter #(seq (:interactions %))))
                             (vals objects))
@@ -311,7 +311,7 @@
                                      :orig-shape shape
                                      :dest-shape dest-shape
                                      :selected selected
-                                     :selected? false
+                                     :is-selected false
                                      :action-type (:action-type interaction)
                                      :zoom zoom}]))))]
 
@@ -322,7 +322,7 @@
                                :orig-shape first-selected
                                :dest-point draw-interaction-to
                                :dest-shape draw-interaction-to-frame
-                               :selected? true
+                               :is-selected true
                                :action-type :navigate
                                :zoom zoom}])
       (for [shape selected-shapes]
@@ -338,7 +338,7 @@
                                         :orig-shape shape
                                         :dest-shape dest-shape
                                         :selected selected
-                                        :selected? true
+                                        :is-selected true
                                         :action-type (:action-type interaction)
                                         :zoom zoom}]
                  (when (and (or (= (:action-type interaction) :open-overlay)
@@ -352,14 +352,14 @@
                                           :dest-shape dest-shape
                                           :position move-overlay-to
                                           :objects objects
-                                          :hover-disabled? hover-disabled?}]
+                                          :is-hover-disabled is-hover-disabled}]
                      [:> overlay-marker* {:page-id page-id
                                           :index index
                                           :orig-shape shape
                                           :dest-shape dest-shape
                                           :position (:overlay-position interaction)
                                           :objects objects
-                                          :hover-disabled? hover-disabled?}]))])))
+                                          :is-hover-disabled is-hover-disabled}]))])))
           (when (and shape
                      (not (cfh/unframed-shape? shape))
                      (not (#{:move :rotate} current-transform)))

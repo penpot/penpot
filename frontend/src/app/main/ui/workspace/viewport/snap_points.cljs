@@ -51,7 +51,7 @@
           :opacity line-opacity}])
 
 (defn get-snap
-  [coord {:keys [shapes page-id remove-snap? zoom]}]
+  [coord {:keys [shapes page-id remove-snap zoom]}]
   (let [bounds (gsh/shapes->rect shapes)
         frame-id  (snap/snap-frame-id shapes)]
 
@@ -63,7 +63,7 @@
 
          (rx/merge-map
           (fn [[frame-id point]]
-            (->> (snap/get-snap-points page-id frame-id remove-snap? zoom point coord)
+            (->> (snap/get-snap-points page-id frame-id remove-snap zoom point coord)
                  (rx/map #(mapcat second %))
                  (rx/map #(map :pt %))
                  (rx/map #(vector point % coord)))))
@@ -101,7 +101,7 @@
                                         (hash-map coord fixedv (flip coord) maxv)]))))
 
 (mf/defc snap-feedback*
-  [{:keys [shapes remove-snap? zoom modifiers] :as props}]
+  [{:keys [shapes remove-snap zoom modifiers] :as props}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
 
@@ -133,7 +133,7 @@
          #(rx/dispose! sub))))
 
     (mf/use-effect
-     (mf/deps shapes remove-snap? modifiers)
+     (mf/deps shapes remove-snap modifiers)
      (fn []
        (rx/push! subject props)))
 
@@ -165,7 +165,7 @@
         (mf/with-memo [layout filter-shapes objects focus]
           (snap/make-remove-snap layout filter-shapes objects focus))
 
-        remove-snap?
+        remove-snap
         (mf/use-callback
          (mf/deps remove-snap-base?)
          (fn [{:keys [type grid] :as snap}]
@@ -178,6 +178,6 @@
     (when-not (ctl/any-layout? objects frame-id)
       [:> snap-feedback* {:shapes shapes
                           :page-id page-id
-                          :remove-snap? remove-snap?
+                          :remove-snap remove-snap
                           :zoom zoom}])))
 

@@ -187,12 +187,12 @@
                           :stroke-width rulers-width}}]]))]))
 
 (mf/defc viewport-frame*
-  [{:keys [show-rulers? zoom zoom-inverse vbox offset-x offset-y]}]
+  [{:keys [show-rulers zoom zoom-inverse vbox offset-x offset-y]}]
 
   (let [{:keys [width height] x1 :x y1 :y} vbox
         x2 (+ x1 width)
         y2 (+ y1 height)
-        bw (if show-rulers? (* ruler-area-size zoom-inverse) 0)
+        bw (if show-rulers (* ruler-area-size zoom-inverse) 0)
         br (/ canvas-border-radius zoom)
         bs (* 4 zoom-inverse)]
     [:*
@@ -214,7 +214,7 @@
               :fill-rule "evenodd"
               :fill rulers-background}]]
 
-     (when show-rulers?
+     (when show-rulers
        (let [step (calculate-step-size zoom)]
          [:g.viewport-frame-rulers
           [:> rulers-text* {:vbox vbox :offset offset-x :step step :zoom-inverse zoom-inverse :axis :x}]
@@ -333,7 +333,7 @@
     (when (some? vbox)
       [:g.viewport-frame {:pointer-events "none"}
        [:> viewport-frame*
-        {:show-rulers? show-rulers?
+        {:show-rulers show-rulers?
          :zoom zoom
          :zoom-inverse zoom-inverse
          :vbox vbox

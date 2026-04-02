@@ -720,7 +720,7 @@
               :zoom zoom
               :objects objects-modified
               :current-transform transform
-              :hover-disabled? hover-disabled?}])])
+              :is-hover-disabled hover-disabled?}])])
 
        (when show-gradient-handlers?
          [:> gradients/gradient-handlers*
