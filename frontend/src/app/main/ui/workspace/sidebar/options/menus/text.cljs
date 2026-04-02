@@ -37,7 +37,7 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc text-align-options
+(mf/defc text-align-options*
   [{:keys [values on-change on-blur] :as props}]
   (let [{:keys [text-align]} values
         handle-change
@@ -69,7 +69,7 @@
                         :title (tr "workspace.options.text-options.text-align-justify")
                         :icon i/text-justify}]]]))
 
-(mf/defc text-direction-options
+(mf/defc text-direction-options*
   [{:keys [values on-change on-blur] :as props}]
   (let [direction     (:text-direction values)
         handle-change
@@ -97,7 +97,7 @@
                         :title (tr "workspace.options.text-options.direction-rtl")
                         :icon i/text-rtl}]]]))
 
-(mf/defc vertical-align
+(mf/defc vertical-align*
   [{:keys [values on-change on-blur] :as props}]
   (let [{:keys [vertical-align]} values
         vertical-align (or vertical-align "top")
@@ -125,7 +125,7 @@
                         :title (tr "workspace.options.text-options.align-bottom")
                         :icon i/text-bottom}]]]))
 
-(mf/defc grow-options
+(mf/defc grow-options*
   [{:keys [ids values on-blur] :as props}]
   (let [grow-type (:grow-type values)
 
@@ -169,7 +169,7 @@
                         :title (tr "workspace.options.text-options.grow-auto-height")
                         :icon i/text-auto-height}]]]))
 
-(mf/defc text-decoration-options
+(mf/defc text-decoration-options*
   [{:keys [values on-change on-blur] :as props}]
   (let [text-decoration (or (:text-decoration values) "none")
         handle-change
@@ -196,7 +196,7 @@
                         :title (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
                         :icon i/text-stroked}]]]))
 
-(mf/defc text-menu
+(mf/defc text-menu*
   {::mf/wrap [mf/memo]}
   [{:keys [ids type values] :as props}]
 
@@ -342,8 +342,8 @@
           [:> text-options opts])
 
         [:div {:class (stl/css :text-align-options)}
-         [:> text-align-options opts]
-         [:> grow-options opts]
+         [:> text-align-options* opts]
+         [:> grow-options* opts]
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "labels.options")
                            :data-testid "text-align-options-button"
@@ -352,6 +352,6 @@
 
         (when more-options-open?
           [:div  {:class (stl/css :text-decoration-options)}
-           [:> vertical-align opts]
-           [:> text-decoration-options opts]
-           [:> text-direction-options opts]])])]))
+           [:> vertical-align* opts]
+           [:> text-decoration-options* opts]
+           [:> text-direction-options* opts]])])]))
