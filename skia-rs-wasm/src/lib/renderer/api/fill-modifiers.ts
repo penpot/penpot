@@ -14,6 +14,7 @@ import {
   isLinearGradient,
   isRadialGradient,
   isAngularGradient,
+  isDiamondGradient,
   isImageFill,
 } from './constants'
 import {
@@ -21,6 +22,7 @@ import {
   writeLinearGradientFill,
   writeRadialGradientFill,
   writeAngularGradientFill,
+  writeDiamondGradientFill,
   writeImageFill,
 } from './fills'
 
@@ -49,6 +51,7 @@ export function setShapeFillModifier(
     else if (isLinearGradient(fill)) writeLinearGradientFill(fo, dataView, fill.fillColorGradient, opacity)
     else if (isRadialGradient(fill)) writeRadialGradientFill(fo, dataView, fill.fillColorGradient, opacity)
     else if (isAngularGradient(fill)) writeAngularGradientFill(fo, dataView, fill.fillColorGradient, opacity)
+    else if (isDiamondGradient(fill)) writeDiamondGradientFill(fo, dataView, fill.fillColorGradient, opacity)
     else if (isImageFill(fill)) writeImageFill(fo, dataView, fill.fillImage, fill.fillOpacity ?? 1)
   }
 

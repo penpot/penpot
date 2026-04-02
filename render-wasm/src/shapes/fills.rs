@@ -208,6 +208,108 @@ impl Gradient {
             Some(&transform),
         )
     }
+
+    pub fn to_diamond_shader(&self, rect: &Rect) -> Option<skia::Shader> {
+        use std::cell::OnceCell;
+
+        thread_local! {
+            static EFFECT: OnceCell<skia::RuntimeEffect> = const { OnceCell::new() };
+        }
+
+        EFFECT.with(|cell| {
+            let effect = cell.get_or_init(|| {
+                skia::RuntimeEffect::make_for_shader(
+                    "\
+                    uniform float2 u_center;\n\
+                    uniform float4 u_inv;\n\
+                    uniform shader u_colors;\n\
+                    \n\
+                    half4 main(float2 coord) {\n\
+                        float2 delta = coord - u_center;\n\
+                        float2 local = float2(\n\
+                            u_inv.x * delta.x + u_inv.y * delta.y,\n\
+                            u_inv.z * delta.x + u_inv.w * delta.y\n\
+                        );\n\
+                        float t = clamp(abs(local.x) + abs(local.y), 0.0, 1.0);\n\
+                        return u_colors.eval(float2(t, 0.5));\n\
+                    }\n",
+                    None,
+                )
+                .expect("diamond gradient SkSL compile failed")
+            });
+
+            // Work in normalized [0,1] coords so both axes use consistent units.
+            // A local_matrix maps pixel coords → normalized before the shader runs.
+            let dx = self.end.0 - self.start.0;
+            let dy = self.end.1 - self.start.1;
+            let r_norm = (dx * dx + dy * dy).sqrt();
+            if r_norm < 1e-6 {
+                return None;
+            }
+
+            let angle = dy.atan2(dx);
+            let cos_a = angle.cos();
+            let sin_a = angle.sin();
+            let aspect = if self.width > 0.0 { self.width } else { 1.0 };
+
+            // Inverse rotation + axis normalization baked together.
+            // Maps normalized delta to diamond space where |x| + |y| = 1 at boundary.
+            let inv_m00 = cos_a / r_norm;
+            let inv_m01 = sin_a / r_norm;
+            let inv_m10 = -sin_a / (r_norm * aspect);
+            let inv_m11 = cos_a / (r_norm * aspect);
+
+            // Pack uniform data using layout offsets from the compiled effect.
+            let uniform_size = effect.uniform_size();
+            let mut data = vec![0u8; uniform_size];
+
+            fn write_f32(data: &mut [u8], offset: usize, val: f32) {
+                data[offset..offset + 4].copy_from_slice(&val.to_ne_bytes());
+            }
+
+            for u in effect.uniforms().iter() {
+                let name: &str = &u.name();
+                match name {
+                    "u_center" => {
+                        write_f32(&mut data, u.offset(), self.start.0);
+                        write_f32(&mut data, u.offset() + 4, self.start.1);
+                    }
+                    "u_inv" => {
+                        write_f32(&mut data, u.offset(), inv_m00);
+                        write_f32(&mut data, u.offset() + 4, inv_m01);
+                        write_f32(&mut data, u.offset() + 8, inv_m10);
+                        write_f32(&mut data, u.offset() + 12, inv_m11);
+                    }
+                    _ => {}
+                }
+            }
+
+            // 1D color lookup gradient
+            let color_shader = skia::gradient_shader::linear(
+                ((0.0f32, 0.5f32), (1.0f32, 0.5f32)),
+                self.colors.as_slice(),
+                Some(self.offsets.as_slice()),
+                skia::TileMode::Clamp,
+                None,
+                None,
+            )?;
+
+            let children: Vec<skia::runtime_effect::ChildPtr> =
+                vec![skia::runtime_effect::ChildPtr::Shader(color_shader)];
+
+            // Local matrix: normalized [0,1] → pixel space.
+            // Skia inverts this so the shader receives normalized coords.
+            let mut local_matrix = skia::Matrix::new_identity();
+            local_matrix.pre_translate((rect.left, rect.top));
+            local_matrix.pre_scale((rect.width(), rect.height()), None);
+
+            effect.make_shader(
+                skia::Data::new_copy(&data),
+                &children,
+                Some(&local_matrix),
+            )
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -252,6 +354,7 @@ pub enum Fill {
     LinearGradient(Gradient),
     RadialGradient(Gradient),
     AngularGradient(Gradient),
+    DiamondGradient(Gradient),
     Image(ImageFill),
 }
 
@@ -262,6 +365,7 @@ impl Fill {
             Fill::LinearGradient(g) => g.opacity as f32 / 255.0,
             Fill::RadialGradient(g) => g.opacity as f32 / 255.0,
             Fill::AngularGradient(g) => g.opacity as f32 / 255.0,
+            Fill::DiamondGradient(g) => g.opacity as f32 / 255.0,
             Fill::Image(i) => i.opacity as f32 / 255.0,
         }
     }
@@ -283,6 +387,10 @@ impl Fill {
                 ..g.clone()
             }),
             Fill::AngularGradient(g) => Fill::AngularGradient(Gradient {
+                opacity: 255,
+                ..g.clone()
+            }),
+            Fill::DiamondGradient(g) => Fill::DiamondGradient(Gradient {
                 opacity: 255,
                 ..g.clone()
             }),
@@ -330,6 +438,15 @@ impl Fill {
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }
+            Self::DiamondGradient(gradient) => {
+                let mut p = skia::Paint::default();
+                p.set_shader(gradient.to_diamond_shader(rect));
+                p.set_alpha(gradient.opacity);
+                p.set_style(skia::PaintStyle::Fill);
+                p.set_anti_alias(anti_alias);
+                p.set_blend_mode(skia::BlendMode::SrcOver);
+                p
+            }
             Self::Image(image_fill) => {
                 let mut p = skia::Paint::default();
                 p.set_style(skia::PaintStyle::Fill);
@@ -348,6 +465,7 @@ pub fn get_fill_shader(fill: &Fill, bounding_box: &Rect) -> Option<skia::Shader>
         Fill::LinearGradient(gradient) => gradient.to_linear_shader(bounding_box),
         Fill::RadialGradient(gradient) => gradient.to_radial_shader(bounding_box),
         Fill::AngularGradient(gradient) => gradient.to_angular_shader(bounding_box),
+        Fill::DiamondGradient(gradient) => gradient.to_diamond_shader(bounding_box),
         Fill::Image(image_fill) => {
             let mut image_shader = None;
             let image = get_image(&image_fill.id);
