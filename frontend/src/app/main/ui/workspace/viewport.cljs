@@ -339,7 +339,7 @@
                        ;; some opacity because to debug auto-width events will fill the screen
                        :opacity 0.6}}
          (when (and (:can-edit permissions) (not read-only?))
-           [:& stvh/viewport-texts
+           [:> stvh/viewport-texts*
             {:key (dm/str "texts-" page-id)
              :page-id page-id
              :objects objects
@@ -442,8 +442,8 @@
            [:> editor-v2/text-editor* {:shape editing-shape
                                        :canvas-ref canvas-ref
                                        :modifiers modifiers}]
-           [:& editor-v1/text-editor-svg {:shape editing-shape
-                                          :modifiers modifiers}]))
+           [:> editor-v1/text-editor-svg* {:shape editing-shape
+                                           :modifiers modifiers}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id

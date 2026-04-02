@@ -17,7 +17,6 @@
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.text-editor :as text-editor]
    [app.util.dom :as dom]
-   [app.util.object :as obj]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -40,12 +39,10 @@
       (if (>= (count lang) 3) (str/capital lang) (str/upper lang)))
     "Noto Color Emoji"))
 
-(mf/defc text-editor
+(mf/defc text-editor*
   "Contenteditable element positioned over the text shape to capture input events."
-  {::mf/wrap-props false}
-  [props]
-  (let [shape     (obj/get props "shape")
-        shape-id  (dm/get-prop shape :id)
+  [{:keys [shape]}]
+  (let [shape-id  (dm/get-prop shape :id)
 
         clip-id   (dm/str "text-edition-clip" shape-id)
 

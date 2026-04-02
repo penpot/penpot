@@ -95,12 +95,11 @@
     "bottom" "flex-end"
     nil))
 
-(mf/defc text-shape-edit-html
+(mf/defc text-shape-edit-html*
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false
    ::mf/forward-ref true}
-  [props _]
-  (let [{:keys [id content] :as shape} (obj/get props "shape")
+  [{:keys [shape]} _]
+  (let [{:keys [id content]} shape
 
         state-map     (mf/deref refs/workspace-editor-state)
         state         (get state-map id empty-editor-state)
@@ -269,8 +268,7 @@
       (-> (gpt/subtract pt box)
           (gpt/multiply zoom)))))
 
-(mf/defc text-editor-svg
-  {::mf/wrap-props false}
+(mf/defc text-editor-svg*
   [{:keys [shape modifiers]}]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
@@ -343,6 +341,6 @@
 
      [:foreignObject {:x x :y y :width width :height height}
       [:div {:style style}
-       [:& text-shape-edit-html
+       [:> text-shape-edit-html*
         {:shape shape
          :key (dm/str shape-id)}]]]]))
