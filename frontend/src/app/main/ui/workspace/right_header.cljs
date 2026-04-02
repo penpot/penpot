@@ -25,7 +25,7 @@
    [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.presence :refer [active-sessions]]
+   [app.main.ui.workspace.presence :refer [active-sessions*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -198,7 +198,7 @@
 
     [:div {:class (stl/css :workspace-header-right)}
      [:div {:class (stl/css :users-section)}
-      [:& active-sessions]]
+      [:> active-sessions*]]
 
      [:& progress-widget]
 
