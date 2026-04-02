@@ -16,7 +16,7 @@
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
-   [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid*]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
@@ -160,7 +160,7 @@
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:> blur-menu* {:ids ids
                      :values (select-keys shape [:blur])}]
-     [:& frame-grid {:shape shape}]
+     [:> frame-grid* {:shape shape}]
      [:> exports-menu* {:type shape-type
                         :ids ids
                         :shapes shapes
