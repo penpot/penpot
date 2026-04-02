@@ -65,8 +65,6 @@
   flex-direction: column;
   overflow: hidden;
   block-size: 100%;
-  user-select: none;
-  -webkit-user-select: none;
   & > * {
     flex: 1;
   }
@@ -82,7 +80,6 @@
   border-block-end: 2px solid var(--color-background-quaternary);
   padding-block-end: var(--spacing-4);
   cursor: grab;
-  user-select: none;
   touch-action: none;
 }
 
@@ -102,7 +99,6 @@ h1 {
   font-weight: var(--font-weight-bold);
   margin: 0;
   margin-inline-end: var(--spacing-4);
-  user-select: none;
 }
 
 iframe {
