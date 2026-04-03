@@ -179,7 +179,8 @@
     (ex/print-throwable cause)
     (let [code (get error :code)]
       (if (or (= code :panic)
-              (= code :webgl-context-lost))
+              (= code :webgl-context-lost)
+              (= code :webgl-not-supported))
         (st/emit! (rt/assign-exception error))
         (flash :type :handled :cause cause)))))
 

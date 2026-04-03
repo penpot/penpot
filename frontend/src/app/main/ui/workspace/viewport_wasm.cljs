@@ -16,11 +16,11 @@
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
-   [app.main.data.common :as dcm]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.flex-controls :as mfc]
@@ -322,20 +322,28 @@
         (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
-                         (let [init? (try
-                                       (wasm.api/init-canvas-context canvas)
-                                       (catch :default e
-                                         (js/console.error "Error initializing canvas context:" e)
-                                         false))]
-                           (reset! canvas-init? init?)
-                           (when init?
-                             ;; Restore previous canvas pixels immediately after context initialization
-                             ;; This happens before initialize-viewport is called
-                             (wasm.api/apply-canvas-blur)
-                             (wasm.api/restore-previous-canvas-pixels))
-                           (when-not init?
-                             (js/alert "WebGL not supported")
-                             (st/emit! (dcm/go-to-dashboard-recent))))))))
+                         (let [try-init
+                               (fn try-init [retries]
+                                 (let [init? (try
+                                               (wasm.api/init-canvas-context canvas)
+                                               (catch :default e
+                                                 (js/console.error "Error initializing canvas context:" e)
+                                                 false))]
+                                   (cond
+                                     init?
+                                     (do
+                                       (reset! canvas-init? true)
+                                       (wasm.api/apply-canvas-blur)
+                                       (wasm.api/restore-previous-canvas-pixels))
+
+                                     (pos? retries)
+                                     (js/setTimeout #(try-init (dec retries)) 500)
+
+                                     :else
+                                     (st/emit! (rt/assign-exception
+                                                {:type :wasm-error
+                                                 :code :webgl-not-supported})))))]
+                           (try-init 3))))))
         (fn []
           (wasm.api/clear-canvas))))
 
