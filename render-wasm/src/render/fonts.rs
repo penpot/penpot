@@ -119,6 +119,7 @@ impl FontStore {
     pub fn get_emoji_font(&self, _size: f32) -> Option<Font> {
         None
     }
+
 }
 
 fn load_default_provider(font_mgr: &FontMgr) -> skia::textlayout::TypefaceFontProvider {

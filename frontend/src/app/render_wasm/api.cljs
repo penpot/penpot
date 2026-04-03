@@ -1705,6 +1705,25 @@
     (mem/free)
     result))
 
+(defn render-shape-pdf
+  [shape-id scale]
+  (let [buffer (uuid/get-u32 shape-id)
+
+        offset
+        (h/call wasm/internal-module "_render_shape_pdf"
+                (aget buffer 0)
+                (aget buffer 1)
+                (aget buffer 2)
+                (aget buffer 3)
+                scale)
+
+        heap (mem/get-heap-u8)
+        heapu32 (mem/get-heap-u32)
+        length (aget heapu32 (mem/->offset-32 offset))
+        result (dr/read-image-bytes heap (+ offset 4) length)]
+    (mem/free)
+    result))
+
 (defn init-wasm-module
   [module]
   (let [default-fn (unchecked-get module "default")
