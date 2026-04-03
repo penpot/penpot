@@ -8107,13 +8107,13 @@ msgstr "TOKEN -   %s"
 msgid "workspace.tokens.tools"
 msgstr "Verktyg"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "Importen lyckades. Vissa tokens inkluderades ej."
+msgstr "Importen lyckades, men vissa tokens hoppades över eftersom de använder $type-värden som inte stöds. Expandera detaljerna för att se vilka tokens som påverkades."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Typen '%s' stödjs ej (%s)\n"
+msgstr "Typen '%s' stöds ej (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"

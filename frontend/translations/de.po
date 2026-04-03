@@ -8023,13 +8023,13 @@ msgstr "TOKENS -   %s"
 msgid "workspace.tokens.tools"
 msgstr "Werkzeuge"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "Der Import war erfolgreich. Einige Token wurden nicht übernommen."
+msgstr "Der Import war erfolgreich, aber einige Token wurden übersprungen, da sie nicht unterstützte $type-Werte verwenden. Details aufklappen, um zu sehen, welche Token betroffen sind."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "„%s“ wird nicht als Datentyp unterstützt (%s)\n"
+msgstr "„%s“ wird nicht als Datentyp unterstützt (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"

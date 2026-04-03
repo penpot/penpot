@@ -7956,13 +7956,13 @@ msgstr "TOKEN-URI-  %s"
 msgid "workspace.tokens.tools"
 msgstr "Unelte"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "Import cu succes. Unele token-uri nu au fost incluse."
+msgstr "Importul a fost realizat cu succes, dar unele token-uri au fost omise deoarece folosesc valori $type neacceptate. Extindeți detaliile pentru a vedea care token-uri au fost afectate."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Tipul '%s' nu este suportat (%s)\n"
+msgstr "Tipul '%s' nu este suportat (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"

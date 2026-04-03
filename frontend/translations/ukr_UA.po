@@ -7421,9 +7421,9 @@ msgstr "ТОКЕНИ -  %s"
 msgid "workspace.tokens.tools"
 msgstr "Інструменти"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Тип \"%s\" непідтримуваний (%s)\n"
+msgstr "Тип \"%s\" непідтримуваний (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:132
 msgid "workspace.tokens.value-not-valid"

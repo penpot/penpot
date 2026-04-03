@@ -8435,13 +8435,13 @@ msgstr "TOKENS -  %s"
 msgid "workspace.tokens.tools"
 msgstr "Hulpmiddelen"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "Importeren was succesvol. Sommige tokens zijn niet inbegrepen."
+msgstr "Importeren was succesvol, maar sommige tokens zijn overgeslagen omdat ze niet-ondersteunde $type-waarden gebruiken. Klap de details uit om te zien welke tokens getroffen zijn."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Typ '%s' wordt niet ondersteund (%s)\n"
+msgstr "Typ '%s' wordt niet ondersteund (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"
