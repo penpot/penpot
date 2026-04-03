@@ -8187,13 +8187,13 @@ msgstr "टोकन - %s"
 msgid "workspace.tokens.tools"
 msgstr "औजार"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "आयात सफल रहा। कुछ टोकन शामिल नहीं किए गए।"
+msgstr "आयात सफल रहा, लेकिन कुछ टोकन छोड़ दिए गए क्योंकि वे असमर्थित $type मानों का उपयोग करते हैं। प्रभावित टोकन देखने के लिए विवरण विस्तृत करें।"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "टाइप '%s' समर्थित नहीं है (%s)\n"
+msgstr "टाइप '%s' समर्थित नहीं है (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"

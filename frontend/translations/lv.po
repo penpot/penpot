@@ -7720,9 +7720,9 @@ msgstr "TEKSTVIENĪBAS -  %s"
 msgid "workspace.tokens.tools"
 msgstr "Rīki"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Veids \"%s\" nav atbalstīts (%s)\n"
+msgstr "Veids \"%s\" nav atbalstīts (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:132
 msgid "workspace.tokens.value-not-valid"

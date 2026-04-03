@@ -8393,13 +8393,13 @@ msgstr "TOKENLER -  %s"
 msgid "workspace.tokens.tools"
 msgstr "Araçlar"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "İçe aktarma başarılı oldu. Bazı tokenler dahil edilmedi."
+msgstr "İçe aktarma başarılı oldu, ancak bazı tokenler desteklenmeyen $type değerleri kullandıkları için atlandı. Hangi tokenlerin etkilendiğini görmek için ayrıntıları genişletin."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "'%s' türü desteklenmiyor (%s)\n"
+msgstr "'%s' türü desteklenmiyor (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"

@@ -8431,15 +8431,13 @@ msgstr "Introduce un valor o un alias usando {alias}"
 msgid "workspace.tokens.tools"
 msgstr "Herramientas"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr ""
-"La importación se ha realizado correctamente. Algunos tokens no se "
-"incluyeron."
+msgstr "La importación se ha realizado correctamente, pero algunos tokens fueron omitidos porque usan valores de $type no soportados. Expande los detalles para ver qué tokens se vieron afectados."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "El tipo '%s' no está soportado (%s)\n"
+msgstr "El tipo '%s' no está soportado (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"

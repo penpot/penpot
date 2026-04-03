@@ -8150,13 +8150,13 @@ msgstr "TOKENS -  %s"
 msgid "workspace.tokens.tools"
 msgstr "Outils"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "L'importation a réussi. Certains tokens n'ont pas été inclus."
+msgstr "L'importation a réussi, mais certains tokens ont été ignorés car ils utilisent des valeurs $type non prises en charge. Développez les détails pour voir quels tokens ont été affectés."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Le type « %s » n'est pas pris en charge (%s)\n"
+msgstr "Le type « %s » n'est pas pris en charge (%s) :"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"
