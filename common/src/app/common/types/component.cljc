@@ -49,8 +49,8 @@
   {:name                    :name-group
    :fills                   :fill-group
    :hide-fill-on-export     :fill-group
-   :content                 {:path :geometry-group
-                             :text :content-group}
+   :content                 :content-group
+   :path-data               :geometry-group
    :position-data           :content-group
    :hidden                  :visibility-group
    :blocked                 :modifiable-group
@@ -147,16 +147,9 @@
     :interactions})
 
 (defn resolve-sync-group
-  "Makes a by type resolution of the sync group. This is necessary
-  because we have several properties that has different group
-  depending on the shape type. Per example the attr `:content` is used
-  by path and text shapes and the sync groups are different for each
-  shape type."
-  [type attr]
-  (when-let [group (get sync-attrs attr)]
-    (if (map? group)
-      (get group type)
-      group)))
+  "Resolve the sync group for a given attribute."
+  [_type attr]
+  (get sync-attrs attr))
 
 (defn component-attr?
   "Check if some attribute is one that is involved in component syncrhonization.

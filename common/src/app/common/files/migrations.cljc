@@ -149,8 +149,8 @@
   [data _]
   (letfn [(migrate-path [shape]
             (if-not (contains? shape :content)
-              (let [content (path.segment/points->content (:segments shape) :close (:close? shape))
-                    selrect (path.segment/content->selrect content)
+              (let [content (path.segment/points->path-data (:segments shape) :close (:close? shape))
+                    selrect (path.segment/path-data->selrect content)
                     points  (grc/rect->points selrect)]
                 (-> shape
                     (dissoc :segments)
@@ -221,7 +221,7 @@
             (if (= (:type shape) :path)
               (let [{:keys [width height]} (grc/points->rect (:points shape))]
                 (if (or (mth/almost-zero? width) (mth/almost-zero? height))
-                  (let [selrect (path.segment/content->selrect (:content shape))
+                  (let [selrect (path.segment/path-data->selrect (:content shape))
                         points (grc/rect->points selrect)
                         transform (gmt/matrix)
                         transform-inv (gmt/matrix)]
@@ -1336,16 +1336,16 @@
                   (cfh/path-shape? object))
             (let [content (get object :content)
                   content (cond
-                            (path/content? content)
+                            (path/path-data? content)
                             content
 
                             (nil? content)
-                            (path/content [])
+                            (path/path-data [])
 
                             :else
                             (-> content
                                 (decode-segments)
-                                (path/content)))]
+                                (path/path-data)))]
               (assoc object :content content))
             object))
 
@@ -1786,6 +1786,27 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0018-rename-path-content-to-path-data"
+  [data _]
+  (let [update-object
+        (fn [object]
+          (if (or (= :path (:type object))
+                  (= :bool (:type object)))
+            (let [content (get object :content)]
+              (cond-> object
+                (some? content)
+                (-> (assoc :path-data content)
+                    (dissoc :content))))
+            object))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1860,4 +1881,5 @@
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
          "0016-copy-fills-from-position-data-to-text-node"
-         "0017-fix-layout-flex-dir"]))
+         "0017-fix-layout-flex-dir"
+         "0018-rename-path-content-to-path-data"]))

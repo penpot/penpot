@@ -1060,7 +1060,7 @@
                  (u/not-valid plugin-id :toD (:type shape))
 
                  :else
-                 (.toString (:content shape)))))
+                 (.toString (:path-data shape)))))
 
            ;; Text shapes
            :getRange
@@ -1559,7 +1559,7 @@
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
             {:name "commands"
-             :get #(-> % u/proxy->shape :content format/format-path-content)
+             :get #(-> % u/proxy->shape :path-data format/format-path-content)
              :set
              (fn [_ value]
                (let [segments (parser/parse-commands value)]
@@ -1578,11 +1578,11 @@
                                 [id]
                                 (fn [shape]
                                   (-> shape
-                                      (assoc :content content)
+                                      (assoc :path-data content)
                                       (assoc :selrect selrect)
                                       (assoc :points points)))))))))}
             {:name "d"
-             :get #(-> % u/proxy->shape :content str)
+             :get #(-> % u/proxy->shape :path-data str)
              :set
              (fn [_ value]
                (let [segments
@@ -1606,7 +1606,7 @@
                      (st/emit! (dwsh/update-shapes [id]
                                                    (fn [shape]
                                                      (-> shape
-                                                         (assoc :content content)
+                                                         (assoc :path-data content)
                                                          (assoc :selrect selrect)
                                                          (assoc :points points)))))))))}
             {:name "content"

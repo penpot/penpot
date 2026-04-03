@@ -43,13 +43,13 @@
         height    (dm/get-prop shape :height)
         selrect   (dm/get-prop shape :selrect)
         type      (dm/get-prop shape :type)
-        content   (get shape :content)
+        path-data (get shape :path-data)
         path?     (cfh/path-shape? shape)
 
-        path-data
-        (mf/with-memo [path? content]
-          (when (and ^boolean path? (some? content))
-            (.toString content)))
+        path-data-str
+        (mf/with-memo [path? path-data]
+          (when (and ^boolean path? (some? path-data))
+            (.toString path-data)))
 
         border-attrs
         (attrs/get-border-props shape)
@@ -78,7 +78,7 @@
                 :ry (/ height 2)}
 
            :path
-           #js {:d path-data
+           #js {:d path-data-str
                 :transform nil}
 
            (let [x (dm/get-prop selrect :x)

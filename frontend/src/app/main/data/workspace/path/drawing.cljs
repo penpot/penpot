@@ -33,7 +33,7 @@
    [potok.v2.core :as ptk]))
 
 (declare close-path-drag-end)
-(declare check-changed-content)
+(declare check-changed-path-data)
 (declare change-edit-mode)
 
 (defn- end-path-event?
@@ -93,13 +93,13 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [id (st/get-path-id state)
-             content (st/get-path state :content)
+             path-data (st/get-path state :path-data)
 
-             index (or index (count content))
+             index (or index (count path-data))
              prefix (or prefix :c1)
-             position (or position (path.helpers/segment->point (nth content (dec index))))
+             position (or position (path.helpers/segment->point (nth path-data (dec index))))
 
-             old-handler (path.segment/get-handler-point content index prefix)
+             old-handler (path.segment/get-handler-point path-data index prefix)
 
              handler-position (cond-> (gpt/point x y)
                                 shift? (path.helpers/position-fixed-angle position))
@@ -111,7 +111,7 @@
 
              match-opposite? (not alt?)
 
-             modifiers (helpers/move-handler-modifiers content index prefix match-opposite? match-opposite? dx dy)]
+             modifiers (helpers/move-handler-modifiers path-data index prefix match-opposite? match-opposite? dx dy)]
          (-> state
              (update-in [:workspace-local :edit-path id :content-modifiers] merge modifiers)
              (assoc-in [:workspace-local :edit-path id :drag-handler] handler-position)))))))
@@ -123,12 +123,12 @@
       (let [id (st/get-path-id state)
 
             modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
-            content (-> (st/get-path state :content)
-                        (path/apply-content-modifiers modifiers))
+            path-data (-> (st/get-path state :path-data)
+                          (path/apply-path-data-modifiers modifiers))
 
             handler (get-in state [:workspace-local :edit-path id :drag-handler])]
         (-> state
-            (st/set-content content)
+            (st/set-path-data path-data)
             (update-in [:workspace-local :edit-path id] dissoc :drag-handler)
             (update-in [:workspace-local :edit-path id] dissoc :content-modifiers)
             (assoc-in  [:workspace-local :edit-path id :prev-handler] handler)
@@ -147,8 +147,8 @@
   (ptk/reify ::close-path-drag-start
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [content  (st/get-path state :content)
-            handlers (-> (path.segment/get-handlers content)
+      (let [path-data (st/get-path state :path-data)
+            handlers (-> (path.segment/get-handlers path-data)
                          (get position))
 
             [idx prefix] (when (= (count handlers) 1)
@@ -279,10 +279,10 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects      (dsh/lookup-page-objects state)
-            content      (get-in state [:workspace-drawing :object :content] [])
+            path-data (get-in state [:workspace-drawing :object :path-data] [])
 
             ;; FIXME: use native operation for retrieve the first position
-            position     (-> (nth content 0)
+            position     (-> (nth path-data 0)
                              (get :params)
                              (gpt/point))
 
@@ -305,16 +305,16 @@
   (ptk/reify ::handle-drawing-end
     ptk/UpdateEvent
     (update [_ state]
-      (let [content (some-> (dm/get-in state [:workspace-drawing :object :content])
-                            (path/check-content))]
-        (if (> (count content) 1)
+      (let [path-data (some-> (dm/get-in state [:workspace-drawing :object :path-data])
+                              (path/check-path-data))]
+        (if (> (count path-data) 1)
           (assoc-in state [:workspace-drawing :object :initialized?] true)
           state)))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [content (dm/get-in state [:workspace-drawing :object :content])]
-        (if (> (count content) 1)
+      (when-let [path-data (dm/get-in state [:workspace-drawing :object :path-data])]
+        (if (> (count path-data) 1)
           (rx/of (setup-frame)
                  (dwdc/handle-finish-drawing)
                  (dwe/start-edition-mode shape-id)
@@ -350,9 +350,9 @@
     (update [_ state]
       (let [id      (dm/get-in state [:workspace-local :edition])
             objects (dsh/lookup-page-objects state)
-            content (dm/get-in objects [id :content])]
-        (if content
-          (update-in state [:workspace-local :edit-path id] assoc :old-content content)
+            path-data (dm/get-in objects [id :path-data])]
+        (if path-data
+          (update-in state [:workspace-local :edit-path id] assoc :old-content path-data)
           state)))
 
     ptk/WatchEvent
@@ -376,7 +376,7 @@
                 (rx/filter (ptk/type? ::end-edition))
                 (rx/take 1)
                 (rx/mapcat (fn [_]
-                             (rx/of (check-changed-content)
+                             (rx/of (check-changed-path-data)
                                     (start-draw-mode*))))))
           (rx/empty))))))
 
@@ -406,20 +406,20 @@
       (let [id (st/get-path-id state)]
         (assoc-in state [:workspace-local :edit-path id :prev-handler] nil)))))
 
-(defn check-changed-content
+(defn check-changed-path-data
   []
-  (ptk/reify ::check-changed-content
+  (ptk/reify ::check-changed-path-data
     ptk/WatchEvent
     (watch [_ state _]
       (let [id (st/get-path-id state)
-            content (st/get-path state :content)
-            old-content (get-in state [:workspace-local :edit-path id :old-content])
+            path-data (st/get-path state :path-data)
+            old-path-data (get-in state [:workspace-local :edit-path id :old-content])
             mode (get-in state [:workspace-local :edit-path id :edit-mode])
-            empty-content? (empty? content)]
+            empty-path-data? (empty? path-data)]
 
         (cond
-          (and (not= content old-content) (not empty-content?))
-          (rx/of (changes/save-path-content))
+          (and (not= path-data old-path-data) (not empty-path-data?))
+          (rx/of (changes/save-path-data))
 
           (= mode :draw)
           (rx/of :interrupt)

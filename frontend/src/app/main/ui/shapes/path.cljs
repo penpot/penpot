@@ -11,31 +11,31 @@
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [rumext.v2 :as mf]))
 
-(defn- content->string
-  [content]
+(defn- path-data->string
+  [path-data]
   (cond
-    (nil? content)
+    (nil? path-data)
     ""
 
-    (path/content? content)
-    (.toString content)
+    (path/path-data? path-data)
+    (.toString path-data)
 
     :else
-    (let [content (path/content content)]
-      (.toString content))))
+    (let [path-data (path/path-data path-data)]
+      (.toString path-data))))
 
 (mf/defc path-shape
   {::mf/props :obj}
   [{:keys [shape]}]
-  (let [content (get shape :content)
-        pdata   (mf/with-memo [content]
-                  (try
-                    (content->string content)
-                    (catch :default cause
-                      (log/error :hint "unexpected error on formatting path"
-                                 :shape-name (:name shape)
-                                 :shape-id (:id shape)
-                                 :cause cause)
-                      "")))]
+  (let [path-data (get shape :path-data)
+        pdata     (mf/with-memo [path-data]
+                    (try
+                      (path-data->string path-data)
+                      (catch :default cause
+                        (log/error :hint "unexpected error on formatting path"
+                                   :shape-name (:name shape)
+                                   :shape-id (:id shape)
+                                   :cause cause)
+                        "")))]
     [:& shape-custom-strokes {:shape shape}
      [:path {:d pdata}]]))

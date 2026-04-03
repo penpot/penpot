@@ -34,7 +34,7 @@
       shape
       (get-in shape ks))))
 
-(defn set-content
-  [state content]
-  (let [path-loc (get-path-location state :content)]
-    (assoc-in state path-loc content)))
+(defn set-path-data
+  [state path-data]
+  (let [path-loc (get-path-location state :path-data)]
+    (assoc-in state path-loc path-data)))
