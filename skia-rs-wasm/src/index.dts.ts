@@ -1,7 +1,7 @@
 export { Renderer } from './lib/renderer/renderer'
 export { Viewport, screenToWorld, worldToScreen } from './lib/renderer/viewport'
 export type { ViewportData } from './lib/renderer/viewport'
-export { setPan, setZoom, zoomAt, resetViewport } from './lib/renderer/hooks/viewport-actions'
+export { setPan, setZoom, setViewport, zoomAt, resetViewport } from './lib/renderer/hooks/viewport-actions'
 export { CanvasWrapper } from './lib/renderer/canvas-wrapper'
 export type {
   ShapeType,
@@ -60,10 +60,13 @@ export {
 } from './lib/changes/changes-builder'
 export { useHistoryStore } from './lib/history/history-store'
 
+// Document selection
+export { setSelectedIds, clearSelection, getSelectedIdsSet } from './lib/renderer/store/document-selection'
+
 // Document state (Valtio proxy)
 export { docProxy, getActiveOrSinglePageId, getCurrentPage, getPage } from './lib/renderer/store/doc-proxy'
 export type { DocState, DocumentMeta } from './lib/renderer/store/doc-proxy'
-export { useSnapshot } from 'valtio'
+export { useSnapshot, subscribe } from 'valtio'
 
 // Document model singleton
 export { documentModel } from './lib/renderer/store/document-model'

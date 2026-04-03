@@ -168,42 +168,58 @@ impl Gradient {
     }
 
     pub fn to_angular_shader(&self, rect: &Rect) -> Option<skia::Shader> {
-        let center = skia::Point::new(
-            rect.left + self.start.0 * rect.width(),
-            rect.top + self.start.1 * rect.height(),
-        );
-        // Convert the angle-zero point from normalized shape coords to pixel space,
-        // then compute the angle there so it is correct for non-square shapes.
-        let end = skia::Point::new(
-            rect.left + self.end.0 * rect.width(),
-            rect.top + self.end.1 * rect.height(),
-        );
-        let dir = end - center;
-        let start_angle = dir.y.atan2(dir.x).to_degrees();
-        let end_angle = start_angle + 360.0;
+        // Reconstruct the full gradient inverse transform from center/end/width so the
+        // sweep evaluates in gradient space.  This avoids both:
+        //  • angle distortion on non-square shapes (old pixel-space atan2 bug)
+        //  • the seam artifact from a rotated start_angle
+        //
+        // The exporter gives us:
+        //   start (cx, cy) = M^-1 * (0.5, 0.5)   – center in normalized shape coords
+        //   end   (ex, ey) = M^-1 * (1.0, 0.5)   – angle-zero point
+        //   width          = radius_0 / radius_90  – aspect ratio
+        //
+        // From these we rebuild the 2×2 part of M^-1 (gradient→shape) assuming
+        // orthogonal axes (rotation + non-uniform scale, no shear):
+        //   col0 = 2·(dx, dy)                      maps (1,0) offset in grad space
+        //   col1 = 2·(dy, -dx) / width             maps (0,1) offset
+        //
+        // Skia's sweep_gradient evaluates atan2 which increases counter-clockwise in
+        // math convention.  Figma's angular gradient also increases CCW in its gradient
+        // space (screen-CW would place offset 0.25 at the bottom, but Figma places it
+        // at the top).  Using (dy, -dx) as the perpendicular matches Figma's winding.
+        let dx = self.end.0 - self.start.0;
+        let dy = self.end.1 - self.start.1;
+        let w = if self.width > 0.0 { self.width } else { 1.0 };
+        let cx = self.start.0;
+        let cy = self.start.1;
 
-        // Ellipse aspect: width = 1 means circle; same convention as radial.
-        let aspect = if self.width > 0.0 {
-            self.width
-        } else {
-            1.0
-        };
+        // M^-1 (2×2): gradient offsets → shape offsets
+        let m_inv_2x2 = skia::Matrix::new_all(
+            2.0 * dx,        2.0 * dy / w, 0.0,
+            2.0 * dy,       -2.0 * dx / w, 0.0,
+            0.0,             0.0,           1.0,
+        );
 
+        // Local matrix: gradient space → pixel space
+        //   T(rect) · S(rect_size) · T(shape_center) · M^-1_2x2 · T(-grad_center)
         let mut transform = skia::Matrix::new_identity();
-        transform.pre_translate((center.x, center.y));
-        transform.pre_rotate(start_angle, skia::Point::new(0., 0.));
-        transform.pre_scale((1., aspect), None);
-        transform.pre_rotate(-start_angle, skia::Point::new(0., 0.));
-        transform.pre_translate((-center.x, -center.y));
+        transform.pre_translate((rect.left, rect.top));
+        transform.pre_scale((rect.width(), rect.height()), None);
+        transform.pre_translate((cx, cy));
+        transform.pre_concat(&m_inv_2x2);
+        transform.pre_translate((-0.5, -0.5));
 
         let (colors, offsets) = self.angular_wrapped_stops();
 
+        // Sweep in gradient space: center at (0.5, 0.5), full circle from 0° to 360°.
+        // No rotated start/end angles → the seam sits at 0° (3-o'clock) in gradient space
+        // where angular_wrapped_stops guarantees color(0) == color(1).
         skia::shader::Shader::sweep_gradient(
-            center,
+            skia::Point::new(0.5, 0.5),
             colors.as_slice(),
             offsets.as_slice(),
             skia::TileMode::Clamp,
-            Some((start_angle, end_angle)),
+            Some((0.0, 360.0)),
             None,
             Some(&transform),
         )

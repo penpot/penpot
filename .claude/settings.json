@@ -22,7 +22,12 @@
       "Bash(ls /Users/I590608/IdeaProjects/penpot-ai/render-wasm/src/wasm/fills*)",
       "WebFetch(domain:shopify.github.io)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npx vitest:*)",
+      "WebSearch"
+    ],
+    "additionalDirectories": [
+      "/Users/I590608/IdeaProjects/penpot-ai/.claude"
     ]
   }
 }

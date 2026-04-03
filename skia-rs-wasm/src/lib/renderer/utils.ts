@@ -67,14 +67,15 @@ export function writeU32ToHeap(offset: number, heap: Uint32Array, value: number)
 }
 
 /**
- * Gets the device pixel ratio, defaulting to 1
- */
-/**
- * Match the Penpot frontend's default DPR=1 (the `:render-wasm-dpr` flag is off by default).
- * Native DPR (2 on Retina) renders 4× more pixels; the GPU-side cost alone adds ~5ms per
- * `_render`, and Skia's surface allocations scale with pixel area.
+ * Gets the device pixel ratio.
+ * Uses the actual DPR so the canvas pixel grid matches the display,
+ * preventing size/alignment drift between the plugin canvas and Figma's
+ * native rendering on HiDPI screens.
  */
 export function getDPR(): number {
+  if (typeof window !== 'undefined' && window.devicePixelRatio) {
+    return window.devicePixelRatio
+  }
   return 1
 }
 
