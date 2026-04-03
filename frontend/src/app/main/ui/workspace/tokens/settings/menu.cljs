@@ -26,8 +26,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc token-settings*
-  {::mf/wrap-props false}
-  []
+  [_props]
   (let [file-data (deref refs/workspace-data)
         base-font-size* (mf/use-state #(ctf/get-base-font-size file-data))
         base-font-size (deref base-font-size*)

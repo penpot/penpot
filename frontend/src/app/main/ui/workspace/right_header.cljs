@@ -36,9 +36,8 @@
 
 ;; --- Zoom Widget
 
-(mf/defc zoom-widget-workspace
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc zoom-widget-workspace*
+  {::mf/wrap [mf/memo]}
   [{:keys [zoom on-increase on-decrease on-zoom-reset on-zoom-fit on-zoom-selected]}]
   (let [open*           (mf/use-state false)
         open?           (deref open*)
@@ -205,7 +204,7 @@
      [:div {:class (stl/css :separator)}]
 
      [:div {:class (stl/css :zoom-section)}
-      [:& zoom-widget-workspace
+      [:> zoom-widget-workspace*
        {:zoom zoom
         :on-increase on-increase
         :on-decrease on-decrease
