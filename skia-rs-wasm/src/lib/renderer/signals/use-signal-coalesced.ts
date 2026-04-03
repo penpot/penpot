@@ -7,12 +7,13 @@ export function useSignalCoalesced<T>(sig: Signal<T>): T {
   const [value, setValue] = useState(() => sig.peek())
   useEffect(() => {
     let raf = 0
+    let latest: T
     const dispose = effect(() => {
-      const v = sig.value
+      latest = sig.value
       if (raf) return
       raf = requestAnimationFrame(() => {
         raf = 0
-        setValue(() => v)
+        setValue(() => latest)
       })
     })
     return () => {

@@ -37,6 +37,17 @@ export function zoomAt(point: { x: number; y: number }, scale: number): void {
   viewport.value = { panX: tmp.panX, panY: tmp.panY, zoom: tmp.zoom }
 }
 
+export function setViewport(panX: number, panY: number, zoom: number): void {
+  const vp = viewport.value
+  const { renderer } = useWorkspaceStore.getState()
+  if (!vp) return
+  const tmp = Viewport.from(vp)
+  tmp.setPan(panX, panY)
+  tmp.setZoom(zoom)
+  if (renderer) renderer.applyViewport(tmp)
+  viewport.value = { panX: tmp.panX, panY: tmp.panY, zoom: tmp.zoom }
+}
+
 export function resetViewport(): void {
   const vp = viewport.value
   const { renderer } = useWorkspaceStore.getState()

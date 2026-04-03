@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { effect } from '@preact/signals-core'
 import { viewport as viewportSignal } from '../../renderer/signals/pointer'
 
@@ -13,9 +13,12 @@ export function useViewBoxSync(
     canvasSizeRef.current = canvasSize
   }, [canvasSize])
 
-  useEffect(() => {
-    function applyViewBox() {
-      const vp = viewportSignal.peek()
+  // Read viewportSignal.value directly in the effect body (not via peek())
+  // to create a proper reactive subscription — matching how
+  // useImperativeSelectionRect reads signals and works correctly.
+  useLayoutEffect(() => {
+    return effect(() => {
+      const vp = viewportSignal.value
       const { width, height } = canvasSizeRef.current
       const svg = svgRef.current
       if (!svg || width <= 0 || height <= 0) {
@@ -27,11 +30,6 @@ export function useViewBoxSync(
         return
       }
       svg.setAttribute('viewBox', `${vp.panX} ${vp.panY} ${width / vp.zoom} ${height / vp.zoom}`)
-    }
-    applyViewBox()
-    return effect(() => {
-      void viewportSignal.value
-      applyViewBox()
     })
   }, [svgRef])
 

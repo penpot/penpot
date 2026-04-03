@@ -10,11 +10,13 @@ import { useWorkspaceStore } from './workspace-store'
 function syncSelectionDerived(): void {
   const ids = docProxy.selectedIds
   const renderer = useWorkspaceStore.getState().renderer
+  let nextRect: ReturnType<typeof querySelectionRect> = null
   if (ids.size === 0 || !renderer) {
     wasmSelectionRect.value = null
-    return
+  } else {
+    nextRect = querySelectionRect(renderer, ids)
+    wasmSelectionRect.value = nextRect
   }
-  wasmSelectionRect.value = querySelectionRect(renderer, ids)
 }
 
 export function setSelectedIds(ids: Set<string>): void {
