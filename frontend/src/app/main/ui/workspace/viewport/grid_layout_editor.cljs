@@ -52,8 +52,7 @@
     :flex (dm/str (fmt/format-number value) "FR")
     :auto "AUTO"))
 
-(mf/defc grid-edition-actions
-  {::mf/wrap-props false}
+(mf/defc grid-edition-actions*
   [{:keys [shape]}]
   [:div {:class (stl/css :grid-actions)}
    [:div {:class (stl/css :grid-actions-container)}
@@ -66,15 +65,9 @@
               :on-click #(st/emit! (dw/clear-edition-mode))}
      (tr "workspace.layout-grid.editor.top-bar.done")]]])
 
-(mf/defc grid-editor-frame
-  {::mf/wrap-props false}
-  [props]
-
-  (let [bounds (unchecked-get props "bounds")
-        width (unchecked-get props "width")
-        height (unchecked-get props "height")
-        zoom (unchecked-get props "zoom")
-        hv     #(gpo/start-hv bounds %)
+(mf/defc grid-editor-frame*
+  [{:keys [bounds width height zoom]}]
+  (let [hv     #(gpo/start-hv bounds %)
         vv     #(gpo/start-vv bounds %)
         origin (gpo/origin bounds)
 
@@ -94,15 +87,9 @@
                    (map #(dm/fmt "%,%" (:x %) (:y %)))
                    (str/join " "))}]))
 
-(mf/defc plus-btn
-  {::mf/wrap-props false}
-  [props]
-  (let [start-p  (unchecked-get props "start-p")
-        zoom     (unchecked-get props "zoom")
-        type     (unchecked-get props "type")
-        on-click (unchecked-get props "on-click")
-
-        [rect-x rect-y icon-x icon-y]
+(mf/defc plus-btn*
+  [{:keys [start-p zoom type on-click]}]
+  (let [[rect-x rect-y icon-x icon-y]
         (if (= type :column)
           [(:x start-p)
            (- (:y start-p) (/ 40 zoom))
@@ -184,25 +171,11 @@
      :handle-lost-pointer-capture handle-lost-pointer-capture
      :handle-pointer-move handle-pointer-move}))
 
-(mf/defc resize-cell-handler
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")
-        x (unchecked-get props "x")
-        y (unchecked-get props "y")
-        width (unchecked-get props "width")
-        height (unchecked-get props "height")
-        handler (unchecked-get props "handler")
-
-        on-set-modifiers (unchecked-get props "on-set-modifiers")
-        on-clear-modifiers (unchecked-get props "on-clear-modifiers")
-
-        objects (mf/deref refs/workspace-page-objects)
-        {cell-id :id} (unchecked-get props "cell")
+(mf/defc resize-cell-handler*
+  [{:keys [shape x y width height handler on-set-modifiers on-clear-modifiers cell direction layout-data]}]
+  (let [objects (mf/deref refs/workspace-page-objects)
+        {cell-id :id} cell
         {:keys [row column row-span column-span]} (get-in shape [:layout-grid-cells cell-id])
-
-        direction (unchecked-get props "direction")
-        layout-data (unchecked-get props "layout-data")
 
         calculate-drag-modifiers
         (mf/use-fn
@@ -279,14 +252,11 @@
       :on-lost-pointer-capture handle-lost-pointer-capture
       :on-pointer-move handle-pointer-move}]))
 
-(mf/defc grid-cell-area-label
-  {::mf/wrap-props false}
-  [props]
+(mf/defc grid-cell-area-label*
+  [{:keys [origin width zoom text]}]
 
-  (let [cell-origin (unchecked-get props "origin")
-        cell-width  (unchecked-get props "width")
-        zoom  (unchecked-get props "zoom")
-        text  (unchecked-get props "text")
+  (let [cell-origin origin
+        cell-width  width
 
         area-width (/ (* 10 (count text)) zoom)
         area-height (/ 25 zoom)
@@ -407,10 +377,10 @@
        :on-pointer-down handle-pointer-down}]
 
      (when (:area-name cell)
-       [:& grid-cell-area-label {:origin cell-origin
-                                 :width cell-width
-                                 :zoom zoom
-                                 :text (:area-name cell)}])
+       [:> grid-cell-area-label* {:origin cell-origin
+                                  :width cell-width
+                                  :zoom zoom
+                                  :text (:area-name cell)}])
 
      (when is-selected
        (let [handlers
@@ -421,18 +391,18 @@
               [:left (+ (:x cell-origin) (/ -10 zoom)) (:y cell-origin) (/ 20 zoom) cell-height :column]]]
          [:g {:transform (dm/str (gmt/transform-in cell-center (:transform shape)))}
           (for [[handler x y width height dir] handlers]
-            [:& resize-cell-handler {:key (dm/str "resize-" (d/name handler) "-" (:id cell))
-                                     :shape shape
-                                     :handler handler
-                                     :x x
-                                     :y y
-                                     :cell cell
-                                     :width width
-                                     :height height
-                                     :direction dir
-                                     :layout-data layout-data
-                                     :on-set-modifiers on-set-modifiers
-                                     :on-clear-modifiers on-clear-modifiers}])]))]))
+            [:> resize-cell-handler* {:key (dm/str "resize-" (d/name handler) "-" (:id cell))
+                                      :shape shape
+                                      :handler handler
+                                      :x x
+                                      :y y
+                                      :cell cell
+                                      :width width
+                                      :height height
+                                      :direction dir
+                                      :layout-data layout-data
+                                      :on-set-modifiers on-set-modifiers
+                                      :on-clear-modifiers on-clear-modifiers}])]))]))
 
 (defn use-resize-track
   [type shape index track-before track-after zoom snap-pixel? on-set-modifiers on-clear-modifiers]
@@ -517,27 +487,12 @@
                :on-drag-delta handle-drag-position
                :on-drag-end handle-drag-end})))
 
-(mf/defc resize-track-handler
-  {::mf/wrap-props false}
-  [props]
+(mf/defc resize-track-handler*
+  [{:keys [shape index is-last is-drop track-before track-after snap-pixel
+           on-set-modifiers on-clear-modifiers layout-data start-p type zoom]}]
 
-  (let [shape (unchecked-get props "shape")
-        index (unchecked-get props "index")
-        last? (unchecked-get props "last?")
-        drop? (unchecked-get props "drop?")
-        track-before (unchecked-get props "track-before")
-        track-after (unchecked-get props "track-after")
-        snap-pixel? (unchecked-get props "snap-pixel?")
-
-        on-set-modifiers (unchecked-get props "on-set-modifiers")
-        on-clear-modifiers (unchecked-get props "on-clear-modifiers")
-
-        {:keys [column-total-size column-total-gap row-total-size row-total-gap] :as layout-data}
-        (unchecked-get props "layout-data")
-
-        start-p (unchecked-get props "start-p")
-        type (unchecked-get props "type")
-        zoom (unchecked-get props "zoom")
+  (let [{:keys [column-total-size column-total-gap row-total-size row-total-gap]}
+        layout-data
 
         bounds (:points shape)
         hv #(gpo/start-hv bounds %)
@@ -546,7 +501,7 @@
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
-        (use-resize-track type shape index track-before track-after zoom snap-pixel? on-set-modifiers on-clear-modifiers)
+        (use-resize-track type shape index track-before track-after zoom snap-pixel on-set-modifiers on-clear-modifiers)
 
         [width height]
         (if (= type :column)
@@ -564,11 +519,11 @@
           (and (= type :row) (= index 0))
           (gpt/subtract (vv (/ height 2)))
 
-          (and (= type :column) (not= index 0) (not last?))
+          (and (= type :column) (not= index 0) (not is-last))
           (-> (gpt/subtract (hv (/ layout-gap-col 2)))
               (gpt/subtract (hv (/ width 2))))
 
-          (and (= type :row) (not= index 0) (not last?))
+          (and (= type :row) (not= index 0) (not is-last))
           (-> (gpt/subtract (vv (/ layout-gap-row 2)))
               (gpt/subtract (vv (/ height 2)))))
 
@@ -580,21 +535,21 @@
           (and (= type :row) (= index 0))
           (gpt/subtract (vv (/ height 2)))
 
-          (and (= type :column) last?)
+          (and (= type :column) is-last)
           (gpt/add (hv (/ width 2)))
 
-          (and (= type :row) last?)
+          (and (= type :row) is-last)
           (gpt/add (vv (/ height 2)))
 
-          (and (= type :column) (not= index 0) (not last?))
+          (and (= type :column) (not= index 0) (not is-last))
           (-> (gpt/subtract (hv (/ layout-gap-col 2)))
               (gpt/subtract (hv (/ 5 zoom))))
 
-          (and (= type :row) (not= index 0) (not last?))
+          (and (= type :row) (not= index 0) (not is-last))
           (-> (gpt/subtract (vv (/ layout-gap-row 2)))
               (gpt/subtract (vv (/ 5 zoom)))))]
     [:*
-     (when drop?
+     (when is-drop
        [:rect.drop
         {:x (:x start-p-drop)
          :y (:y start-p-drop)
@@ -689,28 +644,15 @@
      (dm/fmt "L%,%" (:x a1) (:y a1))
      "Z")))
 
-(mf/defc track-marker
-  {::mf/wrap-props false}
-  [props]
+(mf/defc track-marker*
+  [{:keys [center value zoom shape index type track-before track-after snap-pixel
+           on-set-modifiers on-clear-modifiers]}]
 
-  (let [center (unchecked-get props "center")
-        value (unchecked-get props "value")
-        zoom (unchecked-get props "zoom")
-        shape (unchecked-get props "shape")
-        index (unchecked-get props "index")
-        type (unchecked-get props "type")
-        track-before (unchecked-get props "track-before")
-        track-after (unchecked-get props "track-after")
-        snap-pixel? (unchecked-get props "snap-pixel?")
-
-        on-set-modifiers (unchecked-get props "on-set-modifiers")
-        on-clear-modifiers (unchecked-get props "on-clear-modifiers")
-
-        text-x (:x center)
+  (let [text-x (:x center)
         text-y (:y center)
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
-        (use-resize-track type shape index track-before track-after zoom snap-pixel? on-set-modifiers on-clear-modifiers)]
+        (use-resize-track type shape index track-before track-after zoom snap-pixel on-set-modifiers on-clear-modifiers)]
 
     [:g {:on-pointer-down handle-pointer-down
          :on-lost-pointer-capture handle-lost-pointer-capture
@@ -731,28 +673,12 @@
              :dominant-baseline "middle"}
       (dm/str value)]]))
 
-(mf/defc track
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [props]
-  (let [shape       (unchecked-get props "shape")
-        zoom        (unchecked-get props "zoom")
-        type        (unchecked-get props "type")
-        index       (unchecked-get props "index")
-        snap-pixel? (unchecked-get props "snap-pixel?")
-        track-data  (unchecked-get props "track-data")
-        layout-data (unchecked-get props "layout-data")
-        hovering?   (unchecked-get props "hovering?")
-        drop?       (unchecked-get props "drop?")
-
-        on-start-reorder-track   (unchecked-get props "on-start-reorder-track")
-        on-move-reorder-track   (unchecked-get props "on-move-reorder-track")
-        on-end-reorder-track   (unchecked-get props "on-end-reorder-track")
-
-        on-set-modifiers (unchecked-get props "on-set-modifiers")
-        on-clear-modifiers (unchecked-get props "on-clear-modifiers")
-
-        track-input-ref (mf/use-ref)
+(mf/defc track*
+  {::mf/wrap [mf/memo]}
+  [{:keys [shape zoom type index snap-pixel track-data layout-data is-hovering is-drop
+           on-start-reorder-track on-move-reorder-track on-end-reorder-track
+           on-set-modifiers on-clear-modifiers]}]
+  (let [track-input-ref (mf/use-ref)
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
 
         bounds (:points shape)
@@ -898,7 +824,7 @@
               :height (- text-height (/ 5 zoom))
               :rx (/ 3 zoom)
               :style {:cursor "pointer"}
-              :opacity (if (and hovering? (not small?)) 0.2 0)}]
+              :opacity (if (and is-hovering (not small?)) 0.2 0)}]
       (when (not small?)
         [:foreignObject {:x text-x :y text-y :width text-width :height text-height}
          [:div {:class (stl/css :grid-editor-wrapper)
@@ -915,16 +841,16 @@
             :data-default-value (format-size track-data)
             :on-key-down handle-keydown-track-input
             :on-blur handle-blur-track-input}]
-          (when (and hovering? (not medium?) (not small?))
+          (when (and is-hovering (not medium?) (not small?))
             [:button {:class (stl/css :grid-editor-button)
                       :on-click handle-show-track-menu} deprecated-icon/menu])]])]
 
      [:g {:transform (when (= type :row) (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p)))}
-      [:& track-marker
+      [:> track-marker*
        {:center marker-p
         :index index
         :shape shape
-        :snap-pixel? snap-pixel?
+        :snap-pixel snap-pixel
         :track-after track-data
         :track-before track-before
         :type type
@@ -933,12 +859,12 @@
         :on-set-modifiers on-set-modifiers
         :on-clear-modifiers on-clear-modifiers}]]
 
-     [:& resize-track-handler
+     [:> resize-track-handler*
       {:index index
        :layout-data layout-data
        :shape shape
-       :snap-pixel? snap-pixel?
-       :drop? drop?
+       :snap-pixel snap-pixel
+       :is-drop is-drop
        :start-p start-p
        :track-after track-data
        :track-before track-before
@@ -1122,42 +1048,42 @@
 
        (when-not ^boolean view-only
          [:*
-          [:& grid-editor-frame {:zoom zoom
-                                 :bounds bounds
-                                 :width width
-                                 :height height}]
+          [:> grid-editor-frame* {:zoom zoom
+                                  :bounds bounds
+                                  :width width
+                                  :height height}]
           (let [start-p (-> origin (gpt/add (hv (+ width (/ 30 zoom)))))]
             [:g {:transform (dm/str (gmt/transform-in start-p (:transform shape)))}
-             [:& plus-btn {:start-p start-p
-                           :zoom zoom
-                           :type :column
-                           :on-click handle-add-column}]])
+             [:> plus-btn* {:start-p start-p
+                            :zoom zoom
+                            :type :column
+                            :on-click handle-add-column}]])
 
           (let [start-p (-> origin (gpt/add (vv (+ height (/ 30 zoom)))))]
             [:g {:transform (dm/str (gmt/transform-in start-p (:transform shape)))}
-             [:& plus-btn {:start-p start-p
-                           :zoom zoom
-                           :type :row
-                           :on-click handle-add-row}]])
+             [:> plus-btn* {:start-p start-p
+                            :zoom zoom
+                            :type :row
+                            :on-click handle-add-row}]])
 
           (for [[idx column-data] (d/enumerate column-tracks)]
-            (let [drop? (and (= :column @drop-track-type*)
-                             (= idx @drop-track-target*))]
-              [:& track {:key (dm/str "column-track-" idx)
-                         :shape shape
-                         :zoom zoom
-                         :type :column
-                         :index idx
-                         :layout-data layout-data
-                         :snap-pixel? snap-pixel?
-                         :drop? drop?
-                         :track-data column-data
-                         :hovering? (contains? hover-columns idx)
-                         :on-start-reorder-track handle-start-reorder-track
-                         :on-move-reorder-track handle-move-reorder-track
-                         :on-end-reorder-track handle-end-reorder-track
-                         :on-set-modifiers handle-set-modifiers
-                         :on-clear-modifiers handle-clear-modifiers}]))
+            (let [is-drop (and (= :column @drop-track-type*)
+                               (= idx @drop-track-target*))]
+              [:> track* {:key (dm/str "column-track-" idx)
+                          :shape shape
+                          :zoom zoom
+                          :type :column
+                          :index idx
+                          :layout-data layout-data
+                          :snap-pixel snap-pixel?
+                          :is-drop is-drop
+                          :track-data column-data
+                          :is-hovering (contains? hover-columns idx)
+                          :on-start-reorder-track handle-start-reorder-track
+                          :on-move-reorder-track handle-move-reorder-track
+                          :on-end-reorder-track handle-end-reorder-track
+                          :on-set-modifiers handle-set-modifiers
+                          :on-clear-modifiers handle-clear-modifiers}]))
 
           ;; Last track resize handler
           (when-not (empty? column-tracks)
@@ -1167,25 +1093,25 @@
                   marker-p (-> (gpo/project-point bounds :h end-p)
                                (gpt/subtract (vv (/ 20 zoom))))]
               [:g.track
-               [:& track-marker {:center marker-p
-                                 :index (count column-tracks)
-                                 :shape shape
-                                 :snap-pixel? snap-pixel?
-                                 :track-before (last column-tracks)
-                                 :type :column
-                                 :value (dm/str (inc (count column-tracks)))
-                                 :zoom zoom
-                                 :on-set-modifiers handle-set-modifiers
-                                 :on-clear-modifiers handle-clear-modifiers}]
+               [:> track-marker* {:center marker-p
+                                  :index (count column-tracks)
+                                  :shape shape
+                                  :snap-pixel snap-pixel?
+                                  :track-before (last column-tracks)
+                                  :type :column
+                                  :value (dm/str (inc (count column-tracks)))
+                                  :zoom zoom
+                                  :on-set-modifiers handle-set-modifiers
+                                  :on-clear-modifiers handle-clear-modifiers}]
                (let [drop? (and (= :column @drop-track-type*)
                                 (= (count column-tracks) @drop-track-target*))]
-                 [:& resize-track-handler
+                 [:> resize-track-handler*
                   {:index (count column-tracks)
-                   :last? true
-                   :drop? drop?
+                   :is-last true
+                   :is-drop drop?
                    :shape shape
                    :layout-data layout-data
-                   :snap-pixel? snap-pixel?
+                   :snap-pixel snap-pixel?
                    :start-p end-p
                    :type :column
                    :track-before (last column-tracks)
@@ -1194,23 +1120,23 @@
                    :on-clear-modifiers handle-clear-modifiers}])]))
 
           (for [[idx row-data] (d/enumerate row-tracks)]
-            (let [drop? (and (= :row @drop-track-type*)
-                             (= idx @drop-track-target*))]
-              [:& track {:index idx
-                         :key (dm/str "row-track-" idx)
-                         :layout-data layout-data
-                         :shape shape
-                         :snap-pixel? snap-pixel?
-                         :drop? drop?
-                         :track-data row-data
-                         :type :row
-                         :zoom zoom
-                         :hovering? (contains? hover-rows idx)
-                         :on-start-reorder-track handle-start-reorder-track
-                         :on-move-reorder-track handle-move-reorder-track
-                         :on-end-reorder-track handle-end-reorder-track
-                         :on-set-modifiers handle-set-modifiers
-                         :on-clear-modifiers handle-clear-modifiers}]))
+            (let [is-drop (and (= :row @drop-track-type*)
+                               (= idx @drop-track-target*))]
+              [:> track* {:index idx
+                          :key (dm/str "row-track-" idx)
+                          :layout-data layout-data
+                          :shape shape
+                          :snap-pixel snap-pixel?
+                          :is-drop is-drop
+                          :track-data row-data
+                          :type :row
+                          :zoom zoom
+                          :is-hovering (contains? hover-rows idx)
+                          :on-start-reorder-track handle-start-reorder-track
+                          :on-move-reorder-track handle-move-reorder-track
+                          :on-end-reorder-track handle-end-reorder-track
+                          :on-set-modifiers handle-set-modifiers
+                          :on-clear-modifiers handle-clear-modifiers}]))
           (when-not (empty? row-tracks)
             (let [last-track (last row-tracks)
                   start-p (:start-p last-track)
@@ -1219,28 +1145,28 @@
                                (gpt/subtract (hv (/ 20 zoom))))]
               [:g.track
                [:g {:transform (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p))}
-                [:& track-marker {:center marker-p
-                                  :index (count row-tracks)
-                                  :shape shape
-                                  :snap-pixel? snap-pixel?
-                                  :track-before (last row-tracks)
-                                  :type :row
-                                  :value (dm/str (inc (count row-tracks)))
-                                  :zoom zoom
-                                  :on-set-modifiers handle-set-modifiers
-                                  :on-clear-modifiers handle-clear-modifiers}]]
+                [:> track-marker* {:center marker-p
+                                   :index (count row-tracks)
+                                   :shape shape
+                                   :snap-pixel snap-pixel?
+                                   :track-before (last row-tracks)
+                                   :type :row
+                                   :value (dm/str (inc (count row-tracks)))
+                                   :zoom zoom
+                                   :on-set-modifiers handle-set-modifiers
+                                   :on-clear-modifiers handle-clear-modifiers}]]
                (let [drop? (and (= :row @drop-track-type*)
                                 (= (count row-tracks) @drop-track-target*))]
-                 [:& resize-track-handler
+                 [:> resize-track-handler*
                   {:index (count row-tracks)
-                   :last? true
-                   :drop? drop?
+                   :is-last true
+                   :is-drop drop?
                    :shape shape
                    :layout-data layout-data
                    :start-p end-p
                    :type :row
                    :track-before (last row-tracks)
-                   :snap-pixel? snap-pixel?
+                   :snap-pixel snap-pixel?
                    :zoom zoom
                    :on-set-modifiers handle-set-modifiers
                    :on-clear-modifiers handle-clear-modifiers}])]))])])))

@@ -27,8 +27,8 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options
-                                                                   typography-entry]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options*
+                                                                   typography-entry*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.text.content :as content]
@@ -331,11 +331,11 @@
        [:div {:class (stl/css :element-content)}
         (cond
           typography
-          [:& typography-entry {:file-id typography-file-id
-                                :typography typography
-                                :local? (= typography-file-id file-id)
-                                :on-detach handle-detach-typography
-                                :on-change handle-change-typography}]
+          [:> typography-entry* {:file-id typography-file-id
+                                 :typography typography
+                                 :is-local (= typography-file-id file-id)
+                                 :on-detach handle-detach-typography
+                                 :on-change handle-change-typography}]
 
           (= typography-id :multiple)
           [:div {:class (stl/css :multiple-typography)}
@@ -346,7 +346,7 @@
             deprecated-icon/detach]]
 
           :else
-          [:> text-options opts])
+          [:> text-options* opts])
 
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options* opts]

@@ -35,9 +35,8 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc color-item
-  {::mf/wrap-props false}
-  [{:keys [color local? file-id selected multi-colors? multi-assets?
+(mf/defc color-item*
+  [{:keys [color is-local file-id selected is-multi-colors is-multi-assets
            on-asset-click on-assets-delete on-clear-selection on-group
            selected-full selected-paths move-color]}]
 
@@ -84,9 +83,9 @@
 
         delete-color
         (mf/use-fn
-         (mf/deps multi-colors? multi-assets? file-id color-id)
+         (mf/deps is-multi-colors is-multi-assets file-id color-id)
          (fn []
-           (if (or multi-colors? multi-assets?)
+           (if (or is-multi-colors is-multi-assets)
              (on-assets-delete)
              (let [undo-id (js/Symbol)]
                (st/emit! (dwu/start-undo-transaction undo-id)
@@ -102,9 +101,9 @@
 
         rename-color-clicked
         (mf/use-fn
-         (mf/deps read-only? local?)
+         (mf/deps read-only? is-local)
          (fn [event]
-           (when (and local? (not read-only?))
+           (when (and is-local (not read-only?))
              (dom/prevent-default event)
              (reset! editing* true))))
 
@@ -145,7 +144,7 @@
          (fn [event]
            (dom/prevent-default event)
            (let [pos (dom/get-client-position event)]
-             (when (and local? (not read-only?))
+             (when (and is-local (not read-only?))
                (when-not (contains? selected color-id)
                  (on-clear-selection))
                (swap! menu-state cmm/open-context-menu pos)))))
@@ -190,7 +189,7 @@
              (st/emit! (ptk/data-event ::ev/event
                                        {::ev/name "use-library-color"
                                         ::ev/origin "sidebar"
-                                        :external-library (not local?)}))
+                                        :external-library (not is-local)}))
 
              (when-not (on-asset-click event (:id color))
                (st/emit! (dc/apply-color-from-assets file-id color (kbd/alt? event)))))))]
@@ -242,19 +241,19 @@
            (:name color)
            [:span  {:class (stl/css :default-name :default-name-with-color)} default-name]])])
 
-     (when local?
+     (when is-local
        [:> cmm/assets-context-menu*
         {:on-close on-close-menu
          :state @menu-state
-         :options [(when-not (or multi-colors? multi-assets?)
+         :options [(when-not (or is-multi-colors is-multi-assets)
                      {:name    (tr "workspace.assets.rename")
                       :id      "assets-rename-color"
                       :handler rename-color-clicked})
-                   (when-not (or multi-colors? multi-assets?)
+                   (when-not (or is-multi-colors is-multi-assets)
                      {:name    (tr "workspace.assets.edit")
                       :id      "assets-edit-color"
                       :handler edit-color-clicked})
-                   (when (and (not (or multi-colors? multi-assets?))
+                   (when (and (not (or is-multi-colors is-multi-assets))
                               (contains? cf/flags :canary))
                      {:name    (tr "workspace.assets.duplicate")
                       :id      "assets-duplicate-color"
@@ -262,7 +261,7 @@
                    {:name    (tr "workspace.assets.delete")
                     :id      "assets-delete-color"
                     :handler delete-color}
-                   (when-not multi-assets?
+                   (when-not is-multi-assets
                      {:name   (tr "workspace.assets.group")
                       :id     "assets-group-color"
                       :handler (on-group (:id color))})]}])
@@ -337,21 +336,21 @@
              [:div {:class (stl/css :drop-space)}])
 
            (for [color colors]
-             [:& color-item {:key (dm/str (:id color))
-                             :color color
-                             :file-id file-id
-                             :local? is-local
-                             :selected selected
-                             :multi-colors? is-multi-colors
-                             :multi-assets? is-multi-assets
-                             :on-asset-click on-asset-click
-                             :on-assets-delete on-assets-delete
-                             :on-clear-selection on-clear-selection
-                             :on-group on-group
-                             :colors colors
-                             :selected-full selected-full
-                             :selected-paths selected-paths
-                             :move-color move-color}])])
+             [:> color-item* {:key (dm/str (:id color))
+                              :color color
+                              :file-id file-id
+                              :is-local is-local
+                              :selected selected
+                              :is-multi-colors is-multi-colors
+                              :is-multi-assets is-multi-assets
+                              :on-asset-click on-asset-click
+                              :on-assets-delete on-assets-delete
+                              :on-clear-selection on-clear-selection
+                              :on-group on-group
+                              :colors colors
+                              :selected-full selected-full
+                              :selected-paths selected-paths
+                              :move-color move-color}])])
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)

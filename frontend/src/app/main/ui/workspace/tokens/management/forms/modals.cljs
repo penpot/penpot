@@ -73,9 +73,8 @@
     (-> (calculate-position vport position x y token-type)
         (clj->js))))
 
-(mf/defc token-update-create-modal
-  {::mf/wrap-props false}
-  [{:keys [x y position token token-type action selected-token-set-id] :as _args}]
+(mf/defc token-update-create-modal*
+  [{:keys [x y position token token-type action selected-token-set-id]}]
   (let [wrapper-style (use-viewport-position-style x y position token-type)
         modal-size-large* (mf/use-state (or (= token-type :typography)
                                             (= token-type :color)
@@ -110,118 +109,118 @@
   {::mf/register modal/components
    ::mf/register-as :tokens/boolean}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc border-radius-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/border-radius}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc color-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/color}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc stroke-width-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/stroke-width}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc box-shadow-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/shadow}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc sizing-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/sizing}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc dimensions-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/dimensions}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc number-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/number}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc opacity-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/opacity}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc other-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/other}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc rotation-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/rotation}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc spacing-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/spacing}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc string-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/string}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc typography-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/typography}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc font-size-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/font-size}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc letter-spacing-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/letter-spacing}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc font-familiy-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/font-family}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc text-case-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/text-case}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc text-decoration-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/text-decoration}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
 
 (mf/defc font-weight-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/font-weight}
   [properties]
-  [:& token-update-create-modal properties])
+  [:> token-update-create-modal* properties])
