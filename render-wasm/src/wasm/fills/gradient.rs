@@ -12,7 +12,8 @@ pub struct RawGradientData {
     end_y: f32,
     opacity: u8,
     // 24-bit padding here, reserved for future use
-    width: f32,
+    width_x: f32,
+    width_y: f32,
     stop_count: u8,
     stops: [RawStopData; MAX_GRADIENT_STOPS],
 }
@@ -57,7 +58,7 @@ impl From<RawGradientData> for Gradient {
             raw_gradient.start(),
             raw_gradient.end(),
             raw_gradient.opacity,
-            raw_gradient.width,
+            (raw_gradient.width_x, raw_gradient.width_y),
             &stops,
         )
     }

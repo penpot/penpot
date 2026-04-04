@@ -45,7 +45,7 @@ function computePatch(
   handle: GradientHandleKind,
   pt: { x: number; y: number }, // normalised gradient coords in [0, 1]
   current: Gradient,
-): Partial<Pick<Gradient, 'startX' | 'startY' | 'endX' | 'endY' | 'width' | 'stops'>> {
+): Partial<Pick<Gradient, 'startX' | 'startY' | 'endX' | 'endY' | 'width' | 'widthX' | 'widthY' | 'stops'>> {
   if (typeof handle === 'object' && handle.type === 'stop') {
     const { index } = handle
     const stops = current.stops ? [...current.stops] : []
@@ -75,17 +75,34 @@ function computePatch(
     if (current.type === 'linear') {
       return { startX: pt.x, startY: pt.y }
     }
-    // Radial / angular: translate both endpoints by the same delta to preserve direction.
+    // Radial / angular: translate all endpoints by the same delta to preserve geometry.
     const dx = pt.x - current.startX
     const dy = pt.y - current.startY
-    return { startX: pt.x, startY: pt.y, endX: current.endX + dx, endY: current.endY + dy }
+    const patch: Partial<Pick<Gradient, 'startX' | 'startY' | 'endX' | 'endY' | 'widthX' | 'widthY'>> = {
+      startX: pt.x, startY: pt.y, endX: current.endX + dx, endY: current.endY + dy,
+    }
+    if (current.type === 'angular' && current.widthX != null && current.widthY != null) {
+      patch.widthX = current.widthX + dx
+      patch.widthY = current.widthY + dy
+    }
+    return patch
   }
 
   if (handle === 'end') {
     return { endX: pt.x, endY: pt.y }
   }
 
-  // handle === 'width': perpendicular distance from gradient vector, normalised by its length.
+  // handle === 'width'
+  if (current.type === 'angular') {
+    // Angular: widthX/widthY is the full second axis endpoint — set directly to pointer.
+    // Also update scalar width for backward compat (radius0/radius90).
+    const v1Len = Math.hypot(current.endX - current.startX, current.endY - current.startY)
+    const v2Len = Math.hypot(pt.x - current.startX, pt.y - current.startY)
+    const width = v2Len > 1e-6 ? v1Len / v2Len : 1
+    return { widthX: pt.x, widthY: pt.y, width: Math.max(0.01, width) }
+  }
+
+  // Radial / diamond: perpendicular distance from gradient vector, normalised by its length.
   const cx = current.startX
   const cy = current.startY
   const gvx = current.endX - cx

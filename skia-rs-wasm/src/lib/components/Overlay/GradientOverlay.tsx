@@ -141,25 +141,18 @@ export function GradientOverlay({
       x: selW * (gradient.endX - 0.5),
       y: selH * (gradient.endY - 0.5),
     }
-    // V1 = vector from center to end dot (gradient direction axis)
+    // V1 = vector from center to angle-zero point (gradient primary axis)
     const V1 = {
       x: localAngleZero.x - localCenter.x,
       y: localAngleZero.y - localCenter.y,
     }
-    // V2 = vector from center to width dot (perpendicular axis, same approach as radial)
-    const normGradientVec = {
-      x: gradient.endX - gradient.startX,
-      y: gradient.endY - gradient.startY,
-    }
-    const normLen = Math.hypot(normGradientVec.x, normGradientVec.y)
-    const isDegenerate = normLen < 1e-6
-    const normPerp = isDegenerate
-      ? { x: 1, y: 0 }
-      : { x: -normGradientVec.y / normLen, y: normGradientVec.x / normLen }
-    const normWidthDist = (isDegenerate ? 1 : normLen) * (gradient.width ?? 1)
+    // V2 = vector from center to width point (second axis, may include shear).
+    // widthX/widthY store the full pointAt90 coordinates directly.
+    const widthX = gradient.widthX ?? gradient.startX
+    const widthY = gradient.widthY ?? (gradient.startY + (gradient.endX - gradient.startX))
     const localWidthPoint = {
-      x: localCenter.x + normPerp.x * normWidthDist * selW,
-      y: localCenter.y + normPerp.y * normWidthDist * selH,
+      x: selW * (widthX - 0.5),
+      y: selH * (widthY - 0.5),
     }
     const V2 = {
       x: localWidthPoint.x - localCenter.x,
