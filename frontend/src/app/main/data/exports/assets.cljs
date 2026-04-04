@@ -65,6 +65,9 @@
                        (dsh/lookup-shapes state selected)
                        (reverse (dsh/filter-shapes state #(pos? (count (:exports %))))))
 
+            page      (dsh/lookup-page state)
+            page-name (:name page)
+
             exports  (for [shape  shapes
                            export (:exports shape)]
                        (-> export
@@ -76,10 +79,12 @@
                            (assoc :name (:name shape))))]
 
         (rx/of (modal/show :export-shapes
-                           {:exports (vec exports) :origin origin}))))))
+                           {:exports (vec exports)
+                            :origin origin
+                            :name page-name}))))))
 
 (defn show-viewer-export-dialog
-  [{:keys [shapes page-id file-id share-id exports]}]
+  [{:keys [shapes page-id file-id share-id exports name]}]
   (ptk/reify ::show-viewer-export-dialog
     ptk/WatchEvent
     (watch [_ _ _]
@@ -93,27 +98,32 @@
                           (assoc :shape (dissoc shape :exports))
                           (assoc :name (:name shape))
                           (cond-> share-id (assoc :share-id share-id))))]
-        (rx/of (modal/show :export-shapes {:exports (vec exports) :origin "viewer"})))))) #_TODO
+        (rx/of (modal/show :export-shapes {:exports (vec exports)
+                                           :origin "viewer"
+                                           :name name})))))) #_TODO
 
 (defn show-workspace-export-frames-dialog
   [frames]
   (ptk/reify ::show-workspace-export-frames-dialog
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id  (:current-file-id state)
-            page-id  (:current-page-id state)
-            exports  (mapv (fn [frame]
-                             {:enabled true
-                              :page-id page-id
-                              :file-id file-id
-                              :object-id (:id frame)
-                              :shape frame
-                              :name (:name frame)})
-                           frames)]
+      (let [file-id   (:current-file-id state)
+            page-id   (:current-page-id state)
+            page      (dsh/lookup-page state)
+            page-name (:name page)
+            exports   (mapv (fn [frame]
+                              {:enabled true
+                               :page-id page-id
+                               :file-id file-id
+                               :object-id (:id frame)
+                               :shape frame
+                               :name (:name frame)})
+                            frames)]
 
         (rx/of (modal/show :export-frames
                            {:exports exports
-                            :origin "workspace:menu"}))))))
+                            :origin "workspace:menu"
+                            :name page-name}))))))
 
 (defn- initialize-export-status
   [exports cmd resource]
@@ -197,7 +207,7 @@
                              (rx/throw cause)))))))))))
 
 (defn request-multiple-export
-  [{:keys [exports cmd]
+  [{:keys [exports cmd name]
     :or {cmd :export-shapes}
     :as params}]
   (ptk/reify ::request-multiple-export
@@ -206,14 +216,17 @@
       (let [resource-id (volatile! nil)
             profile-id  (:profile-id state)
             ws-conn     (:ws-conn state)
-            params      {:exports exports
-                         :cmd cmd
-                         :profile-id profile-id
-                         :force-multiple true
-                         :is-wasm
-                         (and
-                          (features/active-feature? state "render-wasm/v1")
-                          (contains? cf/flags :wasm-export))}
+            params      (cond->
+                          {:exports exports
+                           :cmd cmd
+                           :profile-id profile-id
+                           :force-multiple true
+                           :is-wasm
+                           (and
+                            (features/active-feature? state "render-wasm/v1")
+                            (contains? cf/flags :wasm-export))}
+                          (some? name)
+                          (assoc :name name))
 
             progress-stream
             (->> (ws/get-rcv-stream ws-conn)
