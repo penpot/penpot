@@ -17,7 +17,9 @@ pub struct Gradient {
     start: (f32, f32),
     end: (f32, f32),
     opacity: u8,
-    width: f32,
+    /// For radial/diamond: (scalar_width, 0.0).
+    /// For angular: (pointAt90_x, pointAt90_y) — the full second axis endpoint.
+    width: (f32, f32),
     colors: Vec<Color>,
     offsets: Vec<f32>,
 }
@@ -27,7 +29,7 @@ impl Gradient {
         start: (f32, f32),
         end: (f32, f32),
         opacity: u8,
-        width: f32,
+        width: (f32, f32),
         stops: &[(Color, f32)],
     ) -> Self {
         let mut gradient = Gradient {
@@ -153,7 +155,7 @@ impl Gradient {
         transform.pre_scale((rect.width(), rect.height()), None);
         transform.pre_translate((sx, sy));
         transform.pre_rotate(angle + 90., skia::Point::new(0., 0.));
-        transform.pre_scale((self.width, 1.), None);
+        transform.pre_scale((self.width.0, 1.), None);
         transform.pre_translate((-sx, -sy));
 
         skia::gradient_shader::radial(
@@ -168,38 +170,30 @@ impl Gradient {
     }
 
     pub fn to_angular_shader(&self, rect: &Rect) -> Option<skia::Shader> {
-        // Reconstruct the full gradient inverse transform from center/end/width so the
-        // sweep evaluates in gradient space.  This avoids both:
-        //  • angle distortion on non-square shapes (old pixel-space atan2 bug)
-        //  • the seam artifact from a rotated start_angle
+        // Reconstruct the full gradient inverse transform from center/end/width.
         //
-        // The exporter gives us:
-        //   start (cx, cy) = M^-1 * (0.5, 0.5)   – center in normalized shape coords
-        //   end   (ex, ey) = M^-1 * (1.0, 0.5)   – angle-zero point
-        //   width          = radius_0 / radius_90  – aspect ratio
+        // The exporter gives us (all in normalized [0,1] shape coords):
+        //   start (cx, cy)       = center
+        //   end   (ex, ey)       = angle-zero point (V1 direction)
+        //   width (wx, wy)       = pointAt90 — the full second axis endpoint
         //
-        // From these we rebuild the 2×2 part of M^-1 (gradient→shape) assuming
-        // orthogonal axes (rotation + non-uniform scale, no shear):
-        //   col0 = 2·(dx, dy)                      maps (1,0) offset in grad space
-        //   col1 = 2·(dy, -dx) / width             maps (0,1) offset
+        // V1 = end - start, V2 = width_point - start.
+        // These two axes need not be perpendicular — shear is supported.
         //
-        // Skia's sweep_gradient evaluates atan2 which increases counter-clockwise in
-        // math convention.  Figma's angular gradient increases CW on screen.
-        // Using (-dy, dx) as the perpendicular keeps the determinant positive,
-        // preserving orientation so the sweep matches Figma's winding.
-        let dx = self.end.0 - self.start.0;
-        let dy = self.end.1 - self.start.1;
-        let w = if self.width > 0.0 { self.width } else { 1.0 };
+        // M^-1 maps gradient offsets → normalized shape offsets:
+        //   col0 = 2·V1  (maps unit offset along gradient X-axis)
+        //   col1 = 2·V2  (maps unit offset along gradient Y-axis)
         let cx = self.start.0;
         let cy = self.start.1;
+        let v1x = self.end.0 - cx;
+        let v1y = self.end.1 - cy;
+        let v2x = self.width.0 - cx;
+        let v2y = self.width.1 - cy;
 
-        // M^-1 (2×2): gradient offsets → shape offsets
-        // Perpendicular is (-dy, dx) so the determinant is positive (4·(dx²+dy²)/w),
-        // preserving Figma's clockwise-on-screen sweep direction.
         let m_inv_2x2 = skia::Matrix::new_all(
-            2.0 * dx,       -2.0 * dy / w, 0.0,
-            2.0 * dy,        2.0 * dx / w, 0.0,
-            0.0,             0.0,           1.0,
+            2.0 * v1x,   2.0 * v2x,   0.0,
+            2.0 * v1y,   2.0 * v2y,   0.0,
+            0.0,         0.0,          1.0,
         );
 
         // Local matrix: gradient space → pixel space
@@ -268,7 +262,7 @@ impl Gradient {
             let angle = dy.atan2(dx);
             let cos_a = angle.cos();
             let sin_a = angle.sin();
-            let aspect = if self.width > 0.0 { self.width } else { 1.0 };
+            let aspect = if self.width.0 > 0.0 { self.width.0 } else { 1.0 };
 
             // Inverse rotation + axis normalization baked together.
             // Maps normalized delta to diamond space where |x| + |y| = 1 at boundary.

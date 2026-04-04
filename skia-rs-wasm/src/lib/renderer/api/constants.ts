@@ -26,7 +26,7 @@ export const POSITION_DATA_U8_SIZE = 36
 export const POSITION_DATA_U32_SIZE = POSITION_DATA_U8_SIZE / 4
 
 // Fill-related constants
-export const FILL_U8_SIZE = 160 // Max size for any fill type
+export const FILL_U8_SIZE = 164 // Max size for any fill type
 export const GRADIENT_STOP_U8_SIZE = 8
 export const MAX_GRADIENT_STOPS = 16
 

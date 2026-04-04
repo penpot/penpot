@@ -181,17 +181,19 @@ export function writeLinearGradientFill(
   const alpha = Math.floor(opacity * 0xff)
   dataView.setUint8(offset + 20, alpha)
 
-  // Width (offset + 24) - unused for linear, set to 0
+  // Width X (offset + 24) - unused for linear, set to 0
   dataView.setFloat32(offset + 24, 0, true)
+  // Width Y (offset + 28) - unused for linear, set to 0
+  dataView.setFloat32(offset + 28, 0, true)
 
-  // Stop count (offset + 28)
+  // Stop count (offset + 32)
   const stops = [...gradient.stops].sort((a, b) => a.offset - b.offset).slice(0, MAX_GRADIENT_STOPS)
-  dataView.setUint8(offset + 28, stops.length)
+  dataView.setUint8(offset + 32, stops.length)
 
-  // Padding (3 bytes at offset + 29) - already zeroed
+  // Padding (3 bytes at offset + 33) - already zeroed
 
-  // Write stops (offset + 32) - exporter stop: { color, opacity?, offset }
-  let stopOffset = offset + 32
+  // Write stops (offset + 36) - exporter stop: { color, opacity?, offset }
+  let stopOffset = offset + 36
   for (const stop of stops) {
     const stopColor = colorToU32ARGB({
       color: stop.color,
@@ -229,17 +231,19 @@ export function writeRadialGradientFill(
   const alpha = Math.floor(opacity * 0xff)
   dataView.setUint8(offset + 20, alpha)
 
-  // Width (offset + 24)
+  // Width X (offset + 24) - scalar aspect ratio for radial
   dataView.setFloat32(offset + 24, gradient.width, true)
+  // Width Y (offset + 28) - unused for radial
+  dataView.setFloat32(offset + 28, 0, true)
 
-  // Stop count (offset + 28)
+  // Stop count (offset + 32)
   const stops = [...gradient.stops].sort((a, b) => a.offset - b.offset).slice(0, MAX_GRADIENT_STOPS)
-  dataView.setUint8(offset + 28, stops.length)
+  dataView.setUint8(offset + 32, stops.length)
 
-  // Padding (3 bytes at offset + 29) - already zeroed
+  // Padding (3 bytes at offset + 33) - already zeroed
 
-  // Write stops (offset + 32)
-  let stopOffset = offset + 32
+  // Write stops (offset + 36)
+  let stopOffset = offset + 36
   for (const stop of stops) {
     const stopColor = colorToU32ARGB({
       color: stop.color,
@@ -277,17 +281,19 @@ export function writeAngularGradientFill(
   const alpha = Math.floor(opacity * 0xff)
   dataView.setUint8(offset + 20, alpha)
 
-  // Width (offset + 24) - ellipse aspect ratio for angular, 1 = circle
-  dataView.setFloat32(offset + 24, gradient.width, true)
+  // Width X (offset + 24) - pointAt90.x for angular (full V2 axis support, handles shear)
+  dataView.setFloat32(offset + 24, gradient.widthX ?? gradient.startX, true)
+  // Width Y (offset + 28) - pointAt90.y for angular
+  dataView.setFloat32(offset + 28, gradient.widthY ?? (gradient.startY + (gradient.endX - gradient.startX)), true)
 
-  // Stop count (offset + 28)
+  // Stop count (offset + 32)
   const stops = [...gradient.stops].sort((a, b) => a.offset - b.offset).slice(0, MAX_GRADIENT_STOPS)
-  dataView.setUint8(offset + 28, stops.length)
+  dataView.setUint8(offset + 32, stops.length)
 
-  // Padding (3 bytes at offset + 29) - already zeroed
+  // Padding (3 bytes at offset + 33) - already zeroed
 
-  // Write stops (offset + 32)
-  let stopOffset = offset + 32
+  // Write stops (offset + 36)
+  let stopOffset = offset + 36
   for (const stop of stops) {
     const stopColor = colorToU32ARGB({
       color: stop.color,
@@ -325,17 +331,19 @@ export function writeDiamondGradientFill(
   const alpha = Math.floor(opacity * 0xff)
   dataView.setUint8(offset + 20, alpha)
 
-  // Width (offset + 24) - aspect ratio
+  // Width X (offset + 24) - scalar aspect ratio for diamond
   dataView.setFloat32(offset + 24, gradient.width, true)
+  // Width Y (offset + 28) - unused for diamond
+  dataView.setFloat32(offset + 28, 0, true)
 
-  // Stop count (offset + 28)
+  // Stop count (offset + 32)
   const stops = [...gradient.stops].sort((a, b) => a.offset - b.offset).slice(0, MAX_GRADIENT_STOPS)
-  dataView.setUint8(offset + 28, stops.length)
+  dataView.setUint8(offset + 32, stops.length)
 
-  // Padding (3 bytes at offset + 29) - already zeroed
+  // Padding (3 bytes at offset + 33) - already zeroed
 
-  // Write stops (offset + 32)
-  let stopOffset = offset + 32
+  // Write stops (offset + 36)
+  let stopOffset = offset + 36
   for (const stop of stops) {
     const stopColor = colorToU32ARGB({
       color: stop.color,
