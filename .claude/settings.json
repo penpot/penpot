@@ -25,7 +25,11 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(npx vitest:*)",
       "WebSearch",
-      "Bash(grep -r \"hotGRef\\\\|cornerHandlesGRef\" /Users/I590608/IdeaProjects/penpot-ai/skia-rs-wasm/src/lib/components/Overlay/*.tsx)"
+      "Bash(grep -r \"hotGRef\\\\|cornerHandlesGRef\" /Users/I590608/IdeaProjects/penpot-ai/skia-rs-wasm/src/lib/components/Overlay/*.tsx)",
+      "Bash(mkdir -p /Users/I590608/IdeaProjects/penpot-ai/.claude)",
+      "Bash(:)",
+      "Bash(node .claude/debug-server.mjs)",
+      "Bash(grep -n \"colorStop\\\\|GradientPaint\\\\|gradientStop\" /Users/I590608/IdeaProjects/penpot-ai/skia-rs-wasm/packages/penpot-exporter-figma-plugin/plugin-src/translators/fills/gradients/*.ts)"
     ],
     "additionalDirectories": [
       "/Users/I590608/IdeaProjects/penpot-ai/.claude"

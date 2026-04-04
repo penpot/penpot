@@ -2,7 +2,7 @@ import type { RefObject } from 'react'
 import { useLayoutEffect } from 'react'
 import { effect } from '@preact/signals-core'
 import { viewport as viewportSignal } from '../../renderer/signals/pointer'
-import { wasmSelectionRect as wasmSelectionRectSignal } from '../../renderer/signals/selection'
+import { selectionRectOutlineVisible, wasmSelectionRect as wasmSelectionRectSignal } from '../../renderer/signals/selection'
 import { SELECTION_STROKE_WIDTH, SELECTION_STROKE_WIDTH_MAX } from './constants'
 import { finiteSelectionOverlayRect } from './finite-selection-overlay-rect'
 
@@ -12,12 +12,13 @@ export function useImperativeSelectionRect(
 ): void {
   useLayoutEffect(() => {
     return effect(() => {
+      const visible = selectionRectOutlineVisible.value
       const sel = wasmSelectionRectSignal.value
       const vp = viewportSignal.value
       const g = hotGRef.current
       const r = selRectRef.current
       if (!g || !r) return
-      if (!finiteSelectionOverlayRect(sel) || !vp || !Number.isFinite(vp.zoom) || vp.zoom <= 0) {
+      if (!visible || !finiteSelectionOverlayRect(sel) || !vp || !Number.isFinite(vp.zoom) || vp.zoom <= 0) {
         g.style.display = 'none'
         return
       }

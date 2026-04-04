@@ -29,6 +29,9 @@ export const shapeDrawPreview = signal<Selrect | null>(null)
 /** Synced from React: showHandles && showCornerHandles. Drives imperative corner-square `effect()`. */
 export const selectionCornerHandlesVisible = signal(false)
 
+/** Synced from React: false when isMoving is true. Drives imperative selection-rect outline `effect()`. */
+export const selectionRectOutlineVisible = signal(true)
+
 function isFiniteSelectionRect(value: SelectionRectResult | null): value is SelectionRectResult {
   if (!value) return false
   return (
