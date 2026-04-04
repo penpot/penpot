@@ -98,3 +98,7 @@ export type { CanvasActorRef } from './lib/renderer/machine/canvas-actor-types'
 export { RightSidePanel, ShapePropertiesPanel } from './lib/components/RightSidePanel/RightSidePanel'
 export type { RightSidePanelProps, ShapePropertiesPanelProps } from './lib/components/RightSidePanel/RightSidePanel'
 
+export { EditorOverlays } from './lib/components/EditorOverlays'
+export { LayersPanel } from './lib/components/LayersPanel/LayersPanel'
+export { ShapeToolbar } from './lib/components/ShapeToolbar'
+
