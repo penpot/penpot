@@ -29,7 +29,11 @@
       "Bash(mkdir -p /Users/I590608/IdeaProjects/penpot-ai/.claude)",
       "Bash(:)",
       "Bash(node .claude/debug-server.mjs)",
-      "Bash(grep -n \"colorStop\\\\|GradientPaint\\\\|gradientStop\" /Users/I590608/IdeaProjects/penpot-ai/skia-rs-wasm/packages/penpot-exporter-figma-plugin/plugin-src/translators/fills/gradients/*.ts)"
+      "Bash(grep -n \"colorStop\\\\|GradientPaint\\\\|gradientStop\" /Users/I590608/IdeaProjects/penpot-ai/skia-rs-wasm/packages/penpot-exporter-figma-plugin/plugin-src/translators/fills/gradients/*.ts)",
+      "Bash(ls -la /Users/I590608/IdeaProjects/penpot-ai/skia-rs-wasm/tsconfig*)",
+      "Bash(pnpm --filter skia-rs-wasm run build:lib)",
+      "Bash(ls -la /Users/I590608/IdeaProjects/penpot-ai/skia-rs-wasm/dist/*.css)",
+      "Bash(VITE_ENABLE_EDITOR_PANELS=true npx vite build)"
     ],
     "additionalDirectories": [
       "/Users/I590608/IdeaProjects/penpot-ai/.claude"
