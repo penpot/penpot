@@ -184,9 +184,9 @@ impl Gradient {
         //   col1 = 2·(dy, -dx) / width             maps (0,1) offset
         //
         // Skia's sweep_gradient evaluates atan2 which increases counter-clockwise in
-        // math convention.  Figma's angular gradient also increases CCW in its gradient
-        // space (screen-CW would place offset 0.25 at the bottom, but Figma places it
-        // at the top).  Using (dy, -dx) as the perpendicular matches Figma's winding.
+        // math convention.  Figma's angular gradient increases CW on screen.
+        // Using (-dy, dx) as the perpendicular keeps the determinant positive,
+        // preserving orientation so the sweep matches Figma's winding.
         let dx = self.end.0 - self.start.0;
         let dy = self.end.1 - self.start.1;
         let w = if self.width > 0.0 { self.width } else { 1.0 };
@@ -194,9 +194,11 @@ impl Gradient {
         let cy = self.start.1;
 
         // M^-1 (2×2): gradient offsets → shape offsets
+        // Perpendicular is (-dy, dx) so the determinant is positive (4·(dx²+dy²)/w),
+        // preserving Figma's clockwise-on-screen sweep direction.
         let m_inv_2x2 = skia::Matrix::new_all(
-            2.0 * dx,        2.0 * dy / w, 0.0,
-            2.0 * dy,       -2.0 * dx / w, 0.0,
+            2.0 * dx,       -2.0 * dy / w, 0.0,
+            2.0 * dy,        2.0 * dx / w, 0.0,
             0.0,             0.0,           1.0,
         );
 

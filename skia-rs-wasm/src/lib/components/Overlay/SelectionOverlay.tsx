@@ -14,6 +14,7 @@ import { docProxy } from '../../renderer/store/doc-proxy'
 import { pointerPos, viewport as viewportSignal } from '../../renderer/signals/pointer'
 import {
   selectionCornerHandlesVisible,
+  selectionRectOutlineVisible,
   selectionRect as selectionRectSignal,
   shapeDrawPreview as shapeDrawPreviewSignal,
   wasmSelectionRect as wasmSelectionRectSignal,
@@ -166,6 +167,10 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
   useLayoutEffect(() => {
     selectionCornerHandlesVisible.value = showHandles && showCornerHandles
   }, [showHandles, showCornerHandles])
+
+  useLayoutEffect(() => {
+    selectionRectOutlineVisible.value = !isMoving
+  }, [isMoving])
 
   const gradientForOverlay = useGradientFill()
 
