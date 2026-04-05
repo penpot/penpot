@@ -22,6 +22,7 @@
 - Add natural sorting on token names [Taiga #13713](https://tree.taiga.io/project/penpot/issue/13713)
 - Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
 - Add CSS linter [Taiga #13790](https://tree.taiga.io/project/penpot/us/13790)
+- Add Find & Replace for text content (by @statxc) [Github #7108](https://github.com/penpot/penpot/issues/7108)
 
 ### :bug: Bugs fixed
 

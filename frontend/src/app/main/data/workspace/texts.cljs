@@ -1120,3 +1120,32 @@
                                        (cond-> (or (some? width) (some? height))
                                          (gsh/transform-shape (ctm/change-size shape width height))))))
                                {:undo-group (when new-shape? id)})))))))
+
+(defn replace-layer-names-in-shapes
+  [ids search replacement]
+  (ptk/reify ::replace-layer-names-in-shapes
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-group (uuid/next)]
+        (rx/of
+         (dwsh/update-shapes
+          ids
+          (fn [shape] (update shape :name txt/replace-all-case-insensitive search replacement))
+          {:attrs #{:name} :undo-group undo-group}))))))
+
+(defn replace-text-in-shapes
+  [ids search replacement]
+  (ptk/reify ::replace-text-in-shapes
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-group (uuid/next)]
+        (rx/of
+         (dwsh/update-shapes
+          ids
+          (fn [shape]
+            (if (and (= :text (:type shape)) (some? (:content shape)))
+              (let [new-content (txt/replace-text-in-content (:content shape) search replacement)
+                    new-name   (txt/generate-shape-name (txt/content->text new-content))]
+                (-> shape (assoc :content new-content) (assoc :name new-name)))
+              shape))
+          {:attrs #{:content :name} :undo-group undo-group}))))))
