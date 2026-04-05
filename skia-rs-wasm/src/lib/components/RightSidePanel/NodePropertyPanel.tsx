@@ -4,6 +4,7 @@ import { NodeIdentitySection } from './Sections/NodeIdentitySection'
 import { NodeLayoutSection } from './Sections/NodeLayoutSection'
 import { FillsSection } from './Sections/FillsSection'
 import { StrokesSection } from './Sections/StrokesSection'
+import { EffectsSection } from './Sections/EffectsSection'
 
 export interface NodePropertyPanelProps {
   nodeId: string
@@ -29,6 +30,8 @@ export function NodePropertyPanel({ nodeId, initialNode, readOnly }: NodePropert
       <FillsSection nodeId={nodeId} readOnly={readOnly} initialNode={initialNode} />
 
       <StrokesSection nodeId={nodeId} readOnly={readOnly} initialNode={initialNode} />
+
+      <EffectsSection nodeId={nodeId} readOnly={readOnly} initialNode={initialNode} />
     </>
   )
 }

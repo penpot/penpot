@@ -1,7 +1,7 @@
 import { createContext, type RefObject } from 'react'
 import type { Fill } from 'penpot-exporter/types'
 
-export type ColorEditorKind = 'fill' | 'stroke'
+export type ColorEditorKind = 'fill' | 'stroke' | 'shadow'
 
 export interface ColorEditorTarget {
   kind: ColorEditorKind

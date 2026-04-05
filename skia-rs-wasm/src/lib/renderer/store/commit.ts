@@ -43,7 +43,8 @@ interface RendererLike {
 async function syncRendererAfterUpdate(
   renderer: RendererLike,
   oldPage: IndexedPage | undefined,
-  updatedPage: IndexedPage
+  updatedPage: IndexedPage,
+  modifiedIds?: Set<string>,
 ): Promise<void> {
   if (!renderer.isInitialized()) return
   const oldObjects = oldPage?.objects ?? {}
@@ -78,7 +79,10 @@ async function syncRendererAfterUpdate(
   } else if (deleted.length > 0) {
     renderer.updateParentChildren(rootId, childIds)
   } else {
-    const changed = [...newIds].filter((id) => {
+    // When we know which shapes were touched by the changes, only diff those
+    // instead of JSON-stringifying every object on the page.
+    const idsToCheck = modifiedIds && modifiedIds.size > 0 ? modifiedIds : newIds
+    const changed = [...idsToCheck].filter((id) => {
       const oldNode = oldObjects[id]
       const newNode = newObjects[id]
       return oldNode && newNode && JSON.stringify(oldNode) !== JSON.stringify(newNode)
@@ -134,7 +138,12 @@ export async function applyChangesLocally(params: ApplyChangesLocallyParams): Pr
   docProxy.pageMap.set(pageId, updatedPage)
 
   if (renderer && !ignoreRendererSync) {
-    await syncRendererAfterUpdate(renderer, oldPage, updatedPage)
+    const modifiedIds = new Set<string>()
+    for (const c of redoChanges) {
+      const id = (c as { id?: string }).id
+      if (id) modifiedIds.add(id)
+    }
+    await syncRendererAfterUpdate(renderer, oldPage, updatedPage, modifiedIds)
   }
   return updatedPage
 }

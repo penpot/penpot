@@ -1,4 +1,4 @@
-import type { Fill, PenpotNode, Stroke } from 'penpot-exporter/types'
+import type { Blur, Fill, PenpotNode, Shadow, Stroke } from 'penpot-exporter/types'
 
 export const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -17,6 +17,33 @@ export const DEFAULT_STROKE: Stroke = {
 
 /** Max stacked strokes per shape. */
 export const MAX_STROKES = 8
+
+export const DEFAULT_SHADOW: Shadow = {
+  id: null,
+  style: 'drop-shadow',
+  offsetX: 4,
+  offsetY: 4,
+  blur: 4,
+  spread: 0,
+  hidden: false,
+  color: { color: '#000000', opacity: 0.2 },
+}
+
+export const DEFAULT_BLUR: Blur = {
+  type: 'layer-blur',
+  value: 4,
+  hidden: false,
+}
+
+/** Max stacked effects (shadows + blur) per shape. */
+export const MAX_EFFECTS = 8
+
+export type EffectKind = 'drop-shadow' | 'inner-shadow' | 'layer-blur'
+
+export type EffectItem =
+  | { kind: 'drop-shadow'; shadow: Shadow }
+  | { kind: 'inner-shadow'; shadow: Shadow }
+  | { kind: 'layer-blur'; blur: Blur }
 
 export function normalizeHex(input: string): string {
   let s = input.trim()

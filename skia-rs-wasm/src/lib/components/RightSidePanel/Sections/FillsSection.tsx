@@ -40,7 +40,7 @@ export function FillsSection({ nodeId, readOnly, initialNode }: FillsSectionProp
       await commitNodePartialUpdate(
         nodeId,
         before,
-        { fills: next.length > 0 ? next : undefined },
+        { fills: next },
         pid,
       )
     },

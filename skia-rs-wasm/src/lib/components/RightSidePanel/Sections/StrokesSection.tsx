@@ -45,7 +45,7 @@ export function StrokesSection({ nodeId, readOnly, initialNode }: StrokesSection
       await commitNodePartialUpdate(
         nodeId,
         before,
-        { strokes: next.length > 0 ? next : undefined },
+        { strokes: next },
         pid,
       )
     },
