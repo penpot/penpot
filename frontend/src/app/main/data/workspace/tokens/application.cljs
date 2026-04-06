@@ -656,6 +656,7 @@
   this is useful for applying a single attribute from an attributes set
   while removing other applied tokens from this set."
   [{:keys [attributes attributes-to-remove token shape-ids on-update-shape]}]
+  (assert (ctob/token? token) "apply-token event requires a valid token")
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
@@ -667,9 +668,10 @@
             text-editing? (and (some? edition)
                                (= :text (:type (get objects edition))))]
         (if (and (empty? (get state :workspace-editor-state))
+                 (some? token)
                  (not text-editing?))
           (let [attributes-to-remove
-                ;; Remove atomic typography tokens when applying composite and vice-verca
+                ;; Remove atomic typography tokens when applying composite and vice-versa
                 (cond
                   (ctt/typography-token-keys (:type token)) (set/union attributes-to-remove ctt/typography-keys)
                   (ctt/typography-keys (:type token)) (set/union attributes-to-remove ctt/typography-token-keys)
@@ -696,7 +698,7 @@
                             shape-ids (d/nilv (keys shapes)  [])
                             any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 
-                            resolved-value (get-in resolved-tokens [(cfo/token-identifier token) :resolved-value])
+                            resolved-value (get-in resolved-tokens [(:name token) :resolved-value])
                             resolved-value (if (contains? cf/flags :tokenscript)
                                              (ts/tokenscript-symbols->penpot-unit resolved-value)
                                              resolved-value)
