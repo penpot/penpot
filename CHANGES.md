@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.14.3 (Unreleased)
+
+### :sparkles: New features & Enhancements
+
+### :bug: Bugs fixed
+
+- Fix component "broken" after switch variant [Taiga #12984](https://tree.taiga.io/project/penpot/issue/12984)
+
 ## 2.14.2
 
 ### :sparkles: New features & Enhancements
