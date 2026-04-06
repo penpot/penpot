@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { Blur, PenpotNode, Shadow } from 'penpot-exporter/types'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -55,10 +55,10 @@ export function EffectsSection({ nodeId, readOnly, initialNode }: EffectsSection
   const [effects, setEffects] = useState<EffectItem[]>(() => mergeEffects(initialNode))
   const [collapsed, setCollapsed] = useState(false)
 
-  // Render-phase sync: when initialNode changes externally, reset local state.
-  const prevNodeRef = useRef(initialNode)
-  if (prevNodeRef.current !== initialNode) {
-    prevNodeRef.current = initialNode
+  // Sync local state when initialNode changes externally.
+  const [prevNode, setPrevNode] = useState(initialNode)
+  if (prevNode !== initialNode) {
+    setPrevNode(initialNode)
     setEffects(mergeEffects(initialNode))
   }
 

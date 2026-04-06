@@ -16,10 +16,19 @@ export function setShapeShadows(module: WasmModule, shadows: Shadow[]): void {
   module._clear_shape_shadows()
 
   for (const shadow of shadows) {
-    const rgba = colorToU32ARGB({
-      color: shadow.color?.color ?? '',
-      opacity: shadow.color?.opacity ?? 1,
-    })
+    // Gradient colors are not supported by the shadow WASM API.
+    // Use the first gradient stop color as a solid fallback.
+    let colorHex: string
+    let colorOpacity: number
+    if (shadow.color?.gradient?.stops?.length) {
+      const stop = shadow.color.gradient.stops[0]
+      colorHex = stop.color ?? '#000000'
+      colorOpacity = stop.opacity ?? 1
+    } else {
+      colorHex = shadow.color?.color ?? '#000000'
+      colorOpacity = shadow.color?.opacity ?? 1
+    }
+    const rgba = colorToU32ARGB({ color: colorHex, opacity: colorOpacity })
     module._add_shape_shadow(
       rgba,
       shadow.blur,

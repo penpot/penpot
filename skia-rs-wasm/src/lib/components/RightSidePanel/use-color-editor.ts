@@ -6,7 +6,7 @@ import {
   type ColorEditorKind,
 } from './color-editor-context'
 
-/** Full unified context — used by FloatingColorEditorPanel and Sections. */
+/** Full unified context — used by FloatingColorEditorPanel, FloatingEffectEditorPanel, and Sections. */
 export function useColorEditor(): ColorEditorContextValue {
   return useContext(ColorEditorContext)
 }
@@ -31,5 +31,12 @@ export function useColorEditorFor(kind: ColorEditorKind, index: number) {
     [ctx, kind, index],
   )
 
-  return { isActive, openEditor, closeEditor: ctx.closeEditor }
+  return {
+    isActive,
+    openEditor,
+    closeEditor: ctx.closeEditor,
+    activeEffect: ctx.activeEffect,
+    setActiveEffect: ctx.setActiveEffect,
+    onEffectChangeRef: ctx.onEffectChangeRef,
+  }
 }

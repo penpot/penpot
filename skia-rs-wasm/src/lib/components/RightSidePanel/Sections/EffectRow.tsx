@@ -1,11 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import type { Blur, Fill, Shadow } from 'penpot-exporter/types'
+import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
-import { isColorFill } from '../../../renderer/api/constants'
-import { normalizeHex } from '../../../renderer/properties/panel-utils'
 import type { EffectItem, EffectKind } from '../../../renderer/properties/panel-utils'
 import { DEFAULT_SHADOW, DEFAULT_BLUR } from '../../../renderer/properties/panel-utils'
 import { useColorEditorFor } from '../use-color-editor'
@@ -71,73 +69,63 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
   const shadow = isShadow ? effect.shadow : null
   const blur = !isShadow ? effect.blur : null
 
-  const { isActive: expanded, openEditor, closeEditor } = useColorEditorFor('shadow', index)
+  const { isActive: expanded, openEditor, closeEditor, setActiveEffect, onEffectChangeRef } =
+    useColorEditorFor('shadow', index)
 
   const fill = shadow ? shadowColorToFill(shadow) : null
-  const isSolid = fill ? isColorFill(fill) : false
   const swatchBg = fill ? fillSwatchBackground(fill) : '#94a3b8'
 
-  const hexDisplay = shadow
-    ? isSolid
-      ? (shadow.color?.color ?? '#000000')
-      : 'Gradient'
-    : ''
-  const opacity = shadow?.color?.opacity ?? 1
+  // Keep refs to latest data so callbacks never go stale
+  const effectRef = useRef(effect)
+  effectRef.current = effect
 
   const handleKindChange = useCallback(
     (newKind: EffectKind) => {
       if (newKind === effect.kind) return
-      // Close shadow color editor if switching away from shadow
       if (expanded && newKind === 'layer-blur') closeEditor()
       onChange(convertEffect(effect, newKind), index)
     },
     [effect, index, onChange, expanded, closeEditor],
   )
 
-  const handleShadowUpdate = useCallback(
-    (partial: Partial<Shadow>) => {
-      if (!shadow) return
-      onChange({ kind: effect.kind as 'drop-shadow' | 'inner-shadow', shadow: { ...shadow, ...partial } }, index)
-    },
-    [shadow, effect.kind, index, onChange],
-  )
-
-  const handleHexChange = useCallback(
-    (raw: string) => {
-      if (!shadow || !isSolid) return
-      const v = raw.trim()
-      if (/^#[0-9A-Fa-f]{6}$/.test(v) || /^#[0-9A-Fa-f]{3}$/.test(v)) {
-        handleShadowUpdate({ color: { ...shadow.color, color: normalizeHex(v) } })
-      }
-    },
-    [shadow, isSolid, handleShadowUpdate],
-  )
-
-  const handleOpacityChange = useCallback(
-    (pct: number) => {
-      if (!shadow || !isSolid) return
-      const v = Math.max(0, Math.min(100, pct)) / 100
-      handleShadowUpdate({ color: { ...shadow.color, opacity: v } })
-    },
-    [shadow, isSolid, handleShadowUpdate],
-  )
-
-  const toggleExpand = useCallback(
+  const openEffectEditor = useCallback(
     (e: React.MouseEvent) => {
-      if (readOnly || !shadow) return
+      if (readOnly) return
       if (expanded) {
         closeEditor()
-      } else {
-        const y = (e.currentTarget as HTMLElement).getBoundingClientRect().top
-        openEditor(fill!, y, `Shadow ${index + 1} color`, (nextFill) => {
-          onChange(
-            { kind: effect.kind as 'drop-shadow' | 'inner-shadow', shadow: fillToShadowColor(nextFill, shadow) },
-            index,
-          )
-        })
+        return
+      }
+
+      const y = (e.currentTarget as HTMLElement).getBoundingClientRect().top
+      const currentEffect = effectRef.current
+      const currentShadow = currentEffect.kind !== 'layer-blur' ? currentEffect.shadow : null
+
+      // For shadows, pass fill for the color picker; for blur, pass a dummy fill
+      const currentFill = currentShadow
+        ? shadowColorToFill(currentShadow)
+        : { fillColor: '#000000', fillOpacity: 1 }
+
+      openEditor(currentFill, y, `Effect ${index + 1}`, (nextFill) => {
+        // Color change callback — only relevant for shadow effects
+        const latest = effectRef.current
+        if (latest.kind === 'layer-blur') return
+        const updatedShadow = fillToShadowColor(nextFill, latest.shadow)
+        const updatedEffect: EffectItem = { kind: latest.kind, shadow: updatedShadow }
+        effectRef.current = updatedEffect
+        setActiveEffect(updatedEffect)
+        onChange(updatedEffect, index)
+      })
+
+      // Set effect data for the floating effect editor panel
+      setActiveEffect(currentEffect)
+
+      // Register callback for effect changes from the floating panel
+      onEffectChangeRef.current = (next: EffectItem) => {
+        effectRef.current = next
+        onChange(next, index)
       }
     },
-    [readOnly, shadow, expanded, closeEditor, openEditor, fill, index, effect.kind, onChange],
+    [readOnly, expanded, closeEditor, openEditor, index, onChange, setActiveEffect, onEffectChangeRef],
   )
 
   if (readOnly) {
@@ -159,24 +147,42 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
     )
   }
 
+  const isHidden = isShadow ? shadow!.hidden : blur!.hidden
+
   return (
     <div className="space-y-1">
-      {/* Row 1: swatch (shadow only) + type dropdown + remove */}
+      {/* Compact row: swatch/label + type dropdown + visibility + remove */}
       <div className="flex min-h-8 items-center gap-1.5">
-        {isShadow && (
+        {/* Clickable trigger — swatch for shadows, text label for blur */}
+        {isShadow ? (
           <button
             type="button"
-            onClick={toggleExpand}
+            onClick={openEffectEditor}
             className={cn(
               'size-5 shrink-0 rounded border border-border',
               'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
               expanded && 'ring-2 ring-ring',
             )}
             style={{ background: swatchBg }}
-            title={expanded ? 'Close shadow color editor' : 'Open shadow color editor'}
+            title={expanded ? 'Close effect editor' : 'Open effect editor'}
             aria-expanded={expanded}
-            aria-label="Toggle shadow color editor"
+            aria-label="Toggle effect editor"
           />
+        ) : (
+          <button
+            type="button"
+            onClick={openEffectEditor}
+            className={cn(
+              'size-5 shrink-0 flex items-center justify-center rounded border border-border text-[10px] text-muted-foreground',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              expanded && 'ring-2 ring-ring',
+            )}
+            title={expanded ? 'Close effect editor' : 'Open effect editor'}
+            aria-expanded={expanded}
+            aria-label="Toggle effect editor"
+          >
+            B
+          </button>
         )}
         <select
           className="border-input bg-background h-8 min-w-0 flex-1 rounded-md border px-1.5 text-xs"
@@ -194,6 +200,23 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
           type="button"
           variant="ghost"
           size="icon-sm"
+          className="shrink-0 text-muted-foreground"
+          onClick={() => {
+            if (isShadow && shadow) {
+              onChange({ kind: effect.kind as 'drop-shadow' | 'inner-shadow', shadow: { ...shadow, hidden: !shadow.hidden } }, index)
+            } else if (blur) {
+              onChange({ kind: 'layer-blur', blur: { ...blur, hidden: !blur.hidden } }, index)
+            }
+          }}
+          aria-label={isHidden ? 'Show effect' : 'Hide effect'}
+          title={isHidden ? 'Show effect' : 'Hide effect'}
+        >
+          {isHidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           className="shrink-0"
           onClick={() => onRemove(index)}
           aria-label="Remove effect"
@@ -201,91 +224,6 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
           ×
         </Button>
       </div>
-
-      {/* Row 2 for shadows: hex + opacity */}
-      {isShadow && shadow && (
-        <div className="flex min-h-8 items-center gap-1.5">
-          <Input
-            type="text"
-            className="h-8 min-w-0 flex-1 font-mono text-xs"
-            value={hexDisplay}
-            placeholder={isSolid ? '#RRGGBB' : undefined}
-            disabled={!isSolid}
-            readOnly={!isSolid}
-            onChange={(e) => handleHexChange(e.target.value)}
-          />
-          <span className="shrink-0 text-xs text-muted-foreground">%</span>
-          <Input
-            type="number"
-            className="h-8 w-12 shrink-0 px-1 text-xs"
-            min={0}
-            max={100}
-            value={isSolid ? Math.round(opacity * 100) : 100}
-            disabled={!isSolid}
-            onChange={(e) => handleOpacityChange(Number(e.target.value))}
-          />
-        </div>
-      )}
-
-      {/* Row 3 for shadows: X, Y, blur, spread */}
-      {isShadow && shadow && (
-        <div className="flex min-h-7 items-center gap-1.5">
-          <Input
-            type="number"
-            className="h-7 w-14 shrink-0 px-1 text-xs"
-            step={1}
-            value={shadow.offsetX}
-            onChange={(e) => handleShadowUpdate({ offsetX: parseFloat(e.target.value) || 0 })}
-            title="X offset"
-          />
-          <Input
-            type="number"
-            className="h-7 w-14 shrink-0 px-1 text-xs"
-            step={1}
-            value={shadow.offsetY}
-            onChange={(e) => handleShadowUpdate({ offsetY: parseFloat(e.target.value) || 0 })}
-            title="Y offset"
-          />
-          <Input
-            type="number"
-            className="h-7 w-14 shrink-0 px-1 text-xs"
-            min={0}
-            step={1}
-            value={shadow.blur}
-            onChange={(e) => handleShadowUpdate({ blur: Math.max(0, parseFloat(e.target.value) || 0) })}
-            title="Blur"
-          />
-          <Input
-            type="number"
-            className="h-7 w-14 shrink-0 px-1 text-xs"
-            step={1}
-            value={shadow.spread}
-            onChange={(e) => handleShadowUpdate({ spread: parseFloat(e.target.value) || 0 })}
-            title="Spread"
-          />
-        </div>
-      )}
-
-      {/* Row 2 for blur: value */}
-      {!isShadow && blur && (
-        <div className="flex min-h-7 items-center gap-1.5">
-          <span className="shrink-0 text-xs text-muted-foreground">Value</span>
-          <Input
-            type="number"
-            className="h-7 w-20 shrink-0 px-1 text-xs"
-            min={0}
-            step={1}
-            value={blur.value}
-            onChange={(e) =>
-              onChange(
-                { kind: 'layer-blur', blur: { ...blur, value: Math.max(0, parseFloat(e.target.value) || 0) } },
-                index,
-              )
-            }
-            title="Blur value"
-          />
-        </div>
-      )}
     </div>
   )
 }
