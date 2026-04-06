@@ -23,6 +23,7 @@ import {
   setShapeChildren,
   setShapeCorners,
   setShapeBlur,
+  setShapeTexture,
   setShapeBoolType,
   setShapeGrowType,
   setMasked,
@@ -87,6 +88,7 @@ export function setObject(
   const boolType: BoolType | undefined = type === 'bool' ? (shape as { boolType: BoolType }).boolType : undefined
   const growType = shape.growType
   const blur = shape.blur
+  const texture = (shape as Record<string, unknown>).texture as import('../properties/panel-utils').Texture | undefined
   const svgAttrs = shape.svgAttrs
   const shadows = shape.shadow || []
   const corners: [number?, number?, number?, number?] = [
@@ -113,6 +115,7 @@ export function setObject(
   setShapeChildren(module, children)
   setShapeCorners(module, corners)
   setShapeBlur(module, blur)
+  setShapeTexture(module, texture)
 
   // Type-specific properties
   if (type === 'group') {

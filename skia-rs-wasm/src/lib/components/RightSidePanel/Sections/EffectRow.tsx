@@ -6,14 +6,15 @@ import { cn } from '@/lib/utils'
 import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
 import { isColorFill } from '../../../renderer/api/constants'
 import { normalizeHex } from '../../../renderer/properties/panel-utils'
-import type { EffectItem, EffectKind } from '../../../renderer/properties/panel-utils'
-import { DEFAULT_SHADOW, DEFAULT_BLUR } from '../../../renderer/properties/panel-utils'
+import type { EffectItem, EffectKind, Texture } from '../../../renderer/properties/panel-utils'
+import { DEFAULT_SHADOW, DEFAULT_BLUR, DEFAULT_TEXTURE } from '../../../renderer/properties/panel-utils'
 import { useColorEditorFor } from '../use-color-editor'
 
 const EFFECT_KIND_OPTIONS: { value: EffectKind; label: string }[] = [
   { value: 'drop-shadow', label: 'Drop shadow' },
   { value: 'inner-shadow', label: 'Inner shadow' },
   { value: 'layer-blur', label: 'Layer blur' },
+  { value: 'texture', label: 'Texture' },
 ]
 
 /** Convert Shadow color to a Fill so FillEditor can be reused. */
@@ -44,14 +45,24 @@ function fillToShadowColor(fill: Fill, existing: Shadow): Shadow {
   }
 }
 
+/** Extract the hidden flag from any effect item. */
+function effectHidden(item: EffectItem): boolean {
+  if (item.kind === 'layer-blur') return item.blur.hidden
+  if (item.kind === 'texture') return item.texture.hidden
+  return item.shadow.hidden
+}
+
 /** Convert between effect kinds, preserving hidden state. */
 function convertEffect(current: EffectItem, newKind: EffectKind): EffectItem {
-  const hidden = current.kind === 'layer-blur' ? current.blur.hidden : current.shadow.hidden
+  const hidden = effectHidden(current)
 
   if (newKind === 'layer-blur') {
     return { kind: 'layer-blur', blur: { ...DEFAULT_BLUR, hidden } }
   }
-  if (current.kind === 'layer-blur') {
+  if (newKind === 'texture') {
+    return { kind: 'texture', texture: { ...DEFAULT_TEXTURE, hidden } }
+  }
+  if (current.kind === 'layer-blur' || current.kind === 'texture') {
     return { kind: newKind, shadow: { ...DEFAULT_SHADOW, style: newKind, hidden } }
   }
   // Shadow → Shadow (different style)
@@ -67,9 +78,12 @@ export interface EffectRowProps {
 }
 
 export function EffectRow({ effect, index, readOnly, onChange, onRemove }: EffectRowProps) {
-  const isShadow = effect.kind !== 'layer-blur'
+  const isShadow = effect.kind === 'drop-shadow' || effect.kind === 'inner-shadow'
+  const isBlur = effect.kind === 'layer-blur'
+  const isTexture = effect.kind === 'texture'
   const shadow = isShadow ? effect.shadow : null
-  const blur = !isShadow ? effect.blur : null
+  const blur = isBlur ? effect.blur : null
+  const texture = isTexture ? effect.texture : null
 
   const { isActive: expanded, openEditor, closeEditor } = useColorEditorFor('shadow', index)
 
@@ -88,7 +102,7 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
     (newKind: EffectKind) => {
       if (newKind === effect.kind) return
       // Close shadow color editor if switching away from shadow
-      if (expanded && newKind === 'layer-blur') closeEditor()
+      if (expanded && (newKind === 'layer-blur' || newKind === 'texture')) closeEditor()
       onChange(convertEffect(effect, newKind), index)
     },
     [effect, index, onChange, expanded, closeEditor],
@@ -138,6 +152,14 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
       }
     },
     [readOnly, shadow, expanded, closeEditor, openEditor, fill, index, effect.kind, onChange],
+  )
+
+  const handleTextureUpdate = useCallback(
+    (partial: Partial<Texture>) => {
+      if (!texture) return
+      onChange({ kind: 'texture', texture: { ...texture, ...partial } }, index)
+    },
+    [texture, index, onChange],
   )
 
   if (readOnly) {
@@ -267,7 +289,7 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
       )}
 
       {/* Row 2 for blur: value */}
-      {!isShadow && blur && (
+      {isBlur && blur && (
         <div className="flex min-h-7 items-center gap-1.5">
           <span className="shrink-0 text-xs text-muted-foreground">Value</span>
           <Input
@@ -284,6 +306,48 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
             }
             title="Blur value"
           />
+        </div>
+      )}
+
+      {/* Rows for texture: noise size + radius */}
+      {isTexture && texture && (
+        <div className="flex min-h-7 items-center gap-1.5">
+          <span className="shrink-0 text-xs text-muted-foreground">Noise Size</span>
+          <Input
+            type="number"
+            className="h-7 w-20 shrink-0 px-1 text-xs"
+            min={1}
+            step={1}
+            value={texture.noiseSize}
+            onChange={(e) =>
+              handleTextureUpdate({ noiseSize: Math.max(1, parseFloat(e.target.value) || 1) })
+            }
+            title="Noise size"
+          />
+        </div>
+      )}
+      {isTexture && texture && (
+        <div className="flex min-h-7 items-center gap-1.5">
+          <span className="shrink-0 text-xs text-muted-foreground">Radius</span>
+          <Input
+            type="number"
+            className="h-7 w-20 shrink-0 px-1 text-xs"
+            min={0}
+            step={1}
+            value={texture.radius}
+            onChange={(e) =>
+              handleTextureUpdate({ radius: Math.max(0, parseFloat(e.target.value) || 0) })
+            }
+            title="Radius"
+          />
+          <label className="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={texture.clipToShape}
+              onChange={(e) => handleTextureUpdate({ clipToShape: e.target.checked })}
+            />
+            Clip
+          </label>
         </div>
       )}
     </div>

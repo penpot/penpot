@@ -11,6 +11,7 @@ mod strokes;
 mod surfaces;
 pub mod text;
 pub mod text_editor;
+mod texture;
 mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
@@ -1152,6 +1153,12 @@ impl RenderState {
                         antialias,
                         innershadows_surface_id,
                     );
+                }
+
+                if !fast_mode {
+                    if let Some(tex) = shape.texture.filter(|t| !t.hidden) {
+                        texture::render(self, shape, &tex, antialias, fills_surface_id);
+                    }
                 }
 
                 if blur_filter_for_layers.is_some() {

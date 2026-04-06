@@ -11,4 +11,5 @@ pub mod strokes;
 pub mod svg_attrs;
 pub mod text;
 pub mod text_editor;
+pub mod texture;
 pub mod transforms;

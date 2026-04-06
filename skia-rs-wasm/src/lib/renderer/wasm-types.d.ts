@@ -173,6 +173,10 @@ export interface WasmModule {
   _set_shape_blur(blur_type: number, hidden: number, value: number): void
   _clear_shape_blur(): void
 
+  // Texture
+  _set_shape_texture(noise_size: number, radius: number, clip_to_shape: boolean, hidden: boolean): void
+  _clear_shape_texture(): void
+
   // Corners
   _set_shape_corners(r1: number, r2: number, r3: number, r4: number): void
 

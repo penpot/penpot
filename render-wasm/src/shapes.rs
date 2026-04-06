@@ -27,6 +27,7 @@ mod svg_attrs;
 mod svgraw;
 mod text;
 pub mod text_paths;
+mod texture;
 mod transform;
 
 pub use blend::*;
@@ -47,6 +48,7 @@ pub use strokes::*;
 pub use svg_attrs::*;
 pub use svgraw::*;
 pub use text::*;
+pub use texture::*;
 pub use transform::*;
 
 use crate::math::{self, Bounds, Matrix, Point};
@@ -186,6 +188,7 @@ pub struct Shape {
     pub blend_mode: BlendMode,
     pub vertical_align: VerticalAlign,
     pub blur: Option<Blur>,
+    pub texture: Option<TextureEffect>,
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
@@ -289,6 +292,7 @@ impl Shape {
             opacity: 1.,
             hidden: false,
             blur: None,
+            texture: None,
             svg: None,
             svg_attrs: None,
             shadows: Vec::with_capacity(1),
@@ -627,6 +631,10 @@ impl Shape {
     pub fn set_blur(&mut self, blur: Option<Blur>) {
         self.invalidate_extrect();
         self.blur = blur;
+    }
+
+    pub fn set_texture(&mut self, texture: Option<TextureEffect>) {
+        self.texture = texture;
     }
 
     pub fn add_child(&mut self, id: Uuid) {
