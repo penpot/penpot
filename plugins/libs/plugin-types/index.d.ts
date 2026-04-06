@@ -187,9 +187,8 @@ export interface Blur {
   id?: string;
   /**
    * The optional type of the blur effect.
-   * Currently, only 'layer-blur' is supported.
    */
-  type?: 'layer-blur';
+  type?: 'layer-blur' | 'background-blur';
   /**
    * The optional intensity value of the blur effect.
    */
