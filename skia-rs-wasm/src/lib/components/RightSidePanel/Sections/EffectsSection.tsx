@@ -25,7 +25,8 @@ function mergeEffects(node: RectLikeNode): EffectItem[] {
   }
   const blur = (node as Record<string, unknown>).blur as Blur | undefined
   if (blur) {
-    items.push({ kind: 'layer-blur', blur })
+    const kind = blur.type === 'background-blur' ? 'background-blur' : 'layer-blur'
+    items.push({ kind, blur })
   }
   return items
 }
@@ -35,7 +36,7 @@ function splitEffects(effects: EffectItem[]): { shadow: Shadow[]; blur: Blur | u
   const shadows: Shadow[] = []
   let blur: Blur | undefined
   for (const e of effects) {
-    if (e.kind === 'layer-blur') {
+    if (e.kind === 'layer-blur' || e.kind === 'background-blur') {
       blur = e.blur
     } else {
       shadows.push(e.shadow)

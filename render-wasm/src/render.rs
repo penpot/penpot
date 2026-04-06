@@ -809,7 +809,7 @@ impl RenderState {
         // For non-text, non-SVG shapes in the normal rendering path, apply blur
         // via a single save_layer on each render surface
         // Clip correctness is preserved
-        let blur_sigma_for_layers: Option<f32> = if !fast_mode
+        let (blur_sigma_for_layers, backdrop_blur_sigma): (Option<f32>, Option<f32>) = if !fast_mode
             && apply_to_current_surface
             && fills_surface_id == SurfaceId::Fills
             && !matches!(shape.shape_type, Type::Text(_))
@@ -817,12 +817,15 @@ impl RenderState {
         {
             if let Some(blur) = shape.blur.filter(|b| !b.hidden) {
                 shape.to_mut().set_blur(None);
-                Some(blur.sigma())
+                match blur.blur_type {
+                    BlurType::LayerBlur => (Some(blur.sigma()), None),
+                    BlurType::BackgroundBlur => (None, Some(blur.sigma())),
+                }
             } else {
-                None
+                (None, None)
             }
         } else {
-            None
+            (None, None)
         };
 
         let center = shape.center();
@@ -1068,6 +1071,17 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
+                // Background blur: blur what's visually behind the shape via a backdrop filter.
+                // The save_layer is opened before the layer-blur layer so content composites correctly.
+                let backdrop_blur_filter: Option<skia::ImageFilter> = backdrop_blur_sigma
+                    .and_then(|sigma| skia::image_filters::blur((sigma, sigma), None, None, None));
+                if let Some(ref filter) = backdrop_blur_filter {
+                    let layer_rec = skia::canvas::SaveLayerRec::default().backdrop(filter);
+                    self.surfaces
+                        .canvas(fills_surface_id)
+                        .save_layer(&layer_rec);
+                }
+
                 // Wrap ALL fill/stroke/shadow rendering so a single GPU blur pass calls
                 let blur_filter_for_layers: Option<skia::ImageFilter> = blur_sigma_for_layers
                     .and_then(|sigma| skia::image_filters::blur((sigma, sigma), None, None, None));
@@ -1157,6 +1171,10 @@ impl RenderState {
                 if blur_filter_for_layers.is_some() {
                     self.surfaces.canvas(innershadows_surface_id).restore();
                     self.surfaces.canvas(strokes_surface_id).restore();
+                    self.surfaces.canvas(fills_surface_id).restore();
+                }
+
+                if backdrop_blur_filter.is_some() {
                     self.surfaces.canvas(fills_surface_id).restore();
                 }
             }

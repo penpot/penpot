@@ -8,6 +8,7 @@ use crate::{with_current_shape_mut, STATE};
 #[allow(dead_code)]
 pub enum RawBlurType {
     LayerBlur = 0, // odd naming to comply with cljs value
+    BackgroundBlur = 1,
 }
 
 impl From<u8> for RawBlurType {
@@ -20,6 +21,7 @@ impl From<RawBlurType> for BlurType {
     fn from(value: RawBlurType) -> Self {
         match value {
             RawBlurType::LayerBlur => BlurType::LayerBlur,
+            RawBlurType::BackgroundBlur => BlurType::BackgroundBlur,
         }
     }
 }

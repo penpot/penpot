@@ -35,15 +35,22 @@ export const DEFAULT_BLUR: Blur = {
   hidden: false,
 }
 
+export const DEFAULT_BACKGROUND_BLUR: Blur = {
+  type: 'background-blur',
+  value: 4,
+  hidden: false,
+}
+
 /** Max stacked effects (shadows + blur) per shape. */
 export const MAX_EFFECTS = 8
 
-export type EffectKind = 'drop-shadow' | 'inner-shadow' | 'layer-blur'
+export type EffectKind = 'drop-shadow' | 'inner-shadow' | 'layer-blur' | 'background-blur'
 
 export type EffectItem =
   | { kind: 'drop-shadow'; shadow: Shadow }
   | { kind: 'inner-shadow'; shadow: Shadow }
   | { kind: 'layer-blur'; blur: Blur }
+  | { kind: 'background-blur'; blur: Blur }
 
 export function normalizeHex(input: string): string {
   let s = input.trim()

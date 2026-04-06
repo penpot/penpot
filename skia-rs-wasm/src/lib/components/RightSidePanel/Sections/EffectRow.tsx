@@ -7,13 +7,14 @@ import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
 import { isColorFill } from '../../../renderer/api/constants'
 import { normalizeHex } from '../../../renderer/properties/panel-utils'
 import type { EffectItem, EffectKind } from '../../../renderer/properties/panel-utils'
-import { DEFAULT_SHADOW, DEFAULT_BLUR } from '../../../renderer/properties/panel-utils'
+import { DEFAULT_SHADOW, DEFAULT_BLUR, DEFAULT_BACKGROUND_BLUR } from '../../../renderer/properties/panel-utils'
 import { useColorEditorFor } from '../use-color-editor'
 
 const EFFECT_KIND_OPTIONS: { value: EffectKind; label: string }[] = [
   { value: 'drop-shadow', label: 'Drop shadow' },
   { value: 'inner-shadow', label: 'Inner shadow' },
   { value: 'layer-blur', label: 'Layer blur' },
+  { value: 'background-blur', label: 'Background blur' },
 ]
 
 /** Convert Shadow color to a Fill so FillEditor can be reused. */
@@ -46,12 +47,18 @@ function fillToShadowColor(fill: Fill, existing: Shadow): Shadow {
 
 /** Convert between effect kinds, preserving hidden state. */
 function convertEffect(current: EffectItem, newKind: EffectKind): EffectItem {
-  const hidden = current.kind === 'layer-blur' ? current.blur.hidden : current.shadow.hidden
+  const hidden =
+    current.kind === 'layer-blur' || current.kind === 'background-blur'
+      ? current.blur.hidden
+      : current.shadow.hidden
 
   if (newKind === 'layer-blur') {
     return { kind: 'layer-blur', blur: { ...DEFAULT_BLUR, hidden } }
   }
-  if (current.kind === 'layer-blur') {
+  if (newKind === 'background-blur') {
+    return { kind: 'background-blur', blur: { ...DEFAULT_BACKGROUND_BLUR, hidden } }
+  }
+  if (current.kind === 'layer-blur' || current.kind === 'background-blur') {
     return { kind: newKind, shadow: { ...DEFAULT_SHADOW, style: newKind, hidden } }
   }
   // Shadow → Shadow (different style)
@@ -67,7 +74,7 @@ export interface EffectRowProps {
 }
 
 export function EffectRow({ effect, index, readOnly, onChange, onRemove }: EffectRowProps) {
-  const isShadow = effect.kind !== 'layer-blur'
+  const isShadow = effect.kind !== 'layer-blur' && effect.kind !== 'background-blur'
   const shadow = isShadow ? effect.shadow : null
   const blur = !isShadow ? effect.blur : null
 
@@ -88,7 +95,7 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
     (newKind: EffectKind) => {
       if (newKind === effect.kind) return
       // Close shadow color editor if switching away from shadow
-      if (expanded && newKind === 'layer-blur') closeEditor()
+      if (expanded && (newKind === 'layer-blur' || newKind === 'background-blur')) closeEditor()
       onChange(convertEffect(effect, newKind), index)
     },
     [effect, index, onChange, expanded, closeEditor],
@@ -278,7 +285,10 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
             value={blur.value}
             onChange={(e) =>
               onChange(
-                { kind: 'layer-blur', blur: { ...blur, value: Math.max(0, parseFloat(e.target.value) || 0) } },
+                {
+                  kind: effect.kind as 'layer-blur' | 'background-blur',
+                  blur: { ...blur, value: Math.max(0, parseFloat(e.target.value) || 0) },
+                },
                 index,
               )
             }
