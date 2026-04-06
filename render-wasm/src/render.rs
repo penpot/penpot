@@ -2,6 +2,7 @@ mod debug;
 mod fills;
 pub mod filters;
 mod fonts;
+mod glass;
 mod gpu_state;
 pub mod grid_layout;
 mod images;
@@ -1064,6 +1065,16 @@ impl RenderState {
                 }
             }
             _ => {
+                // Apply glass backdrop before the shape's own transform so that selrect
+                // coordinates (document space) match the fills canvas coordinate space.
+                if let Some(glass) = shape
+                    .glass
+                    .as_ref()
+                    .filter(|g| !g.hidden && apply_to_current_surface)
+                {
+                    glass::render_glass(self, &shape, glass, fills_surface_id);
+                }
+
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });

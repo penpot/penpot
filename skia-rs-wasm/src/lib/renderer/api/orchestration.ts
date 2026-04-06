@@ -31,6 +31,7 @@ import {
 import { setShapeFills } from './fills'
 import { setShapeStrokes } from './strokes'
 import { setShapeShadows } from './shadows'
+import { setShapeGlass } from './glass'
 import { setShapeSvgAttrs } from './svg'
 import { setShapePathContent } from './path'
 import {
@@ -87,6 +88,7 @@ export function setObject(
   const boolType: BoolType | undefined = type === 'bool' ? (shape as { boolType: BoolType }).boolType : undefined
   const growType = shape.growType
   const blur = shape.blur
+  const glass = shape.glass
   const svgAttrs = shape.svgAttrs
   const shadows = shape.shadow || []
   const corners: [number?, number?, number?, number?] = [
@@ -113,6 +115,7 @@ export function setObject(
   setShapeChildren(module, children)
   setShapeCorners(module, corners)
   setShapeBlur(module, blur)
+  setShapeGlass(module, glass)
 
   // Type-specific properties
   if (type === 'group') {

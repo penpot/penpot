@@ -202,6 +202,44 @@ export interface Blur {
 }
 
 /**
+ * Represents glass (liquid glass) effect properties in Penpot.
+ */
+export interface Glass {
+  /**
+   * The optional unique identifier for the glass effect.
+   */
+  id?: string;
+  /**
+   * Corner radius for the SDF rounded-rect lens shape (px).
+   */
+  radius?: number;
+  /**
+   * Index of refraction (1.0–3.0, default 1.5).
+   */
+  refraction?: number;
+  /**
+   * Lens thickness / depth (0–100).
+   */
+  depth?: number;
+  /**
+   * Chromatic aberration strength (0–1, default 0.03).
+   */
+  dispersion?: number;
+  /**
+   * White-tint + Fresnel reflection intensity (0–1).
+   */
+  lightIntensity?: number;
+  /**
+   * Highlight direction in degrees (converted to radians internally).
+   */
+  lightAngle?: number;
+  /**
+   * Specifies whether the glass effect is hidden.
+   */
+  hidden?: boolean;
+}
+
+/**
  * Represents a board in Penpot.
  * This interface extends `ShapeBase` and includes properties and methods specific to board.
  */
@@ -3680,6 +3718,11 @@ export interface ShapeBase extends PluginData {
    * The blur effect applied to the shape.
    */
   blur?: Blur;
+
+  /**
+   * The glass (liquid glass) effect applied to the shape.
+   */
+  glass?: Glass;
 
   /**
    * The export settings of the shape.
