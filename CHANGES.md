@@ -36,6 +36,7 @@
 - Token tree should be expanded by default [Taiga #13631](https://tree.taiga.io/project/penpot/issue/13631)
 - Fix opacity incorrectly disabled for visible shapes [Taiga #13906](https://tree.taiga.io/project/penpot/issue/13906)
 - Update onboarding image [Taiga #13864](https://tree.taiga.io/project/penpot/issue/13864)
+- Fix hot update on color-row on texts [Taiga #13923](https://tree.taiga.io/project/penpot/issue/13923)
 
 ## 2.15.0 (Unreleased)
 
