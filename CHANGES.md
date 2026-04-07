@@ -17,6 +17,7 @@
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 - Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
+- Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
 
 
 ## 2.14.1
