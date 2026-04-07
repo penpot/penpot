@@ -122,7 +122,8 @@
 (defn commit
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
-           file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?]}]
+           file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?
+           selected-before]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -148,7 +149,8 @@
                    :undo-group undo-group
                    :tags tags
                    :stack-undo? stack-undo?
-                   :ignore-wasm? ignore-wasm?}]
+                   :ignore-wasm? ignore-wasm?
+                   :selected-before selected-before}]
 
     (ptk/reify ::commit
       cljs.core/IDeref
