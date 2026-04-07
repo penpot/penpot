@@ -62,9 +62,9 @@
   []
   (ptk/reify ::initialize-rasterizer
     ptk/EffectEvent
-    (effect [_ state _]
-      (when-not (feat/active-feature? state "render-wasm/v1")
-        (thr/init!)))))
+    (effect [_ _ _]
+      ;; The rasterizer is used for the dashboard thumbnails
+      (thr/init!))))
 
 (defn initialize
   []

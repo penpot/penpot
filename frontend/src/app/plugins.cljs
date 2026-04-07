@@ -8,6 +8,7 @@
   "RPC for plugins runtime."
   (:require
    ["@penpot/plugins-runtime" :as runtime]
+   [app.main.errors :as errors]
    [app.main.features :as features]
    [app.main.store :as st]
    [app.plugins.api :as api]
@@ -30,6 +31,8 @@
   (ptk/reify ::initialize
     ptk/WatchEvent
     (watch [_ _ stream]
+      (set! errors/is-plugin-error? runtime/isPluginError)
+
       (->> stream
            (rx/filter (ptk/type? ::features/initialize))
            (rx/observe-on :async)

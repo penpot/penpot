@@ -11,6 +11,7 @@ vi.mock('./plugin-manager.js', () => ({
 
 vi.mock('./create-sandbox.js', () => ({
   createSandbox: vi.fn(),
+  markPluginError: vi.fn(),
 }));
 
 describe('createPlugin', () => {
@@ -116,7 +117,11 @@ describe('createPlugin', () => {
       throw new Error('Evaluation error');
     });
 
-    await createPlugin(mockContext, manifest, onCloseCallback);
+    try {
+      await createPlugin(mockContext, manifest, onCloseCallback);
+    } catch (err) {
+      expect.assert(err);
+    }
 
     expect(mockPluginManager.close).toHaveBeenCalled();
   });
