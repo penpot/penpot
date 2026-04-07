@@ -576,16 +576,16 @@
   color: var(--color-accent-tertiary);
 }
 
-.nitrate-orgs-container {
+.orgs-container {
   align-items: center;
   display: flex;
   height: calc(2 * var(--sp-xxxl));
   max-height: calc(2 * var(--sp-xxxl));
   justify-content: space-between;
-  padding: 0 var(--sp-l);
+  padding: 0 var(--sp-xl);
 }
 
-.nitrate-selected-org {
+.selected-org {
   @include t.use-typography("body-medium");
 
   color: var(--color-foreground-primary);
@@ -596,12 +596,12 @@
   gap: var(--sp-s);
 }
 
-.nitrate-create-org {
+.create-org {
   margin-inline-start: auto;
   text-transform: uppercase;
 }
 
-.nitrate-penpot-icon {
+.org-penpot-icon {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -617,7 +617,7 @@
   }
 }
 
-.nitrate-org-icon {
+.org-icon {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -641,15 +641,58 @@
 .current-org {
   @include deprecated.buttonStyle;
 
+  text-transform: none;
   display: grid;
   align-items: center;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   gap: var(--sp-s);
   height: 100%;
   width: 100%;
-  padding: 0 var(--sp-s);
 }
 
 .current-org .arrow-icon {
   margin-inline-end: var(--sp-xs);
+}
+
+.org-options {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: var(--sp-xxl);
+  min-width: $sz-28;
+  height: 100%;
+}
+
+.org-switch-content {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  height: $sz-48;
+  width: 100%;
+}
+
+.org-options-btn {
+  --icon-stroke: var(--icon-foreground);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: $sz-32;
+  height: $sz-32;
+
+  &:hover {
+    --icon-stroke: var(--color-accent-primary);
+  }
+}
+
+.org-menu-icon {
+  @extend %button-icon;
+
+  stroke: var(--icon-stroke);
+}
+
+.org-menu-icon-open {
+  @extend %button-icon;
+
+  stroke: var(--color-accent-primary);
 }
