@@ -18,6 +18,7 @@
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 - Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
 - Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
+- Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
 
 
 ## 2.14.1

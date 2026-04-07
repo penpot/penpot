@@ -656,6 +656,7 @@
                 ;; Update the component in case shape is a main instance
                 (when (and (some? component-id) (ctc/main-instance? shape))
                   (dwl/rename-component component-id clean-name))
+                (dwh/dehighlight-shape shape-id)
                 (dwu/commit-undo-transaction undo-id))))))))))
 
 (defn rename-shape-or-variant
