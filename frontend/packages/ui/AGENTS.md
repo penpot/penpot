@@ -68,7 +68,13 @@ frontend/packages/ui/
 │       │   │   ├── RawSvg.stories.tsx
 │       │   │   └── RawSvg.spec.tsx
 │       │   └── typography/       # Text, Heading components + shared utilities
-│       └── product/              # Product-level components (e.g. Cta)
+│       ├── notifications/
+│       │   └── shared/
+│       │       ├── NotificationPill.tsx
+│       │       ├── NotificationPill.module.scss
+│       │       ├── NotificationPill.stories.tsx
+│       │       └── NotificationPill.spec.tsx
+│       └── product/              # Product-level components (e.g. Cta, EmptyPlaceholder)
 │       └── utilities/            # Utility components (e.g. Swatch)
 ├── eslint.config.mjs             # ESLint 9 flat config (TypeScript + React)
 ├── stylelint.config.mjs          # Stylelint config (mirrors frontend/)
@@ -101,6 +107,8 @@ Components are organised to mirror the CLJS source tree
 | `ds/controls/switch.cljs` | `src/lib/controls/Switch.tsx` |
 | `ds/controls/checkbox.cljs` | `src/lib/controls/Checkbox.tsx` |
 | `ds/controls/input.cljs` | `src/lib/controls/Input.tsx` |
+| `ds/product/empty_placeholder.cljs` | `src/lib/product/EmptyPlaceholder.tsx` |
+| `ds/notifications/shared/notification_pill.cljs` | `src/lib/notifications/shared/NotificationPill.tsx` |
 
 ### Known Tooling Notes
 

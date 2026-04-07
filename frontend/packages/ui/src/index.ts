@@ -21,6 +21,11 @@ export type {
 } from "./lib/product/Avatar";
 export { PanelTitle } from "./lib/product/PanelTitle";
 export type { PanelTitleProps } from "./lib/product/PanelTitle";
+export { EmptyPlaceholder } from "./lib/product/EmptyPlaceholder";
+export type {
+  EmptyPlaceholderProps,
+  EmptyPlaceholderType,
+} from "./lib/product/EmptyPlaceholder";
 export { Icon, iconIds } from "./lib/foundations/assets/Icon";
 export type { IconId, IconProps } from "./lib/foundations/assets/Icon";
 export { RawSvg, rawSvgIds } from "./lib/foundations/assets/RawSvg";
@@ -63,3 +68,10 @@ export type {
   InputVariant,
   InputHintType,
 } from "./lib/controls/Input";
+export { NotificationPill } from "./lib/notifications/shared/NotificationPill";
+export type {
+  NotificationPillProps,
+  NotificationPillLevel,
+  NotificationPillType,
+  NotificationPillAppearance,
+} from "./lib/notifications/shared/NotificationPill";
