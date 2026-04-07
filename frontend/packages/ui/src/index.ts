@@ -22,3 +22,11 @@ export type {
   IconButtonProps,
   IconButtonVariant,
 } from "./lib/buttons/IconButton";
+export { Swatch } from "./lib/utilities/Swatch";
+export type {
+  SwatchProps,
+  SwatchBackground,
+  SwatchGradient,
+  SwatchGradientStop,
+  SwatchSize,
+} from "./lib/utilities/Swatch";

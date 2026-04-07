@@ -43,6 +43,7 @@ frontend/packages/ui/
 │       │   │   └── RawSvg.spec.tsx
 │       │   └── typography/       # Text, Heading components + shared utilities
 │       └── product/              # Product-level components (e.g. Cta)
+│       └── utilities/            # Utility components (e.g. Swatch)
 ├── eslint.config.mjs             # ESLint 9 flat config (TypeScript + React)
 ├── stylelint.config.mjs          # Stylelint config (mirrors frontend/)
 ├── vite.config.mts               # Vite lib build + Vitest config
@@ -64,6 +65,7 @@ Components are organised to mirror the CLJS source tree
 | `ds/product/cta.cljs` | `src/lib/product/Cta.tsx` |
 | `ds/buttons/button.cljs` | `src/lib/buttons/Button.tsx` |
 | `ds/buttons/icon_button.cljs` | `src/lib/buttons/IconButton.tsx` |
+| `ds/utilities/swatch.cljs` | `src/lib/utilities/Swatch.tsx` |
 
 ### Known Tooling Notes
 
