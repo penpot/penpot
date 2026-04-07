@@ -47,3 +47,5 @@ export type {
   HintMessageProps,
   HintMessageType,
 } from "./lib/controls/utilities/HintMessage";
+export { Switch } from "./lib/controls/Switch";
+export type { SwitchProps } from "./lib/controls/Switch";
