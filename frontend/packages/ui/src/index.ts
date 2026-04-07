@@ -51,3 +51,15 @@ export { Switch } from "./lib/controls/Switch";
 export type { SwitchProps } from "./lib/controls/Switch";
 export { Checkbox } from "./lib/controls/Checkbox";
 export type { CheckboxProps } from "./lib/controls/Checkbox";
+export { InputField } from "./lib/controls/utilities/InputField";
+export type {
+  InputFieldProps,
+  InputFieldVariant,
+  InputFieldHintType,
+} from "./lib/controls/utilities/InputField";
+export { Input } from "./lib/controls/Input";
+export type {
+  InputProps,
+  InputVariant,
+  InputHintType,
+} from "./lib/controls/Input";
