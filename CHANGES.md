@@ -27,6 +27,7 @@
 - Fix warnings for unsupported token $type (by @Dexterity104) [Github #8790](https://github.com/penpot/penpot/issues/8790)
 - Add per-group add button for typographies (by @eureka928) [Github #5275](https://github.com/penpot/penpot/issues/5275)
 - Use page name for multi-export ZIP/PDF downloads (by @Dexterity104) [Github #8773](https://github.com/penpot/penpot/issues/8773)
+- Make links in comments clickable (by @eureka928) [Github #1602](https://github.com/penpot/penpot/issues/1602)
 
 ### :bug: Bugs fixed
 
