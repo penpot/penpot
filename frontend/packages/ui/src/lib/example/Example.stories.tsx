@@ -1,8 +1,8 @@
-import { Example } from './Example';
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Example } from "./Example";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
 const meta = {
-  title: 'UI/Example',
+  title: "UI/Example",
   component: Example,
 } satisfies Meta<typeof Example>;
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import styles from './Example.module.css';
+import { useState } from "react";
+import styles from "./Example.module.css";
 
 export function Example() {
   const [count, setCount] = useState(0);
@@ -14,7 +14,6 @@ export function Example() {
         <button onClick={() => setCount(0)}>Reset</button>
       </div>
     </div>
-
   );
 }
 
