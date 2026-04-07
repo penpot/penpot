@@ -3,8 +3,10 @@
    [cljs.test :as t]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.data.repo-test]
+   [frontend-tests.data.viewer-test]
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-texts-test]
+   [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.helpers-shapes-test]
    [frontend-tests.logic.comp-remove-swap-slots-test]
    [frontend-tests.logic.components-and-tokens]
@@ -39,8 +41,10 @@
   (t/run-tests
    'frontend-tests.basic-shapes-test
    'frontend-tests.data.repo-test
+   'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.data.workspace-texts-test
+   'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.helpers-shapes-test
    'frontend-tests.logic.comp-remove-swap-slots-test
    'frontend-tests.logic.components-and-tokens
@@ -56,9 +60,9 @@
    'frontend-tests.tokens.logic.token-remapping-test
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-errors-test
+   'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
-   'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.worker-snap-test))
