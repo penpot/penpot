@@ -35,7 +35,7 @@
                    (mf/deps form on-submit)
                    (fn []
                      (let [name (get-in @form [:clean-data :name])]
-                       (when (and (get-in @form [:touched :name]) (not= name (:name node)))
+                       (when (not= name (:name node))
                          (on-submit name)))))
 
         is-disabled? (or (not (:valid @form))

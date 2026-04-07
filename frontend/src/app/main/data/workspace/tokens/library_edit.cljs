@@ -11,6 +11,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.tokens :as clt]
+   [app.common.path-names :as cpn]
+   [app.common.test-helpers.ids-map :as cthi]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -23,6 +25,7 @@
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [me.flowthing.pp :as pp]
    [potok.v2.core :as ptk]))
 
 (declare set-selected-token-set-id)
@@ -432,6 +435,8 @@
         (rx/of (dch/commit-changes changes)
                (set-selected-token-set-id (ctob/get-id token-set)))))))
 
+#_{:clj-kondo/ignore [:potok/reify-type]}
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn create-token
   ([token] (create-token nil token))
   ([set-id token]
@@ -453,6 +458,41 @@
                   (ptk/data-event ::ev/event {::ev/name "create-token" :type token-type})))
 
          (rx/of (create-token-with-set token)))))))
+
+#_{:clj-kondo/ignore [:potok/reify-type]}
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
+(defn bulk-create-tokens
+  [set-id token-ids type node new-node-name]
+  (assert (uuid? set-id) "expected uuid for `set-id`")
+  (assert (every? uuid? token-ids) "expected a collection of uuids for `token-ids`")
+  (assert (keyword? type) "expected keyword for `type`")
+  (assert (string? new-node-name) "expected string for `new-node-name`")
+
+  (ptk/reify ::bulk-create-tokens
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [token-set (lookup-token-set state set-id)
+            data    (dsh/lookup-file-data state)
+            changes (reduce (fn [changes token-id]
+                              (let [token     (-> (get-tokens-lib state)
+                                                  (ctob/get-token (ctob/get-id token-set) token-id))
+                                    new-name (->
+                                              (cpn/split-path (:name token) :separator ".")
+                                              (assoc (:depth node) new-node-name)
+                                              (cpn/join-path :separator "." :with-spaces? false))
+                                    _ (pp/pprint {:token token :new-path new-name})
+                                    token'    (->> (merge token {:name new-name
+                                                                 :id (cthi/new-id! (:name new-name))})
+                                                   (into {})
+                                                   #_(pp/pprint)
+                                                   (ctob/make-token))]
+                                (pcb/set-token changes (ctob/get-id token-set) (:id token') token')))
+                            (-> (pcb/empty-changes it)
+                                (pcb/with-library-data data))
+                            token-ids)]
+        (rx/of
+         (dch/commit-changes changes)
+         (ptk/data-event ::ev/event {::ev/name "bulk-create-tokens" :type type}))))))
 
 (defn update-token
   ([id params] (update-token nil id params))

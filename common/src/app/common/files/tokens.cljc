@@ -163,9 +163,7 @@
     (fn [name]
       (let [current-path (:path node)
             current-name (:name node)
-            new-tokens (ctob/update-tokens-group active-tokens current-path current-name name)
-            _ (pp/pprint {:new-name name
-                          :new-tokens new-tokens})]
+            new-tokens (ctob/update-tokens-group active-tokens current-path current-name name)]
         (and (some? new-tokens)
              (some (fn [[token-name _]]
                      (not (ctob/token-name-path-exists? token-name tokens-tree)))

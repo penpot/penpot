@@ -136,8 +136,7 @@
          (fn [tokens-filtered-by-type node]
            (->> tokens-filtered-by-type
                 (filter (fn [token]
-                          (let [token-path (cpn/split-path (:name token) :separator ".")
-                                _ (pp/pprint {:token-path token-path :count (count token-path)})]
+                          (let [token-path (cpn/split-path (:name token) :separator ".")]
                             (and (> (count token-path) 0)
                                  (str/starts-with? (:name token) (str (:path node) ".")))))))))
 
@@ -265,11 +264,11 @@
                (bulk-rename-tokens-in-path node type new-node-name)))))
 
         on-duplicate-node
-        (fn [node type]
-          (let [path (:path node)
-                new-node-name (str (:name node) "-copy")
-                new-node-path (str (name type) "." new-node-name)]
-            (pp/pprint {:node node :type type :path path :new-node-path new-node-path})))
+        (fn [node type new-node-name]
+          (let [tokens-in-path-ids (filter-tokens-by-path-ids type (:path node))]
+            (st/emit!
+             (modal/hide)
+             (dwtl/bulk-create-tokens selected-token-set-id tokens-in-path-ids type node new-node-name))))
 
         open-rename-node-modal
         ;; When user renames a node, we display a form modal
@@ -285,7 +284,7 @@
         (mf/use-fn
          (mf/deps selected-token-set-tokens on-duplicate-node)
          (fn [node type]
-           (let [on-duplicate-node-handler #(on-duplicate-node node type)]
+           (let [on-duplicate-node-handler #(on-duplicate-node node type %)]
              (st/emit! (modal/show :tokens/rename-node {:new-node-name (str (:name node) "-copy")
                                                         :node node
                                                         :variant "duplicate"
