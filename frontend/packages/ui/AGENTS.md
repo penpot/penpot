@@ -63,6 +63,7 @@ Components are organised to mirror the CLJS source tree
 | `ds/foundations/assets/icon.cljs` | `src/lib/foundations/assets/Icon.tsx` |
 | `ds/foundations/assets/raw_svg.cljs` | `src/lib/foundations/assets/RawSvg.tsx` |
 | `ds/product/cta.cljs` | `src/lib/product/Cta.tsx` |
+| `ds/product/loader.cljs` | `src/lib/product/Loader.tsx` |
 | `ds/buttons/button.cljs` | `src/lib/buttons/Button.tsx` |
 | `ds/buttons/icon_button.cljs` | `src/lib/buttons/IconButton.tsx` |
 | `ds/utilities/swatch.cljs` | `src/lib/utilities/Swatch.tsx` |
