@@ -175,19 +175,19 @@
   "Checks if the given rect overlaps with the path in any point"
   [shape rect include-content?]
 
-  (when (d/not-empty? (:content shape))
+  (when (d/not-empty? (:path-data shape))
     (let [;; If paths are too complex the intersection is too expensive
           ;; we fallback to check its bounding box otherwise the performance penalty
           ;; is too big
           ;; TODO: Look for ways to optimize this operation
-          simple? (> (count (:content shape)) 100)
+          simple? (> (count (:path-data shape)) 100)
 
           rect-points  (grc/rect->points rect)
           rect-lines   (points->lines rect-points)
           path-lines   (if simple?
                          (points->lines (:points shape))
                          (path.segm/path->lines shape))
-          start-point (-> shape :content (first) :params (gpt/point))]
+          start-point (-> shape :path-data (first) :params (gpt/point))]
 
       (or (intersects-lines? rect-lines path-lines)
           (if include-content?

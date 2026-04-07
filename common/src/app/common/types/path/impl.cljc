@@ -528,9 +528,9 @@
 (declare from-string)
 (declare from-plain)
 
-(def schema:content
+(def schema:path-data
   (sm/type-schema
-   {:type ::path/content
+   {:type ::path/path-data
     :compile
     (fn [_ _ _]
       (let [decoder   (delay (sm/decoder schema:segments sm/json-transformer))
@@ -563,8 +563,8 @@
 (def check-segment
   (sm/check-fn schema:segment))
 
-(def check-content
-  (sm/check-fn schema:content))
+(def check-path-data
+  (sm/check-fn schema:path-data))
 
 (def decode-segments
   (sm/lazy-decoder schema:segments sm/json-transformer))

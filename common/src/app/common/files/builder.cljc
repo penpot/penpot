@@ -388,7 +388,7 @@
         (get bool :selrect)
 
         operations
-        [{:type :set :attr :content :val (:content bool) :ignore-touched true}
+        [{:type :set :attr :path-data :val (:path-data bool) :ignore-touched true}
          {:type :set :attr :type :val :bool :ignore-touched true}
          {:type :set :attr :bool-type :val type :ignore-touched true}
          {:type :set :attr :selrect :val selrect :ignore-touched true}

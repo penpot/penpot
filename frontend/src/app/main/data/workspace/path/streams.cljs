@@ -158,14 +158,14 @@
   [state]
   (let [zoom (get-in state [:workspace-local :zoom] 1)
         d-pos (/ snap/snap-path-accuracy zoom)
-        get-content #(pst/get-path % :content)
+        get-path-data #(pst/get-path % :path-data)
 
-        content-stream
-        (-> (l/derived get-content st/state)
+        path-data-stream
+        (-> (l/derived get-path-data st/state)
             (rx/from-atom {:emit-current-value? true}))
 
         ranges-stream
-        (->> content-stream
+        (->> path-data-stream
              (rx/filter some?)
              (rx/map path/get-points)
              (rx/map snap/create-ranges))]

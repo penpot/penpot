@@ -238,7 +238,7 @@
   [:map {:title "BoolAttrs"}
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
    [:bool-type [::sm/one-of bool-types]]
-   [:content path/schema:content]])
+   [:path-data path/schema:path-data]])
 
 (def ^:private schema:rect-attrs
   [:map {:title "RectAttrs"}])
@@ -263,7 +263,7 @@
 
 (def ^:private schema:path-attrs
   [:map {:title "PathAttrs"}
-   [:content path/schema:content]])
+   [:path-data path/schema:path-data]])
 
 (def ^:private schema:text-attrs
   [:map {:title "TextAttrs"}
@@ -417,7 +417,7 @@
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
 (def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform
                                           :transform-inverse :parent-id :frame-id})
-(def ^:private allowed-bool-attrs #{:shapes :bool-type :content})
+(def ^:private allowed-bool-attrs #{:shapes :bool-type :path-data})
 (def ^:private allowed-group-attrs #{:shapes})
 (def ^:private allowed-frame-attrs #{:shapes :hide-fill-on-export :show-content :hide-in-viewer
                                      :layout :layout-flex-dir :layout-gap-type :layout-gap
@@ -427,7 +427,7 @@
                                      :layout-grid-rows})
 (def ^:private allowed-image-attrs #{:metadata})
 (def ^:private allowed-svg-attrs #{:content})
-(def ^:private allowed-path-attrs #{:content})
+(def ^:private allowed-path-attrs #{:path-data})
 (def ^:private allowed-text-attrs #{:content})
 (def ^:private allowed-generic-attrs (set/union allowed-shape-attrs allowed-shape-geom-attrs allowed-shape-base-attrs))
 
@@ -583,18 +583,18 @@
         (assoc :points points))))
 
 (defn setup-path
-  [{:keys [content selrect points] :as shape}]
+  [{:keys [path-data selrect points] :as shape}]
   (let [selrect (or selrect
-                    (path/calc-selrect content)
+                    (path/calc-selrect path-data)
                     (grc/make-rect))
         points  (or points
                     (grc/rect->points selrect))
         ;; Ensure we hace correct type here for Path Data
-        content (path/content content)]
+        path-data (path/path-data path-data)]
     (-> shape
         (assoc :selrect selrect)
         (assoc :points points)
-        (assoc :content content))))
+        (assoc :path-data path-data))))
 
 (defn- setup-image
   [{:keys [metadata] :as shape}]

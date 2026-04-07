@@ -587,10 +587,7 @@
             (= attr :position-data))
 
         is-geometry?
-        (and (or (= group :geometry-group)   ;; never triggers touched by itself
-                 (and (= group :content-group)
-                      (= (:type shape) :path)))
-             ;; :content in paths are also considered geometric
+        (and (= group :geometry-group)
              (not (#{:width :height} attr)))
 
         ;; TODO: the check of :width and :height probably may be

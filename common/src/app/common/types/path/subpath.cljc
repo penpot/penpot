@@ -160,10 +160,10 @@
     (into [] xf-mapcat-data closed-subpaths)))
 
 ;; FIXME: revisit this fn impl for perfromance
-(defn reverse-content
-  "Given a content reverse the order of the commands"
-  [content]
-  (->> (get-subpaths content)
+(defn reverse-path-data
+  "Given a path-data reverse the order of the commands"
+  [path-data]
+  (->> (get-subpaths path-data)
        (mapv reverse-subpath)
        (reverse)
        (into [] xf-mapcat-data)))

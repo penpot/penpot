@@ -17,7 +17,7 @@
 (defn initialize
   [enabled?]
   (if enabled?
-    (set! app.common.types.path/wasm:calc-bool-content wasm.api/calculate-bool)
-    (set! app.common.types.path/wasm:calc-bool-content nil))
+    (set! app.common.types.path/wasm:calc-bool-path-data wasm.api/calculate-bool)
+    (set! app.common.types.path/wasm:calc-bool-path-data nil))
   (set! app.common.types.shape/wasm-enabled? enabled?)
   (set! app.common.types.shape/wasm-create-shape wasm.shape/create-shape))

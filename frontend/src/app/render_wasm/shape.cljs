@@ -144,7 +144,7 @@
         (do
           (api/set-shape-type v)
           (when (or (= v :path) (= v :bool))
-            (api/set-shape-path-content (:content shape))))
+            (api/set-shape-path-content (:path-data shape))))
 
         :bool-type
         (api/set-shape-bool-type v)
@@ -236,12 +236,13 @@
         (when (cfh/group-shape? shape)
           (api/set-masked (boolean (:masked-group shape))))
 
+        :path-data
+        (when (or (cfh/path-shape? shape)
+                  (cfh/bool-shape? shape))
+          (api/set-shape-path-content v))
+
         :content
         (cond
-          (or (cfh/path-shape? shape)
-              (cfh/bool-shape? shape))
-          (api/set-shape-path-content v)
-
           (cfh/svg-raw-shape? shape)
           (api/set-shape-svg-raw-content (api/get-static-markup shape))
 

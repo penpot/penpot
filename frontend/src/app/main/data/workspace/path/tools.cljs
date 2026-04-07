@@ -39,17 +39,17 @@
              (or points selected-points)]
 
          (when (and (seq points) (some? shape))
-           (let [new-content
-                 (-> (tool-fn (:content shape) points)
+           (let [new-path-data
+                 (-> (tool-fn (:path-data shape) points)
                      (path/close-subpaths))
 
                  changes
-                 (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
+                 (changes/generate-path-changes it objects page-id shape (:path-data shape) new-path-data)]
 
              (rx/concat
               (rx/of (dwsh/update-shapes [id] path/convert-to-path)
                      (dch/commit-changes changes))
-              (when (empty? new-content)
+              (when (empty? new-path-data)
                 (rx/of (dwe/clear-edition-mode)))))))))))
 
 (defn make-corner

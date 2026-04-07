@@ -106,33 +106,33 @@
         c2 (-> (get objects (second (:shapes shape)))
                (path/convert-to-path objects))
 
-        content-a (:content c1)
-        content-b (:content c2)
+        path-data-a (:path-data c1)
+        path-data-b (:path-data c2)
 
         bool-type (:bool-type shape)
         should-reverse? (and (not= :union bool-type)
-                             (= (path.subpath/clockwise? content-b)
-                                (path.subpath/clockwise? content-a)))
+                             (= (path.subpath/clockwise? path-data-b)
+                                (path.subpath/clockwise? path-data-a)))
 
-        content-a (-> (:content c1)
-                      (path.bool/close-paths)
-                      (path.bool/add-previous))
+        path-data-a (-> (:path-data c1)
+                        (path.bool/close-paths)
+                        (path.bool/add-previous))
 
-        content-b (-> (:content c2)
-                      (path.bool/close-paths)
-                      (cond-> should-reverse? (path.subpath/reverse-content))
-                      (path.bool/add-previous))
+        path-data-b (-> (:path-data c2)
+                        (path.bool/close-paths)
+                        (cond-> should-reverse? (path.subpath/reverse-path-data))
+                        (path.bool/add-previous))
 
 
-        sr-a (path.segment/content->selrect content-a)
-        sr-b (path.segment/content->selrect content-b)
+        sr-a (path.segment/path-data->selrect path-data-a)
+        sr-b (path.segment/path-data->selrect path-data-b)
 
-        [content-a-split content-b-split] (path.bool/content-intersect-split content-a content-b sr-a sr-b)
+        [content-a-split content-b-split] (path.bool/path-data-intersect-split path-data-a path-data-b sr-a sr-b)
 
-        ;;content-a-geom (path.segment/content->geom-data content-a)
-        ;;content-b-geom (path.segment/content->geom-data content-b)
-        ;;content-a-split (->> content-a-split #_(filter #(path.bool/contains-segment? % content-b sr-b content-b-geom)))
-        ;;content-b-split (->> content-b-split #_(filter #(path.bool/contains-segment? % content-a sr-a content-a-geom)))
+        ;;content-a-geom (path.bool/path-data->geom-data path-data-a)
+        ;;content-b-geom (path.bool/path-data->geom-data path-data-b)
+        ;;content-a-split (->> content-a-split #_(filter #(path.bool/contains-segment? % path-data-b sr-b content-b-geom)))
+        ;;content-b-split (->> content-b-split #_(filter #(path.bool/contains-segment? % path-data-a sr-a content-a-geom)))
         ]
     [:*
      (for [[i segment] (d/enumerate content-a-split)]

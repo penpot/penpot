@@ -23,21 +23,21 @@
           child-objs  (unchecked-get props "childs")
           child-objs  (h/use-equal-memo child-objs)
 
-          metadata? (mf/use-ctx use/include-metadata-ctx)
-          content   (mf/with-memo [shape child-objs]
-                      (let [content (:content shape)]
-                        (cond
-                          (some? content)
-                          content
+          metadata?  (mf/use-ctx use/include-metadata-ctx)
+          path-data  (mf/with-memo [shape child-objs]
+                       (let [path-data (:path-data shape)]
+                         (cond
+                           (some? path-data)
+                           path-data
 
-                          (some? child-objs)
-                          (path/calc-bool-content shape child-objs))))
+                           (some? child-objs)
+                           (path/calc-bool-path-data shape child-objs))))
 
-          shape     (mf/with-memo [shape content]
-                      (assoc shape :content content))]
+          shape      (mf/with-memo [shape path-data]
+                       (assoc shape :path-data path-data))]
 
       [:*
-       (when (some? content)
+       (when (some? path-data)
          [:& path-shape {:shape shape}])
 
        (when metadata?

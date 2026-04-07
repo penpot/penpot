@@ -20,7 +20,7 @@
   [shape]
   (if-let [content (get shape :bool-content)]
     (-> shape
-        (assoc :content content)
+        (assoc :path-data content)
         (dissoc :bool-content))
     shape))
 

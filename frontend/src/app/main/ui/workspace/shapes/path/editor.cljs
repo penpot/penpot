@@ -206,7 +206,7 @@
           (let [segments [{:command :move-to
                            :params from}]
                 segments (conj segments segment)]
-            (path/content segments)))
+            (path/path-data segments)))
 
         position
         (mf/with-memo [segment]
@@ -248,11 +248,11 @@
                :style {:stroke secondary-color
                        :stroke-width (/ path-snap-stroke-width zoom)}}])]))
 
-(defn- matching-handler? [content node handlers]
+(defn- matching-handler? [path-data node handlers]
   (when (= 2 (count handlers))
     (let [[[i1 p1] [i2 p2]] handlers
-          p1 (path.segment/get-handler-point content i1 p1)
-          p2 (path.segment/get-handler-point content i2 p2)
+          p1 (path.segment/get-handler-point path-data i1 p1)
+          p2 (path.segment/get-handler-point path-data i2 p2)
 
           v1 (gpt/to-vec node p1)
           v2 (gpt/to-vec node p2)
@@ -282,34 +282,34 @@
         selected-points
         (or selected-points #{})
 
-        base-content
-        (get shape :content)
+        base-path-data
+        (get shape :path-data)
 
         base-points
-        (mf/with-memo [base-content]
-          (path/get-points base-content))
+        (mf/with-memo [base-path-data]
+          (path/get-points base-path-data))
 
-        content
-        (mf/with-memo [base-content content-modifiers]
-          (path/apply-content-modifiers base-content content-modifiers))
+        path-data
+        (mf/with-memo [base-path-data content-modifiers]
+          (path/apply-path-data-modifiers base-path-data content-modifiers))
 
-        content-points
-        (mf/with-memo [content]
-          (path/get-points content))
+        path-data-points
+        (mf/with-memo [path-data]
+          (path/get-points path-data))
 
-        point->base (->> (map hash-map content-points base-points) (reduce merge))
+        point->base (->> (map hash-map path-data-points base-points) (reduce merge))
         base->point (map-invert point->base)
 
         points
-        (mf/with-memo [content-points]
-          (into #{} content-points))
+        (mf/with-memo [path-data-points]
+          (into #{} path-data-points))
 
         last-p
-        (->> content last path.helpers/segment->point)
+        (->> path-data last path.helpers/segment->point)
 
         handlers
-        (mf/with-memo [content]
-          (path.segment/get-handlers content))
+        (mf/with-memo [path-data]
+          (path.segment/get-handlers path-data))
 
         is-path-start
         (not (some? last-point))
@@ -329,13 +329,13 @@
 
     (hooks/use-stream
      ms/mouse-position
-     (mf/deps base-content zoom)
+     (mf/deps base-path-data zoom)
      (fn [position]
-       (when-let [point (path.segment/closest-point base-content position (/ 0.01 zoom))]
+       (when-let [point (path.segment/closest-point base-path-data position (/ 0.01 zoom))]
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
-     [:path {:d (.toString content)
+     [:path {:d (.toString path-data)
              :style {:fill "none"
                      :stroke accent-color
                      :strokeWidth (/ 1 zoom)}}]
@@ -367,7 +367,7 @@
              (fn [[index prefix]]
                ;; FIXME: get-handler-point is executed twice for each
                ;; render, this can be optimized
-               (let [handler-position (path.segment/get-handler-point content index prefix)]
+               (let [handler-position (path.segment/get-handler-point path-data index prefix)]
                  (not= position handler-position)))
 
              position-handlers
@@ -390,10 +390,10 @@
          [:g.path-node {:key (dm/str pos-x "-" pos-y)}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
            (for [[hindex prefix] position-handlers]
-             (let [handler-position  (path.segment/get-handler-point content hindex prefix)
+             (let [handler-position  (path.segment/get-handler-point path-data hindex prefix)
                    handler-hover?    (contains? hover-handlers [hindex prefix])
                    moving-handler?   (= handler-position moving-handler)
-                   matching-handler? (matching-handler? content position position-handlers)]
+                   matching-handler? (matching-handler? path-data position position-handlers)]
 
                (when (and position handler-position)
                  [:> path-handler*

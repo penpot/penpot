@@ -32,8 +32,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects      (dsh/lookup-page-objects state)
-            content      (dm/get-in state [:workspace-drawing :object :content])
-            position     (path.segment/get-handler-point content 0 nil)
+            path-data    (dm/get-in state [:workspace-drawing :object :path-data])
+            position     (path.segment/get-handler-point path-data 0 nil)
 
             frame-id     (->> (ctst/top-nested-frame objects position)
                               (ctn/get-first-valid-parent objects) ;; We don't want to change the structure of component copies
@@ -63,14 +63,14 @@
     (update [_ state]
       (update-in state [:workspace-drawing :object]
                  (fn [object]
-                   (let [points  (-> (::points object)
-                                     (conj point))
-                         content (path.segment/points->content points)
-                         selrect (path.segment/content->selrect content)
-                         points' (grc/rect->points selrect)]
+                   (let [points    (-> (::points object)
+                                       (conj point))
+                         path-data (path.segment/points->path-data points)
+                         selrect   (path.segment/path-data->selrect path-data)
+                         points'   (grc/rect->points selrect)]
                      (-> object
                          (assoc ::points points)
-                         (assoc :content content)
+                         (assoc :path-data path-data)
                          (assoc :selrect selrect)
                          (assoc :points points'))))))))
 
@@ -81,19 +81,19 @@
     (update [_ state]
       (update-in state [:workspace-drawing :object]
                  (fn [{:keys [::points] :as shape}]
-                   (let [points   (ups/simplify points simplify-tolerance)
-                         content  (path.segment/points->content points)
-                         selrect  (path.segment/content->selrect content)
-                         points   (grc/rect->points selrect)]
+                   (let [points    (ups/simplify points simplify-tolerance)
+                         path-data (path.segment/points->path-data points)
+                         selrect   (path.segment/path-data->selrect path-data)
+                         points    (grc/rect->points selrect)]
 
                      (-> shape
                          (dissoc ::points)
-                         (assoc :content content)
+                         (assoc :path-data path-data)
                          (assoc :selrect selrect)
                          (assoc :points points)
                          (cond-> (or (empty? points)
                                      (nil? selrect)
-                                     (<= (count content) 1))
+                                     (<= (count path-data) 1))
                            (assoc :initialized? false)))))))))
 
 

@@ -15,9 +15,9 @@
 (defn append-node
   "Creates a new node in the path. Usually used when drawing."
   [shape position prev-point prev-handler]
-  (let [segment (path.segment/next-node (:content shape) position prev-point prev-handler)]
+  (let [segment (path.segment/next-node (:path-data shape) position prev-point prev-handler)]
     (-> shape
-        (update :content path.segment/append-segment segment)
+        (update :path-data path.segment/append-segment segment)
         (path/update-geometry))))
 
 (defn angle-points [common p1 p2]
@@ -58,14 +58,14 @@
        (- (:y new-opposite) (:y opposite))])))
 
 (defn move-handler-modifiers
-  [content index prefix match-distance? match-angle? dx dy]
+  [path-data index prefix match-distance? match-angle? dx dy]
 
   (let [[cx cy] (path.helpers/prefix->coords prefix)
-        [op-idx op-prefix] (path.segment/opposite-index content index prefix)
+        [op-idx op-prefix] (path.segment/opposite-index path-data index prefix)
 
-        node (path.segment/handler->node content index prefix)
-        handler (path.segment/get-handler-point content index prefix)
-        opposite (path.segment/get-handler-point content op-idx op-prefix)
+        node (path.segment/handler->node path-data index prefix)
+        handler (path.segment/get-handler-point path-data index prefix)
+        opposite (path.segment/get-handler-point path-data op-idx op-prefix)
 
         [ocx ocy] (path.helpers/prefix->coords op-prefix)
         [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)

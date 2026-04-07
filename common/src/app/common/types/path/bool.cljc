@@ -33,10 +33,10 @@
         [:fills :strokes]))
 
 (defn add-previous
-  ([content]
-   (add-previous content nil))
-  ([content first]
-   (->> (d/with-prev content)
+  ([path-data]
+   (add-previous path-data nil))
+  ([path-data first]
+   (->> (d/with-prev path-data)
         (mapv (fn [[cmd prev]]
                 (cond-> cmd
                   (and (nil? prev) (some? first))
@@ -47,10 +47,10 @@
 
 (defn close-paths
   "Removes the :close-path commands and replace them for line-to so we can calculate
-  the intersections"
-  [content]
+   the intersections"
+  [path-data]
 
-  (loop [segments   (seq content)
+  (loop [segments   (seq path-data)
          result     []
          last-move  nil
          last-point nil]
@@ -117,8 +117,8 @@
       :else
       [[] []])))
 
-(defn content-intersect-split
-  [content-a content-b sr-a sr-b]
+(defn path-data-intersect-split
+  [path-data-a path-data-b sr-a sr-b]
 
   (let [command->selrect (memoize helpers/command->selrect)]
 
@@ -143,9 +143,9 @@
                   (-> (split-command seg-1 ts-seg-1)
                       (add-previous (:prev seg-1))))))
 
-            (split-segment-on-content [segment content content-sr]
-              (if (overlap-segment-selrect? segment content-sr)
-                (->> content
+            (split-segment-on-path-data [segment path-data path-data-sr]
+              (if (overlap-segment-selrect? segment path-data-sr)
+                (->> path-data
                      (filter #(overlap-segments? segment %))
                      (reduce
                       (fn [result current]
@@ -153,13 +153,13 @@
                       [segment]))
                 [segment]))
 
-            (split-content [content-a content-b sr-b]
+            (split-path-data [path-data-a path-data-b sr-b]
               (into []
-                    (mapcat #(split-segment-on-content % content-b sr-b))
-                    content-a))]
+                    (mapcat #(split-segment-on-path-data % path-data-b sr-b))
+                    path-data-a))]
 
-      [(split-content content-a content-b sr-b)
-       (split-content content-b content-a sr-a)])))
+      [(split-path-data path-data-a path-data-b sr-b)
+       (split-path-data path-data-b path-data-a sr-a)])))
 
 (defn is-segment?
   [cmd]
@@ -167,7 +167,7 @@
        (contains? #{:line-to :curve-to} (:command cmd))))
 
 (defn contains-segment?
-  [segment content content-sr content-geom]
+  [segment path-data path-data-sr path-data-geom]
 
   (let [point (case (:command segment)
                 :line-to  (-> (helpers/command->line segment)
@@ -176,13 +176,13 @@
                 :curve-to (-> (helpers/command->bezier segment)
                               (helpers/curve-values 0.5)))]
 
-    (and (grc/contains-point? content-sr point)
+    (and (grc/contains-point? path-data-sr point)
          (or
-          (helpers/is-point-in-geom-data? point content-geom)
-          (helpers/is-point-in-border? point content)))))
+          (helpers/is-point-in-geom-data? point path-data-geom)
+          (helpers/is-point-in-border? point path-data)))))
 
 (defn inside-segment?
-  [segment content-sr content-geom]
+  [segment path-data-sr path-data-geom]
   (let [point (case (:command segment)
                 :line-to  (-> (helpers/command->line segment)
                               (helpers/line-values 0.5))
@@ -190,13 +190,13 @@
                 :curve-to (-> (helpers/command->bezier segment)
                               (helpers/curve-values 0.5)))]
 
-    (and (grc/contains-point? content-sr point)
-         (helpers/is-point-in-geom-data? point content-geom))))
+    (and (grc/contains-point? path-data-sr point)
+         (helpers/is-point-in-geom-data? point path-data-geom))))
 
 (defn overlap-segment?
   "Finds if the current segment is overlapping against other
-  segment meaning they have the same coordinates"
-  [segment content]
+   segment meaning they have the same coordinates"
+  [segment path-data]
 
   (let [overlap-single?
         (fn [other]
@@ -228,17 +228,17 @@
 
                             [segment other])))))]
 
-    (->> content
+    (->> path-data
          (d/seek overlap-single?)
          (some?))))
 
 (defn fix-move-to
-  [content]
+  [path-data]
   ;; Remove the field `:prev` and makes the necessaries `move-to`
   ;; then clean the subpaths
 
-  (loop [current (first content)
-         content (rest content)
+  (loop [current (first path-data)
+         path-data (rest path-data)
          prev nil
          result []]
 
@@ -248,14 +248,14 @@
       (let [result (if (not= (:prev current) prev)
                      (conj result (helpers/make-move-to (:prev current)))
                      result)]
-        (recur (first content)
-               (rest content)
+        (recur (first path-data)
+               (rest path-data)
                (helpers/segment->point current)
                (conj result (dissoc current :prev)))))))
 
 (defn remove-duplicated-segments
-  "Remove from the content segments"
-  [content]
+  "Remove from the path-data segments"
+  [path-data]
   (letfn [;; This is a comparator for float points with a precission
           ;; used to remove already existing segments
           (comparator [[fx1 fy1 tx1 ty1 :as v1] [fx2 fy2 tx2 ty2 :as v2]]
@@ -266,8 +266,8 @@
               0 ;; equal
               (compare v1 v2)))]
 
-    (loop [current (first content)
-           content (rest content)
+    (loop [current (first path-data)
+           path-data (rest path-data)
            segments (sorted-set-by comparator)
            result []]
 
@@ -287,24 +287,24 @@
 
               segments (conj segments [fx fy tx ty])]
 
-          (recur (first content)
-                 (rest content)
+          (recur (first path-data)
+                 (rest path-data)
                  segments
                  result))))))
 
-(defn close-content
-  [content]
+(defn close-path-data
+  [path-data]
   (into []
         (mapcat :data)
-        (->> content
+        (->> path-data
              (subpath/close-subpaths)
              (subpath/get-subpaths))))
 
-(defn- content->geom-data
-  [content]
+(defn- path-data->geom-data
+  [path-data]
 
-  (->> content
-       (close-content)
+  (->> path-data
+       (close-path-data)
        (filter #(not= (= :line-to (:command %))
                       (= :curve-to (:command %))))
        (mapv (fn [segment]
@@ -315,115 +315,115 @@
                         (helpers/command->bezier segment))
                 :selrect (helpers/command->selrect segment)}))))
 
-(defn create-union [content-a content-a-split content-b content-b-split sr-a sr-b]
-  ;; Pick all segments in content-a that are not inside content-b
-  ;; Pick all segments in content-b that are not inside content-a
-  (let [content-a-geom (content->geom-data content-a)
-        content-b-geom (content->geom-data content-b)
+(defn create-union [path-data-a path-data-a-split path-data-b path-data-b-split sr-a sr-b]
+  ;; Pick all segments in path-data-a that are not inside path-data-b
+  ;; Pick all segments in path-data-b that are not inside path-data-a
+  (let [path-data-a-geom (path-data->geom-data path-data-a)
+        path-data-b-geom (path-data->geom-data path-data-b)
 
-        content
+        result
         (concat
-         (->> content-a-split (filter #(not (contains-segment? % content-b sr-b content-b-geom))))
-         (->> content-b-split (filter #(not (contains-segment? % content-a sr-a content-a-geom)))))
+         (->> path-data-a-split (filter #(not (contains-segment? % path-data-b sr-b path-data-b-geom))))
+         (->> path-data-b-split (filter #(not (contains-segment? % path-data-a sr-a path-data-a-geom)))))
 
-        content-geom (content->geom-data content)
+        result-geom (path-data->geom-data result)
 
-        content-sr (segment/content->selrect (fix-move-to content))
+        result-sr (segment/path-data->selrect (fix-move-to result))
 
         ;; Overlapping segments should be added when they are part of the border
-        border-content
-        (->> content-b-split
-             (filter #(and (contains-segment? % content-a sr-a content-a-geom)
-                           (overlap-segment? % content-a-split)
-                           (not (inside-segment? % content-sr content-geom)))))]
+        border-path-data
+        (->> path-data-b-split
+             (filter #(and (contains-segment? % path-data-a sr-a path-data-a-geom)
+                           (overlap-segment? % path-data-a-split)
+                           (not (inside-segment? % result-sr result-geom)))))]
 
     ;; Ensure that the output is always a vector
-    (d/concat-vec content border-content)))
+    (d/concat-vec result border-path-data)))
 
-(defn create-difference [content-a content-a-split content-b content-b-split sr-a sr-b]
-  ;; Pick all segments in content-a that are not inside content-b
-  ;; Pick all segments in content b that are inside content-a
+(defn create-difference [path-data-a path-data-a-split path-data-b path-data-b-split sr-a sr-b]
+  ;; Pick all segments in path-data-a that are not inside path-data-b
+  ;; Pick all segments in path-data-b that are inside path-data-a
   ;;  removing overlapping
-  (let [content-a-geom (content->geom-data content-a)
-        content-b-geom (content->geom-data content-b)]
+  (let [path-data-a-geom (path-data->geom-data path-data-a)
+        path-data-b-geom (path-data->geom-data path-data-b)]
     (d/concat-vec
-     (->> content-a-split (filter #(not (contains-segment? % content-b sr-b content-b-geom))))
+     (->> path-data-a-split (filter #(not (contains-segment? % path-data-b sr-b path-data-b-geom))))
 
-     ;; Reverse second content so we can have holes inside other shapes
-     (->> content-b-split
-          (filter #(and (contains-segment? % content-a sr-a content-a-geom)
-                        (not (overlap-segment? % content-a-split))))))))
+     ;; Reverse second path-data so we can have holes inside other shapes
+     (->> path-data-b-split
+          (filter #(and (contains-segment? % path-data-a sr-a path-data-a-geom)
+                        (not (overlap-segment? % path-data-a-split))))))))
 
-(defn create-intersection [content-a content-a-split content-b content-b-split sr-a sr-b]
-  ;; Pick all segments in content-a that are inside content-b
-  ;; Pick all segments in content-b that are inside content-a
-  (let [content-a-geom (content->geom-data content-a)
-        content-b-geom (content->geom-data content-b)]
+(defn create-intersection [path-data-a path-data-a-split path-data-b path-data-b-split sr-a sr-b]
+  ;; Pick all segments in path-data-a that are inside path-data-b
+  ;; Pick all segments in path-data-b that are inside path-data-a
+  (let [path-data-a-geom (path-data->geom-data path-data-a)
+        path-data-b-geom (path-data->geom-data path-data-b)]
     (d/concat-vec
-     (->> content-a-split (filter #(contains-segment? % content-b sr-b content-b-geom)))
-     (->> content-b-split (filter #(contains-segment? % content-a sr-a content-a-geom))))))
+     (->> path-data-a-split (filter #(contains-segment? % path-data-b sr-b path-data-b-geom)))
+     (->> path-data-b-split (filter #(contains-segment? % path-data-a sr-a path-data-a-geom))))))
 
-(defn create-exclusion [content-a content-b]
+(defn create-exclusion [path-data-a path-data-b]
   ;; Pick all segments
-  (d/concat-vec content-a content-b))
+  (d/concat-vec path-data-a path-data-b))
 
-(defn content-bool-pair
-  [bool-type content-a content-b]
+(defn path-data-bool-pair
+  [bool-type path-data-a path-data-b]
 
   (let [;; We need to reverse the second path when making a difference/intersection/exclude
         ;; and both shapes are in the same direction
         should-reverse?
         (and (not= :union bool-type)
-             (= (subpath/clockwise? content-b)
-                (subpath/clockwise? content-a)))
+             (= (subpath/clockwise? path-data-b)
+                (subpath/clockwise? path-data-a)))
 
-        content-a
-        (-> content-a
+        path-data-a
+        (-> path-data-a
             (close-paths)
             (add-previous))
 
-        content-b
-        (-> content-b
+        path-data-b
+        (-> path-data-b
             (close-paths)
-            (cond-> should-reverse? (subpath/reverse-content))
+            (cond-> should-reverse? (subpath/reverse-path-data))
             (add-previous))
 
         sr-a
-        (segment/content->selrect content-a)
+        (segment/path-data->selrect path-data-a)
 
         sr-b
-        (segment/content->selrect content-b)
+        (segment/path-data->selrect path-data-b)
 
-        ;; Split content in new segments in the intersection with the other path
-        [content-a-split content-b-split]
-        (content-intersect-split content-a content-b sr-a sr-b)
+        ;; Split path-data in new segments in the intersection with the other path
+        [path-data-a-split path-data-b-split]
+        (path-data-intersect-split path-data-a path-data-b sr-a sr-b)
 
-        content-a-split
-        (->> content-a-split add-previous (filter is-segment?))
+        path-data-a-split
+        (->> path-data-a-split add-previous (filter is-segment?))
 
-        content-b-split
-        (->> content-b-split add-previous (filter is-segment?))
+        path-data-b-split
+        (->> path-data-b-split add-previous (filter is-segment?))
 
-        content
+        result
         (case bool-type
-          :union        (create-union        content-a content-a-split content-b content-b-split sr-a sr-b)
-          :difference   (create-difference   content-a content-a-split content-b content-b-split sr-a sr-b)
-          :intersection (create-intersection content-a content-a-split content-b content-b-split sr-a sr-b)
-          :exclude      (create-exclusion    content-a-split content-b-split))]
+          :union        (create-union        path-data-a path-data-a-split path-data-b path-data-b-split sr-a sr-b)
+          :difference   (create-difference   path-data-a path-data-a-split path-data-b path-data-b-split sr-a sr-b)
+          :intersection (create-intersection path-data-a path-data-a-split path-data-b path-data-b-split sr-a sr-b)
+          :exclude      (create-exclusion    path-data-a-split path-data-b-split))]
 
-    (-> content
+    (-> result
         remove-duplicated-segments
         fix-move-to
         subpath/close-subpaths)))
 
-(defn calculate-content
-  "Create a bool content from a collection of contents and specified
-  type. Returns plain segments"
-  [bool-type contents]
+(defn calculate-path-data
+  "Create a bool path-data from a collection of path-data items and
+  specified type. Returns plain segments"
+  [bool-type path-data-items]
   ;; We apply the boolean operation in to each pair and the result to the next
   ;; element
-  (if (seq contents)
-    (->> contents
-         (reduce (partial content-bool-pair bool-type))
+  (if (seq path-data-items)
+    (->> path-data-items
+         (reduce (partial path-data-bool-pair bool-type))
          (vec))
     []))

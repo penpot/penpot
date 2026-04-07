@@ -30,7 +30,7 @@
         (fn [object]
           (if (or (cfh/path-shape? object)
                   (cfh/bool-shape? object))
-            (update object :content vec)
+            (update object :path-data vec)
             object))
 
         update-container

@@ -88,7 +88,7 @@
 
 ;; This means it implements IReduceInit/IReduce protocols
 (t/deftest path-data-to-vector
-  (let [pdata  (path/content sample-content)
+  (let [pdata  (path/path-data sample-content)
         result (vec pdata)]
     (t/is (= 4 (count result)))
     (t/is (= (get-in sample-content [0 :command])
@@ -110,7 +110,7 @@
              (get-in result [3 :params])))))
 
 (t/deftest path-data-plain-to-binary
-  (let [pdata (path/content sample-content)]
+  (let [pdata (path/path-data sample-content)]
     (t/is (= sample-bytes
              (vec
               #?(:cljs (js/Int8Array. (.-buffer (.-buffer pdata)))
@@ -129,7 +129,7 @@
          {:command :curve-to :params {:x 154.0 :y 508.0}}]
 
         binary-content
-        (path/content plain-content)]
+        (path/path-data plain-content)]
 
     #?(:clj
        (t/is (= "M480.0,839.0L439.0,802.0C264.0,634.0,264.0,634.0,264.0,634.0C154.0,508.0,154.0,508.0,154.0,508.0"
@@ -147,7 +147,7 @@
     (t/is (= (vec content) sample-content))))
 
 (t/deftest path-data-transit-roundtrip
-  (let [pdata    (path/content sample-content)
+  (let [pdata    (path/path-data sample-content)
         result1  (trans/encode-str pdata)
         expected (str "[\"~#penpot/path-data\",\"~bAQAAAAAAAAAAAAA"
                       "AAAAAAAAAAAAAAPBDAMBRRAIAAAAAAAAAAAAAAAAAAA"
@@ -160,7 +160,7 @@
 
 #?(:clj
    (t/deftest path-data-fresian
-     (let [pdata (path/content sample-content)
+     (let [pdata (path/path-data sample-content)
            result1 (fres/encode pdata)
            result2 (fres/decode result1)]
        (t/is (= pdata result2)))))
@@ -192,9 +192,9 @@
 
 (t/deftest path-transform-1
   (let [matrix  (gmt/translate-matrix 10 10)
-        content (path/content sample-content)
+        content (path/path-data sample-content)
 
-        result1 (path/transform-content content matrix)
+        result1 (path/transform-path-data content matrix)
         result2 (transform-plain-content sample-content matrix)
         result3 (transform-plain-content content matrix)]
 
@@ -203,9 +203,9 @@
 
 (t/deftest path-transform-2
   (let [matrix  (gmt/translate-matrix 10 10)
-        content (path/content sample-content-large)
+        content (path/path-data sample-content-large)
 
-        result1 (path/transform-content content matrix)
+        result1 (path/transform-path-data content matrix)
         result2 (transform-plain-content sample-content-large matrix)
         result3 (transform-plain-content content matrix)]
 
@@ -214,9 +214,9 @@
 
 (t/deftest path-transform-3
   (let [matrix  (gmt/rotate-matrix 42 (gpt/point 0 0))
-        content (path/content sample-content-square)
+        content (path/path-data sample-content-square)
 
-        result1 (path/transform-content content matrix)
+        result1 (path/transform-path-data content matrix)
         result2 (transform-plain-content sample-content-square matrix)
         result3 (transform-plain-content content matrix)]
 
@@ -263,7 +263,7 @@
              (into [] (keep segment->point)))))
 
 (t/deftest path-get-points
-  (let [content (path/content sample-content-large)
+  (let [content (path/path-data sample-content-large)
 
         result1 (content->points content)
         result2 (content->points sample-content-large)
@@ -276,7 +276,7 @@
   (t/testing "path/get-points returns nil for nil content without throwing"
     (t/is (nil? (path/get-points nil))))
   (t/testing "path/get-points returns correct points for valid content"
-    (let [content (path/content sample-content)
+    (let [content (path/path-data sample-content)
           points  (path/get-points content)]
       (t/is (some? points))
       (t/is (= 3 (count points))))))
@@ -322,7 +322,7 @@
       points)))
 
 (t/deftest extremities-1
-  (let [pdata   (path/content sample-content)
+  (let [pdata   (path/path-data sample-content)
         result1 (calculate-extremities sample-content)
         result2 (calculate-extremities pdata)
         result3 (path.segment/calculate-extremities sample-content)
@@ -352,7 +352,7 @@
 
 (t/deftest extremities-3
   (let [segments [{:command :move-to, :params {:x -310.5355224609375, :y 452.62115478515625}}]
-        content  (path/content segments)
+        content  (path/path-data segments)
         result1  (calculate-extremities segments)
         result2  (path.segment/calculate-extremities segments)
         result3  (path.segment/calculate-extremities content)
@@ -366,7 +366,7 @@
   (let [initial  [(gpt/point 0.0 0.0)
                   (gpt/point 10.0 10.0)
                   (gpt/point 10.0 5.0)]
-        content  (path.segment/points->content initial)
+        content  (path.segment/points->path-data initial)
         segments (vec content)]
     (t/is (= 3 (count segments)))
     (t/is (= {:command :move-to, :params {:x 0.0, :y 0.0}} (nth segments 0)))
@@ -374,7 +374,7 @@
     (t/is (= {:command :line-to, :params {:x 10.0, :y 5.0}} (nth segments 2)))))
 
 (t/deftest get-segments
-  (let [content (path/content sample-content-square)
+  (let [content (path/path-data sample-content-square)
         points  #{(gpt/point 10.0 0.0)
                   (gpt/point 0.0 0.0)}
         result  (path.segment/get-segments-with-points content points)
@@ -408,7 +408,7 @@
                      (get params :y)))))))
 
 (t/deftest handler-to-point
-  (let [content (path/content sample-content-2)
+  (let [content (path/path-data sample-content-2)
         result1 (handler->point content 3 :c1)
         result2 (handler->point content 1 :c1)
         result3 (handler->point content 0 :c1)
@@ -449,7 +449,7 @@
        (d/mapm #(mapv second %2))))
 
 (t/deftest content-to-handlers
-  (let [content (path/content sample-content-large)
+  (let [content (path/path-data sample-content-large)
         result1 (get-handlers sample-content-large)
         result2 (path.segment/get-handlers content)]
     (t/is (= result1 result2))))
@@ -537,7 +537,7 @@
    {:command :line-to, :params {:x 1674.9000244140625, :y 45.0}}])
 
 (t/deftest calculate-bool-content
-  (let [result (path.bool/calculate-content :union contents-for-bool)]
+  (let [result (path.bool/calculate-path-data :union contents-for-bool)]
     (t/is (= result bool-result))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -677,7 +677,7 @@
       (t/is (seq result)))))
 
 (t/deftest subpath-reverse-content
-  (let [result (path.subpath/reverse-content simple-open-content)]
+  (let [result (path.subpath/reverse-path-data simple-open-content)]
     (t/is (= (count simple-open-content) (count result)))
     ;; First command of reversed content is a move-to at old end
     (t/is (= :move-to (:command (first result))))
@@ -945,7 +945,7 @@
     (t/is (nil? (path.segment/get-handler {:command :line-to :params {:x 1 :y 2}} :c1)))))
 
 (t/deftest segment-handler->node
-  (let [content (path/content sample-content-2)]
+  (let [content (path/path-data sample-content-2)]
     ;; For :c1 prefix, the node is the previous segment
     (let [node (path.segment/handler->node (vec content) 2 :c1)]
       (t/is (some? node)))
@@ -968,20 +968,20 @@
     (t/is (mth/close? 5.0 (:y opp)))))
 
 (t/deftest segment-point-indices
-  (let [content (path/content sample-content-2)
+  (let [content (path/path-data sample-content-2)
         pt      (gpt/point 480.0 839.0)
         idxs    (path.segment/point-indices content pt)]
     (t/is (= [0] (vec idxs)))))
 
 (t/deftest segment-opposite-index
-  (let [content (path/content sample-content-2)]
+  (let [content (path/path-data sample-content-2)]
     ;; Index 2 with :c2 prefix — the node is the current point of index 2
     (let [result (path.segment/opposite-index content 2 :c2)]
       ;; result is either nil or [index prefix]
       (t/is (or (nil? result) (vector? result))))))
 
 (t/deftest segment-split-segments
-  (let [content (path/content sample-content-square)
+  (let [content (path/path-data sample-content-square)
         points  #{(gpt/point 10.0 0.0)
                   (gpt/point 0.0 0.0)}
         result  (path.segment/split-segments content points 0.5)]
@@ -989,8 +989,8 @@
     (t/is (> (count result) (count sample-content-square)))))
 
 (t/deftest segment-content->selrect
-  (let [content (path/content sample-content-square)
-        rect    (path.segment/content->selrect content)]
+  (let [content (path/path-data sample-content-square)
+        rect    (path.segment/path-data->selrect content)]
     (t/is (some? rect))
     (t/is (mth/close? 0.0  (:x1 rect) 0.1))
     (t/is (mth/close? 0.0  (:y1 rect) 0.1))
@@ -998,22 +998,22 @@
     (t/is (mth/close? 10.0 (:y2 rect) 0.1))))
 
 (t/deftest segment-content-center
-  (let [content (path/content sample-content-square)
-        center  (path.segment/content-center content)]
+  (let [content (path/path-data sample-content-square)
+        center  (path.segment/path-data-center content)]
     (t/is (some? center))
     (t/is (mth/close? 5.0 (:x center) 0.1))
     (t/is (mth/close? 5.0 (:y center) 0.1))))
 
 (t/deftest segment-move-content
-  (let [content   (path/content sample-content-square)
+  (let [content   (path/path-data sample-content-square)
         move-vec  (gpt/point 5.0 5.0)
-        result    (path.segment/move-content content move-vec)
+        result    (path.segment/move-path-data content move-vec)
         first-seg (first (vec result))]
     (t/is (= :move-to (:command first-seg)))
     (t/is (mth/close? 5.0 (get-in first-seg [:params :x])))))
 
 (t/deftest segment-is-curve?
-  (let [content (path/content sample-content-2)]
+  (let [content (path/path-data sample-content-2)]
     ;; point at index 0 is 480,839 — no handler offset, not a curve
     (let [pt (gpt/point 480.0 839.0)]
       ;; is-curve? can return nil (falsy) or boolean — just check it doesn't throw
@@ -1024,13 +1024,13 @@
                 (boolean? (path.segment/is-curve? content curve-pt)))))))
 
 (t/deftest segment-append-segment
-  (let [content (path/content sample-content)
+  (let [content (path/path-data sample-content)
         seg     {:command :line-to :params {:x 100.0 :y 100.0}}
         result  (path.segment/append-segment content seg)]
     (t/is (= (inc (count (vec content))) (count result)))))
 
 (t/deftest segment-remove-nodes
-  (let [content (path/content simple-open-content)
+  (let [content (path/path-data simple-open-content)
         ;; remove the midpoint
         pt      (gpt/point 10.0 0.0)
         result  (path.segment/remove-nodes content #{pt})]
@@ -1038,7 +1038,7 @@
     (t/is (< (count result) (count simple-open-content)))))
 
 (t/deftest segment-join-nodes
-  (let [content (path/content simple-open-content)
+  (let [content (path/path-data simple-open-content)
         pt1     (gpt/point 0.0 0.0)
         pt2     (gpt/point 10.0 10.0)
         result  (path.segment/join-nodes content #{pt1 pt2})]
@@ -1046,14 +1046,14 @@
     (t/is (>= (count result) (count simple-open-content)))))
 
 (t/deftest segment-separate-nodes
-  (let [content (path/content simple-open-content)
+  (let [content (path/path-data simple-open-content)
         pt      (gpt/point 10.0 0.0)
         result  (path.segment/separate-nodes content #{pt})]
     ;; separate-nodes should return a collection (vector or seq)
     (t/is (coll? result))))
 
 (t/deftest segment-make-corner-point
-  (let [content (path/content sample-content-2)
+  (let [content (path/path-data sample-content-2)
         ;; Take a curve point and make it a corner
         pt      (gpt/point 439.0 802.0)
         result  (path.segment/make-corner-point content pt)]
@@ -1062,13 +1062,13 @@
 
 (t/deftest segment-next-node
   (t/testing "no prev-point returns move-to"
-    (let [content  (path/content sample-content)
+    (let [content  (path/path-data sample-content)
           position (gpt/point 100.0 100.0)
           result   (path.segment/next-node content position nil nil)]
       (t/is (= :move-to (:command result)))))
   (t/testing "with prev-point and no handler and last command is not close-path"
     ;; Use a content that does NOT end with :close-path
-    (let [content  (path/content simple-open-content)
+    (let [content  (path/path-data simple-open-content)
           position (gpt/point 100.0 100.0)
           prev     (gpt/point 50.0 50.0)
           result   (path.segment/next-node content position prev nil)]
@@ -1080,11 +1080,11 @@
 
 (t/deftest path-from-plain
   (let [result (path/from-plain sample-content)]
-    (t/is (path/content? result))
+    (t/is (path/path-data? result))
     (t/is (= (count sample-content) (count (vec result))))))
 
 (t/deftest path-calc-selrect
-  (let [content (path/content sample-content-square)
+  (let [content (path/path-data sample-content-square)
         rect    (path/calc-selrect content)]
     (t/is (some? rect))
     (t/is (mth/close? 0.0 (:x1 rect) 0.1))
@@ -1096,13 +1096,13 @@
                  {:command :move-to :params {:x 10.0 :y 5.0}}
                  {:command :line-to :params {:x 0.0 :y 0.0}}]
         result  (path/close-subpaths content)]
-    (t/is (path/content? result))
+    (t/is (path/path-data? result))
     (t/is (seq (vec result)))))
 
 (t/deftest path-move-content
-  (let [content  (path/content sample-content-square)
+  (let [content  (path/path-data sample-content-square)
         move-vec (gpt/point 3.0 4.0)
-        result   (path/move-content content move-vec)
+        result   (path/move-path-data content move-vec)
         first-r  (first (vec result))]
     (t/is (= :move-to (:command first-r)))
     (t/is (mth/close? 3.0 (get-in first-r [:params :x])))
@@ -1110,31 +1110,31 @@
 
 (t/deftest path-move-content-zero-vec
   (t/testing "moving by zero returns same content"
-    (let [content  (path/content sample-content-square)
-          result   (path/move-content content (gpt/point 0 0))]
+    (let [content  (path/path-data sample-content-square)
+          result   (path/move-path-data content (gpt/point 0 0))]
       ;; should return same object (identity) when zero vector
       (t/is (= (vec content) (vec result))))))
 
 (t/deftest path-shape-with-open-path?
   (t/testing "path shape with open content is open"
     (let [shape {:type :path
-                 :content (path/content simple-open-content)}]
+                 :path-data (path/path-data simple-open-content)}]
       (t/is (path/shape-with-open-path? shape))))
   (t/testing "path shape with closed content is not open"
     (let [shape {:type :path
-                 :content (path/content simple-closed-content)}]
+                 :path-data (path/path-data simple-closed-content)}]
       (t/is (not (path/shape-with-open-path? shape))))))
 
 (t/deftest path-get-byte-size
-  (let [content (path/content sample-content)
+  (let [content (path/path-data sample-content)
         size    (path/get-byte-size content)]
     (t/is (pos? size))))
 
 (t/deftest path-apply-content-modifiers
-  (let [content   (path/content sample-content)
+  (let [content   (path/path-data sample-content)
         ;; shift the first point by x=5, y=3
         modifiers {0 {:x 5.0 :y 3.0}}
-        result    (path/apply-content-modifiers content modifiers)
+        result    (path/apply-path-data-modifiers content modifiers)
         first-seg (first (vec result))]
     (t/is (mth/close? (+ 480.0 5.0) (get-in first-seg [:params :x])))
     (t/is (mth/close? (+ 839.0 3.0) (get-in first-seg [:params :y])))))
@@ -1169,20 +1169,20 @@
    {:command :close-path :params {}}])
 
 (t/deftest bool-difference
-  (let [result (path.bool/calculate-content :difference [rect-a rect-b])]
+  (let [result (path.bool/calculate-path-data :difference [rect-a rect-b])]
     ;; difference result must be a sequence (possibly empty for degenerate cases)
     (t/is (or (nil? result) (sequential? result)))))
 
 (t/deftest bool-intersection
-  (let [result (path.bool/calculate-content :intersection [rect-a rect-b])]
+  (let [result (path.bool/calculate-path-data :intersection [rect-a rect-b])]
     (t/is (or (nil? result) (sequential? result)))))
 
 (t/deftest bool-exclusion
-  (let [result (path.bool/calculate-content :exclude [rect-a rect-b])]
+  (let [result (path.bool/calculate-path-data :exclude [rect-a rect-b])]
     (t/is (or (nil? result) (sequential? result)))))
 
 (t/deftest bool-union-non-overlapping
-  (let [result (path.bool/calculate-content :union [rect-a rect-c])]
+  (let [result (path.bool/calculate-path-data :union [rect-a rect-c])]
     ;; non-overlapping union should contain both shapes' segments
     (t/is (seq result))
     (t/is (> (count result) (count rect-a)))))
@@ -1199,22 +1199,22 @@
                 :selrect (make-selrect 0.0 0.0 100.0 50.0)}
         result (path/convert-to-path shape {})]
     (t/is (= :path (:type result)))
-    (t/is (path/content? (:content result)))
+    (t/is (path/path-data? (:path-data result)))
     ;; A simple rect (no radius) produces an empty path in the current impl
     ;; so we just check it doesn't throw and returns a :path type
-    (t/is (some? (:content result)))))
+    (t/is (some? (:path-data result)))))
 
 (t/deftest shape-to-path-circle
   (let [shape  {:type :circle :x 0.0 :y 0.0 :width 100.0 :height 100.0
                 :selrect (make-selrect 0.0 0.0 100.0 100.0)}
         result (path/convert-to-path shape {})]
     (t/is (= :path (:type result)))
-    (t/is (path/content? (:content result)))
+    (t/is (path/path-data? (:path-data result)))
     ;; A circle converts to bezier curves — should have multiple segments
-    (t/is (> (count (vec (:content result))) 1))))
+    (t/is (> (count (vec (:path-data result))) 1))))
 
 (t/deftest shape-to-path-path
-  (let [shape  {:type :path :content (path/content sample-content)}
+  (let [shape  {:type :path :path-data (path/path-data sample-content)}
         result (path/convert-to-path shape {})]
     ;; A path shape stays a path shape unchanged
     (t/is (= :path (:type result)))))
@@ -1226,6 +1226,6 @@
         result (path/convert-to-path shape {})]
     (t/is (= :path (:type result)))
     ;; rounded rect should have curve-to segments
-    (let [segs (vec (:content result))
+    (let [segs (vec (:path-data result))
           curve-segs (filter #(= :curve-to (:command %)) segs)]
       (t/is (pos? (count curve-segs))))))
