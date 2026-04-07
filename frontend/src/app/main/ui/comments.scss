@@ -418,6 +418,12 @@
   color: var(--color-accent-primary);
 }
 
+.comment-link {
+  color: var(--color-accent-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .comments-mentions-empty {
   font-size: deprecated.$fs-12;
   color: var(--color-foreground-secondary);
