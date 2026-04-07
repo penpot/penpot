@@ -42,3 +42,8 @@ export type {
 } from "./lib/utilities/Swatch";
 export { Label } from "./lib/controls/utilities/Label";
 export type { LabelProps } from "./lib/controls/utilities/Label";
+export { HintMessage } from "./lib/controls/utilities/HintMessage";
+export type {
+  HintMessageProps,
+  HintMessageType,
+} from "./lib/controls/utilities/HintMessage";
