@@ -5,5 +5,25 @@
     "**/.lsp": true,
     "**/.shadow-cljs": true,
     "**/node_modules": true
+  },
+  "rust-analyzer.linkedProjects": [
+    "render-wasm/Cargo.toml"
+  ],
+  "rust-analyzer.check.overrideCommand": [
+    "cargo",
+    "clippy",
+    "--message-format=json",
+    "--all-targets",
+    "--target=wasm32-unknown-emscripten",
+    "--",
+    "-D",
+    "warnings",
+    "-D",
+    "static_mut_refs"
+  ],
+  "rust-analyzer.cargo.extraEnv": {
+    "CARGO_BUILD_TARGET": "wasm32-unknown-emscripten",
+    "SKIA_BINARIES_URL": "https://github.com/penpot/skia-binaries/releases/download/0.93.1/skia-binaries-319323662b1685a112f5-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"
   }
 }
+

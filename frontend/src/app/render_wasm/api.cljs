@@ -1401,15 +1401,17 @@
   [width height]
   (h/call wasm/internal-module "_resize_viewbox" width height))
 
-(defn- debug-flags
+(defn- render-options-flags
   []
   (cond-> 0
     (dbg/enabled? :wasm-viewbox)
-    (bit-or 2r00000000000000000000000000000001)
+    (bit-or 0x01)
     (text-editor-wasm?)
-    (bit-or 2r00000000000000000000000000000100)
+    (bit-or 0x04)
     (contains? cf/flags :render-wasm-info)
-    (bit-or 2r00000000000000000000000000001000)))
+    (bit-or 0x08)
+    (contains? cf/flags :render-wasm-rulers)
+    (bit-or 0x10)))
 
 (defn- wasm-aa-threshold-from-route-params
   "Reads optional `aa_threshold` query param from the router"
@@ -1438,7 +1440,7 @@
 (defn init-canvas-context
   [canvas]
   (let [gl      (unchecked-get wasm/internal-module "GL")
-        flags   (debug-flags)
+        flags   (render-options-flags)
         context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
         context (.getContext ^js canvas context-id default-context-options)
         context-init? (not (nil? context))

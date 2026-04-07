@@ -138,6 +138,7 @@
     :render-wasm-dpr
     ;; Show WASM renderer info label (hidden by default).
     :render-wasm-info
+    :render-wasm-rulers
     :hide-release-modal
     :subscriptions
     :subscriptions-old
