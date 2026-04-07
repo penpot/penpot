@@ -255,4 +255,3 @@ RETURNING id, name;")
            ;; Notify users
            (doseq [team updated-teams]
              (notify-team-change cfg (:id team) (:name team) nil org-name "dashboard.org-deleted"))))))))
-
