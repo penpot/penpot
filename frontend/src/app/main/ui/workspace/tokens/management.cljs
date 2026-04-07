@@ -22,7 +22,6 @@
    [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu*]]
    [app.util.array :as array]
    [app.util.i18n :refer [tr]]
-   [cljs.pprint :as pp]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 

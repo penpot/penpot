@@ -14,8 +14,7 @@
    [app.common.types.tokens-lib :as ctob]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [malli.core :as m]
-   [me.flowthing.pp :as pp]))
+   [malli.core :as m]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HIGH LEVEL SCHEMAS
