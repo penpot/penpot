@@ -1,11 +1,11 @@
-patchedDependencies:
-  '@zip.js/zip.js@2.8.11': patches/@zip.js__zip.js@2.8.11.patch
-
-shamefullyHoist: true
-
 packages:
   - "packages/draft-js"
   - "packages/mousetrap"
   - "packages/tokenscript"
   - "text-editor"
   - "packages/ui"
+
+patchedDependencies:
+  '@zip.js/zip.js@2.8.26': patches/@zip.js__zip.js@2.8.26.patch
+
+shamefullyHoist: true
