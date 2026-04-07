@@ -49,3 +49,5 @@ export type {
 } from "./lib/controls/utilities/HintMessage";
 export { Switch } from "./lib/controls/Switch";
 export type { SwitchProps } from "./lib/controls/Switch";
+export { Checkbox } from "./lib/controls/Checkbox";
+export type { CheckboxProps } from "./lib/controls/Checkbox";
