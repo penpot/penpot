@@ -7,6 +7,7 @@
 (ns common-tests.files.helpers-test
   (:require
    [app.common.files.helpers :as cfh]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/deftest test-generate-unique-name
@@ -36,3 +37,19 @@
                                     #{"base-name 1" "base-name 2"}
                                     :immediate-suffix? true)
           "base-name 3")))
+
+(t/deftest test-get-prev-sibling
+  (let [parent-id (uuid/custom 1 1)
+        child-a   (uuid/custom 1 2)
+        child-b   (uuid/custom 1 3)
+        orphan-id (uuid/custom 1 4)
+        objects   {parent-id {:id parent-id :shapes [child-a child-b]}
+                   child-a   {:id child-a :parent-id parent-id}
+                   child-b   {:id child-b :parent-id parent-id}
+                   orphan-id {:id orphan-id :parent-id parent-id}}]
+    (t/testing "Returns previous sibling when present in parent ordering"
+      (t/is (= child-a
+               (cfh/get-prev-sibling objects child-b))))
+
+    (t/testing "Returns nil when the shape is missing from parent ordering"
+      (t/is (nil? (cfh/get-prev-sibling objects orphan-id))))))

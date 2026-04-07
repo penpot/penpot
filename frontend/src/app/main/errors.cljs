@@ -53,16 +53,33 @@
 
 (defn stale-asset-error?
   "Returns true if the error matches the signature of a cross-build
-  module mismatch: accessing a ClojureScript keyword constant that
-  doesn't exist on the shared $APP object."
+  module mismatch. Two distinct patterns can appear depending on which
+  cross-module reference is accessed first:
+
+  1. Keyword constants  – names contain '$cljs$cst$'; these arise when a
+     compiled keyword defined in shared.js is absent in the version of
+     shared.js already resident in the browser.
+
+  2. Protocol dispatch – names contain '$cljs$core$I'; these arise when
+     main-workspace.js (new build) tries to invoke a protocol method on
+     an object whose prototype was stamped by an older shared.js that
+     used different mangled property names (e.g. the LazySeq /
+     instaparse crash: 'Cannot read properties of undefined (reading
+     \\'$cljs$core$IFn$_invoke$arity$1$\\')').
+
+  Both patterns are symptoms of the same split-brain deployment
+  scenario (browser has JS chunks from two different builds) and
+  should trigger a hard page reload."
   [cause]
   (when (some? cause)
     (let [message (ex-message cause)]
       (and (string? message)
-           (str/includes? message "$cljs$cst$")
+           (or (str/includes? message "$cljs$cst$")
+               (str/includes? message "$cljs$core$I"))
            (or (str/includes? message "is undefined")
                (str/includes? message "is null")
-               (str/includes? message "is not a function"))))))
+               (str/includes? message "is not a function")
+               (str/includes? message "Cannot read properties of undefined"))))))
 
 (defn exception->error-data
   [cause]
@@ -419,7 +436,16 @@
                   ;; RxJS unsubscription / take-until chain).  These are
                   ;; handled gracefully inside app.util.http/fetch and must NOT
                   ;; be surfaced as application errors.
-                  (= (.-name ^js cause) "AbortError"))))
+                  (= (.-name ^js cause) "AbortError")
+                  ;; Zone.js (injected by browser extensions such as Angular
+                  ;; DevTools) wraps event listeners and assigns a custom
+                  ;; .toString to its wrapper functions using
+                  ;; Object.defineProperty.  When the wrapper was previously
+                  ;; defined with {writable: false}, a subsequent plain assignment
+                  ;; in strict mode (our libs.js uses "use strict") throws this
+                  ;; TypeError.  This is a known Zone.js / browser-extension
+                  ;; incompatibility and is NOT a Penpot bug.
+                  (str/starts-with? message "Cannot assign to read only property 'toString'"))))
 
           (on-unhandled-error [event]
             (.preventDefault ^js event)

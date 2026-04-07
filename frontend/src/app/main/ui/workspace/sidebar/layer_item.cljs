@@ -32,6 +32,7 @@
    [app.util.shape-icon :as usi]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
+   [clojure.set :as set]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -45,7 +46,12 @@
   (when (compare-and-set! sidebar-hover-pending? false true)
     (ts/raf
      (fn []
-       (let [{:keys [enter leave]} (swap! sidebar-hover-queue (constantly {:enter #{} :leave #{}}))]
+       (let [{:keys [enter leave]} @sidebar-hover-queue
+
+             enter (set/difference enter leave)
+             leave (set/difference leave enter)]
+
+         (reset! sidebar-hover-queue {:enter #{} :leave #{}})
          (reset! sidebar-hover-pending? false)
          (when (seq leave)
            (apply st/emit! (map dw/dehighlight-shape leave)))
@@ -320,20 +326,22 @@
         (mf/use-fn
          (mf/deps id)
          (fn [_]
-           (swap! sidebar-hover-queue (fn [{:keys [enter leave] :as q}]
-                                        (-> q
-                                            (assoc :enter (conj enter id))
-                                            (assoc :leave (disj leave id)))))
+           (swap! sidebar-hover-queue
+                  (fn [q]
+                    (-> q
+                        (update :enter (fnil conj #{}) id)
+                        (update :leave (fnil disj #{}) id))))
            (schedule-sidebar-hover-flush)))
 
         on-pointer-leave
         (mf/use-fn
          (mf/deps id)
          (fn [_]
-           (swap! sidebar-hover-queue (fn [{:keys [enter leave] :as q}]
-                                        (-> q
-                                            (assoc :enter (disj enter id))
-                                            (assoc :leave (conj leave id)))))
+           (swap! sidebar-hover-queue
+                  (fn [q]
+                    (-> q
+                        (update :enter (fnil disj #{}) id)
+                        (update :leave (fnil conj #{}) id))))
            (schedule-sidebar-hover-flush)))
 
         on-context-menu
