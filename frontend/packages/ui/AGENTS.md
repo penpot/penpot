@@ -30,6 +30,32 @@ frontend/packages/ui/
 │       │   ├── IconButton.module.scss
 │       │   ├── IconButton.stories.tsx
 │       │   └── IconButton.spec.tsx
+│       ├── controls/             # Form controls
+│       │   ├── Checkbox.tsx
+│       │   ├── Checkbox.module.scss
+│       │   ├── Checkbox.stories.tsx
+│       │   ├── Checkbox.spec.tsx
+│       │   ├── Input.tsx
+│       │   ├── Input.module.scss
+│       │   ├── Input.stories.tsx
+│       │   ├── Input.spec.tsx
+│       │   ├── Switch.tsx
+│       │   ├── Switch.module.scss
+│       │   ├── Switch.stories.tsx
+│       │   ├── Switch.spec.tsx
+│       │   └── utilities/
+│       │       ├── HintMessage.tsx
+│       │       ├── HintMessage.module.scss
+│       │       ├── HintMessage.stories.tsx
+│       │       ├── HintMessage.spec.tsx
+│       │       ├── InputField.tsx
+│       │       ├── InputField.module.scss
+│       │       ├── InputField.stories.tsx
+│       │       ├── InputField.spec.tsx
+│       │       ├── Label.tsx
+│       │       ├── Label.module.scss
+│       │       ├── Label.stories.tsx
+│       │       └── Label.spec.tsx
 │       ├── example/              # Example component (reference)
 │       ├── foundations/
 │       │   ├── assets/           # Icon, RawSvg components
@@ -69,6 +95,12 @@ Components are organised to mirror the CLJS source tree
 | `ds/buttons/button.cljs` | `src/lib/buttons/Button.tsx` |
 | `ds/buttons/icon_button.cljs` | `src/lib/buttons/IconButton.tsx` |
 | `ds/utilities/swatch.cljs` | `src/lib/utilities/Swatch.tsx` |
+| `ds/controls/utilities/label.cljs` | `src/lib/controls/utilities/Label.tsx` |
+| `ds/controls/utilities/hint_message.cljs` | `src/lib/controls/utilities/HintMessage.tsx` |
+| `ds/controls/utilities/input_field.cljs` | `src/lib/controls/utilities/InputField.tsx` |
+| `ds/controls/switch.cljs` | `src/lib/controls/Switch.tsx` |
+| `ds/controls/checkbox.cljs` | `src/lib/controls/Checkbox.tsx` |
+| `ds/controls/input.cljs` | `src/lib/controls/Input.tsx` |
 
 ### Known Tooling Notes
 
@@ -80,6 +112,14 @@ Components are organised to mirror the CLJS source tree
 - **`@vitejs/plugin-react` v6** removed the `babel` option. Use
   `reactCompilerPreset()` from the same package instead of passing
   `babel: { plugins: ['babel-plugin-react-compiler'] }`.
+- **`setState` inside `useEffect` is banned** by the `react-hooks/set-state-in-effect`
+  ESLint rule. For uncontrolled-with-default patterns (e.g. `Switch`), initialise
+  state from the prop directly and let consumers use a `key` prop to reset.
+- **`disabled` is not a valid attribute on `<div>`** in TypeScript. Use
+  `aria-disabled` + `data-disabled` attributes instead, and target them in SCSS
+  (`[data-disabled]` selector).
+- **CSS Module class names must be kebab-case** — stylelint rejects camelCase
+  selectors. Use bracket notation in TSX when needed (`styles["my-class"]`).
 
 Every migrated component must have:
 - `ComponentName.tsx` – the React component
