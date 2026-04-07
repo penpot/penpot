@@ -19,6 +19,8 @@ export type {
   AvatarProfile,
   AvatarVariant,
 } from "./lib/product/Avatar";
+export { PanelTitle } from "./lib/product/PanelTitle";
+export type { PanelTitleProps } from "./lib/product/PanelTitle";
 export { Icon, iconIds } from "./lib/foundations/assets/Icon";
 export type { IconId, IconProps } from "./lib/foundations/assets/Icon";
 export { RawSvg, rawSvgIds } from "./lib/foundations/assets/RawSvg";

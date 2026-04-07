@@ -65,6 +65,7 @@ Components are organised to mirror the CLJS source tree
 | `ds/product/cta.cljs` | `src/lib/product/Cta.tsx` |
 | `ds/product/loader.cljs` | `src/lib/product/Loader.tsx` |
 | `ds/product/avatar.cljs` | `src/lib/product/Avatar.tsx` |
+| `ds/product/panel_title.cljs` | `src/lib/product/PanelTitle.tsx` |
 | `ds/buttons/button.cljs` | `src/lib/buttons/Button.tsx` |
 | `ds/buttons/icon_button.cljs` | `src/lib/buttons/IconButton.tsx` |
 | `ds/utilities/swatch.cljs` | `src/lib/utilities/Swatch.tsx` |
