@@ -15,3 +15,8 @@ export { Icon, iconIds } from "./lib/foundations/assets/Icon";
 export type { IconId, IconProps } from "./lib/foundations/assets/Icon";
 export { Button } from "./lib/buttons/Button";
 export type { ButtonProps, ButtonVariant } from "./lib/buttons/Button";
+export { IconButton } from "./lib/buttons/IconButton";
+export type {
+  IconButtonProps,
+  IconButtonVariant,
+} from "./lib/buttons/IconButton";

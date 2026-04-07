@@ -25,7 +25,11 @@ frontend/packages/ui/
 │       │   ├── Button.tsx
 │       │   ├── Button.module.scss
 │       │   ├── Button.stories.tsx
-│       │   └── Button.spec.tsx
+│       │   ├── Button.spec.tsx
+│       │   ├── IconButton.tsx
+│       │   ├── IconButton.module.scss
+│       │   ├── IconButton.stories.tsx
+│       │   └── IconButton.spec.tsx
 │       ├── example/              # Example component (reference)
 │       ├── foundations/
 │       │   ├── assets/           # Icon component
@@ -54,6 +58,7 @@ Components are organised to mirror the CLJS source tree
 | `ds/foundations/assets/icon.cljs` | `src/lib/foundations/assets/Icon.tsx` |
 | `ds/product/cta.cljs` | `src/lib/product/Cta.tsx` |
 | `ds/buttons/button.cljs` | `src/lib/buttons/Button.tsx` |
+| `ds/buttons/icon_button.cljs` | `src/lib/buttons/IconButton.tsx` |
 
 ### Known Tooling Notes
 
