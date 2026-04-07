@@ -27,7 +27,7 @@
 
 (mf/defc token-node-context-menu*
   {::mf/schema schema:token-node-context-menu}
-  [{:keys [on-rename-node on-delete-node]}]
+  [{:keys [on-rename-node on-duplicate-node on-delete-node]}]
   (let [mdata               (mf/deref tokens-node-menu-ref)
         is-open?            (boolean mdata)
         dropdown-ref        (mf/use-ref)
@@ -44,6 +44,13 @@
                                      type (get mdata :type)]
                                  (when node
                                    (on-rename-node node type)))))
+        duplicate-node      (mf/use-fn
+                             (mf/deps mdata on-duplicate-node)
+                             (fn []
+                               (let [node (get mdata :node)
+                                     type (get mdata :type)]
+                                 (when node
+                                   (on-duplicate-node node type)))))
 
         container           (hooks/use-portal-container)
         delete-node         (mf/use-fn
@@ -90,6 +97,11 @@
                         :type "button"
                         :on-click rename-node}
                (tr "labels.rename")]]
+             [:li {:class (stl/css :token-node-context-menu-listitem)}
+              [:button {:class (stl/css :token-node-context-menu-action)
+                        :type "button"
+                        :on-click duplicate-node}
+               (tr "labels.duplicate")]]
              [:li {:class (stl/css :token-node-context-menu-listitem)}
               [:button {:class (stl/css :token-node-context-menu-action)
                         :type "button"

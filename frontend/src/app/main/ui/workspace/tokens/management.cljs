@@ -192,6 +192,8 @@
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
                 (st/emit! (dwtl/close-token-type type))))))
 
+
+
         bulk-rename-tokens-in-path
         ;; Rename tokens in bulk affected by a node rename.
         (mf/use-fn
@@ -254,7 +256,6 @@
                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
                  tokens-filtered-by-type (get tokens-by-type type)
                  tokens-in-current-path (filter-tokens-by-path tokens-filtered-by-type node)
-                 _ (pp/pprint {:tokens-in-current-path tokens-in-current-path})
                  token-references-count (reduce (fn [count token]
                                                   (+ count (remap/count-token-references file-data (:name token))))
                                                 0
@@ -262,6 +263,13 @@
              (if (> token-references-count 0)
                (on-remap-node-warning node type new-node-name)
                (bulk-rename-tokens-in-path node type new-node-name)))))
+
+        on-duplicate-node
+        (fn [node type]
+          (let [path (:path node)
+                new-node-name (str (:name node) "-copy")
+                new-node-path (str (name type) "." new-node-name)]
+            (pp/pprint {:node node :type type :path path :new-node-path new-node-path})))
 
         open-rename-node-modal
         ;; When user renames a node, we display a form modal
@@ -271,7 +279,18 @@
            (let [on-rename-node-handler #(on-rename-node node type %)]
              (st/emit! (modal/show :tokens/rename-node {:node node
                                                         :tokens-in-active-set selected-token-set-tokens
-                                                        :on-rename on-rename-node-handler})))))]
+                                                        :on-rename on-rename-node-handler})))))
+
+        open-duplicate-node-modal
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens on-duplicate-node)
+         (fn [node type]
+           (let [on-duplicate-node-handler #(on-duplicate-node node type)]
+             (st/emit! (modal/show :tokens/rename-node {:new-node-name (str (:name node) "-copy")
+                                                        :node node
+                                                        :variant "duplicate"
+                                                        :tokens-in-active-set selected-token-set-tokens
+                                                        :on-rename on-duplicate-node-handler})))))]
 
     (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib
@@ -286,6 +305,7 @@
     [:*
      [:& token-context-menu {:on-delete-token delete-token}]
      [:> token-node-context-menu* {:on-rename-node open-rename-node-modal
+                                   :on-duplicate-node open-duplicate-node-modal
                                    :on-delete-node delete-node}]
 
      [:> selected-set-info* {:tokens-lib tokens-lib

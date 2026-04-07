@@ -14,7 +14,8 @@
    [app.common.types.tokens-lib :as ctob]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [malli.core :as m]))
+   [malli.core :as m]
+   [me.flowthing.pp :as pp]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HIGH LEVEL SCHEMAS
@@ -162,7 +163,9 @@
     (fn [name]
       (let [current-path (:path node)
             current-name (:name node)
-            new-tokens (ctob/update-tokens-group active-tokens current-path current-name name)]
+            new-tokens (ctob/update-tokens-group active-tokens current-path current-name name)
+            _ (pp/pprint {:new-name name
+                          :new-tokens new-tokens})]
         (and (some? new-tokens)
              (some (fn [[token-name _]]
                      (not (ctob/token-name-path-exists? token-name tokens-tree)))
