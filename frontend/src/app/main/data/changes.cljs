@@ -218,4 +218,4 @@
                        (assoc :undo-changes uchg)
                        (assoc :redo-changes rchg)
                        (assoc :selected-before selected)
-                       (commit))))))))))
+                       (commit)))))))))
