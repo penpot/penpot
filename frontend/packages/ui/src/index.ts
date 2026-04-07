@@ -13,6 +13,12 @@ export { Cta } from "./lib/product/Cta";
 export type { CtaProps } from "./lib/product/Cta";
 export { Loader } from "./lib/product/Loader";
 export type { LoaderProps, LoaderTip } from "./lib/product/Loader";
+export { Avatar } from "./lib/product/Avatar";
+export type {
+  AvatarProps,
+  AvatarProfile,
+  AvatarVariant,
+} from "./lib/product/Avatar";
 export { Icon, iconIds } from "./lib/foundations/assets/Icon";
 export type { IconId, IconProps } from "./lib/foundations/assets/Icon";
 export { RawSvg, rawSvgIds } from "./lib/foundations/assets/RawSvg";
