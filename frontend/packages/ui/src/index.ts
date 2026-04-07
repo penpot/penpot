@@ -13,6 +13,8 @@ export { Cta } from "./lib/product/Cta";
 export type { CtaProps } from "./lib/product/Cta";
 export { Icon, iconIds } from "./lib/foundations/assets/Icon";
 export type { IconId, IconProps } from "./lib/foundations/assets/Icon";
+export { RawSvg, rawSvgIds } from "./lib/foundations/assets/RawSvg";
+export type { RawSvgId, RawSvgProps } from "./lib/foundations/assets/RawSvg";
 export { Button } from "./lib/buttons/Button";
 export type { ButtonProps, ButtonVariant } from "./lib/buttons/Button";
 export { IconButton } from "./lib/buttons/IconButton";

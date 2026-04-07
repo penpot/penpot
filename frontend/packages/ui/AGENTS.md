@@ -32,11 +32,15 @@ frontend/packages/ui/
 │       │   └── IconButton.spec.tsx
 │       ├── example/              # Example component (reference)
 │       ├── foundations/
-│       │   ├── assets/           # Icon component
+│       │   ├── assets/           # Icon, RawSvg components
 │       │   │   ├── Icon.tsx
 │       │   │   ├── Icon.module.scss
 │       │   │   ├── Icon.stories.tsx
-│       │   │   └── Icon.spec.tsx
+│       │   │   ├── Icon.spec.tsx
+│       │   │   ├── RawSvg.tsx
+│       │   │   ├── RawSvg.module.scss
+│       │   │   ├── RawSvg.stories.tsx
+│       │   │   └── RawSvg.spec.tsx
 │       │   └── typography/       # Text, Heading components + shared utilities
 │       └── product/              # Product-level components (e.g. Cta)
 ├── eslint.config.mjs             # ESLint 9 flat config (TypeScript + React)
@@ -56,6 +60,7 @@ Components are organised to mirror the CLJS source tree
 | `ds/foundations/typography/text.cljs` | `src/lib/foundations/typography/Text.tsx` |
 | `ds/foundations/typography/heading.cljs` | `src/lib/foundations/typography/Heading.tsx` |
 | `ds/foundations/assets/icon.cljs` | `src/lib/foundations/assets/Icon.tsx` |
+| `ds/foundations/assets/raw_svg.cljs` | `src/lib/foundations/assets/RawSvg.tsx` |
 | `ds/product/cta.cljs` | `src/lib/product/Cta.tsx` |
 | `ds/buttons/button.cljs` | `src/lib/buttons/Button.tsx` |
 | `ds/buttons/icon_button.cljs` | `src/lib/buttons/IconButton.tsx` |
