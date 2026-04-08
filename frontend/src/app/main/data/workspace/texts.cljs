@@ -896,7 +896,7 @@
                              (merge txt/default-typography values))
                            (generate-typography-name)
                            (assoc :id typ-id)
-                           (cond-> (seq group-path)
+                           (cond-> (string? group-path)
                              (update :name #(str group-path " / " %))))]
 
          (rx/concat

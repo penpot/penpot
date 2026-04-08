@@ -133,7 +133,7 @@
   {::mf/wrap-props false}
   [{:keys [file-id prefix groups open-groups force-open? file local? selected local-data
            editing-id renaming-id on-asset-click handle-change on-rename-group
-           on-ungroup on-context-menu selected-full read-only?]}]
+           on-ungroup on-context-menu selected-full is-read-only]}]
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
                          (get open-groups prefix true))
@@ -170,8 +170,8 @@
         (mf/use-fn
          (mf/deps file-id prefix)
          (fn [_]
-           (st/emit! (dw/set-assets-section-open file-id :typographies true))
-           (st/emit! (dwt/add-typography file-id prefix))))]
+           (st/emit! (dw/set-assets-section-open file-id :typographies true)
+                     (dwt/add-typography file-id prefix))))]
 
     [:div {:class (stl/css :typographies-group)
            :on-drag-enter on-drag-enter
@@ -184,7 +184,7 @@
                                  :is-group-open group-open?
                                  :on-rename on-rename-group
                                  :on-ungroup on-ungroup
-                                 :on-add (when (and local? (not read-only?))
+                                 :on-add (when (and local? (not is-read-only))
                                            add-typography-to-group)}]
 
      (when group-open?
@@ -239,7 +239,7 @@
                                     :on-ungroup on-ungroup
                                     :on-context-menu on-context-menu
                                     :selected-full selected-full
-                                    :read-only? read-only?}]))])]))
+                                    :is-read-only is-read-only}]))])]))
 
 (mf/defc typographies-section*
   [{:keys [file file-id typographies open-status-ref selected
@@ -442,7 +442,7 @@
                                :on-ungroup on-ungroup
                                :on-context-menu on-context-menu
                                :selected-full selected-full
-                               :read-only? read-only?}]
+                               :is-read-only read-only?}]
 
        (if is-local
          [:> cmm/assets-context-menu*
