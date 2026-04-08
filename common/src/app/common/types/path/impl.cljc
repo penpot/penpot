@@ -390,10 +390,10 @@
        ;; NOTE: we still use u8 because until the heap refactor merge
        ;; we can't guarrantee the alignment of offset on 4 bytes
        (assert (instance? js/ArrayBuffer into-buffer))
-       (let [buffer' (.-buffer ^js/DataView buffer)
-             size    (.-byteLength buffer')
+       (let [size    (.-byteLength ^js/DataView buffer)
+             src-off (.-byteOffset ^js/DataView buffer)
              mem     (js/Uint8Array. into-buffer offset size)]
-         (.set mem (js/Uint8Array. buffer'))))
+         (.set mem (js/Uint8Array. (.-buffer ^js/DataView buffer) src-off size))))
 
      ITransformable
      (-transform [this m]
@@ -635,19 +635,27 @@
                     nil))
 
        (instance? js/DataView buffer)
-       (let [buffer' (.-buffer ^js/DataView buffer)
-             size    (.-byteLength ^js/ArrayBuffer buffer')
-             count   (long (/ size SEGMENT-U8-SIZE))]
+       (let [size  (.-byteLength ^js/DataView buffer)
+             count (long (/ size SEGMENT-U8-SIZE))]
          (PathData. count buffer (weak/weak-value-map) nil))
 
        (instance? js/Uint8Array buffer)
-       (from-bytes (.-buffer buffer))
+       (let [ab     (.-buffer buffer)
+             offset (.-byteOffset buffer)
+             size   (.-byteLength buffer)]
+         (from-bytes (js/DataView. ab offset size)))
 
        (instance? js/Uint32Array buffer)
-       (from-bytes (.-buffer buffer))
+       (let [ab     (.-buffer buffer)
+             offset (.-byteOffset buffer)
+             size   (.-byteLength buffer)]
+         (from-bytes (js/DataView. ab offset size)))
 
        (instance? js/Int8Array buffer)
-       (from-bytes (.-buffer buffer))
+       (let [ab     (.-buffer buffer)
+             offset (.-byteOffset buffer)
+             size   (.-byteLength buffer)]
+         (from-bytes (js/DataView. ab offset size)))
 
        :else
        (throw (js/Error. "invalid data provided")))))
@@ -733,7 +741,9 @@
   :class PathData
   :wfn (fn [^PathData pdata]
          (let [buffer (.-buffer pdata)]
-           #?(:cljs (js/Uint8Array. (.-buffer ^js/DataView buffer))
+           #?(:cljs (js/Uint8Array. (.-buffer ^js/DataView buffer)
+                                    (.-byteOffset ^js/DataView buffer)
+                                    (.-byteLength ^js/DataView buffer))
               :clj  (.array ^ByteBuffer buffer))))
   :rfn from-bytes})
 
