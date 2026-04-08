@@ -149,7 +149,7 @@
                  :status "delete"
                  :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
-      (let [deletion-delay (if (= bucket "tempfile")
+      (let [deletion-delay (if (= "tempfile" bucket)
                              (ct/duration {:hours 2})
                              (cf/get-deletion-delay))]
         (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))

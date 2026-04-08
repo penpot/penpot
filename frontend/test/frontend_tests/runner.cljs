@@ -3,8 +3,10 @@
    [cljs.test :as t]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.data.repo-test]
+   [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
    [frontend-tests.data.workspace-colors-test]
+   [frontend-tests.data.workspace-media-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.helpers-shapes-test]
@@ -43,8 +45,10 @@
    'frontend-tests.basic-shapes-test
    'frontend-tests.data.repo-test
    'frontend-tests.main-errors-test
+   'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test
+   'frontend-tests.data.workspace-media-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.helpers-shapes-test

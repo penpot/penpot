@@ -523,6 +523,30 @@
       (generic-check!)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; QUOTE: UPLOAD-SESSIONS-PER-PROFILE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:upload-sessions-per-profile
+  [:map [::profile-id ::sm/uuid]])
+
+(def ^:private valid-upload-sessions-per-profile-quote?
+  (sm/lazy-validator schema:upload-sessions-per-profile))
+
+(def ^:private sql:get-upload-sessions-per-profile
+  "SELECT count(*) AS total
+     FROM upload_session
+    WHERE profile_id = ?")
+
+(defmethod check-quote ::upload-sessions-per-profile
+  [{:keys [::profile-id ::target] :as quote}]
+  (assert (valid-upload-sessions-per-profile-quote? quote) "invalid quote parameters")
+  (-> quote
+      (assoc ::default (cf/get :quotes-upload-sessions-per-profile Integer/MAX_VALUE))
+      (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
+      (assoc ::count-sql [sql:get-upload-sessions-per-profile profile-id])
+      (generic-check!)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: DEFAULT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
