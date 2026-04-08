@@ -34,6 +34,7 @@
 - Fix focus radio button [Taiga #13841](https://tree.taiga.io/project/penpot/issue/13841)
 - Token tree should be expanded by default [Taiga #13631](https://tree.taiga.io/project/penpot/issue/13631)
 - Fix opacity incorrectly disabled for visible shapes [Taiga #13906](https://tree.taiga.io/project/penpot/issue/13906)
+- Update onboarding image [Taiga #13864](https://tree.taiga.io/project/penpot/issue/13864)
 
 ## 2.15.0 (Unreleased)
 
