@@ -207,8 +207,7 @@
                          (update :team-id bfc/lookup-index)
                          (assoc :created-at timestamp)
                          (assoc :modified-at timestamp))]
-          (db/insert! conn :team-profile-rel params
-                      {::db/return-keys false})))
+          (teams/add-profile-to-team! cfg params {::db/return-keys false})))
 
       ;; Duplicate team fonts
       (doseq [font fonts]

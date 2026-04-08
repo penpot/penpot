@@ -23,7 +23,13 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
 
     if let Some(id) = show_grid_id {
         if let Some(shape) = shapes.get(&id) {
-            grid_layout::render_overlay(zoom, canvas, shape, shapes);
+            grid_layout::render_overlay(
+                zoom,
+                render_state.options.antialias_threshold,
+                canvas,
+                shape,
+                shapes,
+            );
         }
     }
 
@@ -50,7 +56,13 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
         }
 
         if let Some(shape) = shapes.get(&shape.id) {
-            grid_layout::render_overlay(zoom, canvas, shape, shapes);
+            grid_layout::render_overlay(
+                zoom,
+                render_state.options.antialias_threshold,
+                canvas,
+                shape,
+                shapes,
+            );
         }
     }
 

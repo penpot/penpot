@@ -1,14 +1,9 @@
 # Penpot Frontend – Agent Instructions
 
-ClojureScript based frontend application that uses React, RxJS as main
+ClojureScript-based frontend application that uses React and RxJS as its main
 architectural pieces.
 
-
 ## General Guidelines
-
-This is a golden rule for frontend development standards. To ensure consistency
-across the penpot stack, all contributions must adhere to these criteria:
-
 
 ### 1. Testing & Validation
 
@@ -22,7 +17,7 @@ If code is added or modified in `src/`, corresponding tests in
   running backend. Test are developed using cljs.test.
 * **Mocks & Stubs:** * Use proper mocks for any side-effecting
   functions (e.g., API calls, storage access).
-  * Avoid testing through the UI (DOM), we have e2e tests for that/
+   * Avoid testing through the UI (DOM); we have e2e tests for that.
   * Use `with-redefs` or similar ClojureScript mocking utilities to isolate the logic under test.
 * **No Flakiness:** Tests must be deterministic. Do not use `setTimeout` or real
   network calls. Use synchronous mocks for asynchronous workflows where
@@ -34,15 +29,15 @@ If code is added or modified in `src/`, corresponding tests in
   * **Isolated:** To run a focused ClojureScript unit test: edit the
     `test/frontend_tests/runner.cljs` to narrow the test suite, then `pnpm run
     test`.
-  * **Regression:** Run `pnpm run test` without modifications on the runner (preferred)
+   * **Regression:** To run `pnpm run test` without modifications on the runner (preferred)
 
 
 #### Integration Tests (Playwright)
 
 Integration tests are developed under `frontend/playwright` directory, we use
-mocks for remove communication with backend.
+mocks for remote communication with the backend.
 
-You should not add, modify or run the integration tests unless it exlicitly asked for.
+You should not add, modify or run the integration tests unless explicitly asked.
 
 
 ```
@@ -50,7 +45,7 @@ pnpm run test:e2e                   # Playwright e2e tests
 pnpm run test:e2e --grep "pattern"  # Single e2e test by pattern
 ```
 
-Ensure everything installed before executing tests with `./scripts/setup` script.
+Ensure everything is installed before executing tests with the `./scripts/setup` script.
 
 
 ### 2. Code Quality & Formatting
@@ -68,9 +63,32 @@ Ensure everything installed before executing tests with `./scripts/setup` script
 
 ### 3. Implementation Rules
 
-* **Logic vs. View:** If logic is embedded in an UI component, extract it into a
-  function in the same namespace if is only used locally or look for a helper
+* **Logic vs. View:** If logic is embedded in a UI component, extract it into a
+  function in the same namespace if it is only used locally, or look for a helper
   namespace to make it unit-testable.
+
+### 4. Stack Trace Analysis
+
+When analyzing production stack traces (minified code), you can generate a
+production bundle locally to map the minified code back to the source.
+
+**To build the production bundle:**
+
+Run: `pnpm run build:app`
+
+The compiled files and their corresponding source maps will be generated in
+`resources/public/js`.
+
+**Analysis Tips:**
+
+- **Source Maps:** Use the `.map` files generated in `resources/public/js` with
+  tools like `source-map-lookup` or browser dev tools to resolve minified
+  locations.
+- **Bundle Inspection:** If the issue is related to bundle size or unexpected
+  code inclusion, inspect the generated modules in `resources/public/js`.
+- **Shadow-CLJS Reports:** For more detailed analysis of what is included in the
+  bundle, you can run shadow-cljs build reports (consult `shadow-cljs.edn` for
+  build IDs like `main` or `worker`).
 
 
 ## Code Conventions
@@ -113,7 +131,7 @@ State is a single atom managed by a Potok store. Events implement protocols
 ```
 
 The state is located under `app.main.store` namespace where we have
-the `emit!` function responsible of emiting events.
+the `emit!` function responsible for emitting events.
 
 Example:
 
@@ -128,15 +146,14 @@ Example:
   (st/emit! (my-event)))
 ```
 
-On `app.main.refs` we have reactive references which lookup into the main state
-for just inner data or precalculated data. That references are very usefull but
-should be used with care because, per example if we have complex operation, this
-operation will be executed on each state change, and sometimes is better to have
-simple references and use react `use-memo` for more granular memoization.
+On `app.main.refs` we have reactive references which look up the main state
+for inner data or precalculated data. These references are very useful but
+should be used with care because, for example, if we have a complex operation,
+this operation will be executed on each state change. Sometimes it is better to
+have simple references and use React `use-memo` for more granular memoization.
 
-Prefer helpers from `app.util.dom` instead of using direct dom calls, if no helper is
-available, prefer adding a new helper for handling it and the use the
-new helper.
+Prefer helpers from `app.util.dom` instead of using direct DOM calls. If no
+helper is available, prefer adding a new helper and then using it.
 
 ### UI Components (React & Rumext: mf/defc)
 
@@ -175,19 +192,20 @@ lifecycle management. These are analogous to standard React hooks:
 ```
 
 The `mf/use-state` in difference with React.useState, returns an atom-like
-object, where you can use `swap!` or `reset!` for to perform an update and
-`deref` for get the current value.
+object, where you can use `swap!` or `reset!` to perform an update and
+`deref` to get the current value.
 
-You also has `mf/deref` hook (which does not follow the `use-` naming pattern)
-and it's purpose is watch (subscribe to changes) on atom or derived atom (from
-okulary) and get the current value. Is mainly used for subscribe to lenses
-defined in `app.main.refs` or (private lenses defined in namespaces).
+You also have the `mf/deref` hook (which does not follow the `use-` naming
+pattern) and its purpose is to watch (subscribe to changes on) an atom or
+derived atom (from okulary) and get the current value. It is mainly used to
+subscribe to lenses defined in `app.main.refs` or private lenses defined in
+namespaces.
 
 Rumext also comes with improved syntax macros as alternative to `mf/use-effect`
 and `mf/use-memo` functions. Examples:
 
 
-Example for `mf/with-memo` macro:
+Example for `mf/with-effect` macro:
 
 ```clj
 ;; Using functions
@@ -221,7 +239,7 @@ Example for `mf/with-memo` macro:
        (filterv #(= team-id (:team-id %)))))
 ```
 
-Prefer using the macros for it syntax simplicity.
+Prefer using the macros for their syntax simplicity.
 
 
 #### 4. Component Usage (Hiccup Syntax)
@@ -282,22 +300,22 @@ CSS modules pattern):
 - If a value isn't in the DS, use the `px2rem(n)` mixin: `@use "ds/_utils.scss"
   as *; padding: px2rem(23);`.
 - Do **not** create new SCSS variables for one-off values.
-- Use physical directions with logical ones to support RTL/LTR naturally.
-  - ❌ `margin-left`, `padding-right`, `left`, `right`.
-  - ✅ `margin-inline-start`, `padding-inline-end`, `inset-inline-start`.
-- Always use the `use-typography` mixin from `ds/typography.scss`.
-  - ✅ `@include t.use-typography("title-small");`
+- Use physical directions with logical ones to support RTL/LTR naturally:
+  - Avoid: `margin-left`, `padding-right`, `left`, `right`.
+  - Prefer: `margin-inline-start`, `padding-inline-end`, `inset-inline-start`.
+- Always use the `use-typography` mixin from `ds/typography.scss`:
+  - Example: `@include t.use-typography("title-small");`
 - Use `$br-*` for radius and `$b-*` for thickness from `ds/_borders.scss`.
 - Use only tokens from `ds/colors.scss`. Do **NOT** use `design-tokens.scss` or
   legacy color variables.
-- Use mixins only those defined in`ds/mixins.scss`. Avoid legacy mixins like
+- Use mixins only from `ds/mixins.scss`. Avoid legacy mixins like
   `@include flexCenter;`. Write standard CSS (flex/grid) instead.
 - Use the `@use` instead of `@import`. If you go to refactor existing SCSS file,
   try to replace all `@import` with `@use`. Example: `@use "ds/_sizes.scss" as
   *;` (Use `as *` to expose variables directly).
 - Avoid deep selector nesting or high-specificity (IDs). Flatten selectors:
-  - ❌ `.card { .title { ... } }`
-  - ✅ `.card-title { ... }`
+  - Avoid: `.card { .title { ... } }`
+  - Prefer: `.card-title { ... }`
 - Leverage component-level CSS variables for state changes (hover/focus) instead
   of rewriting properties.
 
@@ -324,5 +342,5 @@ Always prefer these macros over their `clojure.core` equivalents — they compil
 ### Configuration
 
 `src/app/config.clj` reads globally defined variables and exposes precomputed
-configuration vars ready to be used from other parts of the application
+configuration values ready to be used from other parts of the application.
 

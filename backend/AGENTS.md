@@ -7,8 +7,8 @@ Redis for messaging/caching.
 
 ## General Guidelines
 
-This is a golden rule for backend development standards. To ensure consistency
-across the Penpot JVM stack, all contributions must adhere to these criteria:
+To ensure consistency across the Penpot JVM stack, all contributions must adhere
+to these criteria:
 
 ### 1. Testing & Validation
 
@@ -16,14 +16,14 @@ across the Penpot JVM stack, all contributions must adhere to these criteria:
   tests in `test/backend_tests/` must be added or updated.
 
 * **Execution:**
-  * **Isolated:** Run `clojure -M:dev:test --focus backend-tests.my-ns-test` for the specific task.
-  * **Regression:** Run `clojure -M:dev:test` for ensure the suite passes without regressions in related functional areas.
+  * **Isolated:** Run `clojure -M:dev:test --focus backend-tests.my-ns-test` for the specific test namespace.
+  * **Regression:** Run `clojure -M:dev:test` to ensure the suite passes without regressions in related functional areas.
 
 ### 2. Code Quality & Formatting
 
 * **Linting:** All code must pass `clj-kondo` checks (run `pnpm run lint:clj`)
 * **Formatting:** All the code must pass the formatting check (run `pnpm run
-  check-fmt`). Use the `pnpm run fmt` fix the formatting issues. Avoid "dirty"
+  check-fmt`). Use `pnpm run fmt` to fix formatting issues. Avoid "dirty"
   diffs caused by unrelated whitespace changes.
 * **Type Hinting:** Use explicit JVM type hints (e.g., `^String`, `^long`) in
   performance-critical paths to avoid reflection overhead.
@@ -40,18 +40,18 @@ namespaces structure:
 - `app.db.*` – Database layer
 - `app.tasks.*` – Background job tasks
 - `app.main` – Integrant system setup and entrypoint
-- `app.loggers` – Internal loggers (auditlog, mattermost, etc) (do not be confused with `app.common.loggin`)
+- `app.loggers` – Internal loggers (auditlog, mattermost, etc.) (not to be confused with `app.common.logging`)
 
 ### RPC
 
-The PRC methods are implement in a some kind of multimethod structure using
-`app.util.serivices` namespace. The main RPC methods are collected under
+The RPC methods are implemented using a multimethod-like structure via the
+`app.util.services` namespace. The main RPC methods are collected under
 `app.rpc.commands` namespace and exposed under `/api/rpc/command/<cmd-name>`.
 
-The RPC method accepts POST and GET requests indistinctly and uses `Accept`
-header for negotiate the response encoding (which can be transit, the defaut or
-plain json). It also accepts transit (defaut) or json as input, which should be
-indicated using `Content-Type` header.
+The RPC method accepts POST and GET requests indistinctly and uses the `Accept`
+header to negotiate the response encoding (which can be Transit — the default —
+or plain JSON). It also accepts Transit (default) or JSON as input, which should
+be indicated using the `Content-Type` header.
 
 The main convention is: use `get-` prefix on RPC name when we want READ
 operation.
@@ -107,7 +107,7 @@ are config maps with `::ig/ref` for dependencies. Components implement
                   (db/insert! conn :table row)))
 ```
 
-Almost all methods on `app.db` namespace accepts `pool`, `conn` or
+Almost all methods in the `app.db` namespace accept `pool`, `conn`, or
 `cfg` as params.
 
 Migrations live in `src/app/migrations/` as numbered SQL files. They run automatically on startup.
@@ -116,7 +116,7 @@ Migrations live in `src/app/migrations/` as numbered SQL files. They run automat
 ### Error Handling
 
 The exception helpers are defined on Common module, and are available under
-`app.commin.exceptions` namespace.
+`app.common.exceptions` namespace.
 
 Example of raising an exception:
 
@@ -132,10 +132,11 @@ Common types: `:not-found`, `:validation`, `:authorization`, `:conflict`, `:inte
 
 ### Performance Macros (`app.common.data.macros`)
 
-Always prefer these macros over their `clojure.core` equivalents — they compile to faster JavaScript:
+Always prefer these macros over their `clojure.core` equivalents — they provide
+optimized implementations:
 
 ```clojure
-(dm/select-keys m [:a :b])     ;; ~6x faster than core/select-keys
+(dm/select-keys m [:a :b])     ;; faster than core/select-keys
 (dm/get-in obj [:a :b :c])     ;; faster than core/get-in
 (dm/str "a" "b" "c")           ;; string concatenation
 ```

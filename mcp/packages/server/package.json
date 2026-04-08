@@ -38,6 +38,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "@penpot/mcp-common": "workspace:../common",
     "@types/express": "^4.17.0",
     "@types/js-yaml": "^4.0.9",

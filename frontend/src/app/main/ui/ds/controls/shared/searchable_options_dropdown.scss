@@ -1,0 +1,47 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.option-list {
+  --options-dropdown-icon-fg-color: var(--color-foreground-secondary);
+  --options-dropdown-bg-color: var(--color-background-tertiary);
+  --options-dropdown-outline-color: none;
+  --options-dropdown-border-color: var(--color-background-quaternary);
+
+  position: absolute;
+  inset-block-start: $sz-36;
+  inline-size: var(--dropdown-width, 100%);
+  transform: translateX(var(--dropdown-translate-distance, 0));
+  background-color: var(--options-dropdown-bg-color);
+  border-radius: $br-8;
+  border: $b-1 solid var(--options-dropdown-border-color);
+  padding-block: var(--sp-xs);
+  margin-block-end: 0;
+  max-block-size: $sz-400;
+  overflow: hidden auto;
+  z-index: var(--z-index-dropdown);
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.left-align {
+  inset-inline-start: var(--dropdown-offset, 0);
+}
+
+.right-align {
+  inset-inline-end: var(--dropdown-offset, 0);
+}
+
+.option-search {
+  padding: var(--sp-xs);
+}

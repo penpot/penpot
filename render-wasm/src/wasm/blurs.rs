@@ -7,7 +7,7 @@ use crate::{with_current_shape_mut, STATE};
 #[repr(u8)]
 #[allow(dead_code)]
 pub enum RawBlurType {
-    LayerBlur = 0, // odd naming to comply with cljs value
+    LayerBlur = 0,
     BackgroundBlur = 1,
 }
 

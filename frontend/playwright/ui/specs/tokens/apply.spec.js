@@ -4,7 +4,7 @@ import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import {
   setupTokensFileRender,
   setupTypographyTokensFileRender,
-  unfoldTokenTree,
+  unfoldTokenType,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -24,10 +24,9 @@ test.describe("Tokens: Apply token", () => {
       .filter({ hasText: "Button" })
       .click();
 
-    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
-    await tokensTabButton.click();
+    await page.getByRole("tab", { name: "Tokens" }).click();
 
-    unfoldTokenTree(tokensSidebar, "color", "colors.black");
+    await unfoldTokenType(tokensSidebar, "color");
 
     await tokensSidebar
       .getByRole("button", { name: "black" })
@@ -52,17 +51,15 @@ test.describe("Tokens: Apply token", () => {
     await workspacePage.layers.getByTestId("layer-row").nth(1).click();
 
     // Open tokens sections on left sidebar
-    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
-    await tokensTabButton.click();
 
-    // Unfold border radius tokens
-    await page.getByRole("button", { name: "Border Radius 3" }).click();
+    await page.getByRole("tab", { name: "Tokens" }).click();
+
+    await unfoldTokenType(tokensSidebar, "border radius");
     await expect(
-      tokensSidebar.getByRole("button", { name: "borderRadius" }),
-    ).toBeVisible();
-    await tokensSidebar.getByRole("button", { name: "borderRadius" }).click();
-    await expect(
-      tokensSidebar.getByRole("button", { name: "borderRadius.sm" }),
+      tokensSidebar.getByRole("button", {
+        name: "borderRadius.sm",
+        exact: true,
+      }),
     ).toBeVisible();
 
     // Apply border radius token from token panels
@@ -72,7 +69,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Check if border radius sections is visible on right sidebar
     const borderRadiusSection = page.getByRole("region", {
-      name: "border-radius-section",
+      name: "Border radius section",
     });
     await expect(borderRadiusSection).toBeVisible();
 
@@ -84,8 +81,9 @@ test.describe("Tokens: Apply token", () => {
     await brTokenPillSM.click();
 
     // Change token from dropdown
-    const brTokenOptionXl = borderRadiusSection
-      .getByRole("option", { name: "borderRadius.xl" });
+    const brTokenOptionXl = borderRadiusSection.getByRole("option", {
+      name: "borderRadius.xl",
+    });
     await expect(brTokenOptionXl).toBeVisible();
     await brTokenOptionXl.click();
 
@@ -118,13 +116,7 @@ test.describe("Tokens: Apply token", () => {
     await tokensTabButton.click();
 
     // Unfold opacity tokens
-    await page.getByRole("button", { name: "Opacity 3" }).click();
-    await expect(
-      tokensSidebar.getByRole("button", { name: "opacity", exact: true }),
-    ).toBeVisible();
-    await tokensSidebar
-      .getByRole("button", { name: "opacity", exact: true })
-      .click();
+    await unfoldTokenType(tokensSidebar, "opacity");
     await expect(
       tokensSidebar.getByRole("button", { name: "opacity.high" }),
     ).toBeVisible();
@@ -134,7 +126,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Check if opacity sections is visible on right sidebar
     const layerMenuSection = page.getByRole("region", {
-      name: "layer-menu-section",
+      name: "Layer menu section",
     });
     await expect(layerMenuSection).toBeVisible();
 
@@ -151,7 +143,9 @@ test.describe("Tokens: Apply token", () => {
     await detachButton.click();
 
     // Open dropdown from input
-    const dropdownBtn = layerMenuSection.getByRole('button', { name: 'Open token list' })
+    const dropdownBtn = layerMenuSection.getByRole("button", {
+      name: "Open token list",
+    });
     await expect(dropdownBtn).toBeVisible();
     await dropdownBtn.click();
 
@@ -200,12 +194,8 @@ test.describe("Tokens: Apply token", () => {
   test("User adds shadow token with multiple shadows and applies it to shape", async ({
     page,
   }) => {
-    const {
-      tokensUpdateCreateModal,
-      tokensSidebar,
-      workspacePage,
-      tokenContextMenuForToken,
-    } = await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
+    const { tokensUpdateCreateModal, tokensSidebar, workspacePage } =
+      await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -227,8 +217,12 @@ test.describe("Tokens: Apply token", () => {
       await expect(firstShadowFields).toBeVisible();
 
       // Fill in the shadow values
-      const offsetXInput = firstShadowFields.getByRole('textbox', { name: 'X' });
-      const offsetYInput = firstShadowFields.getByRole('textbox', { name: 'Y' });
+      const offsetXInput = firstShadowFields.getByRole("textbox", {
+        name: "X",
+      });
+      const offsetYInput = firstShadowFields.getByRole("textbox", {
+        name: "Y",
+      });
       const blurInput = firstShadowFields.getByRole("textbox", {
         name: "Blur",
       });
@@ -301,8 +295,12 @@ test.describe("Tokens: Apply token", () => {
       await expect(thirdShadowFields).toBeVisible();
 
       // User adds values for the third shadow
-      const thirdOffsetXInput = thirdShadowFields.getByRole('textbox', { name: 'X' });
-      const thirdOffsetYInput = thirdShadowFields.getByRole('textbox', { name: 'Y' });
+      const thirdOffsetXInput = thirdShadowFields.getByRole("textbox", {
+        name: "X",
+      });
+      const thirdOffsetYInput = thirdShadowFields.getByRole("textbox", {
+        name: "Y",
+      });
       const thirdBlurInput = thirdShadowFields.getByRole("textbox", {
         name: "Blur",
       });
@@ -330,10 +328,10 @@ test.describe("Tokens: Apply token", () => {
 
       // Verify that the first shadow kept its values
       const firstOffsetXValue = await firstShadowFields
-        .getByRole('textbox', { name: 'X' })
+        .getByRole("textbox", { name: "X" })
         .inputValue();
       const firstOffsetYValue = await firstShadowFields
-        .getByRole('textbox', { name: 'Y' })
+        .getByRole("textbox", { name: "Y" })
         .inputValue();
       const firstBlurValue = await firstShadowFields
         .getByRole("textbox", { name: "Blur" })
@@ -359,10 +357,10 @@ test.describe("Tokens: Apply token", () => {
       await expect(newSecondShadowFields).toBeVisible();
 
       const secondOffsetXValue = await newSecondShadowFields
-        .getByRole('textbox', { name: 'X' })
+        .getByRole("textbox", { name: "X" })
         .inputValue();
       const secondOffsetYValue = await newSecondShadowFields
-        .getByRole('textbox', { name: 'Y' })
+        .getByRole("textbox", { name: "Y" })
         .inputValue();
       const secondBlurValue = await newSecondShadowFields
         .getByRole("textbox", { name: "Blur" })
@@ -412,10 +410,10 @@ test.describe("Tokens: Apply token", () => {
 
       // Verify first shadow values are still there
       const restoredFirstOffsetX = await firstShadowFields
-        .getByRole('textbox', { name: 'X' })
+        .getByRole("textbox", { name: "X" })
         .inputValue();
       const restoredFirstOffsetY = await firstShadowFields
-        .getByRole('textbox', { name: 'Y' })
+        .getByRole("textbox", { name: "Y" })
         .inputValue();
       const restoredFirstBlur = await firstShadowFields
         .getByRole("textbox", { name: "Blur" })
@@ -435,10 +433,10 @@ test.describe("Tokens: Apply token", () => {
 
       // Verify second shadow values are still there
       const restoredSecondOffsetX = await newSecondShadowFields
-        .getByRole('textbox', { name: 'X' })
+        .getByRole("textbox", { name: "X" })
         .inputValue();
       const restoredSecondOffsetY = await newSecondShadowFields
-        .getByRole('textbox', { name: 'Y' })
+        .getByRole("textbox", { name: "Y" })
         .inputValue();
       const restoredSecondBlur = await newSecondShadowFields
         .getByRole("textbox", { name: "Blur" })
@@ -464,8 +462,6 @@ test.describe("Tokens: Apply token", () => {
       });
       await submitButton.click();
       await expect(tokensUpdateCreateModal).not.toBeVisible();
-
-      unfoldTokenTree(tokensSidebar, "shadow", "primary");
 
       // Verify token appears in sidebar
       const shadowToken = tokensSidebar.getByRole("button", {
@@ -501,7 +497,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
 
-    unfoldTokenTree(tokensSidebar, "dimensions", "dimension.dimension.sm");
+    await unfoldTokenType(tokensSidebar, "dimensions");
 
     // Apply token to width and height token from token panel
     await tokensSidebar.getByRole("button", { name: "dimension.sm" }).click();
@@ -554,7 +550,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
 
-    unfoldTokenTree(tokensSidebar, "dimensions", "dimension.dimension.sm");
+    await unfoldTokenType(tokensSidebar, "dimensions");
 
     // Apply token to width and height token from token panel
     await tokensSidebar
@@ -610,13 +606,13 @@ test.describe("Tokens: Apply token", () => {
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
 
-    unfoldTokenTree(tokensSidebar, "dimensions", "dimension.dimension.sm");
+    await unfoldTokenType(tokensSidebar, "dimensions");
 
     // Apply token to width and height token from token panel
     await tokensSidebar
       .getByRole("button", { name: "dimension.sm" })
       .click({ button: "right" });
-    await tokenContextMenuForToken.getByText("Y").click();
+    await tokenContextMenuForToken.getByText("Y", { exact: true }).click();
 
     // Check if measures sections is visible on right sidebar
     const measuresSection = page.getByRole("region", {
@@ -666,7 +662,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
 
-    unfoldTokenTree(tokensSidebar, "dimensions", "dimension.dimension.xs");
+    await unfoldTokenType(tokensSidebar, "dimensions");
 
     // Apply token to width and height token from token panel
     await tokensSidebar
@@ -677,7 +673,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Check if border radius sections is visible on right sidebar
     const borderRadiusSection = page.getByRole("region", {
-      name: "border-radius-section",
+      name: "Border radius section",
     });
     await expect(borderRadiusSection).toBeVisible();
 
@@ -798,8 +794,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTab = page.getByRole("tab", { name: "Tokens" });
     await expect(tokensTab).toBeVisible();
     await tokensTab.click();
-    await page.getByRole("button", { name: "Dimensions 4" }).click();
-    await page.getByRole("button", { name: "dim", exact: true }).click();
+    await unfoldTokenType(workspace.tokensSidebar, "dimensions");
     const tokensSidebar = workspace.tokensSidebar;
     await expect(
       tokensSidebar.getByRole("button", { name: "dim.md" }),
@@ -870,11 +865,7 @@ test.describe("Tokens: Detach token", () => {
     await tokensTabButton.click();
 
     // Unfold border radius tokens
-    await page.getByRole("button", { name: "Border Radius 3" }).click();
-    await expect(
-      tokensSidebar.getByRole("button", { name: "borderRadius" }),
-    ).toBeVisible();
-    await tokensSidebar.getByRole("button", { name: "borderRadius" }).click();
+    await unfoldTokenType(tokensSidebar, "Border Radius");
     await expect(
       tokensSidebar.getByRole("button", { name: "borderRadius.sm" }),
     ).toBeVisible();
@@ -886,7 +877,7 @@ test.describe("Tokens: Detach token", () => {
 
     // Check if border radius sections is visible on right sidebar
     const borderRadiusSection = page.getByRole("region", {
-      name: "border-radius-section",
+      name: "Border radius section",
     });
     await expect(borderRadiusSection).toBeVisible();
 

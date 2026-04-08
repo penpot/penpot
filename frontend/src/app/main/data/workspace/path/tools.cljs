@@ -8,7 +8,6 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.path :as path]
-   [app.common.types.path.segment :as path.segment]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.edition :as dwe]
@@ -59,7 +58,7 @@
    (process-path-tool
     (when point #{point})
     (fn [content points]
-      (reduce path.segment/make-corner-point content points)))))
+      (reduce path/make-corner-point content points)))))
 
 (defn make-curve
   ([]
@@ -68,22 +67,22 @@
    (process-path-tool
     (when point #{point})
     (fn [content points]
-      (reduce path.segment/make-curve-point content points)))))
+      (reduce path/make-curve-point content points)))))
 
 (defn add-node []
-  (process-path-tool (fn [content points] (path.segment/split-segments content points 0.5))))
+  (process-path-tool (fn [content points] (path/split-segments content points 0.5))))
 
 (defn remove-node []
-  (process-path-tool path.segment/remove-nodes))
+  (process-path-tool path/remove-nodes))
 
 (defn merge-nodes []
-  (process-path-tool path.segment/merge-nodes))
+  (process-path-tool path/merge-nodes))
 
 (defn join-nodes []
-  (process-path-tool path.segment/join-nodes))
+  (process-path-tool path/join-nodes))
 
 (defn separate-nodes []
-  (process-path-tool path.segment/separate-nodes))
+  (process-path-tool path/separate-nodes))
 
 (defn toggle-snap []
   (ptk/reify ::toggle-snap

@@ -33,6 +33,7 @@
 
 .form-modal-title {
   @include t.use-typography("headline-medium");
+
   color: var(--color-foreground-primary);
   display: flex;
   align-items: center;

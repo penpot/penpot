@@ -380,6 +380,18 @@
 
     state))
 
+(defn use-portal-container
+  "Creates a dedicated div container for React portals. The container
+  is appended to document.body on mount and removed on cleanup, preventing
+  removeChild race conditions when multiple portals target the same body."
+  []
+  (let [container (mf/use-memo #(dom/create-element "div"))]
+    (mf/with-effect []
+      (let [body (dom/get-body)]
+        (dom/append-child! body container)
+        #(dom/remove-child! body container)))
+    container))
+
 (defn use-dynamic-grid-item-width
   ([] (use-dynamic-grid-item-width nil))
   ([itemsize]

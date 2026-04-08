@@ -5,7 +5,7 @@
 
 code[class*="language-"],
 pre[class*="language-"] {
-	color: #393A34;
+	color: #121212;
 	font-family: "Consolas", "Bitstream Vera Sans Mono", "Courier New", Courier, monospace;
 	direction: ltr;
 	text-align: left;
@@ -44,17 +44,20 @@ pre[class*="language-"] {
 	padding: 1em;
 	margin: .5em 0;
 	overflow: auto;
-	border: 1px solid #dddddd;
-	background-color: white;
+	border: 0;
+	border-radius: 8px;
+	background-color: #f7f8fa;
 }
 
 /* Inline code */
-:not(pre) > code[class*="language-"] {
+:not(pre) > code[class*="language-"],
+:not(pre) > code {
 	padding: .2em;
 	padding-top: 1px;
 	padding-bottom: 1px;
-	background: #f8f8f8;
-	border: 1px solid #dddddd;
+	background: #f7f8fa;
+	border: 1px solid #dde3e9;
+	border-radius: 4px;
 }
 
 .token.comment,
@@ -89,7 +92,7 @@ pre[class*="language-"] {
 .token.property,
 .token.regex,
 .token.inserted {
-	color: #36acaa;
+	color: #0a9a97;
 }
 
 .token.atrule,

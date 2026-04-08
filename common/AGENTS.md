@@ -1,14 +1,13 @@
 # Penpot Common – Agent Instructions
 
-A shared module with code written in Clojure, ClojureScript and
-JavaScript. Contains multplatform code that can be used and executed
-from frontend, backend or exporter modules. It uses clojure reader
-conditionals for specify platform specific implementation.
+A shared module with code written in Clojure, ClojureScript, and
+JavaScript. Contains multiplatform code that can be used and executed
+from the frontend, backend, or exporter modules. It uses Clojure reader
+conditionals to specify platform-specific implementations.
 
 ## General Guidelines
 
-This is a golden rule for common module development. To ensure
-consistency across the penpot stack, all contributions must adhere to
+To ensure consistency across the Penpot stack, all contributions must adhere to
 these criteria:
 
 ### 1. Testing & Validation
@@ -16,11 +15,11 @@ these criteria:
 If code is added or modified in `src/`, corresponding tests in
 `test/common_tests/` must be added or updated.
 
-* **Environment:** Tests should run in a JS (nodejs) and JVM
+  * **Environment:** Tests should run in both JS (Node.js) and JVM environments.
 * **Location:** Place tests in the `test/common_tests/` directory, following the
   namespace structure of the source code (e.g., `app.common.colors` ->
   `common-tests.colors-test`).
-* **Execution:** The tests should be executed on both: JS (nodejs) and JVM environments
+* **Execution:** Tests should be executed on both JS (Node.js) and JVM environments:
   * **Isolated:**
     * JS: To run a focused ClojureScript unit test: edit the
     `test/common_tests/runner.cljs` to narrow the test suite, then
@@ -37,8 +36,8 @@ If code is added or modified in `src/`, corresponding tests in
 * **Formatting:** All code changes must pass the formatting check
   * Run `pnpm run check-fmt:clj` for CLJ/CLJS/CLJC
   * Run `pnpm run check-fmt:js` for JS
-  * Use the `pnpm run fmt` fix all the formatting issues (`pnpm run
-    fmt:clj` or `pnpm run fmt:js` for isolated formatting fix)
+  * Use `pnpm run fmt` to fix all formatting issues (`pnpm run
+    fmt:clj` or `pnpm run fmt:js` for isolated formatting fix).
 
 ## Code Conventions
 
@@ -50,16 +49,16 @@ namespaces structure:
 - `app.common.types.*` – Shared data types for shapes, files, pages using Malli schemas
 - `app.common.schema` – Malli abstraction layer, exposes the most used functions from malli
 - `app.common.geom.*` – Geometry and shape transformation helpers
-- `app.common.data` – Generic helpers used around all application
-- `app.common.math` – Generic math helpers used around all aplication
+- `app.common.data` – Generic helpers used across the entire application
+- `app.common.math` – Generic math helpers used across the entire application
 - `app.common.json` – Generic JSON encoding/decoding helpers
 - `app.common.data.macros` – Performance macros used everywhere
 
 
 ### Reader Conditionals
 
-We use reader conditionals to target for differentiate an
-implementation depending on the target platform where code should run:
+We use reader conditionals to differentiate implementations depending on the
+target platform where the code runs:
 
 ```clojure
 #?(:clj  (import java.util.UUID)

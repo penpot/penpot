@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use crate::math::{self as math, intersect_rays, Bounds, Matrix, Point, Ray, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, Frame, GridCell, GridData, GridTrack, GridTrackType,
@@ -6,6 +7,7 @@ use crate::shapes::{
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
+
 use std::collections::{HashMap, HashSet, VecDeque};
 
 use super::common::GetBounds;
@@ -704,7 +706,7 @@ pub fn reflow_grid_layout(
     grid_data: &GridData,
     shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
-) -> VecDeque<Modifier> {
+) -> Result<VecDeque<Modifier>> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
     let children: HashSet<Uuid> = shape.children_ids_iter(true).copied().collect();
@@ -748,7 +750,8 @@ pub fn reflow_grid_layout(
         let mut new_width = child_bounds.width();
         if child.is_layout_horizontal_fill() {
             let margin_left = child.layout_item.map(|i| i.margin_left).unwrap_or(0.0);
-            new_width = cell.width - margin_left;
+            let margin_right = child.layout_item.map(|i| i.margin_right).unwrap_or(0.0);
+            new_width = cell.width - margin_left - margin_right;
             let min_width = child.layout_item.and_then(|i| i.min_w).unwrap_or(MIN_SIZE);
             let max_width = child.layout_item.and_then(|i| i.max_w).unwrap_or(MAX_SIZE);
             new_width = new_width.clamp(min_width, max_width);
@@ -757,7 +760,8 @@ pub fn reflow_grid_layout(
         let mut new_height = child_bounds.height();
         if child.is_layout_vertical_fill() {
             let margin_top = child.layout_item.map(|i| i.margin_top).unwrap_or(0.0);
-            new_height = cell.height - margin_top;
+            let margin_bottom = child.layout_item.map(|i| i.margin_bottom).unwrap_or(0.0);
+            new_height = cell.height - margin_top - margin_bottom;
             let min_height = child.layout_item.and_then(|i| i.min_h).unwrap_or(MIN_SIZE);
             let max_height = child.layout_item.and_then(|i| i.max_h).unwrap_or(MAX_SIZE);
             new_height = new_height.clamp(min_height, max_height);
@@ -825,7 +829,9 @@ pub fn reflow_grid_layout(
 
         let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
-        let parent_transform_inv = &parent_transform.invert().unwrap();
+        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
+            "Failed to invert parent transform".to_string(),
+        ))?;
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
 
         let mut scale = Matrix::scale((scale_width, scale_height));
@@ -839,5 +845,5 @@ pub fn reflow_grid_layout(
         bounds.insert(shape.id, layout_bounds_after);
     }
 
-    result
+    Ok(result)
 }

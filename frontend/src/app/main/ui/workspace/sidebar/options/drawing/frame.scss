@@ -10,11 +10,13 @@
 
 .presets {
   @include sidebar.option-grid-structure;
+
   grid-column: 1 / -1;
 }
 
 .presets-wrapper {
-  @extend .asset-element;
+  @extend %asset-element;
+
   position: relative;
   grid-column: span 6;
   display: flex;
@@ -24,9 +26,12 @@
 
   .collapsed-icon {
     @include deprecated.flexCenter;
+
     cursor: pointer;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--icon-foreground);
       transform: rotate(90deg);
     }
@@ -45,6 +50,7 @@
 
 .select-name {
   @include deprecated.bodySmallTypography;
+
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -53,19 +59,24 @@
 }
 
 .custom-select-dropdown {
-  @extend .dropdown-wrapper;
+  @extend %dropdown-wrapper;
+
   margin-top: deprecated.$s-2;
   max-height: 70vh;
   width: deprecated.$s-252;
+
   .dropdown-element {
-    @extend .dropdown-element-base;
+    @extend %dropdown-element-base;
+
     .name-wrapper {
       display: flex;
       gap: deprecated.$s-8;
       flex-grow: 1;
+
       .preset-name {
         color: var(--menu-foreground-color-rest);
       }
+
       .preset-size {
         color: var(--menu-foreground-color-rest);
       }
@@ -73,8 +84,10 @@
 
     .check-icon {
       @include deprecated.flexCenter;
+
       svg {
-        @extend .button-icon-small;
+        @extend %button-icon-small;
+
         stroke: var(--icon-foreground);
       }
     }
@@ -82,6 +95,7 @@
     &.disabled {
       pointer-events: none;
       cursor: default;
+
       .preset-name {
         color: var(--menu-foreground-color);
       }
@@ -91,6 +105,7 @@
       .name-wrapper .preset-name {
         color: var(--menu-foreground-color-hover);
       }
+
       .check-icon svg {
         stroke: var(--menu-foreground-color-hover);
       }
@@ -98,9 +113,11 @@
 
     &:hover {
       background-color: var(--menu-background-color-hover);
+
       .name-wrapper .preset-name {
         color: var(--menu-foreground-color-hover);
       }
+
       .check-icon svg {
         stroke: var(--menu-foreground-color-hover);
       }

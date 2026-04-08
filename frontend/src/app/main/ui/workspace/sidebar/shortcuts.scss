@@ -9,6 +9,7 @@
 .shortcuts {
   display: grid;
   grid-template-rows: auto auto 1fr;
+
   // TODO: Fix this once we start implementing the DS.
   //       We should not be doign these hardcoded calc's.
   height: calc(100vh - #{deprecated.$s-60});
@@ -28,6 +29,7 @@
 
 .not-found {
   @include deprecated.bodySmallTypography;
+
   color: var(--empty-message-foreground-color);
   margin: deprecated.$s-12;
 }
@@ -44,6 +46,7 @@
   .section-title,
   .subsection-title {
     @include deprecated.uppercaseTitleTipography;
+
     display: flex;
     align-items: center;
     margin: 0;
@@ -64,9 +67,11 @@
     text-transform: none;
     padding-left: deprecated.$s-12;
   }
+
   .subsection-menu {
     margin-bottom: deprecated.$s-4;
   }
+
   .sub-menu {
     margin-bottom: deprecated.$s-4;
 
@@ -83,23 +88,28 @@
 
       .command-name {
         @include deprecated.bodySmallTypography;
+
         margin-left: deprecated.$s-2;
         color: var(--pill-foreground-color);
       }
+
       .keys {
         @include deprecated.flexCenter;
+
         gap: deprecated.$s-2;
         color: var(--pill-foreground-color);
 
         .key {
           @include deprecated.bodySmallTypography;
           @include deprecated.flexCenter;
+
           text-transform: capitalize;
           height: deprecated.$s-20;
           padding: deprecated.$s-2 deprecated.$s-6;
           border-radius: deprecated.$s-6;
           background-color: var(--menu-shortcut-background-color);
         }
+
         .space {
           margin: 0 deprecated.$s-2;
         }

@@ -37,6 +37,7 @@
 (s/def ::suffix ::us/string)
 (s/def ::type ::us/keyword)
 (s/def ::wait ::us/boolean)
+(s/def ::is-wasm ::us/boolean)
 
 (s/def ::export
   (s/keys :req-un [::page-id ::file-id ::object-id ::type ::suffix ::scale ::name]
@@ -47,7 +48,7 @@
 
 (s/def ::params
   (s/keys :req-un [::exports ::profile-id]
-          :opt-un [::wait ::name ::skip-children ::force-multiple]))
+          :opt-un [::wait ::name ::skip-children ::force-multiple ::is-wasm]))
 
 (defn handler
   [{:keys [:request/auth-token] :as exchange} {:keys [exports force-multiple] :as params}]
@@ -61,9 +62,9 @@
       (handle-multiple-export exchange (assoc params :exports exports)))))
 
 (defn- handle-single-export
-  [{:keys [:request/auth-token] :as exchange} {:keys [export name skip-children] :as params}]
+  [{:keys [:request/auth-token] :as exchange} {:keys [export name skip-children is-wasm] :as params}]
   (let [resource (rsc/create (:type export) (or name (:name export)))
-        export   (assoc export :skip-children skip-children)]
+        export   (assoc export :skip-children skip-children :is-wasm is-wasm)]
 
     (->> (rd/render export
                     (fn [{:keys [path] :as object}]
@@ -80,7 +81,7 @@
                    (p/rejected cause))))))
 
 (defn- handle-multiple-export
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports wait profile-id name] :as params}]
+  [{:keys [:request/auth-token] :as exchange} {:keys [exports wait profile-id name is-wasm] :as params}]
   (let [resource    (rsc/create :zip (or name (-> exports first :name)))
         total       (count exports)
         topic       (str profile-id)
@@ -111,7 +112,7 @@
                       (rsc/add-to-zip zip path (str/replace filename sanitize-file-regex "_")))
 
         proc        (->> exports
-                         (map (fn [export] (rd/render export append)))
+                         (map (fn [export] (rd/render (assoc export :is-wasm is-wasm) append)))
                          (p/all)
                          (p/mcat (fn [_] (rsc/close-zip zip)))
                          (p/fmap (constantly resource))

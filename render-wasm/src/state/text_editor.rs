@@ -103,9 +103,68 @@ pub struct TextEditorTheme {
     pub cursor_color: Color,
 }
 
+pub struct TextComposition {
+    pub previous: String,
+    pub current: String,
+    pub is_composing: bool,
+}
+
+impl TextComposition {
+    pub fn new() -> Self {
+        Self {
+            previous: String::new(),
+            current: String::new(),
+            is_composing: false,
+        }
+    }
+
+    pub fn start(&mut self) -> bool {
+        if self.is_composing {
+            return false;
+        }
+        self.is_composing = true;
+        self.previous = String::new();
+        self.current = String::new();
+        true
+    }
+
+    pub fn update(&mut self, text: &str) -> bool {
+        if !self.is_composing {
+            self.is_composing = true;
+        }
+        self.previous = self.current.clone();
+        self.current = text.to_owned();
+        true
+    }
+
+    pub fn end(&mut self) -> bool {
+        if !self.is_composing {
+            return false;
+        }
+        self.is_composing = false;
+        true
+    }
+
+    pub fn get_selection(&self, selection: &TextSelection) -> TextSelection {
+        if self.previous.is_empty() {
+            return *selection;
+        }
+
+        let focus = selection.focus;
+        let previous_len = self.previous.chars().count();
+        let anchor = TextPositionWithAffinity::new_without_affinity(
+            focus.paragraph,
+            focus.offset + previous_len,
+        );
+
+        TextSelection { anchor, focus }
+    }
+}
+
 pub struct TextEditorState {
     pub theme: TextEditorTheme,
     pub selection: TextSelection,
+    pub composition: TextComposition,
     pub is_active: bool,
     // This property indicates that we've started
     // selecting something with the pointer.
@@ -125,6 +184,7 @@ impl TextEditorState {
                 cursor_color: CURSOR_COLOR,
             },
             selection: TextSelection::new(),
+            composition: TextComposition::new(),
             is_active: false,
             is_pointer_selection_active: false,
             active_shape_id: None,

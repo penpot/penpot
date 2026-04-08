@@ -200,7 +200,7 @@ msgid "branding-illustrations-marketing-pieces"
 msgstr "...ब्रांडिंग, चित्रण, मार्केटिंग सामग्री आदि।"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "यह token मौजूद नहीं है या हटा दिया गया है।"
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
@@ -1253,7 +1253,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "token सूची खोलें"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
+msgid "token-actions.detach-token"
 msgstr "token अलग करें"
 
 #: src/app/main/data/auth.cljs:339

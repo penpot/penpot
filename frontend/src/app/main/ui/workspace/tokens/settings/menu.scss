@@ -5,19 +5,18 @@
 // Copyright (c) KALEIDOS INC
 
 @use "ds/spacing.scss" as *;
-
 @use "refactor/common-refactor.scss" as deprecated;
 
 .setting-modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .setting-modal {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
 }
 
 .close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .settings-modal-layout {

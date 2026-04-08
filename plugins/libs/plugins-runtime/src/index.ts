@@ -8,6 +8,9 @@ import {
   ɵunloadPlugin,
 } from './lib/load-plugin.js';
 
+// Export the plugin error checker so the frontend can identify plugin errors
+export { isPluginError } from './lib/create-sandbox.js';
+
 import type { Context } from '@penpot/plugin-types';
 
 console.log('%c[PLUGINS] Loading plugin system', 'color: #008d7c');

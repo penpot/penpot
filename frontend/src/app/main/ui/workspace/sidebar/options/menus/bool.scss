@@ -9,6 +9,7 @@
 
 .boolean-options {
   @include sidebar.option-grid-structure;
+
   height: var(--sp-xxxl);
 }
 
@@ -19,26 +20,31 @@
 }
 
 .flatten-button {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: deprecated.$s-32;
   width: deprecated.$s-32;
   border-radius: deprecated.$br-8;
   grid-column: 5 / span 1;
+
   --flatten-icon-foreground-color: var(--icon-foreground);
 
   &.disabled {
     cursor: default;
+
     --flatten-icon-foreground-color: var(--button-foreground-color-disabled);
 
     &:hover {
       background-color: var(--panel-background-color);
+
       --flatten-icon-foreground-color: var(--button-foreground-color-disabled);
     }
   }
 }
 
 .flatten-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--flatten-icon-foreground-color);
 }
 

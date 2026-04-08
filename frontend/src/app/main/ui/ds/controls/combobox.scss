@@ -26,6 +26,7 @@
   }
 
   @include use-typography("body-small");
+
   position: relative;
   display: grid;
   grid-template-rows: auto;
@@ -40,7 +41,6 @@
   height: $sz-32;
   width: 100%;
   padding: var(--sp-s);
-  border: none;
   border-radius: $br-8;
   outline: $b-1 solid var(--combobox-outline-color);
   border: $b-1 solid var(--combobox-border-color);
@@ -68,6 +68,7 @@
   all: unset;
 
   @include use-typography("body-small");
+
   background-color: transparent;
   overflow: hidden;
   text-align: left;
@@ -88,6 +89,7 @@
 
 .disabled {
   cursor: default;
+
   --combobox-background-color: var(--color-background-primary);
   --combobox-border-color: var(--color-background-quaternary);
   --combobox-text-color: var(--color-foreground-secondary);

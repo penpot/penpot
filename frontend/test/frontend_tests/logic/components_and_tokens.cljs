@@ -23,11 +23,15 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
    [frontend-tests.tokens.helpers.state :as tohs]
    [frontend-tests.tokens.helpers.tokens :as toht]))
 
 (t/use-fixtures :each
-  {:before thp/reset-idmap!})
+  {:before (fn []
+             (thp/reset-idmap!)
+             (thw/setup-wasm-mocks!))
+   :after  thw/teardown-wasm-mocks!})
 
 (defn- setup-base-file
   []
@@ -141,7 +145,7 @@
           events [(dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
-                                     :on-update-shape dwta/update-shape-radius-all})]
+                                     :on-update-shape dwta/update-shape-radius})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
@@ -249,11 +253,11 @@
           events [(dwta/apply-token {:shape-ids [(cthi/id :c-frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
-                                     :on-update-shape dwta/update-shape-radius-all})
+                                     :on-update-shape dwta/update-shape-radius})
                   (dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-3")
-                                     :on-update-shape dwta/update-shape-radius-all})]
+                                     :on-update-shape dwta/update-shape-radius})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
@@ -293,7 +297,7 @@
                   (dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-3")
-                                     :on-update-shape dwta/update-shape-radius-all})]
+                                     :on-update-shape dwta/update-shape-radius})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
@@ -426,7 +430,10 @@
                          (t/is (mth/close? (get c-frame1' :width) 200))
                          (t/is (mth/close? (get c-frame1' :height) 200))
 
-                         (t/is (empty? (:touched c-frame1'))))))))]
+                         (t/is (empty? (:touched c-frame1')))
+
+                         (t/testing "WASM mocks were exercised"
+                           (t/is (pos? (thw/call-count :propagate-modifiers)))))))))]
 
       (tohs/run-store-async
        store step2 events identity))))

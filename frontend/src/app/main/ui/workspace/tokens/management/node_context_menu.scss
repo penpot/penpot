@@ -34,7 +34,7 @@
   background-color: var(--color-background-tertiary);
   max-block-size: 100vh;
   overflow-y: auto;
-  box-shadow: 0px 0px $sz-12 0px var(--menu-shadow-color);
+  box-shadow: 0 0 $sz-12 0 var(--menu-shadow-color);
 }
 
 .token-node-context-menu-action {
@@ -43,6 +43,7 @@
   --context-menu-item-border-color: none;
 
   @include t.use-typography("body-small");
+
   appearance: none;
   background: var(--context-menu-item-bg-color);
   border: $b-1 solid var(--context-menu-item-border-color);

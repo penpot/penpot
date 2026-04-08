@@ -21,13 +21,13 @@
 
 .frame-flow-badge-content {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-xs);
   border-radius: $br-6;
-  padding-inline-start: var(--sp-xs);
-  padding-inline-end: var(--sp-s);
+  padding-inline: var(--sp-xs) var(--sp-s);
   height: var(--sp-xxl);
   background-color: var(--frame-flow-badge-background-color);
   color: var(--frame-flow-badge-foreground-color);
@@ -47,6 +47,7 @@
 
 .frame-title-label {
   @include t.use-typography("body-small");
+
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
@@ -56,6 +57,7 @@
 
 .frame-title-input {
   @include t.use-typography("body-small");
+
   flex-grow: 1;
   width: 100%;
   max-width: initial;
@@ -73,6 +75,7 @@
 
   cursor: pointer;
   fill: var(--button-add-background-color);
+
   &:hover {
     --button-add-background-color: var(--button-add-background-color-hover);
   }

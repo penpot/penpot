@@ -214,6 +214,7 @@
           (update state :workspace-presence dissoc session-id)
           (update state :workspace-presence update-presence))))))
 
+
 (defn handle-pointer-update
   [{:keys [page-id session-id position zoom zoom-inverse vbox vport] :as msg}]
   (ptk/reify ::handle-pointer-update

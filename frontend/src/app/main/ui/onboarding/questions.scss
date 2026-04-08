@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
@@ -15,8 +15,7 @@
   max-height: fit-content;
   width: fit-content;
   padding-inline: deprecated.$s-100;
-  padding-block-start: deprecated.$s-40;
-  padding-block-end: deprecated.$s-72;
+  padding-block: deprecated.$s-40 deprecated.$s-72;
   border-radius: deprecated.$br-8;
   border: deprecated.$s-2 solid var(--modal-border-color);
   background-color: var(--modal-background-color);
@@ -31,20 +30,22 @@
 // STEP CONTAINER
 .paginator {
   @include deprecated.smallTitleTipography;
+
   height: deprecated.$s-20;
   text-align: right;
   color: var(--modal-text-foreground-color);
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
+
 .next-button {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 }
 
 .prev-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }
 
 .radio-btns label,
@@ -62,6 +63,7 @@
 
 .modal-title {
   @include deprecated.bigTitleTipography;
+
   color: var(--modal-title-foreground-color);
   min-height: deprecated.$s-32;
   margin-block: auto;
@@ -69,6 +71,7 @@
 
 .modal-subtitle {
   @include deprecated.bodyLargeTypography;
+
   color: var(--modal-title-foreground-color);
   margin: 0;
   padding: 0;
@@ -76,6 +79,7 @@
 
 .modal-text {
   @include deprecated.bodyLargeTypography;
+
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
@@ -88,6 +92,7 @@
   max-width: deprecated.$s-540;
   width: deprecated.$s-540;
 }
+
 .step-2 {
   grid-template-rows: deprecated.$s-20 auto auto deprecated.$s-32;
 }
@@ -121,8 +126,7 @@
   display: grid;
   grid-template-rows: 1fr 1fr;
   grid-template-columns: deprecated.$s-92 deprecated.$s-92 deprecated.$s-92;
-  row-gap: deprecated.$s-16;
-  column-gap: deprecated.$s-24;
+  gap: deprecated.$s-16 deprecated.$s-24;
   justify-content: center;
 }
 

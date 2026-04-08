@@ -366,11 +366,18 @@ export function getInlineStyle(state, blockKey, offset) {
 const NEWLINE_REGEX = /\r\n?|\n/g;
 
 function splitTextIntoTextBlocks(text) {
+  if (text == null) {
+    return [];
+  }
   return text.split(NEWLINE_REGEX);
 }
 
 export function insertText(state, text, attrs, inlineStyles) {
   const blocks = splitTextIntoTextBlocks(text);
+
+  if (blocks.length === 0) {
+    return state;
+  }
 
   const character = CharacterMetadata.create({style: OrderedSet(inlineStyles)});
 

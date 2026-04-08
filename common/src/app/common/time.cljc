@@ -90,12 +90,21 @@
      (Clock/fixed ^Instant (inst instant)
                   ^ZoneId (ZoneId/of "Z"))))
 
-
-
 (defn now
   []
   #?(:clj (Instant/now *clock*)
      :cljs (new js/Date)))
+
+#?(:clj
+   (defn tick-millis-clock
+     "Alternate clock with a resolution of milliseconds instead of the default nanoseconds of the Java clock.
+      This may be useful if the instant is going to be serialized to DB with fressian (that does not have
+      resolution enough to store all precission) and need to compare the deserialized value for equality.
+
+      You can replace the global clock (for example in unit tests) with
+        (alter-var-root #'ct/*clock* (constantly (ct/tick-millis-clock)))"
+     []
+     (Clock/tickMillis (ZoneId/of "Z"))))
 
 ;; --- DURATION
 

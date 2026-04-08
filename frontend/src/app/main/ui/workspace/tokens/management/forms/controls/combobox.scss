@@ -12,5 +12,6 @@
   position: fixed;
   max-block-size: $sz-400;
   overflow-y: auto;
-  @include custom-scrollbar();
+
+  @include custom-scrollbar;
 }

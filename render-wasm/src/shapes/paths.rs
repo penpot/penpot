@@ -114,6 +114,109 @@ impl Path {
         Path::new(segments)
     }
 
+    /// Like `from_skia_path` but properly converts conics to cubic beziers
+    /// (using Skia's conic-to-quad + quad-to-cubic elevation). Use this when
+    /// accurate curve conversion matters (e.g. stroke-to-path on circles).
+    pub fn from_skia_path_accurate(path: skia::Path) -> Self {
+        let verbs = path.verbs();
+        let points = path.points();
+        let conic_weights = path.conic_weights();
+
+        let mut segments = Vec::new();
+        let mut current_point = 0;
+        let mut current_conic = 0;
+        let mut last_point = skia::Point::new(0.0, 0.0);
+
+        for verb in verbs {
+            match verb {
+                skia::PathVerb::Move => {
+                    let p = points[current_point];
+                    segments.push(Segment::MoveTo((p.x, p.y)));
+                    last_point = p;
+                    current_point += 1;
+                }
+                skia::PathVerb::Line => {
+                    let p = points[current_point];
+                    segments.push(Segment::LineTo((p.x, p.y)));
+                    last_point = p;
+                    current_point += 1;
+                }
+                skia::PathVerb::Quad => {
+                    let ctrl = points[current_point];
+                    let end = points[current_point + 1];
+                    let cp1x = last_point.x + (2.0 / 3.0) * (ctrl.x - last_point.x);
+                    let cp1y = last_point.y + (2.0 / 3.0) * (ctrl.y - last_point.y);
+                    let cp2x = end.x + (2.0 / 3.0) * (ctrl.x - end.x);
+                    let cp2y = end.y + (2.0 / 3.0) * (ctrl.y - end.y);
+                    segments.push(Segment::CurveTo((
+                        (cp1x, cp1y),
+                        (cp2x, cp2y),
+                        (end.x, end.y),
+                    )));
+                    last_point = end;
+                    current_point += 2;
+                }
+                skia::PathVerb::Conic => {
+                    let ctrl = points[current_point];
+                    let end = points[current_point + 1];
+                    let w = conic_weights[current_conic];
+                    current_conic += 1;
+
+                    // pow2=0: 1 quad per conic. A circle (4 conics) becomes
+                    // 4 cubics, matching the standard bezier approximation.
+                    const POW2: usize = 0;
+                    let quad_count = 1 << POW2;
+                    let pts_count = 1 + 2 * quad_count;
+                    let mut quad_pts = vec![skia::Point::default(); pts_count];
+                    if skia::Path::convert_conic_to_quads(
+                        last_point,
+                        ctrl,
+                        end,
+                        w,
+                        &mut quad_pts,
+                        POW2,
+                    )
+                    .is_some()
+                    {
+                        let mut qp = last_point;
+                        for i in 0..quad_count {
+                            let qctrl = quad_pts[1 + i * 2];
+                            let qend = quad_pts[2 + i * 2];
+                            let cp1x = qp.x + (2.0 / 3.0) * (qctrl.x - qp.x);
+                            let cp1y = qp.y + (2.0 / 3.0) * (qctrl.y - qp.y);
+                            let cp2x = qend.x + (2.0 / 3.0) * (qctrl.x - qend.x);
+                            let cp2y = qend.y + (2.0 / 3.0) * (qctrl.y - qend.y);
+                            segments.push(Segment::CurveTo((
+                                (cp1x, cp1y),
+                                (cp2x, cp2y),
+                                (qend.x, qend.y),
+                            )));
+                            qp = qend;
+                        }
+                        last_point = qp;
+                    } else {
+                        segments.push(Segment::LineTo((end.x, end.y)));
+                        last_point = end;
+                    }
+                    current_point += 2;
+                }
+                skia::PathVerb::Cubic => {
+                    let p1 = points[current_point];
+                    let p2 = points[current_point + 1];
+                    let p3 = points[current_point + 2];
+                    segments.push(Segment::CurveTo(((p1.x, p1.y), (p2.x, p2.y), (p3.x, p3.y))));
+                    last_point = p3;
+                    current_point += 3;
+                }
+                skia::PathVerb::Close => {
+                    segments.push(Segment::Close);
+                }
+            }
+        }
+
+        Path::new(segments)
+    }
+
     pub fn to_skia_path(&self) -> skia::Path {
         self.skia_path.snapshot()
     }

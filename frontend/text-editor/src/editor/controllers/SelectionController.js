@@ -278,19 +278,30 @@ export class SelectionController extends EventTarget {
       // FIXME: I don't like this approximation. Having to iterate nodes twice
       // is bad for performance. I think we need another way of "computing"
       // the cascade.
-      for (const textNode of this.#textNodeIterator.iterateFrom(
-        startNode,
-        endNode,
-      )) {
+      const textNodesInRange = [
+        ...this.#textNodeIterator.iterateFrom(startNode, endNode),
+      ];
+      for (const textNode of textNodesInRange) {
         const paragraph = textNode.parentElement.parentElement;
         this.#applyStylesFromElementToCurrentStyle(paragraph);
       }
-      for (const textNode of this.#textNodeIterator.iterateFrom(
-        startNode,
-        endNode,
-      )) {
-        const textSpan = textNode.parentElement;
-        this.#mergeStylesFromElementToCurrentStyle(textSpan);
+      // Empty trailing text runs (length 0) often carry paragraph fallback styles
+      // (e.g. font-size 0) and are not user-visible; merging them with real text
+      // yields false "mixed" in the sidebar. Skip empty nodes when the selection
+      // also includes non-empty text; if everything is empty, keep prior behavior.
+      const nonEmptyTextNodes = textNodesInRange.filter(
+        (textNode) => textNode.length > 0,
+      );
+      const spanMergeNodes =
+        nonEmptyTextNodes.length > 0 ? nonEmptyTextNodes : textNodesInRange;
+
+      if (spanMergeNodes.length > 0) {
+        const firstTextSpan = spanMergeNodes[0].parentElement;
+        this.#applyStylesFromElementToCurrentStyle(firstTextSpan);
+        for (let i = 1; i < spanMergeNodes.length; i++) {
+          const textSpan = spanMergeNodes[i].parentElement;
+          this.#mergeStylesFromElementToCurrentStyle(textSpan);
+        }
       }
     }
     return this;
@@ -403,7 +414,12 @@ export class SelectionController extends EventTarget {
       this.#updateCurrentStyle(textSpan);
     } else {
       // SELECTION.
-      this.#updateCurrentStyleFrom(this.#anchorNode, this.#focusNode);
+      // Use range boundaries normalized to text nodes, not anchor/focus.
+      // Firefox may set anchorNode on the paragraph element and focusNode on a
+      // text node for word selection; passing those to #updateCurrentStyleFrom
+      // breaks TextNodeIterator and yields wrong styles (e.g. default 14px).
+      const { startNode, endNode } = this.getRanges();
+      this.#updateCurrentStyleFrom(startNode, endNode);
     }
     this.dispatchEvent(
       new CustomEvent("stylechange", {
@@ -956,7 +972,7 @@ export class SelectionController extends EventTarget {
    * @type {boolean}
    */
   get isTextFocus() {
-    return this.focusNode.nodeType === Node.TEXT_NODE;
+    return this.focusNode != null && this.focusNode.nodeType === Node.TEXT_NODE;
   }
 
   /**
@@ -965,7 +981,9 @@ export class SelectionController extends EventTarget {
    * @type {boolean}
    */
   get isTextAnchor() {
-    return this.anchorNode.nodeType === Node.TEXT_NODE;
+    return (
+      this.anchorNode != null && this.anchorNode.nodeType === Node.TEXT_NODE
+    );
   }
 
   /**
@@ -2030,6 +2048,18 @@ export class SelectionController extends EventTarget {
 
         this.#textNodeIterator.nextNode();
       } while (this.#textNodeIterator.currentNode);
+    } else {
+      // Empty paragraph uses a text span with <br> only (no text node). The
+      // selection is then on the line-break element, not a TEXT_NODE, so none
+      // of the branches above run — only setRootStyles applied. Paragraph
+      // styles (e.g. text-align) must still be applied before the user types.
+      const paragraph = this.startParagraph;
+      if (paragraph) {
+        setParagraphStyles(paragraph, newStyles);
+        for (const textSpan of paragraph.children) {
+          setTextSpanStyles(textSpan, newStyles);
+        }
+      }
     }
     return this.#notifyStyleChange();
   }

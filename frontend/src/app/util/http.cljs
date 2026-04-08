@@ -106,10 +106,9 @@
            (p/catch
             (fn [cause]
               (vreset! abortable? false)
-              (when-not @unsubscribed?
+              (when-not (or @unsubscribed? (= (.-name ^js cause) "AbortError"))
                 (let [error (ex-info (ex-message cause)
-                                     {:type :internal
-                                      :code :unable-to-fetch
+                                     {:type :network
                                       :hint "unable to perform fetch operation"
                                       :uri uri
                                       :headers headers}
@@ -127,11 +126,17 @@
        (fn []
          (vreset! unsubscribed? true)
          (when @abortable?
-           ;; Provide an explicit reason so that the resulting AbortError carries
-           ;; a meaningful message instead of the browser default
-           ;; "signal is aborted without reason".
-           (.abort ^js controller (ex-info (str "fetch to '" uri "' is aborted")
-                                           {:uri uri}))))))))
+           ;; Do NOT pass a custom reason to .abort(): browsers that support
+           ;; AbortController reason (Chrome 98+, Firefox 97+) would reject
+           ;; the fetch promise with the supplied value directly.  When that
+           ;; value is a ClojureScript ExceptionInfo its `.name` property is
+           ;; "Error", not "AbortError", which defeats every existing guard
+           ;; that checks `(= (.-name cause) "AbortError")`.  Calling .abort
+           ;; without a reason always produces a native DOMException whose
+           ;; `.name` is "AbortError", which is correctly recognised and
+           ;; suppressed by both the p/catch handler and the global
+           ;; unhandled-exception filter.
+           (.abort ^js controller)))))))
 
 (defn response->map
   [response]

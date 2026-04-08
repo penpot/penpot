@@ -1,11 +1,10 @@
+use crate::error::{Error, Result};
 use crate::mem;
-use macros::wasm_error;
-// use crate::mem::SerializableResult;
-use crate::error::Error;
 use crate::uuid::Uuid;
 use crate::with_state_mut;
 use crate::STATE;
 use crate::{shapes::ImageFill, utils::uuid_from_u32_quartet};
+use macros::wasm_error;
 
 const FLAG_KEEP_ASPECT_RATIO: u8 = 1 << 0;
 const IMAGE_IDS_SIZE: usize = 32;
@@ -50,6 +49,7 @@ pub struct ShapeImageIds {
 
 impl From<[u8; IMAGE_IDS_SIZE]> for ShapeImageIds {
     fn from(bytes: [u8; IMAGE_IDS_SIZE]) -> Self {
+        // FIXME: this should probably be a try_from instead
         let shape_id = Uuid::try_from(&bytes[0..16]).unwrap();
         let image_id = Uuid::try_from(&bytes[16..32]).unwrap();
         ShapeImageIds { shape_id, image_id }
@@ -57,9 +57,9 @@ impl From<[u8; IMAGE_IDS_SIZE]> for ShapeImageIds {
 }
 
 impl TryFrom<Vec<u8>> for ShapeImageIds {
-    type Error = &'static str;
+    type Error = Error;
 
-    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+    fn try_from(value: Vec<u8>) -> Result<Self> {
         let mut arr = [0u8; IMAGE_IDS_SIZE];
         arr.copy_from_slice(&value);
         Ok(ShapeImageIds::from(arr))
@@ -68,13 +68,16 @@ impl TryFrom<Vec<u8>> for ShapeImageIds {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn store_image() -> crate::error::Result<()> {
+pub extern "C" fn store_image() -> Result<()> {
     let bytes = mem::bytes();
-    let ids = ShapeImageIds::try_from(bytes[0..IMAGE_IDS_SIZE].to_vec()).unwrap();
+    let ids = ShapeImageIds::try_from(bytes[0..IMAGE_IDS_SIZE].to_vec())?;
 
     // Read is_thumbnail flag (4 bytes as u32)
     let is_thumbnail_bytes = &bytes[IMAGE_IDS_SIZE..IMAGE_HEADER_SIZE];
-    let is_thumbnail_value = u32::from_le_bytes(is_thumbnail_bytes.try_into().unwrap());
+    let is_thumbnail_value =
+        u32::from_le_bytes(is_thumbnail_bytes.try_into().map_err(|_| {
+            Error::CriticalError("Invalid bytes for is_thumbnail flag".to_string())
+        })?);
     let is_thumbnail = is_thumbnail_value != 0;
 
     let image_bytes = &bytes[IMAGE_HEADER_SIZE..];
@@ -104,9 +107,10 @@ pub extern "C" fn store_image() -> crate::error::Result<()> {
 /// - bytes 44-47: height (i32)
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn store_image_from_texture() -> crate::error::Result<()> {
+pub extern "C" fn store_image_from_texture() -> Result<()> {
     let bytes = mem::bytes();
 
+    // FIXME: where does this 48 come from?
     if bytes.len() < 48 {
         // FIXME: Review if this should be an critical or a recoverable error.
         eprintln!("store_image_from_texture: insufficient data");
@@ -116,23 +120,41 @@ pub extern "C" fn store_image_from_texture() -> crate::error::Result<()> {
         ));
     }
 
-    let ids = ShapeImageIds::try_from(bytes[0..IMAGE_IDS_SIZE].to_vec()).unwrap();
+    let ids = ShapeImageIds::try_from(bytes[0..IMAGE_IDS_SIZE].to_vec())
+        .map_err(|_| Error::CriticalError("Invalid image ids".to_string()))?;
+
+    // FIXME: read bytes in a safe way
 
     // Read is_thumbnail flag (4 bytes as u32)
     let is_thumbnail_bytes = &bytes[IMAGE_IDS_SIZE..IMAGE_HEADER_SIZE];
-    let is_thumbnail_value = u32::from_le_bytes(is_thumbnail_bytes.try_into().unwrap());
+    let is_thumbnail_value =
+        u32::from_le_bytes(is_thumbnail_bytes.try_into().map_err(|_| {
+            Error::CriticalError("Invalid bytes for is_thumbnail flag".to_string())
+        })?);
     let is_thumbnail = is_thumbnail_value != 0;
 
     // Read GL texture ID (4 bytes as u32)
     let texture_id_bytes = &bytes[36..40];
-    let texture_id = u32::from_le_bytes(texture_id_bytes.try_into().unwrap());
+    let texture_id = u32::from_le_bytes(
+        texture_id_bytes
+            .try_into()
+            .map_err(|_| Error::CriticalError("Invalid bytes for texture id".to_string()))?,
+    );
 
     // Read width and height (8 bytes as two i32s)
     let width_bytes = &bytes[40..44];
-    let width = i32::from_le_bytes(width_bytes.try_into().unwrap());
+    let width = i32::from_le_bytes(
+        width_bytes
+            .try_into()
+            .map_err(|_| Error::CriticalError("Invalid bytes for width".to_string()))?,
+    );
 
     let height_bytes = &bytes[44..48];
-    let height = i32::from_le_bytes(height_bytes.try_into().unwrap());
+    let height = i32::from_le_bytes(
+        height_bytes
+            .try_into()
+            .map_err(|_| Error::CriticalError("Invalid bytes for height".to_string()))?,
+    );
 
     with_state_mut!(state, {
         if let Err(msg) = state.render_state_mut().add_image_from_gl_texture(
@@ -142,6 +164,7 @@ pub extern "C" fn store_image_from_texture() -> crate::error::Result<()> {
             width,
             height,
         ) {
+            // FIXME: Review if we should return a RecoverableError
             eprintln!("store_image_from_texture error: {}", msg);
         }
         state.touch_shape(ids.shape_id);

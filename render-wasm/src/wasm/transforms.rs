@@ -1,4 +1,6 @@
-use macros::ToJs;
+#[allow(unused_imports)]
+use crate::error::{Error, Result};
+use macros::{wasm_error, ToJs};
 
 use skia_safe as skia;
 
@@ -39,11 +41,11 @@ impl From<[u8; RAW_TRANSFORM_ENTRY_SIZE]> for RawTransformEntry {
 }
 
 impl TryFrom<&[u8]> for RawTransformEntry {
-    type Error = String;
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+    type Error = Error;
+    fn try_from(bytes: &[u8]) -> Result<Self> {
         let bytes: [u8; RAW_TRANSFORM_ENTRY_SIZE] = bytes
             .try_into()
-            .map_err(|_| "Invalid transform entry bytes".to_string())?;
+            .map_err(|_| Error::CriticalError("Invalid transform entry bytes".to_string()))?;
         Ok(RawTransformEntry::from(bytes))
     }
 }
@@ -73,16 +75,17 @@ impl From<RawTransformEntry> for TransformEntry {
 }
 
 #[no_mangle]
-pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
+#[wasm_error]
+pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> Result<*mut u8> {
     let bytes = mem::bytes();
 
     let entries: Vec<TransformEntry> = bytes
         .chunks(RAW_TRANSFORM_ENTRY_SIZE)
-        .map(|data| RawTransformEntry::try_from(data).unwrap().into())
-        .collect();
+        .map(|data| RawTransformEntry::try_from(data).map(|entry| entry.into()))
+        .collect::<Result<Vec<_>>>()?;
 
     with_state!(state, {
-        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
-        mem::write_vec(result)
+        let result = shapes::propagate_modifiers(state, &entries, pixel_precision)?;
+        Ok(mem::write_vec(result))
     })
 }

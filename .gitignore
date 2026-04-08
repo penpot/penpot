@@ -50,6 +50,7 @@
 /frontend/.storybook/preview-body.html
 /frontend/.storybook/preview-head.html
 /frontend/playwright-report/
+/frontend/playwright/ui/visual-specs/
 /frontend/text-editor/src/wasm/
 /frontend/dist/
 /frontend/npm-debug.log

@@ -63,10 +63,11 @@ pub extern "C" fn set_layout_data(
         let h_sizing = RawSizing::from(h_sizing);
         let v_sizing = RawSizing::from(v_sizing);
 
-        let max_h = if has_max_h { Some(max_h) } else { None };
-        let min_h = if has_min_h { Some(min_h) } else { None };
-        let max_w = if has_max_w { Some(max_w) } else { None };
-        let min_w = if has_min_w { Some(min_w) } else { None };
+        let max_h = has_max_h.then(|| max_h.max(0.01));
+        let min_h = has_min_h.then(|| min_h.clamp(0.01, max_h.unwrap_or(f32::INFINITY)));
+        let max_w = has_max_w.then(|| max_w.max(0.01));
+        let min_w = has_min_w.then(|| min_w.clamp(0.01, max_w.unwrap_or(f32::INFINITY)));
+
         let z_index = if z_index != 0 { Some(z_index) } else { None };
 
         let raw_align_self = align::RawAlignSelf::from(align_self);

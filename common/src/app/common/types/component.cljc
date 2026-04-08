@@ -7,6 +7,7 @@
 (ns app.common.types.component
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as-alias ct]
    [app.common.types.page :as ctp]
@@ -39,15 +40,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Attributes that may be synced in components, and the group they belong to.
-;; When one attribute is modified in a shape inside a component, the corresponding
-;; group is marked as :touched. Then, if the shape is synced with the remote shape
-;; in the main component, none of the attributes of the same group is changed.
+;; When one attribute is modified in a shape inside a component, the
+;; corresponding group is marked as :touched. Then, if the shape is synced with
+;; the remote shape in the main component, none of the attributes of the same
+;; group is changed.
 
 (def sync-attrs
   {:name                    :name-group
    :fills                   :fill-group
    :hide-fill-on-export     :fill-group
-   :content                 :content-group
+   :content                 {:path :geometry-group
+                             :text :content-group}
    :position-data           :content-group
    :hidden                  :visibility-group
    :blocked                 :modifiable-group
@@ -143,6 +146,18 @@
     :layout-item-align-self
     :interactions})
 
+(defn resolve-sync-group
+  "Makes a by type resolution of the sync group. This is necessary
+  because we have several properties that has different group
+  depending on the shape type. Per example the attr `:content` is used
+  by path and text shapes and the sync groups are different for each
+  shape type."
+  [type attr]
+  (when-let [group (get sync-attrs attr)]
+    (if (map? group)
+      (get group type)
+      group)))
+
 (defn component-attr?
   "Check if some attribute is one that is involved in component syncrhonization.
    Note that design tokens also are involved, although they go by an alternate
@@ -150,7 +165,7 @@
    Also when detaching a nested copy it also needs to trigger a synchronization,
    even though :shape-ref is not a synced attribute per se"
   [attr]
-  (or (get sync-attrs attr)
+  (or (contains? sync-attrs attr)
       (= :shape-ref attr)
       (= :applied-tokens attr)))
 
@@ -356,15 +371,17 @@
          (or (not (instance-head? shape))
              (not (in-component-copy? parent))))))
 
-(defn all-touched-groups
-  []
-  (into #{} (vals sync-attrs)))
+(def ^:private all-touched-groups
+  (reduce-kv (fn [acc _ v]
+               (if (map? v)
+                 (into acc (vals v))
+                 (conj acc v)))
+             #{}
+             sync-attrs))
 
 (defn valid-touched-group?
   [group]
-  (try
-    (or (contains? (all-touched-groups) group)
-        (and (swap-slot? group)
-             (some? (group->swap-slot group))))
-    (catch #?(:clj Throwable :cljs :default) _
-      false)))
+  (ex/ignoring
+   (or (contains? all-touched-groups group)
+       (and (swap-slot? group)
+            (some? (group->swap-slot group))))))

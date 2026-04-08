@@ -32,7 +32,6 @@
 
 .content {
   grid-column: span 8;
-
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
@@ -62,12 +61,12 @@
   align-items: center;
   gap: px2rem(1);
   border-radius: $br-8;
-  padding: var(--sp-s) var(--sp-m);
   block-size: $sz-32;
   padding: 0;
 
   &.double {
     block-size: $sz-48;
+
     .prototype-pill-button {
       block-size: $sz-48;
     }
@@ -114,13 +113,12 @@
 
 .prototype-pill-input {
   @include t.use-typography("body-small");
+
   border: none;
   background: none;
   outline: none;
   block-size: 100%;
-  inline-size: 100%;
   flex-grow: 1;
-  margin: var(--sp-xxs) 0;
   padding: 0 0 0 var(--sp-s);
   margin: 0;
   background-color: var(--color-background-tertiary);
@@ -130,6 +128,7 @@
 
   &:hover {
     background-color: var(--color-background-quaternary);
+
     &:active {
       background-color: var(--color-background-quaternary);
     }
@@ -142,13 +141,15 @@
 
 .prototype-pill-name {
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
+
   color: var(--color-foreground-primary);
 }
 
 .prototype-pill-description {
   @include t.use-typography("body-small");
-  @include textEllipsis;
+  @include text-ellipsis;
+
   color: var(--color-foreground-secondary);
 }
 
@@ -164,8 +165,9 @@
 }
 
 .interaction-row-name {
-  @include twoLineTextEllipsis;
+  @include two-line-text-ellipsis;
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-secondary);
 }
 
@@ -191,12 +193,10 @@
 .interaction-row-position {
   grid-column: 4 / span 5;
   display: grid;
-  grid-template-areas:
-    "topleft top topright"
-    "left center right"
-    "bottomleft bottom bottomright";
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  grid-template:
+    "topleft top topright" 1fr
+    "left center right" 1fr
+    "bottomleft bottom bottomright" 1fr / repeat(3, 1fr);
   inline-size: calc($sz-32 * 3);
   block-size: calc($sz-32 * 3);
   border-radius: $br-8;
@@ -205,21 +205,27 @@
   .center {
     grid-area: center;
   }
+
   .top-left {
     grid-area: topleft;
   }
+
   .top-center {
     grid-area: top;
   }
+
   .top-right {
     grid-area: topright;
   }
+
   .bottom-left {
     grid-area: bottomleft;
   }
+
   .bottom-center {
     grid-area: bottom;
   }
+
   .bottom-right {
     grid-area: bottomright;
   }

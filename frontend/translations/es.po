@@ -204,7 +204,7 @@ msgid "branding-illustrations-marketing-pieces"
 msgstr "diseño de marca, ilustraciones, piezas de marketing..."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "Este token no existe o ha sido borrado."
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
@@ -346,6 +346,9 @@ msgstr "Vas a restaurar %s."
 #: src/app/main/ui/dashboard/file_menu.cljs:207
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restaurar archivo"
+
+msgid "dashboard.org-deleted"
+msgstr "La organización %s se ha borrado."
 
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
@@ -767,6 +770,9 @@ msgstr "Invitar a la gente"
 #: src/app/main/ui/dashboard/sidebar.cljs:477, src/app/main/ui/dashboard/sidebar.cljs:484, src/app/main/ui/dashboard/sidebar.cljs:489, src/app/main/ui/dashboard/team.cljs:351
 msgid "dashboard.leave-team"
 msgstr "Abandonar equipo"
+
+msgid "dashboard.leave-org"
+msgstr "Abandonar organización"
 
 #: src/app/main/ui/dashboard/templates.cljs:84, src/app/main/ui/dashboard/templates.cljs:169
 msgid "dashboard.libraries-and-templates"
@@ -1275,7 +1281,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Abrir lista de tokens"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
+msgid "token-actions.detach-token"
 msgstr "Desvincular token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
@@ -1283,7 +1289,7 @@ msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "{%s} no está disponible en ningún set o tiene un valor inválido."
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs
-msgid "ds.inputs.token-field.no-active-color.token-option"
+msgid "not-active-token.no-name"
 msgstr "Este token no está disponible en ningún set o tiene un valor inválido."
 
 #: src/app/main/data/auth.cljs:339
@@ -1518,6 +1524,15 @@ msgstr "El SVG no es válido o está mal formado"
 #: src/app/main/errors.cljs:270
 msgid "errors.team-feature-mismatch"
 msgstr "Detectada funcionalidad incompatible '%s'"
+
+msgid "errors.org-leave.org-owner-cannot-leave"
+msgstr "El dueño de la organización no puede abandonarla."
+
+msgid "errors.org-leave.no-valid-teams"
+msgstr "Ha habido un problema abandonando la organización. Intentalo de nuevo, por favor."
+
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Sólo puede borrar un equipo su propietario."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:373, src/app/main/ui/dashboard/team.cljs:393
 msgid "errors.team-leave.insufficient-members"
@@ -2144,8 +2159,13 @@ msgid "integrations.info.mcp-server"
 msgstr "El servidor MCP de Penpot permite a los clientes MCP interactuar directamente con los archivos de diseño de Penpot."
 
 #: src/app/main/ui/settings/integrations.cljs:131
-msgid "integrations.info.non-recuperable"
+msgid "integrations.token.info.non-recuperable"
 msgstr "Esta clave única no es recuperable. Si la pierdes, tendrás que crear una nueva."
+
+#: src/app/main/ui/settings/integrations.cljs:131
+#: src/app/main/ui/settings/integrations.cljs:131
+msgid "integrations.mcp-key.info.non-recuperable"
+msgstr "Esta clave MCP única no es recuperable. Si la pierdes, tendrás que crear una nueva."
 
 #: src/app/main/ui/settings/integrations.cljs:336
 msgid "integrations.mcp-server.title"
@@ -2212,8 +2232,13 @@ msgid "integrations.name.placeholder"
 msgstr "El nombre te pude ayudar a saber para qué se utiliza el token"
 
 #: src/app/main/ui/settings/integrations.cljs:103
-msgid "integrations.notification.success.copied"
+msgid "integrations.notification.success.token-copied"
 msgstr "Token copiado"
+
+#: src/app/main/ui/settings/integrations.cljs:103
+#: src/app/main/ui/settings/integrations.cljs:103
+msgid "integrations.notification.success.mcp-key-copied"
+msgstr "Clave MCP copiada"
 
 #: src/app/main/ui/settings/integrations.cljs:64
 msgid "integrations.notification.success.created"
@@ -2233,7 +2258,7 @@ msgstr "Servidor MCP habilitado"
 
 #: src/app/main/ui/settings/integrations.cljs:317
 msgid "integrations.regenerate-mcp-key.info"
-msgstr "Regenerar la clave revocará inmediatamente la actual. Cualquier aplicación que la esté utilizando dejará de funcionar."
+msgstr "Regenerar la clave MCP revocará inmediatamente la actual. Cualquier aplicación que la esté utilizando dejará de funcionar."
 
 #: src/app/main/ui/settings/integrations.cljs:317
 msgid "integrations.regenerate-mcp-key.title"
@@ -2248,12 +2273,22 @@ msgid "integrations.title"
 msgstr "Integraciones"
 
 #: src/app/main/ui/settings/integrations.cljs:142
-msgid "integrations.token-will-expire"
+msgid "integrations.token.will-expire"
 msgstr "El token expirará el %s"
 
+#: src/app/main/ui/settings/integrations.cljs:142
+#: src/app/main/ui/settings/integrations.cljs:142
+msgid "integrations.mcp-key.will-expire"
+msgstr "La clave MCP expirará el %s"
+
 #: src/app/main/ui/settings/integrations.cljs:143
-msgid "integrations.token-will-not-expire"
+msgid "integrations.token.will-not-expire"
 msgstr "El token no tiene fecha de expiración"
+
+#: src/app/main/ui/settings/integrations.cljs:143
+#: src/app/main/ui/settings/integrations.cljs:143
+msgid "integrations.mcp-key.will-not-expire"
+msgstr "La clave MCP no tiene fecha de expiración"
 
 #: src/app/main/ui/dashboard/comments.cljs:96
 msgid "label.mark-all-as-read"
@@ -3521,6 +3556,19 @@ msgstr ""
 "Tienes la propiedad de este equipo. Por favor selecciona otra persona "
 "integrante para promover al rol Propiedad."
 
+msgid "modals.leave-org-and-reassign.hint"
+msgstr ""
+"Tienes la propiedad de algunos equipos de esta organización. "
+"Por favor selecciona otra persona integrante para promover al rol Propiedad."
+
+msgid "modals.leave-org-and-reassign.hint-delete"
+msgstr "Eres el único miembro de algunos equipos. Esos equipos se van a borrar, junto con sus proyectos y ficheros."
+
+msgid "modals.leave-org-and-reassign.hint-promote"
+msgstr ""
+"Además, tienes la propiedad de algunos equipos de esta organización. "
+"Por favor selecciona otra persona integrante para promover al rol Propiedad."
+
 #: src/app/main/ui/dashboard/change_owner.cljs:73
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Promocionar y abandonar"
@@ -3537,13 +3585,34 @@ msgstr "Antes de que abandones"
 msgid "modals.leave-confirm.accept"
 msgstr "Abandonar el equipo"
 
+msgid "modals.leave-org-confirm.accept"
+msgstr "Abandonar organización"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:409, src/app/main/ui/dashboard/team.cljs:449
 msgid "modals.leave-confirm.message"
 msgstr "¿Seguro que quieres abandonar este equipo?"
 
+msgid "modals.leave-org-confirm.message"
+msgstr "Perderás permanentemente el acceso a todos los equipos, proyectos y archivos en ella."
+
 #: src/app/main/ui/dashboard/sidebar.cljs:408, src/app/main/ui/dashboard/sidebar.cljs:429, src/app/main/ui/dashboard/team.cljs:425, src/app/main/ui/dashboard/team.cljs:448
 msgid "modals.leave-confirm.title"
 msgstr "Abandonando el equipo"
+
+msgid "modals.leave-org-confirm.title"
+msgstr "¿Abandonando la organización %s?"
+
+msgid "modals.before-leave-org.title"
+msgstr "ANTES DE ABANDONAR LA ORGANIZACIÓN"
+
+msgid "modals.before-leave-org.message"
+msgstr "Eres el único miembro de algunos equipos. Esos equipos se van a borrar, junto con sus proyectos y ficheros."
+
+msgid "modals.before-leave-org.warning"
+msgstr "Se van a borrar todos los equipos en los que eres el único miembro."
+
+msgid "dasboard.leave-org.toast"
+msgstr "Ya no eres miembro de la organización %s."
 
 #: src/app/main/ui/delete_shared.cljs:56
 msgid "modals.move-shared-confirm.accept"
@@ -3790,8 +3859,11 @@ msgstr "Invitación enviada con éxito"
 msgid "notifications.invitation-link-copied"
 msgstr "Enlace de invitacion copiado"
 
-msgid "notifications.mcp.active-tab-switching.text"
+msgid "notifications.mcp.active-in-another-tab"
 msgstr "MCP está activo en otra pestaña. ¿Cambiar a esta?"
+
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP está ahora activo en esta pestaña."
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"
@@ -6059,6 +6131,14 @@ msgstr "Eliminar desenfoque"
 msgid "workspace.options.blur-options.title"
 msgstr "Desenfoque"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Desenfoque de capa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Desenfoque de fondo"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"
 msgstr "Desenfoque del grupo"
@@ -6748,6 +6828,10 @@ msgstr "Capas seleccionadas"
 msgid "workspace.options.layer-options.toggle-layer"
 msgstr "Mostrar/ocultar capa"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:255
+msgid "workspace.options.layer-options.layer-section"
+msgstr "Sección del menú de capas"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
 msgid "workspace.options.layout-item.advanced-ops"
@@ -6931,6 +7015,10 @@ msgstr "Colapsar radios individuales"
 #: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
 msgid "workspace.options.radius.show-single-corners"
 msgstr "Mostrar radios individuales"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
+msgid "workspace.options.radius.radius-section"
+msgstr "Sección de radios de borde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:191
 msgid "workspace.options.recent-fonts"
@@ -7238,6 +7326,14 @@ msgstr "Título"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:188
 msgid "workspace.options.text-options.underline"
 msgstr "Subrayado (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.convert-to-typography"
+msgstr "Crear estilo de tipografía"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-section"
+msgstr "Sección de textos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
@@ -7562,6 +7658,10 @@ msgstr "Exclusión"
 msgid "workspace.shape.menu.flatten"
 msgstr "Aplanar"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.stroke-to-path"
+msgstr "Borde a ruta"
+
 #: src/app/main/ui/workspace/context_menu.cljs:299
 msgid "workspace.shape.menu.flip-horizontal"
 msgstr "Voltear horizontal"
@@ -7865,6 +7965,10 @@ msgstr "Borrar theme"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:350
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicar token"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:350
+msgid "workspace.tokens.copy-name"
+msgstr "Copiar ruta de token"
 
 #: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
 msgid "workspace.tokens.duplicate-suffix"
@@ -8175,11 +8279,13 @@ msgstr "Actualizar tokens"
 msgid "workspace.tokens.remap-token-references-title"
 msgstr "¿Actualizar todas las referencias de `%s` a `%s`?"
 
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-node-references-title"
+msgstr "¿Renombrar `%s` to `%s` y remapear todos los tokens de este grupo?"
+
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
 msgid "workspace.tokens.remap-warning-effects"
-msgstr ""
-"Esta acción actualizará todas las capas y referencias que usen el token "
-"antiguo"
+msgstr "Esta acción actualizará todas las capas y referencias que usen el token antiguo"
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
 msgid "workspace.tokens.remap-warning-time"
@@ -8403,6 +8509,14 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/application.cljs
 msgid "workspace.tokens.error-text-edition"
 msgstr "No se pueden aplicar tokens mientras se edita texto. Seleccione la capa de texto en su lugar."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group"
+msgstr "Renombrar grupo de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr "Tus tokens serán automáticamente renombrados a %s.(sufijo).(token)"
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
@@ -8723,3 +8837,6 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "modals.delete-org-team-confirm.message"
+msgstr "¿Estás seguro de que deseas eliminar este equipo que forma parte de la organización %s?"

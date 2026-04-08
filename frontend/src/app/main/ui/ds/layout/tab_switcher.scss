@@ -10,15 +10,14 @@
 
 .tabs {
   --tabs-bg-color: var(--color-background-secondary);
+
   display: grid;
   grid-template-rows: auto 1fr;
 }
 
 .padding-wrapper {
-  padding-inline-start: var(--tabs-nav-padding-inline-start, 0);
-  padding-inline-end: var(--tabs-nav-padding-inline-end, 0);
-  padding-block-start: var(--tabs-nav-padding-block-start, 0);
-  padding-block-end: var(--tabs-nav-padding-block-end, 0);
+  padding-inline: var(--tabs-nav-padding-inline-start, 0) var(--tabs-nav-padding-inline-end, 0);
+  padding-block: var(--tabs-nav-padding-block-start, 0) var(--tabs-nav-padding-block-end, 0);
 }
 
 // TAB NAV
@@ -44,6 +43,7 @@
   grid-auto-flow: column;
   gap: var(--sp-xxs);
   width: 100%;
+
   // Removing margin bottom from default ul
   margin-block-end: 0;
   border-radius: $br-8;
@@ -68,7 +68,6 @@
   height: $sz-32;
   border: none;
   border-radius: $br-8;
-  padding: 0 var(--sp-s);
   outline: $b-1 solid var(--tabs-item-outline-color);
   display: grid;
   grid-auto-flow: column;
@@ -89,6 +88,7 @@
 
 .tab-text {
   @include use-typography("headline-small");
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -102,6 +102,7 @@
 
 .tab-panel {
   --tab-panel-outline-color: none;
+
   &:focus {
     outline: none;
   }

@@ -79,6 +79,7 @@ body {
    :border-end-end-radius
    :box-shadow
    :filter
+   :backdrop-filter
    :opacity
    :overflow
    :blend-mode

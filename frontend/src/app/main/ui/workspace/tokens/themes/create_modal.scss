@@ -5,15 +5,14 @@
 // Copyright (c) KALEIDOS INC
 
 @use "ds/_sizes.scss" as *;
-
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-dialog {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
 
   width: 100%;
   max-width: deprecated.$s-512;
@@ -59,6 +58,7 @@
   gap: deprecated.$s-4;
   align-items: center;
   padding: 0;
+
   &:hover {
     color: var(--color-accent-primary);
   }
@@ -125,6 +125,7 @@
 
 .group-title-name {
   flex-grow: 1;
+
   @include deprecated.textEllipsis;
 }
 
@@ -152,6 +153,7 @@
 
 .theme-name-row {
   @include deprecated.textEllipsis;
+
   flex-grow: 1;
 }
 

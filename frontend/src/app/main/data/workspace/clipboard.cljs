@@ -41,6 +41,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.errors]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -294,6 +295,22 @@
 
 (def default-paste-from-blob (create-paste-from-blob false))
 
+(defn- clipboard-permission-error?
+  "Check if the given error is a clipboard permission error
+  (NotAllowedError DOMException)."
+  [cause]
+  (and (instance? js/DOMException cause)
+       (= (.-name cause) "NotAllowedError")))
+
+(defn- on-clipboard-permission-error
+  [cause]
+  (if (clipboard-permission-error? cause)
+    (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+                      :type :toast
+                      :level :warning
+                      :timeout 5000}))
+    (rx/throw cause)))
+
 (defn paste-from-clipboard
   "Perform a `paste` operation using the Clipboard API."
   []
@@ -302,7 +319,8 @@
     (watch [_ _ _]
       (->> (clipboard/from-navigator default-options)
            (rx/mapcat default-paste-from-blob)
-           (rx/take 1)))))
+           (rx/take 1)
+           (rx/catch on-clipboard-permission-error)))))
 
 (defn paste-from-event
   "Perform a `paste` operation from user emmited event."
@@ -482,11 +500,20 @@
                   (-> entry t/decode-str paste-transit-props))
 
                 (on-error [cause]
-                  (let [data (ex-data cause)]
-                    (if (:not-implemented data)
-                      (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
-                      (js/console.error "Clipboard error:" cause))
-                    (rx/empty)))]
+                  (cond
+                    (clipboard-permission-error? cause)
+                    (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+                                      :type :toast
+                                      :level :warning
+                                      :timeout 5000}))
+
+                    (:not-implemented (ex-data cause))
+                    (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
+
+                    :else
+                    (do
+                      (js/console.error "Clipboard error:" cause)
+                      (rx/empty))))]
 
           (->> (clipboard/from-navigator default-options)
                (rx/mapcat #(.text %))
@@ -970,10 +997,11 @@
             text    (.-textContent root)
             content (tc/dom->cljs root)]
         (when (types.text/valid-content? content)
-          (let [id     (uuid/next)
-                width  (max 8 (min (* 7 (count text)) 700))
-                height 16
+          (let [id            (uuid/next)
+                width         (max 8 (min (* 7 (count text)) 700))
+                height        16
                 {:keys [x y]} (calculate-paste-position state)
+                skip-edition? (features/active-feature? state "text-editor-wasm/v1")
 
                 shape {:id id
                        :type :text
@@ -985,9 +1013,14 @@
                        :grow-type (if (> (count text) 100) :auto-height :auto-width)
                        :content content}
                 undo-id (js/Symbol)]
-            (rx/of (dwu/start-undo-transaction undo-id)
-                   (dwsh/create-and-add-shape :text x y shape)
-                   (dwu/commit-undo-transaction undo-id))))))))
+            (rx/concat
+             (rx/of (dwu/start-undo-transaction undo-id)
+                    (dwsh/create-and-add-shape :text x y shape
+                                               (when skip-edition? {:skip-edition? true})))
+             (if skip-edition?
+               (rx/of (dwwt/resize-wasm-text-debounce id {:undo-group id
+                                                          :undo-id undo-id}))
+               (rx/of (dwu/commit-undo-transaction undo-id))))))))))
 
 (defn- paste-text
   [text]
@@ -995,10 +1028,11 @@
   (ptk/reify ::paste-text
     ptk/WatchEvent
     (watch [_ state _]
-      (let [id (uuid/next)
-            width (max 8 (min (* 7 (count text)) 700))
-            height 16
+      (let [id            (uuid/next)
+            width         (max 8 (min (* 7 (count text)) 700))
+            height        16
             {:keys [x y]} (calculate-paste-position state)
+            skip-edition? (features/active-feature? state "text-editor-wasm/v1")
 
             shape {:id id
                    :type :text
@@ -1011,9 +1045,14 @@
                    :content (as-content text)}
             undo-id (js/Symbol)]
 
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dwsh/create-and-add-shape :text x y shape)
-               (dwu/commit-undo-transaction undo-id))))))
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dwsh/create-and-add-shape :text x y shape
+                                           (when skip-edition? {:skip-edition? true})))
+         (if skip-edition?
+           (rx/of (dwwt/resize-wasm-text-debounce id {:undo-group id
+                                                      :undo-id undo-id}))
+           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 ;; TODO: why not implement it in terms of upload-media-workspace?
 (defn- paste-svg-text

@@ -5,7 +5,8 @@ ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     NODE_VERSION=v22.21.1 \
     DEBIAN_FRONTEND=noninteractive \
-    PATH=/opt/node/bin:$PATH
+    PATH=/opt/node/bin:$PATH \
+    PENPOT_MCP_SERVER_HOST=0.0.0.0
 
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \

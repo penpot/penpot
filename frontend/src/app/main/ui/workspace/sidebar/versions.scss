@@ -132,15 +132,17 @@
 }
 
 .version-options-dropdown {
-  @extend .dropdown-wrapper;
+  @extend %dropdown-wrapper;
+
   position: absolute;
   width: fit-content;
   max-width: deprecated.$s-200;
   right: 0;
   left: unset;
   top: var(--offset);
+
   .menu-option {
-    @extend .dropdown-element-base;
+    @extend %dropdown-element-base;
   }
 }
 
@@ -164,6 +166,7 @@
 
   &:hover {
     color: var(--color-accent-primary);
+
     .icon-arrow {
       stroke: var(--color-accent-primary);
     }
@@ -214,6 +217,7 @@
 
   &:active {
     color: var(--color-accent-primary);
+
     :global(.icon-pin) {
       visibility: initial;
       fill: var(--color-accent-primary);
@@ -227,6 +231,7 @@
 
 .cta {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-secondary);
 
   a {

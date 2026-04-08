@@ -31,7 +31,6 @@
    [app.srepl.main :as srepl]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
-   [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [cuerdas.core :as str]
    [datoteka.io :as io]
@@ -71,8 +70,7 @@
 
 (defn- get-resolved-file
   [cfg file-id]
-  (some-> (bfc/get-file cfg file-id :migrate? false)
-          (update :data blob/encode)))
+  (bfc/get-file cfg file-id :migrate? false :decode? false))
 
 (defn prepare-download
   [file filename]
