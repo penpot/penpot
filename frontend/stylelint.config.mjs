@@ -30,7 +30,7 @@ export default {
 
     // TODO: Enable rules secuentially
     // // Using quotes
-    // "font-family-name-quotes": "always-unless-keyword",
+    "font-family-name-quotes": "always-unless-keyword",
     // "function-url-quotes": "always",
     // "selector-attribute-quotes": "always",
     // // Disallow vendor prefixes
