@@ -40,6 +40,7 @@
    [app.main.ui.workspace.tokens.settings]
    [app.main.ui.workspace.tokens.themes.create-modal]
    [app.main.ui.workspace.viewport :refer [viewport*]]
+   [app.main.ui.workspace.webgl-unavailable-modal]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
