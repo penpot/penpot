@@ -46,7 +46,7 @@
     "watch": "exit 0",
     "watch:app": "pnpm run clear:shadow-cache && pnpm run clear:wasm && pnpm run build:wasm && concurrently --kill-others-on-fail \"pnpm run watch:app:assets\" \"pnpm run watch:app:main\" \"pnpm run watch:app:libs\"",
     "watch:storybook": "pnpm run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 6006 --no-open\" \"node ./scripts/watch-storybook.js\"",
-    "postinstall": "(cd ../plugins/libs/plugins-runtime; pnpm install; pnpm run build)"
+    "postinstall": "../plugins/scripts/build-runtime"
   },
   "devDependencies": {
     "@penpot/draft-js": "workspace:./packages/draft-js",
