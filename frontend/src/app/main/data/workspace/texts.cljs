@@ -400,7 +400,11 @@
             shape-ids (cond (cfh/text-shape? shape)  [id]
                             (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
-        (rx/of (dwsh/update-shapes shape-ids update-fn))))))
+        (rx/concat
+         (rx/of (dwsh/update-shapes shape-ids update-fn))
+         (if (features/active-feature? state "render-wasm/v1")
+           (dwwt/resize-wasm-text-debounce id)
+           (rx/empty)))))))
 
 (defn update-root-attrs
   [{:keys [id attrs]}]
@@ -786,11 +790,18 @@
              (rx/of (update-position-data id position-data))))
           (rx/empty))))))
 
+(defn font-loaded-event?
+  [font-id]
+  (fn [event]
+    (and
+     (= :font-loaded (ptk/type event))
+     (= (:font-id (deref event)) font-id))))
+
 (defn update-attrs
   [id attrs]
   (ptk/reify ::update-attrs
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ state stream]
       (let [text-editor-instance (:workspace-editor state)]
         (if (and (features/active-feature? state "text-editor/v2")
                  (some? text-editor-instance))
@@ -828,9 +839,13 @@
                                   (:shape-id result) (:content result)
                                   :update-name? true))))))))
               ;; Resize (with delay for font-id changes)
-              (cond->> (rx/of (dwwt/resize-wasm-text id))
-                (contains? attrs :font-id)
-                (rx/delay 200))))))))
+              (if (contains? attrs :font-id)
+                (->> stream
+                     (rx/filter (font-loaded-event? (:font-id attrs)))
+                     (rx/take 1)
+                     (rx/observe-on :async)
+                     (rx/map #(dwwt/resize-wasm-text id)))
+                (rx/of (dwwt/resize-wasm-text id)))))))))
 
     ptk/EffectEvent
     (effect [_ state _]
