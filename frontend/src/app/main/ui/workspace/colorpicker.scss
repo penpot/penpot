@@ -122,7 +122,7 @@
   background: linear-gradient(180deg, var(--color-foreground-secondary), transparent);
 
   &.selected {
-    background: linear-gradient(to bottom, rgb(126 255 245 / 100%) 0%, rgb(126 255 245 / 20%) 100%);
+    background: linear-gradient(to bottom, rgb(126 255 245 / 1) 0%, rgb(126 255 245 / 0.2) 100%);
     border: $b-2 solid var(--colorpicker-details-color-selected);
   }
 }
@@ -131,7 +131,7 @@
   background: radial-gradient(transparent, var(--color-foreground-secondary));
 
   &.selected {
-    background: radial-gradient(rgb(126 255 245 / 100%) 0%, rgb(126 255 245 / 20%) 100%);
+    background: radial-gradient(rgb(126 255 245 / 1) 0%, rgb(126 255 245 / 0.2) 100%);
     border: $b-2 solid var(--colorpicker-details-color-selected);
   }
 }

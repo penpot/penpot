@@ -72,7 +72,7 @@
 
   &:active,
   &[aria-pressed="true"] {
-    box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgb(0 0 0 / 20%);
+    box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgb(0 0 0 / 0.2);
   }
 }
 
@@ -122,6 +122,6 @@
 
   &:active,
   &[aria-pressed="true"] {
-    box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgb(0 0 0 / 20%);
+    box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgb(0 0 0 / 0.2);
   }
 }
