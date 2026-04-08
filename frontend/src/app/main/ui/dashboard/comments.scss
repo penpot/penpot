@@ -53,7 +53,7 @@
     height: deprecated.$s-8;
     border: deprecated.$s-2 solid var(--color-background-tertiary);
     border-radius: 50%;
-    background: red;
+    background: var(--color-foreground-error);
     top: deprecated.$s-6;
     right: deprecated.$s-6;
   }
