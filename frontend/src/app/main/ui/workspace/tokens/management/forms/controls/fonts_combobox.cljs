@@ -19,7 +19,7 @@
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.forms :as fc]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
+   [app.main.ui.workspace.sidebar.options.menus.text-shared :refer [font-selector*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
