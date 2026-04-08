@@ -12,6 +12,7 @@
    [app.common.types.stroke :as cts]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
@@ -155,6 +156,13 @@
               (st/emit! (udw/trigger-bounding-box-cloaking ids))
               (st/emit! (dc/change-stroke-attrs ids {:stroke-cap-start stroke-cap-end
                                                      :stroke-cap-end stroke-cap-start} index)))))
+        on-toggle-visibility
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [index]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
+           (st/emit! (dwsh/update-shapes ids #(update-in % [:strokes index :hidden] not)))))
+
         on-add-stroke
         (fn [_]
           (st/emit! (udw/trigger-bounding-box-cloaking ids))
@@ -226,6 +234,7 @@
                               :applied-tokens (when (= 0 index) applied-tokens)
                               :on-detach-token on-detach-token
                               :on-remove on-remove
+                              :on-toggle-visibility on-toggle-visibility
                               :on-reorder handle-reorder
                               :disable-drag disable-drag
                               :on-focus on-focus

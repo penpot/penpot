@@ -7316,6 +7316,10 @@ msgstr "Outside"
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "Remove stroke"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.toggle-stroke"
+msgstr "Toggle stroke"
+
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:137
 msgid "workspace.options.stroke.solid"
 msgstr "Solid"

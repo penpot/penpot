@@ -40,6 +40,7 @@
            on-stroke-cap-start-change
            on-stroke-cap-end-change
            on-stroke-cap-switch
+           on-toggle-visibility
            disable-drag
            on-focus
            on-blur
@@ -49,7 +50,9 @@
            select-on-focus
            ids]}]
 
-  (let [token-numeric-inputs
+  (let [hidden?            (:hidden stroke)
+
+        token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
 
         on-drop
@@ -182,7 +185,14 @@
         on-cap-switch
         (mf/use-fn
          (mf/deps index on-stroke-cap-switch)
-         #(on-stroke-cap-switch index))]
+         #(on-stroke-cap-switch index))
+
+        on-toggle-visibility
+        (mf/use-fn
+         (mf/deps index on-toggle-visibility)
+         (fn []
+           (when on-toggle-visibility
+             (on-toggle-visibility index))))]
 
     [:div {:class (stl/css-case
                    :stroke-data true
@@ -195,22 +205,29 @@
 
      ;; Stroke Color
      ;; FIXME: memorize stroke color
-     [:> color-row* {:color (ctc/stroke->color stroke)
-                     :index index
-                     :title title
-                     :on-change on-color-change-refactor
-                     :on-detach on-color-detach
-                     :on-remove on-remove
-                     :disable-drag disable-drag
-                     :applied-token (if (= index 0)
-                                      stroke-color-token
-                                      nil)
-                     :on-detach-token on-detach-token-color
-                     :on-token-change on-token-change
-                     :on-focus on-focus
-                     :origin :stroke-color
-                     :select-on-focus select-on-focus
-                     :on-blur on-blur}]
+     [:div {:class (stl/css :stroke-color-actions)}
+      [:> color-row* {:color (ctc/stroke->color stroke)
+                      :index index
+                      :title title
+                      :on-change on-color-change-refactor
+                      :on-detach on-color-detach
+                      :on-remove on-remove
+                      :disable-drag disable-drag
+                      :applied-token (if (= index 0)
+                                       stroke-color-token
+                                       nil)
+                      :on-detach-token on-detach-token-color
+                      :on-token-change on-token-change
+                      :on-focus on-focus
+                      :origin :stroke-color
+                      :select-on-focus select-on-focus
+                      :on-blur on-blur}]
+
+      (when (some? on-toggle-visibility)
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.options.stroke.toggle-stroke")
+                          :on-click on-toggle-visibility
+                          :icon (if hidden? "hide" "shown")}])]
 
      ;; Stroke Width, Alignment & Style
      (if token-numeric-inputs

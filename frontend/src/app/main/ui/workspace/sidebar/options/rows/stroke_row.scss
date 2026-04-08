@@ -29,6 +29,16 @@
   }
 }
 
+.stroke-color-actions {
+  display: flex;
+  align-items: center;
+
+  > :first-child {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .stroke-options {
   @include sidebar.option-grid-structure;
 
