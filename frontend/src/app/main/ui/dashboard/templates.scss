@@ -218,7 +218,7 @@
 }
 
 .card-name {
-  padding: 0 $sp-s;
+  padding: 0 var(--sp-s);
   display: flex;
   justify-content: space-between;
   height: $sz-24;

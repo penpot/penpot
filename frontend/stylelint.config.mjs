@@ -53,15 +53,15 @@ export default {
     },
     // // 'order/properties-alphabetical-order': true,
     "selector-max-type": 1,
-    // "selector-type-no-unknown": true,
+    "selector-type-no-unknown": true,
     // // Notation
-    // "font-weight-notation": "numeric",
+    "font-weight-notation": "numeric",
     // // URLs
-    // "function-url-no-scheme-relative": true,
+    "function-url-no-scheme-relative": true,
     // "liberty/use-logical-spec": "always",
-    // "selector-class-pattern": null,
-    // "alpha-value-notation": null,
-    // "color-function-notation": null,
-    // "value-keyword-case": null,
+    "selector-class-pattern": null,
+    "alpha-value-notation": "number",
+    "color-function-notation": "modern",
+    "value-keyword-case": "lower",
   },
 };
