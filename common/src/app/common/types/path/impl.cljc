@@ -128,8 +128,8 @@
             x      (buf/read-float buffer (+ offset 20))
             y      (buf/read-float buffer (+ offset 24))
             type   (case type
-                     1 :line-to
-                     2 :move-to
+                     1 :move-to
+                     2 :line-to
                      3 :curve-to
                      4 :close-path)
             res    (f type c1x c1y c2x c2y x y)]
@@ -153,8 +153,8 @@
             x      (buf/read-float buffer (+ offset 20))
             y      (buf/read-float buffer (+ offset 24))
             type   (case type
-                     1 :line-to
-                     2 :move-to
+                     1 :move-to
+                     2 :line-to
                      3 :curve-to
                      4 :close-path)
             result (f result index type c1x c1y c2x c2y x y)]
@@ -174,8 +174,8 @@
         x      (buf/read-float buffer (+ offset 20))
         y      (buf/read-float buffer (+ offset 24))
         type   (case type
-                 1 :line-to
-                 2 :move-to
+                 1 :move-to
+                 2 :line-to
                  3 :curve-to
                  4 :close-path)]
     #?(:clj (f type c1x c1y c2x c2y x y)
