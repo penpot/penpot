@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
+   [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
@@ -32,10 +33,11 @@
   {::mf/wrap [mf/memo]}
   [{:keys [shape shapes-with-children libraries file-id page-id]}]
 
-  (let [id     (dm/get-prop shape :id)
-        type   (dm/get-prop shape :type)
-        ids    (mf/with-memo [id] [id])
-        shapes (mf/with-memo [shape] [shape])
+  (let [id        (dm/get-prop shape :id)
+        type      (dm/get-prop shape :type)
+        ids       (mf/with-memo [id] [id])
+        shapes    (mf/with-memo [shape] [shape])
+        token-row (contains? cf/flags :token-typography-row)
 
         applied-tokens
         (get shape :applied-tokens)
@@ -171,10 +173,29 @@
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
 
      (when-not (empty? text-ids)
-       [:> ot/text-menu* {:type type
-                          :ids text-ids
-                          :values text-values
-                          :applied-tokens text-tokens}])
+       ;; We are temporarily duplicating some components and modifying the copies
+       ;; to work under a feature flag. When the flag is set to false, the original
+       ;; components are used; when enabled, the new versions are used instead.
+       ;;
+       ;; This approach introduces some code duplication, but it helps avoid
+       ;; scattering conditional (feature flag) logic throughout the codebase,
+       ;; keeping both implementations easier to read and maintain during the transition.
+       ;;
+       ;; Once the feature flag is fully enabled, the old components will be removed
+       ;; and the duplicated code will be cleaned up.
+
+       (if token-row
+         [:> ot/token-text-menu*
+          {:ids text-ids
+           :type type
+           :applied-tokens text-tokens
+           :values text-values}]
+
+         [:> ot/text-menu*
+          {:ids text-ids
+           :type type
+           :applied-tokens text-tokens
+           :values text-values}]))
 
      (when-not (empty? svg-values)
        [:& svg-attrs-menu {:ids ids :values svg-values}])

@@ -179,7 +179,6 @@
          :values (select-keys shape constraint-attrs)}])
 
      (if token-row
-       
        [:> token-text-menu*
         {:ids ids
          :type type

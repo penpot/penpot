@@ -27,8 +27,10 @@
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.shared.searchable-options-dropdown :refer [searchable-options-dropdown*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.workspace.sidebar.options.menus.text-shared :refer [text-options]]
+   [app.main.ui.workspace.sidebar.options.menus.text-shared :refer [text-options token-text-options*]]
    [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
@@ -189,6 +191,82 @@
                                          :label (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
                                          :icon i/text-stroked}]}]]))
 
+;; We are temporarily duplicating some components and modifying the copies
+;; to work under a feature flag. When the flag is set to false, the original
+;; components are used; when enabled, the new versions are used instead.
+;;
+;; This approach introduces some code duplication, but it helps avoid
+;; scattering conditional (feature flag) logic throughout the codebase,
+;; keeping both implementations easier to read and maintain during the transition.
+;;
+;; Once the feature flag is fully enabled, the old components will be removed
+;; and the duplicated code will be cleaned up.
+;;
+;; Once the feature flag is fully enabled, the old components will be removed
+;; and the duplicated code will be cleaned up.
+(mf/defc token-text-decoration-options*
+  [{:keys [values on-change on-blur token-applied]}]
+  (let [token-row    (contains? cf/flags :token-typography-row)
+        text-decoration (some-> (:text-decoration values) d/name)
+        handle-change
+        (mf/use-fn
+         (mf/deps on-change on-blur)
+         (fn [value]
+           (on-change {:text-decoration value})
+           (when (some? on-blur)
+             (on-blur))))]
+
+    [:div {:class (stl/css :text-decoration-options)}
+     [:> radio-buttons* {:selected     text-decoration
+                         :on-change    handle-change
+                         :name         "text-decoration-options"
+                         :disabled     (and token-row (some? token-applied))
+                         :options      [{:value "none"
+                                         :id "none-text-decoration"
+                                         :disabled (and token-row (some? token-applied))
+                                         :label "Unset"
+                                         :icon i/remove}
+                                        {:value "underline"
+                                         :id "underline-text-decoration"
+                                         :disabled (and token-row (some? token-applied))
+                                         :label (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
+                                         :icon i/text-underlined}
+                                        {:value "line-through"
+                                         :id "line-through-text-decoration"
+                                         :disabled (and token-row (some? token-applied))
+                                         :label (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
+                                         :icon i/text-stroked}]}]]))
+
+(mf/defc text-transform-options*
+  [{:keys [values on-change on-blur]}]
+  (let [handle-change
+        (mf/use-fn
+         (mf/deps on-change on-blur)
+         (fn [value]
+           (on-change {:text-transform value})
+           (when (some? on-blur) (on-blur))))]
+
+    [:div {:class (stl/css :text-transform)}
+     [:> radio-buttons* {:selected  (:text-transform values)
+                         :on-change handle-change
+                         :name      "text-transform-options"
+                         :options   [{:value "none"
+                                      :id    "text-transform-none"
+                                      :label "Unset"
+                                      :icon  i/remove}
+                                     {:value "uppercase"
+                                      :id    "text-transform-uppercase"
+                                      :label (tr "workspace.options.text-options.text-transform-uppercase")
+                                      :icon  i/text-uppercase}
+                                     {:value "capitalize"
+                                      :id    "text-transform-capitalize"
+                                      :label (tr "workspace.options.text-options.text-transform-capitalize")
+                                      :icon  i/text-mixed}
+                                     {:value "lowercase"
+                                      :id    "text-transform-lowercase"
+                                      :label (tr "workspace.options.text-options.text-transform-lowercase")
+                                      :icon  i/text-lowercase}]}]]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -215,9 +293,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; This component is being duplicated, when text token row is enabled,
-;; this duplication will be removed and we will use token-text-menu*.
 
 (mf/defc text-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
@@ -447,8 +522,19 @@
            [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
            [:> text-direction-options* common-props]])])]))
 
-;; This component is being duplicated, when text token row is enabled,
-;; this duplication will be removed and we will use this component but renaming it to text-menu*.
+;; We are temporarily duplicating some components and modifying the copies
+;; to work under a feature flag. When the flag is set to false, the original
+;; components are used; when enabled, the new versions are used instead.
+;;
+;; This approach introduces some code duplication, but it helps avoid
+;; scattering conditional (feature flag) logic throughout the codebase,
+;; keeping both implementations easier to read and maintain during the transition.
+;;
+;; Once the feature flag is fully enabled, the old components will be removed
+;; and the duplicated code will be cleaned up.
+;;
+;; Once the feature flag is fully enabled, the old components will be removed
+;; and the duplicated code will be cleaned up.
 
 (mf/defc token-text-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
@@ -660,16 +746,15 @@
       (when token-dropdown-open?
         (ts/schedule 0 #(some-> (mf/ref-val dropdown-ref) dom/focus!))))
 
-    [:section {:class      (stl/css :element-set)
+    [:section {:class      (stl/css :text-menu)
                :aria-label (tr "workspace.options.text-options.text-section")}
-     [:div {:class (stl/css :element-title)}
+     [:div {:class (stl/css :menu-title)}
       [:> title-bar* {:collapsable  true
                       :collapsed    (not main-menu-open?)
                       :on-collapsed toggle-main-menu
-                      :title        label
-                      :class        (stl/css :title-spacing-text)}
+                      :title        label}
        [:*
-        (when (and (some? (resolve-delay typography-tokens)) (not typography) )
+        (when (and (some? (resolve-delay typography-tokens)) (not typography))
           [:> icon-button* {:variant           "ghost"
                             :aria-label        (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                             :on-click          toggle-token-dropdown
@@ -691,6 +776,7 @@
                                      :active-tokens (resolve-delay typography-tokens)}]
 
           typography
+          ;; TODO: Review this component and adapt it to new style
           [:& typography-entry {:file-id    typography-file-id
                                 :typography typography
                                 :local?     (= typography-file-id file-id)
@@ -698,25 +784,27 @@
                                 :on-change  handle-change-typography}]
 
           (= typography-id :multiple)
-          [:div {:class (stl/css :multiple-typography)}
-           [:span {:class (stl/css :multiple-text)} (tr "workspace.libraries.text.multiple-typography")]
+          [:div {:class (stl/css :multiple-typography-row)}
+           [:> text* {:as "span" :typography t/body-small :class (stl/css :multiple-subtitle)}
+            (tr "workspace.libraries.text.multiple-typography")]
            [:> icon-button* {:variant    "ghost"
                              :aria-label (tr "workspace.libraries.text.multiple-typography-tooltip")
                              :on-click   handle-detach-typography
+                             :tooltip-placement "top-left"
                              :icon       i/detach}]]
 
           :else
-          [:> text-options  #js {:ids       ids
-                                 :values    values
-                                 :on-change on-change
-                                 :show-recent true
-                                 :on-blur
-                                 (fn []
-                                   (ts/schedule
-                                    100
+          [:> token-text-options*  {:ids       ids
+                                    :values    values
+                                    :on-change on-change
+                                    :show-recent true
+                                    :on-blur
                                     (fn []
-                                      (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                                        (dom/focus! (txu/get-text-editor-content))))))}])
+                                      (ts/schedule
+                                       100
+                                       (fn []
+                                         (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
+                                           (dom/focus! (txu/get-text-editor-content))))))}])
 
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options* common-props]
@@ -728,10 +816,37 @@
                            :icon        i/menu}]]
 
         (when more-options-open?
-          [:div {:class (stl/css :text-decoration-options)}
-           [:> vertical-align* common-props]
-           [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
-           [:> text-direction-options* common-props]])])
+          [:div {:class (stl/css :advanced-options)}
+           [:> text* {:as "span" :typography t/headline-small :class (stl/css :advanced-options-title)}
+            "Advanced options"]
+           [:div {:class (stl/css :advanced-option)}
+            [:> text* {:as "span" :typography t/body-small :class (stl/css :advanced-option-title)}
+             "Text Case"]
+            [:> text-transform-options* common-props]
+            [:> icon-button* {:variant "secondary"
+                              :aria-label "Open token list"
+                              :on-click   #()
+                              :icon       i/tokens}]]
+
+           [:div {:class (stl/css :advanced-option)}
+            [:> text* {:as "span" :typography t/body-small :class (stl/css :advanced-option-title)}
+             "Text Decoration"]
+            [:> token-text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
+            [:> icon-button* {:variant "secondary"
+                              :aria-label "Open token list"
+                              :on-click   #()
+                              :icon       i/tokens}]]
+
+           [:div {:class (stl/css :advanced-option)}
+            [:> text* {:as "span" :typography t/body-small :class (stl/css :advanced-option-title)}
+             "Align"]
+            [:> vertical-align* common-props]]
+
+
+           [:div {:class (stl/css :advanced-option)}
+            [:> text* {:as "span" :typography t/body-small :class (stl/css :advanced-option-title)}
+             "Direction"]
+            [:> text-direction-options* common-props]]])])
 
      (when token-dropdown-open?
        [:> searchable-options-dropdown* {:on-click     on-option-click

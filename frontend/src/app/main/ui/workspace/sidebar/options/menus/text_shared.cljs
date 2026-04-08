@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    ["react-virtualized" :as rvt]
-   
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -460,4 +459,28 @@
      [:div {:class (stl/css :typography-variations)}
       [:> spacing-options opts]
       [:> text-transform-options opts]]]))
+
+;; We are temporarily duplicating some components and modifying the copies
+;; to work under a feature flag. When the flag is set to false, the original
+;; components are used; when enabled, the new versions are used instead.
+;;
+;; This approach introduces some code duplication, but it helps avoid
+;; scattering conditional (feature flag) logic throughout the codebase,
+;; keeping both implementations easier to read and maintain during the transition.
+
+(mf/defc token-text-options*
+  [{:keys [ids editor values on-change on-blur show-recent]}]
+  (let [full-size-selector? (and show-recent (= (mf/use-ctx ctx/sidebar) :right))
+        opts #js {:editor editor
+                  :ids ids
+                  :values values
+                  :on-change on-change
+                  :on-blur on-blur
+                  :show-recent show-recent
+                  :full-size-selector full-size-selector?}]
+    [:div {:class (stl/css-case :text-options true
+                                :text-options-full-size full-size-selector?)}
+     [:> font-options opts]
+     [:div {:class (stl/css :typography-variations)}
+      [:> spacing-options opts]]]))
 

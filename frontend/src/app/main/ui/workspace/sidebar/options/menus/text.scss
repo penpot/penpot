@@ -64,3 +64,52 @@
   display: flex;
   gap: var(--sp-xs);
 }
+
+
+// This rules are used in token-text-menu
+.text-menu {
+    @include sidebar.option-grid-structure;
+
+  position: relative;
+}
+
+.menu-title {
+  grid-column: span 8;
+}
+
+.multiple-typography-row {
+  display: flex;
+  align-items: center;
+  border-radius: $br-8;
+  height: $sz-32;
+  padding: var(--sp-s);
+  background-color: var(--color-background-tertiary);
+}
+
+.multiple-subtitle {
+  flex-grow: 1;
+  color: var(--color-foreground-primary);
+}
+ 
+.advanced-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: var(--sp-m) 0;
+}
+
+.advanced-option {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.advanced-options-title {
+  color: var(--color-foreground-secondary);
+  padding-block-end: var(--sp-xs);
+}
+
+.advanced-option-title {
+  color: var(--color-foreground-secondary);
+  flex-grow: 1;
+}

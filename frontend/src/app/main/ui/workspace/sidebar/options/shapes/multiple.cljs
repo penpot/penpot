@@ -19,6 +19,7 @@
    [app.common.types.text :as txt]
    [app.common.types.token :as tt]
    [app.common.weak :as weak]
+   [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
@@ -326,7 +327,8 @@
 (mf/defc options*
   {::mf/wrap [#(mf/memo' % check-options-props)]}
   [{:keys [shapes shapes-with-children page-id file-id libraries] :as props}]
-  (let [shape-ids
+  (let [token-row       (contains? cf/flags :token-typography-row)
+        shape-ids
         (mf/with-memo [shapes]
           (into #{} d/xf:map-id shapes))
 
@@ -480,12 +482,29 @@
      (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
+     ;; We are temporarily duplicating some components and modifying the copies
+     ;; to work under a feature flag. When the flag is set to false, the original
+     ;; components are used; when enabled, the new versions are used instead.
+     ;;
+     ;; This approach introduces some code duplication, but it helps avoid
+     ;; scattering conditional (feature flag) logic throughout the codebase,
+     ;; keeping both implementations easier to read and maintain during the transition.
+     ;;
+     ;; Once the feature flag is fully enabled, the old components will be removed
+     ;; and the duplicated code will be cleaned up.
      (when-not (empty? text-ids)
-       [:> ot/text-menu*
-        {:type type
-         :ids text-ids
-         :values text-values
-         :applied-tokens text-tokens}])
+       (if token-row
+         [:> ot/token-text-menu*
+          {:ids text-ids
+           :type type
+           :applied-tokens text-tokens
+           :values text-values}]
+
+         [:> ot/text-menu*
+          {:ids text-ids
+           :type type
+           :applied-tokens text-tokens
+           :values text-values}]))
 
      (when-not (empty? fill-ids)
        [:> fill/fill-menu* {:type type
