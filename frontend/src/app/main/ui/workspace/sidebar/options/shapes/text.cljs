@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
+   [app.config :as cf]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -26,7 +27,7 @@
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu* token-text-menu*]]
    [rumext.v2 :as mf]))
 
 (mf/defc options*
@@ -35,6 +36,7 @@
         type   (dm/get-prop shape :type)
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
+        token-row       (contains? cf/flags :token-typography-row)
 
         applied-tokens
         (get shape :applied-tokens)
@@ -176,11 +178,19 @@
         {:ids ids
          :values (select-keys shape constraint-attrs)}])
 
-     [:> text-menu*
-      {:ids ids
-       :type type
-       :applied-tokens applied-tokens
-       :values text-values}]
+     (if token-row
+       
+       [:> token-text-menu*
+        {:ids ids
+         :type type
+         :applied-tokens applied-tokens
+         :values text-values}]
+
+       [:> text-menu*
+        {:ids ids
+         :type type
+         :applied-tokens applied-tokens
+         :values text-values}])
 
      [:> fill/fill-menu*
       {:ids ids

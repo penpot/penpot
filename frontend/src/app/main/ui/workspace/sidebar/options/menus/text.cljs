@@ -216,6 +216,9 @@
 ;; Main component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; This component is being duplicated, when text token row is enabled,
+;; this duplication will be removed and we will use token-text-menu*.
+
 (mf/defc text-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
   [{:keys [ids type values applied-tokens]}]
@@ -224,7 +227,237 @@
         typographies    (mf/deref refs/workspace-file-typography)
         editor-instance (mf/deref refs/workspace-editor)
         libraries       (mf/deref refs/files)
-        token-row       (contains? cf/flags :token-typography-row)
+
+        ;; --- UI state
+        menu-state*         (mf/use-state {:main-menu true
+                                           :more-options false})
+        menu-state          (deref menu-state*)
+        main-menu-open?     (:main-menu menu-state)
+        more-options-open?  (:more-options menu-state)
+
+        token-dropdown-open* (mf/use-state false)
+        token-dropdown-open? (deref token-dropdown-open*)
+
+        ;; --- Applied token
+        applied-token-name   (:typography applied-tokens)
+        current-token-name*  (mf/use-state applied-token-name)
+        current-token-name   (deref current-token-name*)
+
+        ;; --- Available tokens
+        active-tokens     (mf/use-ctx ctx/active-tokens-by-type)
+        typography-tokens (mf/with-memo [active-tokens] (csu/filter-tokens-for-input active-tokens :typography))
+
+        ;; --- Dropdown
+        dropdown-ref  (mf/use-ref nil)
+
+        dropdown-options
+        (mf/with-memo [typography-tokens]
+          (csu/get-token-dropdown-options typography-tokens nil))
+
+        selected-token-id*
+        (mf/use-state #(when current-token-name
+                         (:id (get-option-by-name dropdown-options current-token-name))))
+
+        ;; --- Typography
+        typography-id      (:typography-ref-id values)
+        typography-file-id (:typography-ref-file values)
+
+        typography
+        (mf/with-memo [typography-id typography-file-id file-id libraries]
+          (cond
+            (and typography-id
+                 (not= typography-id :multiple)
+                 (not= typography-file-id file-id))
+            (-> (get-in libraries [typography-file-id :data :typographies typography-id])
+                (assoc :file-id typography-file-id))
+
+            (and typography-id
+                 (not= typography-id :multiple)
+                 (= typography-file-id file-id))
+            (get typographies typography-id)))
+
+        ;; --- Helpers
+        multiple?       (->> values vals (d/seek #(= % :multiple)))
+
+        label          (case type
+                         :multiple (tr "workspace.options.text-options.title-selection")
+                         :group (tr "workspace.options.text-options.title-group")
+                         (tr "workspace.options.text-options.title"))
+        ;; --- Toggles
+        toggle-main-menu
+        (mf/use-fn
+         (mf/deps main-menu-open?)
+         #(swap! menu-state* update :main-menu not))
+
+        toggle-more-options
+        (mf/use-fn
+         (mf/deps more-options-open?)
+         #(swap! menu-state* update :more-options not))
+
+        ;; --- Event handlers
+
+        emit-update!
+        (mf/use-fn
+         (mf/deps values)
+         (fn [ids attrs]
+           (st/emit! (dwt/save-font (-> (merge (txt/get-default-text-attrs) values attrs)
+                                        (select-keys txt/text-node-attrs)))
+                     (dwt/update-all-attrs ids attrs))))
+
+        on-change
+        (mf/use-fn
+         (mf/deps ids emit-update!)
+         (fn [attrs]
+           (emit-update! ids attrs)))
+
+        on-convert-to-typography
+        (mf/use-fn
+         (mf/deps values ids file-id emit-update!)
+         (fn [_]
+           (let [set-values (-> (d/without-nils values)
+                                (select-keys (d/concat-vec txt/text-font-attrs
+                                                           txt/text-spacing-attrs
+                                                           txt/text-transform-attrs)))
+                 typography (-> (merge txt/default-typography set-values)
+                                (dwt/generate-typography-name))
+                 id         (uuid/next)]
+             (st/emit! (dwl/add-typography (assoc typography :id id) false))
+             (emit-update! ids {:typography-ref-id id :typography-ref-file file-id}))))
+
+        on-grow-type-change
+        (mf/use-fn
+         (mf/deps ids editor-instance)
+         (fn [{:keys [grow-type]}]
+           (let [uid (js/Symbol)]
+             (st/emit! (dwu/start-undo-transaction uid))
+             (when (features/active-feature? @st/state "text-editor/v2")
+               (let [content (when editor-instance
+                               (content/dom->cljs (dwt/get-editor-root editor-instance)))]
+                 (when (some? content)
+                   (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))))
+             (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
+             (when (features/active-feature? @st/state "render-wasm/v1")
+               (st/emit! (dwwt/resize-wasm-text-all ids)
+                         (ptk/data-event :layout/update {:ids ids})))
+             (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))))
+
+        handle-detach-typography
+        (mf/use-fn
+         (mf/deps on-change)
+         #(on-change {:typography-ref-file nil :typography-ref-id nil}))
+
+        handle-change-typography
+        (mf/use-fn
+         (mf/deps typography file-id)
+         (fn [changes]
+           (st/emit! (dwl/update-typography (merge typography changes) file-id))))
+
+        expand-stream
+        (mf/with-memo []
+          (->> st/stream (rx/filter (ptk/type? :expand-text-more-options))))
+
+        on-text-blur
+        (mf/use-fn
+         (fn []
+           (ts/schedule
+            100
+            (fn []
+              (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
+                (dom/focus! (txu/get-text-editor-content)))))))
+
+        common-props
+        (mf/spread-props {} {:values    values
+                             :on-change on-change
+                             :on-blur   on-text-blur})]
+
+    (hooks/use-stream
+     expand-stream
+     #(swap! menu-state* assoc :more-options true))
+
+    (mf/with-effect [applied-token-name]
+      (reset! current-token-name* applied-token-name))
+
+    (mf/with-effect [applied-token-name dropdown-options]
+      (reset! selected-token-id*
+              (when applied-token-name
+                (:id (get-option-by-name dropdown-options applied-token-name)))))
+
+    (mf/with-effect [token-dropdown-open?]
+      (when token-dropdown-open?
+        (ts/schedule 0 #(some-> (mf/ref-val dropdown-ref) dom/focus!))))
+
+    [:section {:class      (stl/css :element-set)
+               :aria-label (tr "workspace.options.text-options.text-section")}
+     [:div {:class (stl/css :element-title)}
+      [:> title-bar* {:collapsable  true
+                      :collapsed    (not main-menu-open?)
+                      :on-collapsed toggle-main-menu
+                      :title        label
+                      :class        (stl/css :title-spacing-text)}
+       (when (and (not typography) (not multiple?) (not applied-token-name))
+         [:> icon-button* {:variant           "ghost"
+                           :aria-label        (tr "workspace.options.convert-to-typography")
+                           :on-click          on-convert-to-typography
+                           :tooltip-placement "top-left"
+                           :icon              i/add}])]]
+
+     (when main-menu-open?
+       [:div {:class (stl/css :element-content)}
+        (cond
+          typography
+          [:& typography-entry {:file-id    typography-file-id
+                                :typography typography
+                                :local?     (= typography-file-id file-id)
+                                :on-detach  handle-detach-typography
+                                :on-change  handle-change-typography}]
+
+          (= typography-id :multiple)
+          [:div {:class (stl/css :multiple-typography)}
+           [:span {:class (stl/css :multiple-text)} (tr "workspace.libraries.text.multiple-typography")]
+           [:> icon-button* {:variant    "ghost"
+                             :aria-label (tr "workspace.libraries.text.multiple-typography-tooltip")
+                             :on-click   handle-detach-typography
+                             :icon       i/detach}]]
+
+          :else
+          [:> text-options  #js {:ids       ids
+                                 :values    values
+                                 :on-change on-change
+                                 :show-recent true
+                                 :on-blur
+                                 (fn []
+                                   (ts/schedule
+                                    100
+                                    (fn []
+                                      (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
+                                        (dom/focus! (txu/get-text-editor-content))))))}])
+
+        [:div {:class (stl/css :text-align-options)}
+         [:> text-align-options* common-props]
+         [:> grow-options* (mf/spread-props common-props {:on-change on-grow-type-change})]
+         [:> icon-button* {:variant     "ghost"
+                           :aria-label  (tr "labels.options")
+                           :data-testid "text-align-options-button"
+                           :on-click    toggle-more-options
+                           :icon        i/menu}]]
+
+        (when more-options-open?
+          [:div {:class (stl/css :text-decoration-options)}
+           [:> vertical-align* common-props]
+           [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
+           [:> text-direction-options* common-props]])])]))
+
+;; This component is being duplicated, when text token row is enabled,
+;; this duplication will be removed and we will use this component but renaming it to text-menu*.
+
+(mf/defc token-text-menu*
+  {::mf/wrap [#(mf/memo' % check-props)]}
+  [{:keys [ids type values applied-tokens]}]
+
+  (let [file-id         (mf/use-ctx ctx/current-file-id)
+        typographies    (mf/deref refs/workspace-file-typography)
+        editor-instance (mf/deref refs/workspace-editor)
+        libraries       (mf/deref refs/files)
 
         ;; --- UI state
         menu-state*         (mf/use-state {:main-menu true
@@ -436,7 +669,7 @@
                       :title        label
                       :class        (stl/css :title-spacing-text)}
        [:*
-        (when (and token-row (some? (resolve-delay typography-tokens)) (not typography))
+        (when (and (some? (resolve-delay typography-tokens)) (not typography) )
           [:> icon-button* {:variant           "ghost"
                             :aria-label        (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                             :on-click          toggle-token-dropdown
@@ -452,7 +685,7 @@
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
         (cond
-          (and token-row current-token-name)
+          current-token-name
           [:> token-typography-row* {:token-name    current-token-name
                                      :detach-token  detach-token
                                      :active-tokens (resolve-delay typography-tokens)}]
@@ -500,7 +733,7 @@
            [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
            [:> text-direction-options* common-props]])])
 
-     (when (and token-row token-dropdown-open?)
+     (when token-dropdown-open?
        [:> searchable-options-dropdown* {:on-click     on-option-click
                                          :id           listbox-id
                                          :options      (resolve-delay dropdown-options)
