@@ -35,7 +35,8 @@
     {:id (get profile :id)
      :name (get profile :fullname)
      :email (get profile :email)
-     :photo-url (files/resolve-public-uri (get profile :photo-id))}))
+     :photo-url (files/resolve-public-uri (get profile :photo-id))
+     :theme (get profile :theme)}))
 
 ;; ---- API: get-teams
 
