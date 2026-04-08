@@ -47,12 +47,12 @@ export default {
     // // Miscellanea
     "color-named": "never",
     // "declaration-no-important": true,
-    // "declaration-property-unit-allowed-list": {
-    //   "font-size": ["rem"],
-    //   "/^animation/": ["s"],
-    // },
+    "declaration-property-unit-allowed-list": {
+      "font-size": ["rem"],
+      "/^animation/": ["s"],
+    },
     // // 'order/properties-alphabetical-order': true,
-    // "selector-max-type": 1,
+    "selector-max-type": 1,
     // "selector-type-no-unknown": true,
     // // Notation
     // "font-weight-notation": "numeric",

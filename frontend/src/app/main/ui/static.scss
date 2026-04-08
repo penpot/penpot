@@ -348,8 +348,10 @@
       margin: deprecated.$s-20 0;
     }
 
-    form div {
-      margin-bottom: deprecated.$s-8;
+    form {
+      div {
+        margin-bottom: deprecated.$s-8;
+      }
     }
   }
 }
