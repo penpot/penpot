@@ -30,6 +30,7 @@
   (obj/reify {:name "FlagProxy"}
     :naturalChildOrdering
     {:this false
+     :writable true
      :get
      (fn [] (u/natural-child-ordering? plugin-id))
 
@@ -44,6 +45,7 @@
 
     :throwValidationErrors
     {:this false
+     :writable true
      :get
      (fn [] (u/throw-validation-errors? plugin-id))
 
