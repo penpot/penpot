@@ -244,6 +244,51 @@ pub extern "C" fn render_preview() -> Result<()> {
     Ok(())
 }
 
+/// Enter bulk-loading mode. While active, `state.loading` is `true`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn begin_loading() -> Result<()> {
+    with_state_mut!(state, {
+        state.loading = true;
+    });
+    Ok(())
+}
+
+/// Draw a full-screen loading overlay (background + "Loading…" text).
+/// Called from CLJS right after begin_loading so the user sees
+/// immediate feedback while shapes are being processed.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_loading_overlay() -> Result<()> {
+    with_state_mut!(state, {
+        state.render_state.render_loading_overlay();
+    });
+    Ok(())
+}
+
+/// Rebuild the full tile index after bulk loading.
+/// Called while `loading` is still `true` so the first render
+/// can use the loading flag (e.g. for placeholders).
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn rebuild_all_tiles() -> Result<()> {
+    with_state_mut!(state, {
+        state.rebuild_tiles();
+    });
+    Ok(())
+}
+
+/// Leave bulk-loading mode. Should be called after the first
+/// render so the loading flag is available during that render.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn end_loading() -> Result<()> {
+    with_state_mut!(state, {
+        state.loading = false;
+    });
+    Ok(())
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn process_animation_frame(timestamp: i32) -> Result<()> {

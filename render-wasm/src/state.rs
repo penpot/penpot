@@ -26,6 +26,8 @@ pub(crate) struct State {
     pub current_browser: u8,
     pub shapes: ShapesPool,
     pub saved_shapes: Option<ShapesPool>,
+    /// True while the first bulk load of shapes is in progress.
+    pub loading: bool,
 }
 
 impl State {
@@ -36,8 +38,8 @@ impl State {
             current_id: None,
             current_browser: 0,
             shapes: ShapesPool::new(),
-            // TODO: Maybe this can be moved to a different object
             saved_shapes: None,
+            loading: false,
         })
     }
 

@@ -1132,46 +1132,40 @@
 
 (defn- set-objects-async
   "Asynchronously process shapes in chunks, yielding to the browser between chunks.
-   Returns a promise that resolves when all shapes are processed.
-
-   Renders a preview only periodically during loading to show progress,
-   then does a full tile-based render at the end."
+   Returns a promise that resolves when all shapes are processed."
   [shapes render-callback]
-  (let [total-shapes (count shapes)
-        total-chunks (mth/ceil (/ total-shapes SHAPES_CHUNK_SIZE))
-        ;; Render at 25%, 50%, 75% of loading
-        render-at-chunks (set [(mth/floor (* total-chunks 0.25))
-                               (mth/floor (* total-chunks 0.5))
-                               (mth/floor (* total-chunks 0.75))])]
+  (let [total-shapes (count shapes)]
     (p/create
      (fn [resolve _reject]
-       (letfn [(process-next-chunk [index thumbnails-acc full-acc chunk-count]
+       (letfn [(process-next-chunk [index thumbnails-acc full-acc]
                  (if (< index total-shapes)
                    ;; Process one chunk
                    (let [{:keys [thumbnails full next-index]}
                          (process-shapes-chunk shapes index SHAPES_CHUNK_SIZE
-                                               thumbnails-acc full-acc)
-                         new-chunk-count (inc chunk-count)]
-                     ;; Only render at specific progress milestones
-                     (when (contains? render-at-chunks new-chunk-count)
-                       (render-preview!))
-
+                                               thumbnails-acc full-acc)]
                      ;; Yield to browser, then continue with next chunk
                      (-> (yield-to-browser)
                          (p/then (fn [_]
-                                   (process-next-chunk next-index thumbnails full new-chunk-count)))))
+                                   (process-next-chunk next-index thumbnails full)))))
                    ;; All chunks done - finalize
                    (do
                      (perf/end-measure "set-objects")
-                     (process-pending shapes thumbnails-acc full-acc noop-fn
+                     ;; Rebuild tiles while loading=true so the first
+                     ;; render can use the flag (e.g. for placeholders)
+                     (h/call wasm/internal-module "_rebuild_all_tiles")
+                     ;; Unblock rendering so shapes appear immediately
+                     (end-shapes-loading!)
+                     (process-pending shapes thumbnails-acc full-acc
+                                      ;; on-render: first render done, now clear loading flag
                                       (fn []
-                                        (end-shapes-loading!)
+                                        (h/call wasm/internal-module "_end_loading"))
+                                      (fn []
                                         (if render-callback
                                           (render-callback)
                                           (render-finish))
                                         (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
                                         (resolve nil))))))]
-         (process-next-chunk 0 [] [] 0))))))
+         (process-next-chunk 0 [] []))))))
 
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."
@@ -1238,12 +1232,16 @@
        (set-objects-sync shapes render-callback)
        (do
          (begin-shapes-loading!)
+         (h/call wasm/internal-module "_begin_loading")
+         (h/call wasm/internal-module "_render_loading_overlay")
          (try
            (-> (set-objects-async shapes render-callback)
                (p/catch (fn [error]
+                          (h/call wasm/internal-module "_end_loading")
                           (end-shapes-loading!)
                           (js/console.error "Async WASM shape loading failed" error))))
            (catch :default error
+             (h/call wasm/internal-module "_end_loading")
              (end-shapes-loading!)
              (js/console.error "Async WASM shape loading failed" error)
              (throw error)))
