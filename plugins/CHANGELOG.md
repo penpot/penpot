@@ -1,6 +1,7 @@
 ## 1.5.0 (Unreleased)
 
 - **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
+- **plugin-types**: Fix missing `webp` export format in `Export.type`
 
 ## 1.4.2 (2026-01-21)
 
