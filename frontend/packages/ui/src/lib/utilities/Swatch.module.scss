@@ -7,12 +7,6 @@
 @use "../_ds/_borders.scss" as *;
 @use "../_ds/_sizes.scss" as *;
 
-@property --solid-color-overlay {
-  syntax: "<color>";
-  inherits: false;
-  initial-value: rgb(0 0 0 / 0%);
-}
-
 .swatch {
   --border-color: var(--color-accent-primary-muted);
   --border-radius: #{$br-4};

@@ -6,6 +6,9 @@
 
 import { memo, useCallback, useId, useRef } from "react";
 import clsx from "clsx";
+// Global @property registration — must be a non-module import so the
+// @property rule lands in the global scope (CSS Modules cannot scope it).
+import "./swatch-properties.scss";
 import styles from "./Swatch.module.scss";
 
 // ---------------------------------------------------------------------------
