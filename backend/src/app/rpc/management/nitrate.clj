@@ -8,6 +8,7 @@
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
   organization management and token validation endpoints."
   (:require
+   [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
@@ -20,8 +21,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as doc]
-   [app.util.services :as sv]
-   [cuerdas.core :as str]))
+   [app.util.services :as sv]))
 
 ;; ---- API: authenticate
 
@@ -211,9 +211,10 @@
 
 ;; ---- API: delete-teams-keeping-your-penpot-projects
 
-(def ^:private sql:add-prefix-to-teams
+(def ^:private sql:prefix-teams-name-and-unset-default
   "UPDATE team
-      SET name = ? || name
+      SET name = ? || name,
+          is_default = FALSE
     WHERE id = ANY(?)
 RETURNING id, name;")
 
@@ -230,23 +231,15 @@ RETURNING id, name;")
    ::sm/params schema:notify-org-deletion}
   [cfg {:keys [teams org-name]}]
   (when (seq teams)
-    (let [cleaned-org-name (if org-name
-                             (-> org-name
-                                 str
-                                 str/trim
-                                 (str/replace #"[^\w\s\-_()]+" "")
-                                 (str/replace #"\s+" " ")
-                                 str/trim)
-                             "")
-          org-prefix       (str "[" cleaned-org-name "] ")]
+    (let [org-prefix (str "[" (d/sanitize-string org-name) "] ")]
       (db/tx-run!
        cfg
        (fn [{:keys [::db/conn] :as cfg}]
          (let [ids-array (db/create-array conn "uuid" teams)
-               ;; ---- Rename projects ----
-               updated-teams (db/exec! conn [sql:add-prefix-to-teams org-prefix ids-array])]
+               ;; Rename projects
+               updated-teams (db/exec! conn [sql:prefix-teams-name-and-unset-default org-prefix ids-array])]
 
-           ;; ---- Notify users ----
+           ;; Notify users
            (doseq [team updated-teams]
              (notify-team-change cfg (:id team) (:name team) nil org-name "dashboard.org-deleted"))))))))
 

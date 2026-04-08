@@ -20,7 +20,7 @@ $_fs-24: px2rem(24);
 $_fs-36: px2rem(36);
 
 @mixin _font-style-display {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-regular;
   line-height: $_font-lineheight-normal;
@@ -28,7 +28,7 @@ $_fs-36: px2rem(36);
 }
 
 @mixin _font-style-title-large {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-regular;
   line-height: $_font-lineheight-normal;
@@ -36,7 +36,7 @@ $_fs-36: px2rem(36);
 }
 
 @mixin _font-style-title-medium {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-regular;
   line-height: $_font-lineheight-normal;
@@ -44,7 +44,7 @@ $_fs-36: px2rem(36);
 }
 
 @mixin _font-style-title-small {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-regular;
   line-height: $_font-lineheight-dense;
@@ -52,7 +52,7 @@ $_fs-36: px2rem(36);
 }
 
 @mixin _font-style-headline-large {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-regular;
   line-height: $_font-lineheight-normal;
@@ -61,7 +61,7 @@ $_fs-36: px2rem(36);
 }
 
 @mixin _font-style-headline-medium {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-regular;
   line-height: $_font-lineheight-normal;
@@ -70,7 +70,7 @@ $_fs-36: px2rem(36);
 }
 
 @mixin _font-style-headline-small {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-medium;
   line-height: $_font-lineheight-dense;
@@ -79,7 +79,7 @@ $_fs-36: px2rem(36);
 }
 
 @mixin _font-style-body-large {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-regular;
   line-height: $_font-lineheight-normal;
@@ -87,7 +87,7 @@ $_fs-36: px2rem(36);
 }
 
 @mixin _font-style-body-medium {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-regular;
   line-height: $_font-lineheight-normal;
@@ -95,7 +95,7 @@ $_fs-36: px2rem(36);
 }
 
 @mixin _font-style-body-small {
-  font-family: worksans, vazirmatn, sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-optical-sizing: auto;
   font-weight: $_font-weight-regular;
   line-height: $_font-lineheight-compact;

@@ -129,6 +129,12 @@
   (->> [sql:team-averages]
        (db/exec-one! conn)))
 
+(defn- get-email-domains
+  [conn]
+  (let [sql "SELECT DISTINCT split_part(email, '@', 2) AS domain FROM profile ORDER BY 1"]
+    (->> (db/exec! conn [sql])
+         (mapv :domain))))
+
 (defn- get-enabled-auth-providers
   [conn]
   (let [sql  (str "SELECT auth_backend AS backend, count(*) AS total "
@@ -192,7 +198,8 @@
          :total-fonts         (get-num-fonts conn)
          :total-comments      (get-num-comments conn)
          :total-file-changes  (get-num-file-changes conn)
-         :total-touched-files (get-num-touched-files conn)}
+         :total-touched-files (get-num-touched-files conn)
+         :email-domains       (get-email-domains conn)}
         (merge
          (get-team-averages conn)
          (get-jvm-stats)

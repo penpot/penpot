@@ -53,19 +53,18 @@ export class WorkspacePage extends BaseWebSocketPage {
       for (let i = 0; i < amount; i++) {
         await this.page.keyboard.press("ArrowLeft");
       }
-      await this.waitForIdle();
+      await this.waitForIdle({ timeout: 100 });
     }
 
     async moveToRight(amount = 0) {
       for (let i = 0; i < amount; i++) {
         await this.page.keyboard.press("ArrowRight");
       }
-      await this.waitForIdle();
+      await this.waitForIdle({ timeout: 100 });
     }
 
     async moveFromStart(offset = 0) {
       await this.page.keyboard.press("Home");
-      await this.waitForIdle();
       await this.moveToRight(offset);
     }
 
@@ -107,10 +106,10 @@ export class WorkspacePage extends BaseWebSocketPage {
       return this.changeNumericInput(this.letterSpacing, newValue);
     }
 
-    async waitForIdle() {
+    async waitForIdle(options) {
       await this.page.evaluate(
-        () => new Promise((resolve) => globalThis.requestIdleCallback(resolve)),
-      );
+        (options) => new Promise(
+          (resolve) => globalThis.requestIdleCallback(resolve, options)), options);
     }
   };
 

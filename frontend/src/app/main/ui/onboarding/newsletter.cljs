@@ -56,8 +56,7 @@
 
      [:div.animated.fadeInDown {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-left)}
-       [:img {:src "images/deco-newsletter.png"
-              :border "0"}]]
+       [:img {:src "images/newsletter-notification.svg"}]]
 
       [:div {:class (stl/css :modal-right)}
        [:h2 {:class (stl/css :modal-title)

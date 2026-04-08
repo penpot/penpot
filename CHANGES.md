@@ -22,6 +22,7 @@
 - Add natural sorting on token names [Taiga #13713](https://tree.taiga.io/project/penpot/issue/13713)
 - Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
 - Add CSS linter [Taiga #13790](https://tree.taiga.io/project/penpot/us/13790)
+- Save and restore selection state in undo/redo (by @eureka928) [Github #6007](https://github.com/penpot/penpot/issues/6007)
 
 ### :bug: Bugs fixed
 
@@ -33,6 +34,8 @@
 - Fix dates to avoid show them in english when browser is in auto [Taiga #13786](https://tree.taiga.io/project/penpot/issue/13786)
 - Fix focus radio button [Taiga #13841](https://tree.taiga.io/project/penpot/issue/13841)
 - Token tree should be expanded by default [Taiga #13631](https://tree.taiga.io/project/penpot/issue/13631)
+- Fix opacity incorrectly disabled for visible shapes [Taiga #13906](https://tree.taiga.io/project/penpot/issue/13906)
+- Update onboarding image [Taiga #13864](https://tree.taiga.io/project/penpot/issue/13864)
 
 ## 2.15.0 (Unreleased)
 
@@ -51,6 +54,7 @@
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 - Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
+- Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
 
 
 ## 2.14.1

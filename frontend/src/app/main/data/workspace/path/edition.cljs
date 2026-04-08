@@ -11,7 +11,6 @@
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
-   [app.common.types.path.segment :as path.segment]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.edition :as dwe]
@@ -74,8 +73,8 @@
 
 (defn modify-content-point
   [content {dx :x dy :y} modifiers point]
-  (let [point-indices (path.segment/point-indices content point) ;; [indices]
-        handler-indices (path.segment/handler-indices content point) ;; [[index prefix]]
+  (let [point-indices (path/point-indices content point) ;; [indices]
+        handler-indices (path/handler-indices content point) ;; [[index prefix]]
 
         modify-point
         (fn [modifiers index]
@@ -258,10 +257,10 @@
             points  (path/get-points content)
 
             point (-> content (nth (if (= prefix :c1) (dec index) index)) (path.helpers/segment->point))
-            handler (-> content (nth index) (path.segment/get-handler prefix))
+            handler (-> content (nth index) (path/get-handler prefix))
 
-            [op-idx op-prefix] (path.segment/opposite-index content index prefix)
-            opposite (path.segment/get-handler-point content op-idx op-prefix)]
+            [op-idx op-prefix] (path/opposite-index content index prefix)
+            opposite (path/get-handler-point content op-idx op-prefix)]
 
         (streams/drag-stream
          (rx/concat
@@ -344,7 +343,7 @@
         (-> state
             (assoc-in [:workspace-local :edit-path id :old-content] content)
             (st/set-content (-> content
-                                (path.segment/split-segments #{from-p to-p} t)
+                                (path/split-segments #{from-p to-p} t)
                                 (path/content))))))
 
     ptk/WatchEvent

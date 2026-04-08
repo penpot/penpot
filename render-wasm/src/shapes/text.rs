@@ -605,6 +605,40 @@ impl TextContent {
         paragraph_group
     }
 
+    /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
+    /// Used as a clip mask for inner stroke rendering.
+    pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
+        let fonts = get_font_collection();
+        let fallback_fonts = get_fallback_fonts();
+        let mut paragraph_group = Vec::new();
+
+        for paragraph in self.paragraphs() {
+            let paragraph_style = paragraph.paragraph_to_style();
+            let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            let mut has_text = false;
+            for span in paragraph.children() {
+                let text_style = span.to_style(
+                    &self.bounds(),
+                    fallback_fonts,
+                    true, // always opaque
+                    paragraph.line_height(),
+                );
+                let text: String = span.apply_text_transform();
+                if !text.is_empty() {
+                    has_text = true;
+                }
+                builder.push_style(&text_style);
+                builder.add_text(&text);
+            }
+            if !has_text {
+                builder.add_text(" ");
+            }
+            paragraph_group.push(vec![builder]);
+        }
+
+        paragraph_group
+    }
+
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
@@ -1094,6 +1128,7 @@ impl TextSpan {
         self.text = text;
     }
 
+    #[allow(dead_code)]
     pub fn fills(&self) -> &[shapes::Fill] {
         &self.fills
     }
