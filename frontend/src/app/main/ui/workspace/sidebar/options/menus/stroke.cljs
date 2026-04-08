@@ -160,8 +160,8 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [index]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids))
-           (st/emit! (dwsh/update-shapes ids #(update-in % [:strokes index :hidden] not)))))
+           (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                     (dwsh/update-shapes ids #(update-in % [:strokes index :hidden] not)))))
 
         on-add-stroke
         (fn [_]
