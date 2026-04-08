@@ -39,6 +39,10 @@ frontend/packages/ui/
 │       │   ├── Input.module.scss
 │       │   ├── Input.stories.tsx
 │       │   ├── Input.spec.tsx
+│       │   ├── RadioButtons.tsx
+│       │   ├── RadioButtons.module.scss
+│       │   ├── RadioButtons.stories.tsx
+│       │   ├── RadioButtons.spec.tsx
 │       │   ├── Switch.tsx
 │       │   ├── Switch.module.scss
 │       │   ├── Switch.stories.tsx
@@ -74,6 +78,11 @@ frontend/packages/ui/
 │       │       ├── NotificationPill.module.scss
 │       │       ├── NotificationPill.stories.tsx
 │       │       └── NotificationPill.spec.tsx
+│       ├── layout/               # Layout components
+│       │   ├── TabSwitcher.tsx
+│       │   ├── TabSwitcher.module.scss
+│       │   ├── TabSwitcher.stories.tsx
+│       │   └── TabSwitcher.spec.tsx
 │       └── product/              # Product-level components (e.g. Cta, EmptyPlaceholder)
 │       └── utilities/            # Utility components (e.g. Swatch)
 ├── eslint.config.mjs             # ESLint 9 flat config (TypeScript + React)
@@ -107,8 +116,11 @@ Components are organised to mirror the CLJS source tree
 | `ds/controls/switch.cljs` | `src/lib/controls/Switch.tsx` |
 | `ds/controls/checkbox.cljs` | `src/lib/controls/Checkbox.tsx` |
 | `ds/controls/input.cljs` | `src/lib/controls/Input.tsx` |
+| `ds/controls/radio_buttons.cljs` | `src/lib/controls/RadioButtons.tsx` |
 | `ds/product/empty_placeholder.cljs` | `src/lib/product/EmptyPlaceholder.tsx` |
 | `ds/notifications/shared/notification_pill.cljs` | `src/lib/notifications/shared/NotificationPill.tsx` |
+| `ds/layout/tab_switcher.cljs` | `src/lib/layout/TabSwitcher.tsx` |
+| `ds/product/empty_state.cljs` | `src/lib/product/EmptyState.tsx` |
 
 ### Known Tooling Notes
 
@@ -128,6 +140,22 @@ Components are organised to mirror the CLJS source tree
   (`[data-disabled]` selector).
 - **CSS Module class names must be kebab-case** — stylelint rejects camelCase
   selectors. Use bracket notation in TSX when needed (`styles["my-class"]`).
+- **`@property` CSS at-rules cannot live in CSS Modules** — they must be in a
+  global (non-module) stylesheet. Create a `component-properties.scss` sidecar
+  file and import it as a side effect (`import "./component-properties.scss"`)
+  from the TSX file so it lands in global scope.
+- **Storybook stories using `useState`** must extract the stateful wrapper into
+  a named component (`function StatefulFoo(…)`) rather than using an inline
+  arrow function in `render: (args) => { ... }`. The `react-hooks/rules-of-hooks`
+  ESLint rule rejects hooks inside anonymous `render` callbacks.
+- **Story args with required props** — when the story component has required props
+  (e.g. `tabs`, `selected`), either provide them as `args` defaults in meta or
+  use a wrapper component (`StatefulFoo`) as the `component` in meta to avoid
+  TypeScript `args` errors on individual stories.
+- **`fireEvent.change` on controlled radio/checkbox inputs** is not reliably
+  dispatched through React's synthetic event system in JSDOM. Test `onChange`
+  wiring structurally (e.g. check `readOnly` attribute) rather than expecting
+  `fireEvent.change` to trigger the handler.
 
 Every migrated component must have:
 - `ComponentName.tsx` – the React component
