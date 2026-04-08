@@ -23,6 +23,8 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(def debounce-resize-text-time 40)
+
 (defn get-wasm-text-new-size
   "Computes the new {width, height} for a text shape from WASM text layout.
   For :fixed grow-type, updates WASM content and returns current dimensions (no resize)."
@@ -144,7 +146,7 @@
               (rx/merge
                (->> stream
                     (rx/filter (ptk/type? ::resize-wasm-text-debounce-inner))
-                    (rx/debounce 40)
+                    (rx/debounce debounce-resize-text-time)
                     (rx/take 1)
                     (rx/map (fn [evt]
                               (resize-wasm-text-debounce-commit
