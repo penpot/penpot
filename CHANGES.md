@@ -23,6 +23,7 @@
 - Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
 - Add CSS linter [Taiga #13790](https://tree.taiga.io/project/penpot/us/13790)
 - Save and restore selection state in undo/redo (by @eureka928) [Github #6007](https://github.com/penpot/penpot/issues/6007)
+- Fix warnings for unsupported token $type (by @Dexterity104) [Github #8790](https://github.com/penpot/penpot/issues/8790)
 
 ### :bug: Bugs fixed
 
