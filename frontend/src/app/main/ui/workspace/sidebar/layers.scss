@@ -286,6 +286,7 @@
 
 .scope-label {
   @include deprecated.bodySmallTypography;
+
   color: var(--color-foreground-secondary);
   cursor: pointer;
 }
