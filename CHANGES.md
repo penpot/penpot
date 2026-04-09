@@ -24,6 +24,7 @@
 - Add CSS linter [Taiga #13790](https://tree.taiga.io/project/penpot/us/13790)
 - Save and restore selection state in undo/redo (by @eureka928) [Github #6007](https://github.com/penpot/penpot/issues/6007)
 - Add per-group add button for typographies (by @eureka928) [Github #5275](https://github.com/penpot/penpot/issues/5275)
+- Use page name for multi-export ZIP/PDF downloads (by @Dexterity104) [Github #8773](https://github.com/penpot/penpot/issues/8773)
 
 ### :bug: Bugs fixed
 
