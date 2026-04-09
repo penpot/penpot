@@ -63,7 +63,7 @@
             {:keys [last-point prev-handler]}
             (get-in state [:workspace-local :edit-path id])
 
-            segment (path/next-node shape position last-point prev-handler)]
+            segment (path/next-node (:content shape) position last-point prev-handler)]
         (assoc-in state [:workspace-local :edit-path id :preview] segment)))))
 
 (defn add-node
