@@ -69,6 +69,8 @@
         hidden?             (get values :hidden)
         blocked?            (get values :blocked)
 
+        opacity (get values :opacity)
+
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
@@ -239,8 +241,9 @@
          :align :right
          :disabled (if (or (= :multiple hidden?) hidden?) true false)
          :class (stl/css :numeric-input-wrapper)
-         :value (* 100
-                   (or (get values :opacity) 1))}]
+         :value (if (= :multiple opacity)
+                  opacity
+                  (* 100 (d/nilv opacity 1)))}]
 
        (cond
          (or (= :multiple hidden?) (not hidden?))
