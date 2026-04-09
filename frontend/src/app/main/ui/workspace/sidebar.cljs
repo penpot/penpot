@@ -280,7 +280,7 @@
         [:> history-toolbox*]])]))
 
 (mf/defc right-sidebar*
-  [{:keys [layout section file page-id drawing-tool active-tokens] :as props}]
+  [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]
   (let [is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
@@ -340,7 +340,7 @@
                 :on-pointer-move on-pointer-move}])
 
        [:> right-header*
-        {:file file
+        {:file-id file-id
          :layout layout
          :page-id page-id}]
 

@@ -6,15 +6,14 @@
 
 @use "ds/_utils.scss" as *;
 @use "ds/_borders.scss" as *;
-
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-dialog {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
 
   color: var(--color-foreground-secondary);
   display: grid;
