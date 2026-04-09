@@ -30,6 +30,18 @@
 #?(:clj (set! *warn-on-reflection* true))
 
 (def ^:const SEGMENT-U8-SIZE 28)
+
+(defn- normalize-coord
+  "Normalize a coordinate value to be within safe integer bounds.
+   Clamps values greater than max-safe-int to max-safe-int,
+   and values less than min-safe-int to min-safe-int.
+   Always returns a double."
+  [v]
+  (cond
+    (> v sm/max-safe-int) (double sm/max-safe-int)
+    (< v sm/min-safe-int) (double sm/min-safe-int)
+    :else (double v)))
+
 (def ^:const SEGMENT-U32-SIZE (/ SEGMENT-U8-SIZE 4))
 
 (defprotocol IPathData
@@ -121,12 +133,12 @@
     (if (< index size)
       (let [offset (* index SEGMENT-U8-SIZE)
             type   (buf/read-short buffer offset)
-            c1x    (buf/read-float buffer (+ offset 4))
-            c1y    (buf/read-float buffer (+ offset 8))
-            c2x    (buf/read-float buffer (+ offset 12))
-            c2y    (buf/read-float buffer (+ offset 16))
-            x      (buf/read-float buffer (+ offset 20))
-            y      (buf/read-float buffer (+ offset 24))
+            c1x    (normalize-coord (buf/read-float buffer (+ offset 4)))
+            c1y    (normalize-coord (buf/read-float buffer (+ offset 8)))
+            c2x    (normalize-coord (buf/read-float buffer (+ offset 12)))
+            c2y    (normalize-coord (buf/read-float buffer (+ offset 16)))
+            x      (normalize-coord (buf/read-float buffer (+ offset 20)))
+            y      (normalize-coord (buf/read-float buffer (+ offset 24)))
             type   (case type
                      1 :move-to
                      2 :line-to
@@ -148,12 +160,12 @@
     (if (< index size)
       (let [offset (* index SEGMENT-U8-SIZE)
             type   (buf/read-short buffer offset)
-            c1x    (buf/read-float buffer (+ offset 4))
-            c1y    (buf/read-float buffer (+ offset 8))
-            c2x    (buf/read-float buffer (+ offset 12))
-            c2y    (buf/read-float buffer (+ offset 16))
-            x      (buf/read-float buffer (+ offset 20))
-            y      (buf/read-float buffer (+ offset 24))
+            c1x    (normalize-coord (buf/read-float buffer (+ offset 4)))
+            c1y    (normalize-coord (buf/read-float buffer (+ offset 8)))
+            c2x    (normalize-coord (buf/read-float buffer (+ offset 12)))
+            c2y    (normalize-coord (buf/read-float buffer (+ offset 16)))
+            x      (normalize-coord (buf/read-float buffer (+ offset 20)))
+            y      (normalize-coord (buf/read-float buffer (+ offset 24)))
             type   (case type
                      1 :move-to
                      2 :line-to
@@ -172,12 +184,12 @@
   [buffer index f]
   (let [offset (* index SEGMENT-U8-SIZE)
         type   (buf/read-short buffer offset)
-        c1x    (buf/read-float buffer (+ offset 4))
-        c1y    (buf/read-float buffer (+ offset 8))
-        c2x    (buf/read-float buffer (+ offset 12))
-        c2y    (buf/read-float buffer (+ offset 16))
-        x      (buf/read-float buffer (+ offset 20))
-        y      (buf/read-float buffer (+ offset 24))
+        c1x    (normalize-coord (buf/read-float buffer (+ offset 4)))
+        c1y    (normalize-coord (buf/read-float buffer (+ offset 8)))
+        c2x    (normalize-coord (buf/read-float buffer (+ offset 12)))
+        c2y    (normalize-coord (buf/read-float buffer (+ offset 16)))
+        x      (normalize-coord (buf/read-float buffer (+ offset 20)))
+        y      (normalize-coord (buf/read-float buffer (+ offset 24)))
         type   (case type
                  1 :move-to
                  2 :line-to
@@ -252,31 +264,31 @@
   (let [offset (* index SEGMENT-U8-SIZE)
         type   (buf/read-short buffer offset)]
     (case (long type)
-      1 (let [x (buf/read-float buffer (+ offset 20))
-              y (buf/read-float buffer (+ offset 24))]
+      1 (let [x (normalize-coord (buf/read-float buffer (+ offset 20)))
+              y (normalize-coord (buf/read-float buffer (+ offset 24)))]
           {:command :move-to
-           :params {:x (double x)
-                    :y (double y)}})
+           :params {:x x
+                    :y y}})
 
-      2 (let [x (buf/read-float buffer (+ offset 20))
-              y (buf/read-float buffer (+ offset 24))]
+      2 (let [x (normalize-coord (buf/read-float buffer (+ offset 20)))
+              y (normalize-coord (buf/read-float buffer (+ offset 24)))]
           {:command :line-to
-           :params {:x (double x)
-                    :y (double y)}})
+           :params {:x x
+                    :y y}})
 
-      3 (let [c1x (buf/read-float buffer (+ offset 4))
-              c1y (buf/read-float buffer (+ offset 8))
-              c2x (buf/read-float buffer (+ offset 12))
-              c2y (buf/read-float buffer (+ offset 16))
-              x   (buf/read-float buffer (+ offset 20))
-              y   (buf/read-float buffer (+ offset 24))]
+      3 (let [c1x (normalize-coord (buf/read-float buffer (+ offset 4)))
+              c1y (normalize-coord (buf/read-float buffer (+ offset 8)))
+              c2x (normalize-coord (buf/read-float buffer (+ offset 12)))
+              c2y (normalize-coord (buf/read-float buffer (+ offset 16)))
+              x   (normalize-coord (buf/read-float buffer (+ offset 20)))
+              y   (normalize-coord (buf/read-float buffer (+ offset 24)))]
           {:command :curve-to
-           :params {:x (double x)
-                    :y (double y)
-                    :c1x (double c1x)
-                    :c1y (double c1y)
-                    :c2x (double c2x)
-                    :c2y (double c2y)}})
+           :params {:x x
+                    :y y
+                    :c1x c1x
+                    :c1y c1y
+                    :c2x c2x
+                    :c2y c2y}})
 
       4 {:command :close-path
          :params {}}
@@ -666,8 +678,6 @@
 (defn from-plain
   "Create a PathData instance from plain data structures"
   [segments]
-  (assert (check-plain-content segments))
-
   (let [total  (count segments)
         buffer (buf/allocate (* total SEGMENT-U8-SIZE))]
     (loop [index 0]
@@ -677,30 +687,28 @@
           (case (get segment :command)
             :move-to
             (let [params (get segment :params)
-                  x      (float (get params :x))
-                  y      (float (get params :y))]
+                  x      (normalize-coord (get params :x))
+                  y      (normalize-coord (get params :y))]
               (buf/write-short buffer offset 1)
               (buf/write-float buffer (+ offset 20) x)
               (buf/write-float buffer (+ offset 24) y))
 
             :line-to
             (let [params (get segment :params)
-                  x      (float (get params :x))
-                  y      (float (get params :y))]
-
+                  x      (normalize-coord (get params :x))
+                  y      (normalize-coord (get params :y))]
               (buf/write-short buffer offset 2)
               (buf/write-float buffer (+ offset 20) x)
               (buf/write-float buffer (+ offset 24) y))
 
             :curve-to
             (let [params (get segment :params)
-                  x      (float (get params :x))
-                  y      (float (get params :y))
-                  c1x    (float (get params :c1x x))
-                  c1y    (float (get params :c1y y))
-                  c2x    (float (get params :c2x x))
-                  c2y    (float (get params :c2y y))]
-
+                  x      (normalize-coord (get params :x))
+                  y      (normalize-coord (get params :y))
+                  c1x    (normalize-coord (get params :c1x x))
+                  c1y    (normalize-coord (get params :c1y y))
+                  c2x    (normalize-coord (get params :c2x x))
+                  c2y    (normalize-coord (get params :c2y y))]
               (buf/write-short buffer offset 3)
               (buf/write-float buffer (+ offset 4)  c1x)
               (buf/write-float buffer (+ offset 8)  c1y)
