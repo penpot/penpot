@@ -157,6 +157,19 @@ This bootstrap command will:
 
 ### 3. Connect an MCP Client
 
+> [!IMPORTANT]  
+> **Use an appropriate model.**
+> 
+> We recommend that you ...
+>   * use the most capable model at your disposal. 
+>     You will achieve the best results with frontier models, 
+>     especially when dealing with more complex tasks.
+>     Weaker models, including most locally hosted ones, 
+>     are unlikely to produce usable results for anything beyond simple tasks.
+>   * use a vision language model (VLM), as many design tasks necessitate visual
+>     inspection. 
+>     (If you are using a standard commercial model, it almost certainly supports vision already.)
+
 By default, the server runs on port 4401 and provides:
 
 - **Modern Streamable HTTP endpoint**: `http://localhost:4401/mcp`
