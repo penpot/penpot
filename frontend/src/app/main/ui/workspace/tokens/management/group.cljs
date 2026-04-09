@@ -76,9 +76,23 @@
         (get dwta/token-properties type)
 
         folded-token-paths (mf/deref ref:folded-token-paths)
-        unfolded-token-types (mf/deref ref:unfolded-token-types)
+        unfolded-token-types-state (mf/deref ref:unfolded-token-types)
+        unfolded-token-types-file-id (if (map? unfolded-token-types-state)
+                     (:file-id unfolded-token-types-state)
+                     nil)
+        unfolded-token-types-set-id (if (map? unfolded-token-types-state)
+                    (:set-id unfolded-token-types-state)
+                    nil)
+        unfolded-token-types (if (map? unfolded-token-types-state)
+                   (:types unfolded-token-types-state)
+                   unfolded-token-types-state)
+        current-file (mf/deref refs/file)
+        current-file-id (:id current-file)
 
-        is-type-unfolded (contains? (set unfolded-token-types) type)
+        is-same-context? (and (= unfolded-token-types-file-id current-file-id)
+                  (= unfolded-token-types-set-id selected-token-set-id))
+        is-type-unfolded (and is-same-context?
+                  (contains? (set unfolded-token-types) type))
 
         editing-ref  (mf/deref refs/workspace-editor-state)
         edition      (mf/deref refs/selected-edition)
@@ -156,6 +170,10 @@
                                         :type :toast
                                         :level :warning
                                         :timeout 3000}))))))))]
+
+    (mf/use-effect
+     (fn []
+       (st/emit! (dwtl/restore-unfolded-token-types))))
 
     [:div {:class (stl/css :token-section-wrapper)
            :data-testid (dm/str "section-" (name type))}
