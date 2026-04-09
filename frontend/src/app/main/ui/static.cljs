@@ -150,7 +150,7 @@
          [:*
           [:div {:class (stl/css :logo-title)} (tr "not-found.login.signup-free")]
           [:div {:class (stl/css :logo-subtitle)} (tr "not-found.login.start-using")]
-          [:& register/register-methods {:on-success-callback success-register :hide-separator true}]
+          [:> register/register-methods* {:on-success-callback success-register :hide-separator true}]
           #_[:hr {:class (stl/css :separator)}]
           [:div {:class (stl/css :separator)}]
           [:div {:class (stl/css :change-section)}
@@ -160,11 +160,11 @@
                 :on-click set-section} (tr "auth.login-here")]]
           [:div {:class (stl/css :links)}
            [:hr {:class (stl/css :separator)}]
-           [:& register/terms-register]]]
+           [:> register/terms-register*]]]
 
          :register-validate
          [:div {:class (stl/css :form-container)}
-          [:& register/register-form
+          [:> register/register-form*
            {:params {:token @register-token}
             :on-success-callback register-email-sent}]
           [:div {:class (stl/css :links)}
@@ -175,7 +175,7 @@
 
          :register-email-sent
          [:div {:class (stl/css :form-container)}
-          [:& register/register-success-page {:params {:email @user-email :hide-logo true}}]]
+          [:> register/register-success-page* {:params {:email @user-email :hide-logo true}}]]
 
          :recovery-request
          [:& recovery-request-page {:go-back-callback set-section-login

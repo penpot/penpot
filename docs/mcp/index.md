@@ -110,6 +110,18 @@ If you just want to try Penpot MCP quickly, follow this path for the **hosted (r
 
 ### Remote MCP in 5 steps
 
+<div class="advice">
+
+### Important: remote MCP is not in production yet
+
+Remote MCP is not available yet in Penpot production (`design.penpot.app`). It is planned for an upcoming release (currently targeted around **2.16**).
+
+Right now, the remote MCP flow is available only in **testing environments** (for example, instances deployed from the `staging` branch: https://github.com/penpot/penpot/tree/staging).
+
+If you need MCP in production today, use the **Local MCP server** setup instead. See [Local MCP server](#local-mcp-server).
+
+</div>
+
 1. #### Enable MCP in Penpot
    Go to **Your account → Integrations → MCP Server (Beta)** and enable the feature.
 
@@ -285,6 +297,16 @@ In Penpot, open a file and connect the plugin from **File → MCP Server → Con
 ## Remote MCP server
 
 Remote MCP is the easiest way to start using AI agents with Penpot. It's hosted for you, so you don't need to install or run anything on your machine.
+
+<div class="advice">
+
+### Availability note
+
+Remote MCP is currently available only in **testing environments**. It is not yet available in Penpot production (`design.penpot.app`) and is planned for an upcoming release (currently targeted around **2.16**).
+
+If you need MCP in production today, use the **Local MCP server** setup instead. See [Local MCP server](#local-mcp-server).
+
+</div>
 
 <a id="install-and-activate-remote"></a>
 ### Install and activate
