@@ -8033,13 +8033,13 @@ msgstr "אסימונים -  %s"
 msgid "workspace.tokens.tools"
 msgstr "כלים"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "הייבוא הצליח. חלק מהאסימונים לא נכללו."
+msgstr "הייבוא הצליח, אך חלק מהאסימונים דולגו כי הם משתמשים בערכי $type שאינם נתמכים. הרחב את הפרטים כדי לראות אילו אסימונים הושפעו."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "הסוג ‚%s’ לא נתמך (%s)\n"
+msgstr "הסוג ‚%s’ לא נתמך (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"
