@@ -21,6 +21,7 @@
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.commands.teams-invitations :as ti]
    [app.rpc.doc :as doc]
    [app.util.services :as sv]))
 
@@ -305,4 +306,19 @@ RETURNING id, name;")
                 :hint "profile does not exist"
                 :id id))
     (profile-to-map profile)))
+
+
+;; API: invite-to-org
+
+(sv/defmethod ::invite-to-org
+  "Invite to organization"
+  {::doc/added "2.15"
+   ::sm/params [:map
+                [:email ::sm/email]
+                [:id ::sm/uuid]
+                [:name ::sm/text]
+                [:logo ::sm/uri]]}
+  [cfg params]
+  (db/tx-run! cfg ti/create-org-invitation params)
+  nil)
 

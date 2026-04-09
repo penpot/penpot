@@ -108,6 +108,9 @@ msgstr "Password recovery link sent to your inbox."
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Joined the team successfully"
 
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "You're now part of %s"
+
 #: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
 msgstr "Password"

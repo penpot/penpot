@@ -28,6 +28,14 @@
   (t/is (not (d/in-range? 5 -1)))
   (t/is (not (d/in-range? 0 0))))
 
+(t/deftest get-initials-test
+  (t/is (= "JD" (d/get-initials "John Doe")))
+  (t/is (= "A" (d/get-initials "acme")))
+  (t/is (= "AB" (d/get-initials "123 Alpha ## beta")))
+  (t/is (= "PD" (d/get-initials "  penpot   design  tool ")))
+  (t/is (= "" (d/get-initials nil)))
+  (t/is (= "" (d/get-initials "!!! ???"))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ordered Data Structures
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
