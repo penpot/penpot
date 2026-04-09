@@ -594,6 +594,26 @@ impl Surfaces {
         }
     }
 
+    /// Draws a cached tile texture to the Cache surface at the given
+    /// cache-aligned rect.  This keeps the Cache surface in sync with
+    /// Target so that `render_from_cache` (used during pan) has the
+    /// full scene including tiles served from the texture cache.
+    pub fn draw_cached_tile_to_cache(
+        &mut self,
+        tile: Tile,
+        aligned_rect: &skia::Rect,
+        color: skia::Color,
+    ) {
+        if let Some(image) = self.tiles.get(tile) {
+            let mut bg = skia::Paint::default();
+            bg.set_color(color);
+            self.cache.canvas().draw_rect(aligned_rect, &bg);
+            self.cache
+                .canvas()
+                .draw_image_rect(&image, None, aligned_rect, &skia::Paint::default());
+        }
+    }
+
     /// Draws the current tile directly to the target and cache surfaces without
     /// creating a snapshot. This avoids GPU stalls from ReadPixels but doesn't
     /// populate the tile texture cache (suitable for one-shot renders like tests).

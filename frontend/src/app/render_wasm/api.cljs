@@ -80,10 +80,9 @@
 (def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
 
 (def ^:const DEBOUNCE_DELAY_MS 100)
-(def ^:const THROTTLE_DELAY_MS 10)
 
-;; Number of shapes to process before yielding to browser
-(def ^:const SHAPES_CHUNK_SIZE 100)
+;; Time budget (ms) per chunk of shape processing before yielding to browser
+(def ^:private ^:const CHUNK_TIME_BUDGET_MS 8)
 ;; Threshold below which we use synchronous processing (no chunking overhead)
 (def ^:const ASYNC_THRESHOLD 100)
 
@@ -98,6 +97,12 @@
 (def capture-canvas-pixels webgl/capture-canvas-pixels)
 (def restore-previous-canvas-pixels webgl/restore-previous-canvas-pixels)
 (def clear-canvas-pixels webgl/clear-canvas-pixels)
+(def draw-thumbnail-to-canvas webgl/draw-thumbnail-to-canvas)
+
+(defn has-captured-pixels?
+  "Returns true if there are saved canvas pixels from a previous page."
+  []
+  (some? wasm/canvas-pixels))
 
 ;; Re-export public text editor functions
 (def text-editor-focus text-editor/text-editor-focus)
@@ -123,13 +128,17 @@
 ;;
 (def shape-wrapper-factory nil)
 
-(defn- yield-to-browser
-  "Returns a promise that resolves after yielding to the browser's event loop.
-   Uses requestAnimationFrame for smooth visual updates during loading."
-  []
-  (p/create
-   (fn [resolve _reject]
-     (js/requestAnimationFrame (fn [_] (resolve nil))))))
+(let [^js ch (js/MessageChannel.)]
+  (defn- yield-to-browser
+    "Returns a promise that resolves after yielding to the browser's event loop.
+     Uses MessageChannel for near-zero delay (avoids setTimeout's 4ms minimum
+     after nesting depth > 5). Same technique used by React's scheduler."
+    []
+    (p/create
+     (fn [resolve _reject]
+       (set! (.-onmessage (.-port1 ch))
+             (fn [_] (resolve nil)))
+       (.postMessage (.-port2 ch) nil)))))
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
@@ -982,11 +991,18 @@
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
-            (when wasm/context-initialized?
+            (when (and wasm/context-initialized? (not @wasm/context-lost?))
               (perf/begin-measure "render-finish")
               (h/call wasm/internal-module "_set_view_end")
               (perf/end-measure "render-finish")
-              (render (js/performance.now))))]
+              ;; Use async _render: visible tiles render synchronously
+              ;; (no yield), interest-area tiles render progressively
+              ;; via rAF.  _set_view_end already rebuilt the tile
+              ;; index.  For pan, most tiles are cached so the render
+              ;; completes in the first frame.  For zoom, interest-
+              ;; area tiles (~3 tile margin) don't block the main
+              ;; thread.
+              (h/call wasm/internal-module "_render" 0)))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box
@@ -1064,54 +1080,62 @@
 
       (set-shape-layout shape)
       (set-layout-data shape)
-      (let [pending_thumbnails (into [] (concat
-                                         (set-shape-text-content id content)
-                                         (set-shape-text-images id content true)
+      (let [is-text? (= type :text)
+            pending_thumbnails (into [] (concat
+                                         (when is-text? (set-shape-text-content id content))
+                                         (when is-text? (set-shape-text-images id content true))
                                          (set-shape-fills id fills true)
                                          (set-shape-strokes id strokes true)))
             pending_full (into [] (concat
-                                   (set-shape-text-images id content false)
+                                   (when is-text? (set-shape-text-images id content false))
                                    (set-shape-fills id fills false)
                                    (set-shape-strokes id strokes false)))]
         (perf/end-measure "set-object")
         {:thumbnails pending_thumbnails
          :full pending_full}))))
 
-(defn update-text-layouts
-  [shapes]
-  (->> shapes
-       (filter cfh/text-shape?)
-       (map :id)
-       (run!
-        (fn [id]
+(defn- update-text-layouts
+  "Synchronously update text layouts for all shapes and send rect updates
+   to the worker index."
+  [text-ids]
+  (run! (fn [id]
           (f/update-text-layout id)
-          (update-text-rect! id)))))
+          (update-text-rect! id))
+        text-ids))
 
 (defn process-pending
-  ([shapes thumbnails full on-complete]
-   (process-pending shapes thumbnails full nil on-complete))
-  ([shapes thumbnails full on-render on-complete]
-   (let [pending-thumbnails
-         (d/index-by :key :callback thumbnails)
+  [shapes thumbnails full on-complete]
+  (let [pending-thumbnails
+        (d/index-by :key :callback thumbnails)
 
-         pending-full
-         (d/index-by :key :callback full)]
+        pending-full
+        (d/index-by :key :callback full)]
 
-     (->> (rx/concat
-           (->> (rx/from (vals pending-thumbnails))
-                (rx/merge-map (fn [callback] (callback)))
-                (rx/reduce conj []))
-           (->> (rx/from (vals pending-full))
-                (rx/mapcat (fn [callback] (callback)))
-                (rx/reduce conj [])))
-          (rx/subs!
-           (fn [_]
-             (update-text-layouts shapes)
-             (if on-render
-               (on-render)
-               (request-render "pending-finished")))
-           noop-fn
-           on-complete)))))
+    ;; Run text layouts synchronously so shapes are immediately correct.
+    (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+      (when (seq text-ids)
+        (update-text-layouts text-ids)))
+
+    (if (or (seq pending-thumbnails) (seq pending-full))
+      (->> (rx/concat
+            (->> (rx/from (vals pending-thumbnails))
+                 (rx/merge-map (fn [callback] (callback)))
+                 (rx/reduce conj []))
+            (->> (rx/from (vals pending-full))
+                 (rx/mapcat (fn [callback] (callback)))
+                 (rx/reduce conj [])))
+           (rx/subs!
+            (fn [_]
+              ;; Fonts are now loaded — recompute text layouts so Skia
+              ;; uses the real metrics instead of fallback-font estimates.
+              (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+                (when (seq text-ids)
+                  (update-text-layouts text-ids)))
+              (request-render "images-loaded"))
+            noop-fn
+            (fn [] (when on-complete (on-complete)))))
+      ;; No pending images — complete immediately.
+      (when on-complete (on-complete)))))
 
 (defn process-object
   [shape]
@@ -1119,86 +1143,115 @@
     (process-pending [shape] thumbnails full noop-fn)))
 
 (defn- process-shapes-chunk
-  "Process a chunk of shapes synchronously, returning accumulated pending operations.
+  "Process shapes starting at `start-index` until the time budget is exhausted.
    Returns {:thumbnails [...] :full [...] :next-index n}"
-  [shapes start-index chunk-size thumbnails-acc full-acc]
-  (let [total (count shapes)
-        end-index (min total (+ start-index chunk-size))]
-    (loop [index start-index
-           t-acc thumbnails-acc
-           f-acc full-acc]
-      (if (< index end-index)
-        (let [shape (nth shapes index)
-              {:keys [thumbnails full]} (set-object shape)]
-          (recur (inc index)
-                 (into t-acc thumbnails)
-                 (into f-acc full)))
-        {:thumbnails t-acc
-         :full f-acc
-         :next-index end-index}))))
+  [shapes start-index thumbnails-acc full-acc]
+  (let [total    (count shapes)
+        deadline (+ (js/performance.now) CHUNK_TIME_BUDGET_MS)]
+    (let [result
+          (loop [index start-index
+                 t-acc (transient thumbnails-acc)
+                 f-acc (transient full-acc)]
+            (if (and (< index total)
+                     ;; Check performance.now every 8 shapes to reduce overhead
+                     (or (pos? (bit-and (- index start-index) 7))
+                         (<= (js/performance.now) deadline)))
+              (let [shape (nth shapes index)
+                    {:keys [thumbnails full]} (set-object shape)]
+                (recur (inc index)
+                       (reduce conj! t-acc thumbnails)
+                       (reduce conj! f-acc full)))
+              {:thumbnails (persistent! t-acc)
+               :full (persistent! f-acc)
+               :next-index index}))]
+      result)))
 
 (defn- set-objects-async
-  "Asynchronously process shapes in chunks, yielding to the browser between chunks.
-   Returns a promise that resolves when all shapes are processed.
-
-   Renders a preview only periodically during loading to show progress,
-   then does a full tile-based render at the end."
-  [shapes render-callback]
-  (let [total-shapes (count shapes)
-        total-chunks (mth/ceil (/ total-shapes SHAPES_CHUNK_SIZE))
-        ;; Render at 25%, 50%, 75% of loading
-        render-at-chunks (set [(mth/floor (* total-chunks 0.25))
-                               (mth/floor (* total-chunks 0.5))
-                               (mth/floor (* total-chunks 0.75))])]
+  "Asynchronously process shapes in time-budgeted chunks, yielding to the
+   browser between chunks so the UI stays responsive.
+   Returns a promise that resolves when all shapes are processed."
+  [shapes render-callback on-shapes-ready]
+  (let [total-shapes (count shapes)]
     (p/create
      (fn [resolve _reject]
-       (letfn [(process-next-chunk [index thumbnails-acc full-acc chunk-count]
+       (letfn [(process-next-chunk [index thumbnails-acc full-acc]
                  (if (< index total-shapes)
-                   ;; Process one chunk
+                   ;; Process one time-budgeted chunk
                    (let [{:keys [thumbnails full next-index]}
-                         (process-shapes-chunk shapes index SHAPES_CHUNK_SIZE
-                                               thumbnails-acc full-acc)
-                         new-chunk-count (inc chunk-count)]
-                     ;; Only render at specific progress milestones
-                     (when (contains? render-at-chunks new-chunk-count)
-                       (render-preview!))
-
+                         (process-shapes-chunk shapes index
+                                               thumbnails-acc full-acc)]
                      ;; Yield to browser, then continue with next chunk
                      (-> (yield-to-browser)
                          (p/then (fn [_]
-                                   (process-next-chunk next-index thumbnails full new-chunk-count)))))
+                                   (process-next-chunk next-index thumbnails full)))))
                    ;; All chunks done - finalize
                    (do
                      (perf/end-measure "set-objects")
-                     (process-pending shapes thumbnails-acc full-acc noop-fn
-                                      (fn []
-                                        (end-shapes-loading!)
-                                        (if render-callback
-                                          (render-callback)
-                                          (render-finish))
-                                        (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
-                                        (resolve nil))))))]
-         (process-next-chunk 0 [] [] 0))))))
+
+                     ;; Notify that shapes are loaded and tiles rebuilt
+                     (when on-shapes-ready (on-shapes-ready))
+                     ;; Show shapes immediately: end loading overlay + unblock rendering
+                     (h/call wasm/internal-module "_end_loading")
+                     (end-shapes-loading!)
+
+                     ;; Text layouts must run after _end_loading (they
+                     ;; depend on state that is only correct when loading
+                     ;; is false).  Each call touch_shape → touched_ids.
+                     (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+                       (when (seq text-ids)
+                         (update-text-layouts text-ids)))
+                     (if render-callback
+                       (render-callback)
+                       (request-render "set-objects-complete"))
+                     (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
+                     (resolve nil)
+
+                     ;; Kick off image fetches in the background.
+                     ;; The promise is already resolved so these don't
+                     ;; block the caller.
+                     (let [pending-thumbnails (d/index-by :key :callback thumbnails-acc)
+                           pending-full       (d/index-by :key :callback full-acc)]
+                       (when (or (seq pending-thumbnails) (seq pending-full))
+                         (->> (rx/concat
+                               (->> (rx/from (vals pending-thumbnails))
+                                    (rx/merge-map (fn [callback] (callback)))
+                                    (rx/reduce conj []))
+                               (->> (rx/from (vals pending-full))
+                                    (rx/mapcat (fn [callback] (callback)))
+                                    (rx/reduce conj [])))
+                              (rx/subs!
+                               (fn [_]
+                                 ;; Fonts are now loaded — recompute text
+                                 ;; layouts so Skia uses the real metrics
+                                 ;; instead of fallback-font estimates.
+                                 (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+                                   (when (seq text-ids)
+                                     (update-text-layouts text-ids)))
+                                 (request-render "images-loaded"))
+                               noop-fn
+                               noop-fn)))))))]
+         (process-next-chunk 0 [] []))))))
 
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."
-  [shapes render-callback]
+  [shapes render-callback on-shapes-ready]
   (let [total-shapes (count shapes)
         {:keys [thumbnails full]}
-        (loop [index 0 thumbnails-acc [] full-acc []]
+        (loop [index 0 thumbnails-acc (transient []) full-acc (transient [])]
           (if (< index total-shapes)
             (let [shape (nth shapes index)
                   {:keys [thumbnails full]} (set-object shape)]
               (recur (inc index)
-                     (into thumbnails-acc thumbnails)
-                     (into full-acc full)))
-            {:thumbnails thumbnails-acc :full full-acc}))]
+                     (reduce conj! thumbnails-acc thumbnails)
+                     (reduce conj! full-acc full)))
+            {:thumbnails (persistent! thumbnails-acc) :full (persistent! full-acc)}))]
     (perf/end-measure "set-objects")
-    (process-pending shapes thumbnails full noop-fn
+    (when on-shapes-ready (on-shapes-ready))
+    (process-pending shapes thumbnails full
                      (fn []
                        (if render-callback
                          (render-callback)
-                         (render-finish))
+                         (request-render "set-objects-sync-complete"))
                        (ug/dispatch! (ug/event "penpot:wasm:set-objects"))))))
 
 (defn- shapes-in-tree-order
@@ -1234,23 +1287,36 @@
   "Set all shape objects for rendering.
 
    Shapes are processed in tree order (parents before children)
-   to maintain proper shape reference consistency in WASM."
+   to maintain proper shape reference consistency in WASM.
+
+   on-shapes-ready is an optional callback invoked right after shapes are
+   loaded into WASM (and tiles rebuilt for async). It fires before image
+   loading begins, allowing callers to reveal the page content during
+   transitions."
   ([objects]
-   (set-objects objects nil))
+   (set-objects objects nil nil))
   ([objects render-callback]
+   (set-objects objects render-callback nil))
+  ([objects render-callback on-shapes-ready]
    (perf/begin-measure "set-objects")
    (let [shapes (shapes-in-tree-order objects)
          total-shapes (count shapes)]
      (if (< total-shapes ASYNC_THRESHOLD)
-       (set-objects-sync shapes render-callback)
+       (set-objects-sync shapes render-callback on-shapes-ready)
        (do
          (begin-shapes-loading!)
+         (h/call wasm/internal-module "_begin_loading")
+         ;; NOTE: to render a loading overlay in the future
+         ;;  (when-not on-shapes-ready
+         ;;    (h/call wasm/internal-module "_render_loading_overlay"))
          (try
-           (-> (set-objects-async shapes render-callback)
+           (-> (set-objects-async shapes render-callback on-shapes-ready)
                (p/catch (fn [error]
+                          (h/call wasm/internal-module "_end_loading")
                           (end-shapes-loading!)
                           (js/console.error "Async WASM shape loading failed" error))))
            (catch :default error
+             (h/call wasm/internal-module "_end_loading")
              (end-shapes-loading!)
              (js/console.error "Async WASM shape loading failed" error)
              (throw error)))
@@ -1385,17 +1451,18 @@
 
 (defn initialize-viewport
   ([base-objects zoom vbox background]
-   (initialize-viewport base-objects zoom vbox background 1 nil))
+   (initialize-viewport base-objects zoom vbox background 1 nil nil))
   ([base-objects zoom vbox background callback]
-   (initialize-viewport base-objects zoom vbox background 1 callback))
+   (initialize-viewport base-objects zoom vbox background 1 callback nil))
   ([base-objects zoom vbox background background-opacity callback]
+   (initialize-viewport base-objects zoom vbox background background-opacity callback nil))
+  ([base-objects zoom vbox background background-opacity callback on-shapes-ready]
    (let [rgba         (sr-clr/hex->u32argb background background-opacity)
-         shapes       (into [] (vals base-objects))
-         total-shapes (count shapes)]
+         total-shapes (count (vals base-objects))]
      (h/call wasm/internal-module "_set_canvas_background" rgba)
      (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
      (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
-     (set-objects base-objects callback))))
+     (set-objects base-objects callback on-shapes-ready))))
 
 (def ^:private default-context-options
   #js {:antialias false

@@ -658,6 +658,41 @@ impl RenderState {
         self.surfaces.reset(self.background_color);
     }
 
+    /// NOTE:
+    /// This is currently not being used, but it's set there for testing purposes on
+    /// upcoming tasks
+    pub fn render_loading_overlay(&mut self) {
+        let canvas = self.surfaces.canvas(SurfaceId::Target);
+        let skia::ISize { width, height } = canvas.base_layer_size();
+
+        canvas.save();
+
+        // Full-screen background rect
+        let rect = skia::Rect::from_wh(width as f32, height as f32);
+        let mut bg_paint = skia::Paint::default();
+        bg_paint.set_color(self.background_color);
+        bg_paint.set_style(skia::PaintStyle::Fill);
+        canvas.draw_rect(rect, &bg_paint);
+
+        // Centered "Loading…" text
+        let mut text_paint = skia::Paint::default();
+        text_paint.set_color(skia::Color::GRAY);
+        text_paint.set_anti_alias(true);
+
+        let font = self.fonts.debug_font();
+        // FIXME
+        let text = "Loading…";
+        let (text_width, _) = font.measure_str(text, None);
+        let metrics = font.metrics();
+        let text_height = metrics.1.cap_height;
+        let x = (width as f32 - text_width) / 2.0;
+        let y = (height as f32 + text_height) / 2.0;
+        canvas.draw_str(text, skia::Point::new(x, y), font, &text_paint);
+
+        canvas.restore();
+        self.flush_and_submit();
+    }
+
     #[allow(dead_code)]
     pub fn get_canvas_at(&mut self, surface_id: SurfaceId) -> &skia::Canvas {
         self.surfaces.canvas(surface_id)
@@ -1559,6 +1594,16 @@ impl RenderState {
             self.render_shape_tree_sync(base_object, tree, timestamp)?;
         } else {
             self.process_animation_frame(base_object, tree, timestamp)?;
+            // Update cached_viewbox after visible tiles render
+            // synchronously so that render_from_cache uses the correct
+            // zoom ratio even if interest-area tiles are still rendering
+            // asynchronously.  Without this, panning right after a zoom
+            // would keep scaling the Cache surface by the old zoom ratio
+            // (pixelated/wrong-scale tiles) because the async render
+            // never completes — each pan frame cancels it.
+            if self.cache_cleared_this_render {
+                self.cached_viewbox = self.viewbox;
+            }
         }
 
         performance::end_measure!("start_render_loop");
@@ -2576,6 +2621,23 @@ impl RenderState {
                         tile_rect,
                         self.background_color,
                     );
+
+                    // Also draw the cached tile to the Cache surface so
+                    // render_from_cache (used during pan) has the full scene.
+                    // apply_render_to_final_canvas clears Cache on the first
+                    // uncached tile, but cached tiles must also be present.
+                    if !self.options.is_fast_mode() {
+                        if !self.cache_cleared_this_render {
+                            self.surfaces.clear_cache(self.background_color);
+                            self.cache_cleared_this_render = true;
+                        }
+                        let aligned_rect = self.get_aligned_tile_bounds(current_tile);
+                        self.surfaces.draw_cached_tile_to_cache(
+                            current_tile,
+                            &aligned_rect,
+                            self.background_color,
+                        );
+                    }
                     performance::end_measure!("render_shape_tree::cached");
 
                     if self.options.is_debug_visible() {
