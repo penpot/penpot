@@ -451,14 +451,16 @@
                              :icon i/close}]]
 
           [:div {:class (stl/css :search-scope-row)}
-           [:label {:class (stl/css :scope-option)}
-            [:input {:type "radio" :class (stl/css :scope-radio) :name "search-scope"
+           [:label {:class (stl/css-case :scope-option true :scope-selected (= :canvas search-scope))}
+            [:span {:class (stl/css-case :scope-radio true :scope-radio-checked (= :canvas search-scope))}]
+            [:input {:type "radio" :name "search-scope" :class (stl/css :scope-radio-input)
                      :checked (= :canvas search-scope)
                      :on-change (fn [_] (set-search-scope :canvas))}]
             [:span {:class (stl/css :scope-label)}
              (tr "workspace.sidebar.layers.search-scope-canvas")]]
-           [:label {:class (stl/css :scope-option)}
-            [:input {:type "radio" :class (stl/css :scope-radio) :name "search-scope"
+           [:label {:class (stl/css-case :scope-option true :scope-selected (= :layers search-scope))}
+            [:span {:class (stl/css-case :scope-radio true :scope-radio-checked (= :layers search-scope))}]
+            [:input {:type "radio" :name "search-scope" :class (stl/css :scope-radio-input)
                      :checked (= :layers search-scope)
                      :on-change (fn [_] (set-search-scope :layers))}]
             [:span {:class (stl/css :scope-label)}

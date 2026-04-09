@@ -266,42 +266,38 @@
 }
 
 .scope-radio {
-  appearance: none;
   width: deprecated.$s-12;
   height: deprecated.$s-12;
-  margin: 0;
   border: deprecated.$s-1 solid var(--color-foreground-secondary);
   border-radius: 50%;
   background-color: transparent;
-  cursor: pointer;
   flex-shrink: 0;
+}
 
-  &:checked {
-    border-color: var(--color-accent-primary);
-    background-color: var(--color-accent-primary);
-    box-shadow: inset 0 0 0 deprecated.$s-2 var(--color-background-primary);
-  }
+.scope-radio-checked {
+  border-color: var(--color-accent-primary);
+  background-color: var(--color-accent-primary);
+  box-shadow: inset 0 0 0 deprecated.$s-2 var(--color-background-primary);
+}
+
+.scope-radio-input {
+  display: none;
 }
 
 .scope-label {
   @include deprecated.bodySmallTypography;
-
   color: var(--color-foreground-secondary);
   cursor: pointer;
+}
 
-  &:has(.scope-radio:checked) {
-    color: var(--color-foreground-primary);
-  }
+.scope-selected .scope-label {
+  color: var(--color-foreground-primary);
 }
 
 .replace-actions-row {
   display: flex;
   gap: deprecated.$s-4;
   padding: 0 deprecated.$s-12 deprecated.$s-8;
-
-  .replace-button {
-    flex: 1;
-  }
 }
 
 .replace-input-wrapper {
@@ -352,6 +348,7 @@
   @include deprecated.bodySmallTypography;
   @include deprecated.buttonStyle;
 
+  flex: 1;
   height: deprecated.$s-28;
   padding: 0 deprecated.$s-8;
   border: deprecated.$s-1 solid var(--color-background-tertiary);
@@ -359,6 +356,7 @@
   background-color: var(--color-background-tertiary);
   color: var(--color-foreground-primary);
   white-space: nowrap;
+  text-transform: uppercase;
 
   &:hover:not(:disabled) {
     border: deprecated.$s-1 solid var(--input-border-color-hover);
