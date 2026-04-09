@@ -723,7 +723,8 @@
         (update :is-source d/nilv false)
         (update :external-id #(or % (str new-id)))
         (update :modified-at #(or % (ct/now)))
-        (update :sets #(into #{} (filter some?) %))
+        (update :sets #(into #{} (comp (filter some?)
+                                       (map normalize-set-name)) %))
         (check-token-theme-attrs)
         (map->TokenTheme))))
 
