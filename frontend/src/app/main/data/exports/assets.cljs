@@ -217,14 +217,14 @@
             profile-id  (:profile-id state)
             ws-conn     (:ws-conn state)
             params      (cond->
-                          {:exports exports
-                           :cmd cmd
-                           :profile-id profile-id
-                           :force-multiple true
-                           :is-wasm
-                           (and
-                            (features/active-feature? state "render-wasm/v1")
-                            (contains? cf/flags :wasm-export))}
+                         {:exports exports
+                          :cmd cmd
+                          :profile-id profile-id
+                          :force-multiple true
+                          :is-wasm
+                          (and
+                           (features/active-feature? state "render-wasm/v1")
+                           (contains? cf/flags :wasm-export))}
                           (some? name)
                           (assoc :name name))
 
