@@ -459,6 +459,17 @@
       (let [page-id (or page-id (:current-page-id state))
             file-id (or file-id (:current-file-id state))
             section (or section :interactions)
+            selected (get-in state [:workspace-local :selected])
+            objects  (dsh/lookup-page-objects state file-id page-id)
+            frame-id (or frame-id
+                         (reduce
+                          (fn [_ id]
+                            (let [obj (get objects id)]
+                              (when (and obj
+                                         (= :frame (:type obj)))
+                                (reduced (:id obj)))))
+                          nil
+                          selected))
             params  {:file-id file-id
                      :page-id page-id
                      :section section

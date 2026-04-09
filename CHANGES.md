@@ -23,6 +23,7 @@
 - Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
 - Add CSS linter [Taiga #13790](https://tree.taiga.io/project/penpot/us/13790)
 - Save and restore selection state in undo/redo (by @eureka928) [Github #6007](https://github.com/penpot/penpot/issues/6007)
+- Add per-group add button for typographies (by @eureka928) [Github #5275](https://github.com/penpot/penpot/issues/5275)
 
 ### :bug: Bugs fixed
 
@@ -37,6 +38,7 @@
 - Fix opacity incorrectly disabled for visible shapes [Taiga #13906](https://tree.taiga.io/project/penpot/issue/13906)
 - Update onboarding image [Taiga #13864](https://tree.taiga.io/project/penpot/issue/13864)
 - Fix plugin modal drag interactions over iframe and close-button behavior (by @marekhrabe) [Github #8871](https://github.com/penpot/penpot/pull/8871)
+- Fix hot update on color-row on texts [Taiga #13923](https://tree.taiga.io/project/penpot/issue/13923)
 
 ## 2.15.0 (Unreleased)
 
@@ -56,6 +58,29 @@
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 - Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
 - Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
+
+
+## 2.14.2
+
+### :sparkles: New features & Enhancements
+
+- Add protection for stale JS asset cache to force reload on version mismatch [Github #8638](https://github.com/penpot/penpot/pull/8638)
+- Normalize newsletter opt-in checkbox across different register flows [Github #8839](https://github.com/penpot/penpot/pull/8839)
+
+### :bug: Bugs fixed
+
+- Fix PathData corruption root causes across WASM and CLJS (unsafe transmute and byteOffset handling)
+- Handle corrupted PathData segments gracefully instead of crashing
+- Fix swapped move-to/line-to type codes in PathData binary readers
+- Fix non-integer row/column values in grid cell position inputs [Github #8869](https://github.com/penpot/penpot/pull/8869)
+- Fix nil path content crash by exposing safe public API [Github #8806](https://github.com/penpot/penpot/pull/8806)
+- Fix infinite recursion in get-frame-ids for thumbnail extraction [Github #8807](https://github.com/penpot/penpot/pull/8807)
+- Fix stale-asset detector missing protocol-dispatch errors
+- Ignore Zone.js toString TypeError in uncaught error handler [Github #8804](https://github.com/penpot/penpot/pull/8804)
+- Prevent thumbnail frame recursion overflow [Github #8763](https://github.com/penpot/penpot/pull/8763)
+- Fix vector index out of bounds in viewer zoom-to-fit/fill [Github #8834](https://github.com/penpot/penpot/pull/8834)
+- Guard delete undo against missing sibling order [Github #8858](https://github.com/penpot/penpot/pull/8858)
+- Fix ICounted error on numeric-input token dropdown keyboard nav [Github #8803](https://github.com/penpot/penpot/pull/8803)
 
 
 ## 2.14.1

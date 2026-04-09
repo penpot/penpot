@@ -423,7 +423,7 @@
 
 (defn- qualify-prop-key
   [provider k]
-  (keyword (:type provider) (name k)))
+  (keyword (:type provider) (-> k name str/kebab)))
 
 (defn- qualify-props
   [provider props]
