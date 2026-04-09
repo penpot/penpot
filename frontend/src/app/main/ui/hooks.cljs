@@ -389,7 +389,8 @@
     (mf/with-effect []
       (let [body (dom/get-body)]
         (dom/append-child! body container)
-        #(dom/remove-child! body container)))
+        #(when (dom/child? container body)
+           (dom/remove-child! body container))))
     container))
 
 (defn use-dynamic-grid-item-width
