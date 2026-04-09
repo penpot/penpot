@@ -8477,15 +8477,13 @@ msgstr "Introduce un valor o un alias usando {alias}"
 msgid "workspace.tokens.tools"
 msgstr "Herramientas"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr ""
-"La importación se ha realizado correctamente. Algunos tokens no se "
-"incluyeron."
+msgstr "La importación se ha realizado correctamente, pero algunos tokens fueron omitidos porque usan valores de $type no soportados. Expande los detalles para ver qué tokens se vieron afectados."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "El tipo '%s' no está soportado (%s)\n"
+msgstr "El tipo '%s' no está soportado (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"
@@ -8833,6 +8831,27 @@ msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%
 #: src/app/main/ui/workspace/sidebar/versions.cljs:431
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
+
+msgid "webgl.modals.webgl-unavailable.title"
+msgstr "Vaya, WebGL no está disponible"
+
+msgid "webgl.modals.webgl-unavailable.message"
+msgstr "WebGL no está disponible en tu navegador, y es necesario para que Penpot funcione. Revisa la configuración de tu navegador y/o cierra pestañas con uso intensivo de gráficos."
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
+msgstr "Consulta nuestra "
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.link"
+msgstr "guía de solución de problemas de WebGL"
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr " para revisar la configuración del navegador, la aceleración por GPU, los drivers y problemas comunes del sistema."
+
+msgid "webgl.modals.webgl-unavailable.cta-dashboard"
+msgstr "Ir al panel"
+
+msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
+msgstr "Guía de solución de problemas"
 
 #, unused
 msgid "workspace.viewport.click-to-close-path"

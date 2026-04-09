@@ -8662,13 +8662,13 @@ msgstr "TOKENS -  %s"
 msgid "workspace.tokens.tools"
 msgstr "Tools"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "Import was successful. Some tokens were not included."
+msgstr "Import was successful, but some tokens were skipped because they use unsupported $type values. Expand details to see which tokens were affected."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Type '%s' is not supported (%s)\n"
+msgstr "Type '%s' is not supported (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"
@@ -9033,9 +9033,33 @@ msgstr ""
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
 
+msgid "webgl.modals.webgl-unavailable.title"
+msgstr "Oops! WebGL is not available"
+
+msgid "webgl.modals.webgl-unavailable.message"
+msgstr "WebGL is not available in your browser, which is required for Penpot to work. Please check your browser settings and/or close graphics-heavy tabs."
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
+msgstr "Follow our "
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.link"
+msgstr "WebGL troubleshooting guide"
+
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr " to check browser settings, GPU acceleration, drivers, and common system issues."
+
+msgid "webgl.modals.webgl-unavailable.cta-dashboard"
+msgstr "Go to dashboard"
+
+msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
+msgstr "Troubleshooting guide"
+
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
 
 msgid "modals.delete-org-team-confirm.message"
 msgstr "Are you sure you want to delete this team that is part of %s org?"
+
+msgid "plugins.validation.message"
+msgstr "Field %s is invalid: %s"

@@ -25,7 +25,7 @@ on:
 
 jobs:
   test:
-    name: "Test"
+    name: "Test MCP"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
 

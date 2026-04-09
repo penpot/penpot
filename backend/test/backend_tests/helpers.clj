@@ -385,6 +385,31 @@
                             (dissoc ::type)
                             (assoc :app.rpc/request-at (ct/now)))))))
 
+(defn management-command!
+  ([data]
+   (management-command! data nil))
+  ([{:keys [::type] :as data} flags-to-add]
+   (let [flags (reduce conj cf/flags (or flags-to-add []))
+
+         resolve-management-methods
+         (requiring-resolve 'app.rpc/resolve-management-methods)
+
+         methods
+         (with-redefs [cf/flags flags]
+           (resolve-management-methods *system*))
+
+         [_ method-fn]
+         (get methods type)]
+
+     (when-not method-fn
+       (ex/raise :type :assertion
+                 :code :rpc-method-not-found
+                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
+
+     (try-on! (method-fn (-> data
+                             (dissoc ::type)
+                             (assoc :app.rpc/request-at (ct/now))))))))
+
 (defn run-task!
   ([name]
    (run-task! name {}))

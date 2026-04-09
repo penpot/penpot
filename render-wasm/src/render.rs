@@ -3004,3 +3004,9 @@ impl RenderState {
         self.viewbox.set_all(zoom, x, y);
     }
 }
+
+impl Drop for RenderState {
+    fn drop(&mut self) {
+        self.gpu_state.context.free_gpu_resources();
+    }
+}

@@ -1541,35 +1541,43 @@
 (defn shape-to-path
   [id]
   (use-shape id)
-  (let [offset (-> (h/call wasm/internal-module "_current_to_path")
-                   (mem/->offset-32))
-        heap   (mem/get-heap-u32)
-        length (aget heap offset)
-        data   (mem/slice heap
-                          (+ offset 1)
-                          (* length path.impl/SEGMENT-U32-SIZE))
-        content (path/from-bytes data)]
-    (mem/free)
-    content))
+  (try
+    (let [offset (-> (h/call wasm/internal-module "_current_to_path")
+                     (mem/->offset-32))
+          heap   (mem/get-heap-u32)
+          length (aget heap offset)
+          data   (mem/slice heap
+                            (+ offset 1)
+                            (* length path.impl/SEGMENT-U32-SIZE))
+          content (path/from-bytes data)]
+      (mem/free)
+      content)
+    (catch :default cause
+      (mem/free)
+      (throw cause))))
 
 (defn stroke-to-path
   "Converts a shape's stroke at the given index into a filled path.
    Returns the stroke outline as PathData content."
   [id stroke-index]
   (use-shape id)
-  (let [offset (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
-                   (mem/->offset-32))
-        heap   (mem/get-heap-u32)
-        length (aget heap offset)]
-    (if (pos? length)
-      (let [data    (mem/slice heap
-                               (+ offset 1)
-                               (* length path.impl/SEGMENT-U32-SIZE))
-            content (path/from-bytes data)]
-        (mem/free)
-        content)
-      (do (mem/free)
-          nil))))
+  (try
+    (let [offset (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
+                     (mem/->offset-32))
+          heap   (mem/get-heap-u32)
+          length (aget heap offset)]
+      (if (pos? length)
+        (let [data    (mem/slice heap
+                                 (+ offset 1)
+                                 (* length path.impl/SEGMENT-U32-SIZE))
+              content (path/from-bytes data)]
+          (mem/free)
+          content)
+        (do (mem/free)
+            nil)))
+    (catch :default cause
+      (mem/free)
+      (throw cause))))
 
 (defn calculate-bool*
   [bool-type ids]
@@ -1582,17 +1590,21 @@
             offset
             (rseq ids))
 
-    (let [offset
-          (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
-              (mem/->offset-32))
+    (try
+      (let [offset
+            (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
+                (mem/->offset-32))
 
-          length  (aget heap offset)
-          data    (mem/slice heap
-                             (+ offset 1)
-                             (* length path.impl/SEGMENT-U32-SIZE))
-          content (path/from-bytes data)]
-      (mem/free)
-      content)))
+            length  (aget heap offset)
+            data    (mem/slice heap
+                               (+ offset 1)
+                               (* length path.impl/SEGMENT-U32-SIZE))
+            content (path/from-bytes data)]
+        (mem/free)
+        content)
+      (catch :default cause
+        (mem/free)
+        (throw cause)))))
 
 (defn calculate-bool
   [shape objects]

@@ -16,7 +16,7 @@
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
-   [app.main.data.common :as dcm]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
@@ -319,25 +319,50 @@
     ;;       harder to follow through.
     (mf/with-effect [page-id]
       (when-let [canvas (mf/ref-val canvas-ref)]
-        (->> wasm.api/module
-             (p/fmap (fn [ready?]
-                       (when ready?
-                         (let [init? (try
-                                       (wasm.api/init-canvas-context canvas)
-                                       (catch :default e
-                                         (js/console.error "Error initializing canvas context:" e)
-                                         false))]
-                           (reset! canvas-init? init?)
-                           (when init?
-                             ;; Restore previous canvas pixels immediately after context initialization
-                             ;; This happens before initialize-viewport is called
-                             (wasm.api/apply-canvas-blur)
-                             (wasm.api/restore-previous-canvas-pixels))
-                           (when-not init?
-                             (js/alert "WebGL not supported")
-                             (st/emit! (dcm/go-to-dashboard-recent))))))))
-        (fn []
-          (wasm.api/clear-canvas))))
+        (let [timeout-id-ref   (volatile! nil)
+              unmounted?       (volatile! false)
+              modal-shown?     (volatile! false)
+
+              show-unavailable
+              (fn []
+                (when-not (or @unmounted? @modal-shown?)
+                  (vreset! modal-shown? true)
+                  (reset! canvas-init? false)
+                  (st/emit! (modal/show {:type :webgl-unavailable}))))
+
+              try-init
+              (fn try-init [retries]
+                (when-not @unmounted?
+                  (let [init? (try
+                                (wasm.api/init-canvas-context canvas)
+                                (catch :default e
+                                  (js/console.error "Error initializing canvas context:" e)
+                                  false))]
+                    (cond
+                      init?
+                      (do
+                        (reset! canvas-init? true)
+                        ;; Restore previous canvas pixels immediately after context initialization
+                        ;; This happens before initialize-viewport is called
+                        (wasm.api/apply-canvas-blur)
+                        (wasm.api/restore-previous-canvas-pixels))
+
+                      (pos? retries)
+                      (vreset! timeout-id-ref
+                               (js/setTimeout #(try-init (dec retries)) 200))
+
+                      :else
+                      (show-unavailable)))))]
+          (reset! canvas-init? false)
+          (->> wasm.api/module
+               (p/fmap (fn [ready?]
+                         (when ready?
+                           (try-init 3)))))
+          (fn []
+            (vreset! unmounted? true)
+            (when-let [timeout-id @timeout-id-ref]
+              (js/clearTimeout timeout-id))
+            (wasm.api/clear-canvas)))))
 
     (mf/with-effect [show-text-editor? workspace-editor-state edition]
       (let [active-editor-state (get workspace-editor-state edition)]
