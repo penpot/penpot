@@ -213,8 +213,13 @@
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid storage"))
 
+(defmethod ig/expand-key ::handler
+  [k v]
+  {k (merge {::min-age (ct/duration {:hours 2})} v)})
+
 (defmethod ig/init-key ::handler
-  [_ cfg]
+  [_ {:keys [::min-age] :as cfg}]
   (fn [_]
-    (process-touched! (assoc cfg ::timestamp (ct/now)))))
+    (let [threshold (ct/minus (ct/now) min-age)]
+      (process-touched! (assoc cfg ::timestamp threshold)))))
 

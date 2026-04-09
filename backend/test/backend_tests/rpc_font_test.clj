@@ -165,7 +165,8 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
 
-    (let [res (th/run-task! :storage-gc-touched {})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 6 (:freeze res))))
 
     (let [params {::th/type :delete-font
@@ -177,14 +178,16 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
-    (let [res (th/run-task! :storage-gc-touched {})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 2 (:processed res)))))
 
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 6 (:delete res)))))))
@@ -226,7 +229,8 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
 
-    (let [res (th/run-task! :storage-gc-touched {})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 6 (:freeze res))))
 
     (let [params {::th/type :delete-font
@@ -238,14 +242,16 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
-    (let [res (th/run-task! :storage-gc-touched {})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 1 (:processed res))))
+        (t/is (= 1 (:processed res)))))
 
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 3 (:delete res)))))))
@@ -255,57 +261,42 @@
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
         font-id (uuid/custom 10 1)
-
-        data1   (-> (io/resource "backend_tests/test_files/font-1.woff")
-                    (io/read*))
-
-        data2   (-> (io/resource "backend_tests/test_files/font-2.woff")
-                    (io/read*))
-        params1 {::th/type :create-font-variant
-                 ::rpc/profile-id (:id prof)
-                 :team-id team-id
-                 :font-id font-id
-                 :font-family "somefont"
-                 :font-weight 400
-                 :font-style "normal"
-                 :data {"font/woff" data1}}
-
-        params2 {::th/type :create-font-variant
-                 ::rpc/profile-id (:id prof)
-                 :team-id team-id
-                 :font-id font-id
-                 :font-family "somefont"
-                 :font-weight 500
-                 :font-style "normal"
-                 :data {"font/woff" data2}}
-
+        data1   (-> (io/resource "backend_tests/test_files/font-1.woff") (io/read*))
+        data2   (-> (io/resource "backend_tests/test_files/font-2.woff") (io/read*))
+        params1 {::th/type :create-font-variant ::rpc/profile-id (:id prof)
+                 :team-id team-id :font-id font-id :font-family "somefont"
+                 :font-weight 400 :font-style "normal" :data {"font/woff" data1}}
+        params2 {::th/type :create-font-variant ::rpc/profile-id (:id prof)
+                 :team-id team-id :font-id font-id :font-family "somefont"
+                 :font-weight 500 :font-style "normal" :data {"font/woff" data2}}
         out1    (th/command! params1)
         out2    (th/command! params2)]
-
-    ;; (th/print-result! out1)
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
 
-    (let [res (th/run-task! :storage-gc-touched {})]
+    ;; freeze with hours 3 clock
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 6 (:freeze res))))
 
-    (let [params {::th/type :delete-font-variant
-                  ::rpc/profile-id (:id prof)
-                  :team-id team-id
-                  :id (-> out1 :result :id)}
+    (let [params {::th/type :delete-font-variant ::rpc/profile-id (:id prof)
+                  :team-id team-id :id (-> out1 :result :id)}
           out    (th/command! params)]
-      ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
-    (let [res (th/run-task! :storage-gc-touched {})]
+    ;; no-op with hours 3 clock (nothing touched yet)
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
+    ;; objects-gc at days 8, then storage-gc-touched at days 8 + 3h
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 1 (:processed res))))
+        (t/is (= 1 (:processed res)))))
 
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 3 (:delete res)))))))
