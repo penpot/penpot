@@ -9,8 +9,9 @@
   organization management and token validation endpoints."
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.schema :as sm]
-   [app.common.types.profile :refer [schema:basic-profile]]
+   [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -22,6 +23,13 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as doc]
    [app.util.services :as sv]))
+
+
+(defn- profile-to-map [profile]
+  {:id            (:id profile)
+   :name          (:fullname profile)
+   :email         (:email profile)
+   :photo-url     (files/resolve-public-uri (get profile :photo-id))})
 
 ;; ---- API: authenticate
 
@@ -43,12 +51,9 @@
   (let [profile            (profile/get-profile cfg profile-id)
         nitrate-subscription (:subscription profile)
         can-use-nitrate-trial (nil? nitrate-subscription)]
-    {:id            (get profile :id)
-     :name          (get profile :fullname)
-     :email         (get profile :email)
-     :photo-url     (files/resolve-public-uri (get profile :photo-id))
-     :theme (get profile :theme)
-     :can-use-trial can-use-nitrate-trial}))
+    (-> (profile-to-map profile)
+        (assoc :can-use-nitrate-trial can-use-nitrate-trial
+               :theme (:theme profile)))))
 
 ;; ---- API: get-teams
 
@@ -255,3 +260,49 @@ RETURNING id, name;")
            ;; Notify users
            (doseq [team updated-teams]
              (notify-team-change cfg (:id team) (:name team) nil org-name "dashboard.org-deleted"))))))))
+
+;; ---- API: get-profile-by-email
+
+(def ^:private sql:get-profile-by-email
+  "SELECT DISTINCT id, fullname, email, photo_id
+     FROM profile
+    WHERE email = ?
+      AND deleted_at IS NULL;")
+
+(sv/defmethod ::get-profile-by-email
+  "Get profile by email"
+  {::doc/added "2.15"
+   ::sm/params [:map [:email ::sm/email]]
+   ::sm/result schema:profile}
+  [cfg {:keys [email]}]
+  (let [profile (db/exec-one! cfg [sql:get-profile-by-email email])]
+    (when-not profile
+      (ex/raise :type :not-found
+                :code :profile-not-found
+                :hint "profile does not exist"
+                :email email))
+    (profile-to-map profile)))
+
+
+;; ---- API: get-profile-by-id
+
+(def ^:private sql:get-profile-by-id
+  "SELECT DISTINCT id, fullname, email, photo_id
+     FROM profile
+    WHERE id = ?
+      AND deleted_at IS NULL;")
+
+(sv/defmethod ::get-profile-by-id
+  "Get profile by email"
+  {::doc/added "2.15"
+   ::sm/params [:map [:id ::sm/uuid]]
+   ::sm/result schema:profile}
+  [cfg {:keys [id]}]
+  (let [profile (db/exec-one! cfg [sql:get-profile-by-id id])]
+    (when-not profile
+      (ex/raise :type :not-found
+                :code :profile-not-found
+                :hint "profile does not exist"
+                :id id))
+    (profile-to-map profile)))
+
