@@ -77,6 +77,38 @@
             guides (-> (select-keys guides ids) (vals))]
         (rx/from (mapv remove-guide guides))))))
 
+(defn remove-frame-guides
+  [frame-ids]
+
+  (dm/assert!
+   "expected a coll of uuids"
+   (every? uuid? frame-ids))
+
+  (ptk/reify ::remove-frame-guides
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [{:keys [guides]} (dsh/lookup-page state)
+            frame-ids-set    (set frame-ids)
+            guide-ids        (into #{}
+                                   (comp (filter #(contains? frame-ids-set (:frame-id %)))
+                                         (map :id))
+                                   (vals guides))]
+        (update-in state [:workspace-guides :hover]
+                   (fn [hover] (reduce disj (or hover #{}) guide-ids)))))
+
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [{:keys [guides] :as page} (dsh/lookup-page state)
+            frame-ids-set    (set frame-ids)
+            to-remove        (filter #(contains? frame-ids-set (:frame-id %)) (vals guides))
+            changes          (reduce
+                              (fn [acc {:keys [id]}]
+                                (pcb/set-guide acc id nil))
+                              (-> (pcb/empty-changes it)
+                                  (pcb/with-page page))
+                              to-remove)]
+        (rx/of (dwc/commit-changes changes))))))
+
 (defmethod ptk/resolve ::move-frame-guides
   [_ args]
   (dm/assert!
