@@ -237,7 +237,7 @@
                         (tr "settings.multiple")
                         "--")
          :align :right
-         :disabled hidden?
+         :disabled (if (or (= :multiple hidden?) hidden?) true false)
          :class (stl/css :numeric-input-wrapper)
          :value (* 100
                    (or (get values :opacity) 1))}]

@@ -927,3 +927,20 @@ test.describe("Tokens: Detach token", () => {
     await expect(brokenPill).not.toBeVisible();
   });
 });
+
+test("Bug: 13959, User select shapes with different hidden state.", async ({
+    page,
+  }) => {
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page);
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+    const layerMenuSection = page.getByRole("region", { name: "Layer menu section" });
+    await expect(layerMenuSection).toBeVisible();
+    await layerMenuSection.getByRole("button", { name: "Toggle layer visibility" }).click();
+    await expect(layerMenuSection).toBeVisible();
+    await workspacePage.layers.getByTestId("layer-row").nth(0).click({  modifiers: ['Shift']});
+    await expect(layerMenuSection).toBeVisible();
+  });
