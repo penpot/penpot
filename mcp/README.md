@@ -174,14 +174,9 @@ NOTE: only relevant if you are executing this outside of devenv
 
 The `mcp-remote` package can proxy stdio transport to HTTP/SSE, 
 allowing clients that support only stdio to connect to the MCP server indirectly.
+Use it to provide the launch command for your MCP client as follows:
 
-1. Install `mcp-remote` globally if you haven't already:
-
-        npm install -g mcp-remote
-
-2. Use `mcp-remote` to provide the launch command for your MCP client:
-
-        npx -y mcp-remote http://localhost:4401/sse --allow-http
+        npx -y mcp-remote http://localhost:4401/mcp --allow-http
 
 #### Example: Claude Desktop
 
@@ -204,7 +199,7 @@ Add a `penpot` entry under `mcpServers` with the following content:
     "mcpServers": {
         "penpot": {
             "command": "npx",
-            "args": ["-y", "mcp-remote", "http://localhost:4401/sse", "--allow-http"]
+            "args": ["-y", "mcp-remote", "http://localhost:4401/mcp", "--allow-http"]
         }
     }
 }
