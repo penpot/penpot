@@ -490,6 +490,26 @@
   [content]
   (txt/transform-nodes (some-fn txt/is-text-node? txt/is-paragraph-node?) migrate-node content))
 
+(defn- text-node-fill-data
+  "Extract fill-only signature from text/paragraph nodes, ignoring structure noise
+  (keys, text splitting, etc.) and token refs."
+  [content]
+  (let [normalize-fill  #(dissoc % :fill-color-ref-id :fill-color-ref-file)
+        normalize-fills (fn [fills]
+                          (mapv normalize-fill (or (some-> fills vec) [])))]
+    (->> (tree-seq map? :children content)
+         (filter (some-fn txt/is-text-node? txt/is-paragraph-node?))
+         (mapv (fn [node]
+                 {:fills (normalize-fills (:fills node))
+                  :fill-color (:fill-color node)
+                  :fill-opacity (:fill-opacity node)
+                  :fill-color-gradient (:fill-color-gradient node)})))))
+
+(defn- fill-changed-in-content?
+  [prev-content content]
+  (not= (text-node-fill-data prev-content)
+        (text-node-fill-data content)))
+
 (defn update-text-with-function
   ([id update-node-fn] (update-text-with-function id update-node-fn nil))
   ([id update-node-fn options]
@@ -1043,6 +1063,10 @@
               shape        (get objects id)
               new-shape?   (contains? (:workspace-new-text-shapes state) id)
               prev-content (:content shape)
+              fill-token-applied? (some? (get-in shape [:applied-tokens :fill]))
+              fill-changed? (fill-changed-in-content? prev-content content)
+              ignore-touched? (and fill-token-applied?
+                                   (not fill-changed?))
               has-prev-content? (not (nil? (:prev-content shape)))
               ;; For existing shapes, capture geometry at session start once so
               ;; finalize can build a single undo entry. Stored in workspace state,
@@ -1091,6 +1115,7 @@
                       (ctm/change-size shape (:width new-size) (:height new-size))))))
              {:save-undo? finalize-save-undo-first?
               :stack-undo? effective-stack-undo?
+              :ignore-touched ignore-touched?
               :undo-group (when new-shape? id)})
 
             ;; When `get-wasm-text-new-size` reports a change, `update-shapes` above resizes the
