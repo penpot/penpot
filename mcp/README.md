@@ -61,11 +61,11 @@ version that matches your Penpot version.
 
 * If you are using the latest Penpot release, e.g. as served on [design.penpot.app](https://design.penpot.app), run:
   ```shell
-  npx -y @penpot/mcp@">=0"
+  npx -y @penpot/mcp@latest
   ```
 * If you are participating in the MCP beta-test, which uses [test-mcp.penpot.dev](https://test-mcp.penpot.dev), run:
   ```shell
-  npx -y @penpot/mcp@"*"
+  npx -y @penpot/mcp@beta
   ```
 
 Once the servers are running, continue with step 2.
