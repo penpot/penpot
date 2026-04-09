@@ -332,9 +332,14 @@
 
 (defn process-shape-changes!
   [objects shape-changes]
-  (->> (rx/from shape-changes)
-       (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
-       (rx/subs! #(api/request-render "set-wasm-attrs"))))
+  (let [shape-changes
+        (->> shape-changes
+             ;; We don't need to update the model for shapes not in the current page
+             (filter (fn [[shape-id _]] (shape-in-current-page? shape-id))))]
+    (when (d/not-empty? shape-changes)
+      (->> (rx/from shape-changes)
+           (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
+           (rx/subs! #(api/request-render "set-wasm-attrs"))))))
 
 ;; `conj` empty set initialization
 (def conj* (fnil conj (d/ordered-set)))
