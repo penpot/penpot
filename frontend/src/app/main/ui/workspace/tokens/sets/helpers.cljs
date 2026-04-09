@@ -41,7 +41,9 @@
               (dwtl/clear-token-set-creation))
     (if (empty? errors)
       (let [token-set (ctob/make-token-set :name name)]
-        (st/emit! (dwtl/create-token-set token-set)))
+        (st/emit! (dwtl/create-token-set token-set)
+                  (dwtl/clear-tokens-paths)
+                  (dwtl/clear-tokens-types)))
       (st/emit! (ntf/show {:content (tr "errors.token-set-already-exists")
                            :type :toast
                            :level :error
