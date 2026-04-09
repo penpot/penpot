@@ -111,6 +111,10 @@ impl State {
             .render_shape_pixels(id, &self.shapes, scale, timestamp)
     }
 
+    pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
+        crate::render::pdf::render_to_pdf(&mut self.render_state, id, &self.shapes, scale)
+    }
+
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<()> {
         // If zoom changed (e.g. interrupted zoom render followed by pan), the
         // tile index may be stale for the new viewport position. Rebuild the

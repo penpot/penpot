@@ -156,11 +156,13 @@
 (defn request-simple-export
   [{:keys [export]}]
   (if (and (contains? cf/flags :wasm-export)
-           (contains? #{:jpeg :webp :png} (:type export)))
+           (contains? #{:jpeg :webp :png :pdf} (:type export)))
     (ptk/reify ::request-simple-export-wasm
       ptk/EffectEvent
       (effect [_ _ _]
-        (wasm.exports/export-image export)))
+        (case (:type export)
+          :pdf (wasm.exports/export-pdf export)
+          (wasm.exports/export-image export))))
 
     (ptk/reify ::request-simple-export
       ptk/UpdateEvent

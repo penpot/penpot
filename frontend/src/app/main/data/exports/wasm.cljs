@@ -26,3 +26,18 @@
     (dom/trigger-download-uri filename mtype url)
     (wapi/revoke-uri url)
     nil))
+
+(defn export-pdf-uri
+  [{:keys [scale object-id]}]
+  (let [bytes (wasm.api/render-shape-pdf object-id (or scale 1))
+        blob (wapi/create-blob bytes "application/pdf")]
+    (wapi/create-uri blob)))
+
+(defn export-pdf
+  [{:keys [suffix name] :as params}]
+  (let [url (export-pdf-uri params)
+        filename (str name (or suffix "") ".pdf")]
+    (dom/trigger-download-uri filename "application/pdf" url)
+    (wapi/revoke-uri url)
+    nil))
+
