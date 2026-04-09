@@ -474,7 +474,7 @@
          nil))
 
      (-nth [_ i default]
-       (if (d/in-range? i size)
+       (if (d/in-range? size i)
          (read-segment buffer i)
          default))
 
