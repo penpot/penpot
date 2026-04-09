@@ -485,17 +485,15 @@
 
 (defn backtrace-tokens-tree
   "Convert tokens into a nested tree with their name as the path.
-  Generates a uuid per token to backtrace a token from an external source (StyleDictionary).
+  Uses the existing token :id to backtrace a token from an external source (StyleDictionary).
   The backtrace can't be the name as the name might not exist when the user is creating a token."
   [tokens]
   (reduce
    (fn [acc [_ token]]
-     (let [temp-id (random-uuid)
-           token   (assoc token :temp/id temp-id)
-           path    (get-token-path token)]
+     (let [path (get-token-path token)]
        (-> acc
            (assoc-in (concat [:tokens-tree] path) token)
-           (assoc-in [:ids temp-id] token))))
+           (assoc-in [:ids (:id token)] token))))
    {:tokens-tree {} :ids {}}
    tokens))
 
