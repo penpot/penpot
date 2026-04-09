@@ -201,41 +201,22 @@
 
 (mf/defc layer-item*
   {::mf/wrap [mf/memo]}
-  [{:keys [index item selected objects rename-id
+  [{:keys [index item-id selected rename-id
            is-sortable is-filtered depth is-component-child
-           highlighted style render-children parent-size]
+           style render-children parent-size]
     :or {render-children true}}]
-  (let [id                (get item :id)
+  (let [item-iref        (mf/with-memo [item-id]
+                           (l/derived (fn [objects] (get objects item-id)) refs/workspace-page-objects))
+        item              (mf/deref item-iref)
+
+        id                item-id
         blocked?          (get item :blocked)
         hidden?           (get item :hidden)
 
-        shapes            (get item :shapes)
-        shapes            (mf/with-memo [shapes objects]
-                            (loop [counter 0
-                                   shapes  (seq shapes)
-                                   result  (list)]
-
-                              (if-let [id (first shapes)]
-                                (if-let [obj (get objects id)]
-                                  (do
-                                    ;; NOTE: this is a bit hacky, but reduces substantially
-                                    ;; the allocation; If we use enumeration, we allocate
-                                    ;; new sequence and add one iteration on each render,
-                                    ;; independently if objects are changed or not. If we
-                                    ;; store counter on metadata, we still need to create a
-                                    ;; new allocation for each shape; with this method we
-                                    ;; bypass this by mutating a private property on the
-                                    ;; object removing extra allocation and extra iteration
-                                    ;; on every request.
-                                    (unchecked-set obj "__$__counter" counter)
-                                    (recur (inc counter)
-                                           (rest shapes)
-                                           (conj result obj)))
-                                  (recur (inc counter)
-                                         (rest shapes)
-                                         result))
-
-                                (-> result vec not-empty))))
+        ;; child shape IDs reversed for display (top z-order first in layer panel)
+        child-ids-raw     (get item :shapes)
+        child-ids         (mf/with-memo [child-ids-raw]
+                            (some-> child-ids-raw rseq vec))
 
         drag-disabled*    (mf/use-state false)
         drag-disabled?    (deref drag-disabled*)
@@ -245,8 +226,11 @@
                             (l/derived #(dm/get-in % [:expanded id]) refs/workspace-local))
         is-expanded       (mf/deref expanded-iref)
 
+        highlighted-iref  (mf/with-memo [id]
+                            (l/derived #(contains? (get % :highlighted) id) refs/workspace-local))
+
         is-selected       (contains? selected id)
-        is-highlighted    (contains? highlighted id)
+        is-highlighted    (mf/deref highlighted-iref)
 
         container?        (or (cfh/frame-shape? item)
                               (cfh/group-shape? item))
@@ -303,14 +287,15 @@
 
         select-shape
         (mf/use-fn
-         (mf/deps id is-filtered objects)
+         (mf/deps id is-filtered)
          (fn [event]
            (dom/prevent-default event)
            (mf/set-ref-val! scroll-middle-ref false)
            (cond
              (kbd/shift? event)
              (if is-filtered
-               (st/emit! (dw/shift-select-shapes id objects))
+               (let [objects (deref refs/workspace-page-objects)]
+                 (st/emit! (dw/shift-select-shapes id objects)))
                (st/emit! (dw/shift-select-shapes id)))
 
              (kbd/mod? event)
@@ -363,13 +348,14 @@
 
         on-drop
         (mf/use-fn
-         (mf/deps id objects is-expanded selected)
+         (mf/deps id is-expanded selected)
          (fn [side _data]
            (let [single? (= (count selected) 1)
                  same?   (and single? (= (first selected) id))]
              (when-not same?
-               (let [files (deref refs/files)
-                     shape (get objects id)
+               (let [objects (deref refs/workspace-page-objects)
+                     files   (deref refs/files)
+                     shape   (get objects id)
 
                      parent-id
                      (cond
@@ -421,20 +407,22 @@
          :on-hold on-hold
          :disabled drag-disabled?
          :detect-center? container?
-         :data {:id (:id item)
+         :data {:id id
                 :index index
                 :name (:name item)}
          ;; We don't want to change the structure of component copies
          :draggable? (and ^boolean is-sortable
                           ^boolean (not is-read-only)
-                          ^boolean (not (ctn/has-any-copy-parent? objects item))))
+                          ^boolean (not (let [objects (deref refs/workspace-page-objects)]
+                                          (ctn/has-any-copy-parent? objects item)))))
 
         on-tab-press
         (mf/use-fn
-         (mf/deps id objects)
+         (mf/deps id)
          (fn [event]
            (when (contains? cf/flags :canary)
-             (let [shift?    (kbd/shift? event)
+             (let [objects   (deref refs/workspace-page-objects)
+                   shift?    (kbd/shift? event)
                    shape     (get objects id)
                    parent    (get objects (:parent-id shape))
                    siblings  (:shapes parent)
@@ -473,15 +461,15 @@
 
     ;; Setup scroll-driven lazy loading when expanded
     ;; and ensures selected children are loaded immediately
-    (mf/with-effect [is-expanded shapes selected]
-      (let [total (count shapes)]
+    (mf/with-effect [is-expanded child-ids selected]
+      (let [total (count child-ids)]
         (if ^boolean is-expanded
           (let [;; Children are rendered in reverse order, so index 0 in render = last in shapes-vec
                 ;; Find if any selected id is a direct child and get its render index
                 selected-child-render-idx
                 (when (> total default-chunk-size)
                   (some (fn [sel-id]
-                          (let [idx (.indexOf shapes sel-id)]
+                          (let [idx (.indexOf child-ids sel-id)]
                             (when (>= idx 0) idx)))
                         selected))
 
@@ -508,9 +496,9 @@
             (mf/set-ref-val! obs nil)))))
 
     ;; Re-observe sentinel whenever children-count changes (sentinel moves)
-    ;; and (shapes item) to reconnect observer after shape changes
-    (mf/with-effect [children-count is-expanded shapes]
-      (let [total       (count shapes)
+    ;; and child-ids to reconnect observer after shape changes
+    (mf/with-effect [children-count is-expanded child-ids]
+      (let [total       (count child-ids)
             name-node   (mf/ref-val name-node-ref)
             scroll-node (dom/get-parent-with-data name-node "scroll-container")
             lazy-node   (mf/ref-val lazy-ref)]
@@ -565,27 +553,26 @@
       :style style}
 
      (when (and ^boolean render-children
-                ^boolean shapes
+                ^boolean (seq child-ids)
                 ^boolean is-expanded)
        [:div {:class (stl/css-case
                       :element-children true
                       :parent-selected is-selected
                       :sticky-children root-board?)
               :data-testid (dm/str "children-" id)}
-        (for [item (take children-count shapes)]
-          [:> layer-item*
-           {:item item
-            :rename-id rename-id
-            :highlighted highlighted
-            :selected selected
-            :index (unchecked-get item "__$__counter")
-            :objects objects
-            :key (dm/str (get item :id))
-            :is-sortable is-sortable
-            :depth depth
-            :parent-size parent-size
-            :is-component-child is-component-tree}])
+        (let [total (count child-ids)]
+          (for [[display-idx child-id] (d/enumerate (take children-count child-ids))]
+            [:> layer-item*
+             {:item-id child-id
+              :rename-id rename-id
+              :selected selected
+              :index (- total 1 display-idx)
+              :key (dm/str child-id)
+              :is-sortable is-sortable
+              :depth depth
+              :parent-size parent-size
+              :is-component-child is-component-tree}]))
 
-        (when (< children-count (count shapes))
+        (when (< children-count (count child-ids))
           [:div {:ref lazy-ref
                  :class (stl/css :lazy-load-sentinel)}])])]))

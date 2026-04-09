@@ -44,13 +44,13 @@
 (defn- render-component-pixels
   "Renders a component frame using the workspace WASM context.
    Returns an observable that emits a data-uri string.
-   Deferred by one animation frame so that process-shape-changes!
-   has time to sync all child shapes to WASM memory first."
+   Deferred with setTimeout so that React can paint pending state
+   updates before the synchronous WASM render blocks the main thread."
   [frame-id]
   (rx/create
    (fn [subs]
-     (js/requestAnimationFrame
-      (fn [_]
+     (js/setTimeout
+      (fn []
         (try
           (let [png-bytes (wasm.api/render-shape-pixels frame-id 1)]
             (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
@@ -63,7 +63,8 @@
                      (fn [err]
                        (rx/error! subs err)))))
           (catch :default err
-            (rx/error! subs err)))))
+            (rx/error! subs err))))
+      0)
      nil)))
 
 (defn render-thumbnail

@@ -34,13 +34,6 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ^:private ref:highlighted-shapes
-  (l/derived (fn [local]
-               (-> local
-                   (get :highlighted)
-                   (not-empty)))
-             refs/workspace-local))
-
 (def ^:private ref:shape-for-rename
   (l/derived (l/key :shape-for-rename) refs/workspace-local))
 
@@ -78,95 +71,61 @@
 
     [:> layer-item* props]))
 
+(defn- use-root-shape-ids
+  "Subscribe to the root shape's children IDs only, using = equality
+  so the component only re-renders when the list of IDs actually changes."
+  []
+  (let [ref (mf/with-memo []
+              (l/derived (fn [objects]
+                           (get-in objects [uuid/zero :shapes]))
+                         refs/workspace-page-objects
+                         =))
+        ids (mf/deref ref)]
+    ids))
+
 (mf/defc layers-tree*
   {::mf/wrap [mf/memo]}
-  [{:keys [objects is-filtered parent-size] :as props}]
+  [{:keys [is-filtered parent-size]}]
   (let [selected    (use-selected-shapes)
-        highlighted (mf/deref ref:highlighted-shapes)
-        root        (get objects uuid/zero)
-
         rename-id   (mf/deref ref:shape-for-rename)
-
-        shapes      (get root :shapes)
-        shapes      (mf/with-memo [shapes objects]
-                      (loop [counter 0
-                             shapes (seq shapes)
-                             result (list)]
-                        (if-let [id (first shapes)]
-                          (if-let [obj (get objects id)]
-                            (do
-                              ;; NOTE: this is a bit hacky, but reduces substantially
-                              ;; the allocation; If we use enumeration, we allocate
-                              ;; new sequence and add one iteration on each render,
-                              ;; independently if objects are changed or not. If we
-                              ;; store counter on metadata, we still need to create a
-                              ;; new allocation for each shape; with this method we
-                              ;; bypass this by mutating a private property on the
-                              ;; object removing extra allocation and extra iteration
-                              ;; on every request.
-                              (unchecked-set obj "__$__counter" counter)
-                              (recur (inc counter)
-                                     (rest shapes)
-                                     (conj result obj)))
-                            (recur (inc counter)
-                                   (rest shapes)
-                                   result))
-                          result)))]
+        root-ids    (use-root-shape-ids)
+        objects     (deref refs/workspace-page-objects)]
 
     [:div {:class (stl/css :element-list) :data-testid "layer-item"}
      [:> hooks/sortable-container* {}
-      (for [obj shapes]
-        (if (cfh/frame-shape? obj)
-          [:> frame-wrapper*
-           {:item obj
-            :rename-id rename-id
-            :selected selected
-            :highlighted highlighted
-            :index (unchecked-get obj "__$__counter")
-            :objects objects
-            :key (dm/str (get obj :id))
-            :is-sortable true
-            :is-filtered is-filtered
-            :parent-size parent-size
-            :depth -1}]
-          [:> layer-item*
-           {:item obj
-            :rename-id rename-id
-            :selected selected
-            :highlighted highlighted
-            :index (unchecked-get obj "__$__counter")
-            :objects objects
-            :key (dm/str (get obj :id))
-            :is-sortable true
-            :is-filtered is-filtered
-            :depth -1
-            :parent-size parent-size}]))]]))
-
+      ;; Layers display top z-order first, so reverse the shapes vector
+      (let [total (count root-ids)]
+        (for [[display-idx id] (d/enumerate (reverse root-ids))]
+          (let [index (- total 1 display-idx)
+                obj   (get objects id)]
+            (when obj
+              (if (cfh/frame-shape? obj)
+                [:> frame-wrapper*
+                 {:item-id id
+                  :rename-id rename-id
+                  :selected selected
+                  :index index
+                  :key (dm/str id)
+                  :is-sortable true
+                  :is-filtered is-filtered
+                  :parent-size parent-size
+                  :depth -1}]
+                [:> layer-item*
+                 {:item-id id
+                  :rename-id rename-id
+                  :selected selected
+                  :index index
+                  :key (dm/str id)
+                  :is-sortable true
+                  :is-filtered is-filtered
+                  :depth -1
+                  :parent-size parent-size}])))))]]))
 (mf/defc layers-tree-wrapper*
   {::mf/private true}
-  [{:keys [objects] :as props}]
-  ;; This is a performance sensitive componet, so we use lower-level primitives for
-  ;; reduce residual allocation for this specific case
-  (let [state-tmp   (mf/useState objects)
-        objects'    (aget state-tmp 0)
-        set-objects (aget state-tmp 1)
-
-        subject-s   (mf/with-memo []
-                      (rx/subject))
-        changes-s   (mf/with-memo [subject-s]
-                      (->> subject-s
-                           (rx/debounce 500)))
-
-        props     (mf/spread-props props {:objects objects'})]
-
-    (mf/with-effect [objects subject-s]
-      (rx/push! subject-s objects))
-
-    (mf/with-effect [changes-s]
-      (let [sub (rx/subscribe changes-s set-objects)]
-        #(rx/dispose! sub)))
-
-    [:> layers-tree* props]))
+  [props]
+  ;; layers-tree* now self-subscribes to objects per-item; no need to
+  ;; debounce the full objects map. Just pass through.
+  [:> layers-tree* props])
 
 (mf/defc filters-tree*
   {::mf/wrap [mf/memo #(mf/throttle % 300)]
@@ -176,12 +135,11 @@
         root     (get objects uuid/zero)]
     [:ul {:class (stl/css :element-list)}
      (for [[index id] (d/enumerate (:shapes root))]
-       (when-let [obj (get objects id)]
+       (when (some? (get objects id))
          [:> layer-item*
-          {:item obj
+          {:item-id id
            :selected selected
            :index index
-           :objects objects
            :key id
            :is-sortable false
            :is-filtered true
@@ -602,8 +560,7 @@
                :data-scroll-container true
                :style {:display (when (some? filtered-objects) "none")}}
 
-         [:> layers-tree-wrapper* {:objects filtered-objects
-                                   :key (dm/str page-id)
+         [:> layers-tree-wrapper* {:key (dm/str page-id)
                                    :is-filtered true
                                    :parent-size size-parent}]]]
 
@@ -611,7 +568,6 @@
               :class (stl/css :tool-window-content)
               :data-scroll-container true
               :style {:display (when (some? filtered-objects) "none")}}
-        [:> layers-tree-wrapper* {:objects objects
-                                  :key (dm/str page-id)
+        [:> layers-tree-wrapper* {:key (dm/str page-id)
                                   :is-filtered false
                                   :parent-size size-parent}]])]))
