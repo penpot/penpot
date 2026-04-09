@@ -533,6 +533,15 @@ impl Surfaces {
         self.clear_all_dirty();
     }
 
+    /// Clears the whole cache surface without disturbing its configured transform.
+    pub fn clear_cache(&mut self, color: skia::Color) {
+        let canvas = self.cache.canvas();
+        canvas.save();
+        canvas.reset_matrix();
+        canvas.clear(color);
+        canvas.restore();
+    }
+
     pub fn cache_current_tile_texture(
         &mut self,
         tile_viewbox: &TileViewbox,

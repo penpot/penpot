@@ -173,7 +173,6 @@
                                  (get base-objects parent-id)))))
 
         zoom              (d/check-num zoom 1)
-        prev-zoom         (mf/use-ref zoom)
 
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
@@ -405,8 +404,7 @@
 
     (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
-        (wasm.api/set-view-box (mf/ref-val prev-zoom) zoom vbox))
-      (mf/set-ref-val! prev-zoom zoom))
+        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [background]
       (when (and @canvas-init? initialized?)

@@ -989,34 +989,17 @@
               (render (js/performance.now))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
-(def render-pan
-  (letfn [(do-render-pan [ts]
-            ;; Check if context is still initialized before executing
-            ;; to prevent errors when navigating quickly
-            (when wasm/context-initialized?
-              (perf/begin-measure "render-pan")
-              (render ts)
-              (perf/end-measure "render-pan")))]
-    (fns/throttle do-render-pan THROTTLE_DELAY_MS)))
-
 (defn set-view-box
-  [prev-zoom zoom vbox]
-  (let [is-pan (mth/close? prev-zoom zoom)]
-    (perf/begin-measure "set-view-box")
-    (h/call wasm/internal-module "_set_view_start")
-    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  [zoom vbox]
+  (perf/begin-measure "set-view-box")
+  (h/call wasm/internal-module "_set_view_start")
+  (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (perf/end-measure "set-view-box")
 
-    (if is-pan
-      (do (perf/end-measure "set-view-box")
-          (perf/begin-measure "set-view-box::pan")
-          (render-pan)
-          (render-finish)
-          (perf/end-measure "set-view-box::pan"))
-      (do (perf/end-measure "set-view-box")
-          (perf/begin-measure "set-view-box::zoom")
-          (h/call wasm/internal-module "_render_from_cache" 0)
-          (render-finish)
-          (perf/end-measure "set-view-box::zoom")))))
+  (perf/begin-measure "render-from-cache")
+  (h/call wasm/internal-module "_render_from_cache" 0)
+  (render-finish)
+  (perf/end-measure "render-from-cache"))
 
 (defn update-text-rect!
   [id]
