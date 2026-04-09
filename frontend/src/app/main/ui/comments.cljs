@@ -198,6 +198,7 @@
              (doseq [{:keys [type content data]} (parse-comment value)]
                (case type
                  :text     (dom/append-child! node (create-text-node content))
+                 :url      (dom/append-child! node (create-text-node content))
                  :mention  (dom/append-child! node (create-mention-node (:id data) content))
                  nil)))))
 
