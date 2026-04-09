@@ -114,6 +114,9 @@ msgstr "Hemos enviado a tu buzón un enlace para recuperar tu contraseña."
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Te uniste al equipo"
 
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "Te uniste a la organización %s"
+
 #: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
 msgstr "Contraseña"
