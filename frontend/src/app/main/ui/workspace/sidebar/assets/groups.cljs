@@ -23,7 +23,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc asset-group-title*
-  [{:keys [file-id section path is-group-open on-rename on-ungroup on-group-combine-variants is-can-combine]}]
+  [{:keys [file-id section path is-group-open on-rename on-ungroup on-group-combine-variants is-can-combine on-add]}]
   (when-not (empty? path)
     (let [[other-path last-path truncated] (cpn/compact-path path 35 true)
           menu-state     (mf/use-state cmm/initial-context-menu-state)
@@ -76,6 +76,11 @@
                        :handler  #(on-group-combine-variants path)}))}]]
 
        [:div {:class (stl/css :title-menu)}
+        (when on-add
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.assets.typography.add-typography")
+                            :on-click on-add
+                            :icon i/add}])
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.assets.component-group-options")
                           :on-click on-context-menu
