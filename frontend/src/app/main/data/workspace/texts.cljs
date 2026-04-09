@@ -1049,16 +1049,15 @@
                                 content-has-text?
                                 has-prev-content?)
                      (dissoc :prev-content))
+
                    (cond-> (and (not new-shape?)
                                 prev-content-has-text?
                                 (not content-has-text?)
                                 (not finalize?))
                      (assoc :prev-content prev-content))
+
                    (cond-> (and update-name? (some? name))
-                     (assoc :name name))
-                   (cond-> (some? new-size)
-                     (gsh/transform-shape
-                      (ctm/change-size shape (:width new-size) (:height new-size))))))
+                     (assoc :name name))))
              {:save-undo? finalize-save-undo-first?
               :stack-undo? effective-stack-undo?
               :undo-group (when new-shape? id)})
