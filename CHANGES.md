@@ -19,6 +19,7 @@
 - Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
 - Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
 - Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
+- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
 
 
 ## 2.14.2
