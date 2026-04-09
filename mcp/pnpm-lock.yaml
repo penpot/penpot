@@ -97,6 +97,9 @@ importers:
       '@types/ws':
         specifier: ^8.5.10
         version: 8.18.1
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       esbuild:
         specifier: ^0.25.0
         version: 0.25.12

@@ -9,8 +9,6 @@
   organization management and token validation endpoints."
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
-   [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
@@ -20,14 +18,10 @@
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
-   [app.rpc.commands.management :as management]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as doc]
-   [app.rpc.quotes :as quotes]
-   [app.util.services :as sv]
-   [clojure.set :as set]
-   [cuerdas.core :as str]))
+   [app.util.services :as sv]))
 
 ;; ---- API: authenticate
 
@@ -88,21 +82,28 @@
    [:organization-id ::sm/uuid]
    [:organization-name ::sm/text]])
 
-(sv/defmethod ::notify-team-change
-  "Notify to Penpot a team change from nitrate"
-  {::doc/added "2.14"
-   ::sm/params schema:notify-team-change
-   ::rpc/auth false}
-  [cfg {:keys [id organization-id organization-name]}]
+(defn notify-team-change
+  [cfg team-id team-name organization-id organization-name notification]
   (let [msgbus (::mbus/msgbus cfg)]
     (mbus/pub! msgbus
                ;;TODO There is a bug on dashboard with teams notifications.
                ;;For now we send it to uuid/zero instead of team-id
                :topic uuid/zero
                :message {:type :team-org-change
-                         :team-id id
+                         :team-id team-id
+                         :team-name team-name
                          :organization-id organization-id
-                         :organization-name organization-name})))
+                         :organization-name organization-name
+                         :notification notification})))
+
+
+(sv/defmethod ::notify-team-change
+  "Notify to Penpot a team change from nitrate"
+  {::doc/added "2.14"
+   ::sm/params schema:notify-team-change
+   ::rpc/auth false}
+  [cfg {:keys [id organization-id organization-name]}]
+  (notify-team-change cfg id nil organization-id organization-name nil))
 
 ;; ---- API: notify-user-added-to-organization
 
@@ -112,25 +113,15 @@
    [:organization-id ::sm/uuid]
    [:role ::sm/text]])
 
+
+
 (sv/defmethod ::notify-user-added-to-organization
   "Notify to Penpot that an user has joined an org from nitrate"
   {::doc/added "2.14"
    ::sm/params schema:notify-user-added-to-organization
    ::rpc/auth false}
   [cfg {:keys [profile-id organization-id]}]
-  (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
-                      ::quotes/profile-id profile-id})
-
-  (let [features (-> (cfeat/get-enabled-features cf/flags)
-                     (set/difference cfeat/frontend-only-features)
-                     (set/difference cfeat/no-team-inheritable-features))
-        params   {:profile-id profile-id
-                  :name "Default"
-                  :features features
-                  :organization-id organization-id
-                  :is-default true}
-        team     (db/tx-run! cfg teams/create-team params)]
-    (select-keys team [:id])))
+  (db/tx-run! cfg teams/create-default-org-team profile-id organization-id))
 
 
 ;; ---- API: get-managed-profiles
@@ -167,7 +158,7 @@
 ;; ---- API: get-teams-summary
 
 (def ^:private sql:get-teams-summary
-  "SELECT t.id, t.name
+  "SELECT t.id, t.name, t.is_default
      FROM team AS t
     WHERE t.id = ANY(?)
       AND t.deleted_at IS NULL;")
@@ -190,7 +181,8 @@
   [:map
    [:teams [:vector [:map
                      [:id ::sm/uuid]
-                     [:name ::sm/text]]]]
+                     [:name ::sm/text]
+                     [:is-default ::sm/boolean]]]]
    [:num-files ::sm/int]])
 
 (sv/defmethod ::get-teams-summary
@@ -213,127 +205,41 @@
                    (let [ids-array     (db/create-array conn "uuid" ids)
                          teams         (db/exec! conn [sql:get-teams-summary ids-array])
                          files-count   (-> (db/exec-one! conn [sql:get-files-count ids-array]) :count)]
-                     {:teams (mapv #(select-keys % [:id :name]) teams)
+                     {:teams teams
                       :num-files files-count})))))
 
 
 ;; ---- API: delete-teams-keeping-your-penpot-projects
 
-(def ^:private sql:get-projects-and-default-teams
-  "Get projects from specified teams along with their team owner's default team information.
-   This query:
-   - Selects projects (id, team_id, name) from teams in the provided list
-   - Gets the profile_id of each team owner
-   - Gets the default_team_id where projects should be moved
-   - Only includes teams where the user is owner
-   - Only includes projects that contain at least one non-deleted file
-   - Excludes deleted projects and teams"
-  "SELECT p.id AS project_id,
-          p.team_id AS source_team_id,
-          p.name AS project_name,
-          tpr.profile_id,
-          pr.default_team_id
-     FROM project AS p
-     JOIN team AS tm ON p.team_id = tm.id
-     JOIN team_profile_rel AS tpr ON tm.id = tpr.team_id
-     JOIN profile AS pr ON tpr.profile_id = pr.id
-    WHERE p.team_id = ANY(?)
-      AND p.deleted_at IS NULL
-      AND tm.deleted_at IS NULL
-      AND tpr.is_owner IS TRUE
-      AND EXISTS (SELECT 1 FROM file f WHERE f.project_id = p.id AND f.deleted_at IS NULL);")
+(def ^:private sql:prefix-teams-name-and-unset-default
+  "UPDATE team
+      SET name = ? || name,
+          is_default = FALSE
+    WHERE id = ANY(?)
+RETURNING id, name;")
 
-(def ^:private sql:delete-teams
-  "UPDATE team SET deleted_at = ? WHERE id = ANY(?)")
 
-(def ^:private schema:delete-teams-keeping-your-penpot-projects
+(def ^:private schema:notify-org-deletion
   [:map
    [:org-name ::sm/text]
-   [:teams [:vector [:map
-                     [:id ::sm/uuid]
-                     [:is-your-penpot ::sm/boolean]]]]])
+   [:teams [:vector ::sm/uuid]]])
 
-(def ^:private schema:delete-teams-error
-  [:map
-   [:error ::sm/keyword]
-   [:message ::sm/text]
-   [:cause ::sm/text]
-   [:project-id {:optional true} ::sm/uuid]
-   [:project-name {:optional true} ::sm/text]
-   [:team-id {:optional true} ::sm/uuid]
-   [:phase {:optional true} [:enum :move-projects :delete-teams]]])
-
-(def ^:private schema:delete-teams-result
-  [:or [:= nil] schema:delete-teams-error])
-
-(defn- ^:private clean-org-name
-  "Clean and sanitize organization name to remove emojis, special characters,
-   and prevent potential injections. Only allows alphanumeric characters,
-   spaces, hyphens, underscores, and parentheses."
-  [org-name]
-  (when org-name
-    (-> org-name
-        str
-        str/trim
-        (str/replace #"[^\w\s\-_()]+" "")
-        (str/replace #"\s+" " ")
-        str/trim)))
-
-(sv/defmethod ::delete-teams-keeping-your-penpot-projects
-  "For a list of teams, move the projects of your-penpot teams to the
-   default team of each team owner, then delete all provided teams."
+(sv/defmethod ::notify-org-deletion
+  "For a list of teams, rename them with the name of the deleted org, and notify
+   of the deletion to the connected users"
   {::doc/added "2.15"
-   ::sm/params schema:delete-teams-keeping-your-penpot-projects
-   ::sm/result schema:delete-teams-result}
-  [cfg {:keys [teams org-name ::rpc/request-at]}]
+   ::sm/params schema:notify-org-deletion}
+  [cfg {:keys [teams org-name]}]
+  (when (seq teams)
+    (let [org-prefix (str "[" (d/sanitize-string org-name) "] ")]
+      (db/tx-run!
+       cfg
+       (fn [{:keys [::db/conn] :as cfg}]
+         (let [ids-array (db/create-array conn "uuid" teams)
+               ;; Rename projects
+               updated-teams (db/exec! conn [sql:prefix-teams-name-and-unset-default org-prefix ids-array])]
 
-  (let [your-penpot-team-ids (into [] (comp (filter :is-your-penpot) d/xf:map-id) teams)
-        all-team-ids         (into [] d/xf:map-id teams)
-        cleaned-org-name     (clean-org-name org-name)
-        org-prefix           (if (str/empty? cleaned-org-name)
-                               "imported: "
-                               (str cleaned-org-name " imported: "))]
-
-    (when (seq all-team-ids)
-
-      (db/tx-run! cfg
-                  (fn [{:keys [::db/conn] :as cfg}]
-
-                    ;; ---- Move projects ----
-                    (when (seq your-penpot-team-ids)
-                      (let [ids-array (db/create-array conn "uuid" your-penpot-team-ids)
-                            projects  (db/exec! conn [sql:get-projects-and-default-teams ids-array])]
-
-                        (doseq [{:keys [default-team-id profile-id project-id project-name source-team-id]} projects
-                                :when default-team-id]
-
-                          (try
-                            (management/move-project cfg {:profile-id profile-id
-                                                          :team-id default-team-id
-                                                          :project-id project-id})
-
-                            (db/update! conn :project
-                                        {:is-default false
-                                         :name (str org-prefix project-name)}
-                                        {:id project-id})
-
-                            (catch Throwable cause
-                              (ex/raise :type :internal
-                                        :code :nitrate-project-move-failed
-                                        :context {:project-id project-id
-                                                  :project-name project-name
-                                                  :team-id source-team-id}
-                                        :cause cause))))))
-
-                    ;; ---- Delete teams ----
-                    (try
-                      (let [team-ids-array (db/create-array conn "uuid" all-team-ids)]
-                        (db/exec-one! conn [sql:delete-teams request-at team-ids-array]))
-                      (catch Throwable cause
-                        (ex/raise :type :internal
-                                  :code :nitrate-team-deletion-failed
-                                  :context {:team-ids all-team-ids}
-                                  :cause cause))))))
-
-    nil))
+           ;; Notify users
+           (doseq [team updated-teams]
+             (notify-team-change cfg (:id team) (:name team) nil org-name "dashboard.org-deleted"))))))))
 

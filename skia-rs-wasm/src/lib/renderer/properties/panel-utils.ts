@@ -35,6 +35,12 @@ export const DEFAULT_BLUR: Blur = {
   hidden: false,
 }
 
+export const DEFAULT_BACKGROUND_BLUR: Blur = {
+  type: 'background-blur',
+  value: 4,
+  hidden: false,
+}
+
 export const DEFAULT_GLASS: Glass = {
   radius: 10,
   refraction: 1.5,
@@ -48,12 +54,13 @@ export const DEFAULT_GLASS: Glass = {
 /** Max stacked effects (shadows + blur + glass) per shape. */
 export const MAX_EFFECTS = 8
 
-export type EffectKind = 'drop-shadow' | 'inner-shadow' | 'layer-blur' | 'glass'
+export type EffectKind = 'drop-shadow' | 'inner-shadow' | 'layer-blur' | 'background-blur' | 'glass'
 
 export type EffectItem =
   | { kind: 'drop-shadow'; shadow: Shadow }
   | { kind: 'inner-shadow'; shadow: Shadow }
   | { kind: 'layer-blur'; blur: Blur }
+  | { kind: 'background-blur'; blur: Blur }
   | { kind: 'glass'; glass: Glass }
 
 export function normalizeHex(input: string): string {

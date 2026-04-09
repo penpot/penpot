@@ -69,7 +69,7 @@
              content (if (and (not preserve-move-to)
                               (= (-> content last :command) :move-to))
                        (path/content (take (dec (count content)) content))
-                       content)]
+                       (path/content content))]
          (st/set-content state content)))
 
      ptk/WatchEvent

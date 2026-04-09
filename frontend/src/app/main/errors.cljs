@@ -33,6 +33,16 @@
 ;; Will contain last uncaught exception
 (def last-exception nil)
 
+(defn is-plugin-error?
+  "This is a placeholder that always return false. It will be
+  overwritten when plugin system is initialized. This works this way
+  because we can't import plugins here because plugins requries full
+  DOM.
+
+  This placeholder is set on app.plugins/initialize event"
+  [_]
+  false)
+
 ;; --- Stale-asset error detection and auto-reload
 ;;
 ;; When the browser loads JS modules from different builds (e.g.  shared.js from
@@ -43,16 +53,33 @@
 
 (defn stale-asset-error?
   "Returns true if the error matches the signature of a cross-build
-  module mismatch: accessing a ClojureScript keyword constant that
-  doesn't exist on the shared $APP object."
+  module mismatch. Two distinct patterns can appear depending on which
+  cross-module reference is accessed first:
+
+  1. Keyword constants  – names contain '$cljs$cst$'; these arise when a
+     compiled keyword defined in shared.js is absent in the version of
+     shared.js already resident in the browser.
+
+  2. Protocol dispatch – names contain '$cljs$core$I'; these arise when
+     main-workspace.js (new build) tries to invoke a protocol method on
+     an object whose prototype was stamped by an older shared.js that
+     used different mangled property names (e.g. the LazySeq /
+     instaparse crash: 'Cannot read properties of undefined (reading
+     \\'$cljs$core$IFn$_invoke$arity$1$\\')').
+
+  Both patterns are symptoms of the same split-brain deployment
+  scenario (browser has JS chunks from two different builds) and
+  should trigger a hard page reload."
   [cause]
   (when (some? cause)
     (let [message (ex-message cause)]
       (and (string? message)
-           (str/includes? message "$cljs$cst$")
+           (or (str/includes? message "$cljs$cst$")
+               (str/includes? message "$cljs$core$I"))
            (or (str/includes? message "is undefined")
                (str/includes? message "is null")
-               (str/includes? message "is not a function"))))))
+               (str/includes? message "is not a function")
+               (str/includes? message "Cannot read properties of undefined"))))))
 
 (defn exception->error-data
   [cause]
@@ -138,6 +165,21 @@
               :type :toast
               :level :error
               :timeout 5000})))
+
+(defmethod ptk/handle-error :network
+  [error]
+  ;; Transient network errors (e.g. lost connectivity, DNS failure)
+  ;; should not replace the entire page with an error screen. Show a
+  ;; non-intrusive toast instead and let the user continue working.
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause :prefix "Network Error"))
+  (flash :cause (::instance error) :type :handled))
+
+(defmethod ptk/handle-error :internal
+  [error]
+  (st/emit! (rt/assign-exception error))
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause :prefix "Internal Error")))
 
 (defmethod ptk/handle-error :default
   [error]
@@ -240,8 +282,7 @@
     (st/async-emit! (rt/assign-exception error))))
 
 ;; This is a pure frontend error that can be caused by an active
-;; assertion (assertion that is preserved on production builds). From
-;; the user perspective this should be treated as internal error.
+;; assertion (assertion that is preserved on production builds).
 (defmethod ptk/handle-error :assertion
   [error]
   (when-let [cause (::instance error)]
@@ -373,6 +414,15 @@
               (and (string? stack)
                    (str/includes? stack "posthog"))))
 
+          ;; Check if the error is marked as originating from plugin code.
+          ;; The plugin runtime tracks plugin errors in a WeakMap, which works
+          ;; even in SES hardened environments where error objects may be frozen.
+          (from-plugin? [cause]
+            (try
+              (is-plugin-error? cause)
+              (catch :default _
+                false)))
+
           (is-ignorable-exception? [cause]
             (let [message (ex-message cause)]
               (or (from-extension? cause)
@@ -381,41 +431,75 @@
                   (= message "Unexpected end of input")
                   (str/starts-with? message "invalid props on component")
                   (str/starts-with? message "Unexpected token ")
-                  ;; Abort errors are expected when an in-flight HTTP request is
-                  ;; cancelled (e.g. via RxJS unsubscription / take-until).  They
-                  ;; are handled gracefully inside app.util.http/fetch and must
-                  ;; NOT be surfaced as application errors.
-                  (= (.-name ^js cause) "AbortError"))))
+                  ;; Native AbortError DOMException: raised when an in-flight
+                  ;; HTTP fetch is cancelled via AbortController (e.g. by an
+                  ;; RxJS unsubscription / take-until chain).  These are
+                  ;; handled gracefully inside app.util.http/fetch and must NOT
+                  ;; be surfaced as application errors.
+                  (= (.-name ^js cause) "AbortError")
+                  ;; Zone.js (injected by browser extensions such as Angular
+                  ;; DevTools) wraps event listeners and assigns a custom
+                  ;; .toString to its wrapper functions using
+                  ;; Object.defineProperty.  When the wrapper was previously
+                  ;; defined with {writable: false}, a subsequent plain assignment
+                  ;; in strict mode (our libs.js uses "use strict") throws this
+                  ;; TypeError.  This is a known Zone.js / browser-extension
+                  ;; incompatibility and is NOT a Penpot bug.
+                  (str/starts-with? message "Cannot assign to read only property 'toString'"))))
 
           (on-unhandled-error [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
-              (when-not (is-ignorable-exception? cause)
-                (if (stale-asset-error? cause)
-                  (cf/throttled-reload :reason (ex-message cause))
-                  (let [data (ex-data cause)
-                        type (get data :type)]
-                    (set! last-exception cause)
-                    (if (= :wasm-error type)
-                      (on-error cause)
-                      (do
-                        (ex/print-throwable cause :prefix "Uncaught Exception")
-                        (ts/asap #(flash :cause cause :type :unhandled)))))))))
+              (cond
+                (stale-asset-error? cause)
+                (cf/throttled-reload :reason (ex-message cause))
+
+                ;; Plugin errors: log to console and ignore
+                (from-plugin? cause)
+                (ex/print-throwable cause :prefix "Plugin Error")
+
+                ;; Other ignorable exceptions: ignore silently
+                (is-ignorable-exception? cause)
+                nil
+
+                ;; All other errors: show exception page
+                :else
+
+                (let [data (ex-data cause)
+                      type (get data :type)]
+                  (set! last-exception cause)
+                  (if (= :wasm-error type)
+                    (on-error cause)
+                    (do
+                      (ex/print-throwable cause :prefix "Uncaught Exception")
+                      (ts/asap #(flash :cause cause :type :unhandled))))))))
 
           (on-unhandled-rejection [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "reason")]
-              (when-not (is-ignorable-exception? cause)
-                (if (stale-asset-error? cause)
-                  (cf/throttled-reload :reason (ex-message cause))
-                  (let [data (ex-data cause)
-                        type (get data :type)]
-                    (set! last-exception cause)
-                    (if (= :wasm-error type)
-                      (on-error cause)
-                      (do
-                        (ex/print-throwable cause :prefix "Uncaught Rejection")
-                        (ts/asap #(flash :cause cause :type :unhandled)))))))))]
+              (cond
+                (stale-asset-error? cause)
+                (cf/throttled-reload :reason (ex-message cause))
+
+                ;; Plugin errors: log to console and ignore
+                (from-plugin? cause)
+                (ex/print-throwable cause :prefix "Plugin Error")
+
+                ;; Other ignorable exceptions: ignore silently
+                (is-ignorable-exception? cause)
+                nil
+
+                ;; All other errors: show exception page
+                :else
+                (let [data (ex-data cause)
+                      type (get data :type)]
+                  (set! last-exception cause)
+                  (if (= :wasm-error type)
+                    (on-error cause)
+                    (do
+                      (ex/print-throwable cause :prefix "Uncaught Rejection")
+                      (ts/asap #(flash :cause cause :type :unhandled))))))))]
+
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)

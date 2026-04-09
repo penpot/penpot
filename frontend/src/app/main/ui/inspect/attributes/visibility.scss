@@ -10,6 +10,7 @@
 
 .attributes-block {
   --box-border-color: var(--color-background-primary);
+
   display: flex;
   flex-direction: column;
   border-block-end: $b-2 solid var(--box-border-color);
@@ -25,12 +26,13 @@
 }
 
 .visibility-row {
-  @extend .attr-row;
+  @extend %attr-row;
+
   block-size: $sz-36;
 }
 
 .button-children {
-  @extend .copy-button-children;
+  @extend %copy-button-children;
 }
 
 .copy-btn-title {

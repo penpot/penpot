@@ -32,6 +32,7 @@
 
 .tab-container-tab-title {
   @include deprecated.flexCenter;
+
   height: 100%;
   width: 100%;
   padding: 0 deprecated.$s-8;
@@ -43,12 +44,14 @@
   min-width: 0;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--tab-foreground-color);
   }
 
   .content {
     @include deprecated.headlineSmallTypography;
+
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
@@ -78,6 +81,7 @@
 .collapse-sidebar {
   @include deprecated.flexCenter;
   @include deprecated.buttonStyle;
+
   height: 100%;
   width: deprecated.$s-24;
   min-width: deprecated.$s-24;
@@ -86,6 +90,7 @@
 
   svg {
     @include deprecated.flexCenter;
+
     height: deprecated.$s-16;
     width: deprecated.$s-16;
     stroke: var(--icon-foreground);
@@ -109,13 +114,12 @@
 }
 
 .tab-container-content {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   display: flex;
   flex-direction: column;
 }
 
-//Firefox doesn't respect scrollbar-gutter
+// Firefox doesn't respect scrollbar-gutter
 @supports (-moz-appearance: none) {
   .tab-container-content {
     padding-right: deprecated.$s-8;

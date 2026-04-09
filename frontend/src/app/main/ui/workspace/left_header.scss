@@ -15,10 +15,12 @@
 
 .main-icon {
   @include deprecated.flexCenter;
+
   width: deprecated.$s-32;
   height: deprecated.$s-32;
   min-height: deprecated.$s-32;
   margin-right: deprecated.$s-4;
+
   svg {
     min-height: deprecated.$s-32;
     width: deprecated.$s-32;
@@ -38,6 +40,7 @@
 .file-name {
   @include deprecated.uppercaseTitleTipography;
   @include deprecated.textEllipsis;
+
   height: deprecated.$s-16;
   width: 100%;
   padding-bottom: deprecated.$s-2;
@@ -47,6 +50,7 @@
 
 .file-name {
   @include deprecated.smallTitleTipography;
+
   text-transform: none;
   color: var(--title-foreground-color-hover);
   align-items: center;
@@ -60,6 +64,7 @@
 
 .file-name-input {
   @include deprecated.flexCenter;
+
   width: 100%;
   margin: 0;
   border: 0;
@@ -70,6 +75,7 @@
   color: var(--input-foreground-color);
   z-index: deprecated.$z-index-20;
   white-space: break-spaces;
+
   &:focus {
     outline: none;
   }
@@ -77,9 +83,11 @@
 
 .shared-badge {
   @include deprecated.flexCenter;
+
   width: deprecated.$s-16;
   height: deprecated.$s-32;
   margin-right: deprecated.$s-4;
+
   svg {
     stroke: var(--button-secondary-foreground-color-rest);
     fill: none;
@@ -118,9 +126,11 @@
   0% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-4px);
   }
+
   100% {
     transform: translateY(0);
   }

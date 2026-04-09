@@ -45,6 +45,7 @@
 
 .block-label {
   @include t.use-typography("headline-small");
+
   color: var(--color-foreground-secondary);
 }
 
@@ -82,6 +83,7 @@
 
 .team-icon {
   --update-button-opacity: 0;
+
   position: relative;
   height: $sz-120;
   width: $sz-120;
@@ -162,6 +164,7 @@
 
 .table-header {
   @include t.use-typography("headline-small");
+
   display: grid;
   align-items: center;
   grid-template-columns: 43% 1fr px2rem(108) var(--sp-m);
@@ -245,12 +248,13 @@
 
 .member-name,
 .member-email {
-  @include textEllipsis;
+  @include text-ellipsis;
   @include t.use-typography("body-large");
 }
 
 .member-email {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-secondary);
 }
 
@@ -262,6 +266,7 @@
 // ROL INFO
 .rol-selector {
   @include t.use-typography("body-medium");
+
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -303,6 +308,7 @@
 
 .rol-dropdown-item {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -311,6 +317,7 @@
   padding: px2rem(6);
   border-radius: $br-8;
   cursor: pointer;
+
   &:hover {
     background-color: var(--color-background-quaternary);
   }
@@ -337,7 +344,8 @@
 
 .input-checkbox {
   // TODO: remove this extended class.
-  @extend .input-checkbox;
+  @extend %input-checkbox;
+
   cursor: pointer;
 }
 
@@ -363,6 +371,7 @@
 
 .action-dropdown-item {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -371,6 +380,7 @@
   padding: px2rem(6);
   border-radius: $br-8;
   cursor: pointer;
+
   &:hover {
     background-color: var(--color-background-quaternary);
   }
@@ -399,6 +409,7 @@
 
 .invitations-actions {
   @include t.use-typography("body-medium");
+
   display: flex;
   justify-content: end;
   align-items: center;
@@ -432,7 +443,8 @@
 
 .btn-empty-invitations {
   // TODO: Remove this extend add DS component
-  @extend .button-primary;
+  @extend %button-primary;
+
   margin-block-start: var(--sp-l);
   padding-inline: var(--sp-m);
 }
@@ -451,8 +463,9 @@
 }
 
 .field-email {
-  @include textEllipsis;
+  @include text-ellipsis;
   @include t.use-typography("body-large");
+
   display: flex;
   gap: var(--sp-l);
   align-items: center;
@@ -499,10 +512,10 @@
 
 .webhooks-hero {
   @include t.use-typography("body-medium");
+
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: var(--sp-xxxl);
-  margin-top: var(--sp-xxxl);
   margin: 0;
   padding: var(--sp-xxxl);
   padding: 0;
@@ -511,19 +524,22 @@
 
 .hero-title {
   @include t.use-typography("title-large");
+
   color: var(--color-foreground-primary);
 }
 
 .hero-desc {
   @include t.use-typography("body-large");
+
   color: var(--color-foreground-secondary);
   margin-bottom: 0;
   max-width: $sz-512;
 }
 
 .hero-btn {
-  //TODO: Remove this extended class using a DS component
-  @extend .button-primary;
+  // TODO: Remove this extended class using a DS component
+  @extend %button-primary;
+
   height: $sz-32;
   max-width: $sz-512;
 }
@@ -572,6 +588,7 @@
 
 .webhook-dropdown-item {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -580,6 +597,7 @@
   padding: px2rem(6);
   border-radius: $br-8;
   cursor: pointer;
+
   &:hover {
     background-color: var(--color-background-quaternary);
   }
@@ -611,10 +629,7 @@
 
 // INVITE MEMBERS MODAL
 .modal-team-container {
-  position: relative;
-  padding: var(--sp-xxxl);
   border-radius: $br-8;
-  background-color: var(--color-background-primary);
   border: $b-2 solid var(--color-background-quaternary);
   min-width: $sz-364;
   min-height: $sz-192;
@@ -643,6 +658,7 @@
 
 .modal-title {
   @include t.use-typography("headline-medium");
+
   height: $sz-32;
   color: var(--color-foreground-primary);
 }
@@ -669,12 +685,14 @@
 
 .invite-team-member-text {
   @include t.use-typography("body-large");
+
   margin: 0 0 var(--sp-l) 0;
   color: var(--color-foreground-primary);
 }
 
 .role-title {
   @include t.use-typography("body-large");
+
   margin: 0;
   color: var(--color-foreground-primary);
 }
@@ -691,7 +709,7 @@
 
 .accept-btn {
   // TODO: remove this extend class creating a modal component
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 }
 
 // WEBHOOKS MODAL
@@ -727,16 +745,18 @@
 
 .modal-title {
   @include t.use-typography("title-small");
+
   color: var(--color-foreground-primary);
 }
 
 .modal-close-btn {
   // TODO remove extended class creating a modal component
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include t.use-typography("body-small");
+
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxl);
@@ -751,6 +771,7 @@
 
 .select-title {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-primary);
 }
 
@@ -764,28 +785,31 @@
 
 // TODO: Remove this extended classes creating a modal component
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 
   button {
-    @extend .modal-accept-btn;
+    @extend %modal-accept-btn;
   }
 
   .cancel-button {
-    @extend .modal-cancel-btn;
+    @extend %modal-cancel-btn;
   }
 }
 
 // TODO: Remove this extended class using input component
 .email-input {
   @include t.use-typography("body-small");
-  @extend .input-base;
+  @extend %input-base;
+
   height: auto;
 }
+
 // FIXME: This does not conform to our CSS Guidelines. Need to unnest and to use
 // custom properties to handle state changes.
 .input-wrapper {
   display: flex;
   align-items: center;
+
   @include t.use-typography("body-large");
 
   label {
@@ -801,6 +825,7 @@
         border-color: var(--color-accent-primary);
       }
     }
+
     &:hover {
       span {
         border-color: var(--color-accent-primary-muted);
@@ -809,13 +834,17 @@
   }
 
   span {
-    @extend .checkbox-icon;
+    @extend %checkbox-icon;
     @include t.use-typography("body-small");
+
     color: var(--color-foreground-secondary);
   }
+
   input {
     margin: 0;
+
     @include t.use-typography("body-small");
+
     color: var(--color-foreground-secondary);
   }
 }

@@ -522,20 +522,78 @@
     (with-meta team
       {::audit/props {:id (:id team)}})))
 
+
+(defn create-default-org-team
+  [cfg profile-id organization-id]
+  (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
+                      ::quotes/profile-id profile-id})
+
+  (let [features (-> (cfeat/get-enabled-features cf/flags)
+                     (set/difference cfeat/frontend-only-features)
+                     (set/difference cfeat/no-team-inheritable-features))
+        params   {:profile-id profile-id
+                  :name "Your Penpot"
+                  :features features
+                  :organization-id organization-id
+                  :is-default true}
+        team     (create-team cfg params)]
+    (select-keys team [:id])))
+
+(defn- initialize-user-in-nitrate-org
+  "If needed, create a default team for the user on the organization,
+   and notify Nitrate that an user has been added to an org."
+  [cfg profile-id team-id]
+  (assert (db/connection-map? cfg)
+          "expected cfg with valid connection")
+  (let [membership (nitrate/call cfg :get-org-membership-by-team {:profile-id profile-id :team-id team-id})]
+    ;; Only when the team belong to an organization and the user is not a member
+    (when (and
+           (some? (:organization-id membership)) ;; the team do belong to an organization
+           (not (:is-member membership)))        ;; the user is not a member of the org yet
+
+      (db/tx-run!
+       cfg
+       (fn [{:keys [::db/conn] :as tx-cfg}]
+         (let [org-id           (:organization-id membership)
+               default-team     (create-default-org-team (assoc tx-cfg ::db/conn conn) profile-id org-id)
+               default-team-id  (:id default-team)
+               result           (nitrate/call tx-cfg :add-profile-to-org {:profile-id profile-id
+                                                                          :team-id default-team-id
+                                                                          :org-id org-id})]
+           (when (not (:is-member result))
+             (ex/raise :type :internal
+                       :code :failed-add-profile-org-nitrate
+                       :context {:profile-id profile-id
+                                 :team-id team-id
+                                 :org-id org-id
+                                 :default-team-id default-team-id}))
+           nil))))))
+
+(defn add-profile-to-team!
+  ([cfg params]
+   (add-profile-to-team! cfg params nil))
+  ([{:keys [::db/conn] :as cfg} {:keys [:profile-id :team-id] :as params} options]
+   (assert (db/connection-map? cfg)
+           "expected cfg with valid connection")
+   (when (contains? cf/flags :nitrate)
+     (initialize-user-in-nitrate-org cfg profile-id team-id))
+   (db/insert! conn :team-profile-rel params options)))
+
 (defn create-team
   "This is a complete team creation process, it creates the team
   object and all related objects (default role and default project)."
-  [cfg-or-conn params]
-  (let [conn    (db/get-connection cfg-or-conn)
-        team    (create-team* conn params)
+  [{:keys [::db/conn] :as cfg} params]
+  (assert (db/connection-map? cfg)
+          "expected cfg with valid connection")
+  (let [team    (create-team* conn params)
         params  (assoc params
                        :team-id (:id team)
                        :role :owner)
         project (create-team-default-project conn params)]
-    (create-team-role conn params)
+    (create-team-role cfg params)
     ;; Set team organization in Nitrate if organization-id is provided
     (when (and (contains? cf/flags :nitrate) (:organization-id params))
-      (nitrate/set-team-organization cfg-or-conn team params))
+      (nitrate/set-team-organization cfg team params))
     (assoc team :default-project-id (:id project))))
 
 (defn- create-team*
@@ -551,11 +609,13 @@
     (decode-row team)))
 
 (defn- create-team-role
-  [conn {:keys [profile-id team-id role] :as params}]
+  [cfg {:keys [profile-id team-id role] :as params}]
+  (assert (db/connection-map? cfg)
+          "expected cfg with valid connection")
   (let [params {:team-id team-id
                 :profile-id profile-id}]
     (->> (perms/assign-role-flags params role)
-         (db/insert! conn :team-profile-rel))))
+         (add-profile-to-team! cfg))))
 
 (defn- create-team-default-project
   [conn {:keys [profile-id team-id] :as params}]
@@ -614,7 +674,7 @@
 ;; --- Mutation: Leave Team
 
 (defn leave-team
-  [conn {:keys [profile-id id reassign-to]}]
+  [{:keys [::db/conn]} {:keys [profile-id id reassign-to]}]
   (let [perms   (get-permissions conn profile-id id)
         members (get-team-members conn id)]
 
@@ -629,7 +689,9 @@
       ;; if the `reassign-to` is filled and has a different value
       ;; than the current profile-id, we proceed to reassing the
       ;; owner role to profile identified by the `reassign-to`.
-      (and reassign-to (not= reassign-to profile-id))
+      ;; Ignore the reasignation if the current profile is not
+      ;; the owner
+      (and reassign-to (not= reassign-to profile-id) (:is-owner perms))
       (let [member (d/seek #(= reassign-to (:id %)) members)]
         (when-not member
           (ex/raise :type :not-found :code :member-does-not-exist))
@@ -668,32 +730,44 @@
   {::doc/added "1.17"
    ::sm/params schema:leave-team
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (leave-team conn (assoc params :profile-id profile-id)))
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (leave-team cfg (assoc params :profile-id profile-id)))
+
 
 ;; --- Mutation: Delete Team
 
-(defn- delete-team
+(defn delete-team
   "Mark a team for deletion"
-  [conn {:keys [id] :as team}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id]}]
 
-  (let [delay (ldel/get-deletion-delay team)
-        team  (db/update! conn :team
-                          {:deleted-at (ct/in-future delay)}
-                          {:id id}
-                          {::db/return-keys true})]
+  (let [team  (get-team conn :profile-id profile-id :team-id team-id)
+        perms (get team :permissions)]
+
+    (when-not (:is-owner perms)
+      (ex/raise :type :validation
+                :code :only-owner-can-delete-team))
 
     (when (:is-default team)
       (ex/raise :type :validation
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
 
-    (wrk/submit! {::db/conn conn
-                  ::wrk/task :delete-object
-                  ::wrk/params {:object :team
-                                :deleted-at (:deleted-at team)
-                                :id id}})
-    team))
+    (let [delay (ldel/get-deletion-delay team)
+          team  (db/update! conn :team
+                            {:deleted-at (ct/in-future delay)}
+                            {:id team-id}
+                            {::db/return-keys true})]
+
+      ;; Api call to nitrate
+      (when (contains? cf/flags :nitrate)
+        (nitrate/call cfg :delete-team {:profile-id profile-id :team-id team-id}))
+
+      (wrk/submit! {::db/conn conn
+                    ::wrk/task :delete-object
+                    ::wrk/params {:object :team
+                                  :deleted-at (:deleted-at team)
+                                  :id team-id}})
+      team)))
 
 (def ^:private schema:delete-team
   [:map {:title "delete-team"}
@@ -703,16 +777,9 @@
   {::doc/added "1.17"
    ::sm/params schema:delete-team
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
-  (let [team  (get-team conn :profile-id profile-id :team-id id)
-        perms (get team :permissions)]
-
-    (when-not (:is-owner perms)
-      (ex/raise :type :validation
-                :code :only-owner-can-delete-team))
-
-    (delete-team conn team)
-    nil))
+  [cfg {:keys [::rpc/profile-id id] :as params}]
+  (delete-team cfg {:team-id id :profile-id profile-id})
+  nil)
 
 ;; --- Mutation: Team Update Role
 

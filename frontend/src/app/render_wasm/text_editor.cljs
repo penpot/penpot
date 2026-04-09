@@ -66,17 +66,48 @@
     (let [res (h/call wasm/internal-module "_text_editor_poll_event")]
       res)))
 
-(defn text-editor-insert-text
+(defn text-editor-encode-text-pre
   [text]
-  (when wasm/context-initialized?
+  (when (and (not (empty? text))
+             wasm/context-initialized?)
     (let [encoder (js/TextEncoder.)
           buf (.encode encoder text)
           heapu8 (mem/get-heap-u8)
           size (mem/size buf)
           offset (mem/alloc size)]
-      (mem/write-buffer offset heapu8 buf)
-      (h/call wasm/internal-module "_text_editor_insert_text")
-      (mem/free))))
+      (mem/write-buffer offset heapu8 buf))))
+
+(defn text-editor-encode-text-post
+  [text]
+  (when (and (not (empty? text))
+             wasm/context-initialized?)
+    (mem/free)))
+
+(defn text-editor-composition-start
+  []
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_composition_start")))
+
+(defn text-editor-composition-update
+  [text]
+  (when wasm/context-initialized?
+    (text-editor-encode-text-pre text)
+    (h/call wasm/internal-module "_text_editor_composition_update")
+    (text-editor-encode-text-post text)))
+
+(defn text-editor-composition-end
+  [text]
+  (when wasm/context-initialized?
+    (text-editor-encode-text-pre text)
+    (h/call wasm/internal-module "_text_editor_composition_end")
+    (text-editor-encode-text-post text)))
+
+(defn text-editor-insert-text
+  [text]
+  (when wasm/context-initialized?
+    (text-editor-encode-text-pre text)
+    (h/call wasm/internal-module "_text_editor_insert_text")
+    (text-editor-encode-text-post text)))
 
 (defn text-editor-delete-backward
   ([]

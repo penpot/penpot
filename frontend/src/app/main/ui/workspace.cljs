@@ -36,6 +36,7 @@
    [app.main.ui.workspace.tokens.import]
    [app.main.ui.workspace.tokens.import.modal]
    [app.main.ui.workspace.tokens.management.forms.modals]
+   [app.main.ui.workspace.tokens.management.forms.rename-node-modal]
    [app.main.ui.workspace.tokens.remapping-modal]
    [app.main.ui.workspace.tokens.settings]
    [app.main.ui.workspace.tokens.themes.create-modal]
@@ -56,7 +57,7 @@
         selected    (mf/deref refs/selected-shapes)
         page-id     (get page :id)
 
-        {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
+        vport       (mf/deref refs/workspace-vport)
         {:keys [options-mode]} wglobal
 
 
@@ -105,7 +106,6 @@
        [:> viewport*
         {:file file
          :page page
-         :wlocal wlocal
          :wglobal wglobal
          :selected selected
          :layout layout

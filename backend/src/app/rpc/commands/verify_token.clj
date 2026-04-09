@@ -18,6 +18,7 @@
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.quotes :as quotes]
@@ -104,7 +105,7 @@
                         ::quotes/team-id team-id})
 
     ;; Insert the invited member to the team
-    (db/insert! conn :team-profile-rel params {::db/on-conflict-do-nothing? true})
+    (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
 
     ;; If profile is not yet verified, mark it as verified because
     ;; accepting an invitation link serves as verification.

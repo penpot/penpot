@@ -7,7 +7,6 @@
 @use "ds/spacing.scss" as *;
 @use "ds/z-index.scss" as *;
 @use "ds/_sizes.scss" as *;
-
 @use "refactor/common-refactor.scss" as deprecated;
 
 .palette-wrapper {
@@ -30,11 +29,7 @@
   right: 0;
   grid-area: color-palette;
   display: grid;
-  grid-template-areas:
-    "resize resize resize"
-    "buttons actions palette";
-  grid-template-rows: deprecated.$s-8 1fr;
-  grid-template-columns: deprecated.$s-32 auto 1fr;
+  grid-template: "resize resize resize" deprecated.$s-8 "buttons actions palette" 1fr / deprecated.$s-32 auto 1fr;
   max-height: deprecated.$s-80;
   height: var(--height);
   width: fit-content;
@@ -46,6 +41,7 @@
     right 0.3s,
     opacity 0.2s,
     width 0.3s;
+
   &.wide {
     width: 100%;
   }
@@ -59,6 +55,7 @@
     cursor: ns-resize;
     background-color: var(--palette-background-color);
   }
+
   .palette-btn-list {
     grid-area: buttons;
     background-color: var(--palette-background-color);
@@ -68,35 +65,44 @@
     list-style: none;
     z-index: deprecated.$z-index-2;
     gap: deprecated.$s-2;
+
     &.mid-palette,
     &.small-palette {
       display: flex;
     }
+
     .palette-item {
       @include deprecated.flexCenter;
+
       border-radius: deprecated.$br-8;
       opacity: deprecated.$op-10;
       transition: opacity 1s ease;
+
       .palette-btn {
-        @extend .button-tertiary;
+        @extend %button-tertiary;
+
         height: deprecated.$s-32;
         width: deprecated.$s-32;
         border-radius: deprecated.$br-8;
         background-clip: padding-box;
         padding: 0;
+
         svg {
-          @extend .button-icon-small;
+          @extend %button-icon-small;
+
           stroke: var(--icon-foreground);
         }
+
         &.selected {
-          @extend .button-icon-selected;
+          @extend %button-icon-selected;
         }
       }
     }
   }
 
   .palette-actions {
-    @extend .button-tertiary;
+    @extend %button-tertiary;
+
     grid-area: actions;
     height: calc(var(--height) - deprecated.$s-16);
     width: deprecated.$s-32;
@@ -105,11 +111,14 @@
     border-radius: deprecated.$br-8;
     background-color: var(--palette-background-color);
     z-index: deprecated.$z-index-2;
+
     svg {
-      @extend .button-icon;
+      @extend %button-icon;
+
       stroke: var(--icon-foreground);
     }
   }
+
   .palette {
     grid-area: palette;
     width: 100%;
@@ -120,8 +129,10 @@
 .handler {
   @include deprecated.buttonStyle;
   @include deprecated.flexCenter;
+
   width: deprecated.$s-12;
   height: 100%;
+
   .handler-btn {
     width: deprecated.$s-4;
     height: 100%;
@@ -147,29 +158,35 @@
   border-inline-start: 0;
   border-start-start-radius: 0;
   border-end-start-radius: 0;
+
   .palette-btn-list {
     opacity: deprecated.$op-0;
     visibility: hidden;
     width: 0;
+
     .palette-item {
       opacity: deprecated.$op-0;
       visibility: hidden;
       z-index: 0;
     }
   }
+
   .resize-area {
     visibility: hidden;
     z-index: 0;
     width: 0;
   }
+
   .palette-actions {
     visibility: hidden;
     z-index: 0;
   }
+
   .palette {
     visibility: hidden;
     z-index: 0;
   }
+
   .handler {
     padding-bottom: deprecated.$s-8;
   }
@@ -179,21 +196,26 @@
 .help-btn {
   z-index: var(--z-index-panels);
   flex-shrink: 0;
-  @extend .button-secondary;
+
+  @extend %button-secondary;
+
   inline-size: $sz-40;
   block-size: $sz-40;
   border-radius: deprecated.$br-circle;
   border: none;
+
   &.selected {
-    @extend .button-icon-selected;
+    @extend %button-icon-selected;
   }
+
   &:hover {
     border: none;
   }
 }
 
 .icon-help {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
   inline-size: var(--sp-xxl);
   block-size: var(--sp-xxl);

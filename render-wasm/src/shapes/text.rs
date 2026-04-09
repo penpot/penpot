@@ -605,6 +605,40 @@ impl TextContent {
         paragraph_group
     }
 
+    /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
+    /// Used as a clip mask for inner stroke rendering.
+    pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
+        let fonts = get_font_collection();
+        let fallback_fonts = get_fallback_fonts();
+        let mut paragraph_group = Vec::new();
+
+        for paragraph in self.paragraphs() {
+            let paragraph_style = paragraph.paragraph_to_style();
+            let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            let mut has_text = false;
+            for span in paragraph.children() {
+                let text_style = span.to_style(
+                    &self.bounds(),
+                    fallback_fonts,
+                    true, // always opaque
+                    paragraph.line_height(),
+                );
+                let text: String = span.apply_text_transform();
+                if !text.is_empty() {
+                    has_text = true;
+                }
+                builder.push_style(&text_style);
+                builder.add_text(&text);
+            }
+            if !has_text {
+                builder.add_text(" ");
+            }
+            paragraph_group.push(vec![builder]);
+        }
+
+        paragraph_group
+    }
+
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
@@ -1002,6 +1036,49 @@ impl Paragraph {
     }
 }
 
+/// Capitalize the first letter of each word, preserving all original whitespace.
+/// Matches CSS `text-transform: capitalize` behavior: a "word" starts after
+/// any non-letter character (whitespace, punctuation, digits, symbols).
+fn capitalize_words(text: &str) -> String {
+    let mut result = String::with_capacity(text.len());
+    let mut capitalize_next = true;
+    for c in text.chars() {
+        if c.is_alphabetic() {
+            if capitalize_next {
+                result.extend(c.to_uppercase());
+            } else {
+                result.push(c);
+            }
+            capitalize_next = false;
+        } else {
+            result.push(c);
+            capitalize_next = true;
+        }
+    }
+    result
+}
+
+/// Filter control characters below U+0020, preserving line breaks.
+/// Browser-dependent: Firefox drops them, others replace with space.
+fn process_ignored_chars(text: &str, browser: u8) -> String {
+    text.chars()
+        .filter_map(|c| {
+            if c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
+                return Some(c);
+            }
+            if c < '\u{0020}' {
+                if browser == Browser::Firefox as u8 {
+                    None
+                } else {
+                    Some(' ')
+                }
+            } else {
+                Some(c)
+            }
+        })
+        .collect()
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextSpan {
     pub text: String,
@@ -1051,6 +1128,7 @@ impl TextSpan {
         self.text = text;
     }
 
+    #[allow(dead_code)]
     pub fn fills(&self) -> &[shapes::Fill] {
         &self.fills
     }
@@ -1136,39 +1214,13 @@ impl TextSpan {
         format!("{}", self.font_family)
     }
 
-    fn process_ignored_chars(text: &str, browser: u8) -> String {
-        text.chars()
-            .filter_map(|c| {
-                if c < '\u{0020}' || c == '\u{2028}' || c == '\u{2029}' {
-                    if browser == Browser::Firefox as u8 {
-                        None
-                    } else {
-                        Some(' ')
-                    }
-                } else {
-                    Some(c)
-                }
-            })
-            .collect()
-    }
-
     pub fn apply_text_transform(&self) -> String {
         let browser = crate::with_state!(state, { state.current_browser });
-        let text = Self::process_ignored_chars(&self.text, browser);
+        let text = process_ignored_chars(&self.text, browser);
         match self.text_transform {
             Some(TextTransform::Uppercase) => text.to_uppercase(),
             Some(TextTransform::Lowercase) => text.to_lowercase(),
-            Some(TextTransform::Capitalize) => text
-                .split_whitespace()
-                .map(|word| {
-                    let mut chars = word.chars();
-                    match chars.next() {
-                        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                        None => String::new(),
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(" "),
+            Some(TextTransform::Capitalize) => capitalize_words(&text),
             None => text,
         }
     }
@@ -1361,67 +1413,45 @@ pub fn calculate_text_layout_data(
             let current_y = para_layout.y;
             let text_paragraph = text_paragraphs.get(paragraph_index);
             if let Some(text_para) = text_paragraph {
-                let mut span_ranges: Vec<(usize, usize, usize, String, String)> = vec![];
+                let mut span_ranges: Vec<(usize, usize, usize)> = vec![];
                 let mut cur = 0;
                 for (span_index, span) in text_para.children().iter().enumerate() {
-                    let transformed_text: String = span.apply_text_transform();
-                    let original_text = span.text.clone();
-                    let text = transformed_text.clone();
-                    let text_len = text.len();
-                    span_ranges.push((cur, cur + text_len, span_index, text, original_text));
+                    let text: String = span.apply_text_transform();
+                    let text_len = text.encode_utf16().count();
+                    span_ranges.push((cur, cur + text_len + 1, span_index));
                     cur += text_len;
                 }
-                for (start, end, span_index, transformed_text, original_text) in span_ranges {
-                    // Skip empty spans to avoid invalid rect calculations
-                    if start >= end {
-                        continue;
-                    }
+                for (start, end, span_index) in span_ranges {
                     let rects = para_layout.paragraph.get_rects_for_range(
                         start..end,
                         RectHeightStyle::Tight,
                         RectWidthStyle::Tight,
                     );
+
                     for textbox in rects {
                         let direction = textbox.direct;
                         let mut rect = textbox.rect;
                         let cy = rect.top + rect.height() / 2.0;
 
                         // Get byte positions from Skia's transformed text layout
-                        let glyph_start = para_layout
+                        let start_pos = para_layout
                             .paragraph
                             .get_glyph_position_at_coordinate((rect.left + 0.1, cy))
-                            .position as usize;
-                        let glyph_end = para_layout
+                            .position as usize
+                            - start;
+
+                        let end_pos = para_layout
                             .paragraph
                             .get_glyph_position_at_coordinate((rect.right - 0.1, cy))
-                            .position as usize;
-
-                        // Convert to byte positions relative to this span
-                        let byte_start = glyph_start.saturating_sub(start);
-                        let byte_end = glyph_end.saturating_sub(start);
-
-                        // Convert byte positions to character positions in ORIGINAL text
-                        // This handles multi-byte UTF-8 and text transform differences
-                        let char_start = transformed_text
-                            .char_indices()
-                            .position(|(i, _)| i >= byte_start)
-                            .unwrap_or(0);
-                        let char_end = transformed_text
-                            .char_indices()
-                            .position(|(i, _)| i >= byte_end)
-                            .unwrap_or_else(|| transformed_text.chars().count());
-
-                        // Clamp to original text length for safety
-                        let original_char_count = original_text.chars().count();
-                        let final_start = char_start.min(original_char_count);
-                        let final_end = char_end.min(original_char_count);
+                            .position as usize
+                            - start;
 
                         rect.offset((x, current_y));
                         position_data.push(PositionData {
                             paragraph: paragraph_index as u32,
                             span: span_index as u32,
-                            start_pos: final_start as u32,
-                            end_pos: final_end as u32,
+                            start_pos: start_pos as u32,
+                            end_pos: end_pos as u32,
                             x: rect.x(),
                             y: rect.y(),
                             width: rect.width(),
@@ -1459,4 +1489,96 @@ pub fn calculate_position_data(
     );
 
     layout_info.position_data
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn capitalize_basic_words() {
+        assert_eq!(capitalize_words("hello world"), "Hello World");
+    }
+
+    #[test]
+    fn capitalize_preserves_leading_whitespace() {
+        assert_eq!(capitalize_words(" hello"), " Hello");
+    }
+
+    #[test]
+    fn capitalize_preserves_trailing_whitespace() {
+        assert_eq!(capitalize_words("hello "), "Hello ");
+    }
+
+    #[test]
+    fn capitalize_preserves_multiple_spaces() {
+        assert_eq!(capitalize_words("hello  world"), "Hello  World");
+    }
+
+    #[test]
+    fn capitalize_whitespace_only() {
+        assert_eq!(capitalize_words(" "), " ");
+        assert_eq!(capitalize_words("  "), "  ");
+    }
+
+    #[test]
+    fn capitalize_empty_string() {
+        assert_eq!(capitalize_words(""), "");
+    }
+
+    #[test]
+    fn capitalize_single_char() {
+        assert_eq!(capitalize_words("a"), "A");
+    }
+
+    #[test]
+    fn capitalize_already_uppercase() {
+        assert_eq!(capitalize_words("HELLO WORLD"), "HELLO WORLD");
+    }
+
+    #[test]
+    fn capitalize_preserves_tabs_and_newlines() {
+        assert_eq!(capitalize_words("hello\tworld"), "Hello\tWorld");
+        assert_eq!(capitalize_words("hello\nworld"), "Hello\nWorld");
+    }
+
+    #[test]
+    fn capitalize_after_punctuation() {
+        assert_eq!(capitalize_words("(readonly)"), "(Readonly)");
+        assert_eq!(capitalize_words("hello-world"), "Hello-World");
+        assert_eq!(capitalize_words("one/two/three"), "One/Two/Three");
+    }
+
+    #[test]
+    fn capitalize_after_digits() {
+        assert_eq!(capitalize_words("item1name"), "Item1Name");
+    }
+
+    #[test]
+    fn process_ignored_chars_preserves_spaces() {
+        assert_eq!(process_ignored_chars("hello world", 0), "hello world");
+    }
+
+    #[test]
+    fn process_ignored_chars_preserves_line_breaks() {
+        assert_eq!(process_ignored_chars("hello\nworld", 0), "hello\nworld");
+        assert_eq!(process_ignored_chars("hello\rworld", 0), "hello\rworld");
+    }
+
+    #[test]
+    fn process_ignored_chars_replaces_control_chars_chrome() {
+        // U+0001 (SOH) should become space in non-Firefox
+        assert_eq!(
+            process_ignored_chars("a\x01b", Browser::Chrome as u8),
+            "a b"
+        );
+    }
+
+    #[test]
+    fn process_ignored_chars_removes_control_chars_firefox() {
+        assert_eq!(
+            process_ignored_chars("a\x01b", Browser::Firefox as u8),
+            "ab"
+        );
+    }
 }

@@ -7,11 +7,12 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-dialog {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   display: grid;
   grid-template-rows: auto 1fr auto;
   max-height: initial;
@@ -41,16 +42,18 @@
 }
 
 .close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .close-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
 }
 
 .modal-title {
   @include deprecated.headlineMediumTypography;
+
   margin-block-end: deprecated.$s-32;
   color: var(--modal-title-foreground-color);
   display: flex;
@@ -82,8 +85,9 @@
 }
 
 .primary-button {
-  @extend .button-primary;
+  @extend %button-primary;
   @include deprecated.headlineSmallTypography;
+
   padding: deprecated.$s-0 deprecated.$s-16;
 }
 
@@ -93,18 +97,21 @@
 }
 
 .cancel-button {
-  @extend .button-secondary;
+  @extend %button-secondary;
   @include deprecated.headlineSmallTypography;
+
   padding: deprecated.$s-0 deprecated.$s-16;
 }
 
 .search-icon {
   @include deprecated.flexCenter;
+
   width: deprecated.$s-20;
   padding: 0 0 0 deprecated.$s-8;
 
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
+
     stroke: var(--icon-foreground);
   }
 }
@@ -126,8 +133,7 @@
 
 .plugins-list {
   padding-top: deprecated.$s-20;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden auto;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -158,11 +164,13 @@
 
 .plugin-title {
   @include deprecated.bodyMediumTypography;
+
   color: var(--color-foreground-primary);
 }
 
 .plugin-summary {
   @include deprecated.bodySmallTypography;
+
   color: var(--color-foreground-secondary);
 }
 
@@ -195,6 +203,7 @@
 
 .plugins-empty-text {
   @include deprecated.bodySmallTypography;
+
   color: var(--color-foreground-primary);
 }
 
@@ -204,6 +213,7 @@ div.input-error {
 
 .info {
   @include deprecated.bodySmallTypography;
+
   margin-top: deprecated.$s-4;
 
   &.error {
@@ -231,9 +241,6 @@ div.input-error {
   }
 }
 
-.plugin-permissions {
-}
-
 .permissions-list {
   display: flex;
   flex-direction: column;
@@ -256,12 +263,14 @@ div.input-error {
 
 .permissions-list-text {
   @include deprecated.bodySmallTypography;
+
   margin: 0;
   color: var(--color-foreground-secondary);
 }
 
 .permissions-disclaimer {
   @include deprecated.bodySmallTypography;
+
   padding: deprecated.$s-16;
   background: var(--color-background-quaternary);
   color: var(--color-foreground-primary);
@@ -275,6 +284,7 @@ div.input-error {
 
 .discover {
   @include deprecated.bodySmallTypography;
+
   color: var(--color-foreground-secondary);
   margin-top: deprecated.$s-24;
 

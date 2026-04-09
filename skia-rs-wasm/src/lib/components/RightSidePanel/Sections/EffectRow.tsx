@@ -7,13 +7,14 @@ import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
 import { isColorFill } from '../../../renderer/api/constants'
 import { normalizeHex } from '../../../renderer/properties/panel-utils'
 import type { EffectItem, EffectKind } from '../../../renderer/properties/panel-utils'
-import { DEFAULT_SHADOW, DEFAULT_BLUR, DEFAULT_GLASS } from '../../../renderer/properties/panel-utils'
+import { DEFAULT_SHADOW, DEFAULT_BLUR, DEFAULT_BACKGROUND_BLUR, DEFAULT_GLASS } from '../../../renderer/properties/panel-utils'
 import { useColorEditorFor } from '../use-color-editor'
 
 const EFFECT_KIND_OPTIONS: { value: EffectKind; label: string }[] = [
   { value: 'drop-shadow', label: 'Drop shadow' },
   { value: 'inner-shadow', label: 'Inner shadow' },
   { value: 'layer-blur', label: 'Layer blur' },
+  { value: 'background-blur', label: 'Background blur' },
   { value: 'glass', label: 'Glass' },
 ]
 
@@ -48,7 +49,7 @@ function fillToShadowColor(fill: Fill, existing: Shadow): Shadow {
 /** Convert between effect kinds, preserving hidden state. */
 function convertEffect(current: EffectItem, newKind: EffectKind): EffectItem {
   const hidden =
-    current.kind === 'layer-blur'
+    current.kind === 'layer-blur' || current.kind === 'background-blur'
       ? current.blur.hidden
       : current.kind === 'glass'
         ? current.glass.hidden
@@ -57,10 +58,13 @@ function convertEffect(current: EffectItem, newKind: EffectKind): EffectItem {
   if (newKind === 'layer-blur') {
     return { kind: 'layer-blur', blur: { ...DEFAULT_BLUR, hidden } }
   }
+  if (newKind === 'background-blur') {
+    return { kind: 'background-blur', blur: { ...DEFAULT_BACKGROUND_BLUR, hidden } }
+  }
   if (newKind === 'glass') {
     return { kind: 'glass', glass: { ...DEFAULT_GLASS, hidden } }
   }
-  if (current.kind === 'layer-blur' || current.kind === 'glass') {
+  if (current.kind === 'layer-blur' || current.kind === 'background-blur' || current.kind === 'glass') {
     return { kind: newKind, shadow: { ...DEFAULT_SHADOW, style: newKind, hidden } }
   }
   // Shadow → Shadow (different style)
@@ -77,7 +81,7 @@ export interface EffectRowProps {
 
 export function EffectRow({ effect, index, readOnly, onChange, onRemove }: EffectRowProps) {
   const isShadow = effect.kind === 'drop-shadow' || effect.kind === 'inner-shadow'
-  const isBlur = effect.kind === 'layer-blur'
+  const isBlur = effect.kind === 'layer-blur' || effect.kind === 'background-blur'
   const isGlass = effect.kind === 'glass'
   const shadow = isShadow ? effect.shadow : null
   const blur = isBlur ? effect.blur : null
@@ -298,7 +302,10 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
             value={blur.value}
             onChange={(e) =>
               onChange(
-                { kind: 'layer-blur', blur: { ...blur, value: Math.max(0, parseFloat(e.target.value) || 0) } },
+                {
+                  kind: effect.kind as 'layer-blur' | 'background-blur',
+                  blur: { ...blur, value: Math.max(0, parseFloat(e.target.value) || 0) },
+                },
                 index,
               )
             }

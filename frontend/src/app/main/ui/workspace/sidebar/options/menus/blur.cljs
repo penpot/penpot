@@ -7,11 +7,15 @@
 (ns app.main.ui.workspace.sidebar.options.menus.blur
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -31,6 +35,9 @@
 (mf/defc blur-menu [{:keys [ids type values]}]
   (let [blur           (:blur values)
         has-value?     (not (nil? blur))
+        render-wasm?   (features/use-feature "render-wasm/v1")
+        bg-blur?       (and render-wasm?
+                            (contains? cf/flags :background-blur))
 
         state*         (mf/use-state {:show-content true
                                       :show-more-options false})
@@ -75,12 +82,25 @@
                        :always
                        (assoc-in [:blur :value] value)))))
 
+        handle-type-change
+        (mf/use-fn
+         (mf/deps change! ids)
+         (fn [value]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
+           (change! #(assoc-in % [:blur :type] (keyword value)))))
+
         handle-toggle-visibility
         (mf/use-fn
          (mf/deps change! ids)
          (fn []
            (st/emit! (udw/trigger-bounding-box-cloaking ids))
-           (change! #(update-in % [:blur :hidden] not))))]
+           (change! #(update-in % [:blur :hidden] not))))
+
+        type-options
+        (mf/with-memo [bg-blur?]
+          (cond-> [{:value "layer-blur" :label (tr "workspace.options.blur-options.layer-blur")}]
+            bg-blur?
+            (conj {:value "background-blur" :label (tr "workspace.options.blur-options.background-blur")})))]
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
@@ -102,13 +122,20 @@
        [:div {:class (stl/css :element-set-content)}
         [:div {:class (stl/css-case :first-row true
                                     :hidden hidden?)}
-         [:div {:class (stl/css :blur-info)}
+         [:div {:class (stl/css :blur-info)
+                :data-testid "blur-info"}
           [:button {:class (stl/css-case :show-more true
                                          :selected more-options?)
                     :on-click toggle-more-options}
            deprecated-icon/menu]
-          [:span {:class (stl/css :label)}
-           (tr "workspace.options.blur-options.title")]]
+          (if bg-blur?
+            [:& select {:class (stl/css :blur-type-select)
+                        :default-value (d/name (:type blur))
+                        :options type-options
+                        :disabled hidden?
+                        :on-change handle-type-change}]
+            [:span {:class (stl/css :label)}
+             (tr "workspace.options.blur-options.title")])]
          [:div {:class (stl/css :actions)}
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.options.blur-options.toggle-blur")

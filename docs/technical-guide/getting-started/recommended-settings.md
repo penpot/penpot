@@ -3,9 +3,18 @@ title: 1.1 Recommended settings
 desc: Learn recommended self-hosting settings, Docker & Kubernetes installs, configuration, and troubleshooting tips in Penpot's technical guide.
 ---
 
-# Recommended storage
+# Recommended settings
 
-Disk requirements depend on your usage, with the primary factors being database storage and user-uploaded files.
+<p class="advice">
+    These recommended settings do not cover specific <a href="/technical-guide/configuration/#high-availability">high-availability setups</a>, which will depend on your particular best practices.
+    Also, for air-gapped environments, please make sure to read this section of <a href="/technical-guide/configuration/#air-gapped-environments">the guide</a>.
+</p>
+
+Regarding **hardware requirements**, these will largely depend on the purpose of the installation. It's important to know that Penpot makes extensive use of the browser, so you need to ensure you have powerful end-user computers. To get the most out of Penpot, we recommend using the latest stable version of Chrome.
+
+Regarding the **server**, 4 CPUs and 16GB of RAM are sufficient to support thousands of users. So you can also be conservative when allocating resources to the instance.
+
+**Disk requirements** depend on your usage, with the primary factors being database storage and user-uploaded files.
 
 As a rule of thumb, start with a **minimum** database size of **50GB** to **100GB** with elastic sizing capability — this configuration should adequately support up to 10 editors. For environments with **more than 10 users**, we recommend adding approximately **5GB** of capacity per additional editor.
 

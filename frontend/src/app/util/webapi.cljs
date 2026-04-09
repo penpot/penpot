@@ -42,8 +42,8 @@
        (obj/set! reader "onerror"
                  #(rx/error! subs %))
        (obj/set! reader "onabort"
-                 #(rx/error! subs (ex/error :type :internal
-                                            :code :abort
+                 #(rx/error! subs (ex/error :type :abort
+                                            :code :operation-aborted
                                             :hint "operation aborted")))
        (f reader)
        (fn []

@@ -463,9 +463,9 @@
            (if (or (string? value) (number? value))
              (on-change :multiple attr value event)
              (do
-               (st/emit! (dwta/toggle-token {:token (first value)
-                                             :attrs #{attr}
-                                             :shape-ids ids}))))))
+               (st/emit! (dwta/apply-token-from-input {:token (first value)
+                                                       :attrs #{attr}
+                                                       :shape-ids ids}))))))
 
         on-focus
         (mf/use-fn

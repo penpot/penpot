@@ -401,6 +401,20 @@ PENPOT_FLAGS: [...] enable-air-gapped-conf
 When Penpot starts, it will leave out the Nginx configuration related to external requests. This means that,
 with this flag enabled, the Penpot configuration will disable as well the libraries and templates dashboard and the use of Google fonts.
 
+## High availability
+
+The mechanisms for installing Penpot in HA depend largely on how each infrastructure is managed.
+In this section, we mention the key factors to consider when replicating a Penpot installation:
+
+The components that can be replicated are the `frontend`, the `backend`, and the `exporter`.
+Replication management depends on the infrastructure, whether it's a load balancer or a Kubernetes deployment with HPA.
+
+In a high-availability (HA) scenario, managing the state outside of replicas is crucial. This affects the following components:
+
+- Database: Penpot typically operates with a single database instance. This database can also have a replica in case the primary instance fails.
+- Valkey: Penpot only needs one Valkey instance to function correctly. Due to the nature of the data it manages, replication isn't even essential.
+- User media storage: This should not be configured with local storage but rather with centralized storage, such as Kubernetes PVC or S3.
+
 ## Backend
 
 This section enumerates the backend only configuration variables.

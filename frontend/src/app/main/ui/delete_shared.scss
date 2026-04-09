@@ -8,14 +8,16 @@
 @use "ds/typography.scss" as t;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
+
   &.transparent {
     background-color: transparent;
   }
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   display: grid;
   gap: var(--sp-xxl);
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -29,38 +31,42 @@
 
 .modal-title {
   @include t.use-typography("headline-medium");
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include t.use-typography("body-small");
+
   display: grid;
   gap: var(--sp-s);
 }
 
 .element-list {
   @include t.use-typography("body-large");
+
   color: var(--modal-text-foreground-color);
   overflow-y: auto;
   margin-block: 0;
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }
 
 .accept-btn {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
+
   &.danger {
-    @extend .modal-danger-btn;
+    @extend %modal-danger-btn;
   }
 }
 
@@ -72,6 +78,7 @@
 .modal-subtitle,
 .modal-msg {
   @include t.use-typography("body-large");
+
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }

@@ -150,6 +150,9 @@
 (def workspace-global
   (l/derived :workspace-global st/state))
 
+(def mcp
+  (l/derived :mcp st/state))
+
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
@@ -230,6 +233,9 @@
 
 (def inspect-expanded
   (l/derived :inspect-expanded workspace-local))
+
+(def workspace-vport
+  (l/derived :vport workspace-local))
 
 (def vbox
   (l/derived :vbox workspace-local))

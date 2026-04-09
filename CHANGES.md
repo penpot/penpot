@@ -5,20 +5,37 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :rocket: Epics and highlights
+
 - Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
 
 ### :sparkles: New features & Enhancements
 
 - Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
+- Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Import Tokens from linked library (by @dfelinto) [Github #8391](https://github.com/penpot/penpot/pull/8391)
 - Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
-- Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
 - Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
-
+- Copy and paste entire rows in existing table (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8498)
+- Rename token group [Taiga #13137](https://tree.taiga.io/project/penpot/us/13137)
+- Copy token name from contextual menu [Taiga #13568](https://tree.taiga.io/project/penpot/issue/13568)
+- Add natural sorting on token names [Taiga #13713](https://tree.taiga.io/project/penpot/issue/13713)
+- Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
+- Add CSS linter [Taiga #13790](https://tree.taiga.io/project/penpot/us/13790)
+- Save and restore selection state in undo/redo (by @eureka928) [Github #6007](https://github.com/penpot/penpot/issues/6007)
 
 ### :bug: Bugs fixed
 
+- Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
+- Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
+- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
+- Update copy on penpot update message [Taiga #12924](https://tree.taiga.io/project/penpot/issue/12924)
+- Fix scroll on library modal [Taiga #13639](https://tree.taiga.io/project/penpot/issue/13639)
+- Fix dates to avoid show them in english when browser is in auto [Taiga #13786](https://tree.taiga.io/project/penpot/issue/13786)
+- Fix focus radio button [Taiga #13841](https://tree.taiga.io/project/penpot/issue/13841)
+- Token tree should be expanded by default [Taiga #13631](https://tree.taiga.io/project/penpot/issue/13631)
+- Fix opacity incorrectly disabled for visible shapes [Taiga #13906](https://tree.taiga.io/project/penpot/issue/13906)
+- Update onboarding image [Taiga #13864](https://tree.taiga.io/project/penpot/issue/13864)
 
 ## 2.15.0 (Unreleased)
 
@@ -29,19 +46,42 @@
 ### :sparkles: New features & Enhancements
 
 - Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
+- Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 
 ### :bug: Bugs fixed
 
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
-- Fix collapsible sidebar property titles not toggling on click [Github #5168](https://github.com/penpot/penpot/issues/5168)
-- Fix `penpot.openPage()` plugin API not navigating in the same tab; change default to same-tab navigation and allow passing a UUID string instead of a Page object [Github #8520](https://github.com/penpot/penpot/issues/8520)
-- Fix scroll on library modal [Taiga #13639](https://tree.taiga.io/project/penpot/issue/13639)
-- Update copy on penpot update message [Taiga #12924](https://tree.taiga.io/project/penpot/issue/12924)
-- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
-- Fix tooltip shown on tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
+- Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
+- Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
+- Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
 
-## 2.14.0 (Unreleased)
+
+## 2.14.1
+
+### :sparkles: New features & Enhancements
+
+- Add automatic retry with backoff for idempotent RPC requests on network failures [Github #8792](https://github.com/penpot/penpot/pull/8792)
+- Add scroll and zoom throttling to one state update per animation frame [Github #8812](https://github.com/penpot/penpot/pull/8812)
+- Improve error handling and exception formatting [Github #8757](https://github.com/penpot/penpot/pull/8757)
+
+### :bug: Bugs fixed
+
+- Fix crash in apply-text-modifier with nil selrect or modifier [Github #8762](https://github.com/penpot/penpot/pull/8762)
+- Fix incorrect attrs references on generate-sync-shape [Github #8776](https://github.com/penpot/penpot/pull/8776)
+- Fix regression on subpath support [Github #8793](https://github.com/penpot/penpot/pull/8793)
+- Improve error reporting on request parsing failures [Github #8805](https://github.com/penpot/penpot/pull/8805)
+- Fix fetch abort errors escaping the unhandled exception handler [Github #8801](https://github.com/penpot/penpot/pull/8801)
+- Fix nil deref on missing bounds in layout modifier propagation [Github #8735](https://github.com/penpot/penpot/pull/8735)
+- Fix TypeError when token error map lacks :error/fn key [Github #8767](https://github.com/penpot/penpot/pull/8767)
+- Fix dissoc error when detaching stroke color from library [Github #8738](https://github.com/penpot/penpot/pull/8738)
+- Fix crash when pasting image into text editor
+- Fix null text crash on paste in text editor
+- Ensure path content is always PathData when saving
+- Fix error when get-parent-with-data encounters non-Element nodes
+
+
+## 2.14.0
 
 ### :boom: Breaking changes & Deprecations
 
@@ -108,6 +148,8 @@
 ## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
+
+- Add 'page' special shapeId to MCP export_shape tool for full-page snapshots [Github #8689](https://github.com/penpot/penpot/issues/8689)
 
 - Fix mask issues with component swap (by @dfelinto) [Github #7675](https://github.com/penpot/penpot/issues/7675)
 

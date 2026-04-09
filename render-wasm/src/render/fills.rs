@@ -1,16 +1,9 @@
 use skia_safe::{self as skia, Paint, RRect};
 
 use super::{filters, RenderState, SurfaceId};
+use crate::error::Result;
 use crate::render::get_source_rect;
-use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, StrokeKind, Type};
-
-/// True when the shape has at least one visible inner stroke.
-fn has_inner_stroke(shape: &Shape) -> bool {
-    let is_open = shape.is_open();
-    shape
-        .visible_strokes()
-        .any(|s| s.render_kind(is_open) == StrokeKind::Inner)
-}
+use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, Type};
 
 fn draw_image_fill(
     render_state: &mut RenderState,
@@ -20,12 +13,11 @@ fn draw_image_fill(
     antialias: bool,
     surface_id: SurfaceId,
 ) {
-    let image = render_state.images.get(&image_fill.id());
-    if image.is_none() {
+    let Some(image) = render_state.images.get(&image_fill.id()) else {
         return;
-    }
+    };
 
-    let size = image.unwrap().dimensions();
+    let size = image.dimensions();
     let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
@@ -85,15 +77,13 @@ fn draw_image_fill(
     }
 
     // Draw the image with the calculated destination rectangle
-    if let Some(image) = image {
-        canvas.draw_image_rect_with_sampling_options(
-            image,
-            Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-            dest_rect,
-            render_state.sampling_options,
-            paint,
-        );
-    }
+    canvas.draw_image_rect_with_sampling_options(
+        image,
+        Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+        dest_rect,
+        render_state.sampling_options,
+        paint,
+    );
 
     // Restore the canvas to remove the clipping
     canvas.restore();
@@ -109,13 +99,13 @@ pub fn render(
     antialias: bool,
     surface_id: SurfaceId,
     outset: Option<f32>,
-) {
+) -> Result<()> {
     if fills.is_empty() {
-        return;
+        return Ok(());
     }
 
     let scale = render_state.get_scale().max(1e-6);
-    let inset = if has_inner_stroke(shape) {
+    let inset = if shape.has_inner_stroke() {
         Some(1.0 / scale)
     } else {
         None
@@ -134,9 +124,9 @@ pub fn render(
                 surface_id,
                 outset,
                 inset,
-            );
+            )?;
         }
-        return;
+        return Ok(());
     }
 
     let mut paint = merge_fills(fills, shape.selrect);
@@ -152,15 +142,17 @@ pub fn render(
                 let mut filtered_paint = paint.clone();
                 filtered_paint.set_image_filter(image_filter.clone());
                 draw_fill_to_surface(state, shape, temp_surface, &filtered_paint, outset, inset);
+                Ok(())
             },
-        ) {
-            return;
+        )? {
+            return Ok(());
         } else {
             paint.set_image_filter(image_filter);
         }
     }
 
     draw_fill_to_surface(render_state, shape, surface_id, &paint, outset, inset);
+    Ok(())
 }
 
 /// Draws a single paint (with a merged shader) to the appropriate surface
@@ -203,7 +195,7 @@ fn render_single_fill(
     surface_id: SurfaceId,
     outset: Option<f32>,
     inset: Option<f32>,
-) {
+) -> Result<()> {
     let mut paint = fill.to_paint(&shape.selrect, antialias);
     if let Some(image_filter) = shape.image_filter(1.) {
         let bounds = image_filter.compute_fast_bounds(shape.selrect);
@@ -224,9 +216,10 @@ fn render_single_fill(
                     outset,
                     inset,
                 );
+                Ok(())
             },
-        ) {
-            return;
+        )? {
+            return Ok(());
         } else {
             paint.set_image_filter(image_filter);
         }
@@ -242,6 +235,7 @@ fn render_single_fill(
         outset,
         inset,
     );
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

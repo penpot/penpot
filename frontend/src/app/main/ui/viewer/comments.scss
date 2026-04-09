@@ -9,6 +9,7 @@
 // COMMENT DROPDOWN ON HEADER
 .view-options {
   @include deprecated.bodySmallTypography;
+
   display: flex;
   align-items: center;
   position: relative;
@@ -21,7 +22,8 @@
 }
 
 .dropdown {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
+
   right: deprecated.$s-2;
   top: calc(deprecated.$s-2 + deprecated.$s-48);
   width: deprecated.$s-272;
@@ -30,6 +32,7 @@
 
 .dropdown-title {
   @include deprecated.bodySmallTypography;
+
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }
@@ -42,10 +45,13 @@
 .icon,
 .icon-dropdown {
   @include deprecated.flexCenter;
+
   height: 100%;
   width: deprecated.$s-16;
+
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
+
     stroke: var(--icon-foreground);
   }
 }
@@ -55,16 +61,21 @@
 }
 
 .dropdown-element {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
+
   .icon {
     @include deprecated.flexCenter;
+
     height: 100%;
     width: deprecated.$s-16;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--icon-foreground);
     }
   }
+
   &:hover .label {
     color: var(--input-foreground-color-active);
   }
@@ -74,6 +85,7 @@
   .label {
     color: var(--input-foreground-color-active);
   }
+
   .icon svg {
     stroke: var(--input-foreground-color);
   }
@@ -86,8 +98,8 @@
 // FLOATING COMMENT
 .viewer-comments-container {
   position: absolute;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   z-index: deprecated.$z-index-1;
@@ -95,11 +107,11 @@
 
 .threads {
   position: absolute;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: 0;
 }
 
-//COMMENT SIDEBAR
+// COMMENT SIDEBAR
 .comments-sidebar {
   position: absolute;
   right: 0;

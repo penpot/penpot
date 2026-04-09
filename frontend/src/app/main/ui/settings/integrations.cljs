@@ -7,7 +7,6 @@
 (ns app.main.ui.settings.integrations
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -89,7 +88,9 @@
            (clipboard/to-clipboard (:token token-created))
            (st/emit! (ntf/show {:level :info
                                 :type :toast
-                                :content (tr "integrations.notification.success.copied")
+                                :content (if mcp-key?
+                                           (tr "integrations.notification.success.mcp-key-copied")
+                                           (tr "integrations.notification.success.token-copied"))
                                 :timeout notification-timeout}))))]
 
     [:div {:class (stl/css :modal-form)}
@@ -103,7 +104,9 @@
       [:> text* {:as "div"
                  :typography t/body-small
                  :class (stl/css :color-primary)}
-       (tr "integrations.info.non-recuperable")]]
+       (if mcp-key?
+         (tr "integrations.mcp-key.info.non-recuperable")
+         (tr "integrations.token.info.non-recuperable"))]]
 
      [:div {:class (stl/css :modal-content)}
       [:> input-copy* {:value (:token token-created "")
@@ -113,8 +116,12 @@
                  :typography t/body-small
                  :class (stl/css :color-secondary)}
        (if (:expires-at token-created)
-         (tr "integrations.token-will-expire" (ct/format-inst (:expires-at token-created) "PPP"))
-         (tr "integrations.token-will-not-expire"))]]
+         (if mcp-key?
+           (tr "integrations.mcp-key.will-expire" (ct/format-inst (:expires-at token-created) "PPP"))
+           (tr "integrations.token.will-expire" (ct/format-inst (:expires-at token-created) "PPP")))
+         (if mcp-key?
+           (tr "integrations.mcp-key.will-not-expire")
+           (tr "integrations.token.will-not-expire")))]]
 
      (when mcp-key?
        [:div {:class (stl/css :modal-content)}
@@ -278,8 +285,8 @@
                                 ::ev/origin "integrations"})
                      (ev/event {::ev/name "enable-mcp"
                                 ::ev/origin "integrations"
-                                :source "key-creation"}))
-           (mbc/emit! :mcp-enabled-change-status true)
+                                :source "key-creation"})
+                     (mbc/event :mcp/enable {}))
            (reset! created? true)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -319,8 +326,8 @@
            (st/emit! (du/delete-access-token {:id mcp-key-id})
                      (du/update-profile-props {:mcp-enabled true})
                      (ev/event {::ev/name "regenerate-mcp-key"
-                                ::ev/origin "integrations"}))
-           (mbc/emit! :mcp-enabled-change-status true)
+                                ::ev/origin "integrations"})
+                     (mbc/event :mcp/enable {}))
            (reset! created? true)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -410,7 +417,7 @@
         profile (mf/deref refs/profile)
 
         mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
-        mcp-enabled? (d/nilv (-> profile :props :mcp-enabled) false)
+        mcp-enabled? (true? (-> profile :props :mcp-enabled))
 
         expires-at  (:expires-at mcp-key)
         expired?    (and (some? expires-at) (> (ct/now) expires-at))
@@ -430,8 +437,10 @@
                                 :timeout notification-timeout})
                      (ev/event {::ev/name (if (true? value) "enable-mcp" "disable-mcp")
                                 ::ev/origin "integrations"
-                                :source "toggle"}))
-           (mbc/emit! :mcp-enabled-change-status value)))
+                                :source "toggle"})
+                     (if value
+                       (mbc/event :mcp/enable {})
+                       (mbc/event :mcp/disable {})))))
 
         handle-generate-mcp-key
         (mf/use-fn
@@ -448,8 +457,8 @@
            (let [params {:id (:id mcp-key)}
                  mdata  {:on-success #(st/emit! (du/fetch-access-tokens))}]
              (st/emit! (du/delete-access-token (with-meta params mdata))
-                       (du/update-profile-props {:mcp-enabled false}))
-             (mbc/emit! :mcp-enabled-change-status false))))
+                       (du/update-profile-props {:mcp-enabled false})
+                       (mbc/event :mcp/disable {})))))
 
         on-copy-to-clipboard
         (mf/use-fn
@@ -550,6 +559,8 @@
                   :typography t/body-medium
                   :class (stl/css :color-secondary)}
         [:a {:href cf/mcp-help-center-uri
+             :target "_blank"
+             :rel "noopener noreferrer"
              :class (stl/css :mcp-server-notification-link)}
          (tr "integrations.mcp-server.mcp-keys.help") [:> icon* {:icon-id i/open-link}]]]]]]))
 

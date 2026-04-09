@@ -554,14 +554,14 @@
   (let [old-applied-tokens     (d/nilv (:applied-tokens shape) #{})
         changed-token-attrs    (filter #(not= (get old-applied-tokens %) (get new-applied-tokens %))
                                        ctt/all-keys)
-        text-shape?            (= (:type shape) :text)
+        shape-type             (get shape :type)
+        text-shape?            (= shape-type :text)
         attrs-in-text-content? (some #(ctt/attrs-in-text-content %)
                                      changed-token-attrs)
 
         changed-groups         (into #{}
                                      (comp (map ctt/token-attr->shape-attr)
-                                           (map #(get ctk/sync-attrs %))
-                                           (filter some?))
+                                           (keep #(ctk/resolve-sync-group shape-type %)))
                                      changed-token-attrs)
 
         changed-groups      (if (and text-shape?
@@ -577,8 +577,9 @@
   The returned shape will contain a metadata associated with it
   indicating if shape is touched or not."
   [shape attr val & {:keys [ignore-touched ignore-geometry]}]
-  (let [group        (get ctk/sync-attrs attr)
-        shape-val    (get shape attr)
+  (let [type      (get shape :type)
+        group     (ctk/resolve-sync-group type attr)
+        shape-val (get shape attr)
 
         ignore?
         (or ignore-touched
@@ -612,16 +613,20 @@
              (not equal?)
              (not (and ignore-geometry is-geometry?)))
 
-        content-diff-type (when (and (= (:type shape) :text) (= attr :content))
-                            (cttx/get-diff-type (:content shape) val))
+        content-diff-type
+        (when (and (= type :text) (= attr :content))
+          (cttx/get-diff-type (:content shape) val))
 
-        token-groups (if (= attr :applied-tokens)
-                       (get-token-groups shape val)
-                       #{})
+        token-groups
+        (if (= attr :applied-tokens)
+          (get-token-groups shape val)
+          #{})
 
-        groups (cond-> token-groups
-                 (and group (not equal?))
-                 (set/union #{group} content-diff-type))]
+        groups
+        (cond-> token-groups
+          (and group (not equal?))
+          (set/union #{group} content-diff-type))]
+
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.

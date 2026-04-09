@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+
+use crate::error::{Error, Result};
 use crate::math::{self as math, Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent, LayoutData, LayoutItem,
@@ -588,7 +590,7 @@ pub fn reflow_flex_layout(
     flex_data: &FlexData,
     shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
-) -> VecDeque<Modifier> {
+) -> Result<VecDeque<Modifier>> {
     let mut result = VecDeque::new();
     let layout_bounds = &bounds.find(shape);
     let layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
@@ -724,7 +726,9 @@ pub fn reflow_flex_layout(
 
         let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
-        let parent_transform_inv = &parent_transform.invert().unwrap();
+        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
+            "Failed to invert parent transform".to_string(),
+        ))?;
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
 
         let mut scale = Matrix::scale((scale_width, scale_height));
@@ -737,5 +741,5 @@ pub fn reflow_flex_layout(
         result.push_back(Modifier::parent(shape.id, scale));
         bounds.insert(shape.id, layout_bounds_after);
     }
-    result
+    Ok(result)
 }

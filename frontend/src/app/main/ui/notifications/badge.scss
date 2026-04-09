@@ -8,9 +8,11 @@
 
 .badge-notification {
   @include deprecated.smallTitleTipography;
+
   --badge-notification-bg-color: var(--alert-background-color-default);
   --badge-notification-fg-color: var(--alert-text-foreground-color-default);
   --badge-notification-border-color: var(--alert-border-color-default);
+
   box-sizing: border-box;
   display: grid;
   place-items: center;
@@ -30,6 +32,7 @@
 
 .small {
   @include deprecated.bodySmallTypography;
+
   min-height: deprecated.$s-20;
   border-radius: deprecated.$br-6;
 }

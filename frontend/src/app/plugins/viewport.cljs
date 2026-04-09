@@ -38,10 +38,10 @@
              new-y (obj/get value "y")]
          (cond
            (not (sm/valid-safe-number? new-x))
-           (u/display-not-valid :center-x new-x)
+           (u/not-valid plugin-id :center-x new-x)
 
            (not (sm/valid-safe-number? new-y))
-           (u/display-not-valid :center-y new-y)
+           (u/not-valid plugin-id :center-y new-y)
 
            :else
            (let [vb (dm/get-in @st/state [:workspace-local :vbox])
@@ -63,7 +63,7 @@
      (fn [value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :zoom value)
+         (u/not-valid plugin-id :zoom value)
 
          :else
          (let [z (dm/get-in @st/state [:workspace-local :zoom])]
@@ -87,7 +87,7 @@
     (fn [shapes]
       (cond
         (not (every? ps/shape-proxy? shapes))
-        (u/display-not-valid :zoomIntoView "Argument should be valid shapes")
+        (u/not-valid plugin-id :zoomIntoView "Argument should be valid shapes")
 
         :else
         (let [ids (->> shapes

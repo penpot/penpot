@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
@@ -42,8 +43,12 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
+   [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
+
+(def tokens-ref
+  (l/derived :access-tokens st/state))
 
 (mf/defc shortcuts*
   {::mf/private true}
@@ -747,10 +752,10 @@
   (let [plugins? (features/active-feature? @st/state "plugins/runtime")
 
         profile         (mf/deref refs/profile)
-        workspace-local (mf/deref refs/workspace-local)
+        mcp             (mf/deref refs/mcp)
 
-        mcp-enabled?    (-> profile :props :mcp-enabled)
-        mcp-connected?  (-> workspace-local :mcp :connected)
+        mcp-enabled?    (true? (-> profile :props :mcp-enabled))
+        mcp-connected?  (= "connected" (get mcp :connection-status))
 
         on-nav-to-integrations
         (mf/use-fn
@@ -769,7 +774,7 @@
         (mf/use-fn
          (fn []
            (if mcp-connected?
-             (st/emit! (mcp/disconnect-mcp)
+             (st/emit! (mcp/user-disconnect-mcp)
                        (ptk/event ::ev/event {::ev/name "disconnect-mcp-plugin"
                                               ::ev/origin "workspace-menu"}))
              (st/emit! (mcp/connect-mcp)
@@ -810,8 +815,8 @@
 
 (mf/defc menu*
   [{:keys [layout file]}]
-  (let [profile         (mf/deref refs/profile)
-        workspace-local (mf/deref refs/workspace-local)
+  (let [profile            (mf/deref refs/profile)
+        mcp                (mf/deref refs/mcp)
 
         show-menu*         (mf/use-state false)
         show-menu?         (deref show-menu*)
@@ -978,9 +983,21 @@
                     :class (stl/css :item-arrow)}]])
 
       (when (contains? cf/flags :mcp)
-        (let [mcp-enabled?   (-> profile :props :mcp-enabled)
-              mcp-connected? (-> workspace-local :mcp :connected)
-              mcp-active?    (and mcp-enabled? mcp-connected?)]
+        (let [tokens   (mf/deref tokens-ref)
+              expired? (some->> tokens
+                                (some #(when (= (:type %) "mcp") %))
+                                :expires-at
+                                (> (ct/now)))
+
+              mcp-enabled?   (true? (-> profile :props :mcp-enabled))
+              mcp-connection (get mcp :connection-status)
+              mcp-connected? (= mcp-connection "connected")
+              mcp-error?     (= mcp-connection "error")
+
+              active?  (and mcp-enabled? mcp-connected?)
+              failed?  (or (and mcp-enabled? mcp-error?)
+                           (true? expired?))]
+
           [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
                                    :on-click    on-menu-click
                                    :on-key-down (fn [event]
@@ -992,7 +1009,8 @@
            [:span {:class (stl/css :item-name)}
             (tr "workspace.header.menu.option.mcp")]
            [:span {:class (stl/css-case :item-indicator true
-                                        :active mcp-active?)}]
+                                        :active active?
+                                        :failed failed?)}]
            [:> icon* {:icon-id i/arrow-right
                       :class (stl/css :item-arrow)}]]))
 

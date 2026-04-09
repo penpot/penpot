@@ -355,7 +355,8 @@
         prt (get objects pid)
         shapes (:shapes prt)
         pos (d/index-of shapes id)]
-    (if (= 0 pos) nil (nth shapes (dec pos)))))
+    (when (and (some? pos) (pos? pos))
+      (nth shapes (dec pos)))))
 
 (defn get-immediate-children
   "Retrieve resolved shape objects that are immediate children

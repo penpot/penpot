@@ -118,11 +118,10 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr]
-           (soc/emit-value-or-token
-            value
-            #(on-change :simple attr %)
-            ids
-            (if (= :m1 attr) #{:m1 :m3} #{:m2 :m4}))))
+           (soc/emit-value-or-token value
+                                    #(on-change :simple attr %)
+                                    ids
+                                    (if (= :m1 attr) #{:m1 :m3} #{:m2 :m4}))))
 
         on-focus-m1
         (mf/use-fn (mf/deps on-focus) #(on-focus :m1))
@@ -244,11 +243,10 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr]
-           (soc/emit-value-or-token
-            value
-            #(on-change :multiple attr %)
-            ids
-            #{attr})))
+           (soc/emit-value-or-token value
+                                    #(on-change :multiple attr %)
+                                    ids
+                                    #{attr})))
 
         on-m1-change
         (mf/use-fn (mf/deps on-change') #(on-change' % :m1))
@@ -571,11 +569,10 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (soc/emit-value-or-token
-            value
-            #(st/emit! (dwsl/update-layout-child ids {attr %}))
-            ids
-            #{attr})))
+           (soc/emit-value-or-token value
+                                    #(st/emit! (dwsl/update-layout-child ids {attr %}))
+                                    ids
+                                    #{attr})))
 
         on-layout-item-min-w-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :layout-item-min-w))

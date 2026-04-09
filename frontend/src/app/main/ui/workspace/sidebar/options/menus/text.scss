@@ -9,6 +9,8 @@
 
 .element-set {
   @include sidebar.option-grid-structure;
+
+  position: relative;
 }
 
 .element-title {
@@ -16,27 +18,31 @@
 }
 
 .element-content {
-  grid-column: span 8;
   @include deprecated.flexColumn;
+
+  grid-column: span 8;
   margin-top: deprecated.$s-4;
 }
 
 .multiple-typography {
-  @extend .mixed-bar;
+  @extend %mixed-bar;
 }
 
 .multiple-text {
   @include deprecated.bodySmallTypography;
+
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }
 
 .multiple-typography-button {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: deprecated.$s-32;
   width: deprecated.$s-28;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
 }
 

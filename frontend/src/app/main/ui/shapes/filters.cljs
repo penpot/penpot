@@ -21,7 +21,9 @@
 (defn filter-str
   [filter-id shape]
   (when (or (seq (->> (:shadow shape) (remove :hidden)))
-            (and (:blur shape) (-> shape :blur :hidden not)))
+            (and (:blur shape)
+                 (-> shape :blur :hidden not)
+                 (= :layer-blur (-> shape :blur :type))))
     (str/ffmt "url(#%)" filter-id)))
 
 (mf/defc color-matrix

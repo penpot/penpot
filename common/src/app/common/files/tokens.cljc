@@ -147,6 +147,27 @@
     #(and (some? tokens-tree)
           (not (ctob/token-name-path-exists? % tokens-tree)))]])
 
+(defn make-node-token-name-schema
+  "Dynamically generates a schema to check a token node name, adding translated error messages
+   and two additional validations:
+    - Min and max length.
+    - Checks if other token with a path derived from the name already exists at `tokens-tree`.
+      e.g. it's not allowed to create a token `foo.bar` if a token `foo` already exists."
+  [active-tokens tokens-tree node]
+  [:and
+   [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
+   (-> cto/schema:token-node-name
+       (sm/update-properties assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error"))))
+   [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
+    (fn [name]
+      (let [current-path (:path node)
+            current-name (:name node)
+            new-tokens (ctob/update-tokens-group active-tokens current-path current-name name)]
+        (and (some? new-tokens)
+             (some (fn [[token-name _]]
+                     (not (ctob/token-name-path-exists? token-name tokens-tree)))
+                   new-tokens))))]])
+
 (def schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
@@ -164,6 +185,11 @@
     (fn [{:keys [name value]}]
       (when (and name value)
         (not (cto/token-value-self-reference? name value))))]])
+
+(defn make-node-token-schema
+  [active-tokens tokens-tree node]
+  [:map
+   [:name (make-node-token-name-schema active-tokens tokens-tree node)]])
 
 (defn convert-dtcg-token
   "Convert token attributes as they come from a decoded json, with DTCG types, to internal types.

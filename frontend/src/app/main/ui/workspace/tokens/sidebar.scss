@@ -11,6 +11,7 @@
 .sidebar-wrapper {
   display: grid;
   grid-template-rows: auto 1fr auto;
+
   // Overflow on the bottom section can't be done without hardcoded values for the height
   // This has to be changed from the wrapping sidebar styles
   height: calc(100vh - #{deprecated.$s-92});
@@ -18,7 +19,6 @@
 }
 
 .token-management-section-wrapper {
-  position: relative;
   display: flex;
   flex: 1;
   height: var(--resize-height);
@@ -55,8 +55,9 @@
 
 .section-icon {
   margin-right: var(--sp-xs);
+
   // Align better with the label
-  translate: 0px -1px;
+  translate: 0 -1px;
 }
 
 .import-export-button-wrapper {
@@ -72,7 +73,8 @@
 }
 
 .import-export-button {
-  @extend .button-secondary;
+  @extend %button-secondary;
+
   display: flex;
   align-items: center;
   justify-content: end;
@@ -80,12 +82,12 @@
   text-transform: uppercase;
   gap: var(--sp-s);
   background-color: var(--color-background-primary);
-
   box-shadow: var(--el-shadow-dark);
 }
 
 .import-export-menu {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
+
   top: -#{deprecated.$s-6};
   right: 0;
   translate: 0 -100%;
@@ -94,8 +96,10 @@
 }
 
 .import-export-menu-item {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
+
   cursor: pointer;
+
   &:hover {
     color: var(--menu-foreground-color-hover);
   }

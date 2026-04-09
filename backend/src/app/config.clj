@@ -327,7 +327,7 @@
 
 (defn logging-context
   []
-  {:version/backend (:full version)})
+  {:backend/version (:full version)})
 
 ;; Set value for all new threads bindings.
 (alter-var-root #'*assert* (constantly (contains? flags :backend-asserts)))

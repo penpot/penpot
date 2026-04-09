@@ -25,7 +25,8 @@ function mergeEffects(node: RectLikeNode): EffectItem[] {
   }
   const blur = (node as Record<string, unknown>).blur as Blur | undefined
   if (blur) {
-    items.push({ kind: 'layer-blur', blur })
+    const kind = blur.type === 'background-blur' ? 'background-blur' : 'layer-blur'
+    items.push({ kind, blur })
   }
   const glass = (node as Record<string, unknown>).glass as Glass | undefined
   if (glass) {
@@ -40,7 +41,7 @@ function splitEffects(effects: EffectItem[]): { shadow: Shadow[]; blur: Blur | u
   let blur: Blur | undefined
   let glass: Glass | undefined
   for (const e of effects) {
-    if (e.kind === 'layer-blur') {
+    if (e.kind === 'layer-blur' || e.kind === 'background-blur') {
       blur = e.blur
     } else if (e.kind === 'glass') {
       glass = e.glass

@@ -188,7 +188,9 @@
                                :shapes shapes
                                :from from
                                :libraries libraries
-                               :file-id file-id}]
+                               :page-id page-id
+                               :file-id file-id
+                               :share-id share-id}]
               :computed
               [:> attributes* {:color-space color-space
                                :page-id page-id

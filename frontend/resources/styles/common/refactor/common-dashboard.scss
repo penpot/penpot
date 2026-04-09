@@ -138,14 +138,14 @@
 }
 
 .btn-primary {
-  @extend .button-primary;
+  @extend %button-primary;
   text-transform: uppercase;
   font-size: $fs-14;
   font-weight: $fw400;
 }
 
 .btn-secondary {
-  @extend .button-secondary;
+  @extend %button-secondary;
   color: var(--color-foreground-primary);
   font-size: $fs-12;
   text-transform: uppercase;

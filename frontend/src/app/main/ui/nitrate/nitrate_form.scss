@@ -12,28 +12,31 @@
 @use "ds/_utils.scss" as *;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
+
   z-index: var(--z-index-notifications);
 }
 
 .modal-dialog {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   max-block-size: initial;
   min-inline-size: px2rem(1021);
   padding: px2rem(80);
 
-  @media (max-width: 1024px) {
+  @media (width <= 1024px) {
     min-inline-size: px2rem(712);
     padding: var(--sp-xxxl);
   }
 }
 
 .close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-title {
   @include t.use-typography("title-large");
+
   margin-block-end: var(--sp-xxxl);
   color: var(--modal-title-foreground-color);
   display: flex;
@@ -79,7 +82,7 @@
     block-size: auto;
   }
 
-  @media (max-width: 992px) {
+  @media (width <= 992px) {
     display: none;
   }
 }
@@ -87,6 +90,7 @@
 .radio-btns {
   label {
     @include t.use-typography("body-large");
+
     padding: 0;
     display: flex;
     align-items: center;
