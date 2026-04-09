@@ -1,16 +1,11 @@
-use skia_safe::{self as skia, canvas::SaveLayerRec, RuntimeEffect, RuntimeShaderBuilder};
-use std::sync::OnceLock;
+use skia_safe::{self as skia, canvas::SaveLayerRec, RuntimeEffect, runtime_effect::RuntimeShaderBuilder};
 
 use crate::shapes::{GlassEffect, Shape, GLASS_SKSL};
 
 use super::{RenderState, SurfaceId};
 
-static GLASS_EFFECT: OnceLock<RuntimeEffect> = OnceLock::new();
-
-fn get_glass_effect() -> &'static RuntimeEffect {
-    GLASS_EFFECT.get_or_init(|| {
-        RuntimeEffect::make_for_shader(GLASS_SKSL, None).expect("glass SKSL shader compile failed")
-    })
+fn get_glass_effect() -> RuntimeEffect {
+    RuntimeEffect::make_for_shader(GLASS_SKSL, None).expect("glass SKSL shader compile failed")
 }
 
 /// Renders the glass backdrop effect for a shape.
@@ -30,7 +25,7 @@ pub fn render_glass(
     }
 
     let effect = get_glass_effect();
-    let mut builder = RuntimeShaderBuilder::new(effect.clone());
+    let mut builder = RuntimeShaderBuilder::new(effect);
 
     let selrect = shape.selrect;
     let scale = render_state.get_scale();
@@ -59,7 +54,8 @@ pub fn render_glass(
         .expect("glass blur image filter creation failed");
 
     // blurredImage child receives the backdrop through the blur pre-filter.
-    // The unnamed image child (child 0) receives the raw unprocessed backdrop.
+    // Pixels outside the glass shape return transparent; SrcOver compositing
+    // preserves the original backdrop for those pixels.
     let Some(glass_filter) =
         skia::image_filters::runtime_shader(&builder, "blurredImage", Some(blur_filter))
     else {

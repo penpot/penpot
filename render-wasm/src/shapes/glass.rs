@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub struct GlassEffect {
     pub radius: f32,
     pub refraction: f32,
@@ -9,7 +10,6 @@ pub struct GlassEffect {
 }
 
 pub const GLASS_SKSL: &str = "
-uniform shader image;
 uniform shader blurredImage;
 uniform vec2  resolution;
 uniform vec4  bounds;
@@ -54,7 +54,7 @@ float lensHeight(float sd, float thickness) {
 
 vec4 computeGlass(float sd, vec2 fragCoord) {
     float thickness   = max(depth, 1.0);
-    float base_height = thickness * 8.0;
+    float base_height = thickness * 1.5;
     float ior         = max(refraction, 1.0001);
     float ca          = dispersion * 0.05;
 
@@ -87,7 +87,7 @@ vec4 computeGlass(float sd, vec2 fragCoord) {
 
 vec4 main(vec2 fragCoord) {
     float d = sdf(fragCoord);
-    if (d > 1.0) return image.eval(fragCoord);
+    if (d > 1.0) return vec4(0.0);
 
     const int S = 4;
     float w = 1.0 / float(S * S);
@@ -100,7 +100,7 @@ vec4 main(vec2 fragCoord) {
             if (sd <= 0.0) {
                 color += computeGlass(sd, p) * w;
             } else {
-                color += image.eval(p) * w;
+                color += vec4(0.0);
             }
         }
     }

@@ -25,6 +25,7 @@ export const RawBlendMode = {
 
 export const RawBlurType = {
   "layer-blur": 0,
+  "background-blur": 1,
 };
 
 export const RawFillData = {
@@ -149,7 +150,7 @@ export const RawBoolType = {
   "union": 0,
   "difference": 1,
   "intersection": 2,
-  "exclusion": 3,
+  "exclude": 3,
 };
 
 export const RawSegmentData = {
