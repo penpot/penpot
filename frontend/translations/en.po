@@ -6462,6 +6462,10 @@ msgstr "Export unexpectedly slow"
 msgid "workspace.options.fill"
 msgstr "Fill"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.fill.section"
+msgstr "Fill section"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:208
 msgid "workspace.options.fill.add-fill"
 msgstr "Add fill"
@@ -7076,6 +7080,10 @@ msgstr "More library colors"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:265
 msgid "workspace.options.more-token-colors"
 msgstr "More color tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color.section"
+msgstr "Color selection section"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
