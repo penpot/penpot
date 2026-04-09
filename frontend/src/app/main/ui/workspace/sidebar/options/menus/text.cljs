@@ -370,7 +370,8 @@
                    (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))))
              (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
              (when (features/active-feature? @st/state "render-wasm/v1")
-               (st/emit! (dwwt/resize-wasm-text-all ids)))
+               (st/emit! (dwwt/resize-wasm-text-all ids)
+                         (ptk/data-event :layout/update {:ids ids})))
              (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))))
 
         handle-detach-typography

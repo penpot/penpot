@@ -205,13 +205,13 @@
     margin-bottom: deprecated.$s-32;
 
     .newsletter-title {
-      font-family: worksans, vazirmatn, sans-serif;
+      font-family: "worksans", "vazirmatn", sans-serif;
       color: var(--color-foreground-secondary);
       font-size: deprecated.$fs-14;
     }
 
     label {
-      font-family: worksans, vazirmatn, sans-serif;
+      font-family: "worksans", "vazirmatn", sans-serif;
       color: var(--color-background-primary);
       font-size: deprecated.$fs-12;
       margin-right: calc(-1 * deprecated.$s-16);
@@ -219,7 +219,7 @@
     }
 
     .info {
-      font-family: worksans, vazirmatn, sans-serif;
+      font-family: "worksans", "vazirmatn", sans-serif;
       color: var(--color-foreground-secondary);
       font-size: deprecated.$fs-12;
       margin-bottom: deprecated.$s-8;

@@ -24,7 +24,7 @@
     [:and :string [:fn #(contains? icon-list %)]]]
    [:label :string]
    [:value [:or :keyword :string]]
-   [:disabled {:optional true} :boolean]])
+   [:disabled {:optional true} [:maybe :boolean]]])
 
 (def ^:private schema:radio-buttons
   [:map
@@ -35,8 +35,8 @@
    [:name {:optional true} :string]
    [:selected {:optional true}
     [:maybe [:or :keyword :string]]]
-   [:allow-empty {:optional true} :boolean]
-   [:disabled {:optional true} :boolean]
+   [:allow-empty {:optional true} [:maybe :boolean]]
+   [:disabled {:optional true} [:maybe :boolean]]
    [:options [:vector {:min 1} schema:radio-button]]
    [:on-change {:optional true} fn?]])
 
@@ -85,7 +85,8 @@
      (for [[idx {:keys [id class value label icon disabled]}] (d/enumerate options)]
        (let [value-str (d/name value)
              selected-str (when selected (d/name selected))
-             checked? (= selected-str value-str)]
+             checked? (= selected-str value-str)
+             disabled (d/nilv disabled false)]
          [:label {:key idx
                   :html-for id
                   :data-label true

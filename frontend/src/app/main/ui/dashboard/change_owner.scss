@@ -5,6 +5,8 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
 
 .modal-overlay {
   @extend %modal-overlay-base;
@@ -57,4 +59,47 @@
 
 .modal-msg {
   color: var(--modal-text-foreground-color);
+}
+
+.teams-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  margin: var(--sp-xxxl) 0;
+}
+
+.team-select-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  width: 100%;
+}
+
+.modal-org-container {
+  @extend %modal-container-base;
+
+  overflow-y: auto;
+  max-height: $sz-512;
+}
+
+.modal-org-title {
+  @include t.use-typography("headline-large");
+
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-org-msg {
+  @include t.use-typography("body-large");
+
+  color: var(--modal-text-foreground-color);
+}
+
+.team-name {
+  @include t.use-typography("body-medium");
+
+  color: var(--modal-text-foreground-color);
+}
+
+.team-member {
+  @include t.use-typography("body-medium");
 }

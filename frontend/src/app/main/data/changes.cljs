@@ -122,7 +122,8 @@
 (defn commit
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
-           file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?]}]
+           file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?
+           selected-before]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -148,7 +149,8 @@
                    :undo-group undo-group
                    :tags tags
                    :stack-undo? stack-undo?
-                   :ignore-wasm? ignore-wasm?}]
+                   :ignore-wasm? ignore-wasm?
+                   :selected-before selected-before}]
 
     (ptk/reify ::commit
       cljs.core/IDeref
@@ -205,15 +207,17 @@
 
         ;; Prevent commit changes by a viewer team member (it really should never happen)
         (when (:can-edit permissions)
-          (rx/of (-> params
-                     (assoc :undo-group undo-group)
-                     (assoc :features features)
-                     (assoc :tags tags)
-                     (assoc :stack-undo? stack-undo?)
-                     (assoc :save-undo? save-undo?)
-                     (assoc :file-id file-id)
-                     (assoc :file-revn (resolve-file-revn state file-id))
-                     (assoc :file-vern (resolve-file-vern state file-id))
-                     (assoc :undo-changes uchg)
-                     (assoc :redo-changes rchg)
-                     (commit))))))))
+          (let [selected (dm/get-in state [:workspace-local :selected])]
+            (rx/of (-> params
+                       (assoc :undo-group undo-group)
+                       (assoc :features features)
+                       (assoc :tags tags)
+                       (assoc :stack-undo? stack-undo?)
+                       (assoc :save-undo? save-undo?)
+                       (assoc :file-id file-id)
+                       (assoc :file-revn (resolve-file-revn state file-id))
+                       (assoc :file-vern (resolve-file-vern state file-id))
+                       (assoc :undo-changes uchg)
+                       (assoc :redo-changes rchg)
+                       (assoc :selected-before selected)
+                       (commit)))))))))

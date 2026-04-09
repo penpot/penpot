@@ -17,7 +17,7 @@
 
 .text-editor-content {
   height: 100%;
-  font-family: sourcesanspro, sans-serif;
+  font-family: "sourcesanspro", sans-serif;
   outline: none;
   user-select: text;
   white-space: pre-wrap;
@@ -53,7 +53,6 @@
     display: inline;
     line-height: inherit;
     caret-color: var(--text-editor-caret-color);
-    white-space-collapse: pre;
     word-break: normal;
     overflow-wrap: break-word;
     tab-size: 2;
