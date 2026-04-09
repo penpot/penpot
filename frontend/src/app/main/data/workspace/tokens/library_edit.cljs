@@ -96,6 +96,13 @@
                      (close-token-type types type)
                      (open-token-type types type)))))))
 
+(defn clear-tokens-types
+  []
+  (ptk/reify ::clear-tokens-types
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-tokens :unfolded-token-types] []))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS TREE - Toggle tree nodes

@@ -9,14 +9,17 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.i18n :as i18n :refer [tr]]
    [app.common.schema :as sm]
+   [app.common.schema.messages :as csm]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
    [app.main.store :as st]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [cuerdas.core :as str]))
 
 (defn locate-file
   [id]
@@ -262,6 +265,15 @@
   (let [s (set values)]
     (if (= (count s) 1) (first s) "mixed")))
 
+(defn error-messages
+  [explain]
+  (->> (:errors explain)
+       (reduce csm/interpret-schema-problem {})
+       (mapcat (comp seq val))
+       (map (fn [[field {:keys [message]}]]
+              (tr "plugins.validation.message" (name field) message)))
+       (str/join ". ")))
+
 (defn handle-error
   "Function to be used in plugin proxies methods to handle errors and print a readable
    message to the console."
@@ -269,7 +281,9 @@
   (fn [cause]
     (let [message
           (if-let [explain (-> cause ex-data ::sm/explain)]
-            (sm/humanize-explain explain)
+            (do
+              (js/console.error (sm/humanize-explain explain))
+              (error-messages explain))
             (ex-data cause))]
       (js/console.log (.-stack cause))
       (not-valid plugin-id :error message))))

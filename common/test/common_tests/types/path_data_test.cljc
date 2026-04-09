@@ -1272,3 +1272,149 @@
     (let [segs (vec (:content result))
           curve-segs (filter #(= :curve-to (:command %)) segs)]
       (t/is (pos? (count curve-segs))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TYPE CODE CONSISTENCY TESTS (regression for move-to/line-to swap bug)
+;;
+;; These tests ensure that all binary reader code paths agree on the
+;; mapping: 1=move-to, 2=line-to, 3=curve-to, 4=close-path.
+;;
+;; The bug was that `impl-walk`, `impl-reduce`, and `impl-lookup` had
+;; type codes 1 and 2 swapped (1→:line-to, 2→:move-to) while
+;; `read-segment`, `from-plain`, and `to-string-segment*` had the
+;; correct mapping. This caused subtle mismatches in operations like
+;; `get-subpaths`, `get-points`, `get-handlers`, etc.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest type-code-walk-consistency
+  (t/testing "impl-walk produces same command types as read-segment (via vec)"
+    (let [pdata      (path/content sample-content)
+          ;; read-segment path: produces {:command :keyword ...} maps
+          seq-types  (mapv :command (vec pdata))
+          ;; impl-walk path: collects type keywords
+          walk-types (path.impl/-walk pdata
+                                      (fn [type _ _ _ _ _ _] type)
+                                      [])]
+      ;; Both paths must agree on the command types
+      (t/is (= seq-types walk-types))
+      ;; Verify the actual expected types
+      (t/is (= [:move-to :line-to :curve-to :close-path] seq-types))
+      (t/is (= [:move-to :line-to :curve-to :close-path] walk-types)))))
+
+(t/deftest type-code-reduce-consistency
+  (t/testing "impl-reduce produces same command types as read-segment (via vec)"
+    (let [pdata      (path/content sample-content)
+          ;; read-segment path
+          seq-types  (mapv :command (vec pdata))
+          ;; impl-reduce path: collects [index type] pairs
+          reduce-types (path.impl/-reduce
+                        pdata
+                        (fn [acc index type _ _ _ _ _ _]
+                          (conj acc type))
+                        [])]
+      (t/is (= seq-types reduce-types))
+      (t/is (= [:move-to :line-to :curve-to :close-path] reduce-types)))))
+
+(t/deftest type-code-lookup-consistency
+  (t/testing "impl-lookup produces same command types as read-segment for each index"
+    (let [pdata     (path/content sample-content)
+          seg-count (count pdata)]
+      (doseq [i (range seg-count)]
+        (let [;; read-segment path
+              seg-type    (:command (nth pdata i))
+              ;; impl-lookup path
+              lookup-type (path.impl/-lookup
+                           pdata i
+                           (fn [type _ _ _ _ _ _] type))]
+          (t/is (= seg-type lookup-type)
+                (str "Mismatch at index " i
+                     ": read-segment=" seg-type
+                     " lookup=" lookup-type)))))))
+
+(t/deftest type-code-get-points-uses-walk
+  (t/testing "get-points (via impl-walk) excludes close-path and includes move-to/line-to/curve-to"
+    (let [pdata  (path/content sample-content)
+          points (path.segment/get-points pdata)
+          ;; Manually extract points from read-segment (via vec),
+          ;; skipping close-path
+          expected-points (->> (vec pdata)
+                               (remove #(= :close-path (:command %)))
+                               (mapv #(gpt/point
+                                       (get-in % [:params :x])
+                                       (get-in % [:params :y]))))]
+      (t/is (= expected-points points))
+      ;; Specifically: 3 points (move-to, line-to, curve-to)
+      (t/is (= 3 (count points))))))
+
+(t/deftest type-code-get-subpaths-uses-reduce
+  (t/testing "get-subpaths (via reduce) correctly identifies move-to to start subpaths"
+    (let [;; Content with two subpaths: move-to + line-to + close-path, then move-to + line-to
+          two-subpath-content
+          [{:command :move-to  :params {:x 0.0 :y 0.0}}
+           {:command :line-to  :params {:x 10.0 :y 0.0}}
+           {:command :close-path :params {}}
+           {:command :move-to  :params {:x 20.0 :y 20.0}}
+           {:command :line-to  :params {:x 30.0 :y 30.0}}]
+          pdata    (path/content two-subpath-content)
+          subpaths (path.subpath/get-subpaths pdata)]
+      ;; Must produce exactly 2 subpaths (one per move-to)
+      (t/is (= 2 (count subpaths)))
+      ;; First subpath starts at (0,0)
+      (t/is (= (gpt/point 0.0 0.0) (:from (first subpaths))))
+      ;; Second subpath starts at (20,20)
+      (t/is (= (gpt/point 20.0 20.0) (:from (second subpaths)))))))
+
+(t/deftest type-code-get-handlers-uses-reduce
+  (t/testing "get-handlers (via impl-reduce) correctly identifies curve-to segments"
+    (let [pdata    (path/content sample-content)
+          handlers (path.segment/get-handlers pdata)]
+      ;; sample-content has one curve-to at index 2
+      ;; The curve-to's :c1 handler belongs to the previous point (line-to endpoint)
+      ;; The curve-to's :c2 handler belongs to the curve-to endpoint
+      (t/is (some? handlers))
+      (let [line-to-point  (gpt/point 439.0 802.0)
+            curve-to-point (gpt/point 264.0 634.0)]
+        ;; line-to endpoint should have [2 :c1] handler
+        (t/is (some #(= [2 :c1] %) (get handlers line-to-point)))
+        ;; curve-to endpoint should have [2 :c2] handler
+        (t/is (some #(= [2 :c2] %) (get handlers curve-to-point)))))))
+
+(t/deftest type-code-handler-point-uses-lookup
+  (t/testing "get-handler-point (via impl-lookup) returns correct values"
+    (let [pdata (path/content sample-content)]
+      ;; Index 0 is move-to (480, 839) — not a curve, so any prefix
+      ;; returns the segment point itself
+      (let [pt (path.segment/get-handler-point pdata 0 :c1)]
+        (t/is (= (gpt/point 480.0 839.0) pt)))
+      ;; Index 2 is curve-to with c1=(368,737), c2=(310,681), point=(264,634)
+      (let [c1-pt (path.segment/get-handler-point pdata 2 :c1)
+            c2-pt (path.segment/get-handler-point pdata 2 :c2)]
+        (t/is (= (gpt/point 368.0 737.0) c1-pt))
+        (t/is (= (gpt/point 310.0 681.0) c2-pt))))))
+
+(t/deftest type-code-all-readers-agree-large-content
+  (t/testing "all binary readers agree on types for a large multi-segment path"
+    (let [pdata      (path/content sample-content-large)
+          seg-count  (count pdata)
+          ;; Collect types from all four code paths
+          seq-types    (mapv :command (vec pdata))
+          walk-types   (path.impl/-walk pdata
+                                        (fn [type _ _ _ _ _ _] type)
+                                        [])
+          reduce-types (path.impl/-reduce
+                        pdata
+                        (fn [acc _ type _ _ _ _ _ _]
+                          (conj acc type))
+                        [])
+          lookup-types (mapv (fn [i]
+                               (path.impl/-lookup
+                                pdata i
+                                (fn [type _ _ _ _ _ _] type)))
+                             (range seg-count))]
+      ;; All four must be identical
+      (t/is (= seq-types walk-types))
+      (t/is (= seq-types reduce-types))
+      (t/is (= seq-types lookup-types))
+      ;; Verify first and last entries specifically
+      (t/is (= :move-to (first seq-types)))
+      (t/is (= :close-path (last seq-types))))))

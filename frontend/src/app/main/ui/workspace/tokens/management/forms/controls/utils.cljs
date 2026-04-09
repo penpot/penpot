@@ -95,7 +95,13 @@
   [raw-tokens input-type]
   (delay
     (let [raw-tokens (deref raw-tokens)
-          key-order  (get  cto/tokens-by-input input-type)]
+          key-order  (case input-type
+                       :color-selection
+                       (concat
+                        (get cto/tokens-by-input :fill)
+                        (get cto/tokens-by-input :stroke-color))
+
+                       (get cto/tokens-by-input input-type))]
       (-> (reduce (fn [acc k]
                     (if (contains? raw-tokens k)
                       (assoc acc k (get raw-tokens k))

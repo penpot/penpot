@@ -13,3 +13,10 @@
    unit tests or backend code for logs or error messages."
   [key & _args]
   key)
+
+(defn c
+  "This function will be monkeypatched at runtime with the real function in frontend i18n.
+   Here it just returns the key passed as argument. This way the result can be used in
+   unit tests or backend code for logs or error messages."
+  [x]
+  x)

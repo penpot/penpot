@@ -18,6 +18,7 @@ use skia_safe::{
     Contains,
 };
 
+use std::cell::Cell;
 use std::collections::HashSet;
 
 use super::FontFamily;
@@ -177,10 +178,25 @@ pub struct TextContentLayoutResult(
     TextContentSize,
 );
 
+/// Cached extrect stored as offsets from the selrect origin,
+/// keyed by the selrect dimensions (width, height) and vertical alignment
+/// used to compute it.
+#[derive(Debug, Clone, Copy)]
+struct CachedExtrect {
+    selrect_width: f32,
+    selrect_height: f32,
+    valign: u8,
+    left: f32,
+    top: f32,
+    right: f32,
+    bottom: f32,
+}
+
 #[derive(Debug)]
 pub struct TextContentLayout {
     pub paragraph_builders: Vec<ParagraphBuilderGroup>,
     pub paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+    cached_extrect: Cell<Option<CachedExtrect>>,
 }
 
 impl Clone for TextContentLayout {
@@ -188,6 +204,7 @@ impl Clone for TextContentLayout {
         Self {
             paragraph_builders: vec![],
             paragraphs: vec![],
+            cached_extrect: Cell::new(None),
         }
     }
 }
@@ -203,6 +220,7 @@ impl TextContentLayout {
         Self {
             paragraph_builders: vec![],
             paragraphs: vec![],
+            cached_extrect: Cell::new(None),
         }
     }
 
@@ -213,6 +231,7 @@ impl TextContentLayout {
     ) {
         self.paragraph_builders = paragraph_builders;
         self.paragraphs = paragraphs;
+        self.cached_extrect.set(None);
     }
 
     pub fn needs_update(&self) -> bool {
@@ -231,11 +250,14 @@ pub struct TextDecorationSegment {
     pub width: f32,
 }
 
-/*
- * Check if the current x,y (in paragraph relative coordinates) is inside
- * the paragraph
- */
-#[allow(dead_code)]
+fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
+    match valign {
+        VerticalAlign::Center => (container_h - content_h) / 2.0,
+        VerticalAlign::Bottom => container_h - content_h,
+        _ => 0.0,
+    }
+}
+
 fn intersects(paragraph: &skia_safe::textlayout::Paragraph, x: f32, y: f32) -> bool {
     if y < 0.0 || y > paragraph.height() {
         return false;
@@ -248,6 +270,20 @@ fn intersects(paragraph: &skia_safe::textlayout::Paragraph, x: f32, y: f32) -> b
         paragraph.get_rects_for_range(0..idx + 1, RectHeightStyle::Tight, RectWidthStyle::Tight);
 
     rects.iter().any(|r| r.rect.contains(&Point::new(x, y)))
+}
+
+fn paragraph_intersects<'a>(
+    paragraphs: impl Iterator<Item = &'a skia::textlayout::Paragraph>,
+    x_pos: f32,
+    y_pos: f32,
+) -> bool {
+    paragraphs
+        .scan(0.0_f32, |height, p| {
+            let prev_height = *height;
+            *height += p.height();
+            Some((prev_height, p))
+        })
+        .any(|(height, p)| intersects(p, x_pos, y_pos - height))
 }
 
 // Performs a text auto layout without width limits.
@@ -370,34 +406,133 @@ impl TextContent {
         self.grow_type = grow_type;
     }
 
+    /// Compute a tight text rect from laid-out Skia paragraphs using glyph
+    /// metrics (fm.top for overshoot, line descent for bottom, line left/width
+    /// for horizontal extent).
+    fn rect_from_paragraphs(&self, selrect: &Rect, valign: VerticalAlign) -> Option<Rect> {
+        let paragraphs = &self.layout.paragraphs;
+        let x = selrect.x();
+        let base_y = selrect.y();
+
+        let total_height: f32 = paragraphs
+            .iter()
+            .filter_map(|group| group.first())
+            .map(|p| p.height())
+            .sum();
+
+        let vertical_offset = vertical_align_offset(selrect.height(), total_height, valign);
+
+        let mut min_x = f32::MAX;
+        let mut min_y = f32::MAX;
+        let mut max_x = f32::MIN;
+        let mut max_y = f32::MIN;
+        let mut has_lines = false;
+        let mut y_accum = base_y + vertical_offset;
+
+        for group in paragraphs {
+            if let Some(paragraph) = group.first() {
+                let line_metrics = paragraph.get_line_metrics();
+                for line in &line_metrics {
+                    let line_baseline = y_accum + line.baseline as f32;
+
+                    // Use per-glyph fm.top for tighter vertical bounds when
+                    // available; fall back to line-level ascent for empty lines
+                    // (where get_style_metrics returns nothing).
+                    let style_metrics = line.get_style_metrics(line.start_index..line.end_index);
+                    if style_metrics.is_empty() {
+                        min_y = min_y.min(line_baseline - line.ascent as f32);
+                    } else {
+                        for (_start, style_metric) in &style_metrics {
+                            let fm = &style_metric.font_metrics;
+                            min_y = min_y.min(line_baseline + fm.top);
+                        }
+                    }
+
+                    // Bottom uses line-level descent (includes descender space
+                    // for the whole line, not just present glyphs).
+                    max_y = max_y.max(line_baseline + line.descent as f32);
+                    min_x = min_x.min(x + line.left as f32);
+                    max_x = max_x.max(x + line.left as f32 + line.width as f32);
+                    has_lines = true;
+                }
+                y_accum += paragraph.height();
+            }
+        }
+
+        if has_lines {
+            Some(Rect::from_ltrb(min_x, min_y, max_x, max_y))
+        } else {
+            None
+        }
+    }
+
+    fn compute_and_cache_extrect(
+        &self,
+        shape: &Shape,
+        selrect: &Rect,
+        valign: VerticalAlign,
+    ) -> Rect {
+        // AutoWidth paragraphs are laid out with f32::MAX, so line metrics
+        // (line.left) reflect alignment within that huge width and are
+        // unusable for tight bounds.  Fall back to content_rect.
+        if self.grow_type() == GrowType::AutoWidth {
+            return self.content_rect(selrect, valign);
+        }
+
+        let tight = if !self.layout.paragraphs.is_empty() {
+            self.rect_from_paragraphs(selrect, valign)
+        } else {
+            let mut text_content = self.clone();
+            text_content.update_layout(shape.selrect);
+            text_content.rect_from_paragraphs(selrect, valign)
+        }
+        .unwrap_or_else(|| self.content_rect(selrect, valign));
+
+        // Cache as offsets from selrect origin so it's position-independent.
+        let sx = selrect.x();
+        let sy = selrect.y();
+        self.layout.cached_extrect.set(Some(CachedExtrect {
+            selrect_width: selrect.width(),
+            selrect_height: selrect.height(),
+            valign: valign as u8,
+            left: tight.left() - sx,
+            top: tight.top() - sy,
+            right: tight.right() - sx,
+            bottom: tight.bottom() - sy,
+        }));
+
+        tight
+    }
+
     pub fn calculate_bounds(&self, shape: &Shape, apply_transform: bool) -> Bounds {
-        let (x, mut y, transform, center) = (
-            shape.selrect.x(),
-            shape.selrect.y(),
-            &shape.transform,
-            &shape.center(),
-        );
+        let transform = &shape.transform;
+        let center = &shape.center();
+        let selrect = shape.selrect();
+        let valign = shape.vertical_align();
+        let sw = selrect.width();
+        let sh = selrect.height();
+        let sx = selrect.x();
+        let sy = selrect.y();
 
-        let width = if self.grow_type() == GrowType::AutoWidth {
-            self.size.width
+        // Try the cache first: if dimensions and valign match, just apply position offset.
+        let text_rect = if let Some(cached) = self.layout.cached_extrect.get() {
+            if (cached.selrect_width - sw).abs() < 0.1
+                && (cached.selrect_height - sh).abs() < 0.1
+                && cached.valign == valign as u8
+            {
+                Rect::from_ltrb(
+                    sx + cached.left,
+                    sy + cached.top,
+                    sx + cached.right,
+                    sy + cached.bottom,
+                )
+            } else {
+                self.compute_and_cache_extrect(shape, &selrect, valign)
+            }
         } else {
-            shape.selrect().width()
+            self.compute_and_cache_extrect(shape, &selrect, valign)
         };
 
-        let height = if self.size.width.round() != width.round() {
-            self.get_height(width)
-        } else {
-            self.size.height
-        };
-
-        let offset_y = match shape.vertical_align() {
-            VerticalAlign::Center => (shape.selrect().height() - height) / 2.0,
-            VerticalAlign::Bottom => shape.selrect().height() - height,
-            _ => 0.0,
-        };
-        y += offset_y;
-
-        let text_rect = Rect::from_xywh(x, y, width, height);
         let mut bounds = Bounds::new(
             Point::new(text_rect.x(), text_rect.y()),
             Point::new(text_rect.x() + text_rect.width(), text_rect.y()),
@@ -434,11 +569,7 @@ impl TextContent {
             self.size.height
         };
 
-        let offset_y = match valign {
-            VerticalAlign::Center => (selrect.height() - height) / 2.0,
-            VerticalAlign::Bottom => selrect.height() - height,
-            _ => 0.0,
-        };
+        let offset_y = vertical_align_offset(selrect.height(), height, valign);
         y += offset_y;
 
         Rect::from_xywh(x, y, width, height)
@@ -883,22 +1014,24 @@ impl TextContent {
         let x_pos = result.x - rect.x();
         let y_pos = result.y - rect.y();
 
-        let width = self.width();
-        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
-        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
-
-        paragraphs
-            .iter()
-            .flatten()
-            .scan(
-                (0 as f32, None::<skia::textlayout::Paragraph>),
-                |(height, _), p| {
-                    let prev_height = *height;
-                    *height += p.height();
-                    Some((prev_height, p))
-                },
+        if !self.layout.paragraphs.is_empty() {
+            // Reuse stored laid-out paragraphs
+            paragraph_intersects(
+                self.layout
+                    .paragraphs
+                    .iter()
+                    .flat_map(|group| group.first()),
+                x_pos,
+                y_pos,
             )
-            .any(|(height, p)| intersects(p, x_pos, y_pos - height))
+        } else {
+            let width = self.width();
+            let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+            let paragraphs =
+                build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+
+            paragraph_intersects(paragraphs.iter().flatten(), x_pos, y_pos)
+        }
     }
 }
 
