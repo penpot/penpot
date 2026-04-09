@@ -83,7 +83,7 @@ pub fn split_intersections(segment: Bezier, intersections: &[f64]) -> Vec<Bezier
     let mut cur_segment = segment;
 
     for t_i in &intersections {
-        let rti = (t_i - prev) / (1.0 - prev);
+        let rti = ((t_i - prev) / (1.0 - prev)).clamp(0.0, 1.0);
         let [s, rest] = cur_segment.split(TValue::Parametric(rti));
         prev = *t_i;
         cur_segment = rest;
@@ -115,13 +115,15 @@ pub fn split_segments(path_a: &Path, path_b: &Path) -> (Vec<Bezier>, Vec<Bezier>
             );
 
             intersects_b[j].extend(intersections_a.iter().map(|t_a| {
-                segment_b.project(
-                    segment_a.evaluate(TValue::Parametric(*t_a)),
-                    Some(PROJECT_OPTS),
-                )
+                segment_b
+                    .project(
+                        segment_a.evaluate(TValue::Parametric(t_a.clamp(0.0, 1.0))),
+                        Some(PROJECT_OPTS),
+                    )
+                    .clamp(0.0, 1.0)
             }));
 
-            intersects_a[i].extend(intersections_a);
+            intersects_a[i].extend(intersections_a.iter().map(|t| t.clamp(0.0, 1.0)));
         }
     }
 
