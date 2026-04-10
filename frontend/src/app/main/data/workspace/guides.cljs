@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.guides
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
@@ -80,9 +81,7 @@
 (defn remove-frame-guides
   [frame-ids]
 
-  (dm/assert!
-   "expected a coll of uuids"
-   (every? uuid? frame-ids))
+  (assert (every? uuid? frame-ids) "expected a coll of uuids")
 
   (ptk/reify ::remove-frame-guides
     ptk/UpdateEvent
@@ -91,7 +90,7 @@
             frame-ids-set    (set frame-ids)
             guide-ids        (into #{}
                                    (comp (filter #(contains? frame-ids-set (:frame-id %)))
-                                         (map :id))
+                                         d/xf:map-id)
                                    (vals guides))]
         (update-in state [:workspace-guides :hover]
                    (fn [hover] (reduce disj (or hover #{}) guide-ids)))))

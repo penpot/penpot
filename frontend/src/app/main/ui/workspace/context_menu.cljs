@@ -651,7 +651,7 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [shapes]}]
-  (let [frame-ids    (into #{} (comp (filter cfh/frame-shape?) (map :id)) shapes)
+  (let [frame-ids    (into #{} (comp (filter cfh/frame-shape?) d/xf:map-id) shapes)
         guides       (mf/deref refs/workspace-page-guides)
         has-guides?  (some #(contains? frame-ids (:frame-id %)) (vals guides))
 
