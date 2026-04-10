@@ -86,6 +86,7 @@
     :roles-attr       (cf/get :oidc-roles-attr)
     :email-attr       (cf/get :oidc-email-attr "email")
     :name-attr        (cf/get :oidc-name-attr "name")
+    :openid-attr      (cf/get :oidc-openid-attr)
     :type             "oidc"
     :id               "oidc"}))
 
@@ -379,7 +380,8 @@
     [::sm/set ::sm/text]]
    [:roles-attr {:optional true} ::sm/text]
    [:email-attr {:optional true} ::sm/text]
-   [:name-attr {:optional true} ::sm/text]])
+   [:name-attr {:optional true} ::sm/text]
+   [:openid-attr {:optional true} ::sm/text]])
 
 (def ^:private schema:providers
   [:map-of :string schema:provider])
@@ -401,8 +403,9 @@
 
 (defn- parse-attr-path
   [provider path]
-  (let [[fitem & items] (str/split path "__")]
-    (into [(keyword (:type provider) fitem)] (map keyword) items)))
+  (let [separator        (if (str/includes? path "__") "__" ".")
+        [fitem & items]  (str/split path separator)]
+    (into [(keyword (:type provider) (str/kebab fitem))] (map (comp keyword str/kebab)) items)))
 
 (defn- build-redirect-uri
   []
@@ -486,16 +489,24 @@
                       attr-ph (parse-attr-path provider attr-kw)]
                   (get-in props attr-ph))
                 (let [attr-ph (parse-attr-path provider "nickname")]
-                  (get-in props attr-ph))))]
+                  (get-in props attr-ph))))
 
-    (let [info  (assoc info :provider-id (str (:id provider)))
-          props (qualify-props provider info)
-          email (get-email props)]
-      {:backend  (:type provider)
-       :fullname (or (get-name props) email)
-       :email email
-       :email-verified (get info :email_verified false)
-       :props props})))
+          (get-openid [props]
+            (when-let [attr-kw (get provider :openid-attr)]
+              (let [attr-ph (parse-attr-path provider attr-kw)]
+                (get-in props attr-ph))))]
+
+    (let [info   (assoc info :provider-id (str (:id provider)))
+          props  (qualify-props provider info)
+          email  (get-email props)
+          openid (get-openid props)]
+      (cond-> {:backend  (:type provider)
+               :fullname (or (get-name props) email)
+               :email email
+               :email-verified (get info :email_verified false)
+               :props props}
+        (some? openid)
+        (assoc-in [:props (keyword (:type provider) "openid")] openid)))))
 
 (defn- fetch-user-info
   [cfg provider tdata]
@@ -553,9 +564,9 @@
         claims (get-id-token-claims provider tdata)
 
         info   (case (get provider :user-info-source)
-                 :token (dissoc claims :exp :iss :iat :aud :sub :sid)
+                 :token (dissoc claims :exp :iss :iat :aud :sid)
                  :userinfo (fetch-user-info cfg provider tdata)
-                 (or (some-> claims (dissoc :exp :iss :iat :aud :sub :sid))
+                 (or (some-> claims (dissoc :exp :iss :iat :aud :sid))
                      (fetch-user-info cfg provider tdata)))
 
         info   (process-user-info provider tdata info)]

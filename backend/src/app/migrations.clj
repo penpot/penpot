@@ -466,7 +466,10 @@
     :fn mg0145/migrate}
 
    {:name "0146-mod-access-token-table"
-    :fn (mg/resource "app/migrations/sql/0146-mod-access-token-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0146-mod-access-token-table.sql")}
+
+   {:name "0147-mod-sso-provider-table"
+    :fn (mg/resource "app/migrations/sql/0147-mod-sso-provider-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
