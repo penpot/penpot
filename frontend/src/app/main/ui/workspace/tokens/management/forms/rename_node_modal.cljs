@@ -18,15 +18,15 @@
    [rumext.v2 :as mf]))
 
 (mf/defc rename-node-form*
-  [{:keys [node active-tokens tokens-tree on-close on-submit]}]
+  [{:keys [new-node-name node active-tokens tokens-tree variant on-close on-submit]}]
   (let [make-schema #(cfo/make-node-token-schema active-tokens tokens-tree node)
 
         schema
         (mf/with-memo [active-tokens]
           (make-schema))
 
-        initial (mf/with-memo [node]
-                  {:name (:name node)})
+        initial (mf/with-memo [node new-node-name]
+                  {:name (d/nilv new-node-name (:name node))})
 
         form (fm/use-form :schema schema
                           :initial initial)
@@ -35,11 +35,10 @@
                    (mf/deps form on-submit)
                    (fn []
                      (let [name (get-in @form [:clean-data :name])]
-                       (when (and (get-in @form [:touched :name]) (not= name (:name node)))
+                       (when (not= name (:name node))
                          (on-submit name)))))
 
         is-disabled? (or (not (:valid @form))
-                         (not (get-in @form [:touched :name]))
                          (= (get-in @form [:clean-data :name]) (:name node)))
 
         hint-path (mf/with-memo [@form node]
@@ -64,7 +63,7 @@
                          :max-length 255
                          :variant "comfortable"
                          :hint-type "hint"
-                         :hint-message (tr "workspace.tokens.rename-group-name-hint" hint-path)
+                         :hint-message (when (= variant "rename") (tr "workspace.tokens.rename-group-name-hint" hint-path))
                          :auto-focus true}]
      [:div {:class (stl/css :form-actions)}
       [:> button* {:variant "secondary"
@@ -72,14 +71,16 @@
                    :on-click on-close} (tr "labels.cancel")]
       [:> fc/form-submit* {:variant "primary"
                            :disabled is-disabled?
-                           :name "rename"} (tr "labels.rename")]]]))
+                           :name "rename"} (if (= variant "rename") (tr "labels.rename") (tr "labels.duplicate"))]]]))
 
 (mf/defc rename-node-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/rename-node}
-  [{:keys [node tokens-in-active-set on-rename]}]
+  [{:keys [new-node-name node tokens-in-active-set on-rename variant]}]
 
-  (let [tokens-tree-in-selected-set
+  (let [variant (d/nilv variant "rename") ;; "rename" or "duplicate"
+
+        tokens-tree-in-selected-set
         (mf/with-memo [tokens-in-active-set node]
           (-> (ctob/tokens-tree tokens-in-active-set)
               (d/dissoc-in (:name node))))
@@ -111,7 +112,9 @@
                         :aria-label (tr "labels.close")
                         :variant "ghost"
                         :icon i/close}]
-      [:> rename-node-form* {:node node
+      [:> rename-node-form* {:new-node-name new-node-name
+                             :node node
+                             :variant variant
                              :active-tokens tokens-in-active-set
                              :tokens-tree tokens-tree-in-selected-set
                              :on-close close-modal

@@ -11,6 +11,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.tokens :as clt]
+   [app.common.path-names :as cpn]
+   [app.common.test-helpers.ids-map :as cthi]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -460,6 +462,37 @@
                   (ptk/data-event ::ev/event {::ev/name "create-token" :type token-type})))
 
          (rx/of (create-token-with-set token)))))))
+
+(defn bulk-create-tokens
+  [set-id token-ids type node new-node-name]
+  (assert (uuid? set-id) "expected uuid for `set-id`")
+  (assert (every? uuid? token-ids) "expected a collection of uuids for `token-ids`")
+  (assert (keyword? type) "expected keyword for `type`")
+  (assert (string? new-node-name) "expected string for `new-node-name`")
+
+  (ptk/reify ::bulk-create-tokens
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [token-set (lookup-token-set state set-id)
+            data    (dsh/lookup-file-data state)
+            changes (reduce (fn [changes token-id]
+                              (let [token     (-> (get-tokens-lib state)
+                                                  (ctob/get-token (ctob/get-id token-set) token-id))
+                                    new-name (->
+                                              (cpn/split-path (:name token) :separator ".")
+                                              (assoc (:depth node) new-node-name)
+                                              (cpn/join-path :separator "." :with-spaces? false))
+                                    token'    (->> (merge token {:name new-name
+                                                                 :id (cthi/new-id! (:name new-name))})
+                                                   (into {})
+                                                   (ctob/make-token))]
+                                (pcb/set-token changes (ctob/get-id token-set) (:id token') token')))
+                            (-> (pcb/empty-changes it)
+                                (pcb/with-library-data data))
+                            token-ids)]
+        (rx/of
+         (dch/commit-changes changes)
+         (ptk/data-event ::ev/event {::ev/name "bulk-create-tokens" :type type}))))))
 
 (defn update-token
   ([id params] (update-token nil id params))

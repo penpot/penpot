@@ -18,6 +18,7 @@
 - Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
 - Copy and paste entire rows in existing table (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8498)
 - Rename token group [Taiga #13137](https://tree.taiga.io/project/penpot/us/13137)
+- Duplicate token group [Taiga #10653](https://tree.taiga.io/project/penpot/us/10653)
 - Copy token name from contextual menu [Taiga #13568](https://tree.taiga.io/project/penpot/issue/13568)
 - Add natural sorting on token names [Taiga #13713](https://tree.taiga.io/project/penpot/issue/13713)
 - Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
@@ -84,7 +85,6 @@
 - Guard delete undo against missing sibling order [Github #8858](https://github.com/penpot/penpot/pull/8858)
 - Fix ICounted error on numeric-input token dropdown keyboard nav [Github #8803](https://github.com/penpot/penpot/pull/8803)
 
-
 ## 2.14.1
 
 ### :sparkles: New features & Enhancements
@@ -107,7 +107,6 @@
 - Fix null text crash on paste in text editor
 - Ensure path content is always PathData when saving
 - Fix error when get-parent-with-data encounters non-Element nodes
-
 
 ## 2.14.0
 
