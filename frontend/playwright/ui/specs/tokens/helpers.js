@@ -332,6 +332,34 @@ const unfoldTokenType = async (tokensTabPanel, type) => {
   }
 };
 
+const createToken = async (page, type, name, textFieldName, value) => {
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+  const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+    flags: ["enable-token-shadow"],
+  });
+
+  // Create base token
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: ${type}` })
+    .click();
+  await expect(tokensUpdateCreateModal).toBeVisible();
+
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  await nameField.fill(name);
+
+  const colorField = tokensUpdateCreateModal.getByRole("textbox", {
+    name: textFieldName,
+  });
+  await colorField.fill(value);
+
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await submitButton.click();
+  await expect(tokensUpdateCreateModal).not.toBeVisible();
+};
+
 export {
   setupEmptyTokensFile,
   setupEmptyTokensFileRender,
@@ -341,4 +369,5 @@ export {
   setupTypographyTokensFileRender,
   testTokenCreationFlow,
   unfoldTokenType,
+  createToken,
 };
