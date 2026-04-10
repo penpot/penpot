@@ -219,15 +219,14 @@
         filters (cond-> filters
                   (contains? filters :shape)
                   (conj :rect :circle :path :bool))
-        name-match? (or (str/includes? (str/lower (:name shape)) (str/lower search))
-                        (str/includes? (str/lower (:variant-name shape)) (str/lower search))
-                        ;; Only for local development we allow search for ids. Otherwise will be hard
-                        ;; search for numbers or single letter shape names (ie: "A")
-                        (and *assert* (str/includes? (dm/str (:id shape)) (str/lower search))))
-        canvas-match? (and (= :text (:type shape))
-                           (some? (:content shape))
-                           (txt/content-has-text? (:content shape) search))
-        text-match? (case scope :canvas canvas-match? name-match?)]
+        text-match? (case scope
+                      :canvas (and (= :text (:type shape))
+                                   (some? (:content shape))
+                                   (txt/content-has-text? (:content shape) search))
+                      (or (str/includes? (str/lower (:name shape)) (str/lower search))
+                          (str/includes? (str/lower (:variant-name shape)) (str/lower search))
+                          ;; Dev-only: allow search by id
+                          (and *assert* (str/includes? (dm/str (:id shape)) (str/lower search)))))]
     (or (= uuid/zero id)
         (and text-match?
              (or (empty? filters)
@@ -347,20 +346,22 @@
         canvas-match-ids
         (mf/with-memo [objects current-search search-scope]
           (when (and (= :canvas search-scope) (d/not-empty? current-search))
-            (->> objects
-                 (filter (fn [[_id shape]]
+            (reduce-kv (fn [acc id shape]
+                         (cond-> acc
                            (and (= :text (:type shape))
                                 (some? (:content shape))
-                                (txt/content-has-text? (:content shape) current-search))))
-                 (mapv first))))
+                                (txt/content-has-text? (:content shape) current-search))
+                           (conj id)))
+                       [] objects)))
 
         layer-match-ids
         (mf/with-memo [objects current-search search-scope]
           (when (and (= :layers search-scope) (d/not-empty? current-search))
-            (->> objects
-                 (filter (fn [[_id shape]]
-                           (str/includes? (str/lower (:name shape)) (str/lower current-search))))
-                 (mapv first))))
+            (reduce-kv (fn [acc id shape]
+                         (cond-> acc
+                           (str/includes? (str/lower (:name shape)) (str/lower current-search))
+                           (conj id)))
+                       [] objects)))
 
         text-match-ids    (if (= :canvas search-scope) canvas-match-ids layer-match-ids)
         text-match-count  (count text-match-ids)
