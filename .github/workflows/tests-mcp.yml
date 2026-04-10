@@ -10,6 +10,7 @@ on:
     types:
       - opened
       - synchronize
+      - ready_for_review
 
     paths:
       - 'mcp/**'
@@ -24,7 +25,8 @@ on:
       - 'mcp/**'
 
 jobs:
-  test:
+  test-mcp:
+    if: ${{ !github.event.pull_request.draft }}
     name: "Test MCP"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
