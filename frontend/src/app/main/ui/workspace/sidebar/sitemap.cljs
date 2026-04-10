@@ -20,9 +20,8 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
@@ -199,7 +198,7 @@
           [:*
            (when-not is-separator?
              [:div {:class (stl/css :page-icon)}
-              deprecated-icon/document])
+              [:> icon* {:icon-id i/document}]])
            (if editing?
              [:input {:class        (stl/css :element-name)
                       :type         "text"
@@ -213,8 +212,10 @@
                name]
               [:div {:class (stl/css :page-actions)}
                (when (and deletable? (not read-only?))
-                 [:button {:on-click on-delete}
-                  deprecated-icon/delete])]])])]])))
+                 [:> icon-button* {:variant "ghost"
+                                   :aria-label (tr "modals.delete-page.title")
+                                   :on-click on-delete
+                                   :icon i/delete}])]])])]])))
 
 ;; --- Page Item Wrapper
 

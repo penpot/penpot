@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
 
 .sitemap {
   position: relative;
@@ -150,17 +151,6 @@
       border: deprecated.$s-1 solid var(--input-border-color-focus);
       color: var(--layer-row-foreground-color);
     }
-    &.separator-body {
-      height: auto;
-      min-height: deprecated.$s-32;
-      padding: 0;
-    }
-    .page-separator {
-      width: 100%;
-      height: deprecated.$s-1;
-      margin: deprecated.$s-8;
-      background-color: var(--color-background-quaternary);
-    }
   }
 
   &:active,
@@ -262,16 +252,26 @@
       }
     }
   }
-  &.separator {
-    &:hover,
-    &.hover {
-      .element-list-body {
-        color: var(--layer-row-foreground-color);
-        background-color: transparent;
-        box-shadow: none;
-      }
-    }
-  }
+}
+
+.element-list-body.separator-body {
+  height: auto;
+  min-height: var(--sp-xxxl);
+  padding: 0;
+}
+
+.page-separator {
+  width: 100%;
+  height: $b-1;
+  margin: var(--sp-s);
+  background-color: var(--color-background-quaternary);
+}
+
+.page-element.separator:hover .element-list-body,
+.page-element.separator.hover .element-list-body {
+  color: var(--layer-row-foreground-color);
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .title-spacing-sitemap {
