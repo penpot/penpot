@@ -196,6 +196,7 @@
 
     [:div {:class (stl/css-case
                    :stroke-data true
+                   :hidden hidden?
                    :dnd-over-top (= (:over dprops) :top)
                    :dnd-over-bot (= (:over dprops) :bot))
            :aria-label (str "stroke-row-" index)}
@@ -247,6 +248,7 @@
                      :options stroke-alignment-options
                      :variant "icon-only"
                      :data-testid "stroke.alignment"
+                     :disabled hidden?
                      :wrapper-class (stl/css :stroke-align-icon-select)
                      :on-change on-alignment-change}]
 
@@ -256,6 +258,7 @@
                        :wrapper-class (stl/css :stroke-style-icon-select)
                        :data-testid "stroke.style"
                        :variant "icon-only"
+                       :disabled hidden?
                        :dropdown-alignment :right
                        :on-change on-style-change}])]
 
@@ -275,6 +278,7 @@
                :data-testid "stroke.alignment"}
          [:& select {:default-value stroke-alignment
                      :options stroke-alignment-options
+                     :disabled hidden?
                      :on-change on-alignment-change}]]
 
         (when-not disable-stroke-style
@@ -282,6 +286,7 @@
                  :data-testid "stroke.style"}
            [:& select {:default-value stroke-style
                        :options stroke-style-options
+                       :disabled hidden?
                        :on-change on-style-change}]])])
 
      ;; Stroke Caps
@@ -289,11 +294,14 @@
        [:div {:class (stl/css :stroke-caps-options)}
         [:& select {:default-value (:stroke-cap-start stroke)
                     :options stroke-caps-options
+                    :disabled hidden?
                     :on-change on-caps-start-change}]
         [:> icon-button* {:variant "secondary"
                           :aria-label (tr "labels.switch")
+                          :disabled hidden?
                           :on-click on-cap-switch
                           :icon i/switch}]
         [:& select {:default-value (:stroke-cap-end stroke)
                     :options stroke-caps-options
+                    :disabled hidden?
                     :on-change on-caps-end-change}]])]))
