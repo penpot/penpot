@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-dialog*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
-   [app.main.ui.auth.register :refer [register-methods register-success-page terms-register register-validate-form]]
+   [app.main.ui.auth.register :refer [register-methods* register-success-page* terms-register* register-validate-form*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -94,7 +94,7 @@
 
          :register
          [:div {:class (stl/css :form-container)}
-          [:& register-methods {:on-success-callback success-register}]
+          [:> register-methods* {:on-success-callback success-register}]
           [:div {:class (stl/css :links)}
            [:div {:class (stl/css :account)}
             [:span (tr "auth.already-have-account") " "]
@@ -104,8 +104,8 @@
 
          :register-validate
          [:div {:class (stl/css :form-container)}
-          [:& register-validate-form {:params {:token @register-token}
-                                      :on-success-callback success-email-sent}]
+          [:> register-validate-form* {:params {:token @register-token}
+                                       :on-success-callback success-email-sent}]
           [:div {:class (stl/css :links)}
            [:div {:class (stl/css :register)}
             [:a {:on-click set-section
@@ -117,8 +117,8 @@
                                     :on-success-callback success-email-sent}]
          :email-sent
          [:div {:class (stl/css :form-container)}
-          [:& register-success-page {:params {:email @user-email}}]])
+          [:> register-success-page* {:params {:email @user-email}}]])
 
        (when main-section
          [:div {:class (stl/css :links)}
-          [:& terms-register]])]]]))
+          [:> terms-register*]])]]]))

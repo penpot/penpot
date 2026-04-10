@@ -253,12 +253,15 @@
               :hint "email has complaint reports")))
 
 (defn prepare-register
-  [{:keys [::db/pool] :as cfg} {:keys [fullname email accept-newsletter-updates] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [fullname email] :as params}]
 
   (validate-register-attempt! cfg params)
 
   (let [email   (profile/clean-email email)
         profile (profile/get-profile-by-email pool email)
+        props   (-> (audit/extract-utm-params params)
+                    (cond-> (:accept-newsletter-updates params)
+                      (assoc :newsletter-updates true)))
         params  {:email email
                  :fullname fullname
                  :password (:password params)
@@ -267,13 +270,12 @@
                  :iss :prepared-register
                  :profile-id (:id profile)
                  :exp (ct/in-future {:days 7})
-                 :props {:newsletter-updates (or accept-newsletter-updates false)}}
-
+                 :props props}
         params (d/without-nils params)
         token  (tokens/generate cfg params)]
 
-    (with-meta {:token token}
-      {::audit/profile-id uuid/zero})))
+    (-> {:token token}
+        (with-meta {::audit/profile-id uuid/zero}))))
 
 (def schema:prepare-register-profile
   [:map {:title "prepare-register-profile"}
@@ -281,6 +283,7 @@
    [:email ::sm/email]
    [:password schema:password]
    [:create-welcome-file {:optional true} :boolean]
+   [:accept-newsletter-updates {:optional true} :boolean]
    [:invitation-token {:optional true} schema:token]])
 
 (sv/defmethod ::prepare-register-profile
@@ -317,8 +320,7 @@
   attrs (all the other attrs are filled with default values)."
   [{:keys [::db/conn] :as cfg} {:keys [email] :as params}]
   (let [id        (or (:id params) (uuid/next))
-        props     (-> (audit/extract-utm-params params)
-                      (merge (:props params))
+        props     (-> (:props params)
                       (merge {:viewed-tutorial? false
                               :viewed-walkthrough? false
                               :nudge {:big 10 :small 1}
@@ -369,7 +371,6 @@
                     :cause cause)
           (throw cause))))))
 
-
 (defn create-profile-rels
   [conn {:keys [id] :as profile}]
   (let [features (cfeat/get-enabled-features cf/flags)
@@ -409,7 +410,9 @@
 (defn register-profile
   [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token] :as params}]
   (let [claims     (tokens/verify cfg {:token token :iss :prepared-register})
-        params     (into claims params)
+        params     (cond-> claims
+                     (:accept-newsletter-updates params)
+                     (update :props assoc :newsletter-updates true))
 
         profile    (if-let [profile-id (:profile-id claims)]
                      (profile/get-profile conn profile-id)
@@ -524,7 +527,8 @@
 
 (def schema:register-profile
   [:map {:title "register-profile"}
-   [:token schema:token]])
+   [:token schema:token]
+   [:accept-newsletter-updates {:optional true} :boolean]])
 
 (sv/defmethod ::register-profile
   {::rpc/auth false

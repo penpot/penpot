@@ -58,12 +58,12 @@
             last-point (get-in state [:workspace-local :edit-path id :last-point])
             position   (cond-> (gpt/point x y)
                          fix-angle? (path.helpers/position-fixed-angle last-point))
-            shape      (st/get-path state)
+            content    (st/get-path state :content)
 
             {:keys [last-point prev-handler]}
             (get-in state [:workspace-local :edit-path id])
 
-            segment (path/next-node shape position last-point prev-handler)]
+            segment (path/next-node content position last-point prev-handler)]
         (assoc-in state [:workspace-local :edit-path id :preview] segment)))))
 
 (defn add-node

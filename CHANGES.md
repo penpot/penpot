@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## 2.14.2
+
+### :sparkles: New features & Enhancements
+
+- Add protection for stale JS asset cache to force reload on version mismatch [Github #8638](https://github.com/penpot/penpot/pull/8638)
+- Normalize newsletter opt-in checkbox across different register flows [Github #8839](https://github.com/penpot/penpot/pull/8839)
+
+### :bug: Bugs fixed
+
+- Fix PathData corruption root causes across WASM and CLJS (unsafe transmute and byteOffset handling)
+- Handle corrupted PathData segments gracefully instead of crashing
+- Fix swapped move-to/line-to type codes in PathData binary readers
+- Fix non-integer row/column values in grid cell position inputs [Github #8869](https://github.com/penpot/penpot/pull/8869)
+- Fix nil path content crash by exposing safe public API [Github #8806](https://github.com/penpot/penpot/pull/8806)
+- Fix infinite recursion in get-frame-ids for thumbnail extraction [Github #8807](https://github.com/penpot/penpot/pull/8807)
+- Fix stale-asset detector missing protocol-dispatch errors
+- Ignore Zone.js toString TypeError in uncaught error handler [Github #8804](https://github.com/penpot/penpot/pull/8804)
+- Prevent thumbnail frame recursion overflow [Github #8763](https://github.com/penpot/penpot/pull/8763)
+- Fix vector index out of bounds in viewer zoom-to-fit/fill [Github #8834](https://github.com/penpot/penpot/pull/8834)
+- Guard delete undo against missing sibling order [Github #8858](https://github.com/penpot/penpot/pull/8858)
+- Fix ICounted error on numeric-input token dropdown keyboard nav [Github #8803](https://github.com/penpot/penpot/pull/8803)
+
 ## 2.14.1
 
 ### :sparkles: New features & Enhancements

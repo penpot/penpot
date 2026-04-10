@@ -217,10 +217,12 @@
        (let [buffer (ByteBuffer/wrap dst)]
          (.order buffer ByteOrder/LITTLE_ENDIAN)))
      :cljs
-     (let [buffer'  (.-buffer ^js/DataView buffer)
-           src-view (js/Uint32Array. buffer')
-           dst-buff (js/ArrayBuffer. (.-byteLength buffer'))
-           dst-view (js/Uint32Array. dst-buff)]
+     (let [src-off  (.-byteOffset ^js/DataView buffer)
+           src-len  (.-byteLength ^js/DataView buffer)
+           src-buf  (.-buffer ^js/DataView buffer)
+           src-view (js/Uint8Array. src-buf src-off src-len)
+           dst-buff (js/ArrayBuffer. src-len)
+           dst-view (js/Uint8Array. dst-buff)]
        (.set dst-view src-view)
        (js/DataView. dst-buff))))
 
@@ -239,12 +241,15 @@
               ^ByteBuffer buffer-b)
 
      :cljs
-     (let [buffer-a (.-buffer buffer-a)
-           buffer-b (.-buffer buffer-b)]
-       (if (= (.-byteLength buffer-a)
-              (.-byteLength buffer-b))
-         (let [cb (js/Uint32Array. buffer-a)
-               ob (js/Uint32Array. buffer-b)
+     (let [len-a (.-byteLength ^js/DataView buffer-a)
+           len-b (.-byteLength ^js/DataView buffer-b)]
+       (if (= len-a len-b)
+         (let [cb (js/Uint8Array. (.-buffer ^js/DataView buffer-a)
+                                  (.-byteOffset ^js/DataView buffer-a)
+                                  len-a)
+               ob (js/Uint8Array. (.-buffer ^js/DataView buffer-b)
+                                  (.-byteOffset ^js/DataView buffer-b)
+                                  len-b)
                sz (alength cb)]
            (loop [i 0]
              (if (< i sz)
