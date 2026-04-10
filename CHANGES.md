@@ -44,6 +44,7 @@
 - Fix hot update on color-row on texts [Taiga #13923](https://tree.taiga.io/project/penpot/issue/13923)
 - Fix selected color tokens [Taiga #13930](https://tree.taiga.io/project/penpot/issue/13930)
 - Display resolved values of inactive tokens [Taiga #13628](https://tree.taiga.io/project/penpot/issue/13628)
+- Fix hyphens stripped from export filenames [Github #8901](https://github.com/penpot/penpot/issues/8901)
 
 ## 2.15.0 (Unreleased)
 
