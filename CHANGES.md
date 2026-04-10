@@ -18,6 +18,7 @@
 - Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
 - Copy and paste entire rows in existing table (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8498)
 - Rename token group [Taiga #13137](https://tree.taiga.io/project/penpot/us/13137)
+- Duplicate token group [Taiga #10653](https://tree.taiga.io/project/penpot/us/10653)
 - Copy token name from contextual menu [Taiga #13568](https://tree.taiga.io/project/penpot/issue/13568)
 - Add natural sorting on token names [Taiga #13713](https://tree.taiga.io/project/penpot/issue/13713)
 - Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
@@ -26,6 +27,7 @@
 - Fix warnings for unsupported token $type (by @Dexterity104) [Github #8790](https://github.com/penpot/penpot/issues/8790)
 - Add per-group add button for typographies (by @eureka928) [Github #5275](https://github.com/penpot/penpot/issues/5275)
 - Add Find & Replace for text content (by @statxc) [Github #7108](https://github.com/penpot/penpot/issues/7108)
+- Use page name for multi-export ZIP/PDF downloads (by @Dexterity104) [Github #8773](https://github.com/penpot/penpot/issues/8773)
 
 ### :bug: Bugs fixed
 
@@ -39,6 +41,7 @@
 - Token tree should be expanded by default [Taiga #13631](https://tree.taiga.io/project/penpot/issue/13631)
 - Fix opacity incorrectly disabled for visible shapes [Taiga #13906](https://tree.taiga.io/project/penpot/issue/13906)
 - Update onboarding image [Taiga #13864](https://tree.taiga.io/project/penpot/issue/13864)
+- Fix plugin modal drag interactions over iframe and close-button behavior (by @marekhrabe) [Github #8871](https://github.com/penpot/penpot/pull/8871)
 - Fix hot update on color-row on texts [Taiga #13923](https://tree.taiga.io/project/penpot/issue/13923)
 - Fix selected color tokens [Taiga #13930](https://tree.taiga.io/project/penpot/issue/13930)
 
@@ -84,7 +87,6 @@
 - Guard delete undo against missing sibling order [Github #8858](https://github.com/penpot/penpot/pull/8858)
 - Fix ICounted error on numeric-input token dropdown keyboard nav [Github #8803](https://github.com/penpot/penpot/pull/8803)
 
-
 ## 2.14.1
 
 ### :sparkles: New features & Enhancements
@@ -107,7 +109,6 @@
 - Fix null text crash on paste in text editor
 - Ensure path content is always PathData when saving
 - Fix error when get-parent-with-data encounters non-Element nodes
-
 
 ## 2.14.0
 
