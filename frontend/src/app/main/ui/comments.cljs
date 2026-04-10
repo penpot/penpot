@@ -55,10 +55,9 @@
     (let [text (:content element)
           parts (str/split text r-url-split)
           urls (re-seq r-url-split text)]
-      (->> (d/interleave-all
-            (map #(hash-map :type :text :content %) parts)
-            (map #(hash-map :type :url :content %) urls))
-           (remove #(and (= (:type %) :text) (str/empty? (:content %))))))
+      (d/interleave-all
+       (map #(hash-map :type :text :content %) parts)
+       (map #(hash-map :type :url :content %) urls)))
     [element]))
 
 (defn- parse-comment
