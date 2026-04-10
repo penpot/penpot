@@ -369,7 +369,8 @@
          ;; in the future (when we handle the UI in the render) should be better to
          ;; have a "wasm.api/pointer-move" function that works as an entry point for
          ;; all the pointer-move events.
-         (wasm.api/text-editor-pointer-move (.-x off-pt) (.-y off-pt))
+         (when (wasm.api/text-editor-has-focus?)
+           (wasm.api/text-editor-pointer-move (.-x off-pt) (.-y off-pt)))
 
          (rx/push! move-stream pt)
          (reset! last-position raw-pt)
