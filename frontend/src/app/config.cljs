@@ -151,6 +151,13 @@
 
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI"))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI"))
+
+;; mPass SSO full-3-layer signout URL. Read at runtime from config.js
+;; (injected via nginx-entrypoint.sh from the MPASS_SIGNOUT_URL env var).
+;; When set, the logout event redirects here instead of to the native
+;; penpot /auth/login screen so the oauth2-proxy cookie and Cognito
+;; session are also cleared. Nil on non-SSO deployments.
+(def mpass-signout-url    (obj/get global "penpotMpassSignoutUrl"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def grid-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot.app/penpothub/plugins"))
