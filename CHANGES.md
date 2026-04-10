@@ -44,6 +44,7 @@
 - Fix plugin modal drag interactions over iframe and close-button behavior (by @marekhrabe) [Github #8871](https://github.com/penpot/penpot/pull/8871)
 - Fix hot update on color-row on texts [Taiga #13923](https://tree.taiga.io/project/penpot/issue/13923)
 - Fix selected color tokens [Taiga #13930](https://tree.taiga.io/project/penpot/issue/13930)
+- Display resolved values of inactive tokens [Taiga #13628](https://tree.taiga.io/project/penpot/issue/13628)
 
 ## 2.15.0 (Unreleased)
 
