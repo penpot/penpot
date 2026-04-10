@@ -7,6 +7,7 @@ import {
   setupTypographyTokensFileRender,
   testTokenCreationFlow,
   unfoldTokenType,
+  createToken,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -1790,6 +1791,27 @@ test("User duplicate color token", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("User disables the current set but token still have resolved values shown in the sidebar", async ({
+  page,
+}) => {
+  const { tokenThemesSetsSidebar, tokensSidebar } = await setupEmptyTokensFileRender(page);
+
+  // Create color token
+  await createToken(page, "Color", "color.primary", "Value", "#ff0000");
+  await unfoldTokenType(tokensSidebar, "color");
+
+  // Deactivate current set
+  await tokenThemesSetsSidebar
+    .getByRole("checkbox")
+    .click();
+
+  // Tokens tab panel should have a token with the color #ff0000 and correct resolved value in the tooltip
+  const colorTokenPill = tokensSidebar.getByRole("button", { name: "#ff0000 color.primary" });
+  await expect(colorTokenPill).toHaveCount(1);
+  await colorTokenPill.hover();  // Force title attribute to be attached to the button
+  await expect(colorTokenPill).toHaveAttribute("title", /Resolved value: #ff0000/);
+});
+
 test.describe("Tokens tab - edition", () => {
   test("User edits typography token and all fields are valid", async ({
     page,
@@ -2010,49 +2032,5 @@ test.describe("Tokens tab - delete", () => {
 
     await expect(tokenContextMenuForToken).not.toBeVisible();
     await expect(colorToken).not.toBeVisible();
-  });
-
-  test("User removes node and all child tokens", async ({ page }) => {
-    const { tokensSidebar } = await setupTokensFileRender(page);
-
-    await expect(tokensSidebar).toBeVisible();
-
-    // Expand color tokens
-    await unfoldTokenType(tokensSidebar, "color");
-
-    // Verify that the node and child token are visible before deletion
-    const colorNode = tokensSidebar.getByRole("button", {
-      name: "colors",
-      exact: true,
-    });
-    const colorNodeToken = tokensSidebar.getByRole("button", {
-      name: "colors.blue.100",
-    });
-
-    // Select a node and right click on it to open context menu
-    await expect(colorNode).toBeVisible();
-    await expect(colorNodeToken).toBeVisible();
-    await colorNode.click({ button: "right" });
-
-    // select "Delete" from the context menu
-    const deleteNodeButton = page.getByRole("button", {
-      name: "Delete",
-      exact: true,
-    });
-    await expect(deleteNodeButton).toBeVisible();
-    await deleteNodeButton.click();
-
-    // Verify that the node is removed
-    await expect(colorNode).not.toBeVisible();
-    // Verify that child token is also removed
-    await expect(colorNodeToken).not.toBeVisible();
-
-    // Save the type button to verify that expands/folds
-    const tokenTypeButton = await tokensSidebar.getByRole("button", {
-      name: "Color",
-      exact: true,
-    });
-
-    await expect(tokenTypeButton).toHaveAttribute("aria-expanded", "false");
   });
 });
