@@ -327,6 +327,19 @@
   {::doc/added "1.0"
    ::sm/params schema:request-email-change}
   [cfg {:keys [::rpc/profile-id email] :as params}]
+  ;; In x-auth-request-headers (oauth2-proxy / Cognito SSO) mode the email
+  ;; is the user's identity as injected by the upstream IdP via the
+  ;; X-Auth-Request-Email header on every request. Letting a user change
+  ;; their Penpot email locally would diverge it from the IdP-supplied
+  ;; email, and the next request would either fail to authenticate (the
+  ;; auth_request middleware looks profiles up by email) or auto-create
+  ;; a fresh duplicate profile under the original IdP email — losing
+  ;; the user's workspace either way. Block the change at the RPC layer
+  ;; so the API enforces it even if the frontend UI is bypassed.
+  (when (contains? cf/flags :x-auth-request-headers)
+    (ex/raise :type :restriction
+              :code :email-managed-by-external-idp
+              :hint "email is managed by the upstream identity provider and cannot be changed in Penpot"))
   (db/tx-run! cfg
               (fn [cfg]
                 (let [profile (db/get-by-id cfg :profile profile-id)

@@ -44,6 +44,18 @@
         form    (fm/use-form :schema schema:profile-form
                              :initial profile)
 
+        ;; In x-auth-request-headers (oauth2-proxy / Cognito SSO) mode the
+        ;; email is the user's identity, owned by the upstream IdP. Letting
+        ;; a user change it locally would diverge it from the IdP-supplied
+        ;; X-Auth-Request-Email and lock them out of their own workspace
+        ;; on the very next request. The backend rejects the change at the
+        ;; RPC layer (rpc/commands/profile.clj + verify_token.clj) — this
+        ;; is just the UX guard so the user doesn't see a button that
+        ;; would only fail. cf/mpass-signout-url is set by the runtime
+        ;; config injection in nginx-entrypoint.sh from MPASS_SIGNOUT_URL
+        ;; and is non-nil exactly when the deployment is in SSO mode.
+        sso-mode? (some? cf/mpass-signout-url)
+
         on-show-change-email
         (mf/use-fn
          #(modal/show! :change-email {}))
@@ -61,18 +73,26 @@
         :name :fullname
         :label (tr "dashboard.your-name")}]]
 
-     [:div {:class (stl/css :fields-row)
-            :on-click on-show-change-email}
-      [:& fm/input
-       {:type "email"
-        :name :email
-        :disabled true
-        :label (tr "dashboard.your-email")}]
-
-      [:div {:class (stl/css :options)}
-       [:div.change-email
-        [:a {:on-click on-show-change-email}
-         (tr "dashboard.change-email")]]]]
+     (if sso-mode?
+       ;; SSO mode — read-only email row, no click handler, no link.
+       [:div {:class (stl/css :fields-row)}
+        [:& fm/input
+         {:type "email"
+          :name :email
+          :disabled true
+          :label (tr "dashboard.your-email")}]]
+       ;; LOCAL/GOOGLE mode — original upstream behaviour preserved.
+       [:div {:class (stl/css :fields-row)
+              :on-click on-show-change-email}
+        [:& fm/input
+         {:type "email"
+          :name :email
+          :disabled true
+          :label (tr "dashboard.your-email")}]
+        [:div {:class (stl/css :options)}
+         [:div.change-email
+          [:a {:on-click on-show-change-email}
+           (tr "dashboard.change-email")]]]])
 
      [:> fm/submit-button*
       {:label (tr "dashboard.save-settings")

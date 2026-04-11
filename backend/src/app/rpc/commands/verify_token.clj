@@ -43,6 +43,19 @@
 
 (defmethod process-token :change-email
   [{:keys [::db/conn] :as cfg} _params {:keys [profile-id email] :as claims}]
+  ;; Belt-and-suspenders for the SSO contract: even if a valid :change-email
+  ;; token already exists (e.g., generated before x-auth-request-headers was
+  ;; enabled, or via a fork or backdoor RPC), refuse to apply it when SSO mode
+  ;; is on. The email is owned by the upstream IdP (Cognito via oauth2-proxy);
+  ;; allowing the change here would diverge the local profile from the
+  ;; X-Auth-Request-Email header that authenticates every request, locking
+  ;; the user out of their own workspace. Block at the RPC layer in
+  ;; rpc/commands/profile.clj AND here so neither the issue side nor the
+  ;; redeem side can complete the change.
+  (when (contains? cf/flags :x-auth-request-headers)
+    (ex/raise :type :restriction
+              :code :email-managed-by-external-idp
+              :hint "email is managed by the upstream identity provider and cannot be changed in Penpot"))
   (let [email (profile/clean-email email)]
     (when (profile/get-profile-by-email conn email)
       (ex/raise :type :validation
