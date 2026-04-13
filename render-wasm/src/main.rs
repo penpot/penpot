@@ -156,6 +156,18 @@ pub extern "C" fn set_antialias_threshold(threshold: f32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn set_max_atlas_texture_size(max_px: i32) -> Result<()> {
+    with_state_mut!(state, {
+        state
+            .render_state_mut()
+            .surfaces
+            .set_max_atlas_texture_size(max_px);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
     with_state_mut!(state, {
         let color = skia::Color::new(raw_color);
