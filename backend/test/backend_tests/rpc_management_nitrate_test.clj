@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as-alias db]
+   [app.email :as email]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]

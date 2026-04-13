@@ -1181,6 +1181,16 @@
         str/trim)
     ""))
 
+(defn get-initials
+  "Returns up to two uppercase initials extracted from a string.
+  Non-letter prefixes in each token are ignored."
+  [name]
+  (->> (str/split (str/trim (or name "")) #"\s+")
+       (keep #(first (re-seq #"[a-zA-Z]" %)))
+       (take 2)
+       (map str/upper)
+       (apply str)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
