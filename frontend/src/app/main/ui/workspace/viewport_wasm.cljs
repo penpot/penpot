@@ -376,7 +376,7 @@
               (wasm.api/request-render "content"))))))
 
     (mf/with-effect [vport]
-      (when @canvas-init?
+      (when (and @canvas-init? @initialized?)
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
     (mf/with-effect [@canvas-init? preview-blend]
@@ -403,11 +403,11 @@
                     (wasm.api/set-focus-mode focus)))))
 
     (mf/with-effect [vbox zoom]
-      (when (and @canvas-init? initialized?)
+      (when (and @canvas-init? @initialized?)
         (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [background]
-      (when (and @canvas-init? initialized?)
+      (when (and @canvas-init? @initialized?)
         (wasm.api/set-canvas-background background)))
 
     (mf/with-effect [@canvas-init? hover-grid? @hover-top-frame-id]
