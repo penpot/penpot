@@ -7,6 +7,7 @@
 (ns app.render-wasm.text-editor
   "Text editor WASM bindings"
   (:require
+   [app.common.data :as d]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.uuid :as uuid]
    [app.main.fonts :as main-fonts]
@@ -310,8 +311,6 @@
                       :font-family (text-editor-get-style-property font-family-state font-id)
                       :font-id (text-editor-get-style-property font-family-state font-id)
                       :font-variant-id (text-editor-get-style-property font-variant-id-state font-variant-id-computed)
-                      :typography-ref-file nil
-                      :typography-ref-id nil
                       :selected-colors selected-colors
                       :fills fills}]
 
@@ -582,8 +581,8 @@
                        (recur (rest spans) span-end (conj acc span))
                        (let [before   (when (> ol-start pos)
                                         (assoc span :text (subs text 0 (- ol-start pos))))
-                             selected (merge span attrs
-                                             {:text (subs text (- ol-start pos) (- ol-end pos))})
+                             selected (d/txt-merge (assoc span :text (subs text (- ol-start pos) (- ol-end pos)))
+                                                   attrs)
                              after    (when (< ol-end span-end)
                                         (assoc span :text (subs text (- ol-end pos))))]
                          (recur (rest spans) span-end

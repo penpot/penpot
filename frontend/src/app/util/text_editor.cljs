@@ -8,6 +8,7 @@
   "Draft related abstraction functions."
   (:require
    ["@penpot/draft-js" :as impl]
+   [app.common.data :as d]
    [app.common.text :as legacy.txt]))
 
 ;; --- CONVERSION
@@ -93,7 +94,7 @@
   (let [update-blocks
         (fn [state block-key]
           (if (empty? (impl/getBlockContent state block-key))
-            (impl/updateBlockData state block-key (clj->js attrs))
+            (impl/updateBlockData state block-key (clj->js (d/without-nils attrs)))
 
             (let [attrs (-> (impl/getInlineStyle state block-key 0)
                             (legacy.txt/styles-to-attrs)
@@ -156,7 +157,8 @@
         (impl/setSelection $ selection)))))
 
 (defn insert-text [state text attrs]
-  (let [style (legacy.txt/attrs-to-styles attrs)]
+  (let [attrs (d/without-nils attrs)
+        style (legacy.txt/attrs-to-styles attrs)]
     (impl/insertText state text (clj->js attrs) (clj->js style))))
 
 (defn get-style-override [state]

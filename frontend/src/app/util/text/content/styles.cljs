@@ -132,7 +132,9 @@
   "Maps attrs to styles"
   [styles]
   (let [mapped-styles
-        (into {} (map attr->style styles))]
+        (into {} (comp (filter (fn [[_ v]] (some? v)))
+                       (map attr->style))
+              styles)]
     (clj->js mapped-styles)))
 
 (defn style-needs-mapping?
