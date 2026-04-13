@@ -5796,6 +5796,14 @@ msgstr "Hide board names"
 msgid "workspace.header.menu.hide-guides"
 msgstr "Hide guides"
 
+#: src/app/main/ui/workspace/main_menu.cljs:387
+msgid "workspace.header.menu.lock-guides"
+msgstr "Lock guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:387
+msgid "workspace.header.menu.unlock-guides"
+msgstr "Unlock guides"
+
 #: src/app/main/ui/workspace/main_menu.cljs:393
 msgid "workspace.header.menu.hide-palette"
 msgstr "Hide color palette"
