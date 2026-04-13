@@ -115,10 +115,17 @@
              "boxShadow" :shadow)))
 
 (def composite-token-type->dtcg-token-type
-  "When converting the type of one element inside a composite token, an additional type
-   :line-height is available, that is not allowed for a standalone token."
-  (assoc token-type->dtcg-token-type
-         :line-height "lineHeights"))
+  "Maps internal keywords to DTCG `$value` property names for `$type` \"typography\"
+  composite tokens (Design Tokens Format typography composite, e.g. 2025.10).
+  Standalone tokens still use `token-type->dtcg-token-type` for their `$type` string."
+  {:font-family     "fontFamily"
+   :font-size       "fontSize"
+   :font-weight     "fontWeight"
+   :line-height     "lineHeight"
+   :letter-spacing  "letterSpacing"
+   :text-case       "textCase"
+   :text-decoration "textDecoration"
+   :typography      "typography"})
 
 (def composite-dtcg-token-type->token-type
   "Same as above, in the opposite direction."

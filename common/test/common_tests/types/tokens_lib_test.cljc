@@ -1745,8 +1745,8 @@
        (t/testing "composite typography token export"
          (let [composite-token (get-in typography-set ["typo" "composite"])]
            (t/is (= (get composite-token "$type") "typography"))
-           (t/is (= (get composite-token "$value") {"fontWeights" "bold"
-                                                    "fontSizes" "16px"
+           (t/is (= (get composite-token "$value") {"fontWeight" "bold"
+                                                    "fontSize" "16px"
                                                     "letterSpacing" "0.1em"}))
            (t/is (= (get composite-token "$description") "A composite typography token"))))
 

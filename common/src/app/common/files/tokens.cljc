@@ -198,9 +198,9 @@
      {'name' 'body-text'
       'type' 'typography'
       'value' {
-        'fontFamilies' ['Arial' 'Helvetica' 'sans-serif']
+        'fontFamily' ['Arial' 'Helvetica' 'sans-serif']
         'fontSize' '16px'
-        'fontWeights' 'normal'}}
+        'fontWeight' 'normal'}}
 
    to this
      {:name 'body-text'
