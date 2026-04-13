@@ -143,7 +143,7 @@
 
 
 (mf/defc interaction-path
-  [{:keys [index level orig-shape dest-shape dest-point selected? action-type zoom] :as props}]
+  [{:keys [index level orig-shape dest-shape dest-point selected selected? action-type zoom] :as props}]
   (let [[orig-pos orig-x orig-y dest-pos dest-x dest-y]
         (cond
           dest-shape
