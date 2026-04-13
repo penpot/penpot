@@ -173,7 +173,6 @@
                                  (get base-objects parent-id)))))
 
         zoom              (d/check-num zoom 1)
-        prev-zoom         (mf/use-ref zoom)
 
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
@@ -377,7 +376,7 @@
               (wasm.api/request-render "content"))))))
 
     (mf/with-effect [vport]
-      (when @canvas-init?
+      (when (and @canvas-init? @initialized?)
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
     (mf/with-effect [@canvas-init? preview-blend]
@@ -404,12 +403,11 @@
                     (wasm.api/set-focus-mode focus)))))
 
     (mf/with-effect [vbox zoom]
-      (when (and @canvas-init? initialized?)
-        (wasm.api/set-view-box (mf/ref-val prev-zoom) zoom vbox))
-      (mf/set-ref-val! prev-zoom zoom))
+      (when (and @canvas-init? @initialized?)
+        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [background]
-      (when (and @canvas-init? initialized?)
+      (when (and @canvas-init? @initialized?)
         (wasm.api/set-canvas-background background)))
 
     (mf/with-effect [@canvas-init? hover-grid? @hover-top-frame-id]

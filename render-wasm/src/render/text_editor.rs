@@ -4,7 +4,7 @@ use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
 use skia_safe::{BlendMode, Canvas, Paint, Rect};
 
 pub fn render_overlay(canvas: &Canvas, editor_state: &TextEditorState, shape: &Shape) {
-    if !editor_state.is_active {
+    if !editor_state.has_focus {
         return;
     }
 
