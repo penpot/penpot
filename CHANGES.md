@@ -20,7 +20,7 @@
 - Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
 - Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
-
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
 
 ## 2.14.2
 
