@@ -1539,6 +1539,8 @@
         (h/call wasm/internal-module "_set_render_options" flags dpr)
         (when-let [t (wasm-aa-threshold-from-route-params)]
           (h/call wasm/internal-module "_set_antialias_threshold" t))
+        (when-let [max-tex (webgl/max-texture-size context)]
+          (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
 
         ;; Set browser and canvas size only after initialization
         (h/call wasm/internal-module "_set_browser" browser)

@@ -135,6 +135,28 @@
       (wasm.mem/free)
       text)))
 
+(defn ^:export wasmAtlasConsole
+  "Logs the current render-wasm atlas as an image in the JS console (if present)."
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_atlas_console"))]
+    (if (fn? f)
+      (wasm.h/call module "_debug_atlas_console")
+      (js/console.warn "[debug] render-wasm module not ready or missing _debug_atlas_console"))))
+
+(defn ^:export wasmAtlasBase64
+  "Returns the atlas PNG base64 (empty string if missing/empty)."
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_atlas_base64"))]
+    (if (fn? f)
+      (let [ptr (wasm.h/call module "_debug_atlas_base64")
+            s   (or (wasm-read-len-prefixed-utf8 ptr) "")]
+        s)
+      (do
+        (js/console.warn "[debug] render-wasm module not ready or missing _debug_atlas_base64")
+        ""))))
+
 (defn ^:export wasmCacheConsole
   "Logs the current render-wasm cache surface as an image in the JS console."
   []
