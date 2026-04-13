@@ -57,3 +57,29 @@
                (t/is (= :error.token/number-too-large
                         (get-in resolved-tokens ["borderRadius.largeFn" :errors 0 :error/code])))
                (done))))))))
+
+(t/deftest resolve-tokens-interactive-test
+  (t/async
+    done
+    (t/testing "resolves tokens interactively using backtrace ids map"
+      (let [tokens (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :core-set)
+                                                          :name "core"))
+                       (ctob/add-token (cthi/id :core-set)
+                                       (ctob/make-token {:name "borderRadius.sm"
+                                                         :value "12px"
+                                                         :type :border-radius}))
+                       (ctob/add-token (cthi/id :core-set)
+                                       (ctob/make-token {:value "{borderRadius.sm} * 2"
+                                                         :name "borderRadius.md"
+                                                         :type :border-radius}))
+                       (ctob/get-all-tokens-map))]
+        (-> (sd/resolve-tokens-interactive tokens)
+            (rx/sub!
+             (fn [resolved-tokens]
+               (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value])))
+               (t/is (= "px" (get-in resolved-tokens ["borderRadius.sm" :unit])))
+               (t/is (= 24 (get-in resolved-tokens ["borderRadius.md" :resolved-value])))
+               (t/is (= "px" (get-in resolved-tokens ["borderRadius.md" :unit])))
+               (done))))))))
+
