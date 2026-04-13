@@ -6,12 +6,14 @@ on:
       - edited
       - reopened
       - synchronize
+      - ready_for_review
   pull_request_target:
     types:
       - opened
       - edited
       - reopened
       - synchronize
+      - ready_for_review
   push:
     branches:
       - main
@@ -20,6 +22,7 @@ on:
 
 jobs:
   check-commit-message:
+    if: ${{ !github.event.pull_request.draft }}
     name: Check Commit Message
     runs-on: ubuntu-latest
     steps:

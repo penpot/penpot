@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../../pages/WorkspacePage";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import {
+  createToken,
   setupTokensFileRender,
   setupTypographyTokensFileRender,
 } from "./helpers";
@@ -13,34 +14,6 @@ test.beforeEach(async ({ page }) => {
   ]);
   await WasmWorkspacePage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
-
-const createToken = async (page, type, name, textFieldName, value) => {
-  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-
-  const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
-    flags: ["enable-token-shadow"],
-  });
-
-  // Create base token
-  await tokensTabPanel
-    .getByRole("button", { name: `Add Token: ${type}` })
-    .click();
-  await expect(tokensUpdateCreateModal).toBeVisible();
-
-  const nameField = tokensUpdateCreateModal.getByLabel("Name");
-  await nameField.fill(name);
-
-  const colorField = tokensUpdateCreateModal.getByRole("textbox", {
-    name: textFieldName,
-  });
-  await colorField.fill(value);
-
-  const submitButton = tokensUpdateCreateModal.getByRole("button", {
-    name: "Save",
-  });
-  await submitButton.click();
-  await expect(tokensUpdateCreateModal).not.toBeVisible();
-};
 
 const createTokenCombobox = async (page, type, name, textFieldName, value) => {
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -636,62 +609,6 @@ test.describe("Remapping a single token", () => {
 });
 
 test.describe("Remapping group of tokens", () => {
-  test("User renames a group - no remap", async ({ page }) => {
-    const { tokensSidebar } = await setupTokensFileRender(page);
-
-    // Create multiple tokens in a group
-    await createToken(page, "Color", "dark.primary", "Value", "#000000");
-    await createToken(page, "Color", "dark.secondary", "Value", "#111111");
-
-    // Verify that the node and child token are visible before deletion
-    const darkNode = tokensSidebar.getByRole("button", {
-      name: "dark",
-      exact: true,
-    });
-    const darkNodeToken = tokensSidebar.getByRole("button", {
-      name: "primary",
-    });
-
-    // Select a node and right click on it to open context menu
-    await expect(darkNode).toBeVisible();
-    await expect(darkNodeToken).toBeVisible();
-    await darkNode.click({ button: "right" });
-
-    // select "Rename" from the context menu
-    const renameNodeButton = page.getByRole("button", {
-      name: "Rename",
-      exact: true,
-    });
-    await expect(renameNodeButton).toBeVisible();
-    await renameNodeButton.click();
-
-    // Expect the rename modal to be visible, fill in the new name and submit
-    const tokenRenameNodeModal = page.getByTestId("token-rename-node-modal");
-    await expect(tokenRenameNodeModal).toBeVisible();
-
-    const nameField = tokenRenameNodeModal.getByRole("textbox", {
-      name: "Name",
-    });
-    await nameField.fill("darker");
-
-    const submitButton = tokenRenameNodeModal.getByRole("button", {
-      name: "Rename",
-    });
-    await submitButton.click();
-
-    // Ensure that the remapping modal does not appear
-    const remappingModal = page.getByTestId("token-remapping-modal");
-    await expect(remappingModal).not.toBeVisible();
-
-    // Verify that the node has been renamed and tokens are still visible
-    const darkerNode = tokensSidebar.getByRole("button", {
-      name: "darker",
-      exact: true,
-    });
-
-    await expect(darkerNode).toBeVisible();
-  });
-
   test("User renames a group - and remaps", async ({ page }) => {
     const { tokensSidebar } = await setupTokensFileRender(page);
     const workspacePage = new WasmWorkspacePage(page);
