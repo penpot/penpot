@@ -405,7 +405,7 @@
   [provider path]
   (let [separator        (if (str/includes? path "__") "__" ".")
         [fitem & items]  (str/split path separator)]
-    (into [(keyword (:type provider) (str/kebab fitem))] (map (comp keyword str/kebab)) items)))
+    (into [(keyword (:type provider) (str/kebab fitem))] (map keyword) items)))
 
 (defn- build-redirect-uri
   []
