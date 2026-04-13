@@ -69,16 +69,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Helper functions for localStorage persistence
-(defn- get-stored-unfolded-token-types
+(defn- get-unfolded-token-types-from-storage
   [file-id set-id]
-  (set (get-in storage/user [::unfolded-token-types file-id set-id] #{})))
+  (get-in storage/user [:app.main.ui.workspace.tokens/unfolded-token-types file-id set-id] #{}))
 
-(defn- save-unfolded-token-types
+(defn- save-unfolded-token-types-in-storage
   [file-id set-id types]
-  (when (and file-id set-id)
-    (swap! storage/user update ::unfolded-token-types
-           assoc-in [file-id set-id] (vec types))))
+  (swap! storage/user update :app.main.ui.workspace.tokens/unfolded-token-types
+         assoc-in [file-id set-id] (vec types)))
 
+;; Helper functions for app state persistence
 (defn- make-unfolded-token-types-state
   [file-id set-id types]
   {:file-id file-id
@@ -88,9 +88,7 @@
 (defn- get-unfolded-token-types-from-state
   [state]
   (let [value (get-in state [:workspace-tokens :unfolded-token-types])]
-    (if (map? value)
-      (set (:types value))
-      (set (or value #{})))))
+    (or (:types value) #{})))
 
 (defn restore-unfolded-token-types
   "Loads unfolded token types from localStorage for the current file and set"
@@ -100,10 +98,10 @@
     (update [_ state]
       (let [file-id (:current-file-id state)
             set-id  (get-in state [:workspace-tokens :selected-token-set-id])
-            stored  (get-stored-unfolded-token-types file-id set-id)]
+            stored  (get-unfolded-token-types-from-storage file-id set-id)]
         (assoc-in state
-              [:workspace-tokens :unfolded-token-types]
-              (make-unfolded-token-types-state file-id set-id stored))))))
+                  [:workspace-tokens :unfolded-token-types]
+                  (make-unfolded-token-types-state file-id set-id stored))))))
 
 (defn open-token-type
   ([types type]
@@ -119,8 +117,8 @@
              new-state (assoc-in state
                                  [:workspace-tokens :unfolded-token-types]
                                  (make-unfolded-token-types-state file-id set-id new-types))]
-         (save-unfolded-token-types file-id set-id
-                                    new-types)
+         (save-unfolded-token-types-in-storage file-id set-id
+                                               new-types)
          new-state)))))
 
 (defn close-token-type
@@ -137,11 +135,12 @@
              new-state (assoc-in state
                                  [:workspace-tokens :unfolded-token-types]
                                  (make-unfolded-token-types-state file-id set-id new-types))]
-         (save-unfolded-token-types file-id set-id
-                                    new-types)
+         (save-unfolded-token-types-in-storage file-id set-id
+                                               new-types)
          new-state)))))
 
-(defn toggle-token-type
+(defn
+  toggle-token-type
   [type]
   (ptk/reify ::toggle-token-type
     ptk/UpdateEvent
@@ -155,8 +154,8 @@
             new-state (assoc-in state
                                 [:workspace-tokens :unfolded-token-types]
                                 (make-unfolded-token-types-state file-id set-id new-types))]
-        (save-unfolded-token-types file-id set-id
-                                   new-types)
+        (save-unfolded-token-types-in-storage file-id set-id
+                                              new-types)
         new-state))))
 
 (defn clear-tokens-types
@@ -166,11 +165,10 @@
     (update [_ state]
       (let [file-id (:current-file-id state)
             set-id  (get-in state [:workspace-tokens :selected-token-set-id])]
-        (save-unfolded-token-types file-id set-id #{})
+        (save-unfolded-token-types-in-storage file-id set-id #{})
         (assoc-in state
-              [:workspace-tokens :unfolded-token-types]
-              (make-unfolded-token-types-state file-id set-id #{}))))))
-
+                  [:workspace-tokens :unfolded-token-types]
+                  (make-unfolded-token-types-state file-id set-id #{}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS TREE - Toggle tree nodes
@@ -725,7 +723,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [file-id (:current-file-id state)
-            stored  (get-stored-unfolded-token-types file-id id)]
+            stored  (get-unfolded-token-types-from-storage file-id id)]
         (-> state
             (update :workspace-tokens assoc :selected-token-set-id id)
             (assoc-in [:workspace-tokens :unfolded-token-types]
