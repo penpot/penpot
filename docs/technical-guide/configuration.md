@@ -214,11 +214,6 @@ PENPOT_OIDC_NAME_ATTR:
 # Attribute to use for lookup the email on the user object. Optional,
 # if not perovided, the `email` prop will be used.
 PENPOT_OIDC_EMAIL_ATTR:
-
-# Attribute to use for lookup the unique user identifier on the user
-# object. Optional, if not provided, no additional openid mapping is
-# performed. Supports dot notation for nested paths (e.g. ocs.data.id).
-PENPOT_OIDC_OPENID_ATTR:
 ```
 <br />
 
