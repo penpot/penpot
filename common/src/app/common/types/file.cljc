@@ -413,10 +413,10 @@
   This will be the ref-shape except if the shape is a copy subhead that has been
   swapped. In this case, the near match will be the ref-shape that was before
   the swap."
-  [file container libraries shape & {:keys [with-context?] :or {with-context? false}}]
+  [file container libraries shape & {:keys [include-deleted? with-context?] :or {include-deleted? false with-context? false}}]
   (let  [parent-shape     (ctst/get-shape container (:parent-id shape))
          parent-ref-shape (when parent-shape
-                            (find-ref-shape file container libraries parent-shape :include-deleted? true :with-context? true))
+                            (find-ref-shape file container libraries parent-shape :include-deleted? include-deleted? :with-context? true))
          ref-container    (when parent-ref-shape
                             (:container (meta parent-ref-shape)))
          shape-index      (when parent-shape
