@@ -24,7 +24,6 @@
         cause-sym (gensym "cause")]
     `(let [~fn-sym (cljs.core/unchecked-get ~module ~name)]
        (try
-         ;; (prn ~name ~@params)
          (~fn-sym ~@params)
          (catch :default ~cause-sym
            (let [read-code-fn# (cljs.core/unchecked-get ~module "_read_error_code")
