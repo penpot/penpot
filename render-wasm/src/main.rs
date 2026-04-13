@@ -220,7 +220,13 @@ pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()
 #[wasm_error]
 pub extern "C" fn render_from_cache(_: i32) -> Result<()> {
     with_state_mut!(state, {
-        state.render_state.cancel_animation_frame();
+        // Don't cancel the animation frame — let the async render
+        // continue populating the tile HashMap in the background.
+        // process_animation_frame skips flush_and_submit in fast
+        // mode so it won't present stale Target content.  The
+        // tile HashMap is position-independent, so tiles rendered
+        // for the old viewport can be reused by the next full
+        // render at the new viewport position.
         state.render_from_cache();
     });
     Ok(())
@@ -240,6 +246,42 @@ pub extern "C" fn set_preview_mode(enabled: bool) -> Result<()> {
 pub extern "C" fn render_preview() -> Result<()> {
     with_state_mut!(state, {
         state.render_preview(performance::get_time());
+    });
+    Ok(())
+}
+
+/// Enter bulk-loading mode. While active, `state.loading` is `true`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn begin_loading() -> Result<()> {
+    with_state_mut!(state, {
+        state.loading = true;
+    });
+    Ok(())
+}
+
+/// Leave bulk-loading mode. Should be called after the first
+/// render so the loading flag is available during that render.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn end_loading() -> Result<()> {
+    with_state_mut!(state, {
+        state.loading = false;
+    });
+    Ok(())
+}
+
+/// Draw a full-screen loading overlay (background + "Loading…" text).
+/// Called from CLJS right after begin_loading so the user sees
+/// immediate feedback while shapes are being processed.
+/// NOTE:
+/// This is currently not being used, but it's set there for testing purposes on
+/// upcoming tasks
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_loading_overlay() -> Result<()> {
+    with_state_mut!(state, {
+        state.render_state.render_loading_overlay();
     });
     Ok(())
 }
@@ -305,8 +347,10 @@ pub extern "C" fn set_view_start() -> Result<()> {
 }
 
 /// Finishes a view interaction (zoom or pan). Rebuilds the tile index
-/// and invalidates the tile texture cache so the subsequent render
-/// re-draws all tiles at full quality (fast_mode is off at this point).
+/// and, for zoom changes, invalidates the tile texture cache so the
+/// subsequent render re-draws tiles at full quality.
+/// For pure pan (same zoom), cached tiles are preserved so only
+/// newly-visible tiles need rendering.
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_view_end() -> Result<()> {
@@ -323,11 +367,21 @@ pub extern "C" fn set_view_end() -> Result<()> {
 
         if state.render_state.options.is_profile_rebuild_tiles() {
             state.rebuild_tiles();
+        } else if state.render_state.zoom_changed() {
+            // Zoom changed: tile sizes differ so all cached tile
+            // textures are invalid (wrong scale).  Rebuild the tile
+            // index and clear the tile texture cache, but *preserve*
+            // the cache canvas so render_from_cache can show a scaled
+            // preview of the old content while new tiles render.
+            state.render_state.rebuild_tile_index(&state.shapes);
+            state.render_state.surfaces.invalidate_tile_cache();
         } else {
-            // Rebuild tile index + invalidate tile texture cache.
-            // Cache canvas is preserved so render_from_cache can still
-            // show a scaled preview during zoom.
-            state.rebuild_tiles_shallow();
+            // Pure pan at the same zoom level: tile contents have not
+            // changed — only the viewport position moved. Update the
+            // tile index (which tiles are in the interest area) but
+            // keep cached tile textures so the render can blit them
+            // instead of re-drawing every visible tile from scratch.
+            state.render_state.rebuild_tile_index(&state.shapes);
         }
 
         performance::end_measure!("set_view_end");

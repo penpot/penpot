@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
@@ -85,9 +86,19 @@
         (mf/deref parents-by-ids-ref)
 
         state-map
-        (if (features/active-feature? @st/state "text-editor/v2")
+        (cond
+          (features/active-feature? @st/state "text-editor-wasm/v1")
+          (mf/deref refs/workspace-wasm-editor-styles)
+
+          (features/active-feature? @st/state "text-editor/v2")
           (mf/deref refs/workspace-v2-editor-state)
+
+          :else
           (mf/deref refs/workspace-editor-state))
+
+        editor-styles
+        (when (features/active-feature? @st/state "text-editor-wasm/v1")
+          (get state-map id))
 
         editor-state
         (when (not (features/active-feature? @st/state "text-editor/v2"))
@@ -99,25 +110,28 @@
 
         fill-values
         (dwt/current-text-values
-         {:editor-state editor-state
+         {:editor-styles editor-styles
+          :editor-state editor-state
           :editor-instance editor-instance
           :shape shape
           :attrs (conj txt/text-fill-attrs :fills)})
 
         text-values
-        (merge
+        (d/merge
          (select-keys shape [:grow-type])
          (select-keys shape fill/fill-attrs)
          (dwt/current-root-values
           {:shape shape
            :attrs txt/root-attrs})
          (dwt/current-paragraph-values
-          {:editor-state editor-state
+          {:editor-styles editor-styles
+           :editor-state editor-state
            :editor-instance editor-instance
            :shape shape
            :attrs txt/paragraph-attrs})
          (dwt/current-text-values
-          {:editor-state editor-state
+          {:editor-styles editor-styles
+           :editor-state editor-state
            :editor-instance editor-instance
            :shape shape
            :attrs txt/text-node-attrs}))]

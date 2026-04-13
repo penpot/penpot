@@ -735,7 +735,8 @@
         (update :is-source d/nilv false)
         (update :external-id #(or % (str new-id)))
         (update :modified-at #(or % (ct/now)))
-        (update :sets #(into #{} (filter some?) %))
+        (update :sets #(into #{} (comp (filter some?)
+                                       (map normalize-set-name)) %))
         (check-token-theme-attrs)
         (map->TokenTheme))))
 
@@ -933,6 +934,7 @@ Will return a value that matches this schema:
 `:all`     All of the nested sets are active
 `:partial` Mixed active state of nested sets")
   (get-tokens-in-active-sets [_] "set of set names that are active in the the active themes")
+  (get-tokens-in-active-sets-force [_ force-set-id] "same as above but forcing a set to be active, even if it's not in the active themes")
   (get-all-tokens [_] "all tokens in the lib, as a sequence")
   (get-all-tokens-map [_] "all tokens in the lib, as a map name -> token")
   (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name"))
@@ -1323,6 +1325,21 @@ Will return a value that matches this schema:
     (let [theme-set-names  (get-active-themes-set-names this)
           all-set-names    (get-set-names this)
           active-set-names (filter theme-set-names all-set-names)
+          tokens           (reduce (fn [tokens set-name]
+                                     (let [set (get-set-by-name this set-name)]
+                                       (merge tokens (get-tokens- set))))
+                                   (d/ordered-map)
+                                   active-set-names)]
+      tokens))
+
+  (get-tokens-in-active-sets-force [this force-set-id]
+    (let [theme-set-names  (get-active-themes-set-names this)
+          all-set-names    (get-set-names this)
+          force-set        (get-set this force-set-id)
+          active-set-names (cond-> (filter theme-set-names all-set-names)
+                             (some? force-set)
+                             (conj (get-name force-set)))
+
           tokens           (reduce (fn [tokens set-name]
                                      (let [set (get-set-by-name this set-name)]
                                        (merge tokens (get-tokens- set))))

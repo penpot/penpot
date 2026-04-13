@@ -306,6 +306,9 @@
 (def workspace-page-flows
   (l/derived #(-> % :flows not-empty) workspace-page))
 
+(def workspace-page-guides
+  (l/derived :guides workspace-page))
+
 (defn workspace-page-object-by-id
   [page-id shape-id]
   (l/derived #(dsh/lookup-shape % page-id shape-id) st/state =))
@@ -380,6 +383,9 @@
 
 (def workspace-modifiers
   (l/derived :workspace-modifiers st/state))
+
+(def workspace-wasm-editor-styles
+  (l/derived :workspace-wasm-editor-styles st/state))
 
 (def workspace-wasm-modifiers
   (l/derived :workspace-wasm-modifiers st/state))

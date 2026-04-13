@@ -581,6 +581,27 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.textContent).toBe("");
   });
 
+  test("`removeBackwardText` should not throw when deleting the first character of the first span in a multi-span paragraph", () => {
+    // Regression test: previousNode() returns null when the cursor is at the
+    // very first text node; passing null to getTextNodeLength used to throw
+    // "TypeError: Invalid text node".
+    const textEditorMock = TextEditorMock.createTextEditorMockWith([
+      ["A", "B"],
+    ]);
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    // Focus at offset 1 of the first span's text node ("A"), then delete backward
+    const firstTextNode = root.firstChild.firstChild.firstChild;
+    focus(selection, textEditorMock, firstTextNode, 1);
+    expect(() => selectionController.removeBackwardText()).not.toThrow();
+    // "A" is removed; the paragraph should keep the second span with "B"
+    expect(textEditorMock.root.textContent).toBe("B");
+  });
+
   test("`insertParagraph` should insert a new paragraph in an empty editor", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockEmpty();
     const root = textEditorMock.root;
@@ -873,6 +894,26 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
       "ello, World!",
     );
+  });
+
+  test("`removeForwardText` should not throw when deleting the last character of the last span in a multi-span paragraph", () => {
+    // Regression test: nextNode() returns null when the cursor is at the
+    // very last text node; passing null to collapse used to crash.
+    const textEditorMock = TextEditorMock.createTextEditorMockWith([
+      ["A", "B"],
+    ]);
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    // Focus at offset 0 of the second span's text node ("B"), then delete forward
+    const secondTextNode = root.firstChild.lastChild.firstChild;
+    focus(selection, textEditorMock, secondTextNode, 0);
+    expect(() => selectionController.removeForwardText()).not.toThrow();
+    // "B" is removed; the paragraph should keep the first span with "A"
+    expect(textEditorMock.root.textContent).toBe("A");
   });
 
   test("`replaceText` should replace the selected text", () => {
