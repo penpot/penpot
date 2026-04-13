@@ -811,7 +811,8 @@
                (rx/of (update-text-attrs {:id id :attrs attrs}))
                (rx/empty)))
 
-           (when (features/active-feature? state "text-editor/v2")
+           (when (and (features/active-feature? state "text-editor/v2")
+                      (not (features/active-feature? state "text-editor-wasm/v1")))
              (rx/of (v2-update-text-editor-styles id attrs)))
 
            (when (features/active-feature? state "render-wasm/v1")
