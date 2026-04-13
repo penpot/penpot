@@ -22,7 +22,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.layer-name :refer [layer-name*]]
@@ -66,7 +66,7 @@
            ;; Callbacks
            on-select-shape on-context-menu on-pointer-enter on-pointer-leave on-zoom-to-selected
            on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking
-           on-tab-press]}]
+           on-toggle-parent-locked on-tab-press]}]
 
   (let [id                    (:id item)
         name                  (:name item)
@@ -143,10 +143,6 @@
                  :on-double-click on-zoom-to-selected}
            (when absolute?
              [:div {:class (stl/css :absolute)}])
-           (when parent-locked?
-             [:div {:class (stl/css :parent-locked)
-                    :title (tr "workspace.shape.menu.pinned-to-parent")}
-              [:> icon* {:icon-id i/pin :size "s"}]])
            [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]]
 
          [:div {:class (stl/css :button-content)}
@@ -156,10 +152,6 @@
                  :on-double-click on-zoom-to-selected}
            (when ^boolean absolute?
              [:div {:class (stl/css :absolute)}])
-           (when ^boolean parent-locked?
-             [:div {:class (stl/css :parent-locked)
-                    :title (tr "workspace.shape.menu.pinned-to-parent")}
-              [:> icon* {:icon-id i/pin :size "s"}]])
            [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]])
 
        [:> layer-name* {:ref name-ref
@@ -204,7 +196,16 @@
                             (tr "workspace.shape.menu.unlock")
                             (tr "workspace.shape.menu.lock"))
                    :on-click on-toggle-blocking}
-          (if ^boolean blocked? deprecated-icon/lock deprecated-icon/unlock)]])]
+          (if ^boolean blocked? deprecated-icon/lock deprecated-icon/unlock)]
+         (when-not ^boolean root-board?
+           [:button {:class    (stl/css-case :pin-element true
+                                              :selected parent-locked?
+                                              :pinned   parent-locked?)
+                     :title    (if ^boolean parent-locked?
+                                 (tr "workspace.shape.menu.unpin-from-parent")
+                                 (tr "workspace.shape.menu.pin-to-parent"))
+                     :on-click on-toggle-parent-locked}
+            deprecated-icon/pin])])]
 
      children]))
 
@@ -217,6 +218,7 @@
   (let [id                (get item :id)
         blocked?          (get item :blocked)
         hidden?           (get item :hidden)
+        parent-locked?    (get item :parent-locked)
 
         shapes            (get item :shapes)
         shapes            (mf/with-memo [shapes objects]
@@ -300,6 +302,13 @@
              (st/emit! (dw/update-shape-flags [id] {:blocked false}))
              (st/emit! (dw/update-shape-flags [id] {:blocked true})
                        (dw/deselect-shape id)))))
+
+        toggle-parent-locked
+        (mf/use-fn
+         (mf/deps id parent-locked?)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dw/update-shape-flags [id] {:parent-locked (not parent-locked?)}))))
 
         toggle-visibility
         (mf/use-fn
@@ -570,6 +579,7 @@
       :on-disable-drag disable-drag
       :on-toggle-visibility toggle-visibility
       :on-toggle-blocking toggle-blocking
+      :on-toggle-parent-locked toggle-parent-locked
       :on-tab-press on-tab-press
       :style style}
 

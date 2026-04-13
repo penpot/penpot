@@ -191,18 +191,63 @@
   }
 }
 
-.parent-locked {
-  position: absolute;
-  top: px2rem(-2);
-  right: px2rem(-2);
-  color: var(--color-accent-primary);
-  opacity: 0.7;
-  inline-size: $sz-8;
-  block-size: $sz-8;
-  z-index: 1;
+.pin-element {
+  border: none;
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  block-size: 100%;
+  inline-size: $sz-24;
+  margin: 0;
+  display: none;
+  background: none;
+  padding-inline-end: px2rem(6);
 
-  .layer-row.hidden & {
-    opacity: 0.2;
+  svg {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    fill: none;
+    block-size: $sz-12;
+    inline-size: $sz-12;
+    stroke-width: 1.33px;
+    stroke: var(--color-foreground-secondary);
+
+    .layer-row.hidden & {
+      opacity: 0.7;
+    }
+  }
+
+  // Pinned + unhovered: filled pin as a status indicator on the right
+  &.pinned {
+    display: flex;
+
+    svg {
+      stroke: var(--color-accent-primary);
+      fill: var(--color-accent-primary);
+    }
+  }
+
+  // Hovered or selected: show outline pin for both pinned and unpinned rows
+  .layer-row.highlight &,
+  .layer-row:hover &,
+  .layer-row.selected & {
+    display: flex;
+
+    svg {
+      opacity: 1;
+      stroke: var(--color-accent-primary);
+      fill: none;
+    }
+  }
+
+  // Hovered or selected + pinned: filled pin = "click to unpin"
+  .layer-row.highlight &.pinned,
+  .layer-row:hover &.pinned,
+  .layer-row.selected &.pinned {
+    svg {
+      fill: var(--color-accent-primary);
+    }
   }
 }
 
