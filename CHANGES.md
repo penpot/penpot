@@ -10,6 +10,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add "Clear artboard guides" option to right-click context menu for frames (by @eureka928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
 - Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
 - Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Import Tokens from linked library (by @dfelinto) [Github #8391](https://github.com/penpot/penpot/pull/8391)
@@ -28,6 +29,7 @@
 - Add per-group add button for typographies (by @eureka928) [Github #5275](https://github.com/penpot/penpot/issues/5275)
 - Add Find & Replace for text content (by @statxc) [Github #7108](https://github.com/penpot/penpot/issues/7108)
 - Use page name for multi-export ZIP/PDF downloads (by @Dexterity104) [Github #8773](https://github.com/penpot/penpot/issues/8773)
+- Make links in comments clickable (by @eureka928) [Github #1602](https://github.com/penpot/penpot/issues/1602)
 
 ### :bug: Bugs fixed
 
@@ -44,6 +46,7 @@
 - Fix plugin modal drag interactions over iframe and close-button behavior (by @marekhrabe) [Github #8871](https://github.com/penpot/penpot/pull/8871)
 - Fix hot update on color-row on texts [Taiga #13923](https://tree.taiga.io/project/penpot/issue/13923)
 - Fix selected color tokens [Taiga #13930](https://tree.taiga.io/project/penpot/issue/13930)
+- Fix dashboard Recent/Deleted titles overlapped by scrolling content (by @rockchris99) [Github #8577](https://github.com/penpot/penpot/issues/8577)
 - Display resolved values of inactive tokens [Taiga #13628](https://tree.taiga.io/project/penpot/issue/13628)
 
 ## 2.15.0 (Unreleased)
