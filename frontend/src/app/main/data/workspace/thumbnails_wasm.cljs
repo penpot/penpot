@@ -47,7 +47,7 @@
 
 ;; This constant stores the target thumbnail minimum max-size so
 ;; the images doesn't lose quality when rendered
-(def target-size 200)
+(def ^:private ^:const target-size 200)
 
 (defn- render-component-pixels
   "Renders a component frame using the workspace WASM context.
@@ -57,29 +57,30 @@
   [file-id page-id frame-id]
   (rx/create
    (fn [subs]
-     (js/requestAnimationFrame
-      (fn [_]
-        (try
-          (let [objects (dsh/lookup-page-objects @st/state file-id page-id)
-                frame (get objects frame-id)
-                {:keys [width height]} (:selrect frame)
-                max-size (mth/max width height)
-                scale (mth/max 1 (/ target-size max-size))
-                png-bytes (wasm.api/render-shape-pixels frame-id scale)]
-            (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
-              (do
-                (js/console.error "[thumbnails] render-shape-pixels returned empty for" (str frame-id))
-                (rx/end! subs))
-              (.then
-               (png-bytes->data-uri png-bytes)
-               (fn [data-uri]
-                 (rx/push! subs data-uri)
-                 (rx/end! subs))
-               (fn [err]
-                 (rx/error! subs err)))))
-          (catch :default err
-            (rx/error! subs err)))))
-     nil)))
+     (let [req-id
+           (js/requestAnimationFrame
+            (fn [_]
+              (try
+                (let [objects (dsh/lookup-page-objects @st/state file-id page-id)
+                      frame (get objects frame-id)
+                      {:keys [width height]} (:selrect frame)
+                      max-size (mth/max width height)
+                      scale (mth/max 1 (/ target-size max-size))
+                      png-bytes (wasm.api/render-shape-pixels frame-id scale)]
+                  (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
+                    (do
+                      (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))
+                      (rx/end! subs))
+                    (.then
+                     (png-bytes->data-uri png-bytes)
+                     (fn [data-uri]
+                       (rx/push! subs data-uri)
+                       (rx/end! subs))
+                     (fn [err]
+                       (rx/error! subs err)))))
+                (catch :default err
+                  (rx/error! subs err)))))]
+       #(js/cancelAnimationFrame req-id)))))
 
 (defn render-thumbnail
   "Renders a component thumbnail via WASM and updates the UI immediately.
@@ -125,7 +126,8 @@
                               (dwt/assoc-thumbnail object-id data-uri)))
 
                            (rx/catch (fn [err]
-                                       (js/console.error "[thumbnails] error rendering component thumbnail" err)
+                                       (js/console.error err)
+                                       (l/error :hint "error rendering component thumbnail" :frame-id (str frame-id))
                                        (rx/empty)))
 
                            (rx/take-until
