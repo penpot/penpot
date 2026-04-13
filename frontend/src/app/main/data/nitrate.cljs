@@ -27,11 +27,13 @@
   ([]
    (st/emit! (rt/nav-raw :href "/control-center/")))
   ([{:keys [organization-id organization-slug]}]
-   (let [href (dm/str "/control-center/org/"
-                      (u/percent-encode organization-slug)
-                      "/"
-                      (u/percent-encode (str organization-id)))]
-     (st/emit! (rt/nav-raw :href href)))))
+   (if (and organization-id organization-slug)
+     (let [href (dm/str "/control-center/org/"
+                        (u/percent-encode organization-slug)
+                        "/"
+                        (u/percent-encode (str organization-id)))]
+       (st/emit! (rt/nav-raw :href href)))
+     (st/emit! (rt/nav-raw :href "/control-center/")))))
 
 (defn go-to-nitrate-cc-create-org
   []
