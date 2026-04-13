@@ -2258,3 +2258,468 @@
     (t/is (or (nil? old-position-data)
               (nil? new-position-data)
               (not= old-position-data new-position-data)))))
+
+;; ============================================================
+;; SELRECT CONSISTENCY TESTS
+;; These tests verify that after a variant switch, the composite
+;; geometry attributes (:selrect, :points) stay consistent with
+;; the scalar attributes (:width, :height) that are kept.
+;; ============================================================
+
+(t/deftest test-switch-selrect-consistent-no-sizing-different-widths
+  ;;  When no :fix sizing and variants have different widths,
+  ;; :width is correctly skipped (stays at new component width),
+  ;; but :selrect was being copied from the old shape, leaving
+  ;; selrect.width inconsistent with :width. This test verifies the fix.
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-with-child
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                       {:child1-params {:width 100 :height 50}
+                        :child2-params {:width 200 :height 50}})
+
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-r01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        rect01 (get-in page [:objects (-> copy01 :shapes first)])
+
+        ;; Override width AND selrect consistently (simulating a real resize)
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(:id rect01)}
+                                            (fn [shape]
+                                              (let [new-width 150
+                                                    sr        (:selrect shape)
+                                                    new-sr    (-> sr
+                                                                  (assoc :width new-width)
+                                                                  (assoc :x2 (+ (:x1 sr) new-width)))]
+                                                (-> shape
+                                                    (assoc :width new-width)
+                                                    (assoc :selrect new-sr))))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+        page   (thf/current-page file)
+        rect01 (get-in page [:objects (:id rect01)])
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        page'     (thf/current-page file')
+        copy02'   (ths/get-shape file' :copy02)
+        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+    ;; The rect had the width override before the switch
+    (t/is (= (:width rect01) 150))
+    (t/is (= (get-in rect01 [:selrect :width]) 150))
+    ;; Since the variants have different widths (100 vs 200), the override is not preserved
+    (t/is (= (:width rect02') 200))
+    ;; The selrect must be consistent with :width
+    (t/is (= (get-in rect02' [:selrect :width]) 200))))
+
+(t/deftest test-switch-selrect-consistent-no-sizing-different-heights
+  ;; Same as above but for height.
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-with-child
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                       {:child1-params {:width 50 :height 100}
+                        :child2-params {:width 50 :height 200}})
+
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-r01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        rect01 (get-in page [:objects (-> copy01 :shapes first)])
+
+        ;; Override height AND selrect consistently
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(:id rect01)}
+                                            (fn [shape]
+                                              (let [new-height 150
+                                                    sr         (:selrect shape)
+                                                    new-sr     (-> sr
+                                                                   (assoc :height new-height)
+                                                                   (assoc :y2 (+ (:y1 sr) new-height)))]
+                                                (-> shape
+                                                    (assoc :height new-height)
+                                                    (assoc :selrect new-sr))))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+        page   (thf/current-page file)
+        rect01 (get-in page [:objects (:id rect01)])
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        page'     (thf/current-page file')
+        copy02'   (ths/get-shape file' :copy02)
+        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+    ;; The rect had the height override before the switch
+    (t/is (= (:height rect01) 150))
+    (t/is (= (get-in rect01 [:selrect :height]) 150))
+    ;; Since the variants have different heights (100 vs 200), the override is not preserved
+    (t/is (= (:height rect02') 200))
+    ;; The selrect must be consistent with :height
+    (t/is (= (get-in rect02' [:selrect :height]) 200))))
+
+(t/deftest test-switch-with-v-sizing-fix-selrect-consistent-different-widths
+  ;; mixed-sizing scenario: v-sizing=:fix but variants differ in WIDTH.
+  ;; switch-fixed-layout-geom-change-value is triggered (because v-sizing=:fix).
+  ;; Without the fix, the function returned prev-width for the non-:fix dimension,
+  ;; leaving selrect.width inconsistent with :width.
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-with-child
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                       {:child1-params {:width 100 :height 50 :layout-item-v-sizing :fix}
+                        :child2-params {:width 200 :height 50 :layout-item-v-sizing :fix}})
+
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-r01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        rect01 (get-in page [:objects (-> copy01 :shapes first)])
+
+        ;; Override width AND selrect consistently
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(:id rect01)}
+                                            (fn [shape]
+                                              (let [new-width 150
+                                                    sr        (:selrect shape)
+                                                    new-sr    (-> sr
+                                                                  (assoc :width new-width)
+                                                                  (assoc :x2 (+ (:x1 sr) new-width)))]
+                                                (-> shape
+                                                    (assoc :width new-width)
+                                                    (assoc :selrect new-sr))))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+        page   (thf/current-page file)
+        rect01 (get-in page [:objects (:id rect01)])
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        page'     (thf/current-page file')
+        copy02'   (ths/get-shape file' :copy02)
+        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+    ;; The rect had the width override before the switch
+    (t/is (= (:width rect01) 150))
+    (t/is (= (get-in rect01 [:selrect :width]) 150))
+    ;; Since the variants have different widths (100 vs 200), the override is not preserved
+    ;; (v-sizing=:fix does not affect the horizontal dimension)
+    (t/is (= (:width rect02') 200))
+    ;; The selrect must be consistent with :width
+    (t/is (= (get-in rect02' [:selrect :width]) 200))
+    ;; v-sizing is preserved
+    (t/is (= (:layout-item-v-sizing rect02') :fix))))
+
+(t/deftest test-switch-with-h-sizing-fix-selrect-consistent-different-heights
+  ;; mixed-sizing scenario: h-sizing=:fix but variants differ in HEIGHT.
+  ;; switch-fixed-layout-geom-change-value is triggered (because h-sizing=:fix).
+  ;; Without the fix, the function returned prev-height for the non-:fix dimension,
+  ;; leaving selrect.height inconsistent with :height.
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-with-child
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                       {:child1-params {:width 50 :height 100 :layout-item-h-sizing :fix}
+                        :child2-params {:width 50 :height 200 :layout-item-h-sizing :fix}})
+
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-r01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        rect01 (get-in page [:objects (-> copy01 :shapes first)])
+
+        ;; Override height AND selrect consistently
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(:id rect01)}
+                                            (fn [shape]
+                                              (let [new-height 150
+                                                    sr         (:selrect shape)
+                                                    new-sr     (-> sr
+                                                                   (assoc :height new-height)
+                                                                   (assoc :y2 (+ (:y1 sr) new-height)))]
+                                                (-> shape
+                                                    (assoc :height new-height)
+                                                    (assoc :selrect new-sr))))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+        page   (thf/current-page file)
+        rect01 (get-in page [:objects (:id rect01)])
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        page'     (thf/current-page file')
+        copy02'   (ths/get-shape file' :copy02)
+        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+    ;; The rect had the height override before the switch
+    (t/is (= (:height rect01) 150))
+    (t/is (= (get-in rect01 [:selrect :height]) 150))
+    ;; Since the variants have different heights (100 vs 200), the override is not preserved
+    ;; (h-sizing=:fix does not affect the vertical dimension)
+    (t/is (= (:height rect02') 200))
+    ;; The selrect must be consistent with :height
+    (t/is (= (get-in rect02' [:selrect :height]) 200))
+    ;; h-sizing is preserved
+    (t/is (= (:layout-item-h-sizing rect02') :fix))))
+
+;; ============================================================
+;; FIXED-SIZING: "SAME-SIZE → PRESERVE OVERRIDE" PATH TESTS
+;; These tests exercise the branch inside switch-fixed-layout-geom-change-value
+;; where variants share the same value in the non-:fix dimension:
+;;   (if (= origin-dim current-dim) prev-dim current-dim)
+;; When origin-dim == current-dim the user's override for that dimension
+;; must be preserved after the switch.
+;; ============================================================
+
+(t/deftest test-switch-with-h-sizing-fix-same-height-override-preserved
+  ;; h-sizing=:fix, variants have SAME height (non-:fix dim, same-size).
+  ;; switch-fixed-layout-geom-change-value must return prev-height for the
+  ;; non-:fix dimension because origin-height == current-height.
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-with-child
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                       {:child1-params {:width 100 :height 50 :layout-item-h-sizing :fix}
+                        :child2-params {:width 200 :height 50 :layout-item-h-sizing :fix}})
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-r01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        rect01 (get-in page [:objects (-> copy01 :shapes first)])
+
+        ;; Override height (the non-:fix dimension) and selrect consistently
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(:id rect01)}
+                                            (fn [shape]
+                                              (let [new-height 75
+                                                    sr         (:selrect shape)
+                                                    new-sr     (-> sr
+                                                                   (assoc :height new-height)
+                                                                   (assoc :y2 (+ (:y1 sr) new-height)))]
+                                                (-> shape
+                                                    (assoc :height new-height)
+                                                    (assoc :selrect new-sr))))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+        page   (thf/current-page file)
+        rect01 (get-in page [:objects (:id rect01)])
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        page'     (thf/current-page file')
+        copy02'   (ths/get-shape file' :copy02)
+        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+    ;; The rect had the height override 75 before the switch
+    (t/is (= (:height rect01) 75))
+    ;; h-sizing=:fix means width always takes the new component's value
+    (t/is (= (:width rect02') 200))
+    ;; Height (non-:fix dim) is preserved because both variants have same height (50)
+    (t/is (= (:height rect02') 75))
+    ;; selrect must be consistent with the preserved height
+    (t/is (= (get-in rect02' [:selrect :height]) 75))
+    (t/is (= (get-in rect02' [:selrect :width]) 200))
+    ;; h-sizing is preserved
+    (t/is (= (:layout-item-h-sizing rect02') :fix))))
+
+(t/deftest test-switch-with-v-sizing-fix-same-width-override-preserved
+  ;; v-sizing=:fix, variants have SAME width (non-:fix dim, same-size).
+  ;; switch-fixed-layout-geom-change-value must return prev-width for the
+  ;; non-:fix dimension because origin-width == current-width.
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-with-child
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                       {:child1-params {:width 100 :height 50 :layout-item-v-sizing :fix}
+                        :child2-params {:width 100 :height 100 :layout-item-v-sizing :fix}})
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-r01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        rect01 (get-in page [:objects (-> copy01 :shapes first)])
+
+        ;; Override width (the non-:fix dimension) and selrect consistently
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(:id rect01)}
+                                            (fn [shape]
+                                              (let [new-width 150
+                                                    sr        (:selrect shape)
+                                                    new-sr    (-> sr
+                                                                  (assoc :width new-width)
+                                                                  (assoc :x2 (+ (:x1 sr) new-width)))]
+                                                (-> shape
+                                                    (assoc :width new-width)
+                                                    (assoc :selrect new-sr))))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+        page   (thf/current-page file)
+        rect01 (get-in page [:objects (:id rect01)])
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        page'     (thf/current-page file')
+        copy02'   (ths/get-shape file' :copy02)
+        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+    ;; The rect had the width override 150 before the switch
+    (t/is (= (:width rect01) 150))
+    ;; Width (non-:fix dim) is preserved because both variants have same width (100)
+    (t/is (= (:width rect02') 150))
+    ;; selrect must be consistent with the preserved width
+    (t/is (= (get-in rect02' [:selrect :width]) 150))
+    ;; v-sizing=:fix means height always takes the new component's value
+    (t/is (= (:height rect02') 100))
+    (t/is (= (get-in rect02' [:selrect :height]) 100))
+    ;; v-sizing is preserved
+    (t/is (= (:layout-item-v-sizing rect02') :fix))))
+
+(t/deftest test-switch-with-both-sizing-fix-overrides-discarded
+  ;; When both h-sizing=:fix and v-sizing=:fix, switch-fixed-layout-geom-change-value
+  ;; always uses current-width and current-height (the new component's values).
+  ;; Both width and height overrides are discarded because :fix always
+  ;; defers to the new component's dimension regardless of same-size or not.
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-with-child
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                       {:child1-params {:width 100 :height 50
+                                        :layout-item-h-sizing :fix
+                                        :layout-item-v-sizing :fix}
+                        :child2-params {:width 200 :height 100
+                                        :layout-item-h-sizing :fix
+                                        :layout-item-v-sizing :fix}})
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-r01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        rect01 (get-in page [:objects (-> copy01 :shapes first)])
+
+        ;; Override both width and height (and selrect) consistently
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(:id rect01)}
+                                            (fn [shape]
+                                              (let [new-width  150
+                                                    new-height 75
+                                                    sr         (:selrect shape)
+                                                    new-sr     (-> sr
+                                                                   (assoc :width new-width)
+                                                                   (assoc :height new-height)
+                                                                   (assoc :x2 (+ (:x1 sr) new-width))
+                                                                   (assoc :y2 (+ (:y1 sr) new-height)))]
+                                                (-> shape
+                                                    (assoc :width new-width)
+                                                    (assoc :height new-height)
+                                                    (assoc :selrect new-sr))))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+        page   (thf/current-page file)
+        rect01 (get-in page [:objects (:id rect01)])
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        page'     (thf/current-page file')
+        copy02'   (ths/get-shape file' :copy02)
+        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+    ;; The rect had both overrides before the switch
+    (t/is (= (:width rect01) 150))
+    (t/is (= (:height rect01) 75))
+    ;; With both sizing :fix, both dimensions take the new component's values
+    (t/is (= (:width rect02') 200))
+    (t/is (= (:height rect02') 100))
+    ;; selrect must be consistent
+    (t/is (= (get-in rect02' [:selrect :width]) 200))
+    (t/is (= (get-in rect02' [:selrect :height]) 100))
+    (t/is (= (:layout-item-h-sizing rect02') :fix))
+    (t/is (= (:layout-item-v-sizing rect02') :fix))))
+
+(t/deftest test-switch-same-size-variants-geometry-override-preserved
+  ;; When both variants have IDENTICAL dimensions (width=100, height=50),
+  ;; the guard that skips :selrect/:points must NOT fire
+  ;; (its condition `(or (not= origin.width current.width) ...)` is false).
+  ;; A geometry override should therefore be carried through correctly.
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-with-child
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                       {:child1-params {:width 100 :height 50}
+                        :child2-params {:width 100 :height 50}})   ; same size!
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-r01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        rect01 (get-in page [:objects (-> copy01 :shapes first)])
+
+        ;; Override width AND selrect consistently (simulating a real resize)
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(:id rect01)}
+                                            (fn [shape]
+                                              (let [new-width 150
+                                                    sr        (:selrect shape)
+                                                    new-sr    (-> sr
+                                                                  (assoc :width new-width)
+                                                                  (assoc :x2 (+ (:x1 sr) new-width)))]
+                                                (-> shape
+                                                    (assoc :width new-width)
+                                                    (assoc :selrect new-sr))))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+        page   (thf/current-page file)
+        rect01 (get-in page [:objects (:id rect01)])
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        page'     (thf/current-page file')
+        copy02'   (ths/get-shape file' :copy02)
+        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+    ;; The rect had the width override 150 before the switch
+    (t/is (= (:width rect01) 150))
+    (t/is (= (get-in rect01 [:selrect :width]) 150))
+    ;; Both variants are identical in size (100x50), so the override IS preserved
+    (t/is (= (:width rect02') 150))
+    ;; The guard must not have suppressed :selrect — it should be consistent
+    (t/is (= (get-in rect02' [:selrect :width]) 150))))

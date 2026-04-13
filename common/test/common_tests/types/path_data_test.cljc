@@ -13,6 +13,7 @@
    [app.common.geom.rect :as grc]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [app.common.transit :as trans]
    [app.common.types.path :as path]
    [app.common.types.path.bool :as path.bool]
@@ -1418,3 +1419,60 @@
       ;; Verify first and last entries specifically
       (t/is (= :move-to (first seq-types)))
       (t/is (= :close-path (last seq-types))))))
+
+(t/deftest path-data-read-normalizes-out-of-bounds-coordinates
+  (let [max-safe (double sm/max-safe-int)
+        min-safe (double sm/min-safe-int)
+        ;; Create content with values exceeding safe bounds
+        content-with-out-of-bounds
+        [{:command :move-to :params {:x (+ max-safe 1000.0) :y (- min-safe 1000.0)}}
+         {:command :line-to :params {:x (- min-safe 500.0) :y (+ max-safe 500.0)}}
+         {:command :curve-to :params
+          {:c1x (+ max-safe 200.0) :c1y (- min-safe 200.0)
+           :c2x (+ max-safe 300.0) :c2y (- min-safe 300.0)
+           :x (+ max-safe 400.0) :y (- min-safe 400.0)}}
+         {:command :close-path :params {}}]
+
+        ;; Create PathData from the content
+        pdata (path/content content-with-out-of-bounds)
+
+        ;; Read it back
+        result (vec pdata)]
+
+    (t/testing "Coordinates exceeding max-safe-int are clamped to max-safe-int"
+      (let [move-to (first result)
+            line-to (second result)]
+        (t/is (= max-safe (:x (:params move-to))) "x in move-to should be clamped to max-safe-int")
+        (t/is (= min-safe (:y (:params move-to))) "y in move-to should be clamped to min-safe-int")
+        (t/is (= min-safe (:x (:params line-to))) "x in line-to should be clamped to min-safe-int")
+        (t/is (= max-safe (:y (:params line-to))) "y in line-to should be clamped to max-safe-int")))
+
+    (t/testing "Curve-to coordinates are clamped"
+      (let [curve-to (nth result 2)]
+        (t/is (= max-safe (:c1x (:params curve-to))) "c1x should be clamped")
+        (t/is (= min-safe (:c1y (:params curve-to))) "c1y should be clamped")
+        (t/is (= max-safe (:c2x (:params curve-to))) "c2x should be clamped")
+        (t/is (= min-safe (:c2y (:params curve-to))) "c2y should be clamped")
+        (t/is (= max-safe (:x (:params curve-to))) "x should be clamped")
+        (t/is (= min-safe (:y (:params curve-to))) "y should be clamped")))
+
+    (t/testing "-lookup normalizes coordinates"
+      (let [move-to (path.impl/-lookup pdata 0 (fn [_ _ _ _ _ x y] {:x x :y y}))]
+        (t/is (= max-safe (:x move-to)) "lookup x should be clamped")
+        (t/is (= min-safe (:y move-to)) "lookup y should be clamped")))
+
+    (t/testing "-walk normalizes coordinates"
+      (let [coords (path.impl/-walk pdata
+                                    (fn [_ _ _ _ _ x y]
+                                      (when (and x y) {:x x :y y}))
+                                    [])]
+        (t/is (= max-safe (:x (first coords))) "walk first x should be clamped")
+        (t/is (= min-safe (:y (first coords))) "walk first y should be clamped")))
+
+    (t/testing "-reduce normalizes coordinates"
+      (let [[move-res] (path.impl/-reduce pdata
+                                          (fn [acc _ _ _ _ _ _ x y]
+                                            (if (and x y) (conj acc {:x x :y y}) acc))
+                                          [])]
+        (t/is (= max-safe (:x move-res)) "reduce first x should be clamped")
+        (t/is (= min-safe (:y move-res)) "reduce first y should be clamped")))))
