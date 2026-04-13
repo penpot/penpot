@@ -6,6 +6,7 @@
 
 (ns app.util.text.content
   (:require
+   [app.common.data :as d]
    [app.common.types.text :as txt]
    [app.main.refs :as refs]
    [app.util.text.content.from-dom :as fd]
@@ -26,7 +27,7 @@
   current default typography. Used by the V2 editor/WASM path when a shape is
   created with no content yet."
   []
-  (let [default-font  (deref refs/default-font)
+  (let [default-font  (d/without-nils (deref refs/default-font))
         text-defaults (merge (txt/get-default-text-attrs) default-font)
         default-span  (merge {:text ""}
                              (select-keys text-defaults txt/text-node-attrs))

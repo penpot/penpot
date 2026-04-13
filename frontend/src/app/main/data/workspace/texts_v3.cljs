@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.texts-v3
   (:require
+   [app.common.data :as d]
    [app.common.types.text :as txt]
    [potok.v2.core :as ptk]))
 
@@ -14,7 +15,8 @@
   (ptk/reify ::v3-update-text-editor-styles
     ptk/UpdateEvent
     (update [_ state]
-      (let [merged-styles (merge (txt/get-default-text-attrs)
-                                 (get-in state [:workspace-global :default-font])
-                                 new-styles)]
+      (let [merged-styles (d/without-nils
+                           (merge (txt/get-default-text-attrs)
+                                  (get-in state [:workspace-global :default-font])
+                                  new-styles))]
         (update-in state [:workspace-wasm-editor-styles id] (fnil merge {}) merged-styles)))))
