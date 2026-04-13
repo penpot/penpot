@@ -416,7 +416,7 @@
         (-> profile :props :subscription)
 
         subscription-type
-        (get-subscription-type subscription)
+        (if (and (contains? cf/flags :nitrate) nitrate?) (:type nitrate-license) (get-subscription-type subscription))
 
         subscription-is-trial?
         (= (:status subscription) "trialing")

@@ -10,6 +10,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add "Clear artboard guides" option to right-click context menu for frames (by @eureka928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
 - Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
 - Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Import Tokens from linked library (by @dfelinto) [Github #8391](https://github.com/penpot/penpot/pull/8391)
@@ -28,6 +29,7 @@
 - Add per-group add button for typographies (by @eureka928) [Github #5275](https://github.com/penpot/penpot/issues/5275)
 - Use page name for multi-export ZIP/PDF downloads (by @Dexterity104) [Github #8773](https://github.com/penpot/penpot/issues/8773)
 - Pin elements to their parent frame to prevent accidental reparenting (by @Dexterity104) [Github #3903](https://github.com/penpot/penpot/issues/3903)
+- Make links in comments clickable (by @eureka928) [Github #1602](https://github.com/penpot/penpot/issues/1602)
 
 ### :bug: Bugs fixed
 
@@ -44,7 +46,10 @@
 - Fix plugin modal drag interactions over iframe and close-button behavior (by @marekhrabe) [Github #8871](https://github.com/penpot/penpot/pull/8871)
 - Fix hot update on color-row on texts [Taiga #13923](https://tree.taiga.io/project/penpot/issue/13923)
 - Fix selected color tokens [Taiga #13930](https://tree.taiga.io/project/penpot/issue/13930)
+- Fix dashboard Recent/Deleted titles overlapped by scrolling content (by @rockchris99) [Github #8577](https://github.com/penpot/penpot/issues/8577)
 - Display resolved values of inactive tokens [Taiga #13628](https://tree.taiga.io/project/penpot/issue/13628)
+- Fix app crash when selecting shapes with one hidden [Taiga #13959](https://tree.taiga.io/project/penpot/issue/13959)
+- Fix opacity mixed value [Taiga #13960](https://tree.taiga.io/project/penpot/issue/13960)
 
 ## 2.15.0 (Unreleased)
 
@@ -64,6 +69,29 @@
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 - Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
 - Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
+- Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
+- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
+- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
+
+
+## 2.14.3 (Unreleased)
+
+### :sparkles: New features & Enhancements
+
+- Add webp export format to plugin types [Github #8870](https://github.com/penpot/penpot/pull/8870)
+
+### :bug: Bugs fixed
+
+- Fix component "broken" after switch variant [Taiga #12984](https://tree.taiga.io/project/penpot/issue/12984)
+- Fix variants corner cases with selrect and points [Github #8882](https://github.com/penpot/penpot/pull/8882)
+- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
+- Fix highlight on frames after rename [Github #8938](https://github.com/penpot/penpot/pull/8938)
+- Fix TypeError in sd-token-uuid when resolving tokens interactively [Github #8929](https://github.com/penpot/penpot/pull/8929)
+- Fix path drawing preview passing shape instead of content to next-node
+- Fix swapped arguments in CLJS PathData `-nth` with default
+- Normalize PathData coordinates to safe integer bounds on read
 
 
 ## 2.14.2

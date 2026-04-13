@@ -21,6 +21,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.guides :as dwg]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
@@ -657,6 +658,25 @@
         [:> menu-entry* {:title (tr "workspace.shape.menu.combine-as-variants")
                          :on-click do-combine-as-variants}]])]))
 
+(mf/defc context-menu-guides*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [shapes]}]
+  (let [frame-ids    (into #{} (comp (filter cfh/frame-shape?) d/xf:map-id) shapes)
+        guides       (mf/deref refs/workspace-page-guides)
+        has-guides?  (some #(contains? frame-ids (:frame-id %)) (vals guides))
+
+        do-remove-guides
+        (mf/use-fn
+         (mf/deps frame-ids)
+         #(st/emit! (dwg/remove-frame-guides frame-ids)))]
+
+    (when (and (seq frame-ids) has-guides?)
+      [:*
+       [:> menu-separator* {}]
+       [:> menu-entry* {:title (tr "workspace.shape.menu.clear-guides")
+                        :on-click do-remove-guides}]])))
+
 (mf/defc context-menu-delete*
   {::mf/props :obj
    ::mf/private true}
@@ -698,6 +718,7 @@
        (when is-not-variant-container?
          [:> context-menu-layout* props])
        [:> context-menu-component* props]
+       [:> context-menu-guides* props]
        [:> context-menu-delete* props]])))
 
 (mf/defc page-item-context-menu*
