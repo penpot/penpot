@@ -67,6 +67,10 @@
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 - Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
 - Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
+- Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
+- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
+- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
 
 
 ## 2.14.2

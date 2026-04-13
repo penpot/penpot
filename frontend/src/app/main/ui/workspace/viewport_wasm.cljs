@@ -173,7 +173,6 @@
                                  (get base-objects parent-id)))))
 
         zoom              (d/check-num zoom 1)
-        prev-zoom         (mf/use-ref zoom)
 
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
@@ -311,7 +310,8 @@
                    (:y selected-frame))
         rule-area-size (/ rulers/ruler-area-size zoom)
         preview-blend (-> refs/workspace-preview-blend
-                          (mf/deref))]
+                          (mf/deref))
+        shapes-loading? (mf/deref wasm.api/shapes-loading?)]
 
     ;; NOTE: We need this page-id dependency to react to it and reset the
     ;;       canvas, even though we are not using `page-id` inside the hook.
@@ -342,10 +342,14 @@
                       init?
                       (do
                         (reset! canvas-init? true)
-                        ;; Restore previous canvas pixels immediately after context initialization
-                        ;; This happens before initialize-viewport is called
                         (wasm.api/apply-canvas-blur)
-                        (wasm.api/restore-previous-canvas-pixels))
+                        (if (wasm.api/has-captured-pixels?)
+                          ;; Page switch: restore previously captured pixels (blurred)
+                          (wasm.api/restore-previous-canvas-pixels)
+                          ;; First load: try to draw a blurred page thumbnail
+                          (when-let [frame-id (get page :thumbnail-frame-id)]
+                            (when-let [uri (dm/get-in @st/state [:thumbnails frame-id])]
+                              (wasm.api/draw-thumbnail-to-canvas uri)))))
 
                       (pos? retries)
                       (vreset! timeout-id-ref
@@ -377,7 +381,7 @@
               (wasm.api/request-render "content"))))))
 
     (mf/with-effect [vport]
-      (when @canvas-init?
+      (when (and @canvas-init? @initialized?)
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
     (mf/with-effect [@canvas-init? preview-blend]
@@ -388,8 +392,14 @@
       (when @canvas-init?
         (if (not @initialized?)
           (do
-            (wasm.api/clear-canvas-pixels)
-            (wasm.api/initialize-viewport base-objects zoom vbox background)
+            ;; Keep the blurred previous-page preview (page switch) or
+            ;; blank canvas (first load) visible while shapes load.
+            ;; The loading overlay is suppressed because on-shapes-ready
+            ;; is set.
+            (wasm.api/initialize-viewport
+             base-objects zoom vbox background 1 nil
+             (fn []
+               (wasm.api/clear-canvas-pixels)))
             (reset! initialized? true)
             (mf/set-ref-val! last-file-version-id-ref file-version-id))
           (when (and (some? file-version-id)
@@ -404,12 +414,11 @@
                     (wasm.api/set-focus-mode focus)))))
 
     (mf/with-effect [vbox zoom]
-      (when (and @canvas-init? initialized?)
-        (wasm.api/set-view-box (mf/ref-val prev-zoom) zoom vbox))
-      (mf/set-ref-val! prev-zoom zoom))
+      (when (and @canvas-init? @initialized?)
+        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [background]
-      (when (and @canvas-init? initialized?)
+      (when (and @canvas-init? @initialized?)
         (wasm.api/set-canvas-background background)))
 
     (mf/with-effect [@canvas-init? hover-grid? @hover-top-frame-id]
@@ -499,7 +508,7 @@
                 :width (max 0 (- (:width vbox) rule-area-size))
                 :height (max 0 (- (:height vbox) rule-area-size))}]]]
 
-      [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
+      [:g {:style {:pointer-events (if (or disable-events? shapes-loading?) "none" "auto")}}
        ;; Text editor handling:
        ;; - When text-editor-wasm/v1 is active, contenteditable is rendered in viewport-overlays (HTML DOM)
        (when show-text-editor?
@@ -598,15 +607,16 @@
            :alt? @alt?
            :shift? @shift?}])
 
-       [:> widgets/frame-titles*
-        {:objects objects-modified
-         :selected selected
-         :zoom zoom
-         :is-show-artboard-names show-artboard-names?
-         :on-frame-enter on-frame-enter
-         :on-frame-leave on-frame-leave
-         :on-frame-select on-frame-select
-         :focus focus}]
+       (when-not shapes-loading?
+         [:> widgets/frame-titles*
+          {:objects objects-modified
+           :selected selected
+           :zoom zoom
+           :is-show-artboard-names show-artboard-names?
+           :on-frame-enter on-frame-enter
+           :on-frame-leave on-frame-leave
+           :on-frame-select on-frame-select
+           :focus focus}])
 
        (when show-prototypes?
          [:> widgets/frame-flows*
