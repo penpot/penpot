@@ -377,8 +377,8 @@
                                 (log/trace :msg (str "       (ref-shape: " (:id ref-shape) ")"))
                                 (log/trace :msg (str "       (ref touched: " (:touched ref-shape) ")"))
                                 (assoc % :touched
-                                       (clojure.set/union (:touched shape)
-                                                          (ctk/normal-touched-groups ref-shape)))))
+                                       (set/union (:touched shape)
+                                                  (ctk/normal-touched-groups ref-shape)))))
 
                           ;; Swap slot must also be copied if the current shape has not any,
                           ;; except if this is the first level subcopy.
