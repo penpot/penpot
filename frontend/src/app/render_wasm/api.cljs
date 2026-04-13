@@ -1148,23 +1148,21 @@
   [shapes start-index thumbnails-acc full-acc]
   (let [total    (count shapes)
         deadline (+ (js/performance.now) CHUNK_TIME_BUDGET_MS)]
-    (let [result
-          (loop [index start-index
-                 t-acc (transient thumbnails-acc)
-                 f-acc (transient full-acc)]
-            (if (and (< index total)
-                     ;; Check performance.now every 8 shapes to reduce overhead
-                     (or (pos? (bit-and (- index start-index) 7))
-                         (<= (js/performance.now) deadline)))
-              (let [shape (nth shapes index)
-                    {:keys [thumbnails full]} (set-object shape)]
-                (recur (inc index)
-                       (reduce conj! t-acc thumbnails)
-                       (reduce conj! f-acc full)))
-              {:thumbnails (persistent! t-acc)
-               :full (persistent! f-acc)
-               :next-index index}))]
-      result)))
+    (loop [index start-index
+           t-acc (transient thumbnails-acc)
+           f-acc (transient full-acc)]
+      (if (and (< index total)
+               ;; Check performance.now every 8 shapes to reduce overhead
+               (or (pos? (bit-and (- index start-index) 7))
+                   (<= (js/performance.now) deadline)))
+        (let [shape (nth shapes index)
+              {:keys [thumbnails full]} (set-object shape)]
+          (recur (inc index)
+                 (reduce conj! t-acc thumbnails)
+                 (reduce conj! f-acc full)))
+        {:thumbnails (persistent! t-acc)
+         :full (persistent! f-acc)
+         :next-index index}))))
 
 (defn- set-objects-async
   "Asynchronously process shapes in time-budgeted chunks, yielding to the
@@ -1193,6 +1191,10 @@
                      ;; Show shapes immediately: end loading overlay + unblock rendering
                      (h/call wasm/internal-module "_end_loading")
                      (end-shapes-loading!)
+
+                     ;; Rebuild the tile index so _render knows which shapes
+                     ;; map to which tiles after a page switch.
+                     (h/call wasm/internal-module "_set_view_end")
 
                      ;; Text layouts must run after _end_loading (they
                      ;; depend on state that is only correct when loading
@@ -1247,6 +1249,9 @@
             {:thumbnails (persistent! thumbnails-acc) :full (persistent! full-acc)}))]
     (perf/end-measure "set-objects")
     (when on-shapes-ready (on-shapes-ready))
+    ;; Rebuild the tile index so _render knows which shapes
+    ;; map to which tiles after a page switch.
+    (h/call wasm/internal-module "_set_view_end")
     (process-pending shapes thumbnails full
                      (fn []
                        (if render-callback

@@ -220,7 +220,13 @@ pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()
 #[wasm_error]
 pub extern "C" fn render_from_cache(_: i32) -> Result<()> {
     with_state_mut!(state, {
-        state.render_state.cancel_animation_frame();
+        // Don't cancel the animation frame — let the async render
+        // continue populating the tile HashMap in the background.
+        // process_animation_frame skips flush_and_submit in fast
+        // mode so it won't present stale Target content.  The
+        // tile HashMap is position-independent, so tiles rendered
+        // for the old viewport can be reused by the next full
+        // render at the new viewport position.
         state.render_from_cache();
     });
     Ok(())
