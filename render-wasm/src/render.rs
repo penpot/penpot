@@ -337,6 +337,9 @@ pub(crate) struct RenderState {
     /// Preview render mode - when true, uses simplified rendering for progressive loading
     pub preview_mode: bool,
     pub export_context: Option<(Rect, f32)>,
+    /// Cleared at the beginning of a render pass; set to true after we clear Cache the first
+    /// time we are about to blit a tile into Cache for this pass.
+    pub cache_cleared_this_render: bool,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -411,6 +414,7 @@ impl RenderState {
             ignore_nested_blurs: false,
             preview_mode: false,
             export_context: None,
+            cache_cleared_this_render: false,
         })
     }
 
@@ -665,6 +669,13 @@ impl RenderState {
     }
 
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) -> Result<()> {
+        // Decide *now* (at the first real cache blit) whether we need to clear Cache.
+        // This avoids clearing Cache on renders that don't actually paint tiles (e.g. hover/UI),
+        // while still preventing stale pixels from surviving across full-quality renders.
+        if !self.options.is_fast_mode() && !self.cache_cleared_this_render {
+            self.surfaces.clear_cache(self.background_color);
+            self.cache_cleared_this_render = true;
+        }
         let tile_rect = self.get_current_aligned_tile_bounds()?;
         self.surfaces.cache_current_tile_texture(
             &self.tile_viewbox,
@@ -1497,6 +1508,7 @@ impl RenderState {
         performance::begin_measure!("render");
         performance::begin_measure!("start_render_loop");
 
+        self.cache_cleared_this_render = false;
         self.reset_canvas();
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
@@ -2443,6 +2455,10 @@ impl RenderState {
                         &node_render_state,
                         target_surface,
                     )?;
+                } else {
+                    // This is necessary or the later flush_and_submit will be very slow
+                    self.surfaces
+                        .draw_into(SurfaceId::DropShadows, target_surface, None);
                 }
 
                 self.render_shape(
