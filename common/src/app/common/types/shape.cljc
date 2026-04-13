@@ -190,6 +190,7 @@
    [:blocked {:optional true} :boolean]
    [:collapsed {:optional true} :boolean]
    [:locked {:optional true} :boolean]
+   [:parent-locked {:optional true} :boolean]
    [:hidden {:optional true} :boolean]
    [:masked-group {:optional true} :boolean]
    [:fills {:optional true} schema:fills]
@@ -408,7 +409,7 @@
 ;; Valid attributes for keeping on a switch
 (def ^:private allowed-shape-attrs
   #{:page-id :component-id :component-file :component-root :main-instance
-    :remote-synced :shape-ref :touched :blocked :collapsed :locked
+    :remote-synced :shape-ref :touched :blocked :collapsed :locked :parent-locked
     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :rotation :opacity :grids :exports
     :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens

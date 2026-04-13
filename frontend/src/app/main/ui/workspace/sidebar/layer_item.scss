@@ -191,6 +191,21 @@
   }
 }
 
+.parent-locked {
+  position: absolute;
+  top: px2rem(-2);
+  right: px2rem(-2);
+  color: var(--color-accent-primary);
+  opacity: 0.7;
+  inline-size: $sz-8;
+  block-size: $sz-8;
+  z-index: 1;
+
+  .layer-row.hidden & {
+    opacity: 0.2;
+  }
+}
+
 .toggle-content {
   border: none;
   background: none;

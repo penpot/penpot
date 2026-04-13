@@ -683,6 +683,21 @@
                          (filter (partial ctl/any-layout-immediate-child-id? objects)))
                    selected)
 
+             ;; When any shape is pinned to its parent, prevent reparenting
+             ;; by keeping the original parent frame as the target
+             parent-locked-frame
+             (when (some :parent-locked shapes)
+               (:parent-id (d/seek :parent-locked shapes)))
+
+             ;; Precompute bounds for constraining parent-locked shapes
+             parent-locked-rect
+             (when (some? parent-locked-frame)
+               (:selrect (get objects parent-locked-frame)))
+
+             shapes-rect
+             (when (some? parent-locked-frame)
+               (grc/join-rects (map :selrect shapes)))
+
              position (->> ms/mouse-position
                            (rx/map #(gpt/to-vec from-position %)))
 
@@ -713,8 +728,10 @@
                        (fn [[move-vector mod?]]
                          (let [position         (gpt/add from-position move-vector)
                                exclude-frames   (if mod? exclude-frames exclude-frames-siblings)
-                               target-frame     (ctst/top-nested-frame objects position exclude-frames)
-                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes false libraries)
+                               target-frame     (if (some? parent-locked-frame)
+                                                  parent-locked-frame
+                                                  (let [tf (ctst/top-nested-frame objects position exclude-frames)]
+                                                    (first (ctn/find-valid-parent-and-frame-ids tf objects shapes false libraries))))
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)
                                drop-index       (when flex-layout? (gslf/get-drop-index target-frame objects position))
@@ -744,7 +761,18 @@
                                  [(assoc move-vector :x 0) :x]
 
                                  :else
-                                 [move-vector nil])]
+                                 [move-vector nil])
+
+                               ;; Constrain parent-locked shapes within parent bounds
+                               move-vector
+                               (if (and (some? parent-locked-rect) (some? shapes-rect))
+                                 (let [min-dx (- (:x1 parent-locked-rect) (:x1 shapes-rect))
+                                       max-dx (- (:x2 parent-locked-rect) (:x2 shapes-rect))
+                                       min-dy (- (:y1 parent-locked-rect) (:y1 shapes-rect))
+                                       max-dy (- (:y2 parent-locked-rect) (:y2 shapes-rect))]
+                                   (gpt/point (mth/clamp (:x move-vector) min-dx max-dx)
+                                              (mth/clamp (:y move-vector) min-dy max-dy)))
+                                 move-vector)]
                            [(-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
                                 (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data))
                             snap-ignore-axis])))

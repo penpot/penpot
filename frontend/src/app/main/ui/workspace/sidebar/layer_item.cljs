@@ -22,7 +22,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.layer-name :refer [layer-name*]]
@@ -72,6 +72,7 @@
         name                  (:name item)
         blocked?              (:blocked item)
         hidden?               (:hidden item)
+        parent-locked?        (:parent-locked item)
         has-shapes?           (-> item :shapes seq boolean)
         touched?              (-> item :touched seq boolean)
         root-board?           (and (cfh/frame-shape? item)
@@ -142,6 +143,10 @@
                  :on-double-click on-zoom-to-selected}
            (when absolute?
              [:div {:class (stl/css :absolute)}])
+           (when parent-locked?
+             [:div {:class (stl/css :parent-locked)
+                    :title (tr "workspace.shape.menu.pinned-to-parent")}
+              [:> icon* {:icon-id i/pin :size "s"}]])
            [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]]
 
          [:div {:class (stl/css :button-content)}
@@ -151,6 +156,10 @@
                  :on-double-click on-zoom-to-selected}
            (when ^boolean absolute?
              [:div {:class (stl/css :absolute)}])
+           (when ^boolean parent-locked?
+             [:div {:class (stl/css :parent-locked)
+                    :title (tr "workspace.shape.menu.pinned-to-parent")}
+              [:> icon* {:icon-id i/pin :size "s"}]])
            [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]])
 
        [:> layer-name* {:ref name-ref

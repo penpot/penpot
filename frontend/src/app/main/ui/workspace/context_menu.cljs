@@ -495,7 +495,11 @@
         do-show-shape #(st/emit! (dw/update-shape-flags ids {:hidden false}))
         do-hide-shape #(st/emit! (dw/update-shape-flags ids {:hidden true}))
         do-lock-shape #(st/emit! (dw/update-shape-flags ids {:blocked true}))
-        do-unlock-shape #(st/emit! (dw/update-shape-flags ids {:blocked false}))]
+        do-unlock-shape #(st/emit! (dw/update-shape-flags ids {:blocked false}))
+        do-pin-to-parent #(st/emit! (dw/update-shape-flags ids {:parent-locked true}))
+        do-unpin-from-parent #(st/emit! (dw/update-shape-flags ids {:parent-locked false}))
+        ;; Only show pin option for shapes that have a parent (not root frames)
+        has-parent? (some #(not (cfh/root-frame? %)) shapes)]
     [:*
      (if (every? :hidden shapes)
        [:> menu-entry* {:title (tr "workspace.shape.menu.show")
@@ -511,7 +515,14 @@
                         :on-click do-unlock-shape}]
        [:> menu-entry* {:title (tr "workspace.shape.menu.lock")
                         :shortcut (sc/get-tooltip :toggle-lock)
-                        :on-click do-lock-shape}])]))
+                        :on-click do-lock-shape}])
+
+     (when has-parent?
+       (if (every? :parent-locked shapes)
+         [:> menu-entry* {:title (tr "workspace.shape.menu.unpin-from-parent")
+                          :on-click do-unpin-from-parent}]
+         [:> menu-entry* {:title (tr "workspace.shape.menu.pin-to-parent")
+                          :on-click do-pin-to-parent}]))]))
 
 (mf/defc context-menu-prototype*
   {::mf/props :obj

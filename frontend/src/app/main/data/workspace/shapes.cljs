@@ -335,7 +335,7 @@
   (assert (every? uuid? ids)
           "expected valid coll of uuids")
 
-  (let [{:keys [blocked hidden undo-group]}
+  (let [{:keys [blocked hidden parent-locked undo-group]}
         (cts/check-shape-generic-attrs flags)]
 
     (ptk/reify ::update-shape-flags
@@ -345,14 +345,15 @@
               (fn [obj]
                 (cond-> obj
                   (boolean? blocked) (assoc :blocked blocked)
-                  (boolean? hidden) (assoc :hidden hidden)))
+                  (boolean? hidden) (assoc :hidden hidden)
+                  (boolean? parent-locked) (assoc :parent-locked parent-locked)))
               objects (dsh/lookup-page-objects state)
               ;; We have change only the hidden behaviour, to hide only the
               ;; selected shape, block behaviour remains the same.
               ids     (if (boolean? blocked)
                         (into ids (->> ids (mapcat #(cfh/get-children-ids objects %))))
                         ids)]
-          (rx/of (update-shapes ids update-fn {:attrs #{:blocked :hidden} :undo-group undo-group})))))))
+          (rx/of (update-shapes ids update-fn {:attrs #{:blocked :hidden :parent-locked} :undo-group undo-group})))))))
 
 (defn toggle-visibility-selected
   []
@@ -429,6 +430,10 @@
 
             ;; If we try to move a parent into a child we remove it
             ids      (filter #(not (cfh/is-parent? objects parent-id %)) ids)
+
+            ;; Filter out parent-locked shapes that would be reparented
+            ids      (remove #(and (:parent-locked (get objects %))
+                                   (not= parent-id (:parent-id (get objects %)))) ids)
 
             all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
 

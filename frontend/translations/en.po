@@ -7786,6 +7786,18 @@ msgstr "Intersection"
 msgid "workspace.shape.menu.lock"
 msgstr "Lock"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.pin-to-parent"
+msgstr "Pin to parent frame"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unpin-from-parent"
+msgstr "Unpin from parent frame"
+
+#: src/app/main/ui/workspace/sidebar/layer_item.cljs
+msgid "workspace.shape.menu.pinned-to-parent"
+msgstr "Pinned to parent frame"
+
 #: src/app/main/ui/workspace/context_menu.cljs:373
 msgid "workspace.shape.menu.mask"
 msgstr "Mask"
