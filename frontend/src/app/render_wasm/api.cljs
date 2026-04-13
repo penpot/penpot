@@ -307,8 +307,9 @@
   "Apply style attrs to the currently selected text spans.
    Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving."
   [attrs]
-  (text-editor/apply-styles-to-selection attrs use-shape set-shape-text-content)
-  (request-render "apply-styles-to-selection"))
+  (let [result (text-editor/apply-styles-to-selection attrs use-shape set-shape-text-content)]
+    (request-render "apply-styles-to-selection")
+    result))
 
 (defn set-parent-id
   [id]
