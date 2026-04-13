@@ -2455,6 +2455,10 @@ impl RenderState {
                         &node_render_state,
                         target_surface,
                     )?;
+                } else {
+                    // This is necessary or the later flush_and_submit will be very slow
+                    self.surfaces
+                        .draw_into(SurfaceId::DropShadows, target_surface, None);
                 }
 
                 self.render_shape(
