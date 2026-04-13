@@ -41,19 +41,22 @@
   (st/emit! (da/login-from-token tdata)))
 
 (defmethod handle-token :team-invitation
-  [tdata]
-  (case (:state tdata)
+  [{:keys [state team-id org-team-id org-name invitation-token] :as tdata}]
+  (case state
     :created
-    (let [team-id (:team-id tdata)]
+    (if org-team-id
       (st/emit!
-       (ntf/success (tr "auth.notifications.team-invitation-accepted"))
        (du/refresh-profile)
-       (dcm/go-to-dashboard-recent :team-id team-id)))
+       (dcm/go-to-dashboard-recent :team-id org-team-id)
+       (ntf/success (tr "auth.notifications.org-invitation-accepted" org-name)))
+      (st/emit!
+       (du/refresh-profile)
+       (dcm/go-to-dashboard-recent :team-id team-id)
+       (ntf/success (tr "auth.notifications.team-invitation-accepted"))))
 
     :pending
-    (let [token    (:invitation-token tdata)
-          route-id (:redirect-to tdata :auth-register)]
-      (st/emit! (rt/nav route-id {:invitation-token token})))))
+    (let [route-id (:redirect-to tdata :auth-register)]
+      (st/emit! (rt/nav route-id {:invitation-token invitation-token})))))
 
 (defmethod handle-token :default
   [_tdata]

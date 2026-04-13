@@ -30,6 +30,9 @@
     ["/recovery"          :auth-recovery]
     ["/verify-token"      :auth-verify-token]]
 
+   (when (contains? cf/flags :nitrate)
+     ["/subscribe-nitrate" :nitrate-entry])
+
    ["/settings"
     ["/profile"       :settings-profile]
     ["/password"      :settings-password]
