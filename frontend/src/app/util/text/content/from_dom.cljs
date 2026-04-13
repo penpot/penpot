@@ -50,8 +50,11 @@
                                   [_ style-decode] (get styles/mapping key)]
                               (style-decode (.getPropertyValue style style-name)))
                             (let [style-name (styles/get-style-name key)]
-                              (styles/normalize-attr-value key (.getPropertyValue style style-name))))]
-                (assoc acc key (if (value-empty? value) (get defaults key) value))))
+                              (styles/normalize-attr-value key (.getPropertyValue style style-name))))
+                    resolved (if (value-empty? value) (get defaults key) value)]
+                (if (some? resolved)
+                  (assoc acc key resolved)
+                  acc)))
             {} attrs)))
 
 (defn get-text-span-styles
