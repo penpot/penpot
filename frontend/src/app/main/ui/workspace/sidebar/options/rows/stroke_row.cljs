@@ -212,7 +212,6 @@
                       :title title
                       :on-change on-color-change-refactor
                       :on-detach on-color-detach
-                      :on-remove on-remove
                       :disable-drag disable-drag
                       :applied-token (if (= index 0)
                                        stroke-color-token
@@ -228,7 +227,12 @@
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.options.stroke.toggle-stroke")
                           :on-click on-toggle-visibility
-                          :icon (if hidden? "hide" "shown")}])]
+                          :icon (if hidden? "hide" "shown")}])
+
+      [:> icon-button* {:variant "ghost"
+                        :aria-label (tr "workspace.options.stroke.remove-stroke")
+                        :on-click on-remove
+                        :icon i/remove}]]
 
      ;; Stroke Width, Alignment & Style
      (if token-numeric-inputs
