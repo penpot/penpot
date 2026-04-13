@@ -506,6 +506,7 @@ impl Surfaces {
         self.canvas(SurfaceId::Fills).restore_to_count(1);
         self.canvas(SurfaceId::InnerShadows).restore_to_count(1);
         self.canvas(SurfaceId::TextDropShadows).restore_to_count(1);
+        self.canvas(SurfaceId::DropShadows).restore_to_count(1);
         self.canvas(SurfaceId::Strokes).restore_to_count(1);
         self.canvas(SurfaceId::Current).restore_to_count(1);
         self.canvas(SurfaceId::Export).restore_to_count(1);
@@ -515,6 +516,7 @@ impl Surfaces {
                 | SurfaceId::Current as u32
                 | SurfaceId::InnerShadows as u32
                 | SurfaceId::TextDropShadows as u32
+                | SurfaceId::DropShadows as u32
                 | SurfaceId::Export as u32,
             |s| {
                 s.canvas().clear(color).reset_matrix();
