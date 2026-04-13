@@ -33,27 +33,15 @@
 
 ;; ---- API: authenticate
 
-(def ^:private schema:nitrate-profile
-  [:map {:title "NitrateProfile"}
-   [:id ::sm/uuid]
-   [:name {:optional true} :string]
-   [:email {:optional true} :string]
-   [:photo-url {:optional true} :string]
-   [:theme {:optional true} :string]
-   [:can-use-trial ::sm/boolean]])
-
 (sv/defmethod ::authenticate
   "Authenticate the current user"
   {::doc/added "2.14"
    ::sm/params [:map]
-   ::sm/result schema:nitrate-profile}
+   ::sm/result schema:profile}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (let [profile            (profile/get-profile cfg profile-id)
-        nitrate-subscription (:subscription profile)
-        can-use-nitrate-trial (nil? nitrate-subscription)]
+  (let [profile            (profile/get-profile cfg profile-id)]
     (-> (profile-to-map profile)
-        (assoc :can-use-nitrate-trial can-use-nitrate-trial
-               :theme (:theme profile)))))
+        (assoc :theme (:theme profile)))))
 
 ;; ---- API: get-teams
 
