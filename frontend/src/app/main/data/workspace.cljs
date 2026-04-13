@@ -289,7 +289,6 @@
         ;; This prevents errors when processing changes from other pages
         (when shape
           (wasm.api/process-object shape))))))
-
 (defn initialize-workspace
   ([team-id file-id]
    (initialize-workspace team-id file-id nil))
