@@ -277,7 +277,7 @@
 
        :viewer
        (let [params   (get params :query)
-             index    (some-> (:index params) parse-long)
+             index    (some-> (rt/get-query-param params :index) parse-long)
              share-id (some-> (:share-id params) uuid/parse*)
              section  (or (some-> (:section params) keyword)
                           :interactions)
