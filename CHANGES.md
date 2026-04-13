@@ -21,6 +21,7 @@
 - Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
 - Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
 
 
 ## 2.14.2
