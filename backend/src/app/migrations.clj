@@ -471,8 +471,8 @@
    {:name "0147-mod-team-invitation-table"
     :fn (mg/resource "app/migrations/sql/0147-mod-team-invitation-table.sql")}
 
-   {:name "0147-mod-sso-provider-table"
-    :fn (mg/resource "app/migrations/sql/0147-mod-sso-provider-table.sql")}])
+   {:name "0148-mod-sso-provider-table"
+    :fn (mg/resource "app/migrations/sql/0148-mod-sso-provider-table.sql")}])
 
 
 (defn apply-migrations!
