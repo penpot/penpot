@@ -9,7 +9,8 @@
   (:require
    [app.common.logging :as log]
    [app.render-wasm.wasm :as wasm]
-   [app.util.dom :as dom]))
+   [app.util.dom :as dom]
+   [promesa.core :as p]))
 
 (defn get-webgl-context
   "Gets the WebGL context from the WASM module"
@@ -166,3 +167,32 @@ void main() {
           _ (.readPixels ^js context 0 0 width height (.-RGBA ^js context) (.-UNSIGNED_BYTE ^js context) buffer)
           image-data (js/ImageData. buffer width height)]
       (set! wasm/canvas-pixels image-data))))
+
+(defn draw-thumbnail-to-canvas
+  "Loads an image from `uri` and draws it stretched to fill the WebGL canvas.
+   Returns a promise that resolves to true if drawn, false otherwise."
+  [uri]
+  (if (and uri wasm/canvas wasm/gl-context)
+    (p/create
+     (fn [resolve _reject]
+       (let [img (js/Image.)]
+         (set! (.-crossOrigin img) "anonymous")
+         (set! (.-onload img)
+               (fn []
+                 (if wasm/gl-context
+                   (let [gl     wasm/gl-context
+                         width  (.-width wasm/canvas)
+                         height (.-height wasm/canvas)
+                         ;; Draw image to an offscreen 2D canvas, scaled to fill
+                         canvas2d (js/OffscreenCanvas. width height)
+                         ctx2d   (.getContext canvas2d "2d")]
+                     (.drawImage ctx2d img 0 0 width height)
+                     (let [image-data (.getImageData ctx2d 0 0 width height)]
+                       (draw-imagedata-to-webgl gl image-data))
+                     (resolve true))
+                   (resolve false))))
+         (set! (.-onerror img)
+               (fn [_]
+                 (resolve false)))
+         (set! (.-src img) uri))))
+    (p/resolved false)))
