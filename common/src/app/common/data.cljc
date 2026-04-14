@@ -782,7 +782,8 @@
                 (not (js/isNaN v))
                 (not (js/isNaN (parse-double v))))
 
-     :clj  (not= (parse-double v :nan) :nan)))
+     :clj  (and (string? v)
+                (not= (parse-double v :nan) :nan))))
 
 (defn read-string
   [v]

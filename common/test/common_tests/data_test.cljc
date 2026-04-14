@@ -841,6 +841,9 @@
   (t/is (d/num-string? "-7"))
   (t/is (not (d/num-string? "hello")))
   (t/is (not (d/num-string? nil)))
+  ;; non-string types always return false
+  (t/is (not (d/num-string? 42)))
+  (t/is (not (d/num-string? :keyword)))
   ;; In CLJS, js/isNaN("") → false (empty string coerces to 0), so "" is numeric
   #?(:clj (t/is (not (d/num-string? ""))))
   #?(:cljs (t/is (d/num-string? ""))))
