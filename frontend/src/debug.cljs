@@ -31,6 +31,9 @@
    [app.main.errors :as errors]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.render-wasm.helpers :as wasm.h]
+   [app.render-wasm.mem :as wasm.mem]
+   [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.http :as http]
@@ -116,6 +119,43 @@
   ([str val]
    (js/console.log str (json/->js val))
    val))
+
+(defn- wasm-read-len-prefixed-utf8
+  "Reads a `[u32 byte_len][utf8 bytes...]` buffer returned by WASM and frees it.
+   Returns a JS string (possibly empty)."
+  [ptr]
+  (when (and ptr (not (zero? ptr)))
+    (let [heap-u8  (wasm.mem/get-heap-u8)
+          heap-u32 (wasm.mem/get-heap-u32)
+          len      (aget heap-u32 (wasm.mem/->offset-32 ptr))
+          start    (+ ptr 4)
+          end      (+ start len)
+          decoder  (js/TextDecoder. "utf-8")
+          text     (.decode decoder (.subarray heap-u8 start end))]
+      (wasm.mem/free)
+      text)))
+
+(defn ^:export wasmCacheConsole
+  "Logs the current render-wasm cache surface as an image in the JS console."
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_cache_console"))]
+    (if (fn? f)
+      (wasm.h/call module "_debug_cache_console")
+      (js/console.warn "[debug] render-wasm module not ready or missing _debug_cache_console"))))
+
+(defn ^:export wasmCacheBase64
+  "Returns the cache surface PNG base64 (empty string if missing/empty)."
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_cache_base64"))]
+    (if (fn? f)
+      (let [ptr (wasm.h/call module "_debug_cache_base64")
+            s   (or (wasm-read-len-prefixed-utf8 ptr) "")]
+        s)
+      (do
+        (js/console.warn "[debug] render-wasm module not ready or missing _debug_cache_base64")
+        ""))))
 
 (when (exists? js/window)
   (set! (.-dbg ^js js/window) json/->js)

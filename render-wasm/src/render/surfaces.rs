@@ -506,6 +506,7 @@ impl Surfaces {
         self.canvas(SurfaceId::Fills).restore_to_count(1);
         self.canvas(SurfaceId::InnerShadows).restore_to_count(1);
         self.canvas(SurfaceId::TextDropShadows).restore_to_count(1);
+        self.canvas(SurfaceId::DropShadows).restore_to_count(1);
         self.canvas(SurfaceId::Strokes).restore_to_count(1);
         self.canvas(SurfaceId::Current).restore_to_count(1);
         self.canvas(SurfaceId::Export).restore_to_count(1);
@@ -515,6 +516,7 @@ impl Surfaces {
                 | SurfaceId::Current as u32
                 | SurfaceId::InnerShadows as u32
                 | SurfaceId::TextDropShadows as u32
+                | SurfaceId::DropShadows as u32
                 | SurfaceId::Export as u32,
             |s| {
                 s.canvas().clear(color).reset_matrix();
@@ -533,11 +535,21 @@ impl Surfaces {
         self.clear_all_dirty();
     }
 
+    /// Clears the whole cache surface without disturbing its configured transform.
+    pub fn clear_cache(&mut self, color: skia::Color) {
+        let canvas = self.cache.canvas();
+        canvas.save();
+        canvas.reset_matrix();
+        canvas.clear(color);
+        canvas.restore();
+    }
+
     pub fn cache_current_tile_texture(
         &mut self,
         tile_viewbox: &TileViewbox,
         tile: &Tile,
         tile_rect: &skia::Rect,
+        skip_cache_surface: bool,
     ) {
         let rect = IRect::from_xywh(
             self.margins.width,
@@ -549,13 +561,15 @@ impl Surfaces {
         let tile_image_opt = self.current.image_snapshot_with_bounds(rect);
 
         if let Some(tile_image) = tile_image_opt {
-            // Draw to cache first (takes reference), then move to tile cache
-            self.cache.canvas().draw_image_rect(
-                &tile_image,
-                None,
-                tile_rect,
-                &skia::Paint::default(),
-            );
+            if !skip_cache_surface {
+                // Draw to cache surface for render_from_cache
+                self.cache.canvas().draw_image_rect(
+                    &tile_image,
+                    None,
+                    tile_rect,
+                    &skia::Paint::default(),
+                );
+            }
 
             self.tiles.add(tile_viewbox, tile, tile_image);
         }
@@ -582,6 +596,29 @@ impl Surfaces {
             self.target
                 .canvas()
                 .draw_image_rect(&image, None, rect, &skia::Paint::default());
+        }
+    }
+
+    /// Draws a cached tile texture to the Cache surface at the given
+    /// cache-aligned rect.  This keeps the Cache surface in sync with
+    /// Target so that `render_from_cache` (used during pan) has the
+    /// full scene including tiles served from the texture cache.
+    pub fn draw_cached_tile_to_cache(
+        &mut self,
+        tile: Tile,
+        aligned_rect: &skia::Rect,
+        color: skia::Color,
+    ) {
+        if let Some(image) = self.tiles.get(tile) {
+            let mut bg = skia::Paint::default();
+            bg.set_color(color);
+            self.cache.canvas().draw_rect(aligned_rect, &bg);
+            self.cache.canvas().draw_image_rect(
+                &image,
+                None,
+                aligned_rect,
+                &skia::Paint::default(),
+            );
         }
     }
 

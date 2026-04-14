@@ -32,7 +32,7 @@
   (d/without-keys shape dissoc-attrs))
 
 (defn- make-corner-arc
-  "Creates a curvle corner for border radius"
+  "Creates a curve corner for border radius"
   [from to corner radius]
   (let [x (case corner
             :top-left (:x from)

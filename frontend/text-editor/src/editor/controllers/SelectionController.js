@@ -1238,7 +1238,11 @@ export class SelectionController extends EventTarget {
       textSpan.childNodes.length === 0
     ) {
       textSpan.remove();
-      return this.collapse(nextTextNode, 0);
+      // nextTextNode can be null when deleting the last text node in the last
+      // span of the paragraph; fall back to the last text node of the
+      // preceding sibling span so the cursor stays within the paragraph.
+      const forwardTarget = nextTextNode ?? paragraph.lastChild?.lastChild;
+      return this.collapse(forwardTarget, 0);
     }
     return this.collapse(this.focusNode, this.focusOffset);
   }
@@ -1284,9 +1288,14 @@ export class SelectionController extends EventTarget {
       textSpan.childNodes.length === 0
     ) {
       textSpan.remove();
+      // previousTextNode can be null when deleting the first text node in
+      // the paragraph (no preceding sibling text node exists).  Fall back
+      // to the first text node of the now-first remaining span so the
+      // cursor stays within the paragraph.
+      const backwardTarget = previousTextNode ?? paragraph.firstChild?.firstChild;
       return this.collapse(
-        previousTextNode,
-        getTextNodeLength(previousTextNode),
+        backwardTarget,
+        getTextNodeLength(backwardTarget),
       );
     }
 
@@ -1358,9 +1367,13 @@ export class SelectionController extends EventTarget {
         textSpan.childNodes.length === 0
       ) {
         textSpan.remove();
+        // previousTextNode can be null when the deleted node was the first
+        // in the paragraph.  Fall back to the first text node of the
+        // now-first remaining span.
+        const backwardTarget = previousTextNode ?? paragraph.firstChild?.firstChild;
         return this.collapse(
-          previousTextNode,
-          getTextNodeLength(previousTextNode),
+          backwardTarget,
+          getTextNodeLength(backwardTarget),
         );
       }
     }
