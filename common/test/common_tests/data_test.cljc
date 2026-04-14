@@ -372,12 +372,19 @@
   (t/is (= 0 (d/index-of-pred [1 2 3] odd?)))
   (t/is (= 1 (d/index-of-pred [2 3 4] odd?)))
   (t/is (nil? (d/index-of-pred [2 4 6] odd?)))
-  (t/is (nil? (d/index-of-pred [] odd?))))
+  (t/is (nil? (d/index-of-pred [] odd?)))
+  ;; works correctly when collection contains nil elements
+  (t/is (= 2 (d/index-of-pred [nil nil 3] some?)))
+  (t/is (= 0 (d/index-of-pred [nil 1 2] nil?)))
+  ;; works correctly when collection contains false elements
+  (t/is (= 1 (d/index-of-pred [false true false] true?))))
 
 (t/deftest index-of-test
   (t/is (= 0 (d/index-of [:a :b :c] :a)))
   (t/is (= 2 (d/index-of [:a :b :c] :c)))
-  (t/is (nil? (d/index-of [:a :b :c] :z))))
+  (t/is (nil? (d/index-of [:a :b :c] :z)))
+  ;; works when searching for nil in a collection
+  (t/is (= 1 (d/index-of [:a nil :c] nil))))
 
 (t/deftest replace-by-id-test
   (let [items [{:id 1 :v "a"} {:id 2 :v "b"} {:id 3 :v "c"}]

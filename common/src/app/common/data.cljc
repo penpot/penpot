@@ -291,15 +291,12 @@
 
 (defn index-of-pred
   [coll pred]
-  (loop [c    (first coll)
-         coll (rest coll)
+  (loop [s     (seq coll)
          index 0]
-    (if (nil? c)
-      nil
-      (if (pred c)
+    (when s
+      (if (pred (first s))
         index
-        (recur (first coll)
-               (rest coll)
+        (recur (next s)
                (inc index))))))
 
 (defn index-of
