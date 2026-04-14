@@ -952,7 +952,7 @@
               (assoc diff key (map-diff v1 v2))
 
               :else
-              (assoc diff key [(get m1 key) (get m2 key)]))))]
+              (assoc diff key [v1 v2]))))]
 
     (->> keys
          (reduce diff-attr {}))))
