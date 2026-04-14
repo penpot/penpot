@@ -445,6 +445,8 @@
   (t/is (= {:a {:x 10 :y 2}} (d/patch-object {:a {:x 1 :y 2}} {:a {:x 10}})))
   ;; nested nil removes nested key
   (t/is (= {:a {:y 2}} (d/patch-object {:a {:x 1 :y 2}} {:a {:x nil}})))
+  ;; nil value removes only the specified key, not other keys
+  (t/is (= {nil 0 :b 2} (d/patch-object {nil 0 :a 1 :b 2} {:a nil})))
   ;; transducer arity (1-arg returns a fn)
   (let [f (d/patch-object {:a 99})]
     (t/is (= {:a 99 :b 2} (f {:a 1 :b 2})))))
