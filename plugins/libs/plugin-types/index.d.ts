@@ -1548,9 +1548,9 @@ export interface EventsMap {
  */
 export interface Export {
   /**
-   * Type of the file to export. Can be one of the following values: png, jpeg, svg, pdf
+   * Type of the file to export. Can be one of the following values: png, jpeg, webp, svg, pdf
    */
-  type: 'png' | 'jpeg' | 'svg' | 'pdf';
+  type: 'png' | 'jpeg' | 'webp' | 'svg' | 'pdf';
   /**
    * For bitmap formats represent the scale of the original size to resize the export
    */

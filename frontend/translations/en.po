@@ -427,7 +427,7 @@ msgstr "Delete team"
 msgid "dashboard.deleted.empty-state-description"
 msgstr "Your trash is empty. Deleted files and projects will appear here."
 
-#: src/app/main/ui/dashboard/grid.cljs:248
+#: src/app/main/ui/dashboard/grid.cljs:251
 msgid "dashboard.deleted.will-be-deleted-at"
 msgstr "Will be deleted %s"
 

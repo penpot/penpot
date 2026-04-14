@@ -74,6 +74,25 @@
 - Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
 
 
+## 2.14.3 (Unreleased)
+
+### :sparkles: New features & Enhancements
+
+- Add webp export format to plugin types [Github #8870](https://github.com/penpot/penpot/pull/8870)
+
+### :bug: Bugs fixed
+
+- Fix component "broken" after switch variant [Taiga #12984](https://tree.taiga.io/project/penpot/issue/12984)
+- Fix variants corner cases with selrect and points [Github #8882](https://github.com/penpot/penpot/pull/8882)
+- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
+- Fix highlight on frames after rename [Github #8938](https://github.com/penpot/penpot/pull/8938)
+- Fix TypeError in sd-token-uuid when resolving tokens interactively [Github #8929](https://github.com/penpot/penpot/pull/8929)
+- Fix path drawing preview passing shape instead of content to next-node
+- Fix swapped arguments in CLJS PathData `-nth` with default
+- Normalize PathData coordinates to safe integer bounds on read
+
+
 ## 2.14.2
 
 ### :sparkles: New features & Enhancements
