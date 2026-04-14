@@ -2779,8 +2779,13 @@ impl RenderState {
                     }
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
+                    // Only allow stopping (yielding) if the current tile is NOT visible.
+                    // This ensures all visible tiles render synchronously before showing,
+                    // eliminating empty squares during zoom. Interest-area tiles can still yield.
+                    let tile_is_visible = self.tile_viewbox.is_visible(&current_tile);
+                    let can_stop = allow_stop && !tile_is_visible;
                     let (is_empty, early_return) = self
-                        .render_shape_tree_partial_uncached(tree, timestamp, allow_stop, false)?;
+                        .render_shape_tree_partial_uncached(tree, timestamp, can_stop, false)?;
 
                     if early_return {
                         return Ok(());

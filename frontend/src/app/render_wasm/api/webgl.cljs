@@ -48,11 +48,28 @@
 
 ;; FIXME: temporary function until we are able to keep the same <canvas> across pages.
 (defn- draw-imagedata-to-webgl
-  "Draws ImageData to a WebGL2 context by creating a texture"
+  "Draws ImageData to a WebGL2 context by creating a texture.
+   After _init, Skia owns the GL context and may have left a non-default
+   FBO bound plus scissor/stencil/depth enabled.  We must reset all
+   relevant GL state so the full-screen quad actually lands on the
+   default framebuffer (the visible canvas)."
   [gl image-data]
   (let [width (.-width ^js image-data)
         height (.-height ^js image-data)
         texture (.createTexture ^js gl)]
+
+    ;; Bind the default framebuffer (FBO 0) — Skia may have left one
+    ;; of its offscreen FBOs bound.
+    (.bindFramebuffer ^js gl (.-FRAMEBUFFER ^js gl) nil)
+
+    ;; Disable GPU tests that Skia may have enabled — any of these
+    ;; can silently discard our fragments.
+    (.disable ^js gl (.-SCISSOR_TEST ^js gl))
+    (.disable ^js gl (.-STENCIL_TEST ^js gl))
+    (.disable ^js gl (.-DEPTH_TEST ^js gl))
+    (.disable ^js gl (.-BLEND ^js gl))
+    (.colorMask ^js gl true true true true)
+
     ;; Bind texture and set parameters
     (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) texture)
     (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_WRAP_S ^js gl) (.-CLAMP_TO_EDGE ^js gl))
@@ -156,6 +173,9 @@ void main() {
   []
   (when wasm/canvas
     (let [context wasm/gl-context]
+      ;; Bind default framebuffer so we clear the visible canvas,
+      ;; not whichever offscreen FBO Skia may have left active.
+      (.bindFramebuffer ^js context (.-FRAMEBUFFER ^js context) nil)
       (.clearColor ^js context 0 0 0 0.0)
       (.clear ^js context (.-COLOR_BUFFER_BIT ^js context))
       (.clear ^js context (.-DEPTH_BUFFER_BIT ^js context))
@@ -172,10 +192,11 @@ void main() {
     (let [context wasm/gl-context
           width (.-width wasm/canvas)
           height (.-height wasm/canvas)
-          buffer (js/Uint8ClampedArray. (* width height  4))
-          _ (.readPixels ^js context 0 0 width height (.-RGBA ^js context) (.-UNSIGNED_BYTE ^js context) buffer)
-          image-data (js/ImageData. buffer width height)]
-      (set! wasm/canvas-pixels image-data))))
+          buffer (js/Uint8ClampedArray. (* width height  4))]
+      ;; Bind default framebuffer — Skia may have left an offscreen FBO active.
+      (.bindFramebuffer ^js context (.-FRAMEBUFFER ^js context) nil)
+      (.readPixels ^js context 0 0 width height (.-RGBA ^js context) (.-UNSIGNED_BYTE ^js context) buffer)
+      (set! wasm/canvas-pixels (js/ImageData. buffer width height)))))
 
 (defn draw-thumbnail-to-canvas
   "Loads an image from `uri` and draws it stretched to fill the WebGL canvas.

@@ -991,7 +991,11 @@
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
-            (when (and wasm/context-initialized? (not @wasm/context-lost?))
+            (when (and wasm/context-initialized? (not @wasm/context-lost?)
+                       ;; Skip during bulk loading — the blurred previous-page
+                       ;; preview must stay visible until set-objects finishes
+                       ;; and renders synchronously.
+                       (not @shapes-loading?))
               (perf/begin-measure "render-finish")
               (h/call wasm/internal-module "_set_view_end")
               (perf/end-measure "render-finish")
@@ -1007,15 +1011,17 @@
 
 (defn set-view-box
   [zoom vbox]
-  (perf/begin-measure "set-view-box")
-  (h/call wasm/internal-module "_set_view_start")
-  (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (perf/end-measure "set-view-box")
+  ;; Skip during bulk loading — preserve blurred previous-page preview
+  (when-not @shapes-loading?
+    (perf/begin-measure "set-view-box")
+    (h/call wasm/internal-module "_set_view_start")
+    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (perf/end-measure "set-view-box")
 
-  (perf/begin-measure "render-from-cache")
-  (h/call wasm/internal-module "_render_from_cache" 0)
-  (render-finish)
-  (perf/end-measure "render-from-cache"))
+    (perf/begin-measure "render-from-cache")
+    (h/call wasm/internal-module "_render_from_cache" 0)
+    (render-finish)
+    (perf/end-measure "render-from-cache")))
 
 (defn update-text-rect!
   [id]
@@ -1204,7 +1210,23 @@
                          (update-text-layouts text-ids)))
                      (if render-callback
                        (render-callback)
-                       (request-render "set-objects-complete"))
+                       ;; When on-shapes-ready is set (page transition), use
+                       ;; synchronous render so the complete scene appears in
+                       ;; one frame right after the blur is cleared.  Without
+                       ;; this, the async _render path flushes partial tiles
+                       ;; progressively, causing visible tile-by-tile loading.
+                       (if on-shapes-ready
+                         (do
+                           ;; Cancel the rAF that end-shapes-loading! just
+                           ;; scheduled — we are about to render synchronously
+                           ;; and don't want a redundant progressive render on
+                           ;; the next frame.
+                           (when-let [fid wasm/internal-frame-id]
+                             (js/cancelAnimationFrame fid)
+                             (set! wasm/internal-frame-id nil)
+                             (reset! pending-render false))
+                           (render-sync))
+                         (request-render "set-objects-complete")))
                      (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
                      (resolve nil)
 
@@ -1252,11 +1274,25 @@
     ;; Rebuild the tile index so _render knows which shapes
     ;; map to which tiles after a page switch.
     (h/call wasm/internal-module "_set_view_end")
+
+    ;; Run text layouts before the first render so text shapes
+    ;; are correctly sized immediately.
+    (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+      (when (seq text-ids)
+        (update-text-layouts text-ids)))
+
+    ;; When doing a page transition, render immediately with whatever
+    ;; content is available (shapes without images). Images load in
+    ;; the background and trigger a re-render when ready.
+    (when on-shapes-ready
+      (render-sync))
+
     (process-pending shapes thumbnails full
                      (fn []
-                       (if render-callback
-                         (render-callback)
-                         (request-render "set-objects-sync-complete"))
+                       (when-not on-shapes-ready
+                         (if render-callback
+                           (render-callback)
+                           (request-render "set-objects-sync-complete")))
                        (ug/dispatch! (ug/event "penpot:wasm:set-objects"))))))
 
 (defn- shapes-in-tree-order
