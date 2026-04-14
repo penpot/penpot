@@ -1117,8 +1117,7 @@
   ([value {:keys [precision] :or {precision 2}}]
    (let [value (if (string? value) (parse-double value) value)]
      (when (num? value)
-       (let [value (format-precision value precision)]
-         (str value))))))
+       (format-precision value precision)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols
