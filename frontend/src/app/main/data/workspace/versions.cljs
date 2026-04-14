@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.main.data.event :as ev]
@@ -189,7 +190,7 @@
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
             features (get-in state [:files file-id :features])]
-        (->> (rp/cmd! :get-file-snapshot-preview
+        (->> (rp/cmd! :get-file-snapshot
                       {:file-id file-id
                        :id id
                        :features features})
@@ -207,7 +208,7 @@
              (rx/catch (fn [err]
                          ;; On error roll back the read-only flag so the
                          ;; user is not stuck in a broken preview state.
-                         (js/console.error "Failed to load snapshot preview" err)
+                         (log/error :hint "failed to load snapshot" :cause err :file-id file-id :snapshot-id id)
                          (rx/of (update-versions-state {:preview-id nil})
                                 (ptk/reify ::clear-preview-read-only
                                   ptk/UpdateEvent

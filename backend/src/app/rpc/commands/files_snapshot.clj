@@ -36,19 +36,19 @@
                  (files/check-read-permissions! conn profile-id file-id)
                  (fsnap/get-visible-snapshots conn file-id))))
 
-;; --- COMMAND QUERY: get-file-snapshot-preview
+;; --- COMMAND QUERY: get-file-snapshot
 
-(def ^:private schema:get-file-snapshot-preview
-  [:map {:title "get-file-snapshot-preview"}
+(def ^:private schema:get-file-snapshot
+  [:map {:title "get-file-snapshot"}
    [:file-id ::sm/uuid]
    [:id ::sm/uuid]
    [:features {:optional true} ::cfeat/features]])
 
-(sv/defmethod ::get-file-snapshot-preview
+(sv/defmethod ::get-file-snapshot
   "Retrieve a file bundle with data from a specific snapshot for
   read-only preview. Does not modify any database state."
-  {::doc/added "2.5"
-   ::sm/params schema:get-file-snapshot-preview
+  {::doc/added "2.16"
+   ::sm/params schema:get-file-snapshot
    ::sm/result files/schema:file-with-permissions
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id id] :as params}]
