@@ -90,7 +90,7 @@
 
 (mf/defc version-entry*
   {::mf/private true}
-  [{:keys [entry current-profile on-restore on-delete on-rename on-lock on-unlock on-edit on-cancel-edit is-editing]}]
+  [{:keys [entry current-profile on-preview on-restore on-delete on-rename on-lock on-unlock on-edit on-cancel-edit is-editing]}]
   (let [show-menu? (mf/use-state false)
         profiles   (mf/deref refs/profiles)
 
@@ -107,6 +107,13 @@
          (mf/deps on-edit entry)
          (fn [event]
            (on-edit (:id entry) event)))
+
+        on-preview
+        (mf/use-fn
+         (mf/deps entry on-preview)
+         (fn []
+           (when (fn? on-preview)
+             (on-preview (:id entry)))))
 
         on-restore
         (mf/use-fn
@@ -193,6 +200,11 @@
 
          [:li {:class (stl/css :menu-option)
                :role "button"
+               :on-click on-preview}
+          (tr "workspace.versions.button.preview")]
+
+         [:li {:class (stl/css :menu-option)
+               :role "button"
                :on-click on-restore}
           (tr "labels.restore")]
 
@@ -216,7 +228,7 @@
             (tr "labels.delete")])])]]))
 
 (mf/defc snapshot-entry*
-  [{:keys [entry on-pin-snapshot on-restore-snapshot]}]
+  [{:keys [entry on-pin-snapshot on-restore-snapshot on-preview-snapshot]}]
 
   (let [open-menu* (mf/use-state nil)
         entry-ref (mf/use-ref nil)
@@ -243,6 +255,17 @@
              (when (fn? on-restore-snapshot)
                (on-restore-snapshot id event)))))
 
+        on-preview-snapshot
+        (mf/use-fn
+         (mf/deps on-preview-snapshot)
+         (fn [event]
+           (let [node  (dom/get-current-target event)
+                 id    (-> node
+                           (dom/get-data "id")
+                           (uuid/parse))]
+             (when (fn? on-preview-snapshot)
+               (on-preview-snapshot id event)))))
+
         on-open-snapshot-menu
         (mf/use-fn
          (mf/deps entry)
@@ -266,6 +289,11 @@
                    :on-close #(reset! open-menu* nil)}
       [:ul {:class (stl/css :version-options-dropdown)
             :style {"--offset" (dm/str (:offset @open-menu*) "px")}}
+       [:li {:class (stl/css :menu-option)
+             :role "button"
+             :data-id (dm/str (:snapshot @open-menu*))
+             :on-click on-preview-snapshot}
+        (tr "workspace.versions.button.preview")]
        [:li {:class (stl/css :menu-option)
              :role "button"
              :data-id (dm/str (:snapshot @open-menu*))
@@ -320,6 +348,16 @@
         (mf/use-fn
          (fn [id label]
            (st/emit! (dwv/rename-version id label))))
+
+        on-preview-version
+        (mf/use-fn
+         (fn [id]
+           (st/emit! (dwv/preview-version id))))
+
+        on-preview-snapshot
+        (mf/use-fn
+         (fn [id _event]
+           (st/emit! (dwv/preview-version id))))
 
         on-restore-version
         (mf/use-fn
@@ -415,6 +453,7 @@
                                    :on-edit on-edit-version
                                    :on-cancel-edit on-cancel-version-edition
                                    :on-rename on-rename-version
+                                   :on-preview on-preview-version
                                    :on-restore on-restore-version
                                    :on-delete on-delete-version
                                    :on-lock on-lock-version
@@ -423,6 +462,7 @@
                :snapshot
                [:> snapshot-entry* {:key (:index entry)
                                     :entry entry
+                                    :on-preview-snapshot on-preview-snapshot
                                     :on-restore-snapshot on-restore-snapshot
                                     :on-pin-snapshot on-pin-version}]
 

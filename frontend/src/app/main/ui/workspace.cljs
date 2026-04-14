@@ -7,12 +7,15 @@
 (ns app.main.ui.workspace
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.versions :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.router :as-alias rt]
@@ -130,6 +133,54 @@
                 :class (stl/css :workspace-loader)
                 :overlay true
                 :file-loading true}])
+
+(def ^:private workspace-versions-ref
+  (l/derived :workspace-versions st/state))
+
+(mf/defc preview-banner*
+  "Banner shown at the top of the workspace when the user is previewing
+  a saved version. Provides Exit and Restore actions."
+  {::mf/private true}
+  []
+  (let [versions-state (mf/deref workspace-versions-ref)
+        preview-id     (:preview-id versions-state)
+        preview-entry  (when preview-id
+                         (d/seek #(= (:id %) preview-id) (:data versions-state)))
+        preview-label  (or (:label preview-entry)
+                           (tr "workspace.versions.preview.unnamed"))
+
+        on-exit
+        (mf/use-fn
+         (fn []
+           (st/emit! (dwv/exit-preview))))
+
+        on-restore
+        (mf/use-fn
+         (mf/deps preview-id)
+         (fn []
+           (when preview-id
+             (st/emit!
+              (ntf/dialog
+               :content (tr "workspace.versions.restore-warning")
+               :controls :inline-actions
+               :cancel {:label (tr "workspace.updates.dismiss")
+                        :callback #(st/emit! (ntf/hide))}
+               :accept {:label (tr "labels.restore")
+                        :callback #(st/emit! (ntf/hide)
+                                             (dwv/exit-preview)
+                                             (dwv/restore-version preview-id :version))}
+               :tag :restore-dialog)))))]
+
+    (when preview-id
+      [:div {:class (stl/css :preview-banner)}
+       [:span {:class (stl/css :preview-banner-label)}
+        (tr "workspace.versions.preview.banner-label" preview-label)]
+       [:button {:class (stl/css :preview-banner-exit-btn)
+                 :on-click on-exit}
+        (tr "workspace.versions.preview.exit")]
+       [:button {:class (stl/css :preview-banner-restore-btn)
+                 :on-click on-restore}
+        (tr "labels.restore")]])))
 
 (defn- make-team-ref
   [team-id]
@@ -268,6 +319,7 @@
                             :touch-action "none"
                             :position "relative"}}
           [:> context-menu*]
+          [:> preview-banner*]
           (when (and file-loaded? page-id)
             [:> workspace-inner*
              {:page-id page-id

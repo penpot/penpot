@@ -8831,6 +8831,9 @@ msgstr "Autosaved %s"
 msgid "workspace.versions.button.pin"
 msgstr "Pin version"
 
+msgid "workspace.versions.button.preview"
+msgstr "Preview version"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:273
 msgid "workspace.versions.button.restore"
 msgstr "Restore version"
@@ -8874,6 +8877,15 @@ msgstr "This version is locked by %s and cannot be modified"
 #, unused
 msgid "workspace.versions.locked-by-you"
 msgstr "This version is locked by you"
+
+msgid "workspace.versions.preview.banner-label"
+msgstr "Previewing: %s"
+
+msgid "workspace.versions.preview.exit"
+msgstr "Exit preview"
+
+msgid "workspace.versions.preview.unnamed"
+msgstr "Unnamed version"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:83
 msgid "workspace.versions.restore-warning"
