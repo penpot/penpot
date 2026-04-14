@@ -1146,7 +1146,7 @@
   "Wrapper around subvec so it doesn't throw an exception but returns nil instead"
   ([v start]
    (when (and (some? v)
-              (> start 0) (< start (count v)))
+              (>= start 0) (< start (count v)))
      (subvec v start)))
   ([v start end]
    (when (some? v)

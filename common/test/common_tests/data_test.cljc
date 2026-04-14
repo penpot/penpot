@@ -325,6 +325,8 @@
   (t/is (= [2 3] (d/safe-subvec [1 2 3 4] 1 3)))
   ;; single arg — from index to end
   (t/is (= [2 3 4] (d/safe-subvec [1 2 3 4] 1)))
+  ;; start=0 returns the full vector
+  (t/is (= [1 2 3 4] (d/safe-subvec [1 2 3 4] 0)))
   ;; out-of-range returns nil
   (t/is (nil? (d/safe-subvec [1 2 3] 5)))
   (t/is (nil? (d/safe-subvec [1 2 3] 0 5)))
