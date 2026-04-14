@@ -125,7 +125,8 @@
        :editing? editing?
        :renaming? renaming?
        :focus-name? rename?
-       :external-open* open*}]
+       :external-open* open*
+       :is-asset? true}]
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))
 

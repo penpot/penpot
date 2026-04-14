@@ -566,7 +566,7 @@
 
 (mf/defc typography-entry
   {::mf/wrap-props false}
-  [{:keys [file-id typography local? selected? on-click on-change on-detach on-context-menu editing? renaming? focus-name? external-open*]}]
+  [{:keys [file-id typography local? selected? on-click on-change on-detach on-context-menu editing? renaming? focus-name? external-open* is-asset?]}]
   (let [name-input-ref       (mf/use-ref)
         read-only?           (mf/use-ctx ctx/workspace-read-only?)
         editable?            (and local? (not read-only?))
@@ -701,7 +701,7 @@
        :on-change  on-change
        :on-name-blur on-name-blur
        :on-key-down on-key-down
-       :on-delete (when editable? on-delete)
-       :on-duplicate (when editable? on-duplicate)
+       :on-delete (when (and is-asset? editable?) on-delete)
+       :on-duplicate (when (and is-asset? editable?) on-duplicate)
        :local?  local?
        :navigate-to-library navigate-to-library}]]))
