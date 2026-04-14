@@ -25,13 +25,12 @@
    [:fullname [::sm/text {:max 250}]]
    [:email ::sm/email]])
 
-(defn- on-success
-  [_]
-  (st/emit! (ntf/success (tr "notifications.profile-saved"))))
-
 (defn- on-submit
   [form _event]
-  (let [data  (:clean-data @form)]
+  (let [data       (:clean-data @form)
+        on-success (fn [_]
+                     (swap! form assoc :touched {})
+                     (st/emit! (ntf/success (tr "notifications.profile-saved"))))]
     (st/emit! (du/update-profile data)
               (du/persist-profile {:on-success on-success}))))
 
