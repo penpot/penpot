@@ -181,7 +181,6 @@
     [:oidc-roles-attr {:optional true} :string]
     [:oidc-email-attr {:optional true} :string]
     [:oidc-name-attr {:optional true} :string]
-    [:oidc-openid-attr {:optional true} :string]
 
     [:ldap-attrs-email {:optional true} :string]
     [:ldap-attrs-fullname {:optional true} :string]

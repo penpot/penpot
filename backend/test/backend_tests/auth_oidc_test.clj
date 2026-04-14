@@ -21,18 +21,15 @@
    (= [:oidc/ocs :data :email]
       (#'oidc/parse-attr-path oidc-provider "ocs.data.email"))))
 
-(t/deftest process-user-info-extracts-openid-from-nested-attrs
+(t/deftest process-user-info-supports-dot-notation-nested-attrs
   (let [provider (assoc oidc-provider
                         :email-attr "ocs.data.email"
-                        :name-attr "ocs.data.display-name"
-                        :openid-attr "ocs.data.id")
+                        :name-attr "ocs.data.display-name")
         info     (#'oidc/process-user-info provider
                                            {}
                                            {:email_verified true
-                                            :ocs {:data {:id "nextcloud-user-1"
-                                                         :email "nextcloud@example.com"
+                                            :ocs {:data {:email "nextcloud@example.com"
                                                          :display-name "Nextcloud User"}}})]
     (t/is (= "nextcloud@example.com" (:email info)))
     (t/is (= "Nextcloud User" (:fullname info)))
-    (t/is (true? (:email-verified info)))
-    (t/is (= "nextcloud-user-1" (get-in info [:props :oidc/openid])))))
+    (t/is (true? (:email-verified info)))))
