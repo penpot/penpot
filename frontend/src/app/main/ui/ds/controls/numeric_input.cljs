@@ -215,6 +215,10 @@
         raw-value*      (mf/use-ref nil)
         last-value*     (mf/use-ref nil)
 
+        ;; Flag to prevent effect from overwriting token during selection
+        ;; This prevents race condition between blur and token selection
+        token-selection-in-progress* (mf/use-ref false)
+
         ;; Refs
         wrapper-ref          (mf/use-ref nil)
         nodes-ref            (mf/use-ref nil)
@@ -318,6 +322,7 @@
         (mf/use-fn
          (mf/deps apply-token)
          (fn [id value name]
+           (mf/set-ref-val! token-selection-in-progress* true)
            (reset! selected-id* id)
            (reset! focused-id* nil)
            (reset! is-open* false)
@@ -325,6 +330,7 @@
            (apply-token value name)
            (ts/schedule-on-idle
             (fn []
+              (mf/set-ref-val! token-selection-in-progress* false)
               (when token-wrapper-ref
                 (dom/focus! (mf/ref-val token-wrapper-ref)))))))
 
@@ -716,22 +722,27 @@
 
                      :else
                      (fmt/format-number (d/parse-double value default)))]
-
         (mf/set-ref-val! raw-value* value')
         (mf/set-ref-val! last-value* value')
-        (reset! token-applied* applied-token)
-        (if applied-token
-          (let [token-id (:id (get-option-by-name dropdown-options applied-token))]
-            (reset! selected-id* token-id))
-          (reset! selected-id* nil))
+
+        ;; Only sync token state if not in the middle of a selection
+        ;; This prevents race condition between blur and token selection
+        (when-not (mf/ref-val token-selection-in-progress*)
+          (reset! token-applied* applied-token)
+          (if applied-token
+            (let [token-id (:id (get-option-by-name dropdown-options applied-token))]
+              (reset! selected-id* token-id))
+            (reset! selected-id* nil)))
 
         (when-let [node (mf/ref-val ref)]
           (dom/set-value! node value'))))
 
     (mf/with-effect [applied-token]
       (when (nil? applied-token)
-        (reset! token-applied* nil)
-        (reset! selected-id* nil)))
+        ;; Only clear if not in the middle of a selection
+        (when-not (mf/ref-val token-selection-in-progress*)
+          (reset! token-applied* nil)
+          (reset! selected-id* nil))))
 
     (mf/with-layout-effect [on-mouse-wheel]
       (when-let [node (mf/ref-val ref)]
