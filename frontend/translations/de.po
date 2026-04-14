@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-03-26 19:09+0000\n"
-"Last-Translator: Marius <hi@mariusscheel.de>\n"
+"PO-Revision-Date: 2026-04-15 13:09+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.17-dev\n"
+"X-Generator: Weblate 5.17.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -7192,7 +7192,7 @@ msgstr "Anmerkung erstellen"
 
 #: src/app/main/ui/workspace/context_menu.cljs:382
 msgid "workspace.shape.menu.create-artboard-from-selection"
-msgstr "Auswahl auf Zeichenfläche"
+msgstr "Auswahl als Zeichenfläche"
 
 #: src/app/main/ui/workspace/context_menu.cljs:592
 msgid "workspace.shape.menu.create-component"
@@ -8450,3 +8450,7 @@ msgstr "Der Wert für die Streuung darf nicht negativ sein"
 #: src/app/main/errors.cljs:303
 msgid "errors.deprecated.contact.before"
 msgstr "Penpot unterstützt diese Assets nicht mehr. Sie können uns allerdings"
+
+#: src/app/main/ui/static.cljs:314
+msgid "errors.webgl-context-lost.main-message"
+msgstr "Ups! Der Canvas-Kontext ist verloren gegangen"
