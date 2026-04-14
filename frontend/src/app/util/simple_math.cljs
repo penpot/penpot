@@ -90,7 +90,12 @@
         init-value (or init-value 0)]
     (s/assert number? init-value)
     (if-not (insta/failure? result)
-      (interpret result init-value)
+      (try
+        (interpret result init-value)
+        (catch :default err
+          (js/console.debug (str "Expression evaluation error: " (ex-message err))
+                            (str "Expression: '" expr "'"))
+          nil))
       (let [text (:text result)
             index (:index result)
             expecting (->> result
