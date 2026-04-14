@@ -713,7 +713,7 @@
         (mf/use-fn
          (mf/deps on-change wrap-type ids)
          (fn [value event attr]
-           (let [on-change-fn #((on-change (= "nowrap" wrap-type) attr % event))]
+           (let [on-change-fn #(on-change (= "nowrap" wrap-type) attr % event)]
              (soc/emit-value-or-token value on-change-fn ids #{attr}))))
 
         on-detach-token
