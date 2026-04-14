@@ -509,7 +509,8 @@
 
     (when (some? shape-strokes)
       [:> :g props
-       (for [[index value] (reverse (d/enumerate shape-strokes))]
+       (for [[index value] (reverse (d/enumerate shape-strokes))
+             :when (not (:hidden value))]
          [:& shape-custom-stroke {:shape shape
                                   :stroke value
                                   :index index
