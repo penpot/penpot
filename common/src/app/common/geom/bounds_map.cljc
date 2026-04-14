@@ -79,10 +79,10 @@
              (loop [new-ids
                     (->> (cfh/get-parent-seq objects cid)
                          (take-while #(and (cfh/group-like-shape? %)
-                                           (not (.has ids %))))
+                                           (not (.has ids (:id %)))))
                          (seq))]
                (when (some? new-ids)
-                 (.add ids (first new-ids))
+                 (.add ids (:id (first new-ids)))
                  (recur (next new-ids))))
              (recur (next base-ids)))))
        ids)))
