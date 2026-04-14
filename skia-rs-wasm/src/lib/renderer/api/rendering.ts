@@ -48,4 +48,3 @@ export function requestRender(module: WasmModule, _requester: string): void {
     render(module, ts)
   })
 }
-

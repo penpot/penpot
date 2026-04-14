@@ -173,6 +173,10 @@ export interface WasmModule {
   _set_shape_blur(blur_type: number, hidden: number, value: number): void
   _clear_shape_blur(): void
 
+  // Glass
+  _set_shape_glass(surface_type: number, bezel_width: number, glass_thickness: number, refractive_index: number, specular_angle: number, specular_opacity: number, specular_saturation: number, chromatic_aberration: number, splay: number, tilt_angle: number, edge_boost: number, zoom: number, blur: number, frost: number, hidden: number): void
+  _clear_shape_glass(): void
+
   // Corners
   _set_shape_corners(r1: number, r2: number, r3: number, r4: number): void
 

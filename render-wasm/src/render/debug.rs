@@ -191,6 +191,58 @@ pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
     run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"));
 }
 
+/// Display a surface snapshot as a labeled image in a floating debug overlay panel.
+/// Images are shown at reasonable size with labels so each pass can be inspected visually.
+#[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
+pub fn overlay_debug_surface(render_state: &mut RenderState, id: SurfaceId, label: &str) {
+    let base64_image = render_state
+        .surfaces
+        .base64_snapshot(id)
+        .expect("Failed to get base64 image");
+
+    overlay_debug_b64(&base64_image, label);
+}
+
+/// Display a base64-encoded PNG image in the debug overlay panel.
+#[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
+pub fn overlay_debug_b64(base64_image: &str, label: &str) {
+    run_script!(format!(
+        r#"(function(label, b64) {{
+            var panel = document.getElementById('glass-debug-panel');
+            if (!panel) {{
+                panel = document.createElement('div');
+                panel.id = 'glass-debug-panel';
+                panel.style.cssText = 'position:fixed;top:0;right:0;z-index:99999;background:rgba(0,0,0,0.92);padding:8px;max-height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-width:340px;';
+                var closeBtn = document.createElement('button');
+                closeBtn.textContent = 'X';
+                closeBtn.style.cssText = 'position:sticky;top:0;align-self:flex-end;background:#c00;color:white;border:none;padding:2px 8px;cursor:pointer;font-size:14px;z-index:1;';
+                closeBtn.onclick = function() {{ panel.remove(); }};
+                panel.appendChild(closeBtn);
+                document.body.appendChild(panel);
+            }}
+            var item = document.createElement('div');
+            item.innerHTML = '<div style="color:#0f0;font-size:11px;font-family:monospace;margin-bottom:2px;">' + label + '</div><img src="data:image/png;base64,' + b64 + '" style="max-width:320px;border:1px solid #555;display:block;">';
+            panel.appendChild(item);
+        }})('{label}', '{base64_image}');"#,
+        label = label,
+        base64_image = base64_image
+    ));
+}
+
+/// Clear the debug overlay panel (call at the start of each glass render).
+#[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
+pub fn overlay_debug_clear() {
+    run_script!(
+        r#"(function() {
+            var panel = document.getElementById('glass-debug-panel');
+            if (panel) panel.remove();
+        })();"#
+    );
+}
+
 #[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId, rect: skia::Rect) {

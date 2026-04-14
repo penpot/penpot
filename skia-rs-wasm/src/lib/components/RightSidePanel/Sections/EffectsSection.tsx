@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import type { Blur, PenpotNode, Shadow } from 'penpot-exporter/types'
+import type { Blur, Glass, PenpotNode, Shadow } from 'penpot-exporter/types'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -17,7 +17,7 @@ import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
 import { EffectRow } from './EffectRow'
 import { useColorEditor } from '../use-color-editor'
 
-/** Merge shape shadow[] + blur into a unified EffectItem list. */
+/** Merge shape shadow[] + blur + glass into a unified EffectItem list. */
 function mergeEffects(node: RectLikeNode): EffectItem[] {
   const items: EffectItem[] = []
   for (const s of (node as Record<string, unknown>).shadow as Shadow[] ?? []) {
@@ -28,21 +28,28 @@ function mergeEffects(node: RectLikeNode): EffectItem[] {
     const kind = blur.type === 'background-blur' ? 'background-blur' : 'layer-blur'
     items.push({ kind, blur })
   }
+  const glass = (node as Record<string, unknown>).glass as Glass | undefined
+  if (glass) {
+    items.push({ kind: 'glass', glass })
+  }
   return items
 }
 
-/** Split EffectItem list back into shadow[] and blur for committing. */
-function splitEffects(effects: EffectItem[]): { shadow: Shadow[]; blur: Blur | undefined } {
+/** Split EffectItem list back into shadow[], blur, and glass for committing. */
+function splitEffects(effects: EffectItem[]): { shadow: Shadow[]; blur: Blur | undefined; glass: Glass | undefined } {
   const shadows: Shadow[] = []
   let blur: Blur | undefined
+  let glass: Glass | undefined
   for (const e of effects) {
     if (e.kind === 'layer-blur' || e.kind === 'background-blur') {
       blur = e.blur
+    } else if (e.kind === 'glass') {
+      glass = e.glass
     } else {
       shadows.push(e.shadow)
     }
   }
-  return { shadow: shadows, blur }
+  return { shadow: shadows, blur, glass }
 }
 
 export interface EffectsSectionProps {
@@ -69,13 +76,17 @@ export function EffectsSection({ nodeId, readOnly, initialNode }: EffectsSection
       const before = getCommittedNodeOnActivePage(nodeId)
       const pid = getActiveOrSinglePageId()
       if (!before || !pid) return
-      const { shadow, blur } = splitEffects(next)
+      const { shadow, blur, glass } = splitEffects(next)
       const partial: Record<string, unknown> = { shadow }
       // Include blur when it has a value or when clearing a previously set blur.
       // Use null (not undefined) to clear, since commitNodePartialUpdate skips undefined.
       const hadBlur = (before as Record<string, unknown>).blur != null
       if (blur !== undefined || hadBlur) {
         partial.blur = blur ?? null
+      }
+      const hadGlass = (before as Record<string, unknown>).glass != null
+      if (glass !== undefined || hadGlass) {
+        partial.glass = glass ?? null
       }
       await commitNodePartialUpdate(nodeId, before, partial as Partial<PenpotNode>, pid)
     },
@@ -102,8 +113,8 @@ export function EffectsSection({ nodeId, readOnly, initialNode }: EffectsSection
 
   const removeEffect = useCallback(
     (index: number) => {
-      // Close color editor if removing the shadow being edited
-      if (activeTarget?.kind === 'shadow' && activeTarget.index === index) closeEditor()
+      // Close effect editor if removing the effect being edited
+      if (activeTarget && activeTarget.index === index && activeTarget.kind !== 'fill' && activeTarget.kind !== 'stroke') closeEditor()
       const next = effects.filter((_, i) => i !== index)
       setEffects(next)
       void commitEffects(next)

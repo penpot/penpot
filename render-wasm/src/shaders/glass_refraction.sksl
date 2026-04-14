@@ -1,0 +1,45 @@
+// Glass refraction — intermediate pass of the glass pipeline.
+// Applies displacement and chromatic aberration to the unblurred backdrop.
+// Output: full image (refracted where glass, original elsewhere).
+// Blur is applied externally AFTER this pass via Skia's ImageFilter.
+
+uniform shader  backdrop;        // unblurred backdrop
+uniform shader  displacement;    // displacement field from Pass 1 (raw F16 values)
+uniform float2  u_resolution;
+uniform float   u_chromaticAberration; // pixels
+
+half4 main(float2 fragCoord) {
+    // Read raw displacement field (F16 — no decoding needed)
+    half4 dispData = displacement.eval(fragCoord);
+    float dx = float(dispData.r);
+    float dy = float(dispData.g);
+    float mask = float(dispData.a);
+
+    // Outside glass: passthrough
+    if (mask < 0.001) {
+        return backdrop.eval(fragCoord);
+    }
+
+    float2 dpx = float2(dx, dy);
+
+    // ---- REFRACTION + CHROMATIC ABERRATION ----
+    float2 dispUV = dpx / u_resolution;
+    float dLen = length(dpx);
+    float caStr = smoothstep(0.0, 5.0, dLen);
+    float2 caDir = dLen > 0.01 ? dpx / dLen : float2(0.0);
+    float2 caShift = caDir * u_chromaticAberration * caStr / u_resolution;
+
+    float2 uv = fragCoord / u_resolution;
+    float2 refUV = uv + dispUV;
+
+    half3 refracted = half3(
+        backdrop.eval((refUV - caShift) * u_resolution).r,
+        backdrop.eval(refUV * u_resolution).g,
+        backdrop.eval((refUV + caShift) * u_resolution).b
+    );
+
+    // Blend refracted content with original at glass boundary using mask
+    half3 bg = backdrop.eval(fragCoord).rgb;
+    half3 result = mix(bg, refracted, half(mask));
+    return half4(result, 1.0);
+}

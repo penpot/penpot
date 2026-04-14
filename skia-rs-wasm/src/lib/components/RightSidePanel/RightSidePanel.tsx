@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { FloatingEditorRail } from '../EditorShell/floating-editor-rail'
-import { ROOT_UUID, type RectLikeNode } from '../../renderer/properties/panel-utils'
+import { ROOT_UUID, type EffectItem, type RectLikeNode } from '../../renderer/properties/panel-utils'
 import { PagePropertyPanel } from './PagePropertyPanel'
 import { NodePropertyPanel } from './NodePropertyPanel'
 import {
@@ -22,6 +22,7 @@ import {
   type ColorEditorTarget,
 } from './color-editor-context'
 import { FloatingColorEditorPanel } from './FloatingColorEditorPanel'
+import { FloatingEffectEditorPanel } from './FloatingEffectEditorPanel'
 
 export interface RightSidePanelProps {
   className?: string
@@ -40,11 +41,17 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
   const [title, setTitle] = useState('')
   const onChangeRef = useRef<((fill: Fill) => void) | null>(null)
 
+  // Effect editor state (glass / shadow properties)
+  const [activeEffect, setActiveEffect] = useState<EffectItem | null>(null)
+  const onEffectChangeRef = useRef<((effect: EffectItem) => void) | null>(null)
+
   const closeEditor = useCallback(() => {
     setActiveTarget(null)
     setActiveFill(null)
+    setActiveEffect(null)
     setTitle('')
     onChangeRef.current = null
+    onEffectChangeRef.current = null
     activeEditorTarget.value = null
   }, [])
 
@@ -54,8 +61,29 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
       setActiveFill(fill)
       setAnchorY(y)
       setTitle(t)
+      // Clear effect-specific state so FloatingEffectEditorPanel hides
+      setActiveEffect(null)
+      onEffectChangeRef.current = null
       onChangeRef.current = (next: Fill) => {
         setActiveFill(next)
+        onChange(next)
+      }
+      activeEditorTarget.value = { kind, index }
+    },
+    [],
+  )
+
+  const openEffectEditor = useCallback(
+    (kind: ColorEditorKind, index: number, effect: EffectItem, y: number, t: string, onChange: (effect: EffectItem) => void) => {
+      setActiveTarget({ kind, index })
+      setActiveEffect(effect)
+      setAnchorY(y)
+      setTitle(t)
+      // Clear fill-specific state so FloatingColorEditorPanel hides
+      setActiveFill(null)
+      onChangeRef.current = null
+      onEffectChangeRef.current = (next: EffectItem) => {
+        setActiveEffect(next)
         onChange(next)
       }
       activeEditorTarget.value = { kind, index }
@@ -109,8 +137,11 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
       openEditor,
       closeEditor,
       onChangeRef,
+      activeEffect,
+      onEffectChangeRef,
+      openEffectEditor,
     }),
-    [activeTarget, activeFill, anchorY, title, openEditor, closeEditor],
+    [activeTarget, activeFill, activeEffect, anchorY, title, openEditor, openEffectEditor, closeEditor],
   )
 
   const count = selectedIds.size
@@ -126,6 +157,7 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
     return (
       <ColorEditorContext.Provider value={colorEditorCtx}>
         <FloatingColorEditorPanel />
+        <FloatingEffectEditorPanel />
         <FloatingEditorRail
           side="right"
           title="Design"
@@ -152,6 +184,7 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
     return (
       <ColorEditorContext.Provider value={colorEditorCtx}>
         <FloatingColorEditorPanel />
+        <FloatingEffectEditorPanel />
         <FloatingEditorRail
           side="right"
           title="Design"
@@ -180,6 +213,7 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
   return (
     <ColorEditorContext.Provider value={colorEditorCtx}>
       <FloatingColorEditorPanel />
+      <FloatingEffectEditorPanel />
       <FloatingEditorRail
         side="right"
         title="Design"

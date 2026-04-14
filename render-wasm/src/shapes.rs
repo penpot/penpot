@@ -15,6 +15,7 @@ mod corners;
 mod fills;
 mod fonts;
 mod frames;
+mod glass;
 mod groups;
 mod layouts;
 pub mod modifiers;
@@ -37,6 +38,7 @@ pub use corners::*;
 pub use fills::*;
 pub use fonts::*;
 pub use frames::*;
+pub use glass::{GlassEffect, GLASS_DISPLACEMENT_SKSL, GLASS_REFRACTION_SKSL, GLASS_SKSL};
 pub use groups::*;
 pub use layouts::*;
 pub use modifiers::*;
@@ -187,6 +189,7 @@ pub struct Shape {
     pub blend_mode: BlendMode,
     pub vertical_align: VerticalAlign,
     pub blur: Option<Blur>,
+    pub glass: Option<GlassEffect>,
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
@@ -290,6 +293,7 @@ impl Shape {
             opacity: 1.,
             hidden: false,
             blur: None,
+            glass: None,
             svg: None,
             svg_attrs: None,
             shadows: Vec::with_capacity(1),
@@ -628,6 +632,10 @@ impl Shape {
     pub fn set_blur(&mut self, blur: Option<Blur>) {
         self.invalidate_extrect();
         self.blur = blur;
+    }
+
+    pub fn set_glass(&mut self, glass: Option<GlassEffect>) {
+        self.glass = glass;
     }
 
     pub fn add_child(&mut self, id: Uuid) {

@@ -1,0 +1,153 @@
+// Glass displacement field — Pass 1 of the glass pipeline.
+// Computes SDF, surface profiles, Snell's Law refraction displacement,
+// specular highlights, and outputs an encoded displacement field.
+// Output: half4(encode(dx), encode(dy), specular, mask)
+
+uniform float2  u_resolution;
+uniform float4  u_mouse;         // glass center (.xy), zw unused
+
+uniform int     u_surfaceType;   // 0=circle, 1=squircle, 2=concave, 3=lip
+uniform float   u_bezelWidth;    // pixels
+uniform float   u_glassThickness;
+uniform float   u_refractiveIndex;
+uniform float   u_specularAngle; // radians
+uniform float2  u_glassSize;     // half-extents in pixels
+uniform float   u_cornerRadius;  // pixels
+uniform float   u_splay;         // 0=flat pane, 1=dome
+uniform float   u_tiltAngle;     // radians
+uniform float   u_edgeBoost;
+uniform float   u_zoom;
+
+// With F16 surfaces, displacement values are stored as raw half-floats.
+// No encoding/decoding needed.
+
+// ============================================================
+//  Rounded rectangle SDF
+// ============================================================
+float roundedRectSDF(float2 p, float2 halfSize, float r) {
+    float2 d = abs(p) - halfSize + float2(r);
+    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - r;
+}
+
+// ============================================================
+//  Surface height functions
+//  x in [0,1]: 0 = outer edge, 1 = end of bezel / flat interior
+// ============================================================
+float surfaceCircle(float x) {
+    float t = 1.0 - x;
+    return sqrt(max(0.0, 1.0 - t * t));
+}
+
+float surfaceSquircle(float x) {
+    float t = 1.0 - x;
+    float t4 = t * t * t * t;
+    return pow(max(0.0, 1.0 - t4), 0.25);
+}
+
+float surfaceConcave(float x) {
+    float t = 1.0 - x;
+    float t4 = t * t * t * t;
+    return 1.0 - pow(max(0.0, 1.0 - t4), 0.25);
+}
+
+float surfaceLip(float x) {
+    float t = 1.0 - x;
+    float t4 = t * t * t * t;
+    float c = pow(max(0.0, 1.0 - t4), 0.25);
+    float sx = clamp(x, 0.0, 1.0);
+    float ss = sx * sx * sx * (sx * (sx * 6.0 - 15.0) + 10.0);
+    return mix(c, 1.0 - c, ss);
+}
+
+float surfaceHeight(float x) {
+    if (u_surfaceType == 0) return surfaceCircle(x);
+    if (u_surfaceType == 1) return surfaceSquircle(x);
+    if (u_surfaceType == 2) return surfaceConcave(x);
+    return surfaceLip(x);
+}
+
+float surfaceDerivative(float x) {
+    float delta = 0.001;
+    return (surfaceHeight(min(1.0, x + delta))
+          - surfaceHeight(max(0.0, x - delta))) / (2.0 * delta);
+}
+
+// ============================================================
+//  Snell's Law displacement
+// ============================================================
+float snellRefract(float theta1, float n1, float n2) {
+    float s = (n1 / n2) * sin(theta1);
+    if (abs(s) > 1.0) return -1.0;
+    return asin(s);
+}
+
+float calculateDisplacement(float d, float thick, float n2) {
+    if (d <= 0.0 || d >= 1.0) return 0.0;
+    float h  = surfaceHeight(d) * thick;
+    float dh = surfaceDerivative(d) * thick;
+    float sA = atan(dh);
+    float tI = abs(sA);
+    float tR = snellRefract(tI, 1.0, n2);
+    if (tR < 0.0) return 0.0;
+    return (h * tan(tR) - h * tan(tI)) * sign(dh);
+}
+
+// ============================================================
+//  Specular
+// ============================================================
+float calculateSpecular(float d, float bezel, float lightAngle, float2 dir) {
+    if (d <= 0.0 || d >= 1.0) return 0.0;
+    float px = d * bezel;
+    float band = exp(-0.5 * pow((px - 2.0) / 1.0, 2.0));
+    float2 ld = float2(cos(lightAngle), sin(lightAngle));
+    float f = abs(dot(dir, ld));
+    f = pow(f, 2.0);
+    return band * f;
+}
+
+// ============================================================
+//  Main — outputs encoded displacement field
+// ============================================================
+half4 main(float2 fragCoord) {
+    float2 glassSize = u_glassSize;
+    float cR = min(u_cornerRadius, min(glassSize.x, glassSize.y));
+    float2 glassCenter = u_mouse.xy;
+    float2 localPos = fragCoord - glassCenter;
+
+    // SDF
+    float dist = roundedRectSDF(localPos, glassSize, cR);
+
+    // Outside glass: zero displacement, no specular, no mask
+    if (dist > 0.0) {
+        return half4(0.0, 0.0, 0.0, 0.0);
+    }
+
+    // Bezel parameters
+    float bezel = min(u_bezelWidth, min(glassSize.x, glassSize.y));
+    float distFromBorder = clamp(-dist / bezel, 0.0, 1.0);
+
+    // Displacement direction (splay + tilt)
+    float2 radialDir = normalize(localPos / max(float2(1.0), glassSize));
+    float2 flatDir = float2(cos(u_tiltAngle), sin(u_tiltAngle));
+    float2 blendedDir = mix(flatDir, radialDir, u_splay);
+    float bLen = length(blendedDir);
+    float2 dir = bLen > 0.001 ? blendedDir / bLen : float2(0.0);
+
+    // Displacement (Snell's Law + edge boost + zoom)
+    float disp = calculateDisplacement(distFromBorder, u_glassThickness, u_refractiveIndex);
+    float edgeFade = pow(1.0 - distFromBorder, 1.5);
+    disp *= 1.0 + u_edgeBoost * edgeFade;
+    float2 dpx = dir * disp;
+
+    // Zoom magnification
+    float zoomFactor = 1.0 / max(u_zoom, 0.1) - 1.0;
+    dpx += localPos * zoomFactor;
+
+    // Specular
+    float specular = calculateSpecular(distFromBorder, bezel, u_specularAngle, dir);
+
+    // Mask
+    float mask = smoothstep(0.0, 1.5, -dist);
+
+    return half4(dpx.x, dpx.y, specular, mask);
+}

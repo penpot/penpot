@@ -1,7 +1,8 @@
 import { createContext, type RefObject } from 'react'
 import type { Fill } from 'penpot-exporter/types'
+import type { EffectItem } from '../../renderer/properties/panel-utils'
 
-export type ColorEditorKind = 'fill' | 'stroke' | 'shadow'
+export type ColorEditorKind = 'fill' | 'stroke' | 'drop-shadow' | 'inner-shadow' | 'layer-blur' | 'background-blur' | 'glass'
 
 export interface ColorEditorTarget {
   kind: ColorEditorKind
@@ -23,6 +24,18 @@ export interface ColorEditorContextValue {
   ) => void
   closeEditor: () => void
   onChangeRef: RefObject<((fill: Fill) => void) | null>
+
+  // Effect editor (glass / shadow properties)
+  activeEffect: EffectItem | null
+  onEffectChangeRef: RefObject<((effect: EffectItem) => void) | null>
+  openEffectEditor: (
+    kind: ColorEditorKind,
+    index: number,
+    effect: EffectItem,
+    anchorY: number,
+    title: string,
+    onChange: (effect: EffectItem) => void,
+  ) => void
 }
 
 export const ColorEditorContext = createContext<ColorEditorContextValue>({
@@ -33,4 +46,7 @@ export const ColorEditorContext = createContext<ColorEditorContextValue>({
   openEditor: () => {},
   closeEditor: () => {},
   onChangeRef: { current: null },
+  activeEffect: null,
+  onEffectChangeRef: { current: null },
+  openEffectEditor: () => {},
 })

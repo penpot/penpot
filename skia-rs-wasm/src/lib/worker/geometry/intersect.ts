@@ -520,6 +520,18 @@ function overlapsInnerShape(shape: PenpotNode, rect: Selrect, shapeType: string)
   return false
 }
 
+/**
+ * True when the shape has a visible background effect (background-blur or glass)
+ * that makes its interior visually significant even without fills.
+ */
+function hasVisibleBackgroundEffect(shape: PenpotNode): boolean {
+  const blur = shape.blur
+  if (blur && blur.type === 'background-blur' && !blur.hidden) return true
+  const glass = shape.glass
+  if (glass && !glass.hidden) return true
+  return false
+}
+
 export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean = false): boolean {
   if (!shape) {
     return false
@@ -536,13 +548,16 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
     rect.height + 2 * swidth
   )
 
-  // Handle shapes without fills (stroke-only)
+  // Handle shapes without fills (stroke-only) — but skip stroke-only mode
+  // when a visible background effect (background-blur or glass) makes the
+  // interior visually significant.
   const svgAttrs = shape.svgAttrs
   if (
     !usingSelrect &&
     (!shape.fills || shape.fills.length === 0) &&
     !svgAttrs?.fill &&
-    !svgAttrs?.style?.fill
+    !svgAttrs?.style?.fill &&
+    !hasVisibleBackgroundEffect(shape)
   ) {
     const shapeTypeInner = shape.type
 

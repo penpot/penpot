@@ -6,9 +6,9 @@ import { Separator } from '@/components/ui/separator'
 import {
   commitNodePartialUpdate,
   getCommittedNodeOnActivePage,
-} from '../../../renderer/properties/commit-node-properties'
-import { DEFAULT_FILL, MAX_FILLS, type RectLikeNode } from '../../../renderer/properties/panel-utils'
-import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
+} from '@/lib/renderer/properties/commit-node-properties'
+import { DEFAULT_FILL, MAX_FILLS, type RectLikeNode } from '@/lib/renderer/properties/panel-utils'
+import { getActiveOrSinglePageId } from '@/lib/renderer/store/doc-proxy'
 import { FillRow } from './FillRow'
 import { useColorEditor } from '../use-color-editor'
 
@@ -72,7 +72,7 @@ export function FillsSection({ nodeId, readOnly, initialNode }: FillsSectionProp
       setFills(next)
       void commitFills(next)
     },
-    [fills, commitFills, activeTarget, closeEditor],
+    [fills, commitFills, closeEditor, activeTarget?.kind, activeTarget?.index],
   )
 
   const hasFills = fills.length > 0
