@@ -602,12 +602,9 @@
   (let [do-map
         (fn [entry]
           (let [[k v] (mfn entry)]
-            (cond
-              (or (vector? v) (map? v))
+            (if (or (vector? v) (map? v))
               [k (deep-mapm mfn v)]
-
-              :else
-              (mfn [k v]))))]
+              [k v])))]
     (cond
       (map? m)
       (into {} (map do-map) m)

@@ -538,17 +538,20 @@
            (into [] (d/distinct-xf :id) [{:id 1 :v "a"} {:id 2 :v "x"} {:id 2 :v "b"}]))))
 
 (t/deftest deep-mapm-test
-  ;; Note: mfn is called twice on leaf entries (once initially, once again
-  ;; after checking if the value is a map/vector), so a doubling fn applied
-  ;; to value 1 gives 1*2*2=4.
-  (t/is (= {:a 4 :b {:c 8}}
+  ;; mfn is applied once per entry
+  (t/is (= {:a 2 :b {:c 4}}
            (d/deep-mapm (fn [[k v]] [k (if (number? v) (* v 2) v)])
                         {:a 1 :b {:c 2}})))
-  ;; Keyword renaming: keys are also transformed — and applied twice.
-  ;; Use an idempotent key transformation (uppercase once = uppercase twice).
+  ;; Keyword renaming: keys are transformed once per entry
   (let [result (d/deep-mapm (fn [[k v]] [(keyword (str (name k) "!")) v])
                             {:a 1})]
-    (t/is (contains? result (keyword "a!!")))))
+    (t/is (contains? result (keyword "a!"))))
+  ;; Vectors inside maps are recursed into
+  (t/is (= {:items [{:x 10}]}
+           (d/deep-mapm (fn [[k v]] [k (if (number? v) (* v 10) v)])
+                        {:items [{:x 1}]})))
+  ;; Plain scalar at top level map
+  (t/is (= {:a "hello"} (d/deep-mapm identity {:a "hello"}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numeric helpers
