@@ -252,13 +252,13 @@
   ([items] (enumerate items 0))
   ([items start]
    (loop [idx   start
-          items items
+          items (seq items)
           res   (transient [])]
-     (if (empty? items)
-       (persistent! res)
+     (if items
        (recur (inc idx)
-              (rest items)
-              (conj! res [idx (first items)]))))))
+              (next items)
+              (conj! res [idx (first items)]))
+       (persistent! res)))))
 
 (defn group-by
   ([kf coll] (group-by kf identity [] coll))
