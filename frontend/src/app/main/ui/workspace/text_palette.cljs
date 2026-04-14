@@ -64,7 +64,7 @@
      [:div {:class (stl/css :typography-font)}
       (:name font-data)]
      [:div {:class (stl/css :typography-data)}
-      (str (:font-size typography) "px | " (:name variant-data))]]))
+      (str (:font-size typography) "px | " (or (:name variant-data) "--"))]]))
 
 (mf/defc palette*
   [{:keys [selected selected-ids current-file-id file-typographies libraries size width]}]
