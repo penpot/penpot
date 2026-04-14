@@ -11,6 +11,7 @@
 ### :sparkles: New features & Enhancements
 
 - Add "Clear artboard guides" option to right-click context menu for frames (by @eureka928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
+- Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
 - Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
 - Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Import Tokens from linked library (by @dfelinto) [Github #8391](https://github.com/penpot/penpot/pull/8391)
