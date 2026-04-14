@@ -420,9 +420,9 @@
               coll)))
 
 (defn removev
-  "Returns a vector of the items in coll for which (fn item) returns logical false"
-  [fn coll]
-  (filterv (comp not fn) coll))
+  "Returns a vector of the items in coll for which (pred item) returns logical false"
+  [pred coll]
+  (filterv (comp not pred) coll))
 
 (defn filterm
   "Filter values of a map that satisfy a predicate"
