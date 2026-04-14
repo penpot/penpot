@@ -16,7 +16,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
-   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.nitrate :as cnit]
@@ -88,18 +87,22 @@
 
 (def ^:private schema:upload-org-logo
   [:map
-   [:content media/schema:upload]])
+   [:content media/schema:upload]
+   [:previous-id {:optional true} ::sm/uuid]])
 
 (def ^:private schema:upload-org-logo-result
   [:map [:id ::sm/uuid]])
 
 (sv/defmethod ::upload-org-logo
-  "Store an organization logo in penpot storage and return its ID"
+  "Store an organization logo in penpot storage and return its ID.
+  Accepts an optional previous-id to mark the old logo for garbage
+  collection when replacing an existing one."
   {::doc/added "2.16"
    ::sm/params schema:upload-org-logo
-   ::sm/result schema:upload-org-logo-result
-   ::rpc/auth false}
-  [{:keys [::sto/storage]} {:keys [content]}]
+   ::sm/result schema:upload-org-logo-result}
+  [{:keys [::sto/storage]} {:keys [content previous-id]}]
+  (when previous-id
+    (sto/del-object! storage previous-id))
   (let [hash (sto/calculate-hash (:path content))
         data (-> (sto/content (:path content))
                  (sto/wrap-with-hash hash))

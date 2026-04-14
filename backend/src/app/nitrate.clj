@@ -116,7 +116,7 @@
    [:is-your-penpot :boolean]
    [:owner-id ::sm/uuid]
    [:avatar-bg-url [::sm/text]]
-   [:logo-data-url {:optional true} [:maybe ::sm/text]]])
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]])
 
 (def ^:private schema:org-summary
   [:map
@@ -394,7 +394,8 @@
                :organization-slug (:slug org)
                :organization-owner-id (:owner-id org)
                :organization-avatar-bg-url (:avatar-bg-url org)
-               :organization-custom-photo (:logo-data-url org)
+               :organization-custom-photo (when-let [logo-id (:logo-id org)]
+                                            (str (cf/get :public-uri) "/assets/by-id/" logo-id))
                :is-default (or (:is-default team) (true? (:is-your-penpot org))))
         team))
     (catch Throwable cause
