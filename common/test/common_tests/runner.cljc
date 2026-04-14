@@ -15,6 +15,7 @@
    [common-tests.files-migrations-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-map-test]
+   [common-tests.geom-grid-layout-test]
    [common-tests.geom-grid-test]
    [common-tests.geom-line-test]
    [common-tests.geom-modif-tree-test]
