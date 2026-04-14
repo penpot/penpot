@@ -467,9 +467,29 @@
 
 (mf/defc typography-advanced-options
   {::mf/wrap [mf/memo]}
-  [{:keys [visible? typography editable? name-input-ref on-close on-change on-name-blur on-delete on-duplicate local? navigate-to-library on-key-down]}]
-  (let [ref       (mf/use-ref nil)
-        font-data (fonts/get-font-data (:font-id typography))]
+  [{:keys [visible? typography editable? name-input-ref on-close on-change on-name-blur
+           local? navigate-to-library on-key-down file-id is-asset?]}]
+  (let [ref            (mf/use-ref nil)
+        font-data      (fonts/get-font-data (:font-id typography))
+        typography-id  (:id typography)
+        show-actions?  (and is-asset? editable?)
+
+        on-delete
+        (mf/use-fn
+         (mf/deps typography-id file-id on-close)
+         (fn []
+           (on-close)
+           (let [undo-id (js/Symbol)]
+             (st/emit! (dwu/start-undo-transaction undo-id)
+                       (dwl/delete-typography typography-id)
+                       (dwl/sync-file file-id file-id :typographies typography-id)
+                       (dwu/commit-undo-transaction undo-id)))))
+
+        on-duplicate
+        (mf/use-fn
+         (mf/deps file-id typography-id)
+         (fn []
+           (st/emit! (dwl/duplicate-typography file-id typography-id))))]
     (fonts/ensure-loaded! (:font-id typography))
 
     (mf/use-effect
@@ -502,16 +522,16 @@
              :on-blur on-name-blur}]
 
            [:div {:class (stl/css :action-btns)}
-            (when (fn? on-duplicate)
-              [:> icon-button* {:variant "ghost"
-                                :aria-label (tr "workspace.assets.duplicate")
-                                :on-click on-duplicate
-                                :icon i/add}])
-            (when (fn? on-delete)
-              [:> icon-button* {:variant "ghost"
-                                :aria-label (tr "workspace.assets.delete")
-                                :on-click on-delete
-                                :icon i/delete}])
+            (when show-actions?
+              [:*
+               [:> icon-button* {:variant "ghost"
+                                 :aria-label (tr "workspace.assets.duplicate")
+                                 :on-click on-duplicate
+                                 :icon i/add}]
+               [:> icon-button* {:variant "ghost"
+                                 :aria-label (tr "workspace.assets.delete")
+                                 :on-click on-delete
+                                 :icon i/delete}]])
             [:> icon-button* {:variant "ghost"
                               :aria-label (tr "labels.close")
                               :on-click on-close
@@ -607,26 +627,7 @@
              (when ^boolean enter?
                (dom/blur! input-node))
              (when ^boolean esc?
-               (dom/blur! input-node)))))
-
-        typography-id (:id typography)
-
-        on-delete
-        (mf/use-fn
-         (mf/deps typography-id file-id on-close)
-         (fn []
-           (on-close)
-           (let [undo-id (js/Symbol)]
-             (st/emit! (dwu/start-undo-transaction undo-id)
-                       (dwl/delete-typography typography-id)
-                       (dwl/sync-file file-id file-id :typographies typography-id)
-                       (dwu/commit-undo-transaction undo-id)))))
-
-        on-duplicate
-        (mf/use-fn
-         (mf/deps file-id typography-id)
-         (fn []
-           (st/emit! (dwl/duplicate-typography file-id typography-id))))]
+               (dom/blur! input-node)))))]
 
     (mf/with-effect [editing?]
       (when editing?
@@ -701,7 +702,7 @@
        :on-change  on-change
        :on-name-blur on-name-blur
        :on-key-down on-key-down
-       :on-delete (when (and is-asset? editable?) on-delete)
-       :on-duplicate (when (and is-asset? editable?) on-duplicate)
+       :file-id file-id
+       :is-asset? is-asset?
        :local?  local?
        :navigate-to-library navigate-to-library}]]))
