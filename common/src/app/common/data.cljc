@@ -143,7 +143,7 @@
     (oassoc-in o (cons k ks) v)))
 
 (defn vec2
-  "Creates a optimized vector compatible type of length 2 backed
+  "Creates an optimized vector compatible type of length 2 backed
   internally with MapEntry impl because it has faster access method
   for its fields."
   [o1 o2]
@@ -401,7 +401,7 @@
   (map vector col1 col2))
 
 (defn zip-all
-  "Return a zip of both collections, extended to the lenght of the longest one,
+  "Return a zip of both collections, extended to the length of the longest one,
    and padding the shorter one with nils as needed."
   [col1 col2]
   (let [diff (- (count col1) (count col2))]
@@ -440,7 +440,7 @@
 
   Optional parameters:
   `pred?`   A predicate that if not satisfied won't process the pair
-  `target?` A collection that will be used as seed to be stored
+  `target`  A collection that will be used as seed to be stored
 
   Example:
   (map-perm vector [1 2 3 4]) => [[1 2] [1 3] [1 4] [2 3] [2 4] [3 4]]"
