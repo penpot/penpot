@@ -1156,5 +1156,6 @@
 
 (defn append-class
   [class current-class]
-  (str (if (some? class) (str class " ") "")
-       current-class))
+  (if (seq class)
+    (str class " " current-class)
+    current-class))

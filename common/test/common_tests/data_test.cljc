@@ -791,7 +791,8 @@
 (t/deftest append-class-test
   (t/is (= "foo bar" (d/append-class "foo" "bar")))
   (t/is (= "bar" (d/append-class nil "bar")))
-  (t/is (= " bar" (d/append-class "" "bar"))))
+  ;; empty string is treated like nil — no leading space
+  (t/is (= "bar" (d/append-class "" "bar"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Additional helpers (5th batch)
