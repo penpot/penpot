@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use skia_safe::gpu::{self, gl::FramebufferInfo, gl::TextureInfo, DirectContext};
-use skia_safe::{self as skia, ISize};
+use skia_safe::{self as skia, AlphaType, ColorType, ISize, ImageInfo};
 
 #[derive(Debug, Clone)]
 pub struct GpuState {
@@ -29,10 +29,12 @@ impl GpuState {
             }
         };
 
-        Ok(GpuState {
+        let mut state = GpuState {
             context,
             framebuffer_info,
-        })
+        };
+
+        Ok(state)
     }
 
     fn create_webgl_texture(&mut self, width: i32, height: i32) -> gl::types::GLuint {
@@ -102,6 +104,63 @@ impl GpuState {
         ))?;
 
         Ok(surface)
+    }
+
+    /// Create a budgeted GPU surface (RGBA8). Skia fully owns and manages
+    /// the backing texture — it will be tracked in the resource cache and
+    /// freed automatically when no longer referenced.
+    pub fn create_budgeted_surface(
+        &mut self,
+        width: i32,
+        height: i32,
+    ) -> Result<skia::Surface> {
+        let info = ImageInfo::new(
+            (width, height),
+            ColorType::RGBA8888,
+            AlphaType::Premul,
+            None,
+        );
+        gpu::ganesh::surface_ganesh::render_target(
+            &mut self.context,
+            gpu::Budgeted::Yes,
+            &info,
+            None,
+            gpu::SurfaceOrigin::BottomLeft,
+            None,
+            None,
+            None,
+        )
+        .ok_or(Error::CriticalError(
+            "Failed to create budgeted RGBA8 surface".to_string(),
+        ))
+    }
+
+    /// Create a budgeted GPU surface with F16 color type. Skia fully owns
+    /// the backing texture — no manual GL texture management needed.
+    pub fn create_budgeted_surface_f16(
+        &mut self,
+        width: i32,
+        height: i32,
+    ) -> Result<skia::Surface> {
+        let info = ImageInfo::new(
+            (width, height),
+            ColorType::RGBAF16,
+            AlphaType::Premul,
+            None,
+        );
+        gpu::ganesh::surface_ganesh::render_target(
+            &mut self.context,
+            gpu::Budgeted::Yes,
+            &info,
+            None,
+            gpu::SurfaceOrigin::BottomLeft,
+            None,
+            None,
+            None,
+        )
+        .ok_or(Error::CriticalError(
+            "Failed to create budgeted F16 surface".to_string(),
+        ))
     }
 
     /// Create a Skia surface that will be used for rendering.

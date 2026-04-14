@@ -825,6 +825,7 @@ impl RenderState {
             && parent_shadows.is_none()
             && !shape.needs_layer()
             && shape.blur.is_none()
+            && !shape.glass.as_ref().is_some_and(|g| !g.hidden)
             && !has_inherited_blur
             && shape.shadows.is_empty()
             && shape.transform.is_identity()
@@ -1269,15 +1270,6 @@ impl RenderState {
                 }
             }
             _ => {
-                // Apply glass backdrop before the shape's own transform so that selrect
-                // coordinates (document space) match the fills canvas coordinate space.
-                if let Some(glass) = shape
-                    .glass
-                    .as_ref()
-                    .filter(|g| !g.hidden && apply_to_current_surface)
-                {
-                    glass::render_glass(self, &shape, glass, fills_surface_id);
-                }
 
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
@@ -2443,6 +2435,18 @@ impl RenderState {
                     self.render_background_blur(element, target_surface);
                 }
 
+                // Glass effect also runs BEFORE save_layer to snapshot
+                // the real accumulated backdrop on target_surface.
+                if !node_render_state.is_root() && self.focus_mode.is_active() {
+                    if let Some(glass) = element
+                        .glass
+                        .as_ref()
+                        .filter(|g| !g.hidden)
+                    {
+                        glass::render_glass(self, element, glass, target_surface);
+                    }
+                }
+
                 self.render_shape_enter(element, mask, target_surface);
             }
 
@@ -2662,10 +2666,21 @@ impl RenderState {
                             })
                         });
 
+                        // Same check for glass effect — glass also snapshots Current
+                        // to use as backdrop for refraction/blur, so all shapes
+                        // behind the glass shape must be rendered on this tile.
+                        let tile_has_glass = ids.iter().any(|id| {
+                            tree.get(id).is_some_and(|s| {
+                                s.glass.as_ref().is_some_and(|g| !g.hidden)
+                            })
+                        });
+
+                        let needs_full_scene = tile_has_bg_blur || tile_has_glass;
+
                         // We only need first level shapes, in the same order as the parent node
                         let mut valid_ids = Vec::with_capacity(ids.len());
                         for root_id in root_ids.iter() {
-                            if tile_has_bg_blur || ids.contains(root_id) {
+                            if needs_full_scene || ids.contains(root_id) {
                                 valid_ids.push(*root_id);
                             }
                         }

@@ -38,7 +38,7 @@ pub use corners::*;
 pub use fills::*;
 pub use fonts::*;
 pub use frames::*;
-pub use glass::{GlassEffect, GLASS_SKSL};
+pub use glass::{GlassEffect, GLASS_DISPLACEMENT_SKSL, GLASS_REFRACTION_SKSL, GLASS_SKSL};
 pub use groups::*;
 pub use layouts::*;
 pub use modifiers::*;

@@ -1,0 +1,85 @@
+// Glass composite — final pass of the glass pipeline.
+// Reads the blurred refracted image and the displacement field, then applies
+// frost scatter, glass tint, prismatic specular highlights, and mask compositing.
+// Refraction + CA are handled in a prior pass; blur is applied externally by Skia.
+
+uniform shader  blurred;         // blurred refracted image (from Skia blur)
+uniform shader  original;        // unblurred backdrop (for passthrough outside glass)
+uniform shader  displacement;    // displacement field from Pass 1 (raw F16 values)
+uniform float2  u_resolution;
+uniform float   u_frost;         // 0-1
+uniform float   u_specularOpacity;
+uniform float   u_specularSaturation; // 0=white highlight, 9=vivid prismatic
+
+// ============================================================
+//  Hash noise for frost scatter
+// ============================================================
+float hash(float2 p) {
+    return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
+}
+float2 hash2(float2 p) {
+    return float2(hash(p), hash(p + float2(73.7, 157.3))) * 2.0 - 1.0;
+}
+
+// ============================================================
+//  Main
+// ============================================================
+half4 main(float2 fragCoord) {
+    // Read displacement field (raw F16 — no decoding needed)
+    half4 dispData = displacement.eval(fragCoord);
+    float specular = float(dispData.b);
+    float mask = float(dispData.a);
+
+    // Outside glass -> passthrough from original
+    half3 bg = original.eval(fragCoord).rgb;
+
+    if (mask < 0.001) {
+        return half4(bg, 1.0);
+    }
+
+    half3 blurredColor;
+    float2 uv = fragCoord / u_resolution;
+
+    if (u_frost > 0.01) {
+        // Frost: scatter sampling from blurred texture at pixel position
+        // (refraction is already baked into the blurred image)
+        half3 frostSum = half3(0.0);
+        float totalW = 0.0;
+        float2 texel = 1.0 / u_resolution;
+        for (float i = 0.0; i < 12.0; i += 1.0) {
+            float2 noise = hash2(fragCoord + float2(i * 7.3, i * 13.1));
+            float2 off = noise * u_frost * 6.0 * texel;
+            frostSum += blurred.eval((uv + off) * u_resolution).rgb;
+            totalW += 1.0;
+        }
+        blurredColor = frostSum / half(totalW);
+
+        // Cool translucent tint
+        half3 frostTint = half3(0.85, 0.88, 0.92);
+        blurredColor = mix(blurredColor, frostTint, half(u_frost * 0.35));
+
+        // Desaturate
+        half luma = dot(blurredColor, half3(0.299, 0.587, 0.114));
+        blurredColor = mix(blurredColor, half3(luma), half(u_frost * 0.4));
+    } else {
+        blurredColor = blurred.eval(fragCoord).rgb;
+    }
+
+    // ---- GLASS TINT ----
+    blurredColor *= half3(0.92, 0.94, 0.98);
+
+    // ---- PRISMATIC SPECULAR ----
+    // Sample refracted color and boost saturation for prismatic highlight.
+    // sat=0 → pure white, sat=4–6 → subtle color, sat=9 → vivid prismatic
+    half3 specColor = blurredColor;
+    half specLuma = dot(specColor, half3(0.299, 0.587, 0.114));
+    half3 saturated = mix(half3(specLuma), specColor, half(1.0 + u_specularSaturation));
+    saturated = max(saturated, half3(0.0));
+    half3 highlightColor = mix(half3(1.0, 0.98, 0.95), saturated, half(min(u_specularSaturation / 9.0, 1.0)));
+    blurredColor += half(specular * u_specularOpacity) * highlightColor;
+
+    // Composite with background using mask
+    half3 finalColor = mix(bg, blurredColor, half(mask));
+
+    return half4(finalColor, 1.0);
+}
