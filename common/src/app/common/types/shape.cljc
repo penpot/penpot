@@ -145,7 +145,8 @@
     [::sm/one-of stroke-caps]]
    [:stroke-color {:optional true} clr/schema:hex-color]
    [:stroke-color-gradient {:optional true} clr/schema:gradient]
-   [:stroke-image {:optional true} clr/schema:image]])
+   [:stroke-image {:optional true} clr/schema:image]
+   [:hidden {:optional true} :boolean]])
 
 (def stroke-attrs
   "A set of attrs that corresponds to stroke data type"

@@ -27,12 +27,16 @@
 - Save and restore selection state in undo/redo (by @eureka928) [Github #6007](https://github.com/penpot/penpot/issues/6007)
 - Fix warnings for unsupported token $type (by @Dexterity104) [Github #8790](https://github.com/penpot/penpot/issues/8790)
 - Add per-group add button for typographies (by @eureka928) [Github #5275](https://github.com/penpot/penpot/issues/5275)
+- Add Find & Replace for text content (by @statxc) [Github #7108](https://github.com/penpot/penpot/issues/7108)
 - Use page name for multi-export ZIP/PDF downloads (by @Dexterity104) [Github #8773](https://github.com/penpot/penpot/issues/8773)
 - Pin elements to their parent frame to prevent accidental reparenting (by @Dexterity104) [Github #3903](https://github.com/penpot/penpot/issues/3903)
 - Make links in comments clickable (by @eureka928) [Github #1602](https://github.com/penpot/penpot/issues/1602)
+- Add visibility toggle for strokes (by @eureka928) [Github #7438](https://github.com/penpot/penpot/issues/7438)
+- Sort asset library subfolders alphabetically at every nesting level (by @eureka928) [Github #2572](https://github.com/penpot/penpot/issues/2572)
 
 ### :bug: Bugs fixed
 
+- Reset profile submenu state when the account menu closes (by @eureka928) [Github #8947](https://github.com/penpot/penpot/issues/8947)
 - Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
 - Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
