@@ -237,6 +237,16 @@
           (nil? pending-version-id)
           (dissoc :workspace-file-version-id))))))
 
+(defn apply-snapshot-data
+  "Swap the file data in app state with the provided snapshot-file
+  response. Used by the version preview feature to show historical
+  file content without modifying the database."
+  [file-id snapshot-file]
+  (ptk/reify ::apply-snapshot-data
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :files assoc file-id snapshot-file))))
+
 (defn zoom-to-frame
   []
   (ptk/reify ::zoom-to-frame
@@ -504,7 +514,8 @@
            :workspace-persistence
            :workspace-presence
            :workspace-tokens
-           :workspace-undo)
+           :workspace-undo
+           :workspace-versions)
           (update :workspace-global dissoc :read-only?)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))

@@ -23,7 +23,8 @@
 (defonce default-state
   {:status :loading
    :data nil
-   :editing nil})
+   :editing nil
+   :preview-id nil})
 
 (declare fetch-versions)
 
@@ -165,6 +166,71 @@
     (watch [_ _ _]
       (->> (rp/cmd! :unlock-file-snapshot {:id id})
            (rx/map fetch-versions)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PREVIEW VERSION EVENTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn preview-version
+  "Load a snapshot into the workspace for read-only preview without
+  modifying any database state. Sets a read-only flag so no changes
+  are persisted while previewing."
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+  (ptk/reify ::preview-version
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-versions assoc :preview-id id)
+          (update :workspace-global assoc :read-only? true)))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id  (:current-file-id state)
+            page-id  (:current-page-id state)
+            features (get-in state [:files file-id :features])]
+        (->> (rp/cmd! :get-file-snapshot-preview
+                      {:file-id file-id
+                       :id id
+                       :features features})
+             (rx/mapcat
+              (fn [snapshot-file]
+                (rx/of
+                 ;; Swap the file data in state with snapshot content.
+                 ;; The workspace derives its page objects reactively from
+                 ;; [:files file-id :data :pages-index page-id] so this
+                 ;; is sufficient to make the canvas show snapshot content.
+                 (dw/apply-snapshot-data file-id snapshot-file)
+                 ;; Re-initialize the page to rebuild its search index
+                 ;; and page-local state with the new snapshot objects.
+                 (dw/initialize-page file-id page-id))))
+             (rx/catch (fn [err]
+                         ;; On error roll back the read-only flag so the
+                         ;; user is not stuck in a broken preview state.
+                         (js/console.error "Failed to load snapshot preview" err)
+                         (rx/of (update-versions-state {:preview-id nil})
+                                (ptk/reify ::clear-preview-read-only
+                                  ptk/UpdateEvent
+                                  (update [_ state]
+                                    (update state :workspace-global dissoc :read-only?)))))))))))
+
+(defn exit-preview
+  "Exit version preview mode and reload the live file data."
+  []
+  (ptk/reify ::exit-preview
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-versions dissoc :preview-id)
+          (update :workspace-global dissoc :read-only?)))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)
+            file-id (:current-file-id state)]
+        ;; Full workspace re-init reloads the live file from the server,
+        ;; clearing all snapshot data and restoring normal edit mode.
+        (rx/of (dw/initialize-workspace team-id file-id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS
