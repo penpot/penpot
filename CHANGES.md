@@ -64,6 +64,7 @@
 
 - Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
+- Persist asset search query and section filter when switching sidebar tabs (by @eureka0928) [Github #2913](https://github.com/penpot/penpot/issues/2913)
 
 ### :bug: Bugs fixed
 
