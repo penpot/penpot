@@ -35,6 +35,7 @@
 - Differentiate incoming and outgoing interaction link colors (by @claytonlin1110) [Github #7794](https://github.com/penpot/penpot/issues/7794)
 - Add guide locking and fix locked elements not selectable in viewer (by @Dexterity104) [Github #8358](https://github.com/penpot/penpot/issues/8358)
 - Apply styles to selection (by @AzazelN28) [Taiga #13647](https://tree.taiga.io/project/penpot/task/13647)
+- Reorder prototyping overlay options to show Position before Relative to (by @rockchris099) [Github #2910](https://github.com/penpot/penpot/issues/2910)
 
 ### :bug: Bugs fixed
 
