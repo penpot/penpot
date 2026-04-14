@@ -686,8 +686,7 @@
              ;; When any shape is pinned to its parent, prevent reparenting
              ;; by keeping the original parent frame as the target
              parent-locked-frame
-             (when (some :parent-locked shapes)
-               (:parent-id (d/seek :parent-locked shapes)))
+             (some-> (d/seek :parent-locked shapes) :parent-id)
 
              ;; Precompute bounds for constraining parent-locked shapes
              parent-locked-rect

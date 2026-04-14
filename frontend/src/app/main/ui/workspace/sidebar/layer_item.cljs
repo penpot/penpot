@@ -199,8 +199,8 @@
           (if ^boolean blocked? deprecated-icon/lock deprecated-icon/unlock)]
          (when-not ^boolean root-board?
            [:button {:class    (stl/css-case :pin-element true
-                                              :selected parent-locked?
-                                              :pinned   parent-locked?)
+                                             :selected parent-locked?
+                                             :pinned   parent-locked?)
                      :title    (if ^boolean parent-locked?
                                  (tr "workspace.shape.menu.unpin-from-parent")
                                  (tr "workspace.shape.menu.pin-to-parent"))
