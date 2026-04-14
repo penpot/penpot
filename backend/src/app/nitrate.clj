@@ -1,6 +1,7 @@
 (ns app.nitrate
   "Module that make calls to the external nitrate aplication"
   (:require
+   [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -130,7 +131,8 @@
 (def ^:private schema:profile-org
   [:map
    [:is-member :boolean]
-   [:organization-id ::sm/uuid]])
+   [:organization-id ::sm/uuid]
+   [:default-team-id [:maybe ::sm/uuid]]])
 
 
 ;; TODO Unify with schemas on backend/src/app/http/management.clj
@@ -213,6 +215,17 @@
                              "/api/teams/"
                              team-id)
                         schema:organization params)))
+
+(defn- get-org-membership-api
+  [cfg {:keys [profile-id org-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/organizations/"
+                             org-id
+                             "/members/"
+                             profile-id)
+                        schema:profile-org params)))
 
 (defn- get-org-membership-by-team-api
   [cfg {:keys [profile-id team-id] :as params}]
@@ -306,6 +319,7 @@
   (when (contains? cf/flags :nitrate)
     {:get-team-org               (partial get-team-org-api cfg)
      :set-team-org               (partial set-team-org-api cfg)
+     :get-org-membership         (partial get-org-membership-api cfg)
      :get-org-membership-by-team (partial get-org-membership-by-team-api cfg)
      :get-org-summary            (partial get-org-summary-api cfg)
      :add-profile-to-org         (partial add-profile-to-org-api cfg)
@@ -367,9 +381,10 @@
                       :is-default (:is-default params))
         result (call cfg :set-team-org params)]
     (when (nil? result)
-      (throw (ex-info "Failed to set team organization"
-                      {:team-id (:id team)
-                       :organization-id (:organization-id params)})))
+      (ex/raise :type :internal
+                :code :failed-to-set-team-org
+                :context {:team-id (:id team)
+                          :organization-id (:organization-id params)}))
     team))
 
 

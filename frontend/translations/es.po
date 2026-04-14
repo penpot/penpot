@@ -1636,6 +1636,9 @@ msgstr "El email o la contraseña son incorrectos."
 msgid "errors.wrong-old-password"
 msgstr "La contraseña anterior no es correcta"
 
+msgid "errors.org-not-found"
+msgstr "Esa organización no existe"
+
 #: src/app/main/ui/settings/feedback.cljs:120
 msgid "feedback.description"
 msgstr "Descripción"
