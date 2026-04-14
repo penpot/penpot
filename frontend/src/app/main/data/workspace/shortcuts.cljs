@@ -146,6 +146,11 @@
                           :subsections [:edit]
                           :fn #(st/emit! esc-pressed)}
 
+   :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
+                      :fn #(st/emit! (dw/open-layers-search :find))}
+   :find-and-replace {:tooltip (ds/meta "H") :command (ds/c-mod "h") :subsections [:edit]
+                      :fn #(st/emit! (dw/open-layers-search :find-and-replace))}
+
    ;; MODIFY LAYERS
 
    :rename               {:tooltip (ds/alt "N")

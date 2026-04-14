@@ -5863,6 +5863,14 @@ msgstr "Redo"
 msgid "workspace.header.menu.select-all"
 msgstr "Select all"
 
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find"
+msgstr "Find"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Find and Replace"
+
 #: src/app/main/ui/workspace/main_menu.cljs:423
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Show boards names"
@@ -7965,6 +7973,34 @@ msgstr "Shapes"
 #: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:386
 msgid "workspace.sidebar.layers.texts"
 msgstr "Texts"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.replace"
+msgstr "Replace"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.replace-all"
+msgstr "Replace all"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.replace-placeholder"
+msgstr "Replace with..."
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.match-count"
+msgstr "%s of %s"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.no-matches"
+msgstr "No matches"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.search-scope-layers"
+msgstr "Search layers"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.search-scope-canvas"
+msgstr "Search on canvas"
 
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
 msgid "workspace.sidebar.options.svg-attrs.title"
