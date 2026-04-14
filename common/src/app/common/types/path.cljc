@@ -23,7 +23,7 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
-(def ^:cosnt bool-group-style-properties bool/group-style-properties)
+(def ^:const bool-group-style-properties bool/group-style-properties)
 (def ^:const bool-style-properties bool/style-properties)
 
 (defn get-default-bool-fills
@@ -79,7 +79,7 @@
 (defn close-subpaths
   "Given a content, searches a path for possible subpaths that can
   create closed loops and merge them; then return the transformed path
-  conten as PathData instance"
+  content as PathData instance"
   [content]
   (-> (subpath/close-subpaths content)
       (impl/from-plain)))

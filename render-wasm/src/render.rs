@@ -40,6 +40,7 @@ pub use images::*;
 // This is the extra area used for tile rendering (tiles beyond viewport).
 // Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
 const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
+
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
@@ -337,15 +338,16 @@ pub(crate) struct RenderState {
     /// Preview render mode - when true, uses simplified rendering for progressive loading
     pub preview_mode: bool,
     pub export_context: Option<(Rect, f32)>,
+    /// Cleared at the beginning of a render pass; set to true after we clear Cache the first
+    /// time we are about to blit a tile into Cache for this pass.
+    pub cache_cleared_this_render: bool,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
-    let TileRect(isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
-        viewbox,
-        VIEWPORT_INTEREST_AREA_THRESHOLD,
-        scale,
-    );
+    let interest = VIEWPORT_INTEREST_AREA_THRESHOLD;
+    let TileRect(isx, isy, iex, iey) =
+        tiles::get_tiles_for_viewbox_with_interest(viewbox, interest, scale);
 
     let dx = if isx.signum() != iex.signum() { 1 } else { 0 };
     let dy = if isy.signum() != iey.signum() { 1 } else { 0 };
@@ -411,6 +413,7 @@ impl RenderState {
             ignore_nested_blurs: false,
             preview_mode: false,
             export_context: None,
+            cache_cleared_this_render: false,
         })
     }
 
@@ -654,6 +657,41 @@ impl RenderState {
         self.surfaces.reset(self.background_color);
     }
 
+    /// NOTE:
+    /// This is currently not being used, but it's set there for testing purposes on
+    /// upcoming tasks
+    pub fn render_loading_overlay(&mut self) {
+        let canvas = self.surfaces.canvas(SurfaceId::Target);
+        let skia::ISize { width, height } = canvas.base_layer_size();
+
+        canvas.save();
+
+        // Full-screen background rect
+        let rect = skia::Rect::from_wh(width as f32, height as f32);
+        let mut bg_paint = skia::Paint::default();
+        bg_paint.set_color(self.background_color);
+        bg_paint.set_style(skia::PaintStyle::Fill);
+        canvas.draw_rect(rect, &bg_paint);
+
+        // Centered "Loading…" text
+        let mut text_paint = skia::Paint::default();
+        text_paint.set_color(skia::Color::GRAY);
+        text_paint.set_anti_alias(true);
+
+        let font = self.fonts.debug_font();
+        // FIXME
+        let text = "Loading…";
+        let (text_width, _) = font.measure_str(text, None);
+        let metrics = font.metrics();
+        let text_height = metrics.1.cap_height;
+        let x = (width as f32 - text_width) / 2.0;
+        let y = (height as f32 + text_height) / 2.0;
+        canvas.draw_str(text, skia::Point::new(x, y), font, &text_paint);
+
+        canvas.restore();
+        self.flush_and_submit();
+    }
+
     #[allow(dead_code)]
     pub fn get_canvas_at(&mut self, surface_id: SurfaceId) -> &skia::Canvas {
         self.surfaces.canvas(surface_id)
@@ -665,13 +703,24 @@ impl RenderState {
     }
 
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) -> Result<()> {
+        let fast_mode = self.options.is_fast_mode();
+        // Decide *now* (at the first real cache blit) whether we need to clear Cache.
+        // This avoids clearing Cache on renders that don't actually paint tiles (e.g. hover/UI),
+        // while still preventing stale pixels from surviving across full-quality renders.
+        if !fast_mode && !self.cache_cleared_this_render {
+            self.surfaces.clear_cache(self.background_color);
+            self.cache_cleared_this_render = true;
+        }
         let tile_rect = self.get_current_aligned_tile_bounds()?;
+        // In fast mode the viewport is moving (pan/zoom) so Cache surface
+        // positions would be wrong — only save to the tile HashMap.
         self.surfaces.cache_current_tile_texture(
             &self.tile_viewbox,
             &self
                 .current_tile
                 .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
             &tile_rect,
+            fast_mode,
         );
 
         self.surfaces.draw_cached_tile_surface(
@@ -1408,18 +1457,19 @@ impl RenderState {
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
         let _start = performance::begin_timed_log!("render_from_cache");
         performance::begin_measure!("render_from_cache");
-        let scale = self.get_cached_scale();
+        let cached_scale = self.get_cached_scale();
 
         // Check if we have a valid cached viewbox (non-zero dimensions indicate valid cache)
         if self.cached_viewbox.area.width() > 0.0 {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
 
+            let interest = VIEWPORT_INTEREST_AREA_THRESHOLD;
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
                     self.cached_viewbox,
-                    VIEWPORT_INTEREST_AREA_THRESHOLD,
-                    scale,
+                    interest,
+                    cached_scale,
                 );
             let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr();
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr();
@@ -1441,6 +1491,36 @@ impl RenderState {
 
             // Restore canvas state
             self.surfaces.canvas(SurfaceId::Target).restore();
+
+            // During pure pan (same zoom), draw tiles from the HashMap
+            // on top of the scaled Cache surface.  Cached tile textures
+            // include full-quality effects (shadows, blur) from the last
+            // render, so blitting them avoids re-rendering and keeps pan
+            // smooth.  During zoom the tile grid changes so HashMap tiles
+            // would be at wrong positions — skip them and let the full
+            // render after set_view_end handle it.
+            if !self.zoom_changed() {
+                let current_scale = self.get_scale();
+                let visible_rect = tiles::get_tiles_for_viewbox(self.viewbox, current_scale);
+                let vb_offset_x = self.viewbox.area.left * current_scale;
+                let vb_offset_y = self.viewbox.area.top * current_scale;
+
+                for tx in visible_rect.x1()..=visible_rect.x2() {
+                    for ty in visible_rect.y1()..=visible_rect.y2() {
+                        let tile = tiles::Tile::from(tx, ty);
+                        if self.surfaces.has_cached_tile_surface(tile) {
+                            let tile_rect = skia::Rect::from_xywh(
+                                tx as f32 * tiles::TILE_SIZE - vb_offset_x,
+                                ty as f32 * tiles::TILE_SIZE - vb_offset_y,
+                                tiles::TILE_SIZE,
+                                tiles::TILE_SIZE,
+                            );
+                            self.surfaces
+                                .draw_cached_tile_surface(tile, tile_rect, bg_color);
+                        }
+                    }
+                }
+            }
 
             if self.options.is_debug_visible() {
                 debug::render(self);
@@ -1497,6 +1577,7 @@ impl RenderState {
         performance::begin_measure!("render");
         performance::begin_measure!("start_render_loop");
 
+        self.cache_cleared_this_render = false;
         self.reset_canvas();
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
@@ -1547,6 +1628,16 @@ impl RenderState {
             self.render_shape_tree_sync(base_object, tree, timestamp)?;
         } else {
             self.process_animation_frame(base_object, tree, timestamp)?;
+            // Update cached_viewbox after visible tiles render
+            // synchronously so that render_from_cache uses the correct
+            // zoom ratio even if interest-area tiles are still rendering
+            // asynchronously.  Without this, panning right after a zoom
+            // would keep scaling the Cache surface by the old zoom ratio
+            // (pixelated/wrong-scale tiles) because the async render
+            // never completes — each pan frame cancels it.
+            if self.cache_cleared_this_render {
+                self.cached_viewbox = self.viewbox;
+            }
         }
 
         performance::end_measure!("start_render_loop");
@@ -1565,7 +1656,15 @@ impl RenderState {
             if tree.len() != 0 {
                 self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
             }
-            self.flush_and_submit();
+
+            // In fast mode (pan/zoom in progress), render_from_cache owns
+            // the Target surface — skip flush so we don't present stale
+            // tile positions.  The rAF still populates the Cache surface
+            // and tile HashMap so render_from_cache progressively shows
+            // more complete content.
+            if !self.options.is_fast_mode() {
+                self.flush_and_submit();
+            }
 
             if self.render_in_progress {
                 self.cancel_animation_frame();
@@ -1611,7 +1710,10 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
 
         if tree.len() != 0 {
-            let shape = tree.get(id).unwrap();
+            let Some(shape) = tree.get(id) else {
+                // FIXME
+                return Ok((Vec::new(), 0, 0));
+            };
             let mut extrect = shape.extrect(tree, scale);
             self.export_context = Some((extrect, scale));
             let margins = self.surfaces.margins;
@@ -2443,6 +2545,10 @@ impl RenderState {
                         &node_render_state,
                         target_surface,
                     )?;
+                } else {
+                    // This is necessary or the later flush_and_submit will be very slow
+                    self.surfaces
+                        .draw_into(SurfaceId::DropShadows, target_surface, None);
                 }
 
                 self.render_shape(
@@ -2564,6 +2670,23 @@ impl RenderState {
                         tile_rect,
                         self.background_color,
                     );
+
+                    // Also draw the cached tile to the Cache surface so
+                    // render_from_cache (used during pan) has the full scene.
+                    // apply_render_to_final_canvas clears Cache on the first
+                    // uncached tile, but cached tiles must also be present.
+                    if !self.options.is_fast_mode() {
+                        if !self.cache_cleared_this_render {
+                            self.surfaces.clear_cache(self.background_color);
+                            self.cache_cleared_this_render = true;
+                        }
+                        let aligned_rect = self.get_aligned_tile_bounds(current_tile);
+                        self.surfaces.draw_cached_tile_to_cache(
+                            current_tile,
+                            &aligned_rect,
+                            self.background_color,
+                        );
+                    }
                     performance::end_measure!("render_shape_tree::cached");
 
                     if self.options.is_debug_visible() {
@@ -2662,8 +2785,17 @@ impl RenderState {
 
         self.surfaces.gc();
 
-        // Mark cache as valid for render_from_cache
-        self.cached_viewbox = self.viewbox;
+        // Mark cache as valid for render_from_cache.
+        // Only update for full-quality renders (non-fast mode).
+        // An async render can complete while fast mode is active
+        // (e.g. interest-area tiles finish during a pan gesture).
+        // Those tiles lack effects (shadows, blur).  Updating
+        // cached_viewbox here would make zoom_changed() return false,
+        // so set_view_end would skip tile invalidation and the next
+        // full render would reuse the low-quality tiles.
+        if !self.options.is_fast_mode() {
+            self.cached_viewbox = self.viewbox;
+        }
 
         if self.options.is_debug_visible() {
             debug::render(self);

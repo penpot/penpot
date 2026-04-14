@@ -61,11 +61,11 @@ version that matches your Penpot version.
 
 * If you are using the latest Penpot release, e.g. as served on [design.penpot.app](https://design.penpot.app), run:
   ```shell
-  npx -y @penpot/mcp@">=0"
+  npx -y @penpot/mcp@latest
   ```
 * If you are participating in the MCP beta-test, which uses [test-mcp.penpot.dev](https://test-mcp.penpot.dev), run:
   ```shell
-  npx -y @penpot/mcp@"*"
+  npx -y @penpot/mcp@beta
   ```
 
 Once the servers are running, continue with step 2.
@@ -157,6 +157,19 @@ This bootstrap command will:
 
 ### 3. Connect an MCP Client
 
+> [!IMPORTANT]  
+> **Use an appropriate model.**
+> 
+> We recommend that you ...
+>   * use the most capable model at your disposal. 
+>     You will achieve the best results with frontier models, 
+>     especially when dealing with more complex tasks.
+>     Weaker models, including most locally hosted ones, 
+>     are unlikely to produce usable results for anything beyond simple tasks.
+>   * use a vision language model (VLM), as many design tasks necessitate visual
+>     inspection. 
+>     (If you are using a standard commercial model, it almost certainly supports vision already.)
+
 By default, the server runs on port 4401 and provides:
 
 - **Modern Streamable HTTP endpoint**: `http://localhost:4401/mcp`
@@ -174,14 +187,9 @@ NOTE: only relevant if you are executing this outside of devenv
 
 The `mcp-remote` package can proxy stdio transport to HTTP/SSE, 
 allowing clients that support only stdio to connect to the MCP server indirectly.
+Use it to provide the launch command for your MCP client as follows:
 
-1. Install `mcp-remote` globally if you haven't already:
-
-        npm install -g mcp-remote
-
-2. Use `mcp-remote` to provide the launch command for your MCP client:
-
-        npx -y mcp-remote http://localhost:4401/sse --allow-http
+        npx -y mcp-remote http://localhost:4401/mcp --allow-http
 
 #### Example: Claude Desktop
 
@@ -204,7 +212,7 @@ Add a `penpot` entry under `mcpServers` with the following content:
     "mcpServers": {
         "penpot": {
             "command": "npx",
-            "args": ["-y", "mcp-remote", "http://localhost:4401/sse", "--allow-http"]
+            "args": ["-y", "mcp-remote", "http://localhost:4401/mcp", "--allow-http"]
         }
     }
 }
