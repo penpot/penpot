@@ -48,7 +48,7 @@ export default {
     "color-named": "never",
     // "declaration-no-important": true,
     "declaration-property-unit-allowed-list": {
-      "font-size": ["rem"],
+      "font-size": ["rem", "lh"],
       "/^animation/": ["s"],
     },
     // // 'order/properties-alphabetical-order': true,
