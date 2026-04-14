@@ -369,7 +369,8 @@
            (when (mf/ref-val dirty-ref)
              (apply-value (mf/ref-val raw-value*)))
            (when (fn? on-blur)
-             (on-blur event))))
+             (on-blur event))
+           (dom/blur! (mf/ref-val ref))))
 
         on-key-down
         (mf/use-fn
@@ -409,7 +410,8 @@
                            value  (get option :resolved-value)
                            name   (get option :name)]
                        (on-token-apply option-id value name)
-                       (reset! filter-id* ""))))
+                       (reset! filter-id* "")
+                       (on-blur event))))
                  (on-blur event))
 
                esc?
