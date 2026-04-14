@@ -380,6 +380,17 @@
          (tr "workspace.header.menu.show-guides"))]
       [:> shortcuts* {:id :toggle-guides}]]
 
+     [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                              :on-click    toggle-flag
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (toggle-flag event)))
+                              :data-testid "lock-guides"
+                              :id          "file-menu-lock-guides"}
+      [:span {:class (stl/css :item-name)}
+       (if (contains? layout :lock-guides)
+         (tr "workspace.header.menu.unlock-guides")
+         (tr "workspace.header.menu.lock-guides"))]]
 
      (when-not ^boolean read-only?
        [:*
