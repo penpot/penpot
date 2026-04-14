@@ -51,6 +51,7 @@
 - Fix selected color tokens [Taiga #13930](https://tree.taiga.io/project/penpot/issue/13930)
 - Fix dashboard Recent/Deleted titles overlapped by scrolling content (by @rockchris99) [Github #8577](https://github.com/penpot/penpot/issues/8577)
 - Display resolved values of inactive tokens [Taiga #13628](https://tree.taiga.io/project/penpot/issue/13628)
+- Fix hyphens stripped from export filenames (by @jamesrayammons) [Github #8901](https://github.com/penpot/penpot/issues/8901)
 - Fix app crash when selecting shapes with one hidden [Taiga #13959](https://tree.taiga.io/project/penpot/issue/13959)
 - Fix opacity mixed value [Taiga #13960](https://tree.taiga.io/project/penpot/issue/13960)
 

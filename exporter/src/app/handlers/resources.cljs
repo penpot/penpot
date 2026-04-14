@@ -36,7 +36,7 @@
     {:path     path
      :mtype    (mime/get type)
      :name     name
-     :filename (str/concat (str/slug name) (mime/get-extension type))
+     :filename (str/concat (str/replace name #"[\\/:*?\"<>|]" "_") (mime/get-extension type))
      :id       task-id}))
 
 (defn create-zip
