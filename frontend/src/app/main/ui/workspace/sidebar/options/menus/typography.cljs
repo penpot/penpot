@@ -28,6 +28,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -502,18 +503,19 @@
 
            [:div {:class (stl/css :action-btns)}
             (when (fn? on-duplicate)
-              [:button {:class (stl/css :action-btn)
-                        :title (tr "workspace.assets.duplicate")
-                        :on-click on-duplicate}
-               deprecated-icon/add])
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "workspace.assets.duplicate")
+                                :on-click on-duplicate
+                                :icon i/add}])
             (when (fn? on-delete)
-              [:button {:class (stl/css :action-btn)
-                        :title (tr "workspace.assets.delete")
-                        :on-click on-delete}
-               deprecated-icon/delete])
-            [:div {:class (stl/css :action-btn)
-                   :on-click on-close}
-             deprecated-icon/tick]]]
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "workspace.assets.delete")
+                                :on-click on-delete
+                                :icon i/delete}])
+            [:> icon-button* {:variant "ghost"
+                              :aria-label (tr "labels.close")
+                              :on-click on-close
+                              :icon i/tick}]]]
 
           [:& text-options {:values typography
                             :on-change on-change
