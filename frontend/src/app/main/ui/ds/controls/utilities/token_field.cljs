@@ -42,7 +42,7 @@
            token-wrapper-ref token-detach-btn-ref on-focus property is-open]}]
   (let [set-active? (some? id)
         content     (if set-active?
-                      label
+                      (dm/str value)
                       (tr "ds.inputs.token-field.no-active-token-option" label))
         default-id  (mf/use-id)
         id          (d/nilv id default-id)
@@ -85,7 +85,7 @@
                   :disabled disabled
                   :aria-labelledby (dm/str id "-pill")
                   :on-key-down on-token-key-down}
-         value
+         (if set-active? label value)
          (when-not set-active?
            [:div {:class (stl/css :pill-dot)}])]]]
 

@@ -23,6 +23,7 @@
 - Copy token name from contextual menu [Taiga #13568](https://tree.taiga.io/project/penpot/issue/13568)
 - Add natural sorting on token names [Taiga #13713](https://tree.taiga.io/project/penpot/issue/13713)
 - Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
+- Show applied spacing/sizing token name in the design tab numeric inputs [Github #7808](https://github.com/penpot/penpot/issues/7808)
 - Add CSS linter [Taiga #13790](https://tree.taiga.io/project/penpot/us/13790)
 - Save and restore selection state in undo/redo (by @eureka928) [Github #6007](https://github.com/penpot/penpot/issues/6007)
 - Fix warnings for unsupported token $type (by @Dexterity104) [Github #8790](https://github.com/penpot/penpot/issues/8790)
