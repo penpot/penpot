@@ -718,7 +718,7 @@
 (defn nan?
   [v]
   #?(:cljs (js/isNaN v)
-     :clj  (not= v v)))
+     :clj  (and (number? v) (Double/isNaN v))))
 
 (defn- impl-parse-integer
   [v]

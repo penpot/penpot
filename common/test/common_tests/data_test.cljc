@@ -565,16 +565,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (t/deftest nan-test
-  ;; Note: nan? behaves differently per platform:
-  ;; - CLJS: uses js/isNaN, returns true for ##NaN
-  ;; - CLJ: uses (not= v v); Clojure's = uses .equals on doubles,
-  ;;   so (= ##NaN ##NaN) is true and nan? returns false for ##NaN.
-  ;; Either way, nan? returns false for regular numbers and nil.
+  (t/is (d/nan? ##NaN))
   (t/is (not (d/nan? 0)))
   (t/is (not (d/nan? 1)))
   (t/is (not (d/nan? nil)))
-  ;; Platform-specific: JS nan? correctly detects NaN
-  #?(:cljs (t/is (d/nan? ##NaN))))
+  ;; CLJS js/isNaN coerces non-numbers; JVM Double/isNaN is number-only
+  #?(:cljs (t/is (d/nan? "hello")))
+  #?(:clj  (t/is (not (d/nan? "hello")))))
 
 (t/deftest safe-plus-test
   (t/is (= 5 (d/safe+ 3 2)))
@@ -618,18 +615,13 @@
   (t/is (nil? (d/parse-uuid nil))))
 
 (t/deftest coalesce-str-test
-  ;; On JVM: nan? uses (not= v v), which is false for all normal values.
-  ;; On CLJS: nan? uses js/isNaN, which is true for non-numeric strings.
-  ;; coalesce-str returns default when value is nil or nan?.
   (t/is (= "default" (d/coalesce-str nil "default")))
   ;; Numbers always stringify on both platforms
   (t/is (= "42" (d/coalesce-str 42 "default")))
-  ;; ##NaN: nan? is true in CLJS, returns default;
-  ;;        nan? is false in CLJ, so str(##NaN)="NaN" is returned.
-  #?(:cljs (t/is (= "default" (d/coalesce-str ##NaN "default"))))
-  #?(:clj  (t/is (= "NaN" (d/coalesce-str ##NaN "default"))))
+  ;; ##NaN returns default on both platforms now that nan? is fixed on JVM
+  (t/is (= "default" (d/coalesce-str ##NaN "default")))
   ;; Strings: in CLJS js/isNaN("hello")=true so "default" is returned;
-  ;;          in CLJ nan? is false so (str "hello")="hello" is returned.
+  ;;          in CLJ nan? is false for strings so (str "hello")="hello" is returned.
   #?(:cljs (t/is (= "default" (d/coalesce-str "hello" "default"))))
   #?(:clj  (t/is (= "hello" (d/coalesce-str "hello" "default")))))
 
