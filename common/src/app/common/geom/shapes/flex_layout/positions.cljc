@@ -61,7 +61,7 @@
         (gpt/add (hv free-width-gap))
 
         around?
-        (gpt/add (hv (max lines-gap-col (/ free-width num-lines) 2)))
+        (gpt/add (hv (max lines-gap-col (/ free-width num-lines 2))))
 
         evenly?
         (gpt/add (hv (max lines-gap-col (/ free-width (inc num-lines)))))))))
