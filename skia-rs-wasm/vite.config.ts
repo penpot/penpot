@@ -70,27 +70,6 @@ export default defineConfig(({ command }) => ({
     react(),
     tailwindcss(),
     dtsBundlePlugin(),
-    // #region DEBUG
-    {
-      name: 'debug-log-plugin',
-      configureServer(server) {
-        const debugLogPath = resolve(__dirname, '../.claude/debug.log')
-        server.middlewares.use((req, res, next) => {
-          if (req.url === '/__debug_log' && req.method === 'POST') {
-            let body = ''
-            req.on('data', (chunk: Buffer) => { body += chunk.toString() })
-            req.on('end', () => {
-              fs.appendFileSync(debugLogPath, body + '\n')
-              res.writeHead(204)
-              res.end()
-            })
-            return
-          }
-          next()
-        })
-      },
-    },
-    // #endregion DEBUG
     {
       name: 'wasm-content-type-plugin',
       configureServer(server) {
