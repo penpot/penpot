@@ -142,3 +142,28 @@
     (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :org-id org-id})
 
     nil))
+
+
+(def ^:private schema:remove-team-from-org
+  [:map
+   [:team-id ::sm/uuid]
+   [:organization-id ::sm/uuid]])
+
+(sv/defmethod ::remove-team-from-org
+  {::rpc/auth true
+   ::doc/added "2.16"
+   ::sm/params schema:remove-team-from-org}
+  [cfg {:keys [::rpc/profile-id  team-id organization-id]}]
+  (let [perms    (teams/get-permissions cfg profile-id team-id)
+        team     (teams/get-team-info cfg {:id team-id})]
+
+    (when-not (:is-owner perms)
+      (ex/raise :type :validation
+                :code :insufficient-permissions))
+
+    (when (:is-default team)
+      (ex/raise :type :validation
+                :code :cant-remove-default-team))
+
+    ;; Api call to nitrate
+    (nitrate/call cfg :remove-team-from-org {:team-id team-id :organization-id organization-id})))

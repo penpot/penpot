@@ -1130,6 +1130,18 @@ msgstr "Información del equipo"
 msgid "dashboard.team-members"
 msgstr "Integrantes del equipo"
 
+msgid "dashboard.team-organization"
+msgstr "Organización del equipo"
+
+msgid "dashboard.team-organization.none"
+msgstr "Este equipo no pertenece a ninguna organización"
+
+msgid "dashboard.team-organization.change"
+msgstr "Cambiar el equipo de organización"
+
+msgid "dashboard.team-organization.remove"
+msgstr "Eliminar equipo de la organización"
+
 #: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"
 msgstr "Proyectos del equipo"
@@ -8863,6 +8875,20 @@ msgstr "Ir al panel"
 
 msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
 msgstr "Guía de solución de problemas"
+
+msgid "modals.remove-team-org.title"
+msgstr "ELIMINAR EQUIPO DE LA ORGANIZACIÓN"
+
+msgid "modals.remove-team-org.text"
+msgstr "¿Estás seguro de que quieres eliminar el equipo %s de la organización %s?"
+
+msgid "modals.remove-team-org.info"
+msgstr "Los proyectos y archivos seguirán estando disponibles para los miembros del equipo, pero la configuración de la organización dejará de aplicarse."
+
+msgid "modals.remove-team-org.accept"
+msgstr "Eliminar de la organización"
+
+
 
 #, unused
 msgid "workspace.viewport.click-to-close-path"
