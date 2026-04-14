@@ -303,13 +303,13 @@
       (neg? dot-x)
       (update :flip-x not)
 
-      (neg? dot-x)
-      (update :rotation -)
-
       (neg? dot-y)
       (update :flip-y not)
 
-      (neg? dot-y)
+      ;; Negate rotation only when an odd number of axes are flipped,
+      ;; since flipping both axes is equivalent to a 180° rotation and
+      ;; two negations would cancel each other out.
+      (not= (neg? dot-x) (neg? dot-y))
       (update :rotation -))))
 
 (defn- apply-transform-move
