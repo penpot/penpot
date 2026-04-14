@@ -4,13 +4,16 @@ use crate::math::{Matrix, Point, Rect};
 use crate::mem;
 use crate::render::text_editor as text_editor_render;
 use crate::render::SurfaceId;
-use crate::shapes::{Shape, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
-use crate::state::TextSelection;
+use crate::shapes::{Shape, TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
+use crate::state::{TextEditorEvent, TextSelection};
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
-use crate::wasm::text::helpers as text_helpers;
+use crate::wasm::fills::RawFillData;
+use crate::wasm::text::{
+    helpers as text_helpers, RawTextAlign, RawTextDecoration, RawTextDirection, RawTextTransform,
+};
 use crate::{with_state, with_state_mut, STATE};
-use skia_safe::{textlayout::TextDirection, Color};
+use skia_safe::Color;
 
 #[derive(PartialEq, ToJs)]
 #[repr(u8)]
@@ -44,7 +47,7 @@ pub extern "C" fn text_editor_apply_theme(
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_start(a: u32, b: u32, c: u32, d: u32) -> bool {
+pub extern "C" fn text_editor_focus(a: u32, b: u32, c: u32, d: u32) -> bool {
     with_state_mut!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
 
@@ -56,35 +59,48 @@ pub extern "C" fn text_editor_start(a: u32, b: u32, c: u32, d: u32) -> bool {
             return false;
         }
 
-        state.text_editor_state.start(shape_id);
+        state.text_editor_state.focus(shape_id);
         true
     })
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_stop() -> bool {
+pub extern "C" fn text_editor_blur() -> bool {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return false;
         }
-        state.text_editor_state.stop();
+        state.text_editor_state.blur();
         true
     })
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_is_active() -> bool {
-    with_state!(state, { state.text_editor_state.is_active })
+pub extern "C" fn text_editor_dispose() -> bool {
+    with_state_mut!(state, {
+        state.text_editor_state.dispose();
+        true
+    })
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_is_active_with_id(a: u32, b: u32, c: u32, d: u32) -> bool {
+pub extern "C" fn text_editor_has_selection() -> bool {
+    with_state!(state, { state.text_editor_state.selection.is_selection() })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_has_focus() -> bool {
+    with_state!(state, { state.text_editor_state.has_focus })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_has_focus_with_id(a: u32, b: u32, c: u32, d: u32) -> bool {
     with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
         let Some(active_shape_id) = state.text_editor_state.active_shape_id else {
             return false;
         };
-        state.text_editor_state.is_active && active_shape_id == shape_id
+        state.text_editor_state.has_focus && active_shape_id == shape_id
     })
 }
 
@@ -106,7 +122,7 @@ pub extern "C" fn text_editor_get_active_shape_id(buffer_ptr: *mut u32) {
 #[no_mangle]
 pub extern "C" fn text_editor_select_all() -> bool {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return false;
         }
 
@@ -128,7 +144,7 @@ pub extern "C" fn text_editor_select_all() -> bool {
 #[no_mangle]
 pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -165,7 +181,7 @@ pub extern "C" fn text_editor_poll_event() -> u8 {
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
@@ -181,6 +197,7 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
         state.text_editor_state.start_pointer_selection();
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
             state.text_editor_state.set_caret_from_position(&position);
+            state.text_editor_state.update_styles(text_content);
         }
     });
 }
@@ -188,7 +205,7 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
         let point = Point::new(x, y);
@@ -209,6 +226,7 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
             state
                 .text_editor_state
                 .extend_selection_from_position(&position);
+            state.text_editor_state.update_styles(text_content);
         }
     });
 }
@@ -216,7 +234,7 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
         let point = Point::new(x, y);
@@ -236,6 +254,7 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
             state
                 .text_editor_state
                 .extend_selection_from_position(&position);
+            state.text_editor_state.update_styles(text_content);
         }
         state.text_editor_state.stop_pointer_selection();
     });
@@ -244,7 +263,7 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -267,7 +286,7 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -299,7 +318,7 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
 #[wasm_error]
 pub extern "C" fn text_editor_composition_start() -> Result<()> {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return Ok(());
         }
         state.text_editor_state.composition.start();
@@ -318,7 +337,7 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
     };
 
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return Ok(());
         }
 
@@ -379,7 +398,7 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
     };
 
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return Ok(());
         }
 
@@ -435,7 +454,7 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
     };
 
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return Ok(());
         }
 
@@ -473,10 +492,10 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
         state.text_editor_state.reset_blink();
         state
             .text_editor_state
-            .push_event(crate::state::TextEditorEvent::ContentChanged);
+            .push_event(TextEditorEvent::ContentChanged);
         state
             .text_editor_state
-            .push_event(crate::state::TextEditorEvent::NeedsLayout);
+            .push_event(TextEditorEvent::NeedsLayout);
 
         state.render_state.mark_touched(shape_id);
     });
@@ -488,7 +507,7 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
 #[no_mangle]
 pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -504,36 +523,9 @@ pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
             return;
         };
 
-        let selection = state.text_editor_state.selection;
-
-        if selection.is_selection() {
-            text_helpers::delete_selection_range(text_content, &selection);
-            let start = selection.start();
-            let clamped = text_helpers::clamp_cursor(start, text_content.paragraphs());
-            state.text_editor_state.selection.set_caret(clamped);
-        } else if word_boundary {
-            let cursor = selection.focus;
-            if let Some(new_cursor) = text_helpers::delete_word_before(text_content, &cursor) {
-                state.text_editor_state.selection.set_caret(new_cursor);
-            }
-        } else {
-            let cursor = selection.focus;
-            if let Some(new_cursor) = text_helpers::delete_char_before(text_content, &cursor) {
-                state.text_editor_state.selection.set_caret(new_cursor);
-            }
-        }
-
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
-
-        state.text_editor_state.reset_blink();
         state
             .text_editor_state
-            .push_event(crate::state::TextEditorEvent::ContentChanged);
-        state
-            .text_editor_state
-            .push_event(crate::state::TextEditorEvent::NeedsLayout);
-
+            .delete_backward(text_content, word_boundary);
         state.render_state.mark_touched(shape_id);
     });
 }
@@ -541,7 +533,7 @@ pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
 #[no_mangle]
 pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -557,36 +549,9 @@ pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
             return;
         };
 
-        let selection = state.text_editor_state.selection;
-
-        if selection.is_selection() {
-            text_helpers::delete_selection_range(text_content, &selection);
-            let start = selection.start();
-            let clamped = text_helpers::clamp_cursor(start, text_content.paragraphs());
-            state.text_editor_state.selection.set_caret(clamped);
-        } else if word_boundary {
-            let cursor = selection.focus;
-            text_helpers::delete_word_after(text_content, &cursor);
-            let clamped = text_helpers::clamp_cursor(cursor, text_content.paragraphs());
-            state.text_editor_state.selection.set_caret(clamped);
-        } else {
-            let cursor = selection.focus;
-            text_helpers::delete_char_after(text_content, &cursor);
-            let clamped = text_helpers::clamp_cursor(cursor, text_content.paragraphs());
-            state.text_editor_state.selection.set_caret(clamped);
-        }
-
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
-
-        state.text_editor_state.reset_blink();
         state
             .text_editor_state
-            .push_event(crate::state::TextEditorEvent::ContentChanged);
-        state
-            .text_editor_state
-            .push_event(crate::state::TextEditorEvent::NeedsLayout);
-
+            .delete_forward(text_content, word_boundary);
         state.render_state.mark_touched(shape_id);
     });
 }
@@ -594,7 +559,7 @@ pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
 #[no_mangle]
 pub extern "C" fn text_editor_insert_paragraph() {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -610,33 +575,7 @@ pub extern "C" fn text_editor_insert_paragraph() {
             return;
         };
 
-        let selection = state.text_editor_state.selection;
-
-        if selection.is_selection() {
-            text_helpers::delete_selection_range(text_content, &selection);
-            let start = selection.start();
-            state.text_editor_state.selection.set_caret(start);
-        }
-
-        let cursor = state.text_editor_state.selection.focus;
-
-        if text_helpers::split_paragraph_at_cursor(text_content, &cursor) {
-            let new_cursor =
-                TextPositionWithAffinity::new_without_affinity(cursor.paragraph + 1, 0);
-            state.text_editor_state.selection.set_caret(new_cursor);
-        }
-
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
-
-        state.text_editor_state.reset_blink();
-        state
-            .text_editor_state
-            .push_event(crate::state::TextEditorEvent::ContentChanged);
-        state
-            .text_editor_state
-            .push_event(crate::state::TextEditorEvent::NeedsLayout);
-
+        state.text_editor_state.insert_paragraph(text_content);
         state.render_state.mark_touched(shape_id);
     });
 }
@@ -652,7 +591,7 @@ pub extern "C" fn text_editor_move_cursor(
     extend_selection: bool,
 ) {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return;
         }
 
@@ -668,63 +607,12 @@ pub extern "C" fn text_editor_move_cursor(
             return;
         };
 
-        let paragraphs = text_content.paragraphs();
-        if paragraphs.is_empty() {
-            return;
-        }
-
-        let current = state.text_editor_state.selection.focus;
-
-        // Get the text direction of the span at the current cursor position
-        let span_text_direction = if current.paragraph < paragraphs.len() {
-            text_helpers::get_span_text_direction_at_offset(
-                &paragraphs[current.paragraph],
-                current.offset,
-            )
-        } else {
-            TextDirection::LTR
-        };
-
-        // For horizontal navigation, swap Backward/Forward when in RTL text
-        let adjusted_direction = if span_text_direction == TextDirection::RTL {
-            match direction {
-                CursorDirection::Backward => CursorDirection::Forward,
-                CursorDirection::Forward => CursorDirection::Backward,
-                other => other,
-            }
-        } else {
-            direction
-        };
-
-        let new_cursor = match adjusted_direction {
-            CursorDirection::Backward => {
-                text_helpers::move_cursor_backward(&current, paragraphs, word_boundary)
-            }
-            CursorDirection::Forward => {
-                text_helpers::move_cursor_forward(&current, paragraphs, word_boundary)
-            }
-            CursorDirection::LineBefore => {
-                text_helpers::move_cursor_up(&current, paragraphs, text_content)
-            }
-            CursorDirection::LineAfter => {
-                text_helpers::move_cursor_down(&current, paragraphs, text_content)
-            }
-            CursorDirection::LineStart => {
-                text_helpers::move_cursor_line_start(&current, paragraphs)
-            }
-            CursorDirection::LineEnd => text_helpers::move_cursor_line_end(&current, paragraphs),
-        };
-
-        if extend_selection {
-            state.text_editor_state.selection.extend_to(new_cursor);
-        } else {
-            state.text_editor_state.selection.set_caret(new_cursor);
-        }
-
-        state.text_editor_state.reset_blink();
-        state
-            .text_editor_state
-            .push_event(crate::state::TextEditorEvent::SelectionChanged);
+        state.text_editor_state.move_cursor(
+            text_content,
+            direction,
+            word_boundary,
+            extend_selection,
+        );
     });
 }
 
@@ -735,7 +623,7 @@ pub extern "C" fn text_editor_move_cursor(
 #[no_mangle]
 pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active || !state.text_editor_state.cursor_visible {
+        if !state.text_editor_state.has_focus || !state.text_editor_state.cursor_visible {
             return std::ptr::null_mut();
         }
 
@@ -767,9 +655,174 @@ pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
 }
 
 #[no_mangle]
+pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
+    with_state_mut!(state, {
+        if !state.text_editor_state.has_focus {
+            return std::ptr::null_mut();
+        }
+
+        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+            return std::ptr::null_mut();
+        };
+
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return std::ptr::null_mut();
+        };
+
+        let Type::Text(_text_content) = &shape.shape_type else {
+            return std::ptr::null_mut();
+        };
+
+        let styles = &state.text_editor_state.current_styles;
+
+        let vertical_align = match styles.vertical_align {
+            VerticalAlign::Top => 0_u32,
+            VerticalAlign::Center => 1_u32,
+            VerticalAlign::Bottom => 2_u32,
+        };
+
+        let text_align = styles
+            .text_align
+            .value()
+            .as_ref()
+            .map(|value| match value {
+                TextAlign::Left => RawTextAlign::Left as u32,
+                TextAlign::Start => RawTextAlign::Left as u32,
+                TextAlign::Center => RawTextAlign::Center as u32,
+                TextAlign::Right => RawTextAlign::Right as u32,
+                TextAlign::End => RawTextAlign::Right as u32,
+                TextAlign::Justify => RawTextAlign::Justify as u32,
+            })
+            .unwrap_or(0);
+
+        let text_direction = styles
+            .text_direction
+            .value()
+            .as_ref()
+            .map(|value| match value {
+                skia_safe::textlayout::TextDirection::LTR => RawTextDirection::Ltr as u32,
+                skia_safe::textlayout::TextDirection::RTL => RawTextDirection::Rtl as u32,
+            })
+            .unwrap_or(0);
+
+        let text_decoration = styles
+            .text_decoration
+            .value()
+            .as_ref()
+            .map(|value| {
+                if *value == skia_safe::textlayout::TextDecoration::UNDERLINE {
+                    RawTextDecoration::Underline as u32
+                } else if *value == skia_safe::textlayout::TextDecoration::LINE_THROUGH {
+                    RawTextDecoration::LineThrough as u32
+                } else if *value == skia_safe::textlayout::TextDecoration::OVERLINE {
+                    RawTextDecoration::Overline as u32
+                } else {
+                    RawTextDecoration::None as u32
+                }
+            })
+            .unwrap_or(RawTextDecoration::None as u32);
+
+        let text_transform = styles
+            .text_transform
+            .value()
+            .as_ref()
+            .map(|value| match value {
+                crate::shapes::TextTransform::Uppercase => RawTextTransform::Uppercase as u32,
+                crate::shapes::TextTransform::Lowercase => RawTextTransform::Lowercase as u32,
+                crate::shapes::TextTransform::Capitalize => RawTextTransform::Capitalize as u32,
+            })
+            .unwrap_or(RawTextTransform::None as u32);
+
+        let font_family_id = styles
+            .font_family
+            .value()
+            .as_ref()
+            .map(|value| {
+                let (a, b, c, d) = uuid_to_u32_quartet(&value.id());
+                [a, b, c, d]
+            })
+            .unwrap_or_default();
+
+        let font_family_weight = styles
+            .font_family
+            .value()
+            .as_ref()
+            .map(|value| value.weight())
+            .unwrap_or_default();
+
+        let font_family_style = styles
+            .font_family
+            .value()
+            .as_ref()
+            .map(|value| value.style() as u32)
+            .unwrap_or_default();
+
+        let font_size = styles.font_size.value().unwrap_or(0.0);
+        let font_weight = styles.font_weight.value().unwrap_or(0);
+        let line_height = styles.line_height.value().unwrap_or(0.0);
+        let letter_spacing = styles.letter_spacing.value().unwrap_or(0.0);
+
+        let mut font_variant_id = [0_u32; 4];
+        if let Some(value) = styles.font_variant_id.value().as_ref() {
+            let (a, b, c, d) = uuid_to_u32_quartet(value);
+            font_variant_id = [a, b, c, d];
+        }
+
+        let mut fill_bytes = Vec::new();
+        let mut fill_count: u32 = 0;
+        for fill in &styles.fills {
+            if let Ok(raw_fill) = RawFillData::try_from(fill) {
+                fill_bytes
+                    .extend_from_slice(&<[u8; std::mem::size_of::<RawFillData>()]>::from(raw_fill));
+                fill_count += 1;
+            }
+        }
+
+        // Layout: 48-byte fixed header + fixed values + serialized fills.
+        let mut bytes = Vec::with_capacity(132 + fill_bytes.len());
+
+        bytes.extend_from_slice(&vertical_align.to_le_bytes());
+        bytes.extend_from_slice(&(*styles.text_align.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(*styles.text_direction.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(*styles.text_decoration.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(*styles.text_transform.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(*styles.font_family.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(*styles.font_size.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(*styles.font_weight.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(*styles.font_variant_id.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(*styles.line_height.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(*styles.letter_spacing.state() as u32).to_le_bytes());
+        bytes.extend_from_slice(&fill_count.to_le_bytes());
+
+        // Value section.
+        bytes.extend_from_slice(&text_align.to_le_bytes());
+        bytes.extend_from_slice(&text_direction.to_le_bytes());
+        bytes.extend_from_slice(&text_decoration.to_le_bytes());
+        bytes.extend_from_slice(&text_transform.to_le_bytes());
+        bytes.extend_from_slice(&font_family_id[0].to_le_bytes());
+        bytes.extend_from_slice(&font_family_id[1].to_le_bytes());
+        bytes.extend_from_slice(&font_family_id[2].to_le_bytes());
+        bytes.extend_from_slice(&font_family_id[3].to_le_bytes());
+        bytes.extend_from_slice(&font_family_style.to_le_bytes());
+        bytes.extend_from_slice(&font_family_weight.to_le_bytes());
+        bytes.extend_from_slice(&font_size.to_le_bytes());
+        bytes.extend_from_slice(&font_weight.to_le_bytes());
+        bytes.extend_from_slice(&font_variant_id[0].to_le_bytes());
+        bytes.extend_from_slice(&font_variant_id[1].to_le_bytes());
+        bytes.extend_from_slice(&font_variant_id[2].to_le_bytes());
+        bytes.extend_from_slice(&font_variant_id[3].to_le_bytes());
+        bytes.extend_from_slice(&line_height.to_le_bytes());
+        bytes.extend_from_slice(&letter_spacing.to_le_bytes());
+        bytes.extend_from_slice(&fill_bytes);
+
+        mem::write_bytes(bytes)
+    })
+}
+
+#[no_mangle]
 pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return std::ptr::null_mut();
         }
 
@@ -791,7 +844,6 @@ pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
 
         let selection = &state.text_editor_state.selection;
         let rects = get_selection_rects(text_content, selection, shape);
-
         if rects.is_empty() {
             return std::ptr::null_mut();
         }
@@ -818,10 +870,6 @@ pub extern "C" fn text_editor_update_blink(timestamp_ms: f64) {
 #[no_mangle]
 pub extern "C" fn text_editor_render_overlay() {
     with_state_mut!(state, {
-        if !state.text_editor_state.is_active {
-            return;
-        }
-
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
@@ -858,7 +906,7 @@ pub extern "C" fn text_editor_render_overlay() {
 #[no_mangle]
 pub extern "C" fn text_editor_export_content() -> *mut u8 {
     with_state!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return std::ptr::null_mut();
         }
 
@@ -901,7 +949,7 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
 pub extern "C" fn text_editor_export_selection() -> *mut u8 {
     use std::ptr;
     with_state!(state, {
-        if !state.text_editor_state.is_active {
+        if !state.text_editor_state.has_focus {
             return ptr::null_mut();
         }
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
@@ -976,10 +1024,10 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> u32 {
+pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
     with_state!(state, {
-        if !state.text_editor_state.is_active {
-            return 0;
+        if !state.text_editor_state.selection.is_selection() {
+            return false;
         }
         let sel = &state.text_editor_state.selection;
         unsafe {
@@ -988,7 +1036,7 @@ pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> u32 {
             *buffer_ptr.add(2) = sel.focus.paragraph as u32;
             *buffer_ptr.add(3) = sel.focus.offset as u32;
         }
-        1
+        true
     })
 }
 

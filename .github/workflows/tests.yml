@@ -151,17 +151,10 @@ jobs:
     name: "Frontend Tests"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
-    needs: test-render-wasm
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
-      - name: Restore shared.js
-        uses: actions/cache/restore@v5
-        with:
-          key: "render-wasm-shared-js-${{ github.sha }}"
-          path: frontend/src/app/render_wasm/api/shared.js
 
       - name: Unit Tests
         working-directory: ./frontend
@@ -199,19 +192,6 @@ jobs:
         working-directory: ./render-wasm
         run: |
           ./test
-
-      - name: Copy shared.js artifact
-        working-directory: ./render-wasm
-        run: |
-          SHARED_FILE=$(find target -name render_wasm_shared.js | head -n 1);
-          mkdir -p ../frontend/src/app/render_wasm/api;
-          cp $SHARED_FILE ../frontend/src/app/render_wasm/api/shared.js;
-
-      - name: Cache shared.js
-        uses: actions/cache@v5
-        with:
-          key: "render-wasm-shared-js-${{ github.sha }}"
-          path: frontend/src/app/render_wasm/api/shared.js
 
   test-backend:
     if: ${{ !github.event.pull_request.draft }}
@@ -291,7 +271,7 @@ jobs:
 
   test-integration-1:
     if: ${{ !github.event.pull_request.draft }}
-    name: "Integration Tests 1/4"
+    name: "Integration Tests 1/3"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -309,7 +289,7 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="1/4";
+          ./scripts/test-e2e --shard="1/3";
 
       - name: Upload test result
         uses: actions/upload-artifact@v7
@@ -322,7 +302,7 @@ jobs:
 
   test-integration-2:
     if: ${{ !github.event.pull_request.draft }}
-    name: "Integration Tests 2/4"
+    name: "Integration Tests 2/3"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -340,7 +320,7 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="2/4";
+          ./scripts/test-e2e --shard="2/3";
 
       - name: Upload test result
         uses: actions/upload-artifact@v7
@@ -353,7 +333,7 @@ jobs:
 
   test-integration-3:
     if: ${{ !github.event.pull_request.draft }}
-    name: "Integration Tests 3/4"
+    name: "Integration Tests 3/3"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -371,44 +351,13 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="3/4";
+          ./scripts/test-e2e --shard="3/3";
 
       - name: Upload test result
         uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-tests-result-3
-          path: frontend/test-results/
-          overwrite: true
-          retention-days: 3
-
-  test-integration-4:
-    if: ${{ !github.event.pull_request.draft }}
-    name: "Integration Tests 4/4"
-    runs-on: penpot-runner-02
-    container: penpotapp/devenv:latest
-    needs: build-integration
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Restore Cache
-        uses: actions/cache/restore@v5
-        with:
-          key: "integration-bundle-${{ github.sha }}"
-          path: frontend/resources/public
-
-      - name: Run Tests
-        working-directory: ./frontend
-        run: |
-          ./scripts/test-e2e --shard="4/4";
-
-      - name: Upload test result
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: integration-tests-result-4
           path: frontend/test-results/
           overwrite: true
           retention-days: 3

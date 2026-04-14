@@ -1,12 +1,13 @@
 ## 1.5.0 (Unreleased)
 
-- **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
 - **plugins-runtime**: Added `version` field that returns the current version
+- **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
 - **plugin-types**: Fix penpot.openPage() to navigate in same tab by default
 - **plugin-types**: Added `createVariantFromComponents`
 - **plugin-types**: Change return type of `combineAsVariants`
 - **plugin-types**: Added `textBounds` property for text shapes
 - **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
+- **plugin-types**: Fix missing `webp` export format in `Export.type`
 
 ## 1.4.2 (2026-01-21)
 

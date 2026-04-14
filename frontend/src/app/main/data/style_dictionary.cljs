@@ -551,7 +551,7 @@
   (.. sd-token -original -name))
 
 (defn sd-token-uuid [^js sd-token]
-  (uuid (.-uuid (.-id ^js sd-token))))
+  (uuid (.-uuid (.. sd-token -original -id))))
 
 (defn resolve-tokens
   [tokens]
@@ -560,15 +560,23 @@
 
 (defn resolve-tokens-interactive
   "Interactive check of resolving tokens.
-  Uses a ids map to backtrace the original token from the resolved StyleDictionary token.
+  Uses a ids map to backtrace the original token from the resolved
+  StyleDictionary token.
 
-  We have to pass in all tokens from all sets in the entire library to style dictionary
-  so we know if references are missing / to resolve them and possibly show interactive previews (in the tokens form) to the user.
+  We have to pass in all tokens from all sets in the entire library to
+  style dictionary so we know if references are missing / to resolve
+  them and possibly show interactive previews (in the tokens form) to
+  the user.
 
-  Since we're using the :name path as the identifier we might be throwing away or overriding tokens in the tree that we pass to StyleDictionary.
+  Since we're using the :name path as the identifier we might be
+  throwing away or overriding tokens in the tree that we pass to
+  StyleDictionary.
 
-  So to get back the original token from the resolved sd-token (see my updates for what an sd-token is) we include a temporary :id for the token that we pass to StyleDictionary,
-  this way after the resolving computation we can restore any token, even clashing ones with the same :name path by just looking up that :id in the ids map."
+  So to get back the original token from the resolved sd-token (see my
+  updates for what an sd-token is) we include a temporary :id for the
+  token that we pass to StyleDictionary, this way after the resolving
+  computation we can restore any token, even clashing ones with the
+  same :name path by just looking up that :id in the ids map."
   [tokens]
   (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)]
     (resolve-tokens-tree tokens-tree  #(get ids (sd-token-uuid %)))))
@@ -584,10 +592,11 @@
 (defonce !tokens-cache (atom nil))
 
 (defn use-resolved-tokens
-  "The StyleDictionary process function is async, so we can't use resolved values directly.
+  "The StyleDictionary process function is async, so we can't use
+  resolved values directly.
 
-  This hook will return the unresolved tokens as state until they are processed,
-  then the state will be updated with the resolved tokens."
+  This hook will return the unresolved tokens as state until they are
+  processed, then the state will be updated with the resolved tokens."
   [tokens & {:keys [cache-atom interactive?]
              :or {cache-atom !tokens-cache}
              :as config}]
