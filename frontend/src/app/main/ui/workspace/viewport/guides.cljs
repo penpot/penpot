@@ -28,7 +28,8 @@
 (def ^:const guide-width 1)
 (def ^:const guide-opacity 0.7)
 (def ^:const guide-opacity-hover 1)
-(def ^:const guide-color colors/new-danger)
+(def ^:const default-guide-color colors/new-danger)
+
 (def ^:const guide-pill-width 34)
 (def ^:const guide-pill-height 20)
 (def ^:const guide-pill-corner-radius 4)
@@ -282,13 +283,17 @@
 (mf/defc guide*
   {::mf/wrap [mf/memo]}
   [{:keys [guide is-hover on-guide-change get-hover-frame vbox zoom
-           hover-frame disabled-guides frame-modifier frame-transform]}]
+           hover-frame disabled-guides frame-modifier frame-transform
+           on-guide-context-menu]}]
   (let [axis
         (get guide :axis)
 
+        guide-color
+        (or (:color guide) default-guide-color)
+
         handle-change-position
         (mf/use-fn
-         (mf/deps on-guide-change)
+         (mf/deps on-guide-change guide)
          (fn [changes]
            (when on-guide-change
              (on-guide-change (merge guide changes)))))
@@ -336,7 +341,13 @@
                    (not (ctst/rotated-frame? frame))))
       [:g.guide-area {:opacity (when frame-guide-outside? 0)}
        (when-not disabled-guides
-         (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
+         (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)
+               on-context-menu
+               (fn [event]
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (when on-guide-context-menu
+                   (on-guide-context-menu event guide)))]
            [:rect {:x x
                    :y y
                    :width width
@@ -349,7 +360,8 @@
                    :on-pointer-down on-pointer-down
                    :on-pointer-up on-pointer-up
                    :on-lost-pointer-capture on-lost-pointer-capture
-                   :on-pointer-move on-pointer-move}]))
+                   :on-pointer-move on-pointer-move
+                   :on-context-menu on-context-menu}]))
 
        (if (some? frame)
          (let [{:keys [l1-x1 l1-y1 l1-x2 l1-y2
@@ -502,6 +514,13 @@
              (st/emit! (dw/update-guides guide))
              (st/emit! (dw/remove-guide guide)))))
 
+        on-guide-context-menu
+        (mf/use-fn
+         (fn [event guide]
+           (let [position (dom/get-client-position event)]
+             (st/emit! (dw/show-guide-context-menu {:position position
+                                                    :guide guide})))))
+
         frame-modifiers
         (-> (group-by :id modifiers)
             (update-vals (comp :transform first)))]
@@ -533,4 +552,5 @@
                      :frame-transform (get frame-modifiers frame-id)
                      :get-hover-frame get-hover-frame
                      :on-guide-change on-guide-change
+                     :on-guide-context-menu on-guide-context-menu
                      :disabled-guides disabled-guides}]))]))

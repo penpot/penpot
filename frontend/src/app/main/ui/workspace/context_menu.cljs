@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.transit :as t]
+   [app.common.types.color :as cc]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
@@ -899,6 +900,83 @@
                       :disabled (not has-copied-tracks?)}]]))
 
 
+(def guide-color-presets
+  ["#ff3277" "#4dabf7" "#51cf66" "#fcc419" "#ff922b" "#cc5de8" "#ffffff" "#868e96"])
+
+(mf/defc guide-color-context-menu*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [mdata]}]
+  (let [{:keys [guide position]} mdata
+        guide-id (:id guide)
+        current-color (or (:color guide) (first guide-color-presets))
+
+        do-set-color
+        (mf/use-fn
+         (mf/deps guide-id)
+         (fn [event]
+           (let [color (dom/get-data (dom/get-current-target event) "color")]
+             (st/emit! dw/hide-context-menu
+                       (dwg/update-guide-color guide-id color)))))
+
+        do-open-picker
+        (mf/use-fn
+         (mf/deps guide-id current-color position)
+         (fn []
+           (st/emit! dw/hide-context-menu)
+           (modal/show! :colorpicker
+                        {:x (- (:x position) 240)
+                         :y (:y position)
+                         :data {:color (cc/remove-hash current-color)
+                                :opacity 1}
+                         :disable-gradient true
+                         :disable-opacity true
+                         :disable-image true
+                         :on-change (fn [{:keys [color]}]
+                                      (when color
+                                        (st/emit! (dwg/update-guide-color
+                                                   guide-id
+                                                   (cc/prepend-hash color)))))
+                         :origin :guide})))
+
+        do-remove-guide
+        (mf/use-fn
+         (mf/deps guide)
+         (fn []
+           (st/emit! dw/hide-context-menu
+                     (dwg/remove-guide guide))))]
+
+    [:*
+     ;; Color label row
+     [:li {:class (stl/css :context-menu-item)
+           :style {:cursor "default" :pointer-events "none"}}
+      [:span {:class (stl/css :title)}
+       (tr "workspace.context-menu.guides.change-color")]]
+     ;; Color swatches row
+     [:li {:style {:padding "4px 6px 8px" :list-style "none"}}
+      [:div {:style {:display "flex" :flex-wrap "wrap" :gap "6px" :align-items "center"}}
+       (for [color guide-color-presets]
+         [:span {:key color
+                 :data-color color
+                 :on-click do-set-color
+                 :title color
+                 :style {:width "18px"
+                         :height "18px"
+                         :border-radius "50%"
+                         :background-color color
+                         :cursor "pointer"
+                         :flex-shrink "0"
+                         :box-sizing "border-box"
+                         :border (if (= color current-color)
+                                   "2px solid var(--menu-foreground-color)"
+                                   "1px solid var(--panel-border-color)")}}])]]
+     ;; Custom color picker option
+     [:> menu-entry* {:title (tr "workspace.context-menu.guides.custom-color")
+                      :on-click do-open-picker}]
+     [:> menu-separator* {}]
+     [:> menu-entry* {:title (tr "workspace.context-menu.guides.remove")
+                      :on-click do-remove-guide}]]))
+
 ;; FIXME: optimize because it is rendered always
 
 (mf/defc context-menu*
@@ -936,4 +1014,5 @@
            :page       [:> page-item-context-menu* {:mdata mdata}]
            :grid-track [:> grid-track-context-menu* {:mdata mdata}]
            :grid-cells [:> grid-cells-context-menu* {:mdata mdata}]
+           :guide      [:> guide-color-context-menu* {:mdata mdata}]
            [:> viewport-context-menu* {:mdata mdata}]))]]]))
