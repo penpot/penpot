@@ -194,4 +194,4 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rx/from ids)
-           (rx/map resize-wasm-text)))))
+           (rx/map resize-wasm-text-debounce)))))
