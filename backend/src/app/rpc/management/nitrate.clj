@@ -296,6 +296,48 @@ RETURNING id, name;")
     (profile-to-map profile)))
 
 
+;; ---- API: get-org-member-team-counts
+
+(def ^:private sql:get-org-member-team-counts
+  "SELECT tpr.profile_id, COUNT(DISTINCT t.id) AS team_count
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON t.id = tpr.team_id
+    WHERE t.id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND t.is_default IS FALSE
+    GROUP BY tpr.profile_id;")
+
+(def ^:private schema:get-org-member-team-counts-params
+  [:map [:team-ids [:or ::sm/uuid [:vector ::sm/uuid]]]])
+
+(def ^:private schema:get-org-member-team-counts-result
+  [:vector [:map
+            [:profile-id ::sm/uuid]
+            [:team-count ::sm/int]]])
+
+(sv/defmethod ::get-org-member-team-counts
+  "Get the number of non-default teams each profile belongs to within a set of teams."
+  {::doc/added "2.15"
+   ::sm/params schema:get-org-member-team-counts-params
+   ::sm/result schema:get-org-member-team-counts-result
+   ::rpc/auth false}
+  [cfg {:keys [team-ids]}]
+  (let [team-ids (cond
+                   (uuid? team-ids)
+                   [team-ids]
+
+                   (and (vector? team-ids) (every? uuid? team-ids))
+                   team-ids
+
+                   :else
+                   [])]
+    (if (empty? team-ids)
+      []
+      (db/run! cfg (fn [{:keys [::db/conn]}]
+                     (let [ids-array (db/create-array conn "uuid" team-ids)]
+                       (db/exec! conn [sql:get-org-member-team-counts ids-array])))))))
+
+
 ;; API: invite-to-org
 
 (sv/defmethod ::invite-to-org
