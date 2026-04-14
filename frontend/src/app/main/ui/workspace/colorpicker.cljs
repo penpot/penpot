@@ -515,7 +515,8 @@
                    {:color current-color
                     :disable-opacity disable-opacity
                     :on-change handle-change-color
-                    :on-start-drag on-start-drag}]
+                    :on-start-drag on-start-drag
+                    :on-finish-drag on-finish-drag}]
 
                   "hsva"
                   [:> hsva-selector*
