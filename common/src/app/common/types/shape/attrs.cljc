@@ -45,6 +45,8 @@
             :stroke-style
             :stroke-alignment
             :stroke-width
+            :stroke-dash
+            :stroke-gap
             :stroke-color
             :stroke-color-ref-id
             :stroke-color-ref-file
@@ -151,6 +153,8 @@
            :stroke-style
            :stroke-alignment
            :stroke-width
+           :stroke-dash
+           :stroke-gap
            :stroke-color
            :stroke-color-ref-id
            :stroke-color-ref-file
@@ -206,6 +210,8 @@
              :stroke-style
              :stroke-alignment
              :stroke-width
+             :stroke-dash
+             :stroke-gap
              :stroke-color
              :stroke-color-ref-id
              :stroke-color-ref-file
@@ -261,6 +267,8 @@
            :stroke-style
            :stroke-alignment
            :stroke-width
+           :stroke-dash
+           :stroke-gap
            :stroke-color
            :stroke-color-ref-id
            :stroke-color-ref-file
@@ -315,6 +323,8 @@
            :stroke-style
            :stroke-alignment
            :stroke-width
+           :stroke-dash
+           :stroke-gap
            :stroke-color
            :stroke-color-ref-id
            :stroke-color-ref-file
@@ -433,6 +443,8 @@
               :stroke-style
               :stroke-alignment
               :stroke-width
+              :stroke-dash
+              :stroke-gap
               :stroke-color
               :stroke-color-ref-id
               :stroke-color-ref-file
@@ -488,6 +500,8 @@
            :stroke-style
            :stroke-alignment
            :stroke-width
+           :stroke-dash
+           :stroke-gap
            :stroke-color
            :stroke-color-ref-id
            :stroke-color-ref-file

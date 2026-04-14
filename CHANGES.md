@@ -47,6 +47,7 @@
 - Allow customising the OIDC login button label (by @wdeveloper16) [Github #7027](https://github.com/penpot/penpot/issues/7027)
 - Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
+- Customize dash and gap length for dashed strokes (by @eureka0928) [Github #3881](https://github.com/penpot/penpot/issues/3881)
 
 ### :bug: Bugs fixed
 
