@@ -32,6 +32,7 @@
 - Make links in comments clickable (by @eureka928) [Github #1602](https://github.com/penpot/penpot/issues/1602)
 - Add visibility toggle for strokes (by @eureka928) [Github #7438](https://github.com/penpot/penpot/issues/7438)
 - Sort asset library subfolders alphabetically at every nesting level (by @eureka928) [Github #2572](https://github.com/penpot/penpot/issues/2572)
+- Add customizable colors for ruler guides (by @Dexterity104) [Github #5199](https://github.com/penpot/penpot/issues/5199)
 
 ### :bug: Bugs fixed
 
