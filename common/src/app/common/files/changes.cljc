@@ -439,7 +439,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- without-obj
-  "Clear collection from specified obj and without nil values."
+  "Return a vector with all elements equal to `o` removed."
   [coll o]
   (into [] (filter #(not= % o)) coll))
 
