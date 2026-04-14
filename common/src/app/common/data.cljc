@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.data
-  "A collection if helpers for working with data structures and other
+  "A collection of helpers for working with data structures and other
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
