@@ -8235,12 +8235,20 @@ msgstr "Error al importar: Datos de token no válidos en JSON."
 msgid "errors.tokens.invalid-json-token-name"
 msgstr "Error al importar: Nombre de token no válido en JSON."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:32
+msgid "workspace.tokens.duplicated-json-token-name"
+msgstr "Error al importar: Nombre de token duplicado en JSON."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:28
 msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" no es un nombre de token válido.\n"
 "Los nombres de token solo pueden contener letras y dígitos separados por "
 "caracteres . y no pueden empezar con un signo $."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:33
+msgid "workspace.tokens.duplicated-json-token-name-detail"
+msgstr "Existe un token en la ruta '%s' o en un prefijo del mismo, en otro set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:105
 msgid "errors.tokens.invalid-shadow-type-token-value"
