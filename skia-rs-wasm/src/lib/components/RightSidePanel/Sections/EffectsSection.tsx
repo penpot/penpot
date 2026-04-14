@@ -113,8 +113,8 @@ export function EffectsSection({ nodeId, readOnly, initialNode }: EffectsSection
 
   const removeEffect = useCallback(
     (index: number) => {
-      // Close color editor if removing the shadow being edited
-      if (activeTarget?.kind === 'shadow' && activeTarget.index === index) closeEditor()
+      // Close effect editor if removing the effect being edited
+      if (activeTarget && activeTarget.index === index && activeTarget.kind !== 'fill' && activeTarget.kind !== 'stroke') closeEditor()
       const next = effects.filter((_, i) => i !== index)
       setEffects(next)
       void commitEffects(next)

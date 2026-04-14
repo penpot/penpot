@@ -1,5 +1,8 @@
 /**
  * Glass effect operations
+ *
+ * All parameters use their physical/direct ranges.
+ * Angles are passed in degrees and converted to radians here.
  */
 
 import type { WasmModule } from '../wasm-types'
@@ -13,12 +16,20 @@ export function setShapeGlass(module: WasmModule, glass: Glass | null | undefine
   checkContext()
   if (glass) {
     module._set_shape_glass(
-      glass.radius ?? 10,
-      glass.refraction ?? 1.5,
-      glass.depth ?? 10,
-      glass.dispersion ?? 0.03,
-      glass.lightIntensity ?? 0.5,
-      (glass.lightAngle ?? 45) * (Math.PI / 180),
+      glass.surfaceType ?? 1,                                   // squircle default
+      glass.bezelWidth ?? 40,                                   // pixels
+      glass.glassThickness ?? 1.2,                              // multiplier
+      glass.refractiveIndex ?? 1.5,                             // physical index
+      ((glass.specularAngle ?? -60) * Math.PI) / 180,           // degrees → radians
+      glass.specularOpacity ?? 0.5,                             // 0–1
+      glass.specularSaturation ?? 4,                            // 0=white, 9=vivid prismatic
+      glass.chromaticAberration ?? 3.0,                         // pixels
+      glass.splay ?? 1.0,                                       // 0–1
+      ((glass.tiltAngle ?? 0) * Math.PI) / 180,                 // degrees → radians
+      glass.edgeBoost ?? 0,                                     // 0–5
+      (glass.zoom ?? 100) / 100,                                  // percentage → multiplier
+      glass.blur ?? 0,                                          // sigma 0–20
+      glass.frost ?? 0,                                         // 0–1
       glass.hidden ? 1 : 0,
     )
   } else {

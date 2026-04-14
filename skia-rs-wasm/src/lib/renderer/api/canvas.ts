@@ -110,6 +110,10 @@ export function initCanvasContext(
     event.preventDefault()
     setContextLost(true)
     console.warn('WebGL context lost')
+    // #region DEBUG
+    const msg = `[${new Date().toISOString()}] [DEBUG CRASH] WebGL CONTEXT_LOST! GL error=${context.getError()}`
+    fetch('/__debug_log', { method: 'POST', body: msg, keepalive: true }).catch(() => {})
+    // #endregion DEBUG
   }
   canvas.addEventListener('webglcontextlost', onContextLost)
   storedOnContextLost = onContextLost

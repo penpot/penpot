@@ -10,7 +10,7 @@ export function FloatingColorEditorPanel() {
   const panelRef = useRef<HTMLDivElement>(null)
 
   // Stable key for effect dependencies
-  const targetKey = activeTarget ? `${activeTarget.kind}-${activeTarget.index}` : null
+  const targetKey = activeTarget && activeFill ? `${activeTarget.kind}-${activeTarget.index}` : null
 
   // Drag state
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)

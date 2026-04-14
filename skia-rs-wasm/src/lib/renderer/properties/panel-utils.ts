@@ -42,12 +42,20 @@ export const DEFAULT_BACKGROUND_BLUR: Blur = {
 }
 
 export const DEFAULT_GLASS: Glass = {
-  radius: 10,
-  refraction: 1.5,
-  depth: 10,
-  dispersion: 0.03,
-  lightIntensity: 0.5,
-  lightAngle: 45,
+  surfaceType: 1,           // squircle
+  bezelWidth: 40,           // pixels
+  glassThickness: 1.2,      // multiplier
+  refractiveIndex: 1.5,     // physical index
+  specularAngle: -60,       // degrees
+  specularOpacity: 0.5,     // 0–1
+  specularSaturation: 4,    // 0=white, 9=vivid prismatic
+  chromaticAberration: 3,   // pixels
+  splay: 1.0,               // dome
+  tiltAngle: 0,             // degrees
+  edgeBoost: 0,             // 0–5
+  zoom: 100,                // percentage (100% = no zoom)
+  blur: 0,                  // sigma
+  frost: 0,                 // 0–1
   hidden: false,
 }
 
