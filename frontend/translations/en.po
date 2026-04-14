@@ -2594,6 +2594,12 @@ msgstr "Empty"
 msgid "labels.error"
 msgstr "Error"
 
+#: src/app/main/ui/dashboard/import.cljs:297
+msgid "labels.warning-count"
+msgid_plural "labels.warning-count"
+msgstr[0] "%s warning"
+msgstr[1] "%s warnings"
+
 #: src/app/main/ui/onboarding/questions.cljs:404
 #, unused
 msgid "labels.event"
