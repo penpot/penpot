@@ -1149,11 +1149,11 @@
               (> start 0) (< start (count v)))
      (subvec v start)))
   ([v start end]
-   (let [size (count v)]
-     (when (and (some? v)
-                (>= start 0) (< start size)
-                (>= end 0) (<= start end) (<= end size))
-       (subvec v start end)))))
+   (when (some? v)
+     (let [size (count v)]
+       (when (and (>= start 0) (< start size)
+                  (>= end 0) (<= start end) (<= end size))
+         (subvec v start end))))))
 
 (defn append-class
   [class current-class]
