@@ -32,6 +32,7 @@
   []
   (let [ref            (mf/use-ref nil)
         file-id        (mf/use-ctx ctx/current-file-id)
+        drawtool       (mf/deref refs/selected-drawing-tool)
 
         on-click
         (mf/use-fn
@@ -41,7 +42,7 @@
 
         on-selected
         (mf/use-fn
-         (mf/deps file-id)
+         (mf/deps file-id drawtool)
          (fn [blobs]
            ;; We don't want to add a ref because that redraws the component
            ;; for everychange. Better direct access on the callback.
@@ -51,7 +52,9 @@
                  params {:file-id file-id
                          :blobs (seq blobs)
                          :position (gpt/point x y)}]
-             (st/emit! (dwm/upload-media-workspace params)))))]
+             (if (= drawtool :terminal)
+               (st/emit! (dwm/upload-terminal-screenshot-workspace params))
+               (st/emit! (dwm/upload-media-workspace params))))))]
     [:li
      [:button
       {:title (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
@@ -179,6 +182,14 @@
             :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :text))
             :on-click select-drawtool
             :data-tool "text"}
+           deprecated-icon/text]]
+         [:li
+          [:button
+           {:title "Terminal (Monospace 80x24)"
+            :aria-label "Terminal (Monospace 80x24)"
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :terminal))
+            :on-click select-drawtool
+            :data-tool "terminal"}
            deprecated-icon/text]]
 
          [:> image-upload*]

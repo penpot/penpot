@@ -109,10 +109,12 @@
              ;; In other all cases we only allowed to have a single
              ;; shape-id because multiple shape-ids are handled
              ;; separately by the export-modal.
-             (let [defaults {:page-id page-id
+             (let [shape    (first shapes-with-exports)
+                   defaults {:page-id page-id
                              :file-id file-id
                              :name sname
-                             :object-id (first ids)}
+                             :object-id (first ids)
+                             :shape (dissoc shape :exports)}
                    exports  (mapv #(merge % defaults) exports)]
 
                (st/emit!
@@ -200,7 +202,9 @@
                         {:value "jpeg" :label "JPG"}
                         {:value "webp" :label "WEBP"}
                         {:value "svg" :label "SVG"}
-                        {:value "pdf" :label "PDF"}]]
+                        {:value "pdf" :label "PDF"}
+                        {:value "ansi" :label "ANSI"}
+                        {:value "json" :label "JSON"}]]
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}

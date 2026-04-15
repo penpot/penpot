@@ -7,6 +7,7 @@
 (ns app.worker.import
   (:refer-clojure :exclude [resolve])
   (:require
+   ["tesseract.js" :as tesseract]
    [app.common.json :as json]
    [app.common.logging :as log]
    [app.common.schema :as sm]
@@ -19,7 +20,9 @@
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [clojure.string :as cstr]
+   [cuerdas.core :as str]
+   [promesa.core :as p]))
 
 (log/set-level! :warn)
 
@@ -234,3 +237,28 @@
                                       {:status :error
                                        :error err
                                        :file-id (:file-id entry)})))))))))))))
+(defn- normalize-grid-text
+  [text cols rows]
+  (let [lines (cstr/split (or text "") #"\r?\n" -1)]
+    (->> (for [idx (range rows)]
+           (let [line (or (nth lines idx nil) "")]
+             (subs (str line (apply str (repeat cols " "))) 0 cols)))
+         (cstr/join "\n"))))
+
+(defmethod impl/handler :terminal-ocr
+  [{:keys [blob cols rows]
+    :or {cols 80
+         rows 24}}]
+  (-> (.recognize tesseract blob "eng")
+      (p/then
+       (fn [result]
+         (let [text (or (.. result -data -text) "")]
+           {:cols cols
+            :rows rows
+            :text (normalize-grid-text text cols rows)})))
+      (p/catch
+       (fn [cause]
+         (log/error :hint "terminal OCR failed" :cause cause)
+         {:cols cols
+          :rows rows
+          :text (normalize-grid-text "" cols rows)}))))

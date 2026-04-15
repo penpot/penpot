@@ -177,10 +177,12 @@
              :objects (mapv part-entry->object part)})
 
           (part-entry->object [entry]
-            {:id (:object-id entry)
-             :filename (:filename entry)
-             :name (:name entry)
-             :suffix (:suffix entry)})]
+            (cond-> {:id (:object-id entry)
+                     :filename (:filename entry)
+                     :name (:name entry)
+                     :suffix (:suffix entry)}
+              (contains? #{:ansi :json} (:type entry))
+              (assoc :shape (:shape entry))))]
 
     (let [xform (comp
                  (map #(assoc % :token token))

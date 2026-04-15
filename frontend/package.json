@@ -118,6 +118,7 @@
     "stylelint-use-logical-spec": "^5.0.1",
     "svg-sprite": "^2.0.4",
     "tdigest": "^0.1.2",
+    "tesseract.js": "^7.0.0",
     "tinycolor2": "^1.6.0",
     "typescript": "^6.0.2",
     "ua-parser-js": "2.0.9",

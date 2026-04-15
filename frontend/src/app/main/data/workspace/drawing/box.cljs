@@ -22,6 +22,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.drawing.common :as common]
+   [app.main.data.workspace.terminal :as dwt]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
    [app.util.array :as array]
@@ -114,7 +115,8 @@
             drop-index   (when flex-layout? (gslf/get-drop-index fid objects initial))
             drop-cell    (when grid-layout? (gslg/get-drop-cell fid objects initial))
 
-            shape        (-> (cts/setup-shape {:type type
+            shape-type   (if (= type :terminal) :text type)
+            shape        (-> (cts/setup-shape {:type shape-type
                                                :x (:x initial)
                                                :y (:y initial)
                                                :frame-id fid
@@ -122,6 +124,10 @@
                                                :initialized? true
                                                :click-draw? true
                                                :hide-in-viewer (and (= type :frame) (not= fid uuid/zero))})
+                             (cond-> (= type :terminal)
+                               (merge (dwt/make-terminal-shape {:x (:x initial)
+                                                                :y (:y initial)
+                                                                :text ""})))
                              (cond-> (some? drop-index)
                                (with-meta {:index drop-index}))
                              (cond-> (some? drop-cell)
