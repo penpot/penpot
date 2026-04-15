@@ -117,6 +117,7 @@ pub struct TextEditorStyles {
     pub font_variant_id: Multiple<Uuid>,
     pub line_height: Multiple<f32>,
     pub letter_spacing: Multiple<f32>,
+    pub fills_are_multiple: bool,
     pub fills: Vec<Fill>,
 }
 
@@ -233,6 +234,7 @@ impl TextEditorStyles {
             font_variant_id: Multiple::empty(),
             line_height: Multiple::empty(),
             letter_spacing: Multiple::empty(),
+            fills_are_multiple: false,
             fills: Vec::new(),
         }
     }
@@ -248,6 +250,7 @@ impl TextEditorStyles {
         self.font_variant_id.reset();
         self.line_height.reset();
         self.letter_spacing.reset();
+        self.fills_are_multiple = false;
         self.fills.clear();
     }
 }
@@ -529,11 +532,7 @@ impl TextEditorState {
         let end_paragraph = end.paragraph.min(paragraphs.len() - 1);
 
         self.current_styles.reset();
-
         let mut has_selected_content = false;
-        let mut has_fills = false;
-        let mut fills_are_multiple = false;
-
         for (para_idx, paragraph) in paragraphs
             .iter()
             .enumerate()
@@ -606,14 +605,11 @@ impl TextEditorState {
                     .letter_spacing
                     .merge(Some(span.letter_spacing));
 
-                if !fills_are_multiple {
-                    if !has_fills {
-                        self.current_styles.fills = span.fills.clone();
-                        has_fills = true;
-                    } else if self.current_styles.fills != span.fills {
-                        fills_are_multiple = true;
-                        self.current_styles.fills.clear();
-                    }
+                if self.current_styles.fills.is_empty() {
+                    self.current_styles.fills.append(&mut span.fills.clone());
+                } else if self.current_styles.fills != span.fills {
+                    self.current_styles.fills_are_multiple = true;
+                    self.current_styles.fills.append(&mut span.fills.clone());
                 }
             }
         }
@@ -630,6 +626,7 @@ impl TextEditorState {
         let current_offset = focus.offset;
         let current_text_span = find_text_span_at_offset(current_paragraph, current_offset);
 
+        self.current_styles.reset();
         self.current_styles
             .text_align
             .set_single(Some(current_paragraph.text_align()));
