@@ -91,7 +91,11 @@
     (s/assert number? init-value)
     (if-not (insta/failure? result)
       (try
-        (interpret result init-value)
+        (let [value (interpret result init-value)]
+          ;; Check for division by zero (Infinity or -Infinity)
+          (if (or (js/Number.isFinite value) (nil? value))
+            value
+            nil))
         (catch :default err
           (js/console.debug (str "Expression evaluation error: " (ex-message err))
                             (str "Expression: '" expr "'"))
