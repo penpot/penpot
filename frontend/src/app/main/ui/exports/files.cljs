@@ -174,15 +174,23 @@
                     :on-click on-accept}]]]]
 
         (= status :exporting)
-        [:*
-         [:div {:class (stl/css :modal-content)}
-          (for [file (:files state)]
-            [:> export-entry* {:file file :key (dm/str (:id file))}])]
+        (let [in-progress? (->> state :files (some :loading))]
+          [:*
+           [:div {:class (stl/css :modal-content)}
+            (for [file (:files state)]
+              [:> export-entry* {:file file :key (dm/str (:id file))}])]
 
-         [:div {:class (stl/css :modal-footer)}
-          [:div {:class (stl/css :action-buttons)}
-           [:input {:class (stl/css :accept-btn)
-                    :type "button"
-                    :value (tr "labels.close")
-                    :disabled (->> state :files (some :loading))
-                    :on-click on-cancel}]]]])]]))
+           [:div {:class (stl/css :modal-footer)}
+            (when in-progress?
+              [:div {:class (stl/css :footer-status)
+                     :role "status"
+                     :aria-live "polite"}
+               [:> loader* {:width 16 :title (tr "labels.exporting-files")}]
+               [:span {:class (stl/css :footer-status-label)}
+                (tr "labels.exporting-files")]])
+            [:div {:class (stl/css :action-buttons)}
+             [:input {:class (stl/css :accept-btn)
+                      :type "button"
+                      :value (tr "labels.close")
+                      :disabled in-progress?
+                      :on-click on-cancel}]]]]))]]))

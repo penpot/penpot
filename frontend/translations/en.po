@@ -2804,6 +2804,14 @@ msgstr "Libraries & Templates"
 msgid "labels.loading"
 msgstr "Loading…"
 
+#: src/app/main/ui/dashboard/import.cljs
+msgid "labels.importing-files"
+msgstr "Importing files…"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "labels.exporting-files"
+msgstr "Exporting files…"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:210
 msgid "labels.lock"
 msgstr "Lock"

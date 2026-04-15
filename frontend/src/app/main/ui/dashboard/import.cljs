@@ -508,6 +508,13 @@
                             :can-be-deleted false}])]
 
       [:div {:class (stl/css :modal-footer)}
+       (when (= :import-progress status)
+         [:div {:class (stl/css :footer-status)
+                :role "status"
+                :aria-live "polite"}
+          [:> loader* {:width 16 :title (tr "labels.importing-files")}]
+          [:span {:class (stl/css :footer-status-label)}
+           (tr "labels.importing-files")]])
        [:div {:class (stl/css :action-buttons)}
         (when (= :analyze status)
           [:input {:class (stl/css :cancel-button)
@@ -523,10 +530,8 @@
                    :on-click on-continue}])
 
         (when (or (= :import-success status)
-                  (= :import-error status)
-                  (= :import-progress status))
+                  (= :import-error status))
           [:input {:class (stl/css :accept-btn)
                    :type "button"
                    :value (tr "labels.accept")
-                   :disabled (= :import-progress status)
                    :on-click on-accept}])]]]]))
