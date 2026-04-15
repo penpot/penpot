@@ -258,14 +258,22 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [profile-id (:profile-id state)]
+      (let [profile-id   (:profile-id state)
+            ;; Full 3-layer SSO logout: when cf/mpass-signout-url is set
+            ;; we redirect there after the native :logout cmd so that the
+            ;; oauth2-proxy cookie and the Cognito session are also
+            ;; cleared. Nil on non-SSO deployments → fall through to the
+            ;; default /auth/login redirect.
+            logged-out-ev (if-some [url cf/mpass-signout-url]
+                            (logged-out {:redirect-uri url})
+                            (logged-out {}))]
         (->> (rx/interval 500)
              (rx/take 1)
              (rx/mapcat (fn [_]
                           (->> (rp/cmd! :logout {:profile-id profile-id})
                                (rx/delay-at-least 300)
                                (rx/catch (constantly (rx/of nil))))))
-             (rx/map logged-out))))))
+             (rx/map (constantly logged-out-ev)))))))
 
 ;; --- Update Profile
 
