@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.2.0-RC2
+
+- Update dependencies
+
 
 ## 1.2.0-RC1
 
