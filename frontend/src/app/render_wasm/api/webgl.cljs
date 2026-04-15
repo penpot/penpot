@@ -9,7 +9,6 @@
   (:require
    [app.common.logging :as log]
    [app.render-wasm.wasm :as wasm]
-   [app.util.dom :as dom]
    [promesa.core :as p]))
 
 (defn max-texture-size
@@ -144,38 +143,29 @@ void main() {
       (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) nil)
       (.deleteTexture ^js gl texture))))
 
-(defn restore-previous-canvas-pixels
-  "Restores previous canvas pixels into the new canvas"
-  []
-  (when-let [previous-canvas-pixels wasm/canvas-pixels]
-    (when-let [gl wasm/gl-context]
-      (draw-imagedata-to-webgl gl previous-canvas-pixels)
-      (set! wasm/canvas-pixels nil))))
+(defn capture-canvas-snapshot-url
+  "Captures the current viewport canvas as a PNG `blob:` URL and stores it in
+  `wasm/canvas-snapshot-url`.
 
-(defn clear-canvas-pixels
+  Returns a promise resolving to the URL string (or nil)."
   []
-  (when wasm/canvas
-    (let [context wasm/gl-context]
-      (.clearColor ^js context 0 0 0 0.0)
-      (.clear ^js context (.-COLOR_BUFFER_BIT ^js context))
-      (.clear ^js context (.-DEPTH_BUFFER_BIT ^js context))
-      (.clear ^js context (.-STENCIL_BUFFER_BIT ^js context)))
-    (dom/set-style! wasm/canvas "filter" "none")
-    (let [controls-to-unblur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
-      (run! #(dom/set-style! % "filter" "none") controls-to-unblur))
-    (set! wasm/canvas-pixels nil)))
-
-(defn capture-canvas-pixels
-  "Captures the pixels of the viewport canvas"
-  []
-  (when wasm/canvas
-    (let [context wasm/gl-context
-          width (.-width wasm/canvas)
-          height (.-height wasm/canvas)
-          buffer (js/Uint8ClampedArray. (* width height  4))
-          _ (.readPixels ^js context 0 0 width height (.-RGBA ^js context) (.-UNSIGNED_BYTE ^js context) buffer)
-          image-data (js/ImageData. buffer width height)]
-      (set! wasm/canvas-pixels image-data))))
+  (if-let [^js canvas wasm/canvas]
+    (p/create
+     (fn [resolve _reject]
+       ;; Revoke previous snapshot to avoid leaking blob URLs.
+       (when-let [prev wasm/canvas-snapshot-url]
+         (when (and (string? prev) (.startsWith ^js prev "blob:"))
+           (js/URL.revokeObjectURL prev)))
+       (set! wasm/canvas-snapshot-url nil)
+       (.toBlob canvas
+                (fn [^js blob]
+                  (if blob
+                    (let [url (js/URL.createObjectURL blob)]
+                      (set! wasm/canvas-snapshot-url url)
+                      (resolve url))
+                    (resolve nil)))
+                "image/png")))
+    (p/resolved nil)))
 
 (defn draw-thumbnail-to-canvas
   "Loads an image from `uri` and draws it stretched to fill the WebGL canvas.

@@ -55,6 +55,109 @@
 
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
 
+;; --- Page transition state (WASM viewport)
+;;
+;; Goal: avoid showing tile-by-tile rendering during page switches (and initial load),
+;; by keeping a blurred snapshot overlay visible until WASM dispatches
+;; `penpot:wasm:tiles-complete`.
+;;
+;; - `page-transition?`: true while the overlay should be considered active.
+;; - `transition-image-url*`: URL used by the UI overlay (usually `blob:` from the
+;;   current WebGL canvas snapshot; on initial load it may be a tiny SVG data-url
+;;   derived from the page background color).
+;; - `transition-epoch*`: monotonic counter used to ignore stale async work/events
+;;   when the user clicks pages rapidly (A -> B -> C).
+;; - `transition-tiles-handler*`: the currently installed DOM event handler for
+;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
+(defonce page-transition? (atom false))
+(defonce transition-image-url* (atom nil))
+(defonce transition-epoch* (atom 0))
+(defonce transition-tiles-handler* (atom nil))
+
+(def ^:private transition-blur-css "blur(4px)")
+
+(defn- set-transition-blur!
+  []
+  (when-let [canvas ^js wasm/canvas]
+    (dom/set-style! canvas "filter" transition-blur-css))
+  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
+    (doseq [^js node (array-seq nodes)]
+      (dom/set-style! node "filter" transition-blur-css))))
+
+(defn- clear-transition-blur!
+  []
+  (when-let [canvas ^js wasm/canvas]
+    (dom/set-style! canvas "filter" ""))
+  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
+    (doseq [^js node (array-seq nodes)]
+      (dom/set-style! node "filter" ""))))
+
+(defn set-transition-image-from-background!
+  "Sets `transition-image-url*` to a data URL representing a solid background color."
+  [background]
+  (when (string? background)
+    (let [svg (str "<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'>"
+                   "<rect width='1' height='1' fill='" background "'/>"
+                   "</svg>")]
+      (reset! transition-image-url*
+              (str "data:image/svg+xml;charset=utf-8," (js/encodeURIComponent svg))))))
+
+(defn begin-page-transition!
+  []
+  (reset! page-transition? true)
+  (swap! transition-epoch* inc))
+
+(defn end-page-transition!
+  []
+  (reset! page-transition? false)
+  (when-let [prev @transition-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (reset! transition-tiles-handler* nil)
+  (reset! transition-image-url* nil)
+  (clear-transition-blur!)
+  ;; Clear captured pixels so future transitions must explicitly capture again.
+  (set! wasm/canvas-snapshot-url nil))
+
+(defn- set-transition-tiles-complete-handler!
+  "Installs a tiles-complete handler bound to the current transition epoch.
+   Replaces any previous handler so rapid page switching doesn't end the wrong transition."
+  [epoch f]
+  (when-let [prev @transition-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (letfn [(handler [_]
+            (when (= epoch @transition-epoch*)
+              (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)
+              (reset! transition-tiles-handler* nil)
+              (f)))]
+    (reset! transition-tiles-handler* handler)
+    (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
+
+(defn start-initial-load-transition!
+  "Starts a page-transition workflow for initial file open.
+
+   - Sets `page-transition?` to true
+   - Installs a tiles-complete handler to end the transition
+   - Uses a solid background-color placeholder as the transition image"
+  [background]
+  ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
+  ;; ensure we still have a deterministic placeholder on initial load.
+  (when (or (not @page-transition?) (nil? @transition-image-url*))
+    (set-transition-image-from-background! background))
+  (when-not @page-transition?
+    ;; Start transition + bind the tiles-complete handler to this epoch.
+    (let [epoch (begin-page-transition!)]
+      (set-transition-tiles-complete-handler! epoch end-page-transition!))))
+
+(defn listen-tiles-render-complete-once!
+  "Registers a one-shot listener for `penpot:wasm:tiles-complete`, dispatched from WASM
+  when a full tile pass finishes."
+  [f]
+  (.addEventListener ^js ug/document
+                     "penpot:wasm:tiles-complete"
+                     (fn [_]
+                       (f))
+                     #js {:once true}))
+
 (defn text-editor-wasm?
   []
   (or (contains? cf/flags :feature-text-editor-wasm)
@@ -94,15 +197,8 @@
 (def ^:const TEXT_EDITOR_EVENT_NEEDS_LAYOUT 4)
 
 ;; Re-export public WebGL functions
-(def capture-canvas-pixels webgl/capture-canvas-pixels)
-(def restore-previous-canvas-pixels webgl/restore-previous-canvas-pixels)
-(def clear-canvas-pixels webgl/clear-canvas-pixels)
+(def capture-canvas-snapshot-url webgl/capture-canvas-snapshot-url)
 (def draw-thumbnail-to-canvas webgl/draw-thumbnail-to-canvas)
-
-(defn has-captured-pixels?
-  "Returns true if there are saved canvas pixels from a previous page."
-  []
-  (some? wasm/canvas-pixels))
 
 ;; Re-export public text editor functions
 (def text-editor-focus text-editor/text-editor-focus)
@@ -1778,9 +1874,36 @@
 
 (defn apply-canvas-blur
   []
-  (when wasm/canvas (dom/set-style! wasm/canvas "filter" "blur(4px)"))
-  (let [controls-to-blur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
-    (run! #(dom/set-style! % "filter" "blur(4px)") controls-to-blur)))
+  (let [already? @page-transition?
+        epoch    (begin-page-transition!)]
+    (set-transition-tiles-complete-handler! epoch end-page-transition!)
+    ;; Two-phase transition:
+    ;; - Apply CSS blur to the live canvas immediately (no async wait), so the user
+    ;;   sees the transition right away.
+    ;; - In parallel, capture a `blob:` snapshot URL; once ready, switch the overlay
+    ;;   to that fixed image (and guard with `epoch` to avoid stale async updates).
+    (set-transition-blur!)
+    ;; Lock the snapshot for the whole transition: if the user clicks to another page
+    ;; while the transition is active, keep showing the original page snapshot until
+    ;; the final target page finishes rendering.
+    (if already?
+      (p/resolved nil)
+      (do
+        ;; If we already have a snapshot URL, use it immediately.
+        (when-let [url wasm/canvas-snapshot-url]
+          (when (string? url)
+            (reset! transition-image-url* url)))
+
+        ;; Capture a fresh snapshot asynchronously and update the overlay as soon
+        ;; as it is ready (guarded by `epoch` to avoid stale async updates).
+        (-> (capture-canvas-snapshot-url)
+            (p/then (fn [url]
+                      (when (and (string? url)
+                                 @page-transition?
+                                 (= epoch @transition-epoch*))
+                        (reset! transition-image-url* url))
+                      url))
+            (p/catch (fn [_] nil)))))))
 
 (defn render-shape-pixels
   [shape-id scale]

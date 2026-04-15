@@ -43,6 +43,13 @@ const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
 
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
+
+/// Dispatches `penpot:wasm:tiles-complete` on `document` so the UI can react when a full
+/// tile pass has finished (e.g. remove page-transition blur).
+fn notify_tiles_render_complete() {
+    #[cfg(target_arch = "wasm32")]
+    crate::run_script!("document.dispatchEvent(new CustomEvent('penpot:wasm:tiles-complete'))");
+}
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
@@ -1750,6 +1757,7 @@ impl RenderState {
                 self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
             } else {
+                notify_tiles_render_complete();
                 performance::end_measure!("render");
             }
         }
@@ -1767,6 +1775,7 @@ impl RenderState {
             self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
         }
         self.flush_and_submit();
+        notify_tiles_render_complete();
 
         Ok(())
     }
