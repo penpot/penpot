@@ -13,7 +13,10 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn- as-key-value
@@ -47,7 +50,7 @@
   (:value (nth options (rotate-index-backward index length))))
 
 (mf/defc select
-  [{:keys [default-value options class dropdown-class is-open? on-change on-pointer-enter-option on-pointer-leave-option disabled data-direction]}]
+  [{:keys [default-value options class dropdown-class is-open? on-change on-pointer-enter-option on-pointer-leave-option disabled data-direction searchable? search-placeholder]}]
   (let [label-index   (mf/with-memo [options]
                         (into {} (map as-key-value) options))
 
@@ -63,6 +66,21 @@
 
         is-open?      (get state :is-open?)
 
+        search*       (mf/use-state "")
+        search        (deref search*)
+        search-input-ref (mf/use-ref nil)
+
+        visible-options
+        (mf/with-memo [options search searchable?]
+          (if (and searchable? (not (str/blank? search)))
+            (let [needle (str/lower search)]
+              (into [] (filter (fn [item]
+                                 (and (map? item)
+                                      (when-let [label (:label item)]
+                                        (str/includes? (str/lower (dm/str label)) needle)))))
+                    options))
+            options))
+
         node-ref      (mf/use-ref nil)
 
         dropdown-direction*
@@ -76,10 +94,10 @@
 
         handle-key-up
         (mf/use-fn
-         (mf/deps disabled options current-value)
+         (mf/deps disabled visible-options current-value)
          (fn [e]
            (when-not disabled
-             (let [options (into [] (remove :disabled) options)
+             (let [options (into [] (remove :disabled) visible-options)
                    length  (count options)
                    index   (d/index-of-pred options #(= (:value %) current-value))
                    index   (d/nilv index 0)]
@@ -159,6 +177,15 @@
         (mf/set-ref-val! dropdown-direction-change* 0)))
 
     (mf/with-effect [is-open?]
+      (when (and searchable? (not is-open?))
+        (reset! search* "")))
+
+    (mf/with-effect [is-open?]
+      (when (and searchable? is-open?)
+        (ts/schedule 0 #(when-let [el (mf/ref-val search-input-ref)]
+                          (dom/focus! el)))))
+
+    (mf/with-effect [is-open?]
       (let [dropdown-element (mf/ref-val node-ref)]
         (when (and (= 0 (mf/ref-val dropdown-direction-change*)) dropdown-element)
           (let [is-outside? (dom/is-element-outside? dropdown-element)]
@@ -185,7 +212,21 @@
         [:ul {:ref node-ref
               :data-direction (d/nilv data-direction dropdown-direction)
               :class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
-         (for [[index item] (d/enumerate options)]
+         (when searchable?
+           [:li {:class (stl/css :custom-select-search)
+                 :role "presentation"
+                 :on-click dom/stop-propagation}
+            [:input {:ref search-input-ref
+                     :type "text"
+                     :class (stl/css :custom-select-search-input)
+                     :placeholder (or search-placeholder (tr "labels.search"))
+                     :value search
+                     :on-change #(reset! search* (dom/get-target-val %))}]])
+         (when (and searchable? (seq search) (empty? visible-options))
+           [:li {:class (stl/css :custom-select-no-matches)
+                 :role "presentation"}
+            (tr "labels.no-matches")])
+         (for [[index item] (d/enumerate visible-options)]
            (if (= :separator item)
              [:li {:id (dm/str current-id "-" index)
                    :key (dm/str current-id "-" index)
