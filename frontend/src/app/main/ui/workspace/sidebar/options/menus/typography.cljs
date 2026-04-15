@@ -524,15 +524,15 @@
            [:div {:class (stl/css :action-btns)}
             (when show-actions?
               [:*
-               [:> icon-button* {:variant "ghost"
+               [:> icon-button* {:variant "action"
                                  :aria-label (tr "workspace.assets.duplicate")
                                  :on-click on-duplicate
-                                 :icon i/add}]
-               [:> icon-button* {:variant "ghost"
+                                 :icon i/clipboard}]
+               [:> icon-button* {:variant "action"
                                  :aria-label (tr "workspace.assets.delete")
                                  :on-click on-delete
                                  :icon i/delete}]])
-            [:> icon-button* {:variant "ghost"
+            [:> icon-button* {:variant "action"
                               :aria-label (tr "labels.close")
                               :on-click on-close
                               :icon i/tick}]]]
