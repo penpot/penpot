@@ -15,6 +15,7 @@
    [common-tests.files-migrations-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-map-test]
+   [common-tests.geom-flex-layout-test]
    [common-tests.geom-grid-layout-test]
    [common-tests.geom-grid-test]
    [common-tests.geom-line-test]
@@ -22,7 +23,9 @@
    [common-tests.geom-modifiers-test]
    [common-tests.geom-point-test]
    [common-tests.geom-proportions-test]
+   [common-tests.geom-rect-test]
    [common-tests.geom-shapes-common-test]
+   [common-tests.geom-shapes-constraints-test]
    [common-tests.geom-shapes-corners-test]
    [common-tests.geom-shapes-effects-test]
    [common-tests.geom-shapes-intersect-test]
@@ -88,13 +91,17 @@
    'common-tests.files-migrations-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-map-test
+   'common-tests.geom-flex-layout-test
+   'common-tests.geom-grid-layout-test
    'common-tests.geom-grid-test
    'common-tests.geom-line-test
    'common-tests.geom-modif-tree-test
    'common-tests.geom-modifiers-test
    'common-tests.geom-point-test
    'common-tests.geom-proportions-test
+   'common-tests.geom-rect-test
    'common-tests.geom-shapes-common-test
+   'common-tests.geom-shapes-constraints-test
    'common-tests.geom-shapes-corners-test
    'common-tests.geom-shapes-effects-test
    'common-tests.geom-shapes-intersect-test
