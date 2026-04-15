@@ -195,6 +195,11 @@
   (let [f (obj/get global "externalContextInfo")]
     (when (fn? f) (f))))
 
+(defn external-notify-register-success
+  [profile-id]
+  (let [f (obj/get global "externalNotifyRegisterSuccess")]
+    (when (fn? f) (f (str profile-id)))))
+
 (defn initialize-external-context-info
   []
   (let [f (obj/get global "initializeExternalConfigInfo")]

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.auth.verify-token
   (:require
+   [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.common :as dcm]
    [app.main.data.notifications :as ntf]
@@ -25,6 +26,7 @@
 
 (defmethod handle-token :verify-email
   [data]
+  (cf/external-notify-register-success (:profile-id data))
   (let [msg (tr "dashboard.notifications.email-verified-successfully")]
     (ts/schedule 1000 #(st/emit! (ntf/success msg)))
     (st/emit! (da/login-from-token data))))

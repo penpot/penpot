@@ -276,6 +276,7 @@
         (mf/use-fn
          (mf/deps on-success-callback)
          (fn [params]
+           (cf/external-notify-register-success (:id params))
            (if (fn? on-success-callback)
              (on-success-callback (:email params))
 
