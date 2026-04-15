@@ -871,6 +871,33 @@
   gap: var(--sp-s);
 }
 
+// SELECT ORGANIZATION MODAL
+
+.modal-select-org-container {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: $sz-512;
+}
+
+.modal-select-org-content {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  overflow: auto;
+  margin-block-end: var(--sp-s);
+}
+
+.modal-select-org-title {
+  @include t.use-typography("title-medium");
+
+  color: var(--color-foreground-primary);
+  text-transform: uppercase;
+  height: $sz-40;
+}
+
+// ORGANIZATIONS SETTINGS
+
 .org-block-content {
   display: grid;
   grid-template-columns: var(--sp-xxxl) 1fr var(--sp-xxxl);
@@ -947,4 +974,8 @@
   &:hover {
     background-color: var(--color-background-quaternary);
   }
+}
+
+a {
+  color: var(--modal-link-foreground-color);
 }

@@ -588,3 +588,12 @@
               (rx/map shared-files-fetched)))))))
 
 
+(defn team->organization [team]
+  {:id              (:organization-id team)
+   :slug            (:organization-slug team)
+   :owner-id        (:organization-owner-id team)
+   :avatar-bg-url   (:organization-avatar-bg-url team)
+   :custom-photo    (:organization-custom-photo team)
+   :name            (:organization-name team)
+   :default-team-id (:id team)})
+

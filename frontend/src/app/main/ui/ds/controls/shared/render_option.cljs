@@ -60,6 +60,7 @@
                     :label (get option :label)
                     :aria-label (get option :aria-label)
                     :icon (get option :icon)
+                    :avatar (get option :avatar)
                     :ref ref
                     :role "option"
                     :focused (= id focused)

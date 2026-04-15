@@ -22,6 +22,12 @@
     [:focused {:optional true} :boolean]
     [:dimmed {:optional true} :boolean]
     [:label {:optional true} :string]
+    [:avatar {:optional true}
+     [:maybe
+      [:map
+       [:size {:optional true} :string]
+       [:organization {:optional true} :any]
+       [:render-fn {:optional true} fn?]]]]
     [:aria-label {:optional true} [:maybe :string]]
     [:on-click {:optional true} fn?]]
    [:fn {:error/message "invalid data: missing required props"}
@@ -33,9 +39,13 @@
 
 (mf/defc option*
   {::mf/schema schema:option}
-  [{:keys [id ref label icon aria-label on-click selected focused dimmed] :rest props}]
-  (let [class (stl/css-case :option true
+  [{:keys [id ref label icon avatar aria-label on-click selected focused dimmed] :rest props}]
+  (let [render-avatar-fn (when avatar
+                           (get avatar :render-fn))
+
+        class (stl/css-case :option true
                             :option-with-icon (some? icon)
+                            :option-with-avatar (fn? render-avatar-fn)
                             :option-selected selected
                             :option-current focused)]
 
@@ -56,6 +66,9 @@
          :class (stl/css :option-icon)
          :aria-hidden (when label true)
          :aria-label  (when (not label) aria-label)}])
+
+     (when (fn? render-avatar-fn)
+       [:> render-avatar-fn {:avatar avatar}])
 
      [:span {:class (stl/css-case :option-text true
                                   :option-text-dimmed dimmed)}
