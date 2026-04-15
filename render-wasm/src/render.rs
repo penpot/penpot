@@ -2454,6 +2454,7 @@ impl RenderState {
                 let has_effects = transformed_element.has_effects_that_extend_bounds();
 
                 let is_visible = export
+                    || mask
                     || if is_container || has_effects {
                         let element_extrect =
                             extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
