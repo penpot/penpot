@@ -7,14 +7,17 @@
 (ns backend-tests.http-middleware-test
   (:require
    [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
-   [app.http.access-token]
+   [app.http.access-token :as access-token]
+   [app.http.auth-request]
    [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.access-token]
+   [app.rpc.commands.profile :as profile]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -136,3 +139,102 @@
     (t/is (= "penpot" (:aud claims)))
     (t/is (= (:id session) (:sid claims)))
     (t/is (= (:id profile) (:uid claims)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; X-Auth-Request middleware tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- make-xauth-cfg
+  []
+  (assoc th/*system* ::session/manager (session/inmemory-manager)))
+
+(t/deftest x-auth-request-no-email-header
+  (let [captured (volatile! nil)
+        handler  (#'app.http.auth-request/wrap-authz
+                  (fn [req] (vreset! captured req) {::yres/status 200})
+                  (make-xauth-cfg))]
+    (handler (->DummyRequest {} {}))
+    (t/is (nil? (::session/profile-id @captured)))))
+
+(t/deftest x-auth-request-skips-when-session-present
+  (let [profile-id (random-uuid)
+        called?    (volatile! false)
+        handler    (#'app.http.auth-request/wrap-authz
+                    (fn [req] (vreset! called? true) req)
+                    (make-xauth-cfg))
+        request    (-> (->DummyRequest {"x-auth-request-email" "user@example.com"} {})
+                       (assoc ::session/profile-id profile-id))
+        result     (handler request)]
+    ;; profile-id must pass through unchanged — middleware must not overwrite it
+    (t/is (= profile-id (::session/profile-id result)))))
+
+(t/deftest x-auth-request-skips-when-access-token-present
+  (let [profile-id (random-uuid)
+        handler    (#'app.http.auth-request/wrap-authz
+                    (fn [req] req)
+                    (make-xauth-cfg))
+        request    (-> (->DummyRequest {"x-auth-request-email" "user@example.com"} {})
+                       (assoc ::access-token/profile-id profile-id))
+        result     (handler request)]
+    (t/is (= profile-id (::access-token/profile-id result)))))
+
+(t/deftest x-auth-request-authenticates-existing-active-profile
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        captured (volatile! nil)
+        cfg      (make-xauth-cfg)
+        handler  (#'app.http.auth-request/wrap-authz
+                  (fn [req] (vreset! captured req) {::yres/status 200})
+                  cfg)
+        response (handler (->DummyRequest {"x-auth-request-email" (:email profile)} {}))]
+    ;; The profile-id must be injected into the request seen by the downstream handler
+    (t/is (= (:id profile) (::session/profile-id @captured)))
+    ;; A session cookie must be set on the response
+    (t/is (contains? (::yres/cookies response) "auth-token"))))
+
+(t/deftest x-auth-request-blocked-profile-returns-403
+  (let [profile  (th/create-profile* 2 {:is-active true})
+        _        (th/db-update! :profile {:is-blocked true} {:id (:id profile)})
+        handler  (#'app.http.auth-request/wrap-authz
+                  (fn [_] {::yres/status 200})
+                  (make-xauth-cfg))
+        response (handler (->DummyRequest {"x-auth-request-email" (:email profile)} {}))]
+    (t/is (= 403 (::yres/status response)))))
+
+(t/deftest x-auth-request-inactive-profile-returns-403
+  (let [profile  (th/create-profile* 3 {:is-active false})
+        handler  (#'app.http.auth-request/wrap-authz
+                  (fn [_] {::yres/status 200})
+                  (make-xauth-cfg))
+        response (handler (->DummyRequest {"x-auth-request-email" (:email profile)} {}))]
+    (t/is (= 403 (::yres/status response)))))
+
+(t/deftest x-auth-request-unknown-email-no-autoregister
+  (let [captured (volatile! nil)
+        handler  (#'app.http.auth-request/wrap-authz
+                  (fn [req] (vreset! captured req) {::yres/status 200})
+                  (make-xauth-cfg))]
+    (handler (->DummyRequest {"x-auth-request-email" "nobody@example.com"} {}))
+    (t/is (nil? (::session/profile-id @captured)))))
+
+(t/deftest x-auth-request-auto-register-creates-active-profile
+  (binding [cf/flags (conj cf/flags :x-auth-request-auto-register)]
+    (let [email    "newuser@example.com"
+          fullname "New User"
+          captured (volatile! nil)
+          cfg      (make-xauth-cfg)
+          handler  (#'app.http.auth-request/wrap-authz
+                    (fn [req] (vreset! captured req) {::yres/status 200})
+                    cfg)
+          response (handler (->DummyRequest {"x-auth-request-email" email
+                                             "x-auth-request-user"  fullname} {}))]
+      ;; Profile must be injected into the downstream request
+      (t/is (uuid? (::session/profile-id @captured)))
+      ;; A session cookie must be set so the browser is authenticated
+      (t/is (contains? (::yres/cookies response) "auth-token"))
+      ;; The created profile must be active and match the forwarded email
+      (let [profile (db/tx-run! cfg
+                                (fn [{:keys [::db/conn]}]
+                                  (profile/get-profile-by-email conn email)))]
+        (t/is (some? profile))
+        (t/is (true? (:is-active profile)))
+        (t/is (= (::session/profile-id @captured) (:id profile)))))))

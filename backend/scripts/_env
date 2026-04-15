@@ -38,6 +38,8 @@ export PENPOT_FLAGS="\
        enable-auto-file-snapshot \
        enable-webhooks \
        enable-access-tokens \
+       enable-x-auth-request-headers \
+       enable-x-auth-request-auto-register \
        disable-tiered-file-data-storage \
        enable-file-validation \
        enable-file-schema-validation \

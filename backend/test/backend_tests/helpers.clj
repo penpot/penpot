@@ -64,7 +64,8 @@
   {:database-uri "postgresql://postgres/penpot_test"
    :redis-uri "redis://redis/1"
    :auto-file-snapshot-every 1
-   :file-data-backend "db"})
+   :file-data-backend "db"
+   :smb-name "testcorp"})
 
 (def config
   (cf/read-config :prefix "penpot-test"
