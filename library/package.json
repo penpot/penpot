@@ -3,7 +3,7 @@
   "version": "1.2.0-RC1",
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
-  "packageManager": "pnpm@10.26.2+sha512.0e308ff2005fc7410366f154f625f6631ab2b16b1d2e70238444dd6ae9d630a8482d92a451144debc492416896ed16f7b114a86ec68b8404b2443869e68ffda6",
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "type": "module",
   "repository": {
     "type": "git",
@@ -34,11 +34,11 @@
     "watch": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch library"
   },
   "devDependencies": {
-    "@types/node": "^22.18.12",
-    "@zip.js/zip.js": "2.8.11",
+    "@types/node": "^25.6.0",
+    "@zip.js/zip.js": "2.8.26",
     "concurrently": "^9.2.1",
     "date-fns": "^4.1.0",
-    "nodemon": "^3.1.10",
+    "nodemon": "^3.1.14",
     "source-map-support": "^0.5.21"
   }
 }
