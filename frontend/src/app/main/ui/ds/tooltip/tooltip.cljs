@@ -160,7 +160,7 @@
 
         tooltip-ref (mf/use-ref nil)
 
-        container (hooks/use-portal-container)
+        container (hooks/use-portal-container :tooltip)
 
         id
         (d/nilv id internal-id)

@@ -136,6 +136,16 @@
   [state]
   (dm/get-in state [:route :params :query]))
 
+(defn get-query-param
+  "Safely extracts a scalar value for a query param key from a params
+  map. When the same key appears multiple times in a URL,
+  query-string->map returns a vector for that key; this function
+  always returns a single (last) element in that case, so downstream
+  consumers such as parse-long always receive a plain string or nil."
+  [params k]
+  (let [v (get params k)]
+    (if (sequential? v) (peek v) v)))
+
 (defn nav-back
   []
   (ptk/reify ::nav-back

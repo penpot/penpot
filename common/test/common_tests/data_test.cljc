@@ -325,6 +325,8 @@
   (t/is (= [2 3] (d/safe-subvec [1 2 3 4] 1 3)))
   ;; single arg — from index to end
   (t/is (= [2 3 4] (d/safe-subvec [1 2 3 4] 1)))
+  ;; start=0 returns the full vector
+  (t/is (= [1 2 3 4] (d/safe-subvec [1 2 3 4] 0)))
   ;; out-of-range returns nil
   (t/is (nil? (d/safe-subvec [1 2 3] 5)))
   (t/is (nil? (d/safe-subvec [1 2 3] 0 5)))
@@ -372,12 +374,19 @@
   (t/is (= 0 (d/index-of-pred [1 2 3] odd?)))
   (t/is (= 1 (d/index-of-pred [2 3 4] odd?)))
   (t/is (nil? (d/index-of-pred [2 4 6] odd?)))
-  (t/is (nil? (d/index-of-pred [] odd?))))
+  (t/is (nil? (d/index-of-pred [] odd?)))
+  ;; works correctly when collection contains nil elements
+  (t/is (= 2 (d/index-of-pred [nil nil 3] some?)))
+  (t/is (= 0 (d/index-of-pred [nil 1 2] nil?)))
+  ;; works correctly when collection contains false elements
+  (t/is (= 1 (d/index-of-pred [false true false] true?))))
 
 (t/deftest index-of-test
   (t/is (= 0 (d/index-of [:a :b :c] :a)))
   (t/is (= 2 (d/index-of [:a :b :c] :c)))
-  (t/is (nil? (d/index-of [:a :b :c] :z))))
+  (t/is (nil? (d/index-of [:a :b :c] :z)))
+  ;; works when searching for nil in a collection
+  (t/is (= 1 (d/index-of [:a nil :c] nil))))
 
 (t/deftest replace-by-id-test
   (let [items [{:id 1 :v "a"} {:id 2 :v "b"} {:id 3 :v "c"}]
@@ -445,6 +454,8 @@
   (t/is (= {:a {:x 10 :y 2}} (d/patch-object {:a {:x 1 :y 2}} {:a {:x 10}})))
   ;; nested nil removes nested key
   (t/is (= {:a {:y 2}} (d/patch-object {:a {:x 1 :y 2}} {:a {:x nil}})))
+  ;; nil value removes only the specified key, not other keys
+  (t/is (= {nil 0 :b 2} (d/patch-object {nil 0 :a 1 :b 2} {:a nil})))
   ;; transducer arity (1-arg returns a fn)
   (let [f (d/patch-object {:a 99})]
     (t/is (= {:a 99 :b 2} (f {:a 1 :b 2})))))
@@ -536,33 +547,33 @@
            (into [] (d/distinct-xf :id) [{:id 1 :v "a"} {:id 2 :v "x"} {:id 2 :v "b"}]))))
 
 (t/deftest deep-mapm-test
-  ;; Note: mfn is called twice on leaf entries (once initially, once again
-  ;; after checking if the value is a map/vector), so a doubling fn applied
-  ;; to value 1 gives 1*2*2=4.
-  (t/is (= {:a 4 :b {:c 8}}
+  ;; mfn is applied once per entry
+  (t/is (= {:a 2 :b {:c 4}}
            (d/deep-mapm (fn [[k v]] [k (if (number? v) (* v 2) v)])
                         {:a 1 :b {:c 2}})))
-  ;; Keyword renaming: keys are also transformed — and applied twice.
-  ;; Use an idempotent key transformation (uppercase once = uppercase twice).
+  ;; Keyword renaming: keys are transformed once per entry
   (let [result (d/deep-mapm (fn [[k v]] [(keyword (str (name k) "!")) v])
                             {:a 1})]
-    (t/is (contains? result (keyword "a!!")))))
+    (t/is (contains? result (keyword "a!"))))
+  ;; Vectors inside maps are recursed into
+  (t/is (= {:items [{:x 10}]}
+           (d/deep-mapm (fn [[k v]] [k (if (number? v) (* v 10) v)])
+                        {:items [{:x 1}]})))
+  ;; Plain scalar at top level map
+  (t/is (= {:a "hello"} (d/deep-mapm identity {:a "hello"}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numeric helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (t/deftest nan-test
-  ;; Note: nan? behaves differently per platform:
-  ;; - CLJS: uses js/isNaN, returns true for ##NaN
-  ;; - CLJ: uses (not= v v); Clojure's = uses .equals on doubles,
-  ;;   so (= ##NaN ##NaN) is true and nan? returns false for ##NaN.
-  ;; Either way, nan? returns false for regular numbers and nil.
+  (t/is (d/nan? ##NaN))
   (t/is (not (d/nan? 0)))
   (t/is (not (d/nan? 1)))
   (t/is (not (d/nan? nil)))
-  ;; Platform-specific: JS nan? correctly detects NaN
-  #?(:cljs (t/is (d/nan? ##NaN))))
+  ;; CLJS js/isNaN coerces non-numbers; JVM Double/isNaN is number-only
+  #?(:cljs (t/is (d/nan? "hello")))
+  #?(:clj  (t/is (not (d/nan? "hello")))))
 
 (t/deftest safe-plus-test
   (t/is (= 5 (d/safe+ 3 2)))
@@ -606,18 +617,13 @@
   (t/is (nil? (d/parse-uuid nil))))
 
 (t/deftest coalesce-str-test
-  ;; On JVM: nan? uses (not= v v), which is false for all normal values.
-  ;; On CLJS: nan? uses js/isNaN, which is true for non-numeric strings.
-  ;; coalesce-str returns default when value is nil or nan?.
   (t/is (= "default" (d/coalesce-str nil "default")))
   ;; Numbers always stringify on both platforms
   (t/is (= "42" (d/coalesce-str 42 "default")))
-  ;; ##NaN: nan? is true in CLJS, returns default;
-  ;;        nan? is false in CLJ, so str(##NaN)="NaN" is returned.
-  #?(:cljs (t/is (= "default" (d/coalesce-str ##NaN "default"))))
-  #?(:clj  (t/is (= "NaN" (d/coalesce-str ##NaN "default"))))
+  ;; ##NaN returns default on both platforms now that nan? is fixed on JVM
+  (t/is (= "default" (d/coalesce-str ##NaN "default")))
   ;; Strings: in CLJS js/isNaN("hello")=true so "default" is returned;
-  ;;          in CLJ nan? is false so (str "hello")="hello" is returned.
+  ;;          in CLJ nan? is false for strings so (str "hello")="hello" is returned.
   #?(:cljs (t/is (= "default" (d/coalesce-str "hello" "default"))))
   #?(:clj  (t/is (= "hello" (d/coalesce-str "hello" "default")))))
 
@@ -779,7 +785,8 @@
 (t/deftest append-class-test
   (t/is (= "foo bar" (d/append-class "foo" "bar")))
   (t/is (= "bar" (d/append-class nil "bar")))
-  (t/is (= " bar" (d/append-class "" "bar"))))
+  ;; empty string is treated like nil — no leading space
+  (t/is (= "bar" (d/append-class "" "bar"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Additional helpers (5th batch)
@@ -828,6 +835,9 @@
   (t/is (d/num-string? "-7"))
   (t/is (not (d/num-string? "hello")))
   (t/is (not (d/num-string? nil)))
+  ;; non-string types always return false
+  (t/is (not (d/num-string? 42)))
+  (t/is (not (d/num-string? :keyword)))
   ;; In CLJS, js/isNaN("") → false (empty string coerces to 0), so "" is numeric
   #?(:clj (t/is (not (d/num-string? ""))))
   #?(:cljs (t/is (d/num-string? ""))))

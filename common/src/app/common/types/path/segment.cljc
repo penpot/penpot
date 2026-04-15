@@ -62,7 +62,7 @@
        (map (fn [[index _]] index))))
 
 (defn handler-indices
-  "Return an index where the key is the positions and the values the handlers"
+  "Returns [[index prefix] ...] of all handlers associated with point."
   [content point]
   (->> (d/with-prev content)
        (d/enumerate)
@@ -76,7 +76,7 @@
                    [])))))
 
 (defn opposite-index
-  "Calculates the opposite index given a prefix and an index"
+  "Calculates the opposite handler index given a content, index and prefix."
   [content index prefix]
 
   (let [point (if (= prefix :c2)
@@ -812,7 +812,7 @@
             :line-to
             (recur (cond-> points
                      (and from-p to-p)
-                     (-> (conj! move-p)
+                     (-> (conj! from-p)
                          (conj! to-p)))
                    (not-empty (subvec content 1))
                    to-p

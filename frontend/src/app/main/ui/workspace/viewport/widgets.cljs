@@ -162,14 +162,16 @@
            (let [name-input     (mf/ref-val ref)
                  name           (str/trim (dom/get-value name-input))]
              (reset! edition* false)
-             (st/emit! (dw/end-rename-shape frame-id name)))))
+             (st/emit! (dw/end-rename-shape frame-id name))
+             (on-frame-leave frame-id))))
 
         cancel-edit
         (mf/use-fn
          (mf/deps frame-id)
          (fn []
            (reset! edition* false)
-           (st/emit! (dw/end-rename-shape frame-id nil))))
+           (st/emit! (dw/end-rename-shape frame-id nil))
+           (on-frame-leave frame-id)))
 
         on-key-down
         (mf/use-fn

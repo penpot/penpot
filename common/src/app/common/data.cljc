@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.data
-  "A collection if helpers for working with data structures and other
+  "A collection of helpers for working with data structures and other
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
@@ -143,7 +143,7 @@
     (oassoc-in o (cons k ks) v)))
 
 (defn vec2
-  "Creates a optimized vector compatible type of length 2 backed
+  "Creates an optimized vector compatible type of length 2 backed
   internally with MapEntry impl because it has faster access method
   for its fields."
   [o1 o2]
@@ -252,13 +252,13 @@
   ([items] (enumerate items 0))
   ([items start]
    (loop [idx   start
-          items items
+          items (seq items)
           res   (transient [])]
-     (if (empty? items)
-       (persistent! res)
+     (if items
        (recur (inc idx)
-              (rest items)
-              (conj! res [idx (first items)]))))))
+              (next items)
+              (conj! res [idx (first items)]))
+       (persistent! res)))))
 
 (defn group-by
   ([kf coll] (group-by kf identity [] coll))
@@ -291,15 +291,12 @@
 
 (defn index-of-pred
   [coll pred]
-  (loop [c    (first coll)
-         coll (rest coll)
+  (loop [s     (seq coll)
          index 0]
-    (if (nil? c)
-      nil
-      (if (pred c)
+    (when s
+      (if (pred (first s))
         index
-        (recur (first coll)
-               (rest coll)
+        (recur (next s)
                (inc index))))))
 
 (defn index-of
@@ -377,7 +374,7 @@
                (assoc object key nil)
 
                (nil? value)
-               (dissoc object key value)
+               (dissoc object key)
 
                :else
                (assoc object key value)))
@@ -396,7 +393,7 @@
               (subvec v (inc index))))
 
 (defn without-obj
-  "Clear collection from specified obj and without nil values."
+  "Return a vector with all elements equal to `o` removed."
   [coll o]
   (into [] (filter #(not= % o)) coll))
 
@@ -404,7 +401,7 @@
   (map vector col1 col2))
 
 (defn zip-all
-  "Return a zip of both collections, extended to the lenght of the longest one,
+  "Return a zip of both collections, extended to the length of the longest one,
    and padding the shorter one with nils as needed."
   [col1 col2]
   (let [diff (- (count col1) (count col2))]
@@ -423,9 +420,9 @@
               coll)))
 
 (defn removev
-  "Returns a vector of the items in coll for which (fn item) returns logical false"
-  [fn coll]
-  (filterv (comp not fn) coll))
+  "Returns a vector of the items in coll for which (pred item) returns logical false"
+  [pred coll]
+  (filterv (comp not pred) coll))
 
 (defn filterm
   "Filter values of a map that satisfy a predicate"
@@ -443,7 +440,7 @@
 
   Optional parameters:
   `pred?`   A predicate that if not satisfied won't process the pair
-  `target?` A collection that will be used as seed to be stored
+  `target`  A collection that will be used as seed to be stored
 
   Example:
   (map-perm vector [1 2 3 4]) => [[1 2] [1 3] [1 4] [2 3] [2 4] [3 4]]"
@@ -602,12 +599,9 @@
   (let [do-map
         (fn [entry]
           (let [[k v] (mfn entry)]
-            (cond
-              (or (vector? v) (map? v))
+            (if (or (vector? v) (map? v))
               [k (deep-mapm mfn v)]
-
-              :else
-              (mfn [k v]))))]
+              [k v])))]
     (cond
       (map? m)
       (into {} (map do-map) m)
@@ -724,7 +718,7 @@
 (defn nan?
   [v]
   #?(:cljs (js/isNaN v)
-     :clj  (not= v v)))
+     :clj  (and (number? v) (Double/isNaN v))))
 
 (defn- impl-parse-integer
   [v]
@@ -788,7 +782,8 @@
                 (not (js/isNaN v))
                 (not (js/isNaN (parse-double v))))
 
-     :clj  (not= (parse-double v :nan) :nan)))
+     :clj  (and (string? v)
+                (not= (parse-double v :nan) :nan))))
 
 (defn read-string
   [v]
@@ -958,7 +953,7 @@
               (assoc diff key (map-diff v1 v2))
 
               :else
-              (assoc diff key [(get m1 key) (get m2 key)]))))]
+              (assoc diff key [v1 v2]))))]
 
     (->> keys
          (reduce diff-attr {}))))
@@ -1123,8 +1118,7 @@
   ([value {:keys [precision] :or {precision 2}}]
    (let [value (if (string? value) (parse-double value) value)]
      (when (num? value)
-       (let [value (format-precision value precision)]
-         (str value))))))
+       (format-precision value precision)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols
@@ -1152,16 +1146,17 @@
   "Wrapper around subvec so it doesn't throw an exception but returns nil instead"
   ([v start]
    (when (and (some? v)
-              (> start 0) (< start (count v)))
+              (>= start 0) (< start (count v)))
      (subvec v start)))
   ([v start end]
-   (let [size (count v)]
-     (when (and (some? v)
-                (>= start 0) (< start size)
-                (>= end 0) (<= start end) (<= end size))
-       (subvec v start end)))))
+   (when (some? v)
+     (let [size (count v)]
+       (when (and (>= start 0) (< start size)
+                  (>= end 0) (<= start end) (<= end size))
+         (subvec v start end))))))
 
 (defn append-class
   [class current-class]
-  (str (if (some? class) (str class " ") "")
-       current-class))
+  (if (seq class)
+    (str class " " current-class)
+    current-class))

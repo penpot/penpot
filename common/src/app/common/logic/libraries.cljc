@@ -2006,14 +2006,17 @@
 (defn- switch-fixed-layout-geom-change-value
   [prev-shape           ; The shape before the switch
    current-shape        ; The shape after the switch (a clean copy)
+   origin-shape         ; The original shape
    attr]
   ;; When there is a layout with fixed h or v sizing, we need
   ;; to keep the width/height (and recalculate selrect and points)
   (let [prev-width     (-> prev-shape :selrect :width)
         current-width  (-> current-shape :selrect :width)
+        origin-width   (-> origin-shape :selrect :width)
 
         prev-height    (-> prev-shape :selrect :height)
         current-height (-> current-shape :selrect :height)
+        origin-height  (-> origin-shape :selrect :height)
 
         x              (-> current-shape :selrect :x)
         y              (-> current-shape :selrect :y)
@@ -2024,10 +2027,16 @@
 
         final-width    (if (= :fix h-sizing)
                          current-width
-                         prev-width)
+                         (if (= origin-width current-width)
+                           prev-width       ;; same-size: preserve override
+                           current-width))  ;; different-size: use new component's
+
         final-height   (if (= :fix v-sizing)
                          current-height
-                         prev-height)
+                         (if (= origin-height current-height)
+                           prev-height      ;; same-size: preserve override
+                           current-height)) ;; different-size: use new component's
+
         selrect        (assoc (:selrect current-shape)
                               :width final-width
                               :height final-height
@@ -2055,6 +2064,25 @@
            (grc/rect->center selrect)
            (or (:transform current-shape) (gmt/matrix)))))))
 
+
+(defn- equal-geometry?
+  "Returns true when the value of `attr` in `shape` is considered equal
+   to the corresponding value in `origin-shape`, ignoring positional
+   displacement (x/y).
+   For :selrect we compare width/height only;
+   for :points we normalise each vector so the first point is the
+   origin before comparing."
+  [shape origin-shape attr]
+  (or (and (= attr :selrect)
+           (= (-> shape :selrect :width)  (-> origin-shape :selrect :width))
+           (= (-> shape :selrect :height) (-> origin-shape :selrect :height)))
+      (and (= attr :points)
+           (let [normalize-pts (fn [pts]
+                                 (when (seq pts)
+                                   (let [f (first pts)]
+                                     (mapv #(gpt/subtract % f) pts))))]
+             (= (normalize-pts (get shape :points))
+                (normalize-pts (get origin-shape :points)))))))
 
 
 (defn update-attrs-on-switch
@@ -2092,8 +2120,9 @@
                ;; If the values are already equal, don't copy them
                (= (get previous-shape attr) (get current-shape attr))
 
-               ;; If the value is the same as the origin, don't copy it
-               (= (get previous-shape attr) (get origin-ref-shape attr))
+               ;; If :selrect/:points values are already equal ignoring displacement,
+               ;; don't copy them
+               (equal-geometry? previous-shape origin-ref-shape attr)
 
                ;; If the attr is not touched, don't copy it
                (not (touched attr-group))
@@ -2143,8 +2172,21 @@
 
               skip-operations? (or skip-operations?
                                    ;; If we are going to reset the position data, skip the selrect attr
-                                   (and reset-pos-data? (= attr :selrect)))
-
+                                   (and reset-pos-data? (= attr :selrect))
+                                   ;; Avoid copying composite geometry attrs (:selrect/:points) when the
+                                   ;; variant dimensions differ but neither sizing is :fix. Without this,
+                                   ;; :width/:height are correctly skipped by the check above
+                                   ;; but :selrect/:points would still carry the old override dimensions,
+                                   ;; leaving the shape in an inconsistent state. When :fix sizing is
+                                   ;; present, switch-fixed-layout-geom-change-value handles the composite
+                                   ;; attrs and must NOT be bypassed. Path shapes are also handled
+                                   ;; separately via switch-path-change-value.
+                                   (and (contains? #{:selrect :points} attr)
+                                        (not path-change?)
+                                        (not (or (= :fix (:layout-item-h-sizing previous-shape))
+                                                 (= :fix (:layout-item-v-sizing previous-shape))))
+                                        (or (not= (get origin-ref-shape :width) (get current-shape :width))
+                                            (not= (get origin-ref-shape :height) (get current-shape :height)))))
               attr-val
               (when-not skip-operations?
                 (cond
@@ -2168,7 +2210,7 @@
                   (and (or (= :fix (:layout-item-h-sizing previous-shape))
                            (= :fix (:layout-item-v-sizing previous-shape)))
                        (contains? #{:points :selrect :width :height} attr))
-                  (switch-fixed-layout-geom-change-value previous-shape current-shape attr)
+                  (switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
 
                   :else
                   (get previous-shape attr)))

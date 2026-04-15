@@ -1918,7 +1918,7 @@
          (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-with-type")]
            (t/is (some? token))
            (t/is (= :shadow (:type token)))
-           (t/is (= [{:offset-x "0", :offset-y "4px", :blur "8px", :spread "0", :color "rgba(0,0,0,0.2)", :inset false}]
+           (t/is (= [{:offset-x "0", :offset-y "4px", :blur "8px", :spread "0", :color "rgba(0,0,0,0.2)", :inset true}]
                     (:value token)))))
 
        (t/testing "shadow token with description"

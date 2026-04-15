@@ -33,6 +33,12 @@
 ;; Will contain last uncaught exception
 (def last-exception nil)
 
+;; Re-entrancy guard: prevents on-error from calling itself recursively.
+;; If an error occurs while we are already handling an error (e.g. the
+;; notification emit itself throws), we log it and bail out immediately
+;; instead of recursing until the call-stack overflows.
+(def ^:private handling-error? (volatile! false))
+
 ;; --- Stale-asset error detection and auto-reload
 ;;
 ;; When the browser loads JS modules from different builds (e.g.  shared.js from
@@ -80,12 +86,24 @@
         (assoc ::trace (.-stack cause)))))
 
 (defn on-error
-  "A general purpose error handler."
+  "A general purpose error handler.
+
+  Protected by a re-entrancy guard: if an error is raised while this
+  function is already on the call stack (e.g. the notification emit
+  itself fails), we print it to the console and return immediately
+  instead of recursing until the call-stack is exhausted."
   [error]
-  (if (map? error)
-    (ptk/handle-error error)
-    (let [data (exception->error-data error)]
-      (ptk/handle-error data))))
+  (if @handling-error?
+    (.error js/console "[on-error] re-entrant call suppressed" error)
+    (do
+      (vreset! handling-error? true)
+      (try
+        (if (map? error)
+          (ptk/handle-error error)
+          (let [data (exception->error-data error)]
+            (ptk/handle-error data)))
+        (finally
+          (vreset! handling-error? false))))))
 
 ;; Inject dependency to remove circular dependency
 (set! app.main.worker/on-error on-error)
@@ -138,7 +156,14 @@
                 :report report}))))
 
 (defn flash
-  "Show error notification banner and emit error report"
+  "Show error notification banner and emit error report.
+
+  The notification is scheduled asynchronously (via tm/schedule) to
+  avoid pushing a new event into the potok store while the store's own
+  error-handling pipeline is still on the call stack.  Emitting
+  synchronously from inside an error handler creates a re-entrant
+  event-processing cycle that can exhaust the JS call stack
+  (RangeError: Maximum call stack size exceeded)."
   [& {:keys [type hint cause] :or {type :handled}}]
   (when (ex/exception? cause)
     (when-let [event-name (case type
@@ -150,11 +175,12 @@
                        :report report
                        :hint (ex/get-hint cause)))))
 
-  (st/emit!
-   (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
-              :type :toast
-              :level :error
-              :timeout 5000})))
+  (ts/schedule
+   #(st/emit!
+     (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
+                :type :toast
+                :level :error
+                :timeout 5000}))))
 
 (defmethod ptk/handle-error :network
   [error]

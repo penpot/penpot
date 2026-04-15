@@ -36,7 +36,7 @@
         dropdown-direction-change* (mf/use-ref 0)
         top                 (+ (get-in mdata [:position :y]) 5)
         left                (+ (get-in mdata [:position :x]) 5)
-        container           (hooks/use-portal-container)
+        container           (hooks/use-portal-container :popup)
 
         delete-node          (mf/use-fn
                               (mf/deps mdata)

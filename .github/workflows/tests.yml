@@ -9,6 +9,7 @@ on:
     types:
       - opened
       - synchronize
+      - ready_for_review
   push:
     branches:
       - develop
@@ -20,6 +21,7 @@ concurrency:
 
 jobs:
   lint:
+    if: ${{ !github.event.pull_request.draft }}
     name: "Linter"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
@@ -79,6 +81,7 @@ jobs:
           pnpm run lint
 
   test-common:
+    if: ${{ !github.event.pull_request.draft }}
     name: "Common Tests"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
@@ -93,6 +96,7 @@ jobs:
           ./scripts/test
 
   test-plugins:
+    if: ${{ !github.event.pull_request.draft }}
     name: Plugins Runtime Linter & Tests
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
@@ -143,6 +147,7 @@ jobs:
         run: pnpm run build:styles-example
 
   test-frontend:
+    if: ${{ !github.event.pull_request.draft }}
     name: "Frontend Tests"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
@@ -164,6 +169,7 @@ jobs:
           ./scripts/test-components
 
   test-render-wasm:
+    if: ${{ !github.event.pull_request.draft }}
     name: "Render WASM Tests"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
@@ -188,6 +194,7 @@ jobs:
           ./test
 
   test-backend:
+    if: ${{ !github.event.pull_request.draft }}
     name: "Backend Tests"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
@@ -227,6 +234,7 @@ jobs:
           clojure -M:dev:test --reporter kaocha.report/documentation
 
   test-library:
+    if: ${{ !github.event.pull_request.draft }}
     name: "Library Tests"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
@@ -241,6 +249,7 @@ jobs:
           ./scripts/test
 
   build-integration:
+    if: ${{ !github.event.pull_request.draft }}
     name: "Build Integration Bundle"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
@@ -255,14 +264,14 @@ jobs:
           ./scripts/build
 
       - name: Store Bundle Cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
 
-
   test-integration-1:
-    name: "Integration Tests 1/4"
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Integration Tests 1/3"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -272,7 +281,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Restore Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
@@ -280,10 +289,10 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="1/4";
+          ./scripts/test-e2e --shard="1/3";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-tests-result-1
@@ -292,7 +301,8 @@ jobs:
           retention-days: 3
 
   test-integration-2:
-    name: "Integration Tests 2/4"
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Integration Tests 2/3"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -302,7 +312,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Restore Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
@@ -310,10 +320,10 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="2/4";
+          ./scripts/test-e2e --shard="2/3";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-tests-result-2
@@ -322,7 +332,8 @@ jobs:
           retention-days: 3
 
   test-integration-3:
-    name: "Integration Tests 3/4"
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Integration Tests 3/3"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -332,7 +343,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Restore Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
@@ -340,43 +351,13 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="3/4";
+          ./scripts/test-e2e --shard="3/3";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-tests-result-3
-          path: frontend/test-results/
-          overwrite: true
-          retention-days: 3
-
-  test-integration-4:
-    name: "Integration Tests 4/4"
-    runs-on: penpot-runner-02
-    container: penpotapp/devenv:latest
-    needs: build-integration
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Restore Cache
-        uses: actions/cache/restore@v4
-        with:
-          key: "integration-bundle-${{ github.sha }}"
-          path: frontend/resources/public
-
-      - name: Run Tests
-        working-directory: ./frontend
-        run: |
-          ./scripts/test-e2e --shard="4/4";
-
-      - name: Upload test result
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: integration-tests-result-4
           path: frontend/test-results/
           overwrite: true
           retention-days: 3

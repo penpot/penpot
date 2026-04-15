@@ -345,7 +345,6 @@
 (def typography-keys (set/union font-family-keys
                                 font-size-keys
                                 font-weight-keys
-                                font-weight-keys
                                 letter-spacing-keys
                                 line-height-keys
                                 text-case-keys

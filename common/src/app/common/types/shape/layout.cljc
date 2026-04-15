@@ -262,7 +262,7 @@
         (or (nil? current) (= current-id parent-id))
         false
 
-        (cfh/frame-shape? current-id)
+        (cfh/frame-shape? current)
         (:layout current)
 
         :else
@@ -1439,7 +1439,7 @@
         (update-in [:layout-grid-cells id-from]
                    assoc
                    :shapes (:shapes cell-to)
-                   :podition (:position cell-to))
+                   :position (:position cell-to))
         (update-in [:layout-grid-cells id-to]
                    assoc
                    :shapes (:shapes cell-from)
