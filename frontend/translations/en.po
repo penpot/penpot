@@ -5676,9 +5676,6 @@ msgstr "Paste"
 msgid "workspace.context-menu.guides.change-color"
 msgstr "Guide color"
 
-msgid "workspace.context-menu.guides.custom-color"
-msgstr "Custom color..."
-
 msgid "workspace.context-menu.guides.remove"
 msgstr "Remove guide"
 
