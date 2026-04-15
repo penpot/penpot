@@ -1318,7 +1318,8 @@
          (mf/deps team)
          (fn []
            (st/emit! (dnt/remove-team-from-org {:team-id (:id team)
-                                                :organization-id (:organization-id team)}))))
+                                                :organization-id (:organization-id team)
+                                                :organization-name (:organization-name team)}))))
 
         on-remove-team-from-org
         (mf/use-fn

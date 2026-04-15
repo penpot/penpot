@@ -353,6 +353,9 @@ msgstr "Restaurar archivo"
 msgid "dashboard.org-deleted"
 msgstr "La organización %s se ha borrado."
 
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "Este equipo ya no pertenece a la organización %s"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Añadir archivo"
@@ -8887,8 +8890,6 @@ msgstr "Los proyectos y archivos seguirán estando disponibles para los miembros
 
 msgid "modals.remove-team-org.accept"
 msgstr "Eliminar de la organización"
-
-
 
 #, unused
 msgid "workspace.viewport.click-to-close-path"

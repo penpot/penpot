@@ -8,6 +8,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.notifications :as notifications]
    [app.util.services :as sv]))
 
 
@@ -153,7 +154,7 @@
   {::rpc/auth true
    ::doc/added "2.16"
    ::sm/params schema:remove-team-from-org}
-  [cfg {:keys [::rpc/profile-id  team-id organization-id]}]
+  [cfg {:keys [::rpc/profile-id  team-id organization-id organization-name]}]
   (let [perms    (teams/get-permissions cfg profile-id team-id)
         team     (teams/get-team-info cfg {:id team-id})]
 
@@ -166,4 +167,6 @@
                 :code :cant-remove-default-team))
 
     ;; Api call to nitrate
-    (nitrate/call cfg :remove-team-from-org {:team-id team-id :organization-id organization-id})))
+    (nitrate/call cfg :remove-team-from-org {:team-id team-id :organization-id organization-id})
+
+    (notifications/notify-team-change cfg team-id nil nil organization-name "dashboard.team-no-longer-belong-org")))

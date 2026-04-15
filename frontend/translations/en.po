@@ -344,6 +344,9 @@ msgstr "Restore file"
 msgid "dashboard.org-deleted"
 msgstr "The %s organization has been deleted."
 
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "This team no longer belongs to the organization %s"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Add file"
