@@ -29,6 +29,7 @@
   [{:keys [card-title
            card-title-icon
            price-value price-period
+           cancel-at
            benefits-title benefits
            cta-text
            cta-link
@@ -57,7 +58,10 @@
     (when (and price-value price-period)
       [:div {:class (stl/css :plan-price)}
        [:span {:class (stl/css :plan-price-value)} price-value]
-       [:span {:class (stl/css :plan-price-period)} " / " price-period]])]
+       [:span {:class (stl/css :plan-price-period)} " / " price-period]])
+    (when cancel-at
+      [:div {:class (stl/css :plan-cancel)}
+       [:span {:class (stl/css :plan-cancel-date)} cancel-at]])]
    (when benefits-title [:h5 {:class (stl/css :benefits-title)} benefits-title])
    [:ul {:class (stl/css :benefits-list)}
     (for [benefit  benefits]
@@ -511,6 +515,8 @@
          ;; TODO add translations for this texts when we have the definitive ones
          [:> plan-card* {:card-title "Business Nitrate"
                          :card-title-icon i/character-b
+                         :cancel-at (when (:cancel-at nitrate-license)
+                                      (dm/str "Active until " (ct/format-inst (:cancel-at nitrate-license) "d MMMM, yyyy")))
                          :benefits-title "Loren ipsum",
                          :benefits ["Loren ipsum",
                                     "Loren ipsum",
