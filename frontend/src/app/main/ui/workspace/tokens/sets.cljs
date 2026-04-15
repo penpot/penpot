@@ -17,7 +17,6 @@
 
 (defn- on-select-token-set-click [id]
   (st/emit! (dwtl/clear-tokens-paths)
-            (dwtl/clear-tokens-types)
             (dwtl/set-selected-token-set-id id)))
 
 (defn- on-toggle-token-set-click [name]
