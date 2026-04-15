@@ -55,13 +55,17 @@
                         (attrs/add-border-props! shape))
         get-gradient-id
         (fn [index]
-          (str render-id "-" (:id shape) "-" index))]
+          (str render-id "-" (:id shape) "-" index))
+
+        position-data
+        (mf/with-memo [position-data]
+          (into [] d/xf:add-index position-data))]
 
     [:*
      ;; Definition of gradients for partial elements
      (when (d/seek :fill-color-gradient position-data)
        [:defs
-        (for [[index data] (d/enumerate position-data)]
+        (for [{:keys [::d/index] :as data} position-data]
           (when (some? (:fill-color-gradient data))
             (let [id (dm/str "fill-color-gradient-" (get-gradient-id index))]
               [:& grad/gradient {:id id
@@ -70,7 +74,7 @@
                                  :shape data}])))])
 
      [:> :g group-props
-      (for [[index data] (d/enumerate position-data)]
+      (for [{:keys [::d/index] :as data} position-data]
         (let [rtl? (= "rtl" (:direction data))
 
               browser-props
