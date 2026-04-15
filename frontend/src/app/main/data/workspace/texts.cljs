@@ -503,13 +503,9 @@
      ptk/WatchEvent
      (watch [_ state _]
        (when (or
-              (and (features/active-feature? state "text-editor-wasm/v1")
-                   (nil? (get-in state [:workspace-wasm-editor-styles id])))
               (and (features/active-feature? state "text-editor/v2")
-                   (not (features/active-feature? state "text-editor-wasm/v1"))
                    (nil? (:workspace-editor state)))
               (and (not (features/active-feature? state "text-editor/v2"))
-                   (not (features/active-feature? state "text-editor-wasm/v1"))
                    (nil? (get-in state [:workspace-editor-state id]))))
          (let [page-id      (or (get options :page-id)
                                 (get state :current-page-id))
@@ -533,16 +529,20 @@
                  (-> shape
                      (dissoc :fills)
                      (d/update-when :content update-content)))]
-           (rx/of (dwsh/update-shapes shape-ids update-shape options)))))
+
+           (rx/concat (rx/of (dwsh/update-shapes shape-ids update-shape options))
+                      (when (features/active-feature? state "text-editor-wasm/v1")
+                        (let [styles ((comp update-node-fn migrate-node))
+                              result (wasm.api/apply-styles-to-selection styles)]
+                          (when result
+                            (rx/of (v2-update-text-shape-content
+                                    (:shape-id result)
+                                    (:content result)
+                                    :update-name? true)))))))))
 
      ptk/EffectEvent
      (effect [_ state _]
-       (cond
-         (features/active-feature? state "text-editor-wasm/v1")
-         (let [styles ((comp update-node-fn migrate-node))]
-           (wasm.api/apply-styles-to-selection styles))
-
-         (features/active-feature? state "text-editor/v2")
+       (when (features/active-feature? state "text-editor/v2")
          (when-let [instance (:workspace-editor state)]
            (let [styles   (some-> (editor.v2/getCurrentStyle instance)
                                   (styles/get-styles-from-style-declaration :removed-mixed true)

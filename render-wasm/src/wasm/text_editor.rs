@@ -769,6 +769,7 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
         }
 
         let mut fill_bytes = Vec::new();
+        let fill_multiple = styles.fills_are_multiple;
         let mut fill_count: u32 = 0;
         for fill in &styles.fills {
             if let Ok(raw_fill) = RawFillData::try_from(fill) {
@@ -781,39 +782,41 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
         // Layout: 48-byte fixed header + fixed values + serialized fills.
         let mut bytes = Vec::with_capacity(132 + fill_bytes.len());
 
-        bytes.extend_from_slice(&vertical_align.to_le_bytes());
-        bytes.extend_from_slice(&(*styles.text_align.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(*styles.text_direction.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(*styles.text_decoration.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(*styles.text_transform.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(*styles.font_family.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(*styles.font_size.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(*styles.font_weight.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(*styles.font_variant_id.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(*styles.line_height.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(*styles.letter_spacing.state() as u32).to_le_bytes());
-        bytes.extend_from_slice(&fill_count.to_le_bytes());
+        // Header data                                                                          // offset // index
+        bytes.extend_from_slice(&vertical_align.to_le_bytes()); // 0      // 0
+        bytes.extend_from_slice(&(*styles.text_align.state() as u32).to_le_bytes()); // 4      // 1
+        bytes.extend_from_slice(&(*styles.text_direction.state() as u32).to_le_bytes()); // 8      // 2
+        bytes.extend_from_slice(&(*styles.text_decoration.state() as u32).to_le_bytes()); // 12     // 3
+        bytes.extend_from_slice(&(*styles.text_transform.state() as u32).to_le_bytes()); // 16     // 4
+        bytes.extend_from_slice(&(*styles.font_family.state() as u32).to_le_bytes()); // 20     // 5
+        bytes.extend_from_slice(&(*styles.font_size.state() as u32).to_le_bytes()); // 24     // 6
+        bytes.extend_from_slice(&(*styles.font_weight.state() as u32).to_le_bytes()); // 28     // 7
+        bytes.extend_from_slice(&(*styles.font_variant_id.state() as u32).to_le_bytes()); // 32     // 8
+        bytes.extend_from_slice(&(*styles.line_height.state() as u32).to_le_bytes()); // 36     // 9
+        bytes.extend_from_slice(&(*styles.letter_spacing.state() as u32).to_le_bytes()); // 40     // 10
+        bytes.extend_from_slice(&fill_count.to_le_bytes()); // 44     // 11
+        bytes.extend_from_slice(&(fill_multiple as u32).to_le_bytes()); // 48     // 12
 
         // Value section.
-        bytes.extend_from_slice(&text_align.to_le_bytes());
-        bytes.extend_from_slice(&text_direction.to_le_bytes());
-        bytes.extend_from_slice(&text_decoration.to_le_bytes());
-        bytes.extend_from_slice(&text_transform.to_le_bytes());
-        bytes.extend_from_slice(&font_family_id[0].to_le_bytes());
-        bytes.extend_from_slice(&font_family_id[1].to_le_bytes());
-        bytes.extend_from_slice(&font_family_id[2].to_le_bytes());
-        bytes.extend_from_slice(&font_family_id[3].to_le_bytes());
-        bytes.extend_from_slice(&font_family_style.to_le_bytes());
-        bytes.extend_from_slice(&font_family_weight.to_le_bytes());
-        bytes.extend_from_slice(&font_size.to_le_bytes());
-        bytes.extend_from_slice(&font_weight.to_le_bytes());
-        bytes.extend_from_slice(&font_variant_id[0].to_le_bytes());
-        bytes.extend_from_slice(&font_variant_id[1].to_le_bytes());
-        bytes.extend_from_slice(&font_variant_id[2].to_le_bytes());
-        bytes.extend_from_slice(&font_variant_id[3].to_le_bytes());
-        bytes.extend_from_slice(&line_height.to_le_bytes());
-        bytes.extend_from_slice(&letter_spacing.to_le_bytes());
-        bytes.extend_from_slice(&fill_bytes);
+        bytes.extend_from_slice(&text_align.to_le_bytes()); // 52     // 13
+        bytes.extend_from_slice(&text_direction.to_le_bytes()); // 56     // 14
+        bytes.extend_from_slice(&text_decoration.to_le_bytes()); // 60     // 15
+        bytes.extend_from_slice(&text_transform.to_le_bytes()); // 64     // 16
+        bytes.extend_from_slice(&font_family_id[0].to_le_bytes()); // 68     // 17
+        bytes.extend_from_slice(&font_family_id[1].to_le_bytes()); // 72     // 18
+        bytes.extend_from_slice(&font_family_id[2].to_le_bytes()); // 76     // 19
+        bytes.extend_from_slice(&font_family_id[3].to_le_bytes()); // 80     // 20
+        bytes.extend_from_slice(&font_family_style.to_le_bytes()); // 84     // 21
+        bytes.extend_from_slice(&font_family_weight.to_le_bytes()); // 88     // 22
+        bytes.extend_from_slice(&font_size.to_le_bytes()); // 92     // 23
+        bytes.extend_from_slice(&font_weight.to_le_bytes()); // 96     // 24
+        bytes.extend_from_slice(&font_variant_id[0].to_le_bytes()); // 100    // 25
+        bytes.extend_from_slice(&font_variant_id[1].to_le_bytes()); // 104    // 26
+        bytes.extend_from_slice(&font_variant_id[2].to_le_bytes()); // 108    // 27
+        bytes.extend_from_slice(&font_variant_id[3].to_le_bytes()); // 112    // 28
+        bytes.extend_from_slice(&line_height.to_le_bytes()); // 116    // 29
+        bytes.extend_from_slice(&letter_spacing.to_le_bytes()); // 120    // 30
+        bytes.extend_from_slice(&fill_bytes); // 124
 
         mem::write_bytes(bytes)
     })
