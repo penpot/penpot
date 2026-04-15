@@ -170,7 +170,11 @@
         selrect       (:selrect shape)
 
         [filter-x filter-y filter-width filter-height filter-units]
-        (filter-coords bounds selrect padding)]
+        (filter-coords bounds selrect padding)
+
+        filters
+        (mf/with-memo [filters]
+          (into [] d/xf:add-index filters))]
 
     (when (> (count filters) 2)
       [:filter {:id          filter-id
@@ -180,7 +184,7 @@
                 :height      filter-height
                 :filterUnits filter-units
                 :color-interpolation-filters "sRGB"}
-       (for [[index entry] (d/enumerate filters)]
+       (for [{:keys [::d/index] :as entry} filters]
          [:& filter-entry {:key (dm/str filter-id "-" index)
                            :entry entry}])])))
 
