@@ -40,6 +40,13 @@
       AND t.id = ANY(?)
       AND t.deleted_at IS NULL")
 
+(def ^:private sql:get-team-files-count
+  "SELECT count(*) AS total
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+    WHERE p.team_id = ?
+      AND f.deleted_at IS NULL")
+
 (def ^:private schema:leave-org
   [:map
    [:org-id ::sm/uuid]
@@ -100,6 +107,18 @@
 
         valid-teams-to-leave-ids    (into valid-teams-to-transfer-ids valid-teams-to-exit-ids)
 
+        all-teams                   (->> (:teams org-summary)
+                                         (map :id)
+                                         (into #{}))
+        selected-team-ids           (conj (into (into #{} teams-to-delete)
+                                                (map :id teams-to-leave))
+                                          default-team-id)
+        all-teams-selected?         (= all-teams selected-team-ids)
+
+        default-team-files-count    (-> (db/exec-one! conn [sql:get-team-files-count default-team-id])
+                                        :total)
+        delete-default-team?        (= default-team-files-count 0)
+
         ;; for every team in teams-to-leave, check that:
         ;; - if it has a reassign-to, it belongs to valid-teams-to-transfer and
         ;;   the reassign-to is a member of the team and not the current user;
@@ -123,7 +142,8 @@
     (when (or
            (not valid-teams-to-delete?)
            (not valid-teams-to-leave?)
-           (not valid-default-team-id?))
+           (not valid-default-team-id?)
+           (not all-teams-selected?))
       (ex/raise :type :validation
                 :code :not-valid-teams))
 
@@ -135,8 +155,12 @@
     (doseq [{:keys [id reassign-to]} teams-to-leave]
       (teams/leave-team cfg {:profile-id profile-id :id id :reassign-to reassign-to}))
 
-    ;; Rename default-team-id
-    (db/exec! conn [sql:prefix-team-name-and-unset-default org-prefix default-team-id])
+    ;; Delete default-team-id if empty; otherwise keep it and prefix the name.
+    (if delete-default-team?
+      (do
+        (db/update! conn :team {:is-default false} {:id default-team-id})
+        (teams/delete-team cfg {:profile-id profile-id :team-id default-team-id}))
+      (db/exec! conn [sql:prefix-team-name-and-unset-default org-prefix default-team-id]))
 
     ;; Api call to nitrate
     (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :org-id org-id})
