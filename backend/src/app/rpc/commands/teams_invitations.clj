@@ -137,7 +137,7 @@
         (if organization
           ;; Insert the invited member to the org
           (when (contains? cf/flags :nitrate)
-            (teams/initialize-user-in-nitrate-org cfg (:id member) (:id organization)))
+            (teams/initialize-user-in-nitrate-org cfg (:id member) (:id organization) email))
           ;; Insert the invited member to the team
           (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true}))
 

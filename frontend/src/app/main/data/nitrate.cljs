@@ -57,7 +57,8 @@
      (let [href (dm/str "/control-center/org/"
                         (u/percent-encode organization-slug)
                         "/"
-                        (u/percent-encode (str organization-id)))]
+                        (u/percent-encode (str organization-id))
+                        "/people/")]
        (st/emit! (rt/nav-raw :href href)))
      (st/emit! (rt/nav-raw :href "/control-center/")))))
 
@@ -65,9 +66,12 @@
   []
   (st/emit! (rt/nav-raw :href "/control-center/?action=create-org")))
 
+(def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
+
 (defn go-to-nitrate-billing
   []
-  (st/emit! (rt/nav-raw :href "/control-center/licenses/billing")))
+  (let [href (dm/str "/control-center/licenses/billing?callback=" (js/encodeURIComponent go-to-subscription-url))]
+    (st/emit! (rt/nav-raw :href href))))
 
 (defn go-to-buy-nitrate-license
   ([subscription]
@@ -77,8 +81,6 @@
                   callback (assoc :callback callback))
          href   (dm/str "/control-center/licenses/start?" (u/map->query-string params))]
      (st/emit! (rt/nav-raw :href href)))))
-
-(def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
 
 (defn is-valid-license?
   [profile]

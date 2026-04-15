@@ -2594,6 +2594,12 @@ msgstr "Empty"
 msgid "labels.error"
 msgstr "Error"
 
+#: src/app/main/ui/dashboard/import.cljs:297
+msgid "labels.warning-count"
+msgid_plural "labels.warning-count"
+msgstr[0] "%s warning"
+msgstr[1] "%s warnings"
+
 #: src/app/main/ui/onboarding/questions.cljs:404
 #, unused
 msgid "labels.event"
@@ -6468,6 +6474,10 @@ msgstr "Export unexpectedly slow"
 msgid "workspace.options.fill"
 msgstr "Fill"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.fill.section"
+msgstr "Fill section"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:208
 msgid "workspace.options.fill.add-fill"
 msgstr "Add fill"
@@ -7082,6 +7092,10 @@ msgstr "More library colors"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:265
 msgid "workspace.options.more-token-colors"
 msgstr "More color tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color.section"
+msgstr "Color selection section"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"

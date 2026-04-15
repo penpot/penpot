@@ -687,7 +687,7 @@ test.describe("Remapping group of tokens", () => {
     await expect(lighterNode).toBeVisible();
 
     // Verify that the applied token reference has been updated in the right sidebar for the selected shape
-    const fillSection = rightSidebar.getByTestId("fill-section");
+    const fillSection = rightSidebar.getByRole("region", { name: "Fill section" });
     await expect(fillSection).toBeVisible();
 
     const tokenReference = fillSection.getByLabel("lighter.primary", {
