@@ -80,6 +80,7 @@
 - Fix incorrect rendering when exporting text as SVG, PNG and JPG (by @edwin-rivera-dev) [Github #8516](https://github.com/penpot/penpot/issues/8516)
 - Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
+- Fix Assets panel crash when previewing components with non-frame roots (by @moorsecopers99) [Github #8606](https://github.com/penpot/penpot/issues/8606)
 
 ## 2.16.0 (Unreleased)
 
