@@ -1323,6 +1323,10 @@
            (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
            (dom/open-new-window "https://penpot.app/pricing")))]
 
+    (mf/with-effect [show-profile-menu?]
+      (when-not show-profile-menu?
+        (reset! sub-menu* nil)))
+
     [:*
      (if (contains? cf/flags :nitrate)
        [:> nitrate-sidebar* {:profile profile :teams teams}]

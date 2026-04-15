@@ -25,6 +25,7 @@
     :element-options
     :rulers
     :display-guides
+    :lock-guides
     :snap-guides
     :scale-text
     :dynamic-alignment

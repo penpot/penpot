@@ -333,7 +333,7 @@
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> promote to root")
                                            (assoc % :component-root true)))
 
-        :always
+        (some? (ctk/get-swap-slot shape))
         ; First level subinstances of a detached component can't have swap-slot
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> remove swap-slot")
                                            (ctk/remove-swap-slot %)))
@@ -364,7 +364,7 @@
                       (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
                         (cond-> changes
                           (some? (:shape-ref ref-shape))
-                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (advanced)")
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (advanced to " (:shape-ref ref-shape) ")"))
                                                                 (assoc % :shape-ref (:shape-ref ref-shape))))
 
                           ;; When advancing level, the normal touched groups (not swap slots) of the
@@ -374,16 +374,18 @@
                           (pcb/update-shapes
                            [(:id shape)]
                            #(do (log/trace :msg "       (merge touched)")
+                                (log/trace :msg (str "       (ref-shape: " (:id ref-shape) ")"))
+                                (log/trace :msg (str "       (ref touched: " (:touched ref-shape) ")"))
                                 (assoc % :touched
-                                       (clojure.set/union (:touched shape)
-                                                          (ctk/normal-touched-groups ref-shape)))))
+                                       (set/union (:touched shape)
+                                                  (ctk/normal-touched-groups ref-shape)))))
 
                           ;; Swap slot must also be copied if the current shape has not any,
                           ;; except if this is the first level subcopy.
                           (and (some? (ctk/get-swap-slot ref-shape))
                                (nil? (ctk/get-swap-slot shape))
                                (not= (:id shape) shape-id))
-                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (got swap-slot)")
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (got swap-slot " (ctk/get-swap-slot ref-shape) ")"))
                                                                 (ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))
 
                           ;; If we can't get the ref-shape (e.g. it's in an external library not linked),
@@ -771,14 +773,6 @@
 ;;         is different than the one in the near component (Shape-2-2-1)
 ;;         but it's not touched.
 
-(defn- redirect-shaperef ;;Set the :shape-ref of a shape pointing to the :id of its remote-shape
-  ([container libraries shape]
-   (redirect-shaperef nil nil shape (ctf/find-remote-shape container libraries shape)))
-  ([_ _ shape remote-shape]
-   (if (some? (:shape-ref shape))
-     (assoc shape :shape-ref (:id remote-shape))
-     shape)))
-
 (defn generate-sync-shape-direct
   "Generate changes to synchronize one shape that is the root of a component
   instance, and all its children, from the given component."
@@ -790,17 +784,11 @@
         component  (ctkl/get-component library (:component-id shape-inst) true)]
     (if (and (ctk/in-component-copy? shape-inst)
              (or (ctf/direct-copy? shape-inst component container nil libraries) reset?)) ; In a normal sync, we don't want to sync remote mains, only direct/near
-      (let [redirect-shaperef (partial redirect-shaperef container libraries)
-
-            shape-main (when component
+      (let [shape-main (when component
                          (if reset?
                            ;; the reset is against the ref-shape, not against the original shape of the component
                            (ctf/find-ref-shape file container libraries shape-inst)
                            (ctf/get-ref-shape library component shape-inst)))
-
-            shape-inst (if reset?
-                         (redirect-shaperef shape-inst shape-main)
-                         shape-inst)
 
             initial-root?  (:component-root shape-inst)
 
@@ -819,8 +807,8 @@
                                                 root-inst
                                                 root-main
                                                 reset?
-                                                initial-root?
-                                                redirect-shaperef)
+                                                initial-root?)
+
           ;; If the component is not found, because the master component has been
           ;; deleted or the library unlinked, do nothing.
           changes))
@@ -844,7 +832,7 @@
             nil))))))
 
 (defn- generate-sync-shape-direct-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? redirect-shaperef]
+  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root?]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
@@ -890,9 +878,6 @@
 
           children-inst       (vec (ctn/get-direct-children container shape-inst))
           children-main       (vec (ctn/get-direct-children component-container shape-main))
-
-          children-inst (if reset?
-                          (map #(redirect-shaperef %) children-inst) children-inst)
 
           only-inst (fn [changes child-inst]
                       (shape-log :trace (:id child-inst) container
@@ -942,8 +927,7 @@
                                                        root-inst
                                                        root-main
                                                        reset?
-                                                       initial-root?
-                                                       redirect-shaperef))
+                                                       initial-root?))
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
@@ -1008,15 +992,12 @@
   the values in the shape and all its children."
   [changes file libraries container shape-id]
   (shape-log :debug shape-id container :msg "Sync shape inverse" :shape (str shape-id))
-  (let [redirect-shaperef (partial redirect-shaperef container libraries)
-        shape-inst     (ctn/get-shape container shape-id)
+  (let [shape-inst     (ctn/get-shape container shape-id)
         library        (dm/get-in libraries [(:component-file shape-inst) :data])
         component      (ctkl/get-component library (:component-id shape-inst))
 
         shape-main     (when component
                          (ctf/find-remote-shape container libraries shape-inst))
-
-        shape-inst     (redirect-shaperef shape-inst shape-main)
 
         initial-root?  (:component-root shape-inst)
 
@@ -1038,12 +1019,11 @@
                                              shape-main
                                              root-inst
                                              root-main
-                                             initial-root?
-                                             redirect-shaperef)
+                                             initial-root?)
       changes)))
 
 (defn- generate-sync-shape-inverse-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root? redirect-shaperef]
+  [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root?]
   (shape-log :trace (:id shape-inst) container
              :msg "Sync shape inverse recursive"
              :shape (str (:name shape-inst))
@@ -1100,8 +1080,6 @@
           children-main   (mapv #(ctn/get-shape component-container %)
                                 (:shapes shape-main))
 
-          children-inst (map #(redirect-shaperef %) children-inst)
-
           only-inst (fn [changes child-inst]
                       (add-shape-to-main changes
                                          child-inst
@@ -1130,8 +1108,7 @@
                                                         child-main
                                                         root-inst
                                                         root-main
-                                                        initial-root?
-                                                        redirect-shaperef))
+                                                        initial-root?))
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
@@ -1773,6 +1750,23 @@
     (pcb/update-shapes changes [(:id dest-shape)] ctk/unhead-shape {:ignore-touched true})
     changes))
 
+(defn- check-swapped-main
+  [changes dest-shape origin-shape]
+  ;; Only for direct updates (from main to copy). Check if the main shape
+  ;; has been swapped. If so, the new component-id and component-file must
+  ;; be put into the copy.
+  (if (and (= (:shape-ref dest-shape) (:id origin-shape))
+           (ctk/instance-head? dest-shape)
+           (ctk/instance-head? origin-shape)
+           (or (not= (:component-id dest-shape) (:component-id origin-shape))
+               (not= (:component-file dest-shape) (:component-file origin-shape))))
+    (pcb/update-shapes changes [(:id dest-shape)]
+                       #(assoc %
+                               :component-id (:component-id origin-shape)
+                               :component-file (:component-file origin-shape))
+                       {:ignore-touched true})
+    changes))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1815,6 +1809,8 @@
             (add-update-attr-changes dest-shape container roperations uoperations)
             :always
             (check-detached-main dest-shape origin-shape)
+            :always
+            (check-swapped-main dest-shape origin-shape)
             :always
             (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))
 
@@ -2016,14 +2012,17 @@
 (defn- switch-fixed-layout-geom-change-value
   [prev-shape           ; The shape before the switch
    current-shape        ; The shape after the switch (a clean copy)
+   origin-shape         ; The original shape
    attr]
   ;; When there is a layout with fixed h or v sizing, we need
   ;; to keep the width/height (and recalculate selrect and points)
   (let [prev-width     (-> prev-shape :selrect :width)
         current-width  (-> current-shape :selrect :width)
+        origin-width   (-> origin-shape :selrect :width)
 
         prev-height    (-> prev-shape :selrect :height)
         current-height (-> current-shape :selrect :height)
+        origin-height  (-> origin-shape :selrect :height)
 
         x              (-> current-shape :selrect :x)
         y              (-> current-shape :selrect :y)
@@ -2034,10 +2033,16 @@
 
         final-width    (if (= :fix h-sizing)
                          current-width
-                         prev-width)
+                         (if (= origin-width current-width)
+                           prev-width       ;; same-size: preserve override
+                           current-width))  ;; different-size: use new component's
+
         final-height   (if (= :fix v-sizing)
                          current-height
-                         prev-height)
+                         (if (= origin-height current-height)
+                           prev-height      ;; same-size: preserve override
+                           current-height)) ;; different-size: use new component's
+
         selrect        (assoc (:selrect current-shape)
                               :width final-width
                               :height final-height
@@ -2065,6 +2070,25 @@
            (grc/rect->center selrect)
            (or (:transform current-shape) (gmt/matrix)))))))
 
+
+(defn- equal-geometry?
+  "Returns true when the value of `attr` in `shape` is considered equal
+   to the corresponding value in `origin-shape`, ignoring positional
+   displacement (x/y).
+   For :selrect we compare width/height only;
+   for :points we normalise each vector so the first point is the
+   origin before comparing."
+  [shape origin-shape attr]
+  (or (and (= attr :selrect)
+           (= (-> shape :selrect :width)  (-> origin-shape :selrect :width))
+           (= (-> shape :selrect :height) (-> origin-shape :selrect :height)))
+      (and (= attr :points)
+           (let [normalize-pts (fn [pts]
+                                 (when (seq pts)
+                                   (let [f (first pts)]
+                                     (mapv #(gpt/subtract % f) pts))))]
+             (= (normalize-pts (get shape :points))
+                (normalize-pts (get origin-shape :points)))))))
 
 
 (defn update-attrs-on-switch
@@ -2104,8 +2128,9 @@
                ;; If the values are already equal, don't copy them
                (= (get previous-shape attr) (get current-shape attr))
 
-               ;; If the value is the same as the origin, don't copy it
-               (= (get previous-shape attr) (get origin-ref-shape attr))
+               ;; If :selrect/:points values are already equal ignoring displacement,
+               ;; don't copy them
+               (equal-geometry? previous-shape origin-ref-shape attr)
 
                ;; If the attr is not touched, don't copy it
                (not (touched sync-group))
@@ -2154,8 +2179,21 @@
 
               skip-operations? (or skip-operations?
                                    ;; If we are going to reset the position data, skip the selrect attr
-                                   (and reset-pos-data? (= attr :selrect)))
-
+                                   (and reset-pos-data? (= attr :selrect))
+                                   ;; Avoid copying composite geometry attrs (:selrect/:points) when the
+                                   ;; variant dimensions differ but neither sizing is :fix. Without this,
+                                   ;; :width/:height are correctly skipped by the check above
+                                   ;; but :selrect/:points would still carry the old override dimensions,
+                                   ;; leaving the shape in an inconsistent state. When :fix sizing is
+                                   ;; present, switch-fixed-layout-geom-change-value handles the composite
+                                   ;; attrs and must NOT be bypassed. Path shapes are also handled
+                                   ;; separately via switch-path-change-value.
+                                   (and (contains? #{:selrect :points} attr)
+                                        (not path-change?)
+                                        (not (or (= :fix (:layout-item-h-sizing previous-shape))
+                                                 (= :fix (:layout-item-v-sizing previous-shape))))
+                                        (or (not= (get origin-ref-shape :width) (get current-shape :width))
+                                            (not= (get origin-ref-shape :height) (get current-shape :height)))))
               attr-val
               (when-not skip-operations?
                 (cond
@@ -2179,7 +2217,7 @@
                   (and (or (= :fix (:layout-item-h-sizing previous-shape))
                            (= :fix (:layout-item-v-sizing previous-shape)))
                        (contains? #{:points :selrect :width :height} attr))
-                  (switch-fixed-layout-geom-change-value previous-shape current-shape attr)
+                  (switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
 
                   :else
                   (get previous-shape attr)))

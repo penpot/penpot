@@ -86,6 +86,17 @@
                           :on-click on-context-menu
                           :icon i/menu}]]])))
 
+(defn- sort-groups
+  "Recursively sort subgroup keys alphabetically at every nesting level."
+  [groups reverse-sort?]
+  (let [cmp (if reverse-sort? #(compare %2 %1) compare)
+        sort-tree (fn sort-tree [m]
+                    (into (sorted-map-by cmp)
+                          (map (fn [[k v]]
+                                 [k (if (map? v) (sort-tree v) v)]))
+                          m))]
+    (sort-tree groups)))
+
 (defn group-assets
   "Convert a list of assets in a nested structure like this:
 
@@ -97,19 +108,17 @@
   "
   [assets reverse-sort?]
   (when-not (empty? assets)
-    (reduce (fn [groups {:keys [path] :as asset}]
-              (let [path (cpn/split-path (or path ""))]
-                (update-in groups
-                           (conj path "")
-                           (fn [group]
-                             (if group
-                               (conj group asset)
-                               [asset])))))
-            (sorted-map-by (fn [key1 key2]
-                             (if reverse-sort?
-                               (compare key2 key1)
-                               (compare key1 key2))))
-            assets)))
+    (-> (reduce (fn [groups {:keys [path] :as asset}]
+                  (let [path (cpn/split-path (or path ""))]
+                    (update-in groups
+                               (conj path "")
+                               (fn [group]
+                                 (if group
+                                   (conj group asset)
+                                   [asset])))))
+                {}
+                assets)
+        (sort-groups reverse-sort?))))
 
 (def ^:private schema:group-form
   [:map {:title "GroupForm"}

@@ -27,14 +27,7 @@
                          (= :floating (:position notification)))
         toast?       (or (= :toast (:type notification))
                          (some? (:timeout notification)))
-        content     (or (:content notification) "")
-
-        show-detail* (mf/use-state false)
-
-        handle-toggle-detail
-        (mf/use-fn
-         (fn []
-           (swap! show-detail* not)))]
+        content     (or (:content notification) "")]
 
     (when notification
       (cond
@@ -43,9 +36,8 @@
          {:level (or (:level notification) :info)
           :type (:type notification)
           :detail (:detail notification)
-          :on-close on-close
-          :show-detail @show-detail*
-          :on-toggle-detail handle-toggle-detail} content]
+          :on-close on-close}
+         content]
 
         inline?
         [:& inline-notification

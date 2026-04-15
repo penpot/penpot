@@ -192,7 +192,8 @@
                               (conj prev-colors color))
              (st/emit! (dwta/apply-token-on-color-selected color-operations token)))))]
 
-    [:div {:class (stl/css :element-set)}
+    [:section {:class (stl/css :element-set)
+               :aria-label (tr "workspace.options.selection-color.section")}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  has-colors?
                       :collapsed    (not open?)

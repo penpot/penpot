@@ -289,7 +289,6 @@
         ;; This prevents errors when processing changes from other pages
         (when shape
           (wasm.api/process-object shape))))))
-
 (defn initialize-workspace
   ([team-id file-id]
    (initialize-workspace team-id file-id nil))
@@ -1420,6 +1419,19 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-global :clipboard-style] style))))
+
+(defn open-layers-search
+  [mode]
+  (ptk/reify ::open-layers-search
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :layers-panel-search] mode))))
+
+(def clear-layers-search
+  (ptk/reify ::clear-layers-search
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :layers-panel-search))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

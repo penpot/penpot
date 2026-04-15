@@ -186,7 +186,8 @@
           },
           "~:fills": [
             {
-              "~:fill-color": "#7f9cf5"
+              "~:fill-color": "#7f9cf5",
+              "~:fill-opacity": 1
             }
           ],
           "~:flip-x": null,
@@ -235,7 +236,8 @@
                         "~:letter-spacing": "0",
                         "~:fills": [
                           {
-                            "~:fill-color": "#ffffff"
+                            "~:fill-color": "#ffffff",
+                            "~:fill-opacity": 1
                           }
                         ],
                         "~:font-family": "sourcesanspro",
@@ -257,7 +259,8 @@
                     "~:letter-spacing": "0",
                     "~:fills": [
                       {
-                        "~:fill-color": "#ffffff"
+                        "~:fill-color": "#ffffff",
+                        "~:fill-opacity": 1
                       }
                     ],
                     "~:font-family": "sourcesanspro"
@@ -328,7 +331,8 @@
                 "~:y2": 37.33333456516266,
                 "~:fills": [
                   {
-                    "~:fill-color": "#ffffff"
+                    "~:fill-color": "#ffffff",
+                    "~:fill-opacity": 1
                   }
                 ],
                 "~:x2": 86.60417175292969,
@@ -445,7 +449,8 @@
           },
           "~:fills": [
             {
-              "~:fill-color": "#ffffff"
+              "~:fill-color": "#ffffff",
+              "~:fill-opacity": 1
             }
           ],
           "~:flip-x": null,

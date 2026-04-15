@@ -2594,6 +2594,12 @@ msgstr "Empty"
 msgid "labels.error"
 msgstr "Error"
 
+#: src/app/main/ui/dashboard/import.cljs:297
+msgid "labels.warning-count"
+msgid_plural "labels.warning-count"
+msgstr[0] "%s warning"
+msgstr[1] "%s warnings"
+
 #: src/app/main/ui/onboarding/questions.cljs:404
 #, unused
 msgid "labels.event"
@@ -5799,6 +5805,14 @@ msgstr "Hide board names"
 msgid "workspace.header.menu.hide-guides"
 msgstr "Hide guides"
 
+#: src/app/main/ui/workspace/main_menu.cljs:387
+msgid "workspace.header.menu.lock-guides"
+msgstr "Lock guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:387
+msgid "workspace.header.menu.unlock-guides"
+msgstr "Unlock guides"
+
 #: src/app/main/ui/workspace/main_menu.cljs:393
 msgid "workspace.header.menu.hide-palette"
 msgstr "Hide color palette"
@@ -5862,6 +5876,14 @@ msgstr "Redo"
 #: src/app/main/ui/workspace/main_menu.cljs:477
 msgid "workspace.header.menu.select-all"
 msgstr "Select all"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find"
+msgstr "Find"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Find and Replace"
 
 #: src/app/main/ui/workspace/main_menu.cljs:423
 msgid "workspace.header.menu.show-artboard-names"
@@ -6445,6 +6467,10 @@ msgstr "Export unexpectedly slow"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:236
 msgid "workspace.options.fill"
 msgstr "Fill"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.fill.section"
+msgstr "Fill section"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:208
 msgid "workspace.options.fill.add-fill"
@@ -7061,6 +7087,10 @@ msgstr "More library colors"
 msgid "workspace.options.more-token-colors"
 msgstr "More color tokens"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color.section"
+msgstr "Color selection section"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
 msgstr "Opacity"
@@ -7315,6 +7345,10 @@ msgstr "Outside"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:202
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "Remove stroke"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.toggle-stroke"
+msgstr "Toggle stroke"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:137
 msgid "workspace.options.stroke.solid"
@@ -7961,6 +7995,34 @@ msgstr "Shapes"
 #: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:386
 msgid "workspace.sidebar.layers.texts"
 msgstr "Texts"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.replace"
+msgstr "Replace"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.replace-all"
+msgstr "Replace all"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.replace-placeholder"
+msgstr "Replace with..."
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.match-count"
+msgstr "%s of %s"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.no-matches"
+msgstr "No matches"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.search-scope-layers"
+msgstr "Search layers"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.search-scope-canvas"
+msgstr "Search on canvas"
 
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
 msgid "workspace.sidebar.options.svg-attrs.title"
