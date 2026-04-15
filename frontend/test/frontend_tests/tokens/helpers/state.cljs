@@ -43,7 +43,9 @@
   (fn [stream]
     (->> stream
          #_(rx/tap #(prn (ptk/type %)))
-         (rx/filter #(ptk/type? event-type %)))))
+         (rx/filter #(ptk/type? event-type %))
+         ;; Safeguard timeout
+         (rx/timeout 200 (rx/of :the/end)))))
 
 (def stop-on-send-update-indices
   "Stops on `send-update-indices` function being called, which should be the last function of an event chain."
