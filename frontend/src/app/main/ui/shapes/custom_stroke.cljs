@@ -485,6 +485,10 @@
         shape-shadow  (get shape :shadow)
         shape-strokes (not-empty strokes)
 
+        strokes
+        (mf/with-memo [strokes]
+          (rseq (into [] d/xf:add-index strokes)))
+
         svg-attrs     (attrs/get-svg-props shape render-id)
 
         style         (-> (obj/get props "style")
@@ -509,7 +513,7 @@
 
     (when (some? shape-strokes)
       [:> :g props
-       (for [[index value] (reverse (d/enumerate shape-strokes))]
+       (for [{:keys [::d/index] :as value} strokes]
          [:& shape-custom-stroke {:shape shape
                                   :stroke value
                                   :index index
