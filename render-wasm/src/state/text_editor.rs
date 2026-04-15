@@ -327,6 +327,7 @@ pub struct TextEditorState {
     // This property indicates that we've started
     // selecting something with the pointer.
     pub is_pointer_selection_active: bool,
+    pub is_click_event_skipped: bool,
     pub active_shape_id: Option<Uuid>,
     pub cursor_visible: bool,
     pub last_blink_time: f64,
@@ -346,6 +347,7 @@ impl TextEditorState {
             composition: TextComposition::new(),
             has_focus: false,
             is_pointer_selection_active: false,
+            is_click_event_skipped: false,
             active_shape_id: None,
             cursor_visible: true,
             last_blink_time: 0.0,

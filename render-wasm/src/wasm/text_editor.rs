@@ -208,16 +208,20 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
         if !state.text_editor_state.has_focus {
             return;
         }
+
         let point = Point::new(x, y);
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
+
         let Some(shape) = state.shapes.get(&shape_id) else {
             return;
         };
+
         if !state.text_editor_state.is_pointer_selection_active {
             return;
         }
+
         let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
@@ -226,6 +230,9 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
             state
                 .text_editor_state
                 .extend_selection_from_position(&position);
+            // We need this flag to prevent handling the click behavior
+            // just after a pointerup event.
+            state.text_editor_state.is_click_event_skipped = true;
             state.text_editor_state.update_styles(text_content);
         }
     });
@@ -263,6 +270,13 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
     with_state_mut!(state, {
+        // We need this flag to prevent handling the click behavior
+        // just after a pointerup event.
+        if state.text_editor_state.is_click_event_skipped {
+            state.text_editor_state.is_click_event_skipped = false;
+            return;
+        }
+
         if !state.text_editor_state.has_focus {
             return;
         }
@@ -271,12 +285,15 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
+
         let Some(shape) = state.shapes.get(&shape_id) else {
             return;
         };
+
         let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
+
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
             state.text_editor_state.set_caret_from_position(&position);
         }
