@@ -111,7 +111,7 @@
           accepted-team-id (if org-id
                              ;; Insert the invited member to the org
                              (when (contains? cf/flags :nitrate)
-                               (teams/initialize-user-in-nitrate-org cfg id-member org-id))
+                               (teams/initialize-user-in-nitrate-org cfg id-member org-id member-email))
                              ;; Insert the invited member to the team
                              (do (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
                                  team-id))]

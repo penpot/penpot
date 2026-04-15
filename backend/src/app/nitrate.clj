@@ -250,9 +250,11 @@
                         schema:team params)))
 
 (defn- add-profile-to-org-api
-  [cfg {:keys [profile-id org-id team-id] :as params}]
+  [cfg {:keys [profile-id org-id team-id email] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
-        params (assoc params :request-params {:user-id profile-id :team-id team-id})]
+        request-params (cond-> {:user-id profile-id :team-id team-id}
+                         (some? email) (assoc :email email))
+        params (assoc params :request-params request-params)]
     (request-to-nitrate cfg :post
                         (str baseuri
                              "/api/organizations/"

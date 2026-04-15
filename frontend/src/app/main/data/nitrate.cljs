@@ -57,7 +57,8 @@
      (let [href (dm/str "/control-center/org/"
                         (u/percent-encode organization-slug)
                         "/"
-                        (u/percent-encode (str organization-id)))]
+                        (u/percent-encode (str organization-id))
+                        "/people/")]
        (st/emit! (rt/nav-raw :href href)))
      (st/emit! (rt/nav-raw :href "/control-center/")))))
 
