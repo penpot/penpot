@@ -347,6 +347,9 @@ msgstr "The %s organization has been deleted."
 msgid "dashboard.team-no-longer-belong-org"
 msgstr "This team no longer belongs to the organization %s"
 
+msgid "dashboard.team-belong-org"
+msgstr "This team now belongs to %s"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Add file"
@@ -1134,6 +1137,21 @@ msgstr "Team organization"
 
 msgid "dashboard.team-organization.none"
 msgstr "This team is not part of any organization"
+
+msgid "dashboard.team-organization.add"
+msgstr "Add to an organization"
+
+msgid "dashboard.select-org-modal.title"
+msgstr "Add team to an organization"
+
+msgid "dashboard.select-org-modal.choose"
+msgstr "Choose an organization:"
+
+msgid "dashboard.select-org-modal.select"
+msgstr "Select an organization"
+
+msgid "dashboard.select-org-modal.accept"
+msgstr "ADD TO ORGANIZATION"
 
 msgid "dashboard.team-organization.change"
 msgstr "Change team organization"

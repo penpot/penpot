@@ -90,13 +90,13 @@
                   (dm/get-in profile [:subscription :status]))))
 
 (defn leave-org
-  [{:keys [org-id org-name default-team-id teams-to-delete teams-to-leave on-error] :as params}]
+  [{:keys [id org-name default-team-id teams-to-delete teams-to-leave on-error] :as params}]
 
   (ptk/reify ::leave-org
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile-team-id (dm/get-in state [:profile :default-team-id])]
-        (->> (rp/cmd! ::leave-org {:org-id org-id
+        (->> (rp/cmd! ::leave-org {:org-id id
                                    :org-name org-name
                                    :default-team-id default-team-id
                                    :teams-to-delete teams-to-delete
@@ -121,5 +121,15 @@
       (->> (rp/cmd! ::remove-team-from-org {:team-id team-id :organization-id organization-id :organization-name organization-name})
            (rx/mapcat
             (fn [_]
-              (rx/of
-               (modal/hide))))))))
+              (rx/of (modal/hide))))))))
+
+
+(defn add-team-to-org
+  [{:keys [team-id organization-id organization-name] :as params}]
+  (ptk/reify ::add-team-to-org
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! ::add-team-to-org {:team-id team-id :organization-id organization-id :organization-name organization-name})
+           (rx/mapcat
+            (fn [_]
+              (rx/of (modal/hide))))))))

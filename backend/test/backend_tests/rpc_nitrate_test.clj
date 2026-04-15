@@ -33,11 +33,14 @@
 
 (defn- nitrate-call-mock
   "Creates a mock for nitrate/call that returns the given org-summary for
-  :get-org-summary and nil for any other method."
+  :get-org-summary, a valid membership for :get-org-membership, and nil for
+  any other method."
   [org-summary]
   (fn [_cfg method _params]
     (case method
       :get-org-summary org-summary
+      :get-org-membership {:is-member true
+                           :organization-id (:id org-summary)}
       nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
