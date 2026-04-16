@@ -931,8 +931,7 @@ test.describe("Tokens: Detach token", () => {
 test("Bug: 13959, User select shapes with different hidden state.", async ({
   page,
 }) => {
-  const { workspacePage } =
-    await setupTokensFileRender(page);
+  const { workspacePage } = await setupTokensFileRender(page);
 
   await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -955,8 +954,7 @@ test("Bug: 13959, User select shapes with different hidden state.", async ({
 test("Bug: 13960, User select shapes with different opacity and input show mixed state.", async ({
   page,
 }) => {
-  const { workspacePage } =
-    await setupTokensFileRender(page);
+  const { workspacePage } = await setupTokensFileRender(page);
 
   await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -965,21 +963,22 @@ test("Bug: 13960, User select shapes with different opacity and input show mixed
     name: "Layer menu section",
   });
   await expect(layerMenuSection).toBeVisible();
-  await layerMenuSection
-    .getByRole('textbox', { name: 'Opacity' })
-    .fill('50');
+  await layerMenuSection.getByRole("textbox", { name: "Opacity" }).fill("50");
   await expect(layerMenuSection).toBeVisible();
   await workspacePage.layers
     .getByTestId("layer-row")
     .nth(0)
     .click({ modifiers: ["Shift"] });
-  await expect(layerMenuSection
-    .getByRole('textbox', { name: 'Opacity' })).toBeVisible();
-  await expect(layerMenuSection
-    .getByRole('textbox', { name: 'Opacity' })).toBeVisible();
+  await expect(
+    layerMenuSection.getByRole("textbox", { name: "Opacity" }),
+  ).toBeVisible();
+  await expect(
+    layerMenuSection.getByRole("textbox", { name: "Opacity" }),
+  ).toBeVisible();
 
-      await expect(layerMenuSection
-    .getByRole('textbox', { name: 'Opacity' })).toHaveAttribute("placeholder", "Mixed");
+  await expect(
+    layerMenuSection.getByRole("textbox", { name: "Opacity" }),
+  ).toHaveAttribute("placeholder", "Mixed");
 });
 
 test("BUG: 13930, Token colors are shown on selected colors section", async ({
@@ -1073,6 +1072,68 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     await page
       .getByTestId("inspect-layout")
       .getByRole("textbox", { name: "Vertical padding" })
+      .click();
+
+    await expect(
+      page
+        .getByTestId("inspect-layout")
+        .getByRole("button", { name: "spacing.lg" }),
+    ).toBeVisible();
+  });
+
+  test("Padding tokens are applied to both vertical or horizontal properties", async ({
+    page,
+  }) => {
+    // Setup the workspace with token features enabled
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    // Transform a rectangle into a flex container to expose gap properties
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+    const layoutSection =
+      workspacePage.rightSidebar.getByTestId("inspect-layout");
+
+    const addLayoutButton = layoutSection
+      .getByRole("button", { name: "Add layout" })
+      .first();
+    await addLayoutButton.click();
+    await page.getByText("Flex layout").click();
+
+    // Apply a spacing token to the Column gap property
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+    await unfoldTokenType(tokensSidebar, "spacing");
+
+    await tokensSidebar
+      .getByRole("button", { name: "spacing.lg" })
+      .click({ button: "right" });
+
+    await tokenContextMenuForToken.getByText("Horizontal").click();
+
+    // Verify that the token pill appears in the layout section, check after blur
+    await expect(
+      page
+        .getByTestId("inspect-layout")
+        .getByRole("button", { name: "spacing.lg" }),
+    ).toBeVisible();
+
+    await layoutSection
+      .getByRole("button", { name: "Show 4 sided padding options" })
+      .click();
+
+    await expect(
+      page
+        .getByTestId("inspect-layout")
+        .getByRole("button", { name: "spacing.lg" }),
+    ).toHaveCount(2);
+
+    await layoutSection
+      .getByRole("button", { name: "Show 4 sided padding options" })
       .click();
 
     await expect(
@@ -1275,6 +1336,7 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     expect(await verticalPaddingInput.inputValue()).toMatch(/^(\d+|--)$/);
     expect(await verticalPaddingInput.inputValue()).not.toBe("Infinity");
   });
+
   test("Negative expression result handled correctly", async ({ page }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
