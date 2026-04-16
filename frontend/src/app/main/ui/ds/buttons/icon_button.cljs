@@ -19,6 +19,7 @@
    [:tooltip-class {:optional true} [:maybe :string]]
    [:type {:optional true} [:maybe [:enum "button" "submit" "reset"]]]
    [:icon-class {:optional true} :string]
+   [:icon-size {:optional true} [:maybe [:enum "s" "m" "l"]]]
    [:icon
     [:and :string [:fn #(contains? icon-list %)]]]
    [:aria-label :string]
@@ -30,7 +31,7 @@
 (mf/defc icon-button*
   {::mf/schema schema:icon-button
    ::mf/memo true}
-  [{:keys [class icon icon-class variant aria-label children tooltip-placement tooltip-class type] :rest props}]
+  [{:keys [class icon icon-class icon-size variant aria-label children tooltip-placement tooltip-class type] :rest props}]
   (let [variant
         (d/nilv variant "primary")
 
@@ -60,5 +61,5 @@
                   :placement tooltip-placement
                   :id tooltip-id}
      [:> :button props
-      [:> icon* {:icon-id icon :aria-hidden true :class icon-class}]
+      [:> icon* {:icon-id icon :aria-hidden true :class icon-class :size icon-size}]
       children]]))

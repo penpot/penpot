@@ -198,7 +198,7 @@
           [:*
            (when-not is-separator?
              [:div {:class (stl/css :page-icon)}
-              [:> icon* {:icon-id i/document}]])
+              [:> icon* {:icon-id i/document :size "s"}]])
            (if editing?
              [:input {:class        (stl/css :element-name)
                       :type         "text"
@@ -215,6 +215,7 @@
                  [:> icon-button* {:variant "ghost"
                                    :aria-label (tr "modals.delete-page.title")
                                    :on-click on-delete
+                                   :icon-size "s"
                                    :icon i/delete}])]])])]])))
 
 ;; --- Page Item Wrapper
