@@ -702,9 +702,11 @@
       (if (contains? cf/flags :nitrate)
         (d/update-in-when state [:teams team-id]
                           (fn [team]
-                            (cond-> (assoc team
-                                           :organization-id organization-id
-                                           :organization-name organization-name)
+                            (cond-> team
+                              (some? organization-id) (assoc :organization-id organization-id)
+                              (nil? organization-id) (dissoc :organization-id)
+                              (some? organization-name) (assoc :organization-name organization-name)
+                              (nil? organization-name) (dissoc :organization-name)
                               team-name (assoc :name team-name))))
         state))))
 

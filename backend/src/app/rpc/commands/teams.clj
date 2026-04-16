@@ -471,8 +471,8 @@
 ;; --- COMMAND QUERY: get-team-info
 
 (defn get-team-info
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
-  (-> (db/get* conn :team
+  [cfg {:keys [id] :as params}]
+  (-> (db/get* cfg :team
                {:id id}
                {::sql/columns [:id :is-default :features]})
       (decode-row)))

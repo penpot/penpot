@@ -51,6 +51,7 @@
 
 .block-text {
   color: var(--color-foreground-primary);
+  text-wrap: nowrap;
 }
 
 .block-content {
@@ -868,4 +869,82 @@
 .modal-invitation-action-buttons {
   margin-block-start: var(--sp-xxxl);
   gap: var(--sp-s);
+}
+
+.org-block-content {
+  display: grid;
+  grid-template-columns: var(--sp-xxxl) 1fr var(--sp-xxxl);
+  align-items: center;
+  gap: var(--sp-m);
+  width: max-content;
+}
+
+.org-options-btn {
+  padding: 0;
+  justify-content: center;
+
+  --stroke-color: var(--color-foreground-primary);
+
+  &:hover {
+    --stroke-color: var(--color-accent-primary);
+  }
+}
+
+.org-options-btn-open {
+  padding: 0;
+  justify-content: center;
+
+  --stroke-color: var(--color-accent-primary);
+
+  background-color: var(--color-background-tertiary);
+  position: relative;
+}
+
+.org-menu-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
+  stroke: var(--stroke-color);
+}
+
+.org-dropdown {
+  box-shadow: var(--el-shadow-dark);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  position: absolute;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  color: var(--color-foreground-primary);
+  background-color: var(--color-background-tertiary);
+  border: $b-2 solid var(--color-background-quaternary);
+  margin: 0;
+  top: var(--sp-xxxl);
+  width: fit-content;
+  min-width: $sz-160;
+}
+
+.org-dropdown-item {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $sz-28;
+  width: 100%;
+  padding: px2rem(6);
+  border-radius: $br-8;
+  cursor: pointer;
+  text-transform: none;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
 }

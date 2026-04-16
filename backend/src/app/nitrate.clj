@@ -286,6 +286,17 @@
                              "/remove-user")
                         nil params)))
 
+(defn- remove-team-from-org-api
+  [cfg {:keys [team-id organization-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)
+        params (assoc params :request-params {:team-id team-id})]
+    (request-to-nitrate cfg :post
+                        (str baseuri
+                             "/api/organizations/"
+                             organization-id
+                             "/remove-team")
+                        nil params)))
+
 (defn- delete-team-api
   [cfg {:keys [team-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
@@ -327,6 +338,7 @@
      :add-profile-to-org         (partial add-profile-to-org-api cfg)
      :remove-profile-from-org    (partial remove-profile-from-org-api cfg)
      :delete-team                (partial delete-team-api cfg)
+     :remove-team-from-org       (partial remove-team-from-org-api cfg)
      :get-subscription           (partial get-subscription-api cfg)
      :connectivity               (partial get-connectivity-api cfg)}))
 
