@@ -17,6 +17,8 @@
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.color :as uc]
@@ -63,6 +65,9 @@
   (let [state        (mf/use-state #(do {:show-menu false}))
         search-term* (mf/use-state "")
         search-term  (deref search-term*)
+        search-open* (mf/use-state false)
+        search-open? (deref search-open*)
+        has-colors?  (seq colors)
 
         filtered-colors
         (mf/with-memo [colors search-term]
@@ -74,12 +79,27 @@
         on-search-change
         (mf/use-fn #(reset! search-term* %))
 
+        on-toggle-search
+        (mf/use-fn
+         (fn [_]
+           (when @search-open*
+             (reset! search-term* ""))
+           (swap! search-open* not)))
+
+        on-search-clear
+        (mf/use-fn
+         (fn [_]
+           (reset! search-term* "")
+           (reset! search-open* false)))
+
         offset-step  (cond
                        (<= size 64) 40
                        (<= size 80) 72
                        :else 72)
-        ;; Reserve room for the search bar (matches `.palette-search` width in scss)
-        search-width   160
+        ;; Reserve room for the search bar, icon button, or nothing
+        search-width   (cond (not has-colors?) 0
+                             search-open? 192
+                             :else 32)
         buttons-size (cond
                        (<= size 64) (+ 164 search-width)
                        :else (+ 132 search-width))
@@ -142,16 +162,30 @@
       (when (not= 0 (:offset @state))
         (swap! state assoc :offset 0)))
 
+    (mf/with-effect [has-colors?]
+      (when-not has-colors?
+        (reset! search-open* false)
+        (reset! search-term* "")))
+
     [:div {:class (stl/css-case
                    :color-palette true
                    :no-text (< size 64))
            :style #js {"--bullet-size" (dm/str bullet-size "px")
                        "--color-cell-width" (dm/str color-cell-width "px")}}
 
-     [:div {:class (stl/css :palette-search)}
-      [:> search-bar* {:on-change on-search-change
-                       :value search-term
-                       :placeholder (tr "workspace.assets.search")}]]
+     (when has-colors?
+       [:div {:class (stl/css-case :palette-search search-open?
+                                   :palette-search-collapsed (not search-open?))}
+        (when search-open?
+          [:> search-bar* {:on-change on-search-change
+                           :on-clear on-search-clear
+                           :value search-term
+                           :placeholder (tr "workspace.assets.search")
+                           :auto-focus true}])
+        [:> icon-button* {:variant "ghost"
+                          :icon i/search
+                          :on-click on-toggle-search
+                          :aria-label (tr "workspace.assets.search")}]])
 
      (when show-arrows?
        [:button {:class (stl/css :left-arrow)

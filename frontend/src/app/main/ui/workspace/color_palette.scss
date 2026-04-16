@@ -11,12 +11,22 @@
   display: flex;
 }
 
-.palette-search {
+.palette-search,
+.palette-search-collapsed {
   display: flex;
   align-items: center;
-  width: deprecated.$s-160;
-  min-width: deprecated.$s-160;
   padding-inline: deprecated.$s-4;
+}
+
+.palette-search {
+  gap: deprecated.$s-4;
+  width: deprecated.$s-192;
+  min-width: deprecated.$s-192;
+}
+
+.palette-search-collapsed {
+  width: deprecated.$s-32;
+  min-width: deprecated.$s-32;
 }
 
 .left-arrow,
