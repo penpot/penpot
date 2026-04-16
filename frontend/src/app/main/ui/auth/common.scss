@@ -33,19 +33,19 @@
 }
 
 .auth-title {
-  @include deprecated.bigTitleTipography;
+  @include deprecated.big-title-typography;
 
   color: var(--title-foreground-color-hover);
 }
 
 .auth-subtitle {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
 
   color: var(--title-foreground-color);
 }
 
 .auth-tagline {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
 
   margin: 0;
   color: var(--title-foreground-color);
@@ -65,7 +65,7 @@
 .login-button,
 .login-ldap-button {
   @extend %button-primary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   height: deprecated.$s-40;
   width: 100%;
@@ -81,7 +81,7 @@
 
 .go-back-link {
   @extend %button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   height: deprecated.$s-40;
 }
@@ -105,7 +105,7 @@
 .account-text,
 .recovery-text,
 .demo-account-text {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
 
   text-align: right;
   color: var(--title-foreground-color);
@@ -116,7 +116,7 @@
 .recovery-link,
 .forgot-pass-link,
 .demo-account-link {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
 
   text-align: left;
   background-color: transparent;
@@ -138,14 +138,14 @@
 .register-btn,
 .recover-btn {
   @extend %button-primary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   height: deprecated.$s-40;
   width: 100%;
 }
 
 .login-btn {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
 
   display: flex;
   align-items: center;

@@ -84,8 +84,8 @@
 }
 
 .toolbar-handler {
-  @include deprecated.flexCenter;
-  @include deprecated.buttonStyle;
+  @include deprecated.flex-center;
+  @include deprecated.button-style;
 
   position: absolute;
   left: 0;

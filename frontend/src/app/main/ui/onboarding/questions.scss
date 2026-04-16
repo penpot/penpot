@@ -29,7 +29,7 @@
 
 // STEP CONTAINER
 .paginator {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
 
   height: deprecated.$s-20;
   text-align: right;
@@ -50,7 +50,7 @@
 
 .radio-btns label,
 .select-class span {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
 }
 
 // STEP 1
@@ -62,7 +62,7 @@
 }
 
 .modal-title {
-  @include deprecated.bigTitleTipography;
+  @include deprecated.big-title-typography;
 
   color: var(--modal-title-foreground-color);
   min-height: deprecated.$s-32;
@@ -70,7 +70,7 @@
 }
 
 .modal-subtitle {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
 
   color: var(--modal-title-foreground-color);
   margin: 0;
@@ -78,7 +78,7 @@
 }
 
 .modal-text {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
 
   color: var(--modal-text-foreground-color);
   margin: 0;
@@ -137,7 +137,7 @@
 }
 
 .input-spacing input {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
 }
 
 // STEP-4

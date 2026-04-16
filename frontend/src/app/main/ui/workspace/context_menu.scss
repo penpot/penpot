@@ -15,7 +15,7 @@
 
 .context-list,
 .workspace-context-submenu {
-  @include deprecated.menuShadow;
+  @include deprecated.menu-shadow;
 
   display: grid;
   width: deprecated.$s-240;
@@ -46,20 +46,20 @@
   cursor: pointer;
 
   .title {
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
 
     color: var(--menu-foreground-color);
   }
 
   .shortcut {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     gap: deprecated.$s-2;
     color: var(--menu-shortcut-foreground-color);
 
     .shortcut-key {
-      @include deprecated.bodySmallTypography;
-      @include deprecated.flexCenter;
+      @include deprecated.body-small-typography;
+      @include deprecated.flex-center;
 
       height: deprecated.$s-20;
       padding: deprecated.$s-2 deprecated.$s-6;

@@ -45,39 +45,39 @@
 }
 
 .sitemap-zone {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   position: relative;
   width: 100%;
 }
 
 .project-name {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   color: var(--title-foreground-color);
 }
 
 .sitemap-text {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 }
 
 .breadcrumb {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.flexRow;
+  @include deprecated.body-small-typography;
+  @include deprecated.flex-row;
 
   color: var(--title-foreground-color);
   cursor: pointer;
 }
 
 .breadcrumb-text {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   max-width: 12vw; // This is a fallback
   max-width: 12cqw; // This is a unit refered to container
 }
 
 .icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-16;
   width: deprecated.$s-16;
@@ -107,7 +107,7 @@
   @extend %dropdown-element-base;
 
   .icon-check {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     height: 100%;
     width: deprecated.$s-16;
@@ -125,8 +125,8 @@
 }
 
 .current-frame {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.flexRow;
+  @include deprecated.body-small-typography;
+  @include deprecated.flex-row;
 
   flex-grow: 1;
   color: var(--title-foreground-color-hover);
@@ -138,7 +138,7 @@
 }
 
 .frame-name {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   max-width: 17vw; // This is a fallback
   max-width: 17cqw; // This is a unit refered to container
@@ -146,14 +146,14 @@
 
 // SECTION BUTTONS
 .mode-zone {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   height: 100%;
 }
 
 .mode-zone-btn {
   @extend %button-tertiary;
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-32;
   width: deprecated.$s-28;
@@ -170,7 +170,7 @@
 
 // OPTION AREA
 .options-zone {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   position: relative;
   justify-content: flex-end;
@@ -187,7 +187,7 @@
 
 .fullscreen-btn {
   @extend %button-tertiary;
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-32;
   width: deprecated.$s-28;
@@ -209,7 +209,7 @@
 
 .edit-btn {
   @extend %button-tertiary;
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-32;
   width: deprecated.$s-28;
@@ -223,7 +223,7 @@
 
 .go-log-btn {
   @extend %button-tertiary;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   height: deprecated.$s-32;
   padding: 0 deprecated.$s-8;
@@ -233,15 +233,15 @@
 
 // ZOOM WIDGET
 .zoom-widget {
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
+  @include deprecated.button-style;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-28;
   min-width: deprecated.$s-64;
   border-radius: deprecated.$br-8;
 
   .label {
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
 
     color: var(--button-tertiary-foreground-color-rest);
   }
@@ -286,7 +286,7 @@
   border-radius: deprecated.$br-8;
 
   .zoom-icon {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     width: deprecated.$s-24;
     height: deprecated.$s-32;
@@ -306,7 +306,7 @@
 }
 
 .zoom-text {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: 100%;
   min-width: deprecated.$s-64;

@@ -109,6 +109,49 @@
   margin-block-end: var(--sp-s);
   padding: var(--sp-s) 0 var(--sp-s) var(--sp-m);
 
+  .typography-sample-input {
+    @include deprecated.flex-center;
+
+    width: deprecated.$s-24;
+    height: 100%;
+    font-size: deprecated.$fs-16;
+    color: var(--assets-item-name-foreground-color-hover);
+  }
+
+  .adv-typography-name {
+    @include deprecated.remove-input-style;
+
+    font-size: deprecated.$fs-12;
+    color: var(--input-foreground-color-active);
+    flex-grow: 1;
+    padding-left: deprecated.$s-6;
+    margin: 0;
+  }
+
+  .action-btn {
+    @extend %button-tertiary;
+    @include deprecated.flex-center;
+
+    width: deprecated.$s-28;
+    height: deprecated.$s-28;
+
+    svg {
+      @extend %button-icon-small;
+
+      stroke: var(--icon-foreground);
+    }
+
+    &:active {
+      background-color: transparent;
+    }
+  }
+
+  .action-btns {
+    display: flex;
+    align-items: center;
+    gap: deprecated.$s-2;
+  }
+
   &:focus-within {
     --font-name-wrapper-border-color: var(--color-accent-primary);
   }

@@ -40,7 +40,7 @@
 }
 
 .path {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   margin-left: deprecated.$s-2;
   text-transform: initial;
@@ -60,7 +60,7 @@
 }
 
 .modal-title {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   color: var(--modal-title-foreground-color);
 }
@@ -70,14 +70,14 @@
 }
 
 .modal-content {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   margin-bottom: deprecated.$s-24;
 }
 
 .input-wrapper {
   @extend %input-with-label;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   margin-bottom: deprecated.$s-8;
 }

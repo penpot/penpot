@@ -18,7 +18,7 @@
 }
 
 .element-content {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   grid-column: span 8;
   margin-top: deprecated.$s-4;
@@ -29,7 +29,7 @@
 }
 
 .multiple-text {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   flex-grow: 1;
   color: var(--input-foreground-color-active);
