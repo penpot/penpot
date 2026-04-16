@@ -164,7 +164,10 @@ impl State {
                 for y in rsy..=rey {
                     let tile = tiles::Tile(x, y);
                     self.render_state.remove_cached_tile(tile);
+                    #[cfg(not(feature = "tile-scheduler"))]
                     self.render_state.tiles.remove_shape_at(tile, shape.id);
+                    #[cfg(feature = "tile-scheduler")]
+                    self.render_state.tile_grid.remove_shape_at(tile, shape.id);
                 }
             }
 

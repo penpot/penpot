@@ -10,6 +10,7 @@ build = "build.rs"
 
 [features]
 default = []
+tile-scheduler = []
 profile = ["profile-macros", "profile-raf"]
 profile-macros = []
 profile-raf = []

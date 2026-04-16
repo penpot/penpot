@@ -8,6 +8,8 @@ mod render;
 mod shapes;
 mod state;
 mod tiles;
+#[cfg(feature = "tile-scheduler")]
+mod tile_grid;
 mod utils;
 mod uuid;
 mod view;

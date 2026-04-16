@@ -1,8 +1,8 @@
-mod debug;
+pub(crate) mod debug;
 mod fills;
 pub mod filters;
 mod fonts;
-mod glass;
+pub(crate) mod glass;
 mod gpu_state;
 pub mod grid_layout;
 mod images;
@@ -12,7 +12,7 @@ mod strokes;
 mod surfaces;
 pub mod text;
 pub mod text_editor;
-mod ui;
+pub(crate) mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
@@ -40,8 +40,8 @@ pub use images::*;
 
 // This is the extra area used for tile rendering (tiles beyond viewport).
 // Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
-const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
-const MAX_BLOCKING_TIME_MS: i32 = 32;
+pub(crate) const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
+pub(crate) const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
 
@@ -297,7 +297,7 @@ fn sort_z_index(tree: ShapesPoolRef, element: &Shape, children_ids: Vec<Uuid>) -
 }
 
 pub(crate) struct RenderState {
-    gpu_state: GpuState,
+    pub(crate) gpu_state: GpuState,
     pub options: RenderOptions,
     pub surfaces: Surfaces,
     pub fonts: FontStore,
@@ -310,6 +310,7 @@ pub(crate) struct RenderState {
     // Indicates whether the rendering process has pending frames.
     pub render_in_progress: bool,
     // Stack of nodes pending to be rendered.
+    #[cfg(not(feature = "tile-scheduler"))]
     pending_nodes: Vec<NodeRenderState>,
     pub current_tile: Option<tiles::Tile>,
     pub sampling_options: skia::SamplingOptions,
@@ -318,8 +319,12 @@ pub(crate) struct RenderState {
     // shapes in the margin zone are rendered (needed for background blur sampling).
     pub render_area_with_margins: Rect,
     pub tile_viewbox: tiles::TileViewbox,
+    #[cfg(not(feature = "tile-scheduler"))]
     pub tiles: tiles::TileHashMap,
+    #[cfg(not(feature = "tile-scheduler"))]
     pub pending_tiles: PendingTiles,
+    #[cfg(feature = "tile-scheduler")]
+    pub tile_grid: crate::tile_grid::TileGrid,
     // nested_fills maintains a stack of group  fills that apply to nested shapes
     // without their own fill definitions. This is necessary because in SVG, a group's `fill`
     // can affect its child elements if they don't specify one themselves. If the planned
@@ -340,7 +345,7 @@ pub(crate) struct RenderState {
     pub export_context: Option<(Rect, f32)>,
 }
 
-pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
+pub(crate) fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
     let TileRect(isx, isy, iex, iey) = tiles::get_tiles_for_viewbox_with_interest(
         viewbox,
@@ -378,7 +383,6 @@ impl RenderState {
         // time we reuse this one.
 
         let viewbox = Viewbox::new(width as f32, height as f32);
-        let tiles = tiles::TileHashMap::new();
 
         Ok(RenderState {
             gpu_state: gpu_state.clone(),
@@ -391,18 +395,23 @@ impl RenderState {
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
             render_in_progress: false,
+            #[cfg(not(feature = "tile-scheduler"))]
             pending_nodes: vec![],
             current_tile: None,
             sampling_options,
             render_area: Rect::new_empty(),
             render_area_with_margins: Rect::new_empty(),
-            tiles,
+            #[cfg(not(feature = "tile-scheduler"))]
+            tiles: tiles::TileHashMap::new(),
             tile_viewbox: tiles::TileViewbox::new_with_interest(
                 viewbox,
                 VIEWPORT_INTEREST_AREA_THRESHOLD,
                 1.0,
             ),
+            #[cfg(not(feature = "tile-scheduler"))]
             pending_tiles: PendingTiles::new_empty(),
+            #[cfg(feature = "tile-scheduler")]
+            tile_grid: crate::tile_grid::TileGrid::new(),
             nested_fills: vec![],
             nested_blurs: vec![],
             nested_shadows: vec![],
@@ -468,7 +477,7 @@ impl RenderState {
     /// Renders background blur effect directly to the given target surface.
     /// Must be called BEFORE any save_layer for the shape's own opacity/blend,
     /// so that the backdrop blur is independent of the shape's visual properties.
-    fn render_background_blur(&mut self, shape: &Shape, target_surface: SurfaceId) {
+    pub(crate) fn render_background_blur(&mut self, shape: &Shape, target_surface: SurfaceId) {
         if self.options.is_fast_mode() {
             return;
         }
@@ -1502,6 +1511,7 @@ impl RenderState {
         Ok(())
     }
 
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn start_render_loop(
         &mut self,
         base_object: Option<&Uuid>,
@@ -1575,6 +1585,7 @@ impl RenderState {
         Ok(())
     }
 
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn process_animation_frame(
         &mut self,
         base_object: Option<&Uuid>,
@@ -1599,6 +1610,7 @@ impl RenderState {
         Ok(())
     }
 
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn render_shape_tree_sync(
         &mut self,
         base_object: Option<&Uuid>,
@@ -1613,6 +1625,7 @@ impl RenderState {
         Ok(())
     }
 
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn render_shape_pixels(
         &mut self,
         id: &Uuid,
@@ -1767,6 +1780,7 @@ impl RenderState {
                 // element of a masked group) and blend (using
                 // the blend mode 'destination-in') the content
                 // of the group and the mask.
+                #[cfg(not(feature = "tile-scheduler"))]
                 if group.masked {
                     self.pending_nodes.push(NodeRenderState {
                         id: element.id,
@@ -2310,6 +2324,7 @@ impl RenderState {
         Ok(())
     }
 
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn render_shape_tree_partial_uncached(
         &mut self,
         tree: ShapesPoolRef,
@@ -2568,6 +2583,7 @@ impl RenderState {
         Ok((is_empty, false))
     }
 
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn render_shape_tree_partial(
         &mut self,
         base_object: Option<&Uuid>,
@@ -2730,6 +2746,7 @@ impl RenderState {
      * are dynamically added to the tile index via the fallback mechanism in
      * render_shape_tree_partial_uncached, ensuring all shapes render correctly.
      */
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
         let scale = self.get_scale();
         let extrect = self.get_cached_extrect(shape, tree, scale);
@@ -2764,6 +2781,7 @@ impl RenderState {
      * Given a shape, check the indexes and update it's location in the tile set
      * returns the tiles that have changed in the process.
      */
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn update_shape_tiles(
         &mut self,
         shape: &Shape,
@@ -2810,6 +2828,7 @@ impl RenderState {
      * Tile cache invalidation only happens when shapes actually move or change,
      * which is handled by rebuild_touched_tiles, not during pan/zoom.
      */
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn update_shape_tiles_incremental(
         &mut self,
         shape: &Shape,
@@ -2852,6 +2871,7 @@ impl RenderState {
      * Add the tiles forthe shape to the index.
      * returns the tiles that have been updated
      */
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn add_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Vec<tiles::Tile> {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
         let tiles: Vec<_> = (rsx..=rex)
@@ -2864,6 +2884,7 @@ impl RenderState {
         tiles
     }
 
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
         self.surfaces.remove_cached_tile_surface(tile);
     }
@@ -2871,6 +2892,7 @@ impl RenderState {
     /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.
     /// This does NOT invalidate the tile texture cache — cached tile images
     /// survive so that fast-mode renders during pan still show shadows/blur.
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn rebuild_tile_index(&mut self, tree: ShapesPoolRef) {
         let zoom_changed = self.zoom_changed();
 
@@ -2893,6 +2915,7 @@ impl RenderState {
         }
     }
 
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles_shallow");
 
@@ -2910,6 +2933,7 @@ impl RenderState {
         performance::end_measure!("rebuild_tiles_shallow");
     }
 
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {
         performance::begin_measure!("rebuild_tiles");
 
@@ -2949,6 +2973,7 @@ impl RenderState {
      * Rebuild the tiles for the shapes that have been modified from the
      * last time this was executed.
      */
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn rebuild_touched_tiles(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_touched_tiles");
 
@@ -2980,6 +3005,7 @@ impl RenderState {
     ///
     /// This is useful when you have a pre-computed set of shape IDs that need to be refreshed,
     /// regardless of their relationship to other shapes (e.g., ancestors, descendants, or any other collection).
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn update_tiles_shapes(
         &mut self,
         shape_ids: &[Uuid],
@@ -3005,6 +3031,7 @@ impl RenderState {
     /// Additionally, it processes all ancestors of modified shapes to ensure their
     /// extended rectangles are properly recalculated and their tiles are updated.
     /// This is crucial for frames and groups that contain transformed children.
+    #[cfg(not(feature = "tile-scheduler"))]
     pub fn rebuild_modifier_tiles(
         &mut self,
         tree: ShapesPoolMutRef<'_>,

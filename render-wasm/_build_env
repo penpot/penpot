@@ -48,6 +48,12 @@ export EM_CACHE="/tmp/emsdk_cache";
 
 export CARGO_PARAMS="${@:2}";
 
+# Enable tile-scheduler feature for dependency-aware tile rendering.
+# Set TILE_SCHEDULER=1 to build with the new TileGrid-based renderer.
+if [ "$TILE_SCHEDULER" = "1" ]; then
+    export CARGO_PARAMS="--features tile-scheduler $CARGO_PARAMS"
+fi
+
 if [ "$BUILD_MODE" = "release" ]; then
     export CARGO_PARAMS="--release $CARGO_PARAMS"
     export EMCC_CFLAGS="-Os $EMCC_CFLAGS"
