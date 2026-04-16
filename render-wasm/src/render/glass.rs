@@ -160,6 +160,9 @@ fn render_displacement_pass(
                 "u_zoom" => {
                     write_f32(&mut data, off, glass.zoom);
                 }
+                "u_scale" => {
+                    write_f32(&mut data, off, scale);
+                }
                 _ => {}
             }
         }
@@ -218,6 +221,9 @@ fn render_refraction_pass(
                 }
                 "u_chromaticAberration" => {
                     write_f32(&mut data, off, glass.chromatic_aberration * scale);
+                }
+                "u_scale" => {
+                    write_f32(&mut data, off, scale);
                 }
                 _ => {}
             }
@@ -410,6 +416,9 @@ pub fn render_glass(
                 }
                 "u_specularSaturation" => {
                     write_f32(&mut data, off, glass.specular_saturation);
+                }
+                "u_scale" => {
+                    write_f32(&mut data, off, scale);
                 }
                 _ => {}
             }

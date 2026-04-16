@@ -10,6 +10,7 @@ uniform float2  u_resolution;
 uniform float   u_frost;         // 0-1
 uniform float   u_specularOpacity;
 uniform float   u_specularSaturation; // 0=white highlight, 9=vivid prismatic
+uniform float   u_scale;              // canvas zoom scale
 
 // ============================================================
 //  Hash noise for frost scatter
@@ -48,7 +49,7 @@ half4 main(float2 fragCoord) {
         float2 texel = 1.0 / u_resolution;
         for (float i = 0.0; i < 12.0; i += 1.0) {
             float2 noise = hash2(fragCoord + float2(i * 7.3, i * 13.1));
-            float2 off = noise * u_frost * 6.0 * texel;
+            float2 off = noise * u_frost * 6.0 * u_scale * texel;
             frostSum += blurred.eval((uv + off) * u_resolution).rgb;
             totalW += 1.0;
         }
