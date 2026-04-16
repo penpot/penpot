@@ -13,16 +13,15 @@
    [app.common.schema :as sm]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.commands.teams-invitations :as ti]
    [app.rpc.doc :as doc]
+   [app.rpc.notifications :as notifications]
    [app.util.services :as sv]))
 
 
@@ -89,19 +88,7 @@
    [:organization-id ::sm/uuid]
    [:organization-name ::sm/text]])
 
-(defn notify-team-change
-  [cfg team-id team-name organization-id organization-name notification]
-  (let [msgbus (::mbus/msgbus cfg)]
-    (mbus/pub! msgbus
-               ;;TODO There is a bug on dashboard with teams notifications.
-               ;;For now we send it to uuid/zero instead of team-id
-               :topic uuid/zero
-               :message {:type :team-org-change
-                         :team-id team-id
-                         :team-name team-name
-                         :organization-id organization-id
-                         :organization-name organization-name
-                         :notification notification})))
+
 
 
 (sv/defmethod ::notify-team-change
@@ -110,7 +97,8 @@
    ::sm/params schema:notify-team-change
    ::rpc/auth false}
   [cfg {:keys [id organization-id organization-name]}]
-  (notify-team-change cfg id nil organization-id organization-name nil))
+  (notifications/notify-team-change cfg id nil organization-id organization-name nil)
+  nil)
 
 ;; ---- API: notify-user-added-to-organization
 
@@ -248,7 +236,7 @@ RETURNING id, name;")
 
            ;; Notify users
            (doseq [team updated-teams]
-             (notify-team-change cfg (:id team) (:name team) nil org-name "dashboard.org-deleted"))))))))
+             (notifications/notify-team-change cfg (:id team) (:name team) nil org-name "dashboard.org-deleted"))))))))
 
 ;; ---- API: get-profile-by-email
 

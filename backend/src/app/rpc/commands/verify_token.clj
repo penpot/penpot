@@ -16,6 +16,7 @@
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
@@ -175,13 +176,13 @@
                                           org-id  (assoc :org-id org-id)))
         profile                (db/get* conn :profile
                                         {:id profile-id}
-                                        {:columns [:id :email]})
-        registration-disabled? (not (contains? cf/flags :registration))]
+                                        {:columns [:id :email :default-team-id]})
+        registration-disabled? (not (contains? cf/flags :registration))
 
-    (when (nil? invitation)
-      (ex/raise :type :validation
-                :code :invalid-token
-                :hint "no invitation associated with the token"))
+        org-invitation?        (and (contains? cf/flags :nitrate) org-id)
+        membership             (when org-invitation?
+                                 (nitrate/call cfg :get-org-membership {:profile-id profile-id
+                                                                        :org-id org-id}))]
 
     (if profile
       (do
@@ -190,6 +191,23 @@
           (ex/raise :type :validation
                     :code :invalid-token
                     :hint "logged-in user does not matches the invitation"))
+
+        (when (:is-member membership)
+          (ex/raise :type :validation
+                    :code :already-an-org-member
+                    :team-id (:default-team-id membership)
+                    :hint "the user is already a member of the organization"))
+
+        (when (and org-invitation? (not (:organization-id membership)))
+          (ex/raise :type :validation
+                    :code :org-not-found
+                    :team-id (:default-team-id profile)
+                    :hint "the organization doesn't exist"))
+
+        (when (nil? invitation)
+          (ex/raise :type :validation
+                    :code :invalid-token
+                    :hint "no invitation associated with the token"))
 
 
         ;; if we have logged-in user and it matches the invitation we proceed

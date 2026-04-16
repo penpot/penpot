@@ -111,3 +111,15 @@
                             :type :toast
                             :level :success}))))
              (rx/catch on-error))))))
+
+
+(defn remove-team-from-org
+  [{:keys [team-id organization-id organization-name] :as params}]
+  (ptk/reify ::remove-team-from-org
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! ::remove-team-from-org {:team-id team-id :organization-id organization-id :organization-name organization-name})
+           (rx/mapcat
+            (fn [_]
+              (rx/of
+               (modal/hide))))))))

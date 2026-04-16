@@ -48,9 +48,15 @@
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
         profile-user   (th/create-profile* 2 {:is-active true})
 
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
+        project          (th/create-project* 99 {:profile-id (:id profile-user)
+                                                 :team-id (:id org-default-team)})
+        _                (th/create-file* 99 {:profile-id (:id profile-user)
+                                              :project-id (:id project)})
+
         org-id         (uuid/random)
         ;; The user's personal penpot team in the org context
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -78,14 +84,81 @@
           (t/is (str/starts-with? (:name team) "[Test Org] "))
           (t/is (false? (:is-default team))))))))
 
+(t/deftest leave-org-deletes-org-default-team-when-empty
+  (let [profile-owner   (th/create-profile* 1 {:is-active true})
+        profile-user    (th/create-profile* 2 {:is-active true})
+        org-default-team (th/create-team* 98 {:profile-id (:id profile-user)})
+
+        org-id          (uuid/random)
+        your-penpot-id  (:id org-default-team)
+
+        org-summary     (make-org-summary
+                         :org-id            org-id
+                         :org-name          "Test Org"
+                         :owner-id          (:id profile-owner)
+                         :your-penpot-teams [your-penpot-id]
+                         :org-teams         [])]
+
+    (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
+      (let [data {::th/type        :leave-org
+                  ::rpc/profile-id (:id profile-user)
+                  :org-id          org-id
+                  :default-team-id your-penpot-id
+                  :teams-to-delete []
+                  :teams-to-leave  []}
+            out  (th/command! data)]
+
+        (t/is (th/success? out))
+
+        ;; Empty org default team should be soft-deleted.
+        (let [team (th/db-get :team {:id your-penpot-id} {::db/remove-deleted false})]
+          (t/is (some? (:deleted-at team))))))))
+
+(t/deftest leave-org-keeps-and-renames-org-default-team-when-has-files
+  (let [profile-owner    (th/create-profile* 1 {:is-active true})
+        profile-user     (th/create-profile* 2 {:is-active true})
+        org-default-team (th/create-team* 97 {:profile-id (:id profile-user)})
+        project          (th/create-project* 97 {:profile-id (:id profile-user)
+                                                 :team-id (:id org-default-team)})
+        _                (th/create-file* 97 {:profile-id (:id profile-user)
+                                              :project-id (:id project)})
+
+        org-id           (uuid/random)
+        your-penpot-id   (:id org-default-team)
+
+        org-summary      (make-org-summary
+                          :org-id            org-id
+                          :org-name          "Test Org"
+                          :owner-id          (:id profile-owner)
+                          :your-penpot-teams [your-penpot-id]
+                          :org-teams         [])]
+
+    (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
+      (let [data {::th/type        :leave-org
+                  ::rpc/profile-id (:id profile-user)
+                  :org-id          org-id
+                  :default-team-id your-penpot-id
+                  :teams-to-delete []
+                  :teams-to-leave  []}
+            out  (th/command! data)]
+
+        (t/is (th/success? out))
+
+        ;; Non-empty org default team should remain and be renamed.
+        (let [team (th/db-get :team {:id your-penpot-id})]
+          (t/is (str/starts-with? (:name team) "[Test Org] "))
+          (t/is (false? (:is-default team)))
+          (t/is (nil? (:deleted-at team))))))))
+
 (t/deftest leave-org-with-teams-to-delete
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
         profile-user   (th/create-profile* 2 {:is-active true})
         ;; profile-user is the sole owner/member of team1
         team1          (th/create-team* 1 {:profile-id (:id profile-user)})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -118,9 +191,10 @@
         _              (th/create-team-role* {:team-id    (:id team1)
                                               :profile-id (:id profile-owner)
                                               :role       :editor})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -161,9 +235,10 @@
         _              (th/create-team-role* {:team-id    (:id team1)
                                               :profile-id (:id profile-user)
                                               :role       :editor})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -196,8 +271,9 @@
 
 (t/deftest leave-org-error-org-owner-cannot-leave
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-owner)})
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-owner)
+        your-penpot-id (:id org-default-team)
 
         ;; profile-owner IS the org owner in the org-summary
         org-summary    (make-org-summary
@@ -223,8 +299,9 @@
 (t/deftest leave-org-error-invalid-default-team-id
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
         profile-user   (th/create-profile* 2 {:is-active true})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -253,9 +330,10 @@
         ;; profile-user is the sole owner/member of both team1 and team2
         team1          (th/create-team* 1 {:profile-id (:id profile-user)})
         team2          (th/create-team* 2 {:profile-id (:id profile-user)})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -286,9 +364,10 @@
         _              (th/create-team-role* {:team-id    (:id team1)
                                               :profile-id (:id profile-owner)
                                               :role       :editor})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -319,9 +398,10 @@
         _              (th/create-team-role* {:team-id    (:id team1)
                                               :profile-id (:id profile-owner)
                                               :role       :editor})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -351,9 +431,10 @@
         _              (th/create-team-role* {:team-id    (:id team1)
                                               :profile-id (:id profile-owner)
                                               :role       :editor})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -385,9 +466,10 @@
         _              (th/create-team-role* {:team-id    (:id team1)
                                               :profile-id (:id profile-owner)
                                               :role       :editor})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id
@@ -418,9 +500,10 @@
         _              (th/create-team-role* {:team-id    (:id team1)
                                               :profile-id (:id profile-user)
                                               :role       :editor})
+        org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
         org-id         (uuid/random)
-        your-penpot-id (:default-team-id profile-user)
+        your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
                         :org-id            org-id

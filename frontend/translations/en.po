@@ -344,6 +344,9 @@ msgstr "Restore file"
 msgid "dashboard.org-deleted"
 msgstr "The %s organization has been deleted."
 
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "This team no longer belongs to the organization %s"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Add file"
@@ -1126,6 +1129,18 @@ msgstr "Team info"
 msgid "dashboard.team-members"
 msgstr "Team members"
 
+msgid "dashboard.team-organization"
+msgstr "Team organization"
+
+msgid "dashboard.team-organization.none"
+msgstr "This team is not part of any organization"
+
+msgid "dashboard.team-organization.change"
+msgstr "Change team organization"
+
+msgid "dashboard.team-organization.remove"
+msgstr "Remove team from organization"
+
 #: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"
 msgstr "Team projects"
@@ -1666,6 +1681,9 @@ msgstr "Email or password is incorrect."
 #: src/app/main/ui/settings/password.cljs:25
 msgid "errors.wrong-old-password"
 msgstr "Old password is incorrect"
+
+msgid "errors.org-not-found"
+msgstr "That organization doesn't exists"
 
 #: src/app/main/ui/settings/feedback.cljs:120
 msgid "feedback.description"
@@ -9091,6 +9109,18 @@ msgstr "Go to dashboard"
 
 msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
 msgstr "Troubleshooting guide"
+
+msgid "modals.remove-team-org.title"
+msgstr "REMOVE TEAM FROM THE ORGANIZATION"
+
+msgid "modals.remove-team-org.text"
+msgstr "Are you sure you want to remove the '%s' team from the '%s' organization?"
+
+msgid "modals.remove-team-org.info"
+msgstr "Projects and files will remain available to team members, but the organization's settings will no longer apply."
+
+msgid "modals.remove-team-org.accept"
+msgstr "Remove from organization"
 
 #, unused
 msgid "workspace.viewport.click-to-close-path"
