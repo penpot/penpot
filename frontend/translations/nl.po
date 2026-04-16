@@ -8399,10 +8399,6 @@ msgstr "Lettertypefamilie of lijst met lettertypen gescheiden door komma (,)"
 msgid "workspace.tokens.token-name"
 msgstr "Naam"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
-msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "Er bestaat al een token op het pad: %s"
-
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Naam moet minimaal 1 teken zijn"

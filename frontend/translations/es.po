@@ -8476,7 +8476,7 @@ msgstr "Nombre"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
 msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "Ya existe un token en la ruta: %s"
+msgstr "Ya existe un token en la ruta: %s o en un prefijo del mismo."
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
 msgid "workspace.tokens.token-name-length-validation-error"

@@ -64,6 +64,7 @@
 - Fix app crash when selecting shapes with one hidden [Taiga #13959](https://tree.taiga.io/project/penpot/issue/13959)
 - Fix opacity mixed value [Taiga #13960](https://tree.taiga.io/project/penpot/issue/13960)
 - Fix gap input throwing an error [Github #8984](https://github.com/penpot/penpot/pull/8984)
+- Fix copy to be more specific [Taiga #13990](https://tree.taiga.io/project/penpot/issue/13990)
 
 ## 2.15.0 (Unreleased)
 
