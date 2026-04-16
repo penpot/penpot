@@ -968,6 +968,11 @@ impl RenderState {
                         .draw_rect(bounds, &paint);
                 }
 
+                // Uncomment to debug the render_position_data
+                // if let Type::Text(text_content) = &shape.shape_type {
+                //     text::render_position_data(self, fills_surface_id, &shape, text_content);
+                // }
+
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas()
                         .concat(&transform.invert().unwrap_or(Matrix::default()));
