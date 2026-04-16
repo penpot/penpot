@@ -137,6 +137,20 @@
   color: var(--color-foreground-primary);
 }
 
+.plan-cancel {
+  align-items: center;
+  background-color: var(--color-background-secondary);
+  border-radius: var(--sp-xs);
+  display: flex;
+  padding-inline: var(--sp-s);
+}
+
+.plan-cancel-date {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+}
+
 .benefits-list {
   margin-block: 0;
 }

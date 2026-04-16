@@ -542,26 +542,29 @@
 (defn initialize-user-in-nitrate-org
   "If needed, create a default team for the user on the organization,
    and notify Nitrate that an user has been added to an org."
-  [cfg profile-id org-id]
-  (assert (db/connection-map? cfg)
-          "expected cfg with valid connection")
-  (when (contains? cf/flags :nitrate)
-    (db/tx-run!
-     cfg
-     (fn [{:keys [::db/conn] :as tx-cfg}]
-       (let [org-id           org-id
-             default-team     (create-default-org-team (assoc tx-cfg ::db/conn conn) profile-id org-id)
-             default-team-id  (:id default-team)
-             result           (nitrate/call tx-cfg :add-profile-to-org {:profile-id profile-id
-                                                                        :team-id default-team-id
-                                                                        :org-id org-id})]
-         (when (not (:is-member result))
-           (ex/raise :type :internal
-                     :code :failed-add-profile-org-nitrate
-                     :context {:profile-id profile-id
-                               :org-id org-id
-                               :default-team-id default-team-id}))
-         default-team-id)))))
+  ([cfg profile-id org-id]
+   (initialize-user-in-nitrate-org cfg profile-id org-id nil))
+  ([cfg profile-id org-id email]
+   (assert (db/connection-map? cfg)
+           "expected cfg with valid connection")
+   (when (contains? cf/flags :nitrate)
+     (db/tx-run!
+      cfg
+      (fn [{:keys [::db/conn] :as tx-cfg}]
+        (let [org-id           org-id
+              default-team     (create-default-org-team (assoc tx-cfg ::db/conn conn) profile-id org-id)
+              default-team-id  (:id default-team)
+              result           (nitrate/call tx-cfg :add-profile-to-org (cond-> {:profile-id profile-id
+                                                                                 :team-id default-team-id
+                                                                                 :org-id org-id}
+                                                                          (some? email) (assoc :email email)))]
+          (when (not (:is-member result))
+            (ex/raise :type :internal
+                      :code :failed-add-profile-org-nitrate
+                      :context {:profile-id profile-id
+                                :org-id org-id
+                                :default-team-id default-team-id}))
+          default-team-id))))))
 
 (defn add-profile-to-team!
   ([cfg params]
