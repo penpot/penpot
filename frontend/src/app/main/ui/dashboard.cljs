@@ -16,6 +16,7 @@
    [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as notif]
    [app.main.data.plugins :as dp]
+   [app.main.data.profile :as dprof]
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.router :as rt]
@@ -268,7 +269,8 @@
   (mf/with-effect []
     (when (dnt/nitrate-entry-popup-pending?)
       (dnt/consume-nitrate-entry-popup!)
-      (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
+      (st/emit! (dprof/update-profile-props {:onboarding-viewed true})
+                (dnt/show-nitrate-popup :nitrate-form)))))
 
 (mf/defc dashboard*
   [{:keys [profile project-id team-id search-term plugin-url template section]}]

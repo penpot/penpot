@@ -38,6 +38,10 @@
 - Apply styles to selection (by @AzazelN28) [Taiga #13647](https://tree.taiga.io/project/penpot/task/13647)
 - Reorder prototyping overlay options to show Position before Relative to (by @rockchris099) [Github #2910](https://github.com/penpot/penpot/issues/2910)
 - Add customizable colors for ruler guides (by @Dexterity104) [Github #5199](https://github.com/penpot/penpot/issues/5199)
+- Persist asset search query and section filter when switching sidebar tabs (by @eureka0928) [Github #2913](https://github.com/penpot/penpot/issues/2913)
+- Add delete and duplicate buttons to typography dialog (by @eureka0928) [Github #5270](https://github.com/penpot/penpot/issues/5270)
+- Edit ruler guide position by double-clicking the guide pill (by @eureka0928) [Github #2311](https://github.com/penpot/penpot/issues/2311)
+
 
 ### :bug: Bugs fixed
 
@@ -72,8 +76,6 @@
 
 - Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
-- Persist asset search query and section filter when switching sidebar tabs (by @eureka0928) [Github #2913](https://github.com/penpot/penpot/issues/2913)
-- Add delete and duplicate buttons to typography dialog (by @eureka0928) [Github #5270](https://github.com/penpot/penpot/issues/5270)
 
 ### :bug: Bugs fixed
 
