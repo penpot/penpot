@@ -1120,11 +1120,13 @@
     (if (or (seq pending-thumbnails) (seq pending-full))
       (->> (rx/concat
             (->> (rx/from (vals pending-thumbnails))
-                 (rx/merge-map (fn [callback] (callback)))
-                 (rx/reduce conj []))
+                 (rx/merge-map (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty)))
             (->> (rx/from (vals pending-full))
-                 (rx/mapcat (fn [callback] (callback)))
-                 (rx/reduce conj [])))
+                 (rx/mapcat (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty))))
            (rx/subs!
             (fn [_]
               ;; Fonts are now loaded — recompute text layouts so Skia
@@ -1134,7 +1136,7 @@
                   (update-text-layouts text-ids)))
               (request-render "images-loaded"))
             noop-fn
-            (fn [] (when on-complete (on-complete)))))
+            (fn [] (when (fn? on-complete) (on-complete)))))
       ;; No pending images — complete immediately.
       (when on-complete (on-complete)))))
 

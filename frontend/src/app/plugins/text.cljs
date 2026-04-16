@@ -15,6 +15,8 @@
    [app.common.types.text :as txt]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.plugins.format :as format]
@@ -417,8 +419,10 @@
             (st/emit! (dwt/update-editor-state shape editor)))
 
           :else
-          (st/emit! (dwsh/update-shapes [id]
-                                        #(update % :content txt/change-text value))))))}
+          (do
+            (st/emit! (dwsh/update-shapes [id] #(update % :content txt/change-text value)))
+            (when (features/active-feature? @st/state "render-wasm/v1")
+              (st/emit! (dwwt/resize-wasm-text-debounce id)))))))}
 
    {:name "growType"
     :get #(-> % u/proxy->shape :grow-type d/name)
@@ -434,7 +438,10 @@
           (u/not-valid plugin-id :growType "Plugin doesn't have 'content:write' permission")
 
           :else
-          (st/emit! (dwsh/update-shapes [id] #(assoc % :grow-type value))))))}
+          (st/emit!
+           (dwsh/update-shapes [id] #(assoc % :grow-type value))
+           (when (features/active-feature? @st/state "render-wasm/v1")
+             (st/emit! (dwwt/resize-wasm-text-debounce id)))))))}
 
    {:name "fontId"
     :get #(-> % u/proxy->shape text-props :font-id format/format-mixed)
