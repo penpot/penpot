@@ -107,13 +107,16 @@
 
         valid-teams-to-leave-ids    (into valid-teams-to-transfer-ids valid-teams-to-exit-ids)
 
-        all-teams                   (->> (:teams org-summary)
-                                         (map :id)
-                                         (into #{}))
-        selected-team-ids           (conj (into (into #{} teams-to-delete)
-                                                (map :id teams-to-leave))
-                                          default-team-id)
-        all-teams-selected?         (= all-teams selected-team-ids)
+        ;; Get all the teams ids
+        all-teams-ids                   (into #{} d/xf:map-id (:teams org-summary))
+
+        ;; Get all the ids of the teams that will be processed:
+        ;; all the ids on teams-to-leave, teams-to-delete and default-team-id
+        selected-team-ids           (-> (into #{default-team-id} teams-to-delete)
+                                        (into d/xf:map-id teams-to-leave))
+
+        ;; Check that we are processing all the teams
+        all-teams-selected?         (= all-teams-ids selected-team-ids)
 
         default-team-files-count    (-> (db/exec-one! conn [sql:get-team-files-count default-team-id])
                                         :total)
