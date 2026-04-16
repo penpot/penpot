@@ -8,6 +8,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.notifications :as notifications]
    [app.util.services :as sv]))
 
 
@@ -39,6 +40,13 @@
     WHERE tpr.profile_id = ?
       AND t.id = ANY(?)
       AND t.deleted_at IS NULL")
+
+(def ^:private sql:get-team-files-count
+  "SELECT count(*) AS total
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+    WHERE p.team_id = ?
+      AND f.deleted_at IS NULL")
 
 (def ^:private schema:leave-org
   [:map
@@ -100,6 +108,21 @@
 
         valid-teams-to-leave-ids    (into valid-teams-to-transfer-ids valid-teams-to-exit-ids)
 
+        ;; Get all the teams ids
+        all-teams-ids                   (into #{} d/xf:map-id (:teams org-summary))
+
+        ;; Get all the ids of the teams that will be processed:
+        ;; all the ids on teams-to-leave, teams-to-delete and default-team-id
+        selected-team-ids           (-> (into #{default-team-id} teams-to-delete)
+                                        (into d/xf:map-id teams-to-leave))
+
+        ;; Check that we are processing all the teams
+        all-teams-selected?         (= all-teams-ids selected-team-ids)
+
+        default-team-files-count    (-> (db/exec-one! conn [sql:get-team-files-count default-team-id])
+                                        :total)
+        delete-default-team?        (= default-team-files-count 0)
+
         ;; for every team in teams-to-leave, check that:
         ;; - if it has a reassign-to, it belongs to valid-teams-to-transfer and
         ;;   the reassign-to is a member of the team and not the current user;
@@ -123,7 +146,8 @@
     (when (or
            (not valid-teams-to-delete?)
            (not valid-teams-to-leave?)
-           (not valid-default-team-id?))
+           (not valid-default-team-id?)
+           (not all-teams-selected?))
       (ex/raise :type :validation
                 :code :not-valid-teams))
 
@@ -135,10 +159,41 @@
     (doseq [{:keys [id reassign-to]} teams-to-leave]
       (teams/leave-team cfg {:profile-id profile-id :id id :reassign-to reassign-to}))
 
-    ;; Rename default-team-id
-    (db/exec! conn [sql:prefix-team-name-and-unset-default org-prefix default-team-id])
+    ;; Delete default-team-id if empty; otherwise keep it and prefix the name.
+    (if delete-default-team?
+      (do
+        (db/update! conn :team {:is-default false} {:id default-team-id})
+        (teams/delete-team cfg {:profile-id profile-id :team-id default-team-id}))
+      (db/exec! conn [sql:prefix-team-name-and-unset-default org-prefix default-team-id]))
 
     ;; Api call to nitrate
     (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :org-id org-id})
 
+    nil))
+
+
+(def ^:private schema:remove-team-from-org
+  [:map
+   [:team-id ::sm/uuid]
+   [:organization-id ::sm/uuid]])
+
+(sv/defmethod ::remove-team-from-org
+  {::doc/added "2.16"
+   ::sm/params schema:remove-team-from-org}
+  [cfg {:keys [::rpc/profile-id  team-id organization-id organization-name]}]
+  (let [perms    (teams/get-permissions cfg profile-id team-id)
+        team     (teams/get-team-info cfg {:id team-id})]
+
+    (when-not (:is-owner perms)
+      (ex/raise :type :validation
+                :code :insufficient-permissions))
+
+    (when (:is-default team)
+      (ex/raise :type :validation
+                :code :cant-remove-default-team))
+
+    ;; Api call to nitrate
+    (nitrate/call cfg :remove-team-from-org {:team-id team-id :organization-id organization-id})
+
+    (notifications/notify-team-change cfg team-id nil nil organization-name "dashboard.team-no-longer-belong-org")
     nil))

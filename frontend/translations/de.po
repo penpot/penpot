@@ -7987,10 +7987,6 @@ msgstr "Schriftfamilie oder eine durch Kommas (,) getrennte Liste von Schriften"
 msgid "workspace.tokens.token-name"
 msgstr "Name"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
-msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "Unter diesem Speicherort existiert bereits ein Token: %s"
-
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Der Name muss mindestens 1 Zeichen lang sein"
