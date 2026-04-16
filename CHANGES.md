@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.14.4 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Fix email validation [Taiga #14006](https://tree.taiga.io/project/penpot/issue/14006)
+
 ## 2.14.3
 
 ### :sparkles: New features & Enhancements
