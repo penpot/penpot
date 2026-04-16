@@ -1398,14 +1398,14 @@
    loading begins, allowing callers to reveal the page content during
    transitions."
   ([objects]
-   (set-objects objects nil nil))
+   (set-objects objects nil nil false))
   ([objects render-callback]
-   (set-objects objects render-callback nil))
-  ([objects render-callback on-shapes-ready]
+   (set-objects objects render-callback nil false))
+  ([objects render-callback on-shapes-ready force-sync]
    (perf/begin-measure "set-objects")
    (let [shapes (shapes-in-tree-order objects)
          total-shapes (count shapes)]
-     (if (< total-shapes ASYNC_THRESHOLD)
+     (if (or force-sync (< total-shapes ASYNC_THRESHOLD))
        (set-objects-sync shapes render-callback on-shapes-ready)
        (do
          (begin-shapes-loading!)
@@ -1554,19 +1554,16 @@
         (request-render "set-modifiers")))))
 
 (defn initialize-viewport
-  ([base-objects zoom vbox background]
-   (initialize-viewport base-objects zoom vbox background 1 nil nil))
-  ([base-objects zoom vbox background callback]
-   (initialize-viewport base-objects zoom vbox background 1 callback nil))
-  ([base-objects zoom vbox background background-opacity callback]
-   (initialize-viewport base-objects zoom vbox background background-opacity callback nil))
-  ([base-objects zoom vbox background background-opacity callback on-shapes-ready]
-   (let [rgba         (sr-clr/hex->u32argb background background-opacity)
-         total-shapes (count (vals base-objects))]
-     (h/call wasm/internal-module "_set_canvas_background" rgba)
-     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-     (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
-     (set-objects base-objects callback on-shapes-ready))))
+  [base-objects zoom vbox &
+   {:keys [background background-opacity on-render on-shapes-ready force-sync]
+    :or {background-opacity 1}}]
+  (let [rgba (when background (sr-clr/hex->u32argb background background-opacity))
+        total-shapes (count (vals base-objects))]
+
+    (when rgba (h/call wasm/internal-module "_set_canvas_background" rgba))
+    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
+    (set-objects base-objects on-render on-shapes-ready force-sync)))
 
 (def ^:private default-context-options
   #js {:antialias false
