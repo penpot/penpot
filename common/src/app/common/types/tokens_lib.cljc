@@ -1637,7 +1637,7 @@ Will return a value that matches this schema:
   [value]
   (let [process-shadow (fn [shadow]
                          (if (map? shadow)
-                           (let [legacy-shadow-type (get "type" shadow)]
+                           (let [legacy-shadow-type (get shadow "type")]
                              (-> shadow
                                  (set/rename-keys {"x" :offset-x
                                                    "offsetX" :offset-x

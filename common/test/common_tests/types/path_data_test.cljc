@@ -973,6 +973,31 @@
     (t/is (mth/close? 10.0 (:x2 rect) 0.1))
     (t/is (mth/close? 10.0 (:y2 rect) 0.1))))
 
+(t/deftest segment-content->selrect-multi-line
+  ;; Regression: calculate-extremities used move-p instead of from-p in
+  ;; the :line-to branch. For a subpath with multiple consecutive line-to
+  ;; commands, the selrect must still match the reference implementation.
+  (let [;; A subpath that starts away from the origin and has three
+        ;; line-to segments so that move-p diverges from from-p for the
+        ;; later segments.
+        segments [{:command :move-to :params {:x 5.0  :y 5.0}}
+                  {:command :line-to :params {:x 15.0 :y 0.0}}
+                  {:command :line-to :params {:x 20.0 :y 8.0}}
+                  {:command :line-to :params {:x 10.0 :y 12.0}}]
+        content  (path/content segments)
+        rect     (path.segment/content->selrect content)
+        ref-pts  (calculate-extremities segments)]
+
+    ;; Bounding box must enclose all four vertices exactly.
+    (t/is (some? rect))
+    (t/is (mth/close?  5.0 (:x1 rect) 0.1))
+    (t/is (mth/close?  0.0 (:y1 rect) 0.1))
+    (t/is (mth/close? 20.0 (:x2 rect) 0.1))
+    (t/is (mth/close? 12.0 (:y2 rect) 0.1))
+
+    ;; Must agree with the reference implementation.
+    (t/is (= ref-pts (calculate-extremities content)))))
+
 (t/deftest segment-content-center
   (let [content (path/content sample-content-square)
         center  (path.segment/content-center content)]

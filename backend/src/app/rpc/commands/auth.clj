@@ -446,6 +446,7 @@
           (when (:create-welcome-file params)
             (let [cfg (dissoc cfg ::db/conn)]
               (wrk/submit! executor (create-welcome-file cfg profile)))))]
+
     (cond
       ;; When profile is blocked, we just ignore it and return plain data
       (:is-blocked profile)
@@ -453,7 +454,8 @@
         (l/wrn :hint "register attempt for already blocked profile"
                :profile-id (str  (:id profile))
                :profile-email (:email profile))
-        (rph/with-meta {:email (:email profile)}
+        (rph/with-meta {:id (:id profile)
+                        :email (:email profile)}
           {::audit/replace-props props
            ::audit/context {:action "ignore-because-blocked"}
            ::audit/profile-id (:id profile)
@@ -469,7 +471,9 @@
               (:member-email invitation)))
       (let [invitation (assoc invitation :member-id  (:id profile))
             token      (tokens/generate cfg invitation)]
-        (-> {:invitation-token token}
+        (-> {:id (:id profile)
+             :email (:email profile)
+             :invitation-token token}
             (rph/with-transform (session/create-fn cfg profile claims))
             (rph/with-meta {::audit/replace-props props
                             ::audit/context {:action "accept-invitation"}
@@ -492,7 +496,8 @@
           (when-not (eml/has-reports? conn (:email profile))
             (send-email-verification! cfg profile))
 
-          (-> {:email (:email profile)}
+          (-> {:id (:id profile)
+               :email (:email profile)}
               (rph/with-defer create-welcome-file-when-needed)
               (rph/with-meta
                 {::audit/replace-props props
@@ -519,7 +524,8 @@
                       {:id (:id profile)})
           (send-email-verification! cfg profile))
 
-        (rph/with-meta {:email (:email profile)}
+        (rph/with-meta {:email (:email profile)
+                        :id (:id profile)}
           {::audit/replace-props (audit/profile->props profile)
            ::audit/context {:action action}
            ::audit/profile-id (:id profile)

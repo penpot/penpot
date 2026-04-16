@@ -11,6 +11,7 @@
    [common-tests.buffer-test]
    [common-tests.colors-test]
    [common-tests.data-test]
+   [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-test]
    [common-tests.geom-align-test]
@@ -58,6 +59,7 @@
    [common-tests.text-test]
    [common-tests.time-test]
    [common-tests.types.absorb-assets-test]
+   [common-tests.types.color-test]
    [common-tests.types.components-test]
    [common-tests.types.container-test]
    [common-tests.types.fill-test]
@@ -88,6 +90,7 @@
    'common-tests.data-test
    #?(:clj 'common-tests.fressian-test)
    'common-tests.files-changes-test
+   'common-tests.files-builder-test
    'common-tests.files-migrations-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-map-test
@@ -134,6 +137,7 @@
    'common-tests.text-test
    'common-tests.time-test
    'common-tests.types.absorb-assets-test
+   'common-tests.types.color-test
    'common-tests.types.components-test
    'common-tests.types.container-test
    'common-tests.types.fill-test
