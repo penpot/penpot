@@ -586,7 +586,7 @@
         on-layout-item-max-h-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :layout-item-max-h))]
 
-    [:article {:class (stl/css :advanced-options)
+    [:section {:class (stl/css :advanced-options)
                :aria-label "Layout item size constraints"}
      (when (= (:layout-item-h-sizing values) :fill)
        [:div {:class (stl/css :horizontal-fill)}

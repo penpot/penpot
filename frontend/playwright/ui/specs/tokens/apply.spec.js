@@ -5,6 +5,7 @@ import {
   setupTokensFileRender,
   setupTypographyTokensFileRender,
   unfoldTokenType,
+  createToken,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -1186,12 +1187,12 @@ test.describe("Numeric Input and Token Integration Tests", () => {
 
     await layoutItemSection.getByTestId("behaviour-h-fill").click();
 
-    const constraintsArticle = layoutItemSection.getByRole("article", {
+    const constraintsSection = layoutItemSection.getByRole("region", {
       name: "layout item size constraints",
     });
-    await expect(constraintsArticle).toBeVisible();
+    await expect(constraintsSection).toBeVisible();
 
-    await constraintsArticle
+    await constraintsSection
       .getByRole("button", { name: "Open token list" })
       .nth(0)
       .click();
@@ -1202,16 +1203,16 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     await page.getByRole("option", { name: "dimension.md" }).click();
 
     await expect(
-      constraintsArticle.getByRole("button", { name: "dimension.md" }),
+      constraintsSection.getByRole("button", { name: "dimension.md" }),
     ).toBeVisible();
 
     // Focus another input (Max width) to trigger blur and check if token pill persists
-    await constraintsArticle
+    await constraintsSection
       .getByRole("textbox", { name: "Max width" })
       .click();
 
     await expect(
-      constraintsArticle.getByRole("button", { name: "dimension.md" }),
+      constraintsSection.getByRole("button", { name: "dimension.md" }),
     ).toBeVisible();
   });
 
@@ -1370,5 +1371,54 @@ test.describe("Numeric Input and Token Integration Tests", () => {
 
     // Should NOT negative values
     expect(await widthInput.inputValue()).not.toContain("-40");
+  });
+
+  test("Token pill show broken reference when set is not activated", async ({
+    page,
+  }) => {
+    // Setup the workspace with token features enabled
+    const {
+      workspacePage,
+      tokensSidebar,
+      tokenContextMenuForToken,
+      tokenThemesSetsSidebar,
+    } = await setupTokensFileRender(page, {
+      flags: ["enable-token-combobox", "enable-feature-token-input"],
+    });
+    // Create a token with a reference value in other set.
+    await createToken(page, "Dimensions", "reference-token", "Value", "{card.padding}");
+
+
+    // Apply this token to a shape
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+    await unfoldTokenType(tokensSidebar, "dimensions");
+
+    await tokensSidebar
+      .getByRole("button", { name: "reference-token" })
+      .click({ button: "right" });
+
+    await tokenContextMenuForToken.getByText("X", { exact: true }).click();
+
+    //Check if token is applied and visible on right sidebar
+    const measuresSection = page.getByRole("region", {
+      name: "shape-measures-section",
+    });
+    await expect(measuresSection).toBeVisible();
+
+    await expect(measuresSection.getByRole('button', { name: 'reference-token' })).toBeVisible();
+
+    // Deactivate token set where reference token exist to make token broken
+    await tokenThemesSetsSidebar.getByRole('button', { name: 'theme' }).getByRole('checkbox').click();
+    
+    // Check if token pill show broken reference state
+    const brokenPill = measuresSection.getByRole("button", {
+      name: "is not in any active set",
+    });
+    await expect(brokenPill).toHaveCount(2);
   });
 });

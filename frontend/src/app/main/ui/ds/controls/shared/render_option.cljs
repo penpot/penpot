@@ -48,6 +48,7 @@
                           :id id
                           :name name
                           :resolved (get option :resolved-value)
+                          :value (get option :value)
                           :ref ref
                           :role "option"
                           :focused (= id focused)
