@@ -12,6 +12,7 @@
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.common.version :as v]
    [app.util.avatars :as avatars]
    [app.util.extends]
@@ -112,9 +113,11 @@
 (def target               (parse-target global))
 (def browser              (parse-browser))
 (def platform             (parse-platform))
+(def session-id           (uuid/next))
 
 (def version              (parse-version global))
 (def version-tag          (obj/get global "penpotVersionTag"))
+
 
 (defn stale-build?
   "Returns true when the compiled JS was built with a different version

@@ -1350,9 +1350,10 @@
     (watch [_ _ stream]
       (let [stopper-s
             (->> stream
-                 (rx/filter #(or (= ::dwpg/finalize-page (ptk/type %))
-                                 (= ::watch-component-changes (ptk/type %)))))
-
+                 (rx/map ptk/type)
+                 (rx/filter (fn [event-type]
+                              (or (= ::dwpg/finalize-page event-type)
+                                  (= ::watch-component-changes event-type)))))
             workspace-data-s
             (->> (rx/from-atom refs/workspace-data {:emit-current-value? true})
                  (rx/share))
