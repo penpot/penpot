@@ -151,8 +151,7 @@
    [:organization-id ::sm/uuid]])
 
 (sv/defmethod ::remove-team-from-org
-  {::rpc/auth true
-   ::doc/added "2.16"
+  {::doc/added "2.16"
    ::sm/params schema:remove-team-from-org}
   [cfg {:keys [::rpc/profile-id  team-id organization-id organization-name]}]
   (let [perms    (teams/get-permissions cfg profile-id team-id)
@@ -169,4 +168,5 @@
     ;; Api call to nitrate
     (nitrate/call cfg :remove-team-from-org {:team-id team-id :organization-id organization-id})
 
-    (notifications/notify-team-change cfg team-id nil nil organization-name "dashboard.team-no-longer-belong-org")))
+    (notifications/notify-team-change cfg team-id nil nil organization-name "dashboard.team-no-longer-belong-org")
+    nil))

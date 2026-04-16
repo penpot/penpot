@@ -97,7 +97,8 @@
    ::sm/params schema:notify-team-change
    ::rpc/auth false}
   [cfg {:keys [id organization-id organization-name]}]
-  (notifications/notify-team-change cfg id nil organization-id organization-name nil))
+  (notifications/notify-team-change cfg id nil organization-id organization-name nil)
+  nil)
 
 ;; ---- API: notify-user-added-to-organization
 
