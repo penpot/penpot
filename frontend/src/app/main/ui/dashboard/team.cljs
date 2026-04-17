@@ -30,11 +30,13 @@
    [app.main.ui.dashboard.team-form]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
+   [app.util.forms :as uforms]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -792,6 +794,79 @@
          (tr "labels.continue")
          (tr "labels.resend"))]]]]])
 
+
+(def schema:organization-form [:map {:title "SelectOrgForm"}
+                               [:selected-id ::sm/uuid]])
+
+(mf/defc render-org-combobox-avatar*
+  [{:keys [avatar]}]
+  [:> org-avatar* {:org (:organization avatar)
+                   :size (:size avatar)}])
+
+(mf/defc select-organization-modal
+  {::mf/register modal/components
+   ::mf/register-as :select-organization-modal}
+  [{:keys [organizations current-organization-id on-confirm title-key choose-key placeholder-key accept-key cancel-key]}]
+  (let [valid-organizations (mf/with-memo [organizations]
+                              (remove #(= (:id %) current-organization-id) organizations))
+        options (mf/with-memo [valid-organizations]
+                  (mapv (fn [organization]
+                          {:id (str (:id organization))
+                           :label (:name organization)
+                           :avatar {:render-fn render-org-combobox-avatar*
+                                    :organization organization
+                                    :size "xl"}})
+                        valid-organizations))
+
+        form (fm/use-form :schema schema:organization-form :initial {})
+
+        on-change
+        (mf/use-fn
+         (mf/deps form)
+         (fn [id]
+           (uforms/on-input-change form :selected-id id)))
+
+        on-confirm'
+        (mf/use-fn
+         (mf/deps on-confirm form)
+         (fn []
+           (on-confirm (dm/get-in @form [:clean-data :selected-id]))))]
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-select-org-container :modal-container)}
+      [:div {:class (stl/css :modal-header)}
+       [:h2 {:class (stl/css :modal-select-org-title)}
+        (tr title-key)]
+
+       [:button {:class (stl/css :modal-close-btn)
+                 :on-click modal/hide!} deprecated-icon/close]]
+
+      [:div
+       [:div {:class (stl/css :modal-select-org-content)}
+        (tr choose-key)]
+       [:> combobox* {:id "selected-id"
+                      :class (stl/css :team-member)
+                      :options options
+                      :default-selected (or (some-> (get-in @form [:data :selected-id]) str) "")
+                      :placeholder (tr placeholder-key)
+                      :on-change on-change}]]
+
+      [:div {:class (stl/css :modal-footer)}
+       [:div {:class (stl/css :action-buttons :modal-invitation-action-buttons)}
+
+        [:> button*
+         {:class (stl/css :cancel-button)
+          :variant "secondary"
+          :type "button"
+          :on-click modal/hide!}
+         (tr cancel-key)]
+        [:> button*
+         {:class (stl/css :accept-btn)
+          :variant "primary"
+          :type "button"
+          :disabled (not (:valid @form))
+          :on-click on-confirm'}
+         (tr accept-key)]]]]]))
+
 (mf/defc invitation-section*
   {::mf/props :obj
    ::mf/private true}
@@ -1291,6 +1366,20 @@
         can-edit    (or (:is-owner permissions)
                         (:is-admin permissions))
 
+        organizations (mf/deref refs/teams)
+        organizations (mf/with-memo [organizations]
+                        (->> (vals organizations)
+                             (filter :is-default)
+                             (filter :organization-id)
+                             (map dtm/team->organization)))
+
+        can-change-organization? (mf/with-memo [organizations]
+                                   (> (count organizations) 1))
+
+        can-add-to-organization? (mf/with-memo [organizations]
+                                   (and (pos? (count organizations))
+                                        (not (:is-default team))))
+
         show-org-options-menu*
         (mf/use-state false)
 
@@ -1333,7 +1422,43 @@
                          :accept-label (tr "modals.remove-team-org.accept")
                          :on-accept remove-team-from-org-fn
                          :accept-style :danger}]
-             (st/emit! (modal/show params)))))]
+             (st/emit! (modal/show params)))))
+
+        on-add-team-to-org-confirm
+        (mf/use-fn
+         (mf/deps team)
+         (fn [organization-id]
+           (let [organization (d/seek #(= organization-id (:id %)) organizations)]
+             (when organization
+               (st/emit! (dnt/add-team-to-org {:team-id (:id team)
+                                               :organization-id organization-id
+                                               :organization-name (:name organization)}))))))
+
+        on-add-team-to-org
+        (mf/use-fn
+         (mf/deps organizations on-add-team-to-org-confirm)
+         (fn []
+           (st/emit! (modal/show :select-organization-modal {:organizations organizations
+                                                             :current-organization-id (:organization-id team)
+                                                             :on-confirm on-add-team-to-org-confirm
+                                                             :title-key "dashboard.select-org-modal.title"
+                                                             :choose-key "dashboard.select-org-modal.choose"
+                                                             :placeholder-key "dashboard.select-org-modal.select"
+                                                             :accept-key "dashboard.select-org-modal.accept"
+                                                             :cancel-key "labels.cancel"}))))
+
+        on-change-team-org
+        (mf/use-fn
+         (mf/deps organizations on-add-team-to-org-confirm)
+         (fn []
+           (st/emit! (modal/show :select-organization-modal {:organizations organizations
+                                                             :current-organization-id (:organization-id team)
+                                                             :on-confirm on-add-team-to-org-confirm
+                                                             :title-key "dashboard.change-org-modal.title"
+                                                             :choose-key "dashboard.change-org-modal.choose"
+                                                             :placeholder-key "dashboard.change-org-modal.select"
+                                                             :accept-key "dashboard.change-org-modal.accept"
+                                                             :cancel-key "labels.cancel"}))))]
 
     (mf/with-effect [team]
       (dom/set-html-title (tr "title.team-settings"
@@ -1374,7 +1499,7 @@
           (if (:organization-id team)
             [:div {:class (stl/css :block-content)}
              [:div {:class (stl/css :org-block-content)}
-              [:> org-avatar* {:org team :size "xxxl"}]
+              [:> org-avatar* {:org (dtm/team->organization team) :size "xxxl"}]
               [:span {:class (stl/css :block-text)}
                (:organization-name team)]
 
@@ -1389,12 +1514,21 @@
                   [:& dropdown {:show show-org-options-menu? :on-close close-org-options-menu :dropdown-id "org-options"}
                    [:ul {:class (stl/css :org-dropdown)
                          :role "listbox"}
+                    (when can-change-organization?
+                      [:li {:on-click on-change-team-org
+                            :class (stl/css :org-dropdown-item)}
+                       (tr "dashboard.team-organization.change")])
                     [:li {:on-click on-remove-team-from-org
                           :class (stl/css :org-dropdown-item)}
                      (tr "dashboard.team-organization.remove")]]]]])]]
-            [:div {:class (stl/css :block-content)}
-             [:span {:class (stl/css :block-text)}
-              (tr "dashboard.team-organization.none")]])])
+            [:*
+             [:div {:class (stl/css :block-content)}
+              [:span {:class (stl/css :block-text)}
+               (tr "dashboard.team-organization.none")]]
+             (when can-add-to-organization?
+               [:div {:class (stl/css :block-content)}
+                [:span {:class (stl/css :block-text)}
+                 [:a {:on-click on-add-team-to-org} (tr "dashboard.team-organization.add")]]])])])
 
        [:div {:class (stl/css :block)}
         [:div {:class (stl/css :block-label)}

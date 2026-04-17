@@ -322,18 +322,16 @@
          (mf/deps organization profile)
          (fn []
            ;; Navigate to active org if user owns it, otherwise to last visited org
-           (if (and (:organization-id organization)
-                    (= (:id profile) (:organization-owner-id organization)))
+           (if (and (:id organization)
+                    (= (:id profile) (:owner-id organization)))
              (dnt/go-to-nitrate-cc organization)
              (dnt/go-to-nitrate-cc))))
 
-        default-team-id (or (->> organizations
-                                 vals
-                                 (filter :is-default)
-                                 first
-                                 :id)
+        empty-org (d/seek #(nil? (:id %)) organizations)
+        default-team-id (or (:default-team-id empty-org)
                             (:default-team-id profile))
-        organizations (dissoc organizations default-team-id)
+
+        organizations (filter :id organizations)
 
         is-valid-license? (dnt/is-valid-license? profile)]
 
@@ -348,15 +346,15 @@
       (when (= default-team-id (:default-team-id organization))
         tick-icon)]
 
-     (for [org-item (remove :is-default (vals organizations))]
+     (for [org-item organizations]
        [:> dropdown-menu-item* {:on-click    on-org-click
-                                :data-value  (:id org-item)
+                                :data-value  (:default-team-id org-item)
                                 :class       (stl/css :org-dropdown-item)
-                                :key         (str (:id org-item))}
+                                :key         (str (:default-team-id org-item))}
         [:> org-avatar* {:org org-item :size "xxl"}]
         [:span {:class (stl/css :team-text)
                 :title (:name org-item)} (:name org-item)]
-        (when (= (:id org-item) (:default-team-id organization))
+        (when (= (:default-team-id org-item) (:default-team-id organization))
           tick-icon)])
 
      [:hr {:role "separator" :class (stl/css :team-separator)}]
@@ -642,7 +640,7 @@
                                   (concat teams-to-transfer))
                  teams-to-delete (map :id teams-to-delete)]
 
-             (st/emit! (dnt/leave-org {:org-id (:organization-id organization)
+             (st/emit! (dnt/leave-org {:id (:id organization)
                                        :default-team-id default-team-id
                                        :teams-to-delete teams-to-delete
                                        :teams-to-leave teams-to-leave
@@ -691,11 +689,6 @@
       (tr "dashboard.leave-org")]]))
 
 
-(defn- team->org [team]
-  (assoc (dm/select-keys team [:id :organization-id :organization-slug :organization-owner-id :organization-avatar-bg-url])
-         :name (:organization-name team)
-         :default-team-id (:id team)))
-
 (mf/defc sidebar-org-switch*
   [{:keys [team profile]}]
   (let [teams (mf/deref refs/teams)
@@ -705,20 +698,20 @@
                 (->> teams
                      vals
                      (filter :is-default)
-                     (map team->org)
+                     (map dtm/team->organization)
                      (d/index-by :id)))
 
         show-dropdown? (or (dnt/is-valid-license? profile)
                            (> (count orgs) 1))
 
-        current-org (team->org team)
+        current-org (dtm/team->organization team)
 
         org-teams (mf/with-memo [teams current-org]
                     (->> teams
                          vals
-                         (filter #(= (:organization-id %) (:organization-id current-org)))))
+                         (filter #(= (:organization-id %) (:id current-org)))))
 
-        default-org? (nil? (:organization-id current-org))
+        default-org? (nil? (:id current-org))
 
         show-orgs-menu*
         (mf/use-state false)
@@ -787,7 +780,7 @@
               (:name current-org)]])]
          arrow-icon]
         (if (or default-org?
-                (= (:id profile) (:organization-owner-id current-org)))
+                (= (:id profile) (:owner-id current-org)))
           [:div {:class (stl/css :org-options)}]
           [:> button* {:variant "ghost"
                        :type "button"
@@ -803,7 +796,7 @@
                                              :class (stl/css :dropdown :teams-dropdown)
                                              :organization current-org
                                              :profile profile
-                                             :organizations orgs}]
+                                             :organizations (vals orgs)}]
        ;; Orgs options
        [:> org-options-dropdown* {:show show-org-options-menu?
                                   :on-close close-org-options-menu

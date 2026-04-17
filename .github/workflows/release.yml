@@ -64,13 +64,14 @@ jobs:
           echo "$PUB_DOCKER_PASSWORD" | skopeo login --username "$PUB_DOCKER_USERNAME" --password-stdin docker.io
 
           IMAGES=("frontend" "backend" "exporter" "storybook")
+          SHORT_TAG=${TAG%.*}
 
           for image in "${IMAGES[@]}"; do
             skopeo copy --all \
               docker://$DOCKER_REGISTRY/$image:$TAG \
               docker://docker.io/penpotapp/$image:$TAG
 
-            for alias in main latest; do
+            for alias in main latest "$SHORT_TAG"; do
               skopeo copy --all \
                 docker://$DOCKER_REGISTRY/$image:$TAG \
                 docker://docker.io/penpotapp/$image:$alias

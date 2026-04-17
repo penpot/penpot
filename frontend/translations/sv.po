@@ -8071,10 +8071,6 @@ msgstr "Typsnittsfamilj eller lista över typsnitt separerade med kommatecken (,
 msgid "workspace.tokens.token-name"
 msgstr "Namn"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
-msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "En token finns redan på denna sökväg: %s"
-
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Namnet måste innehålla minst 1 tecken"
