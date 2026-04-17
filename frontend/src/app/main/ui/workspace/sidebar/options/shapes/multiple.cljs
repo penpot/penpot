@@ -267,11 +267,11 @@
                     (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)
 
                     new-values
-                    (-> values
-                        (merge-attrs shape-attrs)
-                        (merge-attrs content-attrs))
+                    (merge-attrs values (merge shape-attrs content-attrs))
 
-                    new-token-acc (merge-token-values token-acc content-attrs applied-tokens)]
+                    new-token-acc
+                    (merge-token-values token-acc content-attrs applied-tokens)]
+
                 [(conj ids id)
                  new-values
                  new-token-acc])

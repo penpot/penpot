@@ -89,6 +89,7 @@
    (get-attrs-multi objs attrs default-equal identity))
 
   ([objs attrs eqfn sel]
+
    (loop [attr (first attrs)
           attrs (rest attrs)
           result (transient {})]
@@ -100,13 +101,19 @@
 
                (if (and curr (not= value :multiple))
                  (let [new-val (get-attr curr attr)
-                       value (cond
-                               (= new-val ::unset)   value
-                               (= new-val :multiple) :multiple
-                               (= value ::unset)     (sel new-val)
-                               (eqfn new-val value)  value
-                               :else                 :multiple)]
-                   (recur (first objs) (rest objs) value))
+                       value   (cond
+                                 (= new-val ::unset)
+                                 (if (not= value ::unset)
+                                   :multiple
+                                   value)
+                                 (= new-val :multiple) :multiple
+                                 (= value ::unset)     (sel new-val)
+                                 (eqfn new-val value)  value
+                                 :else                 :multiple)]
+
+                   (if (= value :multiple)
+                     value
+                     (recur (first objs) (rest objs) value)))
 
                  value))]
 
