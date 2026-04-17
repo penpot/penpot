@@ -297,6 +297,27 @@ impl Surfaces {
         self.atlas_size.width > 0 && self.atlas_size.height > 0
     }
 
+    /// Clears a document-space rect inside the persistent atlas. Called when
+    /// a tile cache entry is invalidated so that a zoom-out fast-mode preview
+    /// (which paints from the atlas) doesn't show the old pixels of deleted
+    /// or moved shapes. The cleared region becomes transparent; the next tile
+    /// render at any zoom will repopulate it via `blit_tile_image_into_atlas`.
+    pub fn invalidate_atlas_rect(&mut self, doc_rect: skia::Rect) {
+        if !self.has_atlas() || doc_rect.is_empty() {
+            return;
+        }
+        let scale = self.atlas_scale.max(0.01);
+        let atlas_rect = skia::Rect::from_xywh(
+            (doc_rect.left - self.atlas_origin.x) * scale,
+            (doc_rect.top - self.atlas_origin.y) * scale,
+            doc_rect.width() * scale,
+            doc_rect.height() * scale,
+        );
+        let mut paint = skia::Paint::default();
+        paint.set_blend_mode(skia::BlendMode::Clear);
+        self.atlas.canvas().draw_rect(atlas_rect, &paint);
+    }
+
     /// Draw the persistent atlas onto the target using the current viewbox transform.
     /// Intended for fast pan/zoom-out previews (avoids per-tile composition).
     pub fn draw_atlas_to_target(&mut self, viewbox: Viewbox, dpr: f32, background: skia::Color) {

@@ -2794,8 +2794,13 @@ impl RenderState {
                     }
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
+                    // At this point, interest-area tiles can still yield.
+                    let tile_is_visible = self
+                        .current_tile
+                        .is_some_and(|t| self.tile_viewbox.is_visible(&t));
+                    let can_stop = allow_stop && !tile_is_visible;
                     let (is_empty, early_return) = self
-                        .render_shape_tree_partial_uncached(tree, timestamp, allow_stop, false)?;
+                        .render_shape_tree_partial_uncached(tree, timestamp, can_stop, false)?;
 
                     if early_return {
                         return Ok(());
@@ -2865,6 +2870,18 @@ impl RenderState {
                             }
                         }));
                     }
+                }
+
+                // Only yield if the next tile is NOT visible.
+                let next_is_visible = self
+                    .current_tile
+                    .is_some_and(|t| self.tile_viewbox.is_visible(&t));
+
+                if allow_stop
+                    && !next_is_visible
+                    && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
+                {
+                    return Ok(());
                 }
             } else {
                 should_stop = true;
@@ -3043,6 +3060,15 @@ impl RenderState {
     }
 
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
+        let scale = self.get_scale();
+        let tile_size = tiles::get_tile_size(scale);
+        let doc_rect = skia::Rect::from_xywh(
+            tile.x() as f32 * tile_size,
+            tile.y() as f32 * tile_size,
+            tile_size,
+            tile_size,
+        );
+        self.surfaces.invalidate_atlas_rect(doc_rect);
         self.surfaces.remove_cached_tile_surface(tile);
     }
 
