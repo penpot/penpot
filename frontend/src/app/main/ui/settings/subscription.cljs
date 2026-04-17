@@ -454,12 +454,12 @@
 
         open-subscription-modal
         (mf/use-fn
-         (mf/deps subscription-editors)
+         (mf/deps subscription-editors nitrate-license)
          (fn [subscription-type current-subscription]
            (st/emit! (ev/event {::ev/name "open-subscription-modal"
                                 ::ev/origin "settings:in-app"}))
            (if (= subscription-type "nitrate")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog))
+             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license}))
              (st/emit!
               (modal/show :management-dialog
                           {:subscription-type subscription-type
@@ -649,10 +649,11 @@
                          :benefits ["Crea organizaciones y añade personas, que usarán Penpot con las reglas que configures."
                                     "Acceso exclusivo al Control Center"
                                     "Lorem ipsum"]
-                         :cta-text (tr "subscription.settings.subscribe")
+                         :cta-text (if nitrate-license (tr "subscription.settings.subscribe") "Try 14 days for free")
                          :cta-link #(open-subscription-modal "nitrate" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
-                         :cta-link-with-icon go-to-pricing-page}])]]]))
+                         :cta-link-with-icon go-to-pricing-page
+                         :show-button-cta (not nitrate-license)}])]]]))
 
 
 (def ^:private schema:nitrate-form
@@ -662,7 +663,7 @@
 (mf/defc subscribe-nitrate-dialog
   {::mf/register modal/components
    ::mf/register-as :nitrate-dialog}
-  [connectivity]
+  [{:keys [nitrate-license] :as connectivity}]
   ;; TODO add translations for this texts when we have the definitive ones
   (let [online? (:licenses connectivity)
         initial (mf/with-memo []
@@ -730,15 +731,15 @@
                :on-click handle-close-dialog}]
 
              [:> fm/submit-button*
-              {:label "TRY 14 DAYS FOR FREE"
+              {:label (if nitrate-license (tr "subscription.settings.subscribe") "TRY 14 DAYS FOR FREE")
                :class (stl/css :primary-button)}]]]]]]
         [:div {:class (stl/css :modal-content :modal-contact-content)}
          [:div {:class (stl/css :modal-text)}
           "Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum"]
          [:div {:class (stl/css :modal-text)}
-          "Contact us to upgrade to Nitrate:"]
+          (if nitrate-license "Contact us to upgrade to Nitrate:" "Contact us to try Nitrate for 14 days:")]
          [:div {:class (stl/css :modal-text)}
-          [:a {:class (stl/css :link) :href "mailto:sales@penpot.app"}
+          [:a {:class (stl/css :cta-button) :href "mailto:sales@penpot.app"}
            "sales@penpot.app"]]])]]))
 
 
