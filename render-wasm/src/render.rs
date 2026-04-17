@@ -1780,8 +1780,6 @@ impl RenderState {
             self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
         }
         self.flush_and_submit();
-        notify_tiles_render_complete();
-
         Ok(())
     }
 
