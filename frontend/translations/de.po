@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-04-15 13:09+0000\n"
+"PO-Revision-Date: 2026-04-18 13:10+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -8454,3 +8454,8 @@ msgstr "Penpot unterstützt diese Assets nicht mehr. Sie können uns allerdings"
 #: src/app/main/ui/static.cljs:314
 msgid "errors.webgl-context-lost.main-message"
 msgstr "Ups! Der Canvas-Kontext ist verloren gegangen"
+
+#: src/app/main/ui/ds/product/loader.cljs:25
+msgid "loader.tips.03.message"
+msgstr ""
+"Gestalten Sie flexibel mit vertrauten, CSS-ähnlichen Layout-Steuerelementen."
