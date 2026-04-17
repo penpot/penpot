@@ -1157,6 +1157,18 @@ msgstr "Elige una organización"
 msgid "dashboard.select-org-modal.accept"
 msgstr "AÑADIR A UNA ORGANIZACIÓN"
 
+msgid "dashboard.change-org-modal.title"
+msgstr "CAMBIAR EL EQUIPO DE ORGANIZACIÓN"
+
+msgid "dashboard.change-org-modal.choose"
+msgstr "Mover a:"
+
+msgid "dashboard.change-org-modal.select"
+msgstr "Elige una organización"
+
+msgid "dashboard.change-org-modal.accept"
+msgstr "MOVER EL EQUIPO"
+
 msgid "dashboard.team-organization.change"
 msgstr "Cambiar el equipo de organización"
 
