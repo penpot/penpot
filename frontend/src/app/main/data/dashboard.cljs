@@ -23,6 +23,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -710,6 +711,22 @@
                               team-name (assoc :name team-name))))
         state))))
 
+(defn- handle-user-org-change
+  [{:keys [organization-id organization-name notification]}]
+  (ptk/reify ::handle-user-org-change
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (and notification (contains? cf/flags :nitrate))
+        (let [team-id (:current-team-id state)
+              team    (dm/get-in state [:teams team-id])]
+          (rx/of (ntf/show {:content (tr notification organization-name)
+                            :type :toast
+                            :level :info
+                            :timeout nil})
+                 (dtm/fetch-teams)
+                 ;; When the user is currently on a team of the org
+                 (when (= organization-id (:organization-id team))
+                   (dcm/go-to-dashboard-recent {:team-id :default}))))))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
@@ -718,6 +735,7 @@
     :team-role-change       (handle-change-team-role msg)
     :team-membership-change (dcm/team-membership-change msg)
     :team-org-change        (handle-change-team-org msg)
+    :user-org-change        (handle-user-org-change msg)
     nil))
 
 
