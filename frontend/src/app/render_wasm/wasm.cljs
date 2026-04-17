@@ -12,8 +12,9 @@
 
 ;; Reference to the HTML canvas element.
 (defonce canvas nil)
-;; Reference to the captured pixels of the canvas (for page switching effect)
-(defonce canvas-pixels nil)
+;; Snapshot of the current canvas suitable for `<img src=...>` overlays.
+;; This is typically a `blob:` URL created via `canvas.toBlob`.
+(defonce canvas-snapshot-url nil)
 
 ;; Reference to the Emscripten GL context wrapper.
 (defonce gl-context-handle nil)
