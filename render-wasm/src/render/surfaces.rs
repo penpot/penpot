@@ -289,6 +289,33 @@ impl Surfaces {
         Ok(())
     }
 
+    pub fn clear_doc_rect_in_atlas(
+        &mut self,
+        gpu_state: &mut GpuState,
+        doc_rect: skia::Rect,
+    ) -> Result<()> {
+        if doc_rect.is_empty() {
+            return Ok(());
+        }
+
+        self.ensure_atlas_contains(gpu_state, doc_rect)?;
+
+        // Destination is document-space rect mapped into atlas pixel coords.
+        let dst = skia::Rect::from_xywh(
+            (doc_rect.left - self.atlas_origin.x) * self.atlas_scale,
+            (doc_rect.top - self.atlas_origin.y) * self.atlas_scale,
+            doc_rect.width() * self.atlas_scale,
+            doc_rect.height() * self.atlas_scale,
+        );
+
+        let canvas = self.atlas.canvas();
+        canvas.save();
+        canvas.clip_rect(dst, None, true);
+        canvas.clear(skia::Color::TRANSPARENT);
+        canvas.restore();
+        Ok(())
+    }
+
     pub fn clear_tiles(&mut self) {
         self.tiles.clear();
     }

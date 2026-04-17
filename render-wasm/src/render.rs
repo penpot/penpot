@@ -2817,6 +2817,24 @@ impl RenderState {
                             paint.set_color(self.background_color);
                             s.canvas().draw_rect(tile_rect, &paint);
                         });
+                        // Keep Cache surface coherent for render_from_cache.
+                        if !self.options.is_fast_mode() {
+                            if !self.cache_cleared_this_render {
+                                self.surfaces.clear_cache(self.background_color);
+                                self.cache_cleared_this_render = true;
+                            }
+                            let aligned_rect = self.get_aligned_tile_bounds(current_tile);
+                            self.surfaces.apply_mut(SurfaceId::Cache as u32, |s| {
+                                let mut paint = skia::Paint::default();
+                                paint.set_color(self.background_color);
+                                s.canvas().draw_rect(aligned_rect, &paint);
+                            });
+                        }
+
+                        // Clear atlas region to transparent so background shows through.
+                        let _ = self
+                            .surfaces
+                            .clear_doc_rect_in_atlas(&mut self.gpu_state, self.render_area);
                     }
                 }
             }
