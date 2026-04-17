@@ -230,6 +230,7 @@ impl NodeRenderState {
 /// - `enter(...)` / `exit(...)` should be called when entering and leaving shape
 ///   render contexts.
 /// - `is_active()` returns whether the current shape is being rendered in focus.
+#[derive(Clone)]
 pub struct FocusMode {
     shapes: Vec<Uuid>,
     active: bool,
@@ -1792,6 +1793,26 @@ impl RenderState {
     ) -> Result<(Vec<u8>, i32, i32)> {
         let target_surface = SurfaceId::Export;
 
+        // `render_shape_pixels` is used by the workspace to render thumbnails using the
+        // same WASM renderer instance. It must not leak any state into the main
+        // viewport renderer (tile cache, atlas, focus mode, render context, etc.).
+        //
+        // In particular, `update_render_context` clears and reconfigures multiple
+        // render surfaces, and `render_area` drives atlas blits. If we don't restore
+        // them, the workspace can temporarily show missing tiles until the next
+        // interaction (e.g. zoom) forces a full context rebuild.
+        let saved_focus_mode = self.focus_mode.clone();
+        let saved_export_context = self.export_context;
+        let saved_render_area = self.render_area;
+        let saved_render_area_with_margins = self.render_area_with_margins;
+        let saved_current_tile = self.current_tile;
+        let saved_pending_nodes = std::mem::take(&mut self.pending_nodes);
+        let saved_nested_fills = std::mem::take(&mut self.nested_fills);
+        let saved_nested_blurs = std::mem::take(&mut self.nested_blurs);
+        let saved_nested_shadows = std::mem::take(&mut self.nested_shadows);
+        let saved_ignore_nested_blurs = self.ignore_nested_blurs;
+        let saved_preview_mode = self.preview_mode;
+
         // Reset focus mode so all shapes in the export tree are rendered.
         // Without this, leftover focus_mode state from the workspace could
         // cause shapes (and their background blur) to be skipped.
@@ -1842,6 +1863,30 @@ impl RenderState {
             )
             .expect("PNG encode failed");
         let skia::ISize { width, height } = image.dimensions();
+
+        // Restore the workspace render state.
+        self.focus_mode = saved_focus_mode;
+        self.export_context = saved_export_context;
+        self.render_area = saved_render_area;
+        self.render_area_with_margins = saved_render_area_with_margins;
+        self.current_tile = saved_current_tile;
+        self.pending_nodes = saved_pending_nodes;
+        self.nested_fills = saved_nested_fills;
+        self.nested_blurs = saved_nested_blurs;
+        self.nested_shadows = saved_nested_shadows;
+        self.ignore_nested_blurs = saved_ignore_nested_blurs;
+        self.preview_mode = saved_preview_mode;
+
+        // Restore render-surface transforms for the workspace context.
+        // If we have a current tile, restore its tile render context; otherwise
+        // fall back to restoring the previous render_area (may be empty).
+        let workspace_scale = self.get_scale();
+        if let Some(tile) = self.current_tile {
+            self.update_render_context(tile);
+        } else if !self.render_area.is_empty() {
+            self.surfaces
+                .update_render_context(self.render_area, workspace_scale);
+        }
 
         Ok((data.as_bytes().to_vec(), width, height))
     }
