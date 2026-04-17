@@ -33,7 +33,8 @@
                      (swap! form assoc :touched {})
                      (st/emit! (ntf/success (tr "notifications.profile-saved"))))]
     (st/emit! (du/update-profile data)
-              (du/persist-profile {:on-success on-success}))))
+              (du/persist-profile :profile data
+                                  :on-success on-success))))
 
 ;; --- Profile Form
 

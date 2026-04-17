@@ -9,6 +9,17 @@
    [app.util.object :as obj]
    [cuerdas.core :as str]))
 
+(def ^:private palette
+  ["#DB4437" "#E8710A" "#F4B400" "#0F9D58"
+   "#009688" "#00ACC1" "#4285F4" "#3F51B5"
+   "#673AB7" "#AB47BC" "#D81B60" "#795548"])
+
+(defn- color-for
+  [letter]
+  (if (seq letter)
+    (nth palette (mod (.charCodeAt letter 0) (count palette)))
+    "#000000"))
+
 (defn generate*
   [{:keys [name color size]
     :or {size 128}}]
@@ -22,7 +33,7 @@
         text-color (if color
                      "#2e3434"
                      "#fff")
-        color (or color "#000000")]
+        color (or color (color-for letters))]
 
     (obj/set! canvas "width" size)
     (obj/set! canvas "height" size)

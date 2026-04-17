@@ -30,7 +30,8 @@
   [form _event]
   (let [data  (:clean-data @form)]
     (st/emit! (du/update-profile data)
-              (du/persist-profile {:on-success on-success}))))
+              (du/persist-profile :profile data
+                                  :on-success on-success))))
 
 (mf/defc options-form
   {::mf/wrap-props false}

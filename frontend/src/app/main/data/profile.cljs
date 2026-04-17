@@ -120,14 +120,15 @@
 ;; --- Update Profile
 
 (defn persist-profile
-  [& {:as opts}]
+  [& {:keys [profile on-success on-error]
+      :or {on-success identity
+           on-error rx/throw}}]
   (ptk/reify ::persist-profile
     ptk/WatchEvent
     (watch [_ state _]
-      (let [on-success (:on-success opts identity)
-            on-error   (:on-error opts rx/throw)
-            profile    (:profile state)
-            params     (select-keys profile [:fullname :lang :theme])]
+      (let [profile' (d/deep-merge (:profile state)
+                                   (dissoc profile :props))
+            params   (select-keys profile' [:fullname :lang :theme])]
         (->> (rp/cmd! :update-profile params)
              (rx/tap on-success)
              (rx/map set-profile)
