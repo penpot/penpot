@@ -23,10 +23,11 @@
    [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
-(log/set-level! :info)
+(log/set-level! :warn)
 
 (def page-change?
   #{:add-page :mod-page :del-page :mov-page})
+
 (def update-layout-attr?
   #{:hidden})
 
@@ -207,6 +208,7 @@
 
         ;; Prevent commit changes by a viewer team member (it really should never happen)
         (when (:can-edit permissions)
+          (log/trace :hint "commit-changes" :redo-changes redo-changes)
           (let [selected (dm/get-in state [:workspace-local :selected])]
             (rx/of (-> params
                        (assoc :undo-group undo-group)

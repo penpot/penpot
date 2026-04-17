@@ -131,6 +131,7 @@ The <code class="language-js">manifest.json</code> file contains the basic infor
 {
   "name": "Your plugin name",
   "description": "Your plugin description",
+  "version": 2,
   "code": "plugin.js",
   "icon": "Your icon",
   "permissions": [
@@ -146,6 +147,12 @@ The <code class="language-js">manifest.json</code> file contains the basic infor
   ]
 }
 ```
+
+<p class="advice">
+Set <code class="language-js">"version": 2</code> in your
+<code class="language-js">manifest.json</code> if you use relative paths for
+<code class="language-js">code</code> or <code class="language-js">icon</code>.
+</p>
 
 #### Properties
 

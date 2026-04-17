@@ -981,3 +981,51 @@ test("Bug: 13960, User select shapes with different opacity and input show mixed
       await expect(layerMenuSection
     .getByRole('textbox', { name: 'Opacity' })).toHaveAttribute("placeholder", "Mixed");
 });
+
+test("BUG: 13930, Token colors are shown on selected colors section", async ({
+  page,
+}) => {
+  const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+    await setupTokensFileRender(page);
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Button" })
+    .click();
+
+  await page.getByRole("tab", { name: "Tokens" }).click();
+
+  await unfoldTokenType(tokensSidebar, "color");
+
+  await tokensSidebar
+    .getByRole("button", { name: "black" })
+    .click({ button: "right" });
+  await tokenContextMenuForToken.getByText("Fill").click();
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .first()
+    .click({ modifiers: ["Shift"] });
+
+  await expect(
+    workspacePage.page.getByRole("region", { name: "Color selection section" }),
+  ).toBeVisible();
+
+  await workspacePage.page
+    .getByRole("button", { name: "Resolved value: #7f9cf5" })
+    .click();
+  await expect(
+    workspacePage.page.getByRole("region", { name: "Color selection section" }),
+  ).toBeVisible();
+
+  await expect(
+    workspacePage.page
+      .getByTestId("colorpicker")
+      .getByRole("button", { name: "colors.black" }),
+  ).toBeVisible();
+});

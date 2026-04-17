@@ -57,7 +57,8 @@
      (let [href (dm/str "/control-center/org/"
                         (u/percent-encode organization-slug)
                         "/"
-                        (u/percent-encode (str organization-id)))]
+                        (u/percent-encode (str organization-id))
+                        "/people/")]
        (st/emit! (rt/nav-raw :href href)))
      (st/emit! (rt/nav-raw :href "/control-center/")))))
 
@@ -65,9 +66,12 @@
   []
   (st/emit! (rt/nav-raw :href "/control-center/?action=create-org")))
 
+(def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
+
 (defn go-to-nitrate-billing
   []
-  (st/emit! (rt/nav-raw :href "/control-center/licenses/billing")))
+  (let [href (dm/str "/control-center/licenses/billing?callback=" (js/encodeURIComponent go-to-subscription-url))]
+    (st/emit! (rt/nav-raw :href href))))
 
 (defn go-to-buy-nitrate-license
   ([subscription]
@@ -78,8 +82,6 @@
          href   (dm/str "/control-center/licenses/start?" (u/map->query-string params))]
      (st/emit! (rt/nav-raw :href href)))))
 
-(def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
-
 (defn is-valid-license?
   [profile]
   (and (contains? cf/flags :nitrate)
@@ -88,13 +90,13 @@
                   (dm/get-in profile [:subscription :status]))))
 
 (defn leave-org
-  [{:keys [org-id org-name default-team-id teams-to-delete teams-to-leave on-error] :as params}]
+  [{:keys [id org-name default-team-id teams-to-delete teams-to-leave on-error] :as params}]
 
   (ptk/reify ::leave-org
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile-team-id (dm/get-in state [:profile :default-team-id])]
-        (->> (rp/cmd! ::leave-org {:org-id org-id
+        (->> (rp/cmd! ::leave-org {:org-id id
                                    :org-name org-name
                                    :default-team-id default-team-id
                                    :teams-to-delete teams-to-delete
@@ -109,3 +111,25 @@
                             :type :toast
                             :level :success}))))
              (rx/catch on-error))))))
+
+
+(defn remove-team-from-org
+  [{:keys [team-id organization-id organization-name] :as params}]
+  (ptk/reify ::remove-team-from-org
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! ::remove-team-from-org {:team-id team-id :organization-id organization-id :organization-name organization-name})
+           (rx/mapcat
+            (fn [_]
+              (rx/of (modal/hide))))))))
+
+
+(defn add-team-to-org
+  [{:keys [team-id organization-id organization-name] :as params}]
+  (ptk/reify ::add-team-to-org
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! ::add-team-to-org {:team-id team-id :organization-id organization-id :organization-name organization-name})
+           (rx/mapcat
+            (fn [_]
+              (rx/of (modal/hide))))))))

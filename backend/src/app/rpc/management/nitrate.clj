@@ -13,16 +13,15 @@
    [app.common.schema :as sm]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.commands.teams-invitations :as ti]
    [app.rpc.doc :as doc]
+   [app.rpc.notifications :as notifications]
    [app.util.services :as sv]))
 
 
@@ -89,19 +88,7 @@
    [:organization-id ::sm/uuid]
    [:organization-name ::sm/text]])
 
-(defn notify-team-change
-  [cfg team-id team-name organization-id organization-name notification]
-  (let [msgbus (::mbus/msgbus cfg)]
-    (mbus/pub! msgbus
-               ;;TODO There is a bug on dashboard with teams notifications.
-               ;;For now we send it to uuid/zero instead of team-id
-               :topic uuid/zero
-               :message {:type :team-org-change
-                         :team-id team-id
-                         :team-name team-name
-                         :organization-id organization-id
-                         :organization-name organization-name
-                         :notification notification})))
+
 
 
 (sv/defmethod ::notify-team-change
@@ -110,7 +97,8 @@
    ::sm/params schema:notify-team-change
    ::rpc/auth false}
   [cfg {:keys [id organization-id organization-name]}]
-  (notify-team-change cfg id nil organization-id organization-name nil))
+  (notifications/notify-team-change cfg id nil organization-id organization-name nil)
+  nil)
 
 ;; ---- API: notify-user-added-to-organization
 
@@ -248,7 +236,7 @@ RETURNING id, name;")
 
            ;; Notify users
            (doseq [team updated-teams]
-             (notify-team-change cfg (:id team) (:name team) nil org-name "dashboard.org-deleted"))))))))
+             (notifications/notify-team-change cfg (:id team) (:name team) nil org-name "dashboard.org-deleted"))))))))
 
 ;; ---- API: get-profile-by-email
 
@@ -294,6 +282,48 @@ RETURNING id, name;")
                 :hint "profile does not exist"
                 :id id))
     (profile-to-map profile)))
+
+
+;; ---- API: get-org-member-team-counts
+
+(def ^:private sql:get-org-member-team-counts
+  "SELECT tpr.profile_id, COUNT(DISTINCT t.id) AS team_count
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON t.id = tpr.team_id
+    WHERE t.id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND t.is_default IS FALSE
+    GROUP BY tpr.profile_id;")
+
+(def ^:private schema:get-org-member-team-counts-params
+  [:map [:team-ids [:or ::sm/uuid [:vector ::sm/uuid]]]])
+
+(def ^:private schema:get-org-member-team-counts-result
+  [:vector [:map
+            [:profile-id ::sm/uuid]
+            [:team-count ::sm/int]]])
+
+(sv/defmethod ::get-org-member-team-counts
+  "Get the number of non-default teams each profile belongs to within a set of teams."
+  {::doc/added "2.15"
+   ::sm/params schema:get-org-member-team-counts-params
+   ::sm/result schema:get-org-member-team-counts-result
+   ::rpc/auth false}
+  [cfg {:keys [team-ids]}]
+  (let [team-ids (cond
+                   (uuid? team-ids)
+                   [team-ids]
+
+                   (and (vector? team-ids) (every? uuid? team-ids))
+                   team-ids
+
+                   :else
+                   [])]
+    (if (empty? team-ids)
+      []
+      (db/run! cfg (fn [{:keys [::db/conn]}]
+                     (let [ids-array (db/create-array conn "uuid" team-ids)]
+                       (db/exec! conn [sql:get-org-member-team-counts ids-array])))))))
 
 
 ;; API: invite-to-org

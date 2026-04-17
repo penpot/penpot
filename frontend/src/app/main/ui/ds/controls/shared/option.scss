@@ -36,6 +36,11 @@
   grid-template-columns: auto 1fr auto;
 }
 
+.option-with-avatar {
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-s);
+}
+
 .option-text {
   white-space: nowrap;
   overflow: hidden;
