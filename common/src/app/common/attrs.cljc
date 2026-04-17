@@ -85,11 +85,10 @@
 ;;        :r4 nil}
 ;;
 (defn get-attrs-multi
-  ([objs attrs]
-   (get-attrs-multi objs attrs default-equal identity))
+  ([objs attrs origin]
+   (get-attrs-multi objs attrs origin default-equal identity))
 
-  ([objs attrs eqfn sel]
-
+  ([objs attrs origin eqfn sel]
    (loop [attr (first attrs)
           attrs (rest attrs)
           result (transient {})]
@@ -107,7 +106,11 @@
                                    :multiple
                                    value)
                                  (= new-val :multiple) :multiple
-                                 (= value ::unset)     (sel new-val)
+                                 (= value ::unset)     
+                                 (if (and (= origin :text-multi)(= attr :typography-ref-id))
+                                   :multiple
+                                   (sel new-val))
+
                                  (eqfn new-val value)  value
                                  :else                 :multiple)]
 
@@ -134,6 +137,6 @@
         text-node-attrs (->> attrs (filter (set txt/text-node-attrs)))]
     (merge
      defaults
-     (get-attrs-multi (->> (txt/node-seq txt/is-root-node? content)) root-attrs)
-     (get-attrs-multi (->> (txt/node-seq txt/is-paragraph-node? content)) paragraph-attrs)
-     (get-attrs-multi (->> (txt/node-seq txt/is-text-node? content)) text-node-attrs))))
+     (get-attrs-multi (->> (txt/node-seq txt/is-root-node? content)) root-attrs :text-multi)
+     (get-attrs-multi (->> (txt/node-seq txt/is-paragraph-node? content)) paragraph-attrs :text-multi)
+     (get-attrs-multi (->> (txt/node-seq txt/is-text-node? content)) text-node-attrs :text-multi))))

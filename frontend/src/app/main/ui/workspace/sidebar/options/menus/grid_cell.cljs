@@ -89,7 +89,7 @@
         open?  (:open @state*)
 
         cells (hooks/use-equal-memo cells)
-        cell (or cell (attrs/get-attrs-multi cells cell-props))
+        cell (or cell (attrs/get-attrs-multi cells cell-props :grid))
 
         multiple? (= :multiple (:id cell))
         cell-ids (if multiple? (->> cells (map :id)) [(:id cell)])

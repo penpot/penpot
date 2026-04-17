@@ -251,7 +251,7 @@
                               (-> (merge default-text-attrs node)
                                   (assoc :fills fills)))
                             node))))]
-    (attrs/get-attrs-multi nodes attrs)))
+    (attrs/get-attrs-multi nodes attrs :text)))
 
 (defn current-root-values
   [{:keys [attrs shape]}]

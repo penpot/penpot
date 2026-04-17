@@ -1016,7 +1016,7 @@
             objects       (dsh/lookup-page-objects state page-id)
             selected      (dsh/lookup-selected state)
             selected-obj  (-> (map #(get objects %) selected))
-            multi         (attrs/get-attrs-multi selected-obj [:proportion-lock])
+            multi         (attrs/get-attrs-multi selected-obj [:proportion-lock] :lock)
             multi?        (= :multiple (:proportion-lock multi))]
         (if multi?
           (rx/of (dwsh/update-shapes selected #(assoc % :proportion-lock true)))

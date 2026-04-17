@@ -208,9 +208,9 @@
         merge-attrs
         (fn [v1 v2]
           (cond
-            (= attr-group :shadow) (attrs/get-attrs-multi [v1 v2] attrs shadow-eq shadow-sel)
-            (= attr-group :blur)   (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
-            :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
+            (= attr-group :shadow) (attrs/get-attrs-multi [v1 v2] attrs :shadow shadow-eq shadow-sel )
+            (= attr-group :blur)   (attrs/get-attrs-multi [v1 v2] attrs :blur blur-eq blur-sel)
+            :else                  (attrs/get-attrs-multi [v1 v2] attrs :multi)))
 
         merge-attr
         (fn [acc applied-tokens t-attr]
