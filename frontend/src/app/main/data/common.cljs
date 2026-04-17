@@ -199,8 +199,10 @@
 
   (ptk/reify ::change-team-role
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (ntf/info (get-change-role-msg role))))
+    (watch [_ state _]
+      (let [current-team-id (:current-team-id state)]
+        (when (= team-id current-team-id)
+          (rx/of (ntf/info (get-change-role-msg role))))))
 
     ptk/UpdateEvent
     (update [_ state]
