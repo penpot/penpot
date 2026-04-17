@@ -146,6 +146,12 @@
     }
   }
 
+  .action-btns {
+    display: flex;
+    align-items: center;
+    gap: deprecated.$s-2;
+  }
+
   &:focus-within {
     border: deprecated.$s-1 solid var(--input-border-color-active);
 
