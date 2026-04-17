@@ -41,13 +41,14 @@
            nitrate-entry-pending-popup-key)))
 
 (defn show-nitrate-popup
-  [popup-type]
-  (ptk/reify ::show-nitrate-popup
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! ::get-nitrate-connectivity {})
-           (rx/map (fn [connectivity]
-                     (modal/show popup-type (or connectivity {}))))))))
+  ([popup-type] (show-nitrate-popup popup-type {}))
+  ([popup-type extra-props]
+   (ptk/reify ::show-nitrate-popup
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (->> (rp/cmd! ::get-nitrate-connectivity {})
+            (rx/map (fn [connectivity]
+                      (modal/show popup-type (merge (or connectivity {}) extra-props)))))))))
 
 (defn go-to-nitrate-cc
   ([]
