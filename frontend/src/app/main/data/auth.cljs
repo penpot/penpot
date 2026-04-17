@@ -258,15 +258,14 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [profile-id   (:profile-id state)
-            ;; Full 3-layer SSO logout: when cf/mpass-signout-url is set
-            ;; we redirect there after the native :logout cmd so that the
-            ;; oauth2-proxy cookie and the Cognito session are also
-            ;; cleared. Nil on non-SSO deployments → fall through to the
-            ;; default /auth/login redirect.
-            logged-out-ev (if-some [url cf/mpass-signout-url]
-                            (logged-out {:redirect-uri url})
-                            (logged-out {}))]
+      (let [profile-id    (:profile-id state)
+            ;; Rewrite "foss-<app>.<domain>" → "foss.<domain>" so we land on the portal
+            ;; (outside ForwardAuth) instead of Penpot's own root, which would silently re-auth.
+            host          (.-host js/location)
+            protocol      (.-protocol js/location)
+            portal-host   (.replace host #"^[^.]*\." "foss.")
+            portal-uri    (str protocol "//" portal-host)
+            logged-out-ev (logged-out {:redirect-uri portal-uri})]
         (->> (rx/interval 500)
              (rx/take 1)
              (rx/mapcat (fn [_]
