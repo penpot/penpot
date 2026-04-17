@@ -507,14 +507,15 @@
 
        (when (some? template)
          [:> import-entry* {:entry (assoc template :status status)
-                            :can-be-deleted false}])]
+                            :can-be-deleted false}])
 
-      [:div {:class (stl/css :modal-footer)}
        (when (= :import-progress status)
-         [:div {:class (stl/css :footer-status)
+         [:div {:class (stl/css :status-message)
                 :role "status"
                 :aria-live "polite"}
-          (tr "labels.importing-files")])
+          (tr "labels.uploading-file")])]
+
+      [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
         (when (= :analyze status)
           [:input {:class (stl/css :cancel-button)
@@ -530,8 +531,10 @@
                    :on-click on-continue}])
 
         (when (or (= :import-success status)
-                  (= :import-error status))
+                  (= :import-error status)
+                  (= :import-progress status))
           [:input {:class (stl/css :accept-btn)
                    :type "button"
                    :value (tr "labels.accept")
+                   :disabled (= :import-progress status)
                    :on-click on-accept}])]]]]))

@@ -2805,12 +2805,12 @@ msgid "labels.loading"
 msgstr "Loading…"
 
 #: src/app/main/ui/dashboard/import.cljs
-msgid "labels.importing-files"
-msgstr "Importing files…"
+msgid "labels.uploading-file"
+msgstr "Uploading file…"
 
 #: src/app/main/ui/exports/files.cljs
-msgid "labels.exporting-files"
-msgstr "Exporting files…"
+msgid "labels.downloading-file"
+msgstr "Downloading file…"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:210
 msgid "labels.lock"

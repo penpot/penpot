@@ -178,14 +178,15 @@
           [:*
            [:div {:class (stl/css :modal-content)}
             (for [file (:files state)]
-              [:> export-entry* {:file file :key (dm/str (:id file))}])]
+              [:> export-entry* {:file file :key (dm/str (:id file))}])
 
-           [:div {:class (stl/css :modal-footer)}
             (when in-progress?
-              [:div {:class (stl/css :footer-status)
+              [:div {:class (stl/css :status-message)
                      :role "status"
                      :aria-live "polite"}
-               (tr "labels.exporting-files")])
+               (tr "labels.downloading-file")])]
+
+           [:div {:class (stl/css :modal-footer)}
             [:div {:class (stl/css :action-buttons)}
              [:input {:class (stl/css :accept-btn)
                       :type "button"

@@ -183,11 +183,11 @@
   }
 }
 
-.footer-status {
+.status-message {
   @include deprecated.bodySmallTypography;
 
   color: var(--modal-title-foreground-color);
-  margin-block-end: deprecated.$s-16;
+  font-style: italic;
 }
 
 .action-buttons {
