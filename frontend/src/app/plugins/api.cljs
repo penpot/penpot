@@ -54,7 +54,8 @@
    [app.util.object :as obj]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
 
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
@@ -554,7 +555,11 @@
             new-window (if (boolean? new-window) new-window false)]
         (if (nil? id)
           (u/not-valid plugin-id :openPage "Expected a Page object or a page UUID string")
-          (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
+          (st/emit! (ptk/reify ::open-page-context
+                      ptk/UpdateEvent
+                      (update [_ state]
+                        (assoc state :current-page-id id)))
+                    (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
 
     :alignHorizontal
     (fn [shapes direction]

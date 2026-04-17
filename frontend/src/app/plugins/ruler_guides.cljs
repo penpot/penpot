@@ -23,78 +23,87 @@
   (obj/type-of? p "RulerGuideProxy"))
 
 (defn ruler-guide-proxy
-  [plugin-id file-id page-id id]
-  (obj/reify {:name "RulerGuideProxy"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$file {:enumerable false :get (constantly file-id)}
-    :$page {:enumerable false :get (constantly page-id)}
-    :$id {:enumerable false :get (constantly id)}
+  ([plugin-id file-id page-id id]
+   (ruler-guide-proxy plugin-id file-id page-id id nil))
+  ([plugin-id file-id page-id id initial-guide]
+   (obj/reify {:name "RulerGuideProxy"}
+     :$plugin {:enumerable false :get (constantly plugin-id)}
+     :$file {:enumerable false :get (constantly file-id)}
+     :$page {:enumerable false :get (constantly page-id)}
+     :$id {:enumerable false :get (constantly id)}
 
-    :board
-    {:this true
-     :enumerable false
-     :get
-     (fn [self]
-       (let [board-id (-> self u/proxy->ruler-guide :frame-id)]
-         (when board-id
-           (shape-proxy plugin-id file-id page-id board-id))))
+     :board
+     {:this true
+      :enumerable false
+      :get
+      (fn [self]
+        (let [guide (u/proxy->ruler-guide self)
+              board-id (if (some? guide)
+                         (:frame-id guide)
+                         (:frame-id initial-guide))]
+          (when board-id
+            (shape-proxy plugin-id file-id page-id board-id))))
 
-     :set
-     (fn [self value]
-       (let [shape (u/locate-shape file-id page-id (obj/get value "$id"))]
-         (cond
-           (not (shape-proxy? value))
-           (u/not-valid plugin-id :board "The board is not a shape proxy")
+      :set
+      (fn [self value]
+        (let [shape (u/locate-shape file-id page-id (obj/get value "$id"))]
+          (cond
+            (not (shape-proxy? value))
+            (u/not-valid plugin-id :board "The board is not a shape proxy")
 
-           (not (cfh/frame-shape? shape))
-           (u/not-valid plugin-id :board "The shape is not a board")
+            (not (cfh/frame-shape? shape))
+            (u/not-valid plugin-id :board "The shape is not a board")
 
-           (not (r/check-permission plugin-id "content:write"))
-           (u/not-valid plugin-id :board "Plugin doesn't have 'content:write' permission")
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :board "Plugin doesn't have 'content:write' permission")
 
-           :else
-           (let [board-id (when value (obj/get value "$id"))
-                 guide    (-> self u/proxy->ruler-guide)]
-             (st/emit! (dwgu/update-guides (assoc guide :frame-id board-id)))))))}
+            :else
+            (let [board-id (when value (obj/get value "$id"))
+                  guide    (-> self u/proxy->ruler-guide)]
+              (st/emit! (dwgu/update-guides (assoc guide :frame-id board-id)))))))}
 
-    :orientation
-    {:this true
-     :get #(-> % u/proxy->ruler-guide :axis format/axis->orientation)}
+     :orientation
+     {:this true
+      :get (fn [self]
+             (let [guide (u/proxy->ruler-guide self)]
+               (if (some? guide)
+                 (-> guide :axis format/axis->orientation)
+                 (-> initial-guide :axis format/axis->orientation))))}
 
-    :position
-    {:this true
-     :get
-     (fn [self]
-       (let [guide (u/proxy->ruler-guide self)]
-         (if (:frame-id guide)
-           (let [objects   (u/locate-objects file-id page-id)
-                 board-pos (dm/get-in objects [(:frame-id guide) (:axis guide)])
-                 position  (:position guide)]
-             (- position board-pos))
+     :position
+     {:this true
+      :get
+      (fn [self]
+        (let [guide (u/proxy->ruler-guide self)]
+          (if (some? guide)
+            (if (:frame-id guide)
+              (let [objects   (u/locate-objects file-id page-id)
+                    board-pos (dm/get-in objects [(:frame-id guide) (:axis guide)])
+                    position  (:position guide)]
+                (- position board-pos))
+              (:position guide))
+            (:position initial-guide))))
+      :set
+      (fn [self value]
+        (cond
+          (not (sm/valid-safe-number? value))
+          (u/not-valid plugin-id :position "Not valid position")
 
-           ;; No frame
-           (:position guide))))
-     :set
-     (fn [self value]
-       (cond
-         (not (sm/valid-safe-number? value))
-         (u/not-valid plugin-id :position "Not valid position")
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :position "Plugin doesn't have 'content:write' permission")
 
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :position "Plugin doesn't have 'content:write' permission")
+          :else
+          (let [guide (u/proxy->ruler-guide self)
+                position
+                (if (:frame-id guide)
+                  (let [objects   (u/locate-objects file-id page-id)
+                        board-pos (dm/get-in objects [(:frame-id guide) (:axis guide)])]
+                    (+ board-pos value))
 
-         :else
-         (let [guide (u/proxy->ruler-guide self)
-               position
-               (if (:frame-id guide)
-                 (let [objects   (u/locate-objects file-id page-id)
-                       board-pos (dm/get-in objects [(:frame-id guide) (:axis guide)])]
-                   (+ board-pos value))
+                  value)]
+            (st/emit! (dwgu/update-guides (assoc guide :position position))))))}
 
-                 value)]
-           (st/emit! (dwgu/update-guides (assoc guide :position position))))))}
-
-    :remove
-    (fn []
-      (let [guide (u/locate-ruler-guide file-id page-id id)]
-        (st/emit! (dwgu/remove-guide guide))))))
+     :remove
+     (fn []
+       (let [guide (u/locate-ruler-guide file-id page-id id)]
+         (st/emit! (dwgu/remove-guide guide)))))))
