@@ -44,15 +44,10 @@
 }
 
 .footer-status {
-  display: flex;
-  align-items: center;
-  gap: deprecated.$s-8;
-  color: var(--modal-text-foreground-color);
-  margin-block-end: deprecated.$s-16;
-}
-
-.footer-status-label {
   @include deprecated.bodySmallTypography;
+
+  color: var(--modal-title-foreground-color);
+  margin-block-end: deprecated.$s-16;
 }
 
 .action-buttons {

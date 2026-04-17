@@ -185,9 +185,7 @@
               [:div {:class (stl/css :footer-status)
                      :role "status"
                      :aria-live "polite"}
-               [:> loader* {:width 16 :title (tr "labels.exporting-files")}]
-               [:span {:class (stl/css :footer-status-label)}
-                (tr "labels.exporting-files")]])
+               (tr "labels.exporting-files")])
             [:div {:class (stl/css :action-buttons)}
              [:input {:class (stl/css :accept-btn)
                       :type "button"
