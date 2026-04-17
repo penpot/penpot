@@ -1153,6 +1153,18 @@ msgstr "Select an organization"
 msgid "dashboard.select-org-modal.accept"
 msgstr "ADD TO ORGANIZATION"
 
+msgid "dashboard.change-org-modal.title"
+msgstr "CHANGE TEAM'S ORGANIZATION"
+
+msgid "dashboard.change-org-modal.choose"
+msgstr "Move to:"
+
+msgid "dashboard.change-org-modal.select"
+msgstr "Select an organization"
+
+msgid "dashboard.change-org-modal.accept"
+msgstr "MOVE TEAM"
+
 msgid "dashboard.team-organization.change"
 msgstr "Change team organization"
 
