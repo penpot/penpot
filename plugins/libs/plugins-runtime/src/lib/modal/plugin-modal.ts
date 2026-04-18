@@ -52,6 +52,8 @@ export class PluginModalElement extends HTMLElement {
     const title = this.getAttribute('title');
     const iframeSrc = this.getAttribute('iframe-src');
     const allowDownloads = this.getAttribute('allow-downloads') || false;
+    const allowClipboardRead = this.getAttribute('allow-clipboard-read') || false;
+    const allowClipboardWrite = this.getAttribute('allow-clipboard-write') || false;
 
     if (!title || !iframeSrc) {
       throw new Error('title and iframe-src attributes are required');
@@ -95,7 +97,12 @@ export class PluginModalElement extends HTMLElement {
 
     const iframe = document.createElement('iframe');
     iframe.src = iframeSrc;
-    iframe.allow = '';
+
+    const allowList: string[] = [];
+    if (allowClipboardRead) allowList.push('clipboard-read');
+    if (allowClipboardWrite) allowList.push('clipboard-write');
+    iframe.allow = allowList.join('; ');
+
     iframe.sandbox.add(
       'allow-scripts',
       'allow-forms',

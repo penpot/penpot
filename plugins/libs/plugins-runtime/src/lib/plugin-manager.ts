@@ -27,6 +27,14 @@ export async function createPluginManager(
     (s) => s === 'allow:downloads',
   );
 
+  const allowClipboardRead = !!manifest.permissions.find(
+    (s) => s === 'clipboard:read',
+  );
+
+  const allowClipboardWrite = !!manifest.permissions.find(
+    (s) => s === 'clipboard:write',
+  );
+
   const themeChangeId = context.addListener('themechange', (theme: Theme) => {
     modal?.setTheme(theme);
   });
@@ -91,7 +99,7 @@ export async function createPluginManager(
       return;
     }
 
-    modal = openUIApi(name, modalUrl, theme, options, allowDownloads);
+    modal = openUIApi(name, modalUrl, theme, options, allowDownloads, allowClipboardRead, allowClipboardWrite);
 
     modal.setTheme(theme);
 

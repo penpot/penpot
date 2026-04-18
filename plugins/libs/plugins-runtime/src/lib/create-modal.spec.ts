@@ -104,4 +104,31 @@ describe('createModal', () => {
     expect(modal.wrapper.style.width).toEqual('200px');
     expect(modal.wrapper.style.height).toEqual('200px');
   });
+
+  it('should set allow-clipboard-read attribute when allowClipboardRead is true', () => {
+    const theme: Theme = 'light';
+
+    createModal('Test Modal', 'https://example.com', theme, undefined, false, true, false);
+
+    expect(modalMock.setAttribute).toHaveBeenCalledWith('allow-clipboard-read', 'true');
+    expect(modalMock.setAttribute).not.toHaveBeenCalledWith('allow-clipboard-write', 'true');
+  });
+
+  it('should set allow-clipboard-write attribute when allowClipboardWrite is true', () => {
+    const theme: Theme = 'light';
+
+    createModal('Test Modal', 'https://example.com', theme, undefined, false, false, true);
+
+    expect(modalMock.setAttribute).toHaveBeenCalledWith('allow-clipboard-write', 'true');
+    expect(modalMock.setAttribute).not.toHaveBeenCalledWith('allow-clipboard-read', 'true');
+  });
+
+  it('should set both clipboard attributes when both are true', () => {
+    const theme: Theme = 'light';
+
+    createModal('Test Modal', 'https://example.com', theme, undefined, false, true, true);
+
+    expect(modalMock.setAttribute).toHaveBeenCalledWith('allow-clipboard-read', 'true');
+    expect(modalMock.setAttribute).toHaveBeenCalledWith('allow-clipboard-write', 'true');
+  });
 });

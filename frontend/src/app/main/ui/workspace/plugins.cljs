@@ -302,7 +302,20 @@
      [:div {:class (stl/css :permissions-list-entry)}
       deprecated-icon/oauth-1
       [:p {:class (stl/css :permissions-list-text)}
-       (tr "workspace.plugins.permissions.allow-localstorage")]])])
+       (tr "workspace.plugins.permissions.allow-localstorage")]])
+
+   (cond
+     (contains? permissions "clipboard:write")
+     [:div {:class (stl/css :permissions-list-entry)}
+      deprecated-icon/oauth-1
+      [:p {:class (stl/css :permissions-list-text)}
+       (tr "workspace.plugins.permissions.clipboard-write")]]
+
+     (contains? permissions "clipboard:read")
+     [:div {:class (stl/css :permissions-list-entry)}
+      deprecated-icon/oauth-1
+      [:p {:class (stl/css :permissions-list-text)}
+       (tr "workspace.plugins.permissions.clipboard-read")]])])
 
 (mf/defc plugins-permissions-dialog
   {::mf/register modal/components
