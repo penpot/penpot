@@ -242,6 +242,9 @@
         fonts           (mf/deref fonts/fontsdb)
         font            (get fonts font-id)
 
+        wght-range      (fonts/get-variable-weight-range font)
+        variable?       (some? wght-range)
+
         last-font       (mf/use-ref nil)
 
         open-selector?  (mf/use-state false)
@@ -251,12 +254,15 @@
          (mf/deps on-change fonts)
          (fn [new-font-id]
            (let [{:keys [family] :as font} (get fonts new-font-id)
-                 {:keys [id name weight style]} (fonts/get-default-variant font)]
-             (on-change {:font-id new-font-id
-                         :font-family family
-                         :font-variant-id (or id name)
-                         :font-weight weight
-                         :font-style style})
+                 {:keys [id name weight style]} (fonts/get-default-variant font)
+                 new-wght-range (fonts/get-variable-weight-range font)
+                 base {:font-id new-font-id
+                       :font-family family
+                       :font-variant-id (or id name)
+                       :font-weight weight
+                       :font-style style}]
+             (on-change (assoc base :font-variation-settings
+                               (when new-wght-range (str "'wght' " weight))))
              (mf/set-ref-val! last-font font))))
 
         on-font-size-change
@@ -281,6 +287,17 @@
              ;; so we need to call on-blur manually
              (when (some? on-blur)
                (on-blur)))))
+
+        on-variable-weight-change
+        (mf/use-fn
+         (mf/deps font on-change)
+         (fn [new-weight]
+           (when (some? new-weight)
+             (let [w (str new-weight)]
+               (on-change {:font-id      (:id font)
+                           :font-family  (:family font)
+                           :font-weight  w
+                           :font-variation-settings (str "'wght' " w)})))))
 
         on-font-select
         (mf/use-fn
@@ -348,27 +365,43 @@
 
       [:div {:class (stl/css :font-variant-options)
              :title (tr "inspect.attributes.typography.font-style")}
-       (let [basic-variant-options (->> (:variants font)
-                                        (map (fn [variant]
-                                               {:value (:id variant)
-                                                :key (pr-str variant)
-                                                :label (:name variant)})))
-             variant-options (if (or (= font-variant-id :multiple) (= font-variant-id "mixed"))
-                               (conj basic-variant-options
-                                     {:value ""
-                                      :key :multiple-variants
-                                      :label "--"})
-                               basic-variant-options)
-             font-variant-value (attr->string font-variant-id)
-             font-variant-value (if (= font-variant-value "mixed") "" font-variant-value)]
+       (if variable?
+         ;; Variable font: show a numeric weight input bounded by axis range
+         (let [font-weight (:font-weight values)
+               weight-val  (cond
+                             (= font-weight :multiple) nil
+                             (string? font-weight) (d/parse-integer font-weight (:default wght-range))
+                             :else (:default wght-range))]
+           [:> numeric-input*
+            {:class (stl/css :font-variant-select)
+             :title (tr "inspect.attributes.typography.font-weight")
+             :value weight-val
+             :placeholder (tr "settings.multiple")
+             :min (:min wght-range)
+             :max (:max wght-range)
+             :on-change on-variable-weight-change
+             :on-blur on-blur}])
+         ;; Non-variable font: show the variant dropdown
+         (let [basic-variant-options (->> (:variants font)
+                                          (map (fn [variant]
+                                                 {:value (:id variant)
+                                                  :key (pr-str variant)
+                                                  :label (:name variant)})))
+               variant-options (if (or (= font-variant-id :multiple) (= font-variant-id "mixed"))
+                                 (conj basic-variant-options
+                                       {:value ""
+                                        :key :multiple-variants
+                                        :label "--"})
+                                 basic-variant-options)
+               font-variant-value (attr->string font-variant-id)
+               font-variant-value (if (= font-variant-value "mixed") "" font-variant-value)]
 
-         ;;  TODO Add disabled mode
-         [:& select
-          {:class (stl/css :font-variant-select)
-           :default-value font-variant-value
-           :options variant-options
-           :on-change on-font-variant-change
-           :on-blur on-blur}])]]]))
+           [:& select
+            {:class (stl/css :font-variant-select)
+             :default-value font-variant-value
+             :options variant-options
+             :on-change on-font-variant-change
+             :on-blur on-blur}]))]]]))
 
 (mf/defc spacing-options
   {::mf/wrap-props false}

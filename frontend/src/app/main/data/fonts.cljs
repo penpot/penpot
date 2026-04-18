@@ -98,7 +98,18 @@
   "Given a seq of blobs and the team id, creates a ready-to-use fonts
   map with temporal ID's associated to each font entry."
   [blobs team-id]
-  (letfn [(prepare [{:keys [font type name data] :as params}]
+  (letfn [(extract-fvar-wght-axis [font]
+            ;; Reads fvar table to find the wght axis range for variable fonts
+            (when-let [fvar (-> ^js font .-tables .-fvar)]
+              (when-let [axes (.-axes ^js fvar)]
+                (let [axes-clj (js->clj axes :keywordize-keys true)
+                      wght     (d/seek #(= "wght" (:tag %)) axes-clj)]
+                  (when wght
+                    {:min-weight     (int (:minValue wght))
+                     :max-weight     (int (:maxValue wght))
+                     :default-weight (int (:defaultValue wght))})))))
+
+          (prepare [{:keys [font type name data] :as params}]
             (if font
               ;; Font was parsed with opentype.js (ttf, otf, woff)
               (let [family          (or (.getEnglishName ^js font "preferredFamily")
@@ -133,14 +144,19 @@
                                         (and f-selection (or
                                                           (not= hhea-ascender os2-ascent)
                                                           (not= hhea-descender os2-descent))))
-                    data            (js/Uint8Array. data)]
-                {:content {:data (chunk-array data default-chunk-size)
-                           :name name
-                           :type type}
-                 :font-family (or family "")
-                 :font-weight (cm/parse-font-weight variant)
-                 :font-style  (cm/parse-font-style variant)
-                 :height-warning? height-warning?})
+                    data            (js/Uint8Array. data)
+                    wght-axis       (extract-fvar-wght-axis font)]
+                (cond-> {:content {:data (chunk-array data default-chunk-size)
+                                   :name name
+                                   :type type}
+                         :font-family (or family "")
+                         :font-weight (if wght-axis
+                                        (:default-weight wght-axis)
+                                        (cm/parse-font-weight variant))
+                         :font-style  (cm/parse-font-style variant)
+                         :height-warning? height-warning?}
+                  wght-axis (assoc :min-weight (:min-weight wght-axis)
+                                   :max-weight (:max-weight wght-axis))))
               ;; Font could not be parsed (woff2), extract metadata from filename
               (let [base-name       (str/replace name #"\.[^.]+$" "")
                     ;; Strip known weight/style tokens and separators to derive family name
