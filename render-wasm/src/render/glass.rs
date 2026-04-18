@@ -79,9 +79,7 @@ fn make_blurred_shader(
         temp_canvas.draw_image(image, (0.0, 0.0), Some(&paint));
     }
 
-    let blurred_image = temp_surface.image_snapshot();
-
-    blurred_image.to_shader(
+    temp_surface.image_snapshot().to_shader(
         (skia::TileMode::Clamp, skia::TileMode::Clamp),
         sampling,
         None,
@@ -275,6 +273,49 @@ pub fn render_glass(
     glass: &GlassEffect,
     surface_id: SurfaceId,
 ) {
+    render_glass_with_backdrop(render_state, shape, glass, surface_id, surface_id);
+}
+
+/// Same as `render_glass` but reads the backdrop from `backdrop_id` instead of
+/// `surface_id`. Pass `SurfaceId::Target` for root-level gather shapes so the
+/// refraction samples the world-space continuous surface rather than the tile-
+/// local `Current`, eliminating per-tile seams.
+///
+/// When `backdrop_id != surface_id`, a local-matrix is attached to the backdrop
+/// shader so that sampling at the output surface's fragCoord hits the
+/// geometrically-corresponding pixel on the backdrop surface.
+pub fn render_glass_with_backdrop(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    glass: &GlassEffect,
+    surface_id: SurfaceId,
+    backdrop_id: SurfaceId,
+) {
+    render_glass_with_backdrop_image(
+        render_state,
+        shape,
+        glass,
+        surface_id,
+        backdrop_id,
+        None,
+    );
+}
+
+/// Same as `render_glass_with_backdrop`, but the caller may supply a
+/// pre-fetched backdrop snapshot via `backdrop_image`. When `Some(image)` is
+/// passed, that image is used as the backdrop INSTEAD of a fresh
+/// `snapshot(backdrop_id)`. This is how the band-aware tile scheduler shares
+/// one per-gather-shape snapshot across all of that shape's tiles so every
+/// peer sees the same frozen Target state (and a gather's own finalized
+/// output never leaks into a peer's backdrop sample).
+pub fn render_glass_with_backdrop_image(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    glass: &GlassEffect,
+    surface_id: SurfaceId,
+    backdrop_id: SurfaceId,
+    backdrop_image: Option<skia::Image>,
+) {
     if glass.hidden {
         return;
     }
@@ -324,15 +365,58 @@ pub fn render_glass(
     };
 
     // ── Snapshot backdrop ───────────────────────────────────────────────
-    let backdrop = render_state.surfaces.snapshot(surface_id);
-    let iw = backdrop.width();
-    let ih = backdrop.height();
+    // Output surface (`surface_id`) is what drives the displacement/refraction
+    // resolution. Backdrop may be a different surface (e.g. Target for root).
+    let output_surf_w;
+    let output_surf_h;
+    {
+        let output_surf = render_state.surfaces.get_mut(surface_id);
+        output_surf_w = output_surf.width();
+        output_surf_h = output_surf.height();
+    }
+    let iw = output_surf_w;
+    let ih = output_surf_h;
+
+    // Use the caller-provided backdrop snapshot if present; otherwise fall
+    // back to snapshotting the named surface on demand (legacy behavior).
+    let backdrop = backdrop_image
+        .unwrap_or_else(|| render_state.surfaces.snapshot(backdrop_id));
+
+    // When the backdrop and output surfaces differ, the backdrop has its own
+    // coordinate system. We want `shader.eval(output_px) == image.sample(
+    // output_px + offset)` so each Current pixel reads the correct Target
+    // pixel.
+    //
+    // Skia convention: `localMatrix` maps shader-local space → canvas space,
+    // so it is applied INVERSELY when sampling. Intuition: drawing an image
+    // with `localMatrix = translate(tx, ty)` makes the image *appear at*
+    // canvas position (tx, ty), which means `shader.eval(p) = image.sample(
+    // p − (tx, ty))`.
+    //
+    // Therefore to get `sample(p + offset)` we must pass `translate(−offset)`.
+    let backdrop_local_matrix = if backdrop_id == surface_id {
+        None
+    } else {
+        // Convert the world-space `render_area` top-left into backdrop pixels.
+        // Only `SurfaceId::Target` is currently supported as an alternate
+        // backdrop; its origin is the viewport top-left in device pixels.
+        let margins = render_state.surfaces.margins();
+        let viewbox = render_state.viewbox;
+        let offset_x = -(margins.width as f32)
+            + (render_state.render_area.left - viewbox.area.left) * scale;
+        let offset_y = -(margins.height as f32)
+            + (render_state.render_area.top - viewbox.area.top) * scale;
+
+        // Negated: Skia's localMatrix is applied INVERSELY at sampling time
+        // (see the block comment above).
+        Some(skia::Matrix::translate((-offset_x, -offset_y)))
+    };
 
     // Original (unblurred) source shader — always needed for passthrough
     let original_shader = match backdrop.to_shader(
         (skia::TileMode::Clamp, skia::TileMode::Clamp),
         sampling,
-        None,
+        backdrop_local_matrix.as_ref(),
     ) {
         Some(s) => s,
         None => return,
@@ -372,16 +456,21 @@ pub fn render_glass(
     // total_blur_sigma() already returns sigma — no radius_to_sigma conversion.
     let total_sigma = glass.total_blur_sigma() * scale;
     let blurred_shader = if total_sigma > 0.5 {
-        make_blurred_shader(&mut render_state.gpu_state, &refracted_image, total_sigma, sampling)
-            .unwrap_or_else(|| {
-                refracted_image
-                    .to_shader(
-                        (skia::TileMode::Clamp, skia::TileMode::Clamp),
-                        sampling,
-                        None,
-                    )
-                    .unwrap_or_else(|| original_shader.clone())
-            })
+        make_blurred_shader(
+            &mut render_state.gpu_state,
+            &refracted_image,
+            total_sigma,
+            sampling,
+        )
+        .unwrap_or_else(|| {
+            refracted_image
+                .to_shader(
+                    (skia::TileMode::Clamp, skia::TileMode::Clamp),
+                    sampling,
+                    None,
+                )
+                .unwrap_or_else(|| original_shader.clone())
+        })
     } else {
         match refracted_image.to_shader(
             (skia::TileMode::Clamp, skia::TileMode::Clamp),
@@ -459,4 +548,5 @@ pub fn render_glass(
     canvas.draw_paint(&paint);
 
     canvas.restore();
+
 }

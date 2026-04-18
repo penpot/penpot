@@ -1,6 +1,7 @@
 use crate::error::{Error, Result};
 use crate::performance;
 use crate::shapes::Shape;
+use crate::uuid::Uuid;
 
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
@@ -57,6 +58,22 @@ pub struct Surfaces {
     export: skia::Surface,
 
     tiles: TileTextureCache,
+    /// Transient per-frame cache used by the band-aware tile scheduler to
+    /// carry `Current` state across visits of the same tile. Only populated
+    /// for tiles whose paint order is split by a gather barrier; tiles with
+    /// a single band never touch this map. Dropped per-tile on the tile's
+    /// last-band visit and cleared at the end of each `run_schedule`.
+    interband_cache: HashMap<Tile, skia::Image>,
+
+    /// Transient per-frame cache mapping a gather shape's id to ONE Target
+    /// snapshot taken before the gather renders any of its tiles. All of
+    /// that gather's tiles read this same snapshot as their backdrop instead
+    /// of taking a fresh `image_snapshot(Target)` each — which is both
+    /// cheaper (1 snapshot per gather vs. 1 per tile) AND eliminates the
+    /// peer-sampling artifact where tile (A)'s glass output leaks into
+    /// tile (B)'s backdrop because both write to and read from live Target.
+    /// Cleared at the end of each `run_schedule`.
+    glass_backdrop_cache: HashMap<Uuid, skia::Image>,
     sampling_options: skia::SamplingOptions,
     pub margins: skia::ISize,
     // Tracks which surfaces have content (dirty flag bitmask)
@@ -115,6 +132,8 @@ impl Surfaces {
             debug,
             export,
             tiles,
+            interband_cache: HashMap::new(),
+            glass_backdrop_cache: HashMap::new(),
             sampling_options,
             margins,
             dirty_surfaces: 0,
@@ -583,6 +602,99 @@ impl Surfaces {
                 .canvas()
                 .draw_image_rect(&image, None, rect, &skia::Paint::default());
         }
+    }
+
+    /// Snapshot the content region of `Current` (margins excluded) into a
+    /// transient per-tile cache used by the band-aware scheduler to carry
+    /// Current state across visits of the same tile. Called at the end of a
+    /// non-last band visit; matched by a later `restore_current_from_interband`
+    /// when the same tile's next band runs.
+    pub fn snapshot_current_for_interband(&mut self, tile: Tile) {
+        let rect = IRect::from_xywh(
+            self.margins.width,
+            self.margins.height,
+            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
+            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
+        );
+        if let Some(image) = self.current.image_snapshot_with_bounds(rect) {
+            self.interband_cache.insert(tile, image);
+        }
+    }
+
+    /// Restore a tile's Current state from the inter-band cache. Draws the
+    /// snapshot image into `Current` at the content-region origin (margins
+    /// offset). Returns true if a snapshot was present and restored.
+    pub fn restore_current_from_interband(&mut self, tile: Tile) -> bool {
+        let Some(image) = self.interband_cache.get(&tile) else {
+            return false;
+        };
+        let origin = skia::Point::new(
+            self.margins.width as f32,
+            self.margins.height as f32,
+        );
+        self.current
+            .canvas()
+            .draw_image(image, origin, Some(&skia::Paint::default()));
+        true
+    }
+
+    /// Drop the inter-band snapshot for a tile — called after that tile's
+    /// last-band visit so the image doesn't linger until end-of-frame.
+    pub fn drop_interband(&mut self, tile: Tile) {
+        self.interband_cache.remove(&tile);
+    }
+
+    /// Clear the inter-band cache entirely — called at the end of each
+    /// `run_schedule` so snapshots don't leak across frames.
+    pub fn clear_interband_cache(&mut self) {
+        self.interband_cache.clear();
+    }
+
+    /// Get the backdrop snapshot for a gather shape, taking it from the
+    /// given source surface on first access and caching it by shape id.
+    /// All subsequent tiles of the same gather shape reuse this snapshot
+    /// — all peers see the same frozen backdrop state, avoiding the
+    /// tile-order dependence where whichever peer finalizes first has its
+    /// glass output leak into the other peers' sample.
+    pub fn get_or_snapshot_glass_backdrop(
+        &mut self,
+        shape_id: Uuid,
+        source: SurfaceId,
+    ) -> skia::Image {
+        if let Some(image) = self.glass_backdrop_cache.get(&shape_id) {
+            return image.clone();
+        }
+        let image = self.get_mut(source).image_snapshot();
+        self.glass_backdrop_cache.insert(shape_id, image.clone());
+        image
+    }
+
+    /// Clear the per-gather backdrop cache — called at the end of each
+    /// `run_schedule` so snapshots don't leak across frames.
+    pub fn clear_glass_backdrop_cache(&mut self) {
+        self.glass_backdrop_cache.clear();
+    }
+
+    /// Composite the content region of `Current` (excluding margins) onto
+    /// Target at `tile_rect`, without caching. Intended for mid-render partial
+    /// flushes (e.g. the pre-glass flush in run_schedule) that will be
+    /// superseded by a later `apply_render_to_final_canvas`.
+    pub fn composite_current_to_target(&mut self, tile_rect: skia::Rect, bg_color: skia::Color) {
+        let content_rect = IRect::from_xywh(
+            self.margins.width,
+            self.margins.height,
+            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
+            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
+        );
+        let Some(tile_image) = self.current.image_snapshot_with_bounds(content_rect) else {
+            return;
+        };
+        let mut paint = skia::Paint::default();
+        paint.set_color(bg_color);
+        self.target.canvas().draw_rect(tile_rect, &paint);
+        self.target
+            .canvas()
+            .draw_image_rect(&tile_image, None, tile_rect, &skia::Paint::default());
     }
 
     /// Draws the current tile directly to the target and cache surfaces without

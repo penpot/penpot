@@ -22,7 +22,6 @@ use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
 
-
 // ── Data structures ─────────────────────────────────────────────────────
 
 /// Per-shape metadata stored inline in the spatial index.
@@ -31,14 +30,80 @@ use crate::wapi;
 pub struct ShapeEntry {
     pub id: Uuid,
     pub z_index: i32,
+    /// Depth-first paint rank (bottom-first), populated during TileGrid::rebuild
+    /// or update_touched via renumber_paint_order. Entries constructed outside
+    /// those passes use 0 as a placeholder and get corrected on the next
+    /// renumber, which always runs before build_dependency_graph.
+    pub paint_order: u32,
     pub has_gather: bool,
+}
+
+/// A contiguous run of shapes within one tile, bounded by that tile's
+/// gather-barrier paint orders. Populated by `compute_bands`.
+#[derive(Debug, Clone)]
+pub struct Band {
+    /// Shape ids in paint order (ascending).
+    pub shapes: Vec<Uuid>,
+    /// Lowest `paint_order` among entries in this band.
+    pub min_paint_order: u32,
+    /// Highest `paint_order` among entries in this band.
+    pub max_paint_order: u32,
+    /// The gather at the head of the band, if this band starts at a barrier.
+    pub gather_at_head: Option<Uuid>,
+}
+
+/// Scheduler node: a specific band within a specific tile. `band_index` is
+/// T-local and packed — 0, 1, 2, … per tile — no cross-tile meaning.
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
+pub struct BandKey {
+    pub tile: Tile,
+    pub band_index: u32,
+}
+
+impl BandKey {
+    fn new(tile: Tile, band_index: u32) -> Self {
+        Self { tile, band_index }
+    }
+}
+
+/// How a band is finalized when its shape steps end. Pre-computed at
+/// schedule-build time so `run_schedule` never has to infer state at
+/// yield/resume boundaries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FinalizeKind {
+    /// Non-last band of a multi-band tile. Push this band's Current content
+    /// to Target (so later peer gather bands can sample it) and snapshot
+    /// Current into the interband cache so this tile's next band can
+    /// restore it.
+    Intermediate,
+    /// Tile's last band, and the band had shapes to render. Apply Current
+    /// to the final canvas and drop the interband cache entry.
+    LastContent,
+    /// Tile's last band, no shapes in the band (synthetic empty-tile bg
+    /// clear). Draw bg directly on Target — faster than touching Current.
+    LastBg,
 }
 
 /// A single step in the pre-computed render schedule.
 #[derive(Debug, Clone)]
 pub enum RenderStep {
-    /// Switch to rendering a new tile.
-    SetTile(Tile),
+    /// Begin rendering a band: set up the tile context, and either clear
+    /// Current (is_first) or restore Current from the interband cache
+    /// (non-first band). `is_last` is retained for tests/debug only —
+    /// finalize semantics live in the paired `FinalizeBand` step.
+    SetTileBand {
+        tile: Tile,
+        band_index: u32,
+        is_first: bool,
+        is_last: bool,
+    },
+    /// Finalize the band that `SetTileBand` opened. The `kind` is
+    /// determined at build time so a yield between Render and
+    /// FinalizeBand cannot corrupt the finalize path.
+    FinalizeBand {
+        tile: Tile,
+        kind: FinalizeKind,
+    },
     /// Enter a container (Frame/Group): save_layer, clip, transform.
     Enter(Uuid),
     /// Render a shape: fills, strokes, shadows, glass, etc.
@@ -50,27 +115,28 @@ pub enum RenderStep {
 /// Entry in the priority queue for Kahn's algorithm.
 /// Lower priority value = renders first.
 #[derive(Eq, PartialEq)]
-struct TilePriority {
-    tile: Tile,
-    /// Priority group: 0 = visible+cached, 1 = visible+uncached,
-    /// 2 = interest+cached, 3 = interest+uncached
+struct BandPriority {
+    key: BandKey,
+    /// Priority group: 0 = visible, 1 = interest-only.
     group: u8,
-    /// Position in the spiral (lower = closer to center)
+    /// Spiral position of `key.tile` (lower = closer to center).
     spiral_index: usize,
 }
 
-impl Ord for TilePriority {
+impl Ord for BandPriority {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        // BinaryHeap is a max-heap, so reverse the ordering:
-        // we want lowest group first, then lowest spiral_index
+        // BinaryHeap is a max-heap, so reverse: lowest group wins, then lowest
+        // spiral_index, then lowest band_index so earlier bands on a tile
+        // precede later ones when both are ready.
         other
             .group
             .cmp(&self.group)
             .then(other.spiral_index.cmp(&self.spiral_index))
+            .then(other.key.band_index.cmp(&self.key.band_index))
     }
 }
 
-impl PartialOrd for TilePriority {
+impl PartialOrd for BandPriority {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
@@ -85,6 +151,11 @@ pub struct TileGrid {
     /// Shape → tiles it occupies.
     index: HashMap<Uuid, HashSet<Tile>>,
 
+    // ── Band model (populated per rebuild by `compute_bands`) ────────
+    /// Tile → packed list of bands (band_index 0, 1, 2, …). Empty vec or
+    /// missing key means the tile has no shapes in the interest rect.
+    bands: HashMap<Tile, Vec<Band>>,
+
     // ── Render schedule ──────────────────────────────────────────────
     /// Pre-computed flat render schedule. Index 0 executes first.
     schedule: Vec<RenderStep>,
@@ -92,11 +163,28 @@ pub struct TileGrid {
     cursor: usize,
 }
 
+/// Children of `shape` in paint order (bottom-first), honouring flex/grid
+/// `order` overrides. Mirrors `render::sort_z_index` but returns bottom-first
+/// so a depth-first counter walks shapes in paint sequence.
+fn paint_order_children(shape: &Shape, tree: ShapesPoolRef) -> Vec<Uuid> {
+    let mut ids = shape.children_ids(false);
+    ids.reverse(); // children_ids is topmost-first → flip to bottom-first
+    if shape.has_layout() {
+        ids.sort_by(|a, b| {
+            let za = tree.get(a).map(|s| s.z_index()).unwrap_or(0);
+            let zb = tree.get(b).map(|s| s.z_index()).unwrap_or(0);
+            za.cmp(&zb) // ascending = bottom-first
+        });
+    }
+    ids
+}
+
 impl TileGrid {
     pub fn new() -> Self {
         TileGrid {
             grid: HashMap::new(),
             index: HashMap::new(),
+            bands: HashMap::new(),
             schedule: Vec::new(),
             cursor: 0,
         }
@@ -115,9 +203,9 @@ impl TileGrid {
     pub fn add_shape_at(&mut self, tile: Tile, entry: ShapeEntry) {
         let id = entry.id;
         let entries = self.grid.entry(tile).or_default();
-        // Insert in z-sorted position
+        // Insert in paint-order-sorted position.
         let pos = entries
-            .binary_search_by(|e| e.z_index.cmp(&entry.z_index))
+            .binary_search_by(|e| e.paint_order.cmp(&entry.paint_order))
             .unwrap_or_else(|p| p);
         entries.insert(pos, entry);
 
@@ -136,6 +224,7 @@ impl TileGrid {
     pub fn invalidate(&mut self) {
         self.grid.clear();
         self.index.clear();
+        self.bands.clear();
         self.schedule.clear();
         self.cursor = 0;
     }
@@ -156,10 +245,11 @@ impl TileGrid {
         }
     }
 
-    /// Skip forward to the next SetTile step (used when current tile is cached).
+    /// Skip forward to the next SetTileBand step (used when the current
+    /// tile's band is cached).
     pub fn skip_to_next_tile(&mut self) {
         while self.cursor < self.schedule.len() {
-            if matches!(self.schedule[self.cursor], RenderStep::SetTile(_)) {
+            if matches!(self.schedule[self.cursor], RenderStep::SetTileBand { .. }) {
                 break;
             }
             self.cursor += 1;
@@ -186,36 +276,49 @@ impl TileGrid {
 
         self.grid.clear();
         self.index.clear();
+        self.bands.clear();
         self.schedule.clear();
         self.cursor = 0;
 
         let tile_size = tiles::get_tile_size(scale);
         let interest_rect = &tile_viewbox.interest_rect;
 
-        // Step 1: Walk shape tree, assign shapes to tiles
+        // Step 1: Walk shape tree, assign shapes to tiles (and assign paint_order).
         let root_id = Uuid::nil();
+        let mut paint_counter: u32 = 0;
         if let Some(root) = tree.get(&root_id) {
-            let root_children = root.children_ids(false);
-            for child_id in root_children.iter() {
-                self.index_shape_recursive(*child_id, tree, tile_size, interest_rect, scale);
+            for child_id in paint_order_children(root, tree) {
+                self.index_shape_recursive(
+                    child_id,
+                    tree,
+                    tile_size,
+                    interest_rect,
+                    scale,
+                    &mut paint_counter,
+                );
             }
+        } else {
         }
 
         // Step 2: Generate spiral
         let spiral = Self::generate_spiral(interest_rect);
 
-        // Step 3: Build dependency graph from gather effects
+        // Step 3: Compute bands per tile (barriers = paint_orders of gathers
+        // whose sample regions reach this tile, plus the tile's own gathers).
+        self.compute_bands(tree, tile_size, interest_rect, scale);
+
+        // Step 4: Build dependency graph over BandKeys
         let deps = self.build_dependency_graph(tree, tile_size, interest_rect, scale);
 
-        // Step 4: Topological sort with priority
-        let sorted_tiles = self.topological_sort(
+        // Step 5: Topological sort with priority
+        let sorted_bands = self.topological_sort(
             &spiral,
             &deps,
             tile_viewbox,
         );
 
-        // Step 5: Flatten into render schedule
-        self.build_schedule(&sorted_tiles, tree, tile_size, scale);
+        // Step 6: Flatten into render schedule
+        self.build_schedule(&sorted_bands, tree, scale);
 
         performance::end_measure!("tile_grid_rebuild");
     }
@@ -266,6 +369,10 @@ impl TileGrid {
                                     ShapeEntry {
                                         id,
                                         z_index,
+                                        // paint_order corrected below by
+                                        // renumber_paint_order before the dep
+                                        // graph runs — placeholder is fine.
+                                        paint_order: 0,
                                         has_gather,
                                     },
                                 );
@@ -277,11 +384,18 @@ impl TileGrid {
             }
         }
 
+        // Renumber paint_order across every entry so the dep-graph filter has
+        // globally-consistent values (incremental updates above left most
+        // entries with stale indices).
+        self.renumber_paint_order(tree);
+
         // Rebuild schedule with updated index
+        self.bands.clear();
+        self.compute_bands(tree, tile_size, interest_rect, scale);
         let spiral = Self::generate_spiral(interest_rect);
         let deps = self.build_dependency_graph(tree, tile_size, interest_rect, scale);
-        let sorted_tiles = self.topological_sort(&spiral, &deps, tile_viewbox);
-        self.build_schedule(&sorted_tiles, tree, tile_size, scale);
+        let sorted_bands = self.topological_sort(&spiral, &deps, tile_viewbox);
+        self.build_schedule(&sorted_bands, tree, scale);
 
         affected_tiles
     }
@@ -310,6 +424,7 @@ impl TileGrid {
         tile_size: f32,
         interest_rect: &TileRect,
         scale: f32,
+        paint_counter: &mut u32,
     ) {
         let Some(shape) = tree.get(&shape_id) else {
             return;
@@ -318,6 +433,9 @@ impl TileGrid {
         if shape.hidden {
             return;
         }
+
+        let paint_order = *paint_counter;
+        *paint_counter += 1;
 
         let has_gather = Self::shape_has_gather(shape);
         let z_index = shape.z_index();
@@ -339,6 +457,7 @@ impl TileGrid {
                         ShapeEntry {
                             id: shape_id,
                             z_index,
+                            paint_order,
                             has_gather,
                         },
                     );
@@ -346,64 +465,279 @@ impl TileGrid {
             }
         }
 
-        // Recurse into children
+        // Recurse into children in paint order so paint_order stays consistent
+        // with how the schedule will emit them (bottom-first, flex/grid-aware).
         if shape.is_recursive() {
-            for child_id in shape.children_ids_iter(false) {
-                self.index_shape_recursive(*child_id, tree, tile_size, interest_rect, scale);
+            for child_id in paint_order_children(shape, tree) {
+                self.index_shape_recursive(
+                    child_id,
+                    tree,
+                    tile_size,
+                    interest_rect,
+                    scale,
+                    paint_counter,
+                );
             }
         }
     }
 
-    /// Build dependency graph: for each tile with a gather shape, record which
-    /// other tiles must render first (tiles in the gather's sample region that
-    /// have shapes below the gather in z-order).
+    /// Walk the shape tree depth-first and overwrite every existing
+    /// `ShapeEntry.paint_order` in `self.grid` with a fresh counter. Used by
+    /// incremental updates where new entries were added with a placeholder
+    /// `paint_order: 0` and pre-existing entries carry stale values.
+    fn renumber_paint_order(&mut self, tree: ShapesPoolRef) {
+        let mut counter: u32 = 0;
+        let root_id = Uuid::nil();
+        if let Some(root) = tree.get(&root_id) {
+            for child_id in paint_order_children(root, tree) {
+                self.renumber_recurse(&mut counter, child_id, tree);
+            }
+        }
+    }
+
+    fn renumber_recurse(&mut self, counter: &mut u32, id: Uuid, tree: ShapesPoolRef) {
+        let Some(shape) = tree.get(&id) else {
+            return;
+        };
+        if shape.hidden {
+            return;
+        }
+        let po = *counter;
+        *counter += 1;
+        // Update every ShapeEntry for this shape across the tiles it occupies.
+        if let Some(tiles) = self.index.get(&id).cloned() {
+            for tile in tiles {
+                if let Some(entries) = self.grid.get_mut(&tile) {
+                    for e in entries.iter_mut() {
+                        if e.id == id {
+                            e.paint_order = po;
+                        }
+                    }
+                }
+            }
+        }
+        if shape.is_recursive() {
+            for child in paint_order_children(shape, tree) {
+                self.renumber_recurse(counter, child, tree);
+            }
+        }
+    }
+
+    /// Compute per-tile bands. A band is a contiguous run of shapes (in
+    /// paint-order) bounded by gather-barriers *relevant to that tile*. A
+    /// tile's barriers are the `paint_order` values of every gather G such
+    /// that T is in G's sample region (plus G's own tile, so the gather
+    /// always sits at the head of a band in its home tile). Tiles outside
+    /// every gather's sample region get exactly one band — the hot path
+    /// stays identical to the pre-refactor scheduler.
+    fn compute_bands(
+        &mut self,
+        tree: ShapesPoolRef,
+        tile_size: f32,
+        interest_rect: &TileRect,
+        scale: f32,
+    ) {
+        // Pre-pass: for each gather, push its paint_order into every
+        // sample-region tile's barrier list.
+        let mut barriers: HashMap<Tile, Vec<u32>> = HashMap::new();
+
+        // Collect (gather_tile, shape_id, paint_order) first to avoid
+        // borrowing self.grid twice (compute_gather_sample_rect takes &self).
+        let gathers: Vec<(Tile, Uuid, u32)> = self
+            .grid
+            .iter()
+            .flat_map(|(tile, entries)| {
+                entries.iter().filter(|e| e.has_gather).map(move |e| (*tile, e.id, e.paint_order))
+            })
+            .collect();
+
+        for (gather_tile, shape_id, g_po) in gathers {
+            let Some(shape) = tree.get(&shape_id) else {
+                continue;
+            };
+            let sample_rect = self.compute_gather_sample_rect(shape, tree, scale);
+            let sample_tiles = tiles::get_tiles_for_rect(sample_rect, tile_size);
+
+            let sx1 = sample_tiles.x1().max(interest_rect.x1());
+            let sy1 = sample_tiles.y1().max(interest_rect.y1());
+            let sx2 = sample_tiles.x2().min(interest_rect.x2());
+            let sy2 = sample_tiles.y2().min(interest_rect.y2());
+
+            if sx1 <= sx2 && sy1 <= sy2 {
+                for stx in sx1..=sx2 {
+                    for sty in sy1..=sy2 {
+                        barriers.entry(Tile::from(stx, sty)).or_default().push(g_po);
+                    }
+                }
+            }
+            // Ensure G's own tile carries the barrier even if the sample region
+            // happens not to cover it (compute_gather_sample_rect could in
+            // principle return a rect that excludes the shape's own tile).
+            barriers.entry(gather_tile).or_default().push(g_po);
+        }
+
+        for v in barriers.values_mut() {
+            v.sort();
+            v.dedup();
+        }
+
+        // Per-tile band computation. Each shape falls into a "bucket" =
+        // (number of barriers ≤ its paint_order). Consecutive entries with
+        // the same bucket form a band. A shape whose paint_order equals a
+        // barrier AND is itself a gather gets marked as the band's head.
+        for (tile, entries) in &self.grid {
+            if entries.is_empty() {
+                continue;
+            }
+
+            let empty = Vec::new();
+            let bars = barriers.get(tile).unwrap_or(&empty);
+
+            // Entries are stored paint-order-sorted by add_shape_at; be
+            // defensive and sort anyway (incremental paths can leave gaps).
+            let mut sorted: Vec<&ShapeEntry> = entries.iter().collect();
+            sorted.sort_by_key(|e| e.paint_order);
+
+            let bucket_of = |po: u32| -> usize {
+                // Count of barriers ≤ po (partition_point returns the first
+                // index whose element is > po, which is exactly this count).
+                bars.partition_point(|&b| b <= po)
+            };
+
+            let mut packed: Vec<Band> = Vec::new();
+            let mut current_shapes: Vec<Uuid> = Vec::new();
+            let mut current_min: u32 = u32::MAX;
+            let mut current_max: u32 = 0;
+            let mut current_gather_at_head: Option<Uuid> = None;
+            let mut current_bucket: Option<usize> = None;
+
+            for e in sorted {
+                let bucket = bucket_of(e.paint_order);
+                if current_bucket != Some(bucket) {
+                    // Flush the previous band.
+                    if !current_shapes.is_empty() {
+                        packed.push(Band {
+                            shapes: std::mem::take(&mut current_shapes),
+                            min_paint_order: current_min,
+                            max_paint_order: current_max,
+                            gather_at_head: current_gather_at_head.take(),
+                        });
+                        current_min = u32::MAX;
+                        current_max = 0;
+                    }
+                    current_bucket = Some(bucket);
+                    // Mark as gather head iff this entry's po equals the
+                    // barrier that opens this bucket AND the entry is itself
+                    // a gather. (If two gathers share a paint_order — rare —
+                    // we pick the first one as head; subsequent ones are
+                    // still gathers but treated as regular band members.)
+                    if e.has_gather && bucket > 0 && bars[bucket - 1] == e.paint_order {
+                        current_gather_at_head = Some(e.id);
+                    }
+                }
+                current_shapes.push(e.id);
+                if e.paint_order < current_min {
+                    current_min = e.paint_order;
+                }
+                if e.paint_order > current_max {
+                    current_max = e.paint_order;
+                }
+            }
+            if !current_shapes.is_empty() {
+                packed.push(Band {
+                    shapes: std::mem::take(&mut current_shapes),
+                    min_paint_order: current_min,
+                    max_paint_order: current_max,
+                    gather_at_head: current_gather_at_head.take(),
+                });
+            }
+
+            if !packed.is_empty() {
+                self.bands.insert(*tile, packed);
+            }
+        }
+    }
+
+    /// Build dependency graph: for each band headed by a gather G, record
+    /// which bands must render first — specifically, every band on every
+    /// sample-region tile whose `max_paint_order < G.paint_order`. Because G
+    /// contributes a barrier to each sample-region tile, those tiles' bands
+    /// split cleanly at G's paint_order, so "below-G" bands are a well-
+    /// defined prefix and every dep edge is acyclic by construction.
     fn build_dependency_graph(
         &self,
         tree: ShapesPoolRef,
         tile_size: f32,
         interest_rect: &TileRect,
         scale: f32,
-    ) -> HashMap<Tile, HashSet<Tile>> {
-        let mut deps: HashMap<Tile, HashSet<Tile>> = HashMap::new();
+    ) -> HashMap<BandKey, HashSet<BandKey>> {
+        let mut deps: HashMap<BandKey, HashSet<BandKey>> = HashMap::new();
 
-        for (tile, entries) in &self.grid {
-            for entry in entries {
-                if !entry.has_gather {
+        for (tile, bands) in &self.bands {
+            for (band_idx, band) in bands.iter().enumerate() {
+                let Some(g_id) = band.gather_at_head else {
                     continue;
-                }
-
-                let Some(shape) = tree.get(&entry.id) else {
+                };
+                let g_po = band.min_paint_order; // the gather sits at the head
+                let Some(shape) = tree.get(&g_id) else {
                     continue;
                 };
 
-                // Compute the expanded sample region for this gather effect
                 let sample_rect = self.compute_gather_sample_rect(shape, tree, scale);
                 let sample_tiles = tiles::get_tiles_for_rect(sample_rect, tile_size);
 
-                // Intersect with interest area
                 let sx1 = sample_tiles.x1().max(interest_rect.x1());
                 let sy1 = sample_tiles.y1().max(interest_rect.y1());
                 let sx2 = sample_tiles.x2().min(interest_rect.x2());
                 let sy2 = sample_tiles.y2().min(interest_rect.y2());
 
-                // All tiles in the sample region that contain shapes below
-                // this gather in z-order are dependencies
+                let key = BandKey::new(*tile, band_idx as u32);
+
                 for stx in sx1..=sx2 {
                     for sty in sy1..=sy2 {
-                        let dep_tile = Tile::from(stx, sty);
-                        if dep_tile == *tile {
-                            continue; // don't depend on self
-                        }
-
-                        // Check if this tile has any shapes below the gather's z
-                        if let Some(dep_entries) = self.grid.get(&dep_tile) {
-                            let has_shapes_below = dep_entries
-                                .iter()
-                                .any(|e| e.z_index < entry.z_index);
-                            if has_shapes_below {
-                                deps.entry(*tile).or_default().insert(dep_tile);
+                        let sample_tile = Tile::from(stx, sty);
+                        let Some(sample_bands) = self.bands.get(&sample_tile) else {
+                            continue;
+                        };
+                        for (sidx, sband) in sample_bands.iter().enumerate() {
+                            // Edges point toward strictly-lower paint-order
+                            // bands. Self-band (sample_tile == tile && sidx
+                            // == band_idx) is naturally excluded by the
+                            // `max < g_po` test (the gather sits at the head
+                            // so our own band's max >= g_po).
+                            if sband.max_paint_order < g_po {
+                                deps.entry(key)
+                                    .or_default()
+                                    .insert(BandKey::new(sample_tile, sidx as u32));
                             }
                         }
+                    }
+                }
+
+                // Simpler & strictly stronger backstop: force EVERY
+                // non-gather band strictly below this gather in paint order
+                // to run before it, not just those whose tile lies in the
+                // heuristic sample region. `compute_gather_sample_rect`
+                // underestimates the shader's actual reach (displacement +
+                // blur kernel can extend past the heuristic radius), leaving
+                // tile-sized white holes where below-content tiles weren't
+                // yet on Target when the backdrop snapshot was taken. This
+                // pass closes every such gap at the cost of a few extra deps
+                // — cheap at scheduling, zero extra runtime render work.
+                for (other_tile, other_bands) in &self.bands {
+                    for (sidx, sband) in other_bands.iter().enumerate() {
+                        if sband.gather_at_head.is_some() {
+                            continue; // other gather-headed band — unchanged
+                        }
+                        if sband.max_paint_order >= g_po {
+                            continue; // not strictly below this gather
+                        }
+                        if other_tile == tile && sidx == band_idx {
+                            continue; // self
+                        }
+                        deps.entry(key)
+                            .or_default()
+                            .insert(BandKey::new(*other_tile, sidx as u32));
                     }
                 }
             }
@@ -412,9 +746,45 @@ impl TileGrid {
         deps
     }
 
+    /// For a set of tiles whose content just changed, return every tile that
+    /// hosts a gather shape whose sample region overlaps any of those tiles.
+    /// Callers must invalidate the cache of these tiles so the gather effect
+    /// re-samples the updated backdrop.
+    pub fn gather_tiles_affected_by(
+        &self,
+        dirty_tiles: &HashSet<Tile>,
+        tree: ShapesPoolRef,
+        scale: f32,
+    ) -> HashSet<Tile> {
+        let tile_size = tiles::get_tile_size(scale);
+        let mut result: HashSet<Tile> = HashSet::new();
+        if dirty_tiles.is_empty() {
+            return result;
+        }
+        for (gather_tile, entries) in &self.grid {
+            for entry in entries {
+                if !entry.has_gather {
+                    continue;
+                }
+                let Some(shape) = tree.get(&entry.id) else {
+                    continue;
+                };
+                let sample_rect = self.compute_gather_sample_rect(shape, tree, scale);
+                let st = tiles::get_tiles_for_rect(sample_rect, tile_size);
+                let overlaps = dirty_tiles.iter().any(|t| {
+                    t.x() >= st.x1() && t.x() <= st.x2() && t.y() >= st.y1() && t.y() <= st.y2()
+                });
+                if overlaps {
+                    result.insert(*gather_tile);
+                }
+            }
+        }
+        result
+    }
+
     /// Compute the world-space rectangle a gather effect samples from.
     /// This is the shape bounds expanded by displacement + blur + frost radius.
-    fn compute_gather_sample_rect(
+    pub(crate) fn compute_gather_sample_rect(
         &self,
         shape: &Shape,
         tree: ShapesPoolRef,
@@ -452,127 +822,132 @@ impl TileGrid {
         )
     }
 
-    /// Generate tiles in spiral order from center of rect.
-    /// Adapted from PendingTiles::generate_spiral in tiles.rs.
+    /// Generate every tile inside `rect` in roughly-concentric order (closest
+    /// to the center first). Uses Chebyshev distance for ordering — cheaper
+    /// than a literal spiral walk and, crucially, guaranteed to cover exactly
+    /// the tiles in `rect` (no holes, no out-of-bounds tiles).
     fn generate_spiral(rect: &TileRect) -> Vec<Tile> {
-        let columns = rect.width();
-        let rows = rect.height();
+        let columns = rect.width() + 1;
+        let rows = rect.height() + 1;
         let total = columns * rows;
-
         if total <= 0 {
             return Vec::new();
         }
 
-        let mut result = Vec::with_capacity(total as usize);
-        let mut cx = rect.center_x();
-        let mut cy = rect.center_y();
+        let cx = rect.center_x();
+        let cy = rect.center_y();
 
-        let ratio = (columns as f32 / rows as f32).ceil() as i32;
-
-        let mut direction_current = 0;
-        let mut direction_total_x = ratio;
-        let mut direction_total_y = 1;
-        let mut direction = 0;
-        let mut current = 0;
-
-        result.push(Tile::from(cx, cy));
-        while current < total {
-            match direction {
-                0 => cx += 1,
-                1 => cy += 1,
-                2 => cx -= 1,
-                3 => cy -= 1,
-                _ => unreachable!("Invalid direction"),
+        let mut result: Vec<Tile> = Vec::with_capacity(total as usize);
+        for ty in rect.y1()..=rect.y2() {
+            for tx in rect.x1()..=rect.x2() {
+                result.push(Tile::from(tx, ty));
             }
-
-            result.push(Tile::from(cx, cy));
-
-            direction_current += 1;
-            let direction_total = if direction % 2 == 0 {
-                direction_total_x
-            } else {
-                direction_total_y
-            };
-
-            if direction_current == direction_total {
-                if direction % 2 == 0 {
-                    direction_total_x += 1;
-                } else {
-                    direction_total_y += 1;
-                }
-                direction = (direction + 1) % 4;
-                direction_current = 0;
-            }
-            current += 1;
         }
+
+        // Chebyshev distance keeps a "ring" ordering; tiebreak by a stable
+        // clockwise angle so adjacent ring tiles stay locally coherent.
+        result.sort_by(|a, b| {
+            let da = (a.x() - cx).abs().max((a.y() - cy).abs());
+            let db = (b.x() - cx).abs().max((b.y() - cy).abs());
+            da.cmp(&db)
+                .then_with(|| (a.y() - cy).cmp(&(b.y() - cy)))
+                .then_with(|| (a.x() - cx).cmp(&(b.x() - cx)))
+        });
         result
     }
 
-    /// Topological sort using Kahn's algorithm with spiral priority as tiebreaker.
+    /// Topological sort over `BandKey` nodes using Kahn's algorithm. The
+    /// band model is a strict DAG by construction (every edge points to a
+    /// strictly-lower `max_paint_order`), so all nodes must emit. A
+    /// `debug_assert` catches any regression.
     fn topological_sort(
         &self,
         spiral: &[Tile],
-        deps: &HashMap<Tile, HashSet<Tile>>,
+        deps: &HashMap<BandKey, HashSet<BandKey>>,
         tile_viewbox: &TileViewbox,
-    ) -> Vec<Tile> {
-        // Build spiral index for priority
+    ) -> Vec<BandKey> {
+        // Build spiral index for priority tiebreak.
         let spiral_index: HashMap<Tile, usize> = spiral
             .iter()
             .enumerate()
             .map(|(i, t)| (*t, i))
             .collect();
 
-        // Compute in-degree for each tile
-        let mut in_degree: HashMap<Tile, usize> = HashMap::new();
-        let mut reverse_deps: HashMap<Tile, Vec<Tile>> = HashMap::new();
-
-        for (tile, dep_set) in deps {
-            // Only count dependencies that are in our spiral set
-            let count = dep_set
-                .iter()
-                .filter(|d| spiral_index.contains_key(d))
-                .count();
-            *in_degree.entry(*tile).or_default() = count;
-
-            for dep in dep_set {
-                if spiral_index.contains_key(dep) {
-                    reverse_deps.entry(*dep).or_default().push(*tile);
+        // Enumerate every spiral tile as ≥ 1 node. Tiles with bands emit
+        // one BandKey per band. Tiles with no bands (viewport tiles whose
+        // shapes moved away and the tile is now empty) emit a synthetic
+        // BandKey(tile, 0) so `run_schedule` still fires `SetTileBand` on
+        // them — without this the tile's pixels on Target persist from a
+        // previous frame and we see stale content.
+        let mut all_keys: Vec<BandKey> = Vec::new();
+        for tile in spiral {
+            match self.bands.get(tile) {
+                Some(bands) if !bands.is_empty() => {
+                    for idx in 0..bands.len() {
+                        all_keys.push(BandKey::new(*tile, idx as u32));
+                    }
+                }
+                _ => {
+                    all_keys.push(BandKey::new(*tile, 0));
                 }
             }
         }
 
-        // Initialize priority queue with tiles that have no dependencies
+        let key_set: HashSet<BandKey> = all_keys.iter().copied().collect();
+
+        // In-degree + reverse adjacency restricted to keys that actually
+        // exist (deps from/to tiles outside the spiral are ignored).
+        let mut in_degree: HashMap<BandKey, usize> = HashMap::new();
+        let mut reverse_deps: HashMap<BandKey, Vec<BandKey>> = HashMap::new();
+
+        for (key, dep_set) in deps {
+            if !key_set.contains(key) {
+                continue;
+            }
+            let count = dep_set.iter().filter(|d| key_set.contains(d)).count();
+            *in_degree.entry(*key).or_default() = count;
+
+            for dep in dep_set {
+                if key_set.contains(dep) {
+                    reverse_deps.entry(*dep).or_default().push(*key);
+                }
+            }
+        }
+
+        // Seed the priority queue with bands that have no deps.
         let mut ready = BinaryHeap::new();
-        for tile in spiral {
-            let degree = in_degree.get(tile).copied().unwrap_or(0);
+        for key in &all_keys {
+            let degree = in_degree.get(key).copied().unwrap_or(0);
             if degree == 0 {
-                let is_visible = tile_viewbox.visible_rect.contains(tile);
+                let is_visible = tile_viewbox.visible_rect.contains(&key.tile);
                 let group = if is_visible { 0 } else { 1 };
-                ready.push(TilePriority {
-                    tile: *tile,
+                ready.push(BandPriority {
+                    key: *key,
                     group,
-                    spiral_index: spiral_index[tile],
+                    spiral_index: *spiral_index.get(&key.tile).unwrap_or(&usize::MAX),
                 });
             }
         }
 
-        let mut sorted = Vec::with_capacity(spiral.len());
+        let mut sorted = Vec::with_capacity(all_keys.len());
 
-        while let Some(tp) = ready.pop() {
-            sorted.push(tp.tile);
+        while let Some(bp) = ready.pop() {
+            sorted.push(bp.key);
 
-            // Unblock dependents
-            if let Some(dependents) = reverse_deps.get(&tp.tile) {
+            if let Some(dependents) = reverse_deps.get(&bp.key) {
                 for dependent in dependents {
                     if let Some(degree) = in_degree.get_mut(dependent) {
                         *degree -= 1;
                         if *degree == 0 {
-                            let is_visible = tile_viewbox.visible_rect.contains(dependent);
+                            let is_visible =
+                                tile_viewbox.visible_rect.contains(&dependent.tile);
                             let group = if is_visible { 0 } else { 1 };
-                            ready.push(TilePriority {
-                                tile: *dependent,
+                            ready.push(BandPriority {
+                                key: *dependent,
                                 group,
-                                spiral_index: *spiral_index.get(dependent).unwrap_or(&usize::MAX),
+                                spiral_index: *spiral_index
+                                    .get(&dependent.tile)
+                                    .unwrap_or(&usize::MAX),
                             });
                         }
                     }
@@ -580,16 +955,27 @@ impl TileGrid {
             }
         }
 
+        // The band model is a strict DAG — every node must emit. If this
+        // ever trips, it's a correctness regression in compute_bands or
+        // build_dependency_graph.
+        debug_assert_eq!(
+            sorted.len(),
+            all_keys.len(),
+            "band scheduler: dep graph had a cycle (emitted {}/{} bands)",
+            sorted.len(),
+            all_keys.len()
+        );
+
         sorted
     }
 
-    /// Flatten the sorted tile list into a Vec<RenderStep>.
-    /// For each tile, emits SetTile + the depth-first shape traversal.
+    /// Flatten the sorted band list into a Vec<RenderStep>. For each band,
+    /// emits `SetTileBand` + depth-first shape traversal filtered to shapes
+    /// in this band's shape set.
     fn build_schedule(
         &mut self,
-        sorted_tiles: &[Tile],
+        sorted_bands: &[BandKey],
         tree: ShapesPoolRef,
-        tile_size: f32,
         scale: f32,
     ) {
         self.schedule.clear();
@@ -603,51 +989,83 @@ impl TileGrid {
         };
         root_children.reverse();
 
-        for &tile in sorted_tiles {
-            self.schedule.push(RenderStep::SetTile(tile));
+        for key in sorted_bands {
+            // A synthetic empty-tile BandKey has no matching Band. Emit a
+            // single SetTileBand + FinalizeBand { LastBg } pair so
+            // run_schedule clears Target at this tile rect (preventing stale
+            // pixels from a previous frame when shapes move away).
+            let (band_opt, is_first, is_last) = match self.bands.get(&key.tile) {
+                Some(bands) if !bands.is_empty() => {
+                    let total = bands.len();
+                    let idx = key.band_index as usize;
+                    let band = bands.get(idx);
+                    let is_last = idx + 1 == total;
+                    (band, idx == 0, is_last)
+                }
+                _ => (None, true, true),
+            };
 
-            // Get shapes on this tile
-            let tile_shapes: HashSet<Uuid> = self
-                .grid
-                .get(&tile)
-                .map(|entries| entries.iter().map(|e| e.id).collect())
-                .unwrap_or_default();
+            self.schedule.push(RenderStep::SetTileBand {
+                tile: key.tile,
+                band_index: key.band_index,
+                is_first,
+                is_last,
+            });
 
-            if tile_shapes.is_empty() {
-                continue;
-            }
+            let band_has_shapes = band_opt.is_some_and(|b| !b.shapes.is_empty());
 
-            // Check if this tile has gather effects — if so, render all root shapes
-            // (same as current needs_full_scene behavior)
-            let has_gather = self
-                .grid
-                .get(&tile)
-                .is_some_and(|entries| entries.iter().any(|e| e.has_gather));
-
-            // Emit render steps for shapes on this tile
-            let tile_rect = tiles::get_tile_rect(tile, scale);
-            for root_id in &root_children {
-                if has_gather || tile_shapes.contains(root_id) {
-                    self.emit_shape_steps(*root_id, tree, &tile_rect, scale);
+            if let Some(band) = band_opt {
+                if band_has_shapes {
+                    // Emit Enter/Render/Exit for shapes in this band.
+                    let band_shapes: HashSet<Uuid> =
+                        band.shapes.iter().copied().collect();
+                    let tile_rect = tiles::get_tile_rect(key.tile, scale);
+                    for root_id in &root_children {
+                        self.emit_shape_steps(
+                            *root_id,
+                            tree,
+                            &tile_rect,
+                            scale,
+                            &band_shapes,
+                        );
+                    }
                 }
             }
+
+            // Finalize kind is fully determined here (build time) — no
+            // runtime guessing, no state that a yield can drop.
+            let kind = if !is_last {
+                FinalizeKind::Intermediate
+            } else if band_has_shapes {
+                FinalizeKind::LastContent
+            } else {
+                FinalizeKind::LastBg
+            };
+            self.schedule.push(RenderStep::FinalizeBand {
+                tile: key.tile,
+                kind,
+            });
         }
     }
 
-    /// Emit Enter/Render/Exit steps for a shape and its descendants.
+    /// Emit Enter/Render/Exit steps for a shape and its descendants, filtered
+    /// to shapes in `band_shapes`. Returns true if at least one step was
+    /// emitted for this subtree (used by callers to skip empty Enter/Exit
+    /// brackets).
     fn emit_shape_steps(
         &mut self,
         shape_id: Uuid,
         tree: ShapesPoolRef,
         tile_rect: &skia::Rect,
         scale: f32,
-    ) {
+        band_shapes: &HashSet<Uuid>,
+    ) -> bool {
         let Some(shape) = tree.get(&shape_id) else {
-            return;
+            return false;
         };
 
         if shape.hidden {
-            return;
+            return false;
         }
 
         // Visibility check — is the shape in or near this tile?
@@ -659,26 +1077,44 @@ impl TileGrid {
         );
         let check_rect = if is_container { extrect } else { selrect };
         if !check_rect.intersects(*tile_rect) {
-            return;
+            return false;
         }
 
         if shape.is_recursive() {
-            // Container: emit Enter, children, Exit
+            // Container: speculatively push Enter, recurse, then drop the
+            // Enter if no child emitted anything for this band.
+            let enter_pos = self.schedule.len();
             self.schedule.push(RenderStep::Enter(shape_id));
 
-            // children_ids() returns children in reversed order (topmost first).
-            // The schedule is executed front-to-back, so we need bottom-first
-            // (natural tree order) — reverse back to get correct paint order.
             let mut children = shape.children_ids(false);
             children.reverse();
+            let mut any_child_emitted = false;
             for child_id in &children {
-                self.emit_shape_steps(*child_id, tree, tile_rect, scale);
+                if self.emit_shape_steps(*child_id, tree, tile_rect, scale, band_shapes) {
+                    any_child_emitted = true;
+                }
             }
 
-            self.schedule.push(RenderStep::Exit(shape_id));
-        } else {
-            // Leaf shape: emit Render
+            // The container itself is a shape in the band's shape list if and
+            // only if it's a recursive shape with a paint_order matching the
+            // barrier split. But we don't emit Render for recursive shapes,
+            // so container membership in `band_shapes` just means "keep its
+            // Enter/Exit brackets around any contained band content".
+            let self_in_band = band_shapes.contains(&shape_id);
+
+            if any_child_emitted || self_in_band {
+                self.schedule.push(RenderStep::Exit(shape_id));
+                true
+            } else {
+                // Drop speculative Enter — this container has no band content
+                self.schedule.truncate(enter_pos);
+                false
+            }
+        } else if band_shapes.contains(&shape_id) {
             self.schedule.push(RenderStep::Render(shape_id));
+            true
+        } else {
+            false
         }
     }
 }
@@ -708,6 +1144,20 @@ impl RenderState {
         performance::begin_measure!("start_render_loop");
 
         self.reset_canvas();
+        // `reset_canvas` clears Fills/Strokes/Current/etc. but NOT Target.
+        // Target retains pixels from the previous frame until each tile's
+        // finalize_{bg,content} overwrites its rect. A gather tile whose
+        // backdrop samples a region whose tiles haven't yet processed THIS
+        // frame ends up reading stale pixels from the last frame — the glass
+        // then appears to distort whatever was there before. Force a full
+        // clear to guarantee a clean slate. Tiles in the schedule rewrite
+        // their own rects, and cached_blit paths still draw cached tile
+        // images (stored in a separate texture cache, unaffected by this
+        // clear).
+        self.surfaces
+            .canvas(SurfaceId::Target)
+            .clear(self.background_color);
+
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::InnerShadows as u32
@@ -794,8 +1244,23 @@ impl RenderState {
         Ok(())
     }
 
-    /// The main render loop. Iterates the pre-computed schedule, calling
-    /// existing rendering primitives for each step.
+    /// The main render loop. Walks the pre-computed schedule where every
+    /// band is bracketed by a `SetTileBand` (setup) and a `FinalizeBand`
+    /// (teardown) step. Because `FinalizeBand.kind` is decided at build
+    /// time, nothing about the finalize depends on state that a yield
+    /// could drop.
+    ///
+    /// Per band:
+    /// - `SetTileBand` sets up the tile context, then either clears Current
+    ///   (is_first, or cached_blit fast-path), or restores Current from
+    ///   the interband cache (non-first band).
+    /// - `Enter`/`Render`/`Exit` steps render the band's shapes into
+    ///   Current.
+    /// - `FinalizeBand` executes the precomputed finalize action:
+    ///   * `Intermediate` — composite Current→Target (so peer gather
+    ///     bands see it) + snapshot Current into interband cache.
+    ///   * `LastContent` — apply Current to final canvas + drop interband.
+    ///   * `LastBg` — direct bg draw on Target + drop interband.
     fn run_schedule(
         &mut self,
         tree: ShapesPoolRef,
@@ -803,46 +1268,103 @@ impl RenderState {
         can_yield: bool,
     ) -> Result<()> {
         let mut iteration = 0;
-        let mut tile_has_content = false;
 
         while let Some(step) = self.tile_grid.next() {
             match step {
-                RenderStep::SetTile(tile) => {
-                    // Finalize previous tile if any
-                    if let Some(_prev_tile) = self.current_tile {
-                        let tile_rect = self.get_current_tile_bounds()?;
-                        if tile_has_content {
-                            self.apply_render_to_final_canvas(tile_rect)?;
-                        } else {
-                            // Empty tile: draw background directly on Target
-                            self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
-                                let mut paint = skia::Paint::default();
-                                paint.set_color(self.background_color);
-                                s.canvas().draw_rect(tile_rect, &paint);
-                            });
-                        }
-                    }
-
-                    // Always clear Current before each new tile — matches original
-                    // renderer which clears unconditionally every iteration.
-                    self.surfaces
-                        .canvas(SurfaceId::Current)
-                        .clear(self.background_color);
-
-                    tile_has_content = false;
+                RenderStep::SetTileBand {
+                    tile,
+                    band_index,
+                    is_first,
+                    is_last,
+                } => {
                     self.update_render_context(tile);
 
-                    // If cached, blit and skip to next tile
-                    if self.surfaces.has_cached_tile_surface(tile) {
-                        let tile_rect = self.get_current_tile_bounds()?;
-                        self.surfaces.draw_cached_tile_surface(
-                            tile,
-                            tile_rect,
-                            self.background_color,
+                    if is_first {
+                        // First visit to this tile. Check for a fully cached
+                        // tile surface — the fast path — before clearing.
+                        // The cached path is only valid for tiles with a
+                        // single band AND no gather at the band head.
+                        // Gather tiles' output depends on the current
+                        // frame's Target backdrop, so a cached image from
+                        // a previous frame is inherently stale.
+                        let tile_bands = self.tile_grid.bands.get(&tile);
+                        let tile_band_count = tile_bands.map(|b| b.len()).unwrap_or(1);
+                        let band_has_gather_head = tile_bands
+                            .and_then(|b| b.first())
+                            .is_some_and(|b| b.gather_at_head.is_some());
+                        if tile_band_count == 1
+                            && !band_has_gather_head
+                            && self.surfaces.has_cached_tile_surface(tile)
+                        {
+                            let rect = self.get_current_tile_bounds()?;
+                            self.surfaces.draw_cached_tile_surface(
+                                tile,
+                                rect,
+                                self.background_color,
+                            );
+                            self.current_tile = None;
+                            // Blit already drew to final — skip this tile's
+                            // FinalizeBand step by advancing to the next
+                            // SetTileBand (or end of schedule).
+                            self.tile_grid.skip_to_next_tile();
+                            continue;
+                        }
+
+                        self.surfaces
+                            .canvas(SurfaceId::Current)
+                            .clear(self.background_color);
+
+                    } else {
+                        // Non-first band: restore Current from the snapshot
+                        // left by the previous visit to this same tile.
+                        // Clear first so the restore lands on a clean slate
+                        // (margins outside the content region stay bg).
+                        self.surfaces
+                            .canvas(SurfaceId::Current)
+                            .clear(self.background_color);
+                        let restored = self.surfaces.restore_current_from_interband(tile);
+                        debug_assert!(
+                            restored,
+                            "run_schedule: non-first band visit to {:?} without a snapshot",
+                            tile
                         );
-                        self.current_tile = None; // don't finalize on next SetTile
-                        self.tile_grid.skip_to_next_tile();
-                        continue;
+                    }
+                }
+
+                RenderStep::FinalizeBand { tile, kind } => {
+                    // The SetTileBand that opened this band already set
+                    // current_tile; if it was cleared (cached_blit path),
+                    // skip_to_next_tile would have hopped past us. So in
+                    // any well-formed schedule, current_tile == Some(tile)
+                    // here.
+                    debug_assert_eq!(
+                        self.current_tile,
+                        Some(tile),
+                        "FinalizeBand {:?} arrived with current_tile={:?}",
+                        tile, self.current_tile
+                    );
+                    let tile_rect = self.get_current_tile_bounds()?;
+                    match kind {
+                        FinalizeKind::Intermediate => {
+                            self.surfaces.composite_current_to_target(
+                                tile_rect,
+                                self.background_color,
+                            );
+                            self.surfaces.snapshot_current_for_interband(tile);
+                        }
+                        FinalizeKind::LastContent => {
+                            self.apply_render_to_final_canvas(tile_rect)?;
+                            self.surfaces.drop_interband(tile);
+                        }
+                        FinalizeKind::LastBg => {
+                            let bg = self.background_color;
+                            self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
+                                let mut paint = skia::Paint::default();
+                                paint.set_color(bg);
+                                s.canvas().draw_rect(tile_rect, &paint);
+                            });
+                            self.surfaces.drop_interband(tile);
+                        }
                     }
                 }
 
@@ -882,7 +1404,6 @@ impl RenderState {
                         continue;
                     }
 
-                    tile_has_content = true;
                     let scale = self.get_scale();
 
                     // Visibility check against current tile
@@ -894,14 +1415,51 @@ impl RenderState {
                     // Background blur
                     self.render_background_blur(element, SurfaceId::Current);
 
-                    // Glass effect
+                    // Glass effect — root-level gather shapes sample Target
+                    // (world-space continuous surface) to avoid per-tile seams
+                    // at the refraction/blur sample radius. Nested glass still
+                    // samples Current until the container-layer fix lands.
                     if let Some(glass) = element.glass.as_ref().filter(|g| !g.hidden) {
-                        crate::render::glass::render_glass(
-                            self,
-                            element,
-                            glass,
-                            SurfaceId::Current,
-                        );
+                        let is_root_level = element
+                            .parent_id
+                            .is_some_and(|p| p == Uuid::nil());
+                        if is_root_level {
+                            let tile_rect = self.get_current_tile_bounds()?;
+                            let bg_color = self.background_color;
+                            self.surfaces.composite_current_to_target(tile_rect, bg_color);
+                            // Flush Target so the backdrop snapshot inside
+                            // `render_glass_with_backdrop` reflects the content
+                            // just composited (and any prior inter-band handoffs
+                            // from other tiles). Without this, GPU command
+                            // reordering can leave the shader sampling stale
+                            // Target pixels — the glass then appears to see
+                            // only bg behind it.
+                            self.flush_and_submit();
+                            // Per-gather-shape Target snapshot. The first
+                            // tile of this gather takes the snapshot; every
+                            // subsequent tile of the same gather reuses it.
+                            // All peers see the same frozen Target state, so
+                            // a gather's own finalized output never leaks
+                            // into another peer's backdrop sample.
+                            let backdrop_image = self
+                                .surfaces
+                                .get_or_snapshot_glass_backdrop(id, SurfaceId::Target);
+                            crate::render::glass::render_glass_with_backdrop_image(
+                                self,
+                                element,
+                                glass,
+                                SurfaceId::Current,
+                                SurfaceId::Target,
+                                Some(backdrop_image),
+                            );
+                        } else {
+                            crate::render::glass::render_glass(
+                                self,
+                                element,
+                                glass,
+                                SurfaceId::Current,
+                            );
+                        }
                     }
 
                     // Drop shadows
@@ -963,19 +1521,15 @@ impl RenderState {
             }
         }
 
-        // Finalize last tile
-        if self.current_tile.is_some() {
-            let tile_rect = self.get_current_tile_bounds()?;
-            if tile_has_content {
-                self.apply_render_to_final_canvas(tile_rect)?;
-            } else {
-                self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
-                    let mut paint = skia::Paint::default();
-                    paint.set_color(self.background_color);
-                    s.canvas().draw_rect(tile_rect, &paint);
-                });
-            }
-        }
+        // With explicit FinalizeBand steps, a well-formed schedule always
+        // ends on a FinalizeBand (or on a cached_blit that already drew to
+        // final). No trailing finalize needed.
+
+        // Clear any stale inter-band snapshots so they don't leak into
+        // the next frame's run_schedule invocation.
+        self.surfaces.clear_interband_cache();
+        // Same for per-gather-shape backdrop snapshots.
+        self.surfaces.clear_glass_backdrop_cache();
 
         self.render_in_progress = false;
         self.surfaces.gc();
@@ -1047,13 +1601,15 @@ impl RenderState {
             result.insert(tile);
         }
 
-        // Add to new tiles
+        // Add to new tiles. paint_order uses 0 as placeholder — callers of
+        // update_shape_tiles trigger a renumber before the dep graph rebuilds.
         for tile in (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| Tile::from(x, y))) {
             self.tile_grid.add_shape_at(
                 tile,
                 ShapeEntry {
                     id: shape.id,
                     z_index,
+                    paint_order: 0,
                     has_gather,
                 },
             );
@@ -1088,12 +1644,14 @@ impl RenderState {
             self.tile_grid.remove_shape_at(*tile, shape.id);
         }
 
+        // paint_order placeholder — renumbered by the next full/touched pass.
         for tile in &added {
             self.tile_grid.add_shape_at(
                 *tile,
                 ShapeEntry {
                     id: shape.id,
                     z_index,
+                    paint_order: 0,
                     has_gather,
                 },
             );
@@ -1112,12 +1670,14 @@ impl RenderState {
         let z_index = shape.z_index();
         let mut result = Vec::new();
 
+        // paint_order placeholder — renumbered by the next full/touched pass.
         for tile in (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| Tile::from(x, y))) {
             self.tile_grid.add_shape_at(
                 tile,
                 ShapeEntry {
                     id: shape.id,
                     z_index,
+                    paint_order: 0,
                     has_gather,
                 },
             );
@@ -1177,7 +1737,18 @@ impl RenderState {
             scale,
         );
 
+        // Also invalidate any gather tile whose sample region overlaps the
+        // changed tiles. Without this, a non-gather shape moving inside a
+        // glass/background-blur sample region leaves the gather's cached
+        // backdrop stale.
+        let gather_affected =
+            self.tile_grid
+                .gather_tiles_affected_by(&affected, tree, scale);
+
         for tile in affected {
+            self.remove_cached_tile(tile);
+        }
+        for tile in gather_affected {
             self.remove_cached_tile(tile);
         }
 
@@ -1195,7 +1766,12 @@ impl RenderState {
                 all_tiles.extend(self.update_shape_tiles(shape, tree));
             }
         }
+        let scale = self.get_scale();
+        let gather_affected = self.tile_grid.gather_tiles_affected_by(&all_tiles, tree, scale);
         for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
+        for tile in gather_affected {
             self.remove_cached_tile(tile);
         }
         Ok(())
@@ -1218,7 +1794,12 @@ impl RenderState {
                 all_tiles.extend(self.update_shape_tiles(shape, tree));
             }
         }
+        let scale = self.get_scale();
+        let gather_affected = self.tile_grid.gather_tiles_affected_by(&all_tiles, tree, scale);
         for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
+        for tile in gather_affected {
             self.remove_cached_tile(tile);
         }
         Ok(())
@@ -1382,6 +1963,7 @@ mod bench {
                         ShapeEntry {
                             id,
                             z_index: i as i32,
+                            paint_order: i as u32,
                             has_gather: false,
                         },
                     );
@@ -1425,6 +2007,7 @@ mod bench {
                         ShapeEntry {
                             id,
                             z_index: i as i32,
+                            paint_order: i as u32,
                             has_gather: false,
                         },
                     );
@@ -1458,6 +2041,7 @@ mod bench {
                         ShapeEntry {
                             id,
                             z_index: i as i32,
+                            paint_order: i as u32,
                             has_gather: false,
                         },
                     );
@@ -1492,6 +2076,7 @@ mod bench {
                         ShapeEntry {
                             id,
                             z_index: i as i32,
+                            paint_order: i as u32,
                             has_gather: false,
                         },
                     );
@@ -1562,6 +2147,7 @@ mod bench {
                             ShapeEntry {
                                 id: *id,
                                 z_index: i as i32,
+                                paint_order: i as u32,
                                 has_gather: false,
                             },
                         );
@@ -1597,6 +2183,7 @@ mod bench {
                         ShapeEntry {
                             id,
                             z_index: i as i32,
+                            paint_order: i as u32,
                             has_gather: false,
                         },
                     );
@@ -1628,6 +2215,7 @@ mod bench {
                         ShapeEntry {
                             id: drag_id,
                             z_index: 500,
+                            paint_order: 500,
                             has_gather: false,
                         },
                     );
@@ -1685,6 +2273,7 @@ mod bench {
                         ShapeEntry {
                             id,
                             z_index: i as i32,
+                            paint_order: i as u32,
                             has_gather: false,
                         },
                     );
@@ -1705,6 +2294,7 @@ mod bench {
                         ShapeEntry {
                             id,
                             z_index: 5000 + i as i32,
+                            paint_order: 5000 + i as u32,
                             has_gather: true,
                         },
                     );
@@ -1718,24 +2308,47 @@ mod bench {
 
         let spiral = TileGrid::generate_spiral(&interest);
 
-        // Build deps manually for benchmark
+        // Populate bands (1 band per tile — no gather-barrier splits for the
+        // synthetic setup below; tests exercise that path separately).
+        for (tile, entries) in grid.grid.clone().iter() {
+            if entries.is_empty() {
+                continue;
+            }
+            let min = entries.iter().map(|e| e.paint_order).min().unwrap_or(0);
+            let max = entries.iter().map(|e| e.paint_order).max().unwrap_or(0);
+            grid.bands.insert(
+                *tile,
+                vec![Band {
+                    shapes: entries.iter().map(|e| e.id).collect(),
+                    min_paint_order: min,
+                    max_paint_order: max,
+                    gather_at_head: None,
+                }],
+            );
+        }
+
+        // Build deps manually for benchmark. Keep edges one-directional
+        // (dep tile lexicographically less than source tile) so the graph is
+        // acyclic — topological_sort's debug_assert requires that.
         let iterations = 100;
         let start = Instant::now();
         for _ in 0..iterations {
-            // Simulate dependency building from gather shapes
-            let mut deps: HashMap<Tile, HashSet<Tile>> = HashMap::new();
+            let mut deps: HashMap<BandKey, HashSet<BandKey>> = HashMap::new();
             for (tile, entries) in &grid.grid {
                 for entry in entries {
                     if entry.has_gather {
-                        // Add dependencies on neighboring tiles
                         for dx in -2..=2 {
                             for dy in -2..=2 {
                                 if dx == 0 && dy == 0 {
                                     continue;
                                 }
                                 let dep = Tile::from(tile.x() + dx, tile.y() + dy);
-                                if grid.grid.contains_key(&dep) {
-                                    deps.entry(*tile).or_default().insert(dep);
+                                if grid.grid.contains_key(&dep)
+                                    && (dep.y(), dep.x()) < (tile.y(), tile.x())
+                                {
+                                    deps.entry(BandKey::new(*tile, 0))
+                                        .or_default()
+                                        .insert(BandKey::new(dep, 0));
                                 }
                             }
                         }
@@ -1750,5 +2363,482 @@ mod bench {
             "[bench] TileGrid topo sort (1000 shapes, 5 gathers): {:.3}ms/sort",
             elapsed.as_secs_f64() * 1000.0 / iterations as f64
         );
+    }
+
+    // ── End-to-end rebuild benches (exercise compute_bands + build_schedule) ──
+
+    fn end_to_end_rebuild(n_shapes: usize, n_gathers: usize, label: &str) {
+        use crate::shapes::GlassEffect;
+        use crate::state::ShapesPool;
+        use crate::view::Viewbox;
+
+        let scale = 1.0;
+        let mut pool = ShapesPool::new();
+        pool.add_shape(Uuid::nil());
+
+        // Spread non-gather shapes across a tile grid. 100x(n/100) layout.
+        for i in 0..n_shapes {
+            let id = Uuid::from_u64_pair(1, i as u64);
+            let x = (i % 100) as f32 * 60.0;
+            let y = (i / 100) as f32 * 60.0;
+            let shape = pool.add_shape(id);
+            shape.id = id;
+            shape.parent_id = Some(Uuid::nil());
+            shape.selrect = skia::Rect::from_xywh(x, y, 100.0, 80.0);
+            let root = pool.get_mut(&Uuid::nil()).unwrap();
+            root.children.push(id);
+        }
+
+        // Sprinkle n_gathers glass shapes, each covering ~1000px square
+        // (≈ 2x2 tiles at scale 1).
+        for i in 0..n_gathers {
+            let id = Uuid::from_u64_pair(2, i as u64);
+            let x = (i * 300) as f32;
+            let y = (i * 300) as f32;
+            let shape = pool.add_shape(id);
+            shape.id = id;
+            shape.parent_id = Some(Uuid::nil());
+            shape.selrect = skia::Rect::from_xywh(x, y, 1000.0, 1000.0);
+            shape.glass = Some(GlassEffect {
+                surface_type: 0,
+                bezel_width: 10.0,
+                glass_thickness: 1.0,
+                refractive_index: 1.0,
+                specular_angle: 0.0,
+                specular_opacity: 0.0,
+                specular_saturation: 0.0,
+                chromatic_aberration: 0.0,
+                splay: 0.0,
+                tilt_angle: 0.0,
+                edge_boost: 0.0,
+                zoom: 1.0,
+                blur: 50.0,
+                frost: 0.0,
+                hidden: false,
+            });
+            let root = pool.get_mut(&Uuid::nil()).unwrap();
+            root.children.push(id);
+        }
+
+        let viewbox = Viewbox::new(6400.0, 6400.0);
+        let tv = TileViewbox::new_with_interest(viewbox, 1, scale);
+
+        let iterations = 20;
+        let mut grid = TileGrid::new();
+        // Warmup
+        grid.rebuild(&pool, &tv, scale);
+
+        let start = Instant::now();
+        for _ in 0..iterations {
+            grid.rebuild(&pool, &tv, scale);
+        }
+        let elapsed = start.elapsed();
+        println!(
+            "[bench] E2E rebuild {}: {:.3}ms/rebuild (schedule_len={}, total_bands={})",
+            label,
+            elapsed.as_secs_f64() * 1000.0 / iterations as f64,
+            grid.schedule.len(),
+            grid.bands.values().map(|v| v.len()).sum::<usize>(),
+        );
+    }
+
+    #[test]
+    fn bench_rebuild_e2e_no_gather() {
+        end_to_end_rebuild(1_000, 0, "1k shapes, 0 gathers");
+    }
+
+    #[test]
+    fn bench_rebuild_e2e_few_gathers() {
+        end_to_end_rebuild(1_000, 5, "1k shapes, 5 gathers");
+    }
+
+    #[test]
+    fn bench_rebuild_e2e_many_gathers() {
+        end_to_end_rebuild(1_000, 20, "1k shapes, 20 gathers");
+    }
+}
+
+// ── Correctness tests for paint_order + dep-graph scheduling ────────────
+
+#[cfg(test)]
+mod scheduling_tests {
+    use super::*;
+    use crate::shapes::GlassEffect;
+    use crate::state::ShapesPool;
+    use crate::view::Viewbox;
+
+    fn uid(n: u64) -> Uuid {
+        Uuid::from_u64_pair(0, n)
+    }
+
+    /// Build a minimal pool with a root (Uuid::nil()) in place.
+    fn new_pool() -> ShapesPool {
+        let mut pool = ShapesPool::new();
+        pool.add_shape(Uuid::nil());
+        pool
+    }
+
+    /// Add a shape to the pool as a child of `parent_id` with the given
+    /// selrect. Appends `id` to the parent's `children` vec, respecting
+    /// bottom-first paint order.
+    fn add_leaf(pool: &mut ShapesPool, id: Uuid, parent_id: Uuid, rect: skia::Rect) {
+        let shape = pool.add_shape(id);
+        shape.id = id;
+        shape.parent_id = Some(parent_id);
+        shape.selrect = rect;
+
+        let parent = pool.get_mut(&parent_id).expect("parent must exist");
+        parent.children.push(id);
+    }
+
+    /// As `add_leaf` but also attaches a default non-hidden `GlassEffect`.
+    fn add_glass(pool: &mut ShapesPool, id: Uuid, parent_id: Uuid, rect: skia::Rect) {
+        add_leaf(pool, id, parent_id, rect);
+        let s = pool.get_mut(&id).unwrap();
+        s.glass = Some(GlassEffect {
+            surface_type: 0,
+            bezel_width: 10.0,
+            glass_thickness: 1.0,
+            refractive_index: 1.0,
+            specular_angle: 0.0,
+            specular_opacity: 0.0,
+            specular_saturation: 0.0,
+            chromatic_aberration: 0.0,
+            splay: 0.0,
+            tilt_angle: 0.0,
+            edge_boost: 0.0,
+            zoom: 1.0,
+            blur: 50.0,
+            frost: 0.0,
+            hidden: false,
+        });
+    }
+
+    fn make_tile_viewbox(scale: f32) -> TileViewbox {
+        let viewbox = Viewbox::new(1920.0, 1080.0);
+        TileViewbox::new_with_interest(viewbox, 1, scale)
+    }
+
+    /// Find the first ShapeEntry for `id` anywhere in the grid.
+    fn entry_for<'a>(grid: &'a TileGrid, id: Uuid) -> Option<&'a ShapeEntry> {
+        for entries in grid.grid.values() {
+            for e in entries {
+                if e.id == id {
+                    return Some(e);
+                }
+            }
+        }
+        None
+    }
+
+    /// Position of the first `SetTileBand` step targeting `tile` in the flat
+    /// schedule.
+    fn set_tile_pos(schedule: &[RenderStep], tile: Tile) -> Option<usize> {
+        schedule.iter().position(|s| matches!(s, RenderStep::SetTileBand { tile: t, .. } if *t == tile))
+    }
+
+    // ── paint_order assignment ───────────────────────────────────────
+
+    #[test]
+    fn paint_order_is_depth_first_bottom_first() {
+        // Tree: root → [leaf_a, container → [child_x, child_y], leaf_b]
+        // Paint order: leaf_a (0) → container (1) → child_x (2) → child_y (3) → leaf_b (4)
+        let scale = 1.0;
+        let mut pool = new_pool();
+        let leaf_a = uid(10);
+        let container = uid(20);
+        let child_x = uid(21);
+        let child_y = uid(22);
+        let leaf_b = uid(30);
+
+        add_leaf(&mut pool, leaf_a, Uuid::nil(), skia::Rect::from_xywh(100.0, 100.0, 100.0, 100.0));
+        add_leaf(&mut pool, container, Uuid::nil(), skia::Rect::from_xywh(300.0, 100.0, 300.0, 300.0));
+        // Mark container as a Group so it's recursive.
+        {
+            let c = pool.get_mut(&container).unwrap();
+            c.shape_type = crate::shapes::Type::Group(crate::shapes::Group { masked: false });
+        }
+        add_leaf(&mut pool, child_x, container, skia::Rect::from_xywh(300.0, 100.0, 100.0, 100.0));
+        add_leaf(&mut pool, child_y, container, skia::Rect::from_xywh(450.0, 100.0, 100.0, 100.0));
+        add_leaf(&mut pool, leaf_b, Uuid::nil(), skia::Rect::from_xywh(700.0, 100.0, 100.0, 100.0));
+
+        let mut grid = TileGrid::new();
+        let tv = make_tile_viewbox(scale);
+        grid.rebuild(&pool, &tv, scale);
+
+        let po = |id: Uuid| entry_for(&grid, id).map(|e| e.paint_order).unwrap_or(u32::MAX);
+
+        let po_a = po(leaf_a);
+        let po_ctr = po(container);
+        let po_x = po(child_x);
+        let po_y = po(child_y);
+        let po_b = po(leaf_b);
+
+        assert_eq!(po_a, 0, "leaf_a is painted first");
+        assert!(po_ctr > po_a && po_ctr < po_x, "container sits between leaf_a and its children (got {po_ctr})");
+        assert!(po_x < po_y, "child_x painted before child_y (got {po_x} vs {po_y})");
+        assert!(po_b > po_y, "leaf_b painted after container's children");
+    }
+
+    // ── Band model + band-aware scheduling ─────────────────────────
+
+    /// Count `SetTileBand` steps for a specific tile in the flat schedule.
+    fn band_steps_for(schedule: &[RenderStep], tile: Tile) -> Vec<(u32, bool, bool)> {
+        schedule
+            .iter()
+            .filter_map(|s| match s {
+                RenderStep::SetTileBand {
+                    tile: t,
+                    band_index,
+                    is_first,
+                    is_last,
+                } if *t == tile => Some((*band_index, *is_first, *is_last)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn bands_far_tile_not_split_by_distant_gather() {
+        // Locality check: a gather near the origin must NOT force tiles far
+        // from it (outside its sample region) into multiple bands.
+        let scale = 1.0;
+        let mut pool = new_pool();
+        let glass = uid(1);
+        let far = uid(2);
+        // Small glass around origin — sample region stays close.
+        add_glass(&mut pool, glass, Uuid::nil(), skia::Rect::from_xywh(50.0, 50.0, 100.0, 100.0));
+        // Shape far outside glass's sample region. Tile ~ (15, 15) at scale 1
+        // (tile size ≈ 512).
+        add_leaf(&mut pool, far, Uuid::nil(), skia::Rect::from_xywh(7800.0, 7800.0, 100.0, 100.0));
+
+        let mut grid = TileGrid::new();
+        // Custom viewbox wide enough to include the far shape.
+        let viewbox = crate::view::Viewbox::new(16384.0, 16384.0);
+        let tv = TileViewbox::new_with_interest(viewbox, 1, scale);
+        grid.rebuild(&pool, &tv, scale);
+
+        let far_tiles: Vec<Tile> = grid.index.get(&far).unwrap().iter().copied().collect();
+        assert!(!far_tiles.is_empty(), "far shape must be indexed");
+        for t in &far_tiles {
+            let bands = grid.bands.get(t).expect("tile must have bands");
+            assert_eq!(
+                bands.len(),
+                1,
+                "far tile {:?} must not be split by distant gather; got {} bands",
+                t,
+                bands.len()
+            );
+        }
+    }
+
+    #[test]
+    fn peer_glass_regression_no_tile_dropped() {
+        // Primary regression for the original bug: a single glass shape
+        // spans multiple tiles with a below-shape in all of them. Under the
+        // old tile-atomic scheduler this produced a cycle; Kahn dropped the
+        // cycle-bound tiles silently. Under the band model it must resolve
+        // to a strict DAG with every BandKey present in the final schedule.
+        let scale = 1.0;
+        let mut pool = new_pool();
+        let backdrop = uid(1);
+        let glass = uid(2);
+        // Backdrop spans roughly the same tiles as glass so both sit in
+        // each tile.
+        add_leaf(
+            &mut pool,
+            backdrop,
+            Uuid::nil(),
+            skia::Rect::from_xywh(200.0, 200.0, 1400.0, 1400.0),
+        );
+        // Glass covering tiles (0,0)..(2,2) at scale 1.
+        add_glass(
+            &mut pool,
+            glass,
+            Uuid::nil(),
+            skia::Rect::from_xywh(200.0, 200.0, 1400.0, 1400.0),
+        );
+
+        let mut grid = TileGrid::new();
+        let tv = make_tile_viewbox(scale);
+        grid.rebuild(&pool, &tv, scale);
+
+        // Every tile that contains the glass shape must emit ≥ 1 band that
+        // has the gather at its head. More importantly, no glass-tile may
+        // be missing from the schedule.
+        let glass_tiles: Vec<Tile> = grid.index.get(&glass).unwrap().iter().copied().collect();
+        assert!(!glass_tiles.is_empty());
+        for gt in &glass_tiles {
+            let steps = band_steps_for(&grid.schedule, *gt);
+            assert!(
+                !steps.is_empty(),
+                "glass tile {:?} must appear in the schedule (would be missing under old scheduler): \
+                 schedule_len={} bands_for_tile={:?}",
+                gt,
+                grid.schedule.len(),
+                grid.bands.get(gt)
+            );
+            // A glass tile always has ≥ 2 bands (below + gather-at-head).
+            assert!(
+                steps.len() >= 2,
+                "glass tile {:?} must have ≥ 2 bands; got {:?}",
+                gt,
+                steps
+            );
+        }
+    }
+
+    #[test]
+    fn schedule_is_complete_every_band_scheduled_exactly_once() {
+        // Every BandKey produced by `compute_bands` must appear in the
+        // schedule exactly once (no duplicates, no drops). The schedule may
+        // ALSO contain synthetic empty-tile SetTileBands for spiral tiles
+        // that have no shapes — those are needed to clear Target at those
+        // tile rects so previous-frame pixels don't linger.
+        let scale = 1.0;
+        let mut pool = new_pool();
+        let backdrop = uid(1);
+        let glass = uid(2);
+        add_leaf(&mut pool, backdrop, Uuid::nil(), skia::Rect::from_xywh(100.0, 100.0, 100.0, 100.0));
+        add_glass(&mut pool, glass, Uuid::nil(), skia::Rect::from_xywh(600.0, 600.0, 500.0, 500.0));
+
+        let mut grid = TileGrid::new();
+        let tv = make_tile_viewbox(scale);
+        grid.rebuild(&pool, &tv, scale);
+
+        let mut expected: HashSet<BandKey> = HashSet::new();
+        for (tile, bands) in &grid.bands {
+            for idx in 0..bands.len() {
+                expected.insert(BandKey::new(*tile, idx as u32));
+            }
+        }
+
+        let mut got: HashSet<BandKey> = HashSet::new();
+        for step in &grid.schedule {
+            if let RenderStep::SetTileBand { tile, band_index, .. } = step {
+                let key = BandKey::new(*tile, *band_index);
+                assert!(got.insert(key), "duplicate SetTileBand for {:?}", key);
+            }
+        }
+        for key in &expected {
+            assert!(
+                got.contains(key),
+                "schedule missing required BandKey {:?}",
+                key
+            );
+        }
+    }
+
+    #[test]
+    fn gather_band_depends_on_below_shape_in_different_tile() {
+        // A below-shape sits in a tile NOT containing the gather itself. The
+        // gather's sample region reaches into the below-shape's tile. The
+        // schedule must ensure the below-shape tile's band 0 runs BEFORE any
+        // gather band that samples it, so Target has the below content when
+        // the gather reads its backdrop.
+        let scale = 1.0;
+        let mut pool = new_pool();
+        let below = uid(1); // po=0 — far from the gather
+        let glass = uid(2); // po=1 — gather with large sample radius
+
+        // Below shape at tile (0,0) area.
+        add_leaf(&mut pool, below, Uuid::nil(), skia::Rect::from_xywh(100.0, 100.0, 100.0, 100.0));
+        // Glass at tile (1,1)-(2,2). With default glass params (blur=50,
+        // thickness=1) the sample expand is large enough to include (0,0).
+        add_glass(&mut pool, glass, Uuid::nil(), skia::Rect::from_xywh(600.0, 600.0, 500.0, 500.0));
+
+        let mut grid = TileGrid::new();
+        let tv = make_tile_viewbox(scale);
+        grid.rebuild(&pool, &tv, scale);
+
+        let below_tile = Tile::from(0, 0);
+        let below_pos = set_tile_pos(&grid.schedule, below_tile)
+            .expect("below tile (0,0) must appear in the schedule");
+
+        // For every glass tile, locate its gather-head SetTileBand and
+        // assert it comes after below_tile's SetTileBand.
+        let glass_tiles: Vec<Tile> = grid.index.get(&glass).unwrap().iter().copied().collect();
+        for gt in &glass_tiles {
+            // Find the gather band (the one whose gather_at_head matches).
+            let bands = grid.bands.get(gt).expect("glass tile has bands");
+            let gather_band_idx = bands
+                .iter()
+                .position(|b| b.gather_at_head == Some(glass))
+                .expect("glass tile must have a gather-head band");
+            let gather_step_pos = grid
+                .schedule
+                .iter()
+                .position(|s| {
+                    matches!(
+                        s,
+                        RenderStep::SetTileBand { tile: t, band_index, .. }
+                            if *t == *gt && *band_index == gather_band_idx as u32
+                    )
+                })
+                .expect("gather band must be in schedule");
+            assert!(
+                below_pos < gather_step_pos,
+                "below tile (0,0) [pos {}] must come before glass tile {:?} gather band [pos {}]",
+                below_pos, gt, gather_step_pos
+            );
+        }
+    }
+
+    #[test]
+    fn non_gather_tile_in_sample_region_split_by_barrier() {
+        // A tile that contains NO gather but IS in another gather's sample
+        // region must still split at the gather's paint_order, so
+        // above-gather shapes don't leak into the gather's backdrop sample.
+        let scale = 1.0;
+        let mut pool = new_pool();
+        let below = uid(1); // po=0
+        let glass = uid(2); // po=1
+        let above = uid(3); // po=2
+
+        // `below` inside tile (0,0).
+        add_leaf(&mut pool, below, Uuid::nil(), skia::Rect::from_xywh(50.0, 50.0, 100.0, 100.0));
+        // `glass` with sample region large enough to include (0,0).
+        add_glass(&mut pool, glass, Uuid::nil(), skia::Rect::from_xywh(600.0, 600.0, 500.0, 500.0));
+        // `above` in tile (0,0), ABOVE glass in paint order.
+        add_leaf(&mut pool, above, Uuid::nil(), skia::Rect::from_xywh(160.0, 50.0, 100.0, 100.0));
+
+        let mut grid = TileGrid::new();
+        let tv = make_tile_viewbox(scale);
+        grid.rebuild(&pool, &tv, scale);
+
+        let tile_00 = Tile::from(0, 0);
+        let bands = grid.bands.get(&tile_00).expect("tile (0,0) has shapes");
+
+        // Tile (0,0) has no gather of its own, so we should only see a
+        // barrier split IF (0,0) is in glass's sample region. It is (glass
+        // with blur=50 + thickness=1 has a large sample expand that reaches
+        // (0,0)), so expect exactly 2 bands: [below], [above].
+        assert_eq!(
+            bands.len(),
+            2,
+            "tile (0,0) must be split into 2 bands by glass's barrier; got {}: {:?}",
+            bands.len(),
+            bands
+        );
+
+        let po_below = entry_for(&grid, below).unwrap().paint_order;
+        let po_above = entry_for(&grid, above).unwrap().paint_order;
+        assert!(bands[0].shapes.contains(&below));
+        assert!(bands[1].shapes.contains(&above));
+        assert!(bands[0].max_paint_order == po_below);
+        assert!(bands[1].min_paint_order == po_above);
+
+        // Glass's band deps must include (0,0)'s band 0 but NOT band 1.
+        let tile_size = tiles::get_tile_size(scale);
+        let deps = grid.build_dependency_graph(&pool, tile_size, &tv.interest_rect, scale);
+
+        let any_on_00_band0 = deps.iter().any(|(_, ds)| {
+            ds.iter().any(|d| d.tile == tile_00 && d.band_index == 0)
+        });
+        let any_on_00_band1 = deps.iter().any(|(_, ds)| {
+            ds.iter().any(|d| d.tile == tile_00 && d.band_index == 1)
+        });
+        assert!(any_on_00_band0, "some band must depend on (0,0)/0 (below-glass)");
+        assert!(!any_on_00_band1, "no band may depend on (0,0)/1 (above-glass leak!)");
     }
 }
