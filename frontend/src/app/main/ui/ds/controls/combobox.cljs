@@ -10,7 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.main.constants :refer [max-input-length]]
-   [app.main.ui.ds.controls.select :refer [get-option handle-focus-change]]
+   [app.main.ui.ds.controls.select :refer [handle-focus-change]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown* schema:option]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
@@ -67,7 +67,7 @@
         (mf/with-memo [options filter-id]
           (->> options
                (filterv (fn [option]
-                          (let [option (str/lower (get option :id))
+                          (let [option (str/lower (get option :label))
                                 filter (str/lower filter-id)]
                             (str/includes? option filter))))
                (not-empty)))
@@ -113,7 +113,7 @@
 
         on-blur
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change options selected-id)
          (fn [event]
            (dom/stop-propagation event)
            (let [target   (dom/get-related-target event)
@@ -123,7 +123,12 @@
                (reset! focused-id* nil)
                (when (fn? on-change)
                  (when-let [input-node (mf/ref-val input-ref)]
-                   (on-change (dom/get-input-value input-node))))))))
+                   (let [input-value (dom/get-input-value input-node)
+                         selected-option (d/seek #(= selected-id (get % :id)) options)
+                         value (if (some? selected-option)
+                                 selected-id
+                                 input-value)]
+                     (on-change value))))))))
 
         on-input-click
         (mf/use-fn
@@ -209,11 +214,19 @@
         selected-option
         (mf/with-memo [options selected-id]
           (when (d/not-empty? options)
-            (get-option options selected-id)))
+            (d/seek #(= selected-id (get % :id)) options)))
 
         icon
         (when selected-option
-          (get selected-option :icon))]
+          (get selected-option :icon))
+
+        avatar
+        (when selected-option
+          (get selected-option :avatar))
+
+        render-avatar-fn
+        (when avatar
+          (get avatar :render-fn))]
 
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
@@ -241,11 +254,14 @@
             :on-click on-click}
 
       [:span {:class (stl/css-case :header true
-                                   :header-icon (some? icon))}
+                                   :header-icon (some? icon)
+                                   :header-avatar (fn? render-avatar-fn))}
        (when icon
          [:> icon* {:icon-id icon
                     :size "s"
                     :aria-hidden true}])
+       (when (fn? render-avatar-fn)
+         [:> render-avatar-fn {:avatar avatar}])
        [:input {:id id
                 :ref input-ref
                 :type "text"
@@ -259,7 +275,9 @@
                 :data-testid "combobox-input"
                 :max-length (d/nilv max-length max-input-length)
                 :disabled disabled
-                :value (d/nilv selected-id "")
+                :value (if (str/empty? (:id selected-option))
+                         (d/nilv selected-id "")
+                         (d/nilv (:label selected-option) ""))
                 :placeholder placeholder
                 :on-change on-input-change
                 :on-click on-input-click

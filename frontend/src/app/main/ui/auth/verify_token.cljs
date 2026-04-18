@@ -76,8 +76,17 @@
             (fn [tdata]
               (handle-token tdata))
             (fn [cause]
-              (let [{:keys [type code] :as error} (ex-data cause)]
+              (let [{:keys [type code team-id] :as error} (ex-data cause)]
                 (cond
+                  (= :invalid-token-already-member code)
+                  (st/emit!
+                   (rt/nav :dashboard-recent {:team-id team-id}))
+
+                  (= :org-not-found code)
+                  (st/emit!
+                   (rt/nav :dashboard-recent {:team-id team-id})
+                   (ntf/error (tr "errors.org-not-found")))
+
                   (or (= :validation type)
                       (= :invalid-token code)
                       (= :token-expired (:reason error)))

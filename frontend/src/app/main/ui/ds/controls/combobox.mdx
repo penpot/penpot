@@ -53,6 +53,39 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
                ]}]
 ```
 
+
+### Avatars
+
+Each option of `combobox*` also accepts an optional `avatar` map.
+Avatar rendering is defined per option with `:render-fn`, so each avatar type can provide its own UI. The renderer should be a component function that receives the full `avatar` map.
+
+```clj
+;; Example renderer for organization avatars
+(mf/defc render-org-avatar*
+  [{:keys [avatar]}]
+  (when (= :organization (:type avatar))
+    [:> org-avatar* {:org (:organization avatar)
+                     :size (:size avatar)}]))
+
+[:> combobox*
+    {:options [{:label "Design Team"
+                :id "org-design"
+                :avatar {:render-fn render-org-avatar*
+                         :size "s"
+                         :organization {:name "Design Team"
+                                        :organization-avatar-bg-url "https://example.com/avatar-bg.svg"
+                                        :organization-custom-photo nil}}}
+               {:label "Engineering"
+                :id "org-engineering"
+                :avatar {:render-fn render-org-avatar*
+                         :size "s"
+                         :organization {:name "Engineering"
+                                        :organization-avatar-bg-url nil
+                                        :organization-custom-photo "https://example.com/custom-photo.png"}}}]}]
+```
+
+The same pattern can be used later for other avatar kinds, for example `:team`, by adding a different `:render-fn` in those options.
+
 ## Usage guidelines (design)
 
 ### Where to Use

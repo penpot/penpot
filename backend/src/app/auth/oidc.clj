@@ -401,8 +401,9 @@
 
 (defn- parse-attr-path
   [provider path]
-  (let [[fitem & items] (str/split path "__")]
-    (into [(keyword (:type provider) fitem)] (map keyword) items)))
+  (let [separator        (if (str/includes? path "__") "__" ".")
+        [fitem & items]  (str/split path separator)]
+    (into [(keyword (:type provider) (str/kebab fitem))] (map keyword) items)))
 
 (defn- build-redirect-uri
   []
@@ -488,9 +489,9 @@
                 (let [attr-ph (parse-attr-path provider "nickname")]
                   (get-in props attr-ph))))]
 
-    (let [info  (assoc info :provider-id (str (:id provider)))
-          props (qualify-props provider info)
-          email (get-email props)]
+    (let [info    (assoc info :provider-id (str (:id provider)))
+          props   (qualify-props provider info)
+          email   (get-email props)]
       {:backend  (:type provider)
        :fullname (or (get-name props) email)
        :email email
@@ -553,9 +554,9 @@
         claims (get-id-token-claims provider tdata)
 
         info   (case (get provider :user-info-source)
-                 :token (dissoc claims :exp :iss :iat :aud :sub :sid)
+                 :token (dissoc claims :exp :iss :iat :aud :sid)
                  :userinfo (fetch-user-info cfg provider tdata)
-                 (or (some-> claims (dissoc :exp :iss :iat :aud :sub :sid))
+                 (or (some-> claims (dissoc :exp :iss :iat :aud :sid))
                      (fetch-user-info cfg provider tdata)))
 
         info   (process-user-info provider tdata info)]
