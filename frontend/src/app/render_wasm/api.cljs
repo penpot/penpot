@@ -27,7 +27,6 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
-   [app.main.worker :as mw]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.api.shapes :as shapes]
    [app.render-wasm.api.texts :as t]
@@ -1114,15 +1113,6 @@
   (render-finish)
   (perf/end-measure "render-from-cache"))
 
-(defn update-text-rect!
-  [id]
-  (when wasm/context-initialized?
-    (mw/emit!
-     {:cmd :index/update-text-rect
-      :page-id (:current-page-id @st/state)
-      :shape-id id
-      :dimensions (get-text-dimensions id)})))
-
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the
   content is nil (freshly created text) we fall back to
@@ -1195,10 +1185,7 @@
   "Synchronously update text layouts for all shapes and send rect updates
    to the worker index."
   [text-ids]
-  (run! (fn [id]
-          (f/update-text-layout id)
-          (update-text-rect! id))
-        text-ids))
+  (run! f/update-text-layout text-ids))
 
 (defn process-pending
   [shapes thumbnails full on-complete]
