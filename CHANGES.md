@@ -43,6 +43,8 @@
 - Edit ruler guide position by double-clicking the guide pill (by @eureka0928) [Github #2311](https://github.com/penpot/penpot/issues/2311)
 - Add a search bar to filter colors in the color palette toolbar (by @eureka0928) [Github #7653](https://github.com/penpot/penpot/issues/7653)
 - Allow customising the OIDC login button label (by @wdeveloper16) [Github #7027](https://github.com/penpot/penpot/issues/7027)
+- Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
+
 
 ### :bug: Bugs fixed
 
