@@ -84,9 +84,9 @@
 
 (defn render-thumbnail
   "Renders a component thumbnail via WASM and updates the UI immediately.
-   Does NOT persist to the server — persistence is handled separately
-   by `persist-thumbnail` on a debounced schedule."
-  [file-id page-id frame-id]
+   When `persist?` is true, also persists the rendered thumbnail to the
+   server in the same observable chain (guaranteeing correct ordering)."
+  [file-id page-id frame-id & {:keys [persist?] :or {persist? false}}]
 
   (let [object-id (thc/fmt-object-id file-id page-id frame-id "component")]
     (ptk/reify ::render-thumbnail
@@ -115,15 +115,30 @@
                            (catch :default err
                              (rx/error! subs err)))))))
 
+                  (persist-to-server
+                    [data-uri]
+                    (let [blob (wapi/data-uri->blob data-uri)]
+                      (->> (rp/cmd! :create-file-object-thumbnail
+                                    {:file-id file-id
+                                     :object-id object-id
+                                     :media blob
+                                     :tag "component"})
+                           (rx/catch rx/empty)
+                           (rx/ignore))))
+
                   (do-render-thumbnail
                     []
                     (let [tp (ct/tpoint-ms)]
                       (->> (render-component-pixels file-id page-id frame-id)
-                           (rx/map
+                           (rx/mapcat
                             (fn [data-uri]
                               (l/dbg :hint "component thumbnail rendered (wasm)"
                                      :elapsed (dm/str (tp) "ms"))
-                              (dwt/assoc-thumbnail object-id data-uri)))
+                              (if persist?
+                                (rx/merge
+                                 (rx/of (dwt/assoc-thumbnail object-id data-uri))
+                                 (persist-to-server data-uri))
+                                (rx/of (dwt/assoc-thumbnail object-id data-uri)))))
 
                            (rx/catch (fn [err]
                                        (js/console.error err)
