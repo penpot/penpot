@@ -323,11 +323,7 @@
              (vals)
              (rx/from)
              (rx/mapcat (fn [callback] (callback)))
-             (rx/reduce conj [])
-             (rx/tap
-              (fn []
-                (when (cfh/text-shape? shape)
-                  (api/update-text-rect! (:id shape)))))))
+             (rx/reduce conj [])))
       (rx/empty))))
 
 (defn process-shape-changes!
