@@ -24,7 +24,7 @@
                          :notification notification})))
 
 
-(defn notify-user-removed-from-org
+(defn notify-user-org-change
   [cfg profile-id organization-id organization-name notification]
   (let [msgbus (::mbus/msgbus cfg)]
     (mbus/pub! msgbus

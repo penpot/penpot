@@ -7,9 +7,12 @@
 @use "refactor/common-refactor.scss" as deprecated;
 @use "ds/typography.scss" as t;
 @use "ds/_sizes.scss" as *;
+@use "ds/z-index.scss" as *;
 
 .modal-overlay {
   @extend %modal-overlay-base;
+
+  z-index: var(--z-index-notifications);
 }
 
 .modal-container {

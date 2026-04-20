@@ -217,12 +217,12 @@
                         schema:organization params)))
 
 (defn- get-org-membership-api
-  [cfg {:keys [profile-id org-id] :as params}]
+  [cfg {:keys [profile-id organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get
                         (str baseuri
                              "/api/organizations/"
-                             org-id
+                             organization-id
                              "/members/"
                              profile-id)
                         schema:profile-org params)))
@@ -240,12 +240,12 @@
 
 
 (defn- get-org-summary-api
-  [cfg {:keys [org-id] :as params}]
+  [cfg {:keys [organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get
                         (str baseuri
                              "/api/organizations/"
-                             org-id
+                             organization-id
                              "/summary")
                         schema:org-summary params)))
 
@@ -263,7 +263,7 @@
                         schema:team params)))
 
 (defn- add-profile-to-org-api
-  [cfg {:keys [profile-id org-id team-id email] :as params}]
+  [cfg {:keys [profile-id organization-id team-id email] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
         request-params (cond-> {:user-id profile-id :team-id team-id}
                          (some? email) (assoc :email email))
@@ -271,18 +271,18 @@
     (request-to-nitrate cfg :post
                         (str baseuri
                              "/api/organizations/"
-                             org-id
+                             organization-id
                              "/add-user")
                         schema:profile-org params)))
 
 (defn- remove-profile-from-org-api
-  [cfg {:keys [profile-id org-id] :as params}]
+  [cfg {:keys [profile-id organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
         params (assoc params :request-params {:user-id profile-id})]
     (request-to-nitrate cfg :post
                         (str baseuri
                              "/api/organizations/"
-                             org-id
+                             organization-id
                              "/remove-user")
                         nil params)))
 
