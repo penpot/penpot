@@ -147,6 +147,48 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn set_viewport_interest_area_threshold(
+    viewport_interest_area_threshold: i32,
+) -> Result<()> {
+    with_state_mut!(state, {
+        let render_state = state.render_state_mut();
+        render_state.set_viewport_interest_area_threshold(viewport_interest_area_threshold);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_max_blocking_time_ms(max_blocking_time_ms: i32) -> Result<()> {
+    with_state_mut!(state, {
+        let render_state = state.render_state_mut();
+        render_state.set_max_blocking_time_ms(max_blocking_time_ms);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_node_batch_threshold(node_batch_threshold: i32) -> Result<()> {
+    with_state_mut!(state, {
+        let render_state = state.render_state_mut();
+        render_state.set_node_batch_threshold(node_batch_threshold);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_blur_downscale_threshold(blur_downscale_threshold: f32) -> Result<()> {
+    with_state_mut!(state, {
+        let render_state = state.render_state_mut();
+        render_state.set_blur_downscale_threshold(blur_downscale_threshold);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn set_antialias_threshold(threshold: f32) -> Result<()> {
     with_state_mut!(state, {
         state.render_state_mut().set_antialias_threshold(threshold);

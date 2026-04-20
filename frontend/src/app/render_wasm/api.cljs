@@ -1599,6 +1599,42 @@
       (when (and (number? n) (not (js/isNaN n)) (pos? n))
         n))))
 
+(defn- wasm-blur-downscale-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:blur_downscale_threshold p))]
+    (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-max-blocking-time-ms-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:max_blocking_time_ms p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-node-batch-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:node_batch_threshold p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-viewport-interest-area-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:viewport_interest_area_threshold p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
 (defn set-canvas-size
   [canvas]
   (let [width (or (.-clientWidth ^js canvas) (.-width ^js canvas))
@@ -1636,6 +1672,14 @@
         (h/call wasm/internal-module "_set_render_options" flags dpr)
         (when-let [t (wasm-aa-threshold-from-route-params)]
           (h/call wasm/internal-module "_set_antialias_threshold" t))
+        (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
+        (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
+          (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
+        (when-let [t (wasm-node-batch-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_node_batch_threshold" t))
+        (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
         (when-let [max-tex (webgl/max-texture-size context)]
           (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
 
