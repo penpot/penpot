@@ -10,6 +10,7 @@
 @use "ds/mixins.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/typography.scss" as t;
+@use "ds/z-index.scss" as *;
 
 .color-primary {
   color: var(--color-foreground-primary);
@@ -44,6 +45,7 @@
 
 .modal-overlay {
   @extend %modal-overlay-base;
+  z-index: $z-index-100;
 }
 
 .modal-container {
