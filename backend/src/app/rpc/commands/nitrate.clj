@@ -34,7 +34,7 @@
 
 (defn assert-membership [cfg profile-id organization-id]
   (let [membership (nitrate/call cfg :get-org-membership {:profile-id profile-id
-                                                          :org-id organization-id})]
+                                                          :organization-id organization-id})]
     (when-not (:organization-id membership)
       (ex/raise :type :validation
                 :code :organization-doesnt-exists))
@@ -83,8 +83,8 @@
 
 (def ^:private schema:leave-org
   [:map
-   [:org-id ::sm/uuid]
-   [:org-name ::sm/text]
+   [:id ::sm/uuid]
+   [:name ::sm/text]
    [:default-team-id ::sm/uuid]
    [:teams-to-delete
     [:vector ::sm/uuid]]
@@ -130,13 +130,13 @@
       :valid-teams-to-exit valid-teams-to-exit
       :valid-default-team valid-default-team})))
 
-(defn get-valid-teams [cfg org-id profile-id default-team-id]
-  (let [org-summary                (nitrate/call cfg :get-org-summary {:org-id org-id})
+(defn get-valid-teams [cfg organization-id profile-id default-team-id]
+  (let [org-summary                (nitrate/call cfg :get-org-summary {:organization-id organization-id})
         org-teams                  (get-organization-teams-for-user cfg org-summary profile-id)]
     (calculate-valid-teams org-teams default-team-id)))
 
-(defn- assert-valid-teams [cfg profile-id org-id default-team-id teams-to-delete teams-to-leave]
-  (let [org-summary                (nitrate/call cfg :get-org-summary {:org-id org-id})
+(defn- assert-valid-teams [cfg profile-id organization-id default-team-id teams-to-delete teams-to-leave]
+  (let [org-summary                (nitrate/call cfg :get-org-summary {:organization-id organization-id})
         org-teams                  (get-organization-teams-for-user cfg org-summary profile-id)
         {:keys [valid-teams-to-delete-ids
                 valid-teams-to-transfer
@@ -184,8 +184,8 @@
 
 
 (defn leave-org
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id org-id org-name default-team-id teams-to-delete teams-to-leave skip-validation] :as params}]
-  (let [org-prefix                 (str "[" (d/sanitize-string org-name) "] ")
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation] :as params}]
+  (let [org-prefix                 (str "[" (d/sanitize-string name) "] ")
 
         default-team-files-count    (-> (db/exec-one! conn [sql:get-team-files-count default-team-id])
                                         :total)
@@ -196,9 +196,9 @@
 
     ;; assert that the received teams are valid, checking the different constraints
     (when-not skip-validation
-      (assert-valid-teams cfg profile-id org-id default-team-id teams-to-delete teams-to-leave))
+      (assert-valid-teams cfg profile-id id default-team-id teams-to-delete teams-to-leave))
 
-    (assert-membership cfg profile-id org-id)
+    (assert-membership cfg profile-id id)
 
     ;; delete the teams-to-delete
     (doseq [id teams-to-delete]
@@ -216,7 +216,7 @@
       (db/exec! conn [sql:prefix-team-name-and-unset-default org-prefix default-team-id]))
 
     ;; Api call to nitrate
-    (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :org-id org-id})
+    (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :organization-id id})
 
     nil))
 

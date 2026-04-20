@@ -542,9 +542,9 @@
 (defn initialize-user-in-nitrate-org
   "If needed, create a default team for the user on the organization,
    and notify Nitrate that an user has been added to an org."
-  ([cfg profile-id org-id]
-   (initialize-user-in-nitrate-org cfg profile-id org-id nil))
-  ([cfg profile-id org-id email]
+  ([cfg profile-id organization-id]
+   (initialize-user-in-nitrate-org cfg profile-id organization-id nil))
+  ([cfg profile-id organization-id email]
    (assert (db/connection-map? cfg)
            "expected cfg with valid connection")
    (when (contains? cf/flags :nitrate)
@@ -553,25 +553,25 @@
       (fn [{:keys [::db/conn] :as tx-cfg}]
 
         (let [membership (nitrate/call cfg :get-org-membership {:profile-id profile-id
-                                                                :org-id org-id})]
+                                                                :organization-id organization-id})]
           ;; Only when the user doesn't belong to the organization yet
           (when (and
                  (some? (:organization-id membership)) ;; the organization exists
                  (not (:is-member membership)))        ;; the user is not a member of the org yet
 
 
-            (let [org-id           org-id
-                  default-team     (create-default-org-team (assoc tx-cfg ::db/conn conn) profile-id org-id)
+            (let [organization-id           organization-id
+                  default-team     (create-default-org-team (assoc tx-cfg ::db/conn conn) profile-id organization-id)
                   default-team-id  (:id default-team)
                   result           (nitrate/call tx-cfg :add-profile-to-org (cond-> {:profile-id profile-id
                                                                                      :team-id default-team-id
-                                                                                     :org-id org-id}
+                                                                                     :organization-id organization-id}
                                                                               (some? email) (assoc :email email)))]
               (when (not (:is-member result))
                 (ex/raise :type :internal
                           :code :failed-add-profile-org-nitrate
                           :context {:profile-id profile-id
-                                    :org-id org-id
+                                    :organization-id organization-id
                                     :default-team-id default-team-id}))
               default-team-id))))))))
 
