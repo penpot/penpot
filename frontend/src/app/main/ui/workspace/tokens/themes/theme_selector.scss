@@ -43,7 +43,7 @@
 }
 
 .group {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   display: block;
   padding: deprecated.$s-8;
@@ -61,13 +61,13 @@
 }
 
 .dropdown-button {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   color: var(--color-foreground-secondary);
 }
 
 .current-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-24;
   padding-right: deprecated.$s-4;
@@ -115,7 +115,7 @@
 }
 
 .check-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   color: var(--icon-foreground-primary);
   visibility: hidden;
@@ -131,7 +131,7 @@
 }
 
 .current-label {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 }
 
 .dropdown-portal {

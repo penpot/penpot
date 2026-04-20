@@ -23,7 +23,7 @@
 }
 
 .error-text {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--color-foreground-error);
 }
@@ -40,11 +40,11 @@
 }
 
 .location-text {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 }
 
 .author {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   display: flex;
   align-items: center;
@@ -56,13 +56,13 @@
 }
 
 .author-fullname {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   color: var(--comment-title-color);
 }
 
 .author-timeago {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   color: var(--comment-subtitle-color);
 }
@@ -120,7 +120,7 @@
 }
 
 .cover {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   cursor: pointer;
   display: flex;
@@ -131,7 +131,7 @@
 }
 
 .item {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--color-foreground-primary);
   overflow-wrap: break-word;
@@ -140,7 +140,7 @@
 }
 
 .replies {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   display: flex;
   gap: deprecated.$s-8;
@@ -245,7 +245,7 @@
 }
 
 .floating-thread-header-left {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--color-foreground-primary);
 }
@@ -272,11 +272,11 @@
   flex-direction: column;
   gap: deprecated.$s-8;
 
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 }
 
 .checkbox-wrapper {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-16;
   height: deprecated.$s-24;
@@ -381,7 +381,7 @@
 }
 
 .comment-input {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   background: var(--input-background-color);
   border-radius: deprecated.$br-8;

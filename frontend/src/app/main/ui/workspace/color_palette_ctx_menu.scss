@@ -36,7 +36,7 @@
       width: 100%;
 
       .library-name {
-        @include deprecated.bodySmallTypography;
+        @include deprecated.body-small-typography;
 
         color: var(--context-menu-foreground-color);
         display: grid;
@@ -47,7 +47,7 @@
           max-width: deprecated.$s-400;
 
           .lib-name {
-            @include deprecated.textEllipsis;
+            @include deprecated.text-ellipsis;
 
             max-width: deprecated.$s-380;
           }
@@ -60,11 +60,11 @@
         .icon-wrapper {
           margin-left: deprecated.$s-4;
 
-          @include deprecated.flexCenter;
+          @include deprecated.flex-center;
 
           svg {
             @extend %button-icon-small;
-            @include deprecated.flexCenter;
+            @include deprecated.flex-center;
 
             stroke: var(--icon-foreground);
           }
@@ -85,10 +85,10 @@
         color: var(--context-menu-foreground-color-selected);
 
         .icon-wrapper {
-          @include deprecated.flexCenter;
+          @include deprecated.flex-center;
 
           svg {
-            @include deprecated.flexCenter;
+            @include deprecated.flex-center;
             @extend %button-icon-small;
 
             stroke: var(--context-menu-foreground-color-selected);

@@ -10,7 +10,7 @@
   $style-name,
   $file,
   $unicode-range,
-  $weight: unquote("normal"),
+  $weight: string.unquote("normal"),
   $style: string.unquote("normal")
 ) {
   $filepath: "../fonts/" + $file;
@@ -22,6 +22,7 @@
       url($filepath + ".ttf") format("truetype");
     font-weight: string.unquote($weight);
     font-style: string.unquote($style);
+
     @if $unicode-range {
       unicode-range: $unicode-range;
     }

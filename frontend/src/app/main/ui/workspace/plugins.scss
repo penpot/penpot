@@ -52,7 +52,7 @@
 }
 
 .modal-title {
-  @include deprecated.headlineMediumTypography;
+  @include deprecated.headline-medium-typography;
 
   margin-block-end: deprecated.$s-32;
   color: var(--modal-title-foreground-color);
@@ -86,7 +86,7 @@
 
 .primary-button {
   @extend %button-primary;
-  @include deprecated.headlineSmallTypography;
+  @include deprecated.headline-small-typography;
 
   padding: deprecated.$s-0 deprecated.$s-16;
 }
@@ -98,13 +98,13 @@
 
 .cancel-button {
   @extend %button-secondary;
-  @include deprecated.headlineSmallTypography;
+  @include deprecated.headline-small-typography;
 
   padding: deprecated.$s-0 deprecated.$s-16;
 }
 
 .search-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-20;
   padding: 0 0 0 deprecated.$s-8;
@@ -163,13 +163,13 @@
 }
 
 .plugin-title {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
 
   color: var(--color-foreground-primary);
 }
 
 .plugin-summary {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--color-foreground-secondary);
 }
@@ -202,7 +202,7 @@
 }
 
 .plugins-empty-text {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--color-foreground-primary);
 }
@@ -212,7 +212,7 @@ div.input-error {
 }
 
 .info {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   margin-top: deprecated.$s-4;
 
@@ -262,14 +262,14 @@ div.input-error {
 }
 
 .permissions-list-text {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   margin: 0;
   color: var(--color-foreground-secondary);
 }
 
 .permissions-disclaimer {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   padding: deprecated.$s-16;
   background: var(--color-background-quaternary);
@@ -283,7 +283,7 @@ div.input-error {
 }
 
 .discover {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--color-foreground-secondary);
   margin-top: deprecated.$s-24;

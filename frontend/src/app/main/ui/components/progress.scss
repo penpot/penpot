@@ -8,7 +8,7 @@
 
 // PROGRESS WIDGET
 .progress-widget {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-28;
   height: deprecated.$s-28;
@@ -59,7 +59,7 @@
 }
 
 .title {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
 
   display: grid;
   grid-template-columns: auto 1fr;
@@ -72,7 +72,7 @@
 }
 
 .progress {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
 
   padding-left: deprecated.$s-8;
   margin: 0;
@@ -81,8 +81,8 @@
 }
 
 .retry-btn {
-  @include deprecated.buttonStyle;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.button-style;
+  @include deprecated.body-small-typography;
 
   display: inline;
   text-align: left;
@@ -92,7 +92,7 @@
 }
 
 .progress-close-button {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   padding: 0;
   margin-inline-end: deprecated.$s-8;

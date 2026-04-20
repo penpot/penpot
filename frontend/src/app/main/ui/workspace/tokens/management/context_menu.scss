@@ -22,7 +22,7 @@
 
 .context-list,
 .token-context-submenu {
-  @include deprecated.menuShadow;
+  @include deprecated.menu-shadow;
 
   display: grid;
   width: deprecated.$s-240;

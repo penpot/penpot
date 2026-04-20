@@ -21,7 +21,7 @@
 }
 
 .modal-title {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   color: var(--modal-title-foreground-color);
 }
@@ -31,19 +31,19 @@
 }
 
 .modal-content {
-  @include deprecated.flexColumn;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.flex-column;
+  @include deprecated.body-small-typography;
 
   gap: deprecated.$s-24;
   margin-bottom: deprecated.$s-24;
 }
 
 .fields-row {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 }
 
 .select-title {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--modal-title-foreground-color);
 }

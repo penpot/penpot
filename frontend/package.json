@@ -31,7 +31,7 @@
     "fmt:scss": "prettier -c resources/styles -c src/**/*.scss -w",
     "lint:clj": "clj-kondo --parallel --lint ../common/src src/",
     "lint:js": "exit 0",
-    "lint:scss": "pnpx stylelint 'src/**/*.scss'",
+    "lint:scss": "pnpx stylelint '{src,resources}/**/*.scss'",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
     "test": "pnpm run build:wasm && pnpm run build:test && node target/tests/test.js",
     "test:storybook": "vitest run --project=storybook",

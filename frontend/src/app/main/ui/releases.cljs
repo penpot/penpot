@@ -53,7 +53,7 @@
   (let [slide* (mf/use-state :start)
         slide  (deref slide*)
 
-        klass* (mf/use-state "fadeInDown")
+        klass* (mf/use-state "fade-in-down")
         klass  (deref klass*)
 
         navigate
@@ -78,7 +78,7 @@
 
     (mf/with-effect [slide]
       (when (not= :start slide)
-        (reset! klass* "fadeIn"))
+        (reset! klass* "fade-in"))
       (let [sem (tm/schedule 300 #(reset! klass* nil))]
         (fn []
           (reset! klass* nil)

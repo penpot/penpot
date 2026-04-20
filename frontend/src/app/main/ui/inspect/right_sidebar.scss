@@ -56,8 +56,8 @@
 }
 
 .layer-title {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.textEllipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.text-ellipsis;
 
   block-size: $sz-32;
   padding: var(--sp-s) 0;
@@ -70,8 +70,8 @@
 }
 
 .layer-subtitle {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.textEllipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.text-ellipsis;
 
   color: var(--assets-item-name-foreground-color-rest);
 }

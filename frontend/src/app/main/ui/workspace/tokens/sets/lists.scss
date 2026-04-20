@@ -30,7 +30,7 @@
 }
 
 .set-item-container {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   display: flex;
   align-items: center;
@@ -68,7 +68,7 @@
 }
 
 .set-name {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   flex-grow: 1;
   padding-left: deprecated.$s-2;
@@ -142,8 +142,8 @@
 }
 
 .collapsabled-icon {
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
+  @include deprecated.button-style;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-24;
   border-radius: deprecated.$br-8;
@@ -154,9 +154,9 @@
 }
 
 .editing-node {
-  @include deprecated.textEllipsis;
-  @include deprecated.bodySmallTypography;
-  @include deprecated.removeInputStyle;
+  @include deprecated.text-ellipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.remove-input-style;
 
   border: deprecated.$s-1 solid var(--input-border-color-focus);
   border-radius: deprecated.$br-8;

@@ -8,7 +8,7 @@
 
 // COMMENT DROPDOWN ON HEADER
 .view-options {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   display: flex;
   align-items: center;
@@ -31,7 +31,7 @@
 }
 
 .dropdown-title {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   flex-grow: 1;
   color: var(--input-foreground-color-active);
@@ -44,7 +44,7 @@
 
 .icon,
 .icon-dropdown {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: 100%;
   width: deprecated.$s-16;
@@ -64,7 +64,7 @@
   @extend %dropdown-element-base;
 
   .icon {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     height: 100%;
     width: deprecated.$s-16;

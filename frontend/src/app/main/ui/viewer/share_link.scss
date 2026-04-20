@@ -26,7 +26,7 @@
 }
 
 .share-link-title {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   color: var(--modal-title-foreground-color);
 }
@@ -36,20 +36,20 @@
 }
 
 .modal-content {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.flexColumn;
+  @include deprecated.body-small-typography;
+  @include deprecated.flex-column;
 
   gap: deprecated.$s-24;
 }
 
 .share-link-section {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   gap: deprecated.$s-8;
 }
 
 .hint-wrapper {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 }
 
 .hint {
@@ -58,7 +58,7 @@
 }
 
 .custon-input-wrapper {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   border-radius: deprecated.$br-8;
   height: deprecated.$s-32;
@@ -68,7 +68,7 @@
 
 .input-text {
   @extend %input-element;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--input-foreground-color-active);
   padding-left: deprecated.$s-8;
@@ -83,7 +83,7 @@
 
 .copy-button {
   @extend %button-secondary;
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   gap: deprecated.$s-8;
   height: deprecated.$s-32;
@@ -97,14 +97,14 @@
 }
 
 .description {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--modal-text-foreground-color);
   margin-bottom: deprecated.$s-24;
 }
 
 .actions {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   justify-content: flex-end;
 }
@@ -122,14 +122,14 @@
 }
 
 .permissions-section {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   gap: deprecated.$s-8;
 }
 
 .manage-permissions {
-  @include deprecated.buttonStyle;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.button-style;
+  @include deprecated.uppercase-title-typography;
 
   color: var(--menu-foreground-color-rest);
   height: deprecated.$s-32;
@@ -139,7 +139,7 @@
 }
 
 .icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   margin-right: deprecated.$s-6;
 
@@ -182,7 +182,7 @@
 }
 
 .select-all-row {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   justify-content: space-between;
   height: deprecated.$s-32;
@@ -207,7 +207,7 @@
 
 .count-pages,
 .current-tag {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--input-foreground-color);
 }

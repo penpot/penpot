@@ -13,7 +13,7 @@
   --text-color: var(--menu-foreground-color);
 
   @extend %new-scrollbar;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   position: relative;
   display: grid;
@@ -56,7 +56,7 @@
 }
 
 .dropdown-button {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   margin-inline-end: var(--sp-xxs);
 
@@ -69,7 +69,7 @@
 }
 
 .current-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-24;
   padding-right: deprecated.$s-4;
@@ -100,7 +100,7 @@
   @extend %dropdown-element-base;
 
   .icon {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     height: deprecated.$s-24;
     width: deprecated.$s-24;
@@ -119,7 +119,7 @@
   }
 
   .check-icon {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     svg {
       @extend %button-icon-small;
@@ -144,5 +144,5 @@
 }
 
 .current-label {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 }

@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .hsva-selector {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   padding: deprecated.$s-4;
   row-gap: deprecated.$s-8;
@@ -20,7 +20,7 @@
 }
 
 .hsva-selector-label {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   display: flex;
   align-items: center;
