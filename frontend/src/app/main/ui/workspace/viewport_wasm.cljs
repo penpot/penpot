@@ -408,7 +408,7 @@
             (mf/set-ref-val! last-file-version-id-ref file-version-id))
           (when (and (some? file-version-id)
                      (not= file-version-id (mf/ref-val last-file-version-id-ref)))
-            (wasm.api/initialize-viewport base-objects zoom vbox background)
+            (wasm.api/initialize-viewport base-objects zoom vbox :background background)
             (mf/set-ref-val! last-file-version-id-ref file-version-id)))))
 
     (mf/with-effect [focus]
