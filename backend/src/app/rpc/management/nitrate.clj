@@ -17,6 +17,7 @@
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.nitrate :as cnit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.commands.teams-invitations :as ti]
@@ -339,4 +340,86 @@ RETURNING id, name;")
   [cfg params]
   (db/tx-run! cfg ti/create-org-invitation params)
   nil)
+
+
+
+;; API: remove-from-org
+
+(def ^:private sql:get-reassign-to
+  "SELECT tpr.profile_id
+     FROM team_profile_rel AS tpr
+    WHERE tpr.team_id = ?
+      AND tpr.profile_id <> ?
+      AND tpr.is_owner IS NOT TRUE
+    ORDER BY CASE
+               WHEN tpr.is_admin IS TRUE THEN 1
+               ELSE 2
+             END,
+             tpr.created_at,
+             tpr.profile_id
+    LIMIT 1;")
+
+(defn add-reassign-to [cfg profile-id team-to-transfer]
+  (let [reassign-to (-> (db/exec-one! cfg [sql:get-reassign-to (:id team-to-transfer) profile-id])
+                        :profile-id)]
+    (when-not reassign-to
+      (ex/raise :type :validation
+                :code :nobody-to-reassign-team))
+
+    (assoc team-to-transfer :reassign-to reassign-to)))
+
+(sv/defmethod ::remove-from-org
+  "Remove an user from an organization"
+  {::doc/added "2.16"
+   ::sm/params [:map
+                [:profile-id ::sm/uuid]
+                [:org-id ::sm/uuid]
+                [:org-name ::sm/text]
+                [:default-team-id ::sm/uuid]]
+   ::db/transaction true}
+  [cfg {:keys [profile-id org-id org-name default-team-id] :as params}]
+  (let [{:keys [valid-teams-to-delete-ids
+                valid-teams-to-transfer
+                valid-teams-to-exit]} (cnit/get-valid-teams cfg org-id profile-id default-team-id)
+        add-reassign-to (partial add-reassign-to cfg profile-id)
+
+        valid-teams-to-leave (into valid-teams-to-exit
+                                   (map add-reassign-to valid-teams-to-transfer))]
+
+    (cnit/leave-org cfg (assoc params
+                               :teams-to-delete valid-teams-to-delete-ids
+                               :teams-to-leave valid-teams-to-leave
+                               :skip-validation true))
+    (notifications/notify-user-removed-from-org cfg profile-id org-id org-name "dashboard.user-no-longer-belong-org")
+    nil))
+
+;; API: get-remove-from-org-summary
+
+(def ^:private schema:get-remove-from-org-summary-result
+  [:map
+   [:teams-to-delete ::sm/int]
+   [:teams-to-transfer ::sm/int]
+   [:teams-to-exit ::sm/int]])
+
+(sv/defmethod ::get-remove-from-org-summary
+  "Get a summary of the teams that would be deleted, transferred, or exited
+   if the user were removed from the organization"
+  {::doc/added "2.16"
+   ::sm/params [:map
+                [:profile-id ::sm/uuid]
+                [:org-id ::sm/uuid]
+                [:default-team-id ::sm/uuid]]
+   ::sm/result schema:get-remove-from-org-summary-result
+   ::db/transaction true}
+  [cfg {:keys [profile-id org-id default-team-id]}]
+  (let [{:keys [valid-teams-to-delete-ids
+                valid-teams-to-transfer
+                valid-teams-to-exit
+                valid-default-team]} (cnit/get-valid-teams cfg org-id profile-id default-team-id)]
+    (when-not valid-default-team
+      (ex/raise :type :validation
+                :code :not-valid-teams))
+    {:teams-to-delete   (count valid-teams-to-delete-ids)
+     :teams-to-transfer (count valid-teams-to-transfer)
+     :teams-to-exit     (count valid-teams-to-exit)}))
 

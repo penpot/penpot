@@ -57,6 +57,7 @@
 
 (def ^:private sql:get-member-teams-info
   "SELECT t.id,
+          t.is_default,
           tpr.is_owner,
           (SELECT count(*)    FROM team_profile_rel WHERE team_id = t.id) AS num_members,
           (SELECT array_agg(profile_id) FROM team_profile_rel WHERE team_id = t.id) AS member_ids
@@ -76,6 +77,7 @@
 (def ^:private schema:leave-org
   [:map
    [:org-id ::sm/uuid]
+   [:org-name ::sm/text]
    [:default-team-id ::sm/uuid]
    [:teams-to-delete
     [:vector ::sm/uuid]]
@@ -85,73 +87,72 @@
       [:id ::sm/uuid]
       [:reassign-to {:optional true} ::sm/uuid]]]]])
 
-(sv/defmethod ::leave-org
-  {::rpc/auth true
-   ::doc/added "2.15"
-   ::sm/params schema:leave-org
-   ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id org-id default-team-id teams-to-delete teams-to-leave] :as params}]
+
+(defn- get-organization-teams-for-user
+  [{:keys [::db/conn] :as cfg} org-summary profile-id]
+  (let [org-team-ids (->> (:teams org-summary)
+                          (map :id))
+        ids-array    (db/create-array conn "uuid" org-team-ids)]
+    (db/exec! conn [sql:get-member-teams-info profile-id ids-array])))
+
+(defn- calculate-valid-teams
+  ([org-teams default-team-id]
+   (let [;; valid default team is the one which id is default-team-id
+         valid-default-team          (d/seek #(= default-team-id (:id %)) org-teams)
+
+         ;; Remove your-penpot for the rest of validations
+         org-teams                   (remove #(= default-team-id (:id %)) org-teams)
+
+         ;; valid teams to delete are those that the user is owner, and only have one member
+         valid-teams-to-delete-ids   (->> org-teams
+                                          (filter #(and (:is-owner %)
+                                                        (= (:num-members %) 1)))
+                                          (map :id)
+                                          (into #{}))
+         ;; valid teams to transfer are those that the user is owner, and have more than one member
+         valid-teams-to-transfer     (->> org-teams
+                                          (filter #(and (:is-owner %)
+                                                        (> (:num-members %) 1))))
+
+         ;; valid teams to exit are those that the user isn't owner, and have more than one member
+         valid-teams-to-exit         (->> org-teams
+                                          (filter #(and (not (:is-owner %))
+                                                        (> (:num-members %) 1))))]
+     {:valid-teams-to-delete-ids valid-teams-to-delete-ids
+      :valid-teams-to-transfer valid-teams-to-transfer
+      :valid-teams-to-exit valid-teams-to-exit
+      :valid-default-team valid-default-team})))
+
+(defn get-valid-teams [cfg org-id profile-id default-team-id]
   (let [org-summary                (nitrate/call cfg :get-org-summary {:org-id org-id})
+        org-teams                  (get-organization-teams-for-user cfg org-summary profile-id)]
+    (calculate-valid-teams org-teams default-team-id)))
 
-        org-name                   (:name org-summary)
-        org-prefix                 (str "[" (d/sanitize-string org-name) "] ")
+(defn- assert-valid-teams [cfg profile-id org-id default-team-id teams-to-delete teams-to-leave]
+  (let [org-summary                (nitrate/call cfg :get-org-summary {:org-id org-id})
+        org-teams                  (get-organization-teams-for-user cfg org-summary profile-id)
+        {:keys [valid-teams-to-delete-ids
+                valid-teams-to-transfer
+                valid-teams-to-exit
+                valid-default-team]} (calculate-valid-teams org-teams default-team-id)
 
-        your-penpot-ids            (->> (:teams org-summary)
-                                        (filter :is-your-penpot)
-                                        (map :id)
-                                        (into #{}))
 
-        valid-default-team-id?      (contains? your-penpot-ids default-team-id)
 
-        org-team-ids                (->> (:teams org-summary)
-                                         (remove :is-your-penpot)
-                                         (map :id))
-        ids-array                   (db/create-array conn "uuid" org-team-ids)
-        teams                       (db/exec! conn [sql:get-member-teams-info profile-id ids-array])
-        teams-by-id                 (d/index-by :id teams)
-
-        ;; valid teams to delete are those that the user is owner, and only have one member
-        valid-teams-to-delete-ids   (->> teams
-                                         (filter #(and (:is-owner %)
-                                                       (= (:num-members %) 1)))
-                                         (map :id)
-                                         (into #{}))
-
-        valid-teams-to-delete?      (= valid-teams-to-delete-ids (into #{} teams-to-delete))
-
-        ;; valid teams to transfer are those that the user is owner, and have more than one member
-        valid-teams-to-transfer     (->> teams
-                                         (filter #(and (:is-owner %)
-                                                       (> (:num-members %) 1))))
-        valid-teams-to-transfer-ids (->> valid-teams-to-transfer (map :id) (into #{}))
-
-        ;; valid teams to exit are those that the user isn't owner, and have more than one member
-        valid-teams-to-exit         (->> teams
-                                         (filter #(and (not (:is-owner %))
-                                                       (> (:num-members %) 1))))
         valid-teams-to-exit-ids     (->> valid-teams-to-exit (map :id) (into #{}))
-
+        valid-teams-to-transfer-ids (->> valid-teams-to-transfer (map :id) (into #{}))
         valid-teams-to-leave-ids    (into valid-teams-to-transfer-ids valid-teams-to-exit-ids)
 
-        ;; Get all the teams ids
-        all-teams-ids                   (into #{} d/xf:map-id (:teams org-summary))
+        valid-default-team-id?      (some? valid-default-team)
 
-        ;; Get all the ids of the teams that will be processed:
-        ;; all the ids on teams-to-leave, teams-to-delete and default-team-id
-        selected-team-ids           (-> (into #{default-team-id} teams-to-delete)
-                                        (into d/xf:map-id teams-to-leave))
 
-        ;; Check that we are processing all the teams
-        all-teams-selected?         (= all-teams-ids selected-team-ids)
 
-        default-team-files-count    (-> (db/exec-one! conn [sql:get-team-files-count default-team-id])
-                                        :total)
-        delete-default-team?        (= default-team-files-count 0)
+        valid-teams-to-delete?      (= valid-teams-to-delete-ids (into #{} teams-to-delete))
 
         ;; for every team in teams-to-leave, check that:
         ;; - if it has a reassign-to, it belongs to valid-teams-to-transfer and
         ;;   the reassign-to is a member of the team and not the current user;
         ;; - if it hasn't a reassign-to, check that it belongs to valid-teams-to-exit
+        teams-by-id                 (d/index-by :id org-teams)
         valid-teams-to-leave?       (and
                                      (= valid-teams-to-leave-ids (->> teams-to-leave (map :id) (into #{})))
                                      (every? (fn [{:keys [id reassign-to]}]
@@ -162,8 +163,7 @@
                                                         (contains? members reassign-to)))
                                                  (contains? valid-teams-to-exit-ids id)))
                                              teams-to-leave))]
-
-
+    ;; the org owner cannot leave
     (when (= (:owner-id org-summary) profile-id)
       (ex/raise :type :validation
                 :code :org-owner-cannot-leave))
@@ -171,10 +171,25 @@
     (when (or
            (not valid-teams-to-delete?)
            (not valid-teams-to-leave?)
-           (not valid-default-team-id?)
-           (not all-teams-selected?))
+           (not valid-default-team-id?))
       (ex/raise :type :validation
-                :code :not-valid-teams))
+                :code :not-valid-teams))))
+
+
+(defn leave-org
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id org-id org-name default-team-id teams-to-delete teams-to-leave skip-validation] :as params}]
+  (let [org-prefix                 (str "[" (d/sanitize-string org-name) "] ")
+
+        default-team-files-count    (-> (db/exec-one! conn [sql:get-team-files-count default-team-id])
+                                        :total)
+        delete-default-team?        (= default-team-files-count 0)]
+
+
+
+
+    ;; assert that the received teams are valid, checking the different constraints
+    (when-not skip-validation
+      (assert-valid-teams cfg profile-id org-id default-team-id teams-to-delete teams-to-leave))
 
     (assert-membership cfg profile-id org-id)
 
@@ -197,6 +212,15 @@
     (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :org-id org-id})
 
     nil))
+
+
+(sv/defmethod ::leave-org
+  {::rpc/auth true
+   ::doc/added "2.15"
+   ::sm/params schema:leave-org
+   ::db/transaction true}
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (leave-org cfg (assoc params :profile-id profile-id)))
 
 
 (def ^:private schema:remove-team-from-org

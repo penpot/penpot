@@ -13,6 +13,7 @@
    [app.db :as-alias db]
    [app.email :as email]
    [app.msgbus :as mbus]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
@@ -218,3 +219,371 @@
     (t/is (not (th/success? ko-out)))
     (t/is (= :not-found (th/ex-type (:error ko-out))))
     (t/is (= :profile-not-found (th/ex-code (:error ko-out))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests: remove-from-org
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- make-org-summary
+  [& {:keys [org-id org-name owner-id your-penpot-teams org-teams]
+      :or   {your-penpot-teams [] org-teams []}}]
+  {:id       org-id
+   :name     org-name
+   :owner-id owner-id
+   :teams    (into
+              (mapv (fn [id] {:id id :is-your-penpot true}) your-penpot-teams)
+              (mapv (fn [id] {:id id :is-your-penpot false}) org-teams))})
+
+(defn- nitrate-call-mock
+  [org-summary]
+  (fn [_cfg method _params]
+    (case method
+      :get-org-summary org-summary
+      :get-org-membership {:organization-id (:id org-summary)
+                           :is-member true}
+      :remove-profile-from-org nil
+      nil)))
+
+(t/deftest remove-from-org-happy-path-no-extra-teams
+  ;; User is only in its default team (which has files); it should be
+  ;; kept, renamed and unset as default.  A notification must be sent.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        org-team    (th/create-team* 1 {:profile-id (:id user)})
+        project     (th/create-project* 1 {:profile-id (:id user)
+                                           :team-id   (:id org-team)})
+        _           (th/create-file* 1 {:profile-id (:id user)
+                                        :project-id (:id project)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [])
+        calls       (atom [])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
+                                  mbus/pub! (fn [_bus & {:keys [topic message]}]
+                                              (swap! calls conj {:topic topic :message message}))]
+                      (management-command-with-nitrate!
+                       {::th/type        :remove-from-org
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :org-name        "Acme Org"
+                        :default-team-id (:id org-team)}))]
+    (t/is (th/success? out))
+    (t/is (nil? (:result out)))
+
+    ;; default team preserved, renamed and unset as default
+    (let [team (th/db-get :team {:id (:id org-team)})]
+      (t/is (false? (:is-default team)))
+      (t/is (str/starts-with? (:name team) "[Acme Org] ")))
+
+    ;; exactly one notification sent to the user
+    (t/is (= 1 (count @calls)))
+    (let [msg (-> @calls first :message)]
+      (t/is (= :user-org-change (:type msg)))
+      (t/is (= (:id user) (:topic msg)))
+      (t/is (= org-id (:organization-id msg)))
+      (t/is (= "Acme Org" (:organization-name msg)))
+      (t/is (= "dashboard.user-no-longer-belong-org" (:notification msg))))))
+
+(t/deftest remove-from-org-deletes-empty-default-team
+  ;; When the default team has no files it should be soft-deleted.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        org-team    (th/create-team* 2 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
+                                  mbus/pub! (fn [& _] nil)]
+                      (management-command-with-nitrate!
+                       {::th/type        :remove-from-org
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :org-name        "Acme Org"
+                        :default-team-id (:id org-team)}))]
+    (t/is (th/success? out))
+    (let [team (th/db-get :team {:id (:id org-team)} {::db/remove-deleted false})]
+      (t/is (some? (:deleted-at team))))))
+
+(t/deftest remove-from-org-deletes-sole-owner-team
+  ;; When the user is the sole member of an org team it should be deleted.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        extra-team  (th/create-team* 3 {:profile-id (:id user)})
+        org-team    (th/create-team* 99 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [(:id extra-team)])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
+                                  mbus/pub! (fn [& _] nil)]
+                      (management-command-with-nitrate!
+                       {::th/type        :remove-from-org
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :org-name        "Acme Org"
+                        :default-team-id (:id org-team)}))]
+    (t/is (th/success? out))
+    (let [team (th/db-get :team {:id (:id extra-team)} {::db/remove-deleted false})]
+      (t/is (some? (:deleted-at team))))))
+
+(t/deftest remove-from-org-transfers-ownership-of-multi-member-team
+  ;; When the user owns a team that has another non-owner member, ownership
+  ;; is transferred to that member by the endpoint automatically.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        candidate   (th/create-profile* 3 {:is-active true})
+        extra-team  (th/create-team* 4 {:profile-id (:id user)})
+        _           (th/create-team-role* {:team-id    (:id extra-team)
+                                           :profile-id (:id candidate)
+                                           :role       :editor})
+        org-team    (th/create-team* 99 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [(:id extra-team)])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
+                                  mbus/pub! (fn [& _] nil)]
+                      (management-command-with-nitrate!
+                       {::th/type        :remove-from-org
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :org-name        "Acme Org"
+                        :default-team-id (:id org-team)}))]
+    (t/is (th/success? out))
+    ;; user no longer in extra-team
+    (let [rel (th/db-get :team-profile-rel {:team-id (:id extra-team) :profile-id (:id user)})]
+      (t/is (nil? rel)))
+    ;; candidate promoted to owner
+    (let [rel (th/db-get :team-profile-rel {:team-id (:id extra-team) :profile-id (:id candidate)})]
+      (t/is (true? (:is-owner rel))))))
+
+(t/deftest remove-from-org-exits-non-owned-team
+  ;; When the user is a non-owner member of an org team, they simply leave.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        extra-team  (th/create-team* 5 {:profile-id (:id org-owner)})
+        _           (th/create-team-role* {:team-id    (:id extra-team)
+                                           :profile-id (:id user)
+                                           :role       :editor})
+        org-team    (th/create-team* 99 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [(:id extra-team)])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
+                                  mbus/pub! (fn [& _] nil)]
+                      (management-command-with-nitrate!
+                       {::th/type        :remove-from-org
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :org-name        "Acme Org"
+                        :default-team-id (:id org-team)}))]
+    (t/is (th/success? out))
+    ;; user no longer a member of extra-team
+    (let [rel (th/db-get :team-profile-rel {:team-id (:id extra-team) :profile-id (:id user)})]
+      (t/is (nil? rel)))
+    ;; team still exists for the owner
+    (let [team (th/db-get :team {:id (:id extra-team)})]
+      (t/is (some? team)))))
+
+(t/deftest remove-from-org-error-nobody-to-reassign
+  ;; When the user owns a multi-member team but every other member is
+  ;; also an owner, the auto-selection query finds nobody and raises.
+  (let [other-owner (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        extra-team  (th/create-team* 6 {:profile-id (:id user)})
+        ;; add other-owner to the team and make them co-owner directly in DB
+        _           (th/create-team-role* {:team-id    (:id extra-team)
+                                           :profile-id (:id other-owner)
+                                           :role       :editor})
+        _           (th/db-update! :team-profile-rel
+                                   {:is-owner true :is-admin false}
+                                   {:team-id (:id extra-team) :profile-id (:id other-owner)})
+        org-team    (th/create-team* 99 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id other-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [(:id extra-team)])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
+                                  mbus/pub! (fn [& _] nil)]
+                      (management-command-with-nitrate!
+                       {::th/type        :remove-from-org
+                        ::rpc/profile-id (:id other-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :org-name        "Acme Org"
+                        :default-team-id (:id org-team)}))]
+    (t/is (not (th/success? out)))
+    (t/is (= :validation (th/ex-type (:error out))))
+    (t/is (= :nobody-to-reassign-team (th/ex-code (:error out))))))
+
+;; Tests: get-remove-from-org-summary
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest get-remove-from-org-summary-no-extra-teams
+  ;; User only has a default team — nothing to delete/transfer/exit.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        org-team    (th/create-team* 1 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
+                      (management-command-with-nitrate!
+                       {::th/type        :get-remove-from-org-summary
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :default-team-id (:id org-team)}))]
+    (t/is (th/success? out))
+    (t/is (= {:teams-to-delete   0
+              :teams-to-transfer 0
+              :teams-to-exit     0}
+             (:result out)))))
+
+(t/deftest get-remove-from-org-summary-with-teams-to-delete
+  ;; User owns a sole-member extra org team → 1 to delete.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        extra-team  (th/create-team* 3 {:profile-id (:id user)})
+        org-team    (th/create-team* 99 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [(:id extra-team)])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
+                      (management-command-with-nitrate!
+                       {::th/type        :get-remove-from-org-summary
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :default-team-id (:id org-team)}))]
+    (t/is (th/success? out))
+    (t/is (= {:teams-to-delete   1
+              :teams-to-transfer 0
+              :teams-to-exit     0}
+             (:result out)))))
+
+(t/deftest get-remove-from-org-summary-with-teams-to-transfer
+  ;; User owns a multi-member extra org team → 1 to transfer.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        candidate   (th/create-profile* 3 {:is-active true})
+        extra-team  (th/create-team* 4 {:profile-id (:id user)})
+        _           (th/create-team-role* {:team-id    (:id extra-team)
+                                           :profile-id (:id candidate)
+                                           :role       :editor})
+        org-team    (th/create-team* 99 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [(:id extra-team)])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
+                      (management-command-with-nitrate!
+                       {::th/type        :get-remove-from-org-summary
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :default-team-id (:id org-team)}))]
+    (t/is (th/success? out))
+    (t/is (= {:teams-to-delete   0
+              :teams-to-transfer 1
+              :teams-to-exit     0}
+             (:result out)))))
+
+(t/deftest get-remove-from-org-summary-with-teams-to-exit
+  ;; User is a non-owner member of an org team → 1 to exit.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        extra-team  (th/create-team* 5 {:profile-id (:id org-owner)})
+        _           (th/create-team-role* {:team-id    (:id extra-team)
+                                           :profile-id (:id user)
+                                           :role       :editor})
+        org-team    (th/create-team* 99 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [(:id extra-team)])
+        out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
+                      (management-command-with-nitrate!
+                       {::th/type        :get-remove-from-org-summary
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :default-team-id (:id org-team)}))]
+    (t/is (th/success? out))
+    (t/is (= {:teams-to-delete   0
+              :teams-to-transfer 0
+              :teams-to-exit     1}
+             (:result out)))))
+
+(t/deftest get-remove-from-org-summary-does-not-mutate
+  ;; Calling the summary endpoint must not modify any teams.
+  (let [org-owner   (th/create-profile* 1 {:is-active true})
+        user        (th/create-profile* 2 {:is-active true})
+        extra-team  (th/create-team* 6 {:profile-id (:id user)})
+        org-team    (th/create-team* 99 {:profile-id (:id user)})
+        org-id      (uuid/random)
+        org-summary (make-org-summary
+                     :org-id            org-id
+                     :org-name          "Acme Org"
+                     :owner-id          (:id org-owner)
+                     :your-penpot-teams [(:id org-team)]
+                     :org-teams         [(:id extra-team)])
+        _           (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
+                      (management-command-with-nitrate!
+                       {::th/type        :get-remove-from-org-summary
+                        ::rpc/profile-id (:id org-owner)
+                        :profile-id      (:id user)
+                        :org-id          org-id
+                        :default-team-id (:id org-team)}))]
+    ;; Both teams must still exist and be undeleted
+    (let [t1 (th/db-get :team {:id (:id org-team)})]
+      (t/is (some? t1))
+      (t/is (nil? (:deleted-at t1))))
+    (let [t2 (th/db-get :team {:id (:id extra-team)})]
+      (t/is (some? t2))
+      (t/is (nil? (:deleted-at t2))))
+    ;; User must still be a member of both teams
+    (let [rel1 (th/db-get :team-profile-rel {:team-id (:id org-team) :profile-id (:id user)})]
+      (t/is (some? rel1)))
+    (let [rel2 (th/db-get :team-profile-rel {:team-id (:id extra-team) :profile-id (:id user)})]
+      (t/is (some? rel2)))))

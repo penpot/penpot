@@ -685,7 +685,7 @@
 ;; --- Mutation: Leave Team
 
 (defn leave-team
-  [{:keys [::db/conn]} {:keys [profile-id id reassign-to]}]
+  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id id reassign-to]}]
   (let [perms   (get-permissions conn profile-id id)
         members (get-team-members conn id)]
 
@@ -716,7 +716,15 @@
         ;; assign owner role to new profile
         (db/update! conn :team-profile-rel
                     (get types.team/permissions-for-role :owner)
-                    {:team-id id :profile-id reassign-to}))
+                    {:team-id id :profile-id reassign-to})
+
+        ;; notify new owner
+        (mbus/pub! msgbus
+                   :topic reassign-to
+                   :message {:type :team-role-change
+                             :topic reassign-to
+                             :team-id id
+                             :role :owner}))
 
       ;; and finally, if all other conditions does not match and the
       ;; current profile is owner, we dont allow it because there
