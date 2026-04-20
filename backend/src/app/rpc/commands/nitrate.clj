@@ -176,7 +176,8 @@
                 :code :not-valid-teams))))
 
 
-(defn leave-org [{:keys [::db/conn] :as cfg} {:keys [profile-id org-id org-name default-team-id teams-to-delete teams-to-leave skip-validation] :as params}]
+(defn leave-org
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id org-id org-name default-team-id teams-to-delete teams-to-leave skip-validation] :as params}]
   (let [org-prefix                 (str "[" (d/sanitize-string org-name) "] ")
 
         default-team-files-count    (-> (db/exec-one! conn [sql:get-team-files-count default-team-id])

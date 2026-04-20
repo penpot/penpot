@@ -393,3 +393,33 @@ RETURNING id, name;")
     (notifications/notify-user-removed-from-org cfg profile-id org-id org-name "dashboard.user-no-longer-belong-org")
     nil))
 
+;; API: get-remove-from-org-summary
+
+(def ^:private schema:get-remove-from-org-summary-result
+  [:map
+   [:teams-to-delete ::sm/int]
+   [:teams-to-transfer ::sm/int]
+   [:teams-to-exit ::sm/int]])
+
+(sv/defmethod ::get-remove-from-org-summary
+  "Get a summary of the teams that would be deleted, transferred, or exited
+   if the user were removed from the organization"
+  {::doc/added "2.16"
+   ::sm/params [:map
+                [:profile-id ::sm/uuid]
+                [:org-id ::sm/uuid]
+                [:default-team-id ::sm/uuid]]
+   ::sm/result schema:get-remove-from-org-summary-result
+   ::db/transaction true}
+  [cfg {:keys [profile-id org-id default-team-id]}]
+  (let [{:keys [valid-teams-to-delete-ids
+                valid-teams-to-transfer
+                valid-teams-to-exit
+                valid-default-team]} (cnit/get-valid-teams cfg org-id profile-id default-team-id)]
+    (when-not valid-default-team
+      (ex/raise :type :validation
+                :code :not-valid-teams))
+    {:teams-to-delete   (count valid-teams-to-delete-ids)
+     :teams-to-transfer (count valid-teams-to-transfer)
+     :teams-to-exit     (count valid-teams-to-exit)}))
+
