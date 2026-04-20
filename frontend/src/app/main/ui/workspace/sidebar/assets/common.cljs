@@ -22,6 +22,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
@@ -283,6 +284,9 @@
   (let [page-id (:main-instance-page component)
         root-id (:main-instance-id component)
         retry   (mf/use-state 0)
+        wasm?   (features/active-feature? @st/state "render-wasm/v1")
+        current-page-id (mf/deref refs/current-page-id)
+        thumbnail-requested? (mf/use-ref false)
 
         thumbnail-uri*
         (mf/with-memo [file-id page-id root-id]
@@ -299,9 +303,23 @@
            (when (< @retry 3)
              (inc retry))))]
 
+    ;; Lazy WASM thumbnail rendering: when the component becomes
+    ;; visible, has no cached thumbnail, and lives on the current page
+    ;; trigger a render. Ref is used to avoid triggering multiple renders
+    ;; while the component is still not rendered and the thumbnail URI
+    ;; is not available.
+    (mf/use-effect
+     (mf/deps is-hidden thumbnail-uri wasm? current-page-id)
+     (fn []
+       (if (some? thumbnail-uri)
+         (mf/set-ref-val! thumbnail-requested? false)
+         (when (and wasm? (not is-hidden) (not (mf/ref-val thumbnail-requested?)) (= page-id current-page-id))
+           (mf/set-ref-val! thumbnail-requested? true)
+           (st/emit! (dwt.wasm/render-thumbnail file-id page-id root-id))))))
+
     (if (and (some? thumbnail-uri)
              (or (contains? cf/flags :component-thumbnails)
-                 (features/active-feature? @st/state "render-wasm/v1")))
+                 wasm?))
       [:& component-svg-thumbnail
        {:thumbnail-uri thumbnail-uri
         :class class
