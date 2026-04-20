@@ -5630,7 +5630,7 @@ msgstr "Estilo de fuente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:546
 msgid "workspace.assets.typography.go-to-edit"
-msgstr "Ir al archivo de la biblioteca del estilo para editar"
+msgstr "Editar en biblioteca de estilo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:536
 msgid "workspace.assets.typography.letter-spacing"

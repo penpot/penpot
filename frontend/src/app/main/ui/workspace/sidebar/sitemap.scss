@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
 
 .sitemap {
   position: relative;
@@ -99,8 +100,6 @@
       svg {
         @extend %button-icon-small;
 
-        height: deprecated.$s-12;
-        width: deprecated.$s-12;
         color: transparent;
         fill: none;
         stroke: var(--icon-foreground);
@@ -109,6 +108,8 @@
 
     .page-actions {
       height: deprecated.$s-32;
+      display: flex;
+      align-items: center;
 
       button {
         @include deprecated.buttonStyle;
@@ -121,8 +122,6 @@
         svg {
           @extend %button-icon-small;
 
-          height: deprecated.$s-12;
-          width: deprecated.$s-12;
           color: transparent;
           fill: none;
           stroke: var(--icon-foreground);
@@ -251,6 +250,26 @@
       }
     }
   }
+}
+
+.element-list-body.separator-body {
+  height: auto;
+  min-height: var(--sp-xxxl);
+  padding: 0;
+}
+
+.page-separator {
+  width: 100%;
+  height: $b-1;
+  margin: var(--sp-s);
+  background-color: var(--color-background-quaternary);
+}
+
+.page-element.separator:hover .element-list-body,
+.page-element.separator.hover .element-list-body {
+  color: var(--layer-row-foreground-color);
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .title-spacing-sitemap {
