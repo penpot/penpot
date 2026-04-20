@@ -18,6 +18,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logic.libraries :as cll]
+   [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
@@ -260,7 +261,7 @@
        :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")})
 
 (defn- create-paste-from-blob
-  [in-viewport?]
+  [in-viewport? replace?]
   (fn [blob]
     (let [type (.-type blob)]
       (cond
@@ -281,7 +282,9 @@
              (rx/filter map?)
              (rx/map
               (fn [pdata]
-                (assoc pdata :in-viewport in-viewport?)))
+                (-> pdata
+                    (assoc :in-viewport in-viewport?)
+                    (assoc :replace replace?))))
              (rx/mapcat
               (fn [pdata]
                 (case (:type pdata)
@@ -292,8 +295,6 @@
         :else
         (->> (rx/from (.text blob))
              (rx/map paste-text))))))
-
-(def default-paste-from-blob (create-paste-from-blob false))
 
 (defn- clipboard-permission-error?
   "Check if the given error is a clipboard permission error
@@ -313,14 +314,15 @@
 
 (defn paste-from-clipboard
   "Perform a `paste` operation using the Clipboard API."
-  []
-  (ptk/reify ::paste-from-clipboard
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (clipboard/from-navigator default-options)
-           (rx/mapcat default-paste-from-blob)
-           (rx/take 1)
-           (rx/catch on-clipboard-permission-error)))))
+  ([] (paste-from-clipboard nil))
+  ([{:keys [replace?]}]
+   (ptk/reify ::paste-from-clipboard
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (->> (clipboard/from-navigator default-options)
+            (rx/mapcat (create-paste-from-blob false (boolean replace?)))
+            (rx/take 1)
+            (rx/catch on-clipboard-permission-error))))))
 
 (defn paste-from-event
   "Perform a `paste` operation from user emmited event."
@@ -337,7 +339,7 @@
         (if is-editing?
           (rx/empty)
           (->> (clipboard/from-synthetic-clipboard-event event default-options)
-               (rx/mapcat (create-paste-from-blob in-viewport?))))))))
+               (rx/mapcat (create-paste-from-blob in-viewport? false))))))))
 
 (defn copy-selected-svg
   []
@@ -722,7 +724,7 @@
               (update change :obj process-rchange-shape media-idx)
               change))
 
-          (calculate-paste-position [state pobjects selected position]
+          (calculate-paste-position [state pobjects selected position replace-id]
             (let [page-objects         (dsh/lookup-page-objects state)
                   selected-objs        (map (d/getf pobjects) selected)
                   first-selected-obj   (first selected-objs)
@@ -736,9 +738,20 @@
                   tree-root            (get-tree-root-shapes pobjects)
                   only-one-root-shape? (and
                                         (< 1 (count pobjects))
-                                        (= 1 (count tree-root)))]
+                                        (= 1 (count tree-root)))
+                  replaced             (some->> replace-id (get page-objects))]
 
               (cond
+                ;; Paste in place: center pasted content on the replaced shape and
+                ;; reparent to its container. The replaced shape is deleted below
+                ;; so the new content takes its z-index slot.
+                (some? replaced)
+                (let [delta        (gpt/subtract (gsh/shape->center replaced)
+                                                 (grc/rect->center wrapper))
+                      parent-id    (:parent-id replaced)
+                      target-index (cfh/get-position-on-parent page-objects replace-id)]
+                  [parent-id delta target-index])
+
                 ;; Paste next to selected frame, if selected is itself or of the same size as the copied
                 (and (selected-frame? state)
                      (or (any-same-frame-from-selected? state (keys pobjects))
@@ -854,10 +867,17 @@
 
               position     (deref ms/mouse-position)
 
+              ;; Replace mode is only valid with a single selected shape.
+              ;; In that case we drop the pasted content at its position and
+              ;; delete it in the same transaction.
+              page-selected (dsh/lookup-selected state)
+              replace-id    (when (and (:replace pdata) (= 1 (count page-selected)))
+                              (first page-selected))
+
               ;; Calculate position for the pasted elements
               [candidate-parent-id
                delta
-               index]      (calculate-paste-position state objects selected position)
+               index]      (calculate-paste-position state objects selected position replace-id)
 
               page-objects (:objects page)
 
@@ -898,6 +918,10 @@
                                 (filter add-obj?)
                                 (map :id)
                                 (pcb/resize-parents changes))
+
+              changes      (if (some? replace-id)
+                             (second (cls/generate-delete-shapes changes #{replace-id} {}))
+                             changes)
 
               orig-shapes  (map (d/getf all-objects) selected)
 

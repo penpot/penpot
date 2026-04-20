@@ -104,6 +104,11 @@
                           :subsections [:edit]
                           :fn (constantly nil)}
 
+   :paste-replace        {:tooltip (ds/meta (ds/shift "V"))
+                          :command (ds/c-mod "shift+v")
+                          :subsections [:edit]
+                          :fn #(emit-when-no-readonly (dw/paste-from-clipboard {:replace? true}))}
+
    :copy-props           {:tooltip (ds/meta (ds/alt "c"))
                           :command (ds/c-mod "alt+c")
                           :subsections [:edit]
