@@ -11,6 +11,24 @@
   display: flex;
 }
 
+.palette-search,
+.palette-search-collapsed {
+  display: flex;
+  align-items: center;
+  padding-inline: deprecated.$s-4;
+}
+
+.palette-search {
+  gap: deprecated.$s-4;
+  width: deprecated.$s-192;
+  min-width: deprecated.$s-192;
+}
+
+.palette-search-collapsed {
+  width: deprecated.$s-32;
+  min-width: deprecated.$s-32;
+}
+
 .left-arrow,
 .right-arrow {
   @include deprecated.buttonStyle;
