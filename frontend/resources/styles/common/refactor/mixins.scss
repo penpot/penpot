@@ -137,6 +137,7 @@
 
 @mixin inspectValue {
   @include bodySmallTypography;
+
   display: inline-block;
   width: fit-content;
   padding: 0;
@@ -167,6 +168,7 @@
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(359deg);
   }
