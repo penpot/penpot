@@ -33,6 +33,7 @@
 - Make links in comments clickable (by @eureka0928) [Github #1602](https://github.com/penpot/penpot/issues/1602)
 - Add visibility toggle for strokes (by @eureka0928) [Github #7438](https://github.com/penpot/penpot/issues/7438)
 - Sort asset library subfolders alphabetically at every nesting level (by @eureka0928) [Github #2572](https://github.com/penpot/penpot/issues/2572)
+- Add Paste to replace (Cmd+Shift+V) to replace the selected shape with clipboard contents (by @eureka0928) [Github #4240](https://github.com/penpot/penpot/issues/4240)
 - Differentiate incoming and outgoing interaction link colors (by @claytonlin1110) [Github #7794](https://github.com/penpot/penpot/issues/7794)
 - Add guide locking and fix locked elements not selectable in viewer (by @Dexterity104) [Github #8358](https://github.com/penpot/penpot/issues/8358)
 - Apply styles to selection (by @AzazelN28) [Taiga #13647](https://tree.taiga.io/project/penpot/task/13647)
