@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
-import { isColorFill, isImageFill } from '../../../renderer/api/constants'
-import { normalizeHex } from '../../../renderer/properties/panel-utils'
+import { isColorFill, isImageFill } from '@/lib/renderer/verification'
+import { normalizeHex } from '@/lib/renderer/properties/panel-utils'
 import { useColorEditorFor } from '../use-color-editor'
 
 export interface FillRowProps {

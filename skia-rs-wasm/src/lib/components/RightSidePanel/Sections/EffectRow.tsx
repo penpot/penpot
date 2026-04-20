@@ -1,24 +1,32 @@
 import { useCallback } from 'react'
-import type { Blur, Fill, Shadow } from 'penpot-exporter/types'
+import type { Shadow } from 'penpot-exporter/types'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
-import { isColorFill } from '../../../renderer/api/constants'
-import { normalizeHex } from '../../../renderer/properties/panel-utils'
-import type { EffectItem, EffectKind, Texture } from '../../../renderer/properties/panel-utils'
-import { DEFAULT_SHADOW, DEFAULT_BLUR, DEFAULT_TEXTURE } from '../../../renderer/properties/panel-utils'
-import { useColorEditorFor } from '../use-color-editor'
+import type { EffectItem, EffectKind } from '@/lib/renderer/properties/panel-utils'
+import {
+  DEFAULT_SHADOW,
+  DEFAULT_BLUR,
+  DEFAULT_BACKGROUND_BLUR,
+  DEFAULT_GLASS,
+  DEFAULT_NOISE,
+  DEFAULT_TEXTURE,
+} from '../../../renderer/properties/panel-utils'
+import type { ColorEditorKind } from '../color-editor-context'
+import { useEffectEditorFor } from '../use-color-editor'
 
 const EFFECT_KIND_OPTIONS: { value: EffectKind; label: string }[] = [
   { value: 'drop-shadow', label: 'Drop shadow' },
   { value: 'inner-shadow', label: 'Inner shadow' },
   { value: 'layer-blur', label: 'Layer blur' },
+  { value: 'background-blur', label: 'Background blur' },
+  { value: 'glass', label: 'Glass' },
+  { value: 'noise', label: 'Noise' },
   { value: 'texture', label: 'Texture' },
 ]
 
-/** Convert Shadow color to a Fill so FillEditor can be reused. */
-function shadowColorToFill(shadow: Shadow): Fill {
+/** Convert Shadow color to a Fill so swatch background can be computed. */
+function shadowColorToFill(shadow: Shadow): import('penpot-exporter/types').Fill {
   if (shadow.color?.gradient) {
     return { fillColorGradient: shadow.color.gradient }
   }
@@ -28,44 +36,43 @@ function shadowColorToFill(shadow: Shadow): Fill {
   }
 }
 
-/** Merge Fill color fields back into a Shadow. */
-function fillToShadowColor(fill: Fill, existing: Shadow): Shadow {
-  if (fill.fillColorGradient) {
-    return {
-      ...existing,
-      color: { gradient: fill.fillColorGradient },
-    }
-  }
-  return {
-    ...existing,
-    color: {
-      color: fill.fillColor ?? '#000000',
-      opacity: fill.fillOpacity ?? 1,
-    },
-  }
-}
-
 /** Extract the hidden flag from any effect item. */
-function effectHidden(item: EffectItem): boolean {
-  if (item.kind === 'layer-blur') return item.blur.hidden
-  if (item.kind === 'texture') return item.texture.hidden
+function getEffectHidden(item: EffectItem): boolean {
+  if (item.kind === 'layer-blur' || item.kind === 'background-blur') return item.blur.hidden
+  if (item.kind === 'glass') return item.glass.hidden ?? false
+  if (item.kind === 'noise') return item.noise.hidden ?? false
+  if (item.kind === 'texture') return item.texture.hidden ?? false
   return item.shadow.hidden
 }
 
 /** Convert between effect kinds, preserving hidden state. */
 function convertEffect(current: EffectItem, newKind: EffectKind): EffectItem {
-  const hidden = effectHidden(current)
+  const hidden = getEffectHidden(current)
 
   if (newKind === 'layer-blur') {
     return { kind: 'layer-blur', blur: { ...DEFAULT_BLUR, hidden } }
   }
+  if (newKind === 'background-blur') {
+    return { kind: 'background-blur', blur: { ...DEFAULT_BACKGROUND_BLUR, hidden } }
+  }
+  if (newKind === 'glass') {
+    return { kind: 'glass', glass: { ...DEFAULT_GLASS, hidden } }
+  }
+  if (newKind === 'noise') {
+    return { kind: 'noise', noise: { ...DEFAULT_NOISE, hidden } }
+  }
   if (newKind === 'texture') {
     return { kind: 'texture', texture: { ...DEFAULT_TEXTURE, hidden } }
   }
-  if (current.kind === 'layer-blur' || current.kind === 'texture') {
+  if (
+    current.kind === 'layer-blur' ||
+    current.kind === 'background-blur' ||
+    current.kind === 'glass' ||
+    current.kind === 'noise' ||
+    current.kind === 'texture'
+  ) {
     return { kind: newKind, shadow: { ...DEFAULT_SHADOW, style: newKind, hidden } }
   }
-  // Shadow → Shadow (different style)
   return { kind: newKind, shadow: { ...current.shadow, style: newKind } }
 }
 
@@ -79,87 +86,51 @@ export interface EffectRowProps {
 
 export function EffectRow({ effect, index, readOnly, onChange, onRemove }: EffectRowProps) {
   const isShadow = effect.kind === 'drop-shadow' || effect.kind === 'inner-shadow'
-  const isBlur = effect.kind === 'layer-blur'
+  const isBlur = effect.kind === 'layer-blur' || effect.kind === 'background-blur'
+  const isGlass = effect.kind === 'glass'
+  const isNoise = effect.kind === 'noise'
   const isTexture = effect.kind === 'texture'
-  const shadow = isShadow ? effect.shadow : null
-  const blur = isBlur ? effect.blur : null
-  const texture = isTexture ? effect.texture : null
 
-  const { isActive: expanded, openEditor, closeEditor } = useColorEditorFor('shadow', index)
+  const { isActive: effectExpanded, openEffectEditor, closeEditor } = useEffectEditorFor(effect.kind as ColorEditorKind, index)
 
-  const fill = shadow ? shadowColorToFill(shadow) : null
-  const isSolid = fill ? isColorFill(fill) : false
-  const swatchBg = fill ? fillSwatchBackground(fill) : '#94a3b8'
+  // Shadow color swatch background
+  const swatchBg = isShadow
+    ? fillSwatchBackground(shadowColorToFill(effect.shadow))
+    : undefined
 
-  const hexDisplay = shadow
-    ? isSolid
-      ? (shadow.color?.color ?? '#000000')
-      : 'Gradient'
-    : ''
-  const opacity = shadow?.color?.opacity ?? 1
+  // Noise swatch: first slot's color if solid, rainbow gradient if prism.
+  const noiseSwatchBg = (() => {
+    if (!isNoise) return undefined
+    const slot0 = effect.noise.slots?.[0]
+    if (slot0?.kind === 'prism') {
+      return 'linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #a29bfe, #ff9ff3)'
+    }
+    return slot0?.color ?? '#000000'
+  })()
 
   const handleKindChange = useCallback(
     (newKind: EffectKind) => {
       if (newKind === effect.kind) return
-      // Close shadow color editor if switching away from shadow
-      if (expanded && (newKind === 'layer-blur' || newKind === 'texture')) closeEditor()
+      if (effectExpanded) closeEditor()
       onChange(convertEffect(effect, newKind), index)
     },
-    [effect, index, onChange, expanded, closeEditor],
+    [effect, index, onChange, effectExpanded, closeEditor],
   )
 
-  const handleShadowUpdate = useCallback(
-    (partial: Partial<Shadow>) => {
-      if (!shadow) return
-      onChange({ kind: effect.kind as 'drop-shadow' | 'inner-shadow', shadow: { ...shadow, ...partial } }, index)
-    },
-    [shadow, effect.kind, index, onChange],
-  )
-
-  const handleHexChange = useCallback(
-    (raw: string) => {
-      if (!shadow || !isSolid) return
-      const v = raw.trim()
-      if (/^#[0-9A-Fa-f]{6}$/.test(v) || /^#[0-9A-Fa-f]{3}$/.test(v)) {
-        handleShadowUpdate({ color: { ...shadow.color, color: normalizeHex(v) } })
-      }
-    },
-    [shadow, isSolid, handleShadowUpdate],
-  )
-
-  const handleOpacityChange = useCallback(
-    (pct: number) => {
-      if (!shadow || !isSolid) return
-      const v = Math.max(0, Math.min(100, pct)) / 100
-      handleShadowUpdate({ color: { ...shadow.color, opacity: v } })
-    },
-    [shadow, isSolid, handleShadowUpdate],
-  )
-
-  const toggleExpand = useCallback(
+  const toggleEffectExpand = useCallback(
     (e: React.MouseEvent) => {
-      if (readOnly || !shadow) return
-      if (expanded) {
+      if (readOnly) return
+      if (effectExpanded) {
         closeEditor()
       } else {
         const y = (e.currentTarget as HTMLElement).getBoundingClientRect().top
-        openEditor(fill!, y, `Shadow ${index + 1} color`, (nextFill) => {
-          onChange(
-            { kind: effect.kind as 'drop-shadow' | 'inner-shadow', shadow: fillToShadowColor(nextFill, shadow) },
-            index,
-          )
+        const label = EFFECT_KIND_OPTIONS.find((o) => o.value === effect.kind)?.label ?? 'Effect'
+        openEffectEditor(effect, y, label, (nextEffect) => {
+          onChange(nextEffect, index)
         })
       }
     },
-    [readOnly, shadow, expanded, closeEditor, openEditor, fill, index, effect.kind, onChange],
-  )
-
-  const handleTextureUpdate = useCallback(
-    (partial: Partial<Texture>) => {
-      if (!texture) return
-      onChange({ kind: 'texture', texture: { ...texture, ...partial } }, index)
-    },
-    [texture, index, onChange],
+    [readOnly, effectExpanded, closeEditor, openEffectEditor, effect, index, onChange],
   )
 
   if (readOnly) {
@@ -173,6 +144,13 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
               aria-hidden
             />
           )}
+          {isNoise && (
+            <div
+              className="size-5 shrink-0 rounded border border-border"
+              style={{ background: noiseSwatchBg }}
+              aria-hidden
+            />
+          )}
           <span className="text-xs text-muted-foreground">
             {EFFECT_KIND_OPTIONS.find((o) => o.value === effect.kind)?.label ?? 'Effect'}
           </span>
@@ -183,23 +161,110 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
 
   return (
     <div className="space-y-1">
-      {/* Row 1: swatch (shadow only) + type dropdown + remove */}
+      {/* Row: indicator button + type dropdown + remove */}
       <div className="flex min-h-8 items-center gap-1.5">
+        {/* Shadow indicator: color swatch */}
         {isShadow && (
           <button
             type="button"
-            onClick={toggleExpand}
+            onClick={toggleEffectExpand}
             className={cn(
               'size-5 shrink-0 rounded border border-border',
               'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-              expanded && 'ring-2 ring-ring',
+              effectExpanded && 'ring-2 ring-ring',
             )}
             style={{ background: swatchBg }}
-            title={expanded ? 'Close shadow color editor' : 'Open shadow color editor'}
-            aria-expanded={expanded}
-            aria-label="Toggle shadow color editor"
+            title={effectExpanded ? 'Close shadow editor' : 'Open shadow editor'}
+            aria-expanded={effectExpanded}
+            aria-label="Toggle shadow editor"
           />
         )}
+
+        {/* Blur indicator: dashed circle icon */}
+        {isBlur && (
+          <button
+            type="button"
+            onClick={toggleEffectExpand}
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center rounded border',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              effectExpanded
+                ? 'border-ring bg-accent ring-2 ring-ring'
+                : 'border-border bg-muted',
+            )}
+            title={effectExpanded ? 'Close blur editor' : 'Open blur editor'}
+            aria-expanded={effectExpanded}
+            aria-label="Toggle blur editor"
+          >
+            <svg viewBox="0 0 12 12" className="size-3 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <circle cx="6" cy="6" r="4" strokeDasharray="1.5 1.5" />
+            </svg>
+          </button>
+        )}
+
+        {/* Glass indicator: glass icon */}
+        {isGlass && (
+          <button
+            type="button"
+            onClick={toggleEffectExpand}
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center rounded border',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              effectExpanded
+                ? 'border-ring bg-accent ring-2 ring-ring'
+                : 'border-border bg-gradient-to-br from-blue-100 to-purple-100',
+            )}
+            title={effectExpanded ? 'Close glass editor' : 'Open glass editor'}
+            aria-expanded={effectExpanded}
+            aria-label="Toggle glass editor"
+          >
+            <svg viewBox="0 0 12 12" className="size-3 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <path d="M2 9 Q2 4 6 4 Q10 4 10 9" />
+              <line x1="2" y1="9" x2="10" y2="9" />
+            </svg>
+          </button>
+        )}
+
+        {/* Noise indicator: grain color swatch */}
+        {isNoise && (
+          <button
+            type="button"
+            onClick={toggleEffectExpand}
+            className={cn(
+              'size-5 shrink-0 rounded border border-border',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              effectExpanded && 'ring-2 ring-ring',
+            )}
+            style={{ background: noiseSwatchBg }}
+            title={effectExpanded ? 'Close noise editor' : 'Open noise editor'}
+            aria-expanded={effectExpanded}
+            aria-label="Toggle noise editor"
+          />
+        )}
+
+        {/* Texture indicator: grid icon */}
+        {isTexture && (
+          <button
+            type="button"
+            onClick={toggleEffectExpand}
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center rounded border',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              effectExpanded
+                ? 'border-ring bg-accent ring-2 ring-ring'
+                : 'border-border bg-muted',
+            )}
+            title={effectExpanded ? 'Close texture editor' : 'Open texture editor'}
+            aria-expanded={effectExpanded}
+            aria-label="Toggle texture editor"
+          >
+            <svg viewBox="0 0 12 12" className="size-3 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <path d="M2 2h8v8H2z" />
+              <path d="M2 6h8M6 2v8" />
+            </svg>
+          </button>
+        )}
+
         <select
           className="border-input bg-background h-8 min-w-0 flex-1 rounded-md border px-1.5 text-xs"
           value={effect.kind}
@@ -223,133 +288,6 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
           ×
         </Button>
       </div>
-
-      {/* Row 2 for shadows: hex + opacity */}
-      {isShadow && shadow && (
-        <div className="flex min-h-8 items-center gap-1.5">
-          <Input
-            type="text"
-            className="h-8 min-w-0 flex-1 font-mono text-xs"
-            value={hexDisplay}
-            placeholder={isSolid ? '#RRGGBB' : undefined}
-            disabled={!isSolid}
-            readOnly={!isSolid}
-            onChange={(e) => handleHexChange(e.target.value)}
-          />
-          <span className="shrink-0 text-xs text-muted-foreground">%</span>
-          <Input
-            type="number"
-            className="h-8 w-12 shrink-0 px-1 text-xs"
-            min={0}
-            max={100}
-            value={isSolid ? Math.round(opacity * 100) : 100}
-            disabled={!isSolid}
-            onChange={(e) => handleOpacityChange(Number(e.target.value))}
-          />
-        </div>
-      )}
-
-      {/* Row 3 for shadows: X, Y, blur, spread */}
-      {isShadow && shadow && (
-        <div className="flex min-h-7 items-center gap-1.5">
-          <Input
-            type="number"
-            className="h-7 w-14 shrink-0 px-1 text-xs"
-            step={1}
-            value={shadow.offsetX}
-            onChange={(e) => handleShadowUpdate({ offsetX: parseFloat(e.target.value) || 0 })}
-            title="X offset"
-          />
-          <Input
-            type="number"
-            className="h-7 w-14 shrink-0 px-1 text-xs"
-            step={1}
-            value={shadow.offsetY}
-            onChange={(e) => handleShadowUpdate({ offsetY: parseFloat(e.target.value) || 0 })}
-            title="Y offset"
-          />
-          <Input
-            type="number"
-            className="h-7 w-14 shrink-0 px-1 text-xs"
-            min={0}
-            step={1}
-            value={shadow.blur}
-            onChange={(e) => handleShadowUpdate({ blur: Math.max(0, parseFloat(e.target.value) || 0) })}
-            title="Blur"
-          />
-          <Input
-            type="number"
-            className="h-7 w-14 shrink-0 px-1 text-xs"
-            step={1}
-            value={shadow.spread}
-            onChange={(e) => handleShadowUpdate({ spread: parseFloat(e.target.value) || 0 })}
-            title="Spread"
-          />
-        </div>
-      )}
-
-      {/* Row 2 for blur: value */}
-      {isBlur && blur && (
-        <div className="flex min-h-7 items-center gap-1.5">
-          <span className="shrink-0 text-xs text-muted-foreground">Value</span>
-          <Input
-            type="number"
-            className="h-7 w-20 shrink-0 px-1 text-xs"
-            min={0}
-            step={1}
-            value={blur.value}
-            onChange={(e) =>
-              onChange(
-                { kind: 'layer-blur', blur: { ...blur, value: Math.max(0, parseFloat(e.target.value) || 0) } },
-                index,
-              )
-            }
-            title="Blur value"
-          />
-        </div>
-      )}
-
-      {/* Rows for texture: noise size + radius */}
-      {isTexture && texture && (
-        <div className="flex min-h-7 items-center gap-1.5">
-          <span className="shrink-0 text-xs text-muted-foreground">Noise Size</span>
-          <Input
-            type="number"
-            className="h-7 w-20 shrink-0 px-1 text-xs"
-            min={1}
-            step={1}
-            value={texture.noiseSize}
-            onChange={(e) =>
-              handleTextureUpdate({ noiseSize: Math.max(1, parseFloat(e.target.value) || 1) })
-            }
-            title="Noise size"
-          />
-        </div>
-      )}
-      {isTexture && texture && (
-        <div className="flex min-h-7 items-center gap-1.5">
-          <span className="shrink-0 text-xs text-muted-foreground">Radius</span>
-          <Input
-            type="number"
-            className="h-7 w-20 shrink-0 px-1 text-xs"
-            min={0}
-            step={1}
-            value={texture.radius}
-            onChange={(e) =>
-              handleTextureUpdate({ radius: Math.max(0, parseFloat(e.target.value) || 0) })
-            }
-            title="Radius"
-          />
-          <label className="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={texture.clipToShape}
-              onChange={(e) => handleTextureUpdate({ clipToShape: e.target.checked })}
-            />
-            Clip
-          </label>
-        </div>
-      )}
     </div>
   )
 }

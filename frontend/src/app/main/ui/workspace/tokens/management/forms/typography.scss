@@ -30,6 +30,7 @@
 
 .title {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-primary);
   display: flex;
   align-items: center;

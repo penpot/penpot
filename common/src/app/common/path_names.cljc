@@ -148,16 +148,16 @@ Some naming conventions:
      :path 'one'
      :depth 0
      :leaf nil
-     :children-fn (fn [] [{:name 'two'
-                           :path 'one.two'
-                           :depth 1
-                           :leaf nil
-                           :children-fn (fn [] [{... :name 'three'} {... :name 'four'}])}
-                          {:name 'five'
-                           :path 'one.five'
-                           :depth 1
-                           :leaf {... :name 'five'}
-                           ...}])}]"
+     :children [{:name 'two'
+                 :path 'one.two'
+                 :depth 1
+                 :leaf nil
+                 :children [{... :name 'three'} {... :name 'four'}]}
+                {:name 'five'
+                 :path 'one.five'
+                 :depth 1
+                 :leaf {... :name 'five'}
+                 :children nil}]}]"
 
 (defn- sort-by-children
   "Sorts segments so that those with children come first."
@@ -191,7 +191,7 @@ Some naming conventions:
     (into (sorted-map) grouped)))
 
 (defn- build-tree-node
-  "Builds a single tree node with lazy children."
+  "Builds a single tree node with computed children."
   [segment-name remaining-segments separator parent-path depth]
   (let [current-path (if parent-path
                        (str parent-path "." segment-name)
@@ -208,12 +208,11 @@ Some naming conventions:
               :path current-path
               :depth depth
               :leaf leaf-segment
-              :children-fn (when-not is-leaf?
-                             (fn []
-                               (let [grouped-elements (sort-and-group-segments remaining-segments separator)]
-                                 (mapv (fn [[child-segment-name remaining-child-segments]]
-                                         (build-tree-node child-segment-name remaining-child-segments separator current-path (inc depth)))
-                                       grouped-elements))))}]
+              :children (when-not is-leaf?
+                          (let [grouped-elements (sort-and-group-segments remaining-segments separator)]
+                            (mapv (fn [[child-segment-name remaining-child-segments]]
+                                    (build-tree-node child-segment-name remaining-child-segments separator current-path (inc depth)))
+                                  grouped-elements)))}]
     node))
 
 (defn build-tree-root

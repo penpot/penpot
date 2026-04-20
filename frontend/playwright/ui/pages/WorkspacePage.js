@@ -53,19 +53,18 @@ export class WorkspacePage extends BaseWebSocketPage {
       for (let i = 0; i < amount; i++) {
         await this.page.keyboard.press("ArrowLeft");
       }
-      await this.waitForIdle();
+      await this.waitForIdle({ timeout: 100 });
     }
 
     async moveToRight(amount = 0) {
       for (let i = 0; i < amount; i++) {
         await this.page.keyboard.press("ArrowRight");
       }
-      await this.waitForIdle();
+      await this.waitForIdle({ timeout: 100 });
     }
 
     async moveFromStart(offset = 0) {
       await this.page.keyboard.press("Home");
-      await this.waitForIdle();
       await this.moveToRight(offset);
     }
 
@@ -107,8 +106,10 @@ export class WorkspacePage extends BaseWebSocketPage {
       return this.changeNumericInput(this.letterSpacing, newValue);
     }
 
-    async waitForIdle() {
-      await this.page.evaluate(() => new Promise((resolve) => globalThis.requestIdleCallback(resolve)));
+    async waitForIdle(options) {
+      await this.page.evaluate(
+        (options) => new Promise(
+          (resolve) => globalThis.requestIdleCallback(resolve, options)), options);
     }
   };
 
@@ -190,6 +191,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.tokensUpdateCreateModal = page.getByTestId(
       "token-update-create-modal",
     );
+    this.tokenRenameNodeModal = page.getByTestId("token-rename-node-modal");
     this.tokenThemeUpdateCreateModal = page.getByTestId(
       "token-theme-update-create-modal",
     );
@@ -212,6 +214,7 @@ export class WorkspacePage extends BaseWebSocketPage {
   async goToWorkspace({
     fileId = this.fileId ?? WorkspacePage.anyFileId,
     pageId = this.pageId ?? WorkspacePage.anyPageId,
+    pageName = "Page 1",
   } = {}) {
     await this.page.goto(
       `/#/workspace?team-id=${WorkspacePage.anyTeamId}&file-id=${fileId}&page-id=${pageId}`,
@@ -219,12 +222,12 @@ export class WorkspacePage extends BaseWebSocketPage {
 
     this.#ws = await this.waitForNotificationsWebSocket();
     await this.#ws.mockOpen();
-    await this.#waitForWebSocketReadiness();
+    await this.#waitForWebSocketReadiness(pageName);
   }
 
-  async #waitForWebSocketReadiness() {
+  async #waitForWebSocketReadiness(pageName) {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
-    await expect(this.pageName).toHaveText("Page 1", { timeout: 30000 })
+    await expect(this.pageName).toHaveText(pageName, { timeout: 30000 })
   }
 
   async sendPresenceMessage(fixture) {
@@ -309,7 +312,7 @@ export class WorkspacePage extends BaseWebSocketPage {
   async clickWithDragViewportAt(x, y, width, height) {
     await this.page.waitForTimeout(100);
     const box = await this.viewport.boundingBox();
-    if (!box) throw new Error('Viewport not visible');
+    if (!box) throw new Error("Viewport not visible");
 
     const startX = box.x + x;
     const startY = box.y + y;
@@ -362,7 +365,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.keyboard.press("T");
     await this.page.waitForTimeout(timeToWait);
 
-    const layersCountBefore = await this.layers.getByTestId("layer-row").count();
+    const layersCountBefore = await this.layers
+      .getByTestId("layer-row")
+      .count();
     await this.clickAndMove(x1, y1, x2, y2);
 
     if (initialText) {
@@ -385,10 +390,13 @@ export class WorkspacePage extends BaseWebSocketPage {
       await this.page.keyboard.press("ControlOrMeta+C");
     }
     // wait for the clipboard to be updated
-    await this.page.waitForFunction(async () => {
-      const content = await navigator.clipboard.readText()
-      return content !== "";
-    }, { timeout: 1000 });
+    await this.page.waitForFunction(
+      async () => {
+        const content = await navigator.clipboard.readText();
+        return content !== "";
+      },
+      { timeout: 1000 },
+    );
   }
 
   async cut(kind = "keyboard", locator = undefined) {
@@ -399,13 +407,15 @@ export class WorkspacePage extends BaseWebSocketPage {
       await this.page.keyboard.press("ControlOrMeta+X");
     }
     // wait for the clipboard to be updated
-    await this.page.waitForFunction(async () => {
-      const content = await navigator.clipboard.readText()
-      return content !== "";
-    }, { timeout: 1000 });
+    await this.page.waitForFunction(
+      async () => {
+        const content = await navigator.clipboard.readText();
+        return content !== "";
+      },
+      { timeout: 1000 },
+    );
 
     await this.page.waitForTimeout(3000);
-
   }
 
   /**

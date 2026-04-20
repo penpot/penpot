@@ -60,13 +60,13 @@
          (let [profile (:profile @st/state)]
            (cond
              (or (not (string? content)) (empty? content))
-             (u/display-not-valid :content "Not valid")
+             (u/not-valid plugin-id :content "Not valid")
 
              (not= (:id profile) (:owner-id data))
-             (u/display-not-valid :content "Cannot change content from another user's comments")
+             (u/not-valid plugin-id :content "Cannot change content from another user's comments")
 
              (not (r/check-permission plugin-id "comment:write"))
-             (u/display-not-valid :content "Plugin doesn't have 'comment:write' permission")
+             (u/not-valid plugin-id :content "Plugin doesn't have 'comment:write' permission")
 
              :else
              (->> (rp/cmd! :update-comment {:id (:id data) :content content})
@@ -81,7 +81,7 @@
            (cond
              (not (r/check-permission plugin-id "comment:write"))
              (do
-               (u/display-not-valid :remove "Plugin doesn't have 'comment:write' permission")
+               (u/not-valid plugin-id :remove "Plugin doesn't have 'comment:write' permission")
                (reject "Plugin doesn't have 'comment:write' permission"))
 
              :else
@@ -120,10 +120,10 @@
            (cond
              (or (not (sm/valid-safe-number? (:x position)))
                  (not (sm/valid-safe-number? (:y position))))
-             (u/display-not-valid :position "Not valid point")
+             (u/not-valid plugin-id :position "Not valid point")
 
              (not (r/check-permission plugin-id "comment:write"))
-             (u/display-not-valid :position "Plugin doesn't have 'comment:write' permission")
+             (u/not-valid plugin-id :position "Plugin doesn't have 'comment:write' permission")
 
              :else
              (do (st/emit! (dwc/update-comment-thread-position @data* [(:x position) (:y position)]))
@@ -137,10 +137,10 @@
        (fn [is-resolved]
          (cond
            (not (boolean? is-resolved))
-           (u/display-not-valid :resolved "Not a boolean type")
+           (u/not-valid plugin-id :resolved "Not a boolean type")
 
            (not (r/check-permission plugin-id "comment:write"))
-           (u/display-not-valid :resolved "Plugin doesn't have 'comment:write' permission")
+           (u/not-valid plugin-id :resolved "Plugin doesn't have 'comment:write' permission")
 
            :else
            (do (st/emit! (dc/update-comment-thread (assoc @data* :is-resolved is-resolved)))
@@ -153,7 +153,7 @@
            (cond
              (not (r/check-permission plugin-id "comment:read"))
              (do
-               (u/display-not-valid :findComments "Plugin doesn't have 'comment:read' permission")
+               (u/not-valid plugin-id :findComments "Plugin doesn't have 'comment:read' permission")
                (reject "Plugin doesn't have 'comment:read' permission"))
 
              :else
@@ -169,10 +169,10 @@
       (fn [content]
         (cond
           (not (r/check-permission plugin-id "comment:write"))
-          (u/display-not-valid :reply "Plugin doesn't have 'comment:write' permission")
+          (u/not-valid plugin-id :reply "Plugin doesn't have 'comment:write' permission")
 
           (or (not (string? content)) (empty? content))
-          (u/display-not-valid :reply "Not valid")
+          (u/not-valid plugin-id :reply "Not valid")
 
           :else
           (js/Promise.
@@ -186,10 +186,10 @@
               owner   (dsh/lookup-profile @st/state (:owner-id data))]
           (cond
             (not (r/check-permission plugin-id "comment:write"))
-            (u/display-not-valid :remove "Plugin doesn't have 'comment:write' permission")
+            (u/not-valid plugin-id :remove "Plugin doesn't have 'comment:write' permission")
 
             (not= (:id profile) owner)
-            (u/display-not-valid :remove "Cannot change content from another user's comments")
+            (u/not-valid plugin-id :remove "Cannot change content from another user's comments")
 
             :else
             (js/Promise.

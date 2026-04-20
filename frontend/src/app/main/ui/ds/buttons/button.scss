@@ -9,10 +9,9 @@
 
 .button {
   @extend %base-button;
-
   @include use-typography("headline-small");
-  padding: 0 var(--sp-m);
 
+  padding: 0 var(--sp-m);
   display: inline-flex;
   align-items: center;
   column-gap: var(--sp-xs);

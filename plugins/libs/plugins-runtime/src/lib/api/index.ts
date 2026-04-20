@@ -165,6 +165,10 @@ export function createApi(
 
     // Penpot State API
 
+    get version(): string {
+      return plugin.context.version;
+    },
+
     get root(): Shape | null {
       checkPermission('content:read');
       return plugin.context.root;

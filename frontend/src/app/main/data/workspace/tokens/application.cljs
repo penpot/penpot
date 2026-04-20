@@ -49,14 +49,14 @@
 
 ;; (note that dwsh/update-shapes function returns an event)
 
-(defn update-shape-radius-all
-  ([value shape-ids attributes] (update-shape-radius-all value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+(defn update-shape-radius
+  ([value shape-ids attributes] (update-shape-radius value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
    (when (number? value)
      (let [value (max 0 value)]
        (dwsh/update-shapes shape-ids
                            (fn [shape]
-                             (ctsr/set-radius-to-all-corners shape value))
+                             (ctsr/set-radius-for-corners shape attributes value))
                            {:reg-objects? true
                             :ignore-touched true
                             :page-id page-id
@@ -531,7 +531,7 @@
 
     (some attributes #{:r1 :r2 :r3 :r4})
     (conj #(if (= attributes #{:r1 :r2 :r3 :r4})
-             (update-shape-radius-all value shape-ids attributes page-id)
+             (update-shape-radius value shape-ids attributes page-id)
              (update-shape-radius-for-corners
               value shape-ids
               (set (filter attributes #{:r1 :r2 :r3 :r4}))
@@ -822,9 +822,50 @@
                            :shape-ids shape-ids
                            :on-update-shape on-update-shape}))))))))
 
-(defn apply-token-on-selected
+(defn apply-token-from-input
+  [{:keys [token attrs shape-ids expand-with-children]}]
+  (ptk/reify ::apply-token-from-input
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            shapes (into [] (keep (d/getf objects)) shape-ids)
+
+            shapes
+            (if expand-with-children
+              (into []
+                    (mapcat (fn [shape]
+                              (if (= (:type shape) :group)
+                                (keep objects (:shapes shape))
+                                [shape])))
+                    shapes)
+              shapes)
+
+            {:keys [attributes _ on-update-shape]}
+            (get token-properties (:type token))
+
+            on-update-shape
+            (if (seq attrs)
+              (or (get attr->shape-update (first attrs)) on-update-shape)
+              on-update-shape)]
+
+        (rx/of
+         (cond
+           (and (= (:type token) :spacing)
+                (nil? attrs))
+           (apply-spacing-token-separated {:token token
+                                           :attr attrs
+                                           :shapes shapes})
+
+           :else
+           (apply-token {:attributes (if (empty? attrs) attributes attrs)
+                         :token token
+                         :shape-ids shape-ids
+                         :on-update-shape on-update-shape})))))))
+
+
+(defn apply-token-on-color-selected
   [color-operations token]
-  (ptk/reify ::apply-token-on-selected
+  (ptk/reify ::apply-token-on-color-selected
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
@@ -862,7 +903,7 @@
    :border-radius
    {:title "Border Radius"
     :attributes ctt/border-radius-keys
-    :on-update-shape update-shape-radius-all
+    :on-update-shape update-shape-radius
     :modal {:key :tokens/border-radius
             :fields [{:label "Border Radius"
                       :key :border-radius}]}}

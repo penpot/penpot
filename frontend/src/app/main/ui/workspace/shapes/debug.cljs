@@ -15,7 +15,6 @@
    [app.common.types.path :as path]
    [app.common.types.path.bool :as path.bool]
    [app.common.types.path.helpers :as path.helpers]
-   [app.common.types.path.segment :as path.segment]
    [app.common.types.path.subpath :as path.subpath]
    [app.main.refs :as refs]
    [app.util.color :as uc]
@@ -124,8 +123,8 @@
                       (path.bool/add-previous))
 
 
-        sr-a (path.segment/content->selrect content-a)
-        sr-b (path.segment/content->selrect content-b)
+        sr-a (path/calc-selrect content-a)
+        sr-b (path/calc-selrect content-b)
 
         [content-a-split content-b-split] (path.bool/content-intersect-split content-a content-b sr-a sr-b)
 

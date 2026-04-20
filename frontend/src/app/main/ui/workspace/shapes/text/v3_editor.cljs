@@ -75,7 +75,22 @@
         on-composition-start
         (mf/use-fn
          (fn [_event]
-           (reset! composing? true)))
+           (reset! composing? true)
+           (text-editor/text-editor-composition-start)))
+
+        on-composition-update
+        (mf/use-fn
+         (fn [event]
+           (when-not composing?
+             (reset! composing? true))
+
+           (let [data (.-data event)]
+             (when data
+               (text-editor/text-editor-composition-update data)
+               (sync-wasm-text-editor-content!)
+               (wasm.api/request-render "text-composition"))
+             (when-let [node (mf/ref-val contenteditable-ref)]
+               (set! (.-textContent node) "")))))
 
         on-composition-end
         (mf/use-fn
@@ -83,7 +98,7 @@
            (reset! composing? false)
            (let [data (.-data event)]
              (when data
-               (text-editor/text-editor-insert-text data)
+               (text-editor/text-editor-composition-end data)
                (sync-wasm-text-editor-content!)
                (wasm.api/request-render "text-composition"))
              (when-let [node (mf/ref-val contenteditable-ref)]
@@ -326,6 +341,7 @@
          :contentEditable true
          :suppressContentEditableWarning true
          :on-composition-start on-composition-start
+         :on-composition-update on-composition-update
          :on-composition-end on-composition-end
          :on-key-down on-key-down
          :on-input on-input

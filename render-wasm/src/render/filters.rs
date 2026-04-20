@@ -1,6 +1,7 @@
 use skia_safe::{self as skia, ImageFilter, Rect};
 
 use super::{RenderState, SurfaceId};
+use crate::error::Result;
 
 /// Composes two image filters, returning a combined filter if both are present,
 /// or the individual filter if only one is present, or None if neither is present.
@@ -36,12 +37,12 @@ pub fn render_with_filter_surface<F>(
     bounds: Rect,
     target_surface: SurfaceId,
     draw_fn: F,
-) -> bool
+) -> Result<bool>
 where
-    F: FnOnce(&mut RenderState, SurfaceId),
+    F: FnOnce(&mut RenderState, SurfaceId) -> Result<()>,
 {
     if let Some((mut surface, scale)) =
-        render_into_filter_surface(render_state, bounds, 1.0, draw_fn)
+        render_into_filter_surface(render_state, bounds, 1.0, draw_fn)?
     {
         let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
 
@@ -58,9 +59,9 @@ where
             surface.draw(canvas, (0.0, 0.0), render_state.sampling_options, None);
             canvas.restore();
         }
-        true
+        Ok(true)
     } else {
-        false
+        Ok(false)
     }
 }
 
@@ -81,12 +82,12 @@ pub fn render_into_filter_surface<F>(
     bounds: Rect,
     extra_downscale: f32,
     draw_fn: F,
-) -> Option<(skia::Surface, f32)>
+) -> Result<Option<(skia::Surface, f32)>>
 where
-    F: FnOnce(&mut RenderState, SurfaceId),
+    F: FnOnce(&mut RenderState, SurfaceId) -> Result<()>,
 {
     if !bounds.is_finite() || bounds.width() <= 0.0 || bounds.height() <= 0.0 {
-        return None;
+        return Ok(None);
     }
 
     let filter_id = SurfaceId::Filter;
@@ -125,10 +126,10 @@ where
         canvas.translate((-bounds.left, -bounds.top));
     }
 
-    draw_fn(render_state, filter_id);
+    draw_fn(render_state, filter_id)?;
 
     render_state.surfaces.canvas(filter_id).restore();
 
     let filter_surface = render_state.surfaces.surface_clone(filter_id);
-    Some((filter_surface, scale))
+    Ok(Some((filter_surface, scale)))
 }

@@ -112,3 +112,30 @@ test("BUG 13272 - Fix problem with snap to pixel", async ({ page }) => {
   await expect(workspacePage.rightSidebar.getByTitle("Width").getByRole("textbox")).toHaveValue("197.5");
   await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("128.28");
 });
+
+test("BUG 13755 - Fix problem with text change modiifers", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13755.json");
+
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-13755-fragment.json",
+  );
+
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+
+  await workspacePage.goToWorkspace({
+    fileId: "7fd33337-c651-80ae-8007-c357213f876e",
+    pageId: "7fd33337-c651-80ae-8007-c357213f876f",
+  });
+
+  await workspacePage.clickToggableLayer("Board");
+  await workspacePage.clickLeafLayer("uno dos tres cuatro");
+
+  await workspacePage.page.keyboard.press('Enter');
+  await workspacePage.page.keyboard.type('test');
+
+  await workspacePage.clickToggableLayer("Board");
+  await expect(workspacePage.rightSidebar.getByTitle("Width").getByRole("textbox")).toHaveValue("23");
+});

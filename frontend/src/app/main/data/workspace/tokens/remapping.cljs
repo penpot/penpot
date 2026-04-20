@@ -150,6 +150,18 @@
 
         (rx/of (dch/commit-changes token-changes))))))
 
+(defn bulk-remap-tokens
+  "Helper function to remap a batch of tokens, used for node renaming"
+  [tokens-in-path new-tokens]
+  (ptk/reify ::bulk-remap-tokens
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/concat
+       (map (fn [old-token new-token]
+              (remap-tokens (:name old-token) (:name new-token)))
+            tokens-in-path
+            new-tokens)))))
+
 (defn validate-token-remapping
   "Validate that a token remapping operation is safe to perform"
   [old-name new-name]

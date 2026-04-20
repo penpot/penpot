@@ -15,15 +15,19 @@
 .right-arrow {
   @include deprecated.buttonStyle;
   @include deprecated.flexCenter;
+
   position: relative;
   height: 100%;
   width: deprecated.$s-24;
   padding: 0;
   z-index: deprecated.$z-index-5;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
   }
+
   &::after {
     content: "";
     position: absolute;
@@ -39,20 +43,24 @@
     );
     pointer-events: none;
   }
+
   &:hover {
     svg {
       stroke: var(--button-foreground-hover);
     }
   }
+
   &:disabled {
     svg {
       stroke: var(--button-foreground-color-disabled);
     }
+
     &::after {
       background-image: none;
     }
   }
 }
+
 .left-arrow {
   &::after {
     left: deprecated.$s-24;
@@ -99,11 +107,13 @@
 
   &.no-text {
     @include deprecated.flexCenter;
+
     width: deprecated.$s-32;
   }
 }
 
 .color-palette-empty {
   @include deprecated.bodySmallTypography;
+
   color: var(--palette-text-color);
 }

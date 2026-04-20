@@ -8,6 +8,7 @@
 
 .view-options {
   @include deprecated.bodySmallTypography;
+
   display: flex;
   align-items: center;
   position: relative;
@@ -18,8 +19,10 @@
   padding: deprecated.$s-8;
   cursor: pointer;
 }
+
 .dropdown-title {
   @include deprecated.bodySmallTypography;
+
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }
@@ -30,7 +33,8 @@
 }
 
 .dropdown {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
+
   right: deprecated.$s-2;
   top: calc(deprecated.$s-2 + deprecated.$s-48);
   width: deprecated.$s-272;
@@ -40,17 +44,23 @@
 }
 
 .dropdown-element {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
+
   min-height: deprecated.$s-32;
+
   .icon {
     @include deprecated.flexCenter;
+
     height: 100%;
     width: deprecated.$s-16;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--icon-foreground);
     }
   }
+
   &:hover .label {
     color: var(--input-foreground-color-active);
   }
@@ -60,6 +70,7 @@
   .label {
     color: var(--input-foreground-color-active);
   }
+
   .icon svg {
     stroke: var(--input-foreground-color);
   }
@@ -68,10 +79,13 @@
 .icon,
 .icon-dropdown {
   @include deprecated.flexCenter;
+
   height: 100%;
   width: deprecated.$s-16;
+
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
+
     stroke: var(--icon-foreground);
   }
 }

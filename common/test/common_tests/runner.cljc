@@ -12,8 +12,23 @@
    [common-tests.data-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-test]
+   [common-tests.geom-align-test]
+   [common-tests.geom-bounds-map-test]
+   [common-tests.geom-grid-test]
+   [common-tests.geom-line-test]
+   [common-tests.geom-modif-tree-test]
+   [common-tests.geom-modifiers-test]
    [common-tests.geom-point-test]
+   [common-tests.geom-proportions-test]
+   [common-tests.geom-shapes-common-test]
+   [common-tests.geom-shapes-corners-test]
+   [common-tests.geom-shapes-effects-test]
+   [common-tests.geom-shapes-intersect-test]
+   [common-tests.geom-shapes-strokes-test]
    [common-tests.geom-shapes-test]
+   [common-tests.geom-shapes-text-test]
+   [common-tests.geom-shapes-tree-seq-test]
+   [common-tests.geom-snap-test]
    [common-tests.geom-test]
    [common-tests.logic.chained-propagation-test]
    [common-tests.logic.comp-creation-test]
@@ -46,8 +61,10 @@
    [common-tests.types.path-data-test]
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
+   [common-tests.types.shape-layout-test]
    [common-tests.types.token-test]
    [common-tests.types.tokens-lib-test]
+   [common-tests.undo-stack-test]
    [common-tests.uuid-test]))
 
 #?(:cljs (enable-console-print!))
@@ -66,8 +83,23 @@
    'common-tests.data-test
    'common-tests.files-changes-test
    'common-tests.files-migrations-test
+   'common-tests.geom-align-test
+   'common-tests.geom-bounds-map-test
+   'common-tests.geom-grid-test
+   'common-tests.geom-line-test
+   'common-tests.geom-modif-tree-test
+   'common-tests.geom-modifiers-test
    'common-tests.geom-point-test
+   'common-tests.geom-proportions-test
+   'common-tests.geom-shapes-common-test
+   'common-tests.geom-shapes-corners-test
+   'common-tests.geom-shapes-effects-test
+   'common-tests.geom-shapes-intersect-test
+   'common-tests.geom-shapes-strokes-test
    'common-tests.geom-shapes-test
+   'common-tests.geom-shapes-text-test
+   'common-tests.geom-shapes-tree-seq-test
+   'common-tests.geom-snap-test
    'common-tests.geom-test
    'common-tests.logic.chained-propagation-test
    'common-tests.logic.comp-creation-test
@@ -100,6 +132,8 @@
    'common-tests.types.path-data-test
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test
-   'common-tests.types.tokens-lib-test
+   'common-tests.types.shape-layout-test
    'common-tests.types.token-test
+   'common-tests.types.tokens-lib-test
+   'common-tests.undo-stack-test
    'common-tests.uuid-test))

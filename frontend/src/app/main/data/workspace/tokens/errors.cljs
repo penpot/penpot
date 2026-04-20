@@ -135,6 +135,26 @@
 (defn has-error-code? [error-key errors]
   (some #(= (:error/code %) error-key) errors))
 
+(defn resolve-error-message
+  "Returns the human-readable message string for a single error map.
+  When the error carries an :error/fn key the function is called with
+  :error/value to produce the message.  Falls back to :message for
+  errors that originate from schema-validation (which have no :error/fn)."
+  [error]
+  (if-let [f (:error/fn error)]
+    (f (:error/value error))
+    (:message error)))
+
+(defn resolve-error-assoc-message
+  "Returns the error map with a :message key set to the resolved human-
+  readable string.  When the error carries an :error/fn key the function
+  is called with :error/value; otherwise the map is returned unchanged
+  (it is expected to already carry a :message from schema-validation)."
+  [error]
+  (if-let [f (:error/fn error)]
+    (assoc error :message (f (:error/value error)))
+    error))
+
 (defn humanize-errors [errors]
   (->> errors
        (map (fn [err]

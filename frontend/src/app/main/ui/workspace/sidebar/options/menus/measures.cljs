@@ -283,9 +283,9 @@
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (udw/update-dimensions ids attr value))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (dwta/toggle-token {:token (first value)
-                                           :attrs #{attr}
-                                           :shape-ids ids})))))
+                       (dwta/apply-token-from-input {:token (first value)
+                                                     :attrs #{attr}
+                                                     :shape-ids ids})))))
 
         on-proportion-lock-change
         (mf/use-fn
@@ -304,9 +304,9 @@
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
                (st/emit! (udw/update-positions ids {attr value})))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (dwta/toggle-token {:token (first value)
-                                           :attrs #{attr}
-                                           :shape-ids ids})))))
+                       (dwta/apply-token-from-input {:token (first value)
+                                                     :attrs #{attr}
+                                                     :shape-ids ids})))))
 
         on-rotation-change
         (mf/use-fn
@@ -317,9 +317,9 @@
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
                (st/emit! (udw/increase-rotation ids value)))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (dwta/toggle-token {:token (first value)
-                                           :attrs #{:rotation}
-                                           :shape-ids ids})))))
+                       (dwta/apply-token-from-input {:token (first value)
+                                                     :attrs #{:rotation}
+                                                     :shape-ids ids})))))
 
         on-width-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :width))

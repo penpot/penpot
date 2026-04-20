@@ -44,13 +44,13 @@
        (let [shape (u/locate-shape file-id page-id (obj/get value "$id"))]
          (cond
            (not (shape-proxy? value))
-           (u/display-not-valid :board "The board is not a shape proxy")
+           (u/not-valid plugin-id :board "The board is not a shape proxy")
 
            (not (cfh/frame-shape? shape))
-           (u/display-not-valid :board "The shape is not a board")
+           (u/not-valid plugin-id :board "The shape is not a board")
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :board "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :board "Plugin doesn't have 'content:write' permission")
 
            :else
            (let [board-id (when value (obj/get value "$id"))
@@ -78,10 +78,10 @@
      (fn [self value]
        (cond
          (not (sm/valid-safe-number? value))
-         (u/display-not-valid :position "Not valid position")
+         (u/not-valid plugin-id :position "Not valid position")
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :position "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :position "Plugin doesn't have 'content:write' permission")
 
          :else
          (let [guide (u/proxy->ruler-guide self)

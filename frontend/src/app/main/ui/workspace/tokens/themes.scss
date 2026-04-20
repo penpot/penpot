@@ -15,7 +15,7 @@
 .themes-header {
   padding: var(--sp-s);
   color: var(--title-foreground-color);
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .empty-theme-wrapper {
@@ -29,6 +29,7 @@
 
 .create-theme-button {
   @include use-typography("body-small");
+
   background-color: transparent;
   border: none;
   appearance: none;

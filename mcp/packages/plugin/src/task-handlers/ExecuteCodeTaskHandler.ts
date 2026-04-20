@@ -195,16 +195,19 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
         const context = this.context;
         const code = task.params.code;
 
-        // set the penpot.flags.naturalChildOrdering to true during code execution.
-        // NOTE: This significantly simplifies API usage (see )
-        // TODO: Remove ts-ignore once Penpot types have been updated
-        let originalNaturalChildOrdering: any;
+        // set the flags naturalChildOrdering and throwValidationErrors to true during code execution.
+        // TODO: Remove all ts-ignore once Penpot types have been updated
+        let originalNaturalChildOrdering: any, originalThrowValidationErrors: any;
         // @ts-ignore
         if (penpot.flags) {
             // @ts-ignore
             originalNaturalChildOrdering = penpot.flags.naturalChildOrdering;
             // @ts-ignore
             penpot.flags.naturalChildOrdering = true;
+            // @ts-ignore
+            originalThrowValidationErrors = penpot.flags.throwValidationErrors;
+            // @ts-ignore
+            penpot.flags.throwValidationErrors = true;
         } else {
             // TODO: This can be removed once `flags` has been merged to PROD
             throw new Error(
@@ -224,9 +227,11 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
                 return fn(...Object.values(ctx));
             })(context);
         } finally {
-            // restore the original value of penpot.flags.naturalChildOrdering
+            // restore the original value of the flags
             // @ts-ignore
             penpot.flags.naturalChildOrdering = originalNaturalChildOrdering;
+            // @ts-ignore
+            penpot.flags.throwValidationErrors = originalThrowValidationErrors;
         }
 
         console.log("Code execution result:", result);

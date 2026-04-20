@@ -55,6 +55,7 @@ $arrow-side: 12px;
     "arrow"
     "content";
 }
+
 .tooltip-bottom .tooltip-arrow {
   justify-self: center;
   border-radius: var(--sp-xs) 0;
@@ -111,7 +112,7 @@ $arrow-side: 12px;
 }
 
 .tooltip-bottom-right .tooltip-arrow {
-  margin: 0px var(--sp-s);
+  margin: 0 var(--sp-s);
   transform: rotate(45deg) translateX(var(--sp-s));
   border-radius: var(--sp-xs) 0;
   border-block-start: $b-1 solid var(--color-accent-primary-muted);
@@ -123,6 +124,7 @@ $arrow-side: 12px;
     "arrow"
     "content";
 }
+
 .tooltip-bottom-left .tooltip-arrow {
   justify-self: end;
   margin: 0 var(--sp-s);
@@ -137,6 +139,7 @@ $arrow-side: 12px;
     "content"
     "arrow";
 }
+
 .tooltip-top-left .tooltip-arrow {
   margin: 0 var(--sp-s);
   justify-self: end;
@@ -148,6 +151,7 @@ $arrow-side: 12px;
 
 .tooltip-content {
   @include t.use-typography("body-small");
+
   background-color: var(--color-background-primary);
   color: var(--color-foreground-secondary);
   border-radius: var(--sp-xs);

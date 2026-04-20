@@ -27,14 +27,10 @@
        children])))
 
 (defn emit-value-or-token [value emit-value-fn ids attrs]
-  (cond
-    (nil? value)
-    (emit-value-fn nil)
-
-    (or (string? value) (number? value))
+  (if (or (string? value)
+          (number? value)
+          (nil? value))
     (emit-value-fn value)
-
-    :else
     (st/emit!
      (dwta/toggle-token {:token     (first value)
                          :attrs     attrs

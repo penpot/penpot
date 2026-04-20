@@ -40,6 +40,13 @@ export class WasmWorkspacePage extends WorkspacePage {
     this.canvas = page.getByTestId("canvas-wasm-shapes");
   }
 
+  async waitForIdle(options) {
+    return this.page.evaluate(
+      (options) => new Promise((resolve) => globalThis.requestIdleCallback(resolve, options)),
+      options
+    );
+  }
+
   async waitForFirstRender() {
     await this.pageName.waitFor();
     await this.canvas.waitFor();

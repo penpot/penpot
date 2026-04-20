@@ -74,7 +74,7 @@ export default defineConfig(({ command }) => ({
       name: 'wasm-content-type-plugin',
       configureServer(server) {
         const publicDir = join(__dirname, 'public')
-        
+
         server.middlewares.use((req, res, next) => {
           const url = req.url?.split('?')[0] || '';
           if (url.endsWith('.wasm')) {

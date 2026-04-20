@@ -1,5 +1,7 @@
+use crate::error::{Error, Result};
 use crate::performance;
 use crate::shapes::Shape;
+use crate::uuid::Uuid;
 
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
@@ -17,17 +19,18 @@ const TILE_SIZE_MULTIPLIER: i32 = 2;
 #[repr(u32)]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
-    Target = 0b00_0000_0001,
-    Filter = 0b00_0000_0010,
-    Cache = 0b00_0000_0100,
-    Current = 0b00_0000_1000,
-    Fills = 0b00_0001_0000,
-    Strokes = 0b00_0010_0000,
-    DropShadows = 0b00_0100_0000,
-    InnerShadows = 0b00_1000_0000,
-    TextDropShadows = 0b01_0000_0000,
-    UI = 0b10_0000_0000,
-    Debug = 0b10_0000_0001,
+    Target = 0b000_0000_0001,
+    Filter = 0b000_0000_0010,
+    Cache = 0b000_0000_0100,
+    Current = 0b000_0000_1000,
+    Fills = 0b000_0001_0000,
+    Strokes = 0b000_0010_0000,
+    DropShadows = 0b000_0100_0000,
+    InnerShadows = 0b000_1000_0000,
+    TextDropShadows = 0b001_0000_0000,
+    Export = 0b010_0000_0000,
+    UI = 0b100_0000_0000,
+    Debug = 0b100_0000_0001,
 }
 
 pub struct Surfaces {
@@ -52,47 +55,70 @@ pub struct Surfaces {
     // for drawing debug info.
     debug: skia::Surface,
     // for drawing tiles.
+    export: skia::Surface,
+
     tiles: TileTextureCache,
+    /// Transient per-frame cache used by the band-aware tile scheduler to
+    /// carry `Current` state across visits of the same tile. Only populated
+    /// for tiles whose paint order is split by a gather barrier; tiles with
+    /// a single band never touch this map. Dropped per-tile on the tile's
+    /// last-band visit and cleared at the end of each `run_schedule`.
+    interband_cache: HashMap<Tile, skia::Image>,
+
+    /// Transient per-frame cache mapping a gather shape's id to ONE Target
+    /// snapshot taken before the gather renders any of its tiles. All of
+    /// that gather's tiles read this same snapshot as their backdrop instead
+    /// of taking a fresh `image_snapshot(Target)` each — which is both
+    /// cheaper (1 snapshot per gather vs. 1 per tile) AND eliminates the
+    /// peer-sampling artifact where tile (A)'s glass output leaks into
+    /// tile (B)'s backdrop because both write to and read from live Target.
+    /// Cleared at the end of each `run_schedule`.
+    glass_backdrop_cache: HashMap<Uuid, skia::Image>,
     sampling_options: skia::SamplingOptions,
-    margins: skia::ISize,
+    pub margins: skia::ISize,
     // Tracks which surfaces have content (dirty flag bitmask)
     dirty_surfaces: u32,
+
+    extra_tile_dims: skia::ISize,
 }
 
 #[allow(dead_code)]
 impl Surfaces {
-    pub fn new(
+    pub fn try_new(
         gpu_state: &mut GpuState,
         (width, height): (i32, i32),
         sampling_options: skia::SamplingOptions,
         tile_dims: skia::ISize,
-    ) -> Self {
+    ) -> Result<Self> {
         let extra_tile_dims = skia::ISize::new(
             tile_dims.width * TILE_SIZE_MULTIPLIER,
             tile_dims.height * TILE_SIZE_MULTIPLIER,
         );
         let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
 
-        let target = gpu_state.create_target_surface(width, height);
-        let filter = gpu_state.create_surface_with_isize("filter".to_string(), extra_tile_dims);
-        let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height);
-        let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
-        let drop_shadows =
-            gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
-        let inner_shadows =
-            gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims);
-        let text_drop_shadows =
-            gpu_state.create_surface_with_isize("text_drop_shadows".to_string(), extra_tile_dims);
-        let shape_fills =
-            gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims);
-        let shape_strokes =
-            gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims);
+        let target = gpu_state.create_target_surface(width, height)?;
+        let filter = gpu_state.create_surface_with_isize("filter".to_string(), extra_tile_dims)?;
+        let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height)?;
+        let current =
+            gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims)?;
 
-        let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height);
-        let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height);
+        let drop_shadows =
+            gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims)?;
+        let inner_shadows =
+            gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims)?;
+        let text_drop_shadows = gpu_state
+            .create_surface_with_isize("text_drop_shadows".to_string(), extra_tile_dims)?;
+        let shape_fills =
+            gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims)?;
+        let shape_strokes =
+            gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims)?;
+        let export = gpu_state.create_surface_with_isize("export".to_string(), extra_tile_dims)?;
+
+        let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height)?;
+        let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height)?;
 
         let tiles = TileTextureCache::new();
-        Surfaces {
+        Ok(Surfaces {
             target,
             filter,
             cache,
@@ -104,19 +130,33 @@ impl Surfaces {
             shape_strokes,
             ui,
             debug,
+            export,
             tiles,
+            interband_cache: HashMap::new(),
+            glass_backdrop_cache: HashMap::new(),
             sampling_options,
             margins,
             dirty_surfaces: 0,
-        }
+            extra_tile_dims,
+        })
     }
 
     pub fn clear_tiles(&mut self) {
         self.tiles.clear();
     }
 
-    pub fn resize(&mut self, gpu_state: &mut GpuState, new_width: i32, new_height: i32) {
-        self.reset_from_target(gpu_state.create_target_surface(new_width, new_height));
+    pub fn margins(&self) -> skia::ISize {
+        self.margins
+    }
+
+    pub fn resize(
+        &mut self,
+        gpu_state: &mut GpuState,
+        new_width: i32,
+        new_height: i32,
+    ) -> Result<()> {
+        self.reset_from_target(gpu_state.create_target_surface(new_width, new_height)?)?;
+        Ok(())
     }
 
     pub fn snapshot(&mut self, id: SurfaceId) -> skia::Image {
@@ -128,26 +168,33 @@ impl Surfaces {
         (self.filter.width(), self.filter.height())
     }
 
-    pub fn base64_snapshot(&mut self, id: SurfaceId) -> String {
+    pub fn base64_snapshot(&mut self, id: SurfaceId) -> Result<String> {
         let surface = self.get_mut(id);
         let image = surface.image_snapshot();
         let mut context = surface.direct_context();
         let encoded_image = image
             .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
-            .unwrap();
-        general_purpose::STANDARD.encode(encoded_image.as_bytes())
+            .ok_or(Error::CriticalError("Failed to encode image".to_string()))?;
+        Ok(general_purpose::STANDARD.encode(encoded_image.as_bytes()))
     }
 
-    pub fn base64_snapshot_rect(&mut self, id: SurfaceId, irect: skia::IRect) -> Option<String> {
+    pub fn base64_snapshot_rect(
+        &mut self,
+        id: SurfaceId,
+        irect: skia::IRect,
+    ) -> Result<Option<String>> {
         let surface = self.get_mut(id);
         if let Some(image) = surface.image_snapshot_with_bounds(irect) {
             let mut context = surface.direct_context();
             let encoded_image = image
                 .encode(context.as_mut(), skia::EncodedImageFormat::PNG, None)
-                .unwrap();
-            return Some(general_purpose::STANDARD.encode(encoded_image.as_bytes()));
+                .ok_or(Error::CriticalError("Failed to encode image".to_string()))?;
+            Ok(Some(
+                general_purpose::STANDARD.encode(encoded_image.as_bytes()),
+            ))
+        } else {
+            Ok(None)
         }
-        None
     }
 
     /// Returns a mutable reference to the canvas and automatically marks
@@ -259,6 +306,9 @@ impl Surfaces {
         if ids & SurfaceId::Debug as u32 != 0 {
             f(self.get_mut(SurfaceId::Debug));
         }
+        if ids & SurfaceId::Export as u32 != 0 {
+            f(self.get_mut(SurfaceId::Export));
+        }
         performance::begin_measure!("apply_mut::flags");
     }
 
@@ -282,7 +332,8 @@ impl Surfaces {
         let surface_ids = SurfaceId::Fills as u32
             | SurfaceId::Strokes as u32
             | SurfaceId::InnerShadows as u32
-            | SurfaceId::TextDropShadows as u32;
+            | SurfaceId::TextDropShadows as u32
+            | SurfaceId::DropShadows as u32;
 
         // Clear surfaces before updating transformations to remove residual content
         self.apply_mut(surface_ids, |s| {
@@ -294,6 +345,7 @@ impl Surfaces {
         self.mark_dirty(SurfaceId::Strokes);
         self.mark_dirty(SurfaceId::InnerShadows);
         self.mark_dirty(SurfaceId::TextDropShadows);
+        self.mark_dirty(SurfaceId::DropShadows);
 
         // Update transformations
         self.apply_mut(surface_ids, |s| {
@@ -305,7 +357,7 @@ impl Surfaces {
     }
 
     #[inline]
-    fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
+    pub fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
             SurfaceId::Filter => &mut self.filter,
@@ -318,6 +370,7 @@ impl Surfaces {
             SurfaceId::Strokes => &mut self.shape_strokes,
             SurfaceId::Debug => &mut self.debug,
             SurfaceId::UI => &mut self.ui,
+            SurfaceId::Export => &mut self.export,
         }
     }
 
@@ -334,25 +387,45 @@ impl Surfaces {
             SurfaceId::Strokes => &self.shape_strokes,
             SurfaceId::Debug => &self.debug,
             SurfaceId::UI => &self.ui,
+            SurfaceId::Export => &self.export,
         }
     }
 
-    fn reset_from_target(&mut self, target: skia::Surface) {
+    fn reset_from_target(&mut self, target: skia::Surface) -> Result<()> {
         let dim = (target.width(), target.height());
         self.target = target;
-        self.filter = self.target.new_surface_with_dimensions(dim).unwrap();
-        self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
-        self.ui = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.filter = self
+            .target
+            .new_surface_with_dimensions(dim)
+            .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
+        self.debug = self
+            .target
+            .new_surface_with_dimensions(dim)
+            .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
+        self.ui = self
+            .target
+            .new_surface_with_dimensions(dim)
+            .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
         // The rest are tile size surfaces
+
+        Ok(())
     }
 
-    pub fn resize_cache(&mut self, cache_dims: skia::ISize, interest_area_threshold: i32) {
-        self.cache = self.target.new_surface_with_dimensions(cache_dims).unwrap();
+    pub fn resize_cache(
+        &mut self,
+        cache_dims: skia::ISize,
+        interest_area_threshold: i32,
+    ) -> Result<()> {
+        self.cache = self
+            .target
+            .new_surface_with_dimensions(cache_dims)
+            .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
         self.cache.canvas().reset_matrix();
         self.cache.canvas().translate((
             (interest_area_threshold as f32 * TILE_SIZE),
             (interest_area_threshold as f32 * TILE_SIZE),
         ));
+        Ok(())
     }
 
     pub fn draw_rect_to(
@@ -454,12 +527,14 @@ impl Surfaces {
         self.canvas(SurfaceId::TextDropShadows).restore_to_count(1);
         self.canvas(SurfaceId::Strokes).restore_to_count(1);
         self.canvas(SurfaceId::Current).restore_to_count(1);
+        self.canvas(SurfaceId::Export).restore_to_count(1);
         self.apply_mut(
             SurfaceId::Fills as u32
                 | SurfaceId::Strokes as u32
                 | SurfaceId::Current as u32
                 | SurfaceId::InnerShadows as u32
-                | SurfaceId::TextDropShadows as u32,
+                | SurfaceId::TextDropShadows as u32
+                | SurfaceId::Export as u32,
             |s| {
                 s.canvas().clear(color).reset_matrix();
             },
@@ -529,6 +604,99 @@ impl Surfaces {
         }
     }
 
+    /// Snapshot the content region of `Current` (margins excluded) into a
+    /// transient per-tile cache used by the band-aware scheduler to carry
+    /// Current state across visits of the same tile. Called at the end of a
+    /// non-last band visit; matched by a later `restore_current_from_interband`
+    /// when the same tile's next band runs.
+    pub fn snapshot_current_for_interband(&mut self, tile: Tile) {
+        let rect = IRect::from_xywh(
+            self.margins.width,
+            self.margins.height,
+            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
+            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
+        );
+        if let Some(image) = self.current.image_snapshot_with_bounds(rect) {
+            self.interband_cache.insert(tile, image);
+        }
+    }
+
+    /// Restore a tile's Current state from the inter-band cache. Draws the
+    /// snapshot image into `Current` at the content-region origin (margins
+    /// offset). Returns true if a snapshot was present and restored.
+    pub fn restore_current_from_interband(&mut self, tile: Tile) -> bool {
+        let Some(image) = self.interband_cache.get(&tile) else {
+            return false;
+        };
+        let origin = skia::Point::new(
+            self.margins.width as f32,
+            self.margins.height as f32,
+        );
+        self.current
+            .canvas()
+            .draw_image(image, origin, Some(&skia::Paint::default()));
+        true
+    }
+
+    /// Drop the inter-band snapshot for a tile — called after that tile's
+    /// last-band visit so the image doesn't linger until end-of-frame.
+    pub fn drop_interband(&mut self, tile: Tile) {
+        self.interband_cache.remove(&tile);
+    }
+
+    /// Clear the inter-band cache entirely — called at the end of each
+    /// `run_schedule` so snapshots don't leak across frames.
+    pub fn clear_interband_cache(&mut self) {
+        self.interband_cache.clear();
+    }
+
+    /// Get the backdrop snapshot for a gather shape, taking it from the
+    /// given source surface on first access and caching it by shape id.
+    /// All subsequent tiles of the same gather shape reuse this snapshot
+    /// — all peers see the same frozen backdrop state, avoiding the
+    /// tile-order dependence where whichever peer finalizes first has its
+    /// glass output leak into the other peers' sample.
+    pub fn get_or_snapshot_glass_backdrop(
+        &mut self,
+        shape_id: Uuid,
+        source: SurfaceId,
+    ) -> skia::Image {
+        if let Some(image) = self.glass_backdrop_cache.get(&shape_id) {
+            return image.clone();
+        }
+        let image = self.get_mut(source).image_snapshot();
+        self.glass_backdrop_cache.insert(shape_id, image.clone());
+        image
+    }
+
+    /// Clear the per-gather backdrop cache — called at the end of each
+    /// `run_schedule` so snapshots don't leak across frames.
+    pub fn clear_glass_backdrop_cache(&mut self) {
+        self.glass_backdrop_cache.clear();
+    }
+
+    /// Composite the content region of `Current` (excluding margins) onto
+    /// Target at `tile_rect`, without caching. Intended for mid-render partial
+    /// flushes (e.g. the pre-glass flush in run_schedule) that will be
+    /// superseded by a later `apply_render_to_final_canvas`.
+    pub fn composite_current_to_target(&mut self, tile_rect: skia::Rect, bg_color: skia::Color) {
+        let content_rect = IRect::from_xywh(
+            self.margins.width,
+            self.margins.height,
+            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
+            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
+        );
+        let Some(tile_image) = self.current.image_snapshot_with_bounds(content_rect) else {
+            return;
+        };
+        let mut paint = skia::Paint::default();
+        paint.set_color(bg_color);
+        self.target.canvas().draw_rect(tile_rect, &paint);
+        self.target
+            .canvas()
+            .draw_image_rect(&tile_image, None, tile_rect, &skia::Paint::default());
+    }
+
     /// Draws the current tile directly to the target and cache surfaces without
     /// creating a snapshot. This avoids GPU stalls from ReadPixels but doesn't
     /// populate the tile texture cache (suitable for one-shot renders like tests).
@@ -570,13 +738,65 @@ impl Surfaces {
         );
     }
 
+    /// Full cache reset: clears both the tile texture cache and the cache canvas.
+    /// Used by `rebuild_tiles` (full rebuild). For shallow rebuilds that preserve
+    /// the cache canvas for scaled previews, use `invalidate_tile_cache` instead.
     pub fn remove_cached_tiles(&mut self, color: skia::Color) {
         self.tiles.clear();
         self.cache.canvas().clear(color);
     }
 
+    /// Invalidate the tile texture cache without clearing the cache canvas.
+    /// This forces all tiles to be re-rendered, but preserves the cache canvas
+    /// so that `render_from_cache` can still show a scaled preview of the old
+    /// content while new tiles are being rendered.
+    pub fn invalidate_tile_cache(&mut self) {
+        self.tiles.clear();
+    }
+
     pub fn gc(&mut self) {
         self.tiles.gc();
+    }
+
+    pub fn resize_export_surface(&mut self, scale: f32, rect: skia::Rect) {
+        let target_w = (scale * rect.width()).ceil() as i32;
+        let target_h = (scale * rect.height()).ceil() as i32;
+
+        let max_w = i32::max(self.extra_tile_dims.width, target_w);
+        let max_h = i32::max(self.extra_tile_dims.height, target_h);
+
+        if max_w > self.extra_tile_dims.width || max_h > self.extra_tile_dims.height {
+            self.extra_tile_dims = skia::ISize::new(max_w, max_h);
+            self.drop_shadows = self
+                .drop_shadows
+                .new_surface_with_dimensions((max_w, max_h))
+                .unwrap();
+            self.inner_shadows = self
+                .inner_shadows
+                .new_surface_with_dimensions((max_w, max_h))
+                .unwrap();
+            self.text_drop_shadows = self
+                .text_drop_shadows
+                .new_surface_with_dimensions((max_w, max_h))
+                .unwrap();
+            self.text_drop_shadows = self
+                .text_drop_shadows
+                .new_surface_with_dimensions((max_w, max_h))
+                .unwrap();
+            self.shape_strokes = self
+                .shape_strokes
+                .new_surface_with_dimensions((max_w, max_h))
+                .unwrap();
+            self.shape_fills = self
+                .shape_strokes
+                .new_surface_with_dimensions((max_w, max_h))
+                .unwrap();
+        }
+
+        self.export = self
+            .export
+            .new_surface_with_dimensions((target_w, target_h))
+            .unwrap();
     }
 }
 

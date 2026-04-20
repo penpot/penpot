@@ -153,6 +153,18 @@
                   tokens)]
     (group-by :type tokens')))
 
+(defn rename-path
+  "Renames a node or token path segment with a new name.
+   If token is provided, it renames a token path, otherwise it renames a node path."
+  ([node new-name]
+   (rename-path node nil new-name))
+  ([node token new-name]
+   (let [element (if token (:name token) (:path node))
+         split-path (cpn/split-path element :separator ".")
+         updated-split-element-name (assoc split-path (:depth node) new-name)
+         new-element-path (cpn/join-path updated-split-element-name :separator "." :with-spaces? false)]
+     new-element-path)))
+
 ;; === Token Set
 
 (defprotocol ITokenSet
@@ -242,17 +254,19 @@
   (update-token- [this token-id f]
     (assert (uuid? token-id) "expected uuid for `token-id`")
     (if-let [token (get-token- this token-id)]
-      (let [token' (-> (make-token (f token))
-                       (assoc :modified-at (ct/now)))]
-        (TokenSet. id
-                   name
-                   description
-                   (ct/now)
-                   (if (= (:name token) (:name token'))
-                     (assoc tokens (:name token') token')
-                     (-> tokens
-                         (d/oassoc-before (:name token) (:name token') token')
-                         (dissoc (:name token))))))
+      (let [token' (f token)]
+        (if (not= token token')
+          (let [token' (assoc token' :modified-at (ct/now))]
+            (TokenSet. id
+                       name
+                       description
+                       (ct/now)
+                       (if (= (:name token) (:name token'))
+                         (assoc tokens (:name token') token')
+                         (-> tokens
+                             (d/oassoc-before (:name token) (:name token') token')
+                             (dissoc (:name token))))))
+          this))
       this))
 
   (delete-token- [this token-id]
@@ -302,6 +316,35 @@
      cljs.core/IEncodeJS
      (-clj->js [this]
        (clj->js (datafy this)))))
+
+(def ^:private set-prefix "S-")
+
+(def ^:private set-group-prefix "G-")
+
+(def ^:private set-separator "/")
+
+(defn get-set-path
+  [token-set]
+  (cpn/split-path (get-name token-set) :separator set-separator))
+
+(defn split-set-name
+  [name]
+  (cpn/split-path name :separator set-separator))
+
+(defn join-set-path [path]
+  (cpn/join-path path :separator set-separator :with-spaces? false))
+
+(defn normalize-set-name
+  "Normalize a set name (ensure that there are no extra spaces, like ' group /  set' -> 'group/set').
+
+  If `relative-to` is provided, the normalized name will preserve the same group prefix as reference name."
+  ([name]
+   (-> (split-set-name (str name))
+       (cpn/join-path :separator set-separator :with-spaces? false)))
+  ([name relative-to]
+   (-> (concat (butlast (split-set-name relative-to))
+               (split-set-name (str name)))
+       (cpn/join-path :separator set-separator :with-spaces? false))))
 
 (defn token-set?
   [o]
@@ -357,6 +400,7 @@
 (def check-token-set
   (sm/check-fn schema:token-set :hint "expected valid token set"))
 
+
 (defn map->token-set
   [& {:as attrs}]
   (TokenSet. (:id attrs)
@@ -372,37 +416,9 @@
       (update :modified-at #(or % (ct/now)))
       (update :tokens #(into (d/ordered-map) %))
       (update :description d/nilv "")
+      (update :name normalize-set-name)
       (check-token-set-attrs)
       (map->token-set)))
-
-(def ^:private set-prefix "S-")
-
-(def ^:private set-group-prefix "G-")
-
-(def ^:private set-separator "/")
-
-(defn get-set-path
-  [token-set]
-  (cpn/split-path (get-name token-set) :separator set-separator))
-
-(defn split-set-name
-  [name]
-  (cpn/split-path name :separator set-separator))
-
-(defn join-set-path [path]
-  (cpn/join-path path :separator set-separator :with-spaces? false))
-
-(defn normalize-set-name
-  "Normalize a set name (ensure that there are no extra spaces, like ' group /  set' -> 'group/set').
-
-  If `relative-to` is provided, the normalized name will preserve the same group prefix as reference name."
-  ([name]
-   (-> (split-set-name name)
-       (cpn/join-path :separator set-separator :with-spaces? false)))
-  ([name relative-to]
-   (-> (concat (butlast (split-set-name relative-to))
-               (split-set-name name))
-       (cpn/join-path :separator set-separator :with-spaces? false))))
 
 (defn normalized-set-name?
   "Check if a set name is normalized (no extra spaces)."
@@ -1489,6 +1505,30 @@ Will return a value that matches this schema:
       :else (-> (get path-target selector)
                 (seq)
                 (boolean)))))
+
+(defn update-tokens-group
+  "Updates the active tokens path when renaming a group node.
+   - Filters tokens whose path matches the current path prefix
+   - Replaces the token name with the new name
+   - Updates the :path value in the token object
+
+   active-tokens: map of token-name to token-object for all active tokens in the set
+   current-path: the path of the group being renamed, e.g. \"foo.bar\"
+   current-name: the current name of the group being renamed, e.g. \"bar\"
+   new-name: the new name for the group being renamed, e.g. \"baz\""
+
+  [active-tokens current-path current-name new-name]
+  (let [path-prefix (str/replace current-path current-name "")]
+    (mapv (fn [[token-path token-obj]]
+            (if (str/starts-with? token-path path-prefix)
+              (let [new-token-path (str/replace token-path current-name new-name)
+                    new-token-obj (-> token-obj
+                                      (assoc :name new-token-path)
+                                      (cond-> (:path token-obj)
+                                        (assoc :path (str/replace (:path token-obj) current-name new-name))))]
+                [new-token-path new-token-obj])
+              [token-path token-obj]))
+          active-tokens)))
 
 ;; === Import / Export from JSON format
 

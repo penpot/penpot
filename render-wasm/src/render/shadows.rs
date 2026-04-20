@@ -1,8 +1,9 @@
 use super::{RenderState, SurfaceId};
 use crate::render::strokes;
-use crate::shapes::{ParagraphBuilderGroup, Shadow, Shape, Stroke, Type};
+use crate::shapes::{ParagraphBuilderGroup, Shadow, Shape, Stroke, StrokeKind, TextContent, Type};
 use skia_safe::{canvas::SaveLayerRec, Paint, Path};
 
+use crate::error::Result;
 use crate::render::text;
 
 // Fill Shadows
@@ -36,7 +37,7 @@ pub fn render_stroke_inner_shadows(
     stroke: &Stroke,
     antialias: bool,
     surface_id: SurfaceId,
-) {
+) -> Result<()> {
     if !shape.has_fills() {
         for shadow in shape.inner_shadows_visible() {
             let filter = shadow.get_inner_shadow_filter();
@@ -48,9 +49,10 @@ pub fn render_stroke_inner_shadows(
                 filter.as_ref(),
                 antialias,
                 None, // Inner shadows don't use spread
-            )
+            )?;
         }
     }
+    Ok(())
 }
 
 // Render text paths (unused)
@@ -125,6 +127,7 @@ fn render_shadow_paint(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn render_text_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
@@ -133,9 +136,11 @@ pub fn render_text_shadows(
     surface_id: Option<SurfaceId>,
     shadows: &[Paint],
     blur_filter: &Option<skia_safe::ImageFilter>,
-) {
+    stroke_kinds: &[StrokeKind],
+    text_content: &TextContent,
+) -> Result<()> {
     if stroke_paragraphs_group.is_empty() {
-        return;
+        return Ok(());
     }
 
     let canvas = render_state
@@ -156,22 +161,40 @@ pub fn render_text_shadows(
             blur_filter.as_ref(),
             None,
             None,
-        );
+        )?;
 
-        for stroke_paragraphs in stroke_paragraphs_group.iter_mut() {
-            text::render(
-                None,
-                Some(canvas),
-                shape,
-                stroke_paragraphs,
-                surface_id,
-                None,
-                blur_filter.as_ref(),
-                None,
-                None,
-            );
+        for (i, stroke_paragraphs) in stroke_paragraphs_group.iter_mut().enumerate() {
+            if i < stroke_kinds.len() && stroke_kinds[i] == StrokeKind::Inner {
+                let mut mask_builders = text_content.paragraph_builder_group_opaque();
+                let mut fill_builders = text_content.paragraph_builder_group_from_text(Some(true));
+                text::render_inner_stroke(
+                    None,
+                    Some(canvas),
+                    shape,
+                    &mut mask_builders,
+                    stroke_paragraphs,
+                    &mut fill_builders,
+                    surface_id,
+                    blur_filter.as_ref(),
+                    0.0,
+                    None,
+                )?;
+            } else {
+                text::render(
+                    None,
+                    Some(canvas),
+                    shape,
+                    stroke_paragraphs,
+                    surface_id,
+                    None,
+                    blur_filter.as_ref(),
+                    None,
+                    None,
+                )?;
+            }
         }
 
         canvas.restore();
     }
+    Ok(())
 }

@@ -23,7 +23,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.refs :as refs]
-   [app.main.render :as render]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
    [app.main.worker :as mw]
@@ -55,10 +55,11 @@
 
 (defn text-editor-wasm?
   []
-  (let [runtime-features (get @st/state :features-runtime)
-        enabled-features (get @st/state :features)]
-    (or (contains? runtime-features "text-editor-wasm/v1")
-        (contains? enabled-features "text-editor-wasm/v1"))))
+  (or (contains? cf/flags :feature-text-editor-wasm)
+      (let [runtime-features (get @st/state :features-runtime)
+            enabled-features (get @st/state :features)]
+        (or (contains? runtime-features "text-editor-wasm/v1")
+            (contains? enabled-features "text-editor-wasm/v1")))))
 
 (def ^:const UUID-U8-SIZE 16)
 (def ^:const UUID-U32-SIZE (/ UUID-U8-SIZE 4))
@@ -109,6 +110,9 @@
 (def noop-fn
   (constantly nil))
 
+;;
+(def shape-wrapper-factory nil)
+
 (defn- yield-to-browser
   "Returns a promise that resolves after yielding to the browser's event loop.
    Uses requestAnimationFrame for smooth visual updates during loading."
@@ -124,7 +128,7 @@
   (let [objects (mf/deref refs/workspace-page-objects)
         shape-wrapper
         (mf/with-memo [shape]
-          (render/shape-wrapper-factory objects))]
+          (shape-wrapper-factory objects))]
 
     [:svg {:version "1.1"
            :xmlns "http://www.w3.org/2000/svg"
@@ -951,14 +955,14 @@
     (= result 1)))
 
 (def render-finish
-  (letfn [(do-render [ts]
+  (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when wasm/context-initialized?
               (perf/begin-measure "render-finish")
               (h/call wasm/internal-module "_set_view_end")
-              (render ts)
-              (perf/end-measure "render-finish")))]
+              (perf/end-measure "render-finish")
+              (render (js/performance.now))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan
@@ -1009,62 +1013,62 @@
 (defn set-object
   [shape]
   (perf/begin-measure "set-object")
-  (let [shape        (svg-filters/apply-svg-derived shape)
-        id           (dm/get-prop shape :id)
-        type         (dm/get-prop shape :type)
+  (when shape
+    (let [shape        (svg-filters/apply-svg-derived shape)
+          id           (dm/get-prop shape :id)
+          type         (dm/get-prop shape :type)
 
-        masked       (get shape :masked-group)
+          masked       (get shape :masked-group)
 
-        fills        (get shape :fills)
-        strokes      (if (= type :group)
-                       [] (get shape :strokes))
-        children     (get shape :shapes)
-        content      (let [content (get shape :content)]
-                       (if (= type :text)
-                         (ensure-text-content content)
-                         content))
-        bool-type    (get shape :bool-type)
-        grow-type    (get shape :grow-type)
-        blur         (get shape :blur)
-        svg-attrs    (get shape :svg-attrs)
-        shadows      (get shape :shadow)]
+          fills        (get shape :fills)
+          strokes      (if (= type :group)
+                         [] (get shape :strokes))
+          children     (get shape :shapes)
+          content      (let [content (get shape :content)]
+                         (if (= type :text)
+                           (ensure-text-content content)
+                           content))
+          bool-type    (get shape :bool-type)
+          grow-type    (get shape :grow-type)
+          blur         (get shape :blur)
+          svg-attrs    (get shape :svg-attrs)
+          shadows      (get shape :shadow)]
 
-    (shapes/set-shape-base-props shape)
+      (shapes/set-shape-base-props shape)
 
-    ;; Remaining properties that need separate calls (variable-length or conditional)
-    (set-shape-children children)
-    (set-shape-blur blur)
-    (when (= type :group)
-      (set-masked (boolean masked)))
-    (when (= type :bool)
-      (set-shape-bool-type bool-type))
-    (when (and (some? content)
-               (or (= type :path)
-                   (= type :bool)))
-      (set-shape-path-content content))
-    (when (some? svg-attrs)
-      (set-shape-svg-attrs svg-attrs))
-    (when (and (some? content) (= type :svg-raw))
-      (set-shape-svg-raw-content (get-static-markup shape)))
-    (set-shape-shadows shadows)
-    (when (= type :text)
-      (set-shape-grow-type grow-type))
+      ;; Remaining properties that need separate calls (variable-length or conditional)
+      (set-shape-children children)
+      (set-shape-blur blur)
+      (when (= type :group)
+        (set-masked (boolean masked)))
+      (when (= type :bool)
+        (set-shape-bool-type bool-type))
+      (when (and (some? content)
+                 (or (= type :path)
+                     (= type :bool)))
+        (set-shape-path-content content))
+      (when (some? svg-attrs)
+        (set-shape-svg-attrs svg-attrs))
+      (when (and (some? content) (= type :svg-raw))
+        (set-shape-svg-raw-content (get-static-markup shape)))
+      (set-shape-shadows shadows)
+      (when (= type :text)
+        (set-shape-grow-type grow-type))
 
-    (set-shape-layout shape)
-    (set-layout-data shape)
-
-    (let [pending_thumbnails (into [] (concat
-                                       (set-shape-text-content id content)
-                                       (set-shape-text-images id content true)
-                                       (set-shape-fills id fills true)
-                                       (set-shape-strokes id strokes true)))
-          pending_full (into [] (concat
-                                 (set-shape-text-images id content false)
-                                 (set-shape-fills id fills false)
-                                 (set-shape-strokes id strokes false)))]
-      (perf/end-measure "set-object")
-      {:thumbnails pending_thumbnails
-       :full pending_full})))
+      (set-shape-layout shape)
+      (set-layout-data shape)
+      (let [pending_thumbnails (into [] (concat
+                                         (set-shape-text-content id content)
+                                         (set-shape-text-images id content true)
+                                         (set-shape-fills id fills true)
+                                         (set-shape-strokes id strokes true)))
+            pending_full (into [] (concat
+                                   (set-shape-text-images id content false)
+                                   (set-shape-fills id fills false)
+                                   (set-shape-strokes id strokes false)))]
+        (perf/end-measure "set-object")
+        {:thumbnails pending_thumbnails
+         :full pending_full}))))
 
 (defn update-text-layouts
   [shapes]
@@ -1374,9 +1378,11 @@
 
 (defn initialize-viewport
   ([base-objects zoom vbox background]
-   (initialize-viewport base-objects zoom vbox background nil))
+   (initialize-viewport base-objects zoom vbox background 1 nil))
   ([base-objects zoom vbox background callback]
-   (let [rgba         (sr-clr/hex->u32argb background 1)
+   (initialize-viewport base-objects zoom vbox background 1 callback))
+  ([base-objects zoom vbox background background-opacity callback]
+   (let [rgba         (sr-clr/hex->u32argb background background-opacity)
          shapes       (into [] (vals base-objects))
          total-shapes (count shapes)]
      (h/call wasm/internal-module "_set_canvas_background" rgba)
@@ -1401,7 +1407,18 @@
     (dbg/enabled? :wasm-viewbox)
     (bit-or 2r00000000000000000000000000000001)
     (text-editor-wasm?)
+    (bit-or 2r00000000000000000000000000000100)
+    (contains? cf/flags :render-wasm-info)
     (bit-or 2r00000000000000000000000000001000)))
+
+(defn- wasm-aa-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:aa_threshold p))]
+    (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
 
 (defn set-canvas-size
   [canvas]
@@ -1438,6 +1455,8 @@
         ;; Initialize Wasm Render Engine
         (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
         (h/call wasm/internal-module "_set_render_options" flags dpr)
+        (when-let [t (wasm-aa-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_antialias_threshold" t))
 
         ;; Set browser and canvas size only after initialization
         (h/call wasm/internal-module "_set_browser" browser)
@@ -1533,6 +1552,25 @@
     (mem/free)
     content))
 
+(defn stroke-to-path
+  "Converts a shape's stroke at the given index into a filled path.
+   Returns the stroke outline as PathData content."
+  [id stroke-index]
+  (use-shape id)
+  (let [offset (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
+                   (mem/->offset-32))
+        heap   (mem/get-heap-u32)
+        length (aget heap offset)]
+    (if (pos? length)
+      (let [data    (mem/slice heap
+                               (+ offset 1)
+                               (* length path.impl/SEGMENT-U32-SIZE))
+            content (path/from-bytes data)]
+        (mem/free)
+        content)
+      (do (mem/free)
+          nil))))
+
 (defn calculate-bool*
   [bool-type ids]
   (let [size   (mem/get-alloc-size ids UUID-U8-SIZE)
@@ -1605,45 +1643,42 @@
                        (+ offset POSITION-DATA-U32-SIZE)))
               (persistent! result)))
 
-          result
-          (into []
-                (keep
-                 (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
-                   (let [content (:content shape)
-                         element (-> content :children
-                                     (get 0) :children ;; paragraph-set
-                                     (get paragraph) :children ;; paragraph
-                                     (get span))
-                         element-text (:text element)]
+          content (:content shape)]
 
-                     ;; Add comprehensive nil-safety checks
-                     (when (and element
-                                element-text
-                                (>= start-pos 0)
-                                (<= end-pos (count element-text))
-                                (<= start-pos end-pos))
-                       (let [text (subs element-text start-pos end-pos)]
-                         (d/patch-object
-                          txt/default-text-attrs
-                          (d/without-nils
-                           {:x x
-                            :y (+ y height)
-                            :width width
-                            :height height
-                            :direction       (dr/translate-direction direction)
-                            :font-family     (get element :font-family)
-                            :font-size       (get element :font-size)
-                            :font-weight     (get element :font-weight)
-                            :text-transform  (get element :text-transform)
-                            :text-decoration (get element :text-decoration)
-                            :letter-spacing  (get element :letter-spacing)
-                            :font-style      (get element :font-style)
-                            :fills           (get element :fills)
-                            :text            text})))))))
-                result)]
       (mem/free)
 
-      result)))
+      (into []
+            (keep
+             (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
+               (let [element (-> content :children
+                                 (get 0) :children ;; paragraph-set
+                                 (get paragraph) :children ;; paragraph
+                                 (get span))
+                     element-text (:text element)]
+
+                 ;; Add comprehensive nil-safety checks
+                 ;; Be aware that for RTL texts `start-pos` can be greatert han `end-pos`
+                 (when (and element element-text)
+                   (let [text (subs element-text start-pos end-pos)]
+                     (d/patch-object
+                      txt/default-text-attrs
+                      (d/without-nils
+                       {:x x
+                        :y (+ y height)
+                        :width width
+                        :height height
+                        :direction       (dr/translate-direction direction)
+                        :font-id         (get element :font-id)
+                        :font-family     (get element :font-family)
+                        :font-size       (get element :font-size)
+                        :font-weight     (get element :font-weight)
+                        :text-transform  (get element :text-transform)
+                        :text-decoration (get element :text-decoration)
+                        :letter-spacing  (get element :letter-spacing)
+                        :font-style      (get element :font-style)
+                        :fills           (get element :fills)
+                        :text            text})))))))
+            result))))
 
 (defn apply-canvas-blur
   []
@@ -1651,6 +1686,24 @@
   (let [controls-to-blur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
     (run! #(dom/set-style! % "filter" "blur(4px)") controls-to-blur)))
 
+(defn render-shape-pixels
+  [shape-id scale]
+  (let [buffer (uuid/get-u32 shape-id)
+
+        offset
+        (h/call wasm/internal-module "_render_shape_pixels"
+                (aget buffer 0)
+                (aget buffer 1)
+                (aget buffer 2)
+                (aget buffer 3)
+                scale)
+
+        heap (mem/get-heap-u8)
+        heapu32 (mem/get-heap-u32)
+        length (aget heapu32 (mem/->offset-32 offset))
+        result (dr/read-image-bytes heap (+ offset 12) length)]
+    (mem/free)
+    result))
 
 (defn init-wasm-module
   [module]

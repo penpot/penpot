@@ -15,13 +15,16 @@ mod corners;
 mod fills;
 mod fonts;
 mod frames;
+mod glass;
 mod groups;
 mod layouts;
 pub mod modifiers;
+pub mod noise;
 mod paths;
 mod rects;
 mod shadows;
 mod shape_to_path;
+mod stroke_paths;
 mod strokes;
 mod svg_attrs;
 mod svgraw;
@@ -37,13 +40,16 @@ pub use corners::*;
 pub use fills::*;
 pub use fonts::*;
 pub use frames::*;
+pub use glass::{GlassEffect, GLASS_DISPLACEMENT_SKSL, GLASS_REFRACTION_SKSL, GLASS_SKSL};
 pub use groups::*;
 pub use layouts::*;
 pub use modifiers::*;
+pub use noise::{NoiseEffect, NoiseSlot, SlotKind, MAX_NOISE_SLOTS, NOISE_SKSL};
 pub use paths::*;
 pub use rects::*;
 pub use shadows::*;
 pub use shape_to_path::*;
+pub use stroke_paths::*;
 pub use strokes::*;
 pub use svg_attrs::*;
 pub use svgraw::*;
@@ -56,7 +62,6 @@ use crate::math::{self, Bounds, Matrix, Point};
 use crate::state::ShapesPoolRef;
 
 const MIN_VISIBLE_SIZE: f32 = 2.0;
-const ANTIALIAS_THRESHOLD: f32 = 15.0;
 const MIN_STROKE_WIDTH: f32 = 0.001;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -189,11 +194,13 @@ pub struct Shape {
     pub vertical_align: VerticalAlign,
     pub blur: Option<Blur>,
     pub texture: Option<TextureEffect>,
+    pub glass: Option<GlassEffect>,
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
     pub svg_attrs: Option<SvgAttrs>,
     pub shadows: Vec<Shadow>,
+    pub noise: Option<NoiseEffect>,
     pub layout_item: Option<LayoutItem>,
     pub bounds: OnceCell<math::Bounds>,
     pub extrect_cache: RefCell<Option<(math::Rect, u32)>>,
@@ -293,9 +300,11 @@ impl Shape {
             hidden: false,
             blur: None,
             texture: None,
+            glass: None,
             svg: None,
             svg_attrs: None,
             shadows: Vec::with_capacity(1),
+            noise: None,
             layout_item: None,
             bounds: OnceCell::new(),
             extrect_cache: RefCell::new(None),
@@ -637,6 +646,14 @@ impl Shape {
         self.texture = texture;
     }
 
+    pub fn set_noise(&mut self, noise: Option<NoiseEffect>) {
+        self.noise = noise;
+    }
+
+    pub fn set_glass(&mut self, glass: Option<GlassEffect>) {
+        self.glass = glass;
+    }
+
     pub fn add_child(&mut self, id: Uuid) {
         self.children.push(id);
     }
@@ -774,9 +791,8 @@ impl Shape {
         extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
-    pub fn should_use_antialias(&self, scale: f32) -> bool {
-        self.selrect.width() * scale > ANTIALIAS_THRESHOLD
-            || self.selrect.height() * scale > ANTIALIAS_THRESHOLD
+    pub fn should_use_antialias(&self, scale: f32, threshold: f32) -> bool {
+        self.selrect.width() * scale > threshold || self.selrect.height() * scale > threshold
     }
 
     pub fn calculate_bounds(&self, apply_transform: bool) -> Bounds {
@@ -1220,6 +1236,7 @@ impl Shape {
         matrix
     }
 
+    #[allow(dead_code)]
     pub fn get_concatenated_matrix(&self, shapes: ShapesPoolRef) -> Matrix {
         let mut matrix = Matrix::new_identity();
         let mut current_id = self.id;
@@ -1249,6 +1266,7 @@ impl Shape {
                     let sigma = radius_to_sigma(blur.value * scale);
                     skia::image_filters::blur((sigma, sigma), None, None, None)
                 }
+                BlurType::BackgroundBlur => None,
             })
     }
 
@@ -1261,6 +1279,7 @@ impl Shape {
                     let sigma = radius_to_sigma(blur.value * scale);
                     skia::MaskFilter::blur(skia::BlurStyle::Normal, sigma, Some(true))
                 }
+                BlurType::BackgroundBlur => None,
             })
     }
 
@@ -1465,6 +1484,7 @@ impl Shape {
         }
     }
 
+    #[allow(dead_code)]
     pub fn has_z_index(&self) -> bool {
         matches!(
             &self.layout_item,
@@ -1605,6 +1625,13 @@ impl Shape {
         self.visible_strokes()
             .filter(|s| s.kind == StrokeKind::Inner)
             .count()
+    }
+
+    /// True when the shape has at least one visible inner stroke (open paths render strokes as center).
+    pub fn has_inner_stroke(&self) -> bool {
+        let is_open = self.is_open();
+        self.visible_strokes()
+            .any(|s| s.render_kind(is_open) == StrokeKind::Inner)
     }
 
     pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {

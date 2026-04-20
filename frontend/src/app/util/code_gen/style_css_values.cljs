@@ -256,7 +256,14 @@
 (defn- get-filter
   [shape]
   (when-not (cgc/svg-markup? shape)
-    (get-in shape [:blur :value])))
+    (when (= :layer-blur (get-in shape [:blur :type]))
+      (get-in shape [:blur :value]))))
+
+(defn- get-backdrop-filter
+  [shape]
+  (when-not (cgc/svg-markup? shape)
+    (when (= :background-blur (get-in shape [:blur :type]))
+      (get-in shape [:blur :value]))))
 
 (defn- get-display
   [shape]
@@ -546,6 +553,7 @@
     :opacity (get-opacity shape)
     :box-shadow (get-box-shadow shape)
     :filter (get-filter shape)
+    :backdrop-filter (get-backdrop-filter shape)
     :overflow (get-overflow shape)
 
     ;; Display

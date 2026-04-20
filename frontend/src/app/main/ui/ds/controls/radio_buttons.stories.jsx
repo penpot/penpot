@@ -15,6 +15,12 @@ const options = [
   { id: "right", label: "Right", value: "right" },
 ];
 
+const optionsDisabled = [
+  { id: "left", label: "Left", value: "left" },
+  { id: "center", label: "Center", value: "center", disabled: true },
+  { id: "right", label: "Right", value: "right" },
+];
+
 const optionsIcon = [
   { id: "left", label: "Left align", value: "left", icon: "text-align-left" },
   {
@@ -68,9 +74,24 @@ export default {
   parameters: {
     controls: {
       exclude: ["options", "on-change"],
+      disabled: {
+        control: { type: "boolean" },
+      },
     },
   },
-  render: ({ ...args }) => <RadioButtons {...args} />,
+  render: (args) => {
+    const [selected, setSelected] = React.useState(args.selected);
+
+    return (
+      <RadioButtons
+        {...args}
+        selected={selected}
+        onChange={(value, event) => {
+          setSelected(value);
+        }}
+      />
+    );
+  },
 };
 
 export const Default = {};
@@ -78,5 +99,11 @@ export const Default = {};
 export const WithIcons = {
   args: {
     options: optionsIcon,
+  },
+};
+
+export const WithOptionDisabled = {
+  args: {
+    options: optionsDisabled,
   },
 };

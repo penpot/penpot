@@ -27,6 +27,13 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+
+  &.cursor-drag-scrub {
+    cursor: ew-resize !important;
+    * {
+      cursor: ew-resize !important;
+    }
+  }
 }
 
 #app {

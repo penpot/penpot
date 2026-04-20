@@ -11,7 +11,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.tokens :as clt]
-   [app.common.path-names :as cpn]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -62,51 +61,76 @@
       (watch [_ _ _]
         (rx/of (dwsh/update-shapes [id] #(merge % attrs)))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKENS TREE - Type folders
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn open-token-type
+  ([types type]
+   (conj (or types #{}) type))
+  ([type]
+   (ptk/reify ::open-token-type
+     ptk/UpdateEvent
+     (update [_ state]
+       (update-in state [:workspace-tokens :unfolded-token-types]
+                  #(open-token-type % type))))))
+
+(defn close-token-type
+  ([types type]
+   (disj (or types #{}) type))
+  ([type]
+   (ptk/reify ::close-token-type
+     ptk/UpdateEvent
+     (update [_ state]
+       (update-in state [:workspace-tokens :unfolded-token-types]
+                  #(close-token-type % type))))))
+
+(defn toggle-token-type
+  [type]
+  (ptk/reify ::toggle-token-type
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-tokens :unfolded-token-types]
+                 (fn [types]
+                   (if (contains? (or types #{}) type)
+                     (close-token-type types type)
+                     (open-token-type types type)))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Toggle tree nodes
+;; TOKENS TREE - Toggle tree nodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- remove-paths-recursively
+(defn- remove-path
   [path paths]
   (->> paths
-       (remove #(str/starts-with? % (str path)))
+       (remove #(= % path))
        vec))
 
 (defn add-path
   [path paths]
-  (let [split-path (cpn/split-path path :separator ".")
-        partial-paths (->> split-path
-                           (reduce
-                            (fn [acc segment]
-                              (let [new-acc (if (empty? acc)
-                                              segment
-                                              (str (last acc) "." segment))]
-                                (conj acc new-acc)))
-                            []))]
-    (->> paths
-         (into partial-paths)
-         distinct
-         vec)))
+  (vec (conj paths path)))
 
 (defn clear-tokens-paths
   []
   (ptk/reify ::clear-tokens-paths
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
+      (assoc-in state [:workspace-tokens :folded-token-paths] []))))
 
 (defn toggle-token-path
   [path]
   (ptk/reify ::toggle-token-path
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-tokens :unfolded-token-paths]
+      (update-in state [:workspace-tokens :folded-token-paths]
                  (fn [paths]
                    (let [paths (or paths [])]
                      (if (some #(= % path) paths)
-                       (remove-paths-recursively path paths)
+                       (remove-path path paths)
                        (add-path path paths))))))))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
@@ -455,6 +479,34 @@
                                           token'))]
          (rx/of (dch/commit-changes changes)
                 (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type})))))))
+
+(defn bulk-update-tokens
+  [set-id token-ids type old-path new-path]
+  (dm/assert! (uuid? set-id))
+  (dm/assert! (every? uuid? token-ids))
+  (ptk/reify ::bulk-update-tokens
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [token-set (if set-id
+                        (lookup-token-set state set-id)
+                        (lookup-token-set state))
+            data    (dsh/lookup-file-data state)
+            changes (reduce (fn [changes token-id]
+                              (let [token     (-> (get-tokens-lib state)
+                                                  (ctob/get-token (ctob/get-id token-set) token-id))
+                                    new-name (str/replace (:name token) old-path new-path)
+                                    token'    (->> (merge token {:name new-name})
+                                                   (into {})
+                                                   (ctob/make-token))]
+                                (pcb/set-token changes (ctob/get-id token-set) token-id token')))
+                            (-> (pcb/empty-changes it)
+                                (pcb/with-library-data data))
+
+                            token-ids)]
+        (toggle-token-path (str (name type) "." old-path))
+        (toggle-token-path (str (name type) "." new-path))
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens" :type type}))))))
 
 (defn delete-token
   [set-id token-id]

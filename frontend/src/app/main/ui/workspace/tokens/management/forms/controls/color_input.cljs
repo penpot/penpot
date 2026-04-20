@@ -17,6 +17,7 @@
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.refs :as refs]
    [app.main.ui.ds.controls.input :as ds]
@@ -277,9 +278,7 @@
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
-                                (d/update-when result :error
-                                               (fn [error]
-                                                 ((:error/fn error) (:error/value error))))))
+                                (d/update-when result :error wte/resolve-error-message)))
                       (rx/subs! (fn [{:keys [error value]}]
                                   (let [touched? (get-in @form [:touched input-name])]
                                     (when touched?
@@ -439,9 +438,7 @@
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
-                                (d/update-when result :error
-                                               (fn [error]
-                                                 (assoc error :message ((:error/fn error) (:error/value error)))))))
+                                (d/update-when result :error wte/resolve-error-assoc-message)))
 
                       (rx/subs!
                        (fn [{:keys [error value]}]

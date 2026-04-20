@@ -138,13 +138,23 @@ Boards can have layout systems that automatically control the positioning and sp
 
 # Text Elements
 
-The rendered content of a `Text` element is given by the `characters` property.
-
-To change the size of the text, change the `fontSize` property; applying `resize()` does NOT change the font size,
-it only changes the formal bounding box; if the text does not fit it, it will overflow; use `textBounds` for the actual bounding box of the rendered text.
-The bounding box is sized automatically as long as the `growType` property is set to "auto-width" or "auto-height".
-`resize` always sets `growType` to "fixed", so ALWAYS set it back to "auto-*" if you want automatic sizing!
-The auto-sizing is not immediate; sleep for a short time (100ms) if you want to read the updated bounding box.
+`Text` elements:
+  * The text to be rendered is given by the `characters` property.
+  * To change the size of the text, change the `fontSize` property; applying `resize()` does NOT change the font size,
+    it only changes the formal bounding box; if the text does not fit it, it will overflow; use `textBounds` for the actual bounding box of the rendered text.
+  * Property `bounds` is sized automatically (in one dimension) if the `growType` property is set to "auto-width" or "auto-height".
+    `resize` always sets `growType` to "fixed", so ALWAYS set it back to "auto-width" or "auto-height" if you want automatic sizing!
+    The auto-sizing is not immediate; sleep for a short time (100ms) if you want to read the updated bounding box.
+  * Method `getRange(start, end): TextRange` to reference a range of characters as a `TextRange` object, which can be styled separately from the rest of the text; `start` index inclusive, `end` exclusive
+  * Other Writable font properties: `fontId`, `fontFamily`, `fontWeight`, `fontVariant`, `fontStyle`
+     - To discover valid values, check available fonts in `penpot.fonts: FontContext`
+         - `FontContext` provides `Font` instances; each font has property `variants: FontVariant[]` 
+         - Example: Determine available weights for a font using `penpot.fonts.findByName("Laila").variants.map(v => v.fontWeight)`
+     - To apply a `Font` to a `Text` instance and set all font properties at once:
+         - `font.applyToText(text: Text, variant?: FontVariant)`
+         - `applyToRange(range: TextRange, variant?: FontVariant)`
+  * Further writable properties: `align`, `verticalAlign`, `lineHeight`, `letterSpacing`, `textTransform`, `textDecoration` (see API info)
+  * Method `applyTypography(typography: LibraryTypography)`
 
 # The `penpot` and `penpotUtils` Objects, Exploring Designs
 
@@ -282,7 +292,7 @@ Variants are a system for grouping related component versions along named proper
   - check with `isVariantContainer()`
   - property `variants: Variants`.
 * `Variants`: Defines the combinations of property values for which component variants can exist and manages the concrete component variants. 
-  - `properties: string[]` (ordered list of property names); `addProperty()`, `renameProperty(pos, name)`, `currentValues(property)`
+  - `properties: string[]` (ordered list of property names); `addProperty(): void`, `renameProperty(pos, name)`, `currentValues(property)`
   - `variantComponents(): LibraryVariantComponent[]` 
 * `LibraryVariantComponent` (extends `LibraryComponent`): full library component with metadata, for which `isVariant()` returns true.
   - `variantProps: { [property: string]: string }` (this component's value for each property)
@@ -292,11 +302,10 @@ Variants are a system for grouping related component versions along named proper
 Properties are often addressed positionally: `pos` parameter in various methods = index in `Variants.properties`.
 
 **Creating a variant group**:
-- `component.transformInVariant(): null`: Converts a standard component into a variant group, creating a `VariantContainer` and a second duplicate variant. 
-  Both start with a default property `Property 1` with values `Value 1` / `Value 2`; there is no name-based auto-parsing.
-- `board.combineAsVariants(ids: string[]): null`: Combines the board (a main component instance) with other main components (referenced via IDs) into a new variant group. 
-  All components end up inside a single new `VariantContainer` on the canvas.
-- In both cases, look for the created `VariantContainer` on the page, and then edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
+- `penpot.createVariantFromComponents(mainInstances: Board[]): VariantContainer`: Combines several main component instances into a new variant group. 
+  All components end up inside a single new container on the canvas.
+  The container's `Variants` instance is initialised with one property `Property 1`, with the property values set to the respective component's name.
+- After creation, edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
 
 **Adding a variant to an existing group**:
 Use `variantContainer.appendChild(mainInstance)` to move a component's main instance into the container, then set its position manually and assign property values via `setVariantProperty`.
@@ -342,7 +351,7 @@ Applying tokens:
     (if properties is undefined, use a default property based on the token type - not usually recommended).
     `TokenProperty` is a union type; possible values are:
     - "all": applies the token to all properties it can control
-    - TokenBorderRadiusProps: "r1", "r2", "r3", "r4"
+    - TokenBorderRadiusProps: "borderRadiusTopLeft", "borderRadiusTopRight", "borderRadiusBottomRight", "borderRadiusBottomLeft"
     - TokenShadowProps: "shadow"
     - TokenColorProps: "fill", "strokeColor"
     - TokenDimensionProps: "x", "y", "strokeWidth"
@@ -353,7 +362,7 @@ Applying tokens:
     - TokenNumberProps: "rotation"
     - TokenOpacityProps: "opacity"
     - TokenSizingProps: "width", "height", "layoutItemMinW", "layoutItemMaxW", "layoutItemMinH", "layoutItemMaxH"
-    - TokenSpacingProps: "rowGap", "columnGap", "p1", "p2", "p3", "p4", "m1", "m2", "m3", "m4"
+    - TokenSpacingProps: "rowGap", "columnGap", "paddingLeft", "paddingTop", "paddingRight", "paddingBottom", "marginLeft", "marginTop", "marginRight", "marginBottom"
     - TokenBorderWidthProps: "strokeWidth"
     - TokenTextCaseProps: "textCase"
     - TokenTextDecorationProps: "textDecoration"

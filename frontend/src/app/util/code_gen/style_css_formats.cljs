@@ -38,6 +38,7 @@
    :border-color              :border-color
    :box-shadow                :shadows
    :filter                    :blur
+   :backdrop-filter            :blur
    :gap                       :size-array
    :row-gap                   :size-array
    :column-gap                :size-array

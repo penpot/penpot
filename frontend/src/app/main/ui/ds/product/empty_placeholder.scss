@@ -22,8 +22,7 @@
 .text-wrapper {
   display: grid;
   grid-auto-rows: auto;
-  align-self: center;
-  justify-self: center;
+  place-self: center center;
   max-width: $sz-400;
 }
 

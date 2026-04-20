@@ -30,10 +30,10 @@
     (fn [key]
       (cond
         (not (r/check-permission plugin-id "allow:localstorage"))
-        (u/display-not-valid :getItem "Plugin doesn't have 'allow:localstorage' permission")
+        (u/not-valid plugin-id :getItem "Plugin doesn't have 'allow:localstorage' permission")
 
         (not (string? key))
-        (u/display-not-valid :getItem "The key must be a string")
+        (u/not-valid plugin-id :getItem "The key must be a string")
 
         :else
         (.getItem ^js local-storage (prefix-key plugin-id key))))
@@ -42,10 +42,10 @@
     (fn [key value]
       (cond
         (not (r/check-permission plugin-id "allow:localstorage"))
-        (u/display-not-valid :setItem "Plugin doesn't have 'allow:localstorage' permission")
+        (u/not-valid plugin-id :setItem "Plugin doesn't have 'allow:localstorage' permission")
 
         (not (string? key))
-        (u/display-not-valid :setItem "The key must be a string")
+        (u/not-valid plugin-id :setItem "The key must be a string")
 
         :else
         (.setItem ^js local-storage (prefix-key plugin-id key) value)))
@@ -54,10 +54,10 @@
     (fn [key]
       (cond
         (not (r/check-permission plugin-id "allow:localstorage"))
-        (u/display-not-valid :removeItem "Plugin doesn't have 'allow:localstorage' permission")
+        (u/not-valid plugin-id :removeItem "Plugin doesn't have 'allow:localstorage' permission")
 
         (not (string? key))
-        (u/display-not-valid :removeItem "The key must be a string")
+        (u/not-valid plugin-id :removeItem "The key must be a string")
 
         :else
         (.getItem ^js local-storage (prefix-key plugin-id key))))

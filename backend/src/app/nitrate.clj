@@ -51,15 +51,24 @@
   (fn []
     (let [response (handler)
           status (:status response)]
-      (if (>= status 400)
+      (when-not status
+        (l/error :hint "could't do the nitrate request, it is probably down"
+                 :uri uri)
+        ;; TODO decide what to do when Nitrate is inaccesible
+        nil)
+      (cond
+        (>= status 400)
         ;; For error status codes (4xx, 5xx), fail immediately without validation
         (do
-          (l/error :hint "nitrate request failed with error status"
-                   :uri uri
-                   :status status
-                   :body (:body response))
+          (when (not= status 404) ;; Don't need to log 404
+            (l/error :hint "nitrate request failed with error status"
+                     :uri uri
+                     :status status
+                     :body (:body response)))
           nil)
-        ;; For success status codes, validate the response
+        (= status 204) ;; 204 doesn't return any body
+        nil
+        :else ;; For success status codes, validate the response
         (let [coercer-http (sm/coercer schema
                                        :type :validation
                                        :hint (str "invalid data received calling " uri))
@@ -97,13 +106,32 @@
    [:id ::sm/uuid]
    [:name ::sm/text]
    [:slug ::sm/text]
-   [:is-your-penpot :boolean]])
+   [:is-your-penpot :boolean]
+   [:owner-id ::sm/uuid]
+   [:avatar-bg-url [::sm/text]]])
+
+(def ^:private schema:org-summary
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:owner-id ::sm/uuid]
+   [:teams
+    [:vector
+     [:map
+      [:id ::sm/uuid]
+      [:is-your-penpot :boolean]]]]])
 
 (def ^:private schema:team
   [:map
    [:id ::sm/uuid]
    [:organization-id ::sm/uuid]
    [:is-your-penpot :boolean]])
+
+(def ^:private schema:profile-org
+  [:map
+   [:is-member :boolean]
+   [:organization-id ::sm/uuid]])
+
 
 ;; TODO Unify with schemas on backend/src/app/http/management.clj
 (def ^:private schema:timestamp
@@ -177,7 +205,7 @@
   [:map
    [:licenses ::sm/boolean]])
 
-(defn- get-team-org
+(defn- get-team-org-api
   [cfg {:keys [team-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get
@@ -186,7 +214,30 @@
                              team-id)
                         schema:organization params)))
 
-(defn- set-team-org
+(defn- get-org-membership-by-team-api
+  [cfg {:keys [profile-id team-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/teams/"
+                             team-id
+                             "/users/"
+                             profile-id)
+                        schema:profile-org params)))
+
+
+(defn- get-org-summary-api
+  [cfg {:keys [org-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/organizations/"
+                             org-id
+                             "/summary")
+                        schema:org-summary params)))
+
+
+(defn- set-team-org-api
   [cfg {:keys [organization-id team-id is-default] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
         params (assoc params :request-params {:team-id team-id
@@ -198,7 +249,38 @@
                              "/add-team")
                         schema:team params)))
 
-(defn- get-subscription
+(defn- add-profile-to-org-api
+  [cfg {:keys [profile-id org-id team-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)
+        params (assoc params :request-params {:user-id profile-id :team-id team-id})]
+    (request-to-nitrate cfg :post
+                        (str baseuri
+                             "/api/organizations/"
+                             org-id
+                             "/add-user")
+                        schema:profile-org params)))
+
+(defn- remove-profile-from-org-api
+  [cfg {:keys [profile-id org-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)
+        params (assoc params :request-params {:user-id profile-id})]
+    (request-to-nitrate cfg :post
+                        (str baseuri
+                             "/api/organizations/"
+                             org-id
+                             "/remove-user")
+                        nil params)))
+
+(defn- delete-team-api
+  [cfg {:keys [team-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :delete
+                        (str baseuri
+                             "/api/teams/"
+                             team-id)
+                        nil params)))
+
+(defn- get-subscription-api
   [cfg {:keys [profile-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get
@@ -207,7 +289,7 @@
                              profile-id)
                         schema:subscription params)))
 
-(defn- get-connectivity
+(defn- get-connectivity-api
   [cfg params]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get
@@ -222,10 +304,15 @@
 (defmethod ig/init-key ::client
   [_ cfg]
   (when (contains? cf/flags :nitrate)
-    {:get-team-org     (partial get-team-org cfg)
-     :set-team-org     (partial set-team-org cfg)
-     :get-subscription (partial get-subscription cfg)
-     :connectivity     (partial get-connectivity cfg)}))
+    {:get-team-org               (partial get-team-org-api cfg)
+     :set-team-org               (partial set-team-org-api cfg)
+     :get-org-membership-by-team (partial get-org-membership-by-team-api cfg)
+     :get-org-summary            (partial get-org-summary-api cfg)
+     :add-profile-to-org         (partial add-profile-to-org-api cfg)
+     :remove-profile-from-org    (partial remove-profile-from-org-api cfg)
+     :delete-team                (partial delete-team-api cfg)
+     :get-subscription           (partial get-subscription-api cfg)
+     :connectivity               (partial get-connectivity-api cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILS
@@ -248,7 +335,7 @@
 
 (defn add-org-info-to-team
   "Enriches a team map with organization information from Nitrate.
-  Adds organization-id, organization-name, organization-slug, and your-penpot fields.
+  Adds organization-id, organization-name, organization-slug, organization-owner-id, and your-penpot fields.
   Returns the original team unchanged if the request fails or org data is nil."
   [cfg team params]
   (try
@@ -259,6 +346,8 @@
                :organization-id (:id org)
                :organization-name (:name org)
                :organization-slug (:slug org)
+               :organization-owner-id (:owner-id org)
+               :organization-avatar-bg-url (:avatar-bg-url org)
                :is-default (or (:is-default team) (true? (:is-your-penpot org))))
         team))
     (catch Throwable cause
@@ -283,6 +372,6 @@
                        :organization-id (:organization-id params)})))
     team))
 
-(defn connectivity
-  [cfg]
-  (call cfg :connectivity {}))
+
+
+

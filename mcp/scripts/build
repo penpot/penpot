@@ -30,7 +30,7 @@ pnpm -r --filter "mcp-server" run build;
 rsync -avr packages/server/dist/ ./dist/;
 
 cp packages/server/package.json ./dist/;
-cp packages/server/pnpm-lock.yaml ./dist/;
+cp pnpm-lock.yaml ./dist/;
 
 touch ./dist/pnpm-workspace.yaml;
 

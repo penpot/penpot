@@ -4,7 +4,7 @@
 
 Penpot integrates a LLM layer built on the Model Context Protocol
 (MCP) via Penpot's Plugin API to interact with a Penpot design
-file. Penpot's MCP server enables LLMs to perfom data queries,
+file. Penpot's MCP server enables LLMs to perform data queries,
 transformation and creation operations.
 
 Penpot's MCP Server is unlike any other you've seen. You get
@@ -50,13 +50,33 @@ Follow the steps below to enable the integration.
 
 ### Prerequisites
 
-The project requires [Node.js](https://nodejs.org/) (tested with v22.x).  
-Following the installation of Node.js, the tools `corepack` and `npx`
-should be available in your terminal.
+The project requires [Node.js](https://nodejs.org/) (tested with v22.x).
+
+### 1. Starting the MCP Server and the Plugin Server
+
+#### Running a Released Version via npx
+
+The easiest way to launch the servers is to use `npx` to run the appropriate
+version that matches your Penpot version.
+
+* If you are using the latest Penpot release, e.g. as served on [design.penpot.app](https://design.penpot.app), run:
+  ```shell
+  npx -y @penpot/mcp@">=0"
+  ```
+* If you are participating in the MCP beta-test, which uses [test-mcp.penpot.dev](https://test-mcp.penpot.dev), run:
+  ```shell
+  npx -y @penpot/mcp@"*"
+  ```
+
+Once the servers are running, continue with step 2.
+
+#### Running the Source Version from the Repository
+
+The tools `corepack` and `npx` should be available in your terminal.
 
 On Windows, use the Git Bash terminal to ensure compatibility with the provided scripts.
 
-### 0. Clone the Appropriate Branch of the Repository 
+##### Clone the Appropriate Branch of the Repository 
 
 > [!IMPORTANT]
 > The branches are subject to change in the future.  
@@ -65,16 +85,16 @@ On Windows, use the Git Bash terminal to ensure compatibility with the provided 
 Clone the Penpot repository, using the proper branch depending on the
 version of Penpot you want to use the MCP server with.
 
-  * For released versions of Penpot, use the `mcp-prod` branch:
+  * For the current Penpot release 2.14, use the `mcp-prod-2.14.1` branch:
 
     ```shell
-    git clone https://github.com/penpot/penpot.git --branch mcp-prod --depth 1
+    git clone https://github.com/penpot/penpot.git --branch mcp-prod-2.14.1 --depth 1
     ```
 
-  * For the latest development version of Penpot, use the `develop` branch:
+  * For the MCP beta-test, use the `staging` branch:
 
     ```shell
-    git clone https://github.com/penpot/penpot.git --branch develop --depth 1
+    git clone https://github.com/penpot/penpot.git --branch staging --depth 1
     ```
 
 Then change into the `mcp` directory:
@@ -83,7 +103,7 @@ Then change into the `mcp` directory:
 cd penpot/mcp
 ```
 
-### 1. Build & Launch the MCP Server and the Plugin Server
+##### Build & Launch the MCP Server and the Plugin Server
 
 If it's your first execution, install the required dependencies.
 (If you are using the Penpot devenv, this step is not necessary, as dependencies are already installed.)
@@ -238,7 +258,7 @@ The Penpot MCP server can be configured using environment variables.
 
 | Environment Variable               | Description                                                                | Default      |
 |------------------------------------|----------------------------------------------------------------------------|--------------|
-| `PENPOT_MCP_SERVER_LISTEN_ADDRESS` | Address on which the MCP server listens (binds to)                         | `localhost`  |
+| `PENPOT_MCP_SERVER_HOST`           | Address on which the MCP server listens (binds to)                         | `localhost`  |
 | `PENPOT_MCP_SERVER_PORT`           | Port for the HTTP/SSE server                                               | `4401`       |
 | `PENPOT_MCP_WEBSOCKET_PORT`        | Port for the WebSocket server (plugin connection)                          | `4402`       |
 | `PENPOT_MCP_REPL_PORT`             | Port for the REPL server (development/debugging)                           | `4403`       |
@@ -256,7 +276,7 @@ The Penpot MCP server can be configured using environment variables.
 
 | Environment Variable                      | Description                                                                             | Default      |
 |-------------------------------------------|-----------------------------------------------------------------------------------------|--------------|
-| `PENPOT_MCP_PLUGIN_SERVER_LISTEN_ADDRESS` | Address on which the plugin web server listens (single address or comma-separated list) | (local only) |
+| `PENPOT_MCP_PLUGIN_SERVER_HOST`           | Address on which the plugin web server listens (single address or comma-separated list) | (local only) |
 
 ## Beyond Local Execution
 
@@ -282,5 +302,11 @@ you may set the following environment variables to configure the two servers
 * The [contribution guidelines for Penpot](../CONTRIBUTING.md) apply
 * Auto-formatting: Use `pnpm run fmt`
 * Generating API type data: See [types-generator/README.md](types-generator/README.md)
-* Packaging and publishing:
-  - Create npm package: `bash scripts/pack` (sets version and then calls `npm pack`)
+* Versioning: Use `bash scripts/set-version` to set the version for the MCP package (in `package.json`).
+  - Ensure that at least the major, minor and patch components of the version are always up-to-date.
+  - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API) 
+    indicates incompatibility, resulting in the display of a warning message in the plugin UI.
+* Packaging and publishing: 
+  1. Ensure release version is set correctly in package.json (call `bash scripts/set-version` to update it automatically)
+  2. Create npm package: `bash scripts/pack` (creates `penpot-mcp-<version>.tgz` for publishing)
+  3. Publish to npm: `npm publish penpot-mcp-<version>.tgz --access public`

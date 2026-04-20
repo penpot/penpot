@@ -18,39 +18,47 @@
   &.search {
     padding: 0 deprecated.$s-12 0 deprecated.$s-8;
     gap: deprecated.$s-4;
+
     .filter-button {
       @include deprecated.flexCenter;
       @include deprecated.buttonStyle;
+
       height: deprecated.$s-32;
       width: deprecated.$s-32;
       margin: 0;
       border: deprecated.$s-1 solid var(--color-background-tertiary);
       border-radius: deprecated.$br-8 deprecated.$br-2 deprecated.$br-2 deprecated.$br-8;
       background-color: var(--color-background-tertiary);
+
       svg {
         height: deprecated.$s-16;
         width: deprecated.$s-16;
         stroke: var(--icon-foreground);
       }
+
       &:focus {
         border: deprecated.$s-1 solid var(--input-border-color-focus);
         outline: 0;
         background-color: var(--input-background-color-active);
         color: var(--input-foreground-color-active);
+
         svg {
           background-color: var(--input-background-color-active);
         }
       }
+
       &:hover {
         border: deprecated.$s-1 solid var(--input-border-color-hover);
         background-color: var(--input-background-color-hover);
+
         svg {
           background-color: var(--input-background-color-hover);
           stroke: var(--button-foreground-hover);
         }
       }
+
       &.opened {
-        @extend .button-icon-selected;
+        @extend %button-icon-selected;
       }
     }
   }
@@ -58,25 +66,30 @@
 
 .page-name {
   @include deprecated.uppercaseTitleTipography;
+
   padding: 0 deprecated.$s-12;
   color: var(--title-foreground-color);
 }
 
 .icon-search {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: deprecated.$s-32;
   width: deprecated.$s-28;
   border-radius: deprecated.$br-8;
   margin-right: deprecated.$s-8;
   padding: 0;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
   }
 }
 
 .focus-title {
   @include deprecated.buttonStyle;
+
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -86,11 +99,14 @@
 
 .back-button {
   @include deprecated.flexCenter;
+
   height: deprecated.$s-32;
   width: deprecated.$s-24;
   padding: 0 deprecated.$s-4 0 deprecated.$s-8;
+
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
+
     stroke: var(--icon-foreground);
     transform: rotate(180deg);
   }
@@ -99,24 +115,28 @@
 .focus-name {
   @include deprecated.textEllipsis;
   @include deprecated.bodySmallTypography;
+
   padding-left: deprecated.$s-4;
   color: var(--title-foreground-color);
 }
 
 .focus-mode-tag-wrapper {
   @include deprecated.flexCenter;
+
   height: 100%;
   margin-right: deprecated.$s-12;
 }
 
 .active-filters {
   @include deprecated.flexRow;
+
   flex-wrap: wrap;
   margin: 0 deprecated.$s-12;
 }
 
 .layer-filter {
-  @extend .button-tag;
+  @extend %button-tag;
+
   gap: deprecated.$s-6;
   height: deprecated.$s-24;
   margin: deprecated.$s-2 0;
@@ -133,6 +153,7 @@
 .layer-filter-name {
   @include deprecated.flexCenter;
   @include deprecated.bodySmallTypography;
+
   color: var(--pill-foreground-color);
 }
 
@@ -141,12 +162,15 @@
 }
 
 .filters-container {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
+
   position: absolute;
   left: deprecated.$s-20;
   width: deprecated.$s-192;
+
   .filter-menu-item {
     @include deprecated.bodySmallTypography;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -158,28 +182,34 @@
       display: flex;
       align-items: center;
       gap: deprecated.$s-8;
+
       .filter-menu-item-icon {
         color: var(--menu-foreground-color);
       }
+
       .filter-menu-item-name {
         padding-top: deprecated.$s-2;
         color: var(--menu-foreground-color);
       }
     }
+
     .filter-menu-item-tick {
       color: var(--menu-foreground-color);
     }
 
     &.selected {
       background-color: var(--menu-background-color-selected);
+
       .filter-menu-item-name-wrapper {
         .filter-menu-item-icon {
           color: var(--menu-foreground-color);
         }
+
         .filter-menu-item-name {
           color: var(--menu-foreground-color);
         }
       }
+
       .filter-menu-item-tick {
         color: var(--menu-foreground-color);
       }
@@ -187,14 +217,17 @@
 
     &:hover {
       background-color: var(--menu-background-color-hover);
+
       .filter-menu-item-name-wrapper {
         .filter-menu-item-icon {
           color: var(--menu-foreground-color-hover);
         }
+
         .filter-menu-item-name {
           color: var(--menu-foreground-color-hover);
         }
       }
+
       .filter-menu-item-tick {
         color: var(--menu-foreground-color-hover);
       }
@@ -204,12 +237,12 @@
 
 .tool-window-content {
   --calculated-height: calc(#{deprecated.$s-136} + var(--height, #{deprecated.$s-200}));
+
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--calculated-height));
   width: calc(var(--left-sidebar-width) + var(--depth) * var(--layer-indentation-size));
-  overflow-x: auto;
-  overflow-y: overlay;
+  overflow: auto;
   scrollbar-gutter: stable;
 }
 

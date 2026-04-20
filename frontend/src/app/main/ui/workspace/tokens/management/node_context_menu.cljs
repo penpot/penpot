@@ -6,6 +6,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
@@ -13,6 +14,7 @@
 
 (def ^:private schema:token-node-context-menu
   [:map
+   [:on-rename-node fn?]
    [:on-delete-node fn?]])
 
 (def ^:private tokens-node-menu-ref
@@ -25,7 +27,7 @@
 
 (mf/defc token-node-context-menu*
   {::mf/schema schema:token-node-context-menu}
-  [{:keys [on-delete-node]}]
+  [{:keys [on-rename-node on-delete-node]}]
   (let [mdata               (mf/deref tokens-node-menu-ref)
         is-open?            (boolean mdata)
         dropdown-ref        (mf/use-ref)
@@ -35,14 +37,22 @@
         dropdown-direction-change* (mf/use-ref 0)
         top                 (+ (get-in mdata [:position :y]) 5)
         left                (+ (get-in mdata [:position :x]) 5)
+        rename-node         (mf/use-fn
+                             (mf/deps mdata on-rename-node)
+                             (fn []
+                               (let [node (get mdata :node)
+                                     type (get mdata :type)]
+                                 (when node
+                                   (on-rename-node node type)))))
 
-        delete-node          (mf/use-fn
-                              (mf/deps mdata)
-                              (fn []
-                                (let [node (get mdata :node)
-                                      type (get mdata :type)]
-                                  (when node
-                                    (on-delete-node node type)))))]
+        container           (hooks/use-portal-container)
+        delete-node         (mf/use-fn
+                             (mf/deps mdata)
+                             (fn []
+                               (let [node (get mdata :node)
+                                     type (get mdata :type)]
+                                 (when node
+                                   (on-delete-node node type)))))]
 
     (mf/with-effect [is-open?]
       (when (and (not= 0 (mf/ref-val dropdown-direction-change*)) (= false is-open?))
@@ -78,6 +88,11 @@
              [:li {:class (stl/css :token-node-context-menu-listitem)}
               [:button {:class (stl/css :token-node-context-menu-action)
                         :type "button"
+                        :on-click rename-node}
+               (tr "labels.rename")]]
+             [:li {:class (stl/css :token-node-context-menu-listitem)}
+              [:button {:class (stl/css :token-node-context-menu-action)
+                        :type "button"
                         :on-click delete-node}
                (tr "labels.delete")]]])]])
-       (dom/get-body)))))
+       container))))

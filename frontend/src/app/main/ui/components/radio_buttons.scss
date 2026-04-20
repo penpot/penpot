@@ -8,6 +8,7 @@
 
 .radio-btn-wrapper {
   @include deprecated.flexCenter;
+
   border-radius: deprecated.$br-8;
   height: deprecated.$s-32;
   background-color: var(--input-background-color);
@@ -20,6 +21,7 @@
   @include deprecated.buttonStyle;
   @include deprecated.flexCenter;
   @include deprecated.focusRadio;
+
   height: deprecated.$s-32;
   flex-grow: 1;
   border-radius: deprecated.$s-8;
@@ -29,14 +31,19 @@
   input {
     display: none;
   }
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--radio-btn-foreground-color);
   }
+
   .title-name {
     @include deprecated.uppercaseTitleTipography;
+
     color: var(--radio-btn-foreground-color);
   }
+
   &:hover {
     svg {
       stroke: var(--radio-btn-foreground-color-selected);
@@ -48,9 +55,11 @@
   --radio-icon-border-color: var(--radio-btn-border-color-selected);
 
   background-color: var(--radio-btn-background-color-selected);
+
   svg {
     stroke: var(--radio-btn-foreground-color-selected);
   }
+
   .title-name {
     color: var(--radio-btn-foreground-color-selected);
   }
@@ -60,18 +69,23 @@
   cursor: default;
   background-color: transparent;
   border: deprecated.$s-2 solid transparent;
+
   svg {
     stroke: var(--button-foreground-color-disabled);
   }
+
   .title-name {
     color: var(--button-foreground-color-disabled);
   }
+
   &:hover {
     background-color: transparent;
     border: deprecated.$s-2 solid transparent;
+
     svg {
       stroke: var(--button-foreground-color-disabled);
     }
+
     .title-name {
       color: var(--button-foreground-color-disabled);
     }

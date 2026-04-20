@@ -191,7 +191,7 @@ msgid "branding-illustrations-marketing-pieces"
 msgstr "...브랜딩, 일러스트레이션, 마케팅 자료 등."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "이 토큰은 존재하지 않거나 삭제되었습니다."
 
 #: src/app/main/ui/comments.cljs:530
