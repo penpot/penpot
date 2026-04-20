@@ -6,6 +6,7 @@ import type { WasmModule } from '../wasm-types'
 import type { PendingImageCallback, SetObjectResult } from '../types'
 import type { BoolType, ShapeType, PathContent } from '../types'
 import type { PenpotNode, TextContent } from 'penpot-exporter/types'
+import type { Noise } from '../properties/panel-utils'
 import { checkContext } from './context'
 import { requestRender } from './rendering'
 import { renderFinish } from './viewport'
@@ -31,6 +32,7 @@ import {
 import { setShapeFills } from './fills'
 import { setShapeStrokes } from './strokes'
 import { setShapeShadows } from './shadows'
+import { setShapeNoise } from './noise'
 import { setShapeGlass } from './glass'
 import { setShapeSvgAttrs } from './svg'
 import { setShapePathContent } from './path'
@@ -132,6 +134,7 @@ export function setObject(
   }
 
   setShapeShadows(module, shadows)
+  setShapeNoise(module, (shape as Record<string, unknown>).noise as Noise | null | undefined)
   if (type === 'text') {
     setShapeGrowType(module, growType)
   }

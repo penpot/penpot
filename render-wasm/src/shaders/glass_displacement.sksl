@@ -17,6 +17,7 @@ uniform float   u_splay;         // 0=flat pane, 1=dome
 uniform float   u_tiltAngle;     // radians
 uniform float   u_edgeBoost;
 uniform float   u_zoom;
+uniform float   u_scale;         // canvas zoom scale (device-pixel / CSS-pixel)
 
 // With F16 surfaces, displacement values are stored as raw half-floats.
 // No encoding/decoding needed.
@@ -95,10 +96,10 @@ float calculateDisplacement(float d, float thick, float n2) {
 // ============================================================
 //  Specular
 // ============================================================
-float calculateSpecular(float d, float bezel, float lightAngle, float2 dir) {
+float calculateSpecular(float d, float bezel, float lightAngle, float2 dir, float scale) {
     if (d <= 0.0 || d >= 1.0) return 0.0;
     float px = d * bezel;
-    float band = exp(-0.5 * pow((px - 2.0) / 1.0, 2.0));
+    float band = exp(-0.5 * pow((px - 2.0 * scale) / max(scale, 1e-4), 2.0));
     float2 ld = float2(cos(lightAngle), sin(lightAngle));
     float f = abs(dot(dir, ld));
     f = pow(f, 2.0);
@@ -134,7 +135,9 @@ half4 main(float2 fragCoord) {
     float2 dir = bLen > 0.001 ? blendedDir / bLen : float2(0.0);
 
     // Displacement (Snell's Law + edge boost + zoom)
-    float disp = calculateDisplacement(distFromBorder, u_glassThickness, u_refractiveIndex);
+    // Multiply by u_scale so displacement magnitude in device pixels tracks the
+    // glass box size, making the visible refraction independent of canvas zoom.
+    float disp = calculateDisplacement(distFromBorder, u_glassThickness, u_refractiveIndex) * u_scale;
     float edgeFade = pow(1.0 - distFromBorder, 1.5);
     disp *= 1.0 + u_edgeBoost * edgeFade;
     float2 dpx = dir * disp;
@@ -144,10 +147,10 @@ half4 main(float2 fragCoord) {
     dpx += localPos * zoomFactor;
 
     // Specular
-    float specular = calculateSpecular(distFromBorder, bezel, u_specularAngle, dir);
+    float specular = calculateSpecular(distFromBorder, bezel, u_specularAngle, dir, u_scale);
 
-    // Mask
-    float mask = smoothstep(0.0, 1.5, -dist);
+    // Mask (anti-aliased edge band scales with canvas zoom)
+    float mask = smoothstep(0.0, 1.5 * u_scale, -dist);
 
     return half4(dpx.x, dpx.y, specular, mask);
 }

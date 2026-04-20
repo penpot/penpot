@@ -7,6 +7,7 @@ uniform shader  backdrop;        // unblurred backdrop
 uniform shader  displacement;    // displacement field from Pass 1 (raw F16 values)
 uniform float2  u_resolution;
 uniform float   u_chromaticAberration; // pixels
+uniform float   u_scale;               // canvas zoom scale
 
 half4 main(float2 fragCoord) {
     // Read raw displacement field (F16 — no decoding needed)
@@ -25,8 +26,8 @@ half4 main(float2 fragCoord) {
     // ---- REFRACTION + CHROMATIC ABERRATION ----
     float2 dispUV = dpx / u_resolution;
     float dLen = length(dpx);
-    float caStr = smoothstep(0.0, 5.0, dLen);
-    float2 caDir = dLen > 0.01 ? dpx / dLen : float2(0.0);
+    float caStr = smoothstep(0.0, 5.0 * u_scale, dLen);
+    float2 caDir = dLen > 0.01 * u_scale ? dpx / dLen : float2(0.0);
     float2 caShift = caDir * u_chromaticAberration * caStr / u_resolution;
 
     float2 uv = fragCoord / u_resolution;

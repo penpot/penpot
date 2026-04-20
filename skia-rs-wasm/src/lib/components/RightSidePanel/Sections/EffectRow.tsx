@@ -4,7 +4,13 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { fillSwatchBackground } from '../../FillEditor/fill-swatch-background'
 import type { EffectItem, EffectKind } from '@/lib/renderer/properties/panel-utils'
-import { DEFAULT_SHADOW, DEFAULT_BLUR, DEFAULT_BACKGROUND_BLUR, DEFAULT_GLASS } from '../../../renderer/properties/panel-utils'
+import {
+  DEFAULT_SHADOW,
+  DEFAULT_BLUR,
+  DEFAULT_BACKGROUND_BLUR,
+  DEFAULT_GLASS,
+  DEFAULT_NOISE,
+} from '../../../renderer/properties/panel-utils'
 import type { ColorEditorKind } from '../color-editor-context'
 import { useEffectEditorFor } from '../use-color-editor'
 
@@ -14,10 +20,11 @@ const EFFECT_KIND_OPTIONS: { value: EffectKind; label: string }[] = [
   { value: 'layer-blur', label: 'Layer blur' },
   { value: 'background-blur', label: 'Background blur' },
   { value: 'glass', label: 'Glass' },
+  { value: 'noise', label: 'Noise' },
 ]
 
 /** Convert Shadow color to a Fill so swatch background can be computed. */
-function shadowColorToFill(shadow: Shadow): Fill {
+function shadowColorToFill(shadow: Shadow): import('penpot-exporter/types').Fill {
   if (shadow.color?.gradient) {
     return { fillColorGradient: shadow.color.gradient }
   }
@@ -27,14 +34,17 @@ function shadowColorToFill(shadow: Shadow): Fill {
   }
 }
 
+/** Extract the hidden flag from any effect item. */
+function getEffectHidden(item: EffectItem): boolean {
+  if (item.kind === 'layer-blur' || item.kind === 'background-blur') return item.blur.hidden
+  if (item.kind === 'glass') return item.glass.hidden ?? false
+  if (item.kind === 'noise') return item.noise.hidden ?? false
+  return item.shadow.hidden
+}
+
 /** Convert between effect kinds, preserving hidden state. */
 function convertEffect(current: EffectItem, newKind: EffectKind): EffectItem {
-  const hidden =
-    current.kind === 'layer-blur' || current.kind === 'background-blur'
-      ? current.blur.hidden
-      : current.kind === 'glass'
-        ? current.glass.hidden
-        : current.shadow.hidden
+  const hidden = getEffectHidden(current)
 
   if (newKind === 'layer-blur') {
     return { kind: 'layer-blur', blur: { ...DEFAULT_BLUR, hidden } }
@@ -45,7 +55,15 @@ function convertEffect(current: EffectItem, newKind: EffectKind): EffectItem {
   if (newKind === 'glass') {
     return { kind: 'glass', glass: { ...DEFAULT_GLASS, hidden } }
   }
-  if (current.kind === 'layer-blur' || current.kind === 'background-blur' || current.kind === 'glass') {
+  if (newKind === 'noise') {
+    return { kind: 'noise', noise: { ...DEFAULT_NOISE, hidden } }
+  }
+  if (
+    current.kind === 'layer-blur' ||
+    current.kind === 'background-blur' ||
+    current.kind === 'glass' ||
+    current.kind === 'noise'
+  ) {
     return { kind: newKind, shadow: { ...DEFAULT_SHADOW, style: newKind, hidden } }
   }
   return { kind: newKind, shadow: { ...current.shadow, style: newKind } }
@@ -63,6 +81,7 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
   const isShadow = effect.kind === 'drop-shadow' || effect.kind === 'inner-shadow'
   const isBlur = effect.kind === 'layer-blur' || effect.kind === 'background-blur'
   const isGlass = effect.kind === 'glass'
+  const isNoise = effect.kind === 'noise'
 
   const { isActive: effectExpanded, openEffectEditor, closeEditor } = useEffectEditorFor(effect.kind as ColorEditorKind, index)
 
@@ -70,6 +89,16 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
   const swatchBg = isShadow
     ? fillSwatchBackground(shadowColorToFill(effect.shadow))
     : undefined
+
+  // Noise swatch: first slot's color if solid, rainbow gradient if prism.
+  const noiseSwatchBg = (() => {
+    if (!isNoise) return undefined
+    const slot0 = effect.noise.slots?.[0]
+    if (slot0?.kind === 'prism') {
+      return 'linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #a29bfe, #ff9ff3)'
+    }
+    return slot0?.color ?? '#000000'
+  })()
 
   const handleKindChange = useCallback(
     (newKind: EffectKind) => {
@@ -104,6 +133,13 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
             <div
               className="size-5 shrink-0 rounded border border-border"
               style={{ background: swatchBg }}
+              aria-hidden
+            />
+          )}
+          {isNoise && (
+            <div
+              className="size-5 shrink-0 rounded border border-border"
+              style={{ background: noiseSwatchBg }}
               aria-hidden
             />
           )}
@@ -179,6 +215,23 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
               <line x1="2" y1="9" x2="10" y2="9" />
             </svg>
           </button>
+        )}
+
+        {/* Noise indicator: grain color swatch */}
+        {isNoise && (
+          <button
+            type="button"
+            onClick={toggleEffectExpand}
+            className={cn(
+              'size-5 shrink-0 rounded border border-border',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              effectExpanded && 'ring-2 ring-ring',
+            )}
+            style={{ background: noiseSwatchBg }}
+            title={effectExpanded ? 'Close noise editor' : 'Open noise editor'}
+            aria-expanded={effectExpanded}
+            aria-label="Toggle noise editor"
+          />
         )}
 
         <select

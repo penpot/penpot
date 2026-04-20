@@ -2,7 +2,7 @@ import { createContext, type RefObject } from 'react'
 import type { Fill } from 'penpot-exporter/types'
 import type { EffectItem } from '../../renderer/properties/panel-utils'
 
-export type ColorEditorKind = 'fill' | 'stroke' | 'drop-shadow' | 'inner-shadow' | 'layer-blur' | 'background-blur' | 'glass'
+export type ColorEditorKind = 'fill' | 'stroke' | 'drop-shadow' | 'inner-shadow' | 'layer-blur' | 'background-blur' | 'glass' | 'noise'
 
 export interface ColorEditorTarget {
   kind: ColorEditorKind

@@ -59,10 +59,65 @@ export const DEFAULT_GLASS: Glass = {
   hidden: false,
 }
 
-/** Max stacked effects (shadows + blur + glass) per shape. */
+/**
+ * Noise effect — one unified list of "slots" that can be either a solid color
+ * or a Prism (iridescent rainbow sampled from the noise itself).
+ *
+ * Density semantics:
+ *  - With exactly 1 slot: transparent has weight 1 and the slot has weight
+ *    `density`. So density=100% → 50/50 slot/transparent; density=50% → ~33%
+ *    slot, ~67% transparent; density=0% → fully transparent.
+ *  - With 2+ slots: `density` is classic coverage — the colored region is
+ *    `density` of the shape, split equally among the slots; the rest is
+ *    transparent.
+ */
+export type NoiseSlot =
+  | { kind: 'solid'; color: string; opacity: number }
+  | { kind: 'prism'; opacity: number }
+
+export interface Noise {
+  id?: string
+  /** 1..MAX_NOISE_SLOTS slots. */
+  slots?: NoiseSlot[]
+  noiseSize?: number
+  density?: number
+  /**
+   * Edge softness in [0, 1]. 0 = hard crisp edges (default, original
+   * behavior); 1 = maximum feather (pastel-looking soft falloff). The
+   * shader does a symmetric smoothstep around the density threshold.
+   */
+  softness?: number
+  /**
+   * When true, the noise only renders where the shape's fill has coverage
+   * (matches Figma: no fill → no noise). Default false = noise covers the
+   * shape's bounds regardless of fill.
+   */
+  applyToFill?: boolean
+  hidden?: boolean
+}
+
+/** Maximum number of noise slots the shader supports. */
+export const MAX_NOISE_SLOTS = 4
+
+export const DEFAULT_NOISE: Noise = {
+  slots: [{ kind: 'solid', color: '#000000', opacity: 1 }],
+  noiseSize: 50,
+  density: 0.5,
+  softness: 0,
+  applyToFill: false,
+  hidden: false,
+}
+
+/** Max stacked effects (shadows + blur + glass + noise) per shape. */
 export const MAX_EFFECTS = 8
 
-export type EffectKind = 'drop-shadow' | 'inner-shadow' | 'layer-blur' | 'background-blur' | 'glass'
+export type EffectKind =
+  | 'drop-shadow'
+  | 'inner-shadow'
+  | 'layer-blur'
+  | 'background-blur'
+  | 'glass'
+  | 'noise'
 
 export type EffectItem =
   | { kind: 'drop-shadow'; shadow: Shadow }
@@ -70,6 +125,7 @@ export type EffectItem =
   | { kind: 'layer-blur'; blur: Blur }
   | { kind: 'background-blur'; blur: Blur }
   | { kind: 'glass'; glass: Glass }
+  | { kind: 'noise'; noise: Noise }
 
 export function normalizeHex(input: string): string {
   let s = input.trim()
