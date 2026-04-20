@@ -293,7 +293,7 @@
 
         guide-color
         (or (:color guide) default-guide-color)
-        
+
         read-only?
         (mf/use-ctx ctx/workspace-read-only?)
 
