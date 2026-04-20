@@ -403,7 +403,7 @@
             ;; The loading overlay is suppressed because on-shapes-ready
             ;; is set.
             (wasm.api/initialize-viewport
-             base-objects zoom vbox background)
+             base-objects zoom vbox :background background)
             (reset! initialized? true)
             (mf/set-ref-val! last-file-version-id-ref file-version-id))
           (when (and (some? file-version-id)
