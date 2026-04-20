@@ -131,8 +131,8 @@
 (def ^:private schema:profile-org
   [:map
    [:is-member :boolean]
-   [:organization-id ::sm/uuid]
-   [:default-team-id [:maybe ::sm/uuid]]])
+   [:organization-id {:optional true} [:maybe ::sm/uuid]]
+   [:default-team-id {:optional true} [:maybe ::sm/uuid]]])
 
 
 ;; TODO Unify with schemas on backend/src/app/http/management.clj
