@@ -12,24 +12,25 @@ architectural pieces.
 If code is added or modified in `src/`, corresponding tests in
 `test/frontend_tests/` must be added or updated.
 
-- **Environment:** Tests should run in a Node.js or browser-isolated
+* **Environment:** Tests should run in a Node.js or browser-isolated
   environment without requiring the full application state or a
   running backend. Test are developed using cljs.test.
-- **Mocks & Stubs:** \* Use proper mocks for any side-effecting
+* **Mocks & Stubs:** * Use proper mocks for any side-effecting
   functions (e.g., API calls, storage access).
-  - Avoid testing through the UI (DOM); we have e2e tests for that.
-  - Use `with-redefs` or similar ClojureScript mocking utilities to isolate the logic under test.
-- **No Flakiness:** Tests must be deterministic. Do not use `setTimeout` or real
+   * Avoid testing through the UI (DOM); we have e2e tests for that.
+  * Use `with-redefs` or similar ClojureScript mocking utilities to isolate the logic under test.
+* **No Flakiness:** Tests must be deterministic. Do not use `setTimeout` or real
   network calls. Use synchronous mocks for asynchronous workflows where
   possible.
-- **Location:** Place tests in the `test/frontend_tests/` directory, following the
+* **Location:** Place tests in the `test/frontend_tests/` directory, following the
   namespace structure of the source code (e.g., `app.utils.timers` ->
   `frontend-tests.util-timers-test`).
-- **Execution:**
-  - **Isolated:** To run a focused ClojureScript unit test: edit the
+* **Execution:**
+  * **Isolated:** To run a focused ClojureScript unit test: edit the
     `test/frontend_tests/runner.cljs` to narrow the test suite, then `pnpm run
-test`.
-  - **Regression:** To run `pnpm run test` without modifications on the runner (preferred)
+    test`.
+   * **Regression:** To run `pnpm run test` without modifications on the runner (preferred)
+
 
 #### Integration Tests (Playwright)
 
@@ -38,6 +39,7 @@ mocks for remote communication with the backend.
 
 You should not add, modify or run the integration tests unless explicitly asked.
 
+
 ```
 pnpm run test:e2e                   # Playwright e2e tests
 pnpm run test:e2e --grep "pattern"  # Single e2e test by pattern
@@ -45,22 +47,23 @@ pnpm run test:e2e --grep "pattern"  # Single e2e test by pattern
 
 Ensure everything is installed before executing tests with the `./scripts/setup` script.
 
+
 ### 2. Code Quality & Formatting
 
-- **Linting:** All code changes must pass linter checks:
-  - Run `pnpm run lint:clj` for CLJ/CLJS/CLJC
-  - Run `pnpm run lint:js` for JS
-  - Run `pnpm run lint:scss` for SCSS
-- **Formatting:** All code changes must pass the formatting check
-  - Run `pnpm run check-fmt:clj` for CLJ/CLJS/CLJC
-  - Run `pnpm run check-fmt:js` for JS
-  - Run `pnpm run check-fmt:scss` for SCSS
-  - Use the `pnpm run fmt` fix all the formatting issues (`pnpm run fmt:clj`,
+* **Linting:** All code changes must pass linter checks:
+  * Run `pnpm run lint:clj` for CLJ/CLJS/CLJC
+  * Run `pnpm run lint:js` for JS
+  * Run `pnpm run lint:scss` for SCSS
+* **Formatting:** All code changes must pass the formatting check
+  * Run `pnpm run check-fmt:clj` for CLJ/CLJS/CLJC
+  * Run `pnpm run check-fmt:js` for JS
+  * Run `pnpm run check-fmt:scss` for SCSS
+  * Use the `pnpm run fmt` fix all the formatting issues (`pnpm run fmt:clj`,
     `pnpm run fmt:js` or `pnpm run fmt:scss` for isolated formatting fix)
 
 ### 3. Implementation Rules
 
-- **Logic vs. View:** If logic is embedded in a UI component, extract it into a
+* **Logic vs. View:** If logic is embedded in a UI component, extract it into a
   function in the same namespace if it is only used locally, or look for a helper
   namespace to make it unit-testable.
 
@@ -87,6 +90,7 @@ The compiled files and their corresponding source maps will be generated in
   bundle, you can run shadow-cljs build reports (consult `shadow-cljs.edn` for
   build IDs like `main` or `worker`).
 
+
 ## Code Conventions
 
 ### Namespace Overview
@@ -99,6 +103,7 @@ namespaces structure:
 - `app.main.refs` – Reactive subscriptions (okulary lenses)
 - `app.main.store` – Potok event store
 - `app.util.*` – Utilities (DOM, HTTP, i18n, keyboard shortcuts)
+
 
 ### State Management (Potok)
 
@@ -155,10 +160,10 @@ helper is available, prefer adding a new helper and then using it.
 The codebase contains various component patterns. When creating or refactoring
 components, follow the Modern Syntax rules outlined below.
 
-#### 1. The \* Suffix Convention
+#### 1. The * Suffix Convention
 
-The most recent syntax uses a _ suffix in the component name (e.g.,
-my-component_). This suffix signals the mf/defc macro to apply specific rules
+The most recent syntax uses a * suffix in the component name (e.g.,
+my-component*). This suffix signals the mf/defc macro to apply specific rules
 for props handling and destructuring and optimization.
 
 #### 2. Component Definition
@@ -199,6 +204,7 @@ namespaces.
 Rumext also comes with improved syntax macros as alternative to `mf/use-effect`
 and `mf/use-memo` functions. Examples:
 
+
 Example for `mf/with-effect` macro:
 
 ```clj
@@ -235,6 +241,7 @@ Example for `mf/with-memo` macro:
 
 Prefer using the macros for their syntax simplicity.
 
+
 #### 4. Component Usage (Hiccup Syntax)
 
 When invoking a component within Hiccup, always use the [:> component* props]
@@ -264,7 +271,6 @@ Examples:
 #### 5. Styles
 
 ##### Styles on component code
-
 Styles are co-located with components. Each `.cljs` file has a corresponding
 `.scss` file.
 
@@ -292,7 +298,7 @@ CSS modules pattern):
   variables are allowed and still used, just prefer properties if they are
   already defined.
 - If a value isn't in the DS, use the `px2rem(n)` mixin: `@use "ds/_utils.scss"
-as *; padding: px2rem(23);`.
+  as *; padding: px2rem(23);`.
 - Do **not** create new SCSS variables for one-off values.
 - Use physical directions with logical ones to support RTL/LTR naturally:
   - Avoid: `margin-left`, `padding-right`, `left`, `right`.
@@ -303,16 +309,15 @@ as *; padding: px2rem(23);`.
 - Use only tokens from `ds/colors.scss`. Do **NOT** use `design-tokens.scss` or
   legacy color variables.
 - Use mixins only from `ds/mixins.scss`. Avoid legacy mixins like
-  `@include flex-center;`. Write standard CSS (flex/grid) instead.
+  `@include flexCenter;`. Write standard CSS (flex/grid) instead.
 - Use the `@use` instead of `@import`. If you go to refactor existing SCSS file,
   try to replace all `@import` with `@use`. Example: `@use "ds/_sizes.scss" as
-*;` (Use `as *` to expose variables directly).
+  *;` (Use `as *` to expose variables directly).
 - Avoid deep selector nesting or high-specificity (IDs). Flatten selectors:
   - Avoid: `.card { .title { ... } }`
   - Prefer: `.card-title { ... }`
 - Leverage component-level CSS variables for state changes (hover/focus) instead
   of rewriting properties.
-- Ensure the CSS adheres to the rules in `.stylelintrc` configuration and do not bypass any rules.
 
 ##### Checklist
 
@@ -322,7 +327,7 @@ as *; padding: px2rem(23);`.
 - [ ] Typography implemented via `use-typography()` mixin.
 - [ ] Hardcoded pixel values wrapped in `px2rem()`.
 - [ ] Selectors are flat (no deep nesting).
-- [ ] Follow stylelint guidelines set at `.stylelintrc` file.
+
 
 ### Performance Macros (`app.common.data.macros`)
 
@@ -338,3 +343,4 @@ Always prefer these macros over their `clojure.core` equivalents — they compil
 
 `src/app/config.clj` reads globally defined variables and exposes precomputed
 configuration values ready to be used from other parts of the application.
+
