@@ -15,7 +15,10 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.color :as uc]
@@ -23,6 +26,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.strings :refer [matches-search]]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -59,21 +63,54 @@
   {::mf/wrap [mf/memo]}
   [{:keys [colors size width selected]}]
   (let [state        (mf/use-state #(do {:show-menu false}))
+        search-term* (mf/use-state "")
+        search-term  (deref search-term*)
+        search-open* (mf/use-state false)
+        search-open? (deref search-open*)
+        has-colors?  (seq colors)
+
+        filtered-colors
+        (mf/with-memo [colors search-term]
+          (if (empty? search-term)
+            colors
+            (filterv #(matches-search (or (uc/get-color-name %) "") search-term)
+                     colors)))
+
+        on-search-change
+        (mf/use-fn #(reset! search-term* %))
+
+        on-toggle-search
+        (mf/use-fn
+         (fn [_]
+           (when @search-open*
+             (reset! search-term* ""))
+           (swap! search-open* not)))
+
+        on-search-clear
+        (mf/use-fn
+         (fn [_]
+           (reset! search-term* "")
+           (reset! search-open* false)))
+
         offset-step  (cond
                        (<= size 64) 40
                        (<= size 80) 72
                        :else 72)
+        ;; Reserve room for the search bar, icon button, or nothing
+        search-width   (cond (not has-colors?) 0
+                             search-open? 192
+                             :else 32)
         buttons-size (cond
-                       (<= size 64) 164
-                       :else 132)
+                       (<= size 64) (+ 164 search-width)
+                       :else (+ 132 search-width))
         width          (- width buttons-size)
         visible        (int (/ width offset-step))
-        show-arrows?   (> (count colors) visible)
+        show-arrows?   (> (count filtered-colors) visible)
         visible        (if show-arrows?
                          (int (/ (- width 48) offset-step))
                          visible)
         offset         (:offset @state 0)
-        max-offset     (- (count colors)
+        max-offset     (- (count filtered-colors)
                           visible)
         container      (mf/use-ref nil)
         bullet-size  (cond
@@ -121,15 +158,34 @@
             width (obj/get dom "clientWidth")]
         (swap! state assoc :width width)))
 
-    (mf/with-effect [width colors]
+    (mf/with-effect [width filtered-colors]
       (when (not= 0 (:offset @state))
         (swap! state assoc :offset 0)))
+
+    (mf/with-effect [has-colors?]
+      (when-not has-colors?
+        (reset! search-open* false)
+        (reset! search-term* "")))
 
     [:div {:class (stl/css-case
                    :color-palette true
                    :no-text (< size 64))
            :style #js {"--bullet-size" (dm/str bullet-size "px")
                        "--color-cell-width" (dm/str color-cell-width "px")}}
+
+     (when has-colors?
+       [:div {:class (stl/css-case :palette-search search-open?
+                                   :palette-search-collapsed (not search-open?))}
+        (when search-open?
+          [:> search-bar* {:on-change on-search-change
+                           :on-clear on-search-clear
+                           :value search-term
+                           :placeholder (tr "workspace.assets.search")
+                           :auto-focus true}])
+        [:> icon-button* {:variant "ghost"
+                          :icon i/search
+                          :on-click on-toggle-search
+                          :aria-label (tr "workspace.assets.search")}]])
 
      (when show-arrows?
        [:button {:class (stl/css :left-arrow)
@@ -138,18 +194,20 @@
      [:div {:class (stl/css :color-palette-content)
             :ref container
             :on-wheel on-scroll}
-      (if (empty? colors)
+      (if (empty? filtered-colors)
         [:div {:class  (stl/css :color-palette-empty)
                :style {:position "absolute"
                        :left "50%"
                        :top "50%"
                        :transform "translate(-50%, -50%)"}}
-         (tr "workspace.libraries.colors.empty-palette")]
+         (if (empty? search-term)
+           (tr "workspace.libraries.colors.empty-palette")
+           (tr "workspace.assets.not-found"))]
         [:div {:class  (stl/css :color-palette-inside)
                :style {:position "relative"
                        :max-width (str width "px")
                        :right (str (* offset-step offset) "px")}}
-         (for [[idx item] (map-indexed vector colors)]
+         (for [[idx item] (map-indexed vector filtered-colors)]
            [:> palette-item* {:color item :key idx :size size :selected selected}])])]
 
      (when show-arrows?
