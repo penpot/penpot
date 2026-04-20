@@ -160,14 +160,24 @@ impl State {
 
         // Only remove the children when is being deleted from the owner
         if shape.parent_id.is_none() || shape.parent_id == Some(parent_id) {
-            let tiles::TileRect(rsx, rsy, rex, rey) =
-                self.render_state.get_tiles_for_shape(shape, &self.shapes);
-            for x in rsx..=rex {
-                for y in rsy..=rey {
-                    let tile = tiles::Tile(x, y);
-                    self.render_state.remove_cached_tile(tile);
-                    self.render_state.tiles.remove_shape_at(tile, shape.id);
-                }
+            // IMPORTANT:
+            // Do NOT use `get_tiles_for_shape` here. That method intersects the shape
+            // tiles with the current interest area, which means we'd only invalidate
+            // the subset currently near the viewport. When the user later pans/zooms
+            // to reveal previously cached tiles, stale pixels could reappear.
+            //
+            // Instead, remove the shape from *all* tiles where it was indexed, and
+            // drop cached tiles for those entries.
+            let indexed_tiles: Vec<tiles::Tile> = self
+                .render_state
+                .tiles
+                .get_tiles_of(shape.id)
+                .map(|t| t.iter().copied().collect())
+                .unwrap_or_default();
+
+            for tile in indexed_tiles {
+                self.render_state.remove_cached_tile(tile);
+                self.render_state.tiles.remove_shape_at(tile, shape.id);
             }
 
             if let Some(shape_to_delete) = self.shapes.get(&id) {

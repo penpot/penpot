@@ -866,7 +866,12 @@ pub extern "C" fn set_structure_modifiers() -> Result<()> {
 #[wasm_error]
 pub extern "C" fn clean_modifiers() -> Result<()> {
     with_state_mut!(state, {
-        state.shapes.clean_all();
+        let prev_modifier_ids = state.shapes.clean_all();
+        if !prev_modifier_ids.is_empty() {
+            state
+                .render_state
+                .update_tiles_shapes(&prev_modifier_ids, &mut state.shapes)?;
+        }
     });
     Ok(())
 }
