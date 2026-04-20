@@ -119,6 +119,22 @@
   (track! :get-content-fonts)
   [])
 
+(defn- mock-set-objects
+  "Mock for `wasm.api/set-objects`.
+   Accepts the same arities as the real function. Does NOT invoke
+   the render-callback — the real one touches WASM/Skia internals."
+  ([_objects]
+   (track! :set-objects))
+  ([_objects _render-callback]
+   (track! :set-objects))
+  ([_objects _render-callback _on-shapes-ready]
+   (track! :set-objects)))
+
+(defn- mock-request-render
+  [_requester]
+  (track! :request-render)
+  nil)
+
 ;; --- Persistent mock installation via `set!` --------------------------
 ;;
 ;; These use `set!` to directly mutate the module-level JS vars, making
@@ -145,6 +161,8 @@
            :set-shape-text-content  wasm.api/set-shape-text-content
            :set-shape-text-images   wasm.api/set-shape-text-images
            :get-text-dimensions     wasm.api/get-text-dimensions
+           :set-objects             wasm.api/set-objects
+           :request-render          wasm.api/request-render
            :font-stored?            wasm.fonts/font-stored?
            :make-font-data          wasm.fonts/make-font-data
            :get-content-fonts       wasm.fonts/get-content-fonts})
@@ -156,6 +174,8 @@
   (set! wasm.api/set-shape-text-content  mock-set-shape-text-content)
   (set! wasm.api/set-shape-text-images   mock-set-shape-text-images)
   (set! wasm.api/get-text-dimensions     mock-get-text-dimensions)
+  (set! wasm.api/set-objects             mock-set-objects)
+  (set! wasm.api/request-render          mock-request-render)
   (set! wasm.fonts/font-stored?          mock-font-stored?)
   (set! wasm.fonts/make-font-data        mock-make-font-data)
   (set! wasm.fonts/get-content-fonts     mock-get-content-fonts))
@@ -171,6 +191,8 @@
     (set! wasm.api/set-shape-text-content  (:set-shape-text-content orig))
     (set! wasm.api/set-shape-text-images   (:set-shape-text-images orig))
     (set! wasm.api/get-text-dimensions     (:get-text-dimensions orig))
+    (set! wasm.api/set-objects             (:set-objects orig))
+    (set! wasm.api/request-render          (:request-render orig))
     (set! wasm.fonts/font-stored?          (:font-stored? orig))
     (set! wasm.fonts/make-font-data        (:make-font-data orig))
     (set! wasm.fonts/get-content-fonts     (:get-content-fonts orig)))

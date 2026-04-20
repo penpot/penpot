@@ -158,6 +158,8 @@ impl ImageStore {
     ) -> crate::error::Result<()> {
         let key = (id, is_thumbnail);
 
+        // During bulk reload (set-objects) images may already be cached
+        // from different components
         if self.images.contains_key(&key) {
             return Ok(());
         }
@@ -185,6 +187,8 @@ impl ImageStore {
     ) -> Result<()> {
         let key = (id, is_thumbnail);
 
+        // During bulk reload (set-objects) images may already be cached
+        // from different components
         if self.images.contains_key(&key) {
             return Ok(());
         }

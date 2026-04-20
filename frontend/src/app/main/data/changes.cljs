@@ -27,6 +27,12 @@
 
 (def page-change?
   #{:add-page :mod-page :del-page :mov-page})
+
+;; Flag to temporarily pause WASM synchronization during batch operations
+(defonce wasm-sync-paused? (atom false))
+(defn pause-wasm-sync! [] (reset! wasm-sync-paused? true))
+(defn resume-wasm-sync! [] (reset! wasm-sync-paused? false))
+
 (def update-layout-attr?
   #{:hidden})
 
@@ -103,7 +109,9 @@
                     pids (into #{} xf:map-page-id redo-changes)]
                 (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
 
-        (if (and (not ignore-wasm?) (features/active-feature? state "render-wasm/v1"))
+        (if (and (not ignore-wasm?)
+                 (not @wasm-sync-paused?)
+                 (features/active-feature? state "render-wasm/v1"))
           ;; Update the wasm model
           (let [shape-changes (volatile! {})
 
@@ -116,13 +124,14 @@
 
             state)
 
-          ;; wasm renderer deactivated
+          ;; wasm renderer deactivated (or paused)
           (update-in state [:files file-id :data] apply-changes))))))
 
 (defn commit
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
-           file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?]}]
+           file-id file-revn file-vern undo-group tags stack-undo? source
+           ignore-wasm? skip-component-changes?]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -148,7 +157,8 @@
                    :undo-group undo-group
                    :tags tags
                    :stack-undo? stack-undo?
-                   :ignore-wasm? ignore-wasm?}]
+                   :ignore-wasm? ignore-wasm?
+                   :skip-component-changes? skip-component-changes?}]
 
     (ptk/reify ::commit
       cljs.core/IDeref
@@ -214,6 +224,8 @@
                      (assoc :file-id file-id)
                      (assoc :file-revn (resolve-file-revn state file-id))
                      (assoc :file-vern (resolve-file-vern state file-id))
+                     (cond-> @wasm-sync-paused?
+                       (assoc :skip-component-changes? true))
                      (assoc :undo-changes uchg)
                      (assoc :redo-changes rchg)
                      (commit))))))))

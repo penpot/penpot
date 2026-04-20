@@ -217,27 +217,39 @@
                                       :type :border-radius
                                       :value 66})]
 
+          ;; propagate-workspace-tokens defers work via rx/timer 0,
+          ;; so we use the timeout-based stopper to let it complete,
+          ;; then sync-file in a subsequent step.
           step2 (fn [_]
-                  (let [events2 [(dwtp/propagate-workspace-tokens)
-                                 (dwl/sync-file (:id file) (:id file))]]
-                    (tohs/run-store-async
-                     store done events2
-                     (fn [new-state]
-                       (let [;; ==== Get
-                             file'          (ths/get-file-from-state new-state)
-                             c-frame1'      (cths/get-shape file' :c-frame1)
-                             tokens-frame1' (:applied-tokens c-frame1')]
+                  (tohs/run-store-async
+                   store
+                   (fn [_]
+                     (tohs/run-store-async
+                      store done
+                      [(dwl/sync-file (:id file) (:id file))]
+                      (fn [new-state]
+                        (let [;; ==== Get
+                              file'          (ths/get-file-from-state new-state)
+                              c-frame1'      (cths/get-shape file' :c-frame1)
+                              tokens-frame1' (:applied-tokens c-frame1')]
 
-                         ;; ==== Check
-                         (t/is (= (count tokens-frame1') 4))
-                         (t/is (= (get tokens-frame1' :r1) "test-token-1"))
-                         (t/is (= (get tokens-frame1' :r2) "test-token-1"))
-                         (t/is (= (get tokens-frame1' :r3) "test-token-1"))
-                         (t/is (= (get tokens-frame1' :r4) "test-token-1"))
-                         (t/is (= (get c-frame1' :r1) 66))
-                         (t/is (= (get c-frame1' :r2) 66))
-                         (t/is (= (get c-frame1' :r3) 66))
-                         (t/is (= (get c-frame1' :r4) 66)))))))]
+                          ;; ==== Check
+                          (t/is (= (count tokens-frame1') 4))
+                          (t/is (= (get tokens-frame1' :r1) "test-token-1"))
+                          (t/is (= (get tokens-frame1' :r2) "test-token-1"))
+                          (t/is (= (get tokens-frame1' :r3) "test-token-1"))
+                          (t/is (= (get tokens-frame1' :r4) "test-token-1"))
+                          (t/is (= (get c-frame1' :r1) 66))
+                          (t/is (= (get c-frame1' :r2) 66))
+                          (t/is (= (get c-frame1' :r3) 66))
+                          (t/is (= (get c-frame1' :r4) 66))))))
+                   [(dwtp/propagate-workspace-tokens)]
+                   identity
+                   ;; Use timeout-based stopper: propagation defers
+                   ;; work via rx/timer, so the normal ::end stopper
+                   ;; fires too early. The 200ms timeout lets deferred
+                   ;; work complete before moving to sync-file.
+                   (tohs/stop-on ::propagation-done)))]
 
       (tohs/run-store-async
        store step2 events identity))))
@@ -395,45 +407,53 @@
                                       :value 200})]
 
           step2 (fn [_]
-                  (let [events2 [(dwtp/propagate-workspace-tokens)
-                                 (dwl/sync-file (:id file) (:id file))]]
-                    (tohs/run-store-async
-                     store done events2
-                     (fn [new-state]
-                       (let [;; ==== Get
-                             file'          (ths/get-file-from-state new-state)
-                             c-frame1'      (cths/get-shape file' :c-frame1)
-                             tokens-frame1' (:applied-tokens c-frame1')]
+                  (tohs/run-store-async
+                   store
+                   (fn [_]
+                     (tohs/run-store-async
+                      store done
+                      [(dwl/sync-file (:id file) (:id file))]
+                      (fn [new-state]
+                        (let [;; ==== Get
+                              file'          (ths/get-file-from-state new-state)
+                              c-frame1'      (cths/get-shape file' :c-frame1)
+                              tokens-frame1' (:applied-tokens c-frame1')]
 
-                         ;; ==== Check
-                         (t/is (= (count tokens-frame1') 11))
-                         (t/is (= (get tokens-frame1' :r1) "token-radius"))
-                         (t/is (= (get tokens-frame1' :r2) "token-radius"))
-                         (t/is (= (get tokens-frame1' :r3) "token-radius"))
-                         (t/is (= (get tokens-frame1' :r4) "token-radius"))
-                         (t/is (= (get tokens-frame1' :rotation) "token-rotation"))
-                         (t/is (= (get tokens-frame1' :opacity) "token-opacity"))
-                         (t/is (= (get tokens-frame1' :stroke-width) "token-stroke-width"))
-                         (t/is (= (get tokens-frame1' :stroke-color) "token-color"))
-                         (t/is (= (get tokens-frame1' :fill) "token-color"))
-                         (t/is (= (get tokens-frame1' :width) "token-dimensions"))
-                         (t/is (= (get tokens-frame1' :height) "token-dimensions"))
-                         (t/is (= (get c-frame1' :r1) 30))
-                         (t/is (= (get c-frame1' :r2) 30))
-                         (t/is (= (get c-frame1' :r3) 30))
-                         (t/is (= (get c-frame1' :r4) 30))
-                         (t/is (= (get c-frame1' :rotation) 45))
-                         (t/is (= (get c-frame1' :opacity) 0.9))
-                         (t/is (= (get-in c-frame1' [:strokes 0 :stroke-width]) 8))
-                         (t/is (= (get-in c-frame1' [:strokes 0 :stroke-color]) "#ff0000"))
-                         (t/is (= (-> c-frame1' :fills (nth 0) :fill-color) "#ff0000"))
-                         (t/is (mth/close? (get c-frame1' :width) 200))
-                         (t/is (mth/close? (get c-frame1' :height) 200))
+                          ;; ==== Check
+                          (t/is (= (count tokens-frame1') 11))
+                          (t/is (= (get tokens-frame1' :r1) "token-radius"))
+                          (t/is (= (get tokens-frame1' :r2) "token-radius"))
+                          (t/is (= (get tokens-frame1' :r3) "token-radius"))
+                          (t/is (= (get tokens-frame1' :r4) "token-radius"))
+                          (t/is (= (get tokens-frame1' :rotation) "token-rotation"))
+                          (t/is (= (get tokens-frame1' :opacity) "token-opacity"))
+                          (t/is (= (get tokens-frame1' :stroke-width) "token-stroke-width"))
+                          (t/is (= (get tokens-frame1' :stroke-color) "token-color"))
+                          (t/is (= (get tokens-frame1' :fill) "token-color"))
+                          (t/is (= (get tokens-frame1' :width) "token-dimensions"))
+                          (t/is (= (get tokens-frame1' :height) "token-dimensions"))
+                          (t/is (= (get c-frame1' :r1) 30))
+                          (t/is (= (get c-frame1' :r2) 30))
+                          (t/is (= (get c-frame1' :r3) 30))
+                          (t/is (= (get c-frame1' :r4) 30))
+                          (t/is (= (get c-frame1' :rotation) 45))
+                          (t/is (= (get c-frame1' :opacity) 0.9))
+                          (t/is (= (get-in c-frame1' [:strokes 0 :stroke-width]) 8))
+                          (t/is (= (get-in c-frame1' [:strokes 0 :stroke-color]) "#ff0000"))
+                          (t/is (= (-> c-frame1' :fills (nth 0) :fill-color) "#ff0000"))
+                          (t/is (mth/close? (get c-frame1' :width) 200))
+                          (t/is (mth/close? (get c-frame1' :height) 200))
 
-                         (t/is (empty? (:touched c-frame1')))
+                          (t/is (empty? (:touched c-frame1')))
 
-                         (t/testing "WASM mocks were exercised"
-                           (t/is (pos? (thw/call-count :propagate-modifiers)))))))))]
+                          (t/testing "WASM mocks were exercised"
+                            (t/is (pos? (thw/call-count :propagate-modifiers))))))))
+                   [(dwtp/propagate-workspace-tokens)]
+                   identity
+                   ;; Use timeout-based stopper: propagation defers
+                   ;; work via rx/timer, so the normal ::end stopper
+                   ;; fires too early.
+                   (tohs/stop-on ::propagation-done)))]
 
       (tohs/run-store-async
        store step2 events identity))))

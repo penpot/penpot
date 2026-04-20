@@ -10,16 +10,21 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.time :as ct]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
+   [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
+   [app.render-wasm.api :as wasm.api]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
    [clojure.set :as set]
@@ -144,6 +149,7 @@
           (rx/of current-page-id)
           (->> (rx/from (:pages fdata))
                (rx/filter (fn [id] (not= id current-page-id)))))
+         (rx/observe-on :async) ;; Do not block UI on token propagation
          (rx/mapcat
           (fn [page-id]
             (let [page
@@ -170,8 +176,14 @@
 
                (->> (rx/from frame-ids)
                     (rx/mapcat (fn [frame-id]
-                                 (rx/of (dwt/clear-thumbnail file-id page-id frame-id "frame")
-                                        (dwt/clear-thumbnail file-id page-id frame-id "component")))))
+                                 (rx/concat
+                                  (rx/of (dwt/clear-thumbnail file-id page-id frame-id "frame"))
+                                  ;; WASM: skip component thumbnails — they are rendered
+                                  ;; lazily when the assets panel is opened, so clearing
+                                  ;; them here would trigger a flood of render-shape-pixels calls.
+                                  (if (features/active-feature? state "render-wasm/v1")
+                                    (rx/empty)
+                                    (rx/of (dwt/clear-thumbnail file-id page-id frame-id "component")))))))
                (when (not= page-id current-page-id)   ;; Texts in the current page have already their position-data regenerated
                  (rx/of (dwsh/update-shapes text-ids  ;; after change. But those on other pages need to be specifically reset.
                                             (fn [shape]
@@ -183,6 +195,37 @@
             (let [elapsed (tpoint)]
               (l/inf :status "END" :hint "propagate-tokens" :elapsed elapsed)))))))
 
+(defn- reload-wasm-current-page
+  "Bulk-reload all current-page shapes into WASM after token
+   propagation has updated the data model without per-shape sync.
+   After reload, refreshes all component thumbnails progressively,
+   current-page components first, then components on other pages."
+  []
+  (ptk/reify ::reload-wasm-current-page
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects    (dsh/lookup-page-objects state)
+            file-id    (get state :current-file-id)
+            page-id    (get state :current-page-id)
+            fdata      (dsh/lookup-file-data state file-id)
+            components (ctkl/components-seq fdata)
+            ;; Current-page components first (already loaded in WASM),
+            ;; then other pages (render-thumbnail loads their subtree)
+            sorted     (sort-by #(if (= (:main-instance-page %) page-id) 0 1) components)]
+
+        (->> (rx/create
+              (fn [subs]
+                (wasm.api/set-objects objects
+                                      (fn []
+                                        (wasm.api/request-render "token-propagation")
+                                        (rx/push! subs true)
+                                        (rx/end! subs)))))
+             (rx/mapcat
+              (fn [_]
+                (->> (rx/from sorted)
+                     (rx/map (fn [{:keys [main-instance-page main-instance-id]}]
+                               (dwt.wasm/render-thumbnail file-id main-instance-page main-instance-id :persist? true)))))))))))
+
 (defn propagate-workspace-tokens
   []
   (ptk/reify ::propagate-workspace-tokens
@@ -191,13 +234,29 @@
       (when-let [tokens-tree (-> (dsh/lookup-file-data state)
                                  (get :tokens-lib)
                                  (ctob/get-tokens-in-active-sets))]
-        (->> (if (contains? cf/flags :tokenscript)
-               (rx/of (-> (ts/resolve-tokens tokens-tree)
-                          (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
-               (sd/resolve-tokens tokens-tree))
-             (rx/mapcat (fn [sd-tokens]
-                          (let [undo-id (js/Symbol)]
-                            (rx/concat
-                             (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-                             (propagate-tokens state sd-tokens)
-                             (rx/of (dwu/commit-undo-transaction undo-id)))))))))))
+        (let [wasm? (features/active-feature? state "render-wasm/v1")]
+          ;; Pause per-shape WASM sync so token propagation commits
+          ;; only update the data model, bulk-reload WASM at the end.
+          (when wasm?
+            (dch/pause-wasm-sync!))
+          (->> ;; Yield one frame so the UI can repaint (close dropdown,
+           ;; show loading state, etc.) before the heavy work starts.
+           (rx/of nil)
+           (rx/observe-on :async)
+           (rx/mapcat
+            (fn [_]
+              (if (contains? cf/flags :tokenscript)
+                (rx/of (-> (ts/resolve-tokens tokens-tree)
+                           (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
+                (sd/resolve-tokens tokens-tree))))
+           (rx/mapcat (fn [sd-tokens]
+                        (let [undo-id (js/Symbol)]
+                          (rx/concat
+                           (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+                           (propagate-tokens state sd-tokens)
+                           (rx/of (dwu/commit-undo-transaction undo-id))
+                           (when wasm?
+                             (rx/of (reload-wasm-current-page)))))))
+           (rx/finalize (fn []
+                          (when wasm?
+                            (dch/resume-wasm-sync!))))))))))

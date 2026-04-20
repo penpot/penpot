@@ -955,9 +955,8 @@
         root-id   (:main-instance-id component)]
     (if (and (= tag "component")
              (features/active-feature? state "render-wasm/v1"))
-      ;; WASM: render immediately, UI only — server persist happens
-      ;; on the debounced path (update-component-thumbnail)
-      (dwt.wasm/render-thumbnail file-id page-id root-id)
+      (when-not @dch/wasm-sync-paused?
+        (dwt.wasm/render-thumbnail file-id page-id root-id))
       (dwt/update-thumbnail file-id page-id root-id tag "update-component-thumbnail-sync"))))
 
 (defn update-component-sync
@@ -1372,6 +1371,9 @@
                  (rx/filter dch/commit?)
                  (rx/map deref)
                  (rx/filter #(= :local (:source %)))
+                 ;; Filter out propagation commits that are originated by component changes,
+                 ;; to avoid infinite loops.
+                 (rx/filter #(not (:skip-component-changes? %)))
                  (rx/observe-on :async))
 
             check-changes
