@@ -2594,6 +2594,12 @@ msgstr "Delete %s files"
 msgid "labels.deleted"
 msgstr "Deleted"
 
+msgid "labels.delete-profile-photo.title"
+msgstr "Delete profile photo"
+
+msgid "labels.delete-profile-photo.message"
+msgstr "Are you sure you want to delete your profile photo?"
+
 #: src/app/main/ui/onboarding/questions.cljs:86
 msgid "labels.developer"
 msgstr "Development"
