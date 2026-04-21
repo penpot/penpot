@@ -630,16 +630,15 @@
 
 (defn- get-file-stats
   [{:keys [::db/conn] :as cfg} file-id]
-  (let [file      (bfc/get-file cfg file-id)
-        fdata     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-                    (:data file))
-        base      (cfs/calc-file-stats fdata)
-        lib-cnt   (get-file-stats-library-counts conn file-id)]
+  (let [file    (bfc/get-file cfg file-id)
+        base    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+                  (cfs/calc-file-stats (:data file)))
+        lib-cnt (get-file-stats-library-counts conn file-id)]
     (-> base
         (merge lib-cnt)
-        (assoc :file-id     file-id
-               :revn        (:revn file)
-               :updated-at  (:modified-at file)))))
+        (assoc :file-id    file-id
+               :revn       (:revn file)
+               :updated-at (:modified-at file)))))
 
 (def ^:private schema:shape-counts
   [:map {:title "FileStatsShapeCounts"}
