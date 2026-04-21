@@ -243,6 +243,22 @@ test("Renders a file with a closed path shape with multiple segments using strok
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders svg paths with evenodd", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-paths-evenodd.json");
+
+  await workspace.goToWorkspace({
+    id: "3e84615b-5628-818c-8007-e7563bb081fb",
+    pageId: "u3e84615b-5628-818c-8007-e7563bb081fc",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders solid shadows after select all and zoom to selected", async ({
   page,
 }) => {
