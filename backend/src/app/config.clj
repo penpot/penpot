@@ -58,6 +58,9 @@
    :objects-storage-fs-directory "assets"
 
    :auth-token-cookie-name "auth-token"
+   ;; Defaults match FOSS devstack SESSION_COOKIE_MAX_AGE_SECONDS / SESSION_COOKIE_REFRESH_SECONDS
+   :auth-token-cookie-max-age (ct/duration {:days 7})
+   :auth-token-cookie-renewal-max-age (ct/duration {:hours 1})
 
    :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
@@ -156,6 +159,7 @@
 
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
+    [:auth-token-cookie-renewal-max-age {:optional true} ::ct/duration]
 
     [:registration-domain-whitelist {:optional true} [::sm/set :string]]
     [:email-verify-threshold {:optional true} ::ct/duration]
