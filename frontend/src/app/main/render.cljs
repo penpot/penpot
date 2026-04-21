@@ -532,7 +532,9 @@
     (try
       (when (wasm.api/init-canvas-context os-canvas)
         (wasm.api/initialize-viewport
-         objects scale bounds "#000000" 0
+         objects scale bounds
+         :background-opacity 0
+         :on-render
          (fn []
            (wasm.api/render-sync-shape object-id)
            (ts/raf

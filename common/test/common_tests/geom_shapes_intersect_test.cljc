@@ -52,12 +52,10 @@
                    [(pt 0 5) (pt 10 5)]))))
 
   (t/testing "Two collinear overlapping segments"
-    ;; NOTE: The implementation compares orientation result (namespaced keyword ::coplanar)
-    ;; against unnamespaced :coplanar, so the collinear branch never triggers.
-    ;; Collinear overlapping segments are NOT detected as intersecting.
-    (t/is (false? (gint/intersect-segments?
-                   [(pt 0 0) (pt 10 0)]
-                   [(pt 5 0) (pt 15 0)]))))
+    ;; Collinear overlapping segments correctly detected as intersecting.
+    (t/is (true? (gint/intersect-segments?
+                  [(pt 0 0) (pt 10 0)]
+                  [(pt 5 0) (pt 15 0)]))))
 
   (t/testing "Two non-overlapping collinear segments"
     (t/is (false? (gint/intersect-segments?

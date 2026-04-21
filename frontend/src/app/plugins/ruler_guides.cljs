@@ -94,6 +94,22 @@
                  value)]
            (st/emit! (dwgu/update-guides (assoc guide :position position))))))}
 
+    :color
+    {:this true
+     :get
+     (fn [self]
+       (-> self u/proxy->ruler-guide :color))
+
+     :set
+     (fn [self value]
+       (cond
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :color "Plugin doesn't have 'content:write' permission")
+
+         :else
+         (let [guide (u/proxy->ruler-guide self)]
+           (st/emit! (dwgu/update-guides (assoc guide :color value))))))}
+
     :remove
     (fn []
       (let [guide (u/locate-ruler-guide file-id page-id id)]

@@ -21,7 +21,7 @@
 }
 
 .modal-title {
-  @include deprecated.headlineMediumTypography;
+  @include deprecated.headline-medium-typography;
 
   color: var(--modal-title-foreground-color);
 }
@@ -31,18 +31,18 @@
 }
 
 .modal-content {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   gap: deprecated.$s-24;
 
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
 
   margin-bottom: deprecated.$s-24;
 }
 
 .input-wrapper {
   @extend %input-with-label;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   label {
     text-transform: none;
@@ -50,7 +50,7 @@
 }
 
 .modal-msg {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
 
   color: var(--modal-text-foreground-color);
   line-height: 1.5;

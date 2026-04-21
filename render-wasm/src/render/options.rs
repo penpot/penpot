@@ -19,7 +19,7 @@ impl Default for RenderOptions {
             flags: 0,
             dpr: None,
             fast_mode: false,
-            antialias_threshold: 15.0,
+            antialias_threshold: 7.0,
         }
     }
 }

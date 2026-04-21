@@ -33,13 +33,13 @@
 }
 
 .counter {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--viewer-thumbnails-control-foreground-color);
 }
 
 .actions {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   width: deprecated.$s-60;
 }
@@ -77,7 +77,7 @@
 .right-scroll-handler,
 .left-scroll-handler {
   @extend %button-tertiary;
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   grid-column: 3 / span 1;
   grid-row: 1 / span 1;
@@ -121,7 +121,7 @@
 }
 
 .thumbnail-item {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: flex;
   flex-direction: column;
@@ -129,7 +129,7 @@
 }
 
 .thumbnail-preview {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-132;
   min-height: deprecated.$s-132;
@@ -153,8 +153,8 @@
 }
 
 .thumbnail-info {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.textEllipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.text-ellipsis;
 
   text-align: center;
   color: var(--viewer-thumbnails-control-foreground-color);

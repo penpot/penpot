@@ -207,3 +207,18 @@
         fill1  (nth fills1 1)]
     (t/is (nil? fill1))
     (t/is (equivalent-fill? fill0 sample-fill-6))))
+
+(t/deftest indexed-access-with-default
+  (t/testing "nth with default returns fill for valid index"
+    ;; Regression: CLJS -nth with default had reversed d/in-range? args,
+    ;; so it always fell through to the default even for valid indices.
+    (let [fills    (types.fills/from-plain [sample-fill-6])
+          sentinel ::not-found
+          result   (nth fills 0 sentinel)]
+      (t/is (not= sentinel result))
+      (t/is (equivalent-fill? result sample-fill-6))))
+  (t/testing "nth with default returns default for out-of-range index"
+    (let [fills    (types.fills/from-plain [sample-fill-6])
+          sentinel ::not-found]
+      (t/is (= sentinel (nth fills 1 sentinel)))
+      (t/is (= sentinel (nth fills -1 sentinel))))))

@@ -9,6 +9,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
+   [app.common.schema :as sm]
    [clojure.test :as t]))
 
 (t/deftest point-constructors-test
@@ -100,3 +101,28 @@
   (let [m (-> (gmt/matrix)
               (gmt/rotate 10))]
     (t/is (= m (gmt/matrix 0.984807753012208 0.17364817766693033 -0.17364817766693033 0.984807753012208 0 0)))))
+
+;; ---- matrix->str (no trailing comma) ----
+
+(t/deftest matrix-str-roundtrip-test
+  (t/testing "Identity matrix encodes and decodes back to equal matrix"
+    (let [m      (gmt/matrix)
+          enc    (sm/encode gmt/schema:matrix m (sm/string-transformer))
+          dec    (sm/decode gmt/schema:matrix enc (sm/string-transformer))]
+      (t/is (string? enc))
+      ;; Must not end with a comma
+      (t/is (not= \, (last enc)))
+      (t/is (gmt/close? m dec))))
+
+  (t/testing "Arbitrary matrix encodes without trailing comma and round-trips"
+    (let [m      (gmt/matrix 2 0.5 -0.5 3 10 20)
+          enc    (sm/encode gmt/schema:matrix m (sm/string-transformer))
+          dec    (sm/decode gmt/schema:matrix enc (sm/string-transformer))]
+      (t/is (string? enc))
+      (t/is (not= \, (last enc)))
+      (t/is (gmt/close? m dec))))
+
+  (t/testing "Encoded string contains exactly 5 commas (6 fields)"
+    (let [m   (gmt/matrix 1 0 0 1 0 0)
+          enc (sm/encode gmt/schema:matrix m (sm/string-transformer))]
+      (t/is (= 5 (count (filter #(= \, %) enc)))))))

@@ -31,7 +31,7 @@
 }
 
 .tab-container-tab-title {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: 100%;
   width: 100%;
@@ -50,7 +50,7 @@
   }
 
   .content {
-    @include deprecated.headlineSmallTypography;
+    @include deprecated.headline-small-typography;
 
     text-align: center;
     white-space: nowrap;
@@ -79,8 +79,8 @@
 }
 
 .collapse-sidebar {
-  @include deprecated.flexCenter;
-  @include deprecated.buttonStyle;
+  @include deprecated.flex-center;
+  @include deprecated.button-style;
 
   height: 100%;
   width: deprecated.$s-24;
@@ -89,7 +89,7 @@
   border-radius: deprecated.$br-5;
 
   svg {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     height: deprecated.$s-16;
     width: deprecated.$s-16;

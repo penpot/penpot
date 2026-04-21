@@ -34,7 +34,7 @@
 }
 
 .paginator {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   position: absolute;
   top: deprecated.$s-40;
@@ -54,13 +54,13 @@
 }
 
 .modal-title {
-  @include deprecated.bigTitleTipography;
+  @include deprecated.big-title-typography;
 
   color: var(--modal-title-foreground-color);
 }
 
 .modal-subtitle {
-  @include deprecated.medTitleTipography;
+  @include deprecated.med-title-typography;
 
   color: var(--modal-title-foreground-color);
 }
@@ -70,34 +70,34 @@
 }
 
 .modal-text {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
 
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
 
 .modal-desc {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
 
   margin: 0;
   color: var(--modal-title-foreground-color);
 }
 
 .team-features {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   gap: deprecated.$s-16;
   margin: 0;
 }
 
 .feature {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   gap: deprecated.$s-16;
 }
 
 .icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-32;
   width: deprecated.$s-32;
@@ -150,7 +150,7 @@
 
 .first-block,
 .second-block {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   gap: deprecated.$s-16;
 }
@@ -165,8 +165,8 @@
   @extend %input-element-label;
 
   label {
-    @include deprecated.flexColumn;
-    @include deprecated.bodySmallTypography;
+    @include deprecated.flex-column;
+    @include deprecated.body-small-typography;
 
     align-items: flex-start;
     width: 100%;
@@ -175,7 +175,7 @@
     height: 100%;
 
     input {
-      @include deprecated.bodySmallTypography;
+      @include deprecated.body-small-typography;
 
       margin-top: deprecated.$s-8;
     }
@@ -201,7 +201,7 @@
 }
 
 .role-title {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   margin-block-end: deprecated.$s-8;
   color: var(--modal-title-foreground-color);
@@ -213,7 +213,7 @@
 }
 
 .modal-hint {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--modal-text-foreground-color);
   text-align: right;

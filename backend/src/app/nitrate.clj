@@ -1,3 +1,9 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns app.nitrate
   "Module that make calls to the external nitrate aplication"
   (:require
@@ -286,6 +292,16 @@
                              "/remove-user")
                         nil params)))
 
+(defn- remove-profile-from-all-orgs-api
+  [cfg {:keys [profile-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :post
+                        (str baseuri
+                             "/api/users/"
+                             profile-id
+                             "/remove-organizations")
+                        nil params)))
+
 (defn- remove-team-from-org-api
   [cfg {:keys [team-id organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
@@ -330,17 +346,18 @@
 (defmethod ig/init-key ::client
   [_ cfg]
   (when (contains? cf/flags :nitrate)
-    {:get-team-org               (partial get-team-org-api cfg)
-     :set-team-org               (partial set-team-org-api cfg)
-     :get-org-membership         (partial get-org-membership-api cfg)
-     :get-org-membership-by-team (partial get-org-membership-by-team-api cfg)
-     :get-org-summary            (partial get-org-summary-api cfg)
-     :add-profile-to-org         (partial add-profile-to-org-api cfg)
-     :remove-profile-from-org    (partial remove-profile-from-org-api cfg)
-     :delete-team                (partial delete-team-api cfg)
-     :remove-team-from-org       (partial remove-team-from-org-api cfg)
-     :get-subscription           (partial get-subscription-api cfg)
-     :connectivity               (partial get-connectivity-api cfg)}))
+    {:get-team-org                 (partial get-team-org-api cfg)
+     :set-team-org                 (partial set-team-org-api cfg)
+     :get-org-membership           (partial get-org-membership-api cfg)
+     :get-org-membership-by-team   (partial get-org-membership-by-team-api cfg)
+     :get-org-summary              (partial get-org-summary-api cfg)
+     :add-profile-to-org           (partial add-profile-to-org-api cfg)
+     :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
+     :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)
+     :delete-team                  (partial delete-team-api cfg)
+     :remove-team-from-org         (partial remove-team-from-org-api cfg)
+     :get-subscription             (partial get-subscription-api cfg)
+     :connectivity                 (partial get-connectivity-api cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILS

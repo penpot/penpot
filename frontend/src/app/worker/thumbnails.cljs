@@ -171,7 +171,10 @@
                        zoom    (/ width (:width vbox))]
 
                    (wasm.api/initialize-viewport
-                    objects zoom vbox bgcolor
+                    objects zoom vbox
+                    :background bgcolor
+                    :force-sync true
+                    :on-render
                     (fn []
                       (if frame
                         (wasm.api/render-sync-shape (:id frame))

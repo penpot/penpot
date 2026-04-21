@@ -199,6 +199,7 @@ Remember that nesting selector increases specificity, and it's usually not neede
   fill: var(--icon-color);
 }
 ```
+
 Note: Thanks to CSS Modules, identical class names defined in different files are scoped locally and do not cause naming collisions.
 
 ### Use CSS logical properties
@@ -228,17 +229,21 @@ Note: Although `width` and `height` are physical properties, their use is allowe
 Avoid hardcoded values like `px`, `rem`, or raw SASS variables `($s-*)`. Use semantic, named variables provided by the Design System to ensure consistency and scalability.
 
 #### Spacing (margins, paddings, gaps...)
+
 Use variables from `frontend/src/app/main/ui/ds/spacing.scss`. These are predefined and approved by the design team — **do not add or modify values without design approval**.
 
 #### Fixed dimensions
+
 For fixed dimensions (e.g., modals' widths) defined by design and not layout-driven, use or define variables in `frontend/src/app/main/ui/ds/_sizes.scss`. To use them:
 
 ```scss
 @use "ds/_sizes.scss" as *;
 ```
+
 Note: Since these values haven't been semantically defined yet, we’re temporarily using SASS variables instead of named CSS custom properties.
 
 #### Border Widths
+
 Use border thickness variables from `frontend/src/app/main/ui/ds/_borders.scss`. To import:
 
 ```scss
@@ -288,16 +293,16 @@ Replace plain text tags with `text*` or `heading*` components from the Design Sy
 ```clojure
 ...
    [app.main.ui.ds.foundations.typography :as t]
-   [app.main.ui.ds.foundations.typography.heading :refer [heading*]] 
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
 ...
 
   [:> heading* {:level 2
                 :typography t/headline-medium
-                :class (stl/css :modal-title)} 
+                :class (stl/css :modal-title)}
     title]
-  [:> text* {:as "div" 
-             :typography t/body-medium  
+  [:> text* {:as "div"
+             :typography t/body-medium
              :class (stl/css :modal-content)}
     "Content"]
 ```
@@ -308,11 +313,12 @@ When applying typography in SCSS, use the proper mixin from the Design System.
 
 ```scss
 .class {
-  @include headlineLargeTypography;
+  @include headline-large-typography;
 }
 ```
 
 ✅ **DO: Use the DS mixin**
+
 ```scss
 @use "ds/typography.scss" as t;
 
@@ -320,9 +326,9 @@ When applying typography in SCSS, use the proper mixin from the Design System.
   @include t.use-typography("body-small");
 }
 ```
+
 You can find the full list of available typography tokens in [Storybook](https://design.penpot.app/storybook/?path=/docs/foundations-typography--docs).
 If the design you are implementing doesn't match any of them, ask a designer.
-
 
 ### Use custom properties within components
 
@@ -663,7 +669,6 @@ We use three **levels of tokens**:
 ### Implementing variants
 
 We can leverage component tokens to easily implement variants as explained [here](/technical-guide/developer/ui/#use-custom-properties-within-components).
-
 
 ### Using icons and SVG assets
 

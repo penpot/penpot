@@ -72,7 +72,7 @@
     }
 
     .palette-item {
-      @include deprecated.flexCenter;
+      @include deprecated.flex-center;
 
       border-radius: deprecated.$br-8;
       opacity: deprecated.$op-10;
@@ -127,8 +127,8 @@
 }
 
 .handler {
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
+  @include deprecated.button-style;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-12;
   height: 100%;

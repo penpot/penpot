@@ -37,6 +37,8 @@
         dropdown-direction-change* (mf/use-ref 0)
         top                 (+ (get-in mdata [:position :y]) 5)
         left                (+ (get-in mdata [:position :x]) 5)
+        container           (hooks/use-portal-container :popup)
+
         rename-node         (mf/use-fn
                              (mf/deps mdata on-rename-node)
                              (fn []
@@ -44,6 +46,7 @@
                                      type (get mdata :type)]
                                  (when node
                                    (on-rename-node node type)))))
+
         duplicate-node      (mf/use-fn
                              (mf/deps mdata on-duplicate-node)
                              (fn []
@@ -52,7 +55,6 @@
                                  (when node
                                    (on-duplicate-node node type)))))
 
-        container           (hooks/use-portal-container)
         delete-node         (mf/use-fn
                              (mf/deps mdata)
                              (fn []

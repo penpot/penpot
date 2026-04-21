@@ -7,37 +7,37 @@
 @use "./fonts.scss" as *;
 @use "./spacing.scss" as *;
 
-@mixin flexCenter {
+@mixin flex-center {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-@mixin flexColumn($gap: $s-4) {
+@mixin flex-column($gap: $s-4) {
   display: flex;
   flex-direction: column;
   gap: #{$gap};
 }
 
-@mixin flexRow {
+@mixin flex-row {
   display: flex;
   align-items: center;
   gap: $s-4;
 }
 
-@mixin buttonStyle {
+@mixin button-style {
   border: none;
   background: none;
   cursor: pointer;
 }
 
-@mixin removeInputStyle {
+@mixin remove-input-style {
   border: none;
   background: none;
   outline: none;
 }
 
-@mixin uppercaseTitleTipography {
+@mixin uppercase-title-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-11;
   font-weight: $fw500;
@@ -45,28 +45,28 @@
   text-transform: uppercase;
 }
 
-@mixin bigTitleTipography {
+@mixin big-title-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-24;
   font-weight: $fw400;
   line-height: 1.2;
 }
 
-@mixin medTitleTipography {
+@mixin med-title-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-20;
   font-weight: $fw400;
   line-height: 1.2;
 }
 
-@mixin smallTitleTipography {
+@mixin small-title-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-14;
   font-weight: $fw400;
   line-height: 1.2;
 }
 
-@mixin headlineLargeTypography {
+@mixin headline-large-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-18;
   line-height: 1.2;
@@ -74,7 +74,7 @@
   font-weight: $fw400;
 }
 
-@mixin headlineMediumTypography {
+@mixin headline-medium-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-16;
   line-height: 1.4;
@@ -82,7 +82,7 @@
   font-weight: $fw400;
 }
 
-@mixin headlineSmallTypography {
+@mixin headline-small-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-12;
   line-height: 1.2;
@@ -90,35 +90,35 @@
   font-weight: $fw500;
 }
 
-@mixin bodyLargeTypography {
+@mixin body-large-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-16;
   line-height: 1.5;
   font-weight: $fw400;
 }
 
-@mixin bodyMediumTypography {
+@mixin body-medium-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-14;
   line-height: 1.4;
   font-weight: $fw400;
 }
 
-@mixin bodySmallTypography {
+@mixin body-small-typography {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-12;
   font-weight: $fw400;
   line-height: 1.4;
 }
 
-@mixin codeTypography {
+@mixin code-typography {
   font-family: "robotomono", monospace;
   font-size: $fs-12;
   font-weight: $fw400;
   line-height: 1.2;
 }
 
-@mixin textEllipsis {
+@mixin text-ellipsis {
   display: block;
   max-width: 99%;
   overflow: hidden;
@@ -126,7 +126,7 @@
   white-space: nowrap;
 }
 
-@mixin twoLineTextEllipsis {
+@mixin two-line-text-ellipsis {
   max-width: 99%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -135,8 +135,8 @@
   -webkit-box-orient: vertical;
 }
 
-@mixin inspectValue {
-  @include bodySmallTypography;
+@mixin inspect-value {
+  @include body-small-typography;
 
   display: inline-block;
   width: fit-content;
@@ -146,7 +146,7 @@
   color: var(--menu-foreground-color);
 }
 
-@mixin copyWrapperBase {
+@mixin copy-wrapper-base {
   position: relative;
   min-height: $s-32;
   width: $s-144;
@@ -155,7 +155,7 @@
   box-sizing: border-box;
 }
 
-@mixin hiddenElement {
+@mixin hidden-element {
   cursor: default;
   pointer-events: none;
   box-sizing: border-box;

@@ -16,7 +16,7 @@
 }
 
 .element-set-content {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   margin: deprecated.$s-4 0 0 0;
 }
@@ -27,8 +27,8 @@
 }
 
 .attr-name {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.twoLineTextEllipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.two-line-text-ellipsis;
 
   width: deprecated.$s-88;
   margin: auto deprecated.$s-4;
@@ -39,7 +39,7 @@
 
 .attr-input {
   @extend %input-element;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   width: deprecated.$s-124;
 }
@@ -66,7 +66,7 @@
 }
 
 .attr-title {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   font-size: deprecated.$fs-10;
   text-transform: uppercase;

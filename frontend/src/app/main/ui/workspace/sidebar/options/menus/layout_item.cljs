@@ -586,7 +586,8 @@
         on-layout-item-max-h-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :layout-item-max-h))]
 
-    [:div {:class (stl/css :advanced-options)}
+    [:section {:class (stl/css :advanced-options)
+               :aria-label "Layout item size constraints"}
      (when (= (:layout-item-h-sizing values) :fill)
        [:div {:class (stl/css :horizontal-fill)}
         (if token-numeric-inputs
@@ -834,7 +835,7 @@
            (st/emit! (dwsl/update-layout-child ids {:layout-item-z-index value}))))]
 
     [:section {:class (stl/css :element-set)
-               :aria-label "layout item menu"}
+               :aria-label "Layout item section"}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  has-content?
                       :collapsed    (not open?)

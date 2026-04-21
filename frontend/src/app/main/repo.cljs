@@ -139,8 +139,7 @@
    {:stream? true}
 
    ::sse/import-binfile
-   {:stream? true
-    :form-data? true}
+   {:stream? true}
 
    ::sse/permanently-delete-team-files
    {:stream? true}
@@ -273,6 +272,7 @@
     (send-export (merge default params))))
 
 (derive :upload-file-media-object ::multipart-upload)
+(derive :upload-chunk ::multipart-upload)
 (derive :update-profile-photo ::multipart-upload)
 (derive :update-team-photo ::multipart-upload)
 

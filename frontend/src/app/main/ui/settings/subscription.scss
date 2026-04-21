@@ -168,7 +168,7 @@
 
 .cta-button {
   @include t.use-typography("body-medium");
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   align-items: center;
   color: var(--color-accent-primary);

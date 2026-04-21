@@ -85,7 +85,7 @@
       (t/is (map? (:result out))))
 
     ;; run the task again
-    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:minutes 31}))]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! "storage-gc-touched" {}))]
       (t/is (= 2 (:freeze res))))
 
@@ -136,7 +136,7 @@
       (t/is (some? (sto/get-object storage (:media-id row2))))
 
       ;; run the task again
-      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:minutes 31}))]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                   (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:delete res)))
         (t/is (= 0 (:freeze res))))
@@ -235,7 +235,8 @@
         (t/is (= (:object-id data1) (:object-id row)))
         (t/is (uuid? (:media-id row1))))
 
-      (let [result (th/run-task! :storage-gc-touched {})]
+      (let [result (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                     (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:delete result))))
 
       ;; Check if storage objects still exists after file-gc

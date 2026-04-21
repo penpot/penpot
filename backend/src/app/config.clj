@@ -82,7 +82,10 @@
    :initial-project-skey "initial-project"
 
    ;; time to avoid email sending after profile modification
-   :email-verify-threshold "15m"})
+   :email-verify-threshold "15m"
+
+   :quotes-upload-sessions-per-profile 5
+   :quotes-upload-chunks-per-session 20})
 
 (def schema:config
   (do #_sm/optional-keys
@@ -154,6 +157,8 @@
     [:quotes-snapshots-per-team {:optional true} ::sm/int]
     [:quotes-team-access-requests-per-team {:optional true} ::sm/int]
     [:quotes-team-access-requests-per-requester {:optional true} ::sm/int]
+    [:quotes-upload-sessions-per-profile {:optional true} ::sm/int]
+    [:quotes-upload-chunks-per-session {:optional true} ::sm/int]
 
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]

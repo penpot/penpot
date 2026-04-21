@@ -38,6 +38,7 @@
    [app.util.dom :as dom]
    [app.util.forms :as uforms]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -613,7 +614,10 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [invitation team-id]}]
-  (let [email   (:email invitation)
+  (let [email    (:email invitation)
+        copied*  (mf/use-state false)
+        copied?  (deref copied*)
+
         on-error
         (mf/use-fn
          (mf/deps email)
@@ -639,6 +643,8 @@
         on-copy-success
         (mf/use-fn
          (fn []
+           (reset! copied* true)
+           (tm/schedule 1000 #(reset! copied* false))
            (st/emit! (ntf/success (tr "notifications.invitation-link-copied"))
                      (modal/hide))))
 
@@ -656,7 +662,7 @@
     [:> icon-button* {:variant "ghost"
                       :aria-label (tr "labels.copy-invitation-link")
                       :on-click on-copy
-                      :icon "clipboard"}]))
+                      :icon (if copied? "tick" "clipboard")}]))
 
 (mf/defc invitation-row*
   {::mf/wrap [mf/memo]

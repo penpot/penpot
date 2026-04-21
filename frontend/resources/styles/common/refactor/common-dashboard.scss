@@ -29,6 +29,7 @@
   .btn-secondary {
     flex-shrink: 0;
     height: $s-32;
+
     svg {
       height: $s-16;
       width: $s-16;
@@ -57,6 +58,7 @@
         height: $s-40;
         padding: $s-4 $s-24;
         font-weight: $fw400;
+
         &:hover {
           color: var(--color-background-secondary);
           text-decoration: none;
@@ -124,10 +126,12 @@
         font-size: $s-16;
         color: var(--color-foreground-secondary);
         border-color: transparent;
+
         &:hover {
           color: var(--color-foreground-primary);
         }
       }
+
       &.active {
         a {
           color: var(--color-foreground-primary);
@@ -139,6 +143,7 @@
 
 .btn-primary {
   @extend %button-primary;
+
   text-transform: uppercase;
   font-size: $fs-14;
   font-weight: $fw400;
@@ -146,6 +151,7 @@
 
 .btn-secondary {
   @extend %button-secondary;
+
   color: var(--color-foreground-primary);
   font-size: $fs-12;
   text-transform: uppercase;
