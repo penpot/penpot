@@ -83,6 +83,17 @@
 (mf/defc text-direction-options*
   [{:keys [values on-change on-blur]}]
   (let [direction (:text-direction values)
+        options
+        (mf/with-memo []
+          [{:value "ltr"
+            :id    "ltr-text-direction"
+            :label (tr "workspace.options.text-options.direction-ltr")
+            :icon  i/text-ltr}
+           {:value "rtl"
+            :id    "rtl-text-direction"
+            :label (tr "workspace.options.text-options.direction-rtl")
+            :icon  i/text-rtl}])
+
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur direction)
@@ -94,14 +105,7 @@
      [:> radio-buttons* {:selected  direction
                          :on-change handle-change
                          :name      "text-direction-options"
-                         :options   [{:value "ltr"
-                                      :id    "ltr-text-direction"
-                                      :label (tr "workspace.options.text-options.direction-ltr")
-                                      :icon  i/text-ltr}
-                                     {:value "rtl"
-                                      :id    "rtl-text-direction"
-                                      :label (tr "workspace.options.text-options.direction-rtl")
-                                      :icon  i/text-rtl}]}]]))
+                         :options   options}]]))
 
 (mf/defc vertical-align*
   [{:keys [values on-change on-blur]}]
