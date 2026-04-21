@@ -462,6 +462,9 @@
                 {:deleted-at deleted-at}
                 {:id profile-id})
 
+    ;; Api call to nitrate
+    (nitrate/call cfg :remove-profile-from-all-orgs {:profile-id profile-id})
+
     ;; Schedule cascade deletion to a worker
     (wrk/submit! {::db/conn conn
                   ::wrk/task :delete-object
