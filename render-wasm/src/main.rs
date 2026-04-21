@@ -1017,6 +1017,10 @@ pub extern "C" fn render_shape_pixels(
 ) -> Result<*mut u8> {
     let id = uuid_from_u32_quartet(a, b, c, d);
 
+    if !scale.is_finite() {
+        return Err(Error::CriticalError("Scale is not finite".to_string()));
+    }
+
     with_state_mut!(state, {
         let (data, width, height) =
             state.render_shape_pixels(&id, scale, performance::get_time())?;
