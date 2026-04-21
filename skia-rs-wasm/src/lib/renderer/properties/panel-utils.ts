@@ -108,7 +108,21 @@ export const DEFAULT_NOISE: Noise = {
   hidden: false,
 }
 
-/** Max stacked effects (shadows + blur + glass + noise) per shape. */
+export type Texture = {
+  noiseSize: number
+  radius: number
+  clipToShape: boolean
+  hidden: boolean
+}
+
+export const DEFAULT_TEXTURE: Texture = {
+  noiseSize: 100,
+  radius: 0,
+  clipToShape: true,
+  hidden: false,
+}
+
+/** Max stacked effects (shadows + blur + glass + noise + texture) per shape. */
 export const MAX_EFFECTS = 8
 
 export type EffectKind =
@@ -118,6 +132,7 @@ export type EffectKind =
   | 'background-blur'
   | 'glass'
   | 'noise'
+  | 'texture'
 
 export type EffectItem =
   | { kind: 'drop-shadow'; shadow: Shadow }
@@ -126,6 +141,7 @@ export type EffectItem =
   | { kind: 'background-blur'; blur: Blur }
   | { kind: 'glass'; glass: Glass }
   | { kind: 'noise'; noise: Noise }
+  | { kind: 'texture'; texture: Texture }
 
 export function normalizeHex(input: string): string {
   let s = input.trim()

@@ -173,6 +173,10 @@ export interface WasmModule {
   _set_shape_blur(blur_type: number, hidden: number, value: number): void
   _clear_shape_blur(): void
 
+  // Texture
+  _set_shape_texture(noise_size: number, radius: number, clip_to_shape: boolean, hidden: boolean): void
+  _clear_shape_texture(): void
+
   // Noise. Slots are written into shared memory before the call as:
   //   [u32 count][u8 kind_0]…[u8 kind_{count-1}][pad to 4B][u32 color_0]…
   // Each `kind` is 0=solid, 1=prism. Each color is ARGB packed little-endian

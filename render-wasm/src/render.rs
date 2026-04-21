@@ -13,6 +13,7 @@ mod strokes;
 mod surfaces;
 pub mod text;
 pub mod text_editor;
+pub(crate) mod texture;
 pub(crate) mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
@@ -85,6 +86,20 @@ fn get_simplified_children<'a>(tree: ShapesPoolRef<'a>, shape: &'a Shape) -> Vec
 impl NodeRenderState {
     pub fn is_root(&self) -> bool {
         self.id.is_nil()
+    }
+
+    /// Leaf-shape state for callers outside the recursive `render_shape_tree`
+    /// walk (e.g. the tile scheduler's `RenderStep::Render`). Only `id` is
+    /// load-bearing — the rest is container-traversal bookkeeping.
+    pub(crate) fn leaf(id: Uuid) -> Self {
+        Self {
+            id,
+            visited_children: false,
+            clip_bounds: None,
+            visited_mask: false,
+            mask: false,
+            flattened: false,
+        }
     }
 
     /// Calculates the clip bounds for child elements of a given shape.
@@ -837,6 +852,7 @@ impl RenderState {
             && shape.blur.is_none()
             && !shape.glass.as_ref().is_some_and(|g| !g.hidden)
             && !shape.noise.as_ref().is_some_and(|n| !n.hidden)
+            && !shape.texture.as_ref().is_some_and(|t| !t.hidden)
             && !has_inherited_blur
             && shape.shadows.is_empty()
             && shape.transform.is_identity()
@@ -1315,6 +1331,10 @@ impl RenderState {
                         .save_layer(&layer_rec);
                 }
 
+                // Texture (scatter) shapes are routed through a separate
+                // offscreen render + per-tile blit in the tile-scheduler's
+                // `RenderStep::Render`; they never reach this per-tile
+                // pipeline. See tile_grid.rs and render::texture.
                 let shape = &shape;
 
                 if shape.fills.is_empty()
@@ -2148,7 +2168,7 @@ impl RenderState {
     /// Renders element drop shadows to DropShadows surface and composites to Current.
     /// Used for both normal shadow rendering and pre-layer rendering (frame_clip_layer_blur).
     #[allow(clippy::too_many_arguments)]
-    fn render_element_drop_shadows_and_composite(
+    pub(crate) fn render_element_drop_shadows_and_composite(
         &mut self,
         element: &Shape,
         tree: ShapesPoolRef,

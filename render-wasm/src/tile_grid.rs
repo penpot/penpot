@@ -1069,14 +1069,14 @@ impl TileGrid {
         }
 
         // Visibility check — is the shape in or near this tile?
-        let selrect = shape.selrect();
+        // We previously used `selrect` for non-container shapes (cheaper than
+        // computing extrect), but that misses scatter effects whose output
+        // extends past the shape's natural outline into neighbouring tiles.
+        // `extrect` already includes stroke/shadow/blur/scatter expansions,
+        // is cached, and is a tight-enough superset that the over-emission
+        // cost is negligible.
         let extrect = shape.extrect(tree, scale);
-        let is_container = matches!(
-            shape.shape_type,
-            Type::Frame(_) | Type::Group(_)
-        );
-        let check_rect = if is_container { extrect } else { selrect };
-        if !check_rect.intersects(*tile_rect) {
+        if !extrect.intersects(*tile_rect) {
             return false;
         }
 
@@ -1406,96 +1406,235 @@ impl RenderState {
 
                     let scale = self.get_scale();
 
-                    // Visibility check against current tile
-                    let selrect = element.selrect();
-                    if !selrect.intersects(self.render_area_with_margins) {
+                    // Visibility check against current tile. Use extrect
+                    // (not selrect) so scatter shapes whose output reaches
+                    // past selrect into this neighbour tile still fire
+                    // their Render step here and blit their slice.
+                    let extrect = element.extrect(tree, scale);
+                    if !extrect.intersects(self.render_area_with_margins) {
                         continue;
                     }
 
-                    // Background blur
-                    self.render_background_blur(element, SurfaceId::Current);
+                    // Is this a scatter shape (visible texture with non-zero
+                    // radius)? A scatter shape's displacement sample kernel
+                    // crosses tile boundaries, so per-tile save_layer
+                    // filtering produces rectangular seams. Instead we render
+                    // the shape once into an offscreen scratch sized to its
+                    // extrect, apply displacement there, cache the image, and
+                    // each tile blits the slice that falls inside its rect.
+                    let is_scatter = element
+                        .texture
+                        .as_ref()
+                        .is_some_and(|t| !t.hidden && t.radius > 0.0);
 
-                    // Glass effect — root-level gather shapes sample Target
-                    // (world-space continuous surface) to avoid per-tile seams
-                    // at the refraction/blur sample radius. Nested glass still
-                    // samples Current until the container-layer fix lands.
-                    if let Some(glass) = element.glass.as_ref().filter(|g| !g.hidden) {
-                        let is_root_level = element
-                            .parent_id
-                            .is_some_and(|p| p == Uuid::nil());
-                        if is_root_level {
-                            let tile_rect = self.get_current_tile_bounds()?;
-                            let bg_color = self.background_color;
-                            self.surfaces.composite_current_to_target(tile_rect, bg_color);
-                            // Flush Target so the backdrop snapshot inside
-                            // `render_glass_with_backdrop` reflects the content
-                            // just composited (and any prior inter-band handoffs
-                            // from other tiles). Without this, GPU command
-                            // reordering can leave the shader sampling stale
-                            // Target pixels — the glass then appears to see
-                            // only bg behind it.
-                            self.flush_and_submit();
-                            // Per-gather-shape Target snapshot. The first
-                            // tile of this gather takes the snapshot; every
-                            // subsequent tile of the same gather reuses it.
-                            // All peers see the same frozen Target state, so
-                            // a gather's own finalized output never leaks
-                            // into another peer's backdrop sample.
-                            let backdrop_image = self
-                                .surfaces
-                                .get_or_snapshot_glass_backdrop(id, SurfaceId::Target);
-                            crate::render::glass::render_glass_with_backdrop_image(
-                                self,
-                                element,
-                                glass,
-                                SurfaceId::Current,
-                                SurfaceId::Target,
-                                Some(backdrop_image),
-                            );
-                        } else {
-                            crate::render::glass::render_glass(
-                                self,
-                                element,
-                                glass,
-                                SurfaceId::Current,
-                            );
+                    if is_scatter {
+                        // Build the per-frame cache on first tile visit.
+                        if !self.surfaces.has_scatter_output(id) {
+                            // If the shape also has glass, snapshot Target
+                            // first so the scratch-pass refraction samples
+                            // real world content (not the empty scratch,
+                            // which would emit black). This mirrors the
+                            // root-level gather handling in the non-scatter
+                            // branch below.
+                            let glass_backdrop = if element
+                                .glass
+                                .as_ref()
+                                .is_some_and(|g| !g.hidden)
+                            {
+                                let tile_rect = self.get_current_tile_bounds()?;
+                                let bg_color = self.background_color;
+                                self.surfaces
+                                    .composite_current_to_target(tile_rect, bg_color);
+                                self.flush_and_submit();
+                                Some(
+                                    self.surfaces
+                                        .get_or_snapshot_glass_backdrop(id, SurfaceId::Target),
+                                )
+                            } else {
+                                None
+                            };
+
+                            if let Some((img, clipped_extrect)) =
+                                crate::render::texture::render_and_filter_to_image(
+                                    self,
+                                    element,
+                                    tree,
+                                    glass_backdrop,
+                                )
+                            {
+                                self.surfaces
+                                    .insert_scatter_output(id, img, clipped_extrect);
+                            }
                         }
+
+                        if let Some((img, clipped_extrect)) = self
+                            .surfaces
+                            .get_scatter_output(id)
+                            .map(|(i, r)| (i.clone(), *r))
+                        {
+                            // `dst = clipped_extrect` (not the full
+                            // `extrect`) because the scratch only covers
+                            // the viewport-clipped region.
+                            let translation = self
+                                .surfaces
+                                .get_render_context_translation(self.render_area, scale);
+                            let tile_world = self.render_area;
+                            let skip_shadows = self.options.is_fast_mode();
+                            let has_inner_shadows = !skip_shadows
+                                && element.inner_shadows_visible().next().is_some();
+
+                            let canvas =
+                                self.surfaces.canvas_and_mark_dirty(SurfaceId::Current);
+                            canvas.save();
+                            canvas.scale((scale, scale));
+                            canvas.translate(translation);
+                            canvas.clip_rect(tile_world, skia::ClipOp::Intersect, true);
+
+                            let src = skia::Rect::from_xywh(
+                                0.0,
+                                0.0,
+                                img.width() as f32,
+                                img.height() as f32,
+                            );
+                            let src_constraint =
+                                Some((&src, skia::canvas::SrcRectConstraint::Strict));
+
+                            // Drop shadows — behind the silhouette. The
+                            // filter consumes the displaced image's alpha
+                            // so the shadow follows the texture's warp.
+                            if !skip_shadows {
+                                for shadow in element.drop_shadows_visible() {
+                                    let Some(filter) = shadow.get_drop_shadow_filter() else {
+                                        continue;
+                                    };
+                                    let mut paint = skia::Paint::default();
+                                    paint.set_image_filter(filter);
+                                    canvas.draw_image_rect(
+                                        &img,
+                                        src_constraint,
+                                        clipped_extrect,
+                                        &paint,
+                                    );
+                                }
+                            }
+
+                            // Silhouette — wrapped in a save_layer when
+                            // there are inner shadows so `SrcATop` clips
+                            // them to the silhouette's alpha instead of
+                            // leaking onto the tile's prior content.
+                            if has_inner_shadows {
+                                canvas.save_layer(&skia::canvas::SaveLayerRec::default());
+                            }
+
+                            canvas.draw_image_rect(
+                                &img,
+                                src_constraint,
+                                clipped_extrect,
+                                &skia::Paint::default(),
+                            );
+
+                            if has_inner_shadows {
+                                for shadow in element.inner_shadows_visible() {
+                                    let Some(filter) = shadow.get_inner_shadow_filter()
+                                    else {
+                                        continue;
+                                    };
+                                    let mut paint = skia::Paint::default();
+                                    paint.set_image_filter(filter);
+                                    paint.set_blend_mode(skia::BlendMode::SrcATop);
+                                    canvas.draw_image_rect(
+                                        &img,
+                                        src_constraint,
+                                        clipped_extrect,
+                                        &paint,
+                                    );
+                                }
+                                canvas.restore();
+                            }
+
+                            canvas.restore();
+                        }
+                    } else {
+                        // Non-scatter path: existing per-tile pipeline.
+
+                        // Background blur
+                        self.render_background_blur(element, SurfaceId::Current);
+
+                        // Glass effect — root-level gather shapes sample Target
+                        // (world-space continuous surface) to avoid per-tile
+                        // seams at the refraction/blur sample radius. Nested
+                        // glass still samples Current until the container-layer
+                        // fix lands.
+                        if let Some(glass) = element.glass.as_ref().filter(|g| !g.hidden) {
+                            let is_root_level = element
+                                .parent_id
+                                .is_some_and(|p| p == Uuid::nil());
+                            if is_root_level {
+                                let tile_rect = self.get_current_tile_bounds()?;
+                                let bg_color = self.background_color;
+                                self.surfaces.composite_current_to_target(tile_rect, bg_color);
+                                self.flush_and_submit();
+                                let backdrop_image = self
+                                    .surfaces
+                                    .get_or_snapshot_glass_backdrop(id, SurfaceId::Target);
+                                crate::render::glass::render_glass_with_backdrop_image(
+                                    self,
+                                    element,
+                                    glass,
+                                    SurfaceId::Current,
+                                    SurfaceId::Target,
+                                    Some(backdrop_image),
+                                );
+                            } else {
+                                crate::render::glass::render_glass(
+                                    self,
+                                    element,
+                                    glass,
+                                    SurfaceId::Current,
+                                );
+                            }
+                        }
+
+                        // Drop shadows must land BEFORE fills/strokes on
+                        // Current; the composite step below overwrites.
+                        // Text shapes emit drop shadows via the paragraph
+                        // image filter inside `render_shape`.
+                        let skip_shadows = self.options.is_fast_mode();
+                        if !skip_shadows && !matches!(element.shape_type, Type::Text(_)) {
+                            let translation = self
+                                .surfaces
+                                .get_render_context_translation(self.render_area, scale);
+                            let node_render_state =
+                                crate::render::NodeRenderState::leaf(id);
+                            let mut extrect_cache: Option<skia::Rect> = None;
+                            self.render_element_drop_shadows_and_composite(
+                                element,
+                                tree,
+                                &mut extrect_cache,
+                                None,
+                                scale,
+                                translation,
+                                &node_render_state,
+                                SurfaceId::Current,
+                            )?;
+                        }
+
+                        self.render_shape(
+                            element,
+                            None,
+                            SurfaceId::Fills,
+                            SurfaceId::Strokes,
+                            SurfaceId::InnerShadows,
+                            SurfaceId::TextDropShadows,
+                            true,
+                            None,
+                            None,
+                            None,
+                            SurfaceId::Current,
+                        )?;
+
+                        self.apply_drawing_to_render_canvas(Some(element), SurfaceId::Current);
                     }
-
-                    // Drop shadows
-                    let translation = self
-                        .surfaces
-                        .get_render_context_translation(self.render_area, scale);
-
-                    let skip_shadows = self.options.is_fast_mode();
-                    if !skip_shadows && !matches!(element.shape_type, Type::Text(_)) {
-                        let mut extrect: Option<skia::Rect> = None;
-                        // Simplified shadow rendering — delegating to existing method
-                        // would require the full NodeRenderState context.
-                        // For now, we render fills/strokes which includes shadow compositing.
-                    }
-
-                    // Fills, strokes, inner shadows
-                    self.render_shape(
-                        element,
-                        None, // clip_bounds
-                        SurfaceId::Fills,
-                        SurfaceId::Strokes,
-                        SurfaceId::InnerShadows,
-                        SurfaceId::TextDropShadows,
-                        true,
-                        None,
-                        None,
-                        None,
-                        SurfaceId::Current,
-                    )?;
-
-                    self.surfaces
-                        .canvas(SurfaceId::DropShadows)
-                        .clear(skia::Color::TRANSPARENT);
-
-                    // Composite sub-surfaces into Current
-                    self.apply_drawing_to_render_canvas(Some(element), SurfaceId::Current);
 
                     self.focus_mode.exit(&id);
                 }
@@ -1530,6 +1669,8 @@ impl RenderState {
         self.surfaces.clear_interband_cache();
         // Same for per-gather-shape backdrop snapshots.
         self.surfaces.clear_glass_backdrop_cache();
+        // Same for per-scatter-shape displaced-output snapshots.
+        self.surfaces.clear_scatter_output_cache();
 
         self.render_in_progress = false;
         self.surfaces.gc();

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import type { Blur, Glass, PenpotNode, Shadow } from 'penpot-exporter/types'
+import type { Texture } from '../../../renderer/properties/panel-utils'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -9,6 +10,7 @@ import {
 } from '../../../renderer/properties/commit-node-properties'
 import {
   DEFAULT_SHADOW,
+  DEFAULT_TEXTURE,
   MAX_EFFECTS,
   type EffectItem,
   type Noise,
@@ -18,7 +20,7 @@ import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
 import { EffectRow } from './EffectRow'
 import { useColorEditor } from '../use-color-editor'
 
-/** Merge shape shadow[] + blur + glass + noise into a unified EffectItem list. */
+/** Merge shape shadow[] + blur + glass + noise + texture into a unified EffectItem list. */
 function mergeEffects(node: RectLikeNode): EffectItem[] {
   const items: EffectItem[] = []
   for (const s of (node as Record<string, unknown>).shadow as Shadow[] ?? []) {
@@ -37,20 +39,26 @@ function mergeEffects(node: RectLikeNode): EffectItem[] {
   if (noise) {
     items.push({ kind: 'noise', noise })
   }
+  const texture = (node as Record<string, unknown>).texture as Texture | undefined
+  if (texture) {
+    items.push({ kind: 'texture', texture })
+  }
   return items
 }
 
-/** Split EffectItem list back into shadow[], blur, glass, and noise for committing. */
+/** Split EffectItem list back into shadow[], blur, glass, noise, and texture for committing. */
 function splitEffects(effects: EffectItem[]): {
   shadow: Shadow[]
   blur: Blur | undefined
   glass: Glass | undefined
   noise: Noise | undefined
+  texture: Texture | undefined
 } {
   const shadows: Shadow[] = []
   let blur: Blur | undefined
   let glass: Glass | undefined
   let noise: Noise | undefined
+  let texture: Texture | undefined
   for (const e of effects) {
     if (e.kind === 'layer-blur' || e.kind === 'background-blur') {
       blur = e.blur
@@ -58,11 +66,13 @@ function splitEffects(effects: EffectItem[]): {
       glass = e.glass
     } else if (e.kind === 'noise') {
       noise = e.noise
+    } else if (e.kind === 'texture') {
+      texture = e.texture
     } else {
       shadows.push(e.shadow)
     }
   }
-  return { shadow: shadows, blur, glass, noise }
+  return { shadow: shadows, blur, glass, noise, texture }
 }
 
 export interface EffectsSectionProps {
@@ -89,7 +99,7 @@ export function EffectsSection({ nodeId, readOnly, initialNode }: EffectsSection
       const before = getCommittedNodeOnActivePage(nodeId)
       const pid = getActiveOrSinglePageId()
       if (!before || !pid) return
-      const { shadow, blur, glass, noise } = splitEffects(next)
+      const { shadow, blur, glass, noise, texture } = splitEffects(next)
       const partial: Record<string, unknown> = { shadow }
       // Include blur when it has a value or when clearing a previously set blur.
       // Use null (not undefined) to clear, since commitNodePartialUpdate skips undefined.
@@ -104,6 +114,11 @@ export function EffectsSection({ nodeId, readOnly, initialNode }: EffectsSection
       const hadNoise = (before as Record<string, unknown>).noise != null
       if (noise !== undefined || hadNoise) {
         partial.noise = noise ?? null
+      }
+      // Include texture when it has a value or when clearing a previously set texture.
+      const hadTexture = (before as Record<string, unknown>).texture != null
+      if (texture !== undefined || hadTexture) {
+        partial.texture = texture ?? null
       }
       await commitNodePartialUpdate(nodeId, before, partial as Partial<PenpotNode>, pid)
     },

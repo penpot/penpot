@@ -10,6 +10,7 @@ import {
   DEFAULT_BACKGROUND_BLUR,
   DEFAULT_GLASS,
   DEFAULT_NOISE,
+  DEFAULT_TEXTURE,
 } from '../../../renderer/properties/panel-utils'
 import type { ColorEditorKind } from '../color-editor-context'
 import { useEffectEditorFor } from '../use-color-editor'
@@ -21,6 +22,7 @@ const EFFECT_KIND_OPTIONS: { value: EffectKind; label: string }[] = [
   { value: 'background-blur', label: 'Background blur' },
   { value: 'glass', label: 'Glass' },
   { value: 'noise', label: 'Noise' },
+  { value: 'texture', label: 'Texture' },
 ]
 
 /** Convert Shadow color to a Fill so swatch background can be computed. */
@@ -39,6 +41,7 @@ function getEffectHidden(item: EffectItem): boolean {
   if (item.kind === 'layer-blur' || item.kind === 'background-blur') return item.blur.hidden
   if (item.kind === 'glass') return item.glass.hidden ?? false
   if (item.kind === 'noise') return item.noise.hidden ?? false
+  if (item.kind === 'texture') return item.texture.hidden ?? false
   return item.shadow.hidden
 }
 
@@ -58,11 +61,15 @@ function convertEffect(current: EffectItem, newKind: EffectKind): EffectItem {
   if (newKind === 'noise') {
     return { kind: 'noise', noise: { ...DEFAULT_NOISE, hidden } }
   }
+  if (newKind === 'texture') {
+    return { kind: 'texture', texture: { ...DEFAULT_TEXTURE, hidden } }
+  }
   if (
     current.kind === 'layer-blur' ||
     current.kind === 'background-blur' ||
     current.kind === 'glass' ||
-    current.kind === 'noise'
+    current.kind === 'noise' ||
+    current.kind === 'texture'
   ) {
     return { kind: newKind, shadow: { ...DEFAULT_SHADOW, style: newKind, hidden } }
   }
@@ -82,6 +89,7 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
   const isBlur = effect.kind === 'layer-blur' || effect.kind === 'background-blur'
   const isGlass = effect.kind === 'glass'
   const isNoise = effect.kind === 'noise'
+  const isTexture = effect.kind === 'texture'
 
   const { isActive: effectExpanded, openEffectEditor, closeEditor } = useEffectEditorFor(effect.kind as ColorEditorKind, index)
 
@@ -232,6 +240,29 @@ export function EffectRow({ effect, index, readOnly, onChange, onRemove }: Effec
             aria-expanded={effectExpanded}
             aria-label="Toggle noise editor"
           />
+        )}
+
+        {/* Texture indicator: grid icon */}
+        {isTexture && (
+          <button
+            type="button"
+            onClick={toggleEffectExpand}
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center rounded border',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              effectExpanded
+                ? 'border-ring bg-accent ring-2 ring-ring'
+                : 'border-border bg-muted',
+            )}
+            title={effectExpanded ? 'Close texture editor' : 'Open texture editor'}
+            aria-expanded={effectExpanded}
+            aria-label="Toggle texture editor"
+          >
+            <svg viewBox="0 0 12 12" className="size-3 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <path d="M2 2h8v8H2z" />
+              <path d="M2 6h8M6 2v8" />
+            </svg>
+          </button>
         )}
 
         <select
