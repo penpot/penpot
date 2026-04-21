@@ -43,6 +43,15 @@
    [rumext.v2 :as mf]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private token-typography-row-enabled?
+  "True when the token-typography-row feature flag is enabled.
+  Evaluated once at module load time; cf/flags is immutable after startup."
+  (contains? cf/flags :token-typography-row))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Sub-components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -188,18 +197,17 @@
 
 (mf/defc text-decoration-options*
   [{:keys [values on-change on-blur token-applied]}]
-  (let [token-row    (contains? cf/flags :token-typography-row)
-        text-decoration (some-> (:text-decoration values) d/name)
+  (let [text-decoration (some-> (:text-decoration values) d/name)
         options
         (mf/with-memo [token-applied]
           [{:value    "underline"
             :id       "underline-text-decoration"
-            :disabled (and token-row (some? token-applied))
+            :disabled (and token-typography-row-enabled? (some? token-applied))
             :label    (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
             :icon     i/text-underlined}
            {:value    "line-through"
             :id       "line-through-text-decoration"
-            :disabled (and token-row (some? token-applied))
+            :disabled (and token-typography-row-enabled? (some? token-applied))
             :label    (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
             :icon     i/text-stroked}])
 
@@ -217,7 +225,7 @@
                                          text-decoration)
                          :on-change    handle-change
                          :name         "text-decoration-options"
-                         :disabled     (and token-row (some? token-applied))
+                         :disabled     (and token-typography-row-enabled? (some? token-applied))
                          :allow-empty  true
                          :options      options}]]))
 
@@ -255,8 +263,6 @@
   (let [file-id              (mf/use-ctx ctx/current-file-id)
         typographies         (mf/deref refs/workspace-file-typography)
         libraries            (mf/deref refs/files)
-        token-row            (contains? cf/flags :token-typography-row)
-
         ;; --- UI state
         menu-state*          (mf/use-state {:main-menu true
                                             :more-options false})
@@ -455,7 +461,7 @@
                       :title        label
                       :class        (stl/css :title-spacing-text)}
        [:*
-        (when (and token-row (some? (resolve-delay typography-tokens)) (not typography))
+        (when (and token-typography-row-enabled? (some? (resolve-delay typography-tokens)) (not typography))
           [:> icon-button* {:variant           "ghost"
                             :aria-label        (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                             :on-click          toggle-token-dropdown
@@ -471,7 +477,7 @@
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
         (cond
-          (and token-row current-token-name)
+          (and token-typography-row-enabled? current-token-name)
           [:> token-typography-row* {:token-name    current-token-name
                                      :detach-token  detach-token
                                      :active-tokens (resolve-delay typography-tokens)}]
@@ -519,7 +525,7 @@
            [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
            [:> text-direction-options* common-props]])])
 
-     (when (and token-row token-dropdown-open?)
+     (when (and token-typography-row-enabled? token-dropdown-open?)
        [:> searchable-options-dropdown* {:on-click     on-option-click
                                          :id           listbox-id
                                          :options      (resolve-delay dropdown-options)
