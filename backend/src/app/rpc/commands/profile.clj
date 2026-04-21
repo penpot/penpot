@@ -251,6 +251,7 @@
 
 (declare upload-photo)
 (declare update-profile-photo)
+(declare delete-profile-photo)
 
 (def ^:private
   schema:update-profile-photo
@@ -287,6 +288,26 @@
                          :file-size (:size file)
                          :file-path (str (:path file))
                          :file-mtype (:mtype file)}}))))
+
+(sv/defmethod ::delete-profile-photo
+  {::doc/added "2.15"
+   ::sm/params [:map]
+   ::sm/result :nil
+   ::db/transaction true}
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (delete-profile-photo cfg (assoc params :profile-id profile-id)))
+
+(defn delete-profile-photo
+  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [profile-id] :as _params}]
+  (let [profile (db/get-by-id conn :profile profile-id ::sql/for-update true)]
+    (when-let [id (:photo-id profile)]
+      (sto/touch-object! storage id))
+
+    (db/update! conn :profile
+                {:photo-id nil}
+                {:id profile-id}
+                {::db/return-keys false})
+    nil))
 
 (defn- generate-thumbnail
   [_ input]

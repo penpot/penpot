@@ -348,6 +348,19 @@
              (rx/map (constantly (refresh-profile)))
              (rx/catch on-error))))))
 
+(defn delete-photo
+  []
+  (ptk/reify ::delete-photo
+    ev/Event
+    (-data [_] {})
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [on-error di/process-error]
+        (->> (rp/cmd! :delete-profile-photo {})
+             (rx/map (constantly (refresh-profile)))
+             (rx/catch on-error))))))
+
 (defn fetch-file-comments-users
   [{:keys [team-id]}]
   (assert (uuid? team-id) "expected a valid uuid for `team-id`")

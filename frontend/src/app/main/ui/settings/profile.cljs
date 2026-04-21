@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -101,6 +102,13 @@
         (mf/use-fn
          #(dom/click (mf/ref-val input-ref)))
 
+        on-delete-click
+        (mf/use-fn
+         (fn [event]
+           (.preventDefault event)
+           (.stopPropagation event)
+           (st/emit! (du/delete-photo))))
+
         on-file-selected
         (fn [file]
           (st/emit! (du/update-photo file)))]
@@ -109,6 +117,14 @@
      [:div {:class (stl/css :image-change-field)}
       [:span {:class (stl/css :update-overlay)
               :on-click on-image-click} (tr "labels.update")]
+      (when (:photo-id profile)
+        [:button {:class (stl/css :delete-overlay)
+                  :type "button"
+                  :title (tr "labels.delete")
+                  :aria-label (tr "labels.delete")
+                  :on-click on-delete-click
+                  :data-testid "profile-image-delete"}
+         [:> icon* {:icon-id i/delete}]])
       [:img {:src photo}]
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false
