@@ -261,11 +261,20 @@ impl PendingTiles {
         result
     }
 
-    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces) {
+    pub fn update(
+        &mut self,
+        tile_viewbox: &TileViewbox,
+        surfaces: &Surfaces,
+        skip_interest_margin: bool,
+    ) {
         self.list.clear();
 
-        // Generate spiral for the interest area (viewport + margin)
-        let spiral = Self::generate_spiral(&tile_viewbox.interest_rect);
+        let source_rect = if skip_interest_margin {
+            &tile_viewbox.visible_rect
+        } else {
+            &tile_viewbox.interest_rect
+        };
+        let spiral = Self::generate_spiral(source_rect);
 
         // Partition tiles into 4 priority groups (highest priority = processed last due to pop()):
         // 1. visible + cached (fastest - just blit from cache)

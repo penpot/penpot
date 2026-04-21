@@ -334,6 +334,12 @@ pub(crate) struct RenderState {
     /// Cleared at the beginning of a render pass; set to true after we clear Cache the first
     /// time we are about to blit a tile into Cache for this pass.
     pub cache_cleared_this_render: bool,
+    /// Subtree visited by the main pruned drag walk (modified + ancestors + descendants).
+    pub drag_main_include: Option<HashSet<Uuid>>,
+    /// Subtree excluded from the drag-start backdrop capture (dragged shape + descendants).
+    pub drag_capture_exclude: Option<HashSet<Uuid>>,
+    /// Set once the drag-start backdrop capture has run; cleared with modifiers.
+    pub drag_backdrop_captured: bool,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
@@ -407,6 +413,9 @@ impl RenderState {
             preview_mode: false,
             export_context: None,
             cache_cleared_this_render: false,
+            drag_main_include: None,
+            drag_capture_exclude: None,
+            drag_backdrop_captured: false,
         })
     }
 
@@ -721,25 +730,30 @@ impl RenderState {
             self.cache_cleared_this_render = true;
         }
         let tile_rect = self.get_current_aligned_tile_bounds()?;
-        // In fast mode the viewport is moving (pan/zoom) so Cache surface
-        // positions would be wrong — only save to the tile HashMap.
-        self.surfaces.cache_current_tile_texture(
-            &mut self.gpu_state,
-            &self.tile_viewbox,
-            &self
-                .current_tile
-                .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
-            &tile_rect,
-            fast_mode,
-            self.render_area,
-        );
 
-        self.surfaces.draw_cached_tile_surface(
-            self.current_tile
-                .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
-            rect,
-            self.background_color,
-        );
+        if !self.is_pruned_drag_pass() {
+            // In fast mode the viewport is moving (pan/zoom) so Cache surface
+            // positions would be wrong — only save to the tile HashMap.
+            self.surfaces.cache_current_tile_texture(
+                &mut self.gpu_state,
+                &self.tile_viewbox,
+                &self
+                    .current_tile
+                    .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
+                &tile_rect,
+                fast_mode,
+                self.render_area,
+            );
+
+            self.surfaces.draw_cached_tile_surface(
+                self.current_tile
+                    .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
+                rect,
+                self.background_color,
+            );
+        } else {
+            self.surfaces.draw_current_to_target_no_bg(&rect);
+        }
         Ok(())
     }
 
@@ -1674,21 +1688,35 @@ impl RenderState {
         self.cache_cleared_this_render = false;
         self.reset_canvas();
 
-        // During an interactive shape transform (drag/resize/rotate) the
-        // Target is repainted tile-by-tile. If only a subset of the
-        // invalidated tiles finishes in this rAF the remaining area
-        // would either show stale content from the previous frame or,
-        // on buffer swaps, show blank pixels — either way the user
-        // perceives tiles appearing sequentially. Paint the persistent
-        // 1:1 atlas as a stable backdrop so every flush presents a
-        // coherent picture: unchanged tiles come from the atlas and
-        // invalidated tiles are overwritten on top as they finish.
-        if self.options.is_interactive_transform() && self.surfaces.has_atlas() {
-            self.surfaces.draw_atlas_to_target(
-                self.viewbox,
-                self.options.dpr(),
-                self.background_color,
-            );
+        // Interactive transforms repaint tile-by-tile on top of the
+        // persistent 1:1 atlas. A one-shot backdrop-capture at drag start
+        // bakes scene-minus-shape into the atlas so subsequent pruned
+        // frames leave no ghost at the old position.
+        let interactive = self.options.is_interactive_transform();
+
+        // Pruned walk: visit only modified shapes + ancestors + descendants;
+        // the atlas supplies pixels for unmodified siblings.
+        let modified = if interactive {
+            tree.modifier_uuids()
+        } else {
+            Vec::new()
+        };
+        if modified.is_empty() {
+            self.drag_main_include = None;
+            self.drag_backdrop_captured = false;
+        } else {
+            let mut allowed: HashSet<Uuid> = all_with_ancestors(&modified, tree, true)
+                .into_iter()
+                .collect();
+            for id in &modified {
+                if let Some(shape) = tree.get(id) {
+                    allowed.extend(shape.all_children_iter(tree, true, true));
+                }
+            }
+            self.drag_main_include = Some(allowed);
+            self.surfaces
+                .canvas(SurfaceId::Current)
+                .clear(skia::Color::TRANSPARENT);
         }
 
         let surface_ids = SurfaceId::Strokes as u32
@@ -1698,6 +1726,19 @@ impl RenderState {
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().scale((scale, scale));
         });
+
+        if self.drag_main_include.is_some() && !self.drag_backdrop_captured {
+            self.capture_drag_backdrop(tree, timestamp)?;
+            self.drag_backdrop_captured = true;
+        }
+
+        if interactive && self.surfaces.has_atlas() {
+            self.surfaces.draw_atlas_to_target(
+                self.viewbox,
+                self.options.dpr(),
+                self.background_color,
+            );
+        }
 
         let viewbox_cache_size = get_cache_size(
             self.viewbox,
@@ -1726,7 +1767,7 @@ impl RenderState {
         let _tile_start = performance::begin_timed_log!("tile_cache_update");
         performance::begin_measure!("tile_cache");
         self.pending_tiles
-            .update(&self.tile_viewbox, &self.surfaces);
+            .update(&self.tile_viewbox, &self.surfaces, interactive);
         performance::end_measure!("tile_cache");
         performance::end_timed_log!("tile_cache_update", _tile_start);
 
@@ -2811,6 +2852,9 @@ impl RenderState {
                 let children_ids = sort_z_index(tree, element, children_ids);
 
                 for child_id in children_ids.iter() {
+                    if self.drag_walk_skips(child_id) {
+                        continue;
+                    }
                     self.pending_nodes.push(NodeRenderState {
                         id: *child_id,
                         visited_children: false,
@@ -2829,6 +2873,102 @@ impl RenderState {
             iteration += 1;
         }
         Ok((is_empty, false))
+    }
+
+    /// Collect what `capture_drag_backdrop` needs: the dragged subtree,
+    /// tiles covering its pre-modifier bounds, and their world-space union.
+    fn plan_drag_backdrop(
+        &self,
+        tree: ShapesPoolRef,
+    ) -> Option<(HashSet<Uuid>, HashSet<tiles::Tile>, skia::Rect)> {
+        let modified = tree.modifier_uuids();
+        if modified.is_empty() {
+            return None;
+        }
+
+        let scale = self.get_scale();
+        let tile_size = tiles::get_tile_size(scale);
+        let mut exclude: HashSet<Uuid> = HashSet::with_capacity(modified.len());
+        let mut capture_tiles: HashSet<tiles::Tile> = HashSet::new();
+        let mut world_rect: Option<skia::Rect> = None;
+
+        for id in &modified {
+            let Some(shape) = tree.get_raw(id) else {
+                continue;
+            };
+            exclude.insert(*id);
+            exclude.extend(shape.all_children_iter(tree, true, true));
+
+            let bounds = shape.extrect(tree, scale);
+            if let Some(acc) = world_rect.as_mut() {
+                acc.join(bounds);
+            } else {
+                world_rect = Some(bounds);
+            }
+
+            let tr = tiles::get_tiles_for_rect(bounds, tile_size);
+            for tx in tr.x1()..=tr.x2() {
+                for ty in tr.y1()..=tr.y2() {
+                    let tile = tiles::Tile::from(tx, ty);
+                    if self.tile_viewbox.interest_rect.contains(&tile) {
+                        capture_tiles.insert(tile);
+                    }
+                }
+            }
+        }
+
+        let rect = world_rect?;
+        (!capture_tiles.is_empty()).then_some((exclude, capture_tiles, rect))
+    }
+
+    /// One-shot pass at drag start: re-render the tiles covering the
+    /// dragged subtree's pre-modifier bounds with that subtree excluded,
+    /// so the atlas holds scene-minus-shape pixels.
+    pub fn capture_drag_backdrop(&mut self, tree: ShapesPoolRef, timestamp: i32) -> Result<()> {
+        let Some((exclude, capture_tiles, world_rect)) = self.plan_drag_backdrop(tree) else {
+            return Ok(());
+        };
+
+        // Invalidate stale atlas + tile textures so the re-render isn't
+        // short-circuited by `has_cached_tile_surface`.
+        let _ = self
+            .surfaces
+            .clear_doc_rect_in_atlas(&mut self.gpu_state, world_rect);
+        for tile in &capture_tiles {
+            self.surfaces.remove_cached_tile_surface(*tile);
+        }
+
+        // Only the filter fields need round-tripping; start_render_loop
+        // re-inits pending_{tiles,nodes}, current_tile, render_in_progress.
+        let saved_include = self.drag_main_include.take();
+        self.drag_capture_exclude = Some(exclude);
+
+        self.pending_tiles.list = capture_tiles.iter().copied().collect();
+        self.pending_nodes.clear();
+        self.current_tile = None;
+        self.render_in_progress = true;
+        self.surfaces
+            .canvas(SurfaceId::Current)
+            .clear(self.background_color);
+
+        let result = self.render_shape_tree_partial(None, tree, timestamp, false);
+
+        self.drag_main_include = saved_include;
+        self.drag_capture_exclude = None;
+        self.surfaces
+            .canvas(SurfaceId::Current)
+            .clear(skia::Color::TRANSPARENT);
+
+        result?;
+
+        // Flush the scene-minus-shape tile textures written by the nested
+        // render; main drag frames must draw the pruned subtree on top of
+        // the atlas instead.
+        for tile in &capture_tiles {
+            self.surfaces.remove_cached_tile_surface(*tile);
+        }
+
+        Ok(())
     }
 
     pub fn render_shape_tree_partial(
@@ -2908,6 +3048,8 @@ impl RenderState {
                                 tile_rect,
                             );
                         }
+                    } else if self.is_pruned_drag_pass() {
+                        // Keep the atlas backdrop; skip the empty-tile bg clear.
                     } else {
                         self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
                             let mut paint = skia::Paint::default();
@@ -2936,9 +3078,14 @@ impl RenderState {
                 }
             }
 
+            let current_clear_color = if self.is_pruned_drag_pass() {
+                skia::Color::TRANSPARENT
+            } else {
+                self.background_color
+            };
             self.surfaces
                 .canvas(SurfaceId::Current)
-                .clear(self.background_color);
+                .clear(current_clear_color);
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
@@ -2946,6 +3093,10 @@ impl RenderState {
                 self.update_render_context(next_tile);
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
+                    // Disjoint borrows: take the drag filters as shared refs
+                    // before the mutable borrow of self.tiles below.
+                    let drag_include = self.drag_main_include.as_ref();
+                    let drag_exclude = self.drag_capture_exclude.as_ref();
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
                         // Check if any shape on this tile has a background blur.
                         // If so, we need ALL root shapes rendered (not just those
@@ -2962,7 +3113,14 @@ impl RenderState {
                         // We only need first level shapes, in the same order as the parent node
                         let mut valid_ids = Vec::with_capacity(ids.len());
                         for root_id in root_ids.iter() {
-                            if tile_has_bg_blur || ids.contains(root_id) {
+                            let drag_skips = if let Some(keep) = drag_include {
+                                !keep.contains(root_id)
+                            } else if let Some(skip) = drag_exclude {
+                                skip.contains(root_id)
+                            } else {
+                                false
+                            };
+                            if (tile_has_bg_blur || ids.contains(root_id)) && !drag_skips {
                                 valid_ids.push(*root_id);
                             }
                         }
@@ -3304,6 +3462,24 @@ impl RenderState {
         let ancestors = all_with_ancestors(&ids, tree, false);
         self.update_tiles_shapes(&ancestors, tree)?;
         Ok(())
+    }
+
+    /// True during the main pruned drag frame (atlas-backed).
+    #[inline]
+    fn is_pruned_drag_pass(&self) -> bool {
+        self.drag_main_include.is_some()
+    }
+
+    /// Whether the drag walk should skip `id` in the current pass.
+    #[inline]
+    fn drag_walk_skips(&self, id: &Uuid) -> bool {
+        if let Some(keep) = &self.drag_main_include {
+            !keep.contains(id)
+        } else if let Some(skip) = &self.drag_capture_exclude {
+            skip.contains(id)
+        } else {
+            false
+        }
     }
 
     pub fn get_scale(&self) -> f32 {

@@ -288,25 +288,32 @@ impl ShapesPoolImpl {
     pub fn clean_all(&mut self) -> Vec<Uuid> {
         self.clean_shape_cache();
 
-        let modified_uuids: Vec<Uuid> = if self.modifiers.is_empty() {
-            Vec::new()
-        } else {
-            let mut idx_to_uuid: HashMap<usize, Uuid> =
-                HashMap::with_capacity(self.uuid_to_idx.len());
-            for (uuid, idx) in self.uuid_to_idx.iter() {
-                idx_to_uuid.insert(*idx, *uuid);
-            }
-            self.modifiers
-                .keys()
-                .filter_map(|idx| idx_to_uuid.get(idx).copied())
-                .collect()
-        };
+        let modified_uuids = self.modifier_uuids();
 
         self.modifiers = HashMap::default();
         self.structure = HashMap::default();
         self.scale_content = HashMap::default();
 
         modified_uuids
+    }
+
+    pub fn modifier_uuids(&self) -> Vec<Uuid> {
+        if self.modifiers.is_empty() {
+            return Vec::new();
+        }
+        let mut idx_to_uuid: HashMap<usize, Uuid> = HashMap::with_capacity(self.uuid_to_idx.len());
+        for (uuid, idx) in self.uuid_to_idx.iter() {
+            idx_to_uuid.insert(*idx, *uuid);
+        }
+        self.modifiers
+            .keys()
+            .filter_map(|idx| idx_to_uuid.get(idx).copied())
+            .collect()
+    }
+
+    pub fn get_raw(&self, id: &Uuid) -> Option<&Shape> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        Some(&self.shapes[idx])
     }
 
     pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl {

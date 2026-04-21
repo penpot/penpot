@@ -868,6 +868,22 @@ impl Surfaces {
         }
     }
 
+    /// Blit `Current` onto `Target` at `tile_rect`; no bg fill, no cache
+    /// writes. Used by pruned drag frames where the atlas is the backdrop.
+    pub fn draw_current_to_target_no_bg(&mut self, tile_rect: &skia::Rect) {
+        // `Current` has a margin on all sides (shadow/blur sampling);
+        // offset so the margin-inset pixel lands at tile_rect's top-left.
+        self.current.clone().draw(
+            self.target.canvas(),
+            (
+                tile_rect.left - self.margins.width as f32,
+                tile_rect.top - self.margins.height as f32,
+            ),
+            self.sampling_options,
+            None,
+        );
+    }
+
     /// Draws the current tile directly to the target and cache surfaces without
     /// creating a snapshot. This avoids GPU stalls from ReadPixels but doesn't
     /// populate the tile texture cache (suitable for one-shot renders like tests).
