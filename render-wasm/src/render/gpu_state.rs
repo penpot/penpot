@@ -2,10 +2,19 @@ use crate::error::{Error, Result};
 use skia_safe::gpu::{self, gl::FramebufferInfo, gl::TextureInfo, DirectContext};
 use skia_safe::{self as skia, AlphaType, ColorType, ISize, ImageInfo};
 
+/// Upper bound for any on-demand scratch texture we allocate (e.g. the
+/// dynamically-grown Filter surface used by the texture/scatter path).
+/// Capped at 8192 so a runaway allocation can't exhaust GPU memory; most
+/// desktop and mobile GPUs past ~2015 support this.
+pub const MAX_SCRATCH_TEXTURE_SIZE: i32 = 8192;
+
 #[derive(Debug, Clone)]
 pub struct GpuState {
     pub context: DirectContext,
     framebuffer_info: FramebufferInfo,
+    /// `GL_MAX_TEXTURE_SIZE` queried once at init, capped at
+    /// `MAX_SCRATCH_TEXTURE_SIZE`. See `max_scratch_texture_size()`.
+    max_scratch_size: i32,
 }
 
 impl GpuState {
@@ -29,12 +38,33 @@ impl GpuState {
             }
         };
 
-        let mut state = GpuState {
+        // Query GL_MAX_TEXTURE_SIZE once; clamp to MAX_SCRATCH_TEXTURE_SIZE.
+        let hw_max_texture_size: i32 = unsafe {
+            let mut v: gl::types::GLint = 0;
+            gl::GetIntegerv(gl::MAX_TEXTURE_SIZE, &mut v);
+            v
+        };
+        let queried = if hw_max_texture_size > 0 {
+            hw_max_texture_size
+        } else {
+            4096
+        };
+        let max_scratch_size = queried.min(MAX_SCRATCH_TEXTURE_SIZE);
+
+        let state = GpuState {
             context,
             framebuffer_info,
+            max_scratch_size,
         };
 
         Ok(state)
+    }
+
+    /// Max side length we'll allocate for a temporary scratch texture.
+    /// Used by the texture/scatter path to grow the Filter surface when a
+    /// shape's (viewport-clipped) extrect exceeds the pre-allocated size.
+    pub fn max_scratch_texture_size(&self) -> i32 {
+        self.max_scratch_size
     }
 
     fn create_webgl_texture(&mut self, width: i32, height: i32) -> gl::types::GLuint {

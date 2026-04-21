@@ -643,6 +643,7 @@ impl Shape {
     }
 
     pub fn set_texture(&mut self, texture: Option<TextureEffect>) {
+        self.invalidate_extrect();
         self.texture = texture;
     }
 
@@ -939,6 +940,41 @@ impl Shape {
         Bounds::from_rect(&rect)
     }
 
+    /// Expand bounds to cover the pixels a texture (displacement) effect
+    /// can paint past the shape's own outline. The tile-scheduler uses the
+    /// resulting extrect to place the shape into neighbouring tiles that
+    /// the scattered output reaches.
+    ///
+    /// Outset = max per-axis kernel reach of the displacement filter, in
+    /// **world units**. Mirrors the same formula
+    /// `render/texture.rs::build_displacement_filter` uses for the
+    /// `displacement_map.scale` parameter:
+    ///
+    /// ```text
+    ///   S_px  = min(radius · RADIUS_SCALE · scale,  DISPLACEMENT_CAP_PX)
+    ///   reach_world = (S_px / 2) / scale
+    /// ```
+    ///
+    /// Equivalently: `outset = min(radius · RADIUS_SCALE / 2, TILE_SIZE / scale)`.
+    ///
+    /// Below the cap this is world-anchored (Option B); above the cap
+    /// outset shrinks with zoom, matching the screen-pixel-anchored
+    /// behavior the texture filter switches to at that point. Either way
+    /// outset is exactly what the kernel can reach — not over-provisioned.
+    fn apply_scatter_bounds(&self, bounds: Bounds, scale: f32) -> Bounds {
+        let Some(texture) = self.texture.as_ref() else {
+            return bounds;
+        };
+        if texture.hidden || texture.radius <= 0.0 {
+            return bounds;
+        }
+        let s_target_px = texture.radius * crate::render::texture::RADIUS_SCALE * scale;
+        let s_capped_px = s_target_px.min(crate::render::texture::DISPLACEMENT_CAP_PX);
+        let pad = (s_capped_px * 0.5) / scale.max(f32::EPSILON);
+        let rect = bounds.to_rect().with_outset((pad, pad));
+        Bounds::from_rect(&rect)
+    }
+
     fn apply_children_bounds(
         &self,
         bounds: Bounds,
@@ -1078,6 +1114,7 @@ impl Shape {
         bounds = self.apply_stroke_bounds(bounds, max_stroke);
         bounds = self.apply_shadow_bounds(bounds);
         bounds = self.apply_blur_bounds(bounds);
+        bounds = self.apply_scatter_bounds(bounds, scale);
         bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
         bounds = self.apply_children_blur(bounds, shapes_pool);
 

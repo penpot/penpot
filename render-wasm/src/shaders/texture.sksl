@@ -1,0 +1,27 @@
+// Texture effect shader — alpha mask pass.
+//
+// Samples the turbulence noise and outputs transparent-black pixels whose
+// alpha is a smoothstep threshold on the noise's red channel. The resulting
+// shader is drawn with BlendMode::DstIn over the shape's already-drawn fill,
+// so the fill survives where `mask` is ~1 and fades to transparent elsewhere,
+// producing Figma-style fragmented splotches that preserve the fill's color.
+//
+// Uniforms:
+//   u_noise      — the turbulence noise shader (provides threshold mask).
+//   u_threshold  — midpoint of the smoothstep cutoff on the noise's R channel.
+//   u_softness   — half-width of the smoothstep transition. 0 → binary mask,
+//                  larger → feathered splotch edges.
+
+uniform shader u_noise;
+uniform float u_threshold;
+uniform float u_softness;
+
+half4 main(float2 coord) {
+    half4 n = u_noise.eval(coord);
+    float mask = smoothstep(
+        u_threshold - u_softness,
+        u_threshold + u_softness,
+        n.r
+    );
+    return half4(0.0, 0.0, 0.0, mask);
+}

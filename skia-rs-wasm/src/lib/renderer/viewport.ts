@@ -53,7 +53,7 @@ export class Viewport {
     this._panX = options.panX ?? 0
     this._panY = options.panY ?? 0
     this.minZoom = options.minZoom ?? 0.01
-    this.maxZoom = options.maxZoom ?? 200
+    this.maxZoom = options.maxZoom ?? 100
 
     // Ensure initial zoom is within bounds
     this._zoom = Math.max(this.minZoom, Math.min(this.maxZoom, this._zoom))

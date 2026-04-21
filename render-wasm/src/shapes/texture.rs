@@ -1,3 +1,5 @@
+pub const TEXTURE_SKSL: &str = include_str!("../shaders/texture.sksl");
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TextureEffect {
     pub noise_size: f32,

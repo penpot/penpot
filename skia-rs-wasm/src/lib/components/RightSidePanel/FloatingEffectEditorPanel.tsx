@@ -4,7 +4,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import type { EffectItem, EffectKind, Noise, NoiseSlot } from '../../renderer/properties/panel-utils'
+import type { EffectItem, EffectKind, Noise, NoiseSlot, Texture } from '../../renderer/properties/panel-utils'
 import { MAX_NOISE_SLOTS, normalizeHex } from '../../renderer/properties/panel-utils'
 import { isColorFill } from '@/lib/renderer/verification'
 import { fillSwatchBackground } from '../FillEditor/fill-swatch-background'
@@ -18,6 +18,7 @@ const EFFECT_KIND_OPTIONS: { value: EffectKind; label: string }[] = [
   { value: 'background-blur', label: 'Background blur' },
   { value: 'glass', label: 'Glass' },
   { value: 'noise', label: 'Noise' },
+  { value: 'texture', label: 'Texture' },
 ]
 
 // ── Surface profile SVG icons (16×16 viewBox, cross-section curves) ──
@@ -135,11 +136,13 @@ export function FloatingEffectEditorPanel() {
   const isBlur = activeEffect.kind === 'layer-blur' || activeEffect.kind === 'background-blur'
   const isGlass = activeEffect.kind === 'glass'
   const isNoise = activeEffect.kind === 'noise'
+  const isTexture = activeEffect.kind === 'texture'
 
   const shadow = isShadow ? activeEffect.shadow : null
   const blur = isBlur ? activeEffect.blur : null
   const glass = isGlass ? activeEffect.glass : null
   const noise = isNoise ? activeEffect.noise : null
+  const texture = isTexture ? activeEffect.texture : null
 
   // ── Shadow color helpers ──
   const shadowFill = shadow ? shadowColorToFill(shadow) : null
@@ -173,6 +176,11 @@ export function FloatingEffectEditorPanel() {
     handleEffectChange({ kind: 'noise', noise: { ...noise, ...partial } })
   }
 
+  const handleTextureUpdate = (partial: Partial<Texture>) => {
+    if (!texture) return
+    handleEffectChange({ kind: 'texture', texture: { ...texture, ...partial } })
+  }
+
   const handleHexChange = (raw: string) => {
     if (!shadow || !isSolid) return
     const v = raw.trim()
@@ -194,7 +202,9 @@ export function FloatingEffectEditorPanel() {
       ? blur?.hidden
       : isNoise
         ? noise?.hidden
-        : shadow?.hidden
+        : isTexture
+          ? texture?.hidden
+          : shadow?.hidden
 
   const toggleHidden = () => {
     if (isGlass && glass) {
@@ -203,6 +213,8 @@ export function FloatingEffectEditorPanel() {
       handleBlurUpdate({ hidden: !blur.hidden })
     } else if (isNoise && noise) {
       handleNoiseUpdate({ hidden: !noise.hidden })
+    } else if (isTexture && texture) {
+      handleTextureUpdate({ hidden: !texture.hidden })
     } else if (isShadow && shadow) {
       handleShadowUpdate({ hidden: !shadow.hidden })
     }
@@ -534,6 +546,42 @@ export function FloatingEffectEditorPanel() {
           </div>
         )
       })()}
+
+      {/* ── Texture controls ── */}
+      {isTexture && texture && (
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <EffectField
+              label="Grain Size"
+              title="Noise grain size — larger values produce bigger blobs"
+              value={texture.noiseSize}
+              min={1}
+              max={100}
+              step={1}
+              onChange={(v) => handleTextureUpdate({ noiseSize: Math.max(1, Math.min(100, v)) })}
+            />
+            <EffectField
+              label="Radius"
+              title="Displacement amount — 0 leaves the shape unchanged, 100 maximally warps it"
+              value={texture.radius}
+              min={0}
+              max={100}
+              step={1}
+              onChange={(v) => handleTextureUpdate({ radius: Math.max(0, Math.min(100, v)) })}
+            />
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 text-[11px] text-muted-foreground select-none">
+            <input
+              type="checkbox"
+              className="size-3.5 accent-accent"
+              checked={texture.clipToShape}
+              onChange={(e) => handleTextureUpdate({ clipToShape: e.target.checked })}
+            />
+            Clip to shape
+            <span className="text-[10px] opacity-70">(off → splotches extend beyond)</span>
+          </label>
+        </div>
+      )}
     </FloatingPanelShell>
   )
 }
