@@ -1517,6 +1517,23 @@
   []
   (h/call wasm/internal-module "_clean_modifiers"))
 
+(defn set-modifiers-start
+  "Enter interactive transform mode (drag / resize / rotate). Enables
+   fast-mode effect skipping in the renderer and activates an atlas
+   backdrop so tiles do not appear sequentially or flicker while the
+   gesture is in progress."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_set_modifiers_start")))
+
+(defn set-modifiers-end
+  "Leave interactive transform mode. Cancels any pending async render
+   scheduled under it; the caller is expected to trigger a full-quality
+   render (via `request-render`) once the gesture is committed."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_set_modifiers_end")))
+
 (defn set-modifiers
   [modifiers]
 

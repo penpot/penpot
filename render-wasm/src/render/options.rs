@@ -9,6 +9,11 @@ pub struct RenderOptions {
     pub flags: u32,
     pub dpr: Option<f32>,
     fast_mode: bool,
+    /// Active while the user is interacting with a shape (drag, resize,
+    /// rotate). Implies `fast_mode` semantics for expensive effects but
+    /// keeps per-frame flushing enabled (unlike pan/zoom, where
+    /// `render_from_cache` drives target presentation).
+    interactive_transform: bool,
     /// Minimum on-screen size (CSS px at 1:1 zoom) above which vector antialiasing is enabled.
     pub antialias_threshold: f32,
 }
@@ -19,6 +24,7 @@ impl Default for RenderOptions {
             flags: 0,
             dpr: None,
             fast_mode: false,
+            interactive_transform: false,
             antialias_threshold: 7.0,
         }
     }
@@ -40,6 +46,26 @@ impl RenderOptions {
 
     pub fn set_fast_mode(&mut self, enabled: bool) {
         self.fast_mode = enabled;
+    }
+
+    /// Interactive transform is ON while the user is dragging, resizing
+    /// or rotating a shape. Callers use it to keep per-frame flushing
+    /// enabled and to render visible tiles in a single frame so tiles
+    /// never appear sequentially or flicker during the gesture.
+    pub fn is_interactive_transform(&self) -> bool {
+        self.interactive_transform
+    }
+
+    pub fn set_interactive_transform(&mut self, enabled: bool) {
+        self.interactive_transform = enabled;
+    }
+
+    /// True only when the viewport is the one being moved (pan/zoom)
+    /// and the dedicated `render_from_cache` path owns Target
+    /// presentation. In this mode `process_animation_frame` must not
+    /// flush to avoid presenting stale tile positions.
+    pub fn is_viewport_interaction(&self) -> bool {
+        self.fast_mode && !self.interactive_transform
     }
 
     pub fn dpr(&self) -> f32 {

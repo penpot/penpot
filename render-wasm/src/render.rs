@@ -1666,6 +1666,24 @@ impl RenderState {
 
         self.cache_cleared_this_render = false;
         self.reset_canvas();
+
+        // During an interactive shape transform (drag/resize/rotate) the
+        // Target is repainted tile-by-tile. If only a subset of the
+        // invalidated tiles finishes in this rAF the remaining area
+        // would either show stale content from the previous frame or,
+        // on buffer swaps, show blank pixels — either way the user
+        // perceives tiles appearing sequentially. Paint the persistent
+        // 1:1 atlas as a stable backdrop so every flush presents a
+        // coherent picture: unchanged tiles come from the atlas and
+        // invalidated tiles are overwritten on top as they finish.
+        if self.options.is_interactive_transform() && self.surfaces.has_atlas() {
+            self.surfaces.draw_atlas_to_target(
+                self.viewbox,
+                self.options.dpr(),
+                self.background_color,
+            );
+        }
+
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::InnerShadows as u32
@@ -1744,12 +1762,16 @@ impl RenderState {
                 self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
             }
 
-            // In fast mode (pan/zoom in progress), render_from_cache owns
-            // the Target surface — skip flush so we don't present stale
-            // tile positions.  The rAF still populates the Cache surface
-            // and tile HashMap so render_from_cache progressively shows
-            // more complete content.
-            if !self.options.is_fast_mode() {
+            // In a pure viewport interaction (pan/zoom), render_from_cache
+            // owns the Target surface — skip flush so we don't present
+            // stale tile positions.  The rAF still populates the Cache
+            // surface and tile HashMap so render_from_cache progressively
+            // shows more complete content.
+            //
+            // During interactive shape transforms (drag/resize/rotate) we
+            // still need to flush every rAF so the user sees the updated
+            // shape position — render_from_cache is not in the loop here.
+            if !self.options.is_viewport_interaction() {
                 self.flush_and_submit();
             }
 
@@ -1887,8 +1909,26 @@ impl RenderState {
 
     #[inline]
     pub fn should_stop_rendering(&self, iteration: i32, timestamp: i32) -> bool {
-        iteration % NODE_BATCH_THRESHOLD == 0
-            && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
+        if iteration % NODE_BATCH_THRESHOLD != 0 {
+            return false;
+        }
+        if performance::get_time() - timestamp <= MAX_BLOCKING_TIME_MS {
+            return false;
+        }
+
+        // During interactive shape transforms we must complete every
+        // visible tile in a single rAF so the user never sees tiles
+        // popping in sequentially. Only yield once all visible work is
+        // done and we are processing the interest-area pre-render.
+        if self.options.is_interactive_transform() {
+            if let Some(tile) = self.current_tile {
+                if self.tile_viewbox.is_visible(&tile) {
+                    return false;
+                }
+            }
+        }
+
+        true
     }
 
     #[inline]
