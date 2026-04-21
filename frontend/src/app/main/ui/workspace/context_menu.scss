@@ -138,3 +138,30 @@
   pointer-events: none;
   opacity: 0.6;
 }
+
+.guide-color-label {
+  cursor: default;
+  pointer-events: none;
+}
+
+.guide-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: deprecated.$s-6;
+  padding: deprecated.$s-4 deprecated.$s-6 deprecated.$s-8;
+  list-style: none;
+}
+
+.guide-color-swatch {
+  width: deprecated.$s-20;
+  height: deprecated.$s-20;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: deprecated.$s-2 solid var(--panel-border-color);
+
+  &.selected {
+    border: deprecated.$s-2 solid var(--menu-foreground-color);
+  }
+}

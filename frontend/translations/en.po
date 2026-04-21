@@ -5730,6 +5730,12 @@ msgstr "Copy columns"
 msgid "workspace.context-menu.grid-cells.paste-tracks"
 msgstr "Paste"
 
+msgid "workspace.context-menu.guides.change-color"
+msgstr "Guide color"
+
+msgid "workspace.context-menu.guides.remove"
+msgstr "Remove guide"
+
 #: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Add 1 column to the right"

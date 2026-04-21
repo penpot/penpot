@@ -1195,6 +1195,16 @@
                 (-> params (assoc :kind :grid-cells
                                   :grid grid
                                   :cells cells))))))))
+(defn show-guide-context-menu
+  [{:keys [position guide] :as params}]
+  (dm/assert! (gpt/point? position))
+  (ptk/reify ::show-guide-context-menu
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (show-context-menu
+              (-> params (assoc :kind :guide
+                                :guide guide)))))))
+
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
     ptk/UpdateEvent
