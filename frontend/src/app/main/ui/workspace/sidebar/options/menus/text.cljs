@@ -190,6 +190,19 @@
   [{:keys [values on-change on-blur token-applied]}]
   (let [token-row    (contains? cf/flags :token-typography-row)
         text-decoration (some-> (:text-decoration values) d/name)
+        options
+        (mf/with-memo [token-applied]
+          [{:value    "underline"
+            :id       "underline-text-decoration"
+            :disabled (and token-row (some? token-applied))
+            :label    (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
+            :icon     i/text-underlined}
+           {:value    "line-through"
+            :id       "line-through-text-decoration"
+            :disabled (and token-row (some? token-applied))
+            :label    (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
+            :icon     i/text-stroked}])
+
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)
@@ -206,16 +219,7 @@
                          :name         "text-decoration-options"
                          :disabled     (and token-row (some? token-applied))
                          :allow-empty  true
-                         :options      [{:value "underline"
-                                         :id "underline-text-decoration"
-                                         :disabled (and token-row (some? token-applied))
-                                         :label (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
-                                         :icon i/text-underlined}
-                                        {:value "line-through"
-                                         :id "line-through-text-decoration"
-                                         :disabled (and token-row (some? token-applied))
-                                         :label (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
-                                         :icon i/text-stroked}]}]]))
+                         :options      options}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
