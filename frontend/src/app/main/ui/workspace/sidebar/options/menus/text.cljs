@@ -102,6 +102,21 @@
 (mf/defc vertical-align*
   [{:keys [values on-change on-blur]}]
   (let [vertical-align (or (:vertical-align values) "top")
+        options
+        (mf/with-memo []
+          [{:value "top"
+            :id    "vertical-text-align-top"
+            :label (tr "workspace.options.text-options.align-top")
+            :icon  i/text-top}
+           {:value "center"
+            :id    "vertical-text-align-center"
+            :label (tr "workspace.options.text-options.align-middle")
+            :icon  i/text-middle}
+           {:value "bottom"
+            :id    "vertical-text-align-bottom"
+            :label (tr "workspace.options.text-options.align-bottom")
+            :icon  i/text-bottom}])
+
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)
@@ -113,18 +128,7 @@
      [:> radio-buttons* {:selected  vertical-align
                          :on-change handle-change
                          :name      "vertical-align-text-options"
-                         :options   [{:value "top"
-                                      :id    "vertical-text-align-top"
-                                      :label (tr "workspace.options.text-options.align-top")
-                                      :icon  i/text-top}
-                                     {:value "center"
-                                      :id    "vertical-text-align-center"
-                                      :label (tr "workspace.options.text-options.align-middle")
-                                      :icon  i/text-middle}
-                                     {:value "bottom"
-                                      :id    "vertical-text-align-bottom"
-                                      :label (tr "workspace.options.text-options.align-bottom")
-                                      :icon  i/text-bottom}]}]]))
+                         :options   options}]]))
 
 (mf/defc grow-options*
   [{:keys [ids values on-blur]}]
