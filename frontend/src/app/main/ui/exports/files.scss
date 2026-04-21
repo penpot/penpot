@@ -184,7 +184,7 @@
 }
 
 .status-message {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--modal-title-foreground-color);
   font-style: italic;
