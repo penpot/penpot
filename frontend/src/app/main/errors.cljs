@@ -481,6 +481,17 @@
         (and (= (.-name ^js cause) "NotFoundError")
              (str/includes? message "removeChild")))))
 
+
+(defn- from-plugin?
+  "Check if the error is marked as originating from plugin code. The
+  plugin runtime tracks plugin errors in a WeakMap, which works even
+  in SES hardened environments where error objects may be frozen."
+  [cause]
+  (try
+    (is-plugin-error? cause)
+    (catch :default _
+      false)))
+
 (defonce uncaught-error-handler
   (letfn [(on-unhandled-error [event]
             (.preventDefault ^js event)
@@ -534,7 +545,6 @@
                     (do
                       (ex/print-throwable cause :prefix "Uncaught Rejection")
                       (ts/asap #(flash :cause cause :type :unhandled))))))))]
-
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)
