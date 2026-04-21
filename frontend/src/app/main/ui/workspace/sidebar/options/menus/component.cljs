@@ -589,7 +589,7 @@
               :on-click on-select
               :disabled loop}
      (when visible?
-       [:> cmm/component-item-thumbnail* {:file-id (:file-id item)
+       [:> cmm/component-item-thumbnail* {:file-id file-id
                                           :class (stl/css :swap-item-thumbnail)
                                           :root-shape root-shape
                                           :component item

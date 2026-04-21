@@ -938,36 +938,49 @@ impl Surfaces {
 
         if max_w > self.extra_tile_dims.width || max_h > self.extra_tile_dims.height {
             self.extra_tile_dims = skia::ISize::new(max_w, max_h);
-            self.drop_shadows = self
+
+            if let Some(surface) = self
                 .drop_shadows
                 .new_surface_with_dimensions((max_w, max_h))
-                .unwrap();
-            self.inner_shadows = self
+            {
+                self.drop_shadows = surface;
+            }
+
+            if let Some(surface) = self
                 .inner_shadows
                 .new_surface_with_dimensions((max_w, max_h))
-                .unwrap();
-            self.text_drop_shadows = self
+            {
+                self.inner_shadows = surface;
+            }
+
+            if let Some(surface) = self
                 .text_drop_shadows
                 .new_surface_with_dimensions((max_w, max_h))
-                .unwrap();
-            self.text_drop_shadows = self
-                .text_drop_shadows
-                .new_surface_with_dimensions((max_w, max_h))
-                .unwrap();
-            self.shape_strokes = self
+            {
+                self.text_drop_shadows = surface;
+            }
+
+            if let Some(surface) = self
                 .shape_strokes
                 .new_surface_with_dimensions((max_w, max_h))
-                .unwrap();
-            self.shape_fills = self
+            {
+                self.shape_strokes = surface;
+            }
+
+            if let Some(surface) = self
                 .shape_strokes
                 .new_surface_with_dimensions((max_w, max_h))
-                .unwrap();
+            {
+                self.shape_fills = surface;
+            }
         }
 
-        self.export = self
+        if let Some(surface) = self
             .export
             .new_surface_with_dimensions((target_w, target_h))
-            .unwrap();
+        {
+            self.export = surface;
+        }
     }
 }
 

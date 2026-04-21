@@ -61,23 +61,25 @@
            (js/requestAnimationFrame
             (fn [_]
               (try
-                (let [objects (dsh/lookup-page-objects @st/state file-id page-id)
-                      frame (get objects frame-id)
-                      {:keys [width height]} (:selrect frame)
-                      max-size (mth/max width height)
-                      scale (mth/max 1 (/ target-size max-size))
-                      png-bytes (wasm.api/render-shape-pixels frame-id scale)]
-                  (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
-                    (do
-                      (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))
-                      (rx/end! subs))
-                    (.then
-                     (png-bytes->data-uri png-bytes)
-                     (fn [data-uri]
-                       (rx/push! subs data-uri)
-                       (rx/end! subs))
-                     (fn [err]
-                       (rx/error! subs err)))))
+                (let [objects (dsh/lookup-page-objects @st/state file-id page-id)]
+                  (if-let [frame (get objects frame-id)]
+                    (let [{:keys [width height]} (:selrect frame)
+                          max-size (mth/max width height)
+                          scale (mth/max 1 (/ target-size max-size))
+                          png-bytes (wasm.api/render-shape-pixels frame-id scale)]
+                      (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
+                        (do
+                          (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))
+                          (rx/end! subs))
+                        (.then
+                         (png-bytes->data-uri png-bytes)
+                         (fn [data-uri]
+                           (rx/push! subs data-uri)
+                           (rx/end! subs))
+                         (fn [err]
+                           (rx/error! subs err)))))
+
+                    (rx/error! subs "Frame not found")))
                 (catch :default err
                   (rx/error! subs err)))))]
        #(js/cancelAnimationFrame req-id)))))
