@@ -218,10 +218,11 @@
 
 (defn- renew-session?
   [{:keys [id modified-at] :as session}]
-  (or (string? id)
-      (and (ct/inst? modified-at)
-           (let [elapsed (ct/diff modified-at (ct/now))]
-             (neg? (compare default-renewal-max-age elapsed))))))
+  (let [renewal-max (cf/get :auth-token-cookie-renewal-max-age default-renewal-max-age)]
+    (or (string? id)
+        (and (ct/inst? modified-at)
+             (let [elapsed (ct/diff modified-at (ct/now))]
+               (neg? (compare renewal-max elapsed)))))))
 
 (defn- wrap-authz
   [handler {:keys [::manager] :as cfg}]
@@ -279,7 +280,7 @@
   [response {token :token modified-at :modified-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
         created-at modified-at
-        renewal    (ct/plus created-at default-renewal-max-age)
+        renewal    (ct/plus created-at (cf/get :auth-token-cookie-renewal-max-age default-renewal-max-age))
         expires    (ct/plus created-at max-age)
         secure?    (contains? cf/flags :secure-session-cookies)
         strict?    (contains? cf/flags :strict-session-cookies)
