@@ -289,3 +289,33 @@
     (t/is (mth/close? 1.2091818119288809 (:x rs)))
     (t/is (mth/close? 1.8275638211757912 (:y rs)))))
 
+;; ---- gpt/abs ----
+
+(t/deftest abs-point-returns-point-instance
+  (t/testing "abs of a point with negative coordinates returns a Point record"
+    (let [p  (gpt/point -3 -4)
+          rs (gpt/abs p)]
+      (t/is (gpt/point? rs))
+      (t/is (mth/close? 3 (:x rs)))
+      (t/is (mth/close? 4 (:y rs)))))
+
+  (t/testing "abs of a point with mixed-sign coordinates"
+    (let [p  (gpt/point -5 7)
+          rs (gpt/abs p)]
+      (t/is (gpt/point? rs))
+      (t/is (mth/close? 5 (:x rs)))
+      (t/is (mth/close? 7 (:y rs)))))
+
+  (t/testing "abs of a point already positive is unchanged"
+    (let [p  (gpt/point 2 9)
+          rs (gpt/abs p)]
+      (t/is (gpt/point? rs))
+      (t/is (mth/close? 2 (:x rs)))
+      (t/is (mth/close? 9 (:y rs)))))
+
+  (t/testing "abs of a zero point stays zero"
+    (let [rs (gpt/abs (gpt/point 0 0))]
+      (t/is (gpt/point? rs))
+      (t/is (mth/close? 0 (:x rs)))
+      (t/is (mth/close? 0 (:y rs))))))
+

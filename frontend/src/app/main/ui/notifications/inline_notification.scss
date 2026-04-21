@@ -20,5 +20,7 @@
 }
 
 .link {
+  @extend %link;
+
   margin: 0;
 }

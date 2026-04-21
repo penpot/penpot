@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .title-name {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   display: flex;
   align-items: center;
@@ -16,7 +16,7 @@
 }
 
 .title-tokens {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   text-transform: capitalize;
 }
@@ -26,12 +26,12 @@
 }
 
 .section-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   padding-right: deprecated.$s-2;
 
   svg {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     height: deprecated.$s-16;
     width: deprecated.$s-16;
@@ -47,7 +47,7 @@
 }
 
 .num-assets {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: 100%;
   padding-left: deprecated.$s-8;
@@ -62,8 +62,8 @@
 }
 
 .drag-counter {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.textEllipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.text-ellipsis;
 
   position: absolute;
   bottom: 0;

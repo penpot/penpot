@@ -152,6 +152,23 @@
              (map build-move-event)
              (rx/from))))))
 
+(defn update-guide-color
+  [guide-id color]
+  (ptk/reify ::update-guide-color
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [{:keys [guides] :as page} (dsh/lookup-page state)
+            guide (get guides guide-id)]
+        (when (some? guide)
+          (let [updated-guide (if (some? color)
+                                (assoc guide :color color)
+                                (dissoc guide :color))
+                changes
+                (-> (pcb/empty-changes it)
+                    (pcb/with-page page)
+                    (pcb/set-guide guide-id updated-guide))]
+            (rx/of (dwc/commit-changes changes))))))))
+
 (defn set-hover-guide
   [id hover?]
   (ptk/reify ::set-hover-guide

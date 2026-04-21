@@ -20,8 +20,8 @@
     gap: deprecated.$s-4;
 
     .filter-button {
-      @include deprecated.flexCenter;
-      @include deprecated.buttonStyle;
+      @include deprecated.flex-center;
+      @include deprecated.button-style;
 
       height: deprecated.$s-32;
       width: deprecated.$s-32;
@@ -65,7 +65,7 @@
 }
 
 .page-name {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   padding: 0 deprecated.$s-12;
   color: var(--title-foreground-color);
@@ -88,7 +88,7 @@
 }
 
 .focus-title {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -98,7 +98,7 @@
 }
 
 .back-button {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-32;
   width: deprecated.$s-24;
@@ -113,22 +113,22 @@
 }
 
 .focus-name {
-  @include deprecated.textEllipsis;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.text-ellipsis;
+  @include deprecated.body-small-typography;
 
   padding-left: deprecated.$s-4;
   color: var(--title-foreground-color);
 }
 
 .focus-mode-tag-wrapper {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: 100%;
   margin-right: deprecated.$s-12;
 }
 
 .active-filters {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   flex-wrap: wrap;
   margin: 0 deprecated.$s-12;
@@ -151,8 +151,8 @@
 }
 
 .layer-filter-name {
-  @include deprecated.flexCenter;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.flex-center;
+  @include deprecated.body-small-typography;
 
   color: var(--pill-foreground-color);
 }
@@ -169,7 +169,7 @@
   width: deprecated.$s-192;
 
   .filter-menu-item {
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
 
     display: flex;
     align-items: center;
@@ -285,7 +285,7 @@
 }
 
 .scope-label {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--color-foreground-secondary);
   cursor: pointer;
@@ -302,7 +302,7 @@
 }
 
 .replace-input-wrapper {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   flex: 1;
   height: deprecated.$s-32;
@@ -346,8 +346,8 @@
 }
 
 .replace-button {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.buttonStyle;
+  @include deprecated.body-small-typography;
+  @include deprecated.button-style;
 
   flex: 1;
   height: deprecated.$s-28;
@@ -378,14 +378,14 @@
 }
 
 .match-count {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--color-foreground-secondary);
   white-space: nowrap;
 }
 
 .no-matches {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--color-foreground-secondary);
   white-space: nowrap;

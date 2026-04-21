@@ -31,8 +31,8 @@
 
 .left-arrow,
 .right-arrow {
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
+  @include deprecated.button-style;
+  @include deprecated.flex-center;
 
   position: relative;
   height: 100%;
@@ -124,14 +124,14 @@
   height: 100%;
 
   &.no-text {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     width: deprecated.$s-32;
   }
 }
 
 .color-palette-empty {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--palette-text-color);
 }

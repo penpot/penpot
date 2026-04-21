@@ -356,7 +356,7 @@
                 :code :empty-children
                 :hint "expected a group with at least one shape for creating a bool"))
 
-    (let [head  (if (= type :difference)
+    (let [head  (if (= (:bool-type bool-shape) :difference)
                   (first children)
                   (last children))
           fills (if (and (contains? head :svg-attrs) (empty? (:fills head)))
@@ -364,7 +364,7 @@
                   (get head :fills))]
       (-> bool-shape
           (assoc :fills fills)
-          (assoc :stroks (get head :strokes))))))
+          (assoc :strokes (get head :strokes))))))
 
 (defn add-bool
   [state params]
@@ -576,7 +576,7 @@
         {:keys [id width height name]}
         (-> params
             (update :id default-uuid)
-            (check-add-file-media params))]
+            (check-add-file-media))]
 
     (-> state
         (update ::blobs assoc media-id blob)

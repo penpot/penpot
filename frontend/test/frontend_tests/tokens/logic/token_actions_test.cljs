@@ -13,6 +13,7 @@
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
    [frontend-tests.helpers.pages :as thp]
@@ -58,8 +59,11 @@
                     (ctob/add-token (cthi/id :set-a)
                                     (ctob/make-token reference-border-radius-token))))))
 
+(def debounce-text-stop
+  (tohs/stop-on ::dwwt/resize-wasm-text-debounce-commit))
+
 (t/deftest test-apply-token
-  (t/testing "applies token to shape and updates shape attributes to resolved value"
+  (t/testing "applies token to shape and updates shape   attributes to resolved value"
     (t/async
       done
       (let [file   (setup-file-with-tokens)
@@ -553,7 +557,8 @@
              (t/is (= (:font-size style-text-blocks) "24"))
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
-               (t/is (pos? (thw/call-count :get-text-dimensions)))))))))))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-line-height
   (t/testing "applies line-height token and updates the text line-height"
@@ -591,7 +596,8 @@
              (t/is (= (:line-height style-text-blocks) 1.5))
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
-               (t/is (pos? (thw/call-count :get-text-dimensions)))))))))))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-letter-spacing
   (t/testing "applies letter-spacing token and updates the text letter-spacing"
@@ -629,7 +635,8 @@
              (t/is (= (:letter-spacing style-text-blocks) "2"))
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
-               (t/is (pos? (thw/call-count :get-text-dimensions)))))))))))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-font-family
   (t/testing "applies font-family token and updates the text font-family"
@@ -667,7 +674,8 @@
              (t/is (= (:font-family style-text-blocks) (:font-id txt/default-text-attrs)))
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
-               (t/is (pos? (thw/call-count :get-text-dimensions)))))))))))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-text-case
   (t/testing "applies text-case token and updates the text transform"
@@ -775,7 +783,8 @@
              (t/is (= (:font-weight style-text-blocks) "400"))
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
-               (t/is (pos? (thw/call-count :get-text-dimensions)))))))))))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
@@ -1001,7 +1010,8 @@
              (t/is (= (:text-decoration style-text-blocks) "underline"))
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
-               (t/is (pos? (thw/call-count :get-text-dimensions)))))))))))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-reference-typography-token
   (t/testing "applies typography (composite) tokens with references"
@@ -1049,7 +1059,8 @@
              (t/is (= (:font-family style-text-blocks) "Arial"))
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
-               (t/is (pos? (thw/call-count :get-text-dimensions)))))))))))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-unapply-atomic-tokens-on-composite-apply
   (t/testing "unapplies atomic typography tokens when applying composite token"
@@ -1206,4 +1217,5 @@
              (t/is (nil? (:typography-ref-file text-node-3)))
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
-               (t/is (pos? (thw/call-count :get-text-dimensions)))))))))))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))

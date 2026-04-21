@@ -84,7 +84,7 @@
 (mf/defc modal-container*
   {::mf/props :obj}
   []
-  (let [container (hooks/use-portal-container)]
+  (let [container (hooks/use-portal-container :modal)]
     (when-let [modal (mf/deref ref:modal)]
       (mf/portal
        (mf/html [:> modal-wrapper* {:data modal :key (dm/str (:id modal))}])

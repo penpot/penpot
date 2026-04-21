@@ -26,7 +26,7 @@
 (def other-height 100)
 
 
-(mf/defc viewport-scrollbars
+(mf/defc viewport-scrollbars*
   {::mf/wrap [mf/memo]}
   [{:keys [objects zoom vbox bottom-padding]}]
 

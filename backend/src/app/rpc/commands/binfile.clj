@@ -22,6 +22,7 @@
    [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.media :as media-cmd]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -80,20 +81,33 @@
 ;; --- Command: import-binfile
 
 (defn- import-binfile
-  [{:keys [::db/pool] :as cfg} {:keys [profile-id project-id version name file]}]
-  (let [team   (teams/get-team pool
-                               :profile-id profile-id
-                               :project-id project-id)
-        cfg    (-> cfg
-                   (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
-                   (assoc ::bfc/project-id project-id)
-                   (assoc ::bfc/profile-id profile-id)
-                   (assoc ::bfc/name name)
-                   (assoc ::bfc/input (:path file)))
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id project-id version name file upload-id]}]
+  (let [team
+        (teams/get-team pool
+                        :profile-id profile-id
+                        :project-id project-id)
 
-        result (case (int version)
-                 1 (bf.v1/import-files! cfg)
-                 3 (bf.v3/import-files! cfg))]
+        cfg
+        (-> cfg
+            (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
+            (assoc ::bfc/project-id project-id)
+            (assoc ::bfc/profile-id profile-id)
+            (assoc ::bfc/name name))
+
+        input-path (:path file)
+        owned?     (some? upload-id)
+
+        cfg
+        (assoc cfg ::bfc/input input-path)
+
+        result
+        (try
+          (case (int version)
+            1 (bf.v1/import-files! cfg)
+            3 (bf.v3/import-files! cfg))
+          (finally
+            (when owned?
+              (fs/delete input-path))))]
 
     (db/update! pool :project
                 {:modified-at (ct/now)}
@@ -103,13 +117,18 @@
     result))
 
 (def ^:private schema:import-binfile
-  [:map {:title "import-binfile"}
-   [:name [:or [:string {:max 250}]
-           [:map-of ::sm/uuid [:string {:max 250}]]]]
-   [:project-id ::sm/uuid]
-   [:file-id {:optional true} ::sm/uuid]
-   [:version {:optional true} ::sm/int]
-   [:file media/schema:upload]])
+  [:and
+   [:map {:title "import-binfile"}
+    [:name [:or [:string {:max 250}]
+            [:map-of ::sm/uuid [:string {:max 250}]]]]
+    [:project-id ::sm/uuid]
+    [:file-id {:optional true} ::sm/uuid]
+    [:version {:optional true} ::sm/int]
+    [:file {:optional true} media/schema:upload]
+    [:upload-id {:optional true} ::sm/uuid]]
+   [:fn {:error/message "one of :file or :upload-id is required"}
+    (fn [{:keys [file upload-id]}]
+      (or (some? file) (some? upload-id)))]])
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format. If `file-id` is provided,
@@ -117,28 +136,40 @@
 
   The in-place imports are only supported for binfile-v3 and when a
   .penpot file only contains one penpot file.
+
+  The file content may be provided either as a multipart `file` upload
+  or as an `upload-id` referencing a completed chunked-upload session,
+  which allows importing files larger than the multipart size limit.
   "
   {::doc/added "1.15"
    ::doc/changes ["1.20" "Add file-id param for in-place import"
-                  "1.20" "Set default version to 3"]
+                  "1.20" "Set default version to 3"
+                  "2.15" "Add upload-id param for chunked upload support"]
 
    ::webhooks/event? true
    ::sse/stream? true
    ::sm/params schema:import-binfile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version file-id file] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version file-id upload-id] :as params}]
   (projects/check-edition-permissions! pool profile-id project-id)
-  (let [version  (or version 3)
-        params   (-> params
-                     (assoc :profile-id profile-id)
-                     (assoc :version version))
+  (let [version (or version 3)
+        params  (-> params
+                    (assoc :profile-id profile-id)
+                    (assoc :version version))
 
-        cfg      (cond-> cfg
-                   (uuid? file-id)
-                   (assoc ::bfc/file-id file-id))
+        cfg     (cond-> cfg
+                  (uuid? file-id)
+                  (assoc ::bfc/file-id file-id))
 
-        manifest (case (int version)
-                   1 nil
-                   3 (bf.v3/get-manifest (:path file)))]
+        params
+        (if (some? upload-id)
+          (let [file (db/tx-run! cfg media-cmd/assemble-chunks upload-id)]
+            (assoc params :file file))
+          params)
+
+        manifest
+        (case (int version)
+          1 nil
+          3 (bf.v3/get-manifest (-> params :file :path)))]
 
     (with-meta
       (sse/response (partial import-binfile cfg params))

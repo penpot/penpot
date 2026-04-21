@@ -83,7 +83,52 @@ are config maps with `::ig/ref` for dependencies. Components implement
 `ig/init-key` / `ig/halt-key!`.
 
 
-### Database Access
+### Connecting to the Database
+
+Two PostgreSQL databases are used in this environment:
+
+| Database      | Purpose            | Connection string                                  |
+|---------------|--------------------|----------------------------------------------------|
+| `penpot`      | Development / app  | `postgresql://penpot:penpot@postgres/penpot`       |
+| `penpot_test` | Test suite         | `postgresql://penpot:penpot@postgres/penpot_test`  |
+
+**Interactive psql session:**
+
+```bash
+# development DB
+psql "postgresql://penpot:penpot@postgres/penpot"
+
+# test DB
+psql "postgresql://penpot:penpot@postgres/penpot_test"
+```
+
+**One-shot query (non-interactive):**
+
+```bash
+psql "postgresql://penpot:penpot@postgres/penpot" -c "SELECT id, name FROM team LIMIT 5;"
+```
+
+**Useful psql meta-commands:**
+
+```
+\dt              -- list all tables
+\d <table>       -- describe a table (columns, types, constraints)
+\di              -- list indexes
+\q               -- quit
+```
+
+> **Migrations table:** Applied migrations are tracked in the `migrations` table
+> with columns `module`, `step`, and `created_at`. When renaming a migration
+> logical name, update this table in both databases to match the new name;
+> otherwise the runner will attempt to re-apply the migration on next startup.
+
+```bash
+# Example: fix a renamed migration entry in the test DB
+psql "postgresql://penpot:penpot@postgres/penpot_test" \
+  -c "UPDATE migrations SET step = 'new-name' WHERE step = 'old-name';"
+```
+
+### Database Access (Clojure)
 
 `app.db` wraps next.jdbc. Queries use a SQL builder that auto-converts kebab-case ↔ snake_case.
 
@@ -146,3 +191,69 @@ optimized implementations:
 `src/app/config.clj` reads `PENPOT_*` environment variables, validated with
 Malli. Access anywhere via `(cf/get :smtp-host)`. Feature flags: `(cf/flags
 :enable-smtp)`.
+
+
+### Background Tasks
+
+Background tasks live in `src/app/tasks/`. Each task is an Integrant component
+that exposes a `::handler` key and follows this three-method pattern:
+
+```clojure
+(defmethod ig/assert-key ::handler   ;; validate config at startup
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
+
+(defmethod ig/expand-key ::handler   ;; inject defaults before init
+  [k v]
+  {k (assoc v ::my-option default-value)})
+
+(defmethod ig/init-key ::handler     ;; return the task fn
+  [_ cfg]
+  (fn [_task]                        ;; receives the task row from the worker
+    (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+                      ;; … do work …
+                      ))))
+```
+
+**Wiring a new task** requires two changes in `src/app/main.clj`:
+
+1. **Handler config** – add an entry in `system-config` with the dependencies:
+
+```clojure
+:app.tasks.my-task/handler
+{::db/pool (ig/ref ::db/pool)}
+```
+
+2. **Registry + cron** – register the handler name and schedule it:
+
+```clojure
+;; in ::wrk/registry ::wrk/tasks map:
+:my-task (ig/ref :app.tasks.my-task/handler)
+
+;; in worker-config ::wrk/cron ::wrk/entries vector:
+{:cron #penpot/cron "0 0 0 * * ?"   ;; daily at midnight
+ :task :my-task}
+```
+
+**Useful cron patterns** (Quartz format — six fields: s m h dom mon dow):
+
+| Expression                   | Meaning            |
+|------------------------------|--------------------|
+| `"0 0 0 * * ?"`              | Daily at midnight  |
+| `"0 0 */6 * * ?"`            | Every 6 hours      |
+| `"0 */5 * * * ?"`            | Every 5 minutes    |
+
+**Time helpers** (`app.common.time`):
+
+```clojure
+(ct/now)                          ;; current instant
+(ct/duration {:hours 1})          ;; java.time.Duration
+(ct/minus (ct/now) some-duration) ;; subtract duration from instant
+```
+
+`db/interval` converts a `Duration` (or millis / string) to a PostgreSQL
+interval object suitable for use in SQL queries:
+
+```clojure
+(db/interval (ct/duration {:hours 1}))  ;; → PGInterval "3600.0 seconds"
+```

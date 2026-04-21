@@ -55,7 +55,9 @@
      [:> heading* {:level 2
                    :typography "headline-medium"
                    :class (stl/css :form-modal-title)}
-      (tr "workspace.tokens.rename-group")]
+      (if (= variant "rename")
+        (tr "workspace.tokens.rename-group")
+        (tr "workspace.tokens.duplicate-group"))]
      [:> fc/form-input* {:id "rename-node"
                          :name :name
                          :label (tr "workspace.tokens.token-name")

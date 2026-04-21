@@ -32,7 +32,7 @@
   [:map
    [:id {:optional true} :string]
    [:resolved-value {:optional true}
-    [:or :int :string :float]]
+    [:maybe [:or :int :string :float]]]
    [:name {:optional true} :string]
    [:value {:optional true} :keyword]
    [:icon {:optional true} schema:icon-list]

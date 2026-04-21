@@ -101,7 +101,7 @@
             (dm/get-prop o :c) ","
             (dm/get-prop o :d) ","
             (dm/get-prop o :e) ","
-            (dm/get-prop o :f) ",")
+            (dm/get-prop o :f))
     o))
 
 (defn- matrix->json
@@ -358,8 +358,6 @@
          (th-eq m1d m2d)
          (th-eq m1e m2e)
          (th-eq m1f m2f))))
-
-(defmethod pp/simple-dispatch Matrix [obj] (pr obj))
 
 (defn transform-in [pt mtx]
   (if (and (some? pt) (some? mtx))

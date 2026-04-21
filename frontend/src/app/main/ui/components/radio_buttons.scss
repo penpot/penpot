@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .radio-btn-wrapper {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   border-radius: deprecated.$br-8;
   height: deprecated.$s-32;
@@ -18,9 +18,9 @@
 .radio-icon {
   --radio-icon-border-color: var(--radio-btn-border-color);
 
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
-  @include deprecated.focusRadio;
+  @include deprecated.button-style;
+  @include deprecated.flex-center;
+  @include deprecated.focus-radio;
 
   height: deprecated.$s-32;
   flex-grow: 1;
@@ -39,7 +39,7 @@
   }
 
   .title-name {
-    @include deprecated.uppercaseTitleTipography;
+    @include deprecated.uppercase-title-typography;
 
     color: var(--radio-btn-foreground-color);
   }

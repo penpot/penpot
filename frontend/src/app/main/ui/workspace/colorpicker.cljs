@@ -33,12 +33,12 @@
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
+   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs*]]
    [app.main.ui.workspace.colorpicker.color-tokens :refer [token-section*]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
-   [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
-   [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
-   [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]
+   [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector*]]
+   [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector*]]
+   [app.main.ui.workspace.colorpicker.libraries :refer [libraries*]]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.colorpicker.shortcuts :as sc]
    [app.util.dom :as dom]
@@ -93,7 +93,7 @@
       (dom/set-css-property! node "--saturation-grad-from" (format-hsl hsl-from))
       (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to)))))
 
-(mf/defc colorpicker
+(mf/defc colorpicker*
   [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab applied-token]}]
   (let [state                  (mf/deref refs/colorpicker)
         node-ref               (mf/use-ref)
@@ -511,27 +511,28 @@
                     :on-finish-drag on-finish-drag}]
 
                   "harmony"
-                  [:& harmony-selector
+                  [:> harmony-selector*
                    {:color current-color
                     :disable-opacity disable-opacity
                     :on-change handle-change-color
-                    :on-start-drag on-start-drag}]
+                    :on-start-drag on-start-drag
+                    :on-finish-drag on-finish-drag}]
 
                   "hsva"
-                  [:& hsva-selector
+                  [:> hsva-selector*
                    {:color current-color
                     :disable-opacity disable-opacity
                     :on-change handle-change-color
                     :on-start-drag on-start-drag
                     :on-finish-drag on-finish-drag}]))]]
 
-            [:& color-inputs
+            [:> color-inputs*
              {:type type
               :disable-opacity disable-opacity
               :color current-color
               :on-change handle-change-color}]
 
-            [:& libraries
+            [:> libraries*
              {:state state
               :current-color current-color
               :disable-gradient disable-gradient
@@ -786,15 +787,15 @@
            :data-testid "colorpicker"
            :style style}
 
-     [:& colorpicker {:data data
-                      :combined-tokens grouped-tokens-by-set
-                      :disable-gradient disable-gradient
-                      :disable-opacity disable-opacity
-                      :disable-image disable-image
-                      :on-token-change on-token-change
-                      :applied-token applied-token
-                      :on-change on-change'
-                      :origin origin
-                      :tab tab
-                      :color-origin color-origin
-                      :on-accept on-accept}]]))
+     [:> colorpicker* {:data data
+                       :combined-tokens grouped-tokens-by-set
+                       :disable-gradient disable-gradient
+                       :disable-opacity disable-opacity
+                       :disable-image disable-image
+                       :on-token-change on-token-change
+                       :applied-token applied-token
+                       :on-change on-change'
+                       :origin origin
+                       :tab tab
+                       :color-origin color-origin
+                       :on-accept on-accept}]]))

@@ -79,8 +79,8 @@
 }
 
 .color-text {
-  @include deprecated.twoLineTextEllipsis;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.two-line-text-ellipsis;
+  @include deprecated.body-small-typography;
 
   width: deprecated.$s-80;
   text-align: center;
@@ -89,15 +89,15 @@
   color: var(--palette-text-color);
 
   &.small-text {
-    @include deprecated.textEllipsis;
+    @include deprecated.text-ellipsis;
 
     max-height: deprecated.$s-16;
   }
 }
 
 .big-text {
-  @include deprecated.inspectValue;
-  @include deprecated.twoLineTextEllipsis;
+  @include deprecated.inspect-value;
+  @include deprecated.two-line-text-ellipsis;
 
   line-height: 1;
   color: var(--palette-text-color);
