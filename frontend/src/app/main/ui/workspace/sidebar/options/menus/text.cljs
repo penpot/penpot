@@ -142,6 +142,20 @@
   [{:keys [ids values on-blur]}]
   (let [grow-type       (:grow-type values)
         editor-instance (mf/deref refs/workspace-editor)
+        options
+        (mf/with-memo []
+          [{:value "fixed"
+            :id    "text-fixed-grow"
+            :label (tr "workspace.options.text-options.grow-fixed")
+            :icon  i/text-fixed}
+           {:value "auto-width"
+            :id    "text-auto-width-grow"
+            :label (tr "workspace.options.text-options.grow-auto-width")
+            :icon  i/text-auto-width}
+           {:value "auto-height"
+            :id    "text-auto-height-grow"
+            :label (tr "workspace.options.text-options.grow-auto-height")
+            :icon  i/text-auto-height}])
 
         handle-change
         (mf/use-fn
@@ -170,18 +184,7 @@
      [:> radio-buttons* {:selected  (d/name grow-type)
                          :on-change handle-change
                          :name      "grow-text-options"
-                         :options   [{:value "fixed"
-                                      :id    "text-fixed-grow"
-                                      :label (tr "workspace.options.text-options.grow-fixed")
-                                      :icon  i/text-fixed}
-                                     {:value "auto-width"
-                                      :id    "text-auto-width-grow"
-                                      :label (tr "workspace.options.text-options.grow-auto-width")
-                                      :icon  i/text-auto-width}
-                                     {:value "auto-height"
-                                      :id    "text-auto-height-grow"
-                                      :label (tr "workspace.options.text-options.grow-auto-height")
-                                      :icon  i/text-auto-height}]}]]))
+                         :options   options}]]))
 
 (mf/defc text-decoration-options*
   [{:keys [values on-change on-blur token-applied]}]
