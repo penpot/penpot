@@ -48,7 +48,26 @@
 
 (mf/defc text-align-options*
   [{:keys [values on-change on-blur]}]
-  (let [handle-change
+  (let [options
+        (mf/with-memo []
+          [{:value "left"
+            :id    "text-align-left"
+            :label (tr "workspace.options.text-options.text-align-left")
+            :icon  i/text-align-left}
+           {:value "center"
+            :id    "text-align-center"
+            :label (tr "workspace.options.text-options.text-align-center")
+            :icon  i/text-align-center}
+           {:value "right"
+            :id    "text-align-right"
+            :label (tr "workspace.options.text-options.text-align-right")
+            :icon  i/text-align-right}
+           {:value "justify"
+            :id    "text-align-justify"
+            :label (tr "workspace.options.text-options.text-align-justify")
+            :icon  i/text-justify}])
+
+        handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)
          (fn [value]
@@ -59,22 +78,7 @@
      [:> radio-buttons* {:selected  (:text-align values)
                          :on-change handle-change
                          :name      "align-text-options"
-                         :options   [{:value "left"
-                                      :id    "text-align-left"
-                                      :label (tr "workspace.options.text-options.text-align-left")
-                                      :icon  i/text-align-left}
-                                     {:value "center"
-                                      :id    "text-align-center"
-                                      :label (tr "workspace.options.text-options.text-align-center")
-                                      :icon  i/text-align-center}
-                                     {:value "right"
-                                      :id    "text-align-right"
-                                      :label (tr "workspace.options.text-options.text-align-right")
-                                      :icon  i/text-align-right}
-                                     {:value "justify"
-                                      :id    "text-align-justify"
-                                      :label (tr "workspace.options.text-options.text-align-justify")
-                                      :icon  i/text-justify}]}]]))
+                         :options   options}]]))
 
 (mf/defc text-direction-options*
   [{:keys [values on-change on-blur]}]
