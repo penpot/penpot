@@ -44,7 +44,7 @@
     "file-object-thumbnail"
     "file-thumbnail"
     "profile"
-    "org-logo"
+    "organization"
     "tempfile"
     "file-data"
     "file-data-fragment"

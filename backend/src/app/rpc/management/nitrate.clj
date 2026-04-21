@@ -88,6 +88,7 @@
 (def ^:private schema:upload-org-logo
   [:map
    [:content media/schema:upload]
+   [:organization-id ::sm/uuid]
    [:previous-id {:optional true} ::sm/uuid]])
 
 (def ^:private schema:upload-org-logo-result
@@ -100,15 +101,17 @@
   {::doc/added "2.16"
    ::sm/params schema:upload-org-logo
    ::sm/result schema:upload-org-logo-result}
-  [{:keys [::sto/storage]} {:keys [content previous-id]}]
+  [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
   (when previous-id
-    (sto/del-object! storage previous-id))
+    (sto/touch-object! storage previous-id))
   (let [hash (sto/calculate-hash (:path content))
         data (-> (sto/content (:path content))
                  (sto/wrap-with-hash hash))
         obj  (sto/put-object! storage {::sto/content      data
                                        ::sto/deduplicate? true
-                                       :content-type      (:mtype content)})]
+                                       :bucket            "organization"
+                                       :content-type      (:mtype content)
+                                       :organization-id   organization-id})]
     {:id (:id obj)}))
 
 ;; ---- API: notify-team-change
