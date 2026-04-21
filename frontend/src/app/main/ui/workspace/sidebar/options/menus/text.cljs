@@ -127,7 +127,7 @@
                                       :icon  i/text-bottom}]}]]))
 
 (mf/defc grow-options*
-  [{:keys [ids values on-blur on-change]}]
+  [{:keys [ids values on-blur]}]
   (let [grow-type       (:grow-type values)
         editor-instance (mf/deref refs/workspace-editor)
 
@@ -233,18 +233,17 @@
   {::mf/wrap [#(mf/memo' % check-props)]}
   [{:keys [ids type values applied-tokens]}]
 
-  (let [file-id         (mf/use-ctx ctx/current-file-id)
-        typographies    (mf/deref refs/workspace-file-typography)
-        editor-instance (mf/deref refs/workspace-editor)
-        libraries       (mf/deref refs/files)
-        token-row       (contains? cf/flags :token-typography-row)
+  (let [file-id              (mf/use-ctx ctx/current-file-id)
+        typographies         (mf/deref refs/workspace-file-typography)
+        libraries            (mf/deref refs/files)
+        token-row            (contains? cf/flags :token-typography-row)
 
         ;; --- UI state
-        menu-state*         (mf/use-state {:main-menu true
-                                           :more-options false})
-        menu-state          (deref menu-state*)
-        main-menu-open?     (:main-menu menu-state)
-        more-options-open?  (:more-options menu-state)
+        menu-state*          (mf/use-state {:main-menu true
+                                            :more-options false})
+        menu-state           (deref menu-state*)
+        main-menu-open?      (:main-menu menu-state)
+        more-options-open?   (:more-options menu-state)
 
         token-dropdown-open* (mf/use-state false)
         token-dropdown-open? (deref token-dropdown-open*)
@@ -255,13 +254,13 @@
         current-token-name   (deref current-token-name*)
 
         ;; --- Available tokens
-        active-tokens     (mf/use-ctx ctx/active-tokens-by-type)
-        typography-tokens (mf/with-memo [active-tokens] (csu/filter-tokens-for-input active-tokens :typography))
+        active-tokens        (mf/use-ctx ctx/active-tokens-by-type)
+        typography-tokens    (mf/with-memo [active-tokens] (csu/filter-tokens-for-input active-tokens :typography))
 
         ;; --- Dropdown
-        listbox-id    (mf/use-id)
-        nodes-ref     (mf/use-ref nil)
-        dropdown-ref  (mf/use-ref nil)
+        listbox-id           (mf/use-id)
+        nodes-ref            (mf/use-ref nil)
+        dropdown-ref         (mf/use-ref nil)
 
         dropdown-options
         (mf/with-memo [typography-tokens]
@@ -373,23 +372,6 @@
                  id         (uuid/next)]
              (st/emit! (dwl/add-typography (assoc typography :id id) false))
              (emit-update! ids {:typography-ref-id id :typography-ref-file file-id}))))
-
-        on-grow-type-change
-        (mf/use-fn
-         (mf/deps ids editor-instance)
-         (fn [{:keys [grow-type]}]
-           (let [uid (js/Symbol)]
-             (st/emit! (dwu/start-undo-transaction uid))
-             (when (features/active-feature? @st/state "text-editor/v2")
-               (let [content (when editor-instance
-                               (content/dom->cljs (dwt/get-editor-root editor-instance)))]
-                 (when (some? content)
-                   (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))))
-             (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
-             (when (features/active-feature? @st/state "render-wasm/v1")
-               (st/emit! (dwwt/resize-wasm-text-all ids)
-                         (ptk/data-event :layout/update {:ids ids})))
-             (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))))
 
         handle-detach-typography
         (mf/use-fn
@@ -503,7 +485,7 @@
 
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options* common-props]
-         [:> grow-options* (mf/spread-props common-props {:on-change on-grow-type-change})]
+         [:> grow-options* common-props]
          [:> icon-button* {:variant     "ghost"
                            :aria-label  (tr "labels.options")
                            :data-testid "text-align-options-button"
