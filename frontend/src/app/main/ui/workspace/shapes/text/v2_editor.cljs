@@ -367,6 +367,9 @@
         (when (cf/check-browser? :safari)
           (mf/deref refs/selected-zoom))
 
+        vbox
+        (mf/deref refs/vbox)
+
         shape (cond-> shape
                 (some? text-modifier)
                 (dwt/apply-text-modifier text-modifier)
@@ -385,13 +388,20 @@
                 selrect-width (:width selrect)
                 max-width (max width selrect-width)
                 max-height (max height selrect-height)
+                ;; During auto-width editing we keep the shape width trimmed, but the caret
+                ;; must be able to move after trailing spaces. Expand only the editor
+                ;; overlay up to one viewport width to avoid clipping caret rendering.
+                viewport-width (or (:width vbox) 0)
+                overlay-width (if (= (:grow-type shape) :auto-width)
+                                (+ max-width viewport-width)
+                                max-width)
                 valign (-> shape :content :vertical-align)
                 y (:y selrect)
                 y (case valign
                     "bottom" (+ y (- selrect-height height))
                     "center" (+ y (/ (- selrect-height height) 2))
                     y)]
-            [(assoc selrect :y y :width max-width :height max-height) transform])
+            [(assoc selrect :y y :width overlay-width :height max-height) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
