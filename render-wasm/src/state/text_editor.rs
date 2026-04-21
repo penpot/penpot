@@ -100,7 +100,6 @@ pub enum TextEditorEvent {
 
 /// FIXME: It should be better to get these constants from the frontend through the API.
 const SELECTION_COLOR: Color = Color::from_argb(127, 0, 209, 184);
-const CURSOR_WIDTH: f32 = 1.5;
 const CURSOR_COLOR: Color = Color::BLACK;
 const CURSOR_BLINK_INTERVAL_MS: f64 = 530.0;
 
@@ -257,7 +256,6 @@ impl TextEditorStyles {
 
 pub struct TextEditorTheme {
     pub selection_color: Color,
-    pub cursor_width: f32,
     pub cursor_color: Color,
 }
 
@@ -340,7 +338,6 @@ impl TextEditorState {
         Self {
             theme: TextEditorTheme {
                 selection_color: SELECTION_COLOR,
-                cursor_width: CURSOR_WIDTH,
                 cursor_color: CURSOR_COLOR,
             },
             selection: TextSelection::new(),
