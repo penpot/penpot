@@ -62,7 +62,9 @@ fn draw_image_fill(
             if let Some(path) = shape_type.path() {
                 if let Some(path_transform) = path_transform {
                     canvas.clip_path(
-                        &path.to_skia_path().make_transform(&path_transform),
+                        &path
+                            .to_skia_path(shape.svg_attrs.as_ref())
+                            .make_transform(&path_transform),
                         skia::ClipOp::Intersect,
                         antialias,
                     );
