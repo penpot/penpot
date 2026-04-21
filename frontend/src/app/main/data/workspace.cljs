@@ -380,7 +380,6 @@
                       (rx/take 1)
                       (rx/tap (fn [_] (perf/setup)))))
 
-
                (->> stream
                     (rx/filter (ptk/type? ::dps/persistence-notification))
                     (rx/take 1)
@@ -488,8 +487,8 @@
                                       :selected-before selected-before}]
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
-              (rx/take-until stoper-s))
 
+              (rx/take-until stoper-s))
          (rx/of (mcp/notify-other-tabs-disconnect)))))
 
     ptk/EffectEvent

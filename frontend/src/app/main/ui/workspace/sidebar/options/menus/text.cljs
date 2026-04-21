@@ -79,7 +79,6 @@
 (mf/defc text-direction-options*
   [{:keys [values on-change on-blur]}]
   (let [direction (:text-direction values)
-
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur direction)
@@ -103,7 +102,6 @@
 (mf/defc vertical-align*
   [{:keys [values on-change on-blur]}]
   (let [vertical-align (or (:vertical-align values) "top")
-
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)
@@ -135,11 +133,26 @@
 
         handle-change
         (mf/use-fn
-         (mf/deps ids on-blur on-change editor-instance)
+         (mf/deps ids on-blur editor-instance)
          (fn [value]
-           (on-change {:grow-type (keyword value)})
-           (when (some? on-blur)
-             (on-blur))))]
+           (on-blur)
+           (let [uid (js/Symbol)
+                 grow-type (keyword value)]
+             (st/emit! (dwu/start-undo-transaction uid))
+             (when (features/active-feature? @st/state "text-editor/v2")
+               (let [content (when editor-instance
+                               (content/dom->cljs (dwt/get-editor-root editor-instance)))]
+                 (when (some? content)
+                   (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))))
+
+             (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
+
+             (when (features/active-feature? @st/state "render-wasm/v1")
+               (st/emit! (dwwt/resize-wasm-text-all ids)
+                         (ptk/data-event :layout/update {:ids ids})))
+             ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
+             (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
+           (when (some? on-blur) (on-blur))))]
 
     [:div {:class (stl/css :grow-options)}
      [:> radio-buttons* {:selected  (d/name grow-type)
@@ -410,9 +423,9 @@
                 (dom/focus! (txu/get-text-editor-content)))))))
 
         common-props
-        (mf/spread-props {} {:values    values
-                             :on-change on-change
-                             :on-blur   on-text-blur})]
+        (mf/props {:values    values
+                   :on-change on-change
+                   :on-blur   on-text-blur})]
 
     (hooks/use-stream
      expand-stream

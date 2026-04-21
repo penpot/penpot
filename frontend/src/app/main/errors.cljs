@@ -545,7 +545,6 @@
                       (ex/print-throwable cause :prefix "Uncaught Rejection")
                       (ts/asap #(flash :cause cause :type :unhandled))))))))]
 
-
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)
     (fn []

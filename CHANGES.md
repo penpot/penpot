@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.16.0 (Unreleased)
+## 2.17.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
@@ -72,7 +72,8 @@
 - Fix copy to be more specific [Taiga #13990](https://tree.taiga.io/project/penpot/issue/13990)
 - Allow deleting the profile avatar after uploading [Github #9067](https://github.com/penpot/penpot/issues/9067)
 
-## 2.15.0 (Unreleased)
+
+## 2.16.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
@@ -94,6 +95,19 @@
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
 - Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
 - Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
+
+
+## 2.15.0 (Unreleased)
+
+### :sparkles: New features & Enhancements
+
+- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
+- Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
+
+### :bug: Bugs fixed
+
+- Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
 
 
 ## 2.14.3
@@ -186,6 +200,8 @@
 - Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
 - Remove tokens path node and bulk remove tokens [Taiga #13007](https://tree.taiga.io/project/penpot/us/13007)
 - Replace themes management modal radio buttons for switches [Taiga #9215](https://tree.taiga.io/project/penpot/us/9215)
+- [MCP server] Integrations section [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
+- [Access Tokens] Look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 
 ### :bug: Bugs fixed
 
