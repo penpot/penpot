@@ -369,9 +369,6 @@
         (cond (and col? space-evenly?)
               0
 
-              (and col? space-evenly? auto-height?)
-              0
-
               (and col? space-around?)
               (/ (max layout-gap-row (/ (- height line-height) num-children)) 2)
 

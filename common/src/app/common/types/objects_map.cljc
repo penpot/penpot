@@ -278,7 +278,7 @@
                (set! (.-cache this) (c/-assoc cache k v))
                v)
              (do
-               (set! (.-cache this) (assoc cache key nil))
+               (set! (.-cache this) (assoc cache k nil))
                nil))))
 
      (-lookup [this k not-found]

@@ -578,7 +578,7 @@
            :tool drawing-tool}])
 
        (when show-grids?
-         [:& frame-grid/frame-grid
+         [:> frame-grid/frame-grid*
           {:zoom zoom
            :selected selected
            :transform transform
@@ -589,7 +589,7 @@
                                   :zoom zoom}])
 
        (when show-snap-points?
-         [:& snap-points/snap-points
+         [:> snap-points/snap-points*
           {:layout layout
            :transform transform
            :drawing drawing-obj
@@ -690,13 +690,13 @@
                   :disabled (or drawing-tool @space?)}])))
 
           (when show-prototypes?
-            [:& interactions/interactions
+            [:> interactions/interactions*
              {:selected selected
               :page-id page-id
               :zoom zoom
               :objects objects-modified
               :current-transform transform
-              :hover-disabled? hover-disabled?}])])
+              :is-hover-disabled hover-disabled?}])])
 
        (when show-gradient-handlers?
          [:> gradients/gradient-handlers*
@@ -727,7 +727,7 @@
               :view-only true}]))]
 
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}
-        [:& scroll-bars/viewport-scrollbars
+        [:> scroll-bars/viewport-scrollbars*
          {:objects base-objects
           :zoom zoom
           :vbox vbox

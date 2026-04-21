@@ -21,7 +21,8 @@
    [cuerdas.core :as str]
    [goog.object :as gobj]
    [lambdaisland.uri :as u]
-   [okulary.core :as l]))
+   [okulary.core :as l]
+   [potok.v2.core :as ptk]))
 
 (def ^:private fonts
   (l/derived :fonts st/state))
@@ -127,6 +128,7 @@
         mem  (js/Uint8Array. (.-buffer heap) ptr size)]
 
     (.set mem (js/Uint8Array. font-array-buffer))
+    (st/emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
     (h/call wasm/internal-module "_store_font"
             (aget font-id-buffer 0)
             (aget font-id-buffer 1)
@@ -208,7 +210,8 @@
           id-buffer (uuid/get-u32 (:wasm-id font-data))
           font-data (assoc font-data :family-id-buffer id-buffer)
           font-stored? (font-stored? font-data emoji?)]
-      (when-not font-stored?
+      (if font-stored?
+        (st/async-emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
         (fetch-font font-data uri emoji? fallback?)))))
 
 (defn serialize-font-style

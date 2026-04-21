@@ -720,8 +720,10 @@
 
 (defn- offset-spread
   [from to num]
-  (->> (range 0 num)
-       (map #(mth/precision (+ from (* (/ (- to from) (dec num)) %)) 2))))
+  (if (<= num 1)
+    [from]
+    (->> (range 0 num)
+         (map #(mth/precision (+ from (* (/ (- to from) (dec num)) %)) 2)))))
 
 (defn uniform-spread?
   "Checks if the gradient stops are spread uniformly"
@@ -750,6 +752,9 @@
 (defn interpolate-gradient
   [stops offset]
   (let [idx   (d/index-of-pred stops #(<= offset (:offset %)))
-        start (if (= idx 0) (first stops) (get stops (dec idx)))
+        start (cond
+                (nil? idx) (last stops)
+                (= idx 0)  (first stops)
+                :else      (get stops (dec idx)))
         end   (if (nil? idx) (last stops) (get stops idx))]
     (interpolate-color start end offset)))

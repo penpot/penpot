@@ -8575,6 +8575,10 @@ msgid "workspace.tokens.rename-group"
 msgstr "Renombrar grupo de tokens"
 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.duplicate-group"
+msgstr "Duplicar grupo de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Tus tokens serán automáticamente renombrados a %s.(sufijo).(token)"
 

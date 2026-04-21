@@ -411,9 +411,16 @@
              (when id-ref
                (reset! id-ref component-id))
              (when-not (empty? (:redo-changes changes))
-               (rx/of (dch/commit-changes changes)
-                      (dws/select-shapes (d/ordered-set (:id root)))
-                      (ptk/data-event :layout/update {:ids parents}))))))))))
+               (rx/concat
+                (rx/of (dch/commit-changes changes)
+                       (dws/select-shapes (d/ordered-set (:id root)))
+                       (ptk/data-event :layout/update {:ids parents}))
+
+                ;; When activated the wasm rendering we need to recreate its thumbnail on creation
+                (if (features/active-feature? state "render-wasm/v1")
+                  (rx/of (dwt.wasm/render-thumbnail file-id page-id (:id root))
+                         (dwt.wasm/persist-thumbnail file-id page-id (:id root)))
+                  (rx/empty)))))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.

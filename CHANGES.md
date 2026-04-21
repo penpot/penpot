@@ -95,11 +95,12 @@
 - Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
 
 
-## 2.14.3 (Unreleased)
+## 2.14.3
 
 ### :sparkles: New features & Enhancements
 
 - Add webp export format to plugin types [Github #8870](https://github.com/penpot/penpot/pull/8870)
+- Use shared singleton containers for React portals to reduce DOM growth [Github #8957](https://github.com/penpot/penpot/pull/8957)
 
 ### :bug: Bugs fixed
 
@@ -112,6 +113,16 @@
 - Fix path drawing preview passing shape instead of content to next-node
 - Fix swapped arguments in CLJS PathData `-nth` with default
 - Normalize PathData coordinates to safe integer bounds on read
+- Fix RangeError from re-entrant error handling causing stack overflow [Github #8962](https://github.com/penpot/penpot/pull/8962)
+- Fix builder bool styles and media validation [Github #8963](https://github.com/penpot/penpot/pull/8963)
+- Fix "Move to" menu allowing same project as target when multiple files are selected
+- Fix crash when index query param is duplicated in URL
+- Fix wrong extremity point in path `calculate-extremities` for line-to segments
+- Fix reversed args in DTCG shadow composite token conversion
+- Fix `inside-layout?` passing shape id instead of shape to `frame-shape?`
+- Fix wrong `mapcat` call in `collect-main-shapes`
+- Fix stale accumulator in `get-children-in-instance` recursion
+- Fix typo `:podition` in swap-shapes grid cell
 
 
 ## 2.14.2

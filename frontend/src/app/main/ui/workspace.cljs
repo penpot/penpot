@@ -97,7 +97,7 @@
 
       [:section {:class (stl/css :workspace-viewport)}
        (when (dbg/enabled? :coordinates)
-         [:& coordinates/coordinates {:colorpalette? colorpalette?}])
+         [:> coordinates/coordinates* {:is-colorpalette colorpalette?}])
 
        (when (dbg/enabled? :history-overlay)
          [:div {:class (stl/css :history-debug-overlay)}

@@ -278,11 +278,35 @@ impl ShapesPoolImpl {
         }
     }
 
-    pub fn clean_all(&mut self) {
+    /// Clears transient per-frame state (modifiers, structure, scale_content)
+    /// and returns the list of UUIDs that had a `modifier` applied at the
+    /// moment of cleaning. The caller can use that list to re-sync the tile
+    /// index / tile cache for those shapes: after cleaning their modifier is
+    /// gone, but if we don't touch their tiles they keep pointing at the
+    /// previous modified position and the tile texture cache may serve stale
+    /// pixels.
+    pub fn clean_all(&mut self) -> Vec<Uuid> {
         self.clean_shape_cache();
+
+        let modified_uuids: Vec<Uuid> = if self.modifiers.is_empty() {
+            Vec::new()
+        } else {
+            let mut idx_to_uuid: HashMap<usize, Uuid> =
+                HashMap::with_capacity(self.uuid_to_idx.len());
+            for (uuid, idx) in self.uuid_to_idx.iter() {
+                idx_to_uuid.insert(*idx, *uuid);
+            }
+            self.modifiers
+                .keys()
+                .filter_map(|idx| idx_to_uuid.get(idx).copied())
+                .collect()
+        };
+
         self.modifiers = HashMap::default();
         self.structure = HashMap::default();
         self.scale_content = HashMap::default();
+
+        modified_uuids
     }
 
     pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl {
