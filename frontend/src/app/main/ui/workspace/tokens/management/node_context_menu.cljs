@@ -38,7 +38,7 @@
         top                 (+ (get-in mdata [:position :y]) 5)
         left                (+ (get-in mdata [:position :x]) 5)
         container           (hooks/use-portal-container :popup)
-        
+
         rename-node         (mf/use-fn
                              (mf/deps mdata on-rename-node)
                              (fn []
@@ -46,7 +46,7 @@
                                      type (get mdata :type)]
                                  (when node
                                    (on-rename-node node type)))))
-        
+
         duplicate-node      (mf/use-fn
                              (mf/deps mdata on-duplicate-node)
                              (fn []
@@ -76,7 +76,7 @@
             (mf/set-ref-val! dropdown-direction-change* (inc (mf/ref-val dropdown-direction-change*)))))))
 
     ;; FIXME: perf optimization
-    
+
     (when is-open?
       (mf/portal
        (mf/html
