@@ -38,6 +38,23 @@
 (def ^:private xf:without-uuid-zero
   (remove #(= % uuid/zero)))
 
+;; Tracks whether the WASM renderer is currently in "interactive
+;; transform" mode (a drag / resize / rotate gesture in progress).
+;; Paired with `set-modifiers-start` / `set-modifiers-end` so the
+;; native side only toggles once per gesture, regardless of how many
+;; `set-wasm-modifiers` calls fire in between.
+(defonce ^:private interactive-transform-active? (atom false))
+
+(defn- ensure-interactive-transform-start!
+  []
+  (when (compare-and-set! interactive-transform-active? false true)
+    (wasm.api/set-modifiers-start)))
+
+(defn- ensure-interactive-transform-end!
+  []
+  (when (compare-and-set! interactive-transform-active? true false)
+    (wasm.api/set-modifiers-end)))
+
 (def ^:private transform-attrs
   #{:selrect
     :points
@@ -279,6 +296,11 @@
     ptk/EffectEvent
     (effect [_ state _]
       (when (features/active-feature? state "render-wasm/v1")
+        ;; End interactive transform mode BEFORE cleaning modifiers so
+        ;; the final full-quality render triggered by subsequent shape
+        ;; updates is not still classified as "interactive" (which would
+        ;; skip shadows / blur).
+        (ensure-interactive-transform-end!)
         (wasm.api/clean-modifiers)
         (set-wasm-props! (dsh/lookup-page-objects state) (:wasm-props state) [])))
 
@@ -624,6 +646,12 @@
 
     ptk/WatchEvent
     (watch [_ state _]
+      ;; Entering an interactive transform (drag/resize/rotate). Flip
+      ;; the renderer into fast + atlas-backdrop mode so the live
+      ;; preview is cheap, tiles never appear sequentially and the main
+      ;; thread is not blocked. The pair is closed in
+      ;; `clear-local-transform`.
+      (ensure-interactive-transform-start!)
       (wasm.api/clean-modifiers)
       (let [prev-wasm-props (:prev-wasm-props state)
             wasm-props      (:wasm-props state)
@@ -764,6 +792,7 @@
    (ptk/reify ::set-wasm-rotation-modifiers
      ptk/EffectEvent
      (effect [_ state _]
+       (ensure-interactive-transform-start!)
        (let [objects (dsh/lookup-page-objects state)
              ids     (sequence xf-rotation-shape shapes)
 

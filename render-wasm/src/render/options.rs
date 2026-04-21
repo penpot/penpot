@@ -4,13 +4,30 @@ const PROFILE_REBUILD_TILES: u32 = 0x02;
 const TEXT_EDITOR_V3: u32 = 0x04;
 const SHOW_WASM_INFO: u32 = 0x08;
 
+// Render performance options
+// This is the extra area used for tile rendering (tiles beyond viewport).
+// Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
+const MAX_BLOCKING_TIME_MS: i32 = 32;
+const NODE_BATCH_THRESHOLD: i32 = 3;
+const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
+const ANTIALIAS_THRESHOLD: f32 = 7.0;
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct RenderOptions {
     pub flags: u32,
     pub dpr: Option<f32>,
     fast_mode: bool,
+    /// Active while the user is interacting with a shape (drag, resize,
+    /// rotate). Implies `fast_mode` semantics for expensive effects but
+    /// keeps per-frame flushing enabled (unlike pan/zoom, where
+    /// `render_from_cache` drives target presentation).
+    interactive_transform: bool,
     /// Minimum on-screen size (CSS px at 1:1 zoom) above which vector antialiasing is enabled.
     pub antialias_threshold: f32,
+    pub viewport_interest_area_threshold: i32,
+    pub max_blocking_time_ms: i32,
+    pub node_batch_threshold: i32,
+    pub blur_downscale_threshold: f32,
 }
 
 impl Default for RenderOptions {
@@ -19,7 +36,12 @@ impl Default for RenderOptions {
             flags: 0,
             dpr: None,
             fast_mode: false,
-            antialias_threshold: 7.0,
+            interactive_transform: false,
+            antialias_threshold: ANTIALIAS_THRESHOLD,
+            viewport_interest_area_threshold: VIEWPORT_INTEREST_AREA_THRESHOLD,
+            max_blocking_time_ms: MAX_BLOCKING_TIME_MS,
+            node_batch_threshold: NODE_BATCH_THRESHOLD,
+            blur_downscale_threshold: BLUR_DOWNSCALE_THRESHOLD,
         }
     }
 }
@@ -42,6 +64,26 @@ impl RenderOptions {
         self.fast_mode = enabled;
     }
 
+    /// Interactive transform is ON while the user is dragging, resizing
+    /// or rotating a shape. Callers use it to keep per-frame flushing
+    /// enabled and to render visible tiles in a single frame so tiles
+    /// never appear sequentially or flicker during the gesture.
+    pub fn is_interactive_transform(&self) -> bool {
+        self.interactive_transform
+    }
+
+    pub fn set_interactive_transform(&mut self, enabled: bool) {
+        self.interactive_transform = enabled;
+    }
+
+    /// True only when the viewport is the one being moved (pan/zoom)
+    /// and the dedicated `render_from_cache` path owns Target
+    /// presentation. In this mode `process_animation_frame` must not
+    /// flush to avoid presenting stale tile positions.
+    pub fn is_viewport_interaction(&self) -> bool {
+        self.fast_mode && !self.interactive_transform
+    }
+
     pub fn dpr(&self) -> f32 {
         self.dpr.unwrap_or(1.0)
     }
@@ -57,6 +99,30 @@ impl RenderOptions {
     pub fn set_antialias_threshold(&mut self, value: f32) {
         if value.is_finite() && value > 0.0 {
             self.antialias_threshold = value;
+        }
+    }
+
+    pub fn set_blur_downscale_threshold(&mut self, value: f32) {
+        if value.is_finite() && value > 0.0 {
+            self.blur_downscale_threshold = value;
+        }
+    }
+
+    pub fn set_viewport_interest_area_threshold(&mut self, value: i32) {
+        if value >= 0 {
+            self.viewport_interest_area_threshold = value;
+        }
+    }
+
+    pub fn set_node_batch_threshold(&mut self, value: i32) {
+        if value > 0 {
+            self.node_batch_threshold = value;
+        }
+    }
+
+    pub fn set_max_blocking_time_ms(&mut self, value: i32) {
+        if value > 0 {
+            self.max_blocking_time_ms = value;
         }
     }
 }

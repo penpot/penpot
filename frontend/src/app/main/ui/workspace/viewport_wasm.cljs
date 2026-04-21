@@ -79,7 +79,7 @@
   (apply-modifiers-to-objects objects (select-keys (into {} modifiers) selected)))
 
 (mf/defc viewport*
-  [{:keys [selected wglobal layout file page palete-size file-version-id]}]
+  [{:keys [selected wglobal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
 
@@ -111,6 +111,7 @@
         workspace-editor-state (mf/deref refs/workspace-editor-state)
 
         file-id           (get file :id)
+        vern              (get file :vern)
         objects           (get page :objects)
         page-id           (get page :id)
         background        (get page :background clr/canvas)
@@ -154,7 +155,7 @@
 
         canvas-ref        (mf/use-ref nil)
         text-editor-ref   (mf/use-ref nil)
-        last-file-version-id-ref (mf/use-ref nil)
+        last-vern-ref     (mf/use-ref nil)
 
         ;; STATE REFS
         disable-paste-ref (mf/use-ref false)
@@ -393,10 +394,11 @@
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render "with-effect")))
 
-    (mf/with-effect [@canvas-init? file-version-id zoom vbox background]
+    (mf/with-effect [@canvas-init? vern zoom vbox background]
       (when @canvas-init?
         (if (not @initialized?)
           (do
+            (mf/set-ref-val! last-vern-ref vern)
             ;; Initial file open uses the same transition workflow as page switches,
             ;; but with a solid background-color blurred placeholder.
             (wasm.api/start-initial-load-transition! background)
@@ -404,14 +406,12 @@
             ;; blank canvas (first load) visible while shapes load.
             ;; The loading overlay is suppressed because on-shapes-ready
             ;; is set.
-            (wasm.api/initialize-viewport
-             base-objects zoom vbox :background background)
-            (reset! initialized? true)
-            (mf/set-ref-val! last-file-version-id-ref file-version-id))
-          (when (and (some? file-version-id)
-                     (not= file-version-id (mf/ref-val last-file-version-id-ref)))
             (wasm.api/initialize-viewport base-objects zoom vbox :background background)
-            (mf/set-ref-val! last-file-version-id-ref file-version-id)))))
+            (reset! initialized? true))
+
+          (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
+            (wasm.api/initialize-viewport base-objects zoom vbox :background background)
+            (mf/set-ref-val! last-vern-ref vern)))))
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)

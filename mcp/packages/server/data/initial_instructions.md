@@ -386,6 +386,9 @@ For many tasks, it can be critical to visually inspect the design. Remember to u
 * When transferring styles from a Penpot design to code, make sure that you strictly adhere to the design.
   NEVER make assumptions about missing values and don't get overly creative (e.g. don't pick your own colours and stick to
   non-creative defaults such as white/black if you are lacking information).
+* When creating new designs, 
+   - ensure a clean internal structure by applying flex and grid layouts when appropriate
+   - ensure proper semantic naming of elements.
 
 # Revising Designs
 

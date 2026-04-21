@@ -121,24 +121,25 @@
 ;; IMPORTANT: Only TTF fonts can be stored.
 (defn- store-font-buffer
   [font-data font-array-buffer emoji? fallback?]
-  (let [font-id-buffer  (:family-id-buffer font-data)
-        size (.-byteLength font-array-buffer)
-        ptr  (h/call wasm/internal-module "_alloc_bytes" size)
-        heap (gobj/get ^js wasm/internal-module "HEAPU8")
-        mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+  (when wasm/context-initialized?
+    (let [font-id-buffer  (:family-id-buffer font-data)
+          size (.-byteLength font-array-buffer)
+          ptr  (h/call wasm/internal-module "_alloc_bytes" size)
+          heap (gobj/get ^js wasm/internal-module "HEAPU8")
+          mem  (js/Uint8Array. (.-buffer heap) ptr size)]
 
-    (.set mem (js/Uint8Array. font-array-buffer))
-    (st/emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
-    (h/call wasm/internal-module "_store_font"
-            (aget font-id-buffer 0)
-            (aget font-id-buffer 1)
-            (aget font-id-buffer 2)
-            (aget font-id-buffer 3)
-            (:weight font-data)
-            (:style font-data)
-            emoji?
-            fallback?)
-    true))
+      (.set mem (js/Uint8Array. font-array-buffer))
+      (st/emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
+      (h/call wasm/internal-module "_store_font"
+              (aget font-id-buffer 0)
+              (aget font-id-buffer 1)
+              (aget font-id-buffer 2)
+              (aget font-id-buffer 3)
+              (:weight font-data)
+              (:style font-data)
+              emoji?
+              fallback?)
+      true)))
 
 ;; Tracks fonts currently being fetched: {url -> fallback?}
 ;; When the same font is requested as both primary and fallback,

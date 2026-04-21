@@ -11,7 +11,6 @@
    [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.types.objects-map]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
@@ -45,7 +44,8 @@
   (log/inf :version (:full cf/version)
            :asserts *assert*
            :build-date cf/build-date
-           :public-uri (dm/str cf/public-uri))
+           :public-uri (dm/str cf/public-uri)
+           :session-id (str cf/session-id))
   (log/inf :hint "enabled flags" :flags (str/join " " (map name cf/flags))))
 
 (declare reinit)
@@ -71,7 +71,7 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :session-id (uuid/next)))
+      (assoc state :session-id cf/session-id))
 
     ptk/WatchEvent
     (watch [_ _ stream]

@@ -61,32 +61,34 @@
            (js/requestAnimationFrame
             (fn [_]
               (try
-                (let [objects (dsh/lookup-page-objects @st/state file-id page-id)
-                      frame (get objects frame-id)
-                      {:keys [width height]} (:selrect frame)
-                      max-size (mth/max width height)
-                      scale (mth/max 1 (/ target-size max-size))
-                      png-bytes (wasm.api/render-shape-pixels frame-id scale)]
-                  (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
-                    (do
-                      (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))
-                      (rx/end! subs))
-                    (.then
-                     (png-bytes->data-uri png-bytes)
-                     (fn [data-uri]
-                       (rx/push! subs data-uri)
-                       (rx/end! subs))
-                     (fn [err]
-                       (rx/error! subs err)))))
+                (let [objects (dsh/lookup-page-objects @st/state file-id page-id)]
+                  (if-let [frame (get objects frame-id)]
+                    (let [{:keys [width height]} (:selrect frame)
+                          max-size (mth/max width height)
+                          scale (mth/max 1 (/ target-size max-size))
+                          png-bytes (wasm.api/render-shape-pixels frame-id scale)]
+                      (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
+                        (do
+                          (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))
+                          (rx/end! subs))
+                        (.then
+                         (png-bytes->data-uri png-bytes)
+                         (fn [data-uri]
+                           (rx/push! subs data-uri)
+                           (rx/end! subs))
+                         (fn [err]
+                           (rx/error! subs err)))))
+
+                    (rx/error! subs "Frame not found")))
                 (catch :default err
                   (rx/error! subs err)))))]
        #(js/cancelAnimationFrame req-id)))))
 
 (defn render-thumbnail
   "Renders a component thumbnail via WASM and updates the UI immediately.
-   Does NOT persist to the server — persistence is handled separately
-   by `persist-thumbnail` on a debounced schedule."
-  [file-id page-id frame-id]
+   When `persist?` is true, also persists the rendered thumbnail to the
+   server in the same observable chain (guaranteeing correct ordering)."
+  [file-id page-id frame-id & {:keys [persist?] :or {persist? false}}]
 
   (let [object-id (thc/fmt-object-id file-id page-id frame-id "component")]
     (ptk/reify ::render-thumbnail
@@ -115,15 +117,30 @@
                            (catch :default err
                              (rx/error! subs err)))))))
 
+                  (persist-to-server
+                    [data-uri]
+                    (let [blob (wapi/data-uri->blob data-uri)]
+                      (->> (rp/cmd! :create-file-object-thumbnail
+                                    {:file-id file-id
+                                     :object-id object-id
+                                     :media blob
+                                     :tag "component"})
+                           (rx/catch rx/empty)
+                           (rx/ignore))))
+
                   (do-render-thumbnail
                     []
                     (let [tp (ct/tpoint-ms)]
                       (->> (render-component-pixels file-id page-id frame-id)
-                           (rx/map
+                           (rx/mapcat
                             (fn [data-uri]
                               (l/dbg :hint "component thumbnail rendered (wasm)"
                                      :elapsed (dm/str (tp) "ms"))
-                              (dwt/assoc-thumbnail object-id data-uri)))
+                              (if persist?
+                                (rx/merge
+                                 (rx/of (dwt/assoc-thumbnail object-id data-uri))
+                                 (persist-to-server data-uri))
+                                (rx/of (dwt/assoc-thumbnail object-id data-uri)))))
 
                            (rx/catch (fn [err]
                                        (js/console.error err)

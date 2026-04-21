@@ -265,54 +265,68 @@
         prev-transforms   (mf/use-var nil)]
 
     (mf/with-effect [add-children]
-      (ts/raf
-       #(doseq [{:keys [shape]} add-children-prev]
-          (let [shape-node  (get-shape-node shape)
-                mirror-node (dom/query (dm/fmt ".mirror-shape[href='#shape-%'" shape))]
-            (when mirror-node (.remove mirror-node))
-            (dom/remove-attribute! (dom/get-parent shape-node) "display"))))
+      (let [raf-id1
+            (ts/raf
+             #(doseq [{:keys [shape]} add-children-prev]
+                (let [shape-node  (get-shape-node shape)
+                      mirror-node (dom/query (dm/fmt ".mirror-shape[href='#shape-%'" shape))]
+                  (when mirror-node (.remove mirror-node))
+                  (when-let [parent (some-> shape-node dom/get-parent)]
+                    (dom/remove-attribute! parent "display")))))
 
-      (ts/raf
-       #(doseq [{:keys [frame shape]} add-children]
-          (let [frame-node (get-shape-node frame)
-                shape-node (get-shape-node shape)
+            raf-id2
+            (ts/raf
+             #(doseq [{:keys [frame shape]} add-children]
+                (let [frame-node (get-shape-node frame)
+                      shape-node (get-shape-node shape)]
+                  (when (and (some? frame-node) (some? shape-node))
+                    (let [clip-id
+                          (-> (dom/query frame-node ":scope > defs > .frame-clip-def")
+                              (dom/get-attribute "id"))
 
-                clip-id
-                (-> (dom/query frame-node ":scope > defs > .frame-clip-def")
-                    (dom/get-attribute "id"))
+                          use-node
+                          (dom/create-element "http://www.w3.org/2000/svg" "use")
 
-                use-node
-                (dom/create-element "http://www.w3.org/2000/svg" "use")
+                          contents-node
+                          (or (dom/query frame-node ".frame-children") frame-node)]
 
-                contents-node
-                (or (dom/query frame-node ".frame-children") frame-node)]
-
-            (dom/set-attribute! use-node "href" (dm/fmt "#shape-%" shape))
-            (dom/set-attribute! use-node "clip-path" (dm/fmt "url(#%)" clip-id))
-            (dom/add-class! use-node "mirror-shape")
-            (dom/append-child! contents-node use-node)
-            (dom/set-attribute! (dom/get-parent shape-node) "display" "none")))))
+                      (dom/set-attribute! use-node "href" (dm/fmt "#shape-%" shape))
+                      (dom/set-attribute! use-node "clip-path" (dm/fmt "url(#%)" clip-id))
+                      (dom/add-class! use-node "mirror-shape")
+                      (dom/append-child! contents-node use-node)
+                      (dom/set-attribute! (dom/get-parent shape-node) "display" "none"))))))]
+        (fn []
+          (js/cancelAnimationFrame raf-id1)
+          (js/cancelAnimationFrame raf-id2))))
 
     (mf/with-effect [transforms]
       (let [curr-shapes-set (into #{} (map :id) shapes)
             prev-shapes-set (into #{} (map :id) @prev-shapes)
 
             new-shapes      (->> shapes (remove #(contains? prev-shapes-set (:id %))))
-            removed-shapes  (->> @prev-shapes (remove #(contains? curr-shapes-set (:id %))))]
+            removed-shapes  (->> @prev-shapes (remove #(contains? curr-shapes-set (:id %))))
 
-        ;; NOTE: we schedule the dom modifications to be executed
-        ;; asynchronously for avoid component flickering when react18
-        ;; is used.
+            ;; NOTE: we schedule the dom modifications to be executed
+            ;; asynchronously for avoid component flickering when react18
+            ;; is used.
 
-        (when (d/not-empty? new-shapes)
-          (ts/raf #(start-transform! node new-shapes)))
+            raf-id1
+            (when (d/not-empty? new-shapes)
+              (ts/raf #(start-transform! node new-shapes)))
 
-        (when (d/not-empty? shapes)
-          (ts/raf #(update-transform! node shapes transforms modifiers)))
+            raf-id2
+            (when (d/not-empty? shapes)
+              (ts/raf #(update-transform! node shapes transforms modifiers)))
 
-        (when (d/not-empty? removed-shapes)
-          (ts/raf #(remove-transform! node removed-shapes))))
+            raf-id3
+            (when (d/not-empty? removed-shapes)
+              (ts/raf #(remove-transform! node removed-shapes)))]
 
-      (reset! prev-modifiers modifiers)
-      (reset! prev-transforms transforms)
-      (reset! prev-shapes shapes))))
+        (reset! prev-modifiers modifiers)
+        (reset! prev-transforms transforms)
+        (reset! prev-shapes shapes)
+
+        (fn []
+          (when raf-id1 (js/cancelAnimationFrame raf-id1))
+          (when raf-id2 (js/cancelAnimationFrame raf-id2))
+          (when raf-id3 (js/cancelAnimationFrame raf-id3)))))))
