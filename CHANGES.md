@@ -76,6 +76,7 @@
 - Fix copy to be more specific [Taiga #13990](https://tree.taiga.io/project/penpot/issue/13990)
 - Allow deleting the profile avatar after uploading [Github #9067](https://github.com/penpot/penpot/issues/9067)
 - Fix incorrect rendering when exporting text as SVG, PNG and JPG (by @edwin-rivera-dev) [Github #8516](https://github.com/penpot/penpot/issues/8516)
+- Fix Settings and Notifications "Update Settings" button enabled state when form has no changes (by @moorsecopers99) [Github #9090](https://github.com/penpot/penpot/issues/9090)
 
 
 ## 2.16.0 (Unreleased)
