@@ -16,6 +16,7 @@
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.texts-v3 :as dwt-v3]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
@@ -333,9 +334,12 @@
         (mf/use-fn
          (mf/deps values)
          (fn [ids attrs]
-           (st/emit! (dwt/save-font (-> (merge (txt/get-default-text-attrs) values attrs)
-                                        (select-keys txt/text-node-attrs)))
-                     (dwt/update-all-attrs ids attrs))))
+           (let [updated-attrs (-> (merge (txt/get-default-text-attrs) values attrs)
+                                   (select-keys txt/text-node-attrs))]
+             (when (features/active-feature? @st/state "text-editor-wasm/v1")
+               (st/emit! (dwt-v3/v3-update-text-editor-styles (first ids) attrs)))
+             (st/emit! (dwt/save-font updated-attrs)
+                       (dwt/update-all-attrs ids attrs)))))
 
         on-change
         (mf/use-fn

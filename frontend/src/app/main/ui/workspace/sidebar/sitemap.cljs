@@ -30,6 +30,7 @@
    [app.util.timers :as timers]
    [cuerdas.core :as str]
    [okulary.core :as l]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; FIXME: can we unify this two refs in one?
@@ -77,18 +78,21 @@
          (mf/deps id current-page-id is-separator?)
          (fn []
            (when-not is-separator?
-             ;; For the wasm renderer, apply a blur effect to the viewport canvas
-             ;; when we navigate to a different page.
+             ;; WASM page transitions:
+             ;; - Capture the current page (A) once
+             ;; - Show a blurred snapshot while the target page (B/C/...) renders
+             ;; - If the user clicks again during the transition, keep showing the original (A) snapshot
              (if (and (features/active-feature? @st/state "render-wasm/v1")
                       (not= id current-page-id))
                (do
-                 (wasm.api/capture-canvas-pixels)
-                 (wasm.api/apply-canvas-blur)
-                 ;; NOTE: it seems we need two RAF so the blur is actually applied and visible
-                 ;;       in the canvas :(
-                 (timers/raf
-                  (fn []
-                    (timers/raf navigate-fn))))
+                 (-> (wasm.api/apply-canvas-blur)
+                     (p/finally
+                       (fn []
+                         ;; NOTE: it seems we need two RAF so the blur is actually applied and visible
+                         ;;       in the canvas :(
+                         (timers/raf
+                          (fn []
+                            (timers/raf navigate-fn)))))))
                (navigate-fn)))))
 
         on-delete

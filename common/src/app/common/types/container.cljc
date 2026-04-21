@@ -110,8 +110,9 @@
             (let [shape (get objects id)]
               (if (and (ctk/instance-head? shape) (seq children))
                 children
-                (into (conj children shape)
-                      (mapcat #(get-children-rec children %) (:shapes shape))))))]
+                (let [children' (conj children shape)]
+                  (into children'
+                        (mapcat #(get-children-rec children' %) (:shapes shape)))))))]
     (get-children-rec [] id)))
 
 (defn get-component-shape
@@ -444,7 +445,7 @@
   (if (ctk/main-instance? shape)
     [shape]
     (if-let [children (cfh/get-children objects (:id shape))]
-      (mapcat collect-main-shapes children objects)
+      (mapcat #(collect-main-shapes % objects) children)
       [])))
 
 (defn get-component-from-shape

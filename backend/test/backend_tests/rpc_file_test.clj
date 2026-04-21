@@ -312,7 +312,8 @@
       ;; freeze because of the deduplication (we have uploaded 2 times
       ;; the same files).
 
-      (let [res (th/run-task! :storage-gc-touched {})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -386,7 +387,8 @@
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
       ;; them are marked to be deleted
-      (let [res (th/run-task! :storage-gc-touched {})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 0 (:freeze res)))
         (t/is (= 2 (:delete res))))
 
@@ -571,7 +573,8 @@
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
       ;; them are marked to be deleted.
-      (let [res (th/run-task! :storage-gc-touched {})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 0 (:freeze res)))
         (t/is (= 2 (:delete res))))
 
@@ -664,7 +667,8 @@
       ;; because of the deduplication (we have uploaded 2 times the
       ;; same files).
 
-      (let [res (th/run-task! :storage-gc-touched {})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -714,7 +718,8 @@
 
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
-      (let [res (th/run-task! "storage-gc-touched" {})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! "storage-gc-touched" {}))]
         (t/is (= 1 (:freeze res))))
 
       ;; check file media objects
@@ -749,7 +754,8 @@
 
       ;; Now that file-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
-      (let [res (th/run-task! :storage-gc-touched {})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:delete res))))
 
       ;; check file media objects
@@ -1319,7 +1325,8 @@
     ;; The FileGC task will schedule an inner taskq
     (th/run-pending-tasks!)
 
-    (let [res (th/run-task! :storage-gc-touched {})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 2 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
@@ -1413,7 +1420,8 @@
 
     ;; we ensure that once object-gc is passed and marked two storage
     ;; objects to delete
-    (let [res (th/run-task! :storage-gc-touched {})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
       (t/is (= 2 (:delete res))))
 

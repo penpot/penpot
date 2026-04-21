@@ -29,7 +29,7 @@
             :style {:background-color color}
             :src (cfg/resolve-profile-photo-url profile)}]]))
 
-(mf/defc active-sessions
+(mf/defc active-sessions*
   {::mf/memo true}
   []
   (let [profiles     (mf/deref refs/profiles)

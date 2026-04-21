@@ -3,8 +3,10 @@
    [cljs.test :as t]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.data.repo-test]
+   [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
    [frontend-tests.data.workspace-colors-test]
+   [frontend-tests.data.workspace-media-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.helpers-shapes-test]
@@ -14,6 +16,7 @@
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.pasting-in-containers-test]
+   [frontend-tests.main-errors-test]
    [frontend-tests.plugins.context-shapes-test]
    [frontend-tests.svg-fills-test]
    [frontend-tests.tokens.import-export-test]
@@ -41,8 +44,11 @@
   (t/run-tests
    'frontend-tests.basic-shapes-test
    'frontend-tests.data.repo-test
+   'frontend-tests.main-errors-test
+   'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test
+   'frontend-tests.data.workspace-media-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.helpers-shapes-test

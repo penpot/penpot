@@ -186,13 +186,9 @@
         flex (make-flex-frame :parent-id root-id)
         child (make-shape :parent-id (:id flex))]
 
-    ;; Note: inside-layout? calls (cfh/frame-shape? current-id) with a UUID id,
-    ;; but frame-shape? checks (:type uuid) which is nil for a UUID value.
-    ;; The function therefore always returns false regardless of structure.
-    ;; These tests document the actual (not the intended) behavior.
-    (t/testing "returns false when child is under a flex frame"
+    (t/testing "returns true when child is under a flex frame"
       (let [objects {root-id root (:id flex) flex (:id child) child}]
-        (t/is (not (layout/inside-layout? objects child)))))
+        (t/is (layout/inside-layout? objects child))))
 
     (t/testing "returns false for root shape"
       (let [objects {root-id root (:id flex) flex (:id child) child}]
