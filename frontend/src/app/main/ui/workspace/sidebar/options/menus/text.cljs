@@ -323,10 +323,12 @@
                                  :attributes        #{:typography}
                                  :token             token
                                  :on-update-shape   dwta/update-typography})))))
-        label          (case type
-                         :multiple (tr "workspace.options.text-options.title-selection")
-                         :group (tr "workspace.options.text-options.title-group")
-                         (tr "workspace.options.text-options.title"))
+        label
+        (mf/with-memo [type]
+          (case type
+            :multiple (tr "workspace.options.text-options.title-selection")
+            :group (tr "workspace.options.text-options.title-group")
+            (tr "workspace.options.text-options.title")))
         set-option-ref
         (mf/use-fn
          (fn [node]
