@@ -314,9 +314,9 @@ pub extern "C" fn set_shape_grow_type(grow_type: u8) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(text_content) = &mut shape.shape_type {
             text_content.set_grow_type(GrowType::from(grow_type));
-        } else {
-            panic!("Trying to update grow type in a shape that it's not a text shape");
         }
+        // Don't throw error if the object is not text.
+        // On swap component opperations is convenient.
     });
 }
 
