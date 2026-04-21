@@ -401,6 +401,42 @@ pub extern "C" fn set_view_end() -> Result<()> {
     Ok(())
 }
 
+/// Enter interactive transform mode (drag / resize / rotate of a
+/// shape). Activates the same expensive-effect skipping as pan/zoom
+/// (`fast_mode`) but keeps per-frame flushing enabled so the Target is
+/// presented every rAF, and triggers atlas-backed backdrops so
+/// invalidated tiles do not appear sequentially or flicker.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_modifiers_start() -> Result<()> {
+    with_state_mut!(state, {
+        performance::begin_measure!("set_modifiers_start");
+        let opts = &mut state.render_state.options;
+        opts.set_fast_mode(true);
+        opts.set_interactive_transform(true);
+        performance::end_measure!("set_modifiers_start");
+    });
+    Ok(())
+}
+
+/// Leave interactive transform mode and cancel any pending async
+/// render scheduled under it. The caller is responsible for triggering
+/// a final full-quality render (typically via `_render`) once the
+/// modifiers have been committed.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_modifiers_end() -> Result<()> {
+    with_state_mut!(state, {
+        performance::begin_measure!("set_modifiers_end");
+        let opts = &mut state.render_state.options;
+        opts.set_fast_mode(false);
+        opts.set_interactive_transform(false);
+        state.render_state.cancel_animation_frame();
+        performance::end_measure!("set_modifiers_end");
+    });
+    Ok(())
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn clear_focus_mode() -> Result<()> {
