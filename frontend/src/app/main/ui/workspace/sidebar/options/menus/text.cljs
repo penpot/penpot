@@ -314,7 +314,8 @@
      expand-stream
      #(swap! state* assoc-in [:more-options] true))
 
-    [:div {:class (stl/css :element-set)}
+    [:section {:class (stl/css :element-set)
+               :aria-label "Text section"}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  true
                       :collapsed    (not main-menu-open?)

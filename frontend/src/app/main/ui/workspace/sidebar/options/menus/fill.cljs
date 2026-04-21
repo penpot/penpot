@@ -195,7 +195,8 @@
           (dom/set-attribute! checkbox "indeterminate" true)
           (dom/remove-attribute! checkbox "indeterminate"))))
 
-    [:div {:class (stl/css :fill-section)}
+    [:section {:class (stl/css :fill-section)
+               :aria-label "Fill section"}
      [:div {:class (stl/css :fill-title)}
       [:> title-bar* {:collapsable  has-fills?
                       :collapsed    (not open?)
