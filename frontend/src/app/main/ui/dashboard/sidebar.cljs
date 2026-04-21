@@ -782,9 +782,8 @@
              [:span {:class (stl/css :team-text)}
               (:name current-org)]])]
          arrow-icon]
-        (if (or default-org?
-                (= (:id profile) (:owner-id current-org)))
-          [:div {:class (stl/css :org-options)}]
+        (when-not (or default-org?
+                      (= (:id profile) (:owner-id current-org)))
           [:> button* {:variant "ghost"
                        :type "button"
                        :class (stl/css :org-options-btn)
