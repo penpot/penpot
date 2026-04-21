@@ -309,7 +309,7 @@
     ;; while the component is still not rendered and the thumbnail URI
     ;; is not available.
     (mf/use-effect
-     (mf/deps is-hidden thumbnail-uri wasm? current-page-id)
+     (mf/deps is-hidden thumbnail-uri wasm? current-page-id file-id page-id)
      (fn []
        (if (some? thumbnail-uri)
          (mf/set-ref-val! thumbnail-requested? false)
