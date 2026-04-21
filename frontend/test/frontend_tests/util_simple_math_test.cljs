@@ -8,7 +8,6 @@
   (:require
    [app.common.math :as cm]
    [app.util.simple-math :as sm]
-   [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]))
 
 (t/deftest test-parser-inst
@@ -87,4 +86,25 @@
     (let [result1 (sm/expr-eval "(20.333 + 10%) * (1 / 3)" 20)
           result2 (sm/expr-eval "(20,333 + 10%) * (1 / 3)" 20)]
       (t/is (cm/close? result1 result2 7.44433333)))))
+
+(t/deftest test-error-handling
+  (t/testing "Division by zero should return nil"
+    (let [result (sm/expr-eval "10/0" 999)]
+      (t/is (= result nil))))
+
+  (t/testing "Expression with division by zero should return nil"
+    (let [result (sm/expr-eval "(10 + 5) / 0" 999)]
+      (t/is (= result nil))))
+
+  (t/testing "Invalid syntax should return nil"
+    (let [result (sm/expr-eval "asdasd+2" 999)]
+      (t/is (= result nil))))
+
+  (t/testing "Empty expression with no init-value should return nil"
+    (let [result (sm/expr-eval "" nil)]
+      (t/is (= result nil))))
+
+  (t/testing "Partial invalid expression should return nil"
+    (let [result (sm/expr-eval "10 + abc" 100)]
+      (t/is (= result nil)))))
 
