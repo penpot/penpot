@@ -81,6 +81,7 @@
    selected))
 
 (mf/defc viewport-classic*
+  {::mf/private true}
   [{:keys [selected wglobal layout file page palete-size]}]
   (let [{:keys [edit-path
                 panning
@@ -108,8 +109,8 @@
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
-
         file-id           (get file :id)
+        vern              (get file :vern)
         page-id           (get page :id)
         objects           (get page :objects)
         background        (get page :background clr/canvas)
@@ -340,7 +341,7 @@
                        :opacity 0.6}}
          (when (and (:can-edit permissions) (not read-only?))
            [:& stvh/viewport-texts
-            {:key (dm/str "texts-" page-id)
+            {:key (dm/str "viewport-texts-" page-id "-" vern)
              :page-id page-id
              :objects objects
              :modifiers modifiers
@@ -366,7 +367,7 @@
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :xmlns:penpot "https://penpot.app/xmlns"
        :preserveAspectRatio "xMidYMid meet"
-       :key (str "render" page-id)
+       :key (dm/str "viewport-svg-" page-id "-" vern)
        :width (:width vport 0)
        :height (:height vport 0)
        :view-box (utils/format-viewbox vbox)
@@ -400,7 +401,7 @@
       [:& (mf/provider ctx/current-vbox) {:value vbox'}
        [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
         ;; Render root shape
-        [:& shapes/root-shape {:key page-id
+        [:& shapes/root-shape {:key (str page-id)
                                :objects base-objects
                                :active-frames @active-frames}]]]]
 
@@ -408,7 +409,7 @@
       {:xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :preserveAspectRatio "xMidYMid meet"
-       :key (str "viewport" page-id)
+       :key (dm/str "viewport-controls-" page-id "-" vern)
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
        :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
@@ -719,7 +720,7 @@
                      (not= @hover-top-frame-id (:id frame)))
             [:& grid-layout/editor
              {:zoom zoom
-              :key (dm/str (:id frame))
+              :key (dm/str "viewport-frame-" (:id frame))
               :objects base-objects
               :modifiers modifiers
               :shape frame
@@ -733,8 +734,11 @@
           :bottom-padding (when palete-size (+ palete-size 8))}]]]]]))
 
 (mf/defc viewport*
-  [props]
-  (let [wasm-renderer-enabled? (features/use-feature "render-wasm/v1")]
-    (if ^boolean wasm-renderer-enabled?
-      [:> viewport.wasm/viewport* props]
-      [:> viewport-classic* props])))
+  [{:keys [file page] :as props}]
+  (let [vern         (get file :vern)
+        page-id      (get page :id)
+        render-wasm? (features/use-feature "render-wasm/v1")]
+    [:* {:key (dm/str "viewport-" page-id "-" vern)}
+     (if ^boolean render-wasm?
+       [:> viewport.wasm/viewport* props]
+       [:> viewport-classic* props])]))

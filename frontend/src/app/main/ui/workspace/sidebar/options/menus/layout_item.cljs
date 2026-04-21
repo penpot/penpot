@@ -539,15 +539,17 @@
   [:map
    [:values schema:layout-item-props-schema]
    [:applied-tokens [:maybe [:map-of :keyword :string]]]
-   [:ids [::sm/vec ::sm/uuid]]
-   [:v-sizing {:optional true} [:maybe [:enum :fill :fix :auto]]]])
+   [:ids [::sm/vec ::sm/uuid]]])
 
 (mf/defc layout-size-constraints*
   {::mf/private true
    ::mf/schema (sm/schema schema:layout-size-constraints)}
-  [{:keys [values v-sizing ids applied-tokens] :as props}]
+  [{:keys [values ids applied-tokens] :as props}]
   (let [token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
+
+        v-sizing
+        (:layout-item-v-sizing values)
 
         min-w (get values :layout-item-min-w)
 
@@ -914,5 +916,4 @@
                   (= v-sizing :fill))
           [:> layout-size-constraints* {:ids ids
                                         :values values
-                                        :applied-tokens applied-tokens
-                                        :v-sizing v-sizing}])])]))
+                                        :applied-tokens applied-tokens}])])]))
