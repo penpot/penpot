@@ -334,7 +334,7 @@
 
 (defn request-render
   [_requester]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (and wasm/context-initialized? (not @wasm/context-lost?) (not @wasm/disable-request-render?))
     (if @shapes-loading?
       (register-deferred-render!)
       (when-not @pending-render
@@ -1698,6 +1698,8 @@
   []
   (when wasm/context-initialized?
     (try
+      (set! wasm/context-initialized? false)
+
       ;; Cancel any pending animation frame to prevent race conditions
       (when wasm/internal-frame-id
         (js/cancelAnimationFrame wasm/internal-frame-id)
@@ -1708,8 +1710,6 @@
       (reset! shapes-loading? false)
       (reset! deferred-render? false)
 
-      ;; TODO: perform corresponding cleaning
-      (set! wasm/context-initialized? false)
       (h/call wasm/internal-module "_clean_up")
 
       ;; Remove event listener for WebGL context lost
