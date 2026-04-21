@@ -125,7 +125,20 @@
             out  (th/command! data)]
 
         ;; (th/print-result! out)
-        (t/is (nil? (:error out)))))))
+        (t/is (nil? (:error out)))))
+
+    (t/testing "delete photo clears photo-id"
+      (let [data {::th/type :delete-profile-photo
+                  ::rpc/profile-id (:id profile)}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out))))
+
+      (let [data {::th/type :get-profile
+                  ::rpc/profile-id (:id profile)}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:photo-id (:result out))))))))
 
 (t/deftest profile-deletion-1
   (let [prof (th/create-profile* 1)
