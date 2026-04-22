@@ -1234,6 +1234,27 @@ msgstr "Tu nombre"
 msgid "dashboard.your-penpot"
 msgstr "Tu Penpot"
 
+msgid "dashboard.webgl-switch.title"
+msgstr "Renderizado WebGL"
+
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
+
+msgid "dashboard.webgl-switch.description"
+msgstr "El renderizado WebGL puede mejorar el rendimiento, pero está en beta y puede ser menos estable. Pueden aparecer diferencias visuales entre el lienzo, las exportaciones (SVG/PDF) y el modo de vista."
+
+msgid "dashboard.webgl-switch.status"
+msgstr "Estado"
+
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Activado"
+
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Desactivado"
+
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Enviar comentarios"
+
 #: src/app/main/ui/alert.cljs:35
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -5799,6 +5820,13 @@ msgstr "Cambiar a tema claro"
 #: src/app/main/ui/workspace/main_menu.cljs:315
 msgid "workspace.header.menu.toggle-system-theme"
 msgstr "Cambiar a tema del sistema"
+
+msgid "workspace.header.menu.enable-webgl"
+msgstr "Activar renderizado WebGL (beta)"
+
+msgid "workspace.header.menu.disable-webgl"
+msgstr "Desactivar renderizado WebGL (beta)"
+
 
 #: src/app/main/ui/workspace/main_menu.cljs:492
 msgid "workspace.header.menu.undo"
