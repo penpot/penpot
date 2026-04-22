@@ -89,28 +89,36 @@
   (st/emit! (rt/nav :settings-feedback)))
 
 (mf/defc webgl-settings*
-  [{:keys [is-render-enabled]}]
-  [:section {:class (stl/css :webgl-container)}
-   [:header {:class (stl/css :webgl-header)}
-    [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large} (tr "dashboard.webgl-switch.title")]
-    [:> text* {:as "span" :class (stl/css :beta) :typography t/body-small} (tr "dashboard.webgl-switch.beta")]]
-   [:> text* {:class (stl/css :description) :typography t/body-medium} (tr "dashboard.webgl-switch.description")]
-   [:form {:class (stl/css :webgl-form)}
-    [:> heading* {:level 3 :typography t/headline-small} (tr "dashboard.webgl-switch.status")]
-    [:> switch* {:label (if is-render-enabled (tr "dashboard.webgl-switch.enabled") (tr "dashboard.webgl-switch.disabled"))
-                 :default-checked is-render-enabled}]]
-   [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]])
+  [{:keys [renderer]}]
+  (let [wasm-renderer? (= renderer :wasm)
+        handle-render-change
+        (mf/use-fn
+         (fn [enabled?]
+           (st/emit! (du/update-profile-props {:renderer (if enabled? :wasm :svg)}))))]
+    [:section {:class (stl/css :webgl-container)}
+     [:header {:class (stl/css :webgl-header)}
+      [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large} (tr "dashboard.webgl-switch.title")]
+      [:> text* {:as "span" :class (stl/css :beta) :typography t/body-small} (tr "dashboard.webgl-switch.beta")]]
+     [:> text* {:class (stl/css :description) :typography t/body-medium} (tr "dashboard.webgl-switch.description")]
+     [:form {:class (stl/css :webgl-form)}
+      [:> heading* {:level 3 :typography t/headline-small} (tr "dashboard.webgl-switch.status")]
+      [:> switch* {:label (if wasm-renderer? (tr "dashboard.webgl-switch.enabled") (tr "dashboard.webgl-switch.disabled"))
+                   :default-checked wasm-renderer?
+                   :on-change handle-render-change}]]
+     [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]]))
 
 (mf/defc options-page
   []
-  (mf/use-effect
-   #(dom/set-html-title (tr "title.settings.options")))
+  (let [profile (mf/deref refs/profile)
+        renderer (or (-> profile :props :renderer) :svg)]
+    (mf/use-effect
+     #(dom/set-html-title (tr "title.settings.options")))
 
-  [:div {:class (stl/css :dashboard-settings)}
-   [:*
-    [:div {:class (stl/css :form-container) :data-testid "settings-form"}
-     [:h2 (tr "labels.settings")]
-     [:& options-form {}]]
-    (when (contains? cf/flags :render-switch)
-      [:> webgl-settings* {:is-render-enabled true}])]])
+    [:div {:class (stl/css :dashboard-settings)}
+     [:*
+      [:div {:class (stl/css :form-container) :data-testid "settings-form"}
+       [:h2 (tr "labels.settings")]
+       [:& options-form {}]]
+      (when (contains? cf/flags :render-switch)
+        [:> webgl-settings* {:renderer renderer}])]]))
 
