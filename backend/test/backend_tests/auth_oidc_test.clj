@@ -33,3 +33,23 @@
     (t/is (= "nextcloud@example.com" (:email info)))
     (t/is (= "Nextcloud User" (:fullname info)))
     (t/is (true? (:email-verified info)))))
+
+;; The provider's `:user-info-source` value arrives as a string (enforced by
+;; the malli schema in `app.config` and used as-is by the hard-coded Google /
+;; GitHub provider maps), so the dispatch must interpret strings — not
+;; keywords — to actually honour `PENPOT_OIDC_USER_INFO_SOURCE=userinfo`.
+(t/deftest select-user-info-source-interprets-config-strings
+  (t/testing "explicit string values map to keyword dispatch tokens"
+    (t/is (= :token    (#'oidc/select-user-info-source "token")))
+    (t/is (= :userinfo (#'oidc/select-user-info-source "userinfo"))))
+
+  (t/testing "missing or explicit \"auto\" falls back to auto dispatch"
+    (t/is (= :auto (#'oidc/select-user-info-source "auto")))
+    (t/is (= :auto (#'oidc/select-user-info-source nil))))
+
+  (t/testing "unknown values fall back to auto dispatch safely"
+    (t/is (= :auto (#'oidc/select-user-info-source "unknown")))
+    ;; Guards against the reverse regression — a stray keyword value must
+    ;; not silently slip through as if it were the matching string.
+    (t/is (= :auto (#'oidc/select-user-info-source :token)))
+    (t/is (= :auto (#'oidc/select-user-info-source :userinfo)))))
