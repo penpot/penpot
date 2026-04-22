@@ -4,8 +4,8 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import type { EffectItem, EffectKind } from '../../renderer/properties/panel-utils'
-import { normalizeHex } from '../../renderer/properties/panel-utils'
+import type { EffectItem, EffectKind, Noise, NoiseSlot, Texture } from '../../renderer/properties/panel-utils'
+import { MAX_NOISE_SLOTS, normalizeHex } from '../../renderer/properties/panel-utils'
 import { isColorFill } from '@/lib/renderer/verification'
 import { fillSwatchBackground } from '../FillEditor/fill-swatch-background'
 import { useColorEditor } from './use-color-editor'
@@ -17,6 +17,8 @@ const EFFECT_KIND_OPTIONS: { value: EffectKind; label: string }[] = [
   { value: 'layer-blur', label: 'Layer blur' },
   { value: 'background-blur', label: 'Background blur' },
   { value: 'glass', label: 'Glass' },
+  { value: 'noise', label: 'Noise' },
+  { value: 'texture', label: 'Texture' },
 ]
 
 // ── Surface profile SVG icons (16×16 viewBox, cross-section curves) ──
@@ -133,10 +135,14 @@ export function FloatingEffectEditorPanel() {
   const isShadow = activeEffect.kind === 'drop-shadow' || activeEffect.kind === 'inner-shadow'
   const isBlur = activeEffect.kind === 'layer-blur' || activeEffect.kind === 'background-blur'
   const isGlass = activeEffect.kind === 'glass'
+  const isNoise = activeEffect.kind === 'noise'
+  const isTexture = activeEffect.kind === 'texture'
 
   const shadow = isShadow ? activeEffect.shadow : null
   const blur = isBlur ? activeEffect.blur : null
   const glass = isGlass ? activeEffect.glass : null
+  const noise = isNoise ? activeEffect.noise : null
+  const texture = isTexture ? activeEffect.texture : null
 
   // ── Shadow color helpers ──
   const shadowFill = shadow ? shadowColorToFill(shadow) : null
@@ -165,6 +171,16 @@ export function FloatingEffectEditorPanel() {
     handleEffectChange({ kind: activeEffect.kind as 'layer-blur' | 'background-blur', blur: { ...blur, ...partial } })
   }
 
+  const handleNoiseUpdate = (partial: Partial<Noise>) => {
+    if (!noise) return
+    handleEffectChange({ kind: 'noise', noise: { ...noise, ...partial } })
+  }
+
+  const handleTextureUpdate = (partial: Partial<Texture>) => {
+    if (!texture) return
+    handleEffectChange({ kind: 'texture', texture: { ...texture, ...partial } })
+  }
+
   const handleHexChange = (raw: string) => {
     if (!shadow || !isSolid) return
     const v = raw.trim()
@@ -184,13 +200,21 @@ export function FloatingEffectEditorPanel() {
     ? glass?.hidden
     : isBlur
       ? blur?.hidden
-      : shadow?.hidden
+      : isNoise
+        ? noise?.hidden
+        : isTexture
+          ? texture?.hidden
+          : shadow?.hidden
 
   const toggleHidden = () => {
     if (isGlass && glass) {
       handleGlassUpdate({ hidden: !glass.hidden })
     } else if (isBlur && blur) {
       handleBlurUpdate({ hidden: !blur.hidden })
+    } else if (isNoise && noise) {
+      handleNoiseUpdate({ hidden: !noise.hidden })
+    } else if (isTexture && texture) {
+      handleTextureUpdate({ hidden: !texture.hidden })
     } else if (isShadow && shadow) {
       handleShadowUpdate({ hidden: !shadow.hidden })
     }
@@ -329,6 +353,233 @@ export function FloatingEffectEditorPanel() {
             <EffectField label="Specular Opacity" title="Highlight brightness" value={glass.specularOpacity ?? 0.5} min={0} max={1} step={0.05} onChange={(v) => handleGlassUpdate({ specularOpacity: v })} />
             <EffectField label="Specular Saturation" title="Prismatic highlight (0=white, 9=vivid)" value={glass.specularSaturation ?? 4} min={0} max={12} step={0.5} onChange={(v) => handleGlassUpdate({ specularSaturation: v })} />
           </div>
+        </div>
+      )}
+
+      {/* ── Noise controls ── */}
+      {isNoise && noise && (() => {
+        const PRISM_CHIP_BG =
+          'linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #a29bfe, #ff9ff3)'
+        const SOLID_PALETTE = ['#000000', '#FFFFFF', '#3B82F6', '#10B981']
+
+        const slots: NoiseSlot[] =
+          noise.slots && noise.slots.length > 0
+            ? noise.slots
+            : [{ kind: 'solid', color: '#000000', opacity: 1 }]
+
+        const updateSlot = (idx: number, next: NoiseSlot) => {
+          handleNoiseUpdate({ slots: slots.map((s, i) => (i === idx ? next : s)) })
+        }
+        const addSolid = () => {
+          if (slots.length >= MAX_NOISE_SLOTS) return
+          handleNoiseUpdate({
+            slots: [
+              ...slots,
+              { kind: 'solid', color: SOLID_PALETTE[slots.length % SOLID_PALETTE.length], opacity: 1 },
+            ],
+          })
+        }
+        const removeSlot = (idx: number) => {
+          if (slots.length <= 1) return
+          handleNoiseUpdate({ slots: slots.filter((_, i) => i !== idx) })
+        }
+        const toggleKind = (idx: number) => {
+          const s = slots[idx]
+          if (s.kind === 'solid') {
+            updateSlot(idx, { kind: 'prism', opacity: s.opacity })
+          } else {
+            updateSlot(idx, { kind: 'solid', color: SOLID_PALETTE[idx % SOLID_PALETTE.length], opacity: s.opacity })
+          }
+        }
+
+        const atMax = slots.length >= MAX_NOISE_SLOTS
+
+        return (
+          <div className="space-y-3">
+            {/* Slot list */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  Colors <span className="opacity-60">({slots.length}/{MAX_NOISE_SLOTS})</span>
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="h-6 w-6 text-[13px] leading-none"
+                  onClick={addSolid}
+                  disabled={atMax}
+                  aria-label="Add slot"
+                  title={atMax ? `Maximum ${MAX_NOISE_SLOTS} slots` : 'Add slot (use the row icon to switch to Prism)'}
+                >
+                  +
+                </Button>
+              </div>
+
+              {slots.map((s, i) => {
+                const isPrism = s.kind === 'prism'
+                const swatchBg = isPrism ? PRISM_CHIP_BG : s.color ?? '#000000'
+                return (
+                  <div key={i} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="size-5 shrink-0 rounded border border-border"
+                        style={{ background: swatchBg }}
+                        aria-hidden
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleKind(i)}
+                        className={cn(
+                          'flex size-6 shrink-0 items-center justify-center rounded border border-border',
+                          'text-[11px] text-muted-foreground hover:bg-muted',
+                          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                        )}
+                        title={isPrism ? 'Convert to solid color' : 'Convert to Prism (iridescent)'}
+                        aria-label={isPrism ? 'Convert to solid color' : 'Convert to Prism'}
+                      >
+                        {isPrism ? '🎨' : '🌈'}
+                      </button>
+                      {isPrism ? (
+                        <Input
+                          type="text"
+                          className="h-7 min-w-0 flex-1 font-mono text-xs"
+                          value="Prism"
+                          disabled
+                          readOnly
+                        />
+                      ) : (
+                        <Input
+                          type="text"
+                          className="h-7 min-w-0 flex-1 font-mono text-xs"
+                          value={s.color ?? '#000000'}
+                          placeholder="#RRGGBB"
+                          onChange={(e) => {
+                            const v = e.target.value.trim()
+                            if (/^#[0-9A-Fa-f]{6}$/.test(v) || /^#[0-9A-Fa-f]{3}$/.test(v)) {
+                              updateSlot(i, { kind: 'solid', color: normalizeHex(v), opacity: s.opacity })
+                            }
+                          }}
+                        />
+                      )}
+                      <span className="shrink-0 text-[11px] text-muted-foreground">%</span>
+                      <Input
+                        type="number"
+                        className="h-7 w-12 shrink-0 px-1 text-xs"
+                        min={0}
+                        max={100}
+                        value={Math.round((s.opacity ?? 1) * 100)}
+                        onChange={(e) => {
+                          const o = Math.max(0, Math.min(100, Number(e.target.value))) / 100
+                          updateSlot(
+                            i,
+                            isPrism
+                              ? { kind: 'prism', opacity: o }
+                              : { kind: 'solid', color: s.color, opacity: o },
+                          )
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="h-7 shrink-0"
+                        onClick={() => removeSlot(i)}
+                        disabled={slots.length <= 1}
+                        aria-label="Remove slot"
+                        title={slots.length <= 1 ? 'At least one slot required' : 'Remove slot'}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Shared controls */}
+            <div className="space-y-2">
+              <EffectField
+                label="Grain Size"
+                title="Noise grain size (px)"
+                value={noise.noiseSize ?? 50}
+                min={1}
+                max={500}
+                step={1}
+                onChange={(v) => handleNoiseUpdate({ noiseSize: v })}
+              />
+              <EffectField
+                label="Density %"
+                title={
+                  slots.length === 1
+                    ? 'With 1 slot: density=100% gives 50/50 slot vs transparent'
+                    : 'Colored-region coverage (%)'
+                }
+                value={Math.round((noise.density ?? 0.5) * 100)}
+                min={0}
+                max={100}
+                step={1}
+                onChange={(v) => handleNoiseUpdate({ density: Math.max(0, Math.min(100, v)) / 100 })}
+              />
+              <EffectField
+                label="Softness %"
+                title="Edge softness: 0 = hard crisp edges, 100 = soft pastel falloff"
+                value={Math.round((noise.softness ?? 0) * 100)}
+                min={0}
+                max={100}
+                step={1}
+                onChange={(v) => handleNoiseUpdate({ softness: Math.max(0, Math.min(100, v)) / 100 })}
+              />
+            </div>
+
+            {/* Apply-to-fill toggle */}
+            <label className="flex cursor-pointer items-center gap-2 text-[11px] text-muted-foreground select-none">
+              <input
+                type="checkbox"
+                className="size-3.5 accent-accent"
+                checked={noise.applyToFill ?? false}
+                onChange={(e) => handleNoiseUpdate({ applyToFill: e.target.checked })}
+              />
+              Apply to fill only
+              <span className="text-[10px] opacity-70">(no fill → no noise)</span>
+            </label>
+          </div>
+        )
+      })()}
+
+      {/* ── Texture controls ── */}
+      {isTexture && texture && (
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <EffectField
+              label="Grain Size"
+              title="Noise grain size — larger values produce bigger blobs"
+              value={texture.noiseSize}
+              min={1}
+              max={100}
+              step={1}
+              onChange={(v) => handleTextureUpdate({ noiseSize: Math.max(1, Math.min(100, v)) })}
+            />
+            <EffectField
+              label="Radius"
+              title="Displacement amount — 0 leaves the shape unchanged, 100 maximally warps it"
+              value={texture.radius}
+              min={0}
+              max={100}
+              step={1}
+              onChange={(v) => handleTextureUpdate({ radius: Math.max(0, Math.min(100, v)) })}
+            />
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 text-[11px] text-muted-foreground select-none">
+            <input
+              type="checkbox"
+              className="size-3.5 accent-accent"
+              checked={texture.clipToShape}
+              onChange={(e) => handleTextureUpdate({ clipToShape: e.target.checked })}
+            />
+            Clip to shape
+            <span className="text-[10px] opacity-70">(off → splotches extend beyond)</span>
+          </label>
         </div>
       )}
     </FloatingPanelShell>

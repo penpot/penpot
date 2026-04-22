@@ -28,6 +28,7 @@ import {
 import { checkContext } from './context'
 import { UUID_U8_SIZE } from './constants'
 import type { BlendMode, Blur, ConstraintH, ConstraintV, Matrix, Selrect } from 'penpot-exporter/types'
+import type { Texture } from '../properties/panel-utils'
 
 /**
  * Set active shape
@@ -203,6 +204,18 @@ export function setShapeBlur(module: WasmModule, blur: Blur | null | undefined):
     module._set_shape_blur(translateBlurType(blur.type), blur.hidden ? 1 : 0, blur.value)
   } else {
     module._clear_shape_blur()
+  }
+}
+
+/**
+ * Set shape texture effect
+ */
+export function setShapeTexture(module: WasmModule, texture: Texture | null | undefined): void {
+  checkContext()
+  if (texture) {
+    module._set_shape_texture(texture.noiseSize, texture.radius, texture.clipToShape, texture.hidden)
+  } else {
+    module._clear_shape_texture()
   }
 }
 

@@ -1,0 +1,94 @@
+// Unified noise — each of the (up to 4) slots is either a solid color or a
+// "Prism" slot (iridescent rainbow sampled from the turbulence RGB channels).
+// Slot selection uses the independent `g` channel so switching a slot between
+// solid and prism does NOT change which pixels land in which slot.
+//
+// The CPU precomputes `u_threshold` via the inverse-normal-CDF of the noise
+// distribution so that P(n.r >= threshold) matches the desired coverage
+// (see render/noise.rs::percentile_threshold). Density semantics live on the
+// CPU side; the shader just does the comparison.
+
+uniform shader  u_turbulence;
+uniform float   u_threshold;    // precomputed n.r threshold: pixels with n.r < threshold → transparent
+uniform int     u_full_coverage; // 0 = normal (threshold/opacity applied), 1 = always opaque (color-only pass for blur + mask compositing)
+uniform int     u_slot_count;   // 1..4
+uniform float   u_split_1;      // precomputed n.g split: pixels with n.g > split_N land in slot N
+uniform float   u_split_2;      // (unused at slot_count < 3)
+uniform float   u_split_3;      // (unused at slot_count < 4)
+uniform int     u_kind_0;       // 0 = solid, 1 = prism
+uniform int     u_kind_1;
+uniform int     u_kind_2;
+uniform int     u_kind_3;
+uniform float4  u_c0;           // straight RGBA (prism: .a = opacity, rgb ignored)
+uniform float4  u_c1;
+uniform float4  u_c2;
+uniform float4  u_c3;
+
+// HSV → RGB (Smith 1978 / common shader idiom). `c` = (hue, sat, value).
+half3 hsv2rgb(half3 c) {
+    half4 K = half4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    half3 ph = half3(c.x + K.x, c.x + K.y, c.x + K.z);
+    half3 p = abs(fract(ph) * 6.0 - half3(K.w));
+    return c.z * mix(half3(K.x), clamp(p - half3(K.x), half3(0.0), half3(1.0)), c.y);
+}
+
+// Extract hue from an RGB triple, returning a value in [0, 1).
+half rgb2hue(half3 c) {
+    half maxC = max(c.r, max(c.g, c.b));
+    half minC = min(c.r, min(c.g, c.b));
+    half d = maxC - minC;
+    if (d < 0.0001) return 0.0;
+    half h;
+    if      (maxC == c.r) h = (c.g - c.b) / d;
+    else if (maxC == c.g) h = (c.b - c.r) / d + 2.0;
+    else                  h = (c.r - c.g) / d + 4.0;
+    return fract(h / 6.0);
+}
+
+// Returns premultiplied (rgb*a, a). When `full_coverage` is true the slot's
+// opacity is overridden to 1 — used by the color-only pre-blur pass, whose
+// output is later intersected with a crisp mask via DstIn so that semantically
+// opaque pixels don't end up with partial alpha after blurring.
+half4 slotPaint(int idx, half3 noiseRgb, bool full_coverage) {
+    int kind;
+    half4 c;
+    if      (idx == 0) { kind = u_kind_0; c = half4(u_c0); }
+    else if (idx == 1) { kind = u_kind_1; c = half4(u_c1); }
+    else if (idx == 2) { kind = u_kind_2; c = half4(u_c2); }
+    else               { kind = u_kind_3; c = half4(u_c3); }
+
+    half3 rgb;
+    if (kind == 1) {
+        // Prism: stretch each Gaussian channel across [0,1] with fract to
+        // preserve independent spatial variation, extract the hue, and render
+        // at S=1 V=1 for fully vivid, uniform saturation.
+        half3 raw = half3(
+            fract(noiseRgb.r * 3.0),
+            fract(noiseRgb.g * 3.0),
+            fract(noiseRgb.b * 3.0)
+        );
+        half hue = rgb2hue(raw);
+        rgb = hsv2rgb(half3(hue, 1.0, 1.0));
+    } else {
+        rgb = c.rgb;
+    }
+
+    half a = full_coverage ? half(1.0) : c.a;
+    return half4(rgb * a, a);
+}
+
+half4 main(float2 coord) {
+    half4 n = u_turbulence.eval(coord);
+
+    // Full-coverage mode skips the threshold so the pre-blur color pass has
+    // noise colors everywhere; the hard alpha comes from a separate DstIn
+    // mask pass at the CPU-side compositing step.
+    bool full_coverage = (u_full_coverage != 0);
+    if (!full_coverage && n.r < half(u_threshold)) return half4(0.0);
+
+    int idx = 0;
+    if (u_slot_count >= 2 && float(n.g) > u_split_1) idx = 1;
+    if (u_slot_count >= 3 && float(n.g) > u_split_2) idx = 2;
+    if (u_slot_count >= 4 && float(n.g) > u_split_3) idx = 3;
+    return slotPaint(idx, n.rgb, full_coverage);
+}

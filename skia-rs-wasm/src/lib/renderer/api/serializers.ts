@@ -270,6 +270,13 @@ export function translateBlurType(type: string | undefined): number {
   return RawBlurType[type] ?? RawBlurType['layer-blur']
 }
 
+// ---------------------------------------------------------------------------
+// Texture effect
+// Texture has no enum subtypes — all fields (noiseSize, radius, clipToShape,
+// hidden) are passed directly as number/boolean to the WASM layer via
+// _set_shape_texture(). No translation helper is required.
+// ---------------------------------------------------------------------------
+
 /**
  * Translates vertical align to WASM enum
  */

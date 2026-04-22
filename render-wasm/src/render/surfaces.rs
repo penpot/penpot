@@ -74,6 +74,19 @@ pub struct Surfaces {
     /// tile (B)'s backdrop because both write to and read from live Target.
     /// Cleared at the end of each `run_schedule`.
     glass_backdrop_cache: HashMap<Uuid, skia::Image>,
+    /// Per-shape cache of fully-rendered, post-displacement images for
+    /// texture (scatter) shapes. Built once per frame on the first tile
+    /// that touches the shape, then blitted per-tile. The paired `Rect` is
+    /// the **world-space rect** the image represents — this is the
+    /// viewport-clipped extrect returned by
+    /// [`crate::render::texture::render_and_filter_to_image`], and callers
+    /// must use it (not the full `shape.extrect`) as the blit dst so the
+    /// image lines up with the pixels that were actually rendered.
+    ///
+    /// Cleared at the end of each `run_schedule` so a stale displaced image
+    /// (or a stale viewport-clip rect) can't leak across frames when the
+    /// shape or viewport changes.
+    scatter_output_cache: HashMap<Uuid, (skia::Image, skia::Rect)>,
     sampling_options: skia::SamplingOptions,
     pub margins: skia::ISize,
     // Tracks which surfaces have content (dirty flag bitmask)
@@ -134,6 +147,7 @@ impl Surfaces {
             tiles,
             interband_cache: HashMap::new(),
             glass_backdrop_cache: HashMap::new(),
+            scatter_output_cache: HashMap::new(),
             sampling_options,
             margins,
             dirty_surfaces: 0,
@@ -389,6 +403,23 @@ impl Surfaces {
             SurfaceId::UI => &self.ui,
             SurfaceId::Export => &self.export,
         }
+    }
+
+
+    /// Swap the `Filter` surface with a caller-provided one, returning the
+    /// old surface. Used by `render_and_filter_to_image` to temporarily
+    /// grow the scratch when a textured shape's viewport-clipped extrect
+    /// would overflow the viewport-sized default Filter. Caller is
+    /// responsible for swapping the original back after snapshotting.
+    pub fn swap_filter(&mut self, surface: skia::Surface) -> skia::Surface {
+        std::mem::replace(&mut self.filter, surface)
+    }
+
+    /// Allocate a new RGBA8 surface with the given dimensions, using the
+    /// current Filter surface's context. Returns `None` if the allocation
+    /// fails (e.g. requested dims exceed platform texture limits).
+    pub fn create_filter_sized(&mut self, width: i32, height: i32) -> Option<skia::Surface> {
+        self.filter.new_surface_with_dimensions((width, height))
     }
 
     fn reset_from_target(&mut self, target: skia::Surface) -> Result<()> {
@@ -674,6 +705,40 @@ impl Surfaces {
     pub fn clear_glass_backdrop_cache(&mut self) {
         self.glass_backdrop_cache.clear();
     }
+
+    /// Whether the scatter output cache already holds a displaced image for
+    /// this shape. Callers use this to skip re-running the expensive
+    /// render+filter step on every tile after the first.
+    pub fn has_scatter_output(&self, shape_id: Uuid) -> bool {
+        self.scatter_output_cache.contains_key(&shape_id)
+    }
+
+    /// Store the fully-rendered, displaced image for a scatter shape along
+    /// with the world-space `clipped_extrect` the image covers. The rect
+    /// is the viewport-clipped extrect (not the full scheduler extrect)
+    /// and must be used by the caller as the `dst` when blitting.
+    pub fn insert_scatter_output(
+        &mut self,
+        shape_id: Uuid,
+        image: skia::Image,
+        clipped_extrect: skia::Rect,
+    ) {
+        self.scatter_output_cache
+            .insert(shape_id, (image, clipped_extrect));
+    }
+
+    /// Retrieve `(image, clipped_extrect)` for a scatter shape, if cached.
+    /// The rect is the world-space `dst` the image should be blitted into.
+    pub fn get_scatter_output(&self, shape_id: Uuid) -> Option<&(skia::Image, skia::Rect)> {
+        self.scatter_output_cache.get(&shape_id)
+    }
+
+    /// Clear the per-shape scatter output cache — called at the end of each
+    /// `run_schedule` so displaced images don't leak across frames.
+    pub fn clear_scatter_output_cache(&mut self) {
+        self.scatter_output_cache.clear();
+    }
+
 
     /// Composite the content region of `Current` (excluding margins) onto
     /// Target at `tile_rect`, without caching. Intended for mid-render partial

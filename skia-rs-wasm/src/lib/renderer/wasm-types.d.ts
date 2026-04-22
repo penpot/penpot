@@ -173,6 +173,23 @@ export interface WasmModule {
   _set_shape_blur(blur_type: number, hidden: number, value: number): void
   _clear_shape_blur(): void
 
+  // Texture
+  _set_shape_texture(noise_size: number, radius: number, clip_to_shape: boolean, hidden: boolean): void
+  _clear_shape_texture(): void
+
+  // Noise. Slots are written into shared memory before the call as:
+  //   [u32 count][u8 kind_0]…[u8 kind_{count-1}][pad to 4B][u32 color_0]…
+  // Each `kind` is 0=solid, 1=prism. Each color is ARGB packed little-endian
+  // (for prism slots, .rgb is unused and .a is the slot's opacity).
+  _set_shape_noise(
+    noise_size: number,
+    density: number,
+    softness: number,
+    apply_to_fill: number,
+    hidden: number,
+  ): void
+  _clear_shape_noise(): void
+
   // Glass
   _set_shape_glass(surface_type: number, bezel_width: number, glass_thickness: number, refractive_index: number, specular_angle: number, specular_opacity: number, specular_saturation: number, chromatic_aberration: number, splay: number, tilt_angle: number, edge_boost: number, zoom: number, blur: number, frost: number, hidden: number): void
   _clear_shape_glass(): void

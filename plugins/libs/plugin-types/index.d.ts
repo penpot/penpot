@@ -177,6 +177,37 @@ export interface ActiveUser extends User {
 export type Animation = Dissolve | Slide | Push;
 
 /**
+ * Represents texture effect properties in Penpot.
+ * Generates a Perlin noise pattern composited over the shape using Multiply blend mode.
+ */
+export interface Texture {
+  /**
+   * The optional unique identifier for the texture effect.
+   */
+  id?: string;
+  /**
+   * The grain size of the noise pattern. Larger values produce coarser grain.
+   * Defaults to 100 if omitted.
+   */
+  noiseSize?: number;
+  /**
+   * The blur radius applied over the noise pattern.
+   * Defaults to 0 (no blur) if omitted.
+   */
+  radius?: number;
+  /**
+   * When true, the noise is clipped to the shape's visual outline.
+   * Defaults to true if omitted.
+   */
+  clipToShape?: boolean;
+  /**
+   * Specifies whether the texture effect is hidden.
+   * Defaults to false if omitted.
+   */
+  hidden?: boolean;
+}
+
+/**
  * Represents blur properties in Penpot.
  * This interface includes properties for defining the type and intensity of a blur effect, along with its visibility.
  */
@@ -196,6 +227,43 @@ export interface Blur {
   /**
    * Specifies whether the blur effect is hidden.
    * Defaults to false if omitted.
+   */
+  hidden?: boolean;
+}
+
+/**
+ * Represents a noise effect applied to a shape.
+ */
+export interface Noise {
+  /**
+   * The optional unique identifier for the noise effect.
+   */
+  id?: string;
+  /**
+   * The subtype of noise.
+   * - 'monotone': single-color grain (default).
+   * - 'duotone': two-color grain blended by density.
+   * - 'multitone': multi-pass grain with varying blend modes.
+   */
+  noiseType?: 'monotone' | 'duotone' | 'multitone';
+  /**
+   * Grain size in pixels (1–500). Defaults to 50.
+   */
+  noiseSize?: number;
+  /**
+   * Density / blend strength (0–1). Used for duotone and multitone. Defaults to 0.5.
+   */
+  density?: number;
+  /**
+   * Primary color of the noise grain.
+   */
+  color?: Color;
+  /**
+   * Secondary color, used for duotone and multitone subtypes.
+   */
+  secondaryColor?: Color;
+  /**
+   * Specifies whether the noise effect is hidden. Defaults to false.
    */
   hidden?: boolean;
 }
@@ -3729,6 +3797,16 @@ export interface ShapeBase extends PluginData {
    * The blur effect applied to the shape.
    */
   blur?: Blur;
+
+  /**
+   * The texture effect applied to the shape.
+   */
+  texture?: Texture;
+
+  /**
+   * The noise effect applied to the shape.
+   */
+  noise?: Noise;
 
   /**
    * The glass (liquid glass) effect applied to the shape.

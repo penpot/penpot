@@ -389,7 +389,11 @@ export function useViewportInteractions({
     const canvas = canvasRef.current
     if (!canvas) return
 
-    canvas.addEventListener('wheel', handleWheel, { passive: false })
+    // Attach wheel to the container (parent of canvas + selection overlay) so
+    // zoom works even when the cursor is over an interactive SVG overlay element
+    // (MoveHitArea / resize / rotation handles) that has pointerEvents: 'auto'.
+    const wheelTarget = canvas.parentElement ?? canvas
+    wheelTarget.addEventListener('wheel', handleWheel, { passive: false })
     canvas.addEventListener('mousedown', handleMouseDown)
     canvas.addEventListener('mouseenter', handleMouseEnter)
     canvas.addEventListener('mouseleave', handleMouseLeave)
@@ -399,7 +403,7 @@ export function useViewportInteractions({
     window.addEventListener('keyup', handleKeyUp)
 
     return () => {
-      canvas.removeEventListener('wheel', handleWheel)
+      wheelTarget.removeEventListener('wheel', handleWheel)
       canvas.removeEventListener('mousedown', handleMouseDown)
       canvas.removeEventListener('mouseenter', handleMouseEnter)
       canvas.removeEventListener('mouseleave', handleMouseLeave)
