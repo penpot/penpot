@@ -1805,6 +1805,21 @@
                     {})]
     (cfcp/sync-component-id-with-ref-shape data libraries)))
 
+(defmethod migrate-data "0021-fix-shape-svg-attrs"
+  [data _]
+  (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
+  (letfn [(update-object [object]
+            (-> object
+                (d/update-when :svg-attrs csvg/attrs->props)
+                (d/update-when :svg-viewbox grc/make-rect)))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1882,4 +1897,5 @@
          "0017-fix-layout-flex-dir"
          "0018-remove-unneeded-objects-from-components"
          "0019-fix-missing-swap-slots"
-         "0020-sync-component-id-with-near-main"]))
+         "0020-sync-component-id-with-near-main"
+         "0021-fix-shape-svg-attrs"]))
