@@ -183,6 +183,13 @@
   }
 }
 
+.status-message {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-title-foreground-color);
+  font-style: italic;
+}
+
 .action-buttons {
   @extend %modal-action-btns;
 }

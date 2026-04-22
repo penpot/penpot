@@ -14,11 +14,11 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc text-palette-ctx-menu
-  [{:keys [show-menu? close-menu on-select-palette selected]}]
+(mf/defc text-palette-ctx-menu*
+  [{:keys [show-menu close-menu on-select-palette selected]}]
   (let [typographies (mf/deref refs/workspace-file-typography)
         libraries    (mf/deref refs/libraries)]
-    [:& dropdown {:show show-menu?
+    [:& dropdown {:show show-menu
                   :on-close close-menu}
      [:ul {:class (stl/css :text-context-menu)}
       (for [[idx cur-library] (map-indexed vector (vals libraries))]

@@ -32,7 +32,7 @@
      :value 4
      :hidden false}))
 
-(mf/defc blur-menu [{:keys [ids type values]}]
+(mf/defc blur-menu* [{:keys [ids type values]}]
   (let [blur           (:blur values)
         has-value?     (not (nil? blur))
         render-wasm?   (features/use-feature "render-wasm/v1")

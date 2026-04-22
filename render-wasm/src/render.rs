@@ -37,15 +37,6 @@ use crate::wapi;
 pub use fonts::*;
 pub use images::*;
 
-// This is the extra area used for tile rendering (tiles beyond viewport).
-// Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
-const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
-
-const MAX_BLOCKING_TIME_MS: i32 = 32;
-const NODE_BATCH_THRESHOLD: i32 = 3;
-
-const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
-
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
 #[derive(Debug)]
@@ -345,9 +336,8 @@ pub(crate) struct RenderState {
     pub cache_cleared_this_render: bool,
 }
 
-pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
+pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
-    let interest = VIEWPORT_INTEREST_AREA_THRESHOLD;
     let TileRect(isx, isy, iex, iey) =
         tiles::get_tiles_for_viewbox_with_interest(viewbox, interest, scale);
 
@@ -382,10 +372,11 @@ impl RenderState {
 
         let viewbox = Viewbox::new(width as f32, height as f32);
         let tiles = tiles::TileHashMap::new();
+        let options = RenderOptions::default();
 
         Ok(RenderState {
             gpu_state: gpu_state.clone(),
-            options: RenderOptions::default(),
+            options,
             surfaces,
             fonts,
             viewbox,
@@ -402,7 +393,7 @@ impl RenderState {
             tiles,
             tile_viewbox: tiles::TileViewbox::new_with_interest(
                 viewbox,
-                VIEWPORT_INTEREST_AREA_THRESHOLD,
+                options.viewport_interest_area_threshold,
                 1.0,
             ),
             pending_tiles: PendingTiles::new_empty(),
@@ -629,6 +620,22 @@ impl RenderState {
 
     pub fn set_antialias_threshold(&mut self, value: f32) {
         self.options.set_antialias_threshold(value);
+    }
+
+    pub fn set_viewport_interest_area_threshold(&mut self, value: i32) {
+        self.options.set_viewport_interest_area_threshold(value);
+    }
+
+    pub fn set_node_batch_threshold(&mut self, value: i32) {
+        self.options.set_node_batch_threshold(value);
+    }
+
+    pub fn set_max_blocking_time_ms(&mut self, value: i32) {
+        self.options.set_max_blocking_time_ms(value);
+    }
+
+    pub fn set_blur_downscale_threshold(&mut self, value: f32) {
+        self.options.set_blur_downscale_threshold(value);
     }
 
     pub fn set_background_color(&mut self, color: skia::Color) {
@@ -1495,7 +1502,7 @@ impl RenderState {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
 
-            let interest = VIEWPORT_INTEREST_AREA_THRESHOLD;
+            let interest = self.options.viewport_interest_area_threshold;
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
                     self.cached_viewbox,
@@ -1666,6 +1673,24 @@ impl RenderState {
 
         self.cache_cleared_this_render = false;
         self.reset_canvas();
+
+        // During an interactive shape transform (drag/resize/rotate) the
+        // Target is repainted tile-by-tile. If only a subset of the
+        // invalidated tiles finishes in this rAF the remaining area
+        // would either show stale content from the previous frame or,
+        // on buffer swaps, show blank pixels — either way the user
+        // perceives tiles appearing sequentially. Paint the persistent
+        // 1:1 atlas as a stable backdrop so every flush presents a
+        // coherent picture: unchanged tiles come from the atlas and
+        // invalidated tiles are overwritten on top as they finish.
+        if self.options.is_interactive_transform() && self.surfaces.has_atlas() {
+            self.surfaces.draw_atlas_to_target(
+                self.viewbox,
+                self.options.dpr(),
+                self.background_color,
+            );
+        }
+
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::InnerShadows as u32
@@ -1674,15 +1699,25 @@ impl RenderState {
             s.canvas().scale((scale, scale));
         });
 
-        let viewbox_cache_size = get_cache_size(self.viewbox, scale);
-        let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
+        let viewbox_cache_size = get_cache_size(
+            self.viewbox,
+            scale,
+            self.options.viewport_interest_area_threshold,
+        );
+        let cached_viewbox_cache_size = get_cache_size(
+            self.cached_viewbox,
+            scale,
+            self.options.viewport_interest_area_threshold,
+        );
         // Only resize cache if the new size is larger than the cached size
         // This avoids unnecessary surface recreations when the cache size decreases
         if viewbox_cache_size.width > cached_viewbox_cache_size.width
             || viewbox_cache_size.height > cached_viewbox_cache_size.height
         {
-            self.surfaces
-                .resize_cache(viewbox_cache_size, VIEWPORT_INTEREST_AREA_THRESHOLD)?;
+            self.surfaces.resize_cache(
+                viewbox_cache_size,
+                self.options.viewport_interest_area_threshold,
+            )?;
         }
 
         // FIXME - review debug
@@ -1744,12 +1779,16 @@ impl RenderState {
                 self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
             }
 
-            // In fast mode (pan/zoom in progress), render_from_cache owns
-            // the Target surface — skip flush so we don't present stale
-            // tile positions.  The rAF still populates the Cache surface
-            // and tile HashMap so render_from_cache progressively shows
-            // more complete content.
-            if !self.options.is_fast_mode() {
+            // In a pure viewport interaction (pan/zoom), render_from_cache
+            // owns the Target surface — skip flush so we don't present
+            // stale tile positions.  The rAF still populates the Cache
+            // surface and tile HashMap so render_from_cache progressively
+            // shows more complete content.
+            //
+            // During interactive shape transforms (drag/resize/rotate) we
+            // still need to flush every rAF so the user sees the updated
+            // shape position — render_from_cache is not in the loop here.
+            if !self.options.is_viewport_interaction() {
                 self.flush_and_submit();
             }
 
@@ -1887,8 +1926,26 @@ impl RenderState {
 
     #[inline]
     pub fn should_stop_rendering(&self, iteration: i32, timestamp: i32) -> bool {
-        iteration % NODE_BATCH_THRESHOLD == 0
-            && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
+        if iteration % self.options.node_batch_threshold != 0 {
+            return false;
+        }
+        if performance::get_time() - timestamp <= self.options.max_blocking_time_ms {
+            return false;
+        }
+
+        // During interactive shape transforms we must complete every
+        // visible tile in a single rAF so the user never sees tiles
+        // popping in sequentially. Only yield once all visible work is
+        // done and we are processing the interest-area pre-render.
+        if self.options.is_interactive_transform() {
+            if let Some(tile) = self.current_tile {
+                if self.tile_viewbox.is_visible(&tile) {
+                    return false;
+                }
+            }
+        }
+
+        true
     }
 
     #[inline]
@@ -2263,9 +2320,10 @@ impl RenderState {
         // Bounds above were computed from the original sigma so filter surface coverage is correct.
         // Maximum downscale is 1/BLUR_DOWNSCALE_THRESHOLD (i.e. 8x): beyond that the
         // filter surface becomes too small and quality degrades noticeably.
-        const MIN_BLUR_DOWNSCALE: f32 = 1.0 / BLUR_DOWNSCALE_THRESHOLD;
-        let blur_downscale = if shadow.blur > BLUR_DOWNSCALE_THRESHOLD {
-            (BLUR_DOWNSCALE_THRESHOLD / shadow.blur).max(MIN_BLUR_DOWNSCALE)
+        let blur_downscale_threshold: f32 = self.options.blur_downscale_threshold;
+        let min_blur_downscale: f32 = 1.0 / blur_downscale_threshold;
+        let blur_downscale = if shadow.blur > blur_downscale_threshold {
+            (blur_downscale_threshold / shadow.blur).max(min_blur_downscale)
         } else {
             1.0
         };
