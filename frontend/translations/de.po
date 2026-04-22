@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-04-18 13:10+0000\n"
+"PO-Revision-Date: 2026-04-23 10:09+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -8459,3 +8459,53 @@ msgstr "Ups! Der Canvas-Kontext ist verloren gegangen"
 msgid "loader.tips.03.message"
 msgstr ""
 "Gestalten Sie flexibel mit vertrauten, CSS-ähnlichen Layout-Steuerelementen."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+#, unused
+msgid "workspace.tokens.choose-folder"
+msgstr "Ordner auswählen"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:127
+#, unused
+msgid "workspace.tokens.choose-file"
+msgstr "Datei auswählen"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:498
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Variante wiederherstellen"
+
+#: src/app/main/ui/workspace/context_menu.cljs:619, src/app/main/ui/workspace/sidebar/assets/components.cljs:633, src/app/main/ui/workspace/sidebar/assets/groups.cljs:75, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1106
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Als Varianten kombinieren"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:635
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Die Komponenten müssen sich auf derselben Seite befinden"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1157
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "Eigenschaft entfernen"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:512, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1073, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1221, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1307
+msgid "workspace.shape.menu.add-variant-property"
+msgstr "Neue Eigenschaft hinzufügen"
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "Daten im Browser speichern."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:469
+msgid "workspace.options.size.unlock"
+msgstr "Seitenverhältnis entsperren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:469
+msgid "workspace.options.size.lock"
+msgstr "Seitenverhältnis sperren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "Rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "Links"
