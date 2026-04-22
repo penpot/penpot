@@ -13,6 +13,24 @@ export const openUIApi = z
     z.boolean().optional(),
     z.boolean().optional(),
   )
-  .implement((title, url, theme, options, allowDownloads, allowClipboardRead, allowClipboardWrite) => {
-    return createModal(title, url, theme, options, allowDownloads, allowClipboardRead, allowClipboardWrite);
-  });
+  .implement(
+    (
+      title,
+      url,
+      theme,
+      options,
+      allowDownloads,
+      allowClipboardRead,
+      allowClipboardWrite,
+    ) => {
+      return createModal(
+        title,
+        url,
+        theme,
+        options,
+        allowDownloads,
+        allowClipboardRead,
+        allowClipboardWrite,
+      );
+    },
+  );

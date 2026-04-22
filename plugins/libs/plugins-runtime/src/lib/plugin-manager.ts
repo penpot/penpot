@@ -99,7 +99,15 @@ export async function createPluginManager(
       return;
     }
 
-    modal = openUIApi(name, modalUrl, theme, options, allowDownloads, allowClipboardRead, allowClipboardWrite);
+    modal = openUIApi(
+      name,
+      modalUrl,
+      theme,
+      options,
+      allowDownloads,
+      allowClipboardRead,
+      allowClipboardWrite,
+    );
 
     modal.setTheme(theme);
 
