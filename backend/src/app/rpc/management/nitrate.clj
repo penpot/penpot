@@ -15,6 +15,7 @@
    [app.common.types.team :refer [schema:team]]
    [app.config :as cf]
    [app.db :as db]
+   [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.nitrate :as cnit]
@@ -23,6 +24,7 @@
    [app.rpc.commands.teams-invitations :as ti]
    [app.rpc.doc :as doc]
    [app.rpc.notifications :as notifications]
+   [app.storage :as sto]
    [app.util.services :as sv]))
 
 
@@ -80,6 +82,37 @@
   (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
     (->> (db/exec! cfg [sql:get-teams current-user-id])
          (map #(select-keys % [:id :name])))))
+
+;; ---- API: upload-org-logo
+
+(def ^:private schema:upload-org-logo
+  [:map
+   [:content media/schema:upload]
+   [:organization-id ::sm/uuid]
+   [:previous-id {:optional true} ::sm/uuid]])
+
+(def ^:private schema:upload-org-logo-result
+  [:map [:id ::sm/uuid]])
+
+(sv/defmethod ::upload-org-logo
+  "Store an organization logo in penpot storage and return its ID.
+  Accepts an optional previous-id to mark the old logo for garbage
+  collection when replacing an existing one."
+  {::doc/added "2.16"
+   ::sm/params schema:upload-org-logo
+   ::sm/result schema:upload-org-logo-result}
+  [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
+  (when previous-id
+    (sto/touch-object! storage previous-id))
+  (let [hash (sto/calculate-hash (:path content))
+        data (-> (sto/content (:path content))
+                 (sto/wrap-with-hash hash))
+        obj  (sto/put-object! storage {::sto/content      data
+                                       ::sto/deduplicate? true
+                                       :bucket            "organization"
+                                       :content-type      (:mtype content)
+                                       :organization-id   organization-id})]
+    {:id (:id obj)}))
 
 ;; ---- API: notify-team-change
 
