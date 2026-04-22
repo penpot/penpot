@@ -126,7 +126,7 @@
 .group-title-name {
   flex-grow: 1;
 
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 }
 
 .theme-group-rows-wrapper {
@@ -152,7 +152,7 @@
 }
 
 .theme-name-row {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   flex-grow: 1;
 }

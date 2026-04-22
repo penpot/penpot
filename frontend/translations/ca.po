@@ -4289,6 +4289,10 @@ msgid "workspace.tokens.rename-group"
 msgstr "Canviar nom del grup de tokens"
 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.duplicate-group"
+msgstr "Duplicar grup de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Els teus tokens es renomenaran automàticament a %s.(sufix).(token)"
 

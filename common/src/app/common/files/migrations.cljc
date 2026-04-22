@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
+   [app.common.files.comp-processors :as cfcp]
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
@@ -1786,6 +1787,24 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0018-remove-unneeded-objects-from-components"
+  [data _]
+  (cfcp/remove-unneeded-objects-in-components data))
+
+(defmethod migrate-data "0019-fix-missing-swap-slots"
+  [data _]
+  (let [libraries (if (:libs data)
+                    (deref (:libs data))
+                    {})]
+    (cfcp/fix-missing-swap-slots data libraries)))
+
+(defmethod migrate-data "0020-sync-component-id-with-near-main"
+  [data _]
+  (let [libraries (if (:libs data)
+                    (deref (:libs data))
+                    {})]
+    (cfcp/sync-component-id-with-ref-shape data libraries)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1860,4 +1879,7 @@
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
          "0016-copy-fills-from-position-data-to-text-node"
-         "0017-fix-layout-flex-dir"]))
+         "0017-fix-layout-flex-dir"
+         "0018-remove-unneeded-objects-from-components"
+         "0019-fix-missing-swap-slots"
+         "0020-sync-component-id-with-near-main"]))

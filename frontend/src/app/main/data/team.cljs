@@ -41,16 +41,19 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (reduce (fn [state {:keys [id organization-id] :as team}]
-                (let [team-updated (cond-> (merge (dm/get-in state [:teams id]) team)
-                                     (not organization-id) (dissoc :organization-id
-                                                                   :organization-name
-                                                                   :organization-slug
-                                                                   :organization-owner-id
-                                                                   :organization-avatar-bg-url))]
-                  (update state :teams assoc id team-updated)))
-              state
-              teams))))
+      (let [team-ids (map :id teams)
+            ;; Delete old teams from state
+            state    (update state :teams #(select-keys % team-ids))]
+        (reduce (fn [state {:keys [id organization-id] :as team}]
+                  (let [team-updated (cond-> (merge (dm/get-in state [:teams id]) team)
+                                       (not organization-id) (dissoc :organization-id
+                                                                     :organization-name
+                                                                     :organization-slug
+                                                                     :organization-owner-id
+                                                                     :organization-avatar-bg-url))]
+                    (update state :teams assoc id team-updated)))
+                state
+                teams)))))
 
 (defn fetch-teams
   []
@@ -587,4 +590,13 @@
          (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
               (rx/map shared-files-fetched)))))))
 
+
+(defn team->organization [team]
+  {:id              (:organization-id team)
+   :slug            (:organization-slug team)
+   :owner-id        (:organization-owner-id team)
+   :avatar-bg-url   (:organization-avatar-bg-url team)
+   :custom-photo    (:organization-custom-photo team)
+   :name            (:organization-name team)
+   :default-team-id (:id team)})
 

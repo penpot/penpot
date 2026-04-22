@@ -170,8 +170,12 @@
                                  (render/calculate-dimensions objects thumbnail-aspect-ratio))
                        zoom    (/ width (:width vbox))]
 
+                   (reset! wasm/disable-request-render? true)
                    (wasm.api/initialize-viewport
-                    objects zoom vbox bgcolor
+                    objects zoom vbox
+                    :background bgcolor
+                    :force-sync true
+                    :on-render
                     (fn []
                       (if frame
                         (wasm.api/render-sync-shape (:id frame))

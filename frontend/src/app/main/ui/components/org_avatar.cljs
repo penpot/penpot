@@ -7,35 +7,29 @@
 (ns app.main.ui.components.org-avatar
   (:require-macros [app.main.style :as stl])
   (:require
-   [cuerdas.core :as str]
+   [app.common.data :as d]
    [rumext.v2 :as mf]))
-
-(defn- get-org-initials
-  [name]
-  (->> (str/split (str/trim (or name "")) #"\s+")
-       (keep #(first (re-seq #"[a-zA-Z]" %)))
-       (take 2)
-       (map str/upper)
-       (apply str)))
 
 (mf/defc org-avatar*
   {::mf/props :obj}
   [{:keys [org size]}]
   (let [name         (:name org)
-        custom-photo (:organization-custom-photo org)
-        avatar-bg    (:organization-avatar-bg-url org)
-        initials     (get-org-initials name)]
+        custom-photo (:custom-photo org)
+        avatar-bg    (:avatar-bg-url org)
+        initials     (d/get-initials name)]
 
     (if custom-photo
       [:img {:src     custom-photo
              :class   (stl/css-case :org-avatar true
                                     :org-avatar-custom true
                                     :org-avatar-xxxl (= size "xxxl")
-                                    :org-avatar-xxl (= size "xxl"))
+                                    :org-avatar-xxl (= size "xxl")
+                                    :org-avatar-xl (= size "xl"))
              :alt     name}]
       [:div {:class       (stl/css-case :org-avatar true
                                         :org-avatar-xxxl (= size "xxxl")
-                                        :org-avatar-xxl (= size "xxl"))
+                                        :org-avatar-xxl (= size "xxl")
+                                        :org-avatar-xl (= size "xl"))
              :aria-hidden "true"}
        [:img {:src   avatar-bg
               :class (stl/css :org-avatar-bg)
@@ -43,5 +37,6 @@
        (when (seq initials)
          [:span {:class (stl/css-case :org-avatar-initials true
                                       :size-initials-xxxl (= size "xxxl")
-                                      :size-initials-xxl (= size "xxl"))}
+                                      :size-initials-xxl (= size "xxl")
+                                      :size-initials-xxl (= size "xl"))} ;; Keep the initials as xxl to make them legible
           initials])])))

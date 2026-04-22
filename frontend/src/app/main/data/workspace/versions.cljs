@@ -13,9 +13,10 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
-   [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dwp]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.thumbnails :as th]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -95,33 +96,59 @@
          (->> (rp/cmd! :update-file-snapshot {:id id :label label})
               (rx/map fetch-versions)))))))
 
+(defn- initialize-version
+  []
+  (ptk/reify ::initialize-version
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            file-id (:current-file-id state)
+            team-id (:current-team-id state)]
+
+        (rx/merge
+         (->> stream
+              (rx/filter (ptk/type? ::dw/bundle-fetched))
+              (rx/take 1)
+              (rx/map #(dwpg/initialize-page file-id page-id)))
+
+         (rx/of (ntf/hide :tag :restore-dialog)
+                (dw/initialize-file team-id file-id)))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (th/clear-queue!))))
+
+(defn- wait-for-persistence
+  [file-id snapshot-id]
+  (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+       (rx/filter #(or (nil? %) (= :saved %)))
+       (rx/take 1)
+       (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id snapshot-id}))))
+
 (defn restore-version
   [id origin]
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::restore-version
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            team-id (:current-team-id state)]
+      (let [file-id    (:current-file-id state)
+            team-id    (:current-team-id state)
+            event-name (case origin
+                         :version "restore-pin-version"
+                         :snapshot "restore-autosave"
+                         :plugin "restore-version-plugin")]
+
         (rx/concat
          (rx/of ::dwp/force-persist
                 (dw/remove-layout-flag :document-history))
-         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-              (rx/filter #(or (nil? %) (= :saved %)))
-              (rx/take 1)
-              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
-              (rx/tap #(th/clear-queue!))
-              (rx/map #(dw/initialize-workspace team-id file-id id)))
-         (case origin
-           :version
-           (rx/of (ptk/event ::ev/event {::ev/name "restore-pin-version"}))
 
-           :snapshot
-           (rx/of (ptk/event ::ev/event {::ev/name "restore-autosave"}))
+         (->> (wait-for-persistence file-id id)
+              (rx/map #(initialize-version)))
 
-           :plugin
-           (rx/of (ptk/event ::ev/event {::ev/name "restore-version-plugin"}))
-
+         (if event-name
+           (rx/of (ev/event {::ev/name event-name
+                             :file-id file-id
+                             :team-id team-id}))
            (rx/empty)))))))
 
 (defn delete-version
@@ -290,18 +317,15 @@
   (ptk/reify ::restore-version-from-plugins
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file    (dsh/lookup-file state file-id)
-            team-id (or (:team-id file) (:current-file-id state))]
+      (let [team-id (:current-team-id state)]
         (rx/concat
-         (rx/of (ptk/event ::ev/event {::ev/name "restore-version-plugin"})
+         (rx/of (ev/event {::ev/name "restore-version-plugin"
+                           :file-id file-id
+                           :team-id team-id})
                 ::dwp/force-persist)
 
-         ;; FIXME: we should abstract this
-         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-              (rx/filter #(or (nil? %) (= :saved %)))
-              (rx/take 1)
-              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
-              (rx/map #(dw/initialize-workspace team-id file-id id)))
+         (->> (wait-for-persistence file-id id)
+              (rx/map #(initialize-version)))
 
          (->> (rx/of 1)
               (rx/tap resolve)

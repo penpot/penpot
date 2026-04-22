@@ -36,13 +36,13 @@
 }
 
 .element-set-content {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   margin-bottom: deprecated.$s-4;
 }
 
 .multiple-exports {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   grid-column: 1 / span 9;
 }
@@ -52,7 +52,7 @@
 }
 
 .actions {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 }
 
 .element-group {
@@ -102,14 +102,14 @@
 
 .suffix-input {
   @extend %input-element;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   grid-column: span 3;
 }
 
 .export-btn {
   @extend %button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   height: deprecated.$s-32;
   width: 100%;

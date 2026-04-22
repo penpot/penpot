@@ -5,6 +5,7 @@ import {
   setupTokensFileRender,
   setupTypographyTokensFileRender,
   unfoldTokenType,
+  createToken,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -813,7 +814,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Check if token pill is visible on right sidebar
     const layoutItemSectionSidebar = rightSidebar.getByRole("region", {
-      name: "layout item menu",
+      name: "Layout item section",
     });
     await expect(layoutItemSectionSidebar).toBeVisible();
     const marginPillMd = layoutItemSectionSidebar.getByRole("button", {
@@ -925,5 +926,499 @@ test.describe("Tokens: Detach token", () => {
     await workspacePage.layers.getByTestId("layer-row").nth(0).click();
     await workspacePage.layers.getByTestId("layer-row").nth(1).click();
     await expect(brokenPill).not.toBeVisible();
+  });
+});
+
+test("Bug: 13959, User select shapes with different hidden state.", async ({
+  page,
+}) => {
+  const { workspacePage } = await setupTokensFileRender(page);
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+  const layerMenuSection = page.getByRole("region", {
+    name: "Layer menu section",
+  });
+  await expect(layerMenuSection).toBeVisible();
+  await layerMenuSection
+    .getByRole("button", { name: "Toggle layer visibility" })
+    .click();
+  await expect(layerMenuSection).toBeVisible();
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .nth(0)
+    .click({ modifiers: ["Shift"] });
+  await expect(layerMenuSection).toBeVisible();
+});
+
+test("Bug: 13960, User select shapes with different opacity and input show mixed state.", async ({
+  page,
+}) => {
+  const { workspacePage } = await setupTokensFileRender(page);
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+  const layerMenuSection = page.getByRole("region", {
+    name: "Layer menu section",
+  });
+  await expect(layerMenuSection).toBeVisible();
+  await layerMenuSection.getByRole("textbox", { name: "Opacity" }).fill("50");
+  await expect(layerMenuSection).toBeVisible();
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .nth(0)
+    .click({ modifiers: ["Shift"] });
+  await expect(
+    layerMenuSection.getByRole("textbox", { name: "Opacity" }),
+  ).toBeVisible();
+  await expect(
+    layerMenuSection.getByRole("textbox", { name: "Opacity" }),
+  ).toBeVisible();
+
+  await expect(
+    layerMenuSection.getByRole("textbox", { name: "Opacity" }),
+  ).toHaveAttribute("placeholder", "Mixed");
+});
+
+test("BUG: 13930, Token colors are shown on selected colors section", async ({
+  page,
+}) => {
+  const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+    await setupTokensFileRender(page);
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Button" })
+    .click();
+
+  await page.getByRole("tab", { name: "Tokens" }).click();
+
+  await unfoldTokenType(tokensSidebar, "color");
+
+  await tokensSidebar
+    .getByRole("button", { name: "black" })
+    .click({ button: "right" });
+  await tokenContextMenuForToken.getByText("Fill").click();
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .first()
+    .click({ modifiers: ["Shift"] });
+
+  await expect(
+    workspacePage.page.getByRole("region", { name: "Color selection section" }),
+  ).toBeVisible();
+
+  await workspacePage.page
+    .getByRole("button", { name: "Resolved value: #7f9cf5" })
+    .click();
+  await expect(
+    workspacePage.page.getByRole("region", { name: "Color selection section" }),
+  ).toBeVisible();
+
+  await expect(
+    workspacePage.page
+      .getByTestId("colorpicker")
+      .getByRole("button", { name: "colors.black" }),
+  ).toBeVisible();
+});
+
+test.describe("Numeric Input and Token Integration Tests", () => {
+  test("Token pill persists after blur in gap inputs", async ({ page }) => {
+    // Setup the workspace with token features enabled
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    // Transform a rectangle into a flex container to expose gap properties
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+    const layoutSection =
+      workspacePage.rightSidebar.getByTestId("inspect-layout");
+
+    const addLayoutButton = layoutSection
+      .getByRole("button", { name: "Add layout" })
+      .first();
+    await addLayoutButton.click();
+    await page.getByText("Flex layout").click();
+
+    // Apply a spacing token to the Column gap property
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+    await unfoldTokenType(tokensSidebar, "spacing");
+
+    await tokensSidebar
+      .getByRole("button", { name: "spacing.lg" })
+      .click({ button: "right" });
+
+    await tokenContextMenuForToken.getByText("Column gap").click();
+
+    // Verify that the token pill appears in the layout section, check after blur
+    await expect(
+      page
+        .getByTestId("inspect-layout")
+        .getByRole("button", { name: "spacing.lg" }),
+    ).toBeVisible();
+
+    await page
+      .getByTestId("inspect-layout")
+      .getByRole("textbox", { name: "Vertical padding" })
+      .click();
+
+    await expect(
+      page
+        .getByTestId("inspect-layout")
+        .getByRole("button", { name: "spacing.lg" }),
+    ).toBeVisible();
+  });
+
+  test("Padding tokens are applied to both vertical or horizontal properties", async ({
+    page,
+  }) => {
+    // Setup the workspace with token features enabled
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    // Transform a rectangle into a flex container to expose gap properties
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+    const layoutSection =
+      workspacePage.rightSidebar.getByTestId("inspect-layout");
+
+    const addLayoutButton = layoutSection
+      .getByRole("button", { name: "Add layout" })
+      .first();
+    await addLayoutButton.click();
+    await page.getByText("Flex layout").click();
+
+    // Apply a spacing token to the Column gap property
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+    await unfoldTokenType(tokensSidebar, "spacing");
+
+    await tokensSidebar
+      .getByRole("button", { name: "spacing.lg" })
+      .click({ button: "right" });
+
+    await tokenContextMenuForToken.getByText("Horizontal").click();
+
+    // Verify that the token pill appears in the layout section, check after blur
+    await expect(
+      page
+        .getByTestId("inspect-layout")
+        .getByRole("button", { name: "spacing.lg" }),
+    ).toBeVisible();
+
+    await layoutSection
+      .getByRole("button", { name: "Show 4 sided padding options" })
+      .click();
+
+    await expect(
+      page
+        .getByTestId("inspect-layout")
+        .getByRole("button", { name: "spacing.lg" }),
+    ).toHaveCount(2);
+
+    await layoutSection
+      .getByRole("button", { name: "Show 4 sided padding options" })
+      .click();
+
+    await expect(
+      page
+        .getByTestId("inspect-layout")
+        .getByRole("button", { name: "spacing.lg" }),
+    ).toBeVisible();
+  });
+
+  test("Token pill persists after blur in min/max width inputs", async ({
+    page,
+  }) => {
+    // Setup the workspace with token features enabled
+    const { workspacePage } = await setupTokensFileRender(page, {
+      flags: ["enable-token-combobox", "enable-feature-token-input"],
+    });
+
+    // Create a flex container to expose min/max width properties
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(2).click();
+
+    const layoutSection =
+      workspacePage.rightSidebar.getByTestId("inspect-layout");
+
+    const addLayoutButton = layoutSection
+      .getByRole("button", { name: "Add layout" })
+      .first();
+    await addLayoutButton.click();
+    await page.getByText("Flex layout").click();
+
+    // Verify that the flex container (Flex board) is created
+    await expect(
+      page.getByRole("button", { name: "Flex board" }),
+    ).toBeVisible();
+
+    // Select element inside flex container to access to layout constrains inputs
+    // Apply token to min width property
+    await workspacePage.layers
+      .getByTestId("layer-row")
+      .nth(2)
+      .getByTestId("toggle-content")
+      .click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(3).click();
+
+    const layoutItemSection = page.getByRole("region", {
+      name: "Layout item section",
+    });
+
+    await layoutItemSection.getByTestId("behaviour-h-fill").click();
+
+    const constraintsSection = layoutItemSection.getByRole("region", {
+      name: "layout item size constraints",
+    });
+    await expect(constraintsSection).toBeVisible();
+
+    await constraintsSection
+      .getByRole("button", { name: "Open token list" })
+      .nth(0)
+      .click();
+
+    await expect(
+      page.getByRole("option", { name: "dimension.md" }),
+    ).toBeVisible();
+    await page.getByRole("option", { name: "dimension.md" }).click();
+
+    await expect(
+      constraintsSection.getByRole("button", { name: "dimension.md" }),
+    ).toBeVisible();
+
+    // Focus another input (Max width) to trigger blur and check if token pill persists
+    await constraintsSection
+      .getByRole("textbox", { name: "Max width" })
+      .click();
+
+    await expect(
+      constraintsSection.getByRole("button", { name: "dimension.md" }),
+    ).toBeVisible();
+  });
+
+  test("Invalid formula reverts to previous value in padding inputs", async ({
+    page,
+  }) => {
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+    const layoutSection =
+      workspacePage.rightSidebar.getByTestId("inspect-layout");
+
+    const addLayoutButton = layoutSection
+      .getByRole("button", { name: "Add layout" })
+      .first();
+
+    await addLayoutButton.click();
+
+    await page.getByText("Flex layout").click();
+
+    // Apply a spacing token to the Column gap property
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+    await unfoldTokenType(tokensSidebar, "spacing");
+
+    await tokensSidebar
+      .getByRole("button", { name: "spacing.lg" })
+      .click({ button: "right" });
+
+    await tokenContextMenuForToken.getByText("Column gap").click();
+
+    const verticalPaddingInput = layoutSection.getByRole("textbox", {
+      name: "Vertical padding",
+    });
+
+    // Enter a valid value first
+    await verticalPaddingInput.fill("23");
+    await verticalPaddingInput.press("Enter");
+    // Wait for potential error handling
+    await page.waitForTimeout(500);
+
+    expect(await verticalPaddingInput.inputValue()).toMatch("23");
+
+    // Enter invalid expression
+    await verticalPaddingInput.fill("abc+1");
+    await verticalPaddingInput.press("Enter");
+
+    // Wait for potential error handling
+    await page.waitForTimeout(500);
+
+    // Value should revert to previous valid value
+    expect(await verticalPaddingInput.inputValue()).toMatch("23");
+
+    // Should NOT contain invalid characters
+    expect(await verticalPaddingInput.inputValue()).not.toContain("abc");
+  });
+
+  test("Division by zero reverts to previous value", async ({ page }) => {
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+    const layoutSection =
+      workspacePage.rightSidebar.getByTestId("inspect-layout");
+
+    const addLayoutButton = layoutSection
+      .getByRole("button", { name: "Add layout" })
+      .first();
+
+    await addLayoutButton.click();
+
+    await page.getByText("Flex layout").click();
+
+    // Apply a spacing token to the Column gap property
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+    await unfoldTokenType(tokensSidebar, "spacing");
+
+    await tokensSidebar
+      .getByRole("button", { name: "spacing.lg" })
+      .click({ button: "right" });
+
+    await tokenContextMenuForToken.getByText("Column gap").click();
+
+    const verticalPaddingInput = layoutSection.getByRole("textbox", {
+      name: "Vertical padding",
+    });
+
+    // Enter a valid value first
+    await verticalPaddingInput.fill("23");
+    await verticalPaddingInput.press("Enter");
+    // Wait for potential error handling
+    await page.waitForTimeout(500);
+
+    expect(await verticalPaddingInput.inputValue()).toMatch("23");
+
+    // Enter invalid expression
+    await verticalPaddingInput.fill("10/0");
+    await verticalPaddingInput.press("Enter");
+
+    // Wait for potential error handling
+    await page.waitForTimeout(500);
+
+    // Value should revert to previous valid value
+    expect(await verticalPaddingInput.inputValue()).toMatch("23");
+
+    // Should NOT contain invalid characters
+    expect(await verticalPaddingInput.inputValue()).not.toContain("10/0");
+
+    // Value should revert
+    expect(await verticalPaddingInput.inputValue()).toMatch(/^(\d+|--)$/);
+    expect(await verticalPaddingInput.inputValue()).not.toBe("Infinity");
+  });
+
+  test("Negative expression result handled correctly", async ({ page }) => {
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+    const widthInput = workspacePage.rightSidebar.getByRole("textbox", {
+      name: "Width",
+    });
+    await expect(widthInput).toBeVisible();
+
+    // Enter a valid value first
+    await widthInput.fill("23");
+    await widthInput.press("Enter");
+
+    // Wait for potential error handling
+    await page.waitForTimeout(500);
+    expect(await widthInput.inputValue()).toMatch("23");
+
+    // Enter a negative expression
+    await widthInput.fill("10-50");
+    await widthInput.press("Enter");
+
+    // Wait for potential error handling
+    await page.waitForTimeout(500);
+
+    expect(await widthInput.inputValue()).toMatch("0.01");
+
+    // Should NOT negative values
+    expect(await widthInput.inputValue()).not.toContain("-40");
+  });
+
+  test("Token pill show broken reference when set is not activated", async ({
+    page,
+  }) => {
+    // Setup the workspace with token features enabled
+    const {
+      workspacePage,
+      tokensSidebar,
+      tokenContextMenuForToken,
+      tokenThemesSetsSidebar,
+    } = await setupTokensFileRender(page, {
+      flags: ["enable-token-combobox", "enable-feature-token-input"],
+    });
+    // Create a token with a reference value in other set.
+    await createToken(page, "Dimensions", "reference-token", "Value", "{card.padding}");
+
+
+    // Apply this token to a shape
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+    await unfoldTokenType(tokensSidebar, "dimensions");
+
+    await tokensSidebar
+      .getByRole("button", { name: "reference-token" })
+      .click({ button: "right" });
+
+    await tokenContextMenuForToken.getByText("X", { exact: true }).click();
+
+    //Check if token is applied and visible on right sidebar
+    const measuresSection = page.getByRole("region", {
+      name: "shape-measures-section",
+    });
+    await expect(measuresSection).toBeVisible();
+
+    await expect(measuresSection.getByRole('button', { name: 'reference-token' })).toBeVisible();
+
+    // Deactivate token set where reference token exist to make token broken
+    await tokenThemesSetsSidebar.getByRole('button', { name: 'theme' }).getByRole('checkbox').click();
+    
+    // Check if token pill show broken reference state
+    const brokenPill = measuresSection.getByRole("button", {
+      name: "is not in any active set",
+    });
+    await expect(brokenPill).toHaveCount(2);
   });
 });

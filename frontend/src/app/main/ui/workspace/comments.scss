@@ -23,7 +23,7 @@
 }
 
 .mode-dropdown-wrapper {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
   @extend %asset-element;
 
   background-color: var(--color-background-tertiary);
@@ -46,7 +46,7 @@
 }
 
 .arrow-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-24;
   width: deprecated.$s-24;
@@ -78,7 +78,7 @@
   justify-content: space-between;
 
   .icon {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     height: deprecated.$s-24;
     width: deprecated.$s-24;
@@ -91,7 +91,7 @@
   }
 
   .label {
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
   }
 
   &:hover {

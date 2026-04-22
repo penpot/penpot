@@ -431,6 +431,7 @@
                              context  (-> @context
                                           (merge (:context event))
                                           (assoc :session session*)
+                                          (assoc :session-id cf/session-id)
                                           (assoc :external-session-id (cf/external-session-id))
                                           (add-external-context-info)
                                           (d/without-nils))]

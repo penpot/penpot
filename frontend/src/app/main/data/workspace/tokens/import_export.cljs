@@ -16,7 +16,7 @@
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.store :as st]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -47,15 +47,18 @@
   (let [type->tokens (group-by-value unknown-tokens)]
     (l/wrn :hint "unsupported token types found during import"
            :tokens (str/join ", " (map (fn [[path type]] (str path " (" type ")")) unknown-tokens)))
-    (ntf/show {:content (tr "workspace.tokens.unknown-token-type-message")
+    (ntf/show {:content (i18n/tr "workspace.tokens.unknown-token-type-message")
                :detail (->> (for [[token-type token-paths] type->tokens]
-                              (str (tr "workspace.tokens.unknown-token-type-section" token-type (count token-paths))
-                                   "<br>"
+                              (str (i18n/tr "workspace.tokens.unknown-token-type-section"
+                                            token-type
+                                            (i18n/tr "labels.warning-count" (i18n/c (count token-paths))))
+                                   "<ul>"
                                    (->> token-paths
                                         (sort)
-                                        (map #(str "&nbsp;&nbsp;• " %))
-                                        (str/join "<br>"))))
-                            (str/join "<br><br>"))
+                                        (map #(str "<li>" % "</li>"))
+                                        (str/join ""))
+                                   "</ul>"))
+                            (str/join ""))
                :type :toast
                :level :info})))
 

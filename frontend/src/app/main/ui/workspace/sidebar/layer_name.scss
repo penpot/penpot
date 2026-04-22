@@ -11,8 +11,8 @@
   --element-name-comp-color: var(--context-hover-color, var(--layer-row-component-foreground-color));
   --element-name-opacity: var(--context-hover-opacity, deprecated.$op-7);
 
-  @include deprecated.textEllipsis;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.text-ellipsis;
+  @include deprecated.body-small-typography;
 
   color: var(--element-name-color);
   flex-grow: 1;
@@ -41,9 +41,9 @@
   --element-name-input-border-color: var(--input-border-color-focus);
   --element-name-input-color: var(--layer-row-foreground-color);
 
-  @include deprecated.textEllipsis;
-  @include deprecated.bodySmallTypography;
-  @include deprecated.removeInputStyle;
+  @include deprecated.text-ellipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.remove-input-style;
 
   flex-grow: 1;
   height: deprecated.$s-28;

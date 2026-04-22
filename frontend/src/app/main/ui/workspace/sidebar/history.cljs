@@ -258,7 +258,7 @@
        (map (resolve-shape-types entries objects))
        (mapv select-entry)))
 
-(mf/defc history-entry-details [{:keys [entry]}]
+(mf/defc history-entry-details* [{:keys [entry]}]
   (let [{entries :items} (mf/deref workspace-undo)
         objects (mf/deref refs/workspace-page-objects)]
 
@@ -319,7 +319,7 @@
          deprecated-icon/arrow])]
 
      (when @show-detail?
-       [:& history-entry-details {:entry entry}])]))
+       [:> history-entry-details* {:entry entry}])]))
 
 (mf/defc history-toolbox*
   []

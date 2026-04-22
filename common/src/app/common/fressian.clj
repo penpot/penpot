@@ -118,6 +118,36 @@
             (d/ordered-map)
             (partition-all 2 (seq kvs)))))
 
+
+(defn- adapt-write-handler
+  [{:keys [name class wfn]}]
+  [class {name (reify WriteHandler
+                 (write [_ w o]
+                   (wfn name w o)))}])
+
+(defn- adapt-read-handler
+  [{:keys [name rfn]}]
+  [name (reify ReadHandler
+          (read [_ rdr _ _]
+            (rfn rdr)))])
+
+(defn- merge-handlers
+  [m1 m2]
+  (-> (merge m1 m2)
+      (d/without-nils)))
+
+(def ^:private
+  xf:adapt-write-handler
+  (comp
+   (filter :wfn)
+   (map adapt-write-handler)))
+
+(def ^:private
+  xf:adapt-read-handler
+  (comp
+   (filter :rfn)
+   (map adapt-read-handler)))
+
 (def ^:dynamic *write-handler-lookup* nil)
 (def ^:dynamic *read-handler-lookup* nil)
 
@@ -126,36 +156,39 @@
 
 (defn add-handlers!
   [& handlers]
-  (letfn [(adapt-write-handler [{:keys [name class wfn]}]
-            [class {name (reify WriteHandler
-                           (write [_ w o]
-                             (wfn name w o)))}])
+  (let [write-handlers'
+        (into {} xf:adapt-write-handler handlers)
 
-          (adapt-read-handler [{:keys [name rfn]}]
-            [name (reify ReadHandler
-                    (read [_ rdr _ _]
-                      (rfn rdr)))])
+        read-handlers'
+        (into {} xf:adapt-read-handler handlers)
 
-          (merge-and-clean [m1 m2]
-            (-> (merge m1 m2)
-                (d/without-nils)))]
+        write-handlers'
+        (swap! write-handlers merge-handlers write-handlers')
 
-    (let [whs (into {}
-                    (comp
-                     (filter :wfn)
-                     (map adapt-write-handler))
-                    handlers)
-          rhs (into {}
-                    (comp
-                     (filter :rfn)
-                     (map adapt-read-handler))
-                    handlers)
-          cwh (swap! write-handlers merge-and-clean whs)
-          crh (swap! read-handlers merge-and-clean rhs)]
+        read-handlers'
+        (swap! read-handlers merge-handlers read-handlers')]
 
-      (alter-var-root #'*write-handler-lookup* (constantly (-> cwh fres/associative-lookup fres/inheritance-lookup)))
-      (alter-var-root #'*read-handler-lookup* (constantly (-> crh fres/associative-lookup)))
-      nil)))
+    (alter-var-root #'*write-handler-lookup*
+                    (constantly
+                     (-> write-handlers' fres/associative-lookup fres/inheritance-lookup)))
+
+    (alter-var-root #'*read-handler-lookup*
+                    (constantly (-> read-handlers' fres/associative-lookup)))
+
+    nil))
+
+(defn overwrite-read-handlers
+  [& handlers]
+  (->> (into {} xf:adapt-read-handler handlers)
+       (merge-handlers @read-handlers)
+       (fres/associative-lookup)))
+
+(defn overwrite-write-handlers
+  [& handlers]
+  (->> (into {} xf:adapt-write-handler handlers)
+       (merge-handlers @write-handlers)
+       (fres/associative-lookup)
+       (fres/inheritance-lookup)))
 
 (defn write-char
   [n w o]

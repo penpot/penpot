@@ -104,6 +104,11 @@
                           :subsections [:edit]
                           :fn (constantly nil)}
 
+   :paste-replace        {:tooltip (ds/meta (ds/shift "V"))
+                          :command (ds/c-mod "shift+v")
+                          :subsections [:edit]
+                          :fn #(emit-when-no-readonly (dw/paste-from-clipboard {:replace? true}))}
+
    :copy-props           {:tooltip (ds/meta (ds/alt "c"))
                           :command (ds/c-mod "alt+c")
                           :subsections [:edit]
@@ -145,6 +150,11 @@
                           :command "escape"
                           :subsections [:edit]
                           :fn #(st/emit! esc-pressed)}
+
+   :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
+                      :fn #(st/emit! (dw/open-layers-search :find))}
+   :find-and-replace {:tooltip (ds/meta "H") :command (ds/c-mod "h") :subsections [:edit]
+                      :fn #(st/emit! (dw/open-layers-search :find-and-replace))}
 
    ;; MODIFY LAYERS
 

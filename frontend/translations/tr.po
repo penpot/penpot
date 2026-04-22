@@ -8357,10 +8357,6 @@ msgstr "Yazı tipi ailesi veya virgülle (,) ayrılan yazı tipi listesi"
 msgid "workspace.tokens.token-name"
 msgstr "Ad"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
-msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "Bu yolda zaten bir token var: %s"
-
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Ad en az 1 karakterden oluşmalıdır"

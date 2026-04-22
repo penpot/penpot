@@ -8,7 +8,7 @@
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .grid-cell-menu-container {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   margin-top: deprecated.$s-8;
   gap: deprecated.$s-16;
@@ -28,7 +28,7 @@
 }
 
 .row {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 }
 
 .cell-mode :global(label) {
@@ -37,7 +37,7 @@
 
 .edit-grid-btn {
   @extend %button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   width: 100%;
   padding: deprecated.$s-8;
@@ -45,14 +45,14 @@
 
 .area-input {
   @extend %input-element;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   width: 100%;
   padding: deprecated.$s-8;
 }
 
 .grid-coord-group {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   border-radius: deprecated.$br-8;
   padding-left: deprecated.$s-4;
@@ -67,7 +67,7 @@
 
 .coord-input {
   @extend %input-element;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
   border-left: deprecated.$s-1 solid var(--panel-background-color);

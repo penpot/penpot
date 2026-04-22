@@ -2,7 +2,7 @@ use crate::math::Rect as MathRect;
 use crate::shapes::ImageFill;
 use crate::uuid::Uuid;
 
-use crate::error::{Error, Result};
+use crate::error::Result;
 use skia_safe::gpu::{surfaces, Budgeted, DirectContext};
 use skia_safe::{self as skia, Codec, ISize};
 use std::collections::HashMap;
@@ -159,7 +159,7 @@ impl ImageStore {
         let key = (id, is_thumbnail);
 
         if self.images.contains_key(&key) {
-            return Err(Error::RecoverableError("Image already exists".to_string()));
+            return Ok(());
         }
 
         let raw_data = image_data.to_vec();
@@ -186,7 +186,7 @@ impl ImageStore {
         let key = (id, is_thumbnail);
 
         if self.images.contains_key(&key) {
-            return Err(Error::RecoverableError("Image already exists".to_string()));
+            return Ok(());
         }
 
         // Create a Skia image from the existing GL texture

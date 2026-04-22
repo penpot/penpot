@@ -22,11 +22,11 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.workspace.texts-v3 :as texts]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
-   [app.main.worker :as mw]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.api.shapes :as shapes]
    [app.render-wasm.api.texts :as t]
@@ -51,7 +51,111 @@
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
+
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
+
+;; --- Page transition state (WASM viewport)
+;;
+;; Goal: avoid showing tile-by-tile rendering during page switches (and initial load),
+;; by keeping a blurred snapshot overlay visible until WASM dispatches
+;; `penpot:wasm:tiles-complete`.
+;;
+;; - `page-transition?`: true while the overlay should be considered active.
+;; - `transition-image-url*`: URL used by the UI overlay (usually `blob:` from the
+;;   current WebGL canvas snapshot; on initial load it may be a tiny SVG data-url
+;;   derived from the page background color).
+;; - `transition-epoch*`: monotonic counter used to ignore stale async work/events
+;;   when the user clicks pages rapidly (A -> B -> C).
+;; - `transition-tiles-handler*`: the currently installed DOM event handler for
+;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
+(defonce page-transition? (atom false))
+(defonce transition-image-url* (atom nil))
+(defonce transition-epoch* (atom 0))
+(defonce transition-tiles-handler* (atom nil))
+
+(def ^:private transition-blur-css "blur(4px)")
+
+(defn- set-transition-blur!
+  []
+  (when-let [canvas ^js wasm/canvas]
+    (dom/set-style! canvas "filter" transition-blur-css))
+  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
+    (doseq [^js node (array-seq nodes)]
+      (dom/set-style! node "filter" transition-blur-css))))
+
+(defn- clear-transition-blur!
+  []
+  (when-let [canvas ^js wasm/canvas]
+    (dom/set-style! canvas "filter" ""))
+  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
+    (doseq [^js node (array-seq nodes)]
+      (dom/set-style! node "filter" ""))))
+
+(defn set-transition-image-from-background!
+  "Sets `transition-image-url*` to a data URL representing a solid background color."
+  [background]
+  (when (string? background)
+    (let [svg (str "<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'>"
+                   "<rect width='1' height='1' fill='" background "'/>"
+                   "</svg>")]
+      (reset! transition-image-url*
+              (str "data:image/svg+xml;charset=utf-8," (js/encodeURIComponent svg))))))
+
+(defn begin-page-transition!
+  []
+  (reset! page-transition? true)
+  (swap! transition-epoch* inc))
+
+(defn end-page-transition!
+  []
+  (reset! page-transition? false)
+  (when-let [prev @transition-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (reset! transition-tiles-handler* nil)
+  (reset! transition-image-url* nil)
+  (clear-transition-blur!)
+  ;; Clear captured pixels so future transitions must explicitly capture again.
+  (set! wasm/canvas-snapshot-url nil))
+
+(defn- set-transition-tiles-complete-handler!
+  "Installs a tiles-complete handler bound to the current transition epoch.
+   Replaces any previous handler so rapid page switching doesn't end the wrong transition."
+  [epoch f]
+  (when-let [prev @transition-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (letfn [(handler [_]
+            (when (= epoch @transition-epoch*)
+              (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)
+              (reset! transition-tiles-handler* nil)
+              (f)))]
+    (reset! transition-tiles-handler* handler)
+    (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
+
+(defn start-initial-load-transition!
+  "Starts a page-transition workflow for initial file open.
+
+   - Sets `page-transition?` to true
+   - Installs a tiles-complete handler to end the transition
+   - Uses a solid background-color placeholder as the transition image"
+  [background]
+  ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
+  ;; ensure we still have a deterministic placeholder on initial load.
+  (when (or (not @page-transition?) (nil? @transition-image-url*))
+    (set-transition-image-from-background! background))
+  (when-not @page-transition?
+    ;; Start transition + bind the tiles-complete handler to this epoch.
+    (let [epoch (begin-page-transition!)]
+      (set-transition-tiles-complete-handler! epoch end-page-transition!))))
+
+(defn listen-tiles-render-complete-once!
+  "Registers a one-shot listener for `penpot:wasm:tiles-complete`, dispatched from WASM
+  when a full tile pass finishes."
+  [f]
+  (.addEventListener ^js ug/document
+                     "penpot:wasm:tiles-complete"
+                     (fn [_]
+                       (f))
+                     #js {:once true}))
 
 (defn text-editor-wasm?
   []
@@ -71,7 +175,6 @@
 (def ^:const INPUT-MODIFIER-U8-SIZE 44)
 (def ^:const INPUT-MODIFIER-U32-SIZE (/ INPUT-MODIFIER-U8-SIZE 4))
 
-
 (def ^:const GRID-LAYOUT-ROW-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-CELL-U8-SIZE 36)
@@ -79,27 +182,34 @@
 (def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
 
 (def ^:const DEBOUNCE_DELAY_MS 100)
-(def ^:const THROTTLE_DELAY_MS 10)
 
-;; Number of shapes to process before yielding to browser
-(def ^:const SHAPES_CHUNK_SIZE 100)
+;; Time budget (ms) per chunk of shape processing before yielding to browser
+(def ^:private ^:const CHUNK_TIME_BUDGET_MS 8)
 ;; Threshold below which we use synchronous processing (no chunking overhead)
 (def ^:const ASYNC_THRESHOLD 100)
 
+;; Text editor events.
+(def ^:const TEXT_EDITOR_EVENT_NONE 0)
+(def ^:const TEXT_EDITOR_EVENT_CONTENT_CHANGED 1)
+(def ^:const TEXT_EDITOR_EVENT_SELECTION_CHANGED 2)
+(def ^:const TEXT_EDITOR_EVENT_STYLES_CHANGED 3)
+(def ^:const TEXT_EDITOR_EVENT_NEEDS_LAYOUT 4)
+
 ;; Re-export public WebGL functions
-(def capture-canvas-pixels webgl/capture-canvas-pixels)
-(def restore-previous-canvas-pixels webgl/restore-previous-canvas-pixels)
-(def clear-canvas-pixels webgl/clear-canvas-pixels)
+(def capture-canvas-snapshot-url webgl/capture-canvas-snapshot-url)
+(def draw-thumbnail-to-canvas webgl/draw-thumbnail-to-canvas)
 
 ;; Re-export public text editor functions
-(def text-editor-start text-editor/text-editor-start)
-(def text-editor-stop text-editor/text-editor-stop)
+(def text-editor-focus text-editor/text-editor-focus)
+(def text-editor-blur text-editor/text-editor-blur)
 (def text-editor-set-cursor-from-offset text-editor/text-editor-set-cursor-from-offset)
 (def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
 (def text-editor-pointer-down text-editor/text-editor-pointer-down)
 (def text-editor-pointer-move text-editor/text-editor-pointer-move)
 (def text-editor-pointer-up text-editor/text-editor-pointer-up)
-(def text-editor-is-active? text-editor/text-editor-is-active?)
+(def text-editor-get-current-styles text-editor/text-editor-get-current-styles)
+(def text-editor-has-focus? text-editor/text-editor-has-focus?)
+(def text-editor-has-selection? text-editor/text-editor-has-selection?)
 (def text-editor-select-all text-editor/text-editor-select-all)
 (def text-editor-select-word-boundary text-editor/text-editor-select-word-boundary)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
@@ -113,13 +223,17 @@
 ;;
 (def shape-wrapper-factory nil)
 
-(defn- yield-to-browser
-  "Returns a promise that resolves after yielding to the browser's event loop.
-   Uses requestAnimationFrame for smooth visual updates during loading."
-  []
-  (p/create
-   (fn [resolve _reject]
-     (js/requestAnimationFrame (fn [_] (resolve nil))))))
+(let [^js ch (js/MessageChannel.)]
+  (defn- yield-to-browser
+    "Returns a promise that resolves after yielding to the browser's event loop.
+     Uses MessageChannel for near-zero delay (avoids setTimeout's 4ms minimum
+     after nesting depth > 5). Same technique used by React's scheduler."
+    []
+    (p/create
+     (fn [resolve _reject]
+       (set! (.-onmessage (.-port1 ch))
+             (fn [_] (resolve nil)))
+       (.postMessage (.-port2 ch) nil)))))
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
@@ -135,6 +249,13 @@
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :fill "none"}
      [:& shape-wrapper {:shape shape}]]))
+
+(defn is-text-editor-wasm-enabled
+  [state]
+  (let [runtime-features (get state :features-runtime)
+        enabled-features (get state :features)]
+    (or (contains? runtime-features "text-editor-wasm/v1")
+        (contains? enabled-features "text-editor-wasm/v1"))))
 
 (defn get-static-markup
   [shape]
@@ -154,17 +275,23 @@
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
     (try
-      (when wasm/context-initialized?
+      (when (is-text-editor-wasm-enabled @st/state)
         (text-editor/text-editor-update-blink timestamp)
-        ;; Render text editor overlay on top of main canvas (only if feature enabled)
-        ;; Determine if text-editor-wasm feature is active without requiring
-        ;; app.main.features to avoid circular dependency: check runtime and
-        ;; persisted feature sets in the store state.
-        (when (text-editor-wasm?)
-          (text-editor/text-editor-render-overlay))
+        (text-editor/text-editor-render-overlay)
         ;; Poll for editor events; if any event occurs, trigger a re-render
         (let [ev (text-editor/text-editor-poll-event)]
-          (when (and ev (not= ev 0))
+          (when (and ev (not= ev TEXT_EDITOR_EVENT_NONE))
+            ;; When StylesChanged, get the current styles.
+            (case ev
+              ;; StylesChanged Event
+              TEXT_EDITOR_EVENT_STYLES_CHANGED
+              (let [current-styles (text-editor/text-editor-get-current-styles)
+                    shape-id (text-editor/text-editor-get-active-shape-id)]
+                (st/emit! (texts/v3-update-text-editor-styles shape-id current-styles)))
+
+              ;; Default case
+              nil)
+
             (request-render "text-editor-event"))))
       (catch :default e
         (js/console.error "text-editor overlay/update failed:" e)))
@@ -207,7 +334,7 @@
 
 (defn request-render
   [_requester]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (and wasm/context-initialized? (not @wasm/context-lost?) (not @wasm/disable-request-render?))
     (if @shapes-loading?
       (register-deferred-render!)
       (when-not @pending-render
@@ -271,11 +398,13 @@
     (h/call wasm/internal-module "_update_shape_text_layout")
     result))
 
-(defn apply-style-to-selection
+(defn apply-styles-to-selection
   "Apply style attrs to the currently selected text spans.
    Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving."
   [attrs]
-  (text-editor/apply-style-to-selection attrs use-shape set-shape-text-content))
+  (let [result (text-editor/apply-styles-to-selection attrs use-shape set-shape-text-content)]
+    (request-render "apply-styles-to-selection")
+    result))
 
 (defn set-parent-id
   [id]
@@ -525,45 +654,46 @@
   [shape-id strokes thumbnail?]
   (h/call wasm/internal-module "_clear_shape_strokes")
   (keep (fn [stroke]
-          (let [opacity   (or (:stroke-opacity stroke) 1.0)
-                color     (:stroke-color stroke)
-                gradient  (:stroke-color-gradient stroke)
-                image     (:stroke-image stroke)
-                width     (:stroke-width stroke)
-                align     (:stroke-alignment stroke)
-                style     (-> stroke :stroke-style sr/translate-stroke-style)
-                cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
-                cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
-                offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)
-                heap      (mem/get-heap-u8)
-                dview     (js/DataView. (.-buffer heap))]
-            (case align
-              :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
-              :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
-              (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end))
+          (when-not (:hidden stroke)
+            (let [opacity   (or (:stroke-opacity stroke) 1.0)
+                  color     (:stroke-color stroke)
+                  gradient  (:stroke-color-gradient stroke)
+                  image     (:stroke-image stroke)
+                  width     (:stroke-width stroke)
+                  align     (:stroke-alignment stroke)
+                  style     (-> stroke :stroke-style sr/translate-stroke-style)
+                  cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
+                  cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
+                  offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)
+                  heap      (mem/get-heap-u8)
+                  dview     (js/DataView. (.-buffer heap))]
+              (case align
+                :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
+                :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
+                (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end))
 
-            (cond
-              (some? gradient)
-              (do
-                (types.fills.impl/write-gradient-fill offset dview opacity gradient)
-                (h/call wasm/internal-module "_add_shape_stroke_fill"))
+              (cond
+                (some? gradient)
+                (do
+                  (types.fills.impl/write-gradient-fill offset dview opacity gradient)
+                  (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
-              (some? image)
-              (let [image-id      (get image :id)
-                    buffer        (uuid/get-u32 image-id)
-                    cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                          (aget buffer 0) (aget buffer 1)
-                                          (aget buffer 2) (aget buffer 3)
-                                          thumbnail?)]
-                (types.fills.impl/write-image-fill offset dview opacity image)
-                (h/call wasm/internal-module "_add_shape_stroke_fill")
-                (when (== cached-image? 0)
-                  (fetch-image shape-id image-id thumbnail?)))
+                (some? image)
+                (let [image-id      (get image :id)
+                      buffer        (uuid/get-u32 image-id)
+                      cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                            (aget buffer 0) (aget buffer 1)
+                                            (aget buffer 2) (aget buffer 3)
+                                            thumbnail?)]
+                  (types.fills.impl/write-image-fill offset dview opacity image)
+                  (h/call wasm/internal-module "_add_shape_stroke_fill")
+                  (when (== cached-image? 0)
+                    (fetch-image shape-id image-id thumbnail?)))
 
-              (some? color)
-              (do
-                (types.fills.impl/write-solid-fill offset dview opacity color)
-                (h/call wasm/internal-module "_add_shape_stroke_fill")))))
+                (some? color)
+                (do
+                  (types.fills.impl/write-solid-fill offset dview opacity color)
+                  (h/call wasm/internal-module "_add_shape_stroke_fill"))))))
         strokes))
 
 (defn set-shape-svg-attrs
@@ -958,50 +1088,31 @@
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
-            (when wasm/context-initialized?
+            (when (and wasm/context-initialized? (not @wasm/context-lost?))
               (perf/begin-measure "render-finish")
               (h/call wasm/internal-module "_set_view_end")
               (perf/end-measure "render-finish")
-              (render (js/performance.now))))]
+              ;; Use async _render: visible tiles render synchronously
+              ;; (no yield), interest-area tiles render progressively
+              ;; via rAF.  _set_view_end already rebuilt the tile
+              ;; index.  For pan, most tiles are cached so the render
+              ;; completes in the first frame.  For zoom, interest-
+              ;; area tiles (~3 tile margin) don't block the main
+              ;; thread.
+              (h/call wasm/internal-module "_render" 0)))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
-(def render-pan
-  (letfn [(do-render-pan [ts]
-            ;; Check if context is still initialized before executing
-            ;; to prevent errors when navigating quickly
-            (when wasm/context-initialized?
-              (perf/begin-measure "render-pan")
-              (render ts)
-              (perf/end-measure "render-pan")))]
-    (fns/throttle do-render-pan THROTTLE_DELAY_MS)))
-
 (defn set-view-box
-  [prev-zoom zoom vbox]
-  (let [is-pan (mth/close? prev-zoom zoom)]
-    (perf/begin-measure "set-view-box")
-    (h/call wasm/internal-module "_set_view_start")
-    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  [zoom vbox]
+  (perf/begin-measure "set-view-box")
+  (h/call wasm/internal-module "_set_view_start")
+  (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (perf/end-measure "set-view-box")
 
-    (if is-pan
-      (do (perf/end-measure "set-view-box")
-          (perf/begin-measure "set-view-box::pan")
-          (render-pan)
-          (render-finish)
-          (perf/end-measure "set-view-box::pan"))
-      (do (perf/end-measure "set-view-box")
-          (perf/begin-measure "set-view-box::zoom")
-          (h/call wasm/internal-module "_render_from_cache" 0)
-          (render-finish)
-          (perf/end-measure "set-view-box::zoom")))))
-
-(defn update-text-rect!
-  [id]
-  (when wasm/context-initialized?
-    (mw/emit!
-     {:cmd :index/update-text-rect
-      :page-id (:current-page-id @st/state)
-      :shape-id id
-      :dimensions (get-text-dimensions id)})))
+  (perf/begin-measure "render-from-cache")
+  (h/call wasm/internal-module "_render_from_cache" 0)
+  (render-finish)
+  (perf/end-measure "render-from-cache"))
 
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the
@@ -1057,54 +1168,61 @@
 
       (set-shape-layout shape)
       (set-layout-data shape)
-      (let [pending_thumbnails (into [] (concat
-                                         (set-shape-text-content id content)
-                                         (set-shape-text-images id content true)
+      (let [is-text? (= type :text)
+            pending_thumbnails (into [] (concat
+                                         (when is-text? (set-shape-text-content id content))
+                                         (when is-text? (set-shape-text-images id content true))
                                          (set-shape-fills id fills true)
                                          (set-shape-strokes id strokes true)))
             pending_full (into [] (concat
-                                   (set-shape-text-images id content false)
+                                   (when is-text? (set-shape-text-images id content false))
                                    (set-shape-fills id fills false)
                                    (set-shape-strokes id strokes false)))]
         (perf/end-measure "set-object")
         {:thumbnails pending_thumbnails
          :full pending_full}))))
 
-(defn update-text-layouts
-  [shapes]
-  (->> shapes
-       (filter cfh/text-shape?)
-       (map :id)
-       (run!
-        (fn [id]
-          (f/update-text-layout id)
-          (update-text-rect! id)))))
+(defn- update-text-layouts
+  "Synchronously update text layouts for all shapes and send rect updates
+   to the worker index."
+  [text-ids]
+  (run! f/update-text-layout text-ids))
 
 (defn process-pending
-  ([shapes thumbnails full on-complete]
-   (process-pending shapes thumbnails full nil on-complete))
-  ([shapes thumbnails full on-render on-complete]
-   (let [pending-thumbnails
-         (d/index-by :key :callback thumbnails)
+  [shapes thumbnails full on-complete]
+  (let [pending-thumbnails
+        (d/index-by :key :callback thumbnails)
 
-         pending-full
-         (d/index-by :key :callback full)]
+        pending-full
+        (d/index-by :key :callback full)]
 
-     (->> (rx/concat
-           (->> (rx/from (vals pending-thumbnails))
-                (rx/merge-map (fn [callback] (callback)))
-                (rx/reduce conj []))
-           (->> (rx/from (vals pending-full))
-                (rx/mapcat (fn [callback] (callback)))
-                (rx/reduce conj [])))
-          (rx/subs!
-           (fn [_]
-             (update-text-layouts shapes)
-             (if on-render
-               (on-render)
-               (request-render "pending-finished")))
-           noop-fn
-           on-complete)))))
+    ;; Run text layouts synchronously so shapes are immediately correct.
+    (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+      (when (seq text-ids)
+        (update-text-layouts text-ids)))
+
+    (if (or (seq pending-thumbnails) (seq pending-full))
+      (->> (rx/concat
+            (->> (rx/from (vals pending-thumbnails))
+                 (rx/merge-map (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty)))
+            (->> (rx/from (vals pending-full))
+                 (rx/mapcat (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty))))
+           (rx/subs!
+            (fn [_]
+              ;; Fonts are now loaded — recompute text layouts so Skia
+              ;; uses the real metrics instead of fallback-font estimates.
+              (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+                (when (seq text-ids)
+                  (update-text-layouts text-ids)))
+              (request-render "images-loaded"))
+            noop-fn
+            (fn [] (when (fn? on-complete) (on-complete)))))
+      ;; No pending images — complete immediately.
+      (when on-complete (on-complete)))))
 
 (defn process-object
   [shape]
@@ -1112,86 +1230,120 @@
     (process-pending [shape] thumbnails full noop-fn)))
 
 (defn- process-shapes-chunk
-  "Process a chunk of shapes synchronously, returning accumulated pending operations.
+  "Process shapes starting at `start-index` until the time budget is exhausted.
    Returns {:thumbnails [...] :full [...] :next-index n}"
-  [shapes start-index chunk-size thumbnails-acc full-acc]
-  (let [total (count shapes)
-        end-index (min total (+ start-index chunk-size))]
+  [shapes start-index thumbnails-acc full-acc]
+  (let [total    (count shapes)
+        deadline (+ (js/performance.now) CHUNK_TIME_BUDGET_MS)]
     (loop [index start-index
-           t-acc thumbnails-acc
-           f-acc full-acc]
-      (if (< index end-index)
+           t-acc (transient thumbnails-acc)
+           f-acc (transient full-acc)]
+      (if (and (< index total)
+               ;; Check performance.now every 8 shapes to reduce overhead
+               (or (pos? (bit-and (- index start-index) 7))
+                   (<= (js/performance.now) deadline)))
         (let [shape (nth shapes index)
               {:keys [thumbnails full]} (set-object shape)]
           (recur (inc index)
-                 (into t-acc thumbnails)
-                 (into f-acc full)))
-        {:thumbnails t-acc
-         :full f-acc
-         :next-index end-index}))))
+                 (reduce conj! t-acc thumbnails)
+                 (reduce conj! f-acc full)))
+        {:thumbnails (persistent! t-acc)
+         :full (persistent! f-acc)
+         :next-index index}))))
 
 (defn- set-objects-async
-  "Asynchronously process shapes in chunks, yielding to the browser between chunks.
-   Returns a promise that resolves when all shapes are processed.
-
-   Renders a preview only periodically during loading to show progress,
-   then does a full tile-based render at the end."
-  [shapes render-callback]
-  (let [total-shapes (count shapes)
-        total-chunks (mth/ceil (/ total-shapes SHAPES_CHUNK_SIZE))
-        ;; Render at 25%, 50%, 75% of loading
-        render-at-chunks (set [(mth/floor (* total-chunks 0.25))
-                               (mth/floor (* total-chunks 0.5))
-                               (mth/floor (* total-chunks 0.75))])]
+  "Asynchronously process shapes in time-budgeted chunks, yielding to the
+   browser between chunks so the UI stays responsive.
+   Returns a promise that resolves when all shapes are processed."
+  [shapes render-callback on-shapes-ready]
+  (let [total-shapes (count shapes)]
     (p/create
      (fn [resolve _reject]
-       (letfn [(process-next-chunk [index thumbnails-acc full-acc chunk-count]
+       (letfn [(process-next-chunk [index thumbnails-acc full-acc]
                  (if (< index total-shapes)
-                   ;; Process one chunk
+                   ;; Process one time-budgeted chunk
                    (let [{:keys [thumbnails full next-index]}
-                         (process-shapes-chunk shapes index SHAPES_CHUNK_SIZE
-                                               thumbnails-acc full-acc)
-                         new-chunk-count (inc chunk-count)]
-                     ;; Only render at specific progress milestones
-                     (when (contains? render-at-chunks new-chunk-count)
-                       (render-preview!))
-
+                         (process-shapes-chunk shapes index
+                                               thumbnails-acc full-acc)]
                      ;; Yield to browser, then continue with next chunk
                      (-> (yield-to-browser)
                          (p/then (fn [_]
-                                   (process-next-chunk next-index thumbnails full new-chunk-count)))))
+                                   (process-next-chunk next-index thumbnails full)))))
                    ;; All chunks done - finalize
                    (do
                      (perf/end-measure "set-objects")
-                     (process-pending shapes thumbnails-acc full-acc noop-fn
-                                      (fn []
-                                        (end-shapes-loading!)
-                                        (if render-callback
-                                          (render-callback)
-                                          (render-finish))
-                                        (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
-                                        (resolve nil))))))]
-         (process-next-chunk 0 [] [] 0))))))
+
+                     ;; Notify that shapes are loaded and tiles rebuilt
+                     (when on-shapes-ready (on-shapes-ready))
+                     ;; Show shapes immediately: end loading overlay + unblock rendering
+                     (h/call wasm/internal-module "_end_loading")
+                     (end-shapes-loading!)
+
+                     ;; Rebuild the tile index so _render knows which shapes
+                     ;; map to which tiles after a page switch.
+                     (h/call wasm/internal-module "_set_view_end")
+
+                     ;; Text layouts must run after _end_loading (they
+                     ;; depend on state that is only correct when loading
+                     ;; is false).  Each call touch_shape → touched_ids.
+                     (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+                       (when (seq text-ids)
+                         (update-text-layouts text-ids)))
+                     (if render-callback
+                       (render-callback)
+                       (request-render "set-objects-complete"))
+                     (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
+                     (resolve nil)
+
+                     ;; Kick off image fetches in the background.
+                     ;; The promise is already resolved so these don't
+                     ;; block the caller.
+                     (let [pending-thumbnails (d/index-by :key :callback thumbnails-acc)
+                           pending-full       (d/index-by :key :callback full-acc)]
+                       (when (or (seq pending-thumbnails) (seq pending-full))
+                         (->> (rx/concat
+                               (->> (rx/from (vals pending-thumbnails))
+                                    (rx/merge-map (fn [callback] (callback)))
+                                    (rx/reduce conj []))
+                               (->> (rx/from (vals pending-full))
+                                    (rx/mapcat (fn [callback] (callback)))
+                                    (rx/reduce conj [])))
+                              (rx/subs!
+                               (fn [_]
+                                 ;; Fonts are now loaded — recompute text
+                                 ;; layouts so Skia uses the real metrics
+                                 ;; instead of fallback-font estimates.
+                                 (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+                                   (when (seq text-ids)
+                                     (update-text-layouts text-ids)))
+                                 (request-render "images-loaded"))
+                               noop-fn
+                               noop-fn)))))))]
+         (process-next-chunk 0 [] []))))))
 
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."
-  [shapes render-callback]
+  [shapes render-callback on-shapes-ready]
   (let [total-shapes (count shapes)
         {:keys [thumbnails full]}
-        (loop [index 0 thumbnails-acc [] full-acc []]
+        (loop [index 0 thumbnails-acc (transient []) full-acc (transient [])]
           (if (< index total-shapes)
             (let [shape (nth shapes index)
                   {:keys [thumbnails full]} (set-object shape)]
               (recur (inc index)
-                     (into thumbnails-acc thumbnails)
-                     (into full-acc full)))
-            {:thumbnails thumbnails-acc :full full-acc}))]
+                     (reduce conj! thumbnails-acc thumbnails)
+                     (reduce conj! full-acc full)))
+            {:thumbnails (persistent! thumbnails-acc) :full (persistent! full-acc)}))]
     (perf/end-measure "set-objects")
-    (process-pending shapes thumbnails full noop-fn
+    (when on-shapes-ready (on-shapes-ready))
+    ;; Rebuild the tile index so _render knows which shapes
+    ;; map to which tiles after a page switch.
+    (h/call wasm/internal-module "_set_view_end")
+    (process-pending shapes thumbnails full
                      (fn []
                        (if render-callback
                          (render-callback)
-                         (render-finish))
+                         (request-render "set-objects-sync-complete"))
                        (ug/dispatch! (ug/event "penpot:wasm:set-objects"))))))
 
 (defn- shapes-in-tree-order
@@ -1227,23 +1379,36 @@
   "Set all shape objects for rendering.
 
    Shapes are processed in tree order (parents before children)
-   to maintain proper shape reference consistency in WASM."
+   to maintain proper shape reference consistency in WASM.
+
+   on-shapes-ready is an optional callback invoked right after shapes are
+   loaded into WASM (and tiles rebuilt for async). It fires before image
+   loading begins, allowing callers to reveal the page content during
+   transitions."
   ([objects]
-   (set-objects objects nil))
+   (set-objects objects nil nil false))
   ([objects render-callback]
+   (set-objects objects render-callback nil false))
+  ([objects render-callback on-shapes-ready force-sync]
    (perf/begin-measure "set-objects")
    (let [shapes (shapes-in-tree-order objects)
          total-shapes (count shapes)]
-     (if (< total-shapes ASYNC_THRESHOLD)
-       (set-objects-sync shapes render-callback)
+     (if (or force-sync (< total-shapes ASYNC_THRESHOLD))
+       (set-objects-sync shapes render-callback on-shapes-ready)
        (do
          (begin-shapes-loading!)
+         (h/call wasm/internal-module "_begin_loading")
+         ;; NOTE: to render a loading overlay in the future
+         ;;  (when-not on-shapes-ready
+         ;;    (h/call wasm/internal-module "_render_loading_overlay"))
          (try
-           (-> (set-objects-async shapes render-callback)
+           (-> (set-objects-async shapes render-callback on-shapes-ready)
                (p/catch (fn [error]
+                          (h/call wasm/internal-module "_end_loading")
                           (end-shapes-loading!)
                           (js/console.error "Async WASM shape loading failed" error))))
            (catch :default error
+             (h/call wasm/internal-module "_end_loading")
              (end-shapes-loading!)
              (js/console.error "Async WASM shape loading failed" error)
              (throw error)))
@@ -1353,6 +1518,23 @@
   []
   (h/call wasm/internal-module "_clean_modifiers"))
 
+(defn set-modifiers-start
+  "Enter interactive transform mode (drag / resize / rotate). Enables
+   fast-mode effect skipping in the renderer and activates an atlas
+   backdrop so tiles do not appear sequentially or flicker while the
+   gesture is in progress."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_set_modifiers_start")))
+
+(defn set-modifiers-end
+  "Leave interactive transform mode. Cancels any pending async render
+   scheduled under it; the caller is expected to trigger a full-quality
+   render (via `request-render`) once the gesture is committed."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_set_modifiers_end")))
+
 (defn set-modifiers
   [modifiers]
 
@@ -1377,18 +1559,16 @@
         (request-render "set-modifiers")))))
 
 (defn initialize-viewport
-  ([base-objects zoom vbox background]
-   (initialize-viewport base-objects zoom vbox background 1 nil))
-  ([base-objects zoom vbox background callback]
-   (initialize-viewport base-objects zoom vbox background 1 callback))
-  ([base-objects zoom vbox background background-opacity callback]
-   (let [rgba         (sr-clr/hex->u32argb background background-opacity)
-         shapes       (into [] (vals base-objects))
-         total-shapes (count shapes)]
-     (h/call wasm/internal-module "_set_canvas_background" rgba)
-     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-     (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
-     (set-objects base-objects callback))))
+  [base-objects zoom vbox &
+   {:keys [background background-opacity on-render on-shapes-ready force-sync]
+    :or {background-opacity 1}}]
+  (let [rgba (when background (sr-clr/hex->u32argb background background-opacity))
+        total-shapes (count (vals base-objects))]
+
+    (when rgba (h/call wasm/internal-module "_set_canvas_background" rgba))
+    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
+    (set-objects base-objects on-render on-shapes-ready force-sync)))
 
 (def ^:private default-context-options
   #js {:antialias false
@@ -1417,6 +1597,42 @@
   (when-let [raw (let [p (rt/get-params @st/state)]
                    (:aa_threshold p))]
     (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-blur-downscale-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:blur_downscale_threshold p))]
+    (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-max-blocking-time-ms-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:max_blocking_time_ms p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-node-batch-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:node_batch_threshold p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-viewport-interest-area-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:viewport_interest_area_threshold p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
       (when (and (number? n) (not (js/isNaN n)) (pos? n))
         n))))
 
@@ -1457,6 +1673,16 @@
         (h/call wasm/internal-module "_set_render_options" flags dpr)
         (when-let [t (wasm-aa-threshold-from-route-params)]
           (h/call wasm/internal-module "_set_antialias_threshold" t))
+        (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
+        (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
+          (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
+        (when-let [t (wasm-node-batch-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_node_batch_threshold" t))
+        (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
+        (when-let [max-tex (webgl/max-texture-size context)]
+          (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
 
         ;; Set browser and canvas size only after initialization
         (h/call wasm/internal-module "_set_browser" browser)
@@ -1473,6 +1699,8 @@
   []
   (when wasm/context-initialized?
     (try
+      (set! wasm/context-initialized? false)
+
       ;; Cancel any pending animation frame to prevent race conditions
       (when wasm/internal-frame-id
         (js/cancelAnimationFrame wasm/internal-frame-id)
@@ -1483,8 +1711,6 @@
       (reset! shapes-loading? false)
       (reset! deferred-render? false)
 
-      ;; TODO: perform corresponding cleaning
-      (set! wasm/context-initialized? false)
       (h/call wasm/internal-module "_clean_up")
 
       ;; Remove event listener for WebGL context lost
@@ -1682,11 +1908,11 @@
                         :direction       (dr/translate-direction direction)
                         :font-id         (get element :font-id)
                         :font-family     (get element :font-family)
-                        :font-size       (get element :font-size)
+                        :font-size       (dm/str (get element :font-size) "px")
                         :font-weight     (get element :font-weight)
                         :text-transform  (get element :text-transform)
                         :text-decoration (get element :text-decoration)
-                        :letter-spacing  (get element :letter-spacing)
+                        :letter-spacing  (dm/str (get element :letter-spacing) "px")
                         :font-style      (get element :font-style)
                         :fills           (get element :fills)
                         :text            text})))))))
@@ -1694,9 +1920,36 @@
 
 (defn apply-canvas-blur
   []
-  (when wasm/canvas (dom/set-style! wasm/canvas "filter" "blur(4px)"))
-  (let [controls-to-blur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
-    (run! #(dom/set-style! % "filter" "blur(4px)") controls-to-blur)))
+  (let [already? @page-transition?
+        epoch    (begin-page-transition!)]
+    (set-transition-tiles-complete-handler! epoch end-page-transition!)
+    ;; Two-phase transition:
+    ;; - Apply CSS blur to the live canvas immediately (no async wait), so the user
+    ;;   sees the transition right away.
+    ;; - In parallel, capture a `blob:` snapshot URL; once ready, switch the overlay
+    ;;   to that fixed image (and guard with `epoch` to avoid stale async updates).
+    (set-transition-blur!)
+    ;; Lock the snapshot for the whole transition: if the user clicks to another page
+    ;; while the transition is active, keep showing the original page snapshot until
+    ;; the final target page finishes rendering.
+    (if already?
+      (p/resolved nil)
+      (do
+        ;; If we already have a snapshot URL, use it immediately.
+        (when-let [url wasm/canvas-snapshot-url]
+          (when (string? url)
+            (reset! transition-image-url* url)))
+
+        ;; Capture a fresh snapshot asynchronously and update the overlay as soon
+        ;; as it is ready (guarded by `epoch` to avoid stale async updates).
+        (-> (capture-canvas-snapshot-url)
+            (p/then (fn [url]
+                      (when (and (string? url)
+                                 @page-transition?
+                                 (= epoch @transition-epoch*))
+                        (reset! transition-image-url* url))
+                      url))
+            (p/catch (fn [_] nil)))))))
 
 (defn render-shape-pixels
   [shape-id scale]

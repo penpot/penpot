@@ -40,6 +40,7 @@
            on-stroke-cap-start-change
            on-stroke-cap-end-change
            on-stroke-cap-switch
+           on-toggle-visibility
            disable-drag
            on-focus
            on-blur
@@ -49,7 +50,10 @@
            select-on-focus
            ids]}]
 
-  (let [token-numeric-inputs
+  (let [hidden?            (:hidden stroke)
+        hidden?            (if (nil? hidden?) false hidden?)
+
+        token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
 
         on-drop
@@ -182,10 +186,18 @@
         on-cap-switch
         (mf/use-fn
          (mf/deps index on-stroke-cap-switch)
-         #(on-stroke-cap-switch index))]
+         #(on-stroke-cap-switch index))
+
+        on-toggle-visibility
+        (mf/use-fn
+         (mf/deps index on-toggle-visibility)
+         (fn []
+           (when on-toggle-visibility
+             (on-toggle-visibility index))))]
 
     [:div {:class (stl/css-case
                    :stroke-data true
+                   :hidden hidden?
                    :dnd-over-top (= (:over dprops) :top)
                    :dnd-over-bot (= (:over dprops) :bot))
            :aria-label (str "stroke-row-" index)}
@@ -195,22 +207,33 @@
 
      ;; Stroke Color
      ;; FIXME: memorize stroke color
-     [:> color-row* {:color (ctc/stroke->color stroke)
-                     :index index
-                     :title title
-                     :on-change on-color-change-refactor
-                     :on-detach on-color-detach
-                     :on-remove on-remove
-                     :disable-drag disable-drag
-                     :applied-token (if (= index 0)
-                                      stroke-color-token
-                                      nil)
-                     :on-detach-token on-detach-token-color
-                     :on-token-change on-token-change
-                     :on-focus on-focus
-                     :origin :stroke-color
-                     :select-on-focus select-on-focus
-                     :on-blur on-blur}]
+     [:div {:class (stl/css :stroke-color-actions)}
+      [:> color-row* {:color (ctc/stroke->color stroke)
+                      :index index
+                      :title title
+                      :on-change on-color-change-refactor
+                      :on-detach on-color-detach
+                      :disable-drag disable-drag
+                      :applied-token (if (= index 0)
+                                       stroke-color-token
+                                       nil)
+                      :on-detach-token on-detach-token-color
+                      :on-token-change on-token-change
+                      :on-focus on-focus
+                      :origin :stroke-color
+                      :select-on-focus select-on-focus
+                      :on-blur on-blur}]
+
+      (when (some? on-toggle-visibility)
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.options.stroke.toggle-stroke")
+                          :on-click on-toggle-visibility
+                          :icon (if hidden? "hide" "shown")}])
+
+      [:> icon-button* {:variant "ghost"
+                        :aria-label (tr "workspace.options.stroke.remove-stroke")
+                        :on-click on-remove
+                        :icon i/remove}]]
 
      ;; Stroke Width, Alignment & Style
      (if token-numeric-inputs
@@ -230,6 +253,7 @@
                      :options stroke-alignment-options
                      :variant "icon-only"
                      :data-testid "stroke.alignment"
+                     :disabled (if (= :multiple hidden?) true hidden?)
                      :wrapper-class (stl/css :stroke-align-icon-select)
                      :on-change on-alignment-change}]
 
@@ -239,6 +263,7 @@
                        :wrapper-class (stl/css :stroke-style-icon-select)
                        :data-testid "stroke.style"
                        :variant "icon-only"
+                       :disabled (if (= :multiple hidden?) true hidden?)
                        :dropdown-alignment :right
                        :on-change on-style-change}])]
 
@@ -258,6 +283,7 @@
                :data-testid "stroke.alignment"}
          [:& select {:default-value stroke-alignment
                      :options stroke-alignment-options
+                     :disabled hidden?
                      :on-change on-alignment-change}]]
 
         (when-not disable-stroke-style
@@ -265,6 +291,7 @@
                  :data-testid "stroke.style"}
            [:& select {:default-value stroke-style
                        :options stroke-style-options
+                       :disabled hidden?
                        :on-change on-style-change}]])])
 
      ;; Stroke Caps
@@ -272,11 +299,14 @@
        [:div {:class (stl/css :stroke-caps-options)}
         [:& select {:default-value (:stroke-cap-start stroke)
                     :options stroke-caps-options
+                    :disabled hidden?
                     :on-change on-caps-start-change}]
         [:> icon-button* {:variant "secondary"
                           :aria-label (tr "labels.switch")
+                          :disabled hidden?
                           :on-click on-cap-switch
                           :icon i/switch}]
         [:& select {:default-value (:stroke-cap-end stroke)
                     :options stroke-caps-options
+                    :disabled hidden?
                     :on-change on-caps-end-change}]])]))

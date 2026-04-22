@@ -204,7 +204,7 @@
       (watch [_ state _]
         (let [route    (:route state)
               qparams  (:query-params route)
-              index    (some-> (:index qparams) parse-long)
+              index    (some-> (rt/get-query-param qparams :index) parse-long)
               frame-id (some-> (:frame-id qparams) uuid/parse)]
           (rx/merge
            (rx/of (case (:zoom qparams)
@@ -301,7 +301,7 @@
     (update [_ state]
       (let [params (rt/get-params state)
             page-id (some-> (:page-id params) uuid/parse)
-            index   (some-> (:index params) parse-long)
+            index   (some-> (rt/get-query-param params :index) parse-long)
 
             frames  (dm/get-in state [:viewer :pages page-id :frames])
             index   (min (or index 0) (max 0 (dec (count frames))))
@@ -325,7 +325,7 @@
 
       (let [params (rt/get-params state)
             page-id (some-> (:page-id params) uuid/parse)
-            index   (some-> (:index params) parse-long)
+            index   (some-> (rt/get-query-param params :index) parse-long)
 
             frames  (dm/get-in state [:viewer :pages page-id :frames])
             index   (min (or index 0) (max 0 (dec (count frames))))
@@ -399,7 +399,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [params  (rt/get-params state)
-            index   (some-> params :index parse-long)]
+            index   (some-> (rt/get-query-param params :index) parse-long)]
         (when (pos? index)
           (rx/of
            (dcmt/close-thread)
@@ -415,7 +415,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [params  (rt/get-params state)
-            index   (some-> params :index parse-long)
+            index   (some-> (rt/get-query-param params :index) parse-long)
             page-id (some-> params :page-id uuid/parse)
 
             total   (count (get-in state [:viewer :pages page-id :frames]))]
@@ -530,7 +530,7 @@
        (let [route   (:route state)
              qparams (:query-params route)
              page-id (some-> (:page-id qparams) uuid/parse)
-             index   (some-> (:index qparams) parse-long)
+             index   (some-> (rt/get-query-param qparams :index) parse-long)
              frames  (get-in state [:viewer :pages page-id :frames])
              frame   (get frames index)]
          (cond-> state
@@ -744,7 +744,7 @@
       (let [route     (:route state)
             qparams   (:query-params route)
             page-id   (some-> (:page-id qparams) uuid/parse)
-            index     (some-> (:index qparams) parse-long)
+            index     (some-> (rt/get-query-param qparams :index) parse-long)
             objects   (get-in state [:viewer :pages page-id :objects])
             frame-id  (get-in state [:viewer :pages page-id :frames index :id])
 

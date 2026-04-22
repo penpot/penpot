@@ -23,7 +23,6 @@
    [app.main.store :as st]
    [app.main.ui.workspace.sidebar.assets.components :as wsac]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
-   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.dom.normalize-wheel :as nw]
@@ -280,7 +279,6 @@
        (.releasePointerCapture target (.-pointerId event)))
 
      (let [native-event (dom/event->native-event event)
-           off-pt (dom/get-offset-position native-event)
            ctrl? (kbd/ctrl? native-event)
            shift? (kbd/shift? native-event)
            alt? (kbd/alt? native-event)
@@ -290,10 +288,7 @@
            middle-click? (= 2 (.-which native-event))]
 
        (when left-click?
-         (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?))
-
-         (when (wasm.api/text-editor-is-active?)
-           (wasm.api/text-editor-pointer-up (.-x off-pt) (.-y off-pt))))
+         (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?)))
 
        (when middle-click?
          (dom/prevent-default native-event)
@@ -354,9 +349,7 @@
   (let [last-position (mf/use-var nil)]
     (mf/use-fn
      (fn [event]
-       (let [native-event (unchecked-get event "nativeEvent")
-             off-pt   (dom/get-offset-position native-event)
-             raw-pt   (dom/get-client-position event)
+       (let [raw-pt   (dom/get-client-position event)
              pt       (uwvv/point->viewport raw-pt)
 
              ;; We calculate the delta because Safari's MouseEvent.movementX/Y drop
@@ -364,12 +357,6 @@
              delta (if @last-position
                      (gpt/subtract raw-pt @last-position)
                      (gpt/point 0 0))]
-
-         ;; IMPORTANT! This function, right now it's called on EVERY pointermove. I think
-         ;; in the future (when we handle the UI in the render) should be better to
-         ;; have a "wasm.api/pointer-move" function that works as an entry point for
-         ;; all the pointer-move events.
-         (wasm.api/text-editor-pointer-move (.-x off-pt) (.-y off-pt))
 
          (rx/push! move-stream pt)
          (reset! last-position raw-pt)

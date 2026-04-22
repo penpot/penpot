@@ -81,7 +81,7 @@
         h-center? (and row? (ctl/h-center? frame))
         h-end?    (and row? (ctl/h-end? frame))
         v-center? (and col? (ctl/v-center? frame))
-        v-end?    (and row? (ctl/v-end? frame))
+        v-end?    (and col? (ctl/v-end? frame))
 
         center (gco/shape->center frame)
         start-p (gmt/transform-point-center start-p center transform-inverse)

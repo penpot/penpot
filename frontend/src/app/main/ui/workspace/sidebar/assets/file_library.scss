@@ -37,7 +37,7 @@
 }
 
 .special-title {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   color: var(--title-foreground-color-hover);
   margin-left: deprecated.$s-2;
@@ -75,7 +75,7 @@
 }
 
 .no-found-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   background-color: var(--not-found-background-color);
   border-radius: deprecated.$br-circle;
@@ -92,7 +92,7 @@
 }
 
 .no-found-text {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--not-found-foreground-color);
 }

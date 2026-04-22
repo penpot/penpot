@@ -280,6 +280,31 @@ form.avatar-form {
     z-index: $z-index-modal;
   }
 
+  .delete-overlay {
+    position: absolute;
+    top: $s-4;
+    inset-inline-end: $s-4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: $s-32;
+    height: $s-32;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-background-primary);
+    color: var(--color-foreground-primary);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+    z-index: calc(#{$z-index-modal} + 1);
+
+    &:hover {
+      background: var(--color-background-quaternary);
+      color: var(--color-accent-primary);
+    }
+  }
+
   input[type="file"] {
     width: 100%;
     height: 100%;
@@ -293,6 +318,10 @@ form.avatar-form {
   &:hover {
     .update-overlay {
       opacity: 0.8;
+    }
+
+    .delete-overlay {
+      opacity: 1;
     }
   }
 }

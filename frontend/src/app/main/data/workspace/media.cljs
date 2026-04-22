@@ -24,6 +24,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.media :as dmm]
    [app.main.data.notifications :as ntf]
+   [app.main.data.uploads :as uploads]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.svg-upload :as svg]
    [app.main.repo :as rp]
@@ -103,6 +104,26 @@
     :url url
     :is-local true}))
 
+;; Size of each upload chunk in bytes — read from config directly,
+;; same source used by the uploads namespace.
+(def ^:private chunk-size cf/upload-chunk-size)
+
+(defn- upload-blob-chunked
+  "Uploads `blob` to `file-id` as a chunked media object using the
+  three-step session API.  Returns an observable that emits the
+  assembled file-media-object map."
+  [{:keys [file-id name is-local blob]}]
+  (let [mtype (.-type blob)]
+    (->> (uploads/upload-blob-chunked blob)
+         (rx/mapcat
+          (fn [{:keys [session-id]}]
+            (rp/cmd! :assemble-file-media-object
+                     {:session-id session-id
+                      :file-id    file-id
+                      :is-local   is-local
+                      :name       name
+                      :mtype      mtype}))))))
+
 (defn process-uris
   [{:keys [file-id local? name uris mtype on-image on-svg]}]
   (letfn [(svg-url? [url]
@@ -143,12 +164,18 @@
             (and (not force-media)
                  (= (.-type blob) "image/svg+xml")))
 
-          (prepare-blob [blob]
-            (let [name (or name (if (dmm/file? blob) (media/strip-image-extension (.-name blob)) "blob"))]
-              {:file-id file-id
-               :name name
-               :is-local local?
-               :content blob}))
+          (upload-blob [blob]
+            (let [params {:file-id  file-id
+                          :name     (or name (if (dmm/file? blob) (media/strip-image-extension (.-name blob)) "blob"))
+                          :is-local local?
+                          :blob     blob}]
+              (if (>= (.-size blob) chunk-size)
+                (upload-blob-chunked params)
+                (rp/cmd! :upload-file-media-object
+                         {:file-id  file-id
+                          :name     (:name params)
+                          :is-local local?
+                          :content  blob}))))
 
           (extract-content [blob]
             (let [name (or name (.-name blob))]
@@ -159,8 +186,7 @@
      (->> (rx/from blobs)
           (rx/map dmm/validate-file)
           (rx/filter (comp not svg-blob?))
-          (rx/map prepare-blob)
-          (rx/mapcat #(rp/cmd! :upload-file-media-object %))
+          (rx/mapcat upload-blob)
           (rx/tap on-image))
 
      (->> (rx/from blobs)
@@ -170,9 +196,10 @@
           (rx/merge-map svg->clj)
           (rx/tap on-svg)))))
 
-(defn handle-media-error [error on-error]
-  (if (ex/ex-info? error)
-    (handle-media-error (ex-data error) on-error)
+(defn handle-media-error
+  [cause]
+  (ex/print-throwable cause)
+  (let [error (ex-data cause)]
     (cond
       (= (:code error) :invalid-svg-file)
       (rx/of (ntf/error (tr "errors.media-type-not-allowed")))
@@ -195,13 +222,8 @@
       (= (:code error) :unable-to-optimize)
       (rx/of (ntf/error (:hint error)))
 
-      (fn? on-error)
-      (on-error error)
-
       :else
-      (do
-        (.error js/console "ERROR" error)
-        (rx/of (ntf/error (tr "errors.cannot-upload")))))))
+      (rx/of (ntf/error (tr "errors.cannot-upload"))))))
 
 
 (def ^:private
@@ -215,7 +237,7 @@
    [:mtype {:optional true} :string]])
 
 (defn- process-media-objects
-  [{:keys [uris on-error] :as params}]
+  [{:keys [uris] :as params}]
   (dm/assert!
    (and (sm/check schema:process-media-objects params)
         (or (contains? params :blobs)
@@ -238,7 +260,7 @@
 
             ;; Every stream has its own sideeffect. We need to ignore the result
             (rx/ignore)
-            (rx/catch #(handle-media-error % on-error))
+            (rx/catch handle-media-error)
             (rx/finalize #(st/emit! (ntf/hide :tag :media-loading))))))))
 
 (defn upload-media-workspace
@@ -277,8 +299,6 @@
              (rx/mapcat #(rp/cmd! :upload-file-media-object %))
              (rx/tap on-upload-success)
              (rx/catch handle-media-error))))))
-
-;; --- Upload File Media objects
 
 (defn create-shapes-svg
   "Convert svg elements into penpot shapes."

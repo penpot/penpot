@@ -26,7 +26,7 @@
 }
 
 .modal-title {
-  @include deprecated.headlineMediumTypography;
+  @include deprecated.headline-medium-typography;
 
   color: var(--modal-title-foreground-color);
 }
@@ -36,12 +36,12 @@
 }
 
 .modal-content {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   margin-bottom: deprecated.$s-24;
 
   .modal-link {
-    @include deprecated.bodyLargeTypography;
+    @include deprecated.body-large-typography;
 
     text-decoration: none;
     cursor: pointer;
@@ -49,15 +49,15 @@
   }
 
   .selection-header {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
 
     height: deprecated.$s-32;
     margin-bottom: deprecated.$s-4;
 
     .selection-btn {
-      @include deprecated.buttonStyle;
+      @include deprecated.button-style;
       @extend %input-checkbox;
-      @include deprecated.flexCenter;
+      @include deprecated.flex-center;
 
       height: deprecated.$s-24;
       width: deprecated.$s-24;
@@ -70,7 +70,7 @@
     }
 
     .selection-title {
-      @include deprecated.bodyLargeTypography;
+      @include deprecated.body-large-typography;
 
       color: var(--modal-text-foreground-color);
     }
@@ -99,21 +99,21 @@
   }
 
   .selection-list {
-    @include deprecated.flexColumn;
+    @include deprecated.flex-column;
 
     max-height: deprecated.$s-400;
     overflow-y: auto;
     padding-bottom: deprecated.$s-12;
 
     .selection-row {
-      @include deprecated.flexRow;
+      @include deprecated.flex-row;
 
       background-color: var(--entry-background-color);
       min-height: deprecated.$s-40;
       border-radius: deprecated.$br-8;
 
       .selection-btn {
-        @include deprecated.buttonStyle;
+        @include deprecated.button-style;
 
         display: grid;
         grid-template-columns: min-content auto 1fr auto auto;
@@ -125,7 +125,7 @@
 
         .checkbox-wrapper {
           @extend %input-checkbox;
-          @include deprecated.flexCenter;
+          @include deprecated.flex-center;
 
           height: deprecated.$s-24;
           width: deprecated.$s-24;
@@ -137,8 +137,8 @@
         }
 
         .selection-name {
-          @include deprecated.bodyLargeTypography;
-          @include deprecated.textEllipsis;
+          @include deprecated.body-large-typography;
+          @include deprecated.text-ellipsis;
 
           flex-grow: 1;
           color: var(--modal-text-foreground-color);
@@ -146,8 +146,8 @@
         }
 
         .selection-scale {
-          @include deprecated.bodyLargeTypography;
-          @include deprecated.textEllipsis;
+          @include deprecated.body-large-typography;
+          @include deprecated.text-ellipsis;
 
           min-width: deprecated.$s-108;
           padding: deprecated.$s-12;
@@ -155,8 +155,8 @@
         }
 
         .selection-extension {
-          @include deprecated.bodyLargeTypography;
-          @include deprecated.textEllipsis;
+          @include deprecated.body-large-typography;
+          @include deprecated.text-ellipsis;
 
           min-width: deprecated.$s-72;
           padding: deprecated.$s-12;
@@ -165,7 +165,7 @@
       }
 
       .image-wrapper {
-        @include deprecated.flexCenter;
+        @include deprecated.flex-center;
 
         min-height: deprecated.$s-32;
         min-width: deprecated.$s-32;
@@ -181,6 +181,13 @@
       }
     }
   }
+}
+
+.status-message {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-title-foreground-color);
+  font-style: italic;
 }
 
 .action-buttons {
@@ -202,7 +209,7 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
 
   color: var(--modal-text-foreground-color);
 }
@@ -217,7 +224,7 @@
     align-items: flex-start;
 
     .modal-subtitle {
-      @include deprecated.bodyLargeTypography;
+      @include deprecated.body-large-typography;
 
       color: var(--modal-title-foreground-color);
       padding: 0.25rem 0;
@@ -230,16 +237,16 @@
 }
 
 .option-content {
-  @include deprecated.flexColumn;
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.flex-column;
+  @include deprecated.body-large-typography;
 }
 
 .file-entry {
   .file-name {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
 
     .file-icon {
-      @include deprecated.flexCenter;
+      @include deprecated.flex-center;
 
       height: deprecated.$s-16;
       width: deprecated.$s-16;
@@ -252,8 +259,8 @@
     }
 
     .file-name-label {
-      @include deprecated.bodyLargeTypography;
-      @include deprecated.textEllipsis;
+      @include deprecated.body-large-typography;
+      @include deprecated.text-ellipsis;
     }
   }
 

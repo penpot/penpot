@@ -69,12 +69,12 @@
 }
 
 .element-title {
-  @include deprecated.textEllipsis;
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.text-ellipsis;
+  @include deprecated.body-medium-typography;
 }
 
 .back-to-dashboard {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: flex;
   align-items: center;

@@ -221,6 +221,7 @@
                      :class (stl/css :demo-account-link)}
          (tr "auth.create-demo-account")]]])]])
 
+
 ;; --- PAGE: register success page
 
 (mf/defc register-success-page*
@@ -276,6 +277,7 @@
         (mf/use-fn
          (mf/deps on-success-callback)
          (fn [params]
+           (cf/external-notify-register-success (:id params))
            (if (fn? on-success-callback)
              (on-success-callback (:email params))
 

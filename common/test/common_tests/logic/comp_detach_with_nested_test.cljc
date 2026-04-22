@@ -465,9 +465,10 @@
                                               page
                                               {(:id file) file}
                                               (thi/id :nested-h-ellipse))
-        file'   (-> (thf/apply-changes file changes)
+        file'   (-> (thf/apply-changes file changes :validate? false)
                     (tho/propagate-component-changes :c-board-with-ellipse)
-                    (tho/propagate-component-changes :c-big-board))
+                    (tho/propagate-component-changes :c-big-board)
+                    (thf/validate-file!))
 
         ;; ==== Get
         nested2-h-ellipse (ths/get-shape file' :nested-h-ellipse)

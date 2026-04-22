@@ -78,7 +78,7 @@
               :stroke-width (/ 1 zoom)}}]))
 
 
-(mf/defc frame-title
+(mf/defc frame-title*
   {::mf/wrap [mf/memo
               #(mf/deferred % ts/raf)]
    ::mf/forward-ref true}
@@ -164,14 +164,16 @@
            (let [name-input     (mf/ref-val ref)
                  name           (str/trim (dom/get-value name-input))]
              (reset! edition* false)
-             (st/emit! (dw/end-rename-shape frame-id name)))))
+             (st/emit! (dw/end-rename-shape frame-id name))
+             (on-frame-leave frame-id))))
 
         cancel-edit
         (mf/use-fn
          (mf/deps frame-id)
          (fn []
            (reset! edition* false)
-           (st/emit! (dw/end-rename-shape frame-id nil))))
+           (st/emit! (dw/end-rename-shape frame-id nil))
+           (on-frame-leave frame-id)))
 
         on-key-down
         (mf/use-fn
@@ -259,16 +261,16 @@
               (not= id uuid/zero)
               (or (dbg/enabled? :shape-titles) (= parent-id uuid/zero))
               (or (empty? focus) (contains? focus id)))
-         [:& frame-title {:key (dm/str "frame-title-" id)
-                          :frame shape
-                          :zoom zoom
-                          :is-selected (contains? selected id)
-                          :is-show-artboard-names is-show-artboard-names
-                          :is-show-id (dbg/enabled? :shape-titles)
-                          :is-grid-edition (and (= id edition) grid-edition?)
-                          :on-frame-enter on-frame-enter
-                          :on-frame-leave on-frame-leave
-                          :on-frame-select on-frame-select}]))]))
+         [:> frame-title* {:key (dm/str "frame-title-" id)
+                           :frame shape
+                           :zoom zoom
+                           :is-selected (contains? selected id)
+                           :is-show-artboard-names is-show-artboard-names
+                           :is-show-id (dbg/enabled? :shape-titles)
+                           :is-grid-edition (and (= id edition) grid-edition?)
+                           :on-frame-enter on-frame-enter
+                           :on-frame-leave on-frame-leave
+                           :on-frame-select on-frame-select}]))]))
 
 (mf/defc frame-flow*
   [{:keys [flow frame is-selected zoom on-frame-enter on-frame-leave on-frame-select]}]

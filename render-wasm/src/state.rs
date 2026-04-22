@@ -26,6 +26,8 @@ pub(crate) struct State {
     pub current_browser: u8,
     pub shapes: ShapesPool,
     pub saved_shapes: Option<ShapesPool>,
+    /// True while the first bulk load of shapes is in progress.
+    pub loading: bool,
 }
 
 impl State {
@@ -36,8 +38,8 @@ impl State {
             current_id: None,
             current_browser: 0,
             shapes: ShapesPool::new(),
-            // TODO: Maybe this can be moved to a different object
             saved_shapes: None,
+            loading: false,
         })
     }
 
@@ -158,14 +160,24 @@ impl State {
 
         // Only remove the children when is being deleted from the owner
         if shape.parent_id.is_none() || shape.parent_id == Some(parent_id) {
-            let tiles::TileRect(rsx, rsy, rex, rey) =
-                self.render_state.get_tiles_for_shape(shape, &self.shapes);
-            for x in rsx..=rex {
-                for y in rsy..=rey {
-                    let tile = tiles::Tile(x, y);
-                    self.render_state.remove_cached_tile(tile);
-                    self.render_state.tiles.remove_shape_at(tile, shape.id);
-                }
+            // IMPORTANT:
+            // Do NOT use `get_tiles_for_shape` here. That method intersects the shape
+            // tiles with the current interest area, which means we'd only invalidate
+            // the subset currently near the viewport. When the user later pans/zooms
+            // to reveal previously cached tiles, stale pixels could reappear.
+            //
+            // Instead, remove the shape from *all* tiles where it was indexed, and
+            // drop cached tiles for those entries.
+            let indexed_tiles: Vec<tiles::Tile> = self
+                .render_state
+                .tiles
+                .get_tiles_of(shape.id)
+                .map(|t| t.iter().copied().collect())
+                .unwrap_or_default();
+
+            for tile in indexed_tiles {
+                self.render_state.remove_cached_tile(tile);
+                self.render_state.tiles.remove_shape_at(tile, shape.id);
             }
 
             if let Some(shape_to_delete) = self.shapes.get(&id) {
@@ -285,12 +297,16 @@ impl State {
     }
 
     pub fn touch_current(&mut self) {
-        if let Some(current_id) = self.current_id {
-            self.render_state.mark_touched(current_id);
+        if !self.loading {
+            if let Some(current_id) = self.current_id {
+                self.render_state.mark_touched(current_id);
+            }
         }
     }
 
     pub fn touch_shape(&mut self, id: Uuid) {
-        self.render_state.mark_touched(id);
+        if !self.loading {
+            self.render_state.mark_touched(id);
+        }
     }
 }

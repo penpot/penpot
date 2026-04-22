@@ -531,15 +531,17 @@
   [:map
    [:values schema:layout-item-props-schema]
    [:applied-tokens [:maybe [:map-of :keyword :string]]]
-   [:ids [::sm/vec ::sm/uuid]]
-   [:v-sizing {:optional true} [:maybe [:enum :fill :fix :auto]]]])
+   [:ids [::sm/vec ::sm/uuid]]])
 
 (mf/defc layout-size-constraints*
   {::mf/private true
    ::mf/schema (sm/schema schema:layout-size-constraints)}
-  [{:keys [values v-sizing ids applied-tokens] :as props}]
+  [{:keys [values ids applied-tokens] :as props}]
   (let [token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
+
+        v-sizing
+        (:layout-item-v-sizing values)
 
         min-w (get values :layout-item-min-w)
 
@@ -586,7 +588,8 @@
         on-layout-item-max-h-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :layout-item-max-h))]
 
-    [:div {:class (stl/css :advanced-options)}
+    [:section {:class (stl/css :advanced-options)
+               :aria-label "Layout item size constraints"}
      (when (= (:layout-item-h-sizing values) :fill)
        [:div {:class (stl/css :horizontal-fill)}
         (if token-numeric-inputs
@@ -834,7 +837,7 @@
            (st/emit! (dwsl/update-layout-child ids {:layout-item-z-index value}))))]
 
     [:section {:class (stl/css :element-set)
-               :aria-label "layout item menu"}
+               :aria-label "Layout item section"}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  has-content?
                       :collapsed    (not open?)
@@ -903,5 +906,4 @@
                   (= v-sizing :fill))
           [:> layout-size-constraints* {:ids ids
                                         :values values
-                                        :applied-tokens applied-tokens
-                                        :v-sizing v-sizing}])])]))
+                                        :applied-tokens applied-tokens}])])]))

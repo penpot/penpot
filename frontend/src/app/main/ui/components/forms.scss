@@ -123,6 +123,8 @@
 .invalid-icon {
   inline-size: $sz-16;
   block-size: $sz-16;
+  padding: 0;
+  border: none;
   background: var(--input-border-color-error);
   border-radius: $br-circle;
   display: flex;
@@ -131,6 +133,7 @@
   position: absolute;
   inset-inline-end: var(--input-icon-padding);
   inset-block-start: calc(50% - var(--sp-s));
+  cursor: pointer;
 
   svg {
     inline-size: $sz-12;
@@ -334,7 +337,7 @@
   overflow-y: hidden;
 
   .inside-input {
-    @include deprecated.removeInputStyle;
+    @include deprecated.remove-input-style;
     @include t.use-typography("body-small");
     @include text-ellipsis;
 

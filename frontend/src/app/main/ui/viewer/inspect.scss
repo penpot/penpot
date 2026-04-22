@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .inspect-svg-wrapper {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   position: relative;
   flex-direction: column;

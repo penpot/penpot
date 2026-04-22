@@ -13,8 +13,10 @@
    [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as notif]
    [app.main.data.plugins :as dp]
+   [app.main.data.profile :as dprof]
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.router :as rt]
@@ -262,6 +264,14 @@
         (binding [storage/*sync* true]
           (swap! storage/session dissoc :template))))))
 
+(defn- use-nitrate-entry-popup
+  []
+  (mf/with-effect []
+    (when (dnt/nitrate-entry-popup-pending?)
+      (dnt/consume-nitrate-entry-popup!)
+      (st/emit! (dprof/update-profile-props {:onboarding-viewed true})
+                (dnt/show-nitrate-popup :nitrate-form)))))
+
 (mf/defc dashboard*
   [{:keys [profile project-id team-id search-term plugin-url template section]}]
   (let [team            (mf/deref refs/team)
@@ -300,6 +310,7 @@
 
     (use-plugin-register plugin-url team-id (:id default-project))
     (use-templates-import can-edit? template default-project)
+    (use-nitrate-entry-popup)
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
      [:> modal-container*]

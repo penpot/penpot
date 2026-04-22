@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .copy-button {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   width: 100%;
   height: deprecated.$s-32;
@@ -17,7 +17,7 @@
   box-sizing: border-box;
 
   .icon-btn {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     height: deprecated.$s-32;
     min-width: deprecated.$s-28;
@@ -56,8 +56,8 @@
 }
 
 .copy-wrapper {
-  @include deprecated.buttonStyle;
-  @include deprecated.copyWrapperBase;
+  @include deprecated.button-style;
+  @include deprecated.copy-wrapper-base;
 
   width: 100%;
   height: fit-content;
@@ -65,7 +65,7 @@
   border: deprecated.$s-1 solid transparent;
 
   .icon-btn {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     position: absolute;
     top: 0;

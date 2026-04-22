@@ -4,29 +4,28 @@
 //
 // Copyright (c) KALEIDOS INC
 
-//#################################################
+// #################################################
 // MAIN STYLES
-//#################################################
+// #################################################
 
 @forward "common/dependencies/reset";
-@forward "common/refactor/color-defs.scss";
+@forward "common/refactor/color-defs";
 @forward "common/dependencies/fonts";
 @forward "common/dependencies/animations";
-@forward "common/dependencies/highlight.scss";
-@forward "common/dependencies/storybook.scss";
+@forward "common/dependencies/highlight";
+@forward "common/dependencies/storybook";
+@forward "common/refactor/themes";
+@forward "common/refactor/design-tokens";
 
-@forward "common/refactor/themes.scss";
-@forward "common/refactor/design-tokens.scss";
-
-//#################################################
+// #################################################
 // Layouts
-//#################################################
+// #################################################
 
 @forward "common/base";
 
-//#################################################
+// #################################################
 // Commons
-//#################################################
+// #################################################
 
 // TODO: remove this stylesheet once the new text editor is in place
 //       https: //tree.taiga.io/project/penpot/us/8165

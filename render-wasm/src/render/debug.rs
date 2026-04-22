@@ -1,4 +1,7 @@
 use super::{tiles, RenderState, SurfaceId};
+use crate::with_state_mut;
+use crate::STATE;
+use macros::wasm_error;
 use skia_safe::{self as skia, Rect};
 
 #[cfg(target_arch = "wasm32")]
@@ -191,6 +194,15 @@ pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
     run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"));
 }
 
+pub fn console_debug_surface_base64(render_state: &mut RenderState, id: SurfaceId) {
+    let base64_image = render_state
+        .surfaces
+        .base64_snapshot(id)
+        .expect("Failed to get base64 image");
+
+    println!("{}", base64_image);
+}
+
 #[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId, rect: skia::Rect) {
@@ -209,4 +221,44 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
     if let Some(base64_image) = base64_image {
         run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
     }
+}
+
+#[no_mangle]
+#[wasm_error]
+#[cfg(target_arch = "wasm32")]
+pub extern "C" fn debug_cache_console() -> Result<()> {
+    with_state_mut!(state, {
+        console_debug_surface(state.render_state_mut(), SurfaceId::Cache);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+#[cfg(target_arch = "wasm32")]
+pub extern "C" fn debug_cache_base64() -> Result<()> {
+    with_state_mut!(state, {
+        console_debug_surface_base64(state.render_state_mut(), SurfaceId::Cache);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+#[cfg(target_arch = "wasm32")]
+pub extern "C" fn debug_atlas_console() -> Result<()> {
+    with_state_mut!(state, {
+        console_debug_surface(state.render_state_mut(), SurfaceId::Atlas);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+#[cfg(target_arch = "wasm32")]
+pub extern "C" fn debug_atlas_base64() -> Result<()> {
+    with_state_mut!(state, {
+        console_debug_surface_base64(state.render_state_mut(), SurfaceId::Atlas);
+    });
+    Ok(())
 }

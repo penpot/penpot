@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.16.0 (Unreleased)
+## 2.17.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
@@ -10,26 +10,47 @@
 
 ### :sparkles: New features & Enhancements
 
+- Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
+- Add "Clear artboard guides" option to right-click context menu for frames (by @eureka0928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
+- Add loader feedback while importing and exporting files [Github #9020](https://github.com/penpot/penpot/issues/9020)
 - Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
 - Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Import Tokens from linked library (by @dfelinto) [Github #8391](https://github.com/penpot/penpot/pull/8391)
 - Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
 - Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
 - Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
-- Copy and paste entire rows in existing table (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8498)
+- Copy and paste entire rows in existing table (by @bittoby) [Github #8498](https://github.com/penpot/penpot/pull/8498)
 - Rename token group [Taiga #13137](https://tree.taiga.io/project/penpot/us/13137)
 - Duplicate token group [Taiga #10653](https://tree.taiga.io/project/penpot/us/10653)
 - Copy token name from contextual menu [Taiga #13568](https://tree.taiga.io/project/penpot/issue/13568)
 - Add natural sorting on token names [Taiga #13713](https://tree.taiga.io/project/penpot/issue/13713)
 - Add drag-to-change for numeric inputs in workspace sidebar [Github #2466](https://github.com/penpot/penpot/issues/2466)
 - Add CSS linter [Taiga #13790](https://tree.taiga.io/project/penpot/us/13790)
-- Save and restore selection state in undo/redo (by @eureka928) [Github #6007](https://github.com/penpot/penpot/issues/6007)
+- Save and restore selection state in undo/redo (by @eureka0928) [Github #6007](https://github.com/penpot/penpot/issues/6007)
 - Fix warnings for unsupported token $type (by @Dexterity104) [Github #8790](https://github.com/penpot/penpot/issues/8790)
-- Add per-group add button for typographies (by @eureka928) [Github #5275](https://github.com/penpot/penpot/issues/5275)
+- Add per-group add button for typographies (by @eureka0928) [Github #5275](https://github.com/penpot/penpot/issues/5275)
+- Add Find & Replace for text content and layer names (by @statxc) [Github #7108](https://github.com/penpot/penpot/issues/7108)
 - Use page name for multi-export ZIP/PDF downloads (by @Dexterity104) [Github #8773](https://github.com/penpot/penpot/issues/8773)
+- Make links in comments clickable (by @eureka0928) [Github #1602](https://github.com/penpot/penpot/issues/1602)
+- Add visibility toggle for strokes (by @eureka0928) [Github #7438](https://github.com/penpot/penpot/issues/7438)
+- Sort asset library subfolders alphabetically at every nesting level (by @eureka0928) [Github #2572](https://github.com/penpot/penpot/issues/2572)
+- Add Paste to replace (Cmd+Shift+V) to replace the selected shape with clipboard contents (by @eureka0928) [Github #4240](https://github.com/penpot/penpot/issues/4240)
+- Differentiate incoming and outgoing interaction link colors (by @claytonlin1110) [Github #7794](https://github.com/penpot/penpot/issues/7794)
+- Add guide locking and fix locked elements not selectable in viewer (by @Dexterity104) [Github #8358](https://github.com/penpot/penpot/issues/8358)
+- Apply styles to selection (by @AzazelN28) [Taiga #13647](https://tree.taiga.io/project/penpot/task/13647)
+- Reorder prototyping overlay options to show Position before Relative to (by @rockchris099) [Github #2910](https://github.com/penpot/penpot/issues/2910)
+- Add customizable colors for ruler guides (by @Dexterity104) [Github #5199](https://github.com/penpot/penpot/issues/5199)
+- Persist asset search query and section filter when switching sidebar tabs (by @eureka0928) [Github #2913](https://github.com/penpot/penpot/issues/2913)
+- Add delete and duplicate buttons to typography dialog (by @eureka0928) [Github #5270](https://github.com/penpot/penpot/issues/5270)
+- Edit ruler guide position by double-clicking the guide pill (by @eureka0928) [Github #2311](https://github.com/penpot/penpot/issues/2311)
+- Add a search bar to filter colors in the color palette toolbar (by @eureka0928) [Github #7653](https://github.com/penpot/penpot/issues/7653)
+- Allow customising the OIDC login button label (by @wdeveloper16) [Github #7027](https://github.com/penpot/penpot/issues/7027)
+- Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
+
 
 ### :bug: Bugs fixed
 
+- Reset profile submenu state when the account menu closes (by @eureka0928) [Github #8947](https://github.com/penpot/penpot/issues/8947)
 - Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
 - Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
@@ -43,9 +64,20 @@
 - Fix plugin modal drag interactions over iframe and close-button behavior (by @marekhrabe) [Github #8871](https://github.com/penpot/penpot/pull/8871)
 - Fix hot update on color-row on texts [Taiga #13923](https://tree.taiga.io/project/penpot/issue/13923)
 - Fix selected color tokens [Taiga #13930](https://tree.taiga.io/project/penpot/issue/13930)
+- Fix dashboard Recent/Deleted titles overlapped by scrolling content (by @rockchris099) [Github #8577](https://github.com/penpot/penpot/issues/8577)
 - Display resolved values of inactive tokens [Taiga #13628](https://tree.taiga.io/project/penpot/issue/13628)
+- Fix hyphens stripped from export filenames (by @jamesrayammons) [Github #8901](https://github.com/penpot/penpot/issues/8901)
+- Fix app crash when selecting shapes with one hidden [Taiga #13959](https://tree.taiga.io/project/penpot/issue/13959)
+- Fix opacity mixed value [Taiga #13960](https://tree.taiga.io/project/penpot/issue/13960)
+- Fix gap input throwing an error [Github #8984](https://github.com/penpot/penpot/pull/8984)
+- Fix non-functional clear icon in change email modal inputs (by @Dexterity104) [Github #8977](https://github.com/penpot/penpot/issues/8977)
+- Disable save button after saving account profile settings (by @Dexterity104) [Github #8979](https://github.com/penpot/penpot/issues/8979)
+- Fix copy to be more specific [Taiga #13990](https://tree.taiga.io/project/penpot/issue/13990)
+- Allow deleting the profile avatar after uploading [Github #9067](https://github.com/penpot/penpot/issues/9067)
+- Fix incorrect rendering when exporting text as SVG, PNG and JPG (by @edwin-rivera-dev) [Github #8516](https://github.com/penpot/penpot/issues/8516)
 
-## 2.15.0 (Unreleased)
+
+## 2.16.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
@@ -63,6 +95,53 @@
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
 - Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
 - Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
+- Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
+- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
+- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
+
+
+## 2.15.0 (Unreleased)
+
+### :sparkles: New features & Enhancements
+
+- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
+- Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
+
+### :bug: Bugs fixed
+
+- Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
+
+
+## 2.14.3
+
+### :sparkles: New features & Enhancements
+
+- Add webp export format to plugin types [Github #8870](https://github.com/penpot/penpot/pull/8870)
+- Use shared singleton containers for React portals to reduce DOM growth [Github #8957](https://github.com/penpot/penpot/pull/8957)
+
+### :bug: Bugs fixed
+
+- Fix component "broken" after switch variant [Taiga #12984](https://tree.taiga.io/project/penpot/issue/12984)
+- Fix variants corner cases with selrect and points [Github #8882](https://github.com/penpot/penpot/pull/8882)
+- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
+- Fix highlight on frames after rename [Github #8938](https://github.com/penpot/penpot/pull/8938)
+- Fix TypeError in sd-token-uuid when resolving tokens interactively [Github #8929](https://github.com/penpot/penpot/pull/8929)
+- Fix path drawing preview passing shape instead of content to next-node
+- Fix swapped arguments in CLJS PathData `-nth` with default
+- Normalize PathData coordinates to safe integer bounds on read
+- Fix RangeError from re-entrant error handling causing stack overflow [Github #8962](https://github.com/penpot/penpot/pull/8962)
+- Fix builder bool styles and media validation [Github #8963](https://github.com/penpot/penpot/pull/8963)
+- Fix "Move to" menu allowing same project as target when multiple files are selected
+- Fix crash when index query param is duplicated in URL
+- Fix wrong extremity point in path `calculate-extremities` for line-to segments
+- Fix reversed args in DTCG shadow composite token conversion
+- Fix `inside-layout?` passing shape id instead of shape to `frame-shape?`
+- Fix wrong `mapcat` call in `collect-main-shapes`
+- Fix stale accumulator in `get-children-in-instance` recursion
+- Fix typo `:podition` in swap-shapes grid cell
 
 
 ## 2.14.2
@@ -125,6 +204,8 @@
 - Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
 - Remove tokens path node and bulk remove tokens [Taiga #13007](https://tree.taiga.io/project/penpot/us/13007)
 - Replace themes management modal radio buttons for switches [Taiga #9215](https://tree.taiga.io/project/penpot/us/9215)
+- [MCP server] Integrations section [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
+- [Access Tokens] Look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 
 ### :bug: Bugs fixed
 

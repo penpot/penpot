@@ -24,7 +24,7 @@
   }
 
   .context-menu-items {
-    @include deprecated.menuShadow;
+    @include deprecated.menu-shadow;
 
     position: absolute;
     top: deprecated.$s-12;
@@ -50,7 +50,7 @@
       display: flex;
 
       .context-menu-action {
-        @include deprecated.bodySmallTypography;
+        @include deprecated.body-small-typography;
 
         display: flex;
         align-items: center;

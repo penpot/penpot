@@ -39,11 +39,15 @@
   {::mf/schema schema:token-field}
   [{:keys [id label value slot-start disabled class
            on-click on-token-key-down on-blur detach-token tooltip-placement
-           token-wrapper-ref token-detach-btn-ref on-focus property is-open]}]
+           token-wrapper-ref token-detach-btn-ref on-focus property is-open
+           token-has-errors]}]
   (let [set-active? (some? id)
-        content     (if set-active?
-                      label
-                      (tr "ds.inputs.token-field.no-active-token-option" label))
+
+        content (cond
+                  token-has-errors (tr "workspace.tokens.ref-not-valid")
+                  (not set-active?) (tr "ds.inputs.token-field.no-active-token-option" label)
+                  :else label)
+
         default-id  (mf/use-id)
         id          (d/nilv id default-id)
         pill-ref    (mf/use-ref nil)
@@ -80,13 +84,15 @@
         [:button {:on-click on-click
                   :ref pill-ref
                   :class (stl/css-case :pill true
-                                       :no-set-pill (not set-active?)
+                                       :no-set-pill (or (not set-active?)
+                                                        token-has-errors)
                                        :pill-disabled disabled)
                   :disabled disabled
                   :aria-labelledby (dm/str id "-pill")
                   :on-key-down on-token-key-down}
          value
-         (when-not set-active?
+         (when (or (not set-active?)
+                   token-has-errors)
            [:div {:class (stl/css :pill-dot)}])]]]
 
       (when-not ^boolean disabled

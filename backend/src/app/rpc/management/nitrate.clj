@@ -13,15 +13,18 @@
    [app.common.schema :as sm]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.msgbus :as mbus]
+   [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.nitrate :as cnit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.commands.teams-invitations :as ti]
    [app.rpc.doc :as doc]
+   [app.rpc.notifications :as notifications]
+   [app.storage :as sto]
    [app.util.services :as sv]))
 
 
@@ -33,27 +36,15 @@
 
 ;; ---- API: authenticate
 
-(def ^:private schema:nitrate-profile
-  [:map {:title "NitrateProfile"}
-   [:id ::sm/uuid]
-   [:name {:optional true} :string]
-   [:email {:optional true} :string]
-   [:photo-url {:optional true} :string]
-   [:theme {:optional true} :string]
-   [:can-use-trial ::sm/boolean]])
-
 (sv/defmethod ::authenticate
   "Authenticate the current user"
   {::doc/added "2.14"
    ::sm/params [:map]
-   ::sm/result schema:nitrate-profile}
+   ::sm/result schema:profile}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (let [profile            (profile/get-profile cfg profile-id)
-        nitrate-subscription (:subscription profile)
-        can-use-nitrate-trial (nil? nitrate-subscription)]
+  (let [profile            (profile/get-profile cfg profile-id)]
     (-> (profile-to-map profile)
-        (assoc :can-use-nitrate-trial can-use-nitrate-trial
-               :theme (:theme profile)))))
+        (assoc :theme (:theme profile)))))
 
 ;; ---- API: get-teams
 
@@ -92,6 +83,37 @@
     (->> (db/exec! cfg [sql:get-teams current-user-id])
          (map #(select-keys % [:id :name])))))
 
+;; ---- API: upload-org-logo
+
+(def ^:private schema:upload-org-logo
+  [:map
+   [:content media/schema:upload]
+   [:organization-id ::sm/uuid]
+   [:previous-id {:optional true} ::sm/uuid]])
+
+(def ^:private schema:upload-org-logo-result
+  [:map [:id ::sm/uuid]])
+
+(sv/defmethod ::upload-org-logo
+  "Store an organization logo in penpot storage and return its ID.
+  Accepts an optional previous-id to mark the old logo for garbage
+  collection when replacing an existing one."
+  {::doc/added "2.17"
+   ::sm/params schema:upload-org-logo
+   ::sm/result schema:upload-org-logo-result}
+  [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
+  (when previous-id
+    (sto/touch-object! storage previous-id))
+  (let [hash (sto/calculate-hash (:path content))
+        data (-> (sto/content (:path content))
+                 (sto/wrap-with-hash hash))
+        obj  (sto/put-object! storage {::sto/content      data
+                                       ::sto/deduplicate? true
+                                       :bucket            "organization"
+                                       :content-type      (:mtype content)
+                                       :organization-id   organization-id})]
+    {:id (:id obj)}))
+
 ;; ---- API: notify-team-change
 
 (def ^:private schema:notify-team-change
@@ -100,19 +122,7 @@
    [:organization-id ::sm/uuid]
    [:organization-name ::sm/text]])
 
-(defn notify-team-change
-  [cfg team-id team-name organization-id organization-name notification]
-  (let [msgbus (::mbus/msgbus cfg)]
-    (mbus/pub! msgbus
-               ;;TODO There is a bug on dashboard with teams notifications.
-               ;;For now we send it to uuid/zero instead of team-id
-               :topic uuid/zero
-               :message {:type :team-org-change
-                         :team-id team-id
-                         :team-name team-name
-                         :organization-id organization-id
-                         :organization-name organization-name
-                         :notification notification})))
+
 
 
 (sv/defmethod ::notify-team-change
@@ -121,7 +131,8 @@
    ::sm/params schema:notify-team-change
    ::rpc/auth false}
   [cfg {:keys [id organization-id organization-name]}]
-  (notify-team-change cfg id nil organization-id organization-name nil))
+  (notifications/notify-team-change cfg id nil organization-id organization-name nil)
+  nil)
 
 ;; ---- API: notify-user-added-to-organization
 
@@ -239,7 +250,7 @@ RETURNING id, name;")
 
 (def ^:private schema:notify-org-deletion
   [:map
-   [:org-name ::sm/text]
+   [:organization-name ::sm/text]
    [:teams [:vector ::sm/uuid]]])
 
 (sv/defmethod ::notify-org-deletion
@@ -247,9 +258,9 @@ RETURNING id, name;")
    of the deletion to the connected users"
   {::doc/added "2.15"
    ::sm/params schema:notify-org-deletion}
-  [cfg {:keys [teams org-name]}]
+  [cfg {:keys [teams organization-name]}]
   (when (seq teams)
-    (let [org-prefix (str "[" (d/sanitize-string org-name) "] ")]
+    (let [org-prefix (str "[" (d/sanitize-string organization-name) "] ")]
       (db/tx-run!
        cfg
        (fn [{:keys [::db/conn] :as cfg}]
@@ -259,7 +270,7 @@ RETURNING id, name;")
 
            ;; Notify users
            (doseq [team updated-teams]
-             (notify-team-change cfg (:id team) (:name team) nil org-name "dashboard.org-deleted"))))))))
+             (notifications/notify-team-change cfg (:id team) (:name team) nil organization-name "dashboard.org-deleted"))))))))
 
 ;; ---- API: get-profile-by-email
 
@@ -305,4 +316,145 @@ RETURNING id, name;")
                 :hint "profile does not exist"
                 :id id))
     (profile-to-map profile)))
+
+
+;; ---- API: get-org-member-team-counts
+
+(def ^:private sql:get-org-member-team-counts
+  "SELECT tpr.profile_id, COUNT(DISTINCT t.id) AS team_count
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON t.id = tpr.team_id
+    WHERE t.id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND t.is_default IS FALSE
+    GROUP BY tpr.profile_id;")
+
+(def ^:private schema:get-org-member-team-counts-params
+  [:map [:team-ids [:or ::sm/uuid [:vector ::sm/uuid]]]])
+
+(def ^:private schema:get-org-member-team-counts-result
+  [:vector [:map
+            [:profile-id ::sm/uuid]
+            [:team-count ::sm/int]]])
+
+(sv/defmethod ::get-org-member-team-counts
+  "Get the number of non-default teams each profile belongs to within a set of teams."
+  {::doc/added "2.15"
+   ::sm/params schema:get-org-member-team-counts-params
+   ::sm/result schema:get-org-member-team-counts-result
+   ::rpc/auth false}
+  [cfg {:keys [team-ids]}]
+  (let [team-ids (cond
+                   (uuid? team-ids)
+                   [team-ids]
+
+                   (and (vector? team-ids) (every? uuid? team-ids))
+                   team-ids
+
+                   :else
+                   [])]
+    (if (empty? team-ids)
+      []
+      (db/run! cfg (fn [{:keys [::db/conn]}]
+                     (let [ids-array (db/create-array conn "uuid" team-ids)]
+                       (db/exec! conn [sql:get-org-member-team-counts ids-array])))))))
+
+
+;; API: invite-to-org
+
+(sv/defmethod ::invite-to-org
+  "Invite to organization"
+  {::doc/added "2.15"
+   ::sm/params [:map
+                [:email ::sm/email]
+                [:id ::sm/uuid]
+                [:name ::sm/text]
+                [:logo ::sm/uri]]}
+  [cfg params]
+  (db/tx-run! cfg ti/create-org-invitation params)
+  nil)
+
+
+
+;; API: remove-from-org
+
+(def ^:private sql:get-reassign-to
+  "SELECT tpr.profile_id
+     FROM team_profile_rel AS tpr
+    WHERE tpr.team_id = ?
+      AND tpr.profile_id <> ?
+      AND tpr.is_owner IS NOT TRUE
+    ORDER BY CASE
+               WHEN tpr.is_admin IS TRUE THEN 1
+               ELSE 2
+             END,
+             tpr.created_at,
+             tpr.profile_id
+    LIMIT 1;")
+
+(defn add-reassign-to [cfg profile-id team-to-transfer]
+  (let [reassign-to (-> (db/exec-one! cfg [sql:get-reassign-to (:id team-to-transfer) profile-id])
+                        :profile-id)]
+    (when-not reassign-to
+      (ex/raise :type :validation
+                :code :nobody-to-reassign-team))
+
+    (assoc team-to-transfer :reassign-to reassign-to)))
+
+(sv/defmethod ::remove-from-org
+  "Remove an user from an organization"
+  {::doc/added "2.17"
+   ::sm/params [:map
+                [:profile-id ::sm/uuid]
+                [:organization-id ::sm/uuid]
+                [:organization-name ::sm/text]
+                [:default-team-id ::sm/uuid]]
+   ::db/transaction true}
+  [cfg {:keys [profile-id organization-id organization-name default-team-id] :as params}]
+  (let [{:keys [valid-teams-to-delete-ids
+                valid-teams-to-transfer
+                valid-teams-to-exit]} (cnit/get-valid-teams cfg organization-id profile-id default-team-id)
+        add-reassign-to (partial add-reassign-to cfg profile-id)
+
+        valid-teams-to-leave (into valid-teams-to-exit
+                                   (map add-reassign-to valid-teams-to-transfer))]
+
+    (cnit/leave-org cfg (assoc params
+                               :id organization-id
+                               :name organization-name
+                               :teams-to-delete valid-teams-to-delete-ids
+                               :teams-to-leave valid-teams-to-leave
+                               :skip-validation true))
+    (notifications/notify-user-org-change cfg profile-id organization-id organization-name "dashboard.user-no-longer-belong-org")
+    nil))
+
+;; API: get-remove-from-org-summary
+
+(def ^:private schema:get-remove-from-org-summary-result
+  [:map
+   [:teams-to-delete ::sm/int]
+   [:teams-to-transfer ::sm/int]
+   [:teams-to-exit ::sm/int]])
+
+(sv/defmethod ::get-remove-from-org-summary
+  "Get a summary of the teams that would be deleted, transferred, or exited
+   if the user were removed from the organization"
+  {::doc/added "2.17"
+   ::sm/params [:map
+                [:profile-id ::sm/uuid]
+                [:organization-id ::sm/uuid]
+                [:default-team-id ::sm/uuid]]
+   ::sm/result schema:get-remove-from-org-summary-result
+   ::db/transaction true}
+  [cfg {:keys [profile-id organization-id default-team-id]}]
+  (let [{:keys [valid-teams-to-delete-ids
+                valid-teams-to-transfer
+                valid-teams-to-exit
+                valid-default-team]} (cnit/get-valid-teams cfg organization-id profile-id default-team-id)]
+    (when-not valid-default-team
+      (ex/raise :type :validation
+                :code :not-valid-teams))
+    {:teams-to-delete   (count valid-teams-to-delete-ids)
+     :teams-to-transfer (count valid-teams-to-transfer)
+     :teams-to-exit     (count valid-teams-to-exit)}))
 

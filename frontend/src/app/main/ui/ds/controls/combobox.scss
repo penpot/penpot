@@ -64,6 +64,11 @@
   color: var(--combobox-icon-color);
 }
 
+.header-avatar {
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-s);
+}
+
 .input {
   all: unset;
 

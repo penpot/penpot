@@ -19,7 +19,7 @@
 
 .libraries-button {
   @extend %button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   gap: deprecated.$s-2;
   height: deprecated.$s-32;
@@ -42,7 +42,7 @@
 
 .add-library-button {
   @extend %button-primary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   gap: deprecated.$s-2;
   height: deprecated.$s-32;
@@ -52,8 +52,8 @@
 }
 
 .section-button {
-  @include deprecated.flexCenter;
-  @include deprecated.buttonStyle;
+  @include deprecated.flex-center;
+  @include deprecated.button-style;
 
   height: deprecated.$s-32;
   width: deprecated.$s-32;
@@ -106,8 +106,8 @@
 }
 
 .sections-container {
-  @include deprecated.menuShadow;
-  @include deprecated.flexColumn;
+  @include deprecated.menu-shadow;
+  @include deprecated.flex-column;
 
   position: absolute;
   top: deprecated.$s-84;
@@ -120,7 +120,7 @@
 }
 
 .section-item {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   display: flex;
   align-items: center;
@@ -131,7 +131,7 @@
 }
 
 .section-btn {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 }
 
 .assets-header {

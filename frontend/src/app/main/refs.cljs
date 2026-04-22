@@ -259,9 +259,6 @@
 (def workspace-layout
   (l/derived :workspace-layout st/state))
 
-(def workspace-file-version-id
-  (l/derived :workspace-file-version-id st/state))
-
 (def snap-pixel?
   (l/derived #(contains? % :snap-pixel-grid) workspace-layout))
 
@@ -305,6 +302,9 @@
 
 (def workspace-page-flows
   (l/derived #(-> % :flows not-empty) workspace-page))
+
+(def workspace-page-guides
+  (l/derived :guides workspace-page))
 
 (defn workspace-page-object-by-id
   [page-id shape-id]
@@ -380,6 +380,9 @@
 
 (def workspace-modifiers
   (l/derived :workspace-modifiers st/state))
+
+(def workspace-wasm-editor-styles
+  (l/derived :workspace-wasm-editor-styles st/state))
 
 (def workspace-wasm-modifiers
   (l/derived :workspace-wasm-modifiers st/state))

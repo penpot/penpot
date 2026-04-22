@@ -30,7 +30,7 @@
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
-   [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
+   [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline*]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.top-toolbar :refer [top-toolbar*]]
@@ -81,6 +81,7 @@
    selected))
 
 (mf/defc viewport-classic*
+  {::mf/private true}
   [{:keys [selected wglobal layout file page palete-size]}]
   (let [{:keys [edit-path
                 panning
@@ -108,8 +109,8 @@
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
-
         file-id           (get file :id)
+        vern              (get file :vern)
         page-id           (get page :id)
         objects           (get page :objects)
         background        (get page :background clr/canvas)
@@ -259,7 +260,8 @@
         show-rulers?             (and (contains? layout :rulers) (not hide-ui?))
 
 
-        disabled-guides?         (or drawing-tool transform path-drawing? path-editing? @space? @mod?)
+        disabled-guides?         (or drawing-tool transform path-drawing? path-editing? @space? @mod?
+                                     (contains? layout :lock-guides))
 
         single-select?           (= (count selected-shapes) 1)
 
@@ -307,7 +309,7 @@
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
-                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
+                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only?)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
@@ -340,7 +342,7 @@
                        :opacity 0.6}}
          (when (and (:can-edit permissions) (not read-only?))
            [:& stvh/viewport-texts
-            {:key (dm/str "texts-" page-id)
+            {:key (dm/str "viewport-texts-" page-id "-" vern)
              :page-id page-id
              :objects objects
              :modifiers modifiers
@@ -366,7 +368,7 @@
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :xmlns:penpot "https://penpot.app/xmlns"
        :preserveAspectRatio "xMidYMid meet"
-       :key (str "render" page-id)
+       :key (dm/str "viewport-svg-" page-id "-" vern)
        :width (:width vport 0)
        :height (:height vport 0)
        :view-box (utils/format-viewbox vbox)
@@ -400,7 +402,7 @@
       [:& (mf/provider ctx/current-vbox) {:value vbox'}
        [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
         ;; Render root shape
-        [:& shapes/root-shape {:key page-id
+        [:& shapes/root-shape {:key (str page-id)
                                :objects base-objects
                                :active-frames @active-frames}]]]]
 
@@ -408,7 +410,7 @@
       {:xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :preserveAspectRatio "xMidYMid meet"
-       :key (str "viewport" page-id)
+       :key (dm/str "viewport-controls-" page-id "-" vern)
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
        :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
@@ -487,7 +489,7 @@
            :on-context-menu on-menu-selected}])
 
        (when show-text-editor?
-         [:& text-edition-outline
+         [:> text-edition-outline*
           {:shape (get base-objects edition)
            :zoom zoom
            :modifiers modifiers}])
@@ -577,7 +579,7 @@
            :tool drawing-tool}])
 
        (when show-grids?
-         [:& frame-grid/frame-grid
+         [:> frame-grid/frame-grid*
           {:zoom zoom
            :selected selected
            :transform transform
@@ -588,7 +590,7 @@
                                   :zoom zoom}])
 
        (when show-snap-points?
-         [:& snap-points/snap-points
+         [:> snap-points/snap-points*
           {:layout layout
            :transform transform
            :drawing drawing-obj
@@ -689,13 +691,13 @@
                   :disabled (or drawing-tool @space?)}])))
 
           (when show-prototypes?
-            [:& interactions/interactions
+            [:> interactions/interactions*
              {:selected selected
               :page-id page-id
               :zoom zoom
               :objects objects-modified
               :current-transform transform
-              :hover-disabled? hover-disabled?}])])
+              :is-hover-disabled hover-disabled?}])])
 
        (when show-gradient-handlers?
          [:> gradients/gradient-handlers*
@@ -719,22 +721,25 @@
                      (not= @hover-top-frame-id (:id frame)))
             [:& grid-layout/editor
              {:zoom zoom
-              :key (dm/str (:id frame))
+              :key (dm/str "viewport-frame-" (:id frame))
               :objects base-objects
               :modifiers modifiers
               :shape frame
               :view-only true}]))]
 
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}
-        [:& scroll-bars/viewport-scrollbars
+        [:> scroll-bars/viewport-scrollbars*
          {:objects base-objects
           :zoom zoom
           :vbox vbox
           :bottom-padding (when palete-size (+ palete-size 8))}]]]]]))
 
 (mf/defc viewport*
-  [props]
-  (let [wasm-renderer-enabled? (features/use-feature "render-wasm/v1")]
-    (if ^boolean wasm-renderer-enabled?
-      [:> viewport.wasm/viewport* props]
-      [:> viewport-classic* props])))
+  [{:keys [file page] :as props}]
+  (let [vern         (get file :vern)
+        page-id      (get page :id)
+        render-wasm? (features/use-feature "render-wasm/v1")]
+    [:* {:key (dm/str "viewport-" page-id "-" vern)}
+     (if ^boolean render-wasm?
+       [:> viewport.wasm/viewport* props]
+       [:> viewport-classic* props])]))

@@ -471,8 +471,8 @@
 ;; --- COMMAND QUERY: get-team-info
 
 (defn get-team-info
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
-  (-> (db/get* conn :team
+  [cfg {:keys [id] :as params}]
+  (-> (db/get* cfg :team
                {:id id}
                {::sql/columns [:id :is-default :features]})
       (decode-row)))
@@ -539,35 +539,41 @@
         team     (create-team cfg params)]
     (select-keys team [:id])))
 
-(defn- initialize-user-in-nitrate-org
+(defn initialize-user-in-nitrate-org
   "If needed, create a default team for the user on the organization,
    and notify Nitrate that an user has been added to an org."
-  [cfg profile-id team-id]
-  (assert (db/connection-map? cfg)
-          "expected cfg with valid connection")
-  (let [membership (nitrate/call cfg :get-org-membership-by-team {:profile-id profile-id :team-id team-id})]
-    ;; Only when the team belong to an organization and the user is not a member
-    (when (and
-           (some? (:organization-id membership)) ;; the team do belong to an organization
-           (not (:is-member membership)))        ;; the user is not a member of the org yet
+  ([cfg profile-id organization-id]
+   (initialize-user-in-nitrate-org cfg profile-id organization-id nil))
+  ([cfg profile-id organization-id email]
+   (assert (db/connection-map? cfg)
+           "expected cfg with valid connection")
+   (when (contains? cf/flags :nitrate)
+     (db/tx-run!
+      cfg
+      (fn [{:keys [::db/conn] :as tx-cfg}]
 
-      (db/tx-run!
-       cfg
-       (fn [{:keys [::db/conn] :as tx-cfg}]
-         (let [org-id           (:organization-id membership)
-               default-team     (create-default-org-team (assoc tx-cfg ::db/conn conn) profile-id org-id)
-               default-team-id  (:id default-team)
-               result           (nitrate/call tx-cfg :add-profile-to-org {:profile-id profile-id
-                                                                          :team-id default-team-id
-                                                                          :org-id org-id})]
-           (when (not (:is-member result))
-             (ex/raise :type :internal
-                       :code :failed-add-profile-org-nitrate
-                       :context {:profile-id profile-id
-                                 :team-id team-id
-                                 :org-id org-id
-                                 :default-team-id default-team-id}))
-           nil))))))
+        (let [membership (nitrate/call cfg :get-org-membership {:profile-id profile-id
+                                                                :organization-id organization-id})]
+          ;; Only when the user doesn't belong to the organization yet
+          (when (and
+                 (some? (:organization-id membership)) ;; the organization exists
+                 (not (:is-member membership)))        ;; the user is not a member of the org yet
+
+
+            (let [organization-id           organization-id
+                  default-team     (create-default-org-team (assoc tx-cfg ::db/conn conn) profile-id organization-id)
+                  default-team-id  (:id default-team)
+                  result           (nitrate/call tx-cfg :add-profile-to-org (cond-> {:profile-id profile-id
+                                                                                     :team-id default-team-id
+                                                                                     :organization-id organization-id}
+                                                                              (some? email) (assoc :email email)))]
+              (when (not (:is-member result))
+                (ex/raise :type :internal
+                          :code :failed-add-profile-org-nitrate
+                          :context {:profile-id profile-id
+                                    :organization-id organization-id
+                                    :default-team-id default-team-id}))
+              default-team-id))))))))
 
 (defn add-profile-to-team!
   ([cfg params]
@@ -576,7 +582,12 @@
    (assert (db/connection-map? cfg)
            "expected cfg with valid connection")
    (when (contains? cf/flags :nitrate)
-     (initialize-user-in-nitrate-org cfg profile-id team-id))
+     (let [membership (nitrate/call cfg :get-org-membership-by-team {:profile-id profile-id :team-id team-id})]
+       ;; Only when the team belong to an organization and the user is not a member
+       (when (and
+              (some? (:organization-id membership)) ;; the team do belong to an organization
+              (not (:is-member membership)))        ;; the user is not a member of the org yet
+         (initialize-user-in-nitrate-org cfg profile-id (:organization-id membership)))))
    (db/insert! conn :team-profile-rel params options)))
 
 (defn create-team
@@ -674,7 +685,7 @@
 ;; --- Mutation: Leave Team
 
 (defn leave-team
-  [{:keys [::db/conn]} {:keys [profile-id id reassign-to]}]
+  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id id reassign-to]}]
   (let [perms   (get-permissions conn profile-id id)
         members (get-team-members conn id)]
 
@@ -705,7 +716,15 @@
         ;; assign owner role to new profile
         (db/update! conn :team-profile-rel
                     (get types.team/permissions-for-role :owner)
-                    {:team-id id :profile-id reassign-to}))
+                    {:team-id id :profile-id reassign-to})
+
+        ;; notify new owner
+        (mbus/pub! msgbus
+                   :topic reassign-to
+                   :message {:type :team-role-change
+                             :topic reassign-to
+                             :team-id id
+                             :role :owner}))
 
       ;; and finally, if all other conditions does not match and the
       ;; current profile is owner, we dont allow it because there

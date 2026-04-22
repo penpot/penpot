@@ -92,6 +92,15 @@
           (when-not (get-in @form [:touched input-name])
             (swap! form assoc-in [:touched input-name] true)))
 
+        on-clear
+        (fn [event]
+          (dom/prevent-default event)
+          (swap! form (fn [state]
+                        (-> state
+                            (assoc-in [:data input-name] "")
+                            (assoc-in [:touched input-name] false))))
+          (some-> (mf/ref-val input-ref) (dom/focus!)))
+
         on-key-press
         (mf/use-fn
          (mf/deps input-ref)
@@ -158,7 +167,10 @@
                deprecated-icon/tick])
 
             (when show-invalid?
-              [:span {:class (stl/css :invalid-icon)}
+              [:button {:class (stl/css :invalid-icon)
+                        :type "button"
+                        :tab-index "-1"
+                        :on-click on-clear}
                deprecated-icon/close])])]
 
         (some? children)

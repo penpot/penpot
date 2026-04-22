@@ -114,7 +114,7 @@
                         :is-open? true
                         :rect rect))))))
 
-        container (hooks/use-portal-container)]
+        container (hooks/use-portal-container :popup)]
 
     [:div {:on-click on-open-dropdown
            :disabled (not can-edit?)

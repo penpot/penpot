@@ -114,6 +114,9 @@ msgstr "Hemos enviado a tu buzón un enlace para recuperar tu contraseña."
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Te uniste al equipo"
 
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "Te uniste a la organización %s"
+
 #: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
 msgstr "Contraseña"
@@ -349,6 +352,15 @@ msgstr "Restaurar archivo"
 
 msgid "dashboard.org-deleted"
 msgstr "La organización %s se ha borrado."
+
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "Este equipo ya no pertenece a la organización %s"
+
+msgid "dashboard.team-belong-org"
+msgstr "Este equipo ahora pertenece a la organización %s"
+
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "Ya no perteneces a la organización %s"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
@@ -1127,6 +1139,45 @@ msgstr "Información del equipo"
 msgid "dashboard.team-members"
 msgstr "Integrantes del equipo"
 
+msgid "dashboard.team-organization"
+msgstr "Organización del equipo"
+
+msgid "dashboard.team-organization.none"
+msgstr "Este equipo no pertenece a ninguna organización"
+
+msgid "dashboard.team-organization.add"
+msgstr "Añadir a una organización"
+
+msgid "dashboard.select-org-modal.title"
+msgstr "Añadir el equipo a una organización"
+
+msgid "dashboard.select-org-modal.choose"
+msgstr "Elige una organización:"
+
+msgid "dashboard.select-org-modal.select"
+msgstr "Elige una organización"
+
+msgid "dashboard.select-org-modal.accept"
+msgstr "AÑADIR A UNA ORGANIZACIÓN"
+
+msgid "dashboard.change-org-modal.title"
+msgstr "CAMBIAR EL EQUIPO DE ORGANIZACIÓN"
+
+msgid "dashboard.change-org-modal.choose"
+msgstr "Mover a:"
+
+msgid "dashboard.change-org-modal.select"
+msgstr "Elige una organización"
+
+msgid "dashboard.change-org-modal.accept"
+msgstr "MOVER EL EQUIPO"
+
+msgid "dashboard.team-organization.change"
+msgstr "Cambiar el equipo de organización"
+
+msgid "dashboard.team-organization.remove"
+msgstr "Eliminar equipo de la organización"
+
 #: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"
 msgstr "Proyectos del equipo"
@@ -1632,6 +1683,9 @@ msgstr "El email o la contraseña son incorrectos."
 #: src/app/main/ui/settings/password.cljs:25
 msgid "errors.wrong-old-password"
 msgstr "La contraseña anterior no es correcta"
+
+msgid "errors.org-not-found"
+msgstr "Esa organización no existe"
 
 #: src/app/main/ui/settings/feedback.cljs:120
 msgid "feedback.description"
@@ -5576,7 +5630,7 @@ msgstr "Estilo de fuente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:546
 msgid "workspace.assets.typography.go-to-edit"
-msgstr "Ir al archivo de la biblioteca del estilo para editar"
+msgstr "Editar en biblioteca de estilo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:536
 msgid "workspace.assets.typography.letter-spacing"
@@ -6360,6 +6414,10 @@ msgstr "Exportación lenta"
 msgid "workspace.options.fill"
 msgstr "Relleno"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.fill.section"
+msgstr "Sección de relleno"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:208
 msgid "workspace.options.fill.add-fill"
 msgstr "Añadir relleno"
@@ -6974,6 +7032,10 @@ msgstr "Más colores de la biblioteca"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:265
 msgid "workspace.options.more-token-colors"
 msgstr "Más tokens de color"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color.section"
+msgstr "Sección de colores seleccionados"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
@@ -8447,7 +8509,7 @@ msgstr "Nombre"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
 msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "Ya existe un token en la ruta: %s"
+msgstr "Ya existe un token en la ruta: %s o en un prefijo del mismo."
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
 msgid "workspace.tokens.token-name-length-validation-error"
@@ -8511,6 +8573,10 @@ msgstr "No se pueden aplicar tokens mientras se edita texto. Seleccione la capa 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group"
 msgstr "Renombrar grupo de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.duplicate-group"
+msgstr "Duplicar grupo de tokens"
 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group-name-hint"
@@ -8852,6 +8918,18 @@ msgstr "Ir al panel"
 
 msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
 msgstr "Guía de solución de problemas"
+
+msgid "modals.remove-team-org.title"
+msgstr "ELIMINAR EQUIPO DE LA ORGANIZACIÓN"
+
+msgid "modals.remove-team-org.text"
+msgstr "¿Estás seguro de que quieres eliminar el equipo %s de la organización %s?"
+
+msgid "modals.remove-team-org.info"
+msgstr "Los proyectos y archivos seguirán estando disponibles para los miembros del equipo, pero la configuración de la organización dejará de aplicarse."
+
+msgid "modals.remove-team-org.accept"
+msgstr "Eliminar de la organización"
 
 #, unused
 msgid "workspace.viewport.click-to-close-path"

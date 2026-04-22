@@ -8383,10 +8383,6 @@ msgstr "Famiglia di caratteri o elenco di caratteri separati da virgola (,)"
 msgid "workspace.tokens.token-name"
 msgstr "Nome"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
-msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "Un token con questo nome esiste già nel percorso: %s"
-
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Il nome deve essere di almeno 1 carattere"

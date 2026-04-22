@@ -236,7 +236,7 @@
   [:div {:class (stl/css-case
                  :modal-overlay true)}
 
-   [:div.animated.fadeIn {:class (stl/css :modal-container)}
+   [:div.animated.fade-in {:class (stl/css :modal-container)}
     [:h1 {:class (stl/css :modal-title)}
      (tr "onboarding-v2.welcome.title")]
     [:div {:class (stl/css :modal-sections)}
