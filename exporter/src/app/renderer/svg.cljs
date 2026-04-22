@@ -338,6 +338,7 @@
               ;; navigate to the page and perform basic setup
               (bw/nav! page (str uri))
               (bw/sleep page 1000) ; the good old fix with sleep
+              (bw/wait-for-fonts page)
 
               ;; take the screnshot of requested objects, one by one
               (p/run (partial render-object page) objects)
