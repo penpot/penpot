@@ -7,15 +7,23 @@
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.config :as cf]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.ds.controls.switch :refer [switch*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.theme :as theme]
    [rumext.v2 :as mf]))
+
 
 (def ^:private schema:options-form
   [:map {:title "OptionsForm"}
@@ -75,7 +83,23 @@
        :data-testid "submit-lang-change"
        :class (stl/css :btn-primary)}]]))
 
-;; --- Password Page
+(defn ^:private go-settings-feedback
+  [event]
+  (dom/prevent-default event)
+  (st/emit! (rt/nav :settings-feedback)))
+
+(mf/defc webgl-settings*
+  [{:keys [is-render-enabled]}]
+  [:section {:class (stl/css :webgl-container)}
+   [:header {:class (stl/css :webgl-header)}
+    [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large} (tr "dashboard.webgl-switch.title")]
+    [:> text* {:as "span" :class (stl/css :beta) :typography t/body-small} (tr "dashboard.webgl-switch.beta")]]
+   [:> text* {:class (stl/css :description) :typography t/body-medium} (tr "dashboard.webgl-switch.description")]
+   [:form {:class (stl/css :webgl-form)}
+    [:> heading* {:level 3 :typography t/headline-small} (tr "dashboard.webgl-switch.status")]
+    [:> switch* {:label (if is-render-enabled (tr "dashboard.webgl-switch.enabled") (tr "dashboard.webgl-switch.disabled"))
+                 :default-checked is-render-enabled}]]
+   [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]])
 
 (mf/defc options-page
   []
@@ -83,7 +107,10 @@
    #(dom/set-html-title (tr "title.settings.options")))
 
   [:div {:class (stl/css :dashboard-settings)}
-   [:div {:class (stl/css :form-container) :data-testid "settings-form"}
-    [:h2 (tr "labels.settings")]
-    [:& options-form {}]]])
+   [:*
+    [:div {:class (stl/css :form-container) :data-testid "settings-form"}
+     [:h2 (tr "labels.settings")]
+     [:& options-form {}]]
+    (when (contains? cf/flags :render-switch)
+      [:> webgl-settings* {:is-render-enabled true}])]])
 

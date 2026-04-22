@@ -226,7 +226,7 @@
 (mf/defc preferences-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [layout profile toggle-flag on-close toggle-theme]}]
+  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render]}]
   (let [show-nudge-options
         (mf/use-fn
          #(modal/show! {:type :nudge-option}))]
@@ -321,7 +321,15 @@
          "light" (tr "workspace.header.menu.toggle-system-theme")
          "system" (tr "workspace.header.menu.toggle-dark-theme")
          (tr "workspace.header.menu.toggle-light-theme"))]
-      [:> shortcuts* {:id :toggle-theme}]]]))
+      [:> shortcuts* {:id :toggle-theme}]]
+     (when (contains? cf/flags :render-switch)
+       [:> dropdown-menu-item* {:on-click    toggle-render
+                                :class       (stl/css :base-menu-item :submenu-item)
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (toggle-render event)))}
+        [:span {:class (stl/css :item-name)}
+         (tr "workspace.header.menu.enable-webgl")]])]))
 
 (mf/defc view-menu*
   {::mf/private true
@@ -889,6 +897,13 @@
            (dom/stop-propagation event)
            (st/emit! (du/toggle-theme))))
 
+        toggle-render
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (js/console.log "toggle-render")
+           #_(st/emit! (toggle-render))))
+
         open-plugins-manager
         (mf/use-fn
          (fn [event]
@@ -1068,6 +1083,7 @@
                               :profile profile
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
+                              :toggle-render toggle-render
                               :on-close close-sub-menu}]
 
        :plugins
