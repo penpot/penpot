@@ -11,6 +11,7 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dwp]
@@ -198,10 +199,9 @@
               (fn [snapshot-file]
                 (rx/of
                  ;; Swap the file data in state with snapshot content.
-                 ;; The workspace derives its page objects reactively from
-                 ;; [:files file-id :data :pages-index page-id] so this
-                 ;; is sufficient to make the canvas show snapshot content.
-                 (dw/apply-snapshot-data file-id snapshot-file)
+                 ;; Passing id sets workspace-file-version-id, which
+                 ;; causes the WASM viewport to reload its shape buffer.
+                 (dw/apply-snapshot-data file-id id snapshot-file)
                  ;; Re-initialize the page to rebuild its search index
                  ;; and page-local state with the new snapshot objects.
                  (dw/initialize-page file-id page-id))))
@@ -231,7 +231,10 @@
             file-id (:current-file-id state)]
         ;; Full workspace re-init reloads the live file from the server,
         ;; clearing all snapshot data and restoring normal edit mode.
-        (rx/of (dw/initialize-workspace team-id file-id))))))
+        ;; A fresh UUID is passed so bundle-fetched sets a new non-nil
+        ;; workspace-file-version-id, which triggers the WASM viewport
+        ;; to reload its shape buffer with the live file objects.
+        (rx/of (dw/initialize-workspace team-id file-id (uuid/next)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS
