@@ -34,6 +34,7 @@
 - Fix wrong `mapcat` call in `collect-main-shapes`
 - Fix stale accumulator in `get-children-in-instance` recursion
 - Fix typo `:podition` in swap-shapes grid cell
+- Fix multiple selection on shapes with token applied to stroke color
 
 
 ## 2.14.2

@@ -71,11 +71,12 @@
   [{:keys [active-tokens applied-token-name color on-swatch-click-token detach-token open-modal-from-token]}]
   (let [;; `active-tokens` may be provided as a `delay` (lazy computation).
         ;; In that case we must deref it (`@active-tokens`) to force evaluation
-        ;; and obtain the actual value. If it’s already realized (not a delay),
+        ;; and obtain the actual value. If it's already realized (not a delay),
         ;; we just use it directly.
         active-tokens (if (delay? active-tokens)
                         @active-tokens
                         active-tokens)
+
 
         active-color-tokens (:color active-tokens)
 
@@ -345,9 +346,14 @@
                       :dnd-over-top (= (:over dprops) :top)
                       :dnd-over-bot (= (:over dprops) :bot))]
 
+    (when (= applied-token :multiple)
+      ;; (js/console.trace "color-row*")
+      (prn "color-row*" index color applied-token))
+
     (mf/with-effect [color prev-color disable-picker]
       (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
+
     [:div {:class [class row-class]}
      ;; Drag handler
      (when (some? on-reorder)
