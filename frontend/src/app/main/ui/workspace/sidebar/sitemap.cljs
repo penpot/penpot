@@ -89,11 +89,13 @@
         on-delete
         (mf/use-fn
          (mf/deps id)
-         #(st/emit! (modal/show
-                     {:type :confirm
-                      :title (tr "modals.delete-page.title")
-                      :message (tr "modals.delete-page.body")
-                      :on-accept delete-fn})))
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "modals.delete-page.title")
+                       :message (tr "modals.delete-page.body")
+                       :on-accept delete-fn}))))
 
         on-double-click
         (mf/use-fn
