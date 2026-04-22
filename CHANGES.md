@@ -71,6 +71,7 @@
 - Fix gap input throwing an error [Github #8984](https://github.com/penpot/penpot/pull/8984)
 - Fix copy to be more specific [Taiga #13990](https://tree.taiga.io/project/penpot/issue/13990)
 - Allow deleting the profile avatar after uploading [Github #9067](https://github.com/penpot/penpot/issues/9067)
+- Fix onboarding modal overlapped by dashboard navigation tabs (by @juan-flores077) [Github #9052](https://github.com/penpot/penpot/issues/9052)
 
 
 ## 2.16.0 (Unreleased)

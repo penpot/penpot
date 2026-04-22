@@ -36,11 +36,11 @@
    java.sql.Connection
    java.sql.PreparedStatement
    java.sql.Savepoint
-   org.postgresql.PGConnection
    org.postgresql.geometric.PGpoint
    org.postgresql.jdbc.PgArray
    org.postgresql.largeobject.LargeObject
    org.postgresql.largeobject.LargeObjectManager
+   org.postgresql.PGConnection
    org.postgresql.util.PGInterval
    org.postgresql.util.PGobject))
 

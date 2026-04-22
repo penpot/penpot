@@ -8,6 +8,7 @@
 
 .modal-overlay {
   @extend %modal-overlay-base;
+  z-index: var(--z-index-set);
 }
 
 .modal-container {
