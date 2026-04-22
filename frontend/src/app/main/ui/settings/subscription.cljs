@@ -464,7 +464,12 @@
               (modal/show :management-dialog
                           {:subscription-type subscription-type
                            :current-subscription current-subscription
-                           :editors subscription-editors :subscribe-to-trial (not (:type subscription))})))))]
+                           :editors subscription-editors :subscribe-to-trial (not (:type subscription))})))))
+
+        open-contact-sales-modal
+        (mf/use-fn
+         (fn [subscription-type]
+           (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type}))))]
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
@@ -618,7 +623,7 @@
                                     (tr "subscription.settings.unlimited.autosave-benefit"),
                                     (tr "subscription.settings.unlimited.bill")]
                          :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
-                         :cta-link #(open-subscription-modal "unlimited" subscription)
+                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate?) #(open-contact-sales-modal "Unlimited") #(open-subscription-modal "unlimited" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :recommended (= subscription-type "professional")
@@ -742,5 +747,39 @@
           [:a {:class (stl/css :cta-button) :href "mailto:sales@penpot.app"}
            "sales@penpot.app"]]])]]))
 
+(mf/defc nitrate-contact-sales-dialog
+  {::mf/register modal/components
+   ::mf/register-as :nitrate-contact-sales-dialog}
+  [{:keys [subscription-type]}]
+  (let [handle-close-dialog
+        (mf/use-fn
+         (fn []
+           (modal/hide!)))]
 
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog)}
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
+       [:> icon* {:icon-id "close"
+                  :size "m"}]]
+      [:div {:class (stl/css :modal-title :subscription-title)}
+       (str "Switch to " subscription-type " plan?")]
+
+      [:div {:class (stl/css :modal-content)}
+       [:div {:class (stl/css :modal-text-medium)}
+        "When you downgrade:"]
+       [:ul {:class (stl/css :downgrade-list)}
+        [:li {:class (stl/css :downgrade-item)} "Your organization will be deleted."]
+        [:li {:class (stl/css :downgrade-item)} "The teams, projects and files will no longer be part of any organization but they will remain available."]
+        [:li {:class (stl/css :downgrade-item)} "Your total storage, auto-version history, and file recovery period will be limited."]]
+
+       [:div {:class (stl/css :downgrade-warning)}
+        "To switch to this plan, please contact our sales team.
+We’ll help you update your subscription and ensure everything is set up correctly."]
+       [:div {:class (stl/css :action-buttons)}
+        [:> button* {:variant "secondary"
+                     :type "button"
+                     :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
+        [:> button* {:variant "primary"
+                     :type "button"
+                     :on-click #(dom/open-new-window "mailto:sales@penpot.app?subject=Switch%20to%20the%20Unlimited%20plan")} "Contact sales"]]]]]))
 
