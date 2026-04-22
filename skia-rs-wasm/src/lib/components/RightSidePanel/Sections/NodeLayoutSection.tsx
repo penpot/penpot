@@ -1,25 +1,17 @@
-import { useCallback, useMemo, useState } from 'react'
-import { useSelector } from '@xstate/react'
+import { useCallback, useState } from 'react'
 import type { PenpotNode } from 'penpot-exporter/types'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { applyTransformToNode } from '../../../renderer/geom/apply-transform-to-node'
-import { rotationMatrixAroundPoint, translateMatrix } from '../../../renderer/geom/matrix'
-import { useCanvasActor } from '../../../renderer/machine/canvas-actor-context'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
 import {
   commitNodePartialUpdate,
   getCommittedNodeOnActivePage,
-  rectLayoutPartial,
 } from '../../../renderer/properties/commit-node-properties'
 import type { RectLikeNode } from '../../../renderer/properties/panel-utils'
 import { getActiveOrSinglePageId } from '../../../renderer/store/doc-proxy'
-import {
-  movePreviewWorldDelta as movePreviewWorldDeltaSignal,
-  rotatePreviewDeltaDeg as rotatePreviewDeltaDegSignal,
-} from '../../../renderer/signals/pointer'
-import { useSignalCoalesced } from '../../../renderer/signals/use-signal-coalesced'
-
-type LayoutDraft = { x: number; y: number; width: number; height: number; rotation: number }
+import { LayoutFlexBody } from './LayoutFlexBody'
+import { LayoutGridBody } from './LayoutGridBody'
+import { LayoutModeToggle } from './LayoutModeToggle'
+import { getLayoutMode, modeSwitchPartial, type LayoutMode } from './layout-mode'
 
 export interface NodeLayoutSectionProps {
   nodeId: string
@@ -28,145 +20,46 @@ export interface NodeLayoutSectionProps {
 }
 
 export function NodeLayoutSection({ nodeId, initialNode, readOnly }: NodeLayoutSectionProps) {
-  const [draft, setDraft] = useState<LayoutDraft | null>(null)
+  const [collapsed, setCollapsed] = useState(false)
+  const mode = getLayoutMode(initialNode)
 
-  const committed: LayoutDraft = {
-    x: initialNode.x ?? 0,
-    y: initialNode.y ?? 0,
-    width: initialNode.width ?? 100,
-    height: initialNode.height ?? 100,
-    rotation: initialNode.rotation ?? 0,
-  }
-
-  const { x, y, width, height, rotation } = draft ?? committed
-
-  const canvasActor = useCanvasActor()
-  const isMoving = useSelector(canvasActor, (s) => s.matches('moving'))
-  const isRotating = useSelector(canvasActor, (s) => s.matches('rotating'))
-  const rotatePreviewDeltaDeg = useSignalCoalesced(rotatePreviewDeltaDegSignal)
-  const movePreviewCoalesced = useSignalCoalesced(movePreviewWorldDeltaSignal)
-
-  const liveLayoutPartial = useMemo((): Partial<PenpotNode> | null => {
-    if (readOnly) return null
-    const node = initialNode as PenpotNode
-    if (isRotating) {
-      const sr = node.selrect as
-        | { x?: number; y?: number; width?: number; height?: number }
-        | undefined
-      if (!sr) return null
-      const x0 = sr.x ?? 0
-      const y0 = sr.y ?? 0
-      const w0 = sr.width ?? 0
-      const h0 = sr.height ?? 0
-      if (w0 <= 0 || h0 <= 0) return null
-      const cx = x0 + w0 / 2
-      const cy = y0 + h0 / 2
-      return applyTransformToNode(node, rotationMatrixAroundPoint(cx, cy, rotatePreviewDeltaDeg))
-    }
-    if (isMoving) {
-      return applyTransformToNode(
-        node,
-        translateMatrix(movePreviewCoalesced.x, movePreviewCoalesced.y),
-      )
-    }
-    return null
-  }, [readOnly, initialNode, isRotating, isMoving, rotatePreviewDeltaDeg, movePreviewCoalesced])
-
-  const xDisplay =
-    liveLayoutPartial != null && typeof liveLayoutPartial.x === 'number' ? liveLayoutPartial.x : x
-  const yDisplay =
-    liveLayoutPartial != null && typeof liveLayoutPartial.y === 'number' ? liveLayoutPartial.y : y
-  const widthDisplay =
-    liveLayoutPartial != null && typeof liveLayoutPartial.width === 'number'
-      ? liveLayoutPartial.width
-      : width
-  const heightDisplay =
-    liveLayoutPartial != null && typeof liveLayoutPartial.height === 'number'
-      ? liveLayoutPartial.height
-      : height
-  const rotationDisplay =
-    liveLayoutPartial != null && typeof liveLayoutPartial.rotation === 'number'
-      ? liveLayoutPartial.rotation
-      : rotation
-
-  const layoutFieldsDisabled = readOnly || isMoving || isRotating
-
-  const commitLayout = useCallback(async () => {
-    if (readOnly || !draft) return
-    const before = getCommittedNodeOnActivePage(nodeId)
-    const pid = getActiveOrSinglePageId()
-    if (!before || !pid) return
-    await commitNodePartialUpdate(
-      nodeId,
-      before,
-      rectLayoutPartial(draft.x, draft.y, draft.width, draft.height, draft.rotation),
-      pid,
-    )
-    setDraft(null)
-  }, [readOnly, nodeId, draft])
-
-  const patchDraft = (patch: Partial<LayoutDraft>) =>
-    setDraft((d) => ({ ...(d ?? committed), ...patch }))
+  const onModeChange = useCallback(
+    async (next: LayoutMode | null) => {
+      if (readOnly || next === mode) return
+      const before = getCommittedNodeOnActivePage(nodeId)
+      const pid = getActiveOrSinglePageId()
+      if (!before || !pid) return
+      const partial = modeSwitchPartial(next, before as RectLikeNode) as Partial<PenpotNode>
+      await commitNodePartialUpdate(nodeId, before, partial, pid)
+    },
+    [nodeId, readOnly, mode],
+  )
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label htmlFor="rsp-x">X</Label>
-          <Input
-            id="rsp-x"
-            type="number"
-            disabled={layoutFieldsDisabled}
-            value={Number.isFinite(xDisplay) ? xDisplay : 0}
-            onChange={(e) => patchDraft({ x: parseFloat(e.target.value) || 0 })}
-            onBlur={() => void commitLayout()}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="rsp-y">Y</Label>
-          <Input
-            id="rsp-y"
-            type="number"
-            disabled={layoutFieldsDisabled}
-            value={Number.isFinite(yDisplay) ? yDisplay : 0}
-            onChange={(e) => patchDraft({ y: parseFloat(e.target.value) || 0 })}
-            onBlur={() => void commitLayout()}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="rsp-w">W</Label>
-          <Input
-            id="rsp-w"
-            type="number"
-            disabled={layoutFieldsDisabled}
-            value={Number.isFinite(widthDisplay) ? widthDisplay : 0}
-            onChange={(e) => patchDraft({ width: Math.max(1, parseFloat(e.target.value) || 1) })}
-            onBlur={() => void commitLayout()}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="rsp-h">H</Label>
-          <Input
-            id="rsp-h"
-            type="number"
-            disabled={layoutFieldsDisabled}
-            value={Number.isFinite(heightDisplay) ? heightDisplay : 0}
-            onChange={(e) => patchDraft({ height: Math.max(1, parseFloat(e.target.value) || 1) })}
-            onBlur={() => void commitLayout()}
-          />
-        </div>
-      </div>
-
+      <Separator />
       <div className="space-y-2">
-        <Label htmlFor="rsp-rot">Rotation (deg)</Label>
-        <Input
-          id="rsp-rot"
-          type="number"
-          disabled={layoutFieldsDisabled}
-          value={Number.isFinite(rotationDisplay) ? rotationDisplay : 0}
-          onChange={(e) => patchDraft({ rotation: parseFloat(e.target.value) || 0 })}
-          onBlur={() => void commitLayout()}
-        />
+        <div className="flex items-center justify-between gap-2 py-0.5">
+          <button
+            type="button"
+            className="flex min-h-8 flex-1 items-center gap-1 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase hover:text-foreground"
+            onClick={() => setCollapsed((c) => !c)}
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? (
+              <ChevronRight className="size-3.5 shrink-0" aria-hidden />
+            ) : (
+              <ChevronDown className="size-3.5 shrink-0" aria-hidden />
+            )}
+            Layout
+          </button>
+          <LayoutModeToggle mode={mode} onChange={onModeChange} disabled={readOnly} />
+        </div>
+
+        {!collapsed && mode === 'flex' && (
+          <LayoutFlexBody nodeId={nodeId} initialNode={initialNode} readOnly={readOnly} />
+        )}
+        {!collapsed && mode === 'grid' && <LayoutGridBody />}
       </div>
     </>
   )
