@@ -7307,6 +7307,14 @@ msgstr "Size"
 msgid "workspace.options.size-presets"
 msgstr "Size presets"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.search-size-preset"
+msgstr "Search size preset"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.no-size-preset-results"
+msgstr "No matching size preset"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:469
 msgid "workspace.options.size.lock"
 msgstr "Lock ratio"
