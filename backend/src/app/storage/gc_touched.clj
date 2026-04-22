@@ -166,6 +166,7 @@
     "profile"               (process-objects! conn has-profile-refs? bucket objects)
     "file-data"             (process-objects! conn has-file-data-refs? bucket objects)
     "tempfile"              (process-objects! conn (constantly false) bucket objects)
+    "organization"          (process-objects! conn (constantly false) bucket objects)
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))

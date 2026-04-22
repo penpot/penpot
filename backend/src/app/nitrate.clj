@@ -115,7 +115,8 @@
    [:slug ::sm/text]
    [:is-your-penpot :boolean]
    [:owner-id ::sm/uuid]
-   [:avatar-bg-url [::sm/text]]])
+   [:avatar-bg-url [::sm/text]]
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]])
 
 (def ^:private schema:org-summary
   [:map
@@ -223,12 +224,12 @@
                         schema:organization params)))
 
 (defn- get-org-membership-api
-  [cfg {:keys [profile-id org-id] :as params}]
+  [cfg {:keys [profile-id organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get
                         (str baseuri
                              "/api/organizations/"
-                             org-id
+                             organization-id
                              "/members/"
                              profile-id)
                         schema:profile-org params)))
@@ -246,12 +247,12 @@
 
 
 (defn- get-org-summary-api
-  [cfg {:keys [org-id] :as params}]
+  [cfg {:keys [organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get
                         (str baseuri
                              "/api/organizations/"
-                             org-id
+                             organization-id
                              "/summary")
                         schema:org-summary params)))
 
@@ -269,7 +270,7 @@
                         schema:team params)))
 
 (defn- add-profile-to-org-api
-  [cfg {:keys [profile-id org-id team-id email] :as params}]
+  [cfg {:keys [profile-id organization-id team-id email] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
         request-params (cond-> {:user-id profile-id :team-id team-id}
                          (some? email) (assoc :email email))
@@ -277,18 +278,18 @@
     (request-to-nitrate cfg :post
                         (str baseuri
                              "/api/organizations/"
-                             org-id
+                             organization-id
                              "/add-user")
                         schema:profile-org params)))
 
 (defn- remove-profile-from-org-api
-  [cfg {:keys [profile-id org-id] :as params}]
+  [cfg {:keys [profile-id organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
         params (assoc params :request-params {:user-id profile-id})]
     (request-to-nitrate cfg :post
                         (str baseuri
                              "/api/organizations/"
-                             org-id
+                             organization-id
                              "/remove-user")
                         nil params)))
 
@@ -393,6 +394,8 @@
                :organization-slug (:slug org)
                :organization-owner-id (:owner-id org)
                :organization-avatar-bg-url (:avatar-bg-url org)
+               :organization-custom-photo (when-let [logo-id (:logo-id org)]
+                                            (str (cf/get :public-uri) "/assets/by-id/" logo-id))
                :is-default (or (:is-default team) (true? (:is-your-penpot org))))
         team))
     (catch Throwable cause

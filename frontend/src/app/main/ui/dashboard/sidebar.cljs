@@ -640,7 +640,9 @@
                                   (concat teams-to-transfer))
                  teams-to-delete (map :id teams-to-delete)]
 
+
              (st/emit! (dnt/leave-org {:id (:id organization)
+                                       :name (:name organization)
                                        :default-team-id default-team-id
                                        :teams-to-delete teams-to-delete
                                        :teams-to-leave teams-to-leave
@@ -649,32 +651,33 @@
         on-leave-clicked
         (mf/use-fn
          (mf/deps leave-fn profile organization teams-to-transfer num-teams-to-leave num-teams-to-delete num-teams-to-transfer)
-         (cond
-           (and (pos? num-teams-to-delete)
-                (zero? num-teams-to-transfer))
-           #(st/emit! (modal/show
-                       {:type :confirm
-                        :title (tr "modals.before-leave-org.title" (:name organization))
-                        :message (tr "modals.before-leave-org.message")
-                        :accept-label (tr "modals.leave-org-confirm.accept")
-                        :on-accept leave-fn
-                        :error-msg (tr "modals.before-leave-org.warning")}))
-           (pos? num-teams-to-transfer)
-           #(st/emit!
-             (modal/show
-              {:type :leave-and-reassign-org
-               :profile profile
-               :teams-to-transfer teams-to-transfer
-               :num-teams-to-delete num-teams-to-delete
-               :accept leave-fn}))
+         (fn []
+           (cond
+             (and (pos? num-teams-to-delete)
+                  (zero? num-teams-to-transfer))
+             (st/emit! (modal/show
+                        {:type :confirm
+                         :title (tr "modals.before-leave-org.title" (:name organization))
+                         :message (tr "modals.before-leave-org.message")
+                         :accept-label (tr "modals.leave-org-confirm.accept")
+                         :on-accept leave-fn
+                         :error-msg (tr "modals.before-leave-org.warning")}))
+             (pos? num-teams-to-transfer)
+             (st/emit!
+              (modal/show
+               {:type :leave-and-reassign-org
+                :profile profile
+                :teams-to-transfer teams-to-transfer
+                :num-teams-to-delete num-teams-to-delete
+                :accept leave-fn}))
 
-           :else
-           #(st/emit! (modal/show
-                       {:type :confirm
-                        :title (tr "modals.leave-org-confirm.title" (:name organization))
-                        :message (tr "modals.leave-org-confirm.message")
-                        :accept-label (tr "modals.leave-org-confirm.accept")
-                        :on-accept leave-fn}))))]
+             :else
+             (st/emit! (modal/show
+                        {:type :confirm
+                         :title (tr "modals.leave-org-confirm.title" (:name organization))
+                         :message (tr "modals.leave-org-confirm.message")
+                         :accept-label (tr "modals.leave-org-confirm.accept")
+                         :on-accept leave-fn})))))]
     (mf/use-effect
      (fn []
        ;; We need all the team members of the owned teams
@@ -779,9 +782,8 @@
              [:span {:class (stl/css :team-text)}
               (:name current-org)]])]
          arrow-icon]
-        (if (or default-org?
-                (= (:id profile) (:owner-id current-org)))
-          [:div {:class (stl/css :org-options)}]
+        (when-not (or default-org?
+                      (= (:id profile) (:owner-id current-org)))
           [:> button* {:variant "ghost"
                        :type "button"
                        :class (stl/css :org-options-btn)
@@ -817,10 +819,10 @@
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
   (let [nitrate?     (contains? cf/flags :nitrate)
-        org-id (when nitrate? (:organization-id team))
+        organization-id (when nitrate? (:organization-id team))
         teams (cond->> (mf/deref refs/teams)
                 nitrate?
-                (filter #(= (-> % val :organization-id) org-id))
+                (filter #(= (-> % val :organization-id) organization-id))
                 nitrate?
                 (into {}))
 
