@@ -739,6 +739,7 @@ impl Surfaces {
         self.scatter_output_cache.clear();
     }
 
+
     /// Composite the content region of `Current` (excluding margins) onto
     /// Target at `tile_rect`, without caching. Intended for mid-render partial
     /// flushes (e.g. the pre-glass flush in run_schedule) that will be
