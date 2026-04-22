@@ -173,13 +173,17 @@
              current        (get objects first-selected)
              parent         (get objects (:parent-id current))
              sibling-ids    (:shapes parent)
-             current-index  (d/index-of sibling-ids first-selected)
-             sibling        (if (= (dec (count sibling-ids)) current-index)
-                              (first sibling-ids)
-                              (nth sibling-ids (inc current-index)))]
+             ;; `index-of` is nil when the shape is not listed under the parent (stale
+             ;; selection or inconsistent tree). Do not call `nth` with `(dec nil)` — in
+             ;; ClojureScript that is -1 and throws (see penpot#7064).
+             current-index  (some-> sibling-ids (d/index-of first-selected))
+             sibling        (when (some? current-index)
+                              (if (= (dec (count sibling-ids)) current-index)
+                                (first sibling-ids)
+                                (nth sibling-ids (inc current-index) nil)))]
 
          (cond
-           (= 1 count-selected)
+           (and (= 1 count-selected) (some? sibling))
            (rx/of (select-shape sibling))
 
            (> count-selected 1)
@@ -198,12 +202,13 @@
              current        (get objects first-selected)
              parent         (get objects (:parent-id current))
              sibling-ids    (:shapes parent)
-             current-index  (d/index-of sibling-ids first-selected)
-             sibling        (if (= 0 current-index)
-                              (last sibling-ids)
-                              (nth sibling-ids (dec current-index)))]
+             current-index  (some-> sibling-ids (d/index-of first-selected))
+             sibling        (when (some? current-index)
+                              (if (= 0 current-index)
+                                (last sibling-ids)
+                                (nth sibling-ids (dec current-index) nil)))]
          (cond
-           (= 1 count-selected)
+           (and (= 1 count-selected) (some? sibling))
            (rx/of (select-shape sibling))
 
            (> count-selected 1)

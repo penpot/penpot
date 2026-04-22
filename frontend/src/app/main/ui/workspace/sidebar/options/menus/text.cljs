@@ -504,7 +504,7 @@
 
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options* common-props]
-         [:> grow-options* common-props]
+         [:> grow-options* (mf/spread-props common-props {:ids ids})]
          [:> icon-button* {:variant     "ghost"
                            :aria-label  (tr "labels.options")
                            :data-testid "text-align-options-button"

@@ -195,13 +195,14 @@
   {::mf/props :obj
    ::mf/memo true
    ::mf/private true}
-  [{:keys [entries entry edition can-be-deleted on-edit on-change on-delete]}]
+  [{:keys [entries entry edition can-be-deleted importing? on-edit on-change on-delete]}]
   (let [status          (:status entry)
         ;; FIXME: rename to format
         format          (:type entry)
 
         loading?        (or (= :analyze status)
-                            (= :import-progress status))
+                            (= :import-progress status)
+                            (and importing? (= :import-ready status)))
         analyze-error?  (= :analyze-error status)
         import-success? (= :import-success status)
         import-error?   (= :import-error status)
@@ -498,6 +499,7 @@
                               :key (dm/str (:uri entry) "/" (:file-id entry))
                               :entry entry
                               :entries entries
+                              :importing? (= :import-progress status)
                               :on-edit on-edit
                               :on-change on-entry-change
                               :on-delete on-entry-delete
@@ -505,7 +507,13 @@
 
        (when (some? template)
          [:> import-entry* {:entry (assoc template :status status)
-                            :can-be-deleted false}])]
+                            :can-be-deleted false}])
+
+       (when (= :import-progress status)
+         [:div {:class (stl/css :status-message)
+                :role "status"
+                :aria-live "polite"}
+          (tr "labels.uploading-file")])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
