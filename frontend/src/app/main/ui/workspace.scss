@@ -65,7 +65,7 @@
   padding: deprecated.$s-8 deprecated.$s-16;
   border-radius: 0 0 deprecated.$s-8 deprecated.$s-8;
   white-space: nowrap;
-  box-shadow: 0 deprecated.$s-4 deprecated.$s-16 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 deprecated.$s-4 deprecated.$s-16 rgb(0 0 0 / 0.25);
 }
 
 .preview-banner-label {
@@ -83,20 +83,20 @@
 }
 
 .preview-banner-exit-btn {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(255 255 255 / 0.2);
   color: inherit;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.35);
+    background: rgb(255 255 255 / 0.35);
   }
 }
 
 .preview-banner-restore-btn {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgb(255 255 255 / 0.9);
   color: var(--color-accent-primary);
   font-weight: 600;
 
   &:hover {
-    background: white;
+    background: rgb(255 255 255);
   }
 }
