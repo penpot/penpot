@@ -207,6 +207,7 @@ async function generateManifest() {
     rasterizer_main: "./js/rasterizer.js",
 
     config: "./js/config.js?version=" + VERSION_TAG,
+    config_render: "./js/config-render.js?version=" + VERSION_TAG,
     polyfills: "./js/polyfills.js?version=" + VERSION_TAG,
     libs: "./js/libs.js?version=" + VERSION_TAG,
     default_translations: "./js/translation.en.js?version=" + VERSION_TAG,
