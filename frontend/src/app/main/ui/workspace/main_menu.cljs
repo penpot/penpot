@@ -227,7 +227,9 @@
   {::mf/private true
    ::mf/wrap [mf/memo]}
   [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render]}]
-  (let [show-nudge-options
+  (let [renderer (or (-> profile :props :renderer) :svg)
+
+        show-nudge-options
         (mf/use-fn
          #(modal/show! {:type :nudge-option}))]
 
@@ -329,7 +331,9 @@
                                                (when (kbd/enter? event)
                                                  (toggle-render event)))}
         [:span {:class (stl/css :item-name)}
-         (tr "workspace.header.menu.enable-webgl")]])]))
+         (if (= renderer :wasm)
+           (tr "workspace.header.menu.disable-webgl")
+           (tr "workspace.header.menu.enable-webgl"))]])]))
 
 (mf/defc view-menu*
   {::mf/private true
@@ -900,8 +904,9 @@
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (js/console.log "toggle-render")
-           #_(st/emit! (toggle-render))))
+           (let [renderer (or (-> profile :props :renderer) :svg)
+                 next-renderer (if (= renderer :wasm) :svg :wasm)]
+             (st/emit! (du/update-profile-props {:renderer next-renderer})))))
 
         open-plugins-manager
         (mf/use-fn
