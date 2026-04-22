@@ -193,6 +193,7 @@ pub struct Shape {
     pub blend_mode: BlendMode,
     pub vertical_align: VerticalAlign,
     pub blur: Option<Blur>,
+    pub background_blur: Option<Blur>,
     pub texture: Option<TextureEffect>,
     pub glass: Option<GlassEffect>,
     pub opacity: f32,
@@ -299,6 +300,7 @@ impl Shape {
             opacity: 1.,
             hidden: false,
             blur: None,
+            background_blur: None,
             texture: None,
             glass: None,
             svg: None,
@@ -322,6 +324,9 @@ impl Shape {
         self.shadows.iter_mut().for_each(|s| s.scale_content(value));
 
         if let Some(blur) = self.blur.as_mut() {
+            blur.scale_content(value);
+        }
+        if let Some(blur) = self.background_blur.as_mut() {
             blur.scale_content(value);
         }
 
@@ -640,6 +645,21 @@ impl Shape {
     pub fn set_blur(&mut self, blur: Option<Blur>) {
         self.invalidate_extrect();
         self.blur = blur;
+    }
+
+    pub fn set_background_blur(&mut self, blur: Option<Blur>) {
+        self.invalidate_extrect();
+        self.background_blur = blur;
+    }
+
+    /// Route a blur value to the appropriate slot based on its kind. The
+    /// layer-blur and background-blur slots are independent; setting one
+    /// does not affect the other.
+    pub fn set_blur_of_kind(&mut self, kind: BlurType, blur: Option<Blur>) {
+        match kind {
+            BlurType::LayerBlur => self.set_blur(blur),
+            BlurType::BackgroundBlur => self.set_background_blur(blur),
+        }
     }
 
     pub fn set_texture(&mut self, texture: Option<TextureEffect>) {
@@ -1591,7 +1611,7 @@ impl Shape {
             return false;
         }
 
-        if self.blur.is_some() {
+        if self.blur.is_some() || self.background_blur.is_some() {
             return false;
         }
 
@@ -1651,6 +1671,7 @@ impl Shape {
     pub fn has_effects_that_extend_bounds(&self) -> bool {
         !self.shadows.is_empty()
             || self.blur.is_some()
+            || self.background_blur.is_some()
             || !self.strokes.is_empty()
             || !self.transform.is_identity()
             || !math::is_close_to(self.rotation, 0.0)

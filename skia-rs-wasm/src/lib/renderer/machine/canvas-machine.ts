@@ -8,12 +8,12 @@ import { startMoveSelected } from '../handlers/move'
 import { startRotateSelected } from '../handlers/rotate'
 import { startResizeSelected } from '../handlers/resize'
 import { handleAreaSelection } from '../handlers/selection'
-import { handleDrawRect } from '../handlers/draw-shape'
+import { handleDrawShape } from '../handlers/draw-shape'
 import { startGradientDrag } from '../handlers/gradient'
 import type { GradientHandleKind } from '../handlers/gradient'
 import type { Point, ResizeHandlePosition } from '../types'
 
-export type DrawTool = 'rect'
+export type DrawTool = 'rect' | 'frame'
 
 export interface CanvasContext {
   resizeHandle: ResizeHandlePosition | null
@@ -52,7 +52,7 @@ const canvasMachineSetup = setup({
       ({ input }: { input: { append: boolean; remove: boolean; ignoreGroups?: boolean } }) =>
         handleAreaSelection(input.append, input.remove, input.ignoreGroups),
     ),
-    drawActor: fromObservable(() => handleDrawRect()),
+    drawActor: fromObservable(({ input }: { input: { tool: DrawTool } }) => handleDrawShape(input.tool)),
     gradientActor: fromObservable(
       ({ input }: { input: { handle: GradientHandleKind; position: Point } }) =>
         startGradientDrag(input.handle, input.position),
@@ -161,6 +161,7 @@ export const canvasMachine = canvasMachineSetup.createMachine({
     drawingShape: {
       invoke: {
         src: 'drawActor',
+        input: ({ context }) => ({ tool: context.drawTool ?? 'rect' }),
         onDone: { target: 'idle' },
         onError: { target: 'idle' },
       },

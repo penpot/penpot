@@ -410,8 +410,8 @@ impl TileGrid {
             .is_some_and(|g| !g.hidden);
 
         let has_bg_blur = shape
-            .blur
-            .is_some_and(|b| !b.hidden && b.blur_type == BlurType::BackgroundBlur);
+            .background_blur
+            .is_some_and(|b| !b.hidden);
 
         has_glass || has_bg_blur
     }
@@ -837,8 +837,8 @@ impl TileGrid {
         }
 
         // Background blur expansion
-        if let Some(blur) = &shape.blur {
-            if !blur.hidden && blur.blur_type == BlurType::BackgroundBlur {
+        if let Some(blur) = &shape.background_blur {
+            if !blur.hidden {
                 let blur_radius = blur.value * 3.0 * scale;
                 expand = expand.max(blur_radius);
             }
@@ -1183,6 +1183,31 @@ impl TileGrid {
             }
         }
 
+        // Scatter container: emit a single Render step and do NOT recurse,
+        // so descendants aren't also blitted independently on top of the
+        // warped output. The `RenderStep::Render` handler dispatches to the
+        // subtree scatter renderer when the shape is recursive.
+        //
+        // Masked groups are excluded — their Enter/Exit save_layer plumbing
+        // is required for correct masking and the subtree path does not
+        // reproduce it. Such groups fall through to the normal recursive
+        // emission (textures still silently skipped as before — pre-existing
+        // limitation).
+        let is_scatter = shape
+            .texture
+            .as_ref()
+            .is_some_and(|t| !t.hidden && t.radius > 0.0);
+        let is_masked_group = matches!(&shape.shape_type, Type::Group(g) if g.masked);
+        if shape.is_recursive() && is_scatter && !is_masked_group {
+            let has_band_content = band_shapes.contains(&shape_id)
+                || subtree_has_band_shape(shape, tree, band_shapes);
+            if has_band_content {
+                self.schedule.push(RenderStep::Render(shape_id));
+                return true;
+            }
+            return false;
+        }
+
         if shape.is_recursive() {
             // Container: speculatively push Enter, recurse, then drop the
             // Enter if no child emitted anything for this band.
@@ -1227,6 +1252,27 @@ impl TileGrid {
             false
         }
     }
+}
+
+/// True if any descendant of `shape` (at any depth) appears in `band_shapes`.
+/// Used by the scatter-container emit guard to decide whether this band
+/// needs a `Render(container)` step.
+fn subtree_has_band_shape(
+    shape: &Shape,
+    tree: ShapesPoolRef,
+    band_shapes: &HashSet<Uuid>,
+) -> bool {
+    for child_id in shape.children_ids(false) {
+        if band_shapes.contains(&child_id) {
+            return true;
+        }
+        if let Some(child) = tree.get(&child_id) {
+            if subtree_has_band_shape(child, tree, band_shapes) {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 // ── RenderState replacement methods ─────────────────────────────────────
@@ -1492,7 +1538,97 @@ impl RenderState {
                     self.focus_mode.enter(&id);
 
                     if self.focus_mode.is_active() {
+                        let scale = self.get_scale();
+                        let skip_shadows = self.options.is_fast_mode();
+                        let is_text = matches!(element.shape_type, Type::Text(_));
+
+                        // Background blur BEFORE save_layer so it modifies
+                        // the backdrop independently of the shape's opacity.
+                        self.render_background_blur(element, SurfaceId::Current);
+
+                        // Glass effect BEFORE save_layer so it snapshots the
+                        // real accumulated backdrop on Target. Mirrors the
+                        // leaf Render handler's root-vs-nested branching.
+                        if let Some(glass) = element.glass.as_ref().filter(|g| !g.hidden) {
+                            let is_root_level =
+                                element.parent_id.is_some_and(|p| p == Uuid::nil());
+                            if is_root_level {
+                                let tile_rect = self.get_current_tile_bounds()?;
+                                let bg_color = self.background_color;
+                                self.surfaces
+                                    .composite_current_to_target(tile_rect, bg_color);
+                                self.flush_and_submit();
+                                let backdrop_image = self
+                                    .surfaces
+                                    .get_or_snapshot_glass_backdrop(id, SurfaceId::Target);
+                                crate::render::glass::render_glass_with_backdrop_image(
+                                    self,
+                                    element,
+                                    glass,
+                                    SurfaceId::Current,
+                                    SurfaceId::Target,
+                                    Some(backdrop_image),
+                                );
+                            } else {
+                                crate::render::glass::render_glass(
+                                    self,
+                                    element,
+                                    glass,
+                                    SurfaceId::Current,
+                                );
+                            }
+                        }
+
                         self.render_shape_enter(element, false, SurfaceId::Current);
+
+                        // Drop shadows for the container itself. Text shapes
+                        // emit drop shadows via the paragraph image filter
+                        // inside `render_shape`, so skip the separate pass
+                        // for them. Clipped frames with layer blur render
+                        // shadows before the layer (not handled here for
+                        // simplicity — add if needed).
+                        if !skip_shadows && !is_text {
+                            let translation = self
+                                .surfaces
+                                .get_render_context_translation(self.render_area, scale);
+                            let node_render_state =
+                                crate::render::NodeRenderState::leaf(id);
+                            let mut extrect_cache: Option<skia::Rect> = None;
+                            self.render_element_drop_shadows_and_composite(
+                                element,
+                                tree,
+                                &mut extrect_cache,
+                                None,
+                                scale,
+                                translation,
+                                &node_render_state,
+                                SurfaceId::Current,
+                            )?;
+                        }
+
+                        // Render the container's own fills/strokes alongside
+                        // its children. Mirrors the non-tile path's ordering
+                        // (enter → render_shape → children → exit). Strokes
+                        // on clipped frames are skipped here — they land in
+                        // `render_shape_exit` on top of children. See the
+                        // `skip_strokes` branch in `render_shape`.
+                        self.render_shape(
+                            element,
+                            None,
+                            SurfaceId::Fills,
+                            SurfaceId::Strokes,
+                            SurfaceId::InnerShadows,
+                            SurfaceId::TextDropShadows,
+                            true,
+                            None,
+                            None,
+                            None,
+                            SurfaceId::Current,
+                        )?;
+                        self.apply_drawing_to_render_canvas(Some(element), SurfaceId::Current);
+                        self.surfaces
+                            .canvas(SurfaceId::DropShadows)
+                            .clear(skia::Color::TRANSPARENT);
                     }
                 }
 
@@ -1564,14 +1700,25 @@ impl RenderState {
                                 None
                             };
 
-                            if let Some((img, clipped_extrect)) =
+                            let scatter_output = if element.is_recursive() {
+                                // Container: render the whole subtree into
+                                // one displacement scratch so the frame +
+                                // descendants warp as one composite.
+                                crate::render::texture::render_and_filter_subtree_to_image(
+                                    self,
+                                    element,
+                                    tree,
+                                    glass_backdrop,
+                                )
+                            } else {
                                 crate::render::texture::render_and_filter_to_image(
                                     self,
                                     element,
                                     tree,
                                     glass_backdrop,
                                 )
-                            {
+                            };
+                            if let Some((img, clipped_extrect)) = scatter_output {
                                 self.surfaces
                                     .insert_scatter_output(id, img, clipped_extrect);
                             }

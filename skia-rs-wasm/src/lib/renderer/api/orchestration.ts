@@ -23,7 +23,7 @@ import {
   setShapeHidden,
   setShapeChildren,
   setShapeCorners,
-  setShapeBlur,
+  setShapeBlurs,
   setShapeTexture,
   setShapeBoolType,
   setShapeGrowType,
@@ -90,7 +90,15 @@ export function setObject(
   const content = type === 'text' ? ensureTextContent((shape as { content?: TextContent }).content) : (shape as { content?: unknown }).content
   const boolType: BoolType | undefined = type === 'bool' ? (shape as { boolType: BoolType }).boolType : undefined
   const growType = shape.growType
-  const blur = shape.blur
+  // A shape may carry both a layer blur and a background blur. The
+  // upstream Penpot schema only exposes `shape.blur` (single slot, any
+  // kind); we additionally read an optional `backgroundBlur` off the node
+  // so both can be sent in one pass.
+  const blurs: import('penpot-exporter/types').Blur[] = []
+  if (shape.blur) blurs.push(shape.blur)
+  const backgroundBlur = (shape as { backgroundBlur?: import('penpot-exporter/types').Blur })
+    .backgroundBlur
+  if (backgroundBlur) blurs.push(backgroundBlur)
   const texture = (shape as Record<string, unknown>).texture as import('../properties/panel-utils').Texture | undefined
   const glass = shape.glass
   const svgAttrs = shape.svgAttrs
@@ -118,7 +126,7 @@ export function setObject(
   setShapeHidden(module, hidden ?? false)
   setShapeChildren(module, children)
   setShapeCorners(module, corners)
-  setShapeBlur(module, blur)
+  setShapeBlurs(module, blurs)
   setShapeTexture(module, texture)
   setShapeGlass(module, glass)
 

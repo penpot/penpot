@@ -12,15 +12,16 @@ import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { screenToWorld } from '../viewport'
 import { makeSelrect } from '../../worker/types'
 import { applyChanges } from '../../page-crud'
-import { createRect } from '../node-factory'
+import { createFrame, createRect } from '../node-factory'
 import type { AddObjChange } from 'penpot-exporter/types'
+import type { DrawTool } from '../machine/canvas-machine'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 
-/** Minimum rubber-band size in screen pixels before committing a rect. */
+/** Minimum rubber-band size in screen pixels before committing a shape. */
 const MIN_DRAW_SCREEN_PX = 3
 
-export function handleDrawRect(): Observable<void> {
+export function handleDrawShape(tool: DrawTool): Observable<void> {
   const initialVp = viewport.value
   const effectivePageId = getActiveOrSinglePageId()
   const page = effectivePageId ? getPage(effectivePageId) : undefined
@@ -82,17 +83,30 @@ export function handleDrawRect(): Observable<void> {
 
             const root = Object.values(currentPage.objects).find((o) => o.parentId == null)
             const rootId = root?.id ?? ROOT_UUID
-            const newNode = createRect({
-              x: worldOrigin.x,
-              y: worldOrigin.y,
-              width: w,
-              height: h,
-              parentId: rootId,
-              fillColor: '#3B82F6',
-              fillOpacity: 0.85,
-              strokeColor: '#1E40AF',
-              strokeWidth: 2,
-            })
+            const newNode =
+              tool === 'frame'
+                ? createFrame({
+                    x: worldOrigin.x,
+                    y: worldOrigin.y,
+                    width: w,
+                    height: h,
+                    parentId: rootId,
+                    fillColor: '#F3F4F6',
+                    fillOpacity: 1,
+                    strokeColor: '#9CA3AF',
+                    strokeWidth: 1,
+                  })
+                : createRect({
+                    x: worldOrigin.x,
+                    y: worldOrigin.y,
+                    width: w,
+                    height: h,
+                    parentId: rootId,
+                    fillColor: '#3B82F6',
+                    fillOpacity: 0.85,
+                    strokeColor: '#1E40AF',
+                    strokeWidth: 2,
+                  })
 
             const addChange: AddObjChange = {
               type: 'add-obj',

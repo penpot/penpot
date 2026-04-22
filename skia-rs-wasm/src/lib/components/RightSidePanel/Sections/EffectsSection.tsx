@@ -26,10 +26,19 @@ function mergeEffects(node: RectLikeNode): EffectItem[] {
   for (const s of (node as Record<string, unknown>).shadow as Shadow[] ?? []) {
     items.push({ kind: s.style, shadow: s })
   }
+  // A shape may carry a layer blur AND a background blur simultaneously
+  // (at most one of each kind). `node.blur` is the canonical slot used by
+  // upstream Penpot — its `.type` field decides which kind it is.
+  // `node.backgroundBlur` is our convention for the second slot when both
+  // are present.
   const blur = (node as Record<string, unknown>).blur as Blur | undefined
   if (blur) {
     const kind = blur.type === 'background-blur' ? 'background-blur' : 'layer-blur'
     items.push({ kind, blur })
+  }
+  const backgroundBlur = (node as Record<string, unknown>).backgroundBlur as Blur | undefined
+  if (backgroundBlur) {
+    items.push({ kind: 'background-blur', blur: backgroundBlur })
   }
   const glass = (node as Record<string, unknown>).glass as Glass | undefined
   if (glass) {
@@ -46,22 +55,28 @@ function mergeEffects(node: RectLikeNode): EffectItem[] {
   return items
 }
 
-/** Split EffectItem list back into shadow[], blur, glass, noise, and texture for committing. */
+/** Split EffectItem list back into shadow[], blurs, glass, noise, and texture for committing. */
 function splitEffects(effects: EffectItem[]): {
   shadow: Shadow[]
-  blur: Blur | undefined
+  layerBlur: Blur | undefined
+  backgroundBlur: Blur | undefined
   glass: Glass | undefined
   noise: Noise | undefined
   texture: Texture | undefined
 } {
   const shadows: Shadow[] = []
-  let blur: Blur | undefined
+  let layerBlur: Blur | undefined
+  let backgroundBlur: Blur | undefined
   let glass: Glass | undefined
   let noise: Noise | undefined
   let texture: Texture | undefined
+  // At most one of each blur kind survives — if the user added two
+  // layer-blur rows, the last one wins. Same for background-blur.
   for (const e of effects) {
-    if (e.kind === 'layer-blur' || e.kind === 'background-blur') {
-      blur = e.blur
+    if (e.kind === 'layer-blur') {
+      layerBlur = e.blur
+    } else if (e.kind === 'background-blur') {
+      backgroundBlur = e.blur
     } else if (e.kind === 'glass') {
       glass = e.glass
     } else if (e.kind === 'noise') {
@@ -72,7 +87,7 @@ function splitEffects(effects: EffectItem[]): {
       shadows.push(e.shadow)
     }
   }
-  return { shadow: shadows, blur, glass, noise, texture }
+  return { shadow: shadows, layerBlur, backgroundBlur, glass, noise, texture }
 }
 
 export interface EffectsSectionProps {
@@ -99,13 +114,20 @@ export function EffectsSection({ nodeId, readOnly, initialNode }: EffectsSection
       const before = getCommittedNodeOnActivePage(nodeId)
       const pid = getActiveOrSinglePageId()
       if (!before || !pid) return
-      const { shadow, blur, glass, noise, texture } = splitEffects(next)
+      const { shadow, layerBlur, backgroundBlur, glass, noise, texture } = splitEffects(next)
       const partial: Record<string, unknown> = { shadow }
-      // Include blur when it has a value or when clearing a previously set blur.
-      // Use null (not undefined) to clear, since commitNodePartialUpdate skips undefined.
+      // Include blur fields when they have a value or when clearing a
+      // previously set blur. Use null (not undefined) to clear —
+      // commitNodePartialUpdate skips undefined. The layer slot lives on
+      // `blur`, the background slot on `backgroundBlur`; see orchestration
+      // for the WASM routing.
       const hadBlur = (before as Record<string, unknown>).blur != null
-      if (blur !== undefined || hadBlur) {
-        partial.blur = blur ?? null
+      if (layerBlur !== undefined || hadBlur) {
+        partial.blur = layerBlur ?? null
+      }
+      const hadBackgroundBlur = (before as Record<string, unknown>).backgroundBlur != null
+      if (backgroundBlur !== undefined || hadBackgroundBlur) {
+        partial.backgroundBlur = backgroundBlur ?? null
       }
       const hadGlass = (before as Record<string, unknown>).glass != null
       if (glass !== undefined || hadGlass) {

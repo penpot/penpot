@@ -240,8 +240,11 @@ export function createFrame(
     parentId?: string
     fillColor?: string
     fillOpacity?: number
+    strokeColor?: string
+    strokeWidth?: number
     shapes?: string[]
     opacity?: number
+    showContent?: boolean
   } = {}
 ): PenpotNode {
   const id = options.id || newShapeId()
@@ -259,6 +262,18 @@ export function createFrame(
       ]
     : []
 
+  const strokes: Stroke[] = options.strokeColor
+    ? [
+        {
+          strokeColor: options.strokeColor,
+          strokeOpacity: 1,
+          strokeWidth: options.strokeWidth ?? 1,
+          strokeStyle: 'solid',
+          strokeAlignment: 'center',
+        },
+      ]
+    : []
+
   return {
     id,
     type: 'frame',
@@ -270,7 +285,11 @@ export function createFrame(
     shapes: options.shapes || [],
     selrect: createSelRect(x, y, width, height),
     fills,
+    strokes,
     opacity: options.opacity ?? 1,
+    // Default to non-clipping so the frame's own fill/shadows render — the
+    // tile-scheduler's clipped-frame path clears them before stroke rendering.
+    showContent: options.showContent ?? true,
   }
 }
 
