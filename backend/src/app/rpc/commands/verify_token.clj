@@ -134,7 +134,7 @@
       (db/delete! conn :team-invitation
                   (cond-> {:email-to member-email}
                     team-id (assoc :team-id team-id)
-                    organization-id  (assoc :organization-id organization-id)))
+                    organization-id  (assoc :org-id organization-id)))
 
       ;; Delete any request (only applicable for team invitations)
       (when team-id
@@ -173,7 +173,7 @@
   (let [invitation             (db/get* conn :team-invitation
                                         (cond-> {:email-to member-email}
                                           team-id (assoc :team-id team-id)
-                                          organization-id  (assoc :organization-id organization-id)))
+                                          organization-id  (assoc :org-id organization-id)))
         profile                (db/get* conn :profile
                                         {:id profile-id}
                                         {:columns [:id :email :default-team-id]})
