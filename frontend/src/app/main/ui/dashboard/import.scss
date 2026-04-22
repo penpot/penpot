@@ -156,7 +156,7 @@
   .error-message {
     align-items: flex-start;
     white-space: pre-wrap;
-    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .linked-library {
@@ -271,5 +271,5 @@
   margin-top: var(--sp-xs);
   color: var(--modal-text-foreground-color);
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
