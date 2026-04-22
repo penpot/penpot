@@ -38,10 +38,21 @@
         props
         (mf/spread-props props {:token-type token-type
                                 :tokens-tree-in-selected-set tokens-tree-in-selected-set
-                                :token token})
-        text-case-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")})
-        text-decoration-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})
-        font-weight-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})
+                                :token token
+                                :input-component token.controls/value-combobox*})
+        text-case-props (if (contains? cf/flags :token-combobox)
+                          (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")
+                                                  :input-component token.controls/value-combobox*})
+                          (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")}))
+        text-decoration-props (if (contains? cf/flags :token-combobox)
+                                (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")
+                                                        :input-component token.controls/value-combobox*})
+                                (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")}))
+
+        font-weight-props (if (contains? cf/flags :token-combobox)
+                            (mf/spread-props props {:input-component token.controls/value-combobox*})
+                            props)
+
         border-radius-props (if (contains? cf/flags :token-combobox)
                               (mf/spread-props props {:input-component token.controls/value-combobox*})
                               props)]

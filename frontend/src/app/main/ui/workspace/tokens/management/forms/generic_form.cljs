@@ -69,6 +69,7 @@
   (let [make-schema     (or make-schema #(-> (cfo/make-token-schema % token-type)
                                              (sm/dissoc-key :id)))
         input-component (or input-component token.controls/input*)
+        _ (prn "Rendering generic form with input-component:" input-component)
         validate-token  (or validator default-validate-token)
 
         active-tab*     (mf/use-state #(if (cfo/is-reference? token) :reference :composite))

@@ -11,6 +11,7 @@
 
   padding-block-end: var(--sp-s);
   display: flex;
+  gap: var(--sp-s);
   flex-wrap: wrap;
   padding-inline-start: calc(var(--node-spacing));
 

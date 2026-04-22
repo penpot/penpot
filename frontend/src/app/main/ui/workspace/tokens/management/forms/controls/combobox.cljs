@@ -29,6 +29,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
+   [cljs.pprint :as pp]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -104,6 +105,9 @@
         filtered-tokens-by-type
         (mf/with-memo [raw-tokens-by-type token-type]
           (csu/filter-tokens-for-input raw-tokens-by-type token-type))
+
+        _ (pp/pprint raw-tokens-by-type)
+        _ (pp/pprint filtered-tokens-by-type)
 
         visible-options
         (mf/with-memo [filtered-tokens-by-type token]
