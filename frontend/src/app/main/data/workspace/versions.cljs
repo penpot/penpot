@@ -250,7 +250,11 @@
     (update [_ state]
       (-> state
           (update :workspace-versions dissoc :preview-id)
-          (update :workspace-global dissoc :read-only?)))
+          (update :workspace-global dissoc :read-only?)
+          ;; A fresh UUID triggers the WASM viewport to reload its shape
+          ;; buffer with the live file objects once initialize-workspace
+          ;; completes.
+          (assoc :workspace-file-version-id (uuid/next))))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -258,10 +262,7 @@
             file-id (:current-file-id state)]
         ;; Full workspace re-init reloads the live file from the server,
         ;; clearing all snapshot data and restoring normal edit mode.
-        ;; A fresh UUID is passed so bundle-fetched sets a new non-nil
-        ;; workspace-file-version-id, which triggers the WASM viewport
-        ;; to reload its shape buffer with the live file objects.
-        (rx/of (dw/initialize-workspace team-id file-id (uuid/next)))))))
+        (rx/of (dw/initialize-workspace team-id file-id)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS
