@@ -485,6 +485,11 @@ impl TileGrid {
     /// `ShapeEntry.paint_order` in `self.grid` with a fresh counter. Used by
     /// incremental updates where new entries were added with a placeholder
     /// `paint_order: 0` and pre-existing entries carry stale values.
+    ///
+    /// Since this mutates `paint_order` in place without preserving the
+    /// `add_shape_at` insertion-order invariant, it finishes with a
+    /// per-tile sort so downstream consumers (`compute_bands`) can trust
+    /// that `self.grid[tile]` is paint-order-sorted.
     fn renumber_paint_order(&mut self, tree: ShapesPoolRef) {
         let mut counter: u32 = 0;
         let root_id = Uuid::nil();
@@ -492,6 +497,12 @@ impl TileGrid {
             for child_id in paint_order_children(root, tree) {
                 self.renumber_recurse(&mut counter, child_id, tree);
             }
+        }
+        // Restore the paint-order invariant for every tile touched by this
+        // renumber pass. Each tile has a tiny entry count relative to total
+        // shapes, so `sort_unstable_by_key` stays cheap.
+        for entries in self.grid.values_mut() {
+            entries.sort_unstable_by_key(|e| e.paint_order);
         }
     }
 
@@ -593,10 +604,10 @@ impl TileGrid {
             let empty = Vec::new();
             let bars = barriers.get(tile).unwrap_or(&empty);
 
-            // Entries are stored paint-order-sorted by add_shape_at; be
-            // defensive and sort anyway (incremental paths can leave gaps).
-            let mut sorted: Vec<&ShapeEntry> = entries.iter().collect();
-            sorted.sort_by_key(|e| e.paint_order);
+            // Entries are paint-order-sorted by invariant:
+            //   - `add_shape_at` inserts at the binary-search position
+            //   - `renumber_paint_order` re-sorts each tile at its end
+            // so we can walk `entries` directly.
 
             let bucket_of = |po: u32| -> usize {
                 // Count of barriers ≤ po (partition_point returns the first
@@ -611,7 +622,7 @@ impl TileGrid {
             let mut current_gather_at_head: Option<Uuid> = None;
             let mut current_bucket: Option<usize> = None;
 
-            for e in sorted {
+            for e in entries.iter() {
                 let bucket = bucket_of(e.paint_order);
                 if current_bucket != Some(bucket) {
                     // Flush the previous band.
@@ -673,6 +684,29 @@ impl TileGrid {
     ) -> HashMap<BandKey, HashSet<BandKey>> {
         let mut deps: HashMap<BandKey, HashSet<BandKey>> = HashMap::new();
 
+        // Precompute the "strictly-below-G backstop" source: every
+        // non-gather band, sorted by max_paint_order. For a gather with
+        // paint_order `g_po`, eligible dep targets are a prefix of this
+        // sorted list (everything with max_po < g_po). Replaces the old
+        // O(G · B) nested scan with one O(B log B) sort + O(G · cutoff)
+        // prefix walk.
+        let non_gather_count = self
+            .bands
+            .values()
+            .map(|v| v.iter().filter(|b| b.gather_at_head.is_none()).count())
+            .sum::<usize>();
+        let mut non_gather_bands: Vec<(u32, BandKey)> =
+            Vec::with_capacity(non_gather_count);
+        for (tile, bands) in &self.bands {
+            for (idx, band) in bands.iter().enumerate() {
+                if band.gather_at_head.is_none() {
+                    non_gather_bands
+                        .push((band.max_paint_order, BandKey::new(*tile, idx as u32)));
+                }
+            }
+        }
+        non_gather_bands.sort_unstable_by_key(|(po, _)| *po);
+
         for (tile, bands) in &self.bands {
             for (band_idx, band) in bands.iter().enumerate() {
                 let Some(g_id) = band.gather_at_head else {
@@ -693,6 +727,8 @@ impl TileGrid {
 
                 let key = BandKey::new(*tile, band_idx as u32);
 
+                let dep_set = deps.entry(key).or_default();
+
                 for stx in sx1..=sx2 {
                     for sty in sy1..=sy2 {
                         let sample_tile = Tile::from(stx, sty);
@@ -706,8 +742,7 @@ impl TileGrid {
                             // `max < g_po` test (the gather sits at the head
                             // so our own band's max >= g_po).
                             if sband.max_paint_order < g_po {
-                                deps.entry(key)
-                                    .or_default()
+                                dep_set
                                     .insert(BandKey::new(sample_tile, sidx as u32));
                             }
                         }
@@ -724,21 +759,16 @@ impl TileGrid {
                 // yet on Target when the backdrop snapshot was taken. This
                 // pass closes every such gap at the cost of a few extra deps
                 // — cheap at scheduling, zero extra runtime render work.
-                for (other_tile, other_bands) in &self.bands {
-                    for (sidx, sband) in other_bands.iter().enumerate() {
-                        if sband.gather_at_head.is_some() {
-                            continue; // other gather-headed band — unchanged
-                        }
-                        if sband.max_paint_order >= g_po {
-                            continue; // not strictly below this gather
-                        }
-                        if other_tile == tile && sidx == band_idx {
-                            continue; // self
-                        }
-                        deps.entry(key)
-                            .or_default()
-                            .insert(BandKey::new(*other_tile, sidx as u32));
+                //
+                // `non_gather_bands` is sorted by max_paint_order, so the
+                // eligible prefix (max_po < g_po) is found via partition
+                // point and walked in O(cutoff).
+                let cutoff = non_gather_bands.partition_point(|(po, _)| *po < g_po);
+                for (_, dep_key) in &non_gather_bands[..cutoff] {
+                    if *dep_key == key {
+                        continue; // self — can't happen (self is gather-headed) but cheap to guard
                     }
+                    dep_set.insert(*dep_key);
                 }
             }
         }
@@ -989,18 +1019,71 @@ impl TileGrid {
         };
         root_children.reverse();
 
+        // Per-tile cache of root shapes whose extrect/selrect intersects the
+        // tile. A tile with K bands pays the root-visibility scan once here
+        // instead of K times in the band loop; emit_shape_steps_checked
+        // then skips the redundant top-level intersection check for these
+        // pre-filtered roots.
+        //
+        // Only build the cache for *productive* tiles — tiles that own at
+        // least one band carrying shapes. The spiral includes every tile in
+        // the interest rect as a synthetic empty BandKey to clear stale
+        // pixels, but those bands never invoke the emit path, so caching
+        // their visible-roots would be pure waste. For a 6400×6400 viewbox
+        // this can mean 2.5k synthetic tiles vs. ~24 productive tiles.
+        let mut visible_roots: HashMap<Tile, (skia::Rect, Vec<Uuid>)> =
+            HashMap::with_capacity(sorted_bands.len().min(256));
+        for key in sorted_bands {
+            if visible_roots.contains_key(&key.tile) {
+                continue;
+            }
+            let productive = self
+                .bands
+                .get(&key.tile)
+                .is_some_and(|bs| bs.iter().any(|b| !b.shapes.is_empty()));
+            if !productive {
+                continue;
+            }
+            let tile_rect = tiles::get_tile_rect(key.tile, scale);
+            let mut visible = Vec::with_capacity(root_children.len().min(32));
+            for &root_id in &root_children {
+                let Some(shape) = tree.get(&root_id) else {
+                    continue;
+                };
+                if shape.hidden {
+                    continue;
+                }
+                let is_container = matches!(
+                    shape.shape_type,
+                    Type::Frame(_) | Type::Group(_)
+                );
+                let check_rect = if is_container {
+                    shape.extrect(tree, scale)
+                } else {
+                    shape.selrect()
+                };
+                if check_rect.intersects(tile_rect) {
+                    visible.push(root_id);
+                }
+            }
+            visible_roots.insert(key.tile, (tile_rect, visible));
+        }
+
         for key in sorted_bands {
             // A synthetic empty-tile BandKey has no matching Band. Emit a
             // single SetTileBand + FinalizeBand { LastBg } pair so
             // run_schedule clears Target at this tile rect (preventing stale
             // pixels from a previous frame when shapes move away).
-            let (band_opt, is_first, is_last) = match self.bands.get(&key.tile) {
+            let (band_shapes_owned, is_first, is_last) = match self.bands.get(&key.tile) {
                 Some(bands) if !bands.is_empty() => {
                     let total = bands.len();
                     let idx = key.band_index as usize;
                     let band = bands.get(idx);
                     let is_last = idx + 1 == total;
-                    (band, idx == 0, is_last)
+                    // Clone the small band.shapes slice so we drop the
+                    // borrow on self.bands before calling &mut self below.
+                    let shapes = band.map(|b| b.shapes.clone());
+                    (shapes, idx == 0, is_last)
                 }
                 _ => (None, true, true),
             };
@@ -1012,21 +1095,29 @@ impl TileGrid {
                 is_last,
             });
 
-            let band_has_shapes = band_opt.is_some_and(|b| !b.shapes.is_empty());
+            let band_has_shapes = band_shapes_owned
+                .as_ref()
+                .is_some_and(|v| !v.is_empty());
 
-            if let Some(band) = band_opt {
-                if band_has_shapes {
-                    // Emit Enter/Render/Exit for shapes in this band.
-                    let band_shapes: HashSet<Uuid> =
-                        band.shapes.iter().copied().collect();
-                    let tile_rect = tiles::get_tile_rect(key.tile, scale);
-                    for root_id in &root_children {
-                        self.emit_shape_steps(
-                            *root_id,
+            if band_has_shapes {
+                let band_shape_vec = band_shapes_owned.as_ref().unwrap();
+                let band_shapes: HashSet<Uuid> =
+                    band_shape_vec.iter().copied().collect();
+                // Borrow the cached (tile_rect, visible) once per band.
+                // `visible_roots` is a local map disjoint from `self`, so
+                // holding a shared borrow on it while calling
+                // `&mut self.emit_shape_steps_checked` is OK under NLL.
+                if let Some((tile_rect, visible)) = visible_roots.get(&key.tile) {
+                    let tile_rect = *tile_rect;
+                    for root_id in visible.iter() {
+                        let root_id = *root_id;
+                        self.emit_shape_steps_checked(
+                            root_id,
                             tree,
                             &tile_rect,
                             scale,
                             &band_shapes,
+                            /*skip_self_check=*/ true,
                         );
                     }
                 }
@@ -1052,13 +1143,20 @@ impl TileGrid {
     /// to shapes in `band_shapes`. Returns true if at least one step was
     /// emitted for this subtree (used by callers to skip empty Enter/Exit
     /// brackets).
-    fn emit_shape_steps(
+    ///
+    /// `skip_self_check` lets the root-level caller (`build_schedule`) avoid
+    /// re-doing the tile-intersection test it already performed when
+    /// populating the per-tile `visible_roots` cache. Recursed children
+    /// always get the full check since their selrect/extrect is independent
+    /// of the parent's.
+    fn emit_shape_steps_checked(
         &mut self,
         shape_id: Uuid,
         tree: ShapesPoolRef,
         tile_rect: &skia::Rect,
         scale: f32,
         band_shapes: &HashSet<Uuid>,
+        skip_self_check: bool,
     ) -> bool {
         let Some(shape) = tree.get(&shape_id) else {
             return false;
@@ -1069,15 +1167,20 @@ impl TileGrid {
         }
 
         // Visibility check — is the shape in or near this tile?
-        // We previously used `selrect` for non-container shapes (cheaper than
-        // computing extrect), but that misses scatter effects whose output
-        // extends past the shape's natural outline into neighbouring tiles.
-        // `extrect` already includes stroke/shadow/blur/scatter expansions,
-        // is cached, and is a tight-enough superset that the over-emission
-        // cost is negligible.
-        let extrect = shape.extrect(tree, scale);
-        if !extrect.intersects(*tile_rect) {
-            return false;
+        // Use `extrect` (not `selrect`) so scatter-effect shapes, whose
+        // output kernel extends past the shape's natural outline, still
+        // emit on neighbour tiles. `extrect` is cached on the shape.
+        //
+        // The root-level caller (`build_schedule`) pre-filters via its
+        // `visible_roots` cache and passes `skip_self_check = true` so we
+        // don't redo this intersection test. Recursed children always run
+        // the full check since their extrect is independent of the
+        // parent's.
+        if !skip_self_check {
+            let extrect = shape.extrect(tree, scale);
+            if !extrect.intersects(*tile_rect) {
+                return false;
+            }
         }
 
         if shape.is_recursive() {
@@ -1090,7 +1193,14 @@ impl TileGrid {
             children.reverse();
             let mut any_child_emitted = false;
             for child_id in &children {
-                if self.emit_shape_steps(*child_id, tree, tile_rect, scale, band_shapes) {
+                if self.emit_shape_steps_checked(
+                    *child_id,
+                    tree,
+                    tile_rect,
+                    scale,
+                    band_shapes,
+                    /*skip_self_check=*/ false,
+                ) {
                     any_child_emitted = true;
                 }
             }
