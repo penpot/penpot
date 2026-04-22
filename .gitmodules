@@ -7,3 +7,6 @@
 [submodule "figma_plugin_fe"]
 	path = figma_plugin_fe
 	url = https://github.com/ux-plugin/figma_plugin_fe.git
+[submodule "skia-rs-wasm/packages/penpot-exporter"]
+	path = skia-rs-wasm/packages/penpot-exporter
+	url = https://github.com/ux-plugin/penpot-exporter-figma-plugin.git

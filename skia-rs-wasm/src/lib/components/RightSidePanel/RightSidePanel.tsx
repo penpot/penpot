@@ -222,7 +222,7 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
         data-right-side-panel
         className={cn('min-h-0', className)}
       >
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {singleId && !isRoot && (
             <p
               className="shrink-0 truncate border-b border-border px-3 py-1.5 text-xs text-muted-foreground"
@@ -231,8 +231,8 @@ export function RightSidePanel({ className }: RightSidePanelProps) {
               {singleId.slice(0, 8)}…
             </p>
           )}
-          <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-4 p-3">
+          <ScrollArea className="min-h-0 min-w-0 flex-1">
+            <div className="min-w-0 space-y-4 p-3">
               {node ? (
                 <NodePropertyPanel key={singleId} nodeId={singleId} initialNode={node} readOnly={readOnly} />
               ) : null}

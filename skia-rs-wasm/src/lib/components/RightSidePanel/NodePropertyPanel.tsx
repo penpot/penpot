@@ -1,6 +1,6 @@
 import type { RectLikeNode } from '../../renderer/properties/panel-utils'
-import { Separator } from '@/components/ui/separator'
 import { NodeIdentitySection } from './Sections/NodeIdentitySection'
+import { AppearanceSection } from './Sections/AppearanceSection'
 import { NodeLayoutSection } from './Sections/NodeLayoutSection'
 import { FillsSection } from './Sections/FillsSection'
 import { StrokesSection } from './Sections/StrokesSection'
@@ -23,7 +23,7 @@ export function NodePropertyPanel({ nodeId, initialNode, readOnly }: NodePropert
 
       <NodeIdentitySection nodeId={nodeId} readOnly={readOnly} initialNode={initialNode} />
 
-      <Separator />
+      <AppearanceSection nodeId={nodeId} initialNode={initialNode} readOnly={readOnly} />
 
       <NodeLayoutSection nodeId={nodeId} initialNode={initialNode} readOnly={readOnly} />
 
