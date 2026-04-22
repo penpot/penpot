@@ -19,6 +19,10 @@ update_flags() {
       -e "s|^//var penpotFlags = .*;|var penpotFlags = \"$PENPOT_FLAGS\";|g" \
       "$1")" > "$1"
   fi
+
+  if [ -n "$PENPOT_PUBLIC_URI" ]; then
+      echo "var penpotPublicURI = \"$PENPOT_PUBLIC_URI\";" >> "$1";
+  fi
 }
 
 update_flags /var/www/app/js/config.js
