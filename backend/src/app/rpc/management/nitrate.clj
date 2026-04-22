@@ -98,7 +98,7 @@
   "Store an organization logo in penpot storage and return its ID.
   Accepts an optional previous-id to mark the old logo for garbage
   collection when replacing an existing one."
-  {::doc/added "2.16"
+  {::doc/added "2.17"
    ::sm/params schema:upload-org-logo
    ::sm/result schema:upload-org-logo-result}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
@@ -403,7 +403,7 @@ RETURNING id, name;")
 
 (sv/defmethod ::remove-from-org
   "Remove an user from an organization"
-  {::doc/added "2.16"
+  {::doc/added "2.17"
    ::sm/params [:map
                 [:profile-id ::sm/uuid]
                 [:organization-id ::sm/uuid]
@@ -439,7 +439,7 @@ RETURNING id, name;")
 (sv/defmethod ::get-remove-from-org-summary
   "Get a summary of the teams that would be deleted, transferred, or exited
    if the user were removed from the organization"
-  {::doc/added "2.16"
+  {::doc/added "2.17"
    ::sm/params [:map
                 [:profile-id ::sm/uuid]
                 [:organization-id ::sm/uuid]

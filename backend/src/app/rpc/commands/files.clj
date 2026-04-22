@@ -668,7 +668,7 @@
    counts by type, component/color/typography counts, and inbound and
    outbound library reference counts. Cheap alternative to `get-file`
    when only metrics are needed."
-  {::doc/added "2.16"
+  {::doc/added "2.17"
    ::sm/params schema:get-file-stats
    ::sm/result schema:get-file-stats-result
    ::db/transaction true}

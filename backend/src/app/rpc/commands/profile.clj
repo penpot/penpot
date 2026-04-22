@@ -317,7 +317,7 @@
 ;; --- MUTATION: Delete Photo
 
 (sv/defmethod ::delete-profile-photo
-  {::doc/added "2.16"
+  {::doc/added "2.17"
    ::sm/params [:map]
    ::sm/result :nil
    ::db/transaction true}
