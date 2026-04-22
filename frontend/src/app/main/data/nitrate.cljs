@@ -91,14 +91,14 @@
                   (dm/get-in profile [:subscription :status]))))
 
 (defn leave-org
-  [{:keys [id org-name default-team-id teams-to-delete teams-to-leave on-error] :as params}]
+  [{:keys [id name default-team-id teams-to-delete teams-to-leave on-error] :as params}]
 
   (ptk/reify ::leave-org
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile-team-id (dm/get-in state [:profile :default-team-id])]
-        (->> (rp/cmd! ::leave-org {:org-id id
-                                   :org-name org-name
+        (->> (rp/cmd! ::leave-org {:id id
+                                   :name name
                                    :default-team-id default-team-id
                                    :teams-to-delete teams-to-delete
                                    :teams-to-leave teams-to-leave})
@@ -108,7 +108,7 @@
                  (dt/fetch-teams)
                  (dcm/go-to-dashboard-recent :team-id profile-team-id)
                  (modal/hide)
-                 (ntf/show {:content (tr "dasboard.leave-org.toast" org-name)
+                 (ntf/show {:content (tr "dasboard.leave-org.toast" name)
                             :type :toast
                             :level :success}))))
              (rx/catch on-error))))))

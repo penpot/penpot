@@ -44,6 +44,7 @@
     "file-object-thumbnail"
     "file-thumbnail"
     "profile"
+    "organization"
     "tempfile"
     "file-data"
     "file-data-fragment"
