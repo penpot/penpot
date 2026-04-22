@@ -66,6 +66,7 @@
                 (sync-page-size! dom)
                 (bw/screenshot dom {:full-page? true})
                 (bw/sleep page 2000) ; the good old fix with sleep
+                (bw/wait-for-fonts page)
                 (bw/pdf page {:path path})
                 path)))
 
