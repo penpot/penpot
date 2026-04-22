@@ -262,7 +262,7 @@
             file-id (:current-file-id state)]
         ;; Full workspace re-init reloads the live file from the server,
         ;; clearing all snapshot data and restoring normal edit mode.
-        (rx/of (dw/initialize-workspace team-id file-id)))))
+        (rx/of (dw/initialize-workspace team-id file-id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS
