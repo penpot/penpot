@@ -71,7 +71,7 @@
   {::doc/added "1.20"
    ::sm/params schema:restore-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id file-id id] :as params}]
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id ::rpc/session-id file-id id] :as params}]
   (files/check-edition-permissions! conn profile-id file-id)
   (let [file  (bfc/get-file cfg file-id)
         team  (teams/get-team conn
@@ -88,7 +88,8 @@
       ;; Send to the clients a notification to reload the file
       (mbus/pub! msgbus
                  :topic (:id file)
-                 :message {:type :file-restore
+                 :message {:type :file-restored
+                           :session-id session-id
                            :file-id (:id file)
                            :vern vern})
       nil)))

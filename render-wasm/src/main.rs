@@ -147,6 +147,48 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn set_viewport_interest_area_threshold(
+    viewport_interest_area_threshold: i32,
+) -> Result<()> {
+    with_state_mut!(state, {
+        let render_state = state.render_state_mut();
+        render_state.set_viewport_interest_area_threshold(viewport_interest_area_threshold);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_max_blocking_time_ms(max_blocking_time_ms: i32) -> Result<()> {
+    with_state_mut!(state, {
+        let render_state = state.render_state_mut();
+        render_state.set_max_blocking_time_ms(max_blocking_time_ms);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_node_batch_threshold(node_batch_threshold: i32) -> Result<()> {
+    with_state_mut!(state, {
+        let render_state = state.render_state_mut();
+        render_state.set_node_batch_threshold(node_batch_threshold);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_blur_downscale_threshold(blur_downscale_threshold: f32) -> Result<()> {
+    with_state_mut!(state, {
+        let render_state = state.render_state_mut();
+        render_state.set_blur_downscale_threshold(blur_downscale_threshold);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn set_antialias_threshold(threshold: f32) -> Result<()> {
     with_state_mut!(state, {
         state.render_state_mut().set_antialias_threshold(threshold);
@@ -397,6 +439,42 @@ pub extern "C" fn set_view_end() -> Result<()> {
         }
 
         performance::end_measure!("set_view_end");
+    });
+    Ok(())
+}
+
+/// Enter interactive transform mode (drag / resize / rotate of a
+/// shape). Activates the same expensive-effect skipping as pan/zoom
+/// (`fast_mode`) but keeps per-frame flushing enabled so the Target is
+/// presented every rAF, and triggers atlas-backed backdrops so
+/// invalidated tiles do not appear sequentially or flicker.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_modifiers_start() -> Result<()> {
+    with_state_mut!(state, {
+        performance::begin_measure!("set_modifiers_start");
+        let opts = &mut state.render_state.options;
+        opts.set_fast_mode(true);
+        opts.set_interactive_transform(true);
+        performance::end_measure!("set_modifiers_start");
+    });
+    Ok(())
+}
+
+/// Leave interactive transform mode and cancel any pending async
+/// render scheduled under it. The caller is responsible for triggering
+/// a final full-quality render (typically via `_render`) once the
+/// modifiers have been committed.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_modifiers_end() -> Result<()> {
+    with_state_mut!(state, {
+        performance::begin_measure!("set_modifiers_end");
+        let opts = &mut state.render_state.options;
+        opts.set_fast_mode(false);
+        opts.set_interactive_transform(false);
+        state.render_state.cancel_animation_frame();
+        performance::end_measure!("set_modifiers_end");
     });
     Ok(())
 }
@@ -938,6 +1016,10 @@ pub extern "C" fn render_shape_pixels(
     scale: f32,
 ) -> Result<*mut u8> {
     let id = uuid_from_u32_quartet(a, b, c, d);
+
+    if !scale.is_finite() {
+        return Err(Error::CriticalError("Scale is not finite".to_string()));
+    }
 
     with_state_mut!(state, {
         let (data, width, height) =

@@ -259,9 +259,6 @@
 (def workspace-layout
   (l/derived :workspace-layout st/state))
 
-(def workspace-file-version-id
-  (l/derived :workspace-file-version-id st/state))
-
 (def snap-pixel?
   (l/derived #(contains? % :snap-pixel-grid) workspace-layout))
 

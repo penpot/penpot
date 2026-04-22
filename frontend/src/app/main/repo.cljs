@@ -182,6 +182,7 @@
          :credentials "include"
          :headers {"accept" "application/transit+json,text/event-stream,*/*"
                    "x-external-session-id" (cf/external-session-id)
+                   "x-session-id" (str cf/session-id)
                    "x-event-origin" (::ev/origin (meta params))}
          :body (when (= method :post)
                  (if form-data?

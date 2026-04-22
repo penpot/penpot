@@ -26,6 +26,9 @@
 (defonce context-initialized? false)
 (defonce context-lost? (atom false))
 
+;; When we're rendering in a sync way we want to stop the asynchrous `request-render`
+(defonce disable-request-render? (atom false))
+
 
 (defonce serializers
   #js {:blur-type shared/RawBlurType

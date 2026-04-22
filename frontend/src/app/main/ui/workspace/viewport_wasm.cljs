@@ -28,7 +28,7 @@
    [app.main.ui.measurements :as msr]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
-   [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
+   [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline*]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
    [app.main.ui.workspace.shapes.text.v3-editor :as editor-v3]
    [app.main.ui.workspace.top-toolbar :refer [top-toolbar*]]
@@ -79,7 +79,7 @@
   (apply-modifiers-to-objects objects (select-keys (into {} modifiers) selected)))
 
 (mf/defc viewport*
-  [{:keys [selected wglobal layout file page palete-size file-version-id]}]
+  [{:keys [selected wglobal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
 
@@ -111,6 +111,7 @@
         workspace-editor-state (mf/deref refs/workspace-editor-state)
 
         file-id           (get file :id)
+        vern              (get file :vern)
         objects           (get page :objects)
         page-id           (get page :id)
         background        (get page :background clr/canvas)
@@ -154,7 +155,11 @@
 
         canvas-ref        (mf/use-ref nil)
         text-editor-ref   (mf/use-ref nil)
-        last-file-version-id-ref (mf/use-ref nil)
+        last-vern-ref     (mf/use-ref nil)
+
+        ;; WASM grid overlay was visible last run (`hover-grid?` true). Used so `clear-grid`
+        ;; (expensive: `_hide_grid` + full `request-render`) runs only when hiding the overlay.
+        prev-hover-grid-shown?-ref (mf/use-ref false)
 
         ;; STATE REFS
         disable-paste-ref (mf/use-ref false)
@@ -252,9 +257,10 @@
                                       (not page-transition?))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)) (not page-transition?))
 
-        hover-grid?              (and (some? @hover-top-frame-id)
-                                      (ctl/grid-layout? objects @hover-top-frame-id)
-                                      (not page-transition?))
+        has-grid?                (and (some? @hover-top-frame-id)
+                                      (ctl/grid-layout? objects @hover-top-frame-id))
+
+        hover-grid?              (and has-grid? (not page-transition?))
 
         show-grid-editor?        (and editing-shape (ctl/grid-layout? editing-shape) (not page-transition?))
         show-presence?           (and page-id (not page-transition?))
@@ -393,10 +399,11 @@
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render "with-effect")))
 
-    (mf/with-effect [@canvas-init? file-version-id zoom vbox background]
+    (mf/with-effect [@canvas-init? vern zoom vbox background]
       (when @canvas-init?
         (if (not @initialized?)
           (do
+            (mf/set-ref-val! last-vern-ref vern)
             ;; Initial file open uses the same transition workflow as page switches,
             ;; but with a solid background-color blurred placeholder.
             (wasm.api/start-initial-load-transition! background)
@@ -404,14 +411,12 @@
             ;; blank canvas (first load) visible while shapes load.
             ;; The loading overlay is suppressed because on-shapes-ready
             ;; is set.
-            (wasm.api/initialize-viewport
-             base-objects zoom vbox :background background)
-            (reset! initialized? true)
-            (mf/set-ref-val! last-file-version-id-ref file-version-id))
-          (when (and (some? file-version-id)
-                     (not= file-version-id (mf/ref-val last-file-version-id-ref)))
             (wasm.api/initialize-viewport base-objects zoom vbox :background background)
-            (mf/set-ref-val! last-file-version-id-ref file-version-id)))))
+            (reset! initialized? true))
+
+          (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
+            (wasm.api/initialize-viewport base-objects zoom vbox :background background)
+            (mf/set-ref-val! last-vern-ref vern)))))
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)
@@ -427,11 +432,19 @@
       (when (and @canvas-init? @initialized?)
         (wasm.api/set-canvas-background background)))
 
-    (mf/with-effect [@canvas-init? hover-grid? @hover-top-frame-id]
+    ;; Grid overlay: `clear-grid` must run only when the overlay was shown and is now off
+    ;; (e.g. leave grid frame, or `page-transition?`). Do not call it on every
+    ;; `hover-top-frame-id` change while not hovering a grid frame.
+    (mf/with-effect [@canvas-init? hover-grid?]
       (when @canvas-init?
-        (if hover-grid?
-          (wasm.api/show-grid @hover-top-frame-id)
-          (wasm.api/clear-grid))))
+        (when (and (not hover-grid?) (mf/ref-val prev-hover-grid-shown?-ref))
+          (wasm.api/clear-grid))
+        (mf/set-ref-val! prev-hover-grid-shown?-ref hover-grid?)))
+
+    (mf/with-effect [@canvas-init? has-grid? hover-grid?
+                     (if (and has-grid? hover-grid?) @hover-top-frame-id ::no-grid-hover-id)]
+      (when (and @canvas-init? hover-grid?)
+        (wasm.api/show-grid @hover-top-frame-id)))
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -587,7 +600,7 @@
            :on-context-menu on-menu-selected}])
 
        (when show-text-editor?
-         [:& text-edition-outline
+         [:> text-edition-outline*
           {:shape (get base-objects edition)
            :zoom zoom}])
 

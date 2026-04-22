@@ -32,16 +32,11 @@ pub enum CursorDirection {
 // ============================================================================
 
 #[no_mangle]
-pub extern "C" fn text_editor_apply_theme(
-    selection_color: u32,
-    cursor_width: f32,
-    cursor_color: u32,
-) {
+pub extern "C" fn text_editor_apply_theme(selection_color: u32, cursor_color: u32) {
     with_state_mut!(state, {
         // NOTE: In the future could be interesting to fill al this data from
         // a structure pointer.
         state.text_editor_state.theme.selection_color = Color::new(selection_color);
-        state.text_editor_state.theme.cursor_width = cursor_width;
         state.text_editor_state.theme.cursor_color = Color::new(cursor_color);
     })
 }
@@ -912,13 +907,14 @@ pub extern "C" fn text_editor_render_overlay() {
         };
 
         let canvas = state.render_state.surfaces.canvas(SurfaceId::Target);
-        canvas.save();
         let viewbox = state.render_state.viewbox;
-        let zoom = viewbox.zoom * state.render_state.options.dpr();
-        canvas.scale((zoom, zoom));
-        canvas.translate((-viewbox.area.left, -viewbox.area.top));
-        text_editor_render::render_overlay(canvas, &state.text_editor_state, shape);
-        canvas.restore();
+        text_editor_render::render_overlay(
+            canvas,
+            &viewbox,
+            &state.render_state.options,
+            &state.text_editor_state,
+            shape,
+        );
         state.render_state.flush_and_submit();
     });
 }
@@ -1103,12 +1099,11 @@ fn get_cursor_rect(
                 (pos.position as f32, height)
             };
 
-            let cursor_width = 2.0;
             let selrect = shape.selrect();
             let base_x = selrect.x();
             let base_y = selrect.y() + y_offset;
 
-            return Some(Rect::from_xywh(base_x + x, base_y, cursor_width, height));
+            return Some(Rect::from_xywh(base_x + x, base_y, 1.0, height));
         }
         y_offset += laid_out_para.height();
     }

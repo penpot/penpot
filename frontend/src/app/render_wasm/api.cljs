@@ -334,7 +334,7 @@
 
 (defn request-render
   [_requester]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (and wasm/context-initialized? (not @wasm/context-lost?) (not @wasm/disable-request-render?))
     (if @shapes-loading?
       (register-deferred-render!)
       (when-not @pending-render
@@ -1518,6 +1518,23 @@
   []
   (h/call wasm/internal-module "_clean_modifiers"))
 
+(defn set-modifiers-start
+  "Enter interactive transform mode (drag / resize / rotate). Enables
+   fast-mode effect skipping in the renderer and activates an atlas
+   backdrop so tiles do not appear sequentially or flicker while the
+   gesture is in progress."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_set_modifiers_start")))
+
+(defn set-modifiers-end
+  "Leave interactive transform mode. Cancels any pending async render
+   scheduled under it; the caller is expected to trigger a full-quality
+   render (via `request-render`) once the gesture is committed."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_set_modifiers_end")))
+
 (defn set-modifiers
   [modifiers]
 
@@ -1583,6 +1600,42 @@
       (when (and (number? n) (not (js/isNaN n)) (pos? n))
         n))))
 
+(defn- wasm-blur-downscale-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:blur_downscale_threshold p))]
+    (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-max-blocking-time-ms-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:max_blocking_time_ms p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-node-batch-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:node_batch_threshold p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-viewport-interest-area-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:viewport_interest_area_threshold p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
 (defn set-canvas-size
   [canvas]
   (let [width (or (.-clientWidth ^js canvas) (.-width ^js canvas))
@@ -1620,6 +1673,14 @@
         (h/call wasm/internal-module "_set_render_options" flags dpr)
         (when-let [t (wasm-aa-threshold-from-route-params)]
           (h/call wasm/internal-module "_set_antialias_threshold" t))
+        (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
+        (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
+          (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
+        (when-let [t (wasm-node-batch-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_node_batch_threshold" t))
+        (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
         (when-let [max-tex (webgl/max-texture-size context)]
           (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
 
@@ -1638,6 +1699,8 @@
   []
   (when wasm/context-initialized?
     (try
+      (set! wasm/context-initialized? false)
+
       ;; Cancel any pending animation frame to prevent race conditions
       (when wasm/internal-frame-id
         (js/cancelAnimationFrame wasm/internal-frame-id)
@@ -1648,8 +1711,6 @@
       (reset! shapes-loading? false)
       (reset! deferred-render? false)
 
-      ;; TODO: perform corresponding cleaning
-      (set! wasm/context-initialized? false)
       (h/call wasm/internal-module "_clean_up")
 
       ;; Remove event listener for WebGL context lost
