@@ -53,7 +53,10 @@
     font-size: 0px;
   }
 
-  [data-itype="inline"] {
+  // Text spans emitted by @penpot/text-editor use `data-itype="span"`.
+  // Keep whitespace rules attached to the real node type so trailing spaces
+  // are handled consistently while editing.
+  [data-itype="span"] {
     box-sizing: content-box;
     display: inline;
     line-height: inherit;
@@ -75,11 +78,11 @@
 .grow-type-auto-width {
   [data-itype="span"],
   [data-itype="paragraph"] {
-    white-space: nowrap;
-  }
-
-  [data-itype="span"] {
-    white-space-collapse: preserve;
+    // Keep auto-width editing on a single preformatted line so trailing
+    // spaces are part of caret geometry and browser selection math.
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: keep-all;
   }
 }
 
