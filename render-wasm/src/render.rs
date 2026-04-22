@@ -501,10 +501,7 @@ impl RenderState {
         {
             return;
         }
-        let blur = match shape
-            .blur
-            .filter(|b| !b.hidden && b.blur_type == BlurType::BackgroundBlur)
-        {
+        let blur = match shape.background_blur.filter(|b| !b.hidden) {
             Some(blur) => blur,
             None => return,
         };
@@ -958,19 +955,19 @@ impl RenderState {
         // We don't want to change the value in the global state
         let mut shape: Cow<Shape> = Cow::Borrowed(shape);
 
-        // Remove background blur from the shape so it doesn't get processed
-        // as a layer blur. The actual rendering is done before the save_layer
-        // in render_background_blur() so it's independent of shape opacity.
+        // `render_background_blur` (called before `render_shape`) has
+        // already applied the backdrop blur to the target surface for
+        // non-text/non-SVG shapes on the normal render path. Clear the
+        // background-blur slot so the save_layer-based backdrop path below
+        // doesn't double-apply it.
         if !fast_mode
             && apply_to_current_surface
             && fills_surface_id == SurfaceId::Fills
             && !matches!(shape.shape_type, Type::Text(_))
             && !matches!(shape.shape_type, Type::SVGRaw(_))
-            && shape
-                .blur
-                .is_some_and(|b| !b.hidden && b.blur_type == BlurType::BackgroundBlur)
+            && shape.background_blur.is_some_and(|b| !b.hidden)
         {
-            shape.to_mut().set_blur(None);
+            shape.to_mut().set_background_blur(None);
         }
 
         let frame_has_blur = Self::frame_clip_layer_blur(&shape).is_some();
@@ -1000,15 +997,18 @@ impl RenderState {
             && !matches!(shape.shape_type, Type::Text(_))
             && !matches!(shape.shape_type, Type::SVGRaw(_))
         {
-            if let Some(blur) = shape.blur.filter(|b| !b.hidden) {
+            let layer_sigma = shape.blur.filter(|b| !b.hidden).map(|b| b.sigma());
+            let backdrop_sigma = shape
+                .background_blur
+                .filter(|b| !b.hidden)
+                .map(|b| b.sigma());
+            if layer_sigma.is_some() {
                 shape.to_mut().set_blur(None);
-                match blur.blur_type {
-                    BlurType::LayerBlur => (Some(blur.sigma()), None),
-                    BlurType::BackgroundBlur => (None, Some(blur.sigma())),
-                }
-            } else {
-                (None, None)
             }
+            if backdrop_sigma.is_some() {
+                shape.to_mut().set_background_blur(None);
+            }
+            (layer_sigma, backdrop_sigma)
         } else {
             (None, None)
         };
@@ -2699,11 +2699,8 @@ impl RenderState {
                         // assigned to this tile) because the blur snapshots Current
                         // which must contain the shapes behind it.
                         let tile_has_bg_blur = ids.iter().any(|id| {
-                            tree.get(id).is_some_and(|s| {
-                                s.blur.is_some_and(|b| {
-                                    !b.hidden && b.blur_type == BlurType::BackgroundBlur
-                                })
-                            })
+                            tree.get(id)
+                                .is_some_and(|s| s.background_blur.is_some_and(|b| !b.hidden))
                         });
 
                         // Same check for glass effect — glass also snapshots Current

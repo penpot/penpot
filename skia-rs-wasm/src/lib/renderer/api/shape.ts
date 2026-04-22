@@ -196,15 +196,31 @@ export function setShapeCorners(module: WasmModule, corners: [number?, number?, 
 }
 
 /**
- * Set shape blur
+ * Set shape blurs. A shape can carry up to two blurs — one layer blur and
+ * one background blur — independently. Pass both in the array (in any
+ * order) or `null`/empty to clear both slots.
+ */
+export function setShapeBlurs(
+  module: WasmModule,
+  blurs: readonly Blur[] | null | undefined,
+): void {
+  checkContext()
+  // Semantic reset: each render-object pass wipes both slots and
+  // re-populates from the current shape state, so stale entries from a
+  // prior frame don't linger.
+  module._clear_shape_blur()
+  if (!blurs) return
+  for (const blur of blurs) {
+    module._set_shape_blur(translateBlurType(blur.type), blur.hidden ? 1 : 0, blur.value)
+  }
+}
+
+/**
+ * Single-blur convenience wrapper. Prefer `setShapeBlurs` when a shape can
+ * carry both a layer and a background blur.
  */
 export function setShapeBlur(module: WasmModule, blur: Blur | null | undefined): void {
-  checkContext()
-  if (blur) {
-    module._set_shape_blur(translateBlurType(blur.type), blur.hidden ? 1 : 0, blur.value)
-  } else {
-    module._clear_shape_blur()
-  }
+  setShapeBlurs(module, blur ? [blur] : null)
 }
 
 /**

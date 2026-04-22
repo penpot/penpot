@@ -29,14 +29,26 @@ impl From<RawBlurType> for BlurType {
 #[no_mangle]
 pub extern "C" fn set_shape_blur(blur_type: u8, hidden: bool, value: f32) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        let blur_type = RawBlurType::from(blur_type);
-        shape.set_blur(Some(Blur::new(blur_type.into(), hidden, value)));
+        let blur_type: BlurType = RawBlurType::from(blur_type).into();
+        let blur = Blur::new(blur_type, hidden, value);
+        shape.set_blur_of_kind(blur_type, Some(blur));
     });
 }
 
+/// Clears both blur slots. Use `clear_shape_blur_of_kind` for targeted
+/// clearing when the shape carries both a layer blur and a background blur.
 #[no_mangle]
 pub extern "C" fn clear_shape_blur() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_blur(None);
+        shape.set_background_blur(None);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn clear_shape_blur_of_kind(blur_type: u8) {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        let blur_type: BlurType = RawBlurType::from(blur_type).into();
+        shape.set_blur_of_kind(blur_type, None);
     });
 }

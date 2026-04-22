@@ -17,6 +17,7 @@ import {
   Type,
 } from 'lucide-react'
 import { useCanvasActor } from '../renderer/machine/canvas-actor-context'
+import type { DrawTool } from '../renderer/machine/canvas-machine'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -48,15 +49,29 @@ function IconRect({ className }: { className?: string }) {
   )
 }
 
+function IconFrame({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="20" height="20" viewBox="0 0 20 20" aria-hidden>
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        d="M6 3v14M14 3v14M3 6h14M3 14h14"
+      />
+    </svg>
+  )
+}
+
 const placeholderTitle = 'Coming soon'
 
 export function ShapeToolbar() {
   const canvasActor = useCanvasActor()
   const drawTool = useSelector(canvasActor, (s) => s.context.drawTool)
 
-  const syncCanvasCursor = useCallback((tool: 'rect' | null) => {
+  const syncCanvasCursor = useCallback((tool: DrawTool | null) => {
     const canvas = document.querySelector('.canvas-container canvas') as HTMLCanvasElement | null
-    if (canvas) canvas.style.cursor = tool === 'rect' ? 'crosshair' : 'default'
+    if (canvas) canvas.style.cursor = tool != null ? 'crosshair' : 'default'
   }, [])
 
   const onSelect = useCallback(() => {
@@ -64,16 +79,22 @@ export function ShapeToolbar() {
     syncCanvasCursor(null)
   }, [canvasActor, syncCanvasCursor])
 
-  const onRect = useCallback(() => {
-    const active = canvasActor.getSnapshot().context.drawTool === 'rect'
-    if (active) {
-      canvasActor.send({ type: 'DRAW_TOOL_DEACTIVATE' })
-      syncCanvasCursor(null)
-    } else {
-      canvasActor.send({ type: 'DRAW_TOOL_ACTIVATE', tool: 'rect' })
-      syncCanvasCursor('rect')
-    }
-  }, [canvasActor, syncCanvasCursor])
+  const toggleDrawTool = useCallback(
+    (tool: DrawTool) => {
+      const active = canvasActor.getSnapshot().context.drawTool === tool
+      if (active) {
+        canvasActor.send({ type: 'DRAW_TOOL_DEACTIVATE' })
+        syncCanvasCursor(null)
+      } else {
+        canvasActor.send({ type: 'DRAW_TOOL_ACTIVATE', tool })
+        syncCanvasCursor(tool)
+      }
+    },
+    [canvasActor, syncCanvasCursor],
+  )
+
+  const onRect = useCallback(() => toggleDrawTool('rect'), [toggleDrawTool])
+  const onFrame = useCallback(() => toggleDrawTool('frame'), [toggleDrawTool])
 
   const toolBtn = (
     pressed: boolean,
@@ -123,7 +144,8 @@ export function ShapeToolbar() {
     >
       <ul className="flex list-none flex-row items-center gap-0.5 rounded-full border border-border/80 bg-white px-2 py-1.5 shadow-md">
         {toolBtn(drawTool == null, onSelect, 'Select and move', <IconSelect className="shrink-0" />)}
-        {toolBtn(drawTool === 'rect', onRect, 'Draw rectangle', <IconRect className="shrink-0" />)}
+        {toolBtn(drawTool === 'frame', onFrame, 'Draw frame (F)', <IconFrame className="shrink-0" />)}
+        {toolBtn(drawTool === 'rect', onRect, 'Draw rectangle (R)', <IconRect className="shrink-0" />)}
         {disabledTool('Ellipse', Circle)}
         {disabledTool('Triangle', Triangle)}
         {disabledTool('Star', Star)}

@@ -126,7 +126,8 @@ export function useViewportInteractions({
       const screenX = e.clientX - rect.left
       const screenY = e.clientY - rect.top
 
-      if (canvasActor.getSnapshot().context.drawTool === 'rect') {
+      const activeDrawTool = canvasActor.getSnapshot().context.drawTool
+      if (activeDrawTool === 'rect' || activeDrawTool === 'frame') {
         pointerPos.value = { x: screenX, y: screenY }
         canvasActor.send({ type: 'POINTER_DOWN_DRAW' })
         return
@@ -204,7 +205,7 @@ export function useViewportInteractions({
         canvasElement.style.cursor = getResizeCursor(snap.context.resizeHandle, rotation, halfFlip)
       } else if (e.target === canvasElement) {
         const drawTool = snap.context.drawTool
-        if (drawTool === 'rect') {
+        if (drawTool === 'rect' || drawTool === 'frame') {
           canvasElement.style.cursor = 'crosshair'
         } else {
           canvasElement.style.cursor = hasPanModifier(e, shortcuts.panWithModifier) ? 'grab' : 'default'
@@ -266,7 +267,7 @@ export function useViewportInteractions({
     const canvas = canvasRef.current
     if (canvas && !isPanningRef.current) {
       const drawTool = canvasActor.getSnapshot().context.drawTool
-      canvas.style.cursor = drawTool === 'rect' ? 'crosshair' : 'default'
+      canvas.style.cursor = drawTool === 'rect' || drawTool === 'frame' ? 'crosshair' : 'default'
     }
   }, [canvasRef, canvasActor])
 
@@ -296,15 +297,16 @@ export function useViewportInteractions({
       return
     }
 
-    if (e.code === 'KeyR' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    if ((e.code === 'KeyR' || e.code === 'KeyF') && !e.metaKey && !e.ctrlKey && !e.altKey) {
       const el = e.target as HTMLElement | null
       if (!el?.closest('input, textarea, select, [contenteditable="true"]')) {
         e.preventDefault()
-        const active = canvasActor.getSnapshot().context.drawTool === 'rect'
+        const tool = e.code === 'KeyF' ? 'frame' : 'rect'
+        const active = canvasActor.getSnapshot().context.drawTool === tool
         if (active) {
           canvasActor.send({ type: 'DRAW_TOOL_DEACTIVATE' })
         } else {
-          canvasActor.send({ type: 'DRAW_TOOL_ACTIVATE', tool: 'rect' })
+          canvasActor.send({ type: 'DRAW_TOOL_ACTIVATE', tool })
         }
         const canvasElement = canvasRef.current
         if (canvasElement) {

@@ -3,7 +3,7 @@ use std::cell::OnceCell;
 use skia_safe::{self as skia, ColorChannel, RuntimeEffect};
 
 use super::{RenderState, SurfaceId};
-use crate::shapes::{Shape, TextureEffect};
+use crate::shapes::{Shape, Stroke, TextureEffect};
 use crate::state::ShapesPoolRef;
 use crate::tiles;
 
@@ -291,6 +291,186 @@ pub fn render_and_filter_to_image(
     tree: ShapesPoolRef,
     glass_backdrop: Option<skia::Image>,
 ) -> Option<(skia::Image, skia::Rect)> {
+    render_in_displacement_scratch(render_state, shape, tree, glass_backdrop, |state| {
+        // Leaf path: render the shape's own fills, strokes, and noise into
+        // the scratch. Inner/drop shadows are applied after the per-tile
+        // blit (see tile_grid.rs) using the already-displaced silhouette.
+        let antialias = shape.should_use_antialias(
+            state.get_scale(),
+            state.options.antialias_threshold,
+        );
+
+        let fill_result = crate::render::fills::render(
+            state,
+            shape,
+            &shape.fills,
+            antialias,
+            SurfaceId::Filter,
+            None,
+        );
+        let stroke_result = if fill_result.is_ok() {
+            let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+            crate::render::strokes::render(
+                state,
+                shape,
+                &visible_strokes,
+                Some(SurfaceId::Filter),
+                antialias,
+                None,
+            )
+        } else {
+            Ok(())
+        };
+
+        // Noise effect (shape.noise) — separate from the texture's internal
+        // displacement noise. Normally `render_shape` runs this after
+        // fills/strokes; since the scatter branch bypasses `render_shape`,
+        // we call it explicitly so the noise lands inside the displacement
+        // save_layer and gets warped with the rest.
+        crate::render::noise::render_shape_noise(state, shape, SurfaceId::Filter);
+
+        fill_result.and(stroke_result)
+    })
+}
+
+/// Container variant of [`render_and_filter_to_image`]: renders the shape
+/// **and its descendants** into the displacement scratch, so a textured
+/// frame warps its whole subtree as one unit. Children with their own
+/// visible texture get wrapped in a nested `save_layer(filter)` so their
+/// warp composes on top of the outer one (Skia stacks image filters).
+///
+/// Fall through to this path only for `is_recursive()` shapes — the emitter
+/// should already have skipped recursive scheduling of the descendants so
+/// they aren't also blitted independently on the main canvas.
+pub fn render_and_filter_subtree_to_image(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    tree: ShapesPoolRef,
+    glass_backdrop: Option<skia::Image>,
+) -> Option<(skia::Image, skia::Rect)> {
+    render_in_displacement_scratch(render_state, shape, tree, glass_backdrop, |state| {
+        render_shape_into_filter(state, shape, tree, true)
+    })
+}
+
+/// Recursively render `shape` (and its children, if any) into
+/// `SurfaceId::Filter`, wrapping non-root scatter shapes in their own
+/// displacement `save_layer` so nested textures stack naturally.
+///
+/// The caller is expected to have already opened the outer displacement
+/// `save_layer` and pushed the scratch CTM (scale + translate) on Filter.
+fn render_shape_into_filter(
+    state: &mut RenderState,
+    shape: &Shape,
+    tree: ShapesPoolRef,
+    is_root: bool,
+) -> crate::error::Result<()> {
+    if shape.hidden {
+        return Ok(());
+    }
+
+    // Non-root shapes with a visible texture open a nested displacement
+    // layer so their warp composes into the outer one. The root's
+    // displacement is provided by the outer `save_layer` opened in
+    // `render_in_displacement_scratch`.
+    let nested_layer = if !is_root {
+        shape
+            .texture
+            .as_ref()
+            .filter(|t| !t.hidden && t.radius > 0.0)
+            .and_then(|texture| {
+                let scale = state.get_scale();
+                let extrect = shape.extrect(tree, scale);
+                build_displacement_filter(texture, shape, extrect, scale, skia::ISize::new(0, 0))
+            })
+    } else {
+        None
+    };
+    let nested_open = if let Some(filter) = nested_layer {
+        let mut paint = skia::Paint::default();
+        paint.set_image_filter(filter);
+        let rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        state.surfaces.canvas(SurfaceId::Filter).save_layer(&rec);
+        true
+    } else {
+        false
+    };
+
+    // Apply the shape's own transform (rotated/skewed frames and their
+    // descendants). Matches the `canvas.concat(&matrix)` pattern used by
+    // `render_shape`'s slow path.
+    let center = shape.center();
+    let mut matrix = shape.transform;
+    matrix.post_translate(center);
+    matrix.pre_translate(-center);
+
+    state.surfaces.canvas_and_mark_dirty(SurfaceId::Filter).save();
+    state.surfaces.canvas(SurfaceId::Filter).concat(&matrix);
+
+    let antialias =
+        shape.should_use_antialias(state.get_scale(), state.options.antialias_threshold);
+
+    let fill_result = crate::render::fills::render(
+        state,
+        shape,
+        &shape.fills,
+        antialias,
+        SurfaceId::Filter,
+        None,
+    );
+    let stroke_result = if fill_result.is_ok() {
+        let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+        crate::render::strokes::render(
+            state,
+            shape,
+            &visible_strokes,
+            Some(SurfaceId::Filter),
+            antialias,
+            None,
+        )
+    } else {
+        Ok(())
+    };
+    crate::render::noise::render_shape_noise(state, shape, SurfaceId::Filter);
+
+    state.surfaces.canvas(SurfaceId::Filter).restore();
+
+    let subtree_result: crate::error::Result<()> = if shape.is_recursive() {
+        let mut result = Ok(());
+        for child_id in shape.children_ids(false) {
+            if let Some(child) = tree.get(&child_id) {
+                if let Err(e) = render_shape_into_filter(state, child, tree, false) {
+                    result = Err(e);
+                    break;
+                }
+            }
+        }
+        result
+    } else {
+        Ok(())
+    };
+
+    if nested_open {
+        state.surfaces.canvas(SurfaceId::Filter).restore();
+    }
+
+    fill_result.and(stroke_result).and(subtree_result)
+}
+
+/// Shared scatter-scratch setup/teardown for both the leaf and the subtree
+/// scatter paths. Opens the displacement `save_layer` on Filter, pushes the
+/// scratch CTM, invokes `render_inside` for the per-variant content, then
+/// closes the layer and snapshots.
+fn render_in_displacement_scratch<F>(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    tree: ShapesPoolRef,
+    glass_backdrop: Option<skia::Image>,
+    render_inside: F,
+) -> Option<(skia::Image, skia::Rect)>
+where
+    F: FnOnce(&mut RenderState) -> crate::error::Result<()>,
+{
     let texture = shape.texture.as_ref()?;
     if texture.hidden || texture.radius <= 0.0 {
         return None;
@@ -446,10 +626,18 @@ pub fn render_and_filter_to_image(
         );
     }
 
-    // Fills + strokes + noise: push zero-margin CTM on Filter, draw, pop.
-    // The translation below equals `-extrect.origin` — content lands at
-    // filter pixel `scale*(world - extrect.origin)`, matching the layout
-    // glass and bg_blur produce via the `shifted_area` override.
+    // Push zero-margin CTM on Filter, delegate rendering to the caller's
+    // closure, then pop. The translation below equals `-extrect.origin` —
+    // content lands at filter pixel `scale*(world - extrect.origin)`,
+    // matching the layout glass and bg_blur produce via the `shifted_area`
+    // override.
+    //
+    // Inner shadows are applied AFTER the scratch in `tile_grid.rs` using
+    // the already-displaced image as the silhouette. Drawing them here via
+    // `paint.set_image_filter(inner_shadow)` nests a paint filter inside
+    // the `displacement_map` save_layer — Skia samples the paint-filter's
+    // small intermediate bitmap at `pos + disp`, and at radius > ~1 that
+    // sample lands outside the bitmap, so the shadow vanishes.
     let render_result: crate::error::Result<()> = {
         let translation = render_state
             .surfaces
@@ -461,49 +649,11 @@ pub fn render_and_filter_to_image(
             canvas.translate(translation);
         }
 
-        let antialias =
-            shape.should_use_antialias(scale, render_state.options.antialias_threshold);
-
-        let fill_result = crate::render::fills::render(
-            render_state,
-            shape,
-            &shape.fills,
-            antialias,
-            SurfaceId::Filter,
-            None,
-        );
-        let stroke_result = if fill_result.is_ok() {
-            let visible_strokes: Vec<&crate::shapes::Stroke> = shape.visible_strokes().collect();
-            crate::render::strokes::render(
-                render_state,
-                shape,
-                &visible_strokes,
-                Some(SurfaceId::Filter),
-                antialias,
-                None,
-            )
-        } else {
-            Ok(())
-        };
-
-        // Inner shadows are applied AFTER the scratch in `tile_grid.rs`
-        // using the already-displaced image as the silhouette. Drawing
-        // them here via `paint.set_image_filter(inner_shadow)` nests a
-        // paint filter inside the `displacement_map` save_layer — Skia
-        // samples the paint-filter's small intermediate bitmap at
-        // `pos + disp`, and at radius > ~1 that sample lands outside the
-        // bitmap, so the shadow vanishes.
-
-        // Noise effect (shape.noise) — separate from the texture's internal
-        // displacement noise. Normally `render_shape` runs this after
-        // fills/strokes; since the scatter branch bypasses `render_shape`,
-        // we call it explicitly so the noise lands inside the displacement
-        // save_layer and gets warped with the rest.
-        crate::render::noise::render_shape_noise(render_state, shape, SurfaceId::Filter);
+        let inner_result = render_inside(render_state);
 
         render_state.surfaces.canvas(SurfaceId::Filter).restore();
 
-        fill_result.and(stroke_result)
+        inner_result
     };
 
     // Close the displacement layer — filter is applied now.

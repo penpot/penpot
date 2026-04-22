@@ -169,9 +169,13 @@ export interface WasmModule {
   ): void
   _clear_shape_shadows(): void
 
-  // Blur
+  // Blur — a shape can carry at most one layer blur and one background
+  // blur simultaneously. `_set_shape_blur` routes by `blur_type`;
+  // `_clear_shape_blur` wipes both slots, `_clear_shape_blur_of_kind`
+  // clears just the named slot.
   _set_shape_blur(blur_type: number, hidden: number, value: number): void
   _clear_shape_blur(): void
+  _clear_shape_blur_of_kind(blur_type: number): void
 
   // Texture
   _set_shape_texture(noise_size: number, radius: number, clip_to_shape: boolean, hidden: boolean): void
