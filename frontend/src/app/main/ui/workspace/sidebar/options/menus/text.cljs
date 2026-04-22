@@ -500,13 +500,7 @@
                                  :values    values
                                  :on-change on-change
                                  :show-recent true
-                                 :on-blur
-                                 (fn []
-                                   (ts/schedule
-                                    100
-                                    (fn []
-                                      (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                                        (dom/focus! (txu/get-text-editor-content))))))}])
+                                 :on-blur   on-text-blur}])
 
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options* common-props]
