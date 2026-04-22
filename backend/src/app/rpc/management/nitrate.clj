@@ -16,6 +16,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.nitrate :as cnit]
@@ -373,6 +374,87 @@ RETURNING id, name;")
   [cfg params]
   (db/tx-run! cfg ti/create-org-invitation params)
   nil)
+
+
+;; API: get-org-invitations
+
+(def ^:private sql:get-org-invitations
+  "SELECT DISTINCT ON (email_to)
+          ti.id,
+          ti.org_id AS organization_id,
+          ti.email_to AS email,
+          ti.created_at AS sent_at,
+          p.fullname AS name,
+          p.photo_id
+     FROM team_invitation AS ti
+LEFT JOIN profile AS p
+       ON p.email = ti.email_to
+      AND p.deleted_at IS NULL
+    WHERE ti.valid_until >= now()
+      AND (ti.org_id = ? OR ti.team_id = ANY(?))
+    ORDER BY ti.email_to, ti.valid_until DESC, ti.created_at DESC;")
+
+(def ^:private schema:get-org-invitations-params
+  [:map
+   [:organization-id ::sm/uuid]])
+
+(def ^:private schema:get-org-invitations-result
+  [:vector
+   [:map
+    [:id ::sm/uuid]
+    [:organization-id {:optional true} ::sm/uuid]
+    [:email ::sm/email]
+    [:sent-at ::sm/inst]
+    [:name {:optional true} ::sm/text]
+    [:photo-url {:optional true} ::sm/uri]]])
+
+(sv/defmethod ::get-org-invitations
+  "Get valid invitations for an organization, returning at most one invitation per email."
+  {::doc/added "2.16"
+   ::sm/params schema:get-org-invitations-params
+   ::sm/result schema:get-org-invitations-result}
+  [cfg {:keys [organization-id]}]
+  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
+        team-ids    (->> (:teams org-summary)
+                         (map :id)
+                         (filter uuid?)
+                         (into []))]
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array (db/create-array conn "uuid" team-ids)]
+                     (->> (db/exec! conn [sql:get-org-invitations organization-id ids-array])
+                          (mapv (fn [{:keys [photo-id] :as invitation}]
+                                  (cond-> (dissoc invitation :photo-id)
+                                    photo-id
+                                    (assoc :photo-url (files/resolve-public-uri photo-id)))))))))))
+
+
+;; API: delete-org-invitations
+
+(def ^:private sql:delete-org-invitations
+  "DELETE FROM team_invitation AS ti
+    WHERE ti.email_to = ?
+      AND (ti.org_id = ? OR ti.team_id = ANY(?));")
+
+(def ^:private schema:delete-org-invitations-params
+  [:map
+   [:organization-id ::sm/uuid]
+   [:email ::sm/email]])
+
+(sv/defmethod ::delete-org-invitations
+  "Delete all invitations for one email in an organization scope (org + org teams)."
+  {::doc/added "2.16"
+   ::sm/params schema:delete-org-invitations-params}
+  [cfg {:keys [organization-id email]}]
+  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
+        clean-email (profile/clean-email email)
+        team-ids    (->> (:teams org-summary)
+                         (map :id)
+                         (filter uuid?)
+                         (into []))]
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array (db/create-array conn "uuid" team-ids)]
+                     (db/exec! conn [sql:delete-org-invitations clean-email organization-id ids-array]))))
+    nil))
 
 
 

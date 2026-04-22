@@ -220,6 +220,209 @@
     (t/is (= :not-found (th/ex-type (:error ko-out))))
     (t/is (= :profile-not-found (th/ex-code (:error ko-out))))))
 
+(t/deftest get-org-invitations-returns-valid-deduped-by-email
+  (let [profile      (th/create-profile* 1 {:is-active true})
+        team-1       (th/create-team* 1 {:profile-id (:id profile)})
+        team-2       (th/create-team* 2 {:profile-id (:id profile)})
+        org-id       (uuid/random)
+        org-summary  {:id org-id
+                      :teams [{:id (:id team-1)}
+                              {:id (:id team-2)}]}
+        params       {::th/type :get-org-invitations
+                      ::rpc/profile-id (:id profile)
+                      :organization-id org-id}]
+
+    ;; Same email appears in org and team invitations; only one should be returned.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to "dup@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-1)
+                    :org-id nil
+                    :email-to "dup@example.com"
+                    :created-by (:id profile)
+                    :role "admin"
+                    :valid-until (ct/in-future "72h")})
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-2)
+                    :org-id nil
+                    :email-to "valid@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "48h")})
+
+    ;; Expired invitation should be ignored.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to "expired@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-past "1h")})
+
+    (let [out (with-redefs [nitrate/call (fn [_cfg method _params]
+                                           (case method
+                                             :get-org-summary org-summary
+                                             nil))]
+                (management-command-with-nitrate! params))
+          result (:result out)
+          emails (->> result (map :email) set)
+          dedup  (->> result
+                      (filter #(= "dup@example.com" (:email %)))
+                      first)]
+      (t/is (th/success? out))
+      (t/is (= #{"dup@example.com" "valid@example.com"} emails))
+      (t/is (= 2 (count result)))
+      (t/is (some? (:id dedup)))
+      (t/is (some? (:sent-at dedup)))
+      (t/is (nil? (:org-id dedup)))
+      (t/is (nil? (:team-id dedup)))
+      (t/is (nil? (:role dedup)))
+      (t/is (nil? (:valid-until dedup))))))
+
+(t/deftest get-org-invitations-includes-org-level-invitations-when-no-teams
+  (let [profile      (th/create-profile* 1 {:is-active true})
+        org-id       (uuid/random)
+        org-summary  {:id org-id
+                      :teams []}
+        params       {::th/type :get-org-invitations
+                      ::rpc/profile-id (:id profile)
+                      :organization-id org-id}]
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to "org-only@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    (let [out (with-redefs [nitrate/call (fn [_cfg method _params]
+                                           (case method
+                                             :get-org-summary org-summary
+                                             nil))]
+                (management-command-with-nitrate! params))
+          result (:result out)]
+      (t/is (th/success? out))
+      (t/is (= 1 (count result)))
+      (t/is (= "org-only@example.com" (-> result first :email)))
+      (t/is (some? (-> result first :sent-at))))))
+
+(t/deftest get-org-invitations-returns-existing-profile-data
+  (let [profile      (th/create-profile* 1 {:is-active true})
+        invited      (th/create-profile* 2 {:is-active true
+                                            :fullname "Invited User"})
+        photo-id     (uuid/random)
+        _            (th/db-insert! :storage-object {:id photo-id
+                                                     :backend "assets-fs"})
+        _            (th/db-update! :profile {:photo-id photo-id} {:id (:id invited)})
+        org-id       (uuid/random)
+        org-summary  {:id org-id
+                      :teams []}
+        params       {::th/type :get-org-invitations
+                      ::rpc/profile-id (:id profile)
+                      :organization-id org-id}]
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to (:email invited)
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    (let [out (with-redefs [nitrate/call (fn [_cfg method _params]
+                                           (case method
+                                             :get-org-summary org-summary
+                                             nil))]
+                (management-command-with-nitrate! params))
+          invitation (-> out :result first)]
+      (t/is (th/success? out))
+      (t/is (= "Invited User" (:name invitation)))
+      (t/is (some? (:sent-at invitation)))
+      (t/is (str/ends-with? (:photo-url invitation)
+                            (str "/assets/by-id/" photo-id))))))
+
+(t/deftest delete-org-invitations-removes-org-and-org-team-invitations-for-email
+  (let [profile      (th/create-profile* 1 {:is-active true})
+        team-1       (th/create-team* 1 {:profile-id (:id profile)})
+        team-2       (th/create-team* 2 {:profile-id (:id profile)})
+        outside-team (th/create-team* 3 {:profile-id (:id profile)})
+        org-id       (uuid/random)
+        org-summary  {:id org-id
+                      :teams [{:id (:id team-1)}
+                              {:id (:id team-2)}]}
+        target-email "target@example.com"
+        params       {::th/type :delete-org-invitations
+                      ::rpc/profile-id (:id profile)
+                      :organization-id org-id
+                      :email "TARGET@example.com"}]
+
+    ;; Should be deleted: org-level invitation for same org+email.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to target-email
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    ;; Should be deleted: team-level invitation for teams belonging to org summary.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-1)
+                    :org-id nil
+                    :email-to target-email
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-past "1h")})
+
+    ;; Should remain: different email.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-2)
+                    :org-id nil
+                    :email-to "other@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    ;; Should remain: same email but outside org scope.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id outside-team)
+                    :org-id nil
+                    :email-to target-email
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    (let [out (with-redefs [nitrate/call (fn [_cfg method _params]
+                                           (case method
+                                             :get-org-summary org-summary
+                                             nil))]
+                (management-command-with-nitrate! params))
+          remaining-target (th/db-query :team-invitation {:email-to target-email})
+          remaining-other  (th/db-query :team-invitation {:email-to "other@example.com"})]
+      (t/is (th/success? out))
+      (t/is (nil? (:result out)))
+      (t/is (= 1 (count remaining-target)))
+      (t/is (= (:id outside-team) (:team-id (first remaining-target))))
+      (t/is (= 1 (count remaining-other))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests: remove-from-org
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
