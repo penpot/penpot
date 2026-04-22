@@ -36,8 +36,8 @@
 (mf/defc demo-warning*
   []
   [:> context-notification*
-   {:level :warning
-    :content (tr "auth.demo-warning")}])
+   {:level :warning}
+   (tr "auth.demo-warning")])
 
 (defn create-demo-profile
   []

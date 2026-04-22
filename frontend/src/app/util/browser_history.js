@@ -44,6 +44,6 @@ goog.scope(function() {
   }
 
   self.replace_token_BANG_ = function(instance, token) {
-    instance.replaceToken(token);
+    instance?.replaceToken(token);
   }
 });

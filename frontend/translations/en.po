@@ -2594,6 +2594,12 @@ msgstr "Delete %s files"
 msgid "labels.deleted"
 msgstr "Deleted"
 
+msgid "labels.delete-profile-photo.title"
+msgstr "Delete profile photo"
+
+msgid "labels.delete-profile-photo.message"
+msgstr "Are you sure you want to delete your profile photo?"
+
 #: src/app/main/ui/onboarding/questions.cljs:86
 msgid "labels.developer"
 msgstr "Development"
@@ -5730,6 +5736,12 @@ msgstr "Copy columns"
 msgid "workspace.context-menu.grid-cells.paste-tracks"
 msgstr "Paste"
 
+msgid "workspace.context-menu.guides.change-color"
+msgstr "Guide color"
+
+msgid "workspace.context-menu.guides.remove"
+msgstr "Remove guide"
+
 #: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Add 1 column to the right"
@@ -7579,11 +7591,14 @@ msgid "workspace.plugins.empty-plugins"
 msgstr "No plugins installed yet"
 
 #: src/app/main/ui/workspace/plugins.cljs:193
-msgid "workspace.plugins.error.manifest"
-msgstr "The plugin manifest is incorrect."
+ msgid "workspace.plugins.error.manifest"
+ msgstr "The plugin manifest is incorrect."
+
+msgid "plugins.validation.message"
+msgstr "Field %s is invalid: %s"
 
 #: src/app/main/data/plugins.cljs:105, src/app/main/ui/workspace/main_menu.cljs:766, src/app/main/ui/workspace/plugins.cljs:84
-msgid "workspace.plugins.error.need-editor"
+ msgid "workspace.plugins.error.need-editor"
 msgstr "You need to be an editor to use this plugin"
 
 #: src/app/main/ui/workspace/plugins.cljs:189
@@ -8781,6 +8796,10 @@ msgstr "Tokens can't be applied while editing text. Select the text layer instea
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group"
 msgstr "Rename Tokens Group"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.duplicate-group"
+msgstr "Duplicate Tokens Group"
 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group-name-hint"

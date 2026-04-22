@@ -24,7 +24,7 @@
 }
 
 .empty-state {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--empty-message-foreground-color);
   display: grid;
@@ -47,7 +47,7 @@
 }
 
 .thumbnails-close {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
@@ -81,7 +81,7 @@
 .viewer-go-prev,
 .viewer-go-next {
   @extend %button-secondary;
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   position: absolute;
   right: deprecated.$s-8;
@@ -128,7 +128,7 @@
 
 .reset-button {
   @extend %button-secondary;
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-32;
   width: deprecated.$s-28;
@@ -144,8 +144,8 @@
 }
 
 .counter {
-  @include deprecated.flexCenter;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.flex-center;
+  @include deprecated.body-small-typography;
 
   border-radius: deprecated.$br-8;
   width: deprecated.$s-64;

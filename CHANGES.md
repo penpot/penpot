@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.16.0 (Unreleased)
+## 2.17.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
@@ -38,11 +38,14 @@
 - Add guide locking and fix locked elements not selectable in viewer (by @Dexterity104) [Github #8358](https://github.com/penpot/penpot/issues/8358)
 - Apply styles to selection (by @AzazelN28) [Taiga #13647](https://tree.taiga.io/project/penpot/task/13647)
 - Reorder prototyping overlay options to show Position before Relative to (by @rockchris099) [Github #2910](https://github.com/penpot/penpot/issues/2910)
+- Add customizable colors for ruler guides (by @Dexterity104) [Github #5199](https://github.com/penpot/penpot/issues/5199)
 - Persist asset search query and section filter when switching sidebar tabs (by @eureka0928) [Github #2913](https://github.com/penpot/penpot/issues/2913)
 - Add delete and duplicate buttons to typography dialog (by @eureka0928) [Github #5270](https://github.com/penpot/penpot/issues/5270)
 - Edit ruler guide position by double-clicking the guide pill (by @eureka0928) [Github #2311](https://github.com/penpot/penpot/issues/2311)
 - Add a search bar to filter colors in the color palette toolbar (by @eureka0928) [Github #7653](https://github.com/penpot/penpot/issues/7653)
 - Allow customising the OIDC login button label (by @wdeveloper16) [Github #7027](https://github.com/penpot/penpot/issues/7027)
+- Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
+
 
 ### :bug: Bugs fixed
 
@@ -69,8 +72,10 @@
 - Fix non-functional clear icon in change email modal inputs (by @Dexterity104) [Github #8977](https://github.com/penpot/penpot/issues/8977)
 - Disable save button after saving account profile settings (by @Dexterity104) [Github #8979](https://github.com/penpot/penpot/issues/8979)
 - Fix copy to be more specific [Taiga #13990](https://tree.taiga.io/project/penpot/issue/13990)
+- Allow deleting the profile avatar after uploading [Github #9067](https://github.com/penpot/penpot/issues/9067)
 
-## 2.15.0 (Unreleased)
+
+## 2.16.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
@@ -94,11 +99,25 @@
 - Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
 
 
-## 2.14.3 (Unreleased)
+## 2.15.0 (Unreleased)
+
+### :sparkles: New features & Enhancements
+
+- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
+- Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
+
+### :bug: Bugs fixed
+
+- Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
+
+
+## 2.14.3
 
 ### :sparkles: New features & Enhancements
 
 - Add webp export format to plugin types [Github #8870](https://github.com/penpot/penpot/pull/8870)
+- Use shared singleton containers for React portals to reduce DOM growth [Github #8957](https://github.com/penpot/penpot/pull/8957)
 
 ### :bug: Bugs fixed
 
@@ -111,6 +130,16 @@
 - Fix path drawing preview passing shape instead of content to next-node
 - Fix swapped arguments in CLJS PathData `-nth` with default
 - Normalize PathData coordinates to safe integer bounds on read
+- Fix RangeError from re-entrant error handling causing stack overflow [Github #8962](https://github.com/penpot/penpot/pull/8962)
+- Fix builder bool styles and media validation [Github #8963](https://github.com/penpot/penpot/pull/8963)
+- Fix "Move to" menu allowing same project as target when multiple files are selected
+- Fix crash when index query param is duplicated in URL
+- Fix wrong extremity point in path `calculate-extremities` for line-to segments
+- Fix reversed args in DTCG shadow composite token conversion
+- Fix `inside-layout?` passing shape id instead of shape to `frame-shape?`
+- Fix wrong `mapcat` call in `collect-main-shapes`
+- Fix stale accumulator in `get-children-in-instance` recursion
+- Fix typo `:podition` in swap-shapes grid cell
 
 
 ## 2.14.2
@@ -173,6 +202,8 @@
 - Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
 - Remove tokens path node and bulk remove tokens [Taiga #13007](https://tree.taiga.io/project/penpot/us/13007)
 - Replace themes management modal radio buttons for switches [Taiga #9215](https://tree.taiga.io/project/penpot/us/9215)
+- [MCP server] Integrations section [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
+- [Access Tokens] Look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 
 ### :bug: Bugs fixed
 

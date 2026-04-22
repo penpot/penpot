@@ -27,7 +27,7 @@
 }
 
 .multiple-exports {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   grid-column: 1 / span 9;
 
@@ -36,7 +36,7 @@
   }
 
   .actions {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
   }
 }
 
@@ -78,12 +78,12 @@
   grid-column: span 3;
 
   @extend %input-element;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 }
 
 .export-btn {
   @extend %button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   grid-column: 1 / span 9;
   height: deprecated.$s-32;

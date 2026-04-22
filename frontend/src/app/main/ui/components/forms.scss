@@ -337,7 +337,7 @@
   overflow-y: hidden;
 
   .inside-input {
-    @include deprecated.removeInputStyle;
+    @include deprecated.remove-input-style;
     @include t.use-typography("body-small");
     @include text-ellipsis;
 

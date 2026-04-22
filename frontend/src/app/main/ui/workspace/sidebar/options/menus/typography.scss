@@ -5,64 +5,59 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .typography-entry {
+  --actions-visibility: hidden;
+  --typography-entry-background-color: var(--color-background-tertiary);
+  --typography-entry-foreground-color: var(--color-foreground-primary);
+  --typography-entry-border-color: transparent;
+
   display: flex;
   flex-direction: row;
   align-items: center;
-  height: deprecated.$s-32;
-  width: 100%;
-  border-radius: deprecated.$br-8;
-  background-color: var(--assets-item-background-color);
-  color: var(--assets-item-name-foreground-color-hover);
+  block-size: $sz-32;
+  inline-size: 100%;
+  border-radius: $br-8;
+  background-color: var(--typography-entry-background-color);
+  color: var(--typography-entry-foreground-color);
+  border: $b-1 solid var(--typography-entry-border-color);
 
   &:hover,
   &:focus-within {
-    background-color: var(--assets-item-background-color-hover);
-    color: var(--assets-item-name-foreground-color-hover);
+    --typography-entry-background-color: var(--color-background-quaternary);
+    --typography-entry-foreground-color: var(--color-foreground-primary);
   }
 
   &.selected {
-    border: deprecated.$s-1 solid var(--assets-item-border-color);
-  }
-
-  .element-set-actions {
-    display: flex;
-    visibility: hidden;
-
-    .element-set-actions-button,
-    .menu-btn {
-      @extend %button-tertiary;
-
-      height: deprecated.$s-32;
-      width: deprecated.$s-28;
-
-      svg {
-        @extend %button-icon;
-      }
-
-      &:active {
-        background-color: transparent;
-      }
-    }
+    --typography-entry-border-color: var(--color-accent-primary);
   }
 
   &:hover {
-    background-color: var(--assets-item-background-color-hover);
+    --typography-entry-background-color: var(--color-background-quaternary);
 
     .element-set-actions {
-      visibility: visible;
+      --actions-visibility: visible;
     }
   }
 }
 
+.element-set-actions {
+  display: flex;
+  visibility: var(--actions-visibility);
+}
+
 .typography-selection-wrapper {
   display: grid;
-  grid-template-columns: deprecated.$s-24 auto 1fr;
+  grid-template-columns: $sz-24 auto 1fr;
   flex: 1;
-  height: 100%;
-  width: 100%;
-  padding: 0 deprecated.$s-12;
+  block-size: 100%;
+  inline-size: 100%;
+  padding: 0 var(--sp-m);
 
   &.is-selectable {
     cursor: pointer;
@@ -70,455 +65,333 @@
 }
 
 .typography-sample {
-  @include deprecated.flexCenter;
-
-  min-width: deprecated.$s-24;
-  height: deprecated.$s-32;
-  color: var(--assets-item-name-foreground-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-inline-size: $sz-24;
+  block-size: $sz-32;
+  color: var(--color-foreground-secondary);
 }
 
 .typography-name,
 .typography-font {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.textEllipsis;
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
 
   display: block;
   align-self: center;
-  margin-left: deprecated.$s-6;
+  margin-inline-start: px2rem(6);
 }
 
 .typography-name {
-  color: var(--assets-item-name-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .typography-font {
-  color: var(--assets-item-name-foreground-color-rest);
+  color: var(--color-foreground-secondary);
 }
 
 .font-name-wrapper {
-  @include deprecated.bodySmallTypography;
+  --font-name-wrapper-foreground-color: var(--color-foreground-primary);
+  --font-name-wrapper-background-color: var(--color-background-tertiary);
+  --font-name-wrapper-border-color: transparent;
+
+  @include t.use-typography("body-small");
 
   display: flex;
   align-items: center;
-  height: deprecated.$s-32;
-  width: 100%;
-  border-radius: deprecated.$br-8;
-  border: deprecated.$s-1 solid transparent;
+  block-size: $sz-32;
+  inline-size: 100%;
+  border-radius: $br-8;
+  border: $b-1 solid var(--font-name-wrapper-border-color);
   box-sizing: border-box;
-  background-color: var(--assets-item-background-color);
-  margin-bottom: deprecated.$s-4;
-  padding: deprecated.$s-8 deprecated.$s-0 deprecated.$s-8 deprecated.$s-12;
-
-  .typography-sample-input {
-    @include deprecated.flexCenter;
-
-    width: deprecated.$s-24;
-    height: 100%;
-    font-size: deprecated.$fs-16;
-    color: var(--assets-item-name-foreground-color-hover);
-  }
-
-  .adv-typography-name {
-    @include deprecated.removeInputStyle;
-
-    font-size: deprecated.$fs-12;
-    color: var(--input-foreground-color-active);
-    flex-grow: 1;
-    padding-left: deprecated.$s-6;
-    margin: 0;
-  }
-
-  .action-btn {
-    @extend %button-tertiary;
-    @include deprecated.flexCenter;
-
-    width: deprecated.$s-28;
-    height: deprecated.$s-28;
-
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--icon-foreground);
-    }
-
-    &:active {
-      background-color: transparent;
-    }
-  }
-
-  .action-btns {
-    display: flex;
-    align-items: center;
-    gap: deprecated.$s-2;
-  }
+  background-color: var(--font-name-wrapper-background-color);
+  margin-block-end: var(--sp-s);
+  padding: var(--sp-s) 0 var(--sp-s) var(--sp-m);
 
   &:focus-within {
-    border: deprecated.$s-1 solid var(--input-border-color-active);
-
-    .adv-typography-name {
-      color: var(--input-foreground-color-active);
-    }
+    --font-name-wrapper-border-color: var(--color-accent-primary);
   }
 
   &:hover {
-    background-color: var(--assets-item-background-color-hover);
+    --font-name-wrapper-background-color: var(--color-background-quaternary);
   }
+}
+
+.typography-sample-input {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-24;
+  block-size: 100%;
+  font-size: px2rem(16);
+  color: var(--color-foreground-primary);
+}
+
+.adv-typography-name {
+  font-size: px2rem(12);
+  color: var(--font-name-wrapper-foreground-color);
+  flex-grow: 1;
+  padding-inline-start: px2rem(6);
+  margin: 0;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+.action-btns {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
 }
 
 .advanced-options-wrapper {
-  height: 100%;
-  width: 100%;
-  background-color: var(--assets-title-background-color);
+  block-size: 100%;
+  inline-size: 100%;
+  background-color: var(--color-background-primary);
 }
 
 .typography-info-wrapper {
-  @include deprecated.flexColumn;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  margin-block-end: var(--sp-m);
+}
 
-  margin-bottom: deprecated.$s-12;
+.typography-name-wrapper {
+  @extend %asset-element;
 
-  .typography-name-wrapper {
-    @extend %asset-element;
+  display: grid;
+  grid-template-columns: $sz-24 auto 1fr $sz-28;
+  flex: 1;
+  block-size: $sz-32;
+  inline-size: 100%;
+  padding: 0 0 0 var(--sp-m);
+  background-color: var(--color-background-quaternary);
+  margin-block-end: var(--sp-xs);
+}
 
-    display: grid;
-    grid-template-columns: deprecated.$s-24 auto 1fr deprecated.$s-28;
-    flex: 1;
-    height: deprecated.$s-32;
-    width: 100%;
-    padding: 0 0 0 deprecated.$s-12;
-    background-color: var(--assets-item-background-color-hover);
-    margin-bottom: deprecated.$s-4;
+.typography-sample {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-inline-size: $sz-24;
+  font-size: px2rem(16);
+  block-size: $sz-32;
+  padding: 0;
+  color: var(--color-foreground-primary);
+}
 
-    .typography-sample {
-      @include deprecated.flexCenter;
+.typography-name,
+.typography-font {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
 
-      min-width: deprecated.$s-24;
-      font-size: deprecated.$fs-16;
-      height: deprecated.$s-32;
-      padding: 0;
-      color: var(--assets-item-name-foreground-color-hover);
-    }
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-inline-start: px2rem(6);
+  min-inline-size: 0;
+  color: var(--color-foreground-primary);
+}
 
-    .typography-name {
-      @include deprecated.bodySmallTypography;
-      @include deprecated.textEllipsis;
+.info-row {
+  --calculated-width: calc(var(--right-sidebar-width) - $sz-48);
 
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      margin-left: deprecated.$s-6;
-      color: var(--assets-item-name-foreground-color-hover);
-    }
+  display: grid;
+  grid-template-columns: 50% 50%;
+  block-size: $sz-32;
+  padding-left: var(--sp-xs);
+}
 
-    .typography-font {
-      @include deprecated.bodySmallTypography;
-      @include deprecated.textEllipsis;
+.info-label,
+.info-content {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
 
-      margin-left: deprecated.$s-6;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      min-width: 0;
-      color: var(--assets-item-name-foreground-color);
-    }
-
-    .action-btn {
-      @extend %button-tertiary;
-
-      width: deprecated.$s-28;
-      height: deprecated.$s-32;
-
-      svg {
-        @extend %button-icon;
-      }
-
-      &:active {
-        background-color: transparent;
-      }
-    }
-  }
-
-  .info-row {
-    display: grid;
-    grid-template-columns: 50% 50%;
-    height: deprecated.$s-32;
-
-    --calculated-width: calc(var(--right-sidebar-width) - deprecated.$s-48);
-
-    padding-left: deprecated.$s-2;
-
-    .info-label {
-      @include deprecated.bodySmallTypography;
-      @include deprecated.textEllipsis;
-
-      width: calc(var(--calculated-width) / 2);
-      padding-top: deprecated.$s-8;
-      color: var(--assets-item-name-foreground-color);
-    }
-
-    .info-content {
-      @include deprecated.bodySmallTypography;
-      @include deprecated.textEllipsis;
-
-      padding-top: deprecated.$s-8;
-      width: calc(var(--calculated-width) / 2);
-      color: var(--assets-item-name-foreground-color-hover);
-    }
-  }
-
-  .link-btn {
-    @include deprecated.uppercaseTitleTipography;
-    @extend %button-secondary;
-
-    width: 100%;
-    height: deprecated.$s-32;
-    border-radius: deprecated.$br-8;
-
-    &:hover {
-      background-color: var(--button-secondary-background-color-hover);
-      color: var(--button-secondary-foreground-color-hover);
-      border: deprecated.$s-1 solid var(--button-secondary-border-color-hover);
-      text-decoration: none;
-
-      svg {
-        stroke: var(--button-secondary-foreground-color-hover);
-      }
-    }
-
-    &:focus {
-      background-color: var(--button-secondary-background-color-focus);
-      color: var(--button-secondary-foreground-color-focus);
-      border: deprecated.$s-1 solid var(--button-secondary-border-color-focus);
-
-      svg {
-        stroke: var(--button-secondary-foreground-color-focus);
-      }
-    }
-  }
+  inline-size: calc(var(--calculated-width) / 2);
+  padding-block-start: var(--sp-s);
+  color: var(--color-foreground-primary);
 }
 
 .text-options {
-  @include deprecated.flexColumn;
-
-  max-width: var(--options-width);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  max-inline-size: var(--options-width);
 
   &:not(.text-options-full-size) {
     position: relative;
   }
+}
 
-  .font-option {
-    @include deprecated.bodySmallTypography;
-    @extend %asset-element;
+.font-option {
+  @include t.use-typography("body-small");
+  @extend %asset-element;
 
-    padding: deprecated.$s-8 0 deprecated.$s-8 deprecated.$s-8;
-    cursor: pointer;
+  padding: var(--sp-s);
+  cursor: pointer;
+}
 
-    .name {
-      flex-grow: 1;
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      width: 100%;
-    }
+.font-option-name {
+  @include text-ellipsis;
 
-    .icon {
-      @include deprecated.flexCenter;
+  flex-grow: 1;
+  inline-size: 100%;
+}
 
-      height: deprecated.$s-28;
-      width: deprecated.$s-28;
+.font-modifiers {
+  display: flex;
+  gap: var(--sp-xs);
+}
 
-      svg {
-        @extend %button-icon-small;
+.font-size-options {
+  @extend %asset-element;
+  @include t.use-typography("body-small");
 
-        stroke: var(--icon-foreground);
-        transform: rotate(90deg);
-      }
-    }
-  }
+  flex-grow: 1;
+  inline-size: px2rem(60);
+  margin: 0;
+  padding: 0;
+  border: $b-1 solid var(--color-background-tertiary);
+  position: relative;
+}
 
-  .font-modifiers {
+.font-variant-options {
+  padding: 0;
+  flex-grow: 2;
+}
+
+.typography-variations {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.spacing-options {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.line-height,
+.letter-spacing {
+  @extend %input-element;
+  @include t.use-typography("body-small");
+
+  .icon {
     display: flex;
-    gap: deprecated.$s-4;
+    justify-content: center;
+    align-items: center;
+    inline-size: $sz-28;
 
-    .font-size-options {
-      @extend %asset-element;
-      @include deprecated.bodySmallTypography;
-
-      flex-grow: 1;
-      width: deprecated.$s-60;
-      margin: 0;
-      padding: 0;
-      border: deprecated.$s-1 solid var(--input-border-color);
-      position: relative;
-
-      .icon {
-        @include deprecated.flexCenter;
-
-        height: deprecated.$s-28;
-        min-width: deprecated.$s-28;
-
-        svg {
-          @extend %button-icon-small;
-
-          stroke: var(--icon-foreground);
-          transform: rotate(90deg);
-        }
-      }
-    }
-
-    .font-variant-options {
-      padding: 0;
-      flex-grow: 2;
-    }
-  }
-
-  .typography-variations {
-    @include deprecated.flexRow;
-
-    .spacing-options {
-      @include deprecated.flexRow;
-
-      .line-height,
-      .letter-spacing {
-        @extend %input-element;
-        @include deprecated.bodySmallTypography;
-
-        .icon {
-          @include deprecated.flexCenter;
-
-          width: deprecated.$s-28;
-
-          svg {
-            @extend %button-icon-small;
-          }
-        }
-      }
-    }
-
-    .text-transform {
-      @extend %asset-element;
-
-      width: fit-content;
-      padding: 0;
-      background-color: var(--radio-btns-background-color);
-
-      &:hover {
-        background-color: var(--radio-btns-background-color);
-      }
+    svg {
+      @extend %button-icon-small;
     }
   }
 }
 
-.font-size-select {
-  @include deprecated.removeInputStyle;
-  @include deprecated.bodySmallTypography;
+.text-transform {
+  @extend %asset-element;
 
-  height: deprecated.$s-32;
-  height: 100%;
-  width: 100%;
+  inline-size: fit-content;
+  padding: 0;
+  background-color: var(--color-background-tertiary);
+}
+
+.font-size-select {
+  @include t.use-typography("body-small");
+
+  block-size: 100%;
+  inline-size: 100%;
   margin: 0;
-  padding: deprecated.$s-8;
+  padding: var(--sp-s);
+  border: none;
+  background: none;
+  outline: none;
 
   .numeric-input {
     @extend %input-base;
-    @include deprecated.bodySmallTypography;
+    @include t.use-typography("body-small");
 
     padding: 0;
   }
 }
 
 .font-selector {
-  @include deprecated.flexCenter;
-
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 100%;
-  width: 100%;
-  z-index: deprecated.$z-index-4;
+  block-size: 100%;
+  inline-size: 100%;
+  z-index: var(--z-index-dropdown);
 }
 
 .show-recent {
-  border-radius: deprecated.$br-8 deprecated.$br-8 0 0;
-  background: var(--dropdown-background-color);
-  border: deprecated.$s-1 solid var(--color-background-quaternary);
+  border-radius: $br-8 $br-8 0 0;
+  background: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-quaternary);
   border-block-end: none;
 }
 
 .font-selector-dropdown {
-  width: 100%;
+  inline-size: 100%;
 
   &:not(.font-selector-dropdown-full-size) {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    height: 100%;
-  }
-
-  .header {
-    display: grid;
-    row-gap: deprecated.$s-2;
-
-    .title {
-      @include deprecated.uppercaseTitleTipography;
-
-      color: var(--title-foreground-color);
-      margin: 0;
-      padding: deprecated.$s-12;
-    }
+    block-size: 100%;
   }
 }
 
+.header {
+  display: grid;
+  row-gap: var(--sp-xxs);
+}
+
+.header-title {
+  @include t.use-typography("headline-small");
+
+  color: var(--color-foreground-secondary);
+  margin: 0;
+  padding: var(--sp-m);
+}
+
 .font-wrapper {
-  padding-bottom: deprecated.$s-4;
+  padding-bottom: var(--sp-xs);
   cursor: pointer;
 }
 
 .font-item {
   @extend %asset-element;
 
-  margin-bottom: deprecated.$s-4;
-  border-radius: deprecated.$br-8;
+  margin-bottom: var(--sp-xs);
+  border-radius: $br-8;
   display: flex;
 
-  .icon {
-    @include deprecated.flexCenter;
-
-    height: deprecated.$s-28;
-    width: deprecated.$s-28;
-
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--icon-foreground);
-    }
-  }
-
   &.selected {
-    color: var(--assets-item-name-foreground-color-hover);
-
-    .icon {
-      svg {
-        stroke: var(--assets-item-name-foreground-color-hover);
-      }
-    }
-  }
-
-  .label {
-    @include deprecated.bodySmallTypography;
-    @include deprecated.textEllipsis;
-
-    flex-grow: 1;
-    min-width: 0;
+    color: var(--color-foreground-primary);
   }
 }
 
+.font-item-label {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
+
+  flex-grow: 1;
+  min-inline-size: 0;
+}
+
 .font-selector-dropdown-full-size {
-  height: calc(100vh - 48px); // TODO: ugly hack :( Find a workaround for this.
+  block-size: calc(100vh - 48px); // TODO: ugly hack :( Find a workaround for this.
   display: grid;
   grid-template-rows: auto 1fr;
-  padding: deprecated.$s-2 deprecated.$s-12 deprecated.$s-12 deprecated.$s-12;
+  padding: var(--sp-xxs) var(--sp-m) var(--sp-m) var(--sp-m);
 }
 
 .fonts-list {
@@ -526,27 +399,31 @@
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 100%;
-  width: 100%;
-  height: 100%;
-  padding: deprecated.$s-2;
-  border-radius: deprecated.$br-8;
-  background-color: var(--dropdown-background-color);
+  min-block-size: 100%;
+  inline-size: 100%;
+  block-size: 100%;
+  padding: var(--sp-xxs);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
   overflow: hidden;
 
   &:not(.fonts-list-full-size) {
-    margin-block-start: deprecated.$s-2;
+    margin-block-start: var(--sp-xxs);
   }
 }
 
 .fonts-list-full-size {
   border-start-start-radius: 0;
   border-start-end-radius: 0;
-  border: deprecated.$s-1 solid var(--color-background-quaternary);
+  border: $b-1 solid var(--color-background-quaternary);
 
   // TODO: this should belong to typography-entry , but atm we don't have a clear
   // way of accessing whether we are in fullsize mode or not
   .selected {
     padding-inline-end: 0;
   }
+}
+
+.dropdown-icon {
+  color: var(--color-foreground-secondary);
 }

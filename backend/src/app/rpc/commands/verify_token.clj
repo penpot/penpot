@@ -89,7 +89,7 @@
 
 (defn- accept-invitation
   [{:keys [::db/conn] :as cfg}
-   {:keys [team-id org-id role member-email] :as claims} invitation member]
+   {:keys [team-id organization-id role member-email] :as claims} invitation member]
   (let [;; Update the role if there is an invitation
         role   (or (some-> invitation :role keyword) role)
         id-member (:id member)]
@@ -109,10 +109,10 @@
                    :profile-id id-member}
                   (get types.team/permissions-for-role role))
 
-          accepted-team-id (if org-id
+          accepted-team-id (if organization-id
                              ;; Insert the invited member to the org
                              (when (contains? cf/flags :nitrate)
-                               (teams/initialize-user-in-nitrate-org cfg id-member org-id member-email))
+                               (teams/initialize-user-in-nitrate-org cfg id-member organization-id member-email))
                              ;; Insert the invited member to the team
                              (do (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
                                  team-id))]
@@ -134,7 +134,7 @@
       (db/delete! conn :team-invitation
                   (cond-> {:email-to member-email}
                     team-id (assoc :team-id team-id)
-                    org-id  (assoc :org-id org-id)))
+                    organization-id  (assoc :organization-id organization-id)))
 
       ;; Delete any request (only applicable for team invitations)
       (when team-id
@@ -151,11 +151,11 @@
     [:profile-id ::sm/uuid]
     [:role types.team/schema:role]
     [:team-id {:optional true} ::sm/uuid]
-    [:org-id {:optional true} ::sm/uuid]
+    [:organization-id {:optional true} ::sm/uuid]
     [:member-email ::sm/email]
     [:member-id {:optional true} ::sm/uuid]]
-   [:fn {:error/message "team-id or org-id must be present"}
-    (fn [m] (or (:team-id m) (:org-id m)))]])
+   [:fn {:error/message "team-id or organization-id must be present"}
+    (fn [m] (or (:team-id m) (:organization-id m)))]])
 
 (def valid-team-invitation-claims?
   (sm/lazy-validator schema:team-invitation-claims))
@@ -163,7 +163,7 @@
 (defmethod process-token :team-invitation
   [{:keys [::db/conn] :as cfg}
    {:keys [::rpc/profile-id token] :as params}
-   {:keys [member-id team-id org-id member-email] :as claims}]
+   {:keys [member-id team-id organization-id member-email] :as claims}]
 
   (when-not (valid-team-invitation-claims? claims)
     (ex/raise :type :validation
@@ -173,16 +173,16 @@
   (let [invitation             (db/get* conn :team-invitation
                                         (cond-> {:email-to member-email}
                                           team-id (assoc :team-id team-id)
-                                          org-id  (assoc :org-id org-id)))
+                                          organization-id  (assoc :organization-id organization-id)))
         profile                (db/get* conn :profile
                                         {:id profile-id}
                                         {:columns [:id :email :default-team-id]})
         registration-disabled? (not (contains? cf/flags :registration))
 
-        org-invitation?        (and (contains? cf/flags :nitrate) org-id)
+        org-invitation?        (and (contains? cf/flags :nitrate) organization-id)
         membership             (when org-invitation?
                                  (nitrate/call cfg :get-org-membership {:profile-id profile-id
-                                                                        :org-id org-id}))]
+                                                                        :organization-id organization-id}))]
 
     (if profile
       (do
@@ -240,7 +240,7 @@
             (cond-> (assoc claims :state :created)
               ;; when the invitation is to an org, instead of a team, add the
               ;; accepted-team-id as :org-team-id
-              (:org-id claims)
+              (:organization-id claims)
               (assoc :org-team-id accepted-team-id)))))
 
       ;; If we have not logged-in user, and invitation comes with member-id we

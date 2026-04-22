@@ -21,7 +21,7 @@
 }
 
 .element-set-content {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   grid-column: span 8;
   margin: deprecated.$s-4 0 deprecated.$s-8 0;
@@ -87,7 +87,7 @@
 
     .numeric-input {
       @extend %input-base;
-      @include deprecated.bodySmallTypography;
+      @include deprecated.body-small-typography;
     }
   }
 
@@ -108,14 +108,14 @@
 
       .numeric-input {
         @extend %input-base;
-        @include deprecated.bodySmallTypography;
+        @include deprecated.body-small-typography;
 
         margin: 0;
         padding: 0;
       }
 
       span {
-        @include deprecated.flexCenter;
+        @include deprecated.flex-center;
 
         svg {
           @extend %button-icon;
@@ -126,35 +126,35 @@
 
   &.hidden {
     .show-options {
-      @include deprecated.hiddenElement;
+      @include deprecated.hidden-element;
 
       border: deprecated.$s-1 solid var(--input-border-color-disabled);
     }
 
     .type-select-wrapper,
     .editable-select-wrapper {
-      @include deprecated.hiddenElement;
+      @include deprecated.hidden-element;
 
       .column-select,
       .grid-type-select {
-        @include deprecated.hiddenElement;
+        @include deprecated.hidden-element;
 
         border: deprecated.$s-1 solid var(--input-border-color-disabled);
       }
 
       .column-select {
-        @include deprecated.hiddenElement;
+        @include deprecated.hidden-element;
 
         border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
 
         .numeric-input {
-          @include deprecated.hiddenElement;
+          @include deprecated.hidden-element;
         }
       }
     }
 
     .grid-size {
-      @include deprecated.hiddenElement;
+      @include deprecated.hidden-element;
 
       border: deprecated.$s-1 solid var(--input-border-color-disabled);
 
@@ -181,20 +181,20 @@
 }
 
 .actions {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   grid-column: span 2;
 }
 
 .grid-advanced-options {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   margin-top: deprecated.$s-4;
 }
 
 .column-row,
 .square-row {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   position: relative;
 }
@@ -230,7 +230,7 @@
 
   .height {
     @extend %input-element;
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
 
     .icon-text {
       padding-top: deprecated.$s-1;
@@ -240,7 +240,7 @@
   .gutter,
   .margin {
     @extend %input-element;
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
 
     .icon {
       &.rotated svg {
@@ -250,8 +250,8 @@
   }
 
   .more-options {
-    @include deprecated.menuShadow;
-    @include deprecated.flexColumn;
+    @include deprecated.menu-shadow;
+    @include deprecated.flex-column;
 
     position: absolute;
     top: calc(deprecated.$s-2 + deprecated.$s-28);
@@ -267,7 +267,7 @@
     background-color: var(--menu-background-color);
 
     .option-btn {
-      @include deprecated.buttonStyle;
+      @include deprecated.button-style;
 
       display: flex;
       align-items: center;
@@ -292,7 +292,7 @@
   width: deprecated.$s-108;
 
   .btn-options {
-    @include deprecated.buttonStyle;
+    @include deprecated.button-style;
     @extend %dropdown-element-base;
 
     width: 100%;

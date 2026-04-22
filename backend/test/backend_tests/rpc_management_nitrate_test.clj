@@ -162,8 +162,8 @@
         extra-team     (th/create-team* 1 {:profile-id (:id profile)})
         default-team   (th/db-get :team {:id (:default-team-id profile)})
         teams          [(:id default-team) (:id extra-team)]
-        org-name       "Acme / Design"
-        expected-start (str "[" (d/sanitize-string org-name) "] ")
+        organization-name       "Acme / Design"
+        expected-start (str "[" (d/sanitize-string organization-name) "] ")
         calls          (atom [])
         out            (with-redefs [mbus/pub! (fn [_cfg & {:keys [topic message]}]
                                                  (swap! calls conj {:topic topic
@@ -171,7 +171,7 @@
                          (management-command-with-nitrate! {::th/type :notify-org-deletion
                                                             ::rpc/profile-id (:id profile)
                                                             :teams teams
-                                                            :org-name org-name}))
+                                                            :organization-name organization-name}))
         updated        (map #(th/db-get :team {:id %} {::db/remove-deleted false}) teams)]
     (t/is (th/success? out))
     (t/is (= 2 (count @calls)))
@@ -181,7 +181,7 @@
     (doseq [call @calls]
       (t/is (= uuid/zero (:topic call)))
       (t/is (= :team-org-change (-> call :message :type)))
-      (t/is (= org-name (-> call :message :organization-name)))
+      (t/is (= organization-name (-> call :message :organization-name)))
       (t/is (= "dashboard.org-deleted" (-> call :message :notification))))))
 
 (t/deftest get-profile-by-email-success-and-not-found
@@ -225,10 +225,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- make-org-summary
-  [& {:keys [org-id org-name owner-id your-penpot-teams org-teams]
+  [& {:keys [organization-id organization-name owner-id your-penpot-teams org-teams]
       :or   {your-penpot-teams [] org-teams []}}]
-  {:id       org-id
-   :name     org-name
+  {:id       organization-id
+   :name     organization-name
    :owner-id owner-id
    :teams    (into
               (mapv (fn [id] {:id id :is-your-penpot true}) your-penpot-teams)
@@ -254,10 +254,10 @@
                                            :team-id   (:id org-team)})
         _           (th/create-file* 1 {:profile-id (:id user)
                                         :project-id (:id project)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [])
@@ -269,8 +269,8 @@
                        {::th/type        :remove-from-org
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
-                        :org-name        "Acme Org"
+                        :organization-id          organization-id
+                        :organization-name        "Acme Org"
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
     (t/is (nil? (:result out)))
@@ -285,7 +285,7 @@
     (let [msg (-> @calls first :message)]
       (t/is (= :user-org-change (:type msg)))
       (t/is (= (:id user) (:topic msg)))
-      (t/is (= org-id (:organization-id msg)))
+      (t/is (= organization-id (:organization-id msg)))
       (t/is (= "Acme Org" (:organization-name msg)))
       (t/is (= "dashboard.user-no-longer-belong-org" (:notification msg))))))
 
@@ -294,10 +294,10 @@
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
         org-team    (th/create-team* 2 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [])
@@ -307,8 +307,8 @@
                        {::th/type        :remove-from-org
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
-                        :org-name        "Acme Org"
+                        :organization-id          organization-id
+                        :organization-name        "Acme Org"
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
     (let [team (th/db-get :team {:id (:id org-team)} {::db/remove-deleted false})]
@@ -320,10 +320,10 @@
         user        (th/create-profile* 2 {:is-active true})
         extra-team  (th/create-team* 3 {:profile-id (:id user)})
         org-team    (th/create-team* 99 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [(:id extra-team)])
@@ -333,8 +333,8 @@
                        {::th/type        :remove-from-org
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
-                        :org-name        "Acme Org"
+                        :organization-id          organization-id
+                        :organization-name        "Acme Org"
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
     (let [team (th/db-get :team {:id (:id extra-team)} {::db/remove-deleted false})]
@@ -351,10 +351,10 @@
                                            :profile-id (:id candidate)
                                            :role       :editor})
         org-team    (th/create-team* 99 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [(:id extra-team)])
@@ -364,8 +364,8 @@
                        {::th/type        :remove-from-org
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
-                        :org-name        "Acme Org"
+                        :organization-id          organization-id
+                        :organization-name        "Acme Org"
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
     ;; user no longer in extra-team
@@ -384,10 +384,10 @@
                                            :profile-id (:id user)
                                            :role       :editor})
         org-team    (th/create-team* 99 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [(:id extra-team)])
@@ -397,8 +397,8 @@
                        {::th/type        :remove-from-org
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
-                        :org-name        "Acme Org"
+                        :organization-id          organization-id
+                        :organization-name        "Acme Org"
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
     ;; user no longer a member of extra-team
@@ -422,10 +422,10 @@
                                    {:is-owner true :is-admin false}
                                    {:team-id (:id extra-team) :profile-id (:id other-owner)})
         org-team    (th/create-team* 99 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id other-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [(:id extra-team)])
@@ -435,8 +435,8 @@
                        {::th/type        :remove-from-org
                         ::rpc/profile-id (:id other-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
-                        :org-name        "Acme Org"
+                        :organization-id          organization-id
+                        :organization-name        "Acme Org"
                         :default-team-id (:id org-team)}))]
     (t/is (not (th/success? out)))
     (t/is (= :validation (th/ex-type (:error out))))
@@ -450,10 +450,10 @@
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
         org-team    (th/create-team* 1 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [])
@@ -462,7 +462,7 @@
                        {::th/type        :get-remove-from-org-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
+                        :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
     (t/is (= {:teams-to-delete   0
@@ -476,10 +476,10 @@
         user        (th/create-profile* 2 {:is-active true})
         extra-team  (th/create-team* 3 {:profile-id (:id user)})
         org-team    (th/create-team* 99 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [(:id extra-team)])
@@ -488,7 +488,7 @@
                        {::th/type        :get-remove-from-org-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
+                        :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
     (t/is (= {:teams-to-delete   1
@@ -506,10 +506,10 @@
                                            :profile-id (:id candidate)
                                            :role       :editor})
         org-team    (th/create-team* 99 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [(:id extra-team)])
@@ -518,7 +518,7 @@
                        {::th/type        :get-remove-from-org-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
+                        :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
     (t/is (= {:teams-to-delete   0
@@ -535,10 +535,10 @@
                                            :profile-id (:id user)
                                            :role       :editor})
         org-team    (th/create-team* 99 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [(:id extra-team)])
@@ -547,7 +547,7 @@
                        {::th/type        :get-remove-from-org-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
+                        :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
     (t/is (= {:teams-to-delete   0
@@ -561,10 +561,10 @@
         user        (th/create-profile* 2 {:is-active true})
         extra-team  (th/create-team* 6 {:profile-id (:id user)})
         org-team    (th/create-team* 99 {:profile-id (:id user)})
-        org-id      (uuid/random)
+        organization-id      (uuid/random)
         org-summary (make-org-summary
-                     :org-id            org-id
-                     :org-name          "Acme Org"
+                     :organization-id            organization-id
+                     :organization-name          "Acme Org"
                      :owner-id          (:id org-owner)
                      :your-penpot-teams [(:id org-team)]
                      :org-teams         [(:id extra-team)])
@@ -573,7 +573,7 @@
                        {::th/type        :get-remove-from-org-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
-                        :org-id          org-id
+                        :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     ;; Both teams must still exist and be undeleted
     (let [t1 (th/db-get :team {:id (:id org-team)})]

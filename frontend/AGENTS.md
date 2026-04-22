@@ -329,6 +329,31 @@ CSS modules pattern):
 - [ ] Selectors are flat (no deep nesting).
 
 
+### Translations (`tr`) and Memoization
+
+`(tr "some.key")` resolves the translation string from the **currently active
+locale at call time**. This has two consequences:
+
+- **Never call `(tr ...)` at namespace level** (inside a `def` or `defonce`).
+  Doing so would freeze the label to the locale active at module load time and
+  break runtime language switching.
+- **Always call `(tr ...)` at render time** — either directly in the component
+  body or inside a `mf/with-memo` / `mf/use-memo` block.
+
+When a component renders a **static list of options** whose labels come from
+`(tr ...)` (e.g. radio button options, select options), wrap the vector in
+`mf/with-memo []` with no dependencies. This ensures the vector and its
+`(tr ...)` calls are evaluated once per component mount instead of on every
+render, while still respecting the render-time requirement:
+
+```clojure
+(let [options (mf/with-memo []
+                [{:value "top"    :label (tr "some.key.top")}
+                 {:value "center" :label (tr "some.key.center")}
+                 {:value "bottom" :label (tr "some.key.bottom")}])]
+  ...)
+```
+
 ### Performance Macros (`app.common.data.macros`)
 
 Always prefer these macros over their `clojure.core` equivalents — they compile to faster JavaScript:

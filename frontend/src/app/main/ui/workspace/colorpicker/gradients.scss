@@ -141,7 +141,7 @@
 
 .offset-input-wrapper {
   @extend %input-element;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   width: deprecated.$s-92;
 }

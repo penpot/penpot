@@ -43,6 +43,12 @@
   [_]
   false)
 
+;; Re-entrancy guard: prevents on-error from calling itself recursively.
+;; If an error occurs while we are already handling an error (e.g. the
+;; notification emit itself throws), we log it and bail out immediately
+;; instead of recursing until the call-stack overflows.
+(def ^:private handling-error? (volatile! false))
+
 ;; --- Stale-asset error detection and auto-reload
 ;;
 ;; When the browser loads JS modules from different builds (e.g.  shared.js from
@@ -90,12 +96,24 @@
         (assoc ::trace (.-stack cause)))))
 
 (defn on-error
-  "A general purpose error handler."
+  "A general purpose error handler.
+
+  Protected by a re-entrancy guard: if an error is raised while this
+  function is already on the call stack (e.g. the notification emit
+  itself fails), we print it to the console and return immediately
+  instead of recursing until the call-stack is exhausted."
   [error]
-  (if (map? error)
-    (ptk/handle-error error)
-    (let [data (exception->error-data error)]
-      (ptk/handle-error data))))
+  (if @handling-error?
+    (.error js/console "[on-error] re-entrant call suppressed" error)
+    (do
+      (vreset! handling-error? true)
+      (try
+        (if (map? error)
+          (ptk/handle-error error)
+          (let [data (exception->error-data error)]
+            (ptk/handle-error data)))
+        (finally
+          (vreset! handling-error? false))))))
 
 ;; Inject dependency to remove circular dependency
 (set! app.main.worker/on-error on-error)
@@ -148,7 +166,14 @@
                 :report report}))))
 
 (defn flash
-  "Show error notification banner and emit error report"
+  "Show error notification banner and emit error report.
+
+  The notification is scheduled asynchronously (via tm/schedule) to
+  avoid pushing a new event into the potok store while the store's own
+  error-handling pipeline is still on the call stack.  Emitting
+  synchronously from inside an error handler creates a re-entrant
+  event-processing cycle that can exhaust the JS call stack
+  (RangeError: Maximum call stack size exceeded)."
   [& {:keys [type hint cause] :or {type :handled}}]
   (when (ex/exception? cause)
     (when-let [event-name (case type
@@ -160,11 +185,12 @@
                        :report report
                        :hint (ex/get-hint cause)))))
 
-  (st/emit!
-   (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
-              :type :toast
-              :level :error
-              :timeout 5000})))
+  (ts/schedule
+   #(st/emit!
+     (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
+                :type :toast
+                :level :error
+                :timeout 5000}))))
 
 (defmethod ptk/handle-error :network
   [error]
@@ -402,52 +428,71 @@
     (ex/print-throwable instance :prefix "Server Error"))
   (st/async-emit! (rt/assign-exception error)))
 
+(defn- from-extension?
+  "True when the error stack trace originates from a browser extension."
+  [cause]
+  (let [stack (.-stack cause)]
+    (and (string? stack)
+         (or (str/includes? stack "chrome-extension://")
+             (str/includes? stack "moz-extension://")))))
+
+(defn- from-posthog?
+  "True when the error stack trace originates from PostHog analytics."
+  [cause]
+  (let [stack (.-stack cause)]
+    (and (string? stack)
+         (str/includes? stack "posthog"))))
+
+(defn is-ignorable-exception?
+  "True when the error is known to be harmless (browser extensions, analytics,
+   React/extension DOM conflicts, etc.) and should NOT be surfaced to the user."
+  [cause]
+  (let [message (ex-message cause)]
+    (or (from-extension? cause)
+        (from-posthog? cause)
+        (= message "Possible side-effect in debug-evaluate")
+        (= message "Unexpected end of input")
+        (str/starts-with? message "invalid props on component")
+        (str/starts-with? message "Unexpected token ")
+        ;; Native AbortError DOMException: raised when an in-flight
+        ;; HTTP fetch is cancelled via AbortController (e.g. by an
+        ;; RxJS unsubscription / take-until chain).  These are
+        ;; handled gracefully inside app.util.http/fetch and must NOT
+        ;; be surfaced as application errors.
+        (= (.-name ^js cause) "AbortError")
+        ;; Zone.js (injected by browser extensions such as Angular
+        ;; DevTools) wraps event listeners and assigns a custom
+        ;; .toString to its wrapper functions using
+        ;; Object.defineProperty.  When the wrapper was previously
+        ;; defined with {writable: false}, a subsequent plain assignment
+        ;; in strict mode (our libs.js uses "use strict") throws this
+        ;; TypeError.  This is a known Zone.js / browser-extension
+        ;; incompatibility and is NOT a Penpot bug.
+        (str/starts-with? message "Cannot assign to read only property 'toString'")
+        ;; NotFoundError DOMException: "Failed to execute
+        ;; 'removeChild' on 'Node'" — Thrown by React's commit
+        ;; phase when the DOM tree has been modified externally
+        ;; (typically by browser extensions like Grammarly,
+        ;; LastPass, translation tools, or ad blockers that
+        ;; inject/remove nodes).  The entire stack trace is inside
+        ;; React internals (libs.js) with no application code,
+        ;; so there is nothing actionable on our side.  React's
+        ;; error boundary already handles recovery.
+        (and (= (.-name ^js cause) "NotFoundError")
+             (str/includes? message "removeChild")))))
+
+(defn- from-plugin?
+  "Check if the error is marked as originating from plugin code. The
+  plugin runtime tracks plugin errors in a WeakMap, which works even
+  in SES hardened environments where error objects may be frozen."
+  [cause]
+  (try
+    (is-plugin-error? cause)
+    (catch :default _
+      false)))
+
 (defonce uncaught-error-handler
-  (letfn [(from-extension? [cause]
-            (let [stack (.-stack cause)]
-              (and (string? stack)
-                   (or (str/includes? stack "chrome-extension://")
-                       (str/includes? stack "moz-extension://")))))
-
-          (from-posthog? [cause]
-            (let [stack (.-stack cause)]
-              (and (string? stack)
-                   (str/includes? stack "posthog"))))
-
-          ;; Check if the error is marked as originating from plugin code.
-          ;; The plugin runtime tracks plugin errors in a WeakMap, which works
-          ;; even in SES hardened environments where error objects may be frozen.
-          (from-plugin? [cause]
-            (try
-              (is-plugin-error? cause)
-              (catch :default _
-                false)))
-
-          (is-ignorable-exception? [cause]
-            (let [message (ex-message cause)]
-              (or (from-extension? cause)
-                  (from-posthog? cause)
-                  (= message "Possible side-effect in debug-evaluate")
-                  (= message "Unexpected end of input")
-                  (str/starts-with? message "invalid props on component")
-                  (str/starts-with? message "Unexpected token ")
-                  ;; Native AbortError DOMException: raised when an in-flight
-                  ;; HTTP fetch is cancelled via AbortController (e.g. by an
-                  ;; RxJS unsubscription / take-until chain).  These are
-                  ;; handled gracefully inside app.util.http/fetch and must NOT
-                  ;; be surfaced as application errors.
-                  (= (.-name ^js cause) "AbortError")
-                  ;; Zone.js (injected by browser extensions such as Angular
-                  ;; DevTools) wraps event listeners and assigns a custom
-                  ;; .toString to its wrapper functions using
-                  ;; Object.defineProperty.  When the wrapper was previously
-                  ;; defined with {writable: false}, a subsequent plain assignment
-                  ;; in strict mode (our libs.js uses "use strict") throws this
-                  ;; TypeError.  This is a known Zone.js / browser-extension
-                  ;; incompatibility and is NOT a Penpot bug.
-                  (str/starts-with? message "Cannot assign to read only property 'toString'"))))
-
-          (on-unhandled-error [event]
+  (letfn [(on-unhandled-error [event]
             (.preventDefault ^js event)
             (when-let [cause (unchecked-get event "error")]
               (cond
@@ -499,7 +544,6 @@
                     (do
                       (ex/print-throwable cause :prefix "Uncaught Rejection")
                       (ts/asap #(flash :cause cause :type :unhandled))))))))]
-
 
     (.addEventListener g/window "error" on-unhandled-error)
     (.addEventListener g/window "unhandledrejection" on-unhandled-rejection)

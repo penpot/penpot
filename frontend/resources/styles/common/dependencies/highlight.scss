@@ -7,9 +7,9 @@
 @use "sass:meta";
 
 :root {
-  @include meta.load-css("./_hljs-dark-theme.scss");
+  @include meta.load-css("./_hljs-dark-theme");
 }
 
 .light {
-  @include meta.load-css("./_hljs-light-theme.scss");
+  @include meta.load-css("./_hljs-light-theme");
 }

@@ -12,7 +12,7 @@
 }
 
 .notification-text-email {
-  @include deprecated.medTitleTipography;
+  @include deprecated.med-title-typography;
 
   font-size: deprecated.$fs-20;
   color: var(--register-confirmation-color);

@@ -22,7 +22,7 @@
 }
 
 .search-input-wrapper {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-32;
   width: 100%;

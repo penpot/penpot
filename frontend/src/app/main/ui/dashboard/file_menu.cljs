@@ -78,7 +78,8 @@
 
         current-team     (get teams current-team-id)
         other-teams      (remove #(= (:id %) current-team-id) (vals teams))
-        current-projects (remove #(= (:id %) (:project-id file))
+        file-project-ids (into #{} (map :project-id) files)
+        current-projects (remove #(contains? file-project-ids (:id %))
                                  (:projects current-team))
 
         on-new-tab

@@ -34,18 +34,18 @@
 .element-content {
   grid-column: span 8;
 
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   margin-bottom: deprecated.$s-8;
 }
 
 .selected-color-group {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 }
 
 .more-colors-btn {
   @extend %button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   height: deprecated.$s-32;
 }

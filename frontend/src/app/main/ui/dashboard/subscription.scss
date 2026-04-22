@@ -26,7 +26,7 @@
 }
 
 .cta-top-section {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: grid;
   color: var(--color-foreground-secondary);
@@ -44,7 +44,7 @@
 }
 
 .icon-dropdown {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: 100%;
   width: var(--sp-l);
@@ -70,7 +70,7 @@
 
 .cta-bottom-section .content {
   @include t.use-typography("body-medium");
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   color: var(--color-foreground-secondary);
   display: inline-block;
@@ -120,7 +120,7 @@
 }
 
 .cta-link {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   align-self: end;
   margin-inline-start: var(--sp-xs);
@@ -147,7 +147,7 @@
 }
 
 .manage-subscription-link {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
   @include t.use-typography("body-medium");
 
   color: var(--color-accent-tertiary);

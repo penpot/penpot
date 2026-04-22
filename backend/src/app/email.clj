@@ -415,7 +415,7 @@
 (def ^:private schema:invite-to-org
   [:map
    [:invited-by ::sm/text]
-   [:org-name ::sm/text]
+   [:organization-name ::sm/text]
    [:org-initials ::sm/text]
    [:org-logo ::sm/uri]
    [:user-name [:maybe ::sm/text]]

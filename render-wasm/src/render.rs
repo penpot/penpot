@@ -37,14 +37,6 @@ use crate::wapi;
 pub use fonts::*;
 pub use images::*;
 
-// This is the extra area used for tile rendering (tiles beyond viewport).
-// Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
-const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
-
-const MAX_BLOCKING_TIME_MS: i32 = 32;
-const NODE_BATCH_THRESHOLD: i32 = 3;
-const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
-
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
 #[derive(Debug)]
@@ -223,6 +215,7 @@ impl NodeRenderState {
 /// - `enter(...)` / `exit(...)` should be called when entering and leaving shape
 ///   render contexts.
 /// - `is_active()` returns whether the current shape is being rendered in focus.
+#[derive(Clone)]
 pub struct FocusMode {
     shapes: Vec<Uuid>,
     active: bool,
@@ -343,9 +336,8 @@ pub(crate) struct RenderState {
     pub cache_cleared_this_render: bool,
 }
 
-pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
+pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
-    let interest = VIEWPORT_INTEREST_AREA_THRESHOLD;
     let TileRect(isx, isy, iex, iey) =
         tiles::get_tiles_for_viewbox_with_interest(viewbox, interest, scale);
 
@@ -380,10 +372,11 @@ impl RenderState {
 
         let viewbox = Viewbox::new(width as f32, height as f32);
         let tiles = tiles::TileHashMap::new();
+        let options = RenderOptions::default();
 
         Ok(RenderState {
             gpu_state: gpu_state.clone(),
-            options: RenderOptions::default(),
+            options,
             surfaces,
             fonts,
             viewbox,
@@ -400,7 +393,7 @@ impl RenderState {
             tiles,
             tile_viewbox: tiles::TileViewbox::new_with_interest(
                 viewbox,
-                VIEWPORT_INTEREST_AREA_THRESHOLD,
+                options.viewport_interest_area_threshold,
                 1.0,
             ),
             pending_tiles: PendingTiles::new_empty(),
@@ -629,6 +622,22 @@ impl RenderState {
         self.options.set_antialias_threshold(value);
     }
 
+    pub fn set_viewport_interest_area_threshold(&mut self, value: i32) {
+        self.options.set_viewport_interest_area_threshold(value);
+    }
+
+    pub fn set_node_batch_threshold(&mut self, value: i32) {
+        self.options.set_node_batch_threshold(value);
+    }
+
+    pub fn set_max_blocking_time_ms(&mut self, value: i32) {
+        self.options.set_max_blocking_time_ms(value);
+    }
+
+    pub fn set_blur_downscale_threshold(&mut self, value: f32) {
+        self.options.set_blur_downscale_threshold(value);
+    }
+
     pub fn set_background_color(&mut self, color: skia::Color) {
         self.background_color = color;
     }
@@ -715,12 +724,14 @@ impl RenderState {
         // In fast mode the viewport is moving (pan/zoom) so Cache surface
         // positions would be wrong — only save to the tile HashMap.
         self.surfaces.cache_current_tile_texture(
+            &mut self.gpu_state,
             &self.tile_viewbox,
             &self
                 .current_tile
                 .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
             &tile_rect,
             fast_mode,
+            self.render_area,
         );
 
         self.surfaces.draw_cached_tile_surface(
@@ -967,6 +978,11 @@ impl RenderState {
                         .canvas(fills_surface_id)
                         .draw_rect(bounds, &paint);
                 }
+
+                // Uncomment to debug the render_position_data
+                // if let Type::Text(text_content) = &shape.shape_type {
+                //     text::render_position_data(self, fills_surface_id, &shape, text_content);
+                // }
 
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas()
@@ -1459,12 +1475,34 @@ impl RenderState {
         performance::begin_measure!("render_from_cache");
         let cached_scale = self.get_cached_scale();
 
+        let bg_color = self.background_color;
+
+        // During fast mode (pan/zoom), if a previous full-quality render still has pending tiles,
+        // always prefer the persistent atlas. The atlas is incrementally updated as tiles finish,
+        // and drawing from it avoids mixing a partially-updated Cache surface with missing tiles.
+        if self.options.is_fast_mode() && self.render_in_progress && self.surfaces.has_atlas() {
+            self.surfaces
+                .draw_atlas_to_target(self.viewbox, self.options.dpr(), bg_color);
+
+            if self.options.is_debug_visible() {
+                debug::render(self);
+            }
+
+            ui::render(self, shapes);
+            debug::render_wasm_label(self);
+
+            self.flush_and_submit();
+            performance::end_measure!("render_from_cache");
+            performance::end_timed_log!("render_from_cache", _start);
+            return;
+        }
+
         // Check if we have a valid cached viewbox (non-zero dimensions indicate valid cache)
         if self.cached_viewbox.area.width() > 0.0 {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
 
-            let interest = VIEWPORT_INTEREST_AREA_THRESHOLD;
+            let interest = self.options.viewport_interest_area_threshold;
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
                     self.cached_viewbox,
@@ -1475,7 +1513,62 @@ impl RenderState {
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr();
             let translate_x = (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x;
             let translate_y = (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y;
-            let bg_color = self.background_color;
+
+            // For zoom-out, prefer cache only if it fully covers the viewport.
+            // Otherwise, atlas will provide a more correct full-viewport preview.
+            let zooming_out = self.viewbox.zoom < self.cached_viewbox.zoom;
+            if zooming_out {
+                let cache_dim = self.surfaces.cache_dimensions();
+                let cache_w = cache_dim.width as f32;
+                let cache_h = cache_dim.height as f32;
+
+                // Viewport in target pixels.
+                let vw = (self.viewbox.width * self.options.dpr()).max(1.0);
+                let vh = (self.viewbox.height * self.options.dpr()).max(1.0);
+
+                // Inverse-map viewport corners into cache coordinates.
+                // target = (cache * navigate_zoom) translated by (translate_x, translate_y) (in cache coords).
+                // => cache = (target / navigate_zoom) - translate
+                let inv = if navigate_zoom.abs() > f32::EPSILON {
+                    1.0 / navigate_zoom
+                } else {
+                    0.0
+                };
+
+                let cx0 = (0.0 * inv) - translate_x;
+                let cy0 = (0.0 * inv) - translate_y;
+                let cx1 = (vw * inv) - translate_x;
+                let cy1 = (vh * inv) - translate_y;
+
+                let min_x = cx0.min(cx1);
+                let min_y = cy0.min(cy1);
+                let max_x = cx0.max(cx1);
+                let max_y = cy0.max(cy1);
+
+                let cache_covers =
+                    min_x >= 0.0 && min_y >= 0.0 && max_x <= cache_w && max_y <= cache_h;
+                if !cache_covers {
+                    // Early return only if atlas exists; otherwise keep cache path.
+                    if self.surfaces.has_atlas() {
+                        self.surfaces.draw_atlas_to_target(
+                            self.viewbox,
+                            self.options.dpr(),
+                            bg_color,
+                        );
+
+                        if self.options.is_debug_visible() {
+                            debug::render(self);
+                        }
+
+                        ui::render(self, shapes);
+                        debug::render_wasm_label(self);
+                        self.flush_and_submit();
+                        performance::end_measure!("render_from_cache");
+                        performance::end_timed_log!("render_from_cache", _start);
+                        return;
+                    }
+                }
+            }
 
             // Setup canvas transform
             {
@@ -1531,6 +1624,7 @@ impl RenderState {
 
             self.flush_and_submit();
         }
+
         performance::end_measure!("render_from_cache");
         performance::end_timed_log!("render_from_cache", _start);
     }
@@ -1579,6 +1673,24 @@ impl RenderState {
 
         self.cache_cleared_this_render = false;
         self.reset_canvas();
+
+        // During an interactive shape transform (drag/resize/rotate) the
+        // Target is repainted tile-by-tile. If only a subset of the
+        // invalidated tiles finishes in this rAF the remaining area
+        // would either show stale content from the previous frame or,
+        // on buffer swaps, show blank pixels — either way the user
+        // perceives tiles appearing sequentially. Paint the persistent
+        // 1:1 atlas as a stable backdrop so every flush presents a
+        // coherent picture: unchanged tiles come from the atlas and
+        // invalidated tiles are overwritten on top as they finish.
+        if self.options.is_interactive_transform() && self.surfaces.has_atlas() {
+            self.surfaces.draw_atlas_to_target(
+                self.viewbox,
+                self.options.dpr(),
+                self.background_color,
+            );
+        }
+
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::InnerShadows as u32
@@ -1587,15 +1699,25 @@ impl RenderState {
             s.canvas().scale((scale, scale));
         });
 
-        let viewbox_cache_size = get_cache_size(self.viewbox, scale);
-        let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
+        let viewbox_cache_size = get_cache_size(
+            self.viewbox,
+            scale,
+            self.options.viewport_interest_area_threshold,
+        );
+        let cached_viewbox_cache_size = get_cache_size(
+            self.cached_viewbox,
+            scale,
+            self.options.viewport_interest_area_threshold,
+        );
         // Only resize cache if the new size is larger than the cached size
         // This avoids unnecessary surface recreations when the cache size decreases
         if viewbox_cache_size.width > cached_viewbox_cache_size.width
             || viewbox_cache_size.height > cached_viewbox_cache_size.height
         {
-            self.surfaces
-                .resize_cache(viewbox_cache_size, VIEWPORT_INTEREST_AREA_THRESHOLD)?;
+            self.surfaces.resize_cache(
+                viewbox_cache_size,
+                self.options.viewport_interest_area_threshold,
+            )?;
         }
 
         // FIXME - review debug
@@ -1657,12 +1779,16 @@ impl RenderState {
                 self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
             }
 
-            // In fast mode (pan/zoom in progress), render_from_cache owns
-            // the Target surface — skip flush so we don't present stale
-            // tile positions.  The rAF still populates the Cache surface
-            // and tile HashMap so render_from_cache progressively shows
-            // more complete content.
-            if !self.options.is_fast_mode() {
+            // In a pure viewport interaction (pan/zoom), render_from_cache
+            // owns the Target surface — skip flush so we don't present
+            // stale tile positions.  The rAF still populates the Cache
+            // surface and tile HashMap so render_from_cache progressively
+            // shows more complete content.
+            //
+            // During interactive shape transforms (drag/resize/rotate) we
+            // still need to flush every rAF so the user sees the updated
+            // shape position — render_from_cache is not in the loop here.
+            if !self.options.is_viewport_interaction() {
                 self.flush_and_submit();
             }
 
@@ -1670,6 +1796,7 @@ impl RenderState {
                 self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
             } else {
+                wapi::notify_tiles_render_complete!();
                 performance::end_measure!("render");
             }
         }
@@ -1687,7 +1814,6 @@ impl RenderState {
             self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
         }
         self.flush_and_submit();
-
         Ok(())
     }
 
@@ -1699,6 +1825,26 @@ impl RenderState {
         timestamp: i32,
     ) -> Result<(Vec<u8>, i32, i32)> {
         let target_surface = SurfaceId::Export;
+
+        // `render_shape_pixels` is used by the workspace to render thumbnails using the
+        // same WASM renderer instance. It must not leak any state into the main
+        // viewport renderer (tile cache, atlas, focus mode, render context, etc.).
+        //
+        // In particular, `update_render_context` clears and reconfigures multiple
+        // render surfaces, and `render_area` drives atlas blits. If we don't restore
+        // them, the workspace can temporarily show missing tiles until the next
+        // interaction (e.g. zoom) forces a full context rebuild.
+        let saved_focus_mode = self.focus_mode.clone();
+        let saved_export_context = self.export_context;
+        let saved_render_area = self.render_area;
+        let saved_render_area_with_margins = self.render_area_with_margins;
+        let saved_current_tile = self.current_tile;
+        let saved_pending_nodes = std::mem::take(&mut self.pending_nodes);
+        let saved_nested_fills = std::mem::take(&mut self.nested_fills);
+        let saved_nested_blurs = std::mem::take(&mut self.nested_blurs);
+        let saved_nested_shadows = std::mem::take(&mut self.nested_shadows);
+        let saved_ignore_nested_blurs = self.ignore_nested_blurs;
+        let saved_preview_mode = self.preview_mode;
 
         // Reset focus mode so all shapes in the export tree are rendered.
         // Without this, leftover focus_mode state from the workspace could
@@ -1751,13 +1897,55 @@ impl RenderState {
             .expect("PNG encode failed");
         let skia::ISize { width, height } = image.dimensions();
 
+        // Restore the workspace render state.
+        self.focus_mode = saved_focus_mode;
+        self.export_context = saved_export_context;
+        self.render_area = saved_render_area;
+        self.render_area_with_margins = saved_render_area_with_margins;
+        self.current_tile = saved_current_tile;
+        self.pending_nodes = saved_pending_nodes;
+        self.nested_fills = saved_nested_fills;
+        self.nested_blurs = saved_nested_blurs;
+        self.nested_shadows = saved_nested_shadows;
+        self.ignore_nested_blurs = saved_ignore_nested_blurs;
+        self.preview_mode = saved_preview_mode;
+
+        // Restore render-surface transforms for the workspace context.
+        // If we have a current tile, restore its tile render context; otherwise
+        // fall back to restoring the previous render_area (may be empty).
+        let workspace_scale = self.get_scale();
+        if let Some(tile) = self.current_tile {
+            self.update_render_context(tile);
+        } else if !self.render_area.is_empty() {
+            self.surfaces
+                .update_render_context(self.render_area, workspace_scale);
+        }
+
         Ok((data.as_bytes().to_vec(), width, height))
     }
 
     #[inline]
     pub fn should_stop_rendering(&self, iteration: i32, timestamp: i32) -> bool {
-        iteration % NODE_BATCH_THRESHOLD == 0
-            && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
+        if iteration % self.options.node_batch_threshold != 0 {
+            return false;
+        }
+        if performance::get_time() - timestamp <= self.options.max_blocking_time_ms {
+            return false;
+        }
+
+        // During interactive shape transforms we must complete every
+        // visible tile in a single rAF so the user never sees tiles
+        // popping in sequentially. Only yield once all visible work is
+        // done and we are processing the interest-area pre-render.
+        if self.options.is_interactive_transform() {
+            if let Some(tile) = self.current_tile {
+                if self.tile_viewbox.is_visible(&tile) {
+                    return false;
+                }
+            }
+        }
+
+        true
     }
 
     #[inline]
@@ -2132,9 +2320,10 @@ impl RenderState {
         // Bounds above were computed from the original sigma so filter surface coverage is correct.
         // Maximum downscale is 1/BLUR_DOWNSCALE_THRESHOLD (i.e. 8x): beyond that the
         // filter surface becomes too small and quality degrades noticeably.
-        const MIN_BLUR_DOWNSCALE: f32 = 1.0 / BLUR_DOWNSCALE_THRESHOLD;
-        let blur_downscale = if shadow.blur > BLUR_DOWNSCALE_THRESHOLD {
-            (BLUR_DOWNSCALE_THRESHOLD / shadow.blur).max(MIN_BLUR_DOWNSCALE)
+        let blur_downscale_threshold: f32 = self.options.blur_downscale_threshold;
+        let min_blur_downscale: f32 = 1.0 / blur_downscale_threshold;
+        let blur_downscale = if shadow.blur > blur_downscale_threshold {
+            (blur_downscale_threshold / shadow.blur).max(min_blur_downscale)
         } else {
             1.0
         };
@@ -2454,6 +2643,7 @@ impl RenderState {
                 let has_effects = transformed_element.has_effects_that_extend_bounds();
 
                 let is_visible = export
+                    || mask
                     || if is_container || has_effects {
                         let element_extrect =
                             extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
@@ -2699,13 +2889,8 @@ impl RenderState {
                     }
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
-                    // Only allow stopping (yielding) if the current tile is NOT visible.
-                    // This ensures all visible tiles render synchronously before showing,
-                    // eliminating empty squares during zoom. Interest-area tiles can still yield.
-                    let tile_is_visible = self.tile_viewbox.is_visible(&current_tile);
-                    let can_stop = allow_stop && !tile_is_visible;
-                    let (is_empty, early_return) =
-                        self.render_shape_tree_partial_uncached(tree, timestamp, can_stop, false)?;
+                    let (is_empty, early_return) = self
+                        .render_shape_tree_partial_uncached(tree, timestamp, allow_stop, false)?;
 
                     if early_return {
                         return Ok(());
@@ -2729,6 +2914,24 @@ impl RenderState {
                             paint.set_color(self.background_color);
                             s.canvas().draw_rect(tile_rect, &paint);
                         });
+                        // Keep Cache surface coherent for render_from_cache.
+                        if !self.options.is_fast_mode() {
+                            if !self.cache_cleared_this_render {
+                                self.surfaces.clear_cache(self.background_color);
+                                self.cache_cleared_this_render = true;
+                            }
+                            let aligned_rect = self.get_aligned_tile_bounds(current_tile);
+                            self.surfaces.apply_mut(SurfaceId::Cache as u32, |s| {
+                                let mut paint = skia::Paint::default();
+                                paint.set_color(self.background_color);
+                                s.canvas().draw_rect(aligned_rect, &paint);
+                            });
+                        }
+
+                        // Clear atlas region to transparent so background shows through.
+                        let _ = self
+                            .surfaces
+                            .clear_doc_rect_in_atlas(&mut self.gpu_state, self.render_area);
                     }
                 }
             }

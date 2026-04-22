@@ -202,13 +202,13 @@
     }
 
     .project-name {
-      @include deprecated.uppercaseTitleTipography;
+      @include deprecated.uppercase-title-typography;
 
       color: var(--title-foreground-color);
     }
 
     .file-name {
-      @include deprecated.smallTitleTipography;
+      @include deprecated.small-title-typography;
 
       text-transform: none;
       color: var(--title-foreground-color-hover);

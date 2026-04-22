@@ -149,7 +149,7 @@
                  :status "delete"
                  :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
-      (let [deletion-delay (if (= bucket "tempfile")
+      (let [deletion-delay (if (= "tempfile" bucket)
                              (ct/duration {:hours 2})
                              (cf/get-deletion-delay))]
         (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
@@ -166,6 +166,7 @@
     "profile"               (process-objects! conn has-profile-refs? bucket objects)
     "file-data"             (process-objects! conn has-file-data-refs? bucket objects)
     "tempfile"              (process-objects! conn (constantly false) bucket objects)
+    "organization"          (process-objects! conn (constantly false) bucket objects)
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))
@@ -213,8 +214,13 @@
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid storage"))
 
+(defmethod ig/expand-key ::handler
+  [k v]
+  {k (merge {::min-age (ct/duration {:hours 2})} v)})
+
 (defmethod ig/init-key ::handler
-  [_ cfg]
+  [_ {:keys [::min-age] :as cfg}]
   (fn [_]
-    (process-touched! (assoc cfg ::timestamp (ct/now)))))
+    (let [threshold (ct/minus (ct/now) min-age)]
+      (process-touched! (assoc cfg ::timestamp threshold)))))
 

@@ -43,7 +43,7 @@
 (def gradient-endpoint-radius-selected 6)
 (def gradient-endpoint-radius-handler 20)
 
-(mf/defc shadow [{:keys [id offset]}]
+(mf/defc shadow* [{:keys [id offset]}]
   [:filter {:id id
             :x "-10%"
             :y "-10%"
@@ -61,7 +61,7 @@
 
 (def checkerboard "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAIAAAC0tAIdAAACvUlEQVQoFQGyAk39AeLi4gAAAAAAAB0dHQAAAAAAAOPj4wAAAAAAAB0dHQAAAAAAAOPj4wAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////AAAAAAAA4+PjAAAAAAAAHR0dAAAAAAAA4+PjAAAAAAAAHR0dAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATj4+MAAAAAAAAdHR0AAAAAAADj4+MAAAAAAAAdHR0AAAAAAADj4+MAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjScaa0cU7nIAAAAASUVORK5CYII=")
 
-(mf/defc gradient-color-handler
+(mf/defc gradient-color-handler*
   [{:keys [zoom point color angle selected index
            on-click on-pointer-down on-pointer-up on-pointer-move on-lost-pointer-capture]}]
   [:g {:filter "url(#gradient-drop-shadow)"
@@ -118,7 +118,7 @@
              :r (/ 2 zoom)
              :fill "var(--app-white)"}]])
 
-(mf/defc gradient-handler-transformed
+(mf/defc gradient-handler-transformed*
   [{:keys [from-p
            to-p
            width-p
@@ -270,7 +270,7 @@
 
     [:g.gradient-handlers {:pointer-events "none"}
      [:defs
-      [:& shadow {:id "gradient-drop-shadow" :offset (/ 2 zoom)}]]
+      [:> shadow* {:id "gradient-drop-shadow" :offset (/ 2 zoom)}]]
 
      (let [lv (-> (gpt/to-vec from-p to-p)
                   (gpt/unit))
@@ -425,7 +425,7 @@
               (-> (gpt/to-vec from-p to-p)
                   (gpt/scale (:offset stop))))]
 
-         [:& gradient-color-handler
+         [:> gradient-color-handler*
           {:key index
            :selected (= editing index)
            :zoom zoom
@@ -505,7 +505,7 @@
              (when (and norm-dist (d/num? norm-dist))
                (change! {:width norm-dist})))))]
 
-    [:& gradient-handler-transformed
+    [:> gradient-handler-transformed*
      {:editing editing
       :from-p from-p
       :to-p to-p

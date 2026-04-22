@@ -22,7 +22,7 @@
 }
 
 .modal-title {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   color: var(--modal-title-foreground-color);
 }
@@ -32,7 +32,7 @@
 }
 
 .modal-content {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   flex: 1;
   overflow: hidden auto;
@@ -62,7 +62,7 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
@@ -72,10 +72,10 @@
   display: flex;
 
   .file-name {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
 
     .file-icon {
-      @include deprecated.flexCenter;
+      @include deprecated.flex-center;
 
       height: deprecated.$s-24;
       width: deprecated.$s-16;
@@ -93,13 +93,13 @@
 
     .file-name-edit {
       @extend %input-element;
-      @include deprecated.bodySmallTypography;
+      @include deprecated.body-small-typography;
 
       flex-grow: 1;
     }
 
     .file-name-label {
-      @include deprecated.bodySmallTypography;
+      @include deprecated.body-small-typography;
 
       display: flex;
       align-items: center;
@@ -107,7 +107,7 @@
       flex-grow: 1;
 
       .icon {
-        @include deprecated.flexCenter;
+        @include deprecated.flex-center;
 
         height: deprecated.$s-16;
         width: deprecated.$s-16;
@@ -121,7 +121,7 @@
     }
 
     .edit-entry-buttons {
-      @include deprecated.flexRow;
+      @include deprecated.flex-row;
 
       button {
         @extend %button-tertiary;
@@ -153,7 +153,7 @@
     color: var(--modal-text-foreground-color);
 
     .linked-library-tag {
-      @include deprecated.flexCenter;
+      @include deprecated.flex-center;
 
       height: deprecated.$s-24;
       width: deprecated.$s-24;

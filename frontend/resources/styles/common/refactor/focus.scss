@@ -6,44 +6,46 @@
 
 @use "./spacing.scss" as *;
 
-@mixin focusType($type) {
-  $realType: "";
+@mixin focus-type($type) {
+  $real-type: "";
+
   @if $type {
-    $realType: $type + "-";
+    $real-type: $type + "-";
   }
+
   &:focus-visible {
     outline: none;
-    background-color: var(--button-#{$realType}background-color-focus);
-    border: $s-1 solid var(--button-#{$realType}border-color-focus);
-    color: var(--button-#{$realType}foreground-color-focus);
-    svg,
-    span svg {
-      stroke: var(--button-#{$realType}foreground-color-focus);
+    background-color: var(--button-#{$real-type}background-color-focus);
+    border: $s-1 solid var(--button-#{$real-type}border-color-focus);
+    color: var(--button-#{$real-type}foreground-color-focus);
+
+    svg {
+      stroke: var(--button-#{$real-type}foreground-color-focus);
     }
   }
 }
 
-@mixin focusPrimary {
-  @include focusType(primary);
+@mixin focus-primary {
+  @include focus-type(primary);
 }
 
-@mixin focusSecondary {
-  @include focusType(secondary);
+@mixin focus-secondary {
+  @include focus-type(secondary);
 }
 
-@mixin focusTertiary {
-  @include focusType(tertiary);
+@mixin focus-tertiary {
+  @include focus-type(tertiary);
 }
 
-@mixin focusRadio {
-  @include focusType(radio);
+@mixin focus-radio {
+  @include focus-type(radio);
 }
 
 @mixin focus {
-  @include focusType(null);
+  @include focus-type(null);
 }
 
-@mixin focusInput {
+@mixin focus-input {
   &:focus-within {
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color-active);

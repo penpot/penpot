@@ -12,6 +12,7 @@
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.common.version :as v]
    [app.util.avatars :as avatars]
    [app.util.extends]
@@ -112,9 +113,11 @@
 (def target               (parse-target global))
 (def browser              (parse-browser))
 (def platform             (parse-platform))
+(def session-id           (uuid/next))
 
 (def version              (parse-version global))
 (def version-tag          (obj/get global "penpotVersionTag"))
+
 
 (defn stale-build?
   "Returns true when the compiled JS was built with a different version
@@ -161,6 +164,7 @@
 (def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot.app/penpothub/plugins"))
 (def plugins-whitelist    (into #{} (obj/get global "penpotPluginsWhitelist" [])))
 (def templates-uri        (obj/get global "penpotTemplatesUri" "https://penpot.github.io/penpot-files/"))
+(def upload-chunk-size    (obj/get global "penpotUploadChunkSize" (* 1024 1024 25))) ;; 25 MiB
 
 ;; We set the current parsed flags under common for make
 ;; it available for common code without the need to pass
@@ -203,6 +207,11 @@
   []
   (let [f (obj/get global "externalContextInfo")]
     (when (fn? f) (f))))
+
+(defn external-notify-register-success
+  [profile-id]
+  (let [f (obj/get global "externalNotifyRegisterSuccess")]
+    (when (fn? f) (f (str profile-id)))))
 
 (defn initialize-external-context-info
   []
