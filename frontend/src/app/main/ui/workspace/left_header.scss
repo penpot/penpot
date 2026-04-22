@@ -29,9 +29,10 @@
 .project-tree {
   position: relative;
   flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0;
   height: deprecated.$s-32;
   min-height: deprecated.$s-32;
-  max-width: calc(100% - deprecated.$s-64);
 }
 
 .project-name,

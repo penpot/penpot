@@ -70,16 +70,9 @@
         all-colors (distinct (mapv :attrs data))
 
         ;; ;; Split into: library colors, token colors, and plain colors
-        ;; library-colors (filterv :ref-id all-colors)
-        ;; token-colors   (filterv :token-name all-colors)
-        ;; colors         (filterv #(and (nil? (:ref-id %))
-        ;;                               (not (:token-name %)))
-        ;;                         all-colors)
-
         token-colors   (filterv :token-name all-colors)
         library-colors (filterv (fn [c] (and (some? (:ref-id c)) (nil? (:token-name c)))) all-colors)
-        colors         (filterv (fn [c] (and (nil? (:ref-id c)) (nil? (:token-name c)))) all-colors)
-        ]
+        colors         (filterv (fn [c] (and (nil? (:ref-id c)) (nil? (:token-name c)))) all-colors)]
     {:groups groups
      :all-colors all-colors
      :colors colors
@@ -107,9 +100,6 @@
   (let [{:keys [groups library-colors colors token-colors]}
         (mf/with-memo [file-id shapes libraries]
           (prepare-colors shapes file-id libraries))
-
-        ;; _ (prn "color-selection-menu*")
-        ;; _ (app.common.pprint/pprint token-colors)
 
         open*            (mf/use-state true)
         open?            (deref open*)
@@ -250,9 +240,7 @@
          (let [token-color-extract (cond->> token-colors (not @expand-token-color) (take 3))]
            (for [[index token-color] (d/enumerate token-color-extract)]
              (let [color {:color (:color token-color)
-                          :opacity (:opacity token-color)}
-
-                   color (dissoc token-color :token-name :has-token-applied)]
+                          :opacity (:opacity token-color)}]
                [:> color-row*
                 {:key index
                  :color color
