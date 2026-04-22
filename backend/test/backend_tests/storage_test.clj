@@ -169,7 +169,8 @@
         (t/is (= 2 (:count res))))
 
       ;; run the touched gc task
-      (let [res (th/run-task! :storage-gc-touched {})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -229,7 +230,8 @@
     (t/is (nil? (:error out2)))
 
     ;; run the touched gc task
-    (let [res (th/run-task! :storage-gc-touched {})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 5 (:freeze res)))
       (t/is (= 0 (:delete res)))
 
@@ -249,7 +251,8 @@
         (th/db-exec-one! ["update storage_object set touched_at=?" (ct/now)])
 
         ;; Run the task again
-        (let [res (th/run-task! :storage-gc-touched {})]
+        (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                    (th/run-task! :storage-gc-touched {}))]
           (t/is (= 2 (:freeze res)))
           (t/is (= 3 (:delete res))))
 
@@ -295,7 +298,8 @@
       (th/db-exec! ["update storage_object set touched_at=?" (ct/now)])
 
       ;; run the touched gc task
-      (let [res (th/run-task! :storage-gc-touched {})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -310,7 +314,8 @@
       (t/is (= 2 (:processed res))))
 
     ;; run the touched gc task
-    (let [res (th/run-task! :storage-gc-touched {})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
       (t/is (= 2 (:delete res))))
 
@@ -336,7 +341,7 @@
         (t/is (= 0 (:delete res)))))
 
 
-    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:minutes 1}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 1 (:delete res)))))

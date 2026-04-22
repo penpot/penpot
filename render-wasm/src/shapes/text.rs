@@ -1551,7 +1551,7 @@ pub fn calculate_text_layout_data(
                 for (span_index, span) in text_para.children().iter().enumerate() {
                     let text: String = span.apply_text_transform();
                     let text_len = text.encode_utf16().count();
-                    span_ranges.push((cur, cur + text_len + 1, span_index));
+                    span_ranges.push((cur, cur + text_len, span_index));
                     cur += text_len;
                 }
                 for (start, end, span_index) in span_ranges {

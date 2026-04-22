@@ -27,7 +27,6 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
-   [app.main.worker :as mw]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.api.shapes :as shapes]
    [app.render-wasm.api.texts :as t]
@@ -54,6 +53,109 @@
    [rumext.v2 :as mf]))
 
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
+
+;; --- Page transition state (WASM viewport)
+;;
+;; Goal: avoid showing tile-by-tile rendering during page switches (and initial load),
+;; by keeping a blurred snapshot overlay visible until WASM dispatches
+;; `penpot:wasm:tiles-complete`.
+;;
+;; - `page-transition?`: true while the overlay should be considered active.
+;; - `transition-image-url*`: URL used by the UI overlay (usually `blob:` from the
+;;   current WebGL canvas snapshot; on initial load it may be a tiny SVG data-url
+;;   derived from the page background color).
+;; - `transition-epoch*`: monotonic counter used to ignore stale async work/events
+;;   when the user clicks pages rapidly (A -> B -> C).
+;; - `transition-tiles-handler*`: the currently installed DOM event handler for
+;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
+(defonce page-transition? (atom false))
+(defonce transition-image-url* (atom nil))
+(defonce transition-epoch* (atom 0))
+(defonce transition-tiles-handler* (atom nil))
+
+(def ^:private transition-blur-css "blur(4px)")
+
+(defn- set-transition-blur!
+  []
+  (when-let [canvas ^js wasm/canvas]
+    (dom/set-style! canvas "filter" transition-blur-css))
+  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
+    (doseq [^js node (array-seq nodes)]
+      (dom/set-style! node "filter" transition-blur-css))))
+
+(defn- clear-transition-blur!
+  []
+  (when-let [canvas ^js wasm/canvas]
+    (dom/set-style! canvas "filter" ""))
+  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
+    (doseq [^js node (array-seq nodes)]
+      (dom/set-style! node "filter" ""))))
+
+(defn set-transition-image-from-background!
+  "Sets `transition-image-url*` to a data URL representing a solid background color."
+  [background]
+  (when (string? background)
+    (let [svg (str "<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'>"
+                   "<rect width='1' height='1' fill='" background "'/>"
+                   "</svg>")]
+      (reset! transition-image-url*
+              (str "data:image/svg+xml;charset=utf-8," (js/encodeURIComponent svg))))))
+
+(defn begin-page-transition!
+  []
+  (reset! page-transition? true)
+  (swap! transition-epoch* inc))
+
+(defn end-page-transition!
+  []
+  (reset! page-transition? false)
+  (when-let [prev @transition-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (reset! transition-tiles-handler* nil)
+  (reset! transition-image-url* nil)
+  (clear-transition-blur!)
+  ;; Clear captured pixels so future transitions must explicitly capture again.
+  (set! wasm/canvas-snapshot-url nil))
+
+(defn- set-transition-tiles-complete-handler!
+  "Installs a tiles-complete handler bound to the current transition epoch.
+   Replaces any previous handler so rapid page switching doesn't end the wrong transition."
+  [epoch f]
+  (when-let [prev @transition-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (letfn [(handler [_]
+            (when (= epoch @transition-epoch*)
+              (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)
+              (reset! transition-tiles-handler* nil)
+              (f)))]
+    (reset! transition-tiles-handler* handler)
+    (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
+
+(defn start-initial-load-transition!
+  "Starts a page-transition workflow for initial file open.
+
+   - Sets `page-transition?` to true
+   - Installs a tiles-complete handler to end the transition
+   - Uses a solid background-color placeholder as the transition image"
+  [background]
+  ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
+  ;; ensure we still have a deterministic placeholder on initial load.
+  (when (or (not @page-transition?) (nil? @transition-image-url*))
+    (set-transition-image-from-background! background))
+  (when-not @page-transition?
+    ;; Start transition + bind the tiles-complete handler to this epoch.
+    (let [epoch (begin-page-transition!)]
+      (set-transition-tiles-complete-handler! epoch end-page-transition!))))
+
+(defn listen-tiles-render-complete-once!
+  "Registers a one-shot listener for `penpot:wasm:tiles-complete`, dispatched from WASM
+  when a full tile pass finishes."
+  [f]
+  (.addEventListener ^js ug/document
+                     "penpot:wasm:tiles-complete"
+                     (fn [_]
+                       (f))
+                     #js {:once true}))
 
 (defn text-editor-wasm?
   []
@@ -94,15 +196,8 @@
 (def ^:const TEXT_EDITOR_EVENT_NEEDS_LAYOUT 4)
 
 ;; Re-export public WebGL functions
-(def capture-canvas-pixels webgl/capture-canvas-pixels)
-(def restore-previous-canvas-pixels webgl/restore-previous-canvas-pixels)
-(def clear-canvas-pixels webgl/clear-canvas-pixels)
+(def capture-canvas-snapshot-url webgl/capture-canvas-snapshot-url)
 (def draw-thumbnail-to-canvas webgl/draw-thumbnail-to-canvas)
-
-(defn has-captured-pixels?
-  "Returns true if there are saved canvas pixels from a previous page."
-  []
-  (some? wasm/canvas-pixels))
 
 ;; Re-export public text editor functions
 (def text-editor-focus text-editor/text-editor-focus)
@@ -239,7 +334,7 @@
 
 (defn request-render
   [_requester]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (and wasm/context-initialized? (not @wasm/context-lost?) (not @wasm/disable-request-render?))
     (if @shapes-loading?
       (register-deferred-render!)
       (when-not @pending-render
@@ -307,8 +402,9 @@
   "Apply style attrs to the currently selected text spans.
    Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving."
   [attrs]
-  (text-editor/apply-styles-to-selection attrs use-shape set-shape-text-content)
-  (request-render "apply-styles-to-selection"))
+  (let [result (text-editor/apply-styles-to-selection attrs use-shape set-shape-text-content)]
+    (request-render "apply-styles-to-selection")
+    result))
 
 (defn set-parent-id
   [id]
@@ -1018,15 +1114,6 @@
   (render-finish)
   (perf/end-measure "render-from-cache"))
 
-(defn update-text-rect!
-  [id]
-  (when wasm/context-initialized?
-    (mw/emit!
-     {:cmd :index/update-text-rect
-      :page-id (:current-page-id @st/state)
-      :shape-id id
-      :dimensions (get-text-dimensions id)})))
-
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the
   content is nil (freshly created text) we fall back to
@@ -1099,10 +1186,7 @@
   "Synchronously update text layouts for all shapes and send rect updates
    to the worker index."
   [text-ids]
-  (run! (fn [id]
-          (f/update-text-layout id)
-          (update-text-rect! id))
-        text-ids))
+  (run! f/update-text-layout text-ids))
 
 (defn process-pending
   [shapes thumbnails full on-complete]
@@ -1120,11 +1204,13 @@
     (if (or (seq pending-thumbnails) (seq pending-full))
       (->> (rx/concat
             (->> (rx/from (vals pending-thumbnails))
-                 (rx/merge-map (fn [callback] (callback)))
-                 (rx/reduce conj []))
+                 (rx/merge-map (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty)))
             (->> (rx/from (vals pending-full))
-                 (rx/mapcat (fn [callback] (callback)))
-                 (rx/reduce conj [])))
+                 (rx/mapcat (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty))))
            (rx/subs!
             (fn [_]
               ;; Fonts are now loaded — recompute text layouts so Skia
@@ -1134,7 +1220,7 @@
                   (update-text-layouts text-ids)))
               (request-render "images-loaded"))
             noop-fn
-            (fn [] (when on-complete (on-complete)))))
+            (fn [] (when (fn? on-complete) (on-complete)))))
       ;; No pending images — complete immediately.
       (when on-complete (on-complete)))))
 
@@ -1300,14 +1386,14 @@
    loading begins, allowing callers to reveal the page content during
    transitions."
   ([objects]
-   (set-objects objects nil nil))
+   (set-objects objects nil nil false))
   ([objects render-callback]
-   (set-objects objects render-callback nil))
-  ([objects render-callback on-shapes-ready]
+   (set-objects objects render-callback nil false))
+  ([objects render-callback on-shapes-ready force-sync]
    (perf/begin-measure "set-objects")
    (let [shapes (shapes-in-tree-order objects)
          total-shapes (count shapes)]
-     (if (< total-shapes ASYNC_THRESHOLD)
+     (if (or force-sync (< total-shapes ASYNC_THRESHOLD))
        (set-objects-sync shapes render-callback on-shapes-ready)
        (do
          (begin-shapes-loading!)
@@ -1432,6 +1518,23 @@
   []
   (h/call wasm/internal-module "_clean_modifiers"))
 
+(defn set-modifiers-start
+  "Enter interactive transform mode (drag / resize / rotate). Enables
+   fast-mode effect skipping in the renderer and activates an atlas
+   backdrop so tiles do not appear sequentially or flicker while the
+   gesture is in progress."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_set_modifiers_start")))
+
+(defn set-modifiers-end
+  "Leave interactive transform mode. Cancels any pending async render
+   scheduled under it; the caller is expected to trigger a full-quality
+   render (via `request-render`) once the gesture is committed."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_set_modifiers_end")))
+
 (defn set-modifiers
   [modifiers]
 
@@ -1456,19 +1559,16 @@
         (request-render "set-modifiers")))))
 
 (defn initialize-viewport
-  ([base-objects zoom vbox background]
-   (initialize-viewport base-objects zoom vbox background 1 nil nil))
-  ([base-objects zoom vbox background callback]
-   (initialize-viewport base-objects zoom vbox background 1 callback nil))
-  ([base-objects zoom vbox background background-opacity callback]
-   (initialize-viewport base-objects zoom vbox background background-opacity callback nil))
-  ([base-objects zoom vbox background background-opacity callback on-shapes-ready]
-   (let [rgba         (sr-clr/hex->u32argb background background-opacity)
-         total-shapes (count (vals base-objects))]
-     (h/call wasm/internal-module "_set_canvas_background" rgba)
-     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-     (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
-     (set-objects base-objects callback on-shapes-ready))))
+  [base-objects zoom vbox &
+   {:keys [background background-opacity on-render on-shapes-ready force-sync]
+    :or {background-opacity 1}}]
+  (let [rgba (when background (sr-clr/hex->u32argb background background-opacity))
+        total-shapes (count (vals base-objects))]
+
+    (when rgba (h/call wasm/internal-module "_set_canvas_background" rgba))
+    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
+    (set-objects base-objects on-render on-shapes-ready force-sync)))
 
 (def ^:private default-context-options
   #js {:antialias false
@@ -1497,6 +1597,42 @@
   (when-let [raw (let [p (rt/get-params @st/state)]
                    (:aa_threshold p))]
     (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-blur-downscale-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:blur_downscale_threshold p))]
+    (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-max-blocking-time-ms-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:max_blocking_time_ms p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-node-batch-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:node_batch_threshold p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
+(defn- wasm-viewport-interest-area-threshold-from-route-params
+  "Reads optional `aa_threshold` query param from the router"
+  []
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (:viewport_interest_area_threshold p))]
+    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
       (when (and (number? n) (not (js/isNaN n)) (pos? n))
         n))))
 
@@ -1537,6 +1673,16 @@
         (h/call wasm/internal-module "_set_render_options" flags dpr)
         (when-let [t (wasm-aa-threshold-from-route-params)]
           (h/call wasm/internal-module "_set_antialias_threshold" t))
+        (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
+        (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
+          (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
+        (when-let [t (wasm-node-batch-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_node_batch_threshold" t))
+        (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
+          (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
+        (when-let [max-tex (webgl/max-texture-size context)]
+          (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
 
         ;; Set browser and canvas size only after initialization
         (h/call wasm/internal-module "_set_browser" browser)
@@ -1553,6 +1699,8 @@
   []
   (when wasm/context-initialized?
     (try
+      (set! wasm/context-initialized? false)
+
       ;; Cancel any pending animation frame to prevent race conditions
       (when wasm/internal-frame-id
         (js/cancelAnimationFrame wasm/internal-frame-id)
@@ -1563,8 +1711,6 @@
       (reset! shapes-loading? false)
       (reset! deferred-render? false)
 
-      ;; TODO: perform corresponding cleaning
-      (set! wasm/context-initialized? false)
       (h/call wasm/internal-module "_clean_up")
 
       ;; Remove event listener for WebGL context lost
@@ -1762,11 +1908,11 @@
                         :direction       (dr/translate-direction direction)
                         :font-id         (get element :font-id)
                         :font-family     (get element :font-family)
-                        :font-size       (get element :font-size)
+                        :font-size       (dm/str (get element :font-size) "px")
                         :font-weight     (get element :font-weight)
                         :text-transform  (get element :text-transform)
                         :text-decoration (get element :text-decoration)
-                        :letter-spacing  (get element :letter-spacing)
+                        :letter-spacing  (dm/str (get element :letter-spacing) "px")
                         :font-style      (get element :font-style)
                         :fills           (get element :fills)
                         :text            text})))))))
@@ -1774,9 +1920,36 @@
 
 (defn apply-canvas-blur
   []
-  (when wasm/canvas (dom/set-style! wasm/canvas "filter" "blur(4px)"))
-  (let [controls-to-blur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
-    (run! #(dom/set-style! % "filter" "blur(4px)") controls-to-blur)))
+  (let [already? @page-transition?
+        epoch    (begin-page-transition!)]
+    (set-transition-tiles-complete-handler! epoch end-page-transition!)
+    ;; Two-phase transition:
+    ;; - Apply CSS blur to the live canvas immediately (no async wait), so the user
+    ;;   sees the transition right away.
+    ;; - In parallel, capture a `blob:` snapshot URL; once ready, switch the overlay
+    ;;   to that fixed image (and guard with `epoch` to avoid stale async updates).
+    (set-transition-blur!)
+    ;; Lock the snapshot for the whole transition: if the user clicks to another page
+    ;; while the transition is active, keep showing the original page snapshot until
+    ;; the final target page finishes rendering.
+    (if already?
+      (p/resolved nil)
+      (do
+        ;; If we already have a snapshot URL, use it immediately.
+        (when-let [url wasm/canvas-snapshot-url]
+          (when (string? url)
+            (reset! transition-image-url* url)))
+
+        ;; Capture a fresh snapshot asynchronously and update the overlay as soon
+        ;; as it is ready (guarded by `epoch` to avoid stale async updates).
+        (-> (capture-canvas-snapshot-url)
+            (p/then (fn [url]
+                      (when (and (string? url)
+                                 @page-transition?
+                                 (= epoch @transition-epoch*))
+                        (reset! transition-image-url* url))
+                      url))
+            (p/catch (fn [_] nil)))))))
 
 (defn render-shape-pixels
   [shape-id scale]

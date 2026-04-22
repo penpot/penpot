@@ -163,7 +163,9 @@
           [:> button* {:variant "primary"
                        :type "button"
                        :class (stl/css :nitrate-bottom-button)
-                       :on-click handle-click} "UPGRADE TO NITRATE"]]]))))
+                       :on-click handle-click} (if (:subscription profile)
+                                                 "UPGRADE TO NITRATE"
+                                                 "Try 14 days for free")]]]))))
 
 (mf/defc team*
   [{:keys [is-owner team]}]

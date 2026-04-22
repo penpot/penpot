@@ -139,8 +139,7 @@
    {:stream? true}
 
    ::sse/import-binfile
-   {:stream? true
-    :form-data? true}
+   {:stream? true}
 
    ::sse/permanently-delete-team-files
    {:stream? true}
@@ -183,6 +182,7 @@
          :credentials "include"
          :headers {"accept" "application/transit+json,text/event-stream,*/*"
                    "x-external-session-id" (cf/external-session-id)
+                   "x-session-id" (str cf/session-id)
                    "x-event-origin" (::ev/origin (meta params))}
          :body (when (= method :post)
                  (if form-data?
@@ -273,6 +273,7 @@
     (send-export (merge default params))))
 
 (derive :upload-file-media-object ::multipart-upload)
+(derive :upload-chunk ::multipart-upload)
 (derive :update-profile-photo ::multipart-upload)
 (derive :update-team-photo ::multipart-upload)
 

@@ -22,3 +22,15 @@
                          :organization-id organization-id
                          :organization-name organization-name
                          :notification notification})))
+
+
+(defn notify-user-org-change
+  [cfg profile-id organization-id organization-name notification]
+  (let [msgbus (::mbus/msgbus cfg)]
+    (mbus/pub! msgbus
+               :topic profile-id
+               :message {:type :user-org-change
+                         :topic profile-id
+                         :organization-id organization-id
+                         :organization-name organization-name
+                         :notification notification})))

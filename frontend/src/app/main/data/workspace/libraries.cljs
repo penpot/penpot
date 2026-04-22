@@ -411,9 +411,16 @@
              (when id-ref
                (reset! id-ref component-id))
              (when-not (empty? (:redo-changes changes))
-               (rx/of (dch/commit-changes changes)
-                      (dws/select-shapes (d/ordered-set (:id root)))
-                      (ptk/data-event :layout/update {:ids parents}))))))))))
+               (rx/concat
+                (rx/of (dch/commit-changes changes)
+                       (dws/select-shapes (d/ordered-set (:id root)))
+                       (ptk/data-event :layout/update {:ids parents}))
+
+                ;; When activated the wasm rendering we need to recreate its thumbnail on creation
+                (if (features/active-feature? state "render-wasm/v1")
+                  (rx/of (dwt.wasm/render-thumbnail file-id page-id (:id root))
+                         (dwt.wasm/persist-thumbnail file-id page-id (:id root)))
+                  (rx/empty)))))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
@@ -972,10 +979,7 @@
 
           ;; These calls are necessary for properly sync thumbnails
           ;; when a main component does not live in the same page.
-          ;; When WASM is active, skip the "frame" tag (SVG-based) since
-          ;; component previews are rendered locally via WASM.
-          (when-not (features/active-feature? state "render-wasm/v1")
-            (update-component-thumbnail-sync state component-id file-id "frame"))
+          (update-component-thumbnail-sync state component-id file-id "frame")
           (update-component-thumbnail-sync state component-id file-id "component")
 
           (sync-file current-file-id file-id :components component-id undo-group)
@@ -1000,10 +1004,10 @@
           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn update-component-thumbnail
-  "Persist the thumbnail of the component to the server.
-   For WASM, the UI is already up-to-date from the immediate render in
-   update-component-thumbnail-sync, so this only persists.
-   For SVG, this does the full render + persist."
+  "Update the thumbnail of the component with the given id, in the
+   current file and in the imported libraries.
+   For WASM, re-renders and persists to the server in one step.
+   For SVG, update-thumbnail already handles both render + persist."
   [component-id file-id]
   (ptk/reify ::update-component-thumbnail
     ptk/WatchEvent
@@ -1013,7 +1017,7 @@
               component (ctkl/get-component data component-id)
               page-id   (:main-instance-page component)
               root-id   (:main-instance-id component)]
-          (rx/of (dwt.wasm/persist-thumbnail file-id page-id root-id)))
+          (rx/of (dwt.wasm/render-thumbnail file-id page-id root-id :persist? true)))
         (rx/of (update-component-thumbnail-sync state component-id file-id "component"))))))
 
 (defn- find-shape-index
@@ -1346,9 +1350,10 @@
     (watch [_ _ stream]
       (let [stopper-s
             (->> stream
-                 (rx/filter #(or (= ::dwpg/finalize-page (ptk/type %))
-                                 (= ::watch-component-changes (ptk/type %)))))
-
+                 (rx/map ptk/type)
+                 (rx/filter (fn [event-type]
+                              (or (= ::dwpg/finalize-page event-type)
+                                  (= ::watch-component-changes event-type)))))
             workspace-data-s
             (->> (rx/from-atom refs/workspace-data {:emit-current-value? true})
                  (rx/share))
@@ -1372,7 +1377,8 @@
 
             check-changes
             (fn [[event [old-data _mid_data _new-data]]]
-              (when old-data
+              (if (nil? old-data)
+                (rx/empty)
                 (let [{:keys [file-id changes save-undo? undo-group]} event
 
                       changed-components
@@ -1390,18 +1396,9 @@
                           (->> (rx/from changed-components)
                                (rx/map #(component-changed % (:id old-data) undo-group))))
                       ;; even if save-undo? is false, we need to update the :modified-date of the component
-                      ;; (for example, for undos). When WASM is active, also re-render the thumbnail
-                      ;; so undo/redo visually updates component previews.
-                      (->> (mapcat (fn [component-id]
-                                     (if (features/active-feature? @st/state "render-wasm/v1")
-                                       (let [component (ctkl/get-component old-data component-id)]
-                                         [(touch-component component-id)
-                                          (dwt.wasm/render-thumbnail (:id old-data)
-                                                                     (:main-instance-page component)
-                                                                     (:main-instance-id component))])
-                                       [(touch-component component-id)]))
-                                   changed-components)
-                           (rx/from)))
+                      ;; (for example, for undos)
+                      (->> (rx/from changed-components)
+                           (rx/map touch-component)))
 
                     (rx/empty)))))
 
@@ -1418,30 +1415,30 @@
 
         (when (or (contains? cf/flags :component-thumbnails)
                   (features/active-feature? @st/state "render-wasm/v1"))
-          (let [wasm? (features/active-feature? @st/state "render-wasm/v1")]
-            (->> (rx/merge
-                  changes-s
+          (->> (rx/merge
+                changes-s
 
-                  ;; WASM: render thumbnails immediately for instant UI feedback
-                  (if wasm?
-                    (->> changes-s
-                         (rx/filter (ptk/type? ::component-changed))
-                         (rx/map deref)
-                         (rx/map (fn [[component-id file-id]]
-                                   (update-component-thumbnail-sync @st/state component-id file-id "component"))))
-                    (rx/empty))
+                ;; Persist thumbnails to the server in batches after user
+                ;; becomes inactive for 5 seconds.
+                (->> changes-s
+                     (rx/filter (ptk/type? ::component-changed))
+                     (rx/map deref)
+                     (rx/buffer-until notifier-s)
+                     (rx/mapcat #(into #{} %))
+                     (rx/map (fn [[component-id file-id]]
+                               (update-component-thumbnail component-id file-id))))
 
-                  ;; Persist thumbnails to the server in batches after user
-                  ;; becomes inactive for 5 seconds.
-                  (->> changes-s
-                       (rx/filter (ptk/type? ::component-changed))
-                       (rx/map deref)
-                       (rx/buffer-until notifier-s)
-                       (rx/mapcat #(into #{} %))
-                       (rx/map (fn [[component-id file-id]]
-                                 (update-component-thumbnail component-id file-id)))))
+                ;; Immediately update the component thumbnail on undos,
+                ;; which emit touch-component instead of component-changed.
+                (->> changes-s
+                     (rx/filter (ptk/type? ::touch-component))
+                     (rx/map deref)
+                     (rx/map (fn [[component-id file-id]]
+                               (let [file-id (or file-id (:current-file-id @st/state))]
+                                 (update-component-thumbnail-sync
+                                  @st/state component-id file-id "component"))))))
 
-                 (rx/take-until stopper-s))))))))
+               (rx/take-until stopper-s)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backend interactions

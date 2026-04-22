@@ -15,7 +15,7 @@
 
 .context-list,
 .workspace-context-submenu {
-  @include deprecated.menuShadow;
+  @include deprecated.menu-shadow;
 
   display: grid;
   width: deprecated.$s-240;
@@ -46,20 +46,20 @@
   cursor: pointer;
 
   .title {
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
 
     color: var(--menu-foreground-color);
   }
 
   .shortcut {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     gap: deprecated.$s-2;
     color: var(--menu-shortcut-foreground-color);
 
     .shortcut-key {
-      @include deprecated.bodySmallTypography;
-      @include deprecated.flexCenter;
+      @include deprecated.body-small-typography;
+      @include deprecated.flex-center;
 
       height: deprecated.$s-20;
       padding: deprecated.$s-2 deprecated.$s-6;
@@ -137,4 +137,31 @@
 .context-menu-item[disabled] {
   pointer-events: none;
   opacity: 0.6;
+}
+
+.guide-color-label {
+  cursor: default;
+  pointer-events: none;
+}
+
+.guide-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: deprecated.$s-6;
+  padding: deprecated.$s-4 deprecated.$s-6 deprecated.$s-8;
+  list-style: none;
+}
+
+.guide-color-swatch {
+  width: deprecated.$s-20;
+  height: deprecated.$s-20;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: deprecated.$s-2 solid var(--panel-border-color);
+
+  &.selected {
+    border: deprecated.$s-2 solid var(--menu-foreground-color);
+  }
 }

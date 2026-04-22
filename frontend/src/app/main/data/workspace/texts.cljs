@@ -400,7 +400,11 @@
             shape-ids (cond (cfh/text-shape? shape)  [id]
                             (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
-        (rx/of (dwsh/update-shapes shape-ids update-fn))))))
+        (rx/concat
+         (rx/of (dwsh/update-shapes shape-ids update-fn))
+         (if (features/active-feature? state "render-wasm/v1")
+           (dwwt/resize-wasm-text-debounce id)
+           (rx/empty)))))))
 
 (defn update-root-attrs
   [{:keys [id attrs]}]
@@ -503,13 +507,9 @@
      ptk/WatchEvent
      (watch [_ state _]
        (when (or
-              (and (features/active-feature? state "text-editor-wasm/v1")
-                   (nil? (get-in state [:workspace-wasm-editor-styles id])))
               (and (features/active-feature? state "text-editor/v2")
-                   (not (features/active-feature? state "text-editor-wasm/v1"))
                    (nil? (:workspace-editor state)))
               (and (not (features/active-feature? state "text-editor/v2"))
-                   (not (features/active-feature? state "text-editor-wasm/v1"))
                    (nil? (get-in state [:workspace-editor-state id]))))
          (let [page-id      (or (get options :page-id)
                                 (get state :current-page-id))
@@ -533,16 +533,20 @@
                  (-> shape
                      (dissoc :fills)
                      (d/update-when :content update-content)))]
-           (rx/of (dwsh/update-shapes shape-ids update-shape options)))))
+
+           (rx/concat (rx/of (dwsh/update-shapes shape-ids update-shape options))
+                      (when (features/active-feature? state "text-editor-wasm/v1")
+                        (let [styles ((comp update-node-fn migrate-node))
+                              result (wasm.api/apply-styles-to-selection styles)]
+                          (when result
+                            (rx/of (v2-update-text-shape-content
+                                    (:shape-id result)
+                                    (:content result)
+                                    :update-name? true)))))))))
 
      ptk/EffectEvent
      (effect [_ state _]
-       (cond
-         (features/active-feature? state "text-editor-wasm/v1")
-         (let [styles ((comp update-node-fn migrate-node))]
-           (wasm.api/apply-styles-to-selection styles))
-
-         (features/active-feature? state "text-editor/v2")
+       (when (features/active-feature? state "text-editor/v2")
          (when-let [instance (:workspace-editor state)]
            (let [styles   (some-> (editor.v2/getCurrentStyle instance)
                                   (styles/get-styles-from-style-declaration :removed-mixed true)
@@ -786,11 +790,18 @@
              (rx/of (update-position-data id position-data))))
           (rx/empty))))))
 
+(defn font-loaded-event?
+  [font-id]
+  (fn [event]
+    (and
+     (= :font-loaded (ptk/type event))
+     (= (:font-id (deref event)) font-id))))
+
 (defn update-attrs
   [id attrs]
   (ptk/reify ::update-attrs
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ state stream]
       (let [text-editor-instance (:workspace-editor state)]
         (if (and (features/active-feature? state "text-editor/v2")
                  (some? text-editor-instance))
@@ -811,7 +822,8 @@
                (rx/of (update-text-attrs {:id id :attrs attrs}))
                (rx/empty)))
 
-           (when (features/active-feature? state "text-editor/v2")
+           (when (and (features/active-feature? state "text-editor/v2")
+                      (not (features/active-feature? state "text-editor-wasm/v1")))
              (rx/of (v2-update-text-editor-styles id attrs)))
 
            (when (features/active-feature? state "render-wasm/v1")
@@ -827,9 +839,13 @@
                                   (:shape-id result) (:content result)
                                   :update-name? true))))))))
               ;; Resize (with delay for font-id changes)
-              (cond->> (rx/of (dwwt/resize-wasm-text id))
-                (contains? attrs :font-id)
-                (rx/delay 200))))))))
+              (if (contains? attrs :font-id)
+                (->> stream
+                     (rx/filter (font-loaded-event? (:font-id attrs)))
+                     (rx/take 1)
+                     (rx/observe-on :async)
+                     (rx/map #(dwwt/resize-wasm-text id)))
+                (rx/of (dwwt/resize-wasm-text id)))))))))
 
     ptk/EffectEvent
     (effect [_ state _]

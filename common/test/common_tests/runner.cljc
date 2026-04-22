@@ -6,21 +6,27 @@
 
 (ns common-tests.runner
   (:require
+   #?(:clj [common-tests.fressian-test])
    [clojure.test :as t]
    [common-tests.buffer-test]
    [common-tests.colors-test]
    [common-tests.data-test]
+   [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-map-test]
+   [common-tests.geom-flex-layout-test]
+   [common-tests.geom-grid-layout-test]
    [common-tests.geom-grid-test]
    [common-tests.geom-line-test]
    [common-tests.geom-modif-tree-test]
    [common-tests.geom-modifiers-test]
    [common-tests.geom-point-test]
    [common-tests.geom-proportions-test]
+   [common-tests.geom-rect-test]
    [common-tests.geom-shapes-common-test]
+   [common-tests.geom-shapes-constraints-test]
    [common-tests.geom-shapes-corners-test]
    [common-tests.geom-shapes-effects-test]
    [common-tests.geom-shapes-intersect-test]
@@ -53,6 +59,7 @@
    [common-tests.text-test]
    [common-tests.time-test]
    [common-tests.types.absorb-assets-test]
+   [common-tests.types.color-test]
    [common-tests.types.components-test]
    [common-tests.types.container-test]
    [common-tests.types.fill-test]
@@ -81,17 +88,23 @@
    'common-tests.buffer-test
    'common-tests.colors-test
    'common-tests.data-test
+   #?(:clj 'common-tests.fressian-test)
    'common-tests.files-changes-test
+   'common-tests.files-builder-test
    'common-tests.files-migrations-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-map-test
+   'common-tests.geom-flex-layout-test
+   'common-tests.geom-grid-layout-test
    'common-tests.geom-grid-test
    'common-tests.geom-line-test
    'common-tests.geom-modif-tree-test
    'common-tests.geom-modifiers-test
    'common-tests.geom-point-test
    'common-tests.geom-proportions-test
+   'common-tests.geom-rect-test
    'common-tests.geom-shapes-common-test
+   'common-tests.geom-shapes-constraints-test
    'common-tests.geom-shapes-corners-test
    'common-tests.geom-shapes-effects-test
    'common-tests.geom-shapes-intersect-test
@@ -124,6 +137,7 @@
    'common-tests.text-test
    'common-tests.time-test
    'common-tests.types.absorb-assets-test
+   'common-tests.types.color-test
    'common-tests.types.components-test
    'common-tests.types.container-test
    'common-tests.types.fill-test

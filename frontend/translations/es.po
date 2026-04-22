@@ -359,6 +359,9 @@ msgstr "Este equipo ya no pertenece a la organización %s"
 msgid "dashboard.team-belong-org"
 msgstr "Este equipo ahora pertenece a la organización %s"
 
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "Ya no perteneces a la organización %s"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Añadir archivo"
@@ -5627,7 +5630,7 @@ msgstr "Estilo de fuente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:546
 msgid "workspace.assets.typography.go-to-edit"
-msgstr "Ir al archivo de la biblioteca del estilo para editar"
+msgstr "Editar en biblioteca de estilo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:536
 msgid "workspace.assets.typography.letter-spacing"
@@ -8570,6 +8573,10 @@ msgstr "No se pueden aplicar tokens mientras se edita texto. Seleccione la capa 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group"
 msgstr "Renombrar grupo de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.duplicate-group"
+msgstr "Duplicar grupo de tokens"
 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group-name-hint"

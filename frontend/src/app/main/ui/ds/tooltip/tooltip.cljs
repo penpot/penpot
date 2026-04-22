@@ -17,7 +17,51 @@
 
 (def ^:private ^:const overlay-offset 32)
 
+;; Global state for tooltip coordination
 (defonce active-tooltip (atom nil))
+
+;; Registry of visible tooltips to detect nested tooltips
+;; Map: tooltip-id -> trigger-element
+(defonce ^:private tooltip-registry (atom {}))
+
+;; Track tooltips that are "about to show" - used to prevent race conditions
+;; when both parent and child schedule their show at the same time.
+;; Map: tooltip-id -> trigger-element
+(defonce ^:private pending-tooltips (atom {}))
+
+(defn- mark-pending
+  "Mark a tooltip as pending (scheduled to show soon).
+   Used to detect potential nested tooltips during race condition window."
+  [tooltip-id trigger-el]
+  (swap! pending-tooltips assoc tooltip-id trigger-el))
+
+(defn- clear-pending
+  "Clear the pending state (tooltip showed or cancelled)."
+  [tooltip-id]
+  (swap! pending-tooltips dissoc tooltip-id))
+
+(defn- register-tooltip
+  "Register this tooltip in the global registry when it becomes visible.
+   Used to detect nested tooltips."
+  [tooltip-id trigger-el]
+  (swap! tooltip-registry assoc tooltip-id trigger-el)
+  (clear-pending tooltip-id))
+
+(defn- unregister-tooltip
+  "Unregister this tooltip from the global registry when it hides."
+  [tooltip-id]
+  (swap! tooltip-registry dissoc tooltip-id)
+  (clear-pending tooltip-id))
+
+(defn- has-descendant-tooltip?
+  "Check if there's a registered or pending tooltip that is a descendant of trigger-el.
+   If so, we should NOT show the parent tooltip."
+  [trigger-el]
+  (let [all-tooltips (merge @tooltip-registry @pending-tooltips)]
+    (some (fn [[_ entry-el]]
+            (when (some? entry-el)
+              (dom/child? entry-el trigger-el)))
+          all-tooltips)))
 
 (defn- clear-schedule
   [ref]
@@ -160,7 +204,7 @@
 
         tooltip-ref (mf/use-ref nil)
 
-        container (hooks/use-portal-container)
+        container (hooks/use-portal-container :tooltip)
 
         id
         (d/nilv id internal-id)
@@ -191,15 +235,27 @@
            (when-not (.-hidden js/document)
              (let [trigger-el (mf/ref-val trigger-ref)]
                (clear-schedule schedule-ref)
-               (add-schedule schedule-ref (d/nilv delay 300)
-                             (fn []
-                               (when-let [active @active-tooltip]
-                                 (when (not= (:id active) tooltip-id)
-                                   (when-let [tooltip-el (dom/get-element (:id active))]
-                                     (dom/set-css-property! tooltip-el "display" "none"))
-                                   (reset! active-tooltip nil)))
-                               (reset! active-tooltip {:id tooltip-id :trigger trigger-el})
-                               (reset! visible* true)))))))
+
+               ;; Check if there's a registered or pending tooltip that is a descendant of our trigger.
+               ;; If so, skip showing this tooltip and let the innermost one show instead.
+               (when-not (has-descendant-tooltip? trigger-el)
+                 ;; Mark as pending BEFORE scheduling (helps prevent race conditions)
+                 (mark-pending tooltip-id trigger-el)
+
+                 (add-schedule schedule-ref (d/nilv delay 300)
+                               (fn []
+                                 ;; Double-check: don't show if another tooltip is now visible
+                                 (when-let [active @active-tooltip]
+                                   (when (not= (:id active) tooltip-id)
+                                     (when-let [tooltip-el (dom/get-element (:id active))]
+                                       (dom/set-css-property! tooltip-el "display" "none"))
+                                     (reset! active-tooltip nil)))
+
+                                 ;; Register this tooltip as visible
+                                 (register-tooltip tooltip-id trigger-el)
+
+                                 (reset! active-tooltip {:id tooltip-id :trigger trigger-el})
+                                 (reset! visible* true))))))))
 
         on-show-focus
         (mf/use-fn
@@ -215,6 +271,10 @@
          (fn []
            (clear-schedule schedule-ref)
            (reset! visible* false)
+
+           ;; Unregister from the global registry
+           (unregister-tooltip tooltip-id)
+
            (when (= (:id @active-tooltip) tooltip-id)
              (reset! active-tooltip nil))))
 

@@ -350,6 +350,9 @@ msgstr "This team no longer belongs to the organization %s"
 msgid "dashboard.team-belong-org"
 msgstr "This team now belongs to %s"
 
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "You are no longer a member of the organization %s"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Add file"
@@ -2591,6 +2594,12 @@ msgstr "Delete %s files"
 msgid "labels.deleted"
 msgstr "Deleted"
 
+msgid "labels.delete-profile-photo.title"
+msgstr "Delete profile photo"
+
+msgid "labels.delete-profile-photo.message"
+msgstr "Are you sure you want to delete your profile photo?"
+
 #: src/app/main/ui/onboarding/questions.cljs:86
 msgid "labels.developer"
 msgstr "Development"
@@ -2794,6 +2803,14 @@ msgstr "Libraries & Templates"
 #: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:126, src/app/main/ui/dashboard/grid.cljs:147, src/app/main/ui/dashboard/import.cljs:258, src/app/main/ui/dashboard/placeholder.cljs:140, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:60, src/app/main/ui/viewer.cljs:642, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:249, src/app/main/ui/workspace.cljs:129, src/app/main/ui.cljs:70, src/app/main/ui.cljs:108, src/app/main/ui.cljs:127
 msgid "labels.loading"
 msgstr "Loading…"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "labels.uploading-file"
+msgstr "Uploading file…"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "labels.downloading-file"
+msgstr "Downloading file…"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:210
 msgid "labels.lock"
@@ -5727,6 +5744,12 @@ msgstr "Copy columns"
 msgid "workspace.context-menu.grid-cells.paste-tracks"
 msgstr "Paste"
 
+msgid "workspace.context-menu.guides.change-color"
+msgstr "Guide color"
+
+msgid "workspace.context-menu.guides.remove"
+msgstr "Remove guide"
+
 #: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Add 1 column to the right"
@@ -7576,11 +7599,14 @@ msgid "workspace.plugins.empty-plugins"
 msgstr "No plugins installed yet"
 
 #: src/app/main/ui/workspace/plugins.cljs:193
-msgid "workspace.plugins.error.manifest"
-msgstr "The plugin manifest is incorrect."
+ msgid "workspace.plugins.error.manifest"
+ msgstr "The plugin manifest is incorrect."
+
+msgid "plugins.validation.message"
+msgstr "Field %s is invalid: %s"
 
 #: src/app/main/data/plugins.cljs:105, src/app/main/ui/workspace/main_menu.cljs:766, src/app/main/ui/workspace/plugins.cljs:84
-msgid "workspace.plugins.error.need-editor"
+ msgid "workspace.plugins.error.need-editor"
 msgstr "You need to be an editor to use this plugin"
 
 #: src/app/main/ui/workspace/plugins.cljs:189
@@ -8786,6 +8812,10 @@ msgstr "Tokens can't be applied while editing text. Select the text layer instea
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group"
 msgstr "Rename Tokens Group"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.duplicate-group"
+msgstr "Duplicate Tokens Group"
 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group-name-hint"

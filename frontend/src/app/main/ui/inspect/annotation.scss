@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .attributes-block {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 }
 
 .title-spacing-annotation {
@@ -15,7 +15,7 @@
 }
 
 .annotation-content {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--entry-foreground-color);
 }

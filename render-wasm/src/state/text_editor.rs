@@ -100,7 +100,6 @@ pub enum TextEditorEvent {
 
 /// FIXME: It should be better to get these constants from the frontend through the API.
 const SELECTION_COLOR: Color = Color::from_argb(127, 0, 209, 184);
-const CURSOR_WIDTH: f32 = 1.5;
 const CURSOR_COLOR: Color = Color::BLACK;
 const CURSOR_BLINK_INTERVAL_MS: f64 = 530.0;
 
@@ -117,6 +116,7 @@ pub struct TextEditorStyles {
     pub font_variant_id: Multiple<Uuid>,
     pub line_height: Multiple<f32>,
     pub letter_spacing: Multiple<f32>,
+    pub fills_are_multiple: bool,
     pub fills: Vec<Fill>,
 }
 
@@ -233,6 +233,7 @@ impl TextEditorStyles {
             font_variant_id: Multiple::empty(),
             line_height: Multiple::empty(),
             letter_spacing: Multiple::empty(),
+            fills_are_multiple: false,
             fills: Vec::new(),
         }
     }
@@ -248,13 +249,13 @@ impl TextEditorStyles {
         self.font_variant_id.reset();
         self.line_height.reset();
         self.letter_spacing.reset();
+        self.fills_are_multiple = false;
         self.fills.clear();
     }
 }
 
 pub struct TextEditorTheme {
     pub selection_color: Color,
-    pub cursor_width: f32,
     pub cursor_color: Color,
 }
 
@@ -324,6 +325,7 @@ pub struct TextEditorState {
     // This property indicates that we've started
     // selecting something with the pointer.
     pub is_pointer_selection_active: bool,
+    pub is_click_event_skipped: bool,
     pub active_shape_id: Option<Uuid>,
     pub cursor_visible: bool,
     pub last_blink_time: f64,
@@ -336,13 +338,13 @@ impl TextEditorState {
         Self {
             theme: TextEditorTheme {
                 selection_color: SELECTION_COLOR,
-                cursor_width: CURSOR_WIDTH,
                 cursor_color: CURSOR_COLOR,
             },
             selection: TextSelection::new(),
             composition: TextComposition::new(),
             has_focus: false,
             is_pointer_selection_active: false,
+            is_click_event_skipped: false,
             active_shape_id: None,
             cursor_visible: true,
             last_blink_time: 0.0,
@@ -529,11 +531,7 @@ impl TextEditorState {
         let end_paragraph = end.paragraph.min(paragraphs.len() - 1);
 
         self.current_styles.reset();
-
         let mut has_selected_content = false;
-        let mut has_fills = false;
-        let mut fills_are_multiple = false;
-
         for (para_idx, paragraph) in paragraphs
             .iter()
             .enumerate()
@@ -606,14 +604,11 @@ impl TextEditorState {
                     .letter_spacing
                     .merge(Some(span.letter_spacing));
 
-                if !fills_are_multiple {
-                    if !has_fills {
-                        self.current_styles.fills = span.fills.clone();
-                        has_fills = true;
-                    } else if self.current_styles.fills != span.fills {
-                        fills_are_multiple = true;
-                        self.current_styles.fills.clear();
-                    }
+                if self.current_styles.fills.is_empty() {
+                    self.current_styles.fills.append(&mut span.fills.clone());
+                } else if self.current_styles.fills != span.fills {
+                    self.current_styles.fills_are_multiple = true;
+                    self.current_styles.fills.append(&mut span.fills.clone());
                 }
             }
         }
@@ -630,6 +625,7 @@ impl TextEditorState {
         let current_offset = focus.offset;
         let current_text_span = find_text_span_at_offset(current_paragraph, current_offset);
 
+        self.current_styles.reset();
         self.current_styles
             .text_align
             .set_single(Some(current_paragraph.text_align()));

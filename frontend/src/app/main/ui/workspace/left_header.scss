@@ -14,7 +14,7 @@
 }
 
 .main-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-32;
   height: deprecated.$s-32;
@@ -38,8 +38,8 @@
 
 .project-name,
 .file-name {
-  @include deprecated.uppercaseTitleTipography;
-  @include deprecated.textEllipsis;
+  @include deprecated.uppercase-title-typography;
+  @include deprecated.text-ellipsis;
 
   height: deprecated.$s-16;
   width: 100%;
@@ -49,7 +49,7 @@
 }
 
 .file-name {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
 
   text-transform: none;
   color: var(--title-foreground-color-hover);
@@ -59,11 +59,11 @@
 }
 
 .file-name-label {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 }
 
 .file-name-input {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: 100%;
   margin: 0;
@@ -82,7 +82,7 @@
 }
 
 .shared-badge {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-16;
   height: deprecated.$s-32;

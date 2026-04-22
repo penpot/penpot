@@ -28,8 +28,9 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -82,8 +83,10 @@
            :on-click on-click}
      [:div {:class  (stl/css-case :font-item true
                                   :selected is-current)}
-      [:span {:class (stl/css :label)} (:name font)]
-      [:span {:class (stl/css :icon)} (when is-current deprecated-icon/tick)]]]))
+      [:span {:class (stl/css :font-item-label)} (:name font)]
+      (when is-current
+        [:> icon* {:icon-id i/tick
+                   :size "s"}])]]))
 
 (declare row-renderer)
 
@@ -191,7 +194,7 @@
                         :placeholder (tr "workspace.options.search-font")}]
        (when (and recent-fonts show-recent)
          [:section {:class (stl/css :show-recent)}
-          [:p {:class (stl/css :title)} (tr "workspace.options.recent-fonts")]
+          [:p {:class (stl/css :header-title)} (tr "workspace.options.recent-fonts")]
           (for [[idx font] (d/enumerate recent-fonts)]
             [:> font-item* {:key (dm/str "font-" idx)
                             :font font
@@ -316,10 +319,11 @@
 
         (some? font)
         [:*
-         [:span {:class (stl/css :name)}
+         [:span {:class (stl/css :font-option-name)}
           (:name font)]
-         [:span {:class (stl/css :icon)}
-          deprecated-icon/arrow]]
+         [:> icon* {:icon-id i/arrow-down
+                    :class (stl/css :dropdown-icon)
+                    :size "s"}]]
 
         :else
         (tr "dashboard.fonts.deleted-placeholder"))]
@@ -524,15 +528,15 @@
            [:div {:class (stl/css :action-btns)}
             (when show-actions?
               [:*
-               [:> icon-button* {:variant "ghost"
+               [:> icon-button* {:variant "action"
                                  :aria-label (tr "workspace.assets.duplicate")
                                  :on-click on-duplicate
-                                 :icon i/add}]
-               [:> icon-button* {:variant "ghost"
+                                 :icon i/clipboard}]
+               [:> icon-button* {:variant "action"
                                  :aria-label (tr "workspace.assets.delete")
                                  :on-click on-delete
                                  :icon i/delete}]])
-            [:> icon-button* {:variant "ghost"
+            [:> icon-button* {:variant "action"
                               :aria-label (tr "labels.close")
                               :on-click on-close
                               :icon i/tick}]]]
@@ -555,9 +559,10 @@
             (:name typography)]
            [:span {:class (stl/css :typography-font)}
             (:name font-data)]
-           [:div {:class (stl/css :action-btn)
-                  :on-click on-close}
-            deprecated-icon/menu]]
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "labels.close")
+                             :on-click on-close
+                             :icon i/menu}]]
 
           [:div {:class (stl/css :info-row)}
            [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.font-style")]
@@ -580,8 +585,8 @@
            [:span {:class (stl/css :info-content)} (:text-transform typography)]]
 
           (when-not local?
-            [:a {:class (stl/css :link-btn)
-                 :on-click navigate-to-library}
+            [:> button* {:variant "secondary"
+                         :on-click navigate-to-library}
              (tr "workspace.assets.typography.go-to-edit")])])])))
 
 (mf/defc typography-entry
@@ -686,12 +691,14 @@
             (:name font-data)])])
       [:div {:class (stl/css :element-set-actions)}
        (when ^boolean on-detach
-         [:button {:class (stl/css :element-set-actions-button)
-                   :on-click on-detach}
-          deprecated-icon/detach])
-       [:button {:class (stl/css :menu-btn)
-                 :on-click on-open}
-        deprecated-icon/menu]]]
+         [:> icon-button* {:variant "action"
+                           :aria-label (tr "settings.detach")
+                           :on-click on-detach
+                           :icon i/detach}])
+       [:> icon-button* {:variant "action"
+                         :aria-label (tr "labels.open")
+                         :on-click on-open
+                         :icon i/menu}]]]
 
      [:& typography-advanced-options
       {:visible? open?

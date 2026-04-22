@@ -331,7 +331,7 @@
         ;; Apply the allocations to the tracks
         track-list
         (into []
-              (map-indexed #(update %2 :size max (get allocated %1)))
+              (map-indexed #(update %2 :size max (get allocated %1 0)))
               track-list)]
     track-list))
 
@@ -381,7 +381,7 @@
         ;; Apply the allocations to the tracks
         track-list
         (into []
-              (map-indexed #(update %2 :size max (get allocate-fr-tracks %1)))
+              (map-indexed #(update %2 :size max (get allocate-fr-tracks %1 0)))
               track-list)]
     track-list))
 
@@ -474,8 +474,8 @@
          min-column-fr     (min-fr-value column-tracks)
          min-row-fr        (min-fr-value row-tracks)
 
-         column-fr         (if auto-width? min-column-fr (mth/finite (/ fr-column-space column-frs) 0))
-         row-fr            (if auto-height? min-row-fr (mth/finite (/ fr-row-space row-frs) 0))
+         column-fr         (if auto-width? min-column-fr (if (zero? column-frs) 0 (mth/finite (/ fr-column-space column-frs) 0)))
+         row-fr            (if auto-height? min-row-fr (if (zero? row-frs) 0 (mth/finite (/ fr-row-space row-frs) 0)))
 
          column-tracks     (set-fr-value column-tracks column-fr auto-width?)
          row-tracks        (set-fr-value row-tracks row-fr auto-height?)
@@ -489,8 +489,8 @@
          column-autos      (tracks-total-autos column-tracks)
          row-autos         (tracks-total-autos row-tracks)
 
-         column-add-auto   (/ auto-column-space column-autos)
-         row-add-auto      (/ auto-row-space row-autos)
+         column-add-auto   (if (zero? column-autos) 0 (/ auto-column-space column-autos))
+         row-add-auto      (if (zero? row-autos) 0 (/ auto-row-space row-autos))
 
          column-tracks (cond-> column-tracks
                          (= :stretch (:layout-justify-content parent))
@@ -505,36 +505,38 @@
 
          num-columns (count column-tracks)
          column-gap
-         (case (:layout-justify-content parent)
+         (cond
            auto-width?
            column-gap
 
-           :space-evenly
+           (= :space-evenly (:layout-justify-content parent))
            (max column-gap (/ (- bound-width column-total-size) (inc num-columns)))
 
-           :space-around
+           (= :space-around (:layout-justify-content parent))
            (max column-gap (/ (- bound-width column-total-size) num-columns))
 
-           :space-between
+           (= :space-between (:layout-justify-content parent))
            (max column-gap (if (= num-columns 1) column-gap (/ (- bound-width column-total-size) (dec num-columns))))
 
+           :else
            column-gap)
 
          num-rows (count row-tracks)
          row-gap
-         (case (:layout-align-content parent)
+         (cond
            auto-height?
            row-gap
 
-           :space-evenly
+           (= :space-evenly (:layout-align-content parent))
            (max row-gap (/ (- bound-height row-total-size) (inc num-rows)))
 
-           :space-around
+           (= :space-around (:layout-align-content parent))
            (max row-gap (/ (- bound-height row-total-size) num-rows))
 
-           :space-between
+           (= :space-between (:layout-align-content parent))
            (max row-gap (if (= num-rows 1) row-gap (/ (- bound-height row-total-size) (dec num-rows))))
 
+           :else
            row-gap)
 
          start-p

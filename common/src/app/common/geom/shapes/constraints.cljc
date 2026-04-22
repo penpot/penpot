@@ -234,7 +234,7 @@
         after-side-vector (side-vector axis parent-points-after)]
     (ctm/move-modifiers (displacement center-before center-after before-side-vector after-side-vector))))
 
-(defmethod constraint-modifier :default [_ _ _ _ _]
+(defmethod constraint-modifier :default [_ _ _ _ _ _]
   [])
 
 (def const->type+axis

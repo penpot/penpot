@@ -25,7 +25,7 @@
                                                     (tr "settings.multiple")
                                                     "--"))
                                  :class [class (stl/css :numeric-input-wrapper)]
-                                 :applied-token applied-token
+                                 :applied-token-name applied-token
                                  :tokens (if (delay? tokens) @tokens tokens)
                                  :align align
                                  :on-detach on-detach-attr

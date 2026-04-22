@@ -21,7 +21,7 @@
 }
 
 .element-set-content {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 
   margin-bottom: deprecated.$s-8;
 }
@@ -61,7 +61,7 @@
     }
 
     .label {
-      @include deprecated.bodySmallTypography;
+      @include deprecated.body-small-typography;
 
       flex-grow: 1;
       display: flex;
@@ -82,21 +82,21 @@
   }
 
   .actions {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
   }
 
   &.hidden {
     .blur-info {
-      @include deprecated.hiddenElement;
+      @include deprecated.hidden-element;
 
       .show-more {
-        @include deprecated.hiddenElement;
+        @include deprecated.hidden-element;
 
         border: deprecated.$s-1 solid var(--input-border-color-disabled);
       }
 
       .label {
-        @include deprecated.hiddenElement;
+        @include deprecated.hidden-element;
 
         border: deprecated.$s-1 solid var(--input-border-color-disabled);
       }
@@ -106,7 +106,7 @@
 
 .second-row {
   @extend %input-element;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   width: deprecated.$s-92;
 

@@ -38,8 +38,8 @@
 }
 
 .version-tag {
-  @include deprecated.flexCenter;
-  @include deprecated.headlineSmallTypography;
+  @include deprecated.flex-center;
+  @include deprecated.headline-small-typography;
 
   height: deprecated.$s-32;
   width: deprecated.$s-96;
@@ -49,7 +49,7 @@
 }
 
 .modal-title {
-  @include deprecated.headlineLargeTypography;
+  @include deprecated.headline-large-typography;
 
   color: var(--modal-title-foreground-color);
 }
@@ -62,7 +62,7 @@
 }
 
 .feature-content {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
 
   margin: 0;
   color: var(--modal-text-foreground-color);

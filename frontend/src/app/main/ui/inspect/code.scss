@@ -22,7 +22,7 @@
 
 .download-button {
   @extend %button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   height: deprecated.$s-32;
   width: 100%;
@@ -30,7 +30,7 @@
 }
 
 .code-block {
-  @include deprecated.codeTypography;
+  @include deprecated.code-typography;
 
   display: flex;
   flex-direction: column;
@@ -63,7 +63,7 @@
 }
 
 .code-lang {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   display: flex;
   align-items: center;
@@ -95,7 +95,7 @@
 }
 
 .code-lang-select {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   width: deprecated.$s-72;
   border: deprecated.$s-1 solid transparent;
@@ -104,7 +104,7 @@
 }
 
 .code-lang-option {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
 
   width: deprecated.$s-72;
   height: deprecated.$s-32;
@@ -120,7 +120,7 @@
 }
 
 .toggle-btn {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: flex;
   align-items: center;
@@ -129,7 +129,7 @@
   stroke: var(--title-foreground-color);
 
   .collapsabled-icon {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     height: deprecated.$s-24;
     border-radius: deprecated.$br-8;
