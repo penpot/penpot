@@ -348,12 +348,10 @@
         ;; --- Toggles
         toggle-main-menu
         (mf/use-fn
-         (mf/deps main-menu-open?)
          #(swap! menu-state* update :main-menu not))
 
         toggle-more-options
         (mf/use-fn
-         (mf/deps more-options-open?)
          #(swap! menu-state* update :more-options not))
 
         toggle-token-dropdown
