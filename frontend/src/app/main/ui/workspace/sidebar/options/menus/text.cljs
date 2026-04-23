@@ -292,7 +292,7 @@
           (csu/get-token-dropdown-options typography-tokens nil))
 
         selected-token-id*
-        (mf/use-state #(when current-token-name
+        (mf/use-state #(when (and (not= :multiple current-token-name) current-token-name)
                          (:id (get-option-by-name dropdown-options current-token-name))))
         selected-token-id (deref selected-token-id*)
 
@@ -445,7 +445,7 @@
 
     (mf/with-effect [applied-token-name dropdown-options]
       (reset! selected-token-id*
-              (when applied-token-name
+              (when (and (not= :multiple applied-token-name)applied-token-name)
                 (:id (get-option-by-name dropdown-options applied-token-name)))))
 
     (mf/with-effect [token-dropdown-open?]
@@ -477,17 +477,16 @@
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
         (cond
+          (and token-typography-row-enabled? (= :multiple current-token-name) (= typography-id :multiple))
+          [:div "Texts have multiple typography assets and typography tokens applied"]
+          
+          (and token-typography-row-enabled? (= :multiple current-token-name))
+          [:div "token-multiple"]
+
           (and token-typography-row-enabled? current-token-name)
           [:> token-typography-row* {:token-name    current-token-name
                                      :detach-token  detach-token
                                      :active-tokens (resolve-delay typography-tokens)}]
-
-          typography
-          [:& typography-entry {:file-id    typography-file-id
-                                :typography typography
-                                :local?     (= typography-file-id file-id)
-                                :on-detach  handle-detach-typography
-                                :on-change  handle-change-typography}]
 
           (= typography-id :multiple)
           [:div {:class (stl/css :multiple-typography)}
@@ -496,6 +495,15 @@
                              :aria-label (tr "workspace.libraries.text.multiple-typography-tooltip")
                              :on-click   handle-detach-typography
                              :icon       i/detach}]]
+
+          typography
+          [:& typography-entry {:file-id    typography-file-id
+                                :typography typography
+                                :local?     (= typography-file-id file-id)
+                                :on-detach  handle-detach-typography
+                                :on-change  handle-change-typography}]
+
+
 
           :else
           [:> text-options* common-props])
