@@ -77,6 +77,10 @@
                       (assoc item :index index)))
        (reverse)))
 
+(defn- on-name-input-focus
+  [event]
+  (dom/select-text! (dom/get-target event)))
+
 (mf/defc version-entry*
   {::mf/private true}
   [{:keys [entry current-profile on-preview on-restore on-delete on-rename on-lock on-unlock on-edit on-cancel-edit is-editing]}]
@@ -131,11 +135,6 @@
          (fn []
            (when on-unlock
              (on-unlock (:id entry)))))
-
-        on-name-input-focus
-        (mf/use-fn
-         (fn [event]
-           (dom/select-text! (dom/get-target event))))
 
         on-name-input-blur
         (mf/use-fn
