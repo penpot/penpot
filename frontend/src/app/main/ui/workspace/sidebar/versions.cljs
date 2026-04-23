@@ -85,6 +85,38 @@
   [event]
   (-> event dom/get-current-target (dom/get-data "id") uuid/parse))
 
+(defn- on-create-version
+  []
+  (st/emit! (dwv/create-version)))
+
+(defn- on-edit-version
+  [id _event]
+  (st/emit! (dwv/update-versions-state {:editing id})))
+
+(defn- on-cancel-version-edition
+  [_id _event]
+  (st/emit! (dwv/update-versions-state {:editing nil})))
+
+(defn- on-rename-version
+  [id label]
+  (st/emit! (dwv/rename-version id label)))
+
+(defn- on-delete-version
+  [id]
+  (st/emit! (dwv/delete-version id)))
+
+(defn- on-pin-version
+  [id]
+  (st/emit! (dwv/pin-version id)))
+
+(defn- on-lock-version
+  [id]
+  (st/emit! (dwv/lock-version id)))
+
+(defn- on-unlock-version
+  [id]
+  (st/emit! (dwv/unlock-version id)))
+
 (mf/defc version-entry*
   {::mf/private true}
   [{:keys [entry current-profile on-preview on-restore on-delete on-rename on-lock on-unlock on-edit on-cancel-edit is-editing]}]
@@ -310,25 +342,6 @@
                                  (= (:filter state) (:profile-id %)))))
                (group-snapshots)))
 
-        on-create-version
-        (mf/use-fn
-         (fn [] (st/emit! (dwv/create-version))))
-
-        on-edit-version
-        (mf/use-fn
-         (fn [id _event]
-           (st/emit! (dwv/update-versions-state {:editing id}))))
-
-        on-cancel-version-edition
-        (mf/use-fn
-         (fn [_id _event]
-           (st/emit! (dwv/update-versions-state {:editing nil}))))
-
-        on-rename-version
-        (mf/use-fn
-         (fn [id label]
-           (st/emit! (dwv/rename-version id label))))
-
         on-preview-version
         (mf/use-fn
          (fn [id]
@@ -360,25 +373,6 @@
                      (ev/event {::ev/name "restore-version"
                                 ::ev/origin "workspace:sidebar"
                                 :type "autosaved-version"}))))
-
-        on-delete-version
-        (mf/use-fn
-         (fn [id]
-           (st/emit! (dwv/delete-version id))))
-
-        on-pin-version
-        (mf/use-fn
-         (fn [id] (st/emit! (dwv/pin-version id))))
-
-        on-lock-version
-        (mf/use-fn
-         (fn [id]
-           (st/emit! (dwv/lock-version id))))
-
-        on-unlock-version
-        (mf/use-fn
-         (fn [id]
-           (st/emit! (dwv/unlock-version id))))
 
         on-change-filter
         (mf/use-fn
