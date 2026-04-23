@@ -8804,6 +8804,12 @@ msgstr "Ir al panel"
 msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
 msgstr "Guía de solución de problemas"
 
+msgid "webgl.toast.webgl-render-enabled"
+msgstr "Renderizado WebGL activado"
+
+msgid "webgl.toast.webgl-render-disabled"
+msgstr "Renderizado WebGL desactivado"
+
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
