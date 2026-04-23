@@ -2907,6 +2907,9 @@ msgstr "Reenviar invitacion"
 msgid "labels.restore"
 msgstr "Restaurar"
 
+msgid "labels.exit"
+msgstr "Salir"
+
 #: src/app/main/ui/components/progress.cljs:80, src/app/main/ui/static.cljs:299, src/app/main/ui/static.cljs:308, src/app/main/ui/static.cljs:419
 msgid "labels.retry"
 msgstr "Reintentar"
@@ -8725,6 +8728,9 @@ msgstr "Versiones de %s"
 #: src/app/main/ui/workspace/sidebar/versions.cljs:391
 msgid "workspace.versions.loading"
 msgstr "Cargando..."
+
+msgid "workspace.versions.preview-banner-title"
+msgstr "Previsualizando version: %s"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:83
 msgid "workspace.versions.restore-warning"

@@ -11,7 +11,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
-   [app.main.data.notifications :as ntf]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.versions :as dwv]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -76,17 +76,6 @@
        (map-indexed (fn [index item]
                       (assoc item :index index)))
        (reverse)))
-
-(defn- open-restore-version-dialog
-  [origin id]
-  (st/emit! (ntf/dialog
-             :content (tr "workspace.versions.restore-warning")
-             :controls :inline-actions
-             :cancel {:label (tr "workspace.updates.dismiss")
-                      :callback #(st/emit! (ntf/hide))}
-             :accept {:label (tr "labels.restore")
-                      :callback #(st/emit! (dwv/restore-version id origin))}
-             :tag :restore-dialog)))
 
 (mf/defc version-entry*
   {::mf/private true}
@@ -352,22 +341,34 @@
         on-preview-version
         (mf/use-fn
          (fn [id]
-           (st/emit! (dwv/preview-version id))))
+           (st/emit! (dwv/enter-preview id)
+                     (ev/event {::ev/name "preview-version"
+                                ::ev/origin "workspace:sidebar"
+                                :type "pinned-version"}))))
 
         on-preview-snapshot
         (mf/use-fn
          (fn [id _event]
-           (st/emit! (dwv/preview-version id))))
+           (st/emit! (dwv/enter-preview id)
+                     (ev/event {::ev/name "preview-version"
+                                ::ev/origin "workspace:sidebar"
+                                :type "autosaved-version"}))))
 
         on-restore-version
         (mf/use-fn
          (fn [id _event]
-           (open-restore-version-dialog :version id)))
+           (st/emit! (dwv/enter-restore id)
+                     (ev/event {::ev/name "restore-version"
+                                ::ev/origin "workspace:sidebar"
+                                :type "pinned-version"}))))
 
         on-restore-snapshot
         (mf/use-fn
          (fn [id _event]
-           (open-restore-version-dialog :snapshot id)))
+           (st/emit! (dwv/enter-restore id)
+                     (ev/event {::ev/name "restore-version"
+                                ::ev/origin "workspace:sidebar"
+                                :type "autosaved-version"}))))
 
         on-delete-version
         (mf/use-fn
