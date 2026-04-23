@@ -266,7 +266,7 @@
 }
 
 .import-error-detail {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   margin-top: var(--sp-xs);
   color: var(--modal-text-foreground-color);
