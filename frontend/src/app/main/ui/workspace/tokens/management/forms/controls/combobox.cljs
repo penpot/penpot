@@ -29,7 +29,6 @@
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
-   [cljs.pprint :as pp]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -38,6 +37,10 @@
   (let [valid-token-name?
         (and (string? token-name)
              (re-matches  cto/token-name-validation-regex token-name))
+
+        valid-token-ref?
+        (or (str/blank? value)
+            (re-matches cto/token-ref-validation-regex value))
 
         token
         {:value value
@@ -50,18 +53,21 @@
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
 
-    (->> (if (contains? cf/flags :tokenscript)
-           (rx/of (ts/resolve-tokens tokens))
-           (sd/resolve-tokens-interactive tokens))
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                  resolved-value (if (contains? cf/flags :tokenscript)
-                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                   resolved-value)]
-              (if resolved-value
-                (rx/of {:value resolved-value})
-                (rx/of {:error (first errors)}))))))))
+    (if-not valid-token-ref?
+      (rx/of {:error {:error/fn #(str (tr "workspace.tokens.invalid-value" %))
+                      :error/value value}})
+      (->> (if (contains? cf/flags :tokenscript)
+             (rx/of (ts/resolve-tokens tokens))
+             (sd/resolve-tokens-interactive tokens))
+           (rx/mapcat
+            (fn [resolved-tokens]
+              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                    resolved-value (if (contains? cf/flags :tokenscript)
+                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     resolved-value)]
+                (if resolved-value
+                  (rx/of {:value resolved-value})
+                  (rx/of {:error (first errors)})))))))))
 
 (mf/defc value-combobox*
   [{:keys [name tokens token token-type empty-to-end ref] :rest props}]
@@ -105,7 +111,6 @@
         filtered-tokens-by-type
         (mf/with-memo [raw-tokens-by-type token-type]
           (csu/filter-tokens-for-input raw-tokens-by-type token-type))
-
 
         visible-options
         (mf/with-memo [filtered-tokens-by-type token]
@@ -280,21 +285,15 @@
                                                (fn [error]
                                                  ((:error/fn error) (:error/value error))))))
                       (rx/subs! (fn [{:keys [error value]}]
-                                  (let [touched? (get-in @form [:touched name])
-                                        current-value (get-in @form [:data name] "")
-                                        valid-ref? (re-matches cto/token-ref-validation-regex current-value)]
+                                  (let [touched? (get-in @form [:touched name])]
                                     (when touched?
                                       (if error
                                         (do
                                           (swap! form assoc-in [:extra-errors name] {:message error})
                                           (reset! hint* {:message error :type "error"}))
-                                        (if (and (not (str/blank? current-value)) (not valid-ref?))
-                                          (let [message (tr "workspace.tokens.invalid-value" (str current-value))]
-                                            (swap! form assoc-in [:extra-errors name] {:message message})
-                                            (reset! hint* {:message message :type "error"}))
-                                          (let [message (tr "workspace.tokens.resolved-value" value)]
-                                            (swap! form update :extra-errors dissoc name)
-                                            (reset! hint* {:message message :type "hint"})))))))))]
+                                        (let [message (tr "workspace.tokens.resolved-value" value)]
+                                          (swap! form update :extra-errors dissoc name)
+                                          (reset! hint* {:message message :type "hint"}))))))))]
         (fn []
           (rx/dispose! subs))))
 

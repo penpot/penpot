@@ -35,11 +35,16 @@
         (mf/with-memo [token-path tokens-in-selected-set]
           (-> (ctob/tokens-tree tokens-in-selected-set)
               (d/dissoc-in token-path)))
+
         props
-        (mf/spread-props props {:token-type token-type
-                                :tokens-tree-in-selected-set tokens-tree-in-selected-set
-                                :token token
-                                :input-component token.controls/value-combobox*})
+        (if (contains? cf/flags :token-combobox)
+          (mf/spread-props props {:token-type token-type
+                                  :tokens-tree-in-selected-set tokens-tree-in-selected-set
+                                  :token token
+                                  :input-component token.controls/value-combobox*})
+          (mf/spread-props props {:token-type token-type
+                                  :tokens-tree-in-selected-set tokens-tree-in-selected-set
+                                  :token token}))
         text-case-props (if (contains? cf/flags :token-combobox)
                           (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")
                                                   :input-component token.controls/value-combobox*})
