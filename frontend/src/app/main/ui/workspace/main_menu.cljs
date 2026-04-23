@@ -18,6 +18,7 @@
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as scd]
@@ -907,7 +908,10 @@
            (dom/stop-propagation event)
            (let [renderer (or (-> profile :props :renderer) :svg)
                  next-renderer (if (= renderer :wasm) :svg :wasm)]
-             (st/emit! (du/update-profile-props {:renderer next-renderer})))))
+             (st/emit! (du/update-profile-props {:renderer next-renderer})
+                       (ntf/success (tr (if (= next-renderer :wasm)
+                                          "webgl.toast.webgl-render-enabled"
+                                          "webgl.toast.webgl-render-disabled")))))))
 
         open-plugins-manager
         (mf/use-fn

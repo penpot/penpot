@@ -8958,6 +8958,12 @@ msgstr "Go to dashboard"
 msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
 msgstr "Troubleshooting guide"
 
+msgid "webgl.toast.webgl-render-enabled"
+msgstr "WebGL rendering enabled"
+
+msgid "webgl.toast.webgl-render-disabled"
+msgstr "WebGL rendering disabled"
+
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
