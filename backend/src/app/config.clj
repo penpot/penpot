@@ -184,7 +184,7 @@
     [:oidc-roles-attr {:optional true} :string]
     [:oidc-email-attr {:optional true} :string]
     [:oidc-name-attr {:optional true} :string]
-    [:smb-name {:optional false} :string]
+    [:default-email-domain {:optional true} :string]
 
     [:ldap-attrs-email {:optional true} :string]
     [:ldap-attrs-fullname {:optional true} :string]

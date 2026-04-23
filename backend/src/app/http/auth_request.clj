@@ -40,15 +40,15 @@
 
 (defn- resolve-email
   "If the claim is already a valid email, return it as-is.
-  Otherwise treat it as a bare username and append @<smb-name>.com."
+  Otherwise treat it as a bare username and append @<default-email-domain>."
   [email-claim]
   (if (valid-email? email-claim)
     email-claim
-    (let [domain (cf/get :smb-name)]
-      (l/wrn :hint "x-auth-request: email claim is not a valid address, constructing from smb-name"
+    (let [domain (or (cf/get :default-email-domain) "askii.ai")]
+      (l/wrn :hint "x-auth-request: email claim is not a valid address, constructing from default-email-domain"
              :claim email-claim
              :domain domain)
-      (str (first (str/split email-claim #"@")) "@" domain ".com"))))
+      (str (first (str/split email-claim #"@")) "@" domain))))
 
 (defn- get-or-register-profile
   "Looks up a profile by email. If not found and the

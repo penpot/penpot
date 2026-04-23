@@ -65,7 +65,7 @@
    :redis-uri "redis://redis/1"
    :auto-file-snapshot-every 1
    :file-data-backend "db"
-   :smb-name "testcorp"})
+   :default-email-domain "askii.ai"})
 
 (def config
   (cf/read-config :prefix "penpot-test"
