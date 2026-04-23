@@ -309,6 +309,17 @@ impl ShapesPoolImpl {
         modified_uuids
     }
 
+    /// Returns the current transform modifier for a shape, if any.
+    pub fn get_modifier(&self, id: &Uuid) -> Option<&skia::Matrix> {
+        let idx = self.uuid_to_idx.get(id)?;
+        self.modifiers.get(idx)
+    }
+
+    /// Number of shapes currently under a modifier.
+    pub fn modifier_count(&self) -> usize {
+        self.modifiers.len()
+    }
+
     pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl {
         let Some(shape) = self.get(id) else {
             panic!("Subtree not found");
