@@ -106,8 +106,6 @@
         (mf/with-memo [raw-tokens-by-type token-type]
           (csu/filter-tokens-for-input raw-tokens-by-type token-type))
 
-        _ (pp/pprint raw-tokens-by-type)
-        _ (pp/pprint filtered-tokens-by-type)
 
         visible-options
         (mf/with-memo [filtered-tokens-by-type token]
@@ -282,15 +280,21 @@
                                                (fn [error]
                                                  ((:error/fn error) (:error/value error))))))
                       (rx/subs! (fn [{:keys [error value]}]
-                                  (let [touched? (get-in @form [:touched name])]
+                                  (let [touched? (get-in @form [:touched name])
+                                        current-value (get-in @form [:data name] "")
+                                        valid-ref? (re-matches cto/token-ref-validation-regex current-value)]
                                     (when touched?
                                       (if error
                                         (do
                                           (swap! form assoc-in [:extra-errors name] {:message error})
                                           (reset! hint* {:message error :type "error"}))
-                                        (let [message (tr "workspace.tokens.resolved-value" value)]
-                                          (swap! form update :extra-errors dissoc name)
-                                          (reset! hint* {:message message :type "hint"}))))))))]
+                                        (if (and (not (str/blank? current-value)) (not valid-ref?))
+                                          (let [message (tr "workspace.tokens.invalid-value" (str current-value))]
+                                            (swap! form assoc-in [:extra-errors name] {:message message})
+                                            (reset! hint* {:message message :type "error"}))
+                                          (let [message (tr "workspace.tokens.resolved-value" value)]
+                                            (swap! form update :extra-errors dissoc name)
+                                            (reset! hint* {:message message :type "hint"})))))))))]
         (fn []
           (rx/dispose! subs))))
 
