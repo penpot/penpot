@@ -26,3 +26,16 @@
    [:id ::sm/uuid]
    [:name :string]])
 
+(def schema:team-with-organization
+  [:map
+   [:id ::sm/uuid]
+   [:is-your-penpot :boolean]
+   [:organization
+    [:map
+     [:id ::sm/uuid]
+     [:name ::sm/text]
+     [:slug ::sm/text]
+     [:owner-id ::sm/uuid]
+     [:avatar-bg-url ::sm/uri]
+     [:logo-id {:optional true} [:maybe ::sm/uuid]]]]])
+
