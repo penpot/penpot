@@ -17,7 +17,7 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 deprecated.$s-16;
+  padding: 0 var(--sp-l) deprecated.$s-16;
 }
 
 .grid-row {

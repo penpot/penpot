@@ -4,10 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "ds/_borders.scss" as *;
-@use "ds/_utils.scss" as *;
-@use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as t;
+@use "ds/z-index.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .dashboard-templates-section {
   background-color: var(--color-background-tertiary);
@@ -26,6 +27,8 @@
   transition: bottom 300ms;
   width: calc(100% - $sz-12);
   pointer-events: none;
+  z-index: var(--z-index-set);
+
   &.collapsed {
     inset-block-end: calc(-1 * px2rem(228));
     background-color: transparent;

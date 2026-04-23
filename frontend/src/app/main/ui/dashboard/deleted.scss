@@ -6,11 +6,11 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
-@use "../ds/typography.scss" as t;
-@use "../ds/_borders.scss" as *;
-@use "../ds/spacing.scss" as *;
-@use "../ds/_sizes.scss" as *;
-@use "../ds/z-index.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/spacing.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
 
 .dashboard-container {
   flex: 1 0 0;
@@ -51,7 +51,7 @@
   padding: var(--sp-xxl) var(--sp-xxl) var(--sp-s) var(--sp-xxl);
   position: sticky;
   top: 0;
-  z-index: $z-index-100;
+  z-index: var(--z-index-panels);
 }
 
 .nav-inside {
