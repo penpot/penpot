@@ -69,12 +69,11 @@
         ;; Unique color attribute maps
         all-colors (distinct (mapv :attrs data))
 
-        ;; Split into: library colors, token colors, and plain colors
-        library-colors (filterv :ref-id all-colors)
+        ;; Split into mutually exclusive groups:
+        ;; token-colors take priority; library-colors and plain colors exclude tokens
         token-colors   (filterv :token-name all-colors)
-        colors         (filterv #(and (nil? (:ref-id %))
-                                      (not (:token-name %)))
-                                all-colors)]
+        library-colors (filterv (fn [c] (and (some? (:ref-id c)) (nil? (:token-name c)))) all-colors)
+        colors         (filterv (fn [c] (and (nil? (:ref-id c)) (nil? (:token-name c)))) all-colors)]
     {:groups groups
      :all-colors all-colors
      :colors colors
@@ -242,8 +241,7 @@
         [:div {:class (stl/css :selected-color-group)}
          (let [token-color-extract (cond->> token-colors (not @expand-token-color) (take 3))]
            (for [[index token-color] (d/enumerate token-color-extract)]
-             (let [color {:color (:color token-color)
-                          :opacity (:opacity token-color)}]
+             (let [color (dissoc token-color :token-name :has-token-applied)]
                [:> color-row*
                 {:key index
                  :color color
