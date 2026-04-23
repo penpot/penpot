@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.guides
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
@@ -23,12 +24,15 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.rulers :as rulers]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def ^:const guide-width 1)
 (def ^:const guide-opacity 0.7)
 (def ^:const guide-opacity-hover 1)
-(def ^:const guide-color colors/new-danger)
+(def ^:const default-guide-color colors/new-danger)
+
 (def ^:const guide-pill-width 34)
 (def ^:const guide-pill-height 20)
 (def ^:const guide-pill-corner-radius 4)
@@ -282,13 +286,29 @@
 (mf/defc guide*
   {::mf/wrap [mf/memo]}
   [{:keys [guide is-hover on-guide-change get-hover-frame vbox zoom
-           hover-frame disabled-guides frame-modifier frame-transform]}]
+           hover-frame disabled-guides frame-modifier frame-transform
+           on-guide-context-menu]}]
   (let [axis
         (get guide :axis)
 
+        guide-color
+        (or (:color guide) default-guide-color)
+
+        read-only?
+        (mf/use-ctx ctx/workspace-read-only?)
+
+        is-editing*
+        (mf/use-state false)
+
+        is-editing
+        (deref is-editing*)
+
+        input-ref
+        (mf/use-ref nil)
+
         handle-change-position
         (mf/use-fn
-         (mf/deps on-guide-change)
+         (mf/deps on-guide-change guide)
          (fn [changes]
            (when on-guide-change
              (on-guide-change (merge guide changes)))))
@@ -329,14 +349,68 @@
 
         frame-guide-outside?
         (and (some? frame)
-             (not (is-guide-inside-frame? (assoc guide :position pos) frame)))]
+             (not (is-guide-inside-frame? (assoc guide :position pos) frame)))
+
+        frame-offset
+        (if (some? frame)
+          (if (= axis :x) (:x frame) (:y frame))
+          0)
+
+        accept-editing
+        (mf/use-fn
+         (mf/deps frame-offset on-guide-change guide)
+         (fn []
+           ;; Enter both fires this and triggers a blur that calls it again;
+           ;; bail out on the second invocation when the input is already gone.
+           (when-let [input (mf/ref-val input-ref)]
+             (let [parsed (-> input dom/get-value str/trim d/parse-double)]
+               (reset! is-editing* false)
+               (when (and (some? parsed) (some? on-guide-change))
+                 (on-guide-change (assoc guide :position (+ parsed frame-offset))))))))
+
+        cancel-editing
+        (mf/use-fn
+         #(reset! is-editing* false))
+
+        on-input-key-down
+        (mf/use-fn
+         (mf/deps accept-editing cancel-editing)
+         (fn [event]
+           (cond
+             (kbd/enter? event)
+             (do (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (accept-editing))
+
+             (kbd/esc? event)
+             (do (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (cancel-editing)))))
+
+        on-double-click
+        (mf/use-fn
+         (mf/deps read-only?)
+         (fn [event]
+           (when-not read-only?
+             (dom/stop-propagation event)
+             (reset! is-editing* true))))]
+
+    (mf/with-effect [is-editing]
+      (when is-editing
+        (some-> (mf/ref-val input-ref) dom/select-text!)))
 
     (when (or (nil? frame)
               (and (cfh/root-frame? frame)
                    (not (ctst/rotated-frame? frame))))
       [:g.guide-area {:opacity (when frame-guide-outside? 0)}
        (when-not disabled-guides
-         (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
+         (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)
+               on-context-menu
+               (fn [event]
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (when on-guide-context-menu
+                   (on-guide-context-menu event guide)))]
            [:rect {:x x
                    :y y
                    :width width
@@ -349,7 +423,9 @@
                    :on-pointer-down on-pointer-down
                    :on-pointer-up on-pointer-up
                    :on-lost-pointer-capture on-lost-pointer-capture
-                   :on-pointer-move on-pointer-move}]))
+                   :on-pointer-move on-pointer-move
+                   :on-context-menu on-context-menu
+                   :on-double-click on-double-click}]))
 
        (if (some? frame)
          (let [{:keys [l1-x1 l1-y1 l1-x2 l1-y2
@@ -398,9 +474,12 @@
                                              guide-opacity-hover
                                              guide-opacity)}}]))
 
-       (when (or is-hover (:hover @state))
+       (when (or is-hover (:hover @state) is-editing)
          (let [{:keys [rect-x rect-y rect-width rect-height text-x text-y]}
-               (guide-pill-axis pos vbox zoom axis)]
+               (guide-pill-axis pos vbox zoom axis)
+               display-value (fmt/format-number (- pos frame-offset))
+               input-w       (/ guide-pill-width zoom)
+               input-h       (/ guide-pill-height zoom)]
            [:g.guide-pill
             [:rect {:x rect-x
                     :y rect-y
@@ -408,18 +487,46 @@
                     :height rect-height
                     :rx guide-pill-corner-radius
                     :ry guide-pill-corner-radius
-                    :style {:fill guide-color}}]
+                    :style {:fill guide-color}
+                    :on-double-click on-double-click}]
 
-            [:text {:x text-x
-                    :y text-y
-                    :text-anchor "middle"
-                    :dominant-baseline "middle"
-                    :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
-                    :style {:font-size (/ rulers/font-size zoom)
-                            :font-family rulers/font-family
-                            :fill colors/white}}
-             ;; If the guide is associated to a frame we show the position relative to the frame
-             (fmt/format-number (- pos (if (= axis :x) (:x frame) (:y frame))))]]))])))
+            (if is-editing
+              [:foreignObject {:x (- text-x (/ input-w 2))
+                               :y (- text-y (/ input-h 2))
+                               :width input-w
+                               :height input-h
+                               :transform (when (= axis :y)
+                                            (str "rotate(-90 " text-x "," text-y ")"))}
+               [:input {:ref input-ref
+                        :type "number"
+                        :step "any"
+                        :default-value display-value
+                        :auto-focus true
+                        :on-key-down on-input-key-down
+                        :on-blur accept-editing
+                        :on-pointer-down dom/stop-propagation
+                        :style {:width "100%"
+                                :height "100%"
+                                :border "none"
+                                :outline "none"
+                                :padding 0
+                                :margin 0
+                                :background "transparent"
+                                :color colors/white
+                                :font-family rulers/font-family
+                                :font-size (str (/ rulers/font-size zoom) "px")
+                                :text-align "center"
+                                :-moz-appearance "textfield"}}]]
+              [:text {:x text-x
+                      :y text-y
+                      :text-anchor "middle"
+                      :dominant-baseline "middle"
+                      :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
+                      :style {:font-size (/ rulers/font-size zoom)
+                              :font-family rulers/font-family
+                              :fill colors/white}}
+               ;; If the guide is associated to a frame we show the position relative to the frame
+               display-value])]))])))
 
 (mf/defc new-guide-area*
   [{:keys [vbox zoom axis get-hover-frame disabled-guides]}]
@@ -502,6 +609,13 @@
              (st/emit! (dw/update-guides guide))
              (st/emit! (dw/remove-guide guide)))))
 
+        on-guide-context-menu
+        (mf/use-fn
+         (fn [event guide]
+           (let [position (dom/get-client-position event)]
+             (st/emit! (dw/show-guide-context-menu {:position position
+                                                    :guide guide})))))
+
         frame-modifiers
         (-> (group-by :id modifiers)
             (update-vals (comp :transform first)))]
@@ -533,4 +647,5 @@
                      :frame-transform (get frame-modifiers frame-id)
                      :get-hover-frame get-hover-frame
                      :on-guide-change on-guide-change
+                     :on-guide-context-menu on-guide-context-menu
                      :disabled-guides disabled-guides}]))]))

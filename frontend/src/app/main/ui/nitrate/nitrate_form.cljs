@@ -10,6 +10,7 @@
    [app.common.schema :as sm]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
+   [app.main.refs :as refs]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
@@ -27,6 +28,7 @@
   [connectivity]
 
   (let [online? (:licenses connectivity)
+        profile  (mf/deref refs/profile)
         initial (mf/with-memo []
                   {:subscription "yearly"})
         form     (fm/use-form :schema schema:nitrate-form
@@ -72,7 +74,9 @@
              [:> button* {:variant "primary"
                           :on-click on-click
                           :class (stl/css :modal-button)}
-              "UPGRADE TO NITRATE"]
+              (if (:subscription profile)
+                "UPGRADE TO NITRATE"
+                "Try it free for 14 days")]
              [:div {:class (stl/css :modal-text-small :modal-info)}
               "Cancel anytime before your next billing cycle."]]]
 
@@ -83,7 +87,9 @@
 
           [:div {:class (stl/css :contact)}
            [:p {:class (stl/css :modal-text-large)}
-            "Contact us to upgrade to Nitrate:"]
+            (if (:subscription profile)
+              "Contact us to upgrade to Nitrate:"
+              "Contact us to try Nitrate for 14 days:")]
            [:p {:class (stl/css :modal-text-large)}
             [:a {:class (stl/css :link) :href "mailto:sales@penpot.app"}
              "sales@penpot.app"]]])]]]]))

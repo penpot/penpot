@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .badge-notification {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
 
   --badge-notification-bg-color: var(--alert-background-color-default);
   --badge-notification-fg-color: var(--alert-text-foreground-color-default);
@@ -31,7 +31,7 @@
 }
 
 .small {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   min-height: deprecated.$s-20;
   border-radius: deprecated.$br-6;

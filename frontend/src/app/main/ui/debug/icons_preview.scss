@@ -9,7 +9,7 @@
 }
 
 .title {
-  @include deprecated.bigTitleTipography;
+  @include deprecated.big-title-typography;
 
   color: var(--color-foreground-primary);
 }
@@ -32,7 +32,7 @@
   color: var(--color-foreground-primary);
   overflow-wrap: break-word;
 
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   svg {
     width: var(--cell-size);

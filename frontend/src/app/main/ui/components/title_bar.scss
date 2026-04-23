@@ -67,7 +67,7 @@
 }
 
 .icon-text-btn {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: flex;
   align-items: center;

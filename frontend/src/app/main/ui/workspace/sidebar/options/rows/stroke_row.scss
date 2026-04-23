@@ -27,6 +27,25 @@
   &.dnd-over-bot {
     --reorder-bottom-display: block;
   }
+
+  &.hidden {
+    .stroke-options,
+    .stroke-options-tokens,
+    .stroke-caps-options {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
+}
+
+.stroke-color-actions {
+  display: flex;
+  align-items: center;
+
+  > :first-child {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .stroke-options {

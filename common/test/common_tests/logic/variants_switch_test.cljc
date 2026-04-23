@@ -35,7 +35,7 @@
         copy01 (ths/get-shape file :copy01)
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         copy01'   (ths/get-shape file' :copy02)]
     (thf/dump-file file :keys [:width])
@@ -61,7 +61,7 @@
         rect01 (get-in page [:objects (-> copy01 :shapes first)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -100,7 +100,7 @@
         copy01 (ths/get-shape file :copy01)
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         copy01'   (ths/get-shape file' :copy02)]
     (thf/dump-file file :keys [:width])
@@ -137,7 +137,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -180,7 +180,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -257,25 +257,19 @@
 
 
         ;; The copy clean has no overrides
-
-
-        copy-clean       (ths/get-shape file :copy-clean)
         copy-clean-t     (ths/get-shape file :copy-clean-t)
 
         ;; Override font size on copy-font-size
         file             (update-attr file :copy-font-size-t font-size-path-0 "25")
-        copy-font-size   (ths/get-shape file :copy-font-size)
         copy-font-size-t (ths/get-shape file :copy-font-size-t)
 
         ;; Override text on copy-text
         file             (update-attr file :copy-text-t text-path-0 "text overriden")
-        copy-text        (ths/get-shape file :copy-text)
         copy-text-t      (ths/get-shape file :copy-text-t)
 
         ;; Override both on copy-both
         file             (update-attr file :copy-both-t font-size-path-0 "25")
         file             (update-attr file :copy-both-t text-path-0 "text overriden")
-        copy-both        (ths/get-shape file :copy-both)
         copy-both-t      (ths/get-shape file :copy-both-t)
 
 
@@ -283,10 +277,10 @@
 
 
         file' (-> file
-                  (tho/swap-component copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
-                  (tho/swap-component copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
-                  (tho/swap-component copy-text :c02 {:new-shape-label :copy-text-2 :keep-touched? true})
-                  (tho/swap-component copy-both :c02 {:new-shape-label :copy-both-2 :keep-touched? true}))
+                  (tho/swap-component-in-shape :copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-text :c02 {:new-shape-label :copy-text-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-both :c02 {:new-shape-label :copy-both-2 :keep-touched? true}))
         page'             (thf/current-page file')
         copy-clean'       (ths/get-shape file' :copy-clean-2)
         copy-clean-t'     (get-in page' [:objects (-> copy-clean' :shapes first)])
@@ -387,25 +381,19 @@
 
 
         ;; The copy clean has no overrides
-
-
-        copy-clean       (ths/get-shape file :copy-clean)
         copy-clean-t     (ths/get-shape file :copy-clean-t)
 
         ;; Override font size on copy-font-size
         file             (update-attr file :copy-font-size-t font-size-path-0 "25")
-        copy-font-size   (ths/get-shape file :copy-font-size)
         copy-font-size-t (ths/get-shape file :copy-font-size-t)
 
         ;; Override text on copy-text
         file             (update-attr file :copy-text-t text-path-0 "text overriden")
-        copy-text        (ths/get-shape file :copy-text)
         copy-text-t      (ths/get-shape file :copy-text-t)
 
         ;; Override both on copy-both
         file             (update-attr file :copy-both-t font-size-path-0 "25")
         file             (update-attr file :copy-both-t text-path-0 "text overriden")
-        copy-both        (ths/get-shape file :copy-both)
         copy-both-t      (ths/get-shape file :copy-both-t)
 
 
@@ -413,10 +401,10 @@
 
 
         file' (-> file
-                  (tho/swap-component copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
-                  (tho/swap-component copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
-                  (tho/swap-component copy-text :c02 {:new-shape-label :copy-text-2 :keep-touched? true})
-                  (tho/swap-component copy-both :c02 {:new-shape-label :copy-both-2 :keep-touched? true}))
+                  (tho/swap-component-in-shape :copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-text :c02 {:new-shape-label :copy-text-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-both :c02 {:new-shape-label :copy-both-2 :keep-touched? true}))
         page'             (thf/current-page file')
         copy-clean'       (ths/get-shape file' :copy-clean-2)
         copy-clean-t'     (get-in page' [:objects (-> copy-clean' :shapes first)])
@@ -515,25 +503,19 @@
 
 
         ;; The copy clean has no overrides
-
-
-        copy-clean       (ths/get-shape file :copy-clean)
         copy-clean-t     (ths/get-shape file :copy-clean-t)
 
         ;; Override font size on copy-font-size
         file             (update-attr file :copy-font-size-t font-size-path-0 "25")
-        copy-font-size   (ths/get-shape file :copy-font-size)
         copy-font-size-t (ths/get-shape file :copy-font-size-t)
 
         ;; Override text on copy-text
         file             (update-attr file :copy-text-t text-path-0 "text overriden")
-        copy-text        (ths/get-shape file :copy-text)
         copy-text-t      (ths/get-shape file :copy-text-t)
 
         ;; Override both on copy-both
         file             (update-attr file :copy-both-t font-size-path-0 "25")
         file             (update-attr file :copy-both-t text-path-0 "text overriden")
-        copy-both        (ths/get-shape file :copy-both)
         copy-both-t      (ths/get-shape file :copy-both-t)
 
 
@@ -541,10 +523,10 @@
 
 
         file' (-> file
-                  (tho/swap-component copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
-                  (tho/swap-component copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
-                  (tho/swap-component copy-text :c02 {:new-shape-label :copy-text-2 :keep-touched? true})
-                  (tho/swap-component copy-both :c02 {:new-shape-label :copy-both-2 :keep-touched? true}))
+                  (tho/swap-component-in-shape :copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-text :c02 {:new-shape-label :copy-text-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-both :c02 {:new-shape-label :copy-both-2 :keep-touched? true}))
         page'             (thf/current-page file')
         copy-clean'       (ths/get-shape file' :copy-clean-2)
         copy-clean-t'     (get-in page' [:objects (-> copy-clean' :shapes first)])
@@ -645,25 +627,19 @@
 
 
         ;; The copy clean has no overrides
-
-
-        copy-clean       (ths/get-shape file :copy-clean)
         copy-clean-t     (ths/get-shape file :copy-clean-t)
 
         ;; Override font size on copy-font-size
         file             (update-attr file :copy-font-size-t font-size-path-0 "25")
-        copy-font-size   (ths/get-shape file :copy-font-size)
         copy-font-size-t (ths/get-shape file :copy-font-size-t)
 
         ;; Override text on copy-text
         file             (update-attr file :copy-text-t text-path-0 "text overriden")
-        copy-text        (ths/get-shape file :copy-text)
         copy-text-t      (ths/get-shape file :copy-text-t)
 
         ;; Override both on copy-both
         file             (update-attr file :copy-both-t font-size-path-0 "25")
         file             (update-attr file :copy-both-t text-path-0 "text overriden")
-        copy-both        (ths/get-shape file :copy-both)
         copy-both-t      (ths/get-shape file :copy-both-t)
 
 
@@ -671,10 +647,10 @@
 
 
         file' (-> file
-                  (tho/swap-component copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
-                  (tho/swap-component copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
-                  (tho/swap-component copy-text :c02 {:new-shape-label :copy-text-2 :keep-touched? true})
-                  (tho/swap-component copy-both :c02 {:new-shape-label :copy-both-2 :keep-touched? true}))
+                  (tho/swap-component-in-shape :copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-text :c02 {:new-shape-label :copy-text-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-both :c02 {:new-shape-label :copy-both-2 :keep-touched? true}))
         page'             (thf/current-page file')
         copy-clean'       (ths/get-shape file' :copy-clean-2)
         copy-clean-t'     (get-in page' [:objects (-> copy-clean' :shapes first)])
@@ -774,14 +750,12 @@
 
 
         file                   (change-structure file :copy-structure-clean-t)
-        copy-structure-clean   (ths/get-shape file :copy-structure-clean)
         copy-structure-clean-t (ths/get-shape file :copy-structure-clean-t)
 
         ;; Duplicate a text line in copy-structure-clean, updating
         ;; both lines with the same attrs
         file                   (-> (update-attr file :copy-structure-unif-t font-size-path-0 "25")
                                    (change-structure :copy-structure-unif-t))
-        copy-structure-unif   (ths/get-shape file :copy-structure-unif)
         copy-structure-unif-t (ths/get-shape file :copy-structure-unif-t)
 
         ;; Duplicate a text line in copy-structure-clean, updating
@@ -789,7 +763,6 @@
         file                   (-> (change-structure file :copy-structure-mixed-t)
                                    (update-attr :copy-structure-mixed-t font-size-path-0 "35")
                                    (update-attr :copy-structure-mixed-t font-size-path-1 "40"))
-        copy-structure-mixed   (ths/get-shape file :copy-structure-mixed)
         copy-structure-mixed-t (ths/get-shape file :copy-structure-mixed-t)
 
 
@@ -797,9 +770,9 @@
 
 
         file' (-> file
-                  (tho/swap-component copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
-                  (tho/swap-component copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
-                  (tho/swap-component copy-structure-mixed :c02 {:new-shape-label :copy-structure-mixed-2 :keep-touched? true}))
+                  (tho/swap-component-in-shape :copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-structure-mixed :c02 {:new-shape-label :copy-structure-mixed-2 :keep-touched? true}))
         page'                   (thf/current-page file')
         copy-structure-clean'   (ths/get-shape file' :copy-structure-clean-2)
         copy-structure-clean-t' (get-in page' [:objects (-> copy-structure-clean' :shapes first)])
@@ -908,14 +881,12 @@
 
 
         file                   (change-structure file :copy-structure-clean-t)
-        copy-structure-clean   (ths/get-shape file :copy-structure-clean)
         copy-structure-clean-t (ths/get-shape file :copy-structure-clean-t)
 
         ;; Duplicate a text line in copy-structure-clean, updating
         ;; both lines with the same attrs
         file                   (-> (update-attr file :copy-structure-unif-t font-size-path-0 "25")
                                    (change-structure :copy-structure-unif-t))
-        copy-structure-unif   (ths/get-shape file :copy-structure-unif)
         copy-structure-unif-t (ths/get-shape file :copy-structure-unif-t)
 
         ;; Duplicate a text line in copy-structure-clean, updating
@@ -923,7 +894,6 @@
         file                   (-> (change-structure file :copy-structure-mixed-t)
                                    (update-attr :copy-structure-mixed-t font-size-path-0 "35")
                                    (update-attr :copy-structure-mixed-t font-size-path-1 "40"))
-        copy-structure-mixed   (ths/get-shape file :copy-structure-mixed)
         copy-structure-mixed-t (ths/get-shape file :copy-structure-mixed-t)
 
 
@@ -931,9 +901,9 @@
 
 
         file' (-> file
-                  (tho/swap-component copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
-                  (tho/swap-component copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
-                  (tho/swap-component copy-structure-mixed :c02 {:new-shape-label :copy-structure-mixed-2 :keep-touched? true}))
+                  (tho/swap-component-in-shape :copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-structure-mixed :c02 {:new-shape-label :copy-structure-mixed-2 :keep-touched? true}))
         page'                   (thf/current-page file')
         copy-structure-clean'   (ths/get-shape file' :copy-structure-clean-2)
         copy-structure-clean-t' (get-in page' [:objects (-> copy-structure-clean' :shapes first)])
@@ -1038,14 +1008,12 @@
 
 
         file                   (change-structure file :copy-structure-clean-t)
-        copy-structure-clean   (ths/get-shape file :copy-structure-clean)
         copy-structure-clean-t (ths/get-shape file :copy-structure-clean-t)
 
         ;; Duplicate a text line in copy-structure-clean, updating
         ;; both lines with the same attrs
         file                   (-> (update-attr file :copy-structure-unif-t font-size-path-0 "25")
                                    (change-structure :copy-structure-unif-t))
-        copy-structure-unif   (ths/get-shape file :copy-structure-unif)
         copy-structure-unif-t (ths/get-shape file :copy-structure-unif-t)
 
         ;; Duplicate a text line in copy-structure-clean, updating
@@ -1053,7 +1021,6 @@
         file                   (-> (change-structure file :copy-structure-mixed-t)
                                    (update-attr :copy-structure-mixed-t font-size-path-0 "35")
                                    (update-attr :copy-structure-mixed-t font-size-path-1 "40"))
-        copy-structure-mixed   (ths/get-shape file :copy-structure-mixed)
         copy-structure-mixed-t (ths/get-shape file :copy-structure-mixed-t)
 
 
@@ -1061,9 +1028,9 @@
 
 
         file' (-> file
-                  (tho/swap-component copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
-                  (tho/swap-component copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
-                  (tho/swap-component copy-structure-mixed :c02 {:new-shape-label :copy-structure-mixed-2 :keep-touched? true}))
+                  (tho/swap-component-in-shape :copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-structure-mixed :c02 {:new-shape-label :copy-structure-mixed-2 :keep-touched? true}))
         page'                   (thf/current-page file')
         copy-structure-clean'   (ths/get-shape file' :copy-structure-clean-2)
         copy-structure-clean-t' (get-in page' [:objects (-> copy-structure-clean' :shapes first)])
@@ -1169,14 +1136,12 @@
 
 
         file                   (change-structure file :copy-structure-clean-t)
-        copy-structure-clean   (ths/get-shape file :copy-structure-clean)
         copy-structure-clean-t (ths/get-shape file :copy-structure-clean-t)
 
         ;; Duplicate a text line in copy-structure-clean, updating
         ;; both lines with the same attrs
         file                   (-> (update-attr file :copy-structure-unif-t font-size-path-0 "25")
                                    (change-structure :copy-structure-unif-t))
-        copy-structure-unif   (ths/get-shape file :copy-structure-unif)
         copy-structure-unif-t (ths/get-shape file :copy-structure-unif-t)
 
         ;; Duplicate a text line in copy-structure-clean, updating
@@ -1184,7 +1149,6 @@
         file                   (-> (change-structure file :copy-structure-mixed-t)
                                    (update-attr :copy-structure-mixed-t font-size-path-0 "35")
                                    (update-attr :copy-structure-mixed-t font-size-path-1 "40"))
-        copy-structure-mixed   (ths/get-shape file :copy-structure-mixed)
         copy-structure-mixed-t (ths/get-shape file :copy-structure-mixed-t)
 
 
@@ -1192,9 +1156,9 @@
 
 
         file' (-> file
-                  (tho/swap-component copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
-                  (tho/swap-component copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
-                  (tho/swap-component copy-structure-mixed :c02 {:new-shape-label :copy-structure-mixed-2 :keep-touched? true}))
+                  (tho/swap-component-in-shape :copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
+                  (tho/swap-component-in-shape :copy-structure-mixed :c02 {:new-shape-label :copy-structure-mixed-2 :keep-touched? true}))
         page'                   (thf/current-page file')
         copy-structure-clean'   (ths/get-shape file' :copy-structure-clean-2)
         copy-structure-clean-t' (get-in page' [:objects (-> copy-structure-clean' :shapes first)])
@@ -1290,7 +1254,6 @@
                                                  :children-labels [:copy-cp01]))
 
         page   (thf/current-page file)
-        copy01 (ths/get-shape file :copy01)
         copy-cp01 (ths/get-shape file :copy-cp01)
         copy-cp01-rect-id (-> copy-cp01 :shapes first)
 
@@ -1309,7 +1272,7 @@
 
         ;; ==== Action
         ;; Switch :c01 for :c02
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
         copy02    (ths/get-shape file' :copy02)
         copy-cp02' (ths/get-shape-by-id file' (-> copy02 :shapes first))
         copy-cp02-rect' (ths/get-shape-by-id file' (-> copy-cp02' :shapes first))]
@@ -1337,17 +1300,16 @@
                                                  :children-labels [:copy-cp01]))
 
         copy01 (ths/get-shape file :copy01)
-        copy-cp01 (ths/get-shape file :copy-cp01)
         external02 (thc/get-component file :external02)
 
         ;; On :c01, swap the copy of :external01 for a copy of :external02
         file (-> file
-                 (tho/swap-component copy-cp01 :external02 {:new-shape-label :copy-cp02 :keep-touched? false}))
+                 (tho/swap-component-in-shape :copy-cp01 :external02 {:new-shape-label :copy-cp02 :keep-touched? false}))
         copy-cp02 (ths/get-shape file :copy-cp02)
 
         ;; ==== Action
         ;; Switch :c01 for :c02
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         copy02'    (ths/get-shape file' :copy02)
         copy-cp02' (ths/get-shape file' :copy-cp02)]
@@ -1376,12 +1338,11 @@
 
         page   (thf/current-page file)
         copy01 (ths/get-shape file :copy01)
-        copy-cp01 (ths/get-shape file :copy-cp01)
         external02 (thc/get-component file :external02)
 
         ;; On :c01, swap the copy of :external01 for a copy of :external02
         file (-> file
-                 (tho/swap-component copy-cp01 :external02 {:new-shape-label :copy-cp02 :keep-touched? false}))
+                 (tho/swap-component-in-shape :copy-cp01 :external02 {:new-shape-label :copy-cp02 :keep-touched? false}))
         copy-cp02 (ths/get-shape file :copy-cp02)
         copy-cp02-rect-id (-> copy-cp02 :shapes first)
 
@@ -1396,7 +1357,7 @@
 
         ;; ==== Action
         ;; Switch :c01 for :c02
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         copy02'    (ths/get-shape file' :copy02)
         copy-cp02' (ths/get-shape file' :copy-cp02)
@@ -1463,7 +1424,7 @@
         ;; ==== Action
 
 
-        file'        (tho/swap-component file c01-in-copy :c02 {:new-shape-label :c02-in-copy :keep-touched? true})
+        file'        (tho/swap-component-in-shape file :c01-in-copy :c02 {:new-shape-label :c02-in-copy :keep-touched? true})
 
         page'        (thf/current-page file')
         c02-in-copy' (ths/get-shape file' :c02-in-copy)
@@ -1515,7 +1476,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -1564,7 +1525,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -1613,7 +1574,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -1660,7 +1621,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -1714,7 +1675,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -1763,7 +1724,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -1812,7 +1773,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -1859,7 +1820,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -1910,7 +1871,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -1956,7 +1917,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2023,7 +1984,7 @@
         text01 (get-in page [:objects (:id text01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2055,7 +2016,7 @@
         rect01 (get-in page [:objects (-> copy01 :shapes first)])
 
         ;; ==== Action - Try to switch to a component with different shape type
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2098,7 +2059,7 @@
         path01 (get-in page [:objects (:id path01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2146,7 +2107,7 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2190,7 +2151,7 @@
         rect01 (get-in page [:objects (-> copy01 :shapes first)])
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2243,7 +2204,7 @@
         old-position-data (:position-data text01)
 
         ;; ==== Action
-        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2307,6 +2268,7 @@
 
         ;; ==== Action
         file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2589,6 +2551,7 @@
 
         ;; ==== Action
         file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2654,6 +2617,7 @@
 
         ;; ==== Action
         file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)
@@ -2711,6 +2675,7 @@
 
         ;; ==== Action
         file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
         page'     (thf/current-page file')
         copy02'   (ths/get-shape file' :copy02)

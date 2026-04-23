@@ -151,7 +151,7 @@
                  (dm/get-prop p2 :y))))
 
 (defn multiply
-  "Returns the subtraction of the supplied value to both
+  "Returns the multiplication of the supplied value to both
   coordinates of the point as a new point."
   [p1 p2]
   (assert (and (point? p1)
@@ -509,12 +509,10 @@
   (let [old-length (length vector)]
     (scale vector (/ new-length old-length))))
 
-;; FIXME: perfromance
 (defn abs
   [point]
-  (-> point
-      (update :x mth/abs)
-      (update :y mth/abs)))
+  (pos->Point (mth/abs (dm/get-prop point :x))
+              (mth/abs (dm/get-prop point :y))))
 
 ;; --- Debug
 

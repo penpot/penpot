@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
@@ -61,10 +62,16 @@
         menu-state  (mf/use-state cmm/initial-context-menu-state)
         read-only?  (mf/use-ctx ctx/workspace-read-only?)
 
+        opacity      (:opacity color)
+        alpha-suffix (when (and (number? opacity) (< opacity 1))
+                       (dm/str " " (mth/round (* opacity 100)) "%"))
         default-name (cond
                        (:gradient color) (uc/gradient-type->string (dm/get-in color [:gradient :type]))
                        (:color color)    (:color color)
                        :else             (:value color))
+        display-name (if (and alpha-suffix (not (:gradient color)))
+                       (dm/str default-name alpha-suffix)
+                       default-name)
 
         rename-color
         (mf/use-fn
@@ -231,16 +238,16 @@
          :default-value (cpn/merge-path-item (:path color) (:name color))}]
 
        [:div {:title (if (= (:name color) default-name)
-                       default-name
-                       (dm/str (:name color) " (" default-name ")"))
+                       display-name
+                       (dm/str (:name color) " (" display-name ")"))
               :class (stl/css :name-block)
               :on-double-click rename-color-clicked}
 
         (if (= (:name color) default-name)
-          [:span  {:class (stl/css :default-name)} default-name]
+          [:span  {:class (stl/css :default-name)} display-name]
           [:*
            (:name color)
-           [:span  {:class (stl/css :default-name :default-name-with-color)} default-name]])])
+           [:span  {:class (stl/css :default-name :default-name-with-color)} display-name]])])
 
      (when local?
        [:> cmm/assets-context-menu*

@@ -48,6 +48,7 @@
                           :id id
                           :name name
                           :resolved (get option :resolved-value)
+                          :value (get option :value)
                           :ref ref
                           :role "option"
                           :focused (= id focused)
@@ -60,6 +61,7 @@
                     :label (get option :label)
                     :aria-label (get option :aria-label)
                     :icon (get option :icon)
+                    :avatar (get option :avatar)
                     :ref ref
                     :role "option"
                     :focused (= id focused)

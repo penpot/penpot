@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
 
 .sitemap {
   position: relative;
@@ -55,7 +56,7 @@
 }
 
 .page-element {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   min-height: deprecated.$s-32;
   width: 100%;
@@ -83,14 +84,14 @@
     color: var(--layer-row-foreground-color);
 
     .page-name {
-      @include deprecated.textEllipsis;
+      @include deprecated.text-ellipsis;
 
       flex-grow: 1;
       padding-left: deprecated.$s-2;
     }
 
     .page-icon {
-      @include deprecated.flexCenter;
+      @include deprecated.flex-center;
 
       height: deprecated.$s-32;
       width: deprecated.$s-24;
@@ -99,8 +100,6 @@
       svg {
         @extend %button-icon-small;
 
-        height: deprecated.$s-12;
-        width: deprecated.$s-12;
         color: transparent;
         fill: none;
         stroke: var(--icon-foreground);
@@ -109,10 +108,12 @@
 
     .page-actions {
       height: deprecated.$s-32;
+      display: flex;
+      align-items: center;
 
       button {
-        @include deprecated.buttonStyle;
-        @include deprecated.flexCenter;
+        @include deprecated.button-style;
+        @include deprecated.flex-center;
 
         width: deprecated.$s-24;
         height: 100%;
@@ -121,8 +122,6 @@
         svg {
           @extend %button-icon-small;
 
-          height: deprecated.$s-12;
-          width: deprecated.$s-12;
           color: transparent;
           fill: none;
           stroke: var(--icon-foreground);
@@ -131,15 +130,15 @@
     }
 
     .element-name {
-      @include deprecated.textEllipsis;
+      @include deprecated.text-ellipsis;
 
       color: var(--layer-row-foreground-color-focus);
     }
 
     input.element-name {
-      @include deprecated.textEllipsis;
-      @include deprecated.bodySmallTypography;
-      @include deprecated.removeInputStyle;
+      @include deprecated.text-ellipsis;
+      @include deprecated.body-small-typography;
+      @include deprecated.remove-input-style;
 
       flex-grow: 1;
       height: deprecated.$s-28;
@@ -251,6 +250,26 @@
       }
     }
   }
+}
+
+.element-list-body.separator-body {
+  height: auto;
+  min-height: var(--sp-xxxl);
+  padding: 0;
+}
+
+.page-separator {
+  width: 100%;
+  height: $b-1;
+  margin: var(--sp-s);
+  background-color: var(--color-background-quaternary);
+}
+
+.page-element.separator:hover .element-list-body,
+.page-element.separator.hover .element-list-body {
+  color: var(--layer-row-foreground-color);
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .title-spacing-sitemap {

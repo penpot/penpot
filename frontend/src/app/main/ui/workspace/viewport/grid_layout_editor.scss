@@ -119,7 +119,7 @@
 }
 
 .grid-actions-container {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 
   background: var(--panel-background-color);
   border-radius: deprecated.$br-12;

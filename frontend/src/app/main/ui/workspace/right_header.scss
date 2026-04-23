@@ -28,7 +28,7 @@
 }
 
 .zoom-widget {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: flex;
   align-items: center;
@@ -39,7 +39,7 @@
   border-radius: deprecated.$br-8;
 
   .label {
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
 
     height: 100%;
     padding: deprecated.$s-8 0;
@@ -79,7 +79,7 @@
 }
 
 .zoom-text {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: 100%;
   min-width: deprecated.$s-48;
@@ -181,14 +181,14 @@
 }
 
 .persistence-status-widget {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-28;
   height: deprecated.$s-28;
 }
 
 .status-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: deprecated.$s-24;
   height: deprecated.$s-24;

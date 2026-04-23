@@ -14,9 +14,9 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
@@ -25,7 +25,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu*]]
    [rumext.v2 :as mf]))
 
@@ -172,7 +172,7 @@
          :shape shape}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:& constraints-menu
+       [:> constraints-menu*
         {:ids ids
          :values (select-keys shape constraint-attrs)}])
 
@@ -188,11 +188,11 @@
        :values fill-values
        :applied-tokens applied-tokens}]
 
-     [:& stroke-menu {:ids ids
-                      :type type
-                      :values stroke-values
-                      :disable-stroke-style true
-                      :applied-tokens applied-tokens}]
+     [:> stroke-menu* {:ids ids
+                       :type type
+                       :values stroke-values
+                       :disable-stroke-style true
+                       :applied-tokens applied-tokens}]
 
      (when (= :multiple (:fills fill-values))
        [:> color-selection-menu*
@@ -203,7 +203,7 @@
 
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
 
-     [:& blur-menu
+     [:> blur-menu*
       {:ids ids
        :values (select-keys shape [:blur])}]
 

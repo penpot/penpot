@@ -17,7 +17,7 @@
    [app.main.refs :as refs]
    [rumext.v2 :as mf]))
 
-(mf/defc square-grid [{:keys [frame zoom grid] :as props}]
+(mf/defc square-grid* [{:keys [frame zoom grid]}]
   (let [grid-id (mf/use-memo #(uuid/next))
         {:keys [size] :as params} (-> grid :params)
         {color-value :color color-opacity :opacity} (-> grid :params :color)
@@ -45,7 +45,7 @@
              :height (:height frame)
              :fill (str "url(#" grid-id ")")}]]))
 
-(mf/defc layout-grid
+(mf/defc layout-grid*
   [{:keys [key frame grid zoom]}]
   (let [{color-value :color color-opacity :opacity} (-> grid :params :color)
         ;; Support for old color format
@@ -124,7 +124,7 @@
    selrect
    parents))
 
-(mf/defc grid-display-frame
+(mf/defc grid-display-frame*
   {::mf/wrap [mf/memo]}
   [{:keys [frame zoom transforming]}]
   (let [frame-id (:id frame)
@@ -154,16 +154,16 @@
                           :zoom zoom
                           :grid grid}]
            (case (:type grid)
-             :square [:> square-grid props]
-             :column [:> layout-grid props]
-             :row    [:> layout-grid props])))])))
+             :square [:> square-grid* props]
+             :column [:> layout-grid* props]
+             :row    [:> layout-grid* props])))])))
 
 (defn has-grid?
   [{:keys [grids]}]
   (and (some? grids)
        (d/not-empty? (->> grids (filter :display)))))
 
-(mf/defc frame-grid
+(mf/defc frame-grid*
   {::mf/wrap [mf/memo]}
   [{:keys [zoom transform selected focus]}]
   (let [frames        (->> (mf/deref refs/workspace-frames)
@@ -175,7 +175,7 @@
        (when (and #_(not (is-transform? frame))
               (not (ctst/rotated-frame? frame))
                   (or (empty? focus) (contains? focus (:id frame))))
-         [:& grid-display-frame {:key (str "grid-" (:id frame))
-                                 :zoom zoom
-                                 :frame frame
-                                 :transforming transforming}]))]))
+         [:> grid-display-frame* {:key (str "grid-" (:id frame))
+                                  :zoom zoom
+                                  :frame frame
+                                  :transforming transforming}]))]))

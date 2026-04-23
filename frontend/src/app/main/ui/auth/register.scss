@@ -27,7 +27,7 @@
   gap: deprecated.$s-24;
 
   .auth-title {
-    @include deprecated.medTitleTipography;
+    @include deprecated.med-title-typography;
   }
 }
 
@@ -44,13 +44,13 @@
 }
 
 .notification-text {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
 
   color: var(--title-foreground-color);
 }
 
 .notification-text-email {
-  @include deprecated.medTitleTipography;
+  @include deprecated.med-title-typography;
 
   font-size: deprecated.$fs-20;
   color: var(--register-confirmation-color);
@@ -75,7 +75,7 @@
 }
 
 .terms-register {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   display: flex;
   gap: deprecated.$s-4;

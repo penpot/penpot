@@ -40,7 +40,7 @@
 (declare handle-pointer-update)
 (declare handle-file-change)
 (declare handle-file-deleted)
-(declare handle-file-restore)
+(declare handle-file-restored)
 (declare handle-library-change)
 (declare handle-pointer-send)
 (declare handle-export-update)
@@ -132,7 +132,7 @@
     :pointer-update         (handle-pointer-update msg)
     :file-change            (handle-file-change msg)
     :file-deleted           (handle-file-deleted msg)
-    :file-restore           (handle-file-restore msg)
+    :file-restored          (handle-file-restored msg)
     :library-change         (handle-library-change msg)
     :notification           (dc/handle-notification msg)
     :team-role-change       (handle-change-team-role msg)
@@ -283,22 +283,22 @@
            (rt/nav :dashboard-recent {:team-id team-id})))))))
 
 (def ^:private
-  schema:handle-file-restore
-  [:map {:title "handle-file-restore"}
+  schema:handle-file-restored
+  [:map {:title "handle-file-restored"}
    [:type :keyword]
    [:file-id ::sm/uuid]
    [:vern :int]])
 
-(def ^:private check-file-restore-params
-  (sm/check-fn schema:handle-file-restore))
+(def ^:private check-file-restored-params
+  (sm/check-fn schema:handle-file-restored))
 
-(defn handle-file-restore
+(defn handle-file-restored
   [{:keys [file-id vern] :as msg}]
 
-  (assert (check-file-restore-params msg)
+  (assert (check-file-restored-params msg)
           "expected valid parameters")
 
-  (ptk/reify ::handle-file-restore
+  (ptk/reify ::handle-file-restored
     ptk/WatchEvent
     (watch [_ state _]
       (let [curr-file-id    (:current-file-id state)

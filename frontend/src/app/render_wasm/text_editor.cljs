@@ -15,7 +15,7 @@
    [app.render-wasm.mem :as mem]
    [app.render-wasm.wasm :as wasm]))
 
-(def ^:const TEXT_EDITOR_STYLES_METADATA_SIZE (* 30 4))
+(def ^:const TEXT_EDITOR_STYLES_METADATA_SIZE (* 31 4))
 (def ^:const TEXT_EDITOR_STYLES_FILL_SOLID 0)
 (def ^:const TEXT_EDITOR_STYLES_FILL_LINEAR_GRADIENT 1)
 (def ^:const TEXT_EDITOR_STYLES_FILL_RADIAL_GRADIENT 2)
@@ -261,22 +261,23 @@
               line-height-state (aget heap-u32 (+ u32-offset 9))
               letter-spacing-state (aget heap-u32 (+ u32-offset 10))
               num-fills (aget heap-u32 (+ u32-offset 11))
+              multiple-fills (aget heap-u32 (+ u32-offset 12))
 
-              text-align-value (aget heap-u32 (+ u32-offset 12))
-              text-direction-value (aget heap-u32 (+ u32-offset 13))
-              text-decoration-value (aget heap-u32 (+ u32-offset 14))
-              text-transform-value (aget heap-u32 (+ u32-offset 15))
-              font-family-id-a (aget heap-u32 (+ u32-offset 16))
-              font-family-id-b (aget heap-u32 (+ u32-offset 17))
-              font-family-id-c (aget heap-u32 (+ u32-offset 18))
-              font-family-id-d (aget heap-u32 (+ u32-offset 19))
+              text-align-value (aget heap-u32 (+ u32-offset 13))
+              text-direction-value (aget heap-u32 (+ u32-offset 14))
+              text-decoration-value (aget heap-u32 (+ u32-offset 15))
+              text-transform-value (aget heap-u32 (+ u32-offset 16))
+              font-family-id-a (aget heap-u32 (+ u32-offset 17))
+              font-family-id-b (aget heap-u32 (+ u32-offset 18))
+              font-family-id-c (aget heap-u32 (+ u32-offset 19))
+              font-family-id-d (aget heap-u32 (+ u32-offset 20))
               font-family-id-value (uuid/from-unsigned-parts font-family-id-a font-family-id-b font-family-id-c font-family-id-d)
-              font-family-style-value (aget heap-u32 (+ u32-offset 20))
-              _font-family-weight-value (aget heap-u32 (+ u32-offset 21))
-              font-size-value (aget heap-f32 (+ u32-offset 22))
-              font-weight-value (aget heap-i32 (+ u32-offset 23))
-              line-height-value (aget heap-f32 (+ u32-offset 28))
-              letter-spacing-value (aget heap-f32 (+ u32-offset 29))
+              font-family-style-value (aget heap-u32 (+ u32-offset 21))
+              _font-family-weight-value (aget heap-u32 (+ u32-offset 22))
+              font-size-value (aget heap-f32 (+ u32-offset 23))
+              font-weight-value (aget heap-i32 (+ u32-offset 24))
+              line-height-value (aget heap-f32 (+ u32-offset 29))
+              letter-spacing-value (aget heap-f32 (+ u32-offset 30))
               font-id (fonts/uuid->font-id font-family-id-value)
               font-style-value (text-editor-translate-font-style (text-editor-get-style-property font-family-state font-family-style-value))
               font-variant-id-computed (text-editor-compute-font-variant-id font-id font-weight-value font-style-value)
@@ -290,6 +291,11 @@
                                     (* idx types.fills.impl/FILL-U8-SIZE)))))
                          (filter some?)
                          (into []))
+
+              ;; The order of these two variables is important, do not
+              ;; reorder them.
+              selected-colors (if (= multiple-fills 1) fills nil)
+              fills (if (= multiple-fills 1) :multiple fills)
 
               result {:vertical-align (text-editor-translate-vertical-align vertical-align)
                       :text-align (text-editor-translate-text-align (text-editor-get-style-property text-align-state text-align-value))
@@ -306,6 +312,7 @@
                       :font-variant-id (text-editor-get-style-property font-variant-id-state font-variant-id-computed)
                       :typography-ref-file nil
                       :typography-ref-id nil
+                      :selected-colors selected-colors
                       :fills fills}]
 
           (mem/free)
@@ -471,6 +478,19 @@
 ;; This is used as a intermediate cache between Clojure global state and WASM state.
 (def ^:private shape-text-contents (atom {}))
 
+(defn cache-shape-text-content!
+  [shape-id content]
+  (when (some? content)
+    (swap! shape-text-contents assoc shape-id content)))
+
+(defn get-cached-content
+  [shape-id]
+  (get @shape-text-contents shape-id))
+
+(defn update-cached-content!
+  [shape-id content]
+  (swap! shape-text-contents assoc shape-id content))
+
 (defn- merge-exported-texts-into-content
   "Merge exported span texts back into the existing content tree.
 
@@ -522,25 +542,12 @@
           new-texts (text-editor-export-content)]
       (when (and shape-id new-texts)
         (let [texts-clj (js->clj new-texts)
-              content   (get @shape-text-contents shape-id)]
+              content   (get-cached-content shape-id)]
           (when content
             (let [merged (merge-exported-texts-into-content content texts-clj)]
               (swap! shape-text-contents assoc shape-id merged)
               {:shape-id shape-id
                :content  merged})))))))
-
-(defn cache-shape-text-content!
-  [shape-id content]
-  (when (some? content)
-    (swap! shape-text-contents assoc shape-id content)))
-
-(defn get-cached-content
-  [shape-id]
-  (get @shape-text-contents shape-id))
-
-(defn update-cached-content!
-  [shape-id content]
-  (swap! shape-text-contents assoc shape-id content))
 
 (defn- normalize-selection
   "Given anchor/focus para+offset, return {:start-para :start-offset :end-para :end-offset}
@@ -558,6 +565,7 @@
    Splits spans at boundaries as needed."
   [para sel-start sel-end attrs]
   (let [spans  (:children para)
+
         result (loop [spans spans
                       pos   0
                       acc   []]
@@ -594,7 +602,7 @@
           selection (text-editor-get-selection)]
 
       (when (and shape-id selection)
-        (let [content (get @shape-text-contents shape-id)]
+        (let [content (get-cached-content shape-id)]
           (when content
             (let [normalized-selection (normalize-selection selection)
                   {:keys [start-para start-offset end-para end-offset]} normalized-selection
@@ -630,11 +638,13 @@
 
                           (range (count paragraphs))
                           paragraphs))
+
                   new-content (when new-paragraphs
                                 (assoc content :children
                                        [(assoc paragraph-set :children new-paragraphs)]))]
+
               (when new-content
-                (swap! shape-text-contents assoc shape-id new-content)
+                (update-cached-content! shape-id new-content)
                 (use-shape-fn shape-id)
                 (set-shape-text-content-fn shape-id new-content)
                 {:shape-id shape-id

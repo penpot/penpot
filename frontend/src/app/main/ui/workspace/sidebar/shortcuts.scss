@@ -28,7 +28,7 @@
 }
 
 .not-found {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   color: var(--empty-message-foreground-color);
   margin: deprecated.$s-12;
@@ -45,7 +45,7 @@
 
   .section-title,
   .subsection-title {
-    @include deprecated.uppercaseTitleTipography;
+    @include deprecated.uppercase-title-typography;
 
     display: flex;
     align-items: center;
@@ -87,21 +87,21 @@
       background-color: var(--pill-background-color);
 
       .command-name {
-        @include deprecated.bodySmallTypography;
+        @include deprecated.body-small-typography;
 
         margin-left: deprecated.$s-2;
         color: var(--pill-foreground-color);
       }
 
       .keys {
-        @include deprecated.flexCenter;
+        @include deprecated.flex-center;
 
         gap: deprecated.$s-2;
         color: var(--pill-foreground-color);
 
         .key {
-          @include deprecated.bodySmallTypography;
-          @include deprecated.flexCenter;
+          @include deprecated.body-small-typography;
+          @include deprecated.flex-center;
 
           text-transform: capitalize;
           height: deprecated.$s-20;

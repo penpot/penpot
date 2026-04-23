@@ -79,7 +79,7 @@
 }
 
 .current-team {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: grid;
   align-items: center;
@@ -98,7 +98,7 @@
 }
 
 .team-text {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
   @include t.use-typography("title-small");
 
   width: auto;
@@ -115,7 +115,7 @@
 
 // This icon still use the old svg
 .penpot-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   svg {
     fill: var(--icon-foreground);
@@ -125,7 +125,7 @@
 }
 
 .team-picture {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   border-radius: 50%;
   height: var(--sp-xxl);
@@ -140,8 +140,8 @@
 }
 
 .switch-options {
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
+  @include deprecated.button-style;
+  @include deprecated.flex-center;
 
   max-width: var(--sp-xxl);
   min-width: deprecated.$s-28;
@@ -199,7 +199,7 @@
 }
 
 .icon-wrapper {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   width: var(--sp-xxl);
   height: var(--sp-xxl);
@@ -301,7 +301,7 @@
 }
 
 .element-title {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   width: deprecated.$s-256;
   color: var(--color-foreground-primary);
@@ -366,8 +366,8 @@
 }
 
 .search-btn {
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
+  @include deprecated.button-style;
+  @include deprecated.flex-center;
 
   position: absolute;
   right: 0;
@@ -401,7 +401,7 @@
 }
 
 .profile {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: grid;
   grid-template-columns: auto 1fr;
@@ -412,7 +412,7 @@
 
 .profile-fullname {
   @include t.use-typography("title-small");
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   align-self: center;
   max-width: var(--sp-l) 0;
@@ -454,7 +454,7 @@
 }
 
 .profile-dropdown-item .open-arrow {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 }
 
 .profile-dropdown-item .open-arrow svg {
@@ -504,7 +504,7 @@
 
 .menu-version {
   @include t.use-typography("code-font");
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 
   color: var(--color-foreground-secondary);
   margin-inline-start: var(--sp-s);
@@ -545,7 +545,7 @@
 }
 
 .upgrade-plan-section {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   display: flex;
   justify-content: space-between;
@@ -638,7 +638,7 @@
 }
 
 .current-org {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   text-transform: none;
   display: grid;

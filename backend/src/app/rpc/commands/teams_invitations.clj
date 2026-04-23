@@ -50,15 +50,15 @@
    returning *")
 
 (defn- create-invitation-token
-  [cfg {:keys [profile-id valid-until org-id org-name team-id member-id member-email role]}]
+  [cfg {:keys [profile-id valid-until organization-id organization-name team-id member-id member-email role]}]
   (tokens/generate cfg
                    {:iss :team-invitation
                     :exp valid-until
                     :profile-id profile-id
                     :role role
                     :team-id team-id
-                    :org-id org-id
-                    :org-name org-name
+                    :organization-id organization-id
+                    :organization-name organization-name
                     :member-email member-email
                     :member-id member-id}))
 
@@ -137,7 +137,7 @@
         (if organization
           ;; Insert the invited member to the org
           (when (contains? cf/flags :nitrate)
-            (teams/initialize-user-in-nitrate-org cfg (:id member) (:id organization)))
+            (teams/initialize-user-in-nitrate-org cfg (:id member) (:id organization) email))
           ;; Insert the invited member to the team
           (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true}))
 
@@ -178,8 +178,8 @@
                           :invitation-id (:id invitation)
                           :valid-until expire
                           :team-id (:id team)
-                          :org-id (:id organization)
-                          :org-name (:name organization)
+                          :organization-id (:id organization)
+                          :organization-name (:name organization)
                           :member-email (:email-to invitation)
                           :member-id (:id member)
                           :role role}
@@ -210,7 +210,7 @@
                             :to email
                             :invited-by (:fullname profile)
                             :user-name (:fullname member)
-                            :org-name (:name organization)
+                            :organization-name (:name organization)
                             :org-logo (:logo organization)
                             :org-initials (d/get-initials (:name organization))
                             :token itoken

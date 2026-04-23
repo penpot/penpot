@@ -32,11 +32,16 @@
   [:map
    [:id {:optional true} :string]
    [:resolved-value {:optional true}
-    [:or :int :string :float]]
+    [:maybe [:or :int :string :float]]]
    [:name {:optional true} :string]
    [:value {:optional true} :keyword]
    [:icon {:optional true} schema:icon-list]
    [:label {:optional true} :string]
+   [:avatar {:optional true}
+    [:map
+     [:size {:optional true} :string]
+     [:organization {:optional true} :any]
+     [:render-fn {:optional true} fn?]]]
    [:aria-label {:optional true} :string]])
 
 (def ^:private schema:options-dropdown

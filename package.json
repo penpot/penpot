@@ -20,5 +20,6 @@
     "@types/node": "^25.5.2",
     "esbuild": "^0.28.0",
     "opencode-ai": "^1.4.3"
+    "opencode-ai": "^1.14.19"
   }
 }

@@ -344,6 +344,15 @@ msgstr "Restore file"
 msgid "dashboard.org-deleted"
 msgstr "The %s organization has been deleted."
 
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "This team no longer belongs to the organization %s"
+
+msgid "dashboard.team-belong-org"
+msgstr "This team now belongs to %s"
+
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "You are no longer a member of the organization %s"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Add file"
@@ -1126,6 +1135,45 @@ msgstr "Team info"
 msgid "dashboard.team-members"
 msgstr "Team members"
 
+msgid "dashboard.team-organization"
+msgstr "Team organization"
+
+msgid "dashboard.team-organization.none"
+msgstr "This team is not part of any organization"
+
+msgid "dashboard.team-organization.add"
+msgstr "Add to an organization"
+
+msgid "dashboard.select-org-modal.title"
+msgstr "Add team to an organization"
+
+msgid "dashboard.select-org-modal.choose"
+msgstr "Choose an organization:"
+
+msgid "dashboard.select-org-modal.select"
+msgstr "Select an organization"
+
+msgid "dashboard.select-org-modal.accept"
+msgstr "ADD TO ORGANIZATION"
+
+msgid "dashboard.change-org-modal.title"
+msgstr "CHANGE TEAM'S ORGANIZATION"
+
+msgid "dashboard.change-org-modal.choose"
+msgstr "Move to:"
+
+msgid "dashboard.change-org-modal.select"
+msgstr "Select an organization"
+
+msgid "dashboard.change-org-modal.accept"
+msgstr "MOVE TEAM"
+
+msgid "dashboard.team-organization.change"
+msgstr "Change team organization"
+
+msgid "dashboard.team-organization.remove"
+msgstr "Remove team from organization"
+
 #: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"
 msgstr "Team projects"
@@ -1666,6 +1714,9 @@ msgstr "Email or password is incorrect."
 #: src/app/main/ui/settings/password.cljs:25
 msgid "errors.wrong-old-password"
 msgstr "Old password is incorrect"
+
+msgid "errors.org-not-found"
+msgstr "That organization doesn't exists"
 
 #: src/app/main/ui/settings/feedback.cljs:120
 msgid "feedback.description"
@@ -2543,6 +2594,12 @@ msgstr "Delete %s files"
 msgid "labels.deleted"
 msgstr "Deleted"
 
+msgid "labels.delete-profile-photo.title"
+msgstr "Delete profile photo"
+
+msgid "labels.delete-profile-photo.message"
+msgstr "Are you sure you want to delete your profile photo?"
+
 #: src/app/main/ui/onboarding/questions.cljs:86
 msgid "labels.developer"
 msgstr "Development"
@@ -2593,6 +2650,12 @@ msgstr "Empty"
 #: src/app/main/ui/dashboard/import.cljs:297
 msgid "labels.error"
 msgstr "Error"
+
+#: src/app/main/ui/dashboard/import.cljs:297
+msgid "labels.warning-count"
+msgid_plural "labels.warning-count"
+msgstr[0] "%s warning"
+msgstr[1] "%s warnings"
 
 #: src/app/main/ui/onboarding/questions.cljs:404
 #, unused
@@ -2740,6 +2803,14 @@ msgstr "Libraries & Templates"
 #: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:126, src/app/main/ui/dashboard/grid.cljs:147, src/app/main/ui/dashboard/import.cljs:258, src/app/main/ui/dashboard/placeholder.cljs:140, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:60, src/app/main/ui/viewer.cljs:642, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:249, src/app/main/ui/workspace.cljs:129, src/app/main/ui.cljs:70, src/app/main/ui.cljs:108, src/app/main/ui.cljs:127
 msgid "labels.loading"
 msgstr "Loading…"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "labels.uploading-file"
+msgstr "Uploading file…"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "labels.downloading-file"
+msgstr "Downloading file…"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:210
 msgid "labels.lock"
@@ -5673,6 +5744,12 @@ msgstr "Copy columns"
 msgid "workspace.context-menu.grid-cells.paste-tracks"
 msgstr "Paste"
 
+msgid "workspace.context-menu.guides.change-color"
+msgstr "Guide color"
+
+msgid "workspace.context-menu.guides.remove"
+msgstr "Remove guide"
+
 #: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Add 1 column to the right"
@@ -5799,6 +5876,14 @@ msgstr "Hide board names"
 msgid "workspace.header.menu.hide-guides"
 msgstr "Hide guides"
 
+#: src/app/main/ui/workspace/main_menu.cljs:387
+msgid "workspace.header.menu.lock-guides"
+msgstr "Lock guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:387
+msgid "workspace.header.menu.unlock-guides"
+msgstr "Unlock guides"
+
 #: src/app/main/ui/workspace/main_menu.cljs:393
 msgid "workspace.header.menu.hide-palette"
 msgstr "Hide color palette"
@@ -5862,6 +5947,14 @@ msgstr "Redo"
 #: src/app/main/ui/workspace/main_menu.cljs:477
 msgid "workspace.header.menu.select-all"
 msgstr "Select all"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find"
+msgstr "Find"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Find and Replace"
 
 #: src/app/main/ui/workspace/main_menu.cljs:423
 msgid "workspace.header.menu.show-artboard-names"
@@ -6445,6 +6538,10 @@ msgstr "Export unexpectedly slow"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:236
 msgid "workspace.options.fill"
 msgstr "Fill"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.fill.section"
+msgstr "Fill section"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:208
 msgid "workspace.options.fill.add-fill"
@@ -7061,6 +7158,10 @@ msgstr "More library colors"
 msgid "workspace.options.more-token-colors"
 msgstr "More color tokens"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color.section"
+msgstr "Color selection section"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
 msgstr "Opacity"
@@ -7316,6 +7417,10 @@ msgstr "Outside"
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "Remove stroke"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.toggle-stroke"
+msgstr "Toggle stroke"
+
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:137
 msgid "workspace.options.stroke.solid"
 msgstr "Solid"
@@ -7494,11 +7599,14 @@ msgid "workspace.plugins.empty-plugins"
 msgstr "No plugins installed yet"
 
 #: src/app/main/ui/workspace/plugins.cljs:193
-msgid "workspace.plugins.error.manifest"
-msgstr "The plugin manifest is incorrect."
+ msgid "workspace.plugins.error.manifest"
+ msgstr "The plugin manifest is incorrect."
+
+msgid "plugins.validation.message"
+msgstr "Field %s is invalid: %s"
 
 #: src/app/main/data/plugins.cljs:105, src/app/main/ui/workspace/main_menu.cljs:766, src/app/main/ui/workspace/plugins.cljs:84
-msgid "workspace.plugins.error.need-editor"
+ msgid "workspace.plugins.error.need-editor"
 msgstr "You need to be an editor to use this plugin"
 
 #: src/app/main/ui/workspace/plugins.cljs:189
@@ -7961,6 +8069,34 @@ msgstr "Shapes"
 #: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:386
 msgid "workspace.sidebar.layers.texts"
 msgstr "Texts"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.replace"
+msgstr "Replace"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.replace-all"
+msgstr "Replace all"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.replace-placeholder"
+msgstr "Replace with..."
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.match-count"
+msgstr "%s of %s"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.no-matches"
+msgstr "No matches"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.search-scope-layers"
+msgstr "Search layers"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+msgid "workspace.sidebar.layers.search-scope-canvas"
+msgstr "Search on canvas"
 
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
 msgid "workspace.sidebar.options.svg-attrs.title"
@@ -8598,7 +8734,7 @@ msgstr "Name"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
 msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "A token already exists at the path: %s"
+msgstr "A token already exists at the path: %s or at a prefix thereof."
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
 msgid "workspace.tokens.token-name-length-validation-error"
@@ -8668,6 +8804,10 @@ msgstr "Tokens can't be applied while editing text. Select the text layer instea
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group"
 msgstr "Rename Tokens Group"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.duplicate-group"
+msgstr "Duplicate Tokens Group"
 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group-name-hint"
@@ -9023,6 +9163,18 @@ msgstr "Go to dashboard"
 
 msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
 msgstr "Troubleshooting guide"
+
+msgid "modals.remove-team-org.title"
+msgstr "REMOVE TEAM FROM THE ORGANIZATION"
+
+msgid "modals.remove-team-org.text"
+msgstr "Are you sure you want to remove the '%s' team from the '%s' organization?"
+
+msgid "modals.remove-team-org.info"
+msgstr "Projects and files will remain available to team members, but the organization's settings will no longer apply."
+
+msgid "modals.remove-team-org.accept"
+msgstr "Remove from organization"
 
 #, unused
 msgid "workspace.viewport.click-to-close-path"

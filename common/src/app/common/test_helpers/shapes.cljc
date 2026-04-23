@@ -82,6 +82,18 @@
                                 (:id page)
                                 #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
 
+(defn update-shape-by-id
+  [file shape-id attr val & {:keys [page-label]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        shape (ctst/get-shape page shape-id)]
+    (update file :data
+            (fn [file-data]
+              (ctpl/update-page file-data
+                                (:id page)
+                                #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
+
 (defn update-shape-text
   [file shape-label attr val & {:keys [page-label]}]
   (let [page (if page-label

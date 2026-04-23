@@ -102,8 +102,8 @@
 .collapse-sidebar-button {
   --collapse-icon-color: var(--color-foreground-secondary);
 
-  @include deprecated.flexCenter;
-  @include deprecated.buttonStyle;
+  @include deprecated.flex-center;
+  @include deprecated.button-style;
 
   height: 100%;
   width: deprecated.$s-24;
@@ -117,7 +117,7 @@
 }
 
 .collapsed-sidebar {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   position: absolute;
   top: deprecated.$s-48;
@@ -129,7 +129,7 @@
 }
 
 .collapsed-title {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
 
   height: deprecated.$s-36;
   width: deprecated.$s-24;
@@ -138,7 +138,7 @@
 }
 
 .collapsed-button {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 
   height: deprecated.$s-24;
   width: deprecated.$s-16;
@@ -146,7 +146,7 @@
   border-radius: deprecated.$br-5;
 
   svg {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
 
     height: deprecated.$s-16;
     width: deprecated.$s-16;

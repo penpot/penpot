@@ -6,6 +6,7 @@
 
 (ns app.main.ui.auth.verify-token
   (:require
+   [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.common :as dcm]
    [app.main.data.notifications :as ntf]
@@ -25,6 +26,7 @@
 
 (defmethod handle-token :verify-email
   [data]
+  (cf/external-notify-register-success (:profile-id data))
   (let [msg (tr "dashboard.notifications.email-verified-successfully")]
     (ts/schedule 1000 #(st/emit! (ntf/success msg)))
     (st/emit! (da/login-from-token data))))
@@ -41,14 +43,14 @@
   (st/emit! (da/login-from-token tdata)))
 
 (defmethod handle-token :team-invitation
-  [{:keys [state team-id org-team-id org-name invitation-token] :as tdata}]
+  [{:keys [state team-id org-team-id organization-name invitation-token] :as tdata}]
   (case state
     :created
     (if org-team-id
       (st/emit!
        (du/refresh-profile)
        (dcm/go-to-dashboard-recent :team-id org-team-id)
-       (ntf/success (tr "auth.notifications.org-invitation-accepted" org-name)))
+       (ntf/success (tr "auth.notifications.org-invitation-accepted" organization-name)))
       (st/emit!
        (du/refresh-profile)
        (dcm/go-to-dashboard-recent :team-id team-id)
@@ -76,8 +78,17 @@
             (fn [tdata]
               (handle-token tdata))
             (fn [cause]
-              (let [{:keys [type code] :as error} (ex-data cause)]
+              (let [{:keys [type code team-id] :as error} (ex-data cause)]
                 (cond
+                  (= :invalid-token-already-member code)
+                  (st/emit!
+                   (rt/nav :dashboard-recent {:team-id team-id}))
+
+                  (= :org-not-found code)
+                  (st/emit!
+                   (rt/nav :dashboard-recent {:team-id team-id})
+                   (ntf/error (tr "errors.org-not-found")))
+
                   (or (= :validation type)
                       (= :invalid-token code)
                       (= :token-expired (:reason error)))

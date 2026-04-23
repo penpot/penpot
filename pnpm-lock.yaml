@@ -20,6 +20,8 @@ importers:
       opencode-ai:
         specifier: ^1.4.3
         version: 1.4.3
+        specifier: ^1.14.19
+        version: 1.14.19
 
 packages:
 
@@ -288,6 +290,67 @@ packages:
 
   opencode-windows-x64@1.4.3:
     resolution: {integrity: sha512-UxmKDIw3t4XHST6JSUWHmSrCGIEK1LRTAOpO82HBC3XkIjH78gVIeauRR6RULjWAApmy9I1C3TukO2sDUi7Gvw==}
+  opencode-ai@1.14.19:
+    resolution: {integrity: sha512-67h56qYcJivd2U9VK8LJvyMBCc3ZE3HcJ/qL4YtaidSnjEumy4SxO+HHlDISsLase7TUQ0w1nULOAibdZxGzbQ==}
+    hasBin: true
+
+  opencode-darwin-arm64@1.14.19:
+    resolution: {integrity: sha512-gjJ97dTiBbCas3Y7K6KQMQm5/KNIBOM9+10KZHqNr2bQfn0N09O977ZkXoX6IVBBE2632Ahaa71d4pzLKN9ULw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  opencode-darwin-x64-baseline@1.14.19:
+    resolution: {integrity: sha512-UuwLpa511h7qQ+rTmOUmsHch/N4NBQT64dzg+iLWnR5yoR/81inENpbwxiS7hXpVdzCUGo/YnxI1u6SIBoMlTQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  opencode-darwin-x64@1.14.19:
+    resolution: {integrity: sha512-uksrjOtWI7Ob5JvjZBSsrKuy3JVF9d89oYZYfWS5m8ordNyv1Nob39MXJXizv85ozsXjSb0rqjpJurnJw8K+tQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  opencode-linux-arm64-musl@1.14.19:
+    resolution: {integrity: sha512-R1BJuBGWHfBxfKvIA/Hb4nhYaJgCKl1B+mAGNydu+z0CLtGtwU8r+kQWF/G2N0y8Vx6Y6DRfJiv1X0eZEfD1BQ==}
+    cpu: [arm64]
+    os: [linux]
+
+  opencode-linux-arm64@1.14.19:
+    resolution: {integrity: sha512-Bo+aZOppLF366mgGfK0CnIcAVy1EmsrBv93eot1CmPSN1oeud07GpGdn3Bjl5f6KuBx1io6JsvjQyHno+MH5AA==}
+    cpu: [arm64]
+    os: [linux]
+
+  opencode-linux-x64-baseline-musl@1.14.19:
+    resolution: {integrity: sha512-+K8MuGoHugtUec4P/nKcTwZFUipHfW7oPpwlIoPiAQou3bNFTzzP6rslbzzNwjXlQRsUw9GAtuIPDOCL6CkgDg==}
+    cpu: [x64]
+    os: [linux]
+
+  opencode-linux-x64-baseline@1.14.19:
+    resolution: {integrity: sha512-KuvITzg4iK0hdIjpNZepwu3bLZ/dUZDI6BwCoV4w//VEP1j3UfDyeS3vWghKcQLd2T1+yybuEMM/3RXcwm/lGQ==}
+    cpu: [x64]
+    os: [linux]
+
+  opencode-linux-x64-musl@1.14.19:
+    resolution: {integrity: sha512-0qe2+X76UJdrCdhdlJyfubMC4tveHAVxjSmPq7g9Zm95heBeJdcQDCLeyQk/lGgeXgsZzVPfLmyTWNtBvCZYFQ==}
+    cpu: [x64]
+    os: [linux]
+
+  opencode-linux-x64@1.14.19:
+    resolution: {integrity: sha512-2GljfL7BeG4xALBJVRwaAGCM/dzYF5aQf6bfLTKsQIl6QpLUguYSF+fkStBHLeehyqbDP5MtiEEuXjC0+mecjA==}
+    cpu: [x64]
+    os: [linux]
+
+  opencode-windows-arm64@1.14.19:
+    resolution: {integrity: sha512-8/vRHe5tHexikfPceLmpjsQiEhuDTOSCSlEmP4s0Yq3UAkVaDAxpiWq7Bx4g8hjr1gzfXD9vbjV+WHq/BtMC/w==}
+    cpu: [arm64]
+    os: [win32]
+
+  opencode-windows-x64-baseline@1.14.19:
+    resolution: {integrity: sha512-Z8imEJK/srE/r1fr7oNLvpLTeRJQyuL7vsbXvCt3T7j2Ew9BOZ7RuYa8EE0R6bNqQ+MLhBGPiAG7NWc++MgK8Q==}
+    cpu: [x64]
+    os: [win32]
+
+  opencode-windows-x64@1.14.19:
+    resolution: {integrity: sha512-/TqGN91WiUzx7IPMPwmpMIzRixi5TMjaBcC9FH1TgD7DCqKnP6pokvu+ak0C9xwA4wKorE9PoZzeRt/+c3rDCQ==}
     cpu: [x64]
     os: [win32]
 
@@ -483,6 +546,55 @@ snapshots:
     optional: true
 
   opencode-windows-x64@1.4.3:
+  opencode-ai@1.14.19:
+    optionalDependencies:
+      opencode-darwin-arm64: 1.14.19
+      opencode-darwin-x64: 1.14.19
+      opencode-darwin-x64-baseline: 1.14.19
+      opencode-linux-arm64: 1.14.19
+      opencode-linux-arm64-musl: 1.14.19
+      opencode-linux-x64: 1.14.19
+      opencode-linux-x64-baseline: 1.14.19
+      opencode-linux-x64-baseline-musl: 1.14.19
+      opencode-linux-x64-musl: 1.14.19
+      opencode-windows-arm64: 1.14.19
+      opencode-windows-x64: 1.14.19
+      opencode-windows-x64-baseline: 1.14.19
+
+  opencode-darwin-arm64@1.14.19:
+    optional: true
+
+  opencode-darwin-x64-baseline@1.14.19:
+    optional: true
+
+  opencode-darwin-x64@1.14.19:
+    optional: true
+
+  opencode-linux-arm64-musl@1.14.19:
+    optional: true
+
+  opencode-linux-arm64@1.14.19:
+    optional: true
+
+  opencode-linux-x64-baseline-musl@1.14.19:
+    optional: true
+
+  opencode-linux-x64-baseline@1.14.19:
+    optional: true
+
+  opencode-linux-x64-musl@1.14.19:
+    optional: true
+
+  opencode-linux-x64@1.14.19:
+    optional: true
+
+  opencode-windows-arm64@1.14.19:
+    optional: true
+
+  opencode-windows-x64-baseline@1.14.19:
+    optional: true
+
+  opencode-windows-x64@1.14.19:
     optional: true
 
   undici-types@7.18.2: {}

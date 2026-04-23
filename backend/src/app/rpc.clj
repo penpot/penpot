@@ -96,6 +96,7 @@
     (fn [{:keys [params path-params method] :as request}]
       (let [handler-name (:method-name path-params)
             etag         (yreq/get-header request "if-none-match")
+            session-id   (yreq/get-header request "x-session-id")
 
             key-id       (get request ::http/auth-key-id)
             profile-id   (or (::session/profile-id request)
@@ -108,6 +109,7 @@
                              (assoc ::handler-name handler-name)
                              (assoc ::ip-addr ip-addr)
                              (assoc ::request-at (ct/now))
+                             (assoc ::session-id (some-> session-id uuid/parse*))
                              (assoc ::cond/key etag)
                              (cond-> (uuid? profile-id)
                                (assoc ::profile-id profile-id)))

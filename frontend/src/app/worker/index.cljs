@@ -10,9 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes :as ch]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.worker.impl :as impl]
@@ -65,33 +63,7 @@
           (log/dbg :hint "page index updated" :id page-id :elapsed elapsed ::log/sync? true))))
     nil))
 
-(defmethod impl/handler :index/update-text-rect
-  [{:keys [page-id shape-id dimensions]}]
-  (let [page (dm/get-in @state [:pages-index page-id])
-        objects (get page :objects)
-        shape (get objects shape-id)
-        center (gsh/shape->center shape)
-        transform (:transform shape (gmt/matrix))
-        rect (-> (grc/make-rect dimensions)
-                 (grc/rect->points))
-        points (gsh/transform-points rect center transform)
-        selrect (gsh/calculate-selrect points (gsh/points->center points))
-
-        data {:position-data nil
-              :points points
-              :selrect selrect}
-
-        shape (d/patch-object shape data)
-
-        objects
-        (assoc objects shape-id shape)]
-
-    (swap! state update-in [::text-rect page-id] assoc shape-id data)
-    (swap! state update-in [::selection page-id] selection/update-index-single objects shape)
-    nil))
-
 ;; FIXME: schema
-
 (defmethod impl/handler :index/query-snap
   [{:keys [page-id frame-id axis ranges bounds] :as message}]
   (if-let [index (get @state ::snap)]

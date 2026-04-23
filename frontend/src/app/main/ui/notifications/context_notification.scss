@@ -68,7 +68,7 @@
 }
 
 .context-text {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   align-self: center;
   color: var(--context-notification-fg-color);
@@ -81,7 +81,7 @@
 
 .link,
 .contain-html .context-text a {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
 
   align-self: center;
   display: inline;

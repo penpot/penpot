@@ -475,16 +475,6 @@
 
         (when (ctsi/has-overlay-opts interaction)
           [:*
-           ;; Overlay position relative-to (select)
-           [:div {:class (stl/css :interaction-row)}
-            [:div {:class (stl/css :interaction-row-label)}
-             [:div {:class (stl/css :interaction-row-name)}
-              (tr "workspace.options.interaction-relative-to")]]
-            [:div {:class (stl/css :interaction-row-select)}
-             [:& select {:default-value  (str (:position-relative-to interaction))
-                         :options relative-to-opts
-                         :on-change change-position-relative-to}]]]
-
            ;; Overlay position (select)
            [:div {:class (stl/css :interaction-row)}
             [:div {:class (stl/css :interaction-row-label)}
@@ -494,6 +484,16 @@
              [:& select {:default-value (:overlay-pos-type interaction)
                          :options overlay-position-opts
                          :on-change change-overlay-pos-type}]]]
+
+           ;; Overlay position relative-to (select)
+           [:div {:class (stl/css :interaction-row)}
+            [:div {:class (stl/css :interaction-row-label)}
+             [:div {:class (stl/css :interaction-row-name)}
+              (tr "workspace.options.interaction-relative-to")]]
+            [:div {:class (stl/css :interaction-row-select)}
+             [:& select {:default-value  (str (:position-relative-to interaction))
+                         :options relative-to-opts
+                         :on-change change-position-relative-to}]]]
 
            ;; Overlay position (buttons)
            [:div {:class (stl/css :interaction-row)}

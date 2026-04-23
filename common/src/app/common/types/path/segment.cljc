@@ -812,7 +812,7 @@
             :line-to
             (recur (cond-> points
                      (and from-p to-p)
-                     (-> (conj! move-p)
+                     (-> (conj! from-p)
                          (conj! to-p)))
                    (not-empty (subvec content 1))
                    to-p
