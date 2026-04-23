@@ -1815,16 +1815,20 @@ impl RenderState {
             }
 
             // In a pure viewport interaction (pan/zoom), render_from_cache
-            // owns the Target surface — skip flush so we don't present
-            // stale tile positions.  The rAF still populates the Cache
-            // surface and tile HashMap so render_from_cache progressively
-            // shows more complete content.
+            // owns the Target surface — don't flush Target so we don't
+            // present stale tile positions. We still drain the GPU command
+            // queue with a non-Target `flush_and_submit` so the backlog
+            // of tile-render commands executes incrementally instead of
+            // piling up for hundreds of milliseconds and blowing up the
+            // next `render_from_cache` call into a multi-frame hitch.
             //
             // During interactive shape transforms (drag/resize/rotate) we
             // still need to flush every rAF so the user sees the updated
             // shape position — render_from_cache is not in the loop here.
             if !self.options.is_viewport_interaction() {
                 self.flush_and_submit();
+            } else {
+                self.gpu_state.context.flush_and_submit();
             }
 
             if self.render_in_progress {
