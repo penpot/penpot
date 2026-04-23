@@ -1075,16 +1075,18 @@
 
 (defn intersect-position-in-shape
   [id position]
-  (let [buffer (uuid/get-u32 id)
-        result
-        (h/call wasm/internal-module "_intersect_position_in_shape"
-                (aget buffer 0)
-                (aget buffer 1)
-                (aget buffer 2)
-                (aget buffer 3)
-                (:x position)
-                (:y position))]
-    (= result 1)))
+  (if (and wasm/context-initialized? (not @wasm/context-lost?))
+    (let [buffer (uuid/get-u32 id)
+          result
+          (h/call wasm/internal-module "_intersect_position_in_shape"
+                  (aget buffer 0)
+                  (aget buffer 1)
+                  (aget buffer 2)
+                  (aget buffer 3)
+                  (:x position)
+                  (:y position))]
+      (= result 1))
+    false))
 
 (def render-finish
   (letfn [(do-render []

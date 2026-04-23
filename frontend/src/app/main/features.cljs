@@ -30,9 +30,9 @@
   [features state]
   (let [params       (rt/get-params state)
         wasm         (get params :wasm)
-        enable-wasm  (= "true" wasm)
         renderer (-> state :profile :props :renderer)
-        disable-wasm (or (= "false" wasm) (= renderer :svg))
+        enable-wasm  (or (= "true" wasm) (and (= renderer :wasm) (not= "false" wasm)))
+        disable-wasm (or (= "false" wasm) (and (= renderer :svg) (not= "true" wasm)))
         features     (cond-> features
                        enable-wasm  (conj "render-wasm/v1")
                        disable-wasm (disj "render-wasm/v1"))]
@@ -177,4 +177,25 @@
           (wasm/initialize false))
 
         (log/inf :hint "initialized"
+                 :enabled (str/join " " features))))))
+
+(defn recompute-features
+  []
+  (ptk/reify ::recompute-features
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [previous (or (get state :features) #{})
+            features (setup-wasm-features previous state)]
+        (if (= previous features)
+          state
+          (assoc state :features features))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [features (get state :features)]
+        (if (contains? features "render-wasm/v1")
+          (wasm/initialize true)
+          (wasm/initialize false))
+
+        (log/inf :hint "recomputed features"
                  :enabled (str/join " " features))))))

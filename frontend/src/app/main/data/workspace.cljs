@@ -72,6 +72,7 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
@@ -318,7 +319,7 @@
       (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
-            render-wasm? (contains? features "render-wasm/v1")]
+            render-wasm? #(features/active-feature? @st/state "render-wasm/v1")]
 
         (log/debug :hint "initialize-workspace"
                    :team-id (dm/str team-id)
@@ -329,7 +330,7 @@
                (rx/concat
                 ;; Fetch all essential data that should be loaded before the file
                 (rx/merge
-                 (if ^boolean render-wasm?
+                 (if ^boolean (render-wasm?)
                    (->> (rx/from @wasm/module)
                         (rx/filter true?)
                         (rx/tap (fn [_]
@@ -405,72 +406,72 @@
                       (rx/take 1)
                       (rx/map #(dwcm/navigate-to-comment-id comment-id))))
 
-               (when render-wasm?
-                 (->> stream
-                      (rx/filter dch/commit?)
-                      (rx/map deref)
-                      (rx/mapcat
-                       (fn [{:keys [redo-changes]}]
-                         (let [added (->> redo-changes
-                                          (filter #(= (:type %) :add-obj))
-                                          (map :id))]
-                           (->> (rx/from added)
-                                (rx/map process-wasm-object)))))))
+               (->> stream
+                    (rx/filter dch/commit?)
+                    (rx/filter (fn [_] (render-wasm?)))
+                    (rx/map deref)
+                    (rx/mapcat
+                     (fn [{:keys [redo-changes]}]
+                       (let [added (->> redo-changes
+                                        (filter #(= (:type %) :add-obj))
+                                        (map :id))]
+                         (->> (rx/from added)
+                              (rx/map process-wasm-object))))))
 
-               (when render-wasm?
-                 (let [local-commits-s
-                       (->> stream
-                            (rx/filter dch/commit?)
-                            (rx/map deref)
-                            (rx/filter #(and (= :local (:source %))
-                                             (not (contains? (:tags %) :position-data))))
-                            (rx/filter (complement empty?)))
+               (let [local-commits-s
+                     (->> stream
+                          (rx/filter dch/commit?)
+                          (rx/filter (fn [_] (render-wasm?)))
+                          (rx/map deref)
+                          (rx/filter #(and (= :local (:source %))
+                                           (not (contains? (:tags %) :position-data))))
+                          (rx/filter (complement empty?)))
 
-                       notifier-s
-                       (rx/merge
-                        (->> local-commits-s (rx/debounce 1000))
-                        (->> stream (rx/filter dps/force-persist?)))
+                     notifier-s
+                     (rx/merge
+                      (->> local-commits-s (rx/debounce 1000))
+                      (->> stream (rx/filter dps/force-persist?)))
 
-                       objects-s
-                       (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
+                     objects-s
+                     (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
 
-                       current-page-id-s
-                       (rx/from-atom refs/current-page-id {:emit-current-value? true})]
+                     current-page-id-s
+                     (rx/from-atom refs/current-page-id {:emit-current-value? true})]
 
-                   (->> local-commits-s
-                        (rx/buffer-until notifier-s)
-                        (rx/with-latest-from objects-s)
-                        (rx/map
-                         (fn [[commits objects]]
-                           (->> commits
-                                (mapcat :redo-changes)
-                                (filter #(contains? #{:mod-obj :add-obj} (:type %)))
-                                (filter #(cfh/text-shape? objects (:id %)))
-                                (map #(vector
-                                       (:id %)
-                                       (wasm.api/calculate-position-data (get objects (:id %))))))))
+                 (->> local-commits-s
+                      (rx/buffer-until notifier-s)
+                      (rx/with-latest-from objects-s)
+                      (rx/map
+                       (fn [[commits objects]]
+                         (->> commits
+                              (mapcat :redo-changes)
+                              (filter #(contains? #{:mod-obj :add-obj} (:type %)))
+                              (filter #(cfh/text-shape? objects (:id %)))
+                              (map #(vector
+                                     (:id %)
+                                     (wasm.api/calculate-position-data (get objects (:id %))))))))
 
-                        (rx/with-latest-from current-page-id-s)
-                        (rx/map
-                         (fn [[text-position-data page-id]]
-                           (let [changes
-                                 (->> text-position-data
-                                      (mapv (fn [[id position-data]]
-                                              {:type :mod-obj
-                                               :id id
-                                               :page-id page-id
-                                               :operations
-                                               [{:type :set
-                                                 :attr :position-data
-                                                 :val position-data
-                                                 :ignore-touched true
-                                                 :ignore-geometry true}]})))]
-                             (when (d/not-empty? changes)
-                               (dch/commit-changes
-                                {:redo-changes changes :undo-changes []
-                                 :save-undo? false
-                                 :tags #{:position-data}})))))
-                        (rx/take-until stoper-s))))
+                      (rx/with-latest-from current-page-id-s)
+                      (rx/map
+                       (fn [[text-position-data page-id]]
+                         (let [changes
+                               (->> text-position-data
+                                    (mapv (fn [[id position-data]]
+                                            {:type :mod-obj
+                                             :id id
+                                             :page-id page-id
+                                             :operations
+                                             [{:type :set
+                                               :attr :position-data
+                                               :val position-data
+                                               :ignore-touched true
+                                               :ignore-geometry true}]})))]
+                           (when (d/not-empty? changes)
+                             (dch/commit-changes
+                              {:redo-changes changes :undo-changes []
+                               :save-undo? false
+                               :tags #{:position-data}})))))
+                      (rx/take-until stoper-s)))
 
                (->> stream
                     (rx/filter dch/commit?)
