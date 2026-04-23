@@ -402,10 +402,10 @@ LEFT JOIN profile AS p
   [:vector
    [:map
     [:id ::sm/uuid]
-    [:organization-id {:optional true} ::sm/uuid]
+    [:organization-id {:optional true} [:maybe ::sm/uuid]]
     [:email ::sm/email]
     [:sent-at ::sm/inst]
-    [:name {:optional true} ::sm/text]
+    [:name {:optional true} [:maybe ::sm/text]]
     [:photo-url {:optional true} ::sm/uri]]])
 
 (sv/defmethod ::get-org-invitations

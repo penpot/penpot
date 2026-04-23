@@ -285,7 +285,7 @@
       (t/is (= 2 (count result)))
       (t/is (some? (:id dedup)))
       (t/is (some? (:sent-at dedup)))
-      (t/is (nil? (:org-id dedup)))
+      (t/is (nil? (:organization-id dedup)))
       (t/is (nil? (:team-id dedup)))
       (t/is (nil? (:role dedup)))
       (t/is (nil? (:valid-until dedup))))))
