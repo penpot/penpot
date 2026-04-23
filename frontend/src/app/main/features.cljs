@@ -31,7 +31,8 @@
   (let [params       (rt/get-params state)
         wasm         (get params :wasm)
         enable-wasm  (= "true" wasm)
-        disable-wasm (= "false" wasm)
+        renderer (-> state :profile :props :renderer)
+        disable-wasm (or (= "false" wasm) (= renderer :svg))
         features     (cond-> features
                        enable-wasm  (conj "render-wasm/v1")
                        disable-wasm (disj "render-wasm/v1"))]
