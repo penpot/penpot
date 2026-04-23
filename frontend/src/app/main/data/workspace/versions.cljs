@@ -13,13 +13,16 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dwp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.thumbnails :as th]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -125,32 +128,6 @@
        (rx/take 1)
        (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id snapshot-id}))))
 
-(defn restore-version
-  [id origin]
-  (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::restore-version
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [file-id    (:current-file-id state)
-            team-id    (:current-team-id state)
-            event-name (case origin
-                         :version "restore-pin-version"
-                         :snapshot "restore-autosave"
-                         :plugin "restore-version-plugin")]
-
-        (rx/concat
-         (rx/of ::dwp/force-persist
-                (dw/remove-layout-flag :document-history))
-
-         (->> (wait-for-persistence file-id id)
-              (rx/map #(initialize-version)))
-
-         (if event-name
-           (rx/of (ev/event {::ev/name event-name
-                             :file-id file-id
-                             :team-id team-id}))
-           (rx/empty)))))))
-
 (defn delete-version
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
@@ -197,72 +174,144 @@
            (rx/map fetch-versions)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; RESTORE VERSION EVENTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- restore-version
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+  (ptk/reify ::restore-version
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)]
+        (rx/concat
+         (rx/of ::dwp/force-persist
+                (dw/remove-layout-flag :document-history))
+
+         (->> (wait-for-persistence file-id id)
+              (rx/map #(initialize-version))))))))
+
+(defn enter-restore
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+  (ptk/reify ::restore-version
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [output-s (rx/subject)]
+        (rx/merge
+         output-s
+         (rx/of (ntf/dialog
+                 :content (tr "workspace.versions.restore-warning")
+                 :controls :inline-actions
+                 :cancel {:label (tr "workspace.updates.dismiss")
+                          :callback #(do
+                                       (rx/push! output-s (ntf/hide :tag :restore-dialog))
+                                       (rx/end! output-s))}
+                 :accept {:label (tr "labels.restore")
+                          :callback #(do
+                                       (rx/push! output-s (restore-version id))
+                                       (rx/end! output-s))}
+                 :tag :restore-dialog)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PREVIEW VERSION EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn preview-version
-  "Load a snapshot into the workspace for read-only preview without
-  modifying any database state. Sets a read-only flag so no changes
-  are persisted while previewing."
-  [id]
-  (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::preview-version
+(defn- apply-snapshot
+  "Swap the file data in app state with the provided snapshot-file
+  response. Used by the version preview feature to show historical
+  file content without modifying the database"
+  [{:keys [id] :as snapshot}]
+  (ptk/reify ::apply-snapshot-data
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (update :workspace-versions assoc :preview-id id)
-          (update :workspace-global assoc :read-only? true)))
+      (update state :files assoc id snapshot))))
+
+(defn exit-preview
+  "Exit from preview mode and reload the live file data"
+  []
+  (ptk/reify ::exit-preview
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [backup (dm/get-in state [:workspace-versions :backup])]
+        (-> state
+            (update :workspace-versions dissoc :backup)
+            (update :workspace-global dissoc :read-only? :preview-id)
+            (update :files assoc (:id backup) backup))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)
+            file-id (:current-file-id state)
+            page-id (:current-page-id state)]
+
+        (rx/of (dwpg/initialize-page file-id page-id))))))
+
+(defn enter-preview
+  "Load a snapshot into the workspace for read-only preview without
+  modifying any database state. Sets a read-only flag so no changes
+  are persisted while previewing and enter on the preview mode"
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+
+  (ptk/reify ::enter-preview
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file (dsh/lookup-file state)]
+        (-> state
+            (update :workspace-versions assoc :backup file)
+            (update :workspace-global assoc :read-only? true :preview-id id))))
 
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
-            features (get-in state [:files file-id :features])]
-        (->> (rp/cmd! :get-file-snapshot
-                      {:file-id file-id
-                       :id id
-                       :features features})
-             (rx/mapcat
-              (fn [snapshot-file]
-                (rx/of
-                 ;; Swap the file data in state with snapshot content.
-                 ;; Passing id sets workspace-file-version-id, which
-                 ;; causes the WASM viewport to reload its shape buffer.
-                 (dw/apply-snapshot-data file-id id snapshot-file)
-                 ;; Re-initialize the page to rebuild its search index
-                 ;; and page-local state with the new snapshot objects.
-                 (dw/initialize-page file-id page-id))))
-             (rx/catch (fn [err]
-                         ;; On error roll back the read-only flag so the
-                         ;; user is not stuck in a broken preview state.
-                         (log/error :hint "failed to load snapshot" :cause err :file-id file-id :snapshot-id id)
-                         (rx/of (update-versions-state {:preview-id nil})
-                                (ptk/reify ::clear-preview-read-only
-                                  ptk/UpdateEvent
-                                  (update [_ state]
-                                    (update state :workspace-global dissoc :read-only?)))))))))))
+            team-id  (:current-team-id state)
+            features (features/get-enabled-features state team-id)
+            snapshot (->> (dm/get-in state [:workspace-versions :data])
+                          (d/seek #(= id (:id %))))
+            label    (or (:label snapshot)
+                         (tr "workspace.versions.preview.unnamed"))
+            output-s (rx/subject)]
+        (rx/merge
+         output-s
 
-(defn exit-preview
-  "Exit version preview mode and reload the live file data."
-  []
-  (ptk/reify ::exit-preview
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update :workspace-versions dissoc :preview-id)
-          (update :workspace-global dissoc :read-only?)
-          ;; A fresh UUID triggers the WASM viewport to reload its shape
-          ;; buffer with the live file objects once initialize-workspace
-          ;; completes.
-          (assoc :workspace-file-version-id (uuid/next))))
+         (rx/of (ntf/dialog
+                 :content (tr "workspace.versions.preview-banner-title" label)
+                 :controls :inline-actions
+                 :cancel {:label (tr "labels.exit")
+                          :callback #(do
+                                       (rx/push! output-s (ntf/hide))
+                                       (rx/push! output-s (exit-preview))
+                                       (rx/end! output-s))}
+                 :accept {:label (tr "labels.restore")
+                          :callback #(do
+                                       (rx/push! output-s (ntf/hide))
+                                       (rx/push! output-s (restore-version id))
+                                       (rx/end! output-s))}
+                 :tag :preview-dialog))
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            file-id (:current-file-id state)]
-        ;; Full workspace re-init reloads the live file from the server,
-        ;; clearing all snapshot data and restoring normal edit mode.
-        (rx/of (dw/initialize-workspace team-id file-id))))))
+         (->> (rp/cmd! :get-file-snapshot
+                       {:file-id file-id
+                        :id id
+                        :features features})
+              (rx/mapcat
+               (fn [snapshot]
+                 (rx/of
+                  ;; Swap the file data in state with snapshot content.
+                  ;; Passing id sets workspace-file-version-id, which
+                  ;; causes the WASM viewport to reload its shape buffer.
+                  (apply-snapshot snapshot)
+                  ;; Re-initialize the page to rebuild its search index
+                  ;; and page-local state with the new snapshot
+                  ;; objects.
+                  (dwpg/initialize-page file-id page-id))))
+
+              (rx/catch (fn [err]
+                          ;; On error roll back the read-only flag so the
+                          ;; user is not stuck in a broken preview state.
+                          (log/error :hint "failed to load snapshot" :cause err :file-id file-id :snapshot-id id)
+                          (rx/of (exit-preview))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS
@@ -320,9 +369,8 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (rx/concat
-         (rx/of (ev/event {::ev/name "restore-version-plugin"
-                           :file-id file-id
-                           :team-id team-id})
+         (rx/of (ev/event {::ev/name "restore-version"
+                           ::ev/origin "plugins"})
                 ::dwp/force-persist)
 
          (->> (wait-for-persistence file-id id)

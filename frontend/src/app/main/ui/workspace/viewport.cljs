@@ -97,6 +97,7 @@
 
         {:keys [options-mode
                 tooltip
+                preview-id
                 show-distances?
                 picking-color?]}
         wglobal
@@ -314,23 +315,28 @@
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
-    [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
-     (when (:can-edit permissions)
-       (if read-only?
-         [:> view-only-bar* {}]
-         [:*
-          (when-not hide-ui?
-            [:> top-toolbar* {:layout layout}])
+    [:div {:class (stl/css :viewport) :style {"--zoom" zoom} :data-testid "viewport"}
+     (cond
+       (some? preview-id)
+       nil
 
-          (when (and ^boolean path-editing?
-                     ^boolean single-select?)
-            [:> path-edition-bar* {:shape editing-shape
-                                   :edit-path-state edit-path-state
-                                   :layout layout}])
+       (and read-only? (:can-edit permissions))
+       [:> view-only-bar* {}]
 
-          (when (and ^boolean grid-editing?
-                     ^boolean single-select?)
-            [:> grid-edition-bar* {:shape editing-shape}])]))
+       :else
+       [:*
+        (when-not hide-ui?
+          [:> top-toolbar* {:layout layout}])
+
+        (when (and ^boolean path-editing?
+                   ^boolean single-select?)
+          [:> path-edition-bar* {:shape editing-shape
+                                 :edit-path-state edit-path-state
+                                 :layout layout}])
+
+        (when (and ^boolean grid-editing?
+                   ^boolean single-select?)
+          [:> grid-edition-bar* {:shape editing-shape}])])
 
      [:div {:class (stl/css :viewport-overlays)}
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap

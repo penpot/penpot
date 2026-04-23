@@ -231,22 +231,6 @@
           (assoc :thumbnails thumbnails)
           (update :files assoc file-id file)))))
 
-(defn apply-snapshot-data
-  "Swap the file data in app state with the provided snapshot-file
-  response. Used by the version preview feature to show historical
-  file content without modifying the database.
-
-  Also sets workspace-file-version-id to snapshot-id so the WASM
-  viewport detects the change and reloads shapes into its internal
-  buffer (it only re-initialises when this value changes)."
-  [file-id snapshot-id snapshot-file]
-  (ptk/reify ::apply-snapshot-data
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update :files assoc file-id snapshot-file)
-          (assoc :workspace-file-version-id snapshot-id)))))
-
 (defn zoom-to-frame
   []
   (ptk/reify ::zoom-to-frame

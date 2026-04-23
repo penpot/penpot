@@ -70,6 +70,7 @@
             (assoc :version (:version snapshot))
             (assoc :features (:features snapshot))
             (assoc :revn (:revn snapshot))
+            (assoc :vern (rand-int 100000))
             (assoc :permissions perms))))))
 
 (def ^:private schema:create-file-snapshot
