@@ -3,12 +3,12 @@
  */
 
 import { useCallback, useMemo, useState } from 'react'
-import type { IndexedNode, IndexedPage } from '../../worker/types'
+import type { IndexedPage, IndexedShape } from '../../worker/types'
 import type { PenpotNode, PenpotPage } from 'penpot-exporter/types'
 import { useSnapshot } from 'valtio'
 import { docProxy, getActiveOrSinglePageId } from '../../renderer/store/doc-proxy'
 import { setSelectedIds } from '../../renderer/store/document-selection'
-import { orderedNodesFromPage } from '../../renderer/store/ordered-page-nodes'
+import { orderedNodesWithDepth } from '../../renderer/store/ordered-page-nodes'
 import { FloatingEditorRail } from '../EditorShell/floating-editor-rail'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ChevronDown, ChevronRight, FileText, Plus } from 'lucide-react'
 import { commitPageMetadataUpdate } from '../../renderer/properties/commit-page-properties'
 import { setActivePage, addPage } from '../../page-crud'
+import { commitChanges } from '../../renderer/store/commit'
+import { buildReparentChanges, resolveDropTarget, type DropSide } from './reparent'
+import { LayerRow, type DragOverState } from './layer-row'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -30,6 +33,7 @@ export function LayersPanel({ className }: LayersPanelProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [pagesOpen, setPagesOpen] = useState(true)
   const [layersOpen, setLayersOpen] = useState(true)
+  const [dragOver, setDragOver] = useState<DragOverState | null>(null)
 
   const [editingPageId, setEditingPageId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
@@ -41,11 +45,11 @@ export function LayersPanel({ className }: LayersPanelProps) {
 
   const currentPageNodes = useMemo(() => {
     if (!page) return
-    return orderedNodesFromPage(page)
+    return orderedNodesWithDepth(page)
   }, [page])
 
   const shapeLayers = useMemo(
-    () => (currentPageNodes ?? []).filter((n) => n.id !== ROOT_UUID),
+    () => (currentPageNodes ?? []).filter(({ node }) => node.id !== ROOT_UUID),
     [currentPageNodes],
   )
 
@@ -109,6 +113,73 @@ export function LayersPanel({ className }: LayersPanelProps) {
 
   const onLayerRowClick = useCallback((id: string) => {
     setSelectedIds(new Set([id]))
+  }, [])
+
+  const [draggingInPanel, setDraggingInPanel] = useState(false)
+
+  const onLayerDragStart = useCallback((id: string): string[] => {
+    setDraggingInPanel(true)
+    const current = docProxy.selectedIds
+    if (current.has(id) && current.size > 1) {
+      return Array.from(current)
+    }
+    setSelectedIds(new Set([id]))
+    return [id]
+  }, [])
+
+  const onLayerDragEnd = useCallback(() => {
+    setDraggingInPanel(false)
+  }, [])
+
+  const onLayerDrop = useCallback(
+    async (targetId: string, side: DropSide, draggedIds: string[]) => {
+      setDragOver(null)
+      const activePageId = docProxy.currentPageId ?? getActiveOrSinglePageId()
+      if (!activePageId) return
+      const currentPage = docProxy.pageMap.get(activePageId)
+      if (!currentPage) return
+      const objects = currentPage.objects
+      const resolved = resolveDropTarget({ targetId, side, draggedIds, objects })
+      if (!resolved) return
+      const { redoChanges, undoChanges } = buildReparentChanges({
+        pageId: activePageId,
+        parentId: resolved.parentId,
+        index: resolved.index,
+        shapeIds: draggedIds,
+        objects,
+      })
+      await commitChanges({ redoChanges, undoChanges, pageId: activePageId })
+    },
+    [],
+  )
+
+  const [rootDropActive, setRootDropActive] = useState(false)
+
+  const handleRootDrop = useCallback(async (draggedIds: string[]) => {
+    setRootDropActive(false)
+    setDragOver(null)
+    if (draggedIds.length === 0) return
+    const activePageId = docProxy.currentPageId ?? getActiveOrSinglePageId()
+    if (!activePageId) return
+    const currentPage = docProxy.pageMap.get(activePageId)
+    if (!currentPage) return
+    const objects = currentPage.objects as Record<string, IndexedShape>
+    const rootChildren = objects[ROOT_UUID]?.shapes ?? []
+    const filtered = draggedIds.filter((id) => {
+      const shape = objects[id]
+      if (!shape) return false
+      if (shape.parentId === ROOT_UUID) return false
+      return true
+    })
+    if (filtered.length === 0) return
+    const { redoChanges, undoChanges } = buildReparentChanges({
+      pageId: activePageId,
+      parentId: ROOT_UUID,
+      index: rootChildren.length,
+      shapeIds: filtered,
+      objects,
+    })
+    await commitChanges({ redoChanges, undoChanges, pageId: activePageId })
   }, [])
 
   const footer = layerCount === 1 ? '1 layer' : `${layerCount} layers`
@@ -266,27 +337,64 @@ export function LayersPanel({ className }: LayersPanelProps) {
                   <p className="px-2 py-1 text-xs text-muted-foreground">No layers yet</p>
                 )}
                 {page && shapeLayers.length > 0 && (
-                  <ul className="list-none space-y-0.5 p-0">
-                    {shapeLayers.map((node: IndexedNode) => {
-                      const active = selectedIds.has(node.id)
-                      return (
-                        <li key={node.id}>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className={cn(
-                              'h-8 w-full justify-start px-2 font-normal',
-                              active && 'bg-muted/80 text-foreground',
-                            )}
-                            onClick={() => onLayerRowClick(node.id)}
-                          >
-                            <span className="truncate">{node.name ?? 'Shape'}</span>
-                          </Button>
-                        </li>
-                      )
-                    })}
-                  </ul>
+                  <div className="relative">
+                    <ul className="list-none space-y-0.5 p-0">
+                      {shapeLayers.map(({ node, depth }) => {
+                        const active = selectedIds.has(node.id)
+                        return (
+                          <li key={node.id}>
+                            <LayerRow
+                              node={node}
+                              depth={depth}
+                              active={active}
+                              selectedIds={selectedIds}
+                              objects={page.objects as Record<string, IndexedShape>}
+                              dragOver={dragOver}
+                              onSelect={onLayerRowClick}
+                              onDragStart={onLayerDragStart}
+                              onDragOver={setDragOver}
+                              onDragEnd={onLayerDragEnd}
+                              onDrop={onLayerDrop}
+                            />
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    {draggingInPanel && (
+                      <div
+                        onDragOver={(e) => {
+                          if (!e.dataTransfer.types.includes('application/x-skia-layer-ids')) return
+                          e.preventDefault()
+                          e.dataTransfer.dropEffect = 'move'
+                          if (!rootDropActive) setRootDropActive(true)
+                        }}
+                        onDragLeave={() => setRootDropActive(false)}
+                        onDrop={(e) => {
+                          if (!e.dataTransfer.types.includes('application/x-skia-layer-ids')) return
+                          e.preventDefault()
+                          const raw = e.dataTransfer.getData('application/x-skia-layer-ids')
+                          let ids: string[] = []
+                          try {
+                            const parsed: unknown = JSON.parse(raw)
+                            if (Array.isArray(parsed)) {
+                              ids = parsed.filter((x): x is string => typeof x === 'string')
+                            }
+                          } catch {
+                            ids = []
+                          }
+                          void handleRootDrop(ids)
+                        }}
+                        className={cn(
+                          'sticky bottom-0 z-10 mt-1 flex min-h-[32px] items-center justify-center rounded-md border border-dashed text-[0.7rem] uppercase tracking-wider backdrop-blur transition-colors',
+                          rootDropActive
+                            ? 'border-blue-500 bg-blue-50/90 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                            : 'border-muted-foreground/25 bg-background/80 text-muted-foreground/60',
+                        )}
+                      >
+                        {rootDropActive ? 'Move to root' : 'Drop here for root'}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}

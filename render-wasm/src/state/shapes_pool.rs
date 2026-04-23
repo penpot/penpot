@@ -238,6 +238,11 @@ impl ShapesPoolImpl {
         for uuid in all_ids {
             if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
                 self.modified_shape_cache.insert(idx, OnceCell::new());
+                // Drop the cached extrect so tile indexing recomputes against the live modifier.
+                // Ancestors without their own modifier still need this: their extrect unions
+                // descendant bounds, and those descendants now carry the new transform.
+                self.shapes[idx].invalidate_extrect();
+                self.shapes[idx].invalidate_bounds();
             }
         }
     }
@@ -371,5 +376,143 @@ impl ShapesPoolImpl {
                 .unwrap_or(default);
             !math::is_close_matrix(parent_modifier, child_modifier)
         })
+    }
+}
+
+#[cfg(test)]
+mod bench {
+    use super::*;
+    use std::time::Instant;
+
+    fn make_uuid(n: u64) -> Uuid {
+        // Offset away from the nil UUID (which `all_with_ancestors` treats as root).
+        Uuid::from_u64_pair(0, n + 1)
+    }
+
+    /// Build a pool containing a single ancestor chain: root → mid_1 → … → leaf.
+    /// Returns (pool, leaf_id) for driving `set_modifiers` during the bench.
+    fn build_chain(depth: usize) -> (ShapesPoolImpl, Uuid) {
+        let mut pool = ShapesPoolImpl::new();
+        pool.initialize(depth + 1);
+        let mut prev_id: Option<Uuid> = None;
+        let mut last_id = Uuid::nil();
+        for i in 0..=depth {
+            let id = make_uuid(i as u64);
+            {
+                let shape = pool.add_shape(id);
+                if let Some(parent) = prev_id {
+                    shape.set_parent(parent);
+                }
+            }
+            if let Some(parent_id) = prev_id {
+                if let Some(parent) = pool.get_mut(&parent_id) {
+                    parent.add_child(id);
+                }
+            }
+            prev_id = Some(id);
+            last_id = id;
+        }
+        (pool, last_id)
+    }
+
+    fn bench_set_modifiers_chain(depth: usize, iterations: usize) {
+        let (mut pool, leaf_id) = build_chain(depth);
+        let matrix = skia::Matrix::translate((10.0, 0.0));
+        let start = Instant::now();
+        for _ in 0..iterations {
+            let mut m = HashMap::new();
+            m.insert(leaf_id, matrix);
+            pool.set_modifiers(m);
+        }
+        let elapsed = start.elapsed();
+        println!(
+            "[bench] set_modifiers leaf-in-chain depth={depth} x{iterations}: \
+             {:.3}ms total, {:.2}µs/call",
+            elapsed.as_secs_f64() * 1000.0,
+            elapsed.as_secs_f64() * 1_000_000.0 / iterations as f64
+        );
+    }
+
+    #[test]
+    fn bench_set_modifiers_depth_3() {
+        bench_set_modifiers_chain(3, 10_000);
+    }
+
+    #[test]
+    fn bench_set_modifiers_depth_10() {
+        bench_set_modifiers_chain(10, 10_000);
+    }
+
+    #[test]
+    fn bench_set_modifiers_depth_30() {
+        bench_set_modifiers_chain(30, 10_000);
+    }
+
+    /// Simulate a multi-select drag: N shapes all sharing a common parent chain
+    /// get modifiers set together (frequent Penpot scenario).
+    fn bench_set_modifiers_multi_select(
+        depth: usize,
+        fan_out: usize,
+        iterations: usize,
+    ) {
+        let mut pool = ShapesPoolImpl::new();
+        pool.initialize(depth + fan_out + 2);
+        // Build ancestor chain up to a branching node.
+        let mut prev_id: Option<Uuid> = None;
+        for i in 0..=depth {
+            let id = make_uuid(i as u64);
+            {
+                let shape = pool.add_shape(id);
+                if let Some(parent) = prev_id {
+                    shape.set_parent(parent);
+                }
+            }
+            if let Some(parent_id) = prev_id {
+                if let Some(parent) = pool.get_mut(&parent_id) {
+                    parent.add_child(id);
+                }
+            }
+            prev_id = Some(id);
+        }
+        let branch_parent = prev_id.expect("chain has at least root");
+        // Fan out `fan_out` leaves under the branch parent.
+        let mut leaves = Vec::with_capacity(fan_out);
+        for j in 0..fan_out {
+            let id = make_uuid((1000 + j) as u64);
+            {
+                let shape = pool.add_shape(id);
+                shape.set_parent(branch_parent);
+            }
+            if let Some(parent) = pool.get_mut(&branch_parent) {
+                parent.add_child(id);
+            }
+            leaves.push(id);
+        }
+        let matrix = skia::Matrix::translate((10.0, 0.0));
+        let start = Instant::now();
+        for _ in 0..iterations {
+            let mut m = HashMap::with_capacity(leaves.len());
+            for id in &leaves {
+                m.insert(*id, matrix);
+            }
+            pool.set_modifiers(m);
+        }
+        let elapsed = start.elapsed();
+        println!(
+            "[bench] set_modifiers multi-select depth={depth} fan_out={fan_out} x{iterations}: \
+             {:.3}ms total, {:.2}µs/call",
+            elapsed.as_secs_f64() * 1000.0,
+            elapsed.as_secs_f64() * 1_000_000.0 / iterations as f64
+        );
+    }
+
+    #[test]
+    fn bench_set_modifiers_multi_10_at_depth_5() {
+        bench_set_modifiers_multi_select(5, 10, 10_000);
+    }
+
+    #[test]
+    fn bench_set_modifiers_multi_100_at_depth_5() {
+        bench_set_modifiers_multi_select(5, 100, 1_000);
     }
 }

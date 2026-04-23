@@ -17,7 +17,7 @@ import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
 import { getSelectedIdsSet } from '../store/document-selection'
-import { getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
+import { docProxy, getActiveOrSinglePageId, getPage } from '../store/doc-proxy'
 import { applyModifiersAndCommit } from './utils'
 import { DRAG_RENDER_INTERVAL_MS } from './drag-render-interval'
 import {
@@ -26,6 +26,14 @@ import {
   translateSelectionRectWorld,
 } from './selection-rect-helpers'
 import { translateMatrix } from '../geom/matrix'
+import { commitChanges } from '../store/commit'
+import {
+  buildReparentChanges,
+  findContainerAtPoint,
+} from '../../components/LayersPanel/reparent'
+import { rectToCenter } from '../../worker/geometry/rect'
+import { ZERO_UUID } from '@skia-rs-wasm/common/conversions'
+import type { IndexedShape } from '../../worker/types'
 import type { Point } from '../types'
 import type { Matrix } from 'penpot-exporter/types'
 
@@ -130,6 +138,9 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
         translateMatrix(delta.x, delta.y),
       ])
       applyModifiersAndCommit(entries)
+        .then(async () => {
+          await reparentSelectedIfMovedIntoFrame(selectedIds, pageId)
+        })
         .then(() => {
           renderer.cleanModifiers()
           renderer.flushRenderSync()
@@ -147,4 +158,52 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
   )
 
   return merge(moveStream, commitOnRelease) as Observable<void>
+}
+
+/**
+ * After the move commit lands, find the innermost frame each moved shape's
+ * center is now inside. If different from the shape's current parent, emit a
+ * `mov-objects` change grouped by new parent. Mirrors Penpot's canvas-drop
+ * reparent — dragging a shape inside a frame adopts it into that frame.
+ */
+async function reparentSelectedIfMovedIntoFrame(
+  selectedIds: Set<string>,
+  pageId: string,
+): Promise<void> {
+  if (selectedIds.size === 0) return
+  const page = docProxy.pageMap.get(pageId)
+  if (!page) return
+  const objects = page.objects as Record<string, IndexedShape>
+
+  const excludeIds = Array.from(selectedIds)
+  const byNewParent = new Map<string, string[]>()
+  for (const id of selectedIds) {
+    const shape = objects[id]
+    if (!shape?.selrect) continue
+    const center = rectToCenter(shape.selrect)
+    if (!center) continue
+    // When the shape's center ends up outside every container (e.g. past the
+    // root frame's right/bottom edge), fall back to the root so the shape
+    // escapes its old parent instead of being silently re-anchored.
+    const hit = findContainerAtPoint(objects, center, excludeIds)
+    const newParent = hit ?? (excludeIds.includes(ZERO_UUID) ? null : ZERO_UUID)
+    if (!newParent) continue
+    if (newParent === shape.parentId) continue
+    const list = byNewParent.get(newParent) ?? []
+    list.push(id)
+    byNewParent.set(newParent, list)
+  }
+
+  for (const [parentId, shapeIds] of byNewParent) {
+    const parent = objects[parentId]
+    const nextIndex = parent?.shapes?.length ?? 0
+    const { redoChanges, undoChanges } = buildReparentChanges({
+      pageId,
+      parentId,
+      index: nextIndex,
+      shapeIds,
+      objects,
+    })
+    await commitChanges({ redoChanges, undoChanges, pageId })
+  }
 }

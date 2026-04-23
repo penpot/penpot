@@ -203,14 +203,31 @@ function processMovObjects(data: IndexedPage, change: MovObjectsChange): Indexed
       ? (parent.shapes?.indexOf(afterShape) ?? -1) + 1
       : index
 
-  const parentShapes = parent.shapes ?? []
+  const oldParentIds = new Map<string, string | undefined>()
+  for (const shapeId of shapeIds) {
+    oldParentIds.set(shapeId, objects[shapeId]?.parentId)
+  }
+
+  for (const shapeId of shapeIds) {
+    const oldParentId = oldParentIds.get(shapeId)
+    if (oldParentId && oldParentId !== parentId) {
+      const oldParent = objects[oldParentId]
+      if (oldParent) {
+        const oldShapes = (oldParent.shapes ?? []).filter((s: string) => s !== shapeId)
+        objects[oldParentId] = { ...oldParent, shapes: oldShapes }
+      }
+    }
+  }
+
+  const currentParent = objects[parentId] ?? parent
+  const parentShapes = currentParent.shapes ?? []
   let newParentShapes = [...parentShapes]
   for (const shapeId of shapeIds) {
     if (!newParentShapes.includes(shapeId)) {
       newParentShapes = insertAtIndex(newParentShapes, insertIndex, [shapeId])
     }
   }
-  objects[parentId] = { ...parent, shapes: newParentShapes }
+  objects[parentId] = { ...currentParent, shapes: newParentShapes }
 
   for (const shapeId of shapeIds) {
     const shape = objects[shapeId]
@@ -219,19 +236,6 @@ function processMovObjects(data: IndexedPage, change: MovObjectsChange): Indexed
         ...shape,
         parentId,
         frameId,
-      }
-    }
-  }
-
-  for (const shapeId of shapeIds) {
-    const shape = objects[shapeId]
-    if (!shape) continue
-    const oldParentId = shape.parentId
-    if (oldParentId && oldParentId !== parentId) {
-      const oldParent = objects[oldParentId]
-      if (oldParent) {
-        const oldShapes = (oldParent.shapes ?? []).filter((s: string) => s !== shapeId)
-        objects[oldParentId] = { ...oldParent, shapes: oldShapes }
       }
     }
   }

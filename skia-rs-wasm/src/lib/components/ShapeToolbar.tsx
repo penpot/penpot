@@ -20,48 +20,7 @@ import { useCanvasActor } from '../renderer/machine/canvas-actor-context'
 import type { DrawTool } from '../renderer/machine/canvas-machine'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-
-function IconSelect({ className }: { className?: string }) {
-  return (
-    <svg className={className} width="20" height="20" viewBox="0 0 20 20" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M4.5 3.5L15 11h-4.25L12 16.5 4.5 9.25H8.75L4.5 3.5z"
-      />
-    </svg>
-  )
-}
-
-function IconRect({ className }: { className?: string }) {
-  return (
-    <svg className={className} width="20" height="20" viewBox="0 0 20 20" aria-hidden>
-      <rect
-        x="3.5"
-        y="4.5"
-        width="13"
-        height="12"
-        rx="1.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-    </svg>
-  )
-}
-
-function IconFrame({ className }: { className?: string }) {
-  return (
-    <svg className={className} width="20" height="20" viewBox="0 0 20 20" aria-hidden>
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        d="M6 3v14M14 3v14M3 6h14M3 14h14"
-      />
-    </svg>
-  )
-}
+import { IconFrame, IconRect, IconSelect } from './shape-icons'
 
 const placeholderTitle = 'Coming soon'
 
