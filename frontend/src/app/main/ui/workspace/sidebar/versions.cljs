@@ -81,6 +81,10 @@
   [event]
   (dom/select-text! (dom/get-target event)))
 
+(defn- extract-id-from-event
+  [event]
+  (-> event dom/get-current-target (dom/get-data "id") uuid/parse))
+
 (mf/defc version-entry*
   {::mf/private true}
   [{:keys [entry current-profile on-preview on-restore on-delete on-rename on-lock on-unlock on-edit on-cancel-edit is-editing]}]
@@ -225,34 +229,22 @@
         (mf/use-fn
          (mf/deps on-pin-snapshot)
          (fn [event]
-           (let [node  (dom/get-current-target event)
-                 id    (-> node
-                           (dom/get-data "id")
-                           (uuid/parse))]
-             (when (fn? on-pin-snapshot)
-               (on-pin-snapshot id event)))))
+           (when (fn? on-pin-snapshot)
+             (on-pin-snapshot (extract-id-from-event event) event))))
 
         on-restore-snapshot
         (mf/use-fn
          (mf/deps on-restore-snapshot)
          (fn [event]
-           (let [node  (dom/get-current-target event)
-                 id    (-> node
-                           (dom/get-data "id")
-                           (uuid/parse))]
-             (when (fn? on-restore-snapshot)
-               (on-restore-snapshot id event)))))
+           (when (fn? on-restore-snapshot)
+             (on-restore-snapshot (extract-id-from-event event) event))))
 
         on-preview-snapshot
         (mf/use-fn
          (mf/deps on-preview-snapshot)
          (fn [event]
-           (let [node  (dom/get-current-target event)
-                 id    (-> node
-                           (dom/get-data "id")
-                           (uuid/parse))]
-             (when (fn? on-preview-snapshot)
-               (on-preview-snapshot id event)))))
+           (when (fn? on-preview-snapshot)
+             (on-preview-snapshot (extract-id-from-event event) event))))
 
         on-open-snapshot-menu
         (mf/use-fn
