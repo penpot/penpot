@@ -400,6 +400,26 @@ impl Surfaces {
     /// Draw the persistent atlas onto the target using the current viewbox transform.
     /// Intended for fast pan/zoom-out previews (avoids per-tile composition).
     pub fn draw_atlas_to_target(&mut self, viewbox: Viewbox, dpr: f32, background: skia::Color) {
+        self.draw_atlas_to_target_inner(viewbox, dpr, Some(background));
+    }
+
+    /// Same as `draw_atlas_to_target` but preserves whatever is already on
+    /// Target instead of clearing it to the background color first. Used
+    /// by the progressive pass-1 rebuild so that, when the atlas only
+    /// partially covers the current viewport, uncovered regions keep
+    /// their previous content (e.g. tiles rendered directly during an
+    /// earlier render) instead of flashing to the background color until
+    /// pass 1 catches up.
+    pub fn draw_atlas_over_target(&mut self, viewbox: Viewbox, dpr: f32) {
+        self.draw_atlas_to_target_inner(viewbox, dpr, None);
+    }
+
+    fn draw_atlas_to_target_inner(
+        &mut self,
+        viewbox: Viewbox,
+        dpr: f32,
+        background: Option<skia::Color>,
+    ) {
         if !self.has_atlas() {
             return;
         };
@@ -417,7 +437,9 @@ impl Surfaces {
         let s = viewbox.zoom * dpr;
         let atlas_scale = self.atlas_scale.max(0.01);
 
-        canvas.clear(background);
+        if let Some(bg) = background {
+            canvas.clear(bg);
+        }
         canvas.translate((
             (self.atlas_origin.x + viewbox.pan_x) * s,
             (self.atlas_origin.y + viewbox.pan_y) * s,
@@ -858,6 +880,7 @@ impl Surfaces {
         canvas.restore();
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn cache_current_tile_texture(
         &mut self,
         gpu_state: &mut GpuState,
@@ -865,6 +888,7 @@ impl Surfaces {
         tile: &Tile,
         tile_rect: &skia::Rect,
         skip_cache_surface: bool,
+        skip_atlas: bool,
         tile_doc_rect: skia::Rect,
     ) {
         let rect = IRect::from_xywh(
@@ -889,8 +913,13 @@ impl Surfaces {
 
             // Incrementally update persistent 1:1 atlas in document space.
             // `tile_doc_rect` is in world/document coordinates (1 unit == 1 px at 100%).
-            let _ = self.blit_tile_image_into_atlas(gpu_state, &tile_image, tile_doc_rect);
-            self.atlas_tile_doc_rects.insert(*tile, tile_doc_rect);
+            // Skipped during the progressive pass 1 (defer_effects) so we do
+            // not contaminate the atlas with shape previews that lack blur
+            // or shadows — pass 2 will write the final full-quality tiles.
+            if !skip_atlas {
+                let _ = self.blit_tile_image_into_atlas(gpu_state, &tile_image, tile_doc_rect);
+                self.atlas_tile_doc_rects.insert(*tile, tile_doc_rect);
+            }
             self.tiles.add(tile_viewbox, tile, tile_image);
         }
     }

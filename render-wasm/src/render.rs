@@ -334,6 +334,12 @@ pub(crate) struct RenderState {
     /// Cleared at the beginning of a render pass; set to true after we clear Cache the first
     /// time we are about to blit a tile into Cache for this pass.
     pub cache_cleared_this_render: bool,
+    /// One-shot flag consumed by `start_render_loop`. When set, the Cache
+    /// surface is NOT wiped for the upcoming pass — its current content
+    /// (typically a first-pass preview) stays visible while new tiles
+    /// overwrite it in place. Used by the progressive two-pass rebuild
+    /// after a zoom ends.
+    pub preserve_cache_this_render: bool,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
@@ -407,6 +413,7 @@ impl RenderState {
             preview_mode: false,
             export_context: None,
             cache_cleared_this_render: false,
+            preserve_cache_this_render: false,
         })
     }
 
@@ -464,7 +471,7 @@ impl RenderState {
     /// Must be called BEFORE any save_layer for the shape's own opacity/blend,
     /// so that the backdrop blur is independent of the shape's visual properties.
     fn render_background_blur(&mut self, shape: &Shape, target_surface: SurfaceId) {
-        if self.options.is_fast_mode() {
+        if self.options.should_skip_effects() {
             return;
         }
         if matches!(shape.shape_type, Type::Text(_)) || matches!(shape.shape_type, Type::SVGRaw(_))
@@ -713,6 +720,7 @@ impl RenderState {
 
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) -> Result<()> {
         let fast_mode = self.options.is_fast_mode();
+        let skip_atlas = self.options.is_defer_effects();
         // Decide *now* (at the first real cache blit) whether we need to clear Cache.
         // This avoids clearing Cache on renders that don't actually paint tiles (e.g. hover/UI),
         // while still preventing stale pixels from surviving across full-quality renders.
@@ -733,6 +741,7 @@ impl RenderState {
             &current_tile,
             &tile_rect,
             fast_mode,
+            skip_atlas,
             self.render_area,
         );
 
@@ -867,7 +876,7 @@ impl RenderState {
 
         let antialias =
             shape.should_use_antialias(self.get_scale(), self.options.antialias_threshold);
-        let fast_mode = self.options.is_fast_mode();
+        let skip_effects = self.options.should_skip_effects();
         let has_nested_fills = self
             .nested_fills
             .last()
@@ -995,7 +1004,7 @@ impl RenderState {
         // Remove background blur from the shape so it doesn't get processed
         // as a layer blur. The actual rendering is done before the save_layer
         // in render_background_blur() so it's independent of shape opacity.
-        if !fast_mode
+        if !skip_effects
             && apply_to_current_surface
             && fills_surface_id == SurfaceId::Fills
             && !matches!(shape.shape_type, Type::Text(_))
@@ -1021,14 +1030,14 @@ impl RenderState {
         } else if shape_has_blur {
             shape.to_mut().set_blur(None);
         }
-        if fast_mode {
+        if skip_effects {
             shape.to_mut().set_blur(None);
         }
 
         // For non-text, non-SVG shapes in the normal rendering path, apply blur
         // via a single save_layer on each render surface
         // Clip correctness is preserved
-        let blur_sigma_for_layers: Option<f32> = if !fast_mode
+        let blur_sigma_for_layers: Option<f32> = if !skip_effects
             && apply_to_current_surface
             && fills_surface_id == SurfaceId::Fills
             && !matches!(shape.shape_type, Type::Text(_))
@@ -1107,7 +1116,7 @@ impl RenderState {
                         )
                     })
                     .unzip();
-                if fast_mode {
+                if skip_effects {
                     // Fast path: render fills and strokes only (skip shadows/blur).
                     text::render(
                         Some(self),
@@ -1396,7 +1405,7 @@ impl RenderState {
                         antialias,
                         outset,
                     )?;
-                    if !fast_mode {
+                    if !skip_effects {
                         for stroke in &visible_strokes {
                             shadows::render_stroke_inner_shadows(
                                 self,
@@ -1409,7 +1418,7 @@ impl RenderState {
                     }
                 }
 
-                if !fast_mode {
+                if !skip_effects {
                     shadows::render_fill_inner_shadows(
                         self,
                         shape,
@@ -1669,7 +1678,12 @@ impl RenderState {
         performance::begin_measure!("render");
         performance::begin_measure!("start_render_loop");
 
-        self.cache_cleared_this_render = false;
+        // When preserve_cache_this_render is set, pretend the Cache surface
+        // has already been cleared for this pass. The first-tile clear guards
+        // in apply_render_to_final_canvas keep their pass-1 content intact so
+        // pass-2 tiles overwrite in place (no flicker between passes).
+        self.cache_cleared_this_render = self.preserve_cache_this_render;
+        self.preserve_cache_this_render = false;
         self.reset_canvas();
 
         // Compute and set document-space bounds (1 unit == 1 doc px @ 100% zoom)
@@ -1687,12 +1701,26 @@ impl RenderState {
         // 1:1 atlas as a stable backdrop so every flush presents a
         // coherent picture: unchanged tiles come from the atlas and
         // invalidated tiles are overwritten on top as they finish.
+        //
+        // The same applies to the post-zoom pass 1 (`defer_effects`):
+        // tiles at the new scale are still being rebuilt, so paint the
+        // atlas as a scaled backdrop until they land. Unlike the
+        // interactive-transform case we do NOT clear Target first —
+        // during early-load gestures the atlas may only cover part of
+        // the viewport and clearing would flash bg-colored rectangles
+        // where pass-1 tiles haven't landed yet. Target already holds
+        // whatever `render_from_cache` drew during the gesture (or
+        // direct tile renders from a prior rAF), which is a strictly
+        // better backdrop than the raw background color.
         if self.options.is_interactive_transform() && self.surfaces.has_atlas() {
             self.surfaces.draw_atlas_to_target(
                 self.viewbox,
                 self.options.dpr(),
                 self.background_color,
             );
+        } else if self.options.is_defer_effects() && self.surfaces.has_atlas() {
+            self.surfaces
+                .draw_atlas_over_target(self.viewbox, self.options.dpr());
         }
 
         let surface_ids = SurfaceId::Strokes as u32
@@ -1834,6 +1862,17 @@ impl RenderState {
             if self.render_in_progress {
                 self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
+            } else if self.options.is_defer_effects() {
+                // Pass 1 just finished — tiles are on screen without
+                // blur/shadow. Immediately launch pass 2 to upgrade them
+                // in place. The tile texture cache is invalidated so
+                // every tile re-renders; the Cache surface is preserved
+                // so pass-1 content stays visible until each pass-2
+                // tile overwrites it.
+                self.options.set_defer_effects(false);
+                self.surfaces.invalidate_tile_cache();
+                self.preserve_cache_this_render = true;
+                self.start_render_loop(base_object, tree, timestamp, false)?;
             } else {
                 wapi::notify_tiles_render_complete!();
                 performance::end_measure!("render");
@@ -2030,8 +2069,9 @@ impl RenderState {
             paint.set_blend_mode(element.blend_mode().into());
             paint.set_alpha_f(element.opacity());
 
-            // Skip frame-level blur in fast mode (pan/zoom)
-            if !self.options.is_fast_mode() {
+            // Skip frame-level blur in fast mode (pan/zoom) or during the
+            // post-gesture first rebuild pass.
+            if !self.options.should_skip_effects() {
                 if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
                     let scale = self.get_scale();
                     let sigma = radius_to_sigma(frame_blur.value * scale);
@@ -2717,7 +2757,7 @@ impl RenderState {
                 // the layer blur (which would make it more diffused than without clipping)
                 let shadow_before_layer = !node_render_state.is_root()
                     && self.focus_mode.is_active()
-                    && !self.options.is_fast_mode()
+                    && !self.options.should_skip_effects()
                     && !matches!(element.shape_type, Type::Text(_))
                     && Self::frame_clip_layer_blur(element).is_some()
                     && element.drop_shadows_visible().next().is_some();
@@ -2753,8 +2793,9 @@ impl RenderState {
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
 
-                // Skip expensive drop shadow rendering in fast mode (during pan/zoom)
-                let skip_shadows = self.options.is_fast_mode();
+                // Skip expensive drop shadow rendering in fast mode (during
+                // pan/zoom) or during the post-gesture first rebuild pass.
+                let skip_shadows = self.options.should_skip_effects();
 
                 // Skip shadow block when already rendered before the layer (frame_clip_layer_blur)
                 let shadows_already_rendered = Self::frame_clip_layer_blur(element).is_some();

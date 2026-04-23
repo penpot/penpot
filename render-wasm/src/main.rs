@@ -395,6 +395,9 @@ pub extern "C" fn set_view_start() -> Result<()> {
         }
         performance::begin_measure!("set_view_start");
         state.render_state.options.set_fast_mode(true);
+        // If a previous two-pass rebuild was mid-flight, discard its
+        // intent — the new gesture supersedes it.
+        state.render_state.options.set_defer_effects(false);
         performance::end_measure!("set_view_start");
     });
     Ok(())
@@ -429,6 +432,11 @@ pub extern "C" fn set_view_end() -> Result<()> {
             // preview of the old content while new tiles render.
             state.render_state.rebuild_tile_index(&state.shapes);
             state.render_state.surfaces.invalidate_tile_cache();
+            // Start the progressive two-pass rebuild. Pass 1 renders
+            // tiles without blur/shadow for fast feedback; when it
+            // completes, process_animation_frame flips this off and
+            // kicks pass 2 which adds the effects back in place.
+            state.render_state.options.set_defer_effects(true);
         } else {
             // Pure pan at the same zoom level: tile contents have not
             // changed — only the viewport position moved. Update the
