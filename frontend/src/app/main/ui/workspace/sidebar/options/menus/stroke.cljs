@@ -177,7 +177,7 @@
                                           :shape-ids ids}))))]
 
     [:section {:class (stl/css :stroke-section)
-               :aria-label "stroke-section"}
+               :aria-label "Stroke section"}
      [:div {:class (stl/css :stroke-title)}
       [:> title-bar* {:collapsable  has-strokes?
                       :collapsed    (not open?)

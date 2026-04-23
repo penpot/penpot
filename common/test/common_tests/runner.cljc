@@ -8,6 +8,7 @@
   (:require
    #?(:clj [common-tests.fressian-test])
    [clojure.test :as t]
+   [common-tests.attrs-test]
    [common-tests.buffer-test]
    [common-tests.colors-test]
    [common-tests.data-test]
@@ -85,6 +86,7 @@
 (defn -main
   [& args]
   (t/run-tests
+   'common-tests.attrs-test
    'common-tests.buffer-test
    'common-tests.colors-test
    'common-tests.data-test

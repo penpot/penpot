@@ -37,7 +37,9 @@
 (defn attrs-to-styles
   [attrs]
   (reduce-kv (fn [res k v]
-               (conj res (encode-style k v)))
+               (if (some? v)
+                 (conj res (encode-style k v))
+                 res))
              #{}
              attrs))
 
