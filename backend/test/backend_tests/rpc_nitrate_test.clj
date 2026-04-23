@@ -23,10 +23,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- make-org-summary
-  [& {:keys [org-id org-name owner-id your-penpot-teams org-teams]
+  [& {:keys [organization-id organization-name owner-id your-penpot-teams org-teams]
       :or   {your-penpot-teams [] org-teams []}}]
-  {:id       org-id
-   :name     org-name
+  {:id       organization-id
+   :name     organization-name
    :owner-id owner-id
    :teams    (into
               (mapv (fn [id] {:id id :is-your-penpot true}) your-penpot-teams)
@@ -58,13 +58,13 @@
         _                (th/create-file* 99 {:profile-id (:id profile-user)
                                               :project-id (:id project)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         ;; The user's personal penpot team in the org context
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [])]
@@ -72,8 +72,8 @@
     (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  []}
@@ -94,12 +94,12 @@
         profile-user    (th/create-profile* 2 {:is-active true})
         org-default-team (th/create-team* 98 {:profile-id (:id profile-user)})
 
-        org-id          (uuid/random)
+        organization-id          (uuid/random)
         your-penpot-id  (:id org-default-team)
 
         org-summary     (make-org-summary
-                         :org-id            org-id
-                         :org-name          "Test Org"
+                         :organization-id            organization-id
+                         :organization-name          "Test Org"
                          :owner-id          (:id profile-owner)
                          :your-penpot-teams [your-penpot-id]
                          :org-teams         [])]
@@ -107,8 +107,8 @@
     (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  []}
@@ -129,12 +129,12 @@
         _                (th/create-file* 97 {:profile-id (:id profile-user)
                                               :project-id (:id project)})
 
-        org-id           (uuid/random)
+        organization-id           (uuid/random)
         your-penpot-id   (:id org-default-team)
 
         org-summary      (make-org-summary
-                          :org-id            org-id
-                          :org-name          "Test Org"
+                          :organization-id            organization-id
+                          :organization-name          "Test Org"
                           :owner-id          (:id profile-owner)
                           :your-penpot-teams [your-penpot-id]
                           :org-teams         [])]
@@ -142,8 +142,8 @@
     (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  []}
@@ -164,12 +164,12 @@
         team1          (th/create-team* 1 {:profile-id (:id profile-user)})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1)])]
@@ -177,8 +177,8 @@
     (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete [(:id team1)]
                   :teams-to-leave  []}
@@ -201,12 +201,12 @@
                                               :role       :editor})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1)])]
@@ -214,8 +214,8 @@
     (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  [{:id (:id team1) :reassign-to (:id profile-owner)}]}
@@ -246,12 +246,12 @@
                                               :role       :editor})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1)])]
@@ -259,8 +259,8 @@
     (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  [{:id (:id team1)}]}
@@ -282,13 +282,13 @@
 (t/deftest leave-org-error-org-owner-cannot-leave
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-owner)})
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         ;; profile-owner IS the org owner in the org-summary
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [])]
@@ -296,8 +296,8 @@
     (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-owner)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  []}
@@ -311,12 +311,12 @@
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
         profile-user   (th/create-profile* 2 {:is-active true})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [])]
@@ -325,8 +325,8 @@
       ;; Pass a random UUID that is not in the your-penpot-teams list
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id (uuid/random)
                   :teams-to-delete []
                   :teams-to-leave  []}
@@ -435,12 +435,12 @@
                                               :role       :editor})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1) (:id team2) (:id team3)])]
@@ -448,8 +448,8 @@
     (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete [(:id team1)]
                   :teams-to-leave  [{:id (:id team2) :reassign-to (:id profile-owner)}
@@ -485,12 +485,12 @@
         team2          (th/create-team* 2 {:profile-id (:id profile-user)})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1) (:id team2)])]
@@ -499,8 +499,8 @@
       ;; Only team1 is listed; team2 is also a sole-owner team and must be included
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete [(:id team1)]
                   :teams-to-leave  []}
@@ -520,12 +520,12 @@
                                               :role       :editor})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1)])]
@@ -534,8 +534,8 @@
       ;; team1 has 2 members so it is not a valid deletion candidate
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete [(:id team1)]
                   :teams-to-leave  []}
@@ -555,12 +555,12 @@
                                               :role       :editor})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1)])]
@@ -569,8 +569,8 @@
       ;; team1 must be transferred (owner + multiple members) but is absent
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  []}
@@ -589,12 +589,12 @@
                                               :role       :editor})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1)])]
@@ -603,8 +603,8 @@
       ;; reassign-to points to the profile that is leaving — not allowed
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  [{:id (:id team1) :reassign-to (:id profile-user)}]}
@@ -625,12 +625,12 @@
                                               :role       :editor})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1)])]
@@ -639,8 +639,8 @@
       ;; profile-other is not a member of team1
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  [{:id (:id team1) :reassign-to (:id profile-other)}]}
@@ -660,12 +660,12 @@
                                               :role       :editor})
         org-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
 
-        org-id         (uuid/random)
+        organization-id         (uuid/random)
         your-penpot-id (:id org-default-team)
 
         org-summary    (make-org-summary
-                        :org-id            org-id
-                        :org-name          "Test Org"
+                        :organization-id            organization-id
+                        :organization-name          "Test Org"
                         :owner-id          (:id profile-owner)
                         :your-penpot-teams [your-penpot-id]
                         :org-teams         [(:id team1)])]
@@ -674,8 +674,8 @@
       ;; profile-user is not the owner so providing reassign-to is invalid
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
-                  :org-id          org-id
-                  :org-name        "Test Org"
+                  :id          organization-id
+                  :name        "Test Org"
                   :default-team-id your-penpot-id
                   :teams-to-delete []
                   :teams-to-leave  [{:id (:id team1) :reassign-to (:id profile-owner)}]}

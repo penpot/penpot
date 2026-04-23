@@ -9,10 +9,9 @@
    ["react-dom/server" :as rds]
    [app.main.render :as render]
    [app.util.code-beautify :as cb]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn generate-svg
+(defn- generate-single-svg
   [objects shape]
   (rds/renderToStaticMarkup
    (mf/element
@@ -20,13 +19,26 @@
     #js {:objects objects
          :object-id (-> shape :id)})))
 
+(defn- generate-multi-svg
+  [objects shapes]
+  (rds/renderToStaticMarkup
+   (mf/element
+    render/objects-svg
+    #js {:objects objects
+         :object-ids (mapv :id shapes)})))
+
+(defn generate-svg
+  [objects shape]
+  (generate-single-svg objects shape))
+
 (defn generate-markup
   [objects shapes]
-  (->> shapes
-       (map #(generate-svg objects %))
-       (str/join "\n")))
+  (case (count shapes)
+    0 ""
+    1 (generate-single-svg objects (first shapes))
+    (generate-multi-svg objects shapes)))
 
 (defn generate-formatted-markup
   [objects shapes]
-  (let [markup (generate-markup objects shapes)]
-    (cb/format-code markup "svg")))
+  (-> (generate-markup objects shapes)
+      (cb/format-code "svg")))
