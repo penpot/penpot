@@ -27,7 +27,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options*
                                                                    typography-entry]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -297,18 +297,19 @@
 
         multiple? (->> values vals (d/seek #(= % :multiple)))
 
-        opts #js {:ids ids
-                  :values values
-                  :on-change on-change
-                  :show-recent true
-                  :on-blur
-                  (fn []
-                    (ts/schedule
-                     100
-                     (fn []
-                       (when (not= "INPUT" (-> (dom/get-active) (dom/get-tag-name)))
-                         (let [node (txu/get-text-editor-content)]
-                           (dom/focus! node))))))}]
+        opts  (mf/props
+               {:ids ids
+                :values values
+                :on-change on-change
+                :show-recent true
+                :on-blur
+                (fn []
+                  (ts/schedule
+                   100
+                   (fn []
+                     (when (not= "INPUT" (-> (dom/get-active) (dom/get-tag-name)))
+                       (let [node (txu/get-text-editor-content)]
+                         (dom/focus! node))))))})]
 
     (hooks/use-stream
      expand-stream
@@ -346,7 +347,7 @@
             deprecated-icon/detach]]
 
           :else
-          [:> text-options opts])
+          [:> text-options* opts])
 
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options* opts]
