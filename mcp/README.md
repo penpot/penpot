@@ -72,7 +72,7 @@ Once the servers are running, continue with step 2.
 
 #### Running the Source Version from the Repository
 
-`npx` must be available in your terminal; it ships with every supported Node.js version.
+The tools `corepack` and `npx` should be available in your terminal.
 
 On Windows, use the Git Bash terminal to ensure compatibility with the provided scripts.
 

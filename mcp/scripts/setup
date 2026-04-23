@@ -2,6 +2,6 @@
 
 set -e;
 
-PNPM_VERSION=$(node -p "require('./package.json').packageManager.match(/^pnpm@([^+]+)/)[1]");
-
-npx -y pnpm@"$PNPM_VERSION" -r install;
+corepack enable;
+corepack install;
+pnpm -r install;

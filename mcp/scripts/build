@@ -9,8 +9,8 @@ echo "Preparing bundle for types from $URL"
 
 set -ex
 
-PNPM_VERSION=$(node -p "require('./package.json').packageManager.match(/^pnpm@([^+]+)/)[1]");
-PNPM=(npx -y pnpm@"$PNPM_VERSION");
+corepack enable;
+corepack install;
 
 # Ensure clean working directory
 rm -rf dist;
@@ -24,8 +24,8 @@ set +e
 set -e
 popd
 
-"${PNPM[@]}" -r --filter "!mcp-plugin" install;
-"${PNPM[@]}" -r --filter "mcp-server" run build;
+pnpm -r --filter "!mcp-plugin" install;
+pnpm -r --filter "mcp-server" run build;
 
 rsync -avr packages/server/dist/ ./dist/;
 
@@ -35,10 +35,11 @@ cp pnpm-lock.yaml ./dist/;
 touch ./dist/pnpm-workspace.yaml;
 
 cat <<EOF | tee ./dist/setup
-#!/usr/bin/env bash
+#/usr/bin/env bash
 set -e;
-PNPM_VERSION=\$(node -p "require('./package.json').packageManager.match(/^pnpm@([^+]+)/)[1]");
-npx -y pnpm@"\$PNPM_VERSION" install -P;
+corepack enable;
+corepack install;
+pnpm install -P
 EOF
 
 chmod +x ./dist/setup;
