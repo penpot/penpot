@@ -7,15 +7,12 @@
 (ns app.main.ui.workspace
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
-   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.versions :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.router :as-alias rt]

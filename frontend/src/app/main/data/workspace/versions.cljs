@@ -11,7 +11,6 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
@@ -194,9 +193,9 @@
 (defn enter-restore
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::restore-version
+  (ptk/reify ::enter-restore
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ _ _]
       (let [output-s (rx/subject)]
         (rx/merge
          output-s
@@ -241,8 +240,7 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            file-id (:current-file-id state)
+      (let [file-id (:current-file-id state)
             page-id (:current-page-id state)]
 
         (rx/of (dwpg/initialize-page file-id page-id))))))
@@ -366,19 +364,18 @@
 
   (ptk/reify ::restore-version-from-plugins
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/concat
-         (rx/of (ev/event {::ev/name "restore-version"
-                           ::ev/origin "plugins"})
-                ::dwp/force-persist)
+    (watch [_ _ _]
+      (rx/concat
+       (rx/of (ev/event {::ev/name "restore-version"
+                         ::ev/origin "plugins"})
+              ::dwp/force-persist)
 
-         (->> (wait-for-persistence file-id id)
-              (rx/map #(initialize-version)))
+       (->> (wait-for-persistence file-id id)
+            (rx/map #(initialize-version)))
 
-         (->> (rx/of 1)
-              (rx/tap resolve)
-              (rx/ignore)))))))
+       (->> (rx/of 1)
+            (rx/tap resolve)
+            (rx/ignore))))))
 
 
 
