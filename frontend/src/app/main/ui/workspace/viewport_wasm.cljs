@@ -157,6 +157,10 @@
         text-editor-ref   (mf/use-ref nil)
         last-vern-ref     (mf/use-ref nil)
 
+        ;; WASM grid overlay was visible last run (`hover-grid?` true). Used so `clear-grid`
+        ;; (expensive: `_hide_grid` + full `request-render`) runs only when hiding the overlay.
+        prev-hover-grid-shown?-ref (mf/use-ref false)
+
         ;; STATE REFS
         disable-paste-ref (mf/use-ref false)
         in-viewport-ref   (mf/use-ref false)
@@ -253,9 +257,10 @@
                                       (not page-transition?))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)) (not page-transition?))
 
-        hover-grid?              (and (some? @hover-top-frame-id)
-                                      (ctl/grid-layout? objects @hover-top-frame-id)
-                                      (not page-transition?))
+        has-grid?                (and (some? @hover-top-frame-id)
+                                      (ctl/grid-layout? objects @hover-top-frame-id))
+
+        hover-grid?              (and has-grid? (not page-transition?))
 
         show-grid-editor?        (and editing-shape (ctl/grid-layout? editing-shape) (not page-transition?))
         show-presence?           (and page-id (not page-transition?))
@@ -427,11 +432,19 @@
       (when (and @canvas-init? @initialized?)
         (wasm.api/set-canvas-background background)))
 
-    (mf/with-effect [@canvas-init? hover-grid? @hover-top-frame-id]
+    ;; Grid overlay: `clear-grid` must run only when the overlay was shown and is now off
+    ;; (e.g. leave grid frame, or `page-transition?`). Do not call it on every
+    ;; `hover-top-frame-id` change while not hovering a grid frame.
+    (mf/with-effect [@canvas-init? hover-grid?]
       (when @canvas-init?
-        (if hover-grid?
-          (wasm.api/show-grid @hover-top-frame-id)
-          (wasm.api/clear-grid))))
+        (when (and (not hover-grid?) (mf/ref-val prev-hover-grid-shown?-ref))
+          (wasm.api/clear-grid))
+        (mf/set-ref-val! prev-hover-grid-shown?-ref hover-grid?)))
+
+    (mf/with-effect [@canvas-init? has-grid? hover-grid?
+                     (if (and has-grid? hover-grid?) @hover-top-frame-id ::no-grid-hover-id)]
+      (when (and @canvas-init? hover-grid?)
+        (wasm.api/show-grid @hover-top-frame-id)))
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)

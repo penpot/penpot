@@ -237,7 +237,7 @@
    [:organization-name ::sm/text]])
 
 (sv/defmethod ::remove-team-from-org
-  {::doc/added "2.16"
+  {::doc/added "2.17"
    ::sm/params schema:remove-team-from-org}
   [cfg {:keys [::rpc/profile-id  team-id organization-id organization-name]}]
 
@@ -261,7 +261,7 @@
 
 (sv/defmethod ::add-team-to-org
   {::rpc/auth true
-   ::doc/added "2.16"
+   ::doc/added "2.17"
    ::sm/params schema:add-team-to-org
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id  team-id organization-id organization-name]}]

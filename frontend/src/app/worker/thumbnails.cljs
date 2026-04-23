@@ -170,6 +170,7 @@
                                  (render/calculate-dimensions objects thumbnail-aspect-ratio))
                        zoom    (/ width (:width vbox))]
 
+                   (reset! wasm/disable-request-render? true)
                    (wasm.api/initialize-viewport
                     objects zoom vbox
                     :background bgcolor
