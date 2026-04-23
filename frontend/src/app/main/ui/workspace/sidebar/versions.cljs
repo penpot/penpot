@@ -376,16 +376,16 @@
 
         on-change-filter
         (mf/use-fn
-         (fn [filter]
+         (fn [filter-value]
            (cond
-             (= :all filter)
+             (= :all filter-value)
              (st/emit! (dwv/update-versions-state {:filter nil}))
 
-             (= :own filter)
+             (= :own filter-value)
              (st/emit! (dwv/update-versions-state {:filter (:id profile)}))
 
              :else
-             (st/emit! (dwv/update-versions-state {:filter filter})))))
+             (st/emit! (dwv/update-versions-state {:filter filter-value})))))
 
         options
         (mf/with-memo [users profile]
