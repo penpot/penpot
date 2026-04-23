@@ -902,6 +902,7 @@
 
         toggle-render
         (mf/use-fn
+         (mf/deps profile)
          (fn [event]
            (dom/stop-propagation event)
            (let [renderer (or (-> profile :props :renderer) :svg)

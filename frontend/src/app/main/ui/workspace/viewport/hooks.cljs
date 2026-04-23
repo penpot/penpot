@@ -31,6 +31,7 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.worker :as mw]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
