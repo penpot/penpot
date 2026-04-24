@@ -10,6 +10,8 @@ export function createModal(
   theme: Theme,
   options?: OpenUIOptions,
   allowDownloads?: boolean,
+  allowClipboardRead?: boolean,
+  allowClipboardWrite?: boolean,
 ) {
   const modal = document.createElement('plugin-modal') as PluginModalElement;
 
@@ -42,6 +44,14 @@ export function createModal(
 
   if (allowDownloads) {
     modal.setAttribute('allow-downloads', 'true');
+  }
+
+  if (allowClipboardRead) {
+    modal.setAttribute('allow-clipboard-read', 'true');
+  }
+
+  if (allowClipboardWrite) {
+    modal.setAttribute('allow-clipboard-write', 'true');
   }
 
   document.body.appendChild(modal);

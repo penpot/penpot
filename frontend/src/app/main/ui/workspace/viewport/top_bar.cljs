@@ -20,14 +20,12 @@
 ;; branch.
 
 (mf/defc view-only-bar*
-  {::mf/private true}
   []
-  (let [handle-close-view-mode
+  (let [on-close
         (mf/use-fn
-         (fn []
-           (st/emit! :interrupt
-                     (dw/set-options-mode :design)
-                     (dwc/set-workspace-read-only false))))]
+         #(st/emit! :interrupt
+                    (dw/set-options-mode :design)
+                    (dwc/set-workspace-read-only false)))]
     [:div {:class (stl/css :viewport-actions)}
      [:div {:class (stl/css :viewport-actions-container)}
       [:div {:class (stl/css :viewport-actions-title)}
@@ -35,7 +33,7 @@
         {:tag-name "span"
          :content (tr "workspace.top-bar.view-only")}]]
       [:button {:class (stl/css :done-btn)
-                :on-click handle-close-view-mode}
+                :on-click on-close}
        (tr "workspace.top-bar.read-only.done")]]]))
 
 (mf/defc path-edition-bar*

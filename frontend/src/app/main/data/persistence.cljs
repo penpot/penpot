@@ -121,8 +121,10 @@
                         :features features}
               permissions (:permissions state)]
 
-          ;; Prevent commit changes by a team member without edition permission
-          (when (:can-edit permissions)
+          ;; Prevent saving changes when in version preview (read-only) mode
+          ;; or when the user does not have edition permission.
+          (when (and (:can-edit permissions)
+                     (not (get-in state [:workspace-global :read-only?])))
             (->> (rp/cmd! :update-file params)
                  (rx/mapcat (fn [{:keys [revn lagged] :as response}]
                               (log/debug :hint "changes persisted" :commit-id (dm/str commit-id) :lagged (count lagged))
