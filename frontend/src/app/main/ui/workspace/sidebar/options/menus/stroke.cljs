@@ -194,7 +194,9 @@
        [:div {:class (stl/css-case :stroke-content true
                                    :stroke-content-empty (not has-strokes?))}
         (cond
-          (= :multiple strokes)
+          (or (= :multiple (:stroke-color applied-tokens))
+              (= :multiple (:stroke-width applied-tokens))
+              (= :multiple strokes))
           [:div {:class (stl/css :stroke-multiple)}
            [:div {:class (stl/css :stroke-multiple-label)}
             (tr "settings.multiple")]

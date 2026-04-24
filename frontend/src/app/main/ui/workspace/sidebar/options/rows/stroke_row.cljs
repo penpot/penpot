@@ -192,6 +192,8 @@
      (when (some? on-reorder)
        [:> reorder-handler* {:ref dref}])
 
+     (prn "stroke-row*" applied-tokens)
+
      ;; Stroke Color
      ;; FIXME: memorize stroke color
      [:> color-row* {:color (ctc/stroke->color stroke)
