@@ -68,6 +68,7 @@
     "components/v2"
     "plugins/runtime"
     "design-tokens/v1"
+    "tokens/numeric-input"
     "variants/v1"})
 
 ;; A set of features which only affects on frontend and can be enabled
