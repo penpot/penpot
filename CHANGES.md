@@ -10,6 +10,7 @@
 ### :bug: Bugs fixed
 
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Prevent invitations to blacklisted domains [Github #9150](https://github.com/penpot/penpot/pull/9150)
 
 
 ## 2.14.4

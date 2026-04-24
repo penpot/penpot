@@ -12,7 +12,7 @@ export PENPOT_PUBLIC_URI=https://localhost:3449
 
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
-       enable-login-with-password
+       enable-login-with-password \
        disable-login-with-ldap \
        disable-login-with-oidc \
        disable-login-with-google \

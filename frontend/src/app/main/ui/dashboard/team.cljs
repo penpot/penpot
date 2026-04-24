@@ -195,6 +195,11 @@
                   (= :email-has-complaints code))
               (swap! error-text (tr "errors.email-spam-or-permanent-bounces" (:email error)))
 
+              (and (= :restriction type)
+                   (= :email-domain-is-not-allowed code))
+              (st/emit! (ntf/error (tr "errors.email-domain-not-allowed"))
+                        (modal/hide))
+
               :else
               (st/emit! (ntf/error (tr "errors.generic"))
                         (modal/hide)))))
