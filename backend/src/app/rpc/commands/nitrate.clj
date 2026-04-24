@@ -253,15 +253,15 @@
   nil)
 
 
-(def ^:private schema:add-team-to-org
+(def ^:private schema:add-team-to-organization
   [:map
    [:team-id ::sm/uuid]
    [:organization-id ::sm/uuid]])
 
-(sv/defmethod ::add-team-to-org
+(sv/defmethod ::add-team-to-organization
   {::rpc/auth true
    ::doc/added "2.17"
-   ::sm/params schema:add-team-to-org
+   ::sm/params schema:add-team-to-organization
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id  team-id organization-id]}]
 
