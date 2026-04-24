@@ -19,6 +19,10 @@ update_flags() {
       -e "s|^//var penpotFlags = .*;|var penpotFlags = \"$PENPOT_FLAGS\";|g" \
       "$1")" > "$1"
   fi
+
+  if [ -n "$PENPOT_PUBLIC_URI" ]; then
+      echo "var penpotPublicURI = \"$PENPOT_PUBLIC_URI\";" >> "$1";
+  fi
 }
 
 update_oidc_name() {
@@ -39,8 +43,9 @@ update_oidc_name /var/www/app/js/config.js
 export PENPOT_BACKEND_URI=${PENPOT_BACKEND_URI:-http://penpot-backend:6060}
 export PENPOT_EXPORTER_URI=${PENPOT_EXPORTER_URI:-http://penpot-exporter:6061}
 export PENPOT_NITRATE_URI=${PENPOT_NITRATE_URI:-http://penpot-nitrate:3000}
+export PENPOT_MCP_URI=${PENPOT_MCP_URI:-http://penpot-mcp}
 export PENPOT_HTTP_SERVER_MAX_BODY_SIZE=${PENPOT_HTTP_SERVER_MAX_BODY_SIZE:-367001600} # Default to 350MiB
-envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_NITRATE_URI,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE" \
+envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_NITRATE_URI,\$PENPOT_MCP_URI,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE" \
          < /tmp/nginx.conf.template > /etc/nginx/nginx.conf
 
 PENPOT_DEFAULT_INTERNAL_RESOLVER="$(awk 'BEGIN{ORS=" "} $1=="nameserver" { sub(/%.*$/,"",$2); print ($2 ~ ":")? "["$2"]": $2}' /etc/resolv.conf)"

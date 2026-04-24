@@ -240,7 +240,16 @@
 
         open-modal
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open tokens index applied-token)
+         (mf/deps disable-gradient
+                  disable-opacity
+                  disable-image
+                  disable-picker
+                  on-change
+                  on-close
+                  on-open
+                  tokens
+                  index
+                  applied-token)
          (fn [color pos tab]
            (let [color (cond
                          ^boolean has-multiple-colors
@@ -345,6 +354,11 @@
     (mf/with-effect [color prev-color disable-picker]
       (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
+
+    (mf/with-effect [applied-token disable-picker]
+      (when (not disable-picker)
+        (modal/update-props! :colorpicker {:applied-token applied-token})))
+
     [:div {:class [class row-class]}
      ;; Drag handler
      (when (some? on-reorder)
@@ -436,4 +450,5 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "settings.select-this-color")
                          :on-click handle-select
+                         :tooltip-position "top-left"
                          :icon i/move}])]))

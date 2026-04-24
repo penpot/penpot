@@ -451,8 +451,7 @@
                         :value "lowercase"
                         :id "text-transform-lowercase"}]]]))
 
-(mf/defc text-options
-  {::mf/wrap-props false}
+(mf/defc text-options*
   [{:keys [ids editor values on-change on-blur show-recent]}]
   (let [full-size-selector? (and show-recent (= (mf/use-ctx ctx/sidebar) :right))
         opts #js {:editor editor
@@ -541,9 +540,9 @@
                               :on-click on-close
                               :icon i/tick}]]]
 
-          [:& text-options {:values typography
-                            :on-change on-change
-                            :show-recent false}]]
+          [:> text-options* {:values typography
+                             :on-change on-change
+                             :show-recent false}]]
 
          [:div {:class (stl/css :typography-info-wrapper)}
           [:div {:class (stl/css :typography-name-wrapper)}
