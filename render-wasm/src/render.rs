@@ -720,26 +720,24 @@ impl RenderState {
             self.surfaces.clear_cache(self.background_color);
             self.cache_cleared_this_render = true;
         }
-        let tile_rect = self.get_current_aligned_tile_bounds()?;
         // In fast mode the viewport is moving (pan/zoom) so Cache surface
         // positions would be wrong — only save to the tile HashMap.
+        let tile_rect = self.get_current_aligned_tile_bounds()?;
+        let current_tile = *self
+            .current_tile
+            .as_ref()
+            .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
         self.surfaces.cache_current_tile_texture(
             &mut self.gpu_state,
             &self.tile_viewbox,
-            &self
-                .current_tile
-                .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
+            &current_tile,
             &tile_rect,
             fast_mode,
             self.render_area,
         );
 
-        self.surfaces.draw_cached_tile_surface(
-            self.current_tile
-                .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
-            rect,
-            self.background_color,
-        );
+        self.surfaces
+            .draw_cached_tile_surface(current_tile, rect, self.background_color);
         Ok(())
     }
 
@@ -1674,6 +1672,12 @@ impl RenderState {
         self.cache_cleared_this_render = false;
         self.reset_canvas();
 
+        // Compute and set document-space bounds (1 unit == 1 doc px @ 100% zoom)
+        // to clamp atlas updates. This prevents zoom-out tiles from forcing atlas
+        // growth far beyond real content.
+        let doc_bounds = self.compute_document_bounds(base_object, tree);
+        self.surfaces.set_atlas_doc_bounds(doc_bounds);
+
         // During an interactive shape transform (drag/resize/rotate) the
         // Target is repainted tile-by-tile. If only a subset of the
         // invalidated tiles finishes in this rAF the remaining area
@@ -1767,6 +1771,37 @@ impl RenderState {
         Ok(())
     }
 
+    fn compute_document_bounds(
+        &mut self,
+        base_object: Option<&Uuid>,
+        tree: ShapesPoolRef,
+    ) -> Option<skia::Rect> {
+        let ids: Vec<Uuid> = if let Some(id) = base_object {
+            vec![*id]
+        } else {
+            let root = tree.get(&Uuid::nil())?;
+            root.children_ids(false)
+        };
+
+        let mut acc: Option<skia::Rect> = None;
+        for id in ids.iter() {
+            let Some(shape) = tree.get(id) else {
+                continue;
+            };
+            let r = self.get_cached_extrect(shape, tree, 1.0);
+            if r.is_empty() {
+                continue;
+            }
+            acc = Some(if let Some(mut a) = acc {
+                a.join(r);
+                a
+            } else {
+                r
+            });
+        }
+        acc
+    }
+
     pub fn process_animation_frame(
         &mut self,
         base_object: Option<&Uuid>,
@@ -1780,16 +1815,20 @@ impl RenderState {
             }
 
             // In a pure viewport interaction (pan/zoom), render_from_cache
-            // owns the Target surface — skip flush so we don't present
-            // stale tile positions.  The rAF still populates the Cache
-            // surface and tile HashMap so render_from_cache progressively
-            // shows more complete content.
+            // owns the Target surface — don't flush Target so we don't
+            // present stale tile positions. We still drain the GPU command
+            // queue with a non-Target `flush_and_submit` so the backlog
+            // of tile-render commands executes incrementally instead of
+            // piling up for hundreds of milliseconds and blowing up the
+            // next `render_from_cache` call into a multi-frame hitch.
             //
             // During interactive shape transforms (drag/resize/rotate) we
             // still need to flush every rAF so the user sees the updated
             // shape position — render_from_cache is not in the loop here.
             if !self.options.is_viewport_interaction() {
                 self.flush_and_submit();
+            } else {
+                self.gpu_state.context.flush_and_submit();
             }
 
             if self.render_in_progress {
@@ -2927,11 +2966,6 @@ impl RenderState {
                                 s.canvas().draw_rect(aligned_rect, &paint);
                             });
                         }
-
-                        // Clear atlas region to transparent so background shows through.
-                        let _ = self
-                            .surfaces
-                            .clear_doc_rect_in_atlas(&mut self.gpu_state, self.render_area);
                     }
                 }
             }
@@ -3156,7 +3190,8 @@ impl RenderState {
     }
 
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
-        self.surfaces.remove_cached_tile_surface(tile);
+        self.surfaces
+            .remove_cached_tile_surface(&mut self.gpu_state, tile);
     }
 
     /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.

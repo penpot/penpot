@@ -108,7 +108,7 @@
   border-radius: 6px;
   border: 1.75px solid var(--color-foreground-primary);
   stroke-width: 2.25px;
-  padding: deprecated.$s-1;
+  padding: px2rem(3);
 
   svg {
     block-size: var(--sp-m);
@@ -380,4 +380,27 @@
 
 .modal-contact-content {
   gap: var(--sp-xl);
+}
+
+.downgrade-warning {
+  @include t.use-typography("body-medium");
+
+  background-color: var(--color-background-tertiary);
+  border-radius: var(--sp-s);
+  padding-block: var(--sp-s);
+  padding-inline: var(--sp-m);
+  margin-block: var(--sp-m) var(--sp-xxxl);
+}
+
+.downgrade-list {
+  list-style-position: outside;
+  list-style-type: disc;
+  margin-block: var(--sp-l) 0;
+  padding-inline-start: var(--sp-l);
+}
+
+.downgrade-item {
+  @include t.use-typography("body-medium");
+
+  margin-block-end: var(--sp-l);
 }
