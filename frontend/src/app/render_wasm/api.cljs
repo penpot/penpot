@@ -691,7 +691,7 @@
                   (h/call wasm/internal-module "_add_shape_stroke_fill")
                   (when (== cached-image? 0)
                     (fetch-image shape-id image-id thumbnail?)))
-                
+
                 (some? color)
                 (do
                   (types.fills.impl/write-solid-fill offset dview opacity color)
