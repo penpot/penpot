@@ -16,6 +16,7 @@ mod ui;
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::collections::HashMap;
 
 use gpu_state::GpuState;
 
@@ -289,9 +290,46 @@ fn sort_z_index(tree: ShapesPoolRef, element: &Shape, children_ids: Vec<Uuid>) -
     }
 }
 
+struct RenderStats {
+    pub counts: HashMap<Uuid, i32>,
+}
+
+impl RenderStats {
+    pub fn new() -> Self {
+        Self {
+            counts: HashMap::new()
+        }
+    }
+
+    fn count(&mut self, id: Uuid) -> i32 {
+        let counter = self.counts.entry(id).or_insert(0);
+        *counter += 1;
+        *counter
+    }
+
+    fn clear(&mut self) {
+        self.counts.clear();
+    }
+
+    #[allow(dead_code)]
+    fn get(&self, id: &Uuid) -> Option<&i32> {
+        self.counts.get(id)
+    }
+
+    fn print(&self) {
+        let mut sum: i32 = 0;
+        for (&id, &count) in self.counts.iter() {
+            println!("{}: {}", id, count);
+            sum += count;
+        }
+        println!("{}: {}", self.counts.len(), sum);
+    }
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
+    stats: RenderStats,
     pub surfaces: Surfaces,
     pub fonts: FontStore,
     pub viewbox: Viewbox,
@@ -377,6 +415,7 @@ impl RenderState {
         Ok(RenderState {
             gpu_state: gpu_state.clone(),
             options,
+            stats: RenderStats::new(),
             surfaces,
             fonts,
             viewbox,
@@ -851,6 +890,8 @@ impl RenderState {
         outset: Option<f32>,
         target_surface: SurfaceId,
     ) -> Result<()> {
+        self.stats.count(shape.id);
+
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
             | innershadows_surface_id as u32
@@ -1662,6 +1703,7 @@ impl RenderState {
         timestamp: i32,
         sync_render: bool,
     ) -> Result<()> {
+        self.stats.clear();
         let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
 
@@ -3337,6 +3379,10 @@ impl RenderState {
 
     pub fn set_view(&mut self, zoom: f32, x: f32, y: f32) {
         self.viewbox.set_all(zoom, x, y);
+    }
+
+    pub fn print_stats(&self) {
+        self.stats.print();
     }
 }
 

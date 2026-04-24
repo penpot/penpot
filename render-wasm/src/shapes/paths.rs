@@ -1,6 +1,9 @@
-use skia_safe::{self as skia, Matrix};
-
+use std::{ops::Deref, rc::Rc};
+use skia_safe::{self as skia, Matrix, wrapper::ValueWrapper};
 use crate::math;
+
+#[cfg(target_arch = "wasm32")]
+use crate::run_script;
 
 mod subpaths;
 
@@ -19,7 +22,7 @@ impl Segment {}
 #[derive(Debug, Clone, PartialEq)]
 pub struct Path {
     segments: Vec<Segment>,
-    skia_path: skia::Path,
+    pub skia_path: skia::Path,
     open: bool,
 }
 
@@ -217,8 +220,8 @@ impl Path {
         Path::new(segments)
     }
 
-    pub fn to_skia_path(&self) -> skia::Path {
-        self.skia_path.snapshot()
+    pub fn to_skia_path(&self) -> &skia::Path {
+        &self.skia_path
     }
 
     pub fn contains(&self, p: skia::Point) -> bool {

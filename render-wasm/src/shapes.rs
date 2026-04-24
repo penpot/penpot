@@ -2,6 +2,9 @@ use skia_safe::{self as skia};
 
 use indexmap::IndexSet;
 
+#[cfg(target_arch = "wasm32")]
+use crate::run_script;
+
 use crate::uuid::Uuid;
 use std::borrow::Cow;
 use std::cell::{OnceCell, RefCell};
@@ -1349,7 +1352,7 @@ impl Shape {
 
     pub fn get_skia_path(&self) -> Option<skia::Path> {
         if let Some(path) = self.shape_type.path() {
-            let mut skia_path = path.to_skia_path();
+            let mut skia_path = path.to_skia_path().clone();
             if let Some(path_transform) = self.to_path_transform() {
                 skia_path = skia_path.make_transform(&path_transform);
             }
@@ -1392,6 +1395,8 @@ impl Shape {
 
         if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
             if let Some(path) = shape_type.path_mut() {
+                #[cfg(target_arch = "wasm32")]
+                run_script!("console.count('path.transform')");
                 path.transform(transform);
             }
         } else if let Type::Text(text) = &mut self.shape_type {

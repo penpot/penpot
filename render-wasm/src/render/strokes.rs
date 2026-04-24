@@ -10,6 +10,9 @@ use crate::error::{Error, Result};
 use crate::render::filters::compose_filters;
 use crate::render::{get_dest_rect, get_source_rect};
 
+#[cfg(target_arch = "wasm32")]
+use crate::run_script;
+
 #[allow(clippy::too_many_arguments)]
 fn draw_stroke_on_rect(
     canvas: &skia::Canvas,
@@ -229,21 +232,21 @@ fn draw_stroke_on_path(
     if let Some(pt) = path_transform {
         canvas.concat(pt);
     }
-    let skia_path = path.to_skia_path();
 
+    let skia_path = path.to_skia_path();
     match stroke.render_kind(is_open) {
         StrokeKind::Inner => {
-            draw_inner_stroke_path(canvas, &skia_path, &draw_paint, blur, antialias);
+            draw_inner_stroke_path(canvas, skia_path, &draw_paint, blur, antialias);
         }
         StrokeKind::Center => {
-            canvas.draw_path(&skia_path, &draw_paint);
+            canvas.draw_path(skia_path, &draw_paint);
         }
         StrokeKind::Outer => {
-            draw_outer_stroke_path(canvas, &skia_path, &draw_paint, blur, antialias);
+            draw_outer_stroke_path(canvas, skia_path, &draw_paint, blur, antialias);
         }
     }
 
-    handle_stroke_caps(&skia_path, stroke, canvas, is_open, paint, blur, antialias);
+    handle_stroke_caps(skia_path, stroke, canvas, is_open, paint, blur, antialias);
 
     canvas.restore_to_count(save_count);
 }

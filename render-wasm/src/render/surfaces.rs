@@ -463,6 +463,7 @@ impl Surfaces {
     }
 
     pub fn flush_and_submit(&mut self, gpu_state: &mut GpuState, id: SurfaceId) {
+        println!("flush_and_submit");
         let surface = self.get_mut(id);
         gpu_state.context.flush_and_submit_surface(surface, None);
     }
