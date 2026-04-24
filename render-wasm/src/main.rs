@@ -1035,6 +1035,13 @@ pub extern "C" fn render_shape_pixels(
     })
 }
 
+#[no_mangle]
+pub extern "C" fn render_stats() {
+    with_state!(state, {
+        state.render_state.print_stats();
+    })
+}
+
 fn main() {
     #[cfg(target_arch = "wasm32")]
     init_gl!();
