@@ -32,6 +32,36 @@ precision while maintaining a strong focus on maintainability and performance.
 5. When searching code, prefer `ripgrep` (`rg`) over `grep` — it respects
    `.gitignore` by default.
 
+## GitHub Operations
+
+To obtain the list of repository members/collaborators:
+
+```bash
+gh api repos/:owner/:repo/collaborators --paginate --jq '.[].login'
+```
+
+To obtain the list of open PRs authored by members:
+
+```bash
+MEMBERS=$(gh api repos/:owner/:repo/collaborators --paginate --jq '.[].login' | tr '\n' '|' | sed 's/|$//')
+gh pr list --state open --limit 200 --json author,title,number | jq -r --arg members "$MEMBERS" '
+  ($members | split("|")) as $m |
+  .[] | select(.author.login as $a | $m | index($a)) |
+  "\(.number)\t\(.author.login)\t\(.title)"
+'
+```
+
+To obtain the list of open PRs from external contributors (non-members):
+
+```bash
+MEMBERS=$(gh api repos/:owner/:repo/collaborators --paginate --jq '.[].login' | tr '\n' '|' | sed 's/|$//')
+gh pr list --state open --limit 200 --json author,title,number | jq -r --arg members "$MEMBERS" '
+  ($members | split("|")) as $m |
+  .[] | select(.author.login as $a | $m | index($a) | not) |
+  "\(.number)\t\(.author.login)\t\(.title)"
+'
+```
+
 ## Architecture Overview
 
 Penpot is an open-source design tool composed of several modules:
