@@ -40,8 +40,8 @@
    [promesa.util :as pu]
    [yetti.adapter :as yt])
   (:import
-   com.github.luben.zstd.ZstdIOException
    com.github.luben.zstd.ZstdInputStream
+   com.github.luben.zstd.ZstdIOException
    com.github.luben.zstd.ZstdOutputStream
    java.io.DataInputStream
    java.io.DataOutputStream
