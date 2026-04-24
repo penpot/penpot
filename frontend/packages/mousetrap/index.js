@@ -187,6 +187,14 @@ function _addEvent(object, type, callback) {
  */
 function _characterFromEvent(e) {
 
+  // Numpad digits as "num0".."num9" — keeps them separate from main-row bindings across NumLock states and event types.
+  if (e.code && e.code.indexOf('Numpad') === 0) {
+    var suffix = e.code.substring(6);
+    if (suffix.length === 1 && suffix >= '0' && suffix <= '9') {
+      return 'num' + suffix;
+    }
+  }
+
   // for keypress events we should return the character as is
   if (e.type == 'keypress') {
     var character = String.fromCharCode(e.which);

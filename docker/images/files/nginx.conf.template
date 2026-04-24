@@ -135,6 +135,23 @@ http {
             proxy_http_version 1.1;
         }
 
+        location /mcp/ws {
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_pass $PENPOT_MCP_URI:4402;
+            proxy_http_version 1.1;
+        }
+
+        location /mcp/stream {
+            proxy_pass $PENPOT_MCP_URI:4401/mcp;
+            proxy_http_version 1.1;
+        }
+
+        location /mcp/sse {
+            proxy_pass $PENPOT_MCP_URI:4401/sse;
+            proxy_http_version 1.1;
+        }
+
         location /readyz {
             access_log off;
             proxy_pass $PENPOT_BACKEND_URI$request_uri;
