@@ -429,12 +429,12 @@
               (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
                 (dom/focus! (txu/get-text-editor-content)))))))
 
-        opts  (mf/props
-               {:ids         ids
-                :values      values
-                :on-change   on-change
-                :show-recent true
-                :on-blur     on-text-blur})]
+        common-props (mf/props
+                      {:ids         ids
+                       :values      values
+                       :on-change   on-change
+                       :show-recent true
+                       :on-blur     on-text-blur})]
 
     (hooks/use-stream
      expand-stream
@@ -498,11 +498,11 @@
                              :icon       i/detach}]]
 
           :else
-          [:> text-options* opts])
+          [:> text-options* common-props])
 
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options* common-props]
-         [:> grow-options* (mf/spread-props common-props {:ids ids})]
+         [:> grow-options* common-props]
          [:> icon-button* {:variant     "ghost"
                            :aria-label  (tr "labels.options")
                            :data-testid "text-align-options-button"
