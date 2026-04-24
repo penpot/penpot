@@ -5,12 +5,13 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/z-index.scss" as *;
 
 .context-menu {
   position: relative;
   visibility: hidden;
   opacity: deprecated.$op-0;
-  z-index: deprecated.$z-index-4;
+  z-index: var(--z-index-dropdown);
 
   &.is-open {
     position: relative;

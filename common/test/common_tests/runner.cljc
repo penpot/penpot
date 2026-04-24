@@ -8,6 +8,7 @@
   (:require
    #?(:clj [common-tests.fressian-test])
    [clojure.test :as t]
+   [common-tests.attrs-test]
    [common-tests.buffer-test]
    [common-tests.colors-test]
    [common-tests.data-test]
@@ -54,6 +55,7 @@
    [common-tests.path-names-test]
    [common-tests.record-test]
    [common-tests.schema-test]
+   [common-tests.spec-test]
    [common-tests.svg-path-test]
    [common-tests.svg-test]
    [common-tests.text-test]
@@ -85,6 +87,7 @@
 (defn -main
   [& args]
   (t/run-tests
+   'common-tests.attrs-test
    'common-tests.buffer-test
    'common-tests.colors-test
    'common-tests.data-test
@@ -132,6 +135,7 @@
    'common-tests.path-names-test
    'common-tests.record-test
    'common-tests.schema-test
+   'common-tests.spec-test
    'common-tests.svg-path-test
    'common-tests.svg-test
    'common-tests.text-test

@@ -34,14 +34,7 @@
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
-
-(def tokens-ref
-  (l/derived :access-tokens st/state))
-
-(def token-created-ref
-  (l/derived :access-token-created st/state))
 
 (def notification-timeout 7000)
 
@@ -78,7 +71,7 @@
 (mf/defc token-created*
   {::mf/private true}
   [{:keys [title mcp-key?]}]
-  (let [token-created (mf/deref token-created-ref)
+  (let [token-created (mf/deref refs/access-token-created)
 
         on-copy-to-clipboard
         (mf/use-fn
@@ -310,7 +303,7 @@
   []
   (let [created?   (mf/use-state false)
 
-        tokens     (mf/deref tokens-ref)
+        tokens     (mf/deref refs/access-tokens)
         mcp-key    (some #(when (= (:type %) "mcp") %) tokens)
         mcp-key-id (:id mcp-key)
 
@@ -413,7 +406,7 @@
 (mf/defc mcp-server-section*
   {::mf/private true}
   []
-  (let [tokens  (mf/deref tokens-ref)
+  (let [tokens  (mf/deref refs/access-tokens)
         profile (mf/deref refs/profile)
 
         mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
@@ -421,6 +414,8 @@
 
         expires-at  (:expires-at mcp-key)
         expired?    (and (some? expires-at) (> (ct/now) expires-at))
+
+        show-enabled?  (and mcp-enabled? (false? expired?))
 
         tooltip-id
         (mf/use-id)
@@ -511,14 +506,17 @@
             (tr "integrations.mcp-server.status.expired.1")]]])
 
        [:div {:class (stl/css :mcp-server-switch)}
-        [:> switch* {:label (if mcp-enabled?
+        [:> switch* {:label (if show-enabled?
                               (tr "integrations.mcp-server.status.enabled")
                               (tr "integrations.mcp-server.status.disabled"))
-                     :default-checked mcp-enabled?
+                     :default-checked show-enabled?
                      :on-change handle-mcp-change}]
         (when (and (false? mcp-enabled?) (nil? mcp-key))
           [:div {:class (stl/css :mcp-server-switch-cover)
-                 :on-click handle-generate-mcp-key}])]]]
+                 :on-click handle-generate-mcp-key}])
+        (when (true? expired?)
+          [:div {:class (stl/css :mcp-server-switch-cover)
+                 :on-click handle-regenerate-mcp-key}])]]]
 
      (when (some? mcp-key)
        [:div {:class (stl/css :mcp-server-key)}
@@ -567,7 +565,7 @@
 (mf/defc access-tokens-section*
   {::mf/private true}
   []
-  (let [tokens (mf/deref tokens-ref)
+  (let [tokens (mf/deref refs/access-tokens)
 
         handle-click
         (mf/use-fn
