@@ -514,17 +514,17 @@
                           :fn #(st/emit! (dw/decrease-zoom))}
 
    :reset-zoom           {:tooltip (ds/shift "0")
-                          :command "shift+0"
+                          :command ["shift+0" "shift+num0"]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/reset-zoom)}
 
    :fit-all              {:tooltip (ds/shift "1")
-                          :command "shift+1"
+                          :command ["shift+1" "shift+num1"]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/zoom-to-fit-all)}
 
    :zoom-selected        {:tooltip (ds/shift "2")
-                          :command ["shift+2" "@" "\""]
+                          :command ["shift+2" "shift+num2" "@" "\""]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}
 
@@ -626,7 +626,7 @@
             (range 10)
             (map (fn [n] [(keyword (str "opacity-" n))
                           {:tooltip (str n)
-                           :command (str n)
+                           :command [(str n) (str "num" n)]
                            :subsections [:modify-layers]
                            :fn #(emit-when-no-readonly (dwly/pressed-opacity n))}])))))
 
