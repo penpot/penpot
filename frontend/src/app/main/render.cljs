@@ -484,6 +484,46 @@
        [:& ff/fontfaces-style {:fonts fonts}]
        [:& shape-wrapper {:shape object}]]]]))
 
+(mf/defc objects-svg
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects object-ids embed] :or {embed false} :as props}]
+  (let [shapes
+        (->> object-ids
+             (keep #(get objects %))
+             (mapv (fn [object]
+                     (cond-> object
+                       (:hide-fill-on-export object)
+                       (assoc :fills [])))))
+
+        bounds
+        (->> shapes
+             (map #(gsb/get-object-bounds objects % {:ignore-margin? false}))
+             (grc/join-rects))
+
+        {:keys [width height]} bounds
+        vbox  (format-viewbox bounds)
+        fonts (->> shapes
+                   (mapcat #(ff/shape->fonts % objects))
+                   (distinct))
+
+        shape-wrapper
+        (mf/with-memo [objects]
+          (shape-wrapper-factory objects))]
+
+    [:& (mf/provider export/include-metadata-ctx) {:value false}
+     [:& (mf/provider embed/context) {:value embed}
+      [:svg {:view-box vbox
+             :width (ust/format-precision width viewbox-decimal-precision)
+             :height (ust/format-precision height viewbox-decimal-precision)
+             :version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :style {:-webkit-print-color-adjust :exact}
+             :fill "none"}
+       [:& ff/fontfaces-style {:fonts fonts}]
+       (for [shape shapes]
+         [:& shape-wrapper {:key (dm/str (:id shape)) :shape shape}])]]]))
+
 (defn render-to-canvas
   [objects canvas bounds scale object-id on-render]
   (let [width (.-width canvas)

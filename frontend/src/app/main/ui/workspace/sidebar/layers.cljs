@@ -115,7 +115,8 @@
                                    result))
                           result)))]
 
-    [:div {:class (stl/css :element-list) :data-testid "layer-item"}
+    [:div {:class (stl/css :element-list)
+           :data-testid "layer-item"}
      [:> hooks/sortable-container* {}
       (for [obj shapes]
         (if (cfh/frame-shape? obj)

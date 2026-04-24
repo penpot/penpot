@@ -358,7 +358,9 @@
 
             shapes          (mapv maybe-translate selected)
             svg-formatted   (svg/generate-formatted-markup objects shapes)]
-        (clipboard/to-clipboard svg-formatted)))))
+        (clipboard/to-clipboard-multi
+         {"image/svg+xml" svg-formatted
+          "text/plain"    svg-formatted})))))
 
 (defn copy-selected-css
   []

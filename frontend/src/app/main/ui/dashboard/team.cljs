@@ -1437,8 +1437,7 @@
            (let [organization (d/seek #(= organization-id (:id %)) organizations)]
              (when organization
                (st/emit! (dnt/add-team-to-org {:team-id (:id team)
-                                               :organization-id organization-id
-                                               :organization-name (:name organization)}))))))
+                                               :organization-id organization-id}))))))
 
         on-add-team-to-org
         (mf/use-fn
