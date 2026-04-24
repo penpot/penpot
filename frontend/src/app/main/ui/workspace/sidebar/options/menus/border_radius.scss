@@ -10,8 +10,12 @@
 
 .radius {
   display: grid;
-  grid-template-columns: subgrid;
+  // 1fr for the radius input (narrows to make room), then two
+  // `auto` tracks for the expand-corners and corner-smoothing
+  // buttons so both sit on the same row.
+  grid-template-columns: 1fr auto auto;
   gap: var(--sp-xs);
+  align-items: center;
 }
 
 .radius-1,
@@ -51,7 +55,10 @@
 
 .radius-first-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  // 1fr = numeric input takes remaining space, `auto auto` reserves
+  // space for the expand-corners button and the corner-smoothing
+  // button side-by-side on the same row.
+  grid-template-columns: 1fr auto auto;
   gap: var(--sp-xs);
 }
 
@@ -60,3 +67,4 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--sp-xs);
 }
+

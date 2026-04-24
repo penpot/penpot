@@ -43,6 +43,7 @@
    :ox :oy
    :rotation
    :r1 :r2 :r3 :r4
+   :corner-smoothing
    :selrect
    :points
    :show-content
