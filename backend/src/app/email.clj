@@ -416,8 +416,8 @@
   [:map
    [:invited-by ::sm/text]
    [:organization-name ::sm/text]
-   [:org-initials ::sm/text]
-   [:org-logo ::sm/uri]
+   [:organization-initials [:maybe :string]]
+   [:organization-logo ::sm/uri]
    [:user-name [:maybe ::sm/text]]
    [:token ::sm/text]])
 
