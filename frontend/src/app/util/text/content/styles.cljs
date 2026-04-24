@@ -132,7 +132,9 @@
   "Maps attrs to styles"
   [styles]
   (let [mapped-styles
-        (into {} (map attr->style styles))]
+        (into {} (comp (filter (fn [[_ v]] (some? v)))
+                       (map attr->style))
+              styles)]
     (clj->js mapped-styles)))
 
 (defn style-needs-mapping?
@@ -199,12 +201,14 @@
        (let [style-name (get-style-name-as-css-variable k)
              [_ style-decode] (get mapping k)
              style-value (.getPropertyValue style-declaration style-name)]
-         (when (or (not removed-mixed) (not (contains? mixed-values style-value)))
-           (assoc acc k (style-decode style-value))))
+         (if (or (not removed-mixed) (not (contains? mixed-values style-value)))
+           (assoc acc k (style-decode style-value))
+           acc))
        (let [style-name (get-style-name k)
              style-value (normalize-attr-value k (.getPropertyValue style-declaration style-name))]
-         (when (or (not removed-mixed) (not (contains? mixed-values style-value)))
-           (assoc acc k style-value))))) {} txt/text-style-attrs))
+         (if (or (not removed-mixed) (not (contains? mixed-values style-value)))
+           (assoc acc k style-value)
+           acc)))) {} txt/text-style-attrs))
 
 (defn get-styles-from-event
   "Returns a ClojureScript object compatible with text nodes"

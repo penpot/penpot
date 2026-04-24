@@ -935,6 +935,12 @@
                             (d/concat-vec txt/text-font-attrs
                                           txt/text-spacing-attrs
                                           txt/text-transform-attrs)))
+             values    (cond-> values
+                         (number? (:line-height values))
+                         (update :line-height str)
+
+                         (number? (:letter-spacing values))
+                         (update :letter-spacing str))
 
              typ-id    (uuid/next)
              typ       (-> (if multiple?

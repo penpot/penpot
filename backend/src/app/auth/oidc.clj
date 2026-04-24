@@ -548,16 +548,29 @@
 (def ^:private valid-info?
   (sm/validator schema:info))
 
+(defn- select-user-info-source
+  "Normalise the provider's configured user-info source into a keyword the
+  dispatch below can match. The raw value comes from config as a string
+  per the malli schema in `app.config` (`\"token\"`, `\"userinfo\"`, or
+  `\"auto\"`) and from hard-coded per-provider maps as strings as well;
+  any unrecognised or missing value falls back to `:auto` (prefer claims,
+  use userinfo as fallback)."
+  [source]
+  (case source
+    "token"    :token
+    "userinfo" :userinfo
+    :auto))
+
 (defn- get-info
   [cfg provider state code]
   (let [tdata  (fetch-access-token cfg provider code)
         claims (get-id-token-claims provider tdata)
 
-        info   (case (get provider :user-info-source)
-                 :token (dissoc claims :exp :iss :iat :aud :sid)
+        info   (case (select-user-info-source (get provider :user-info-source))
+                 :token    (dissoc claims :exp :iss :iat :aud :sid)
                  :userinfo (fetch-user-info cfg provider tdata)
-                 (or (some-> claims (dissoc :exp :iss :iat :aud :sid))
-                     (fetch-user-info cfg provider tdata)))
+                 :auto     (or (some-> claims (dissoc :exp :iss :iat :aud :sid))
+                               (fetch-user-info cfg provider tdata)))
 
         info   (process-user-info provider tdata info)]
 

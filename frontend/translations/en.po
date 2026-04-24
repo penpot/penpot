@@ -3049,6 +3049,9 @@ msgstr "Resend invitation"
 msgid "labels.restore"
 msgstr "Restore"
 
+msgid "labels.exit"
+msgstr "Exit"
+
 #: src/app/main/ui/components/progress.cljs:80, src/app/main/ui/static.cljs:299, src/app/main/ui/static.cljs:308, src/app/main/ui/static.cljs:419
 msgid "labels.retry"
 msgstr "Retry"
@@ -7643,6 +7646,14 @@ msgstr ""
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "Start file downloads."
 
+#: src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.permissions.clipboard-read"
+msgstr "Read the contents of your clipboard."
+
+#: src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.permissions.clipboard-write"
+msgstr "Read and write to your clipboard."
+
 #: src/app/main/ui/workspace/plugins.cljs:287
 msgid "workspace.plugins.permissions.allow-localstorage"
 msgstr "Store data in the browser."
@@ -9064,6 +9075,9 @@ msgstr "Autosaved %s"
 msgid "workspace.versions.button.pin"
 msgstr "Pin version"
 
+msgid "workspace.versions.button.preview"
+msgstr "Preview version"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:273
 msgid "workspace.versions.button.restore"
 msgstr "Restore version"
@@ -9107,6 +9121,12 @@ msgstr "This version is locked by %s and cannot be modified"
 #, unused
 msgid "workspace.versions.locked-by-you"
 msgstr "This version is locked by you"
+
+msgid "workspace.versions.preview-banner-title"
+msgstr "Previewing version: %s"
+
+msgid "workspace.versions.preview.unnamed"
+msgstr "Unnamed version"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:83
 msgid "workspace.versions.restore-warning"
