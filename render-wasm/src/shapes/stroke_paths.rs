@@ -17,7 +17,7 @@ pub fn stroke_to_path(
     selrect: &Rect,
     svg_attrs: Option<&SvgAttrs>,
 ) -> Option<Path> {
-    let skia_shape_path = shape_path.to_skia_path();
+    let skia_shape_path = shape_path.to_skia_path(svg_attrs);
 
     let transformed_shape_path = if let Some(pt) = path_transform {
         skia_shape_path.make_transform(pt)

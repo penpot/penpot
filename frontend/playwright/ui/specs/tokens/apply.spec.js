@@ -735,7 +735,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Check if token pill is visible on right sidebar
     const strokeSectionSidebar = rightSidebar.getByRole("region", {
-      name: "stroke-section",
+      name: "Stroke section",
     });
     await expect(strokeSectionSidebar).toBeVisible();
     const firstStrokeRow = strokeSectionSidebar.getByLabel("stroke-row-0");
