@@ -47,6 +47,7 @@
 - Allow customising the OIDC login button label (by @wdeveloper16) [Github #7027](https://github.com/penpot/penpot/issues/7027)
 - Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
+- Add squircle corner option for rectangles (by @jack-stormentswe) [Github #6771](https://github.com/penpot/penpot/issues/6771)
 
 ### :bug: Bugs fixed
 
@@ -79,7 +80,7 @@
 - Allow deleting the profile avatar after uploading [Github #9067](https://github.com/penpot/penpot/issues/9067)
 - Fix incorrect rendering when exporting text as SVG, PNG and JPG (by @edwin-rivera-dev) [Github #8516](https://github.com/penpot/penpot/issues/8516)
 - Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
-- Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
+- Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479) 
 
 ## 2.16.0 (Unreleased)
 
