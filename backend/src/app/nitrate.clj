@@ -10,11 +10,10 @@
    [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.logging :as l]
-   [app.common.organization :as co]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
-   [app.common.types.team :as ctt]
+   [app.common.types.organization :as cto]
    [app.config :as cf]
    [app.http.client :as http]
    [app.rpc :as-alias rpc]
@@ -207,7 +206,7 @@
                         (str baseuri
                              "/api/teams/"
                              team-id)
-                        ctt/schema:team-with-organization params)))
+                        cto/schema:team-with-organization params)))
 
 (defn- get-org-membership-api
   [cfg {:keys [profile-id organization-id] :as params}]
@@ -253,7 +252,7 @@
                                       "/api/organizations/"
                                       organization-id
                                       "/add-team")
-                                 ctt/schema:team-with-organization params)
+                                 cto/schema:team-with-organization params)
         custom-photo (when-let [logo-id (get-in team [:organization :logo-id])]
                        (str (cf/get :public-uri) "/assets/by-id/" logo-id))]
     (cond-> team
@@ -380,9 +379,9 @@
           team-with-org (call cfg :get-team-org params)
           org           (:organization team-with-org)]
       (if (some? org)
-        (-> (co/apply-organization team (assoc org :custom-photo
-                                               (when-let [logo-id (:logo-id org)]
-                                                 (str (cf/get :public-uri) "/assets/by-id/" logo-id))))
+        (-> (cto/apply-organization team (assoc org :custom-photo
+                                                (when-let [logo-id (:logo-id org)]
+                                                  (str (cf/get :public-uri) "/assets/by-id/" logo-id))))
             (assoc :is-default (or (:is-default team) (true? (:is-your-penpot team-with-org)))))
         team))
     (catch Throwable cause
