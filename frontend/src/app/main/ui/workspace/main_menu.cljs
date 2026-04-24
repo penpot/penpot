@@ -43,12 +43,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
-   [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
-
-(def tokens-ref
-  (l/derived :access-tokens st/state))
 
 (mf/defc shortcuts*
   {::mf/private true}
@@ -749,13 +745,21 @@
 (mf/defc mcp-menu*
   {::mf/private true}
   [{:keys [on-close]}]
-  (let [plugins? (features/active-feature? @st/state "plugins/runtime")
-
-        profile         (mf/deref refs/profile)
-        mcp             (mf/deref refs/mcp)
+  (let [plugins? (features/active-feature? @st/state "plugins/runtime") 
+        
+        profile  (mf/deref refs/profile)
+        mcp      (mf/deref refs/mcp)
+        tokens   (mf/deref refs/access-tokens)
+        
+        expired? (some->> tokens
+                          (some #(when (= (:type %) "mcp") %))
+                          :expires-at
+                          (> (ct/now)))
 
         mcp-enabled?    (true? (-> profile :props :mcp-enabled))
         mcp-connected?  (= "connected" (get mcp :connection-status))
+
+        show-enabled?   (and mcp-enabled? (false? expired?))
 
         on-nav-to-integrations
         (mf/use-fn
@@ -794,7 +798,7 @@
                                              :pos-6 plugins?)
                         :on-close on-close}
 
-     (when mcp-enabled?
+     (when show-enabled?
        [:> dropdown-menu-item* {:id          "mcp-menu-toggle-mcp-plugin"
                                 :class       (stl/css :base-menu-item :submenu-item)
                                 :on-click    on-toggle-mcp-plugin
@@ -809,7 +813,7 @@
                               :on-click    on-nav-to-integrations
                               :on-key-down on-nav-to-integrations-key-down}
       [:span {:class (stl/css :item-name)}
-       (if mcp-enabled?
+       (if show-enabled?
          (tr "workspace.header.menu.mcp.server.status.enabled")
          (tr "workspace.header.menu.mcp.server.status.disabled"))]]]))
 
@@ -983,7 +987,7 @@
                     :class (stl/css :item-arrow)}]])
 
       (when (contains? cf/flags :mcp)
-        (let [tokens   (mf/deref tokens-ref)
+        (let [tokens   (mf/deref refs/access-tokens)
               expired? (some->> tokens
                                 (some #(when (= (:type %) "mcp") %))
                                 :expires-at

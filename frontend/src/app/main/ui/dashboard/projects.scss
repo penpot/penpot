@@ -19,16 +19,15 @@
   margin-inline-end: var(--sp-l);
   border-block-start: $b-1 solid var(--panel-border-color);
   overflow-y: auto;
-  padding-block-end: var(--sp-xxxl);
 }
 
 .dashboard-projects {
   user-select: none;
-  block-size: calc(100vh - px2rem(64));
+  block-size: calc(100vh - px2rem(80));
 }
 
 .with-team-hero {
-  block-size: calc(100vh - px2rem(280));
+  block-size: calc(100vh - px2rem(360));
 }
 
 .dashboard-shared {

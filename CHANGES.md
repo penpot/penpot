@@ -35,6 +35,14 @@
 ### :bug: Bugs fixed
 
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+
+
+## 2.14.4
+
+### :bug: Bugs fixed
+
+- Fix email validation [Taiga #14006](https://tree.taiga.io/project/penpot/issue/14006)
+- Fix email blacklisting [Github #9122](https://github.com/penpot/penpot/pull/9122)
 - Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
 
 

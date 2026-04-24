@@ -349,7 +349,8 @@
                     :object-id (mapv :id objects)
                     :route "objects"}
             uri    (-> (cf/get :public-uri)
-                       (assoc :path "/render.html")
+                       (u/ensure-path-slash)
+                       (u/join "render.html")
                        (assoc :query (u/map->query-string params)))]
       (bw/exec! (prepare-options uri)
                 (partial render uri)))))

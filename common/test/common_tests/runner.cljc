@@ -55,6 +55,7 @@
    [common-tests.path-names-test]
    [common-tests.record-test]
    [common-tests.schema-test]
+   [common-tests.spec-test]
    [common-tests.svg-path-test]
    [common-tests.svg-test]
    [common-tests.text-test]
@@ -134,6 +135,7 @@
    'common-tests.path-names-test
    'common-tests.record-test
    'common-tests.schema-test
+   'common-tests.spec-test
    'common-tests.svg-path-test
    'common-tests.svg-test
    'common-tests.text-test

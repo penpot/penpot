@@ -105,7 +105,7 @@ services:
       # - "traefik.http.routers.penpot-https.tls=true"
 
     environment:
-      << : [*penpot-flags, *penpot-http-body-size]
+      << : [*penpot-flags, *penpot-http-body-size, *penpot-public-uri]
 
   penpot-backend:
     image: "penpotapp/backend:${PENPOT_VERSION:-latest}"

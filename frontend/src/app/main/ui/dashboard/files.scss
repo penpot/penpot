@@ -6,6 +6,8 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .dashboard-container {
   flex: 1 0 0;
@@ -13,6 +15,7 @@
   overflow-y: auto;
   width: 100%;
   border-top: deprecated.$s-1 solid var(--color-background-quaternary);
+  padding-block-end: var(--sp-xxxl);
 
   &.dashboard-projects {
     user-select: none;
