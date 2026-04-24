@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-03-01 09:09+0000\n"
-"Last-Translator: Egor Filatov <e.v.filatov@javatar.ru>\n"
+"PO-Revision-Date: 2026-04-25 14:09+0000\n"
+"Last-Translator: bobsonzu0a5d198e17c343cb <bobsonzu@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.16.1-dev\n"
+"X-Generator: Weblate 5.17.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -7030,3 +7030,53 @@ msgstr "Сделано с любовью и открытым исходным к
 #: src/app/main/ui/static.cljs:248
 msgid "not-found.no-permission.already-requested.file"
 msgstr "Вы уже запросили доступ к этому файлу."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:61
+msgid "dashboard.empty-project.explore"
+msgstr "Рассмотрите варианты для добавления"
+
+#: src/app/main/errors.cljs:214
+msgid "errors.internal-worker-error"
+msgstr "Произошла ошибка в работе веб-воркера."
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:120
+msgid "inspect.attributes.image.preview"
+msgstr "Предварительный просмотр заливки фигуры"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:68
+msgid "inspect.tabs.styles.copy-shorthand"
+msgstr "Копировать CSS-сокращение в буфер обмена"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1125
+msgid "labels.community-contributions"
+msgstr "Сообщество и содействие"
+
+#: src/app/main/ui/static.cljs:67
+msgid "labels.copyright-period"
+msgstr "Kaleidos © 2019–по настоящее время"
+
+#: src/app/main/ui/static.cljs:406
+msgid "labels.internal-error.desc-message-second"
+msgstr ""
+"Повторите попытку или свяжитесь с технической поддержкой, чтобы сообщить об "
+"ошибке."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:893
+msgid "labels.learning-center"
+msgstr "Центр обучения"
+
+#: src/app/main/ui/comments.cljs:581
+msgid "labels.mention"
+msgstr "Отметить"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:210
+msgid "labels.lock"
+msgstr "Заблокировать"
+
+#: src/app/main/ui/static.cljs:61, src/app/main/ui/static.cljs:137
+msgid "labels.login"
+msgstr "Логин"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:631
+msgid "labels.mixed-values"
+msgstr "Смешать"
