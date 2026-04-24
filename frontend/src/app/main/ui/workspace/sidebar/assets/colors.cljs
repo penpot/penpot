@@ -107,6 +107,22 @@
          (fn []
            (st/emit! (dwl/duplicate-color file-id color-id))))
 
+        ;; Toggle whether this color style binds alpha together with hue.
+        ;; When unlocked, shapes using the style keep their own opacity
+        ;; and hue updates no longer overwrite it (see issue #3085).
+        lock-alpha?
+        (get color :lock-alpha? true)
+
+        toggle-alpha-lock
+        (mf/use-fn
+         (mf/deps color file-id lock-alpha?)
+         (fn []
+           (let [name  (cpn/merge-path-item (:path color) (:name color))
+                 next  (-> color
+                           (assoc :name name)
+                           (assoc :lock-alpha? (not lock-alpha?)))]
+             (st/emit! (dwl/update-color next file-id)))))
+
         rename-color-clicked
         (mf/use-fn
          (mf/deps read-only? local?)
@@ -261,6 +277,12 @@
                      {:name    (tr "workspace.assets.edit")
                       :id      "assets-edit-color"
                       :handler edit-color-clicked})
+                   (when-not (or multi-colors? multi-assets?)
+                     {:name    (if lock-alpha?
+                                 (tr "workspace.assets.color.unlock-alpha")
+                                 (tr "workspace.assets.color.lock-alpha"))
+                      :id      "assets-toggle-color-alpha-lock"
+                      :handler toggle-alpha-lock})
                    (when (and (not (or multi-colors? multi-assets?))
                               (contains? cf/flags :canary))
                      {:name    (tr "workspace.assets.duplicate")

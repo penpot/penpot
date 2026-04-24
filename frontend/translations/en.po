@@ -5548,6 +5548,14 @@ msgstr "Colors"
 msgid "workspace.assets.colors.add-color"
 msgstr "Add color"
 
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs
+msgid "workspace.assets.color.lock-alpha"
+msgstr "Lock alpha to style"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs
+msgid "workspace.assets.color.unlock-alpha"
+msgstr "Unlock alpha from style"
+
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:81
 msgid "workspace.assets.component-group-options"
 msgstr "Component group options"

@@ -39,7 +39,7 @@
     (str (-> opacity
              (d/coalesce 1)
              (* 100)
-             (fmt/format-number)))))
+             (js/Math.round)))))
 
 (mf/defc color-info-wrapper*
   {::mf/private true}

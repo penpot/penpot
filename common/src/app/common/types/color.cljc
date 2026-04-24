@@ -140,6 +140,10 @@
    [:name ::sm/text]
    [:path {:optional true} :string]
    [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
+   ;; When false, the style stores only hue; shapes using it keep their
+   ;; own per-instance alpha and hue updates do not overwrite it. When
+   ;; true (default, existing behavior), hue+alpha are bound together.
+   [:lock-alpha? {:optional true} :boolean]
    [:modified-at {:optional true} ::ct/inst]
    [:plugin-data {:optional true} ctpg/schema:plugin-data]])
 
@@ -347,7 +351,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn library-color->color
-  "Converts a library color data structure to a plain color data structure"
+  "Converts a library color data structure to a plain color data structure.
+
+  The `:lock-alpha?` flag is preserved on the returned color as metadata
+  so downstream apply logic can decide whether to bind the shape's
+  opacity to the style or leave the shape's per-instance alpha intact
+  (see issue #3085)."
   [lcolor file-id]
   (-> lcolor
       (select-keys [:image :gradient :color :opacity])
@@ -355,7 +364,8 @@
       (assoc :ref-file file-id)
       (vary-meta assoc
                  :path (get lcolor :path)
-                 :name (get lcolor :name))))
+                 :name (get lcolor :name)
+                 :lock-alpha? (get lcolor :lock-alpha? true))))
 
 (defn stroke->color
   [stroke]
