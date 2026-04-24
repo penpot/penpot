@@ -313,6 +313,16 @@
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :path))}
 
+   :draw-line            {:tooltip "L"
+                          :command "l"
+                          :subsections [:tools]
+                          :fn #(emit-when-no-readonly (dwd/select-for-drawing :line))}
+
+   :draw-arrow           {:tooltip (ds/shift "L")
+                          :command "shift+l"
+                          :subsections [:tools]
+                          :fn #(emit-when-no-readonly (dwd/select-for-drawing :arrow))}
+
    :draw-curve           {:tooltip (ds/shift "C")
                           :command "shift+c"
                           :subsections [:tools]
