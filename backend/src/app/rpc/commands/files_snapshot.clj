@@ -8,6 +8,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
+   [app.common.features :as-alias cfeat]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
@@ -34,6 +35,43 @@
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (files/check-read-permissions! conn profile-id file-id)
                  (fsnap/get-visible-snapshots conn file-id))))
+
+;; --- COMMAND QUERY: get-file-snapshot
+
+(def ^:private schema:get-file-snapshot
+  [:map {:title "get-file-snapshot"}
+   [:file-id ::sm/uuid]
+   [:id ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(sv/defmethod ::get-file-snapshot
+  "Retrieve a file bundle with data from a specific snapshot for
+  read-only preview. Does not modify any database state."
+  {::doc/added "2.16"
+   ::sm/params schema:get-file-snapshot
+   ::sm/result files/schema:file-with-permissions
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id id] :as params}]
+  (let [perms (bfc/get-file-permissions conn profile-id file-id)]
+    (files/check-read-permissions! perms)
+    (let [snapshot (fsnap/get-snapshot-data cfg file-id id)]
+      (when-not snapshot
+        (ex/raise :type :not-found
+                  :code :snapshot-not-found
+                  :hint "unable to find snapshot with the provided id"
+                  :snapshot-id id
+                  :file-id file-id))
+      ;; Load current file metadata only (no data decoding) then overlay
+      ;; the snapshot data so the client receives the same shape as a
+      ;; normal get-file response but with historical page/object content.
+      (let [base-file (bfc/get-file cfg file-id :load-data? false)]
+        (-> base-file
+            (assoc :data (:data snapshot))
+            (assoc :version (:version snapshot))
+            (assoc :features (:features snapshot))
+            (assoc :revn (:revn snapshot))
+            (assoc :vern (rand-int 100000))
+            (assoc :permissions perms))))))
 
 (def ^:private schema:create-file-snapshot
   [:map
