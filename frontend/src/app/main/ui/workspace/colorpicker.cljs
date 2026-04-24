@@ -26,7 +26,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -341,11 +340,6 @@
                  (mapv #(assoc %2 :offset (:offset %1)) stops new-stops)]
              (st/emit! (dc/update-colorpicker-stops stops)))))
 
-        handle-change-gradient-opacity
-        (mf/use-fn
-         (fn [value]
-           (st/emit! (dc/update-colorpicker-gradient-opacity (/ value 100)))))
-
         render-wasm?
         (features/use-feature "render-wasm/v1")
 
@@ -394,17 +388,6 @@
       [:div {:class (stl/css :top-actions)}
 
        [:div {:class (stl/css :top-actions-right)}
-        (when (and (= color-style :direct-color)
-                   (= :gradient selected-mode))
-          [:div {:class (stl/css :opacity-input-wrapper)}
-           [:span {:class (stl/css :icon-text)} "%"]
-           [:> numeric-input*
-            {:value (-> data :opacity opacity->string)
-             :on-change handle-change-gradient-opacity
-             :default 100
-             :data-testid "opacity-global-input"
-             :min 0
-             :max 100}]])
 
         (when (and (= color-style :direct-color)
                    (or (not disable-gradient) (not disable-image)))
