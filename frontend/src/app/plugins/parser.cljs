@@ -7,6 +7,7 @@
 (ns app.plugins.parser
   (:require
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.common.json :as json]
    [app.common.types.path :as path]
    [app.common.uuid :as uuid]
@@ -26,10 +27,16 @@
   (if (string? color) (-> color str/lower) color))
 
 (defn parse-point
+  "Parses a point-like JS object into a `gpt/point` record.
+
+  The schema for shape interactions (`schema:open-overlay-interaction`,
+  `::gpt/point`) requires a Point record — returning a plain map caused
+  plugin `addInteraction` calls with an `open-overlay` action and a
+  `manualPositionLocation` to be silently rejected. See issue #8409."
   [^js point]
   (when point
-    {:x (obj/get point "x")
-     :y (obj/get point "y")}))
+    (gpt/point (obj/get point "x")
+               (obj/get point "y"))))
 
 (defn parse-shape-type
   [type]

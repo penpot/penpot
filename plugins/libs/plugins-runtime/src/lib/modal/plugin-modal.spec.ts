@@ -99,6 +99,35 @@ describe('PluginModalElement', () => {
     modal.remove();
   });
 
+  it('should set iframe allow attribute for clipboard permissions', () => {
+    const modal = document.createElement('plugin-modal');
+    modal.setAttribute('title', 'Test modal');
+    modal.setAttribute('iframe-src', 'about:blank');
+    modal.setAttribute('allow-clipboard-read', 'true');
+    modal.setAttribute('allow-clipboard-write', 'true');
+    document.body.appendChild(modal);
+
+    const iframe = modal.shadowRoot?.querySelector('iframe');
+    expect(iframe).toBeTruthy();
+    expect(iframe?.allow).toContain('clipboard-read');
+    expect(iframe?.allow).toContain('clipboard-write');
+
+    modal.remove();
+  });
+
+  it('should not set clipboard allow attributes when permissions are absent', () => {
+    const modal = document.createElement('plugin-modal');
+    modal.setAttribute('title', 'Test modal');
+    modal.setAttribute('iframe-src', 'about:blank');
+    document.body.appendChild(modal);
+
+    const iframe = modal.shadowRoot?.querySelector('iframe');
+    expect(iframe).toBeTruthy();
+    expect(iframe?.allow).toBe('');
+
+    modal.remove();
+  });
+
   it('should dispatch close event when close button is clicked', () => {
     const modal = document.createElement('plugin-modal');
     modal.setAttribute('title', 'Test modal');
