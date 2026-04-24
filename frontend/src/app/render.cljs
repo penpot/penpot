@@ -278,9 +278,6 @@
   (let [el (dom/get-element "app")]
     (mf/create-root el)))
 
-(declare ^:private render-single-object)
-(declare ^:private render-components)
-(declare ^:private render-objects)
 
 (defn- parse-params
   [loc]
