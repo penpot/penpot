@@ -2119,8 +2119,8 @@
                             (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]
 
     (loop [attrs       updatable-attrs
-           roperations [{:type :set-touched :touched (:touched previous-shape)}]
-           uoperations (list {:type :set-touched :touched (:touched current-shape)})]
+           roperations []
+           uoperations '()]
       (if-let [attr (first attrs)]
         (let [sync-group
               (ctk/resolve-sync-group (:type previous-shape) attr)
@@ -2262,7 +2262,13 @@
 
         (let [updated-attrs (into #{} (comp (filter #(= :set (:type %)))
                                             (map :attr))
-                                  roperations)]
+                                  roperations)
+              updated-sync-groups (into #{}
+                                        (keep #(ctk/resolve-sync-group (:type previous-shape) %))
+                                        updated-attrs)
+              new-touched (set/union (or (:touched current-shape) #{}) updated-sync-groups)
+              roperations (into [{:type :set-touched :touched new-touched}] roperations)
+              uoperations (into (list {:type :set-touched :touched (:touched current-shape)}) uoperations)]
           (cond-> changes
             (> (count roperations) 1)
             (-> (add-update-attr-changes current-shape container roperations uoperations)

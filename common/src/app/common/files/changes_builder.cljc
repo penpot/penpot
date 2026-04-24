@@ -46,8 +46,8 @@
      (with-meta changes
        {::page-id page-id})))
   ([]
-   {:redo-changes []
-    :undo-changes '()})
+   {:redo-changes []     ;; redo-changes is a vector so that conj adds things at the end, in order of execution
+    :undo-changes '()})  ;; undo-changes is a list to conj things at the beginning, so they execute in the reverse order when undoing several changes
   ([origin]
    {:redo-changes []
     :undo-changes '()
