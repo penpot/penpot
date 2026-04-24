@@ -1,6 +1,7 @@
 use skia_safe::{self as skia, Matrix};
 
 use crate::math;
+use crate::shapes::svg_attrs::{FillRule, SvgAttrs};
 
 mod subpaths;
 
@@ -217,8 +218,14 @@ impl Path {
         Path::new(segments)
     }
 
-    pub fn to_skia_path(&self) -> skia::Path {
-        self.skia_path.snapshot()
+    pub fn to_skia_path(&self, svg_attrs: Option<&SvgAttrs>) -> skia::Path {
+        let mut path = self.skia_path.snapshot();
+        if let Some(attrs) = svg_attrs {
+            if attrs.fill_rule == FillRule::Evenodd {
+                path.set_fill_type(skia::PathFillType::EvenOdd);
+            }
+        }
+        path
     }
 
     pub fn contains(&self, p: skia::Point) -> bool {

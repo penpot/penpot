@@ -1,10 +1,33 @@
 use crate::error::{Error, Result};
 use crate::mem;
+use crate::shapes::Fill;
+use crate::state::State;
 use crate::uuid::Uuid;
 use crate::with_state_mut;
 use crate::STATE;
 use crate::{shapes::ImageFill, utils::uuid_from_u32_quartet};
 use macros::wasm_error;
+
+fn touch_shapes_with_image(state: &mut State, image_id: Uuid) {
+    let ids: Vec<Uuid> = state
+        .shapes
+        .iter()
+        .filter(|shape| {
+            shape
+                .fills()
+                .any(|f| matches!(f, Fill::Image(i) if i.id() == image_id))
+                || shape
+                    .strokes
+                    .iter()
+                    .any(|s| matches!(&s.fill, Fill::Image(i) if i.id() == image_id))
+        })
+        .map(|shape| shape.id)
+        .collect();
+
+    for id in ids {
+        state.touch_shape(id);
+    }
+}
 
 const FLAG_KEEP_ASPECT_RATIO: u8 = 1 << 0;
 const IMAGE_IDS_SIZE: usize = 32;
@@ -90,7 +113,7 @@ pub extern "C" fn store_image() -> Result<()> {
         {
             eprintln!("{}", msg);
         }
-        state.touch_shape(ids.shape_id);
+        touch_shapes_with_image(state, ids.image_id);
     });
 
     mem::free_bytes()?;
@@ -167,7 +190,7 @@ pub extern "C" fn store_image_from_texture() -> Result<()> {
             // FIXME: Review if we should return a RecoverableError
             eprintln!("store_image_from_texture error: {}", msg);
         }
-        state.touch_shape(ids.shape_id);
+        touch_shapes_with_image(state, ids.image_id);
     });
 
     mem::free_bytes()?;

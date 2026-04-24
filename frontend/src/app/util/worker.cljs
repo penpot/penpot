@@ -90,8 +90,8 @@
   "Return a initialized webworker instance."
   [path on-error]
   (let [instance (js/Worker. path)
-        bus     (rx/subject)
-        worker  (Worker. instance (rx/to-observable bus))
+        bus      (rx/subject)
+        worker   (Worker. instance (rx/to-observable bus))
 
         handle-message
         (fn [event]
