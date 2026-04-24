@@ -22,13 +22,13 @@
    [cuerdas.core :as str]
    [integrant.core :as ig])
   (:import
-   jakarta.mail.Message$RecipientType
-   jakarta.mail.Session
-   jakarta.mail.Transport
    jakarta.mail.internet.InternetAddress
    jakarta.mail.internet.MimeBodyPart
    jakarta.mail.internet.MimeMessage
    jakarta.mail.internet.MimeMultipart
+   jakarta.mail.Message$RecipientType
+   jakarta.mail.Session
+   jakarta.mail.Transport
    java.util.Properties))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
