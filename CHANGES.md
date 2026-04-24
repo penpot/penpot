@@ -50,6 +50,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix `PENPOT_OIDC_USER_INFO_SOURCE` flag being silently ignored (`userinfo` / `token`) in the OIDC callback, causing "incomplete user info" failures during registration [Github #9108](https://github.com/penpot/penpot/issues/9108)
 - Fix `get-view-only-bundle` crashing when a share-link viewer encounters a team member whose email lacks `@` (NullPointerException in `obfuscate-email`) or whose domain has no `.` (previously produced a dangling-dot `****@****.`); now the viewer-side obfuscation is nil-safe and omits the trailing dot when the domain has no TLD
 - Remove `corepack` from the MCP local launcher so it runs on Node.js 25+, where corepack is no longer bundled [Github #8877](https://github.com/penpot/penpot/issues/8877)
 - Fix Copy as SVG: emit a single valid SVG document when multiple shapes are selected, and publish `image/svg+xml` to the clipboard so the paste target works in Inkscape and other SVG-native tools [Github #838](https://github.com/penpot/penpot/issues/838)
@@ -78,8 +79,12 @@
 - Fix copy to be more specific [Taiga #13990](https://tree.taiga.io/project/penpot/issue/13990)
 - Allow deleting the profile avatar after uploading [Github #9067](https://github.com/penpot/penpot/issues/9067)
 - Fix incorrect rendering when exporting text as SVG, PNG and JPG (by @edwin-rivera-dev) [Github #8516](https://github.com/penpot/penpot/issues/8516)
+- Fix Settings and Notifications "Update Settings" button enabled state when form has no changes (by @moorsecopers99) [Github #9090](https://github.com/penpot/penpot/issues/9090)
+- Fix "Help & Learning" submenu vertical alignment in account menu (by @juan-flores077) [Github #9137](https://github.com/penpot/penpot/issues/9137)
 - Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
+- Fix colorpicker layout so the eyedropper button is visible again [Taiga #14057](https://tree.taiga.io/project/penpot/issue/14057)
+
 
 ## 2.16.0 (Unreleased)
 
