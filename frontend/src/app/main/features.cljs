@@ -30,7 +30,8 @@
   [features state]
   (let [params       (rt/get-params state)
         wasm         (get params :wasm)
-        renderer (-> state :profile :props :renderer)
+        renderer     (when (contains? cf/flags :render-switch)
+                       (-> state :profile :props :renderer))
         enable-wasm  (or (= "true" wasm) (and (= renderer :wasm) (not= "false" wasm)))
         disable-wasm (or (= "false" wasm) (and (= renderer :svg) (not= "true" wasm)))
         features     (cond-> features
