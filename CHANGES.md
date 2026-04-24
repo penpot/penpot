@@ -23,6 +23,7 @@
 - Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
 - Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
 - Fix color dropdown option update [Taiga #14035](https://tree.taiga.io/project/penpot/issue/14035)
+- Fix themes modal height [Taiga #14046](https://tree.taiga.io/project/penpot/issue/14046)
 
 
 ## 2.15.0 (Unreleased)

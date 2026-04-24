@@ -745,12 +745,12 @@
 (mf/defc mcp-menu*
   {::mf/private true}
   [{:keys [on-close]}]
-  (let [plugins? (features/active-feature? @st/state "plugins/runtime") 
-        
+  (let [plugins? (features/active-feature? @st/state "plugins/runtime")
+
         profile  (mf/deref refs/profile)
         mcp      (mf/deref refs/mcp)
         tokens   (mf/deref refs/access-tokens)
-        
+
         expired? (some->> tokens
                           (some #(when (= (:type %) "mcp") %))
                           :expires-at
