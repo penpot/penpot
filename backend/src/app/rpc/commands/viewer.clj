@@ -28,19 +28,25 @@
       (update :pages-index select-keys allowed)))
 
 (defn obfuscate-email
+  "Obfuscate the `email` for share-link members so the viewer only sees a
+   partially redacted address. Accepts any string shape (including nil,
+   missing `@`, or a domain with no `.`) and falls back to a fully-masked
+   result rather than throwing — the function is called while building the
+   view-only bundle for anonymous viewers, so an NPE here would abort the
+   entire share-link response."
   [email]
   (let [[name domain]
-        (str/split email "@" 2)
+        (str/split (or email "") "@" 2)
 
         [_ rest]
-        (str/split domain "." 2)
+        (str/split (or domain "") "." 2)
 
         name
         (if (> (count name) 3)
           (str (subs name 0 1) (apply str (take (dec (count name)) (repeat "*"))))
           "****")]
 
-    (str name "@****." rest)))
+    (str name "@****" (when rest (str "." rest)))))
 
 (defn anonymize-member
   [member]
