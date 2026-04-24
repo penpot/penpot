@@ -10,6 +10,7 @@
 
 .radius {
   display: grid;
+
   // 1fr for the radius input (narrows to make room), then two
   // `auto` tracks for the expand-corners and corner-smoothing
   // buttons so both sit on the same row.
@@ -55,6 +56,7 @@
 
 .radius-first-row {
   display: grid;
+
   // 1fr = numeric input takes remaining space, `auto auto` reserves
   // space for the expand-corners button and the corner-smoothing
   // button side-by-side on the same row.
