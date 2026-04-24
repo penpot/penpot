@@ -123,6 +123,8 @@ describe('createPluginManager', () => {
       'light',
       { width: 400, height: 300 },
       true,
+      false,
+      false,
     );
     expect(mockModal.setTheme).toHaveBeenCalledWith('light');
     expect(mockModal.addEventListener).toHaveBeenCalledWith(

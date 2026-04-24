@@ -23,6 +23,22 @@
 
 (log/set-level! :warn)
 
+(defn- import-cause-message
+  "Prefer the server `:hint` (full text, e.g. SSE error payload), then `:explain`
+   when present; avoid the generic `stream exception` wrapper when a payload exists."
+  [cause default-msg]
+  (let [data    (ex-data cause)
+        hint    (some-> data :hint str/trim)
+        explain (some-> data :explain str/trim)]
+    (cond
+      (not (str/blank? hint)) hint
+      (not (str/blank? explain)) explain
+      :else
+      (let [msg (some-> (ex-message cause) str/trim)]
+        (if (or (str/blank? msg) (= msg "stream exception"))
+          default-msg
+          msg)))))
+
 ;; Upload changes batches size
 (def ^:const change-batch-size 100)
 
@@ -122,7 +138,7 @@
                           :error (tr "dashboard.import.analyze-error")}))))
 
          (rx/catch (fn [cause]
-                     (let [error (or (ex-message cause) (tr "dashboard.import.analyze-error"))]
+                     (let [error (import-cause-message cause (tr "dashboard.import.analyze-error"))]
                        (rx/of (assoc file :error error :status :error))))))))
 
 (defmethod impl/handler :analyze-import
@@ -178,7 +194,7 @@
                                 :project-id project-id
                                 :cause cause)
                      (rx/of {:status :error
-                             :error (ex-message cause)
+                             :error (import-cause-message cause (tr "labels.error"))
                              :file-id (:file-id data)})))))))
 
      (->> (rx/from binfile-v3)
@@ -212,8 +228,9 @@
                                 :project-id project-id
                                 ::log/sync? true
                                 :cause cause)
-                     (->> (rx/from entries)
-                          (rx/map (fn [entry]
-                                    {:status :error
-                                     :error (ex-message cause)
-                                     :file-id (:file-id entry)}))))))))))))
+                     (let [err (import-cause-message cause (tr "labels.error"))]
+                       (->> (rx/from entries)
+                            (rx/map (fn [entry]
+                                      {:status :error
+                                       :error err
+                                       :file-id (:file-id entry)})))))))))))))
