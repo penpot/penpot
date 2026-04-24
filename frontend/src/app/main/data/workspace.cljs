@@ -75,6 +75,7 @@
    [app.main.store :as st]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.wasm :as wasm-state]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -319,7 +320,10 @@
       (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
-            render-wasm? #(features/active-feature? @st/state "render-wasm/v1")]
+            render-wasm-enabled? #(features/active-feature? @st/state "render-wasm/v1")
+            render-wasm-ready?   #(and (render-wasm-enabled?)
+                                       wasm-state/context-initialized?
+                                       (not @wasm-state/context-lost?))]
 
         (log/debug :hint "initialize-workspace"
                    :team-id (dm/str team-id)
@@ -330,7 +334,7 @@
                (rx/concat
                 ;; Fetch all essential data that should be loaded before the file
                 (rx/merge
-                 (if ^boolean (render-wasm?)
+                 (if ^boolean (render-wasm-enabled?)
                    (->> (rx/from @wasm/module)
                         (rx/filter true?)
                         (rx/tap (fn [_]
@@ -408,7 +412,7 @@
 
                (->> stream
                     (rx/filter dch/commit?)
-                    (rx/filter (fn [_] (render-wasm?)))
+                    (rx/filter render-wasm-ready?)
                     (rx/map deref)
                     (rx/mapcat
                      (fn [{:keys [redo-changes]}]
@@ -421,7 +425,7 @@
                (let [local-commits-s
                      (->> stream
                           (rx/filter dch/commit?)
-                          (rx/filter (fn [_] (render-wasm?)))
+                          (rx/filter render-wasm-ready?)
                           (rx/map deref)
                           (rx/filter #(and (= :local (:source %))
                                            (not (contains? (:tags %) :position-data))))

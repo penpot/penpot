@@ -1166,7 +1166,7 @@ msgid "dashboard.webgl-switch.beta"
 msgstr "Beta"
 
 msgid "dashboard.webgl-switch.description"
-msgstr "WebGL rendering can improve performance, but it is in beta and may be less stable. Some visual differences may appear between the canvas, exports (SVG/​​PDF), and view mode."
+msgstr "WebGL rendering can improve performance, but it is in beta and may be less stable. Some visual differences may appear between the canvas, exports (SVG/PDF), and view mode."
 
 msgid "dashboard.webgl-switch.status"
 msgstr "Status"

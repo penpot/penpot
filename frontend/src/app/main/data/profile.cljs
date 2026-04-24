@@ -292,13 +292,13 @@
     ;; FIXME
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [refresh-profile$ (->> (rp/cmd! :update-profile-props {:props props})
-                                  (rx/map (constantly (refresh-profile))))
-            recompute$      (when (contains? props :renderer)
+      (let [refresh-profile (->> (rp/cmd! :update-profile-props {:props props})
+                                 (rx/map (constantly (refresh-profile))))
+            recompute       (when (contains? props :renderer)
                               (rx/of (features/recompute-features)))]
-        (if recompute$
-          (rx/concat recompute$ refresh-profile$)
-          refresh-profile$)))))
+        (if recompute
+          (rx/concat recompute refresh-profile)
+          refresh-profile)))))
 
 (defn mark-onboarding-as-viewed
   ([] (mark-onboarding-as-viewed nil))
