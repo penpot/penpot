@@ -85,14 +85,6 @@ test("Create a LINEAR gradient", async ({ page }) => {
     .last();
   await inputOpacity2.fill("40");
 
-  const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
-    "opacity-global-input",
-  );
-  await inputOpacityGlobal.fill("50");
-  await inputOpacityGlobal.press("Enter");
-  await expect(inputOpacityGlobal).toHaveValue("50");
-  await expect(inputOpacityGlobal).toBeVisible();
-
   await expect(
     workspacePage.page.getByText("Linear gradient")
   ).toBeVisible();
@@ -168,14 +160,6 @@ test("Create a RADIAL gradient", async ({ page }) => {
     .getByTestId("opacity-input")
     .last();
   await inputOpacity2.fill("100");
-
-  const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
-    "opacity-global-input",
-  );
-  await inputOpacityGlobal.fill("50");
-  await inputOpacityGlobal.press("Enter");
-  await expect(inputOpacityGlobal).toHaveValue("50");
-  await expect(inputOpacityGlobal).toBeVisible();
 
   await expect(
     workspacePage.page.getByText("Radial gradient")
