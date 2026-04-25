@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.util.object :as obj]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]))
@@ -218,7 +219,37 @@
             (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#fabada" :stroke-opacity 1 :stroke-width 5}]))
             (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeColor")) "#fabada"))
             (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeOpacity")) 1))
-            (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidth")) 5))))
+            (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidth")) 5)))
+
+          (t/testing " - fills per-element property mutation (bug #8357)"
+            (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
+            (obj/set! (aget (.-fills shape) 0) "fillColor" "#ff0000")
+            (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#ff0000" :fill-opacity 1}]))
+            (t/is (= (-> (. shape -fills) (aget 0) (aget "fillColor")) "#ff0000")))
+
+          (t/testing " - fills element replacement (bug #8357)"
+            (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
+            (aset (.-fills shape) 0 #js {:fillColor "#00ff00" :fillOpacity 0.5})
+            (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#00ff00" :fill-opacity 0.5}])))
+
+          (t/testing " - fills push/pop (bug #8357)"
+            (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
+            (.push (.-fills shape) #js {:fillColor "#00ff00" :fillOpacity 1})
+            (t/is (= (get-in @store (get-shape-path :fills))
+                     [{:fill-color "#fabada" :fill-opacity 1}
+                      {:fill-color "#00ff00" :fill-opacity 1}]))
+            (.pop (.-fills shape))
+            (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#fabada" :fill-opacity 1}])))
+
+          (t/testing " - strokes per-element property mutation (bug #8357)"
+            (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
+            (obj/set! (aget (.-strokes shape) 0) "strokeColor" "#0000ff")
+            (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#0000ff" :stroke-opacity 1 :stroke-width 5}])))
+
+          (t/testing " - strokes element replacement (bug #8357)"
+            (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
+            (aset (.-strokes shape) 0 #js {:strokeColor "#00ff00" :strokeOpacity 0.5 :strokeWidth 2})
+            (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#00ff00" :stroke-opacity 0.5 :stroke-width 2}]))))
 
         (t/testing "Relative properties"
           (let [board (.createBoard context)]

@@ -26,6 +26,42 @@
   (when (some? coll)
     (apply array (keep format-fn coll))))
 
+(defn- numeric-index?
+  [prop]
+  (and (string? prop) (boolean (re-matches #"\d+" prop))))
+
+(defn wrap-mutable-element
+  [^js js-obj commit!]
+  (when (some? js-obj)
+    (js/Proxy. js-obj
+               #js {:set (fn [target prop value]
+                           (obj/set! target prop value)
+                           (commit!)
+                           true)
+                    :deleteProperty (fn [target prop]
+                                      (js-delete target prop)
+                                      (commit!)
+                                      true)})))
+
+(defn mutable-proxy-array
+  [coll format-fn commit-fn]
+  (let [raw-arr (array)
+        commit! (fn [] (commit-fn raw-arr))]
+    (doseq [el coll]
+      (when-let [js-el (format-fn el)]
+        (.push raw-arr (wrap-mutable-element js-el commit!))))
+    (js/Proxy. raw-arr
+               #js {:set (fn [target prop value]
+                           (if (numeric-index? prop)
+                             (obj/set! target prop (wrap-mutable-element value commit!))
+                             (obj/set! target prop value))
+                           (commit!)
+                           true)
+                    :deleteProperty (fn [target prop]
+                                      (js-delete target prop)
+                                      (commit!)
+                                      true)})))
+
 (defn format-mixed
   [value]
   (if (= value :multiple)
@@ -198,16 +234,15 @@
           :fillImage (format-image fill-image)})))
 
 (defn format-fills
-  [fills]
-  (cond
-    (= fills :multiple)
-    "mixed"
-
-    (= fills "mixed")
-    "mixed"
-
-    (some? fills)
-    (format-array format-fill fills)))
+  ([fills] (format-fills fills nil))
+  ([fills commit-fn]
+   (cond
+     (= fills :multiple) "mixed"
+     (= fills "mixed")   "mixed"
+     (some? fills)
+     (if commit-fn
+       (mutable-proxy-array fills format-fill commit-fn)
+       (format-array format-fill fills)))))
 
 ;; export interface Stroke {
 ;;   strokeColor?: string;
@@ -240,9 +275,12 @@
           :strokeColorGradient (format-gradient stroke-color-gradient)})))
 
 (defn format-strokes
-  [strokes]
-  (when (some? strokes)
-    (format-array format-stroke strokes)))
+  ([strokes] (format-strokes strokes nil))
+  ([strokes commit-fn]
+   (when (some? strokes)
+     (if commit-fn
+       (mutable-proxy-array strokes format-stroke commit-fn)
+       (format-array format-stroke strokes)))))
 
 ;; export interface Blur {
 ;;   id?: string;
