@@ -1256,6 +1256,24 @@
                          (pcb/mod-page {:background (:color color)}))]
          (rx/of (dch/commit-changes changes)))))))
 
+(defn change-pixel-grid-color
+  "Update the pixel grid color (and optional alpha) for the given page.
+  Mirrors `change-canvas-color` — stored on the page so the choice
+  travels with the file and persists across sessions."
+  ([color]
+   (change-pixel-grid-color nil color))
+  ([page-id color]
+   (ptk/reify ::change-pixel-grid-color
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (dsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/mod-page {:pixel-grid-color (:color color)
+                                        :pixel-grid-opacity (:opacity color)}))]
+         (rx/of (dch/commit-changes changes)))))))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -261,7 +261,11 @@
      ;; All props are optional, background can be nil because is the
      ;; way to remove already set background
      [:background {:optional true} [:maybe ctc/schema:hex-color]]
-     [:name {:optional true} :string]]]
+     [:name {:optional true} :string]
+     ;; Pixel grid display controls — nil removes the per-page override
+     ;; and falls back to the default hardcoded grid color/opacity.
+     [:pixel-grid-color {:optional true} [:maybe ctc/schema:hex-color]]
+     [:pixel-grid-opacity {:optional true} [:maybe ::sm/safe-number]]]]
 
    [:set-plugin-data schema:set-plugin-data-change]
 
@@ -853,8 +857,10 @@
   [data {:keys [id] :as params}]
   (d/update-in-when data [:pages-index id]
                     (fn [page]
-                      (let [name (get params :name)
-                            bg   (get params :background :not-found)]
+                      (let [name       (get params :name)
+                            bg         (get params :background :not-found)
+                            grid-color (get params :pixel-grid-color :not-found)
+                            grid-op    (get params :pixel-grid-opacity :not-found)]
                         (cond-> page
                           (string? name)
                           (assoc :name name)
@@ -863,7 +869,19 @@
                           (assoc :background bg)
 
                           (nil? bg)
-                          (dissoc :background))))))
+                          (dissoc :background)
+
+                          (string? grid-color)
+                          (assoc :pixel-grid-color grid-color)
+
+                          (and (not= grid-color :not-found) (nil? grid-color))
+                          (dissoc :pixel-grid-color)
+
+                          (number? grid-op)
+                          (assoc :pixel-grid-opacity grid-op)
+
+                          (and (not= grid-op :not-found) (nil? grid-op))
+                          (dissoc :pixel-grid-opacity))))))
 
 (defmethod process-change :set-plugin-data
   [data {:keys [object-type object-id page-id namespace key value]}]
