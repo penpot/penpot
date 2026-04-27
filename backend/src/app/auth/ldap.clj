@@ -111,7 +111,7 @@
    [:host {:optional true} :string]
    [:port {:optional true} ::sm/int]
    [:bind-dn {:optional true} :string]
-   [:bind-passwor {:optional true} :string]
+   [:bind-password {:optional true} :string]
    [:query {:optional true} :string]
    [:base-dn {:optional true} :string]
    [:attrs-email {:optional true} :string]

@@ -50,6 +50,8 @@
 - Add dedicated Line and Arrow drawing tools [Github #9145](https://github.com/penpot/penpot/issues/9145)
 ### :bug: Bugs fixed
 
+- Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
+- Fix `login-with-ldap` silently dropping its error message on the `ldap-not-initialized` restriction (typo `:hide` → `:hint`); the message `"ldap auth provider is not initialized"` now actually surfaces in logs and error responses instead of being discarded into an unread key
 - Fix `PENPOT_OIDC_USER_INFO_SOURCE` flag being silently ignored (`userinfo` / `token`) in the OIDC callback, causing "incomplete user info" failures during registration [Github #9108](https://github.com/penpot/penpot/issues/9108)
 - Fix `get-view-only-bundle` crashing when a share-link viewer encounters a team member whose email lacks `@` (NullPointerException in `obfuscate-email`) or whose domain has no `.` (previously produced a dangling-dot `****@****.`); now the viewer-side obfuscation is nil-safe and omits the trailing dot when the domain has no TLD
 - Remove `corepack` from the MCP local launcher so it runs on Node.js 25+, where corepack is no longer bundled [Github #8877](https://github.com/penpot/penpot/issues/8877)
@@ -109,6 +111,7 @@
 - Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
 - Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
 - Fix color dropdown option update [Taiga #14035](https://tree.taiga.io/project/penpot/issue/14035)
+- Fix themes modal height [Taiga #14046](https://tree.taiga.io/project/penpot/issue/14046)
 
 
 ## 2.15.0 (Unreleased)
@@ -160,6 +163,7 @@
 - Fix wrong `mapcat` call in `collect-main-shapes`
 - Fix stale accumulator in `get-children-in-instance` recursion
 - Fix typo `:podition` in swap-shapes grid cell
+- Fix multiple selection on shapes with token applied to stroke color
 
 
 ## 2.14.2
