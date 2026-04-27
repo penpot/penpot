@@ -1435,6 +1435,10 @@ msgstr "The recovery token is invalid."
 msgid "errors.invalid-text"
 msgstr "Invalid text"
 
+#: common/src/app/common/types/team.cljc:26
+msgid "errors.team-name-invalid-chars"
+msgstr "The team name can't contain any of the following characters:'.', ':' or '/'"
+
 #: src/app/main/ui/static.cljs:74
 msgid "errors.invite-invalid"
 msgstr "Invite invalid"

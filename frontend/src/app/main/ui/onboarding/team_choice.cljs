@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
+   [app.common.types.team :as ctt]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.profile :as du]
@@ -59,7 +60,7 @@
 
 (def ^:private schema:team-form
   [:map {:title "TeamForm"}
-   [:name [::sm/text {:max 250}]]
+   [:name ctt/schema:team-name]
    [:role :keyword]
    [:emails {:optional true} [::sm/set ::sm/email]]])
 
