@@ -27,7 +27,7 @@
   transition: bottom 300ms;
   width: calc(100% - $sz-12);
   pointer-events: none;
-  z-index: var(--z-index-set);
+  z-index: var(--z-index-panels);
 
   &.collapsed {
     inset-block-end: calc(-1 * px2rem(228));
