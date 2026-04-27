@@ -8,7 +8,6 @@
 
 ### :sparkles: New features & Enhancements
 
-- Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 
 ### :bug: Bugs fixed
@@ -30,6 +29,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
 - Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
 
