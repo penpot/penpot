@@ -2868,6 +2868,10 @@ msgstr "No pending invitations."
 msgid "labels.no-invitations-gather-people"
 msgstr "Gather your people and build great things together."
 
+#: src/app/main/ui/components/select.cljs
+msgid "labels.no-matches"
+msgstr "No matches"
+
 #: src/app/main/ui/static.cljs
 #, unused
 msgid "labels.not-found.desc-message"

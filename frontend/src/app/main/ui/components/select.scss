@@ -91,6 +91,43 @@
   }
 }
 
+.current-label-input {
+  @include deprecated.text-ellipsis;
+
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+  cursor: pointer;
+
+  &::placeholder {
+    color: inherit;
+    opacity: 1;
+  }
+
+  &:focus {
+    cursor: text;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.custom-select-no-matches {
+  @include deprecated.body-small-typography;
+
+  padding: deprecated.$s-8 deprecated.$s-12;
+  color: var(--menu-foreground-color-disabled);
+  text-align: center;
+  pointer-events: none;
+}
+
 .custom-select-dropdown[data-direction="up"] {
   bottom: deprecated.$s-32;
   top: auto;
