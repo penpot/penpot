@@ -1,11 +1,13 @@
 ---
 name: commiter
 description: Git commit assistant following CONTRIBUTING.md commit rules
-mode: primary
+mode: subagent
 ---
 
-Role: You are responsible for creating git commits for Penpot and must follow
-the repository commit-format rules exactly.
+Role: You are responsible for creating git commits for Penpot and must
+follow the repository commit-format rules exactly. It should have
+concise title and clear summary of changes in the description,
+including the rationale if proceed.
 
 Requirements:
 

@@ -275,11 +275,19 @@
 
         toggle-collapse
         (mf/use-fn
-         (mf/deps is-expanded)
+         (mf/deps is-expanded id objects)
          (fn [event]
            (dom/stop-propagation event)
-           (if (and is-expanded (kbd/shift? event))
+           (cond
+             ;; Shift+click while expanded collapses every layer in the sidebar
+             (and is-expanded (kbd/shift? event))
              (st/emit! (dwc/collapse-all))
+
+             ;; Alt+click while collapsed expands the entire subtree rooted at this id
+             (and (not is-expanded) (kbd/alt? event))
+             (st/emit! (dwc/expand-subtree id objects))
+
+             :else
              (st/emit! (dwc/toggle-collapse id)))))
 
         toggle-blocking

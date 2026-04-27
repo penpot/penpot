@@ -33,24 +33,36 @@
 
 (mf/defc pixel-grid*
   [{:keys [vbox zoom]}]
-  [:g.pixel-grid
-   [:defs
-    [:pattern {:id "pixel-grid"
-               :viewBox "0 0 1 1"
-               :width 1
-               :height 1
-               :pattern-units "userSpaceOnUse"}
-     [:path {:d "M 1 0 L 0 0 0 1"
-             :style {:fill "none"
-                     :stroke (if (dbg/enabled? :pixel-grid) "red" "var(--status-color-info-500)")
-                     :stroke-opacity (if (dbg/enabled? :pixel-grid) 1 "0.2")
-                     :stroke-width (str (/ 1 zoom))}}]]]
-   [:rect {:x (:x vbox)
-           :y (:y vbox)
-           :width (:width vbox)
-           :height (:height vbox)
-           :fill (str "url(#pixel-grid)")
-           :style {:pointer-events "none"}}]])
+  (let [page         (mf/deref refs/workspace-page)
+        custom-color (:pixel-grid-color page)
+        custom-alpha (:pixel-grid-opacity page)
+        debug?       (dbg/enabled? :pixel-grid)
+        stroke       (cond
+                       debug?         "red"
+                       custom-color   custom-color
+                       :else          "var(--status-color-info-500)")
+        opacity      (cond
+                       debug?              1
+                       (some? custom-alpha) custom-alpha
+                       :else               0.2)]
+    [:g.pixel-grid
+     [:defs
+      [:pattern {:id "pixel-grid"
+                 :viewBox "0 0 1 1"
+                 :width 1
+                 :height 1
+                 :pattern-units "userSpaceOnUse"}
+       [:path {:d "M 1 0 L 0 0 0 1"
+               :style {:fill "none"
+                       :stroke stroke
+                       :stroke-opacity opacity
+                       :stroke-width (str (/ 1 zoom))}}]]]
+     [:rect {:x (:x vbox)
+             :y (:y vbox)
+             :width (:width vbox)
+             :height (:height vbox)
+             :fill (str "url(#pixel-grid)")
+             :style {:pointer-events "none"}}]]))
 
 (mf/defc cursor-tooltip*
   [{:keys [zoom tooltip]}]
