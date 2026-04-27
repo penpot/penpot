@@ -359,23 +359,28 @@
                          (rx/empty))))))))
 
 (defn restore-version-from-plugin
-  [file-id id resolve _reject]
+  [file-id id resolve reject]
   (assert (uuid? id) "expected valid uuid for `id`")
 
   (ptk/reify ::restore-version-from-plugins
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/concat
-       (rx/of (ev/event {::ev/name "restore-version"
-                         ::ev/origin "plugins"})
-              ::dwp/force-persist)
+      (->> (rx/concat
+            (rx/of (ev/event {::ev/name "restore-version"
+                              ::ev/origin "plugins"})
+                   ::dwp/force-persist)
 
-       (->> (wait-for-persistence file-id id)
-            (rx/map #(initialize-version)))
+            (->> (wait-for-persistence file-id id)
+                 (rx/map #(initialize-version)))
 
-       (->> (rx/of 1)
-            (rx/tap resolve)
-            (rx/ignore))))))
+            (->> (rx/of 1)
+                 (rx/tap resolve)
+                 (rx/ignore)))
+
+           ;; On error reject the promise and empty the stream
+           (rx/catch (fn [error]
+                       (reject error)
+                       (rx/empty)))))))
 
 
 
