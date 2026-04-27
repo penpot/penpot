@@ -3,6 +3,10 @@
  */
 export class Task<TParams = any> {
     public isResponseSent: boolean = false;
+    /** Set when a response is sent; true for success, false for error. */
+    public lastSuccess: boolean | undefined = undefined;
+    /** Populated when the last response was an error. */
+    public lastError: string | undefined = undefined;
 
     /**
      * @param requestId Unique identifier for the task request
@@ -33,6 +37,9 @@ export class Task<TParams = any> {
                 error: error,
             },
         };
+
+        this.lastSuccess = success;
+        this.lastError = success ? undefined : typeof error === "string" ? error : error != null ? String(error) : undefined;
 
         // Send to main.ts which will forward to MCP server via WebSocket
         penpot.ui.sendMessage(response);

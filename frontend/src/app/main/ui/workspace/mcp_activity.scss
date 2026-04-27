@@ -1,0 +1,129 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend %modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend %modal-container-base;
+
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-height: 85vh;
+
+  &.mcp-activity {
+    width: deprecated.$s-520;
+    max-width: deprecated.$s-520;
+  }
+}
+
+.close-btn {
+  @extend %modal-close-btn-base;
+}
+
+.close-icon {
+  @extend %button-icon;
+
+  stroke: var(--icon-foreground);
+}
+
+.modal-title {
+  @include deprecated.headline-medium-typography;
+
+  margin-block-end: deprecated.$s-16;
+  color: var(--modal-title-foreground-color);
+}
+
+.activity-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-end: deprecated.$s-12;
+}
+
+.activity-scroll {
+  overflow: auto;
+  min-height: deprecated.$s-200;
+  max-height: deprecated.$s-480;
+  border: 1px solid var(--color-background-tertiary);
+  border-radius: deprecated.$s-8;
+  background: var(--color-background-secondary);
+}
+
+.activity-empty {
+  padding: deprecated.$s-24;
+  color: var(--color-foreground-secondary);
+  font-size: deprecated.$fs-14;
+}
+
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.activity-row {
+  padding: deprecated.$s-12 deprecated.$s-16;
+  border-block-end: 1px solid var(--color-background-tertiary);
+  font-size: deprecated.$fs-12;
+
+  &:last-child {
+    border-block-end: none;
+  }
+}
+
+.activity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: deprecated.$s-8;
+  align-items: baseline;
+  margin-block-end: deprecated.$s-4;
+  color: var(--color-foreground-secondary);
+}
+
+.activity-phase {
+  font-weight: 600;
+  text-transform: capitalize;
+
+  &.phase-received {
+    color: var(--color-accent-secondary);
+  }
+
+  &.phase-completed {
+    color: var(--icon-foreground-accept);
+  }
+
+  &.phase-failed {
+    color: var(--color-accent-error);
+  }
+}
+
+.activity-task {
+  font-family: ui-monospace, monospace;
+  color: var(--color-foreground-primary);
+}
+
+.activity-error {
+  color: var(--color-accent-error);
+  margin-block-start: deprecated.$s-4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.activity-code {
+  margin-block-start: deprecated.$s-8;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$s-4;
+  background: var(--color-background-primary);
+  font-family: ui-monospace, monospace;
+  font-size: deprecated.$fs-11;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: deprecated.$s-120;
+  overflow: auto;
+}

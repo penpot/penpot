@@ -6,7 +6,9 @@
 
 (ns app.main.data.workspace.mcp
   (:require
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.broadcast :as mbc]
@@ -24,6 +26,48 @@
 (def retry-interval 10000)
 
 (log/set-level! :info)
+
+(def ^:private max-mcp-activity-entries 100)
+
+(def ^:private max-code-preview-chars 200)
+
+(defn- normalize-activity-phase [phase]
+  (cond
+    (keyword? phase) phase
+    (string? phase) (keyword phase)
+    :else :received))
+
+(defn record-mcp-activity
+  "Appends one MCP task lifecycle row for in-app inspection (remote MCP)."
+  [payload]
+  (ptk/reify ::record-mcp-activity
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [{:keys [phase id task code error]} payload
+            phase-kw (normalize-activity-phase phase)
+            code-preview (when (string? code)
+                           (dm/truncate code max-code-preview-chars))
+            entry {:id id
+                   :task task
+                   :phase phase-kw
+                   :ts (ct/now)
+                   :code-preview code-preview
+                   :error error}]
+        (update state :mcp (fn [m]
+                             (let [m (or m {})]
+                               (update m :activity
+                                       (fn [xs]
+                                         (vec (take max-mcp-activity-entries
+                                                    (cons entry (vec xs)))))))))))))
+
+(defn clear-mcp-activity
+  []
+  (ptk/reify ::clear-mcp-activity
+    ptk/UpdateEvent
+    (update [_ state]
+      (cond-> state
+        (:mcp state)
+        (update :mcp dissoc :activity)))))
 
 (def ^:private default-manifest
   {:code "plugin.js"
@@ -209,6 +253,11 @@
                   #js
                    {:getToken (constantly token)
                     :getServerUrl #(str cf/mcp-ws-uri)
+                    :notifyActivity
+                    (fn [^js payload]
+                      (when payload
+                        (st/emit! (record-mcp-activity (js->clj payload :keywordize-keys true)))))
+
                     :setMcpStatus
                     (fn [status]
                       (when (= status "connected")

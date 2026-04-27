@@ -821,7 +821,19 @@
         (mf/use-fn
          (fn [event]
            (when (kbd/enter? event)
-             (on-toggle-mcp-plugin))))]
+             (on-toggle-mcp-plugin))))
+
+        on-view-mcp-activity
+        (mf/use-fn
+         (fn []
+           (modal/show! :mcp-activity {})
+           (on-close)))
+
+        on-view-mcp-activity-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-view-mcp-activity))))]
 
     [:> dropdown-menu* {:show true
                         :class (stl/css-case :base-menu true
@@ -831,14 +843,22 @@
                         :on-close on-close}
 
      (when (and show-enabled? (not expired?))
-       [:> dropdown-menu-item* {:id          "mcp-menu-toggle-mcp-plugin"
-                                :class       (stl/css :base-menu-item :submenu-item)
-                                :on-click    on-toggle-mcp-plugin
-                                :on-key-down on-toggle-mcp-plugin-key-down}
-        [:span {:class (stl/css :item-name)}
-         (if mcp-connected?
-           (tr "workspace.header.menu.mcp.plugin.status.disconnect")
-           (tr "workspace.header.menu.mcp.plugin.status.connect"))]])
+       [:<>
+        [:> dropdown-menu-item* {:id          "mcp-menu-toggle-mcp-plugin"
+                                 :class       (stl/css :base-menu-item :submenu-item)
+                                 :on-click    on-toggle-mcp-plugin
+                                 :on-key-down on-toggle-mcp-plugin-key-down}
+         [:span {:class (stl/css :item-name)}
+          (if mcp-connected?
+            (tr "workspace.header.menu.mcp.plugin.status.disconnect")
+            (tr "workspace.header.menu.mcp.plugin.status.connect"))]]
+
+        [:> dropdown-menu-item* {:id          "mcp-menu-view-activity"
+                                 :class       (stl/css :base-menu-item :submenu-item)
+                                 :on-click    on-view-mcp-activity
+                                 :on-key-down on-view-mcp-activity-key-down}
+         [:span {:class (stl/css :item-name)}
+          (tr "workspace.header.menu.mcp.activity.view")]]])
 
      [:> dropdown-menu-item* {:id          "mcp-menu-nav-to-integrations"
                               :class       (stl/css :base-menu-item :submenu-item)

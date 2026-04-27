@@ -19,6 +19,20 @@ mcp?.setMcpStatus("connecting");
  */
 const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
 
+function notifyMcpActivity(payload: {
+    phase: "received" | "completed" | "failed";
+    id: string;
+    task: string;
+    code?: string | null;
+    error?: string | null;
+}): void {
+    try {
+        mcp?.notifyActivity?.(payload);
+    } catch (e) {
+        console.error("notifyActivity failed:", e);
+    }
+}
+
 // Open the plugin UI (main.ts)
 penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
     width: 236,
@@ -68,6 +82,13 @@ async function handlePluginTaskRequest(request: { id: string; task: string; para
     console.log("Executing plugin task:", request.task, request.params);
     const task = new Task(request.id, request.task, request.params);
 
+    notifyMcpActivity({
+        phase: "received",
+        id: request.id,
+        task: request.task,
+        code: request.params?.code ?? null,
+    });
+
     // Find the appropriate handler
     const handler = taskHandlers.find((h) => h.isApplicableTo(task));
 
@@ -84,14 +105,35 @@ async function handlePluginTaskRequest(request: { id: string; task: string; para
             }
 
             console.log("Task handled successfully:", task);
+            notifyMcpActivity({
+                phase: task.lastSuccess === false ? "failed" : "completed",
+                id: request.id,
+                task: request.task,
+                error: task.lastSuccess === false ? (task.lastError ?? "Task reported an error") : null,
+            });
         } catch (error) {
             console.error("Error handling task:", error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            task.sendError(`Error handling task: ${errorMessage}`);
+            if (!task.isResponseSent) {
+                task.sendError(`Error handling task: ${errorMessage}`);
+            }
+            notifyMcpActivity({
+                phase: "failed",
+                id: request.id,
+                task: request.task,
+                error: errorMessage,
+            });
         }
     } else {
         console.error("Unknown plugin task:", request.task);
-        task.sendError(`Unknown task type: ${request.task}`);
+        const errText = `Unknown task type: ${request.task}`;
+        task.sendError(errText);
+        notifyMcpActivity({
+            phase: "failed",
+            id: request.id,
+            task: request.task,
+            error: errText,
+        });
     }
 }
 
