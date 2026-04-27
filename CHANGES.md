@@ -50,6 +50,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
 - Fix `login-with-ldap` silently dropping its error message on the `ldap-not-initialized` restriction (typo `:hide` → `:hint`); the message `"ldap auth provider is not initialized"` now actually surfaces in logs and error responses instead of being discarded into an unread key
 - Fix `PENPOT_OIDC_USER_INFO_SOURCE` flag being silently ignored (`userinfo` / `token`) in the OIDC callback, causing "incomplete user info" failures during registration [Github #9108](https://github.com/penpot/penpot/issues/9108)
 - Fix `get-view-only-bundle` crashing when a share-link viewer encounters a team member whose email lacks `@` (NullPointerException in `obfuscate-email`) or whose domain has no `.` (previously produced a dangling-dot `****@****.`); now the viewer-side obfuscation is nil-safe and omits the trailing dot when the domain has no TLD
