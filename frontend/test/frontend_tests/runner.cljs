@@ -19,6 +19,7 @@
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.main-errors-test]
+   [frontend-tests.main.data.workspace-mcp-test]
    [frontend-tests.plugins.context-shapes-test]
    [frontend-tests.plugins.parser-test]
    [frontend-tests.svg-fills-test]
@@ -50,6 +51,7 @@
    'frontend-tests.data.repo-test
    'frontend-tests.errors-test
    'frontend-tests.main-errors-test
+   'frontend-tests.main.data.workspace-mcp-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test

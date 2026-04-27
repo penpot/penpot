@@ -50,6 +50,19 @@
     (update [_ state]
       (assoc-in state [:mcp :active] value))))
 
+(defn set-plugin-panel-visible
+  "Shows or hides the MCP plugin floating panel (backed by `penpotPluginPanelSetVisible` on `window`)."
+  [visible?]
+  (ptk/reify ::set-plugin-panel-visible
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:mcp :plugin-panel-visible] (boolean visible?)))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (when-let [setter (unchecked-get js/window "penpotPluginPanelSetVisible")]
+        (setter visible?)))))
+
 (defn start-reconnect-watcher!
   []
   (st/emit! (set-mcp-active true))
@@ -150,6 +163,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (mbc/event :mcp/force-disconect {})
+             (set-plugin-panel-visible true)
              (ptk/data-event ::connect)))))
 
 ;; This event will arrive when the user selects disconnect on the menu
@@ -160,7 +174,8 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (ptk/data-event ::disconnect)
-             (update-mcp-connection-status "disconnected")))
+             (update-mcp-connection-status "disconnected")
+             (set-plugin-panel-visible true)))
 
     ptk/EffectEvent
     (effect [_ _ _]
@@ -216,6 +231,10 @@
                       (st/emit! (update-mcp-connection-status status))
                       (log/info :hint "MCP STATUS" :status status))
 
+                    :minimizePluginPanel
+                    (fn []
+                      (st/emit! (set-plugin-panel-visible false)))
+
                     :on
                     (fn [event cb]
                       (when-let [event
@@ -236,7 +255,10 @@
   (ptk/reify ::init
     ptk/UpdateEvent
     (update [_ state]
-      (update state :mcp assoc :connected-tab (:session-id state) :active true))
+      (update state :mcp assoc
+              :connected-tab (:session-id state)
+              :active true
+              :plugin-panel-visible true))
 
     ptk/WatchEvent
     (watch [_ state stream]

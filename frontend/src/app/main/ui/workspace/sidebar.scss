@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -99,6 +100,13 @@
   --tabs-nav-padding-inline-end: var(--sp-m);
 }
 
+.left-sidebar-tab-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
 .collapse-sidebar-button {
   --collapse-icon-color: var(--color-foreground-secondary);
 
@@ -116,12 +124,63 @@
   }
 }
 
+.mcp-sidebar-indicator {
+  @include deprecated.button-style;
+
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: deprecated.$s-24;
+  block-size: deprecated.$s-32;
+  padding: 0;
+  border-radius: deprecated.$br-5;
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+    outline-offset: $b-1;
+  }
+}
+
+.mcp-sidebar-indicator-dot {
+  display: block;
+  inline-size: var(--sp-s);
+  block-size: var(--sp-s);
+  border-radius: 50%;
+  background-color: var(--color-foreground-secondary);
+}
+
+.mcp-sidebar-indicator--connected .mcp-sidebar-indicator-dot {
+  background-color: var(--color-accent-success);
+}
+
+.mcp-sidebar-indicator--connecting .mcp-sidebar-indicator-dot {
+  background-color: var(--color-accent-warning);
+}
+
+.mcp-sidebar-indicator--error .mcp-sidebar-indicator-dot {
+  background-color: var(--color-accent-error);
+}
+
+.mcp-sidebar-indicator--inactive .mcp-sidebar-indicator-dot {
+  background-color: var(--color-foreground-secondary);
+}
+
 .collapsed-sidebar {
-  @include deprecated.flex-center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-xs);
 
   position: absolute;
   top: deprecated.$s-48;
-  left: 0;
+  inset-inline-start: 0;
   padding: deprecated.$s-4;
   border-radius: deprecated.$br-8;
   background: var(--color-background-primary);

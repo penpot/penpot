@@ -14,6 +14,7 @@ const executedCodeEl = document.getElementById("executed-code") as HTMLTextAreaE
 const copyCodeBtn = document.getElementById("copy-code-btn") as HTMLButtonElement;
 const connectBtn = document.getElementById("connect-btn") as HTMLButtonElement;
 const disconnectBtn = document.getElementById("disconnect-btn") as HTMLButtonElement;
+const minimizeToSidebarBtn = document.getElementById("minimize-to-sidebar-btn") as HTMLButtonElement;
 const versionWarningEl = document.getElementById("version-warning") as HTMLElement;
 const versionWarningTextEl = document.getElementById("version-warning-text") as HTMLElement;
 
@@ -34,6 +35,7 @@ function updateConnectionStatus(code: string, label: string): void {
     const isConnected = code === "connected";
     if (connectBtn) connectBtn.hidden = isConnected;
     if (disconnectBtn) disconnectBtn.hidden = !isConnected;
+    if (minimizeToSidebarBtn) minimizeToSidebarBtn.hidden = !isConnected;
 
     parent.postMessage(
         {
@@ -172,6 +174,10 @@ connectBtn?.addEventListener("click", () => {
 
 disconnectBtn?.addEventListener("click", () => {
     ws?.close();
+});
+
+minimizeToSidebarBtn?.addEventListener("click", () => {
+    parent.postMessage({ type: "minimize-plugin-panel" }, "*");
 });
 
 // Listen plugin.ts messages

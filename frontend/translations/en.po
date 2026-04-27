@@ -8037,6 +8037,14 @@ msgstr "Collapse sidebar"
 msgid "workspace.sidebar.expand"
 msgstr "Expand sidebar"
 
+#: src/app/main/ui/workspace/sidebar.cljs
+msgid "workspace.sidebar.mcp.aria-label"
+msgstr "MCP connection status. Click to open the MCP plugin panel."
+
+#: src/app/main/ui/workspace/sidebar.cljs
+msgid "workspace.sidebar.mcp.tooltip"
+msgstr "MCP connection. Click to show the MCP status panel."
+
 #: src/app/main/ui/workspace/right_header.cljs:226
 msgid "workspace.sidebar.history"
 msgstr "History"

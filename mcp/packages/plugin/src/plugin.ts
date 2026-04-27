@@ -49,6 +49,8 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
                 token: mcp?.getToken(),
             });
         }
+    } else if (typeof message === "object" && message.type === "minimize-plugin-panel") {
+        mcp?.minimizePluginPanel?.();
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown");
     } else if (typeof message === "object" && message.task && message.id) {

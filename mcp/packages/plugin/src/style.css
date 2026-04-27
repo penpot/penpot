@@ -184,7 +184,8 @@ details[open] > .collapsible-header .collapsible-arrow {
 /* ── Action buttons ──────────────────────────────────────────────── */
 
 #connect-btn,
-#disconnect-btn {
+#disconnect-btn,
+#minimize-to-sidebar-btn {
     width: 100%;
     margin-top: var(--spacing-4);
 }

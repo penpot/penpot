@@ -73,6 +73,8 @@ export async function createPluginManager(
       modal = null;
     }
 
+    delete (window as Record<string, unknown>).penpotPluginPanelSetVisible;
+
     destroyed = true;
 
     onCloseCallback();
@@ -116,6 +118,14 @@ export async function createPluginManager(
     });
 
     modal.addEventListener('load', onLoadModal);
+
+    (window as Record<string, unknown>).penpotPluginPanelSetVisible = (
+      visible: boolean,
+    ) => {
+      if (modal) {
+        modal.style.display = visible ? '' : 'none';
+      }
+    };
   };
 
   const registerMessageCallback = (callback: (message: unknown) => void) => {

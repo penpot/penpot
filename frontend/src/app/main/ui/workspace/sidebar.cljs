@@ -19,6 +19,7 @@
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.mcp :as dwmcp]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -61,6 +62,30 @@
               :size "s"
               :aria-label (tr "workspace.sidebar.collapse")}]])
 
+(mf/defc mcp-sidebar-indicator*
+  {::mf/private true}
+  []
+  (when (contains? cf/flags :mcp)
+    (let [profile        (mf/deref refs/profile)
+          mcp            (mf/deref refs/mcp)
+          mcp-enabled?   (true? (-> profile :props :mcp-enabled))
+          conn           (get mcp :connection-status)]
+      (when ^boolean mcp-enabled?
+        [:button
+         {:type "button"
+          :class (stl/css-case :mcp-sidebar-indicator true
+                               :mcp-sidebar-indicator--connected (= conn "connected")
+                               :mcp-sidebar-indicator--connecting (= conn "connecting")
+                               :mcp-sidebar-indicator--error (= conn "error")
+                               :mcp-sidebar-indicator--inactive
+                               (or (nil? conn)
+                                   (#{"disconnected" "idle"} conn)))
+          :title (tr "workspace.sidebar.mcp.tooltip")
+          :aria-label (tr "workspace.sidebar.mcp.aria-label")
+          :data-testid "mcp-sidebar-indicator"
+          :on-click #(st/emit! (dwmcp/set-plugin-panel-visible true))}
+         [:span {:class (stl/css :mcp-sidebar-indicator-dot)}]]))))
+
 (mf/defc collapsed-button*
   {::mf/memo true
    ::mf/private true}
@@ -74,7 +99,8 @@
               :on-click toggle-collapse-left-sidebar}
      [:> icon* {:icon-id i/arrow
                 :size "s"
-                :aria-label (tr "workspace.sidebar.expand")}]]]])
+                :aria-label (tr "workspace.sidebar.expand")}]]]
+   [:> mcp-sidebar-indicator* {}]])
 
 (mf/defc layers-content*
   {::mf/private true
@@ -175,7 +201,10 @@
 
         tabs-action-button
         (mf/with-memo []
-          (mf/html [:> collapse-button* {}]))]
+          (mf/html
+           [:div {:class (stl/css :left-sidebar-tab-actions)}
+            [:> collapse-button* {}]
+            [:> mcp-sidebar-indicator* {}]]))]
 
     [:> (mf/provider muc/sidebar) {:value :left}
      [:aside {:ref parent-ref
