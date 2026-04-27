@@ -2,6 +2,9 @@
 title: Penpot MCP server
 order: 1
 desc: Installing and using the Penpot MCP server with any AI agent or LLM you trust.
+eleventyNavigation:
+  key: MCP Server
+  order: 6
 ---
 
 <div class="main-illus">
@@ -69,7 +72,7 @@ There are three key pieces:
 ### Basic concepts 
 
 Some important concepts for users:
-* **Integrations page**: MCP is configured under **Your account → Integrations → MCP Server (Beta)**. Here you enable or disable MCP, get the server URL and manage the MCP key.
+* **Integrations page**: MCP is configured under **Your account → Integrations → MCP Server**. Here you enable or disable MCP, get the server URL and manage the MCP key.
 * **MCP key**: a personal, non-recoverable token that authenticates your AI client with the MCP server. Only one key can exist per user at a time. This is used by the remote MCP setup.
 * **Currently focused page**: MCP always operates on the page you have in focus in Penpot. If you change the focused page (even in another browser window), the MCP context follows that page.
 * **Active MCP tab**: MCP can only be active in one browser tab at a time. If you have Penpot open in several tabs, you choose explicitly which one owns MCP before running agents.
@@ -110,32 +113,20 @@ If you just want to try Penpot MCP quickly, follow this path for the **hosted (r
 
 ### Remote MCP in 5 steps
 
-<div class="advice">
-
-### Important: remote MCP is not in production yet
-
-Remote MCP is not available yet in Penpot production (`design.penpot.app`). It is planned for an upcoming release (currently targeted around **2.16**).
-
-Right now, the remote MCP flow is available only in **testing environments** (for example, instances deployed from the `staging` branch: https://github.com/penpot/penpot/tree/staging).
-
-If you need MCP in production today, use the **Local MCP server** setup instead. See [Local MCP server](#local-mcp-server).
-
-</div>
-
 1. #### Enable MCP in Penpot
-   Go to **Your account → Integrations → MCP Server (Beta)** and enable the feature.
+   Go to **Your account → Integrations → MCP Server** and enable the feature.
 
-   ![MCP Server (Beta) in Penpot Integrations, enable](/img/mcp/mcp-enable.webp)
+   ![MCP Server in Penpot Integrations, enable](/img/mcp/mcp-enable.webp)
 
 2. #### Generate your MCP key
    If you do not have one yet, create it. The key is shown only once—store it safely.
 
-   ![MCP Server (Beta) in Penpot Integrations, generate key](/img/mcp/mcp-generate-key.webp)
+   ![MCP Server in Penpot Integrations, generate key](/img/mcp/mcp-generate-key.webp)
 
 3. #### Copy the server URL
    In the same Integrations section, copy the **server URL** that already includes your MCP key as `userToken`.
 
-   ![MCP Server (Beta) in Penpot Integrations, copy server url](/img/mcp/mcp-server-url.webp)
+   ![MCP Server in Penpot Integrations, copy server url](/img/mcp/mcp-server-url.webp)
 
 4. #### Add the server to your MCP client
    In your MCP-aware IDE/agent (Cursor, Claude Code, etc.), add a new server pointing to that URL.
@@ -191,7 +182,7 @@ You can use Penpot MCP server in two main ways:
   * Hosted for you (no need to run anything on your machine).
   * Best option for most users, simpler installation and fewer moving parts.
   * Does **not** have privileged access to your local file system, it can only work with what Penpot exposes (design files, libraries, tokens, etc.).
-  * The **server URL** is provided in **Your account → Integrations → MCP Server (Beta)** and looks like:
+  * The **server URL** is provided in **Your account → Integrations → MCP Server** and looks like:
     * `https://<your-penpot-domain>/mcp/stream?userToken=YOUR_MCP_KEY`
     * The domain depends on the Penpot installation. In the official SaaS it will be `design.penpot.app`.
 * **Local MCP server**
@@ -298,21 +289,11 @@ In Penpot, open a file and connect the plugin from **File → MCP Server → Con
 
 Remote MCP is the easiest way to start using AI agents with Penpot. It's hosted for you, so you don't need to install or run anything on your machine.
 
-<div class="advice">
-
-### Availability note
-
-Remote MCP is currently available only in **testing environments**. It is not yet available in Penpot production (`design.penpot.app`) and is planned for an upcoming release (currently targeted around **2.16**).
-
-If you need MCP in production today, use the **Local MCP server** setup instead. See [Local MCP server](#local-mcp-server).
-
-</div>
-
 <a id="install-and-activate-remote"></a>
 ### Install and activate
 
 1. Open **Your account → Integrations**.
-2. In the **MCP Server (Beta)** section, read the short description to confirm that feature is available for your account.
+2. In the **MCP Server** section, read the short description to confirm that feature is available for your account.
 3. Use the **Status** toggle to enable MCP Server. Penpot remembers this state per user across sessions.
 4. If this is your first time, Penpot will ask you to **generate an MCP key**. The key is shown only once, store it safely.
    * Treat the MCP key like a password/token: do not share it in screenshots, logs, or code samples.
@@ -326,7 +307,7 @@ If you need MCP in production today, use the **Local MCP server** setup instead.
 
 For client-specific setup, use the shared section **Connect your MCP client**.
 
-For remote mode, use the URL shown in **Your account → Integrations → MCP Server (Beta)**, which includes your `userToken`.
+For remote mode, use the URL shown in **Your account → Integrations → MCP Server**, which includes your `userToken`.
 
 <a id="use-remote"></a>
 ### Use
@@ -336,7 +317,7 @@ Once everything is configured, day-to-day use of Penpot MCP follows a simple pat
 #### Run
 
 1. **Enable MCP**
-   * Go to **Your account → Integrations → MCP Server (Beta)** and set **Status** to **Enabled**.
+   * Go to **Your account → Integrations → MCP Server** and set **Status** to **Enabled**.
 2. **Connect plugin**:
    * Open a design file and use **File → MCP Server → Connect**.
 3. **Run prompts**:
@@ -393,7 +374,7 @@ At a high level:
 2. Start the MCP server and plugin server from your terminal:
 
 ```json
-npx @penpot/mcp@beta
+npx @penpot/mcp@stable
 ```
 
 Leave this terminal running while you use MCP.
@@ -426,7 +407,7 @@ Once everything is configured, day-to-day use of Penpot MCP follows a simple pat
 
 1. **Start MCP**
 
-   Run `npx -y @penpot/mcp@stable` (production) or `npx -y @penpot/mcp@beta` (test), and keep that terminal running.
+   Run `npx -y @penpot/mcp@stable` (production), and keep that terminal running.
 2. **Connect plugin**
 
    In Penpot, load `http://localhost:4400/manifest.json`, run the plugin, and click **Connect to MCP server**.
