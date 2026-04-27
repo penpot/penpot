@@ -1002,7 +1002,7 @@
               active?  (and mcp-enabled? mcp-connected?)
               failed?  (or (and mcp-enabled? mcp-error?)
                            (true? expired?))]
-          
+
           (print "EXPIRED" expired?)
           (print "FAILED" mcp-error?)
 
