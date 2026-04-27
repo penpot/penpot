@@ -130,7 +130,7 @@
   (ptk/reify ::add-team-to-org
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! ::add-team-to-org {:team-id team-id :organization-id organization-id})
+      (->> (rp/cmd! ::add-team-to-organization {:team-id team-id :organization-id organization-id})
            (rx/mapcat
             (fn [_]
               (rx/of (modal/hide))))))))
