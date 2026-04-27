@@ -334,7 +334,7 @@
 
 (defn request-render
   [_requester]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (and wasm/context-initialized? (not @wasm/context-lost?) (not @wasm/disable-request-render?))
     (if @shapes-loading?
       (register-deferred-render!)
       (when-not @pending-render
@@ -627,6 +627,7 @@
   (if (empty? fills)
     (h/call wasm/internal-module "_clear_shape_fills")
     (let [fills  (types.fills/coerce fills)
+          image-ids (types.fills/get-image-ids fills)
           offset (mem/alloc->offset-32 (types.fills/get-byte-size fills))
           heap   (mem/get-heap-u32)]
 
@@ -648,7 +649,7 @@
                 (when (zero? cached-image?)
                   (fetch-image shape-id id thumbnail?))))
 
-            (types.fills/get-image-ids fills)))))
+            image-ids))))
 
 (defn set-shape-strokes
   [shape-id strokes thumbnail?]
@@ -676,7 +677,8 @@
                 (some? gradient)
                 (do
                   (types.fills.impl/write-gradient-fill offset dview opacity gradient)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill"))
+                  (h/call wasm/internal-module "_add_shape_stroke_fill")
+                  nil)
 
                 (some? image)
                 (let [image-id      (get image :id)
@@ -693,7 +695,9 @@
                 (some? color)
                 (do
                   (types.fills.impl/write-solid-fill offset dview opacity color)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill"))))))
+                  (h/call wasm/internal-module "_add_shape_stroke_fill")
+                  nil)))))
+
         strokes))
 
 (defn set-shape-svg-attrs
@@ -1303,16 +1307,17 @@
                        (when (or (seq pending-thumbnails) (seq pending-full))
                          (->> (rx/concat
                                (->> (rx/from (vals pending-thumbnails))
-                                    (rx/merge-map (fn [callback] (callback)))
+                                    (rx/merge-map
+                                     (fn [callback]
+                                       (if (fn? callback) (callback) (rx/empty))))
                                     (rx/reduce conj []))
                                (->> (rx/from (vals pending-full))
-                                    (rx/mapcat (fn [callback] (callback)))
+                                    (rx/mapcat
+                                     (fn [callback]
+                                       (if (fn? callback) (callback) (rx/empty))))
                                     (rx/reduce conj [])))
                               (rx/subs!
                                (fn [_]
-                                 ;; Fonts are now loaded — recompute text
-                                 ;; layouts so Skia uses the real metrics
-                                 ;; instead of fallback-font estimates.
                                  (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
                                    (when (seq text-ids)
                                      (update-text-layouts text-ids)))
@@ -1699,6 +1704,8 @@
   []
   (when wasm/context-initialized?
     (try
+      (set! wasm/context-initialized? false)
+
       ;; Cancel any pending animation frame to prevent race conditions
       (when wasm/internal-frame-id
         (js/cancelAnimationFrame wasm/internal-frame-id)
@@ -1709,8 +1716,6 @@
       (reset! shapes-loading? false)
       (reset! deferred-render? false)
 
-      ;; TODO: perform corresponding cleaning
-      (set! wasm/context-initialized? false)
       (h/call wasm/internal-module "_clean_up")
 
       ;; Remove event listener for WebGL context lost

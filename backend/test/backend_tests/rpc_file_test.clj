@@ -2121,3 +2121,92 @@
           (t/is (= 1 (count rows)))
           (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
           (t/is (nil? (:deleted-at row1))))))))
+
+(t/deftest get-file-stats-empty-file
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})
+        out     (th/command! {::th/type :get-file-stats
+                              ::rpc/profile-id (:id profile)
+                              :id (:id file)})]
+
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+
+    (let [result (:result out)]
+      (t/is (= (:id file) (:file-id result)))
+      (t/is (pos? (:page-count result)))
+      (t/is (zero? (:component-count result)))
+      (t/is (zero? (:deleted-component-count result)))
+      (t/is (zero? (:color-count result)))
+      (t/is (zero? (:typography-count result)))
+      (t/is (zero? (:library-count result)))
+      (t/is (zero? (:referenced-by-count result)))
+      (t/is (contains? result :shape-counts))
+      (t/is (zero? (get-in result [:shape-counts :total])))
+      (t/is (= {} (get-in result [:shape-counts :by-type]))))))
+
+(t/deftest get-file-stats-with-shapes
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared  false})
+        page-id  (-> file :data :pages first)
+        rect-id  (uuid/random)
+        frame-id (uuid/random)]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id page-id
+       :id frame-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id frame-id
+              :name "frame"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame})}
+      {:type :add-obj
+       :page-id page-id
+       :id rect-id
+       :parent-id frame-id
+       :frame-id frame-id
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id rect-id
+              :name "rect"
+              :frame-id frame-id
+              :parent-id frame-id
+              :type :rect})}])
+
+    (let [out    (th/command! {::th/type :get-file-stats
+                               ::rpc/profile-id (:id profile)
+                               :id (:id file)})
+          result (:result out)]
+
+      (t/is (nil? (:error out)))
+      (t/is (= 2 (get-in result [:shape-counts :total])))
+      (t/is (= 1 (get-in result [:shape-counts :by-type :rect])))
+      (t/is (= 1 (get-in result [:shape-counts :by-type :frame]))))))
+
+(t/deftest get-file-stats-forbidden
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)
+                                  :is-shared  false})
+        out   (th/command! {::th/type :get-file-stats
+                            ::rpc/profile-id (:id other)
+                            :id (:id file)})]
+
+    (t/is (not (nil? (:error out))))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :not-found (:type edata))))))

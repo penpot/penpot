@@ -35,7 +35,7 @@
                           :object-id object-id
                           :route "objects"}]
               (-> base-uri
-                  (assoc :path "/render.html")
+                  (u/join "render.html")
                   (assoc :query (u/map->query-string params)))))
 
           (sync-page-size! [dom]
@@ -66,6 +66,7 @@
                 (sync-page-size! dom)
                 (bw/screenshot dom {:full-page? true})
                 (bw/sleep page 2000) ; the good old fix with sleep
+                (bw/wait-for-fonts page)
                 (bw/pdf page {:path path})
                 path)))
 
@@ -76,6 +77,7 @@
                   (on-object (assoc object :path path))
                   (p/recur (rest objects))))))]
 
-    (let [base-uri (cf/get :public-uri)]
+    (let [base-uri (-> (cf/get :public-uri)
+                       (u/ensure-path-slash))]
       (bw/exec! (prepare-options base-uri)
                 (partial render base-uri)))))

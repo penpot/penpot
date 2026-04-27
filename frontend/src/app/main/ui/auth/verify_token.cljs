@@ -43,14 +43,14 @@
   (st/emit! (da/login-from-token tdata)))
 
 (defmethod handle-token :team-invitation
-  [{:keys [state team-id org-team-id org-name invitation-token] :as tdata}]
+  [{:keys [state team-id org-team-id organization-name invitation-token] :as tdata}]
   (case state
     :created
     (if org-team-id
       (st/emit!
        (du/refresh-profile)
        (dcm/go-to-dashboard-recent :team-id org-team-id)
-       (ntf/success (tr "auth.notifications.org-invitation-accepted" org-name)))
+       (ntf/success (tr "auth.notifications.org-invitation-accepted" organization-name)))
       (st/emit!
        (du/refresh-profile)
        (dcm/go-to-dashboard-recent :team-id team-id)

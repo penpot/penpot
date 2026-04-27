@@ -51,6 +51,7 @@
            ids]}]
 
   (let [hidden?            (:hidden stroke)
+        hidden?            (if (nil? hidden?) false hidden?)
 
         token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
@@ -204,6 +205,8 @@
      (when (some? on-reorder)
        [:> reorder-handler* {:ref dref}])
 
+     (prn "stroke-row*" applied-tokens)
+
      ;; Stroke Color
      ;; FIXME: memorize stroke color
      [:div {:class (stl/css :stroke-color-actions)}
@@ -252,7 +255,7 @@
                      :options stroke-alignment-options
                      :variant "icon-only"
                      :data-testid "stroke.alignment"
-                     :disabled hidden?
+                     :disabled (if (= :multiple hidden?) true hidden?)
                      :wrapper-class (stl/css :stroke-align-icon-select)
                      :on-change on-alignment-change}]
 
@@ -262,7 +265,7 @@
                        :wrapper-class (stl/css :stroke-style-icon-select)
                        :data-testid "stroke.style"
                        :variant "icon-only"
-                       :disabled hidden?
+                       :disabled (if (= :multiple hidden?) true hidden?)
                        :dropdown-alignment :right
                        :on-change on-style-change}])]
 

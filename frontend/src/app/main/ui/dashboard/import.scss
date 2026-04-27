@@ -43,6 +43,13 @@
   min-height: 40px;
 }
 
+.status-message {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-title-foreground-color);
+  font-style: italic;
+}
+
 .action-buttons {
   @extend %modal-action-btns;
 }
@@ -142,8 +149,14 @@
   .progress-message {
     display: flex;
     align-items: center;
-    height: deprecated.$s-32;
+    min-height: deprecated.$s-32;
     color: var(--modal-text-foreground-color);
+  }
+
+  .error-message {
+    align-items: flex-start;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .linked-library {
@@ -250,4 +263,13 @@
 
 .import-error-list-enry {
   padding: var(--sp-xs) 0;
+}
+
+.import-error-detail {
+  @include deprecated.body-small-typography;
+
+  margin-top: var(--sp-xs);
+  color: var(--modal-text-foreground-color);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

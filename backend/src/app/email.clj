@@ -22,13 +22,13 @@
    [cuerdas.core :as str]
    [integrant.core :as ig])
   (:import
-   jakarta.mail.Message$RecipientType
-   jakarta.mail.Session
-   jakarta.mail.Transport
    jakarta.mail.internet.InternetAddress
    jakarta.mail.internet.MimeBodyPart
    jakarta.mail.internet.MimeMessage
    jakarta.mail.internet.MimeMultipart
+   jakarta.mail.Message$RecipientType
+   jakarta.mail.Session
+   jakarta.mail.Transport
    java.util.Properties))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -415,9 +415,9 @@
 (def ^:private schema:invite-to-org
   [:map
    [:invited-by ::sm/text]
-   [:org-name ::sm/text]
-   [:org-initials ::sm/text]
-   [:org-logo ::sm/uri]
+   [:organization-name ::sm/text]
+   [:organization-initials [:maybe :string]]
+   [:organization-logo ::sm/uri]
    [:user-name [:maybe ::sm/text]]
    [:token ::sm/text]])
 

@@ -551,30 +551,27 @@ fn child_position(
     child_axis: &ChildAxis,
     track: &TrackData,
 ) -> Point {
+    let mid_point = (track.across_size - child_axis.across_size + child_axis.margin_across_start
+        - child_axis.margin_across_end)
+        / 2.0;
+    let end_point = track.across_size - child_axis.across_size - child_axis.margin_across_end;
+
     let across_position = match child.layout_item {
         Some(LayoutItem {
             align_self: Some(align_self),
             ..
         }) => match align_self {
-            AlignSelf::Center => {
-                (track.across_size - child_axis.across_size + child_axis.margin_across_start
-                    - child_axis.margin_across_end)
-                    / 2.0
-            }
-            AlignSelf::End => {
-                track.across_size - child_axis.across_size - child_axis.margin_across_end
-            }
-            _ => child_axis.margin_across_start,
+            AlignSelf::Center => mid_point,
+            AlignSelf::End => end_point,
+            _ => match layout_data.align_items {
+                AlignItems::Center => mid_point,
+                AlignItems::End => end_point,
+                _ => child_axis.margin_across_start,
+            },
         },
         _ => match layout_data.align_items {
-            AlignItems::Center => {
-                (track.across_size - child_axis.across_size + child_axis.margin_across_start
-                    - child_axis.margin_across_end)
-                    / 2.0
-            }
-            AlignItems::End => {
-                track.across_size - child_axis.across_size - child_axis.margin_across_end
-            }
+            AlignItems::Center => mid_point,
+            AlignItems::End => end_point,
             _ => child_axis.margin_across_start,
         },
     };

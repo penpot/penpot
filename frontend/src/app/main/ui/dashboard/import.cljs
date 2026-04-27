@@ -195,13 +195,14 @@
   {::mf/props :obj
    ::mf/memo true
    ::mf/private true}
-  [{:keys [entries entry edition can-be-deleted on-edit on-change on-delete]}]
+  [{:keys [entries entry edition can-be-deleted importing? on-edit on-change on-delete]}]
   (let [status          (:status entry)
         ;; FIXME: rename to format
         format          (:type entry)
 
         loading?        (or (= :analyze status)
-                            (= :import-progress status))
+                            (= :import-progress status)
+                            (and importing? (= :import-ready status)))
         analyze-error?  (= :analyze-error status)
         import-success? (= :import-success status)
         import-error?   (= :import-error status)
@@ -294,7 +295,9 @@
 
        import-error?
        [:div {:class (stl/css :error-message)}
-        (tr "labels.error")]
+        (if (some? (:error entry))
+          (tr (:error entry))
+          (tr "labels.error"))]
 
        (and (not import-success?) (some? progress))
        [:div {:class (stl/css :progress-message)} (parse-progress-message progress)])
@@ -490,7 +493,12 @@
           [:ul {:class (stl/css :import-error-list)}
            (for [entry entries]
              (when (contains? #{:import-error :analyze-error} (:status entry))
-               [:li {:class (stl/css :import-error-list-enry)} (:name entry)]))]
+               [:li {:class (stl/css :import-error-list-enry)
+                     :key (dm/str (or (:file-id entry) (:uri entry) (:name entry)))}
+                [:div (:name entry)]
+                (when-let [err (:error entry)]
+                  [:div {:class (stl/css :import-error-detail)}
+                   (tr err)])]))]
           [:div (tr "dashboard.import.import-error.message2")]]
 
          (for [entry entries]
@@ -498,6 +506,7 @@
                               :key (dm/str (:uri entry) "/" (:file-id entry))
                               :entry entry
                               :entries entries
+                              :importing? (= :import-progress status)
                               :on-edit on-edit
                               :on-change on-entry-change
                               :on-delete on-entry-delete
@@ -505,7 +514,13 @@
 
        (when (some? template)
          [:> import-entry* {:entry (assoc template :status status)
-                            :can-be-deleted false}])]
+                            :can-be-deleted false}])
+
+       (when (= :import-progress status)
+         [:div {:class (stl/css :status-message)
+                :role "status"
+                :aria-live "polite"}
+          (tr "labels.uploading-file")])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}

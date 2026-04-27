@@ -82,6 +82,7 @@
 
        [:> fm/submit-button*
         {:label (tr "dashboard.settings.notifications.submit")
+         :disabled (= (:data @form) (:initial @form))
          :data-testid "submit-settings"
          :class (stl/css :update-btn)}]]]]))
 

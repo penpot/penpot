@@ -72,6 +72,7 @@
 
      [:> fm/submit-button*
       {:label (tr "dashboard.update-settings")
+       :disabled (= (:data @form) (:initial @form))
        :data-testid "submit-lang-change"
        :class (stl/css :btn-primary)}]]))
 

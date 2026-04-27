@@ -24,28 +24,28 @@
    [integrant.core :as ig])
   (:import
    clojure.lang.MapEntry
-   io.lettuce.core.KeyValue
-   io.lettuce.core.RedisClient
-   io.lettuce.core.RedisCommandInterruptedException
-   io.lettuce.core.RedisCommandTimeoutException
-   io.lettuce.core.RedisException
-   io.lettuce.core.RedisURI
-   io.lettuce.core.ScriptOutputType
-   io.lettuce.core.SetArgs
    io.lettuce.core.api.StatefulRedisConnection
    io.lettuce.core.api.sync.RedisCommands
    io.lettuce.core.api.sync.RedisScriptingCommands
    io.lettuce.core.codec.RedisCodec
    io.lettuce.core.codec.StringCodec
+   io.lettuce.core.KeyValue
+   io.lettuce.core.pubsub.api.sync.RedisPubSubCommands
    io.lettuce.core.pubsub.RedisPubSubListener
    io.lettuce.core.pubsub.StatefulRedisPubSubConnection
-   io.lettuce.core.pubsub.api.sync.RedisPubSubCommands
+   io.lettuce.core.RedisClient
+   io.lettuce.core.RedisCommandInterruptedException
+   io.lettuce.core.RedisCommandTimeoutException
+   io.lettuce.core.RedisException
+   io.lettuce.core.RedisURI
    io.lettuce.core.resource.ClientResources
    io.lettuce.core.resource.DefaultClientResources
+   io.lettuce.core.ScriptOutputType
+   io.lettuce.core.SetArgs
    io.netty.channel.nio.NioEventLoopGroup
+   io.netty.util.concurrent.EventExecutorGroup
    io.netty.util.HashedWheelTimer
    io.netty.util.Timer
-   io.netty.util.concurrent.EventExecutorGroup
    java.lang.AutoCloseable
    java.time.Duration))
 

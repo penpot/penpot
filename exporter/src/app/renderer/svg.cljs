@@ -338,6 +338,7 @@
               ;; navigate to the page and perform basic setup
               (bw/nav! page (str uri))
               (bw/sleep page 1000) ; the good old fix with sleep
+              (bw/wait-for-fonts page)
 
               ;; take the screnshot of requested objects, one by one
               (p/run (partial render-object page) objects)
@@ -349,7 +350,8 @@
                     :object-id (mapv :id objects)
                     :route "objects"}
             uri    (-> (cf/get :public-uri)
-                       (assoc :path "/render.html")
+                       (u/ensure-path-slash)
+                       (u/join "render.html")
                        (assoc :query (u/map->query-string params)))]
       (bw/exec! (prepare-options uri)
                 (partial render uri)))))

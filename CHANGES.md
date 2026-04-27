@@ -12,6 +12,7 @@
 
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
 - Add "Clear artboard guides" option to right-click context menu for frames (by @eureka0928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
+- Add loader feedback while importing and exporting files [Github #9020](https://github.com/penpot/penpot/issues/9020)
 - Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
 - Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Import Tokens from linked library (by @dfelinto) [Github #8391](https://github.com/penpot/penpot/pull/8391)
@@ -47,9 +48,17 @@
 - Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
 - Preserve vector content when pasting from external tools such as Inkscape: recognise SVG sent as text/plain (with optional XML declaration and HTML comments), skip the raster preview when an SVG sibling is on the clipboard, and ignore empty SVG blobs that some tools advertise alongside the real payload, so pasted graphics arrive editable without spurious "SVG is invalid" warnings [Github #546](https://github.com/penpot/penpot/issues/546)
 
+- Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
 
 ### :bug: Bugs fixed
 
+- Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
+- Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
+- Fix `login-with-ldap` silently dropping its error message on the `ldap-not-initialized` restriction (typo `:hide` → `:hint`); the message `"ldap auth provider is not initialized"` now actually surfaces in logs and error responses instead of being discarded into an unread key
+- Fix `PENPOT_OIDC_USER_INFO_SOURCE` flag being silently ignored (`userinfo` / `token`) in the OIDC callback, causing "incomplete user info" failures during registration [Github #9108](https://github.com/penpot/penpot/issues/9108)
+- Fix `get-view-only-bundle` crashing when a share-link viewer encounters a team member whose email lacks `@` (NullPointerException in `obfuscate-email`) or whose domain has no `.` (previously produced a dangling-dot `****@****.`); now the viewer-side obfuscation is nil-safe and omits the trailing dot when the domain has no TLD
+- Remove `corepack` from the MCP local launcher so it runs on Node.js 25+, where corepack is no longer bundled [Github #8877](https://github.com/penpot/penpot/issues/8877)
+- Fix Copy as SVG: emit a single valid SVG document when multiple shapes are selected, and publish `image/svg+xml` to the clipboard so the paste target works in Inkscape and other SVG-native tools [Github #838](https://github.com/penpot/penpot/issues/838)
 - Reset profile submenu state when the account menu closes (by @eureka0928) [Github #8947](https://github.com/penpot/penpot/issues/8947)
 - Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
 - Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
@@ -70,8 +79,16 @@
 - Fix app crash when selecting shapes with one hidden [Taiga #13959](https://tree.taiga.io/project/penpot/issue/13959)
 - Fix opacity mixed value [Taiga #13960](https://tree.taiga.io/project/penpot/issue/13960)
 - Fix gap input throwing an error [Github #8984](https://github.com/penpot/penpot/pull/8984)
+- Fix non-functional clear icon in change email modal inputs (by @Dexterity104) [Github #8977](https://github.com/penpot/penpot/issues/8977)
+- Disable save button after saving account profile settings (by @Dexterity104) [Github #8979](https://github.com/penpot/penpot/issues/8979)
 - Fix copy to be more specific [Taiga #13990](https://tree.taiga.io/project/penpot/issue/13990)
 - Allow deleting the profile avatar after uploading [Github #9067](https://github.com/penpot/penpot/issues/9067)
+- Fix incorrect rendering when exporting text as SVG, PNG and JPG (by @edwin-rivera-dev) [Github #8516](https://github.com/penpot/penpot/issues/8516)
+- Fix Settings and Notifications "Update Settings" button enabled state when form has no changes (by @moorsecopers99) [Github #9090](https://github.com/penpot/penpot/issues/9090)
+- Fix "Help & Learning" submenu vertical alignment in account menu (by @juan-flores077) [Github #9137](https://github.com/penpot/penpot/issues/9137)
+- Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
+- Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
+- Fix colorpicker layout so the eyedropper button is visible again [Taiga #14057](https://tree.taiga.io/project/penpot/issue/14057)
 
 
 ## 2.16.0 (Unreleased)
@@ -96,6 +113,8 @@
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
 - Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
 - Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
+- Fix color dropdown option update [Taiga #14035](https://tree.taiga.io/project/penpot/issue/14035)
+- Fix themes modal height [Taiga #14046](https://tree.taiga.io/project/penpot/issue/14046)
 
 
 ## 2.15.0 (Unreleased)
@@ -108,6 +127,14 @@
 ### :bug: Bugs fixed
 
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+
+
+## 2.14.4
+
+### :bug: Bugs fixed
+
+- Fix email validation [Taiga #14006](https://tree.taiga.io/project/penpot/issue/14006)
+- Fix email blacklisting [Github #9122](https://github.com/penpot/penpot/pull/9122)
 - Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
 
 
@@ -139,6 +166,7 @@
 - Fix wrong `mapcat` call in `collect-main-shapes`
 - Fix stale accumulator in `get-children-in-instance` recursion
 - Fix typo `:podition` in swap-shapes grid cell
+- Fix multiple selection on shapes with token applied to stroke color
 
 
 ## 2.14.2

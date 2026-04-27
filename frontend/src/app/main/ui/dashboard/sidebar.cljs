@@ -640,7 +640,9 @@
                                   (concat teams-to-transfer))
                  teams-to-delete (map :id teams-to-delete)]
 
+
              (st/emit! (dnt/leave-org {:id (:id organization)
+                                       :name (:name organization)
                                        :default-team-id default-team-id
                                        :teams-to-delete teams-to-delete
                                        :teams-to-leave teams-to-leave
@@ -649,32 +651,33 @@
         on-leave-clicked
         (mf/use-fn
          (mf/deps leave-fn profile organization teams-to-transfer num-teams-to-leave num-teams-to-delete num-teams-to-transfer)
-         (cond
-           (and (pos? num-teams-to-delete)
-                (zero? num-teams-to-transfer))
-           #(st/emit! (modal/show
-                       {:type :confirm
-                        :title (tr "modals.before-leave-org.title" (:name organization))
-                        :message (tr "modals.before-leave-org.message")
-                        :accept-label (tr "modals.leave-org-confirm.accept")
-                        :on-accept leave-fn
-                        :error-msg (tr "modals.before-leave-org.warning")}))
-           (pos? num-teams-to-transfer)
-           #(st/emit!
-             (modal/show
-              {:type :leave-and-reassign-org
-               :profile profile
-               :teams-to-transfer teams-to-transfer
-               :num-teams-to-delete num-teams-to-delete
-               :accept leave-fn}))
+         (fn []
+           (cond
+             (and (pos? num-teams-to-delete)
+                  (zero? num-teams-to-transfer))
+             (st/emit! (modal/show
+                        {:type :confirm
+                         :title (tr "modals.before-leave-org.title" (:name organization))
+                         :message (tr "modals.before-leave-org.message")
+                         :accept-label (tr "modals.leave-org-confirm.accept")
+                         :on-accept leave-fn
+                         :error-msg (tr "modals.before-leave-org.warning")}))
+             (pos? num-teams-to-transfer)
+             (st/emit!
+              (modal/show
+               {:type :leave-and-reassign-org
+                :profile profile
+                :teams-to-transfer teams-to-transfer
+                :num-teams-to-delete num-teams-to-delete
+                :accept leave-fn}))
 
-           :else
-           #(st/emit! (modal/show
-                       {:type :confirm
-                        :title (tr "modals.leave-org-confirm.title" (:name organization))
-                        :message (tr "modals.leave-org-confirm.message")
-                        :accept-label (tr "modals.leave-org-confirm.accept")
-                        :on-accept leave-fn}))))]
+             :else
+             (st/emit! (modal/show
+                        {:type :confirm
+                         :title (tr "modals.leave-org-confirm.title" (:name organization))
+                         :message (tr "modals.leave-org-confirm.message")
+                         :accept-label (tr "modals.leave-org-confirm.accept")
+                         :on-accept leave-fn})))))]
     (mf/use-effect
      (fn []
        ;; We need all the team members of the owned teams
@@ -712,6 +715,9 @@
                          (filter #(= (:organization-id %) (:id current-org)))))
 
         default-org? (nil? (:id current-org))
+
+        show-options? (and (not default-org?)
+                           (not= (:id profile) (:owner-id current-org)))
 
         show-orgs-menu*
         (mf/use-state false)
@@ -762,7 +768,7 @@
     (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
        [:div {:class (stl/css :org-switch-content)}
-        [:button {:class (stl/css :current-org)
+        [:button {:class (stl/css-case :current-org true :current-org-no-options (not show-options?))
                   :on-click on-show-orgs-click
                   :on-key-down on-show-orgs-keydown
                   :aria-expanded show-orgs-menu?
@@ -779,9 +785,7 @@
              [:span {:class (stl/css :team-text)}
               (:name current-org)]])]
          arrow-icon]
-        (if (or default-org?
-                (= (:id profile) (:owner-id current-org)))
-          [:div {:class (stl/css :org-options)}]
+        (when show-options?
           [:> button* {:variant "ghost"
                        :type "button"
                        :class (stl/css :org-options-btn)
@@ -817,10 +821,10 @@
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
   (let [nitrate?     (contains? cf/flags :nitrate)
-        org-id (when nitrate? (:organization-id team))
+        organization-id (when nitrate? (:organization-id team))
         teams (cond->> (mf/deref refs/teams)
                 nitrate?
-                (filter #(= (-> % val :organization-id) org-id))
+                (filter #(= (-> % val :organization-id) organization-id))
                 nitrate?
                 (into {}))
 
