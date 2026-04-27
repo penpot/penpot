@@ -308,6 +308,9 @@ RUN set -ex; \
       less \
       jq \
       nginx \
+      fd-find \
+      bat \
+      gh \
       \
       fontconfig \
       woff-tools \
