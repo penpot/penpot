@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-04-25 14:09+0000\n"
-"Last-Translator: Egor Filatov <e.v.filatov@javatar.ru>\n"
+"PO-Revision-Date: 2026-04-28 15:09+0000\n"
+"Last-Translator: bobsonzu0a5d198e17c343cb <bobsonzu@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -7084,3 +7084,104 @@ msgstr "Смешать"
 #: src/app/main/ui/dashboard/sidebar.cljs:347
 msgid "dashboard.create-new-org"
 msgstr "Создать новую организацию"
+
+#: src/app/main/ui/dashboard/team.cljs:739
+msgid "labels.no-invitations-gather-people"
+msgstr "Объединяйтесь и творите вместе."
+
+#: src/app/main/ui/comments.cljs:911, src/app/main/ui/comments.cljs:976, src/app/main/ui/workspace/palette.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:906, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:213, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:402, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1031, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:316, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:345, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:146
+msgid "labels.options"
+msgstr "Параметры"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:899
+msgid "labels.penpot-hub"
+msgstr "Хаб Penpot"
+
+#: src/app/main/ui/comments.cljs:680
+msgid "labels.post"
+msgstr "Опубликовать"
+
+#: src/app/main/ui/dashboard/deleted.cljs:208
+msgid "labels.recent"
+msgstr "Недавние"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:205, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:179
+msgid "labels.reference"
+msgstr "Референс"
+
+#: src/app/main/data/common.cljs:83
+msgid "labels.refresh"
+msgstr "Перезагрузить"
+
+#: src/app/main/ui/static.cljs:318
+msgid "labels.reload-page"
+msgstr "Обновить страницу"
+
+#: src/app/main/ui/comments.cljs:642
+msgid "labels.replies"
+msgstr "ответы"
+
+#, unused
+msgid "labels.ok"
+msgstr "Ok"
+
+#: src/app/main/ui/comments.cljs:647
+msgid "labels.replies.new"
+msgstr "новые ответы"
+
+#: src/app/main/ui/comments.cljs:641
+msgid "labels.reply"
+msgstr "ответить"
+
+#: src/app/main/ui/comments.cljs:646
+msgid "labels.reply.new"
+msgstr "новый ответ"
+
+#: src/app/main/ui/comments.cljs:713
+msgid "labels.reply.thread"
+msgstr "Ответить"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "Отправить повторно"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:87, src/app/main/ui/workspace/sidebar/versions.cljs:197
+msgid "labels.restore"
+msgstr "Восстановить"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:75
+msgid "labels.sets"
+msgstr "Наборы"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:27, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:229
+msgid "labels.shadow"
+msgstr "Тень"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "Обводка"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+#, fuzzy
+msgid "labels.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:189
+msgid "labels.typography"
+msgstr "Типографика"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:967
+msgid "labels.version-notes"
+msgstr "Примечания к версии %s"
+
+#: src/app/main/ui/ds/product/loader.cljs:20
+msgid "loader.tips.01.title"
+msgstr "Переиспользуемые компоненты"
+
+#: src/app/main/ui/ds/product/loader.cljs:23
+msgid "loader.tips.02.message"
+msgstr "Работайте с командой в реальном времени, делитесь отзывами мгновенно."
+
+#: src/app/main/ui/ds/product/loader.cljs:22
+msgid "loader.tips.02.title"
+msgstr "Совместная работа в реальном времени"
