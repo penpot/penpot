@@ -782,13 +782,14 @@
         mcp      (mf/deref refs/mcp)
         tokens   (mf/deref refs/access-tokens)
 
-        expired? (some->> tokens
-                          (some #(when (= (:type %) "mcp") %))
-                          :expires-at
-                          (> (ct/now)))
+        expires-at (some->> tokens
+                            (some #(when (= (:type %) "mcp") %))
+                            :expires-at)
+        expired?   (and (some? expires-at) (> (ct/now) expires-at))
 
-        mcp-enabled?    (true? (-> profile :props :mcp-enabled))
-        mcp-connected?  (= "connected" (get mcp :connection-status))
+        mcp-enabled?   (true? (-> profile :props :mcp-enabled))
+        mcp-connection (get mcp :connection-status)
+        mcp-connected? (= mcp-connection "connected")
 
         show-enabled?   (and mcp-enabled? (false? expired?))
 
@@ -829,7 +830,7 @@
                                              :pos-6 plugins?)
                         :on-close on-close}
 
-     (when show-enabled?
+     (when (and show-enabled? (not expired?))
        [:> dropdown-menu-item* {:id          "mcp-menu-toggle-mcp-plugin"
                                 :class       (stl/css :base-menu-item :submenu-item)
                                 :on-click    on-toggle-mcp-plugin
@@ -1019,10 +1020,10 @@
 
       (when (contains? cf/flags :mcp)
         (let [tokens   (mf/deref refs/access-tokens)
-              expired? (some->> tokens
-                                (some #(when (= (:type %) "mcp") %))
-                                :expires-at
-                                (> (ct/now)))
+              expires-at (some->> tokens
+                                  (some #(when (= (:type %) "mcp") %))
+                                  :expires-at)
+              expired?   (and (some? expires-at) (> (ct/now) expires-at))
 
               mcp-enabled?   (true? (-> profile :props :mcp-enabled))
               mcp-connection (get mcp :connection-status)
