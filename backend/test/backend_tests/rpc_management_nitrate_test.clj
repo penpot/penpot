@@ -74,24 +74,32 @@
 (t/deftest notify-team-change-publishes-event
   (let [team-id          (uuid/random)
         organization-id  (uuid/random)
+        organization     {:id organization-id
+                          :name "Acme Inc"
+                          :slug "acme-inc"
+                          :owner-id (uuid/random)
+                          :avatar-bg-url "http://example.com/avatar.svg"}
         calls            (atom [])
         out              (with-redefs [mbus/pub! (fn [_cfg & {:keys [topic message]}]
                                                    (swap! calls conj {:topic topic
                                                                       :message message}))]
                            (management-command-with-nitrate! {::th/type :notify-team-change
                                                               :id team-id
-                                                              :organization-id organization-id
-                                                              :organization-name "Acme Inc"}))]
+                                                              :is-your-penpot false
+                                                              :organization organization}))]
     (t/is (th/success? out))
     (t/is (= 1 (count @calls)))
     (t/is (= uuid/zero (-> @calls first :topic)))
-    (t/is (= {:type :team-org-change
-              :team-id team-id
-              :team-name nil
-              :organization-id organization-id
-              :organization-name "Acme Inc"
-              :notification nil}
-             (-> @calls first :message)))))
+    (let [msg (-> @calls first :message)]
+      (t/is (= :team-org-change (:type msg)))
+      (t/is (= nil (:notification msg)))
+      (t/is (= team-id (-> msg :team :id)))
+      (t/is (= false (-> msg :team :is-your-penpot)))
+      (t/is (= (:id organization) (-> msg :team :organization :id)))
+      (t/is (= (:name organization) (-> msg :team :organization :name)))
+      (t/is (= (:slug organization) (-> msg :team :organization :slug)))
+      (t/is (= (:owner-id organization) (-> msg :team :organization :owner-id)))
+      (t/is (= (:avatar-bg-url organization) (str (-> msg :team :organization :avatar-bg-url)))))))
 
 (t/deftest notify-user-added-to-organization-creates-default-org-team
   (let [profile      (th/create-profile* 1 {:is-active true})
@@ -181,7 +189,7 @@
     (doseq [call @calls]
       (t/is (= uuid/zero (:topic call)))
       (t/is (= :team-org-change (-> call :message :type)))
-      (t/is (= organization-name (-> call :message :organization-name)))
+      (t/is (= organization-name (-> call :message :team :organization :name)))
       (t/is (= "dashboard.org-deleted" (-> call :message :notification))))))
 
 (t/deftest get-profile-by-email-success-and-not-found

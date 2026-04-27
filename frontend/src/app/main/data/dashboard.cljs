@@ -13,6 +13,7 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.organization :as co]
    [app.common.types.project :refer [valid-project?]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -686,29 +687,29 @@
              (modal/hide)))))
 
 (defn handle-change-team-org
-  [{:keys [team-id team-name organization-id organization-name notification]}]
+  [{:keys [team notification]}]
   (ptk/reify ::handle-change-team-org
     ptk/WatchEvent
     (watch [_ state _]
-      (let [current-team-id (:current-team-id state)]
+      (let [current-team-id (:current-team-id state)
+            organization (:organization team)]
         (when (and (contains? cf/flags :nitrate)
                    notification
-                   (= team-id current-team-id))
-          (rx/of (ntf/show {:content (tr notification organization-name)
+                   (= (:id team) current-team-id))
+          (rx/of (ntf/show {:content (tr notification (:name organization))
                             :type :toast
                             :level :info
                             :timeout nil})))))
     ptk/UpdateEvent
     (update [_ state]
       (if (contains? cf/flags :nitrate)
-        (d/update-in-when state [:teams team-id]
-                          (fn [team]
-                            (cond-> team
-                              (some? organization-id) (assoc :organization-id organization-id)
-                              (nil? organization-id) (dissoc :organization-id)
-                              (some? organization-name) (assoc :organization-name organization-name)
-                              (nil? organization-name) (dissoc :organization-name)
-                              team-name (assoc :name team-name))))
+        (let [team-id      (:id team)
+              team-name    (:name team)
+              organization (:organization team)]
+          (d/update-in-when state [:teams team-id]
+                            (fn [team]
+                              (cond-> (co/apply-organization team organization)
+                                team-name (assoc :name team-name)))))
         state))))
 
 (defn- handle-user-org-change
