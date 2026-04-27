@@ -73,22 +73,44 @@
 (def wasm-url-override-ref
   (l/derived wasm-url-override st/state))
 
+(defn- wasm-enabled?
+  [state]
+  (let [override (wasm-url-override state)
+        renderer (when (contains? cf/flags :render-switch)
+                   (-> state :profile :props :renderer))]
+    (cond
+      (some? override)
+      override
+
+      (contains? cf/flags :render-switch)
+      (case renderer
+        :wasm true
+        :svg false
+        ;; SVG renderer as default until profile data arrives OR if render-switch
+        ;; flag is disabled.
+        false)
+
+      (contains? cfeat/no-migration-features "render-wasm/v1")
+      (enabled-without-migration? state "render-wasm/v1")
+
+      :else
+      (enabled-by-flags? state "render-wasm/v1"))))
+
 (defn active-feature?
   "Given a state and feature, check if feature is enabled."
   [state feature]
   (assert (contains? cfeat/supported-features feature)
           "feature not supported")
 
-  (let [wasm-override (when (= feature "render-wasm/v1") (wasm-url-override state))]
-    (cond
-      (some? wasm-override)
-      wasm-override
+  (cond
+    (= feature "render-wasm/v1")
+    (wasm-enabled? state)
 
-      (contains? cfeat/no-migration-features feature)
-      (enabled-without-migration? state feature)
+    (contains? cfeat/no-migration-features feature)
+    (enabled-without-migration? state feature)
 
-      :else
-      (enabled-by-flags? state feature))))
+    :else
+    (enabled-by-flags? state feature)))
 
 (defn active-features?
   "Given a state and a set of features, check if the features are all enabled."
@@ -116,10 +138,19 @@
   [feature]
   (let [enabled-features (mf/deref features-ref)
         wasm-override (mf/deref wasm-url-override-ref)
-        wasm-override (when (= feature "render-wasm/v1") wasm-override)]
+        renderer      (mf/deref (l/derived #(-> % :profile :props :renderer) st/state))
+        wasm-enabled  (cond
+                        (some? wasm-override)
+                        wasm-override
+
+                        (contains? cf/flags :render-switch)
+                        (= renderer :wasm)
+
+                        :else
+                        (contains? enabled-features "render-wasm/v1"))]
     (cond
-      (some? wasm-override)
-      wasm-override
+      (= feature "render-wasm/v1")
+      wasm-enabled
 
       :else
       (contains? enabled-features feature))))
@@ -173,7 +204,7 @@
     ptk/EffectEvent
     (effect [_ state _]
       (let [features (get state :features)]
-        (if (contains? features "render-wasm/v1")
+        (if (active-feature? state "render-wasm/v1")
           (wasm/initialize true)
           (wasm/initialize false))
 
@@ -194,7 +225,7 @@
     ptk/EffectEvent
     (effect [_ state _]
       (let [features (get state :features)]
-        (if (contains? features "render-wasm/v1")
+        (if (active-feature? state "render-wasm/v1")
           (wasm/initialize true)
           (wasm/initialize false))
 
