@@ -31,3 +31,14 @@
                          :organization-id organization-id
                          :organization-name organization-name
                          :notification notification})))
+
+
+(defn notify-organization-deletion
+  [cfg organization-name teams deleted-teams]
+  (let [msgbus (::mbus/msgbus cfg)]
+    (mbus/pub! msgbus
+               :topic uuid/zero
+               :message {:type :organization-deleted
+                         :organization-name organization-name
+                         :teams teams
+                         :deleted-teams deleted-teams})))
