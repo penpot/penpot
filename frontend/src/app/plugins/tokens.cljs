@@ -49,8 +49,17 @@
   (get map:token-attr->token-attr-plugin k k))
 
 (defn token-attr-plugin->token-attr
+  "Resolve a plugin-side token attribute reference to the internal keyword.
+
+  Accepts either a Clojure keyword (the canonical internal form) or a
+  string (the natural shape that arrives from a JS plugin call such as
+  `shape.applyToken(token, [\"fill\"])`). Converts strings to keywords
+  before consulting the alias map so abbreviations like `\"r1\"` resolve
+  to `:border-radius-top-left` and direct names like `\"fill\"` pass
+  through unchanged."
   [k]
-  (get map:token-attr-plugin->token-attr k k))
+  (let [k (cond-> k (string? k) keyword)]
+    (get map:token-attr-plugin->token-attr k k)))
 
 (defn applied-tokens-plugin->applied-tokens
   [value]
@@ -186,13 +195,13 @@
     {:enumerable false
      :schema [:tuple
               [:vector [:fn shape-proxy?]]
-              [:maybe [:set [:and ::sm/keyword [:fn token-attr?]]]]]
+              [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [shapes attrs]
            (apply-token-to-shapes plugin-id file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
 
     :applyToSelected
     {:enumerable false
-     :schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn token-attr?]]]]]
+     :schema [:tuple [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [attrs]
            (let [selected (get-in @st/state [:workspace-local :selected])]
              (apply-token-to-shapes plugin-id file-id set-id id selected attrs)))}))
