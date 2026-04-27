@@ -19,7 +19,7 @@
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.14-slide-0.jpg"
+        [:img {:src "images/features/2.15-slide-0.jpg"
                :class (stl/css :start-image)
                :border "0"
                :alt "Penpot 2.15 is here!"}]
@@ -53,7 +53,7 @@
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.14-tokens-fold.gif"
+        [:img {:src "images/features/2.15-mcp-01.gif"
                :class (stl/css :start-image)
                :border "0"
                :alt "Penpot MCP Server: AI connected to real design context"}]
@@ -86,7 +86,7 @@
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.14-api.gif"
+        [:img {:src "images/features/2.15-mcp-02.gif"
                :class (stl/css :start-image)
                :border "0"
                :alt "Multi-directional workflows, from design to code and back"}]
@@ -104,7 +104,7 @@
            "• Generate semantic HTML/CSS from real layouts."]
           [:p {:class (stl/css :feature-content)}
            "• Translate tokens and styles into code variables."]
-          [:p {:class (stl/css :feature-content)}
+          [:p {:class (stl/css :feature-content)j}
            "• Export only assets in use."]
           [:p {:class (stl/css :feature-content)}
            "• Validate design-code consistency."]
@@ -127,7 +127,7 @@
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.14-icons.gif"
+        [:img {:src "images/features/2.15-mcp-03.gif"
                :class (stl/css :start-image)
                :border "0"
                :alt "Your stack, your model, your control"}]
