@@ -48,8 +48,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc dashboard-content*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [team projects project section search-term profile default-project]}]
   (let [container       (mf/use-ref)
         content-width   (mf/use-state 0)

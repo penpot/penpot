@@ -112,8 +112,7 @@
      "\u00A0")))
 
 (mf/defc library-description*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [summary]}]
   (let [components-count (get summary :components)
         graphics-count   (get summary :graphics)
@@ -138,8 +137,7 @@
         (tr "workspace.libraries.typography" (c typography-count))])]))
 
 (mf/defc sample-library-entry*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [library importing]}]
   (let [id         (:id library)
         importing? (deref importing)
@@ -190,8 +188,7 @@
     (not (ctob/empty-lib? tokens-lib))))
 
 (mf/defc libraries-tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [is-shared linked-libraries shared-libraries]}]
   (let [file-id        (mf/use-ctx ctx/current-file-id)
         search-term*   (mf/use-state "")
@@ -488,8 +485,7 @@
                         :typographies typographies}]))
 
 (mf/defc updates-tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [file-id libraries]}]
   ;; FIXME: naming
   (let [summary?*  (mf/use-state true)
