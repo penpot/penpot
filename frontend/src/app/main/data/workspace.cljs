@@ -320,6 +320,8 @@
       (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
+            ;; since render-wasm/v1 can be hot-toggled by the user, we need to query it
+            ;; from the state with active-feature?
             render-wasm-enabled? #(features/active-feature? @st/state "render-wasm/v1")
             render-wasm-ready?   #(and (render-wasm-enabled?)
                                        wasm-state/context-initialized?

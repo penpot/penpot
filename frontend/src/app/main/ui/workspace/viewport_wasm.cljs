@@ -367,7 +367,7 @@
                       :else
                       (show-unavailable)))))]
           (reset! canvas-init? false)
-          (->> wasm.api/module
+          (->> @wasm.api/module
                (p/fmap (fn [ready?]
                          (when ready?
                            (try-init 3)))))
