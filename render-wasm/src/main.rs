@@ -223,6 +223,7 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render(_: i32) -> Result<()> {
+    let dx_t = crate::get_now!();
     with_state_mut!(state, {
         state.rebuild_touched_tiles();
         // Drain the throttled modifier-tile invalidation accumulated
@@ -230,7 +231,15 @@ pub extern "C" fn render(_: i32) -> Result<()> {
         // interactive_transform; we do it once here, with the current
         // modifier set, so the cost is paid once per rAF rather than
         // once per pointer move.
-        if state.render_state.options.is_interactive_transform() {
+        // Skip mid-drag tile invalidation when the drag-sprite fast
+        // path is active: rebuild_modifier_tiles would clear atlas
+        // pixels under the dragged shape, wiping the captured backdrop.
+        // The fast-path render composites atlas + sprite directly; on
+        // commit, set_modifiers_end clears the sprite and the next
+        // full render rebuilds the affected tiles.
+        if state.render_state.options.is_interactive_transform()
+            && !state.render_state.drag_sprite_is_active()
+        {
             let ids = state.shapes.modifier_ids();
             if !ids.is_empty() {
                 state.rebuild_modifier_tiles(ids)?;
@@ -240,6 +249,13 @@ pub extern "C" fn render(_: i32) -> Result<()> {
             .start_render_loop(performance::get_time())
             .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
     });
+    let dx_dt = crate::get_now!() - dx_t;
+    if dx_dt > 16.0 {
+        crate::run_script!(format!(
+            "console.log('[wasm-entry] render took {:.1}ms')",
+            dx_dt
+        ));
+    }
     Ok(())
 }
 
@@ -354,7 +370,16 @@ pub extern "C" fn render_loading_overlay() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn process_animation_frame(timestamp: i32) -> Result<()> {
+    let dx_t = crate::get_now!();
     let result = with_state_mut!(state, { state.process_animation_frame(timestamp) });
+    let dx_dt = crate::get_now!() - dx_t;
+    if dx_dt > 16.0 {
+        crate::run_script!(format!(
+            "console.log('[wasm-entry] process_animation_frame took {:.1}ms')",
+            dx_dt
+        ));
+    }
+
     if let Err(err) = result {
         eprintln!("process_animation_frame error: {}", err);
     }
@@ -404,6 +429,9 @@ pub extern "C" fn set_view_start() -> Result<()> {
         }
         performance::begin_measure!("set_view_start");
         state.render_state.options.set_fast_mode(true);
+        // If a previous two-pass rebuild was mid-flight, discard its
+        // intent — the new gesture supersedes it.
+        state.render_state.options.set_defer_effects(false);
         performance::end_measure!("set_view_start");
     });
     Ok(())
@@ -438,6 +466,11 @@ pub extern "C" fn set_view_end() -> Result<()> {
             // preview of the old content while new tiles render.
             state.render_state.rebuild_tile_index(&state.shapes);
             state.render_state.surfaces.invalidate_tile_cache();
+            // Start the progressive two-pass rebuild. Pass 1 renders
+            // tiles without blur/shadow for fast feedback; when it
+            // completes, process_animation_frame flips this off and
+            // kicks pass 2 which adds the effects back in place.
+            state.render_state.options.set_defer_effects(true);
         } else {
             // Pure pan at the same zoom level: tile contents have not
             // changed — only the viewport position moved. Update the
@@ -462,8 +495,22 @@ pub extern "C" fn set_view_end() -> Result<()> {
 pub extern "C" fn set_modifiers_start() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_modifiers_start");
+        // Drain pending touched_ids accumulated before the gesture
+        // started (typically from the click/selection that initiated
+        // the drag). Without this, the first rAF's rebuild_touched_tiles
+        // would evict 1-2 tiles between sprite capture and the
+        // try_render_frame check, tripping the eviction-seq mismatch
+        // and disabling the fast path for the entire gesture.
+        state.rebuild_touched_tiles();
         state.render_state.options.set_fast_mode(true);
         state.render_state.options.set_interactive_transform(true);
+        state.render_state.drag_sprite_reset();
+        // Keep the default interest area during drag. Reducing it to 1
+        // caused ghost-shape artifacts: tiles invalidated mid-drag that
+        // moved outside the smaller interest area never re-rendered, so
+        // the atlas kept stale content. Default (3) keeps the queue
+        // larger but ensures everything that could be invalidated also
+        // gets re-rendered.
         performance::end_measure!("set_modifiers_start");
     });
     Ok(())
@@ -478,8 +525,15 @@ pub extern "C" fn set_modifiers_start() -> Result<()> {
 pub extern "C" fn set_modifiers_end() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_modifiers_end");
+        state.render_state.drag_sprite_clear();
         state.render_state.options.set_fast_mode(false);
         state.render_state.options.set_interactive_transform(false);
+        // Drop atlas regions for every tile invalidated during the
+        // gesture. We kept them populated during drag (to avoid
+        // disappearing-tile flicker), but stale shape silhouettes
+        // along the drag's path would otherwise linger in tiles that
+        // don't immediately re-render after drop.
+        state.render_state.flush_drag_atlas_cleanup();
         state.render_state.cancel_animation_frame();
         performance::end_measure!("set_modifiers_end");
     });
@@ -952,11 +1006,13 @@ pub extern "C" fn set_structure_modifiers() -> Result<()> {
 pub extern "C" fn clean_modifiers() -> Result<()> {
     with_state_mut!(state, {
         let prev_modifier_ids = state.shapes.clean_all();
-        // Skip the tile-cache cleanup during interactive transform: the
-        // per-rAF `rebuild_modifier_tiles` in `render()` already evicts
-        // the same tiles for the active modifier set, so the eviction
-        // here is redundant and doubles the per-emission cost.
-        if !prev_modifier_ids.is_empty() && !state.render_state.options.is_interactive_transform() {
+        // Skip the tile-cache cleanup when drag-sprite is active: the
+        // sprite fast path doesn't read the dragged shape's tile cache
+        // and the eviction would wipe the captured atlas backdrop. The
+        // next `set_modifiers` will replace `state.shapes.modifiers`
+        // regardless, so the data layer stays consistent. Tiles are
+        // rebuilt at gesture commit (set_modifiers_end → next render).
+        if !prev_modifier_ids.is_empty() && !state.render_state.drag_sprite_is_active() {
             state
                 .render_state
                 .update_tiles_shapes(&prev_modifier_ids, &mut state.shapes)?;
@@ -982,13 +1038,36 @@ pub extern "C" fn set_modifiers() -> Result<()> {
         ids.push(entry.id);
     }
 
+    let dx_t = crate::get_now!();
+    let dx_n = ids.len();
     with_state_mut!(state, {
+        // Phase 3: capture sprite + backdrop BEFORE applying the
+        // modifier, so the captured image is at the pre-drag position.
+        // The state machine ensures the capture only runs on the first
+        // event of each gesture; subsequent calls are no-ops.
+        if state.render_state.options.is_interactive_transform() {
+            let ts = performance::get_time();
+            state
+                .render_state
+                .drag_sprite_try_capture(&ids, &state.shapes, ts)?;
+        }
         state.set_modifiers(modifiers);
-        // TO CHECK
+        // Throttle: skip per-pointer-move tile invalidation. The render
+        // entry (`render`) drains the current modifier set once per rAF
+        // and calls rebuild_modifier_tiles then. With ~3 pointer moves
+        // per rAF, this cuts tile invalidations by 3× and removes the
+        // PAF backlog.
         if !state.render_state.options.is_interactive_transform() {
             state.rebuild_modifier_tiles(ids)?;
         }
     });
+    let dx_dt = crate::get_now!() - dx_t;
+    if dx_dt > 16.0 {
+        crate::run_script!(format!(
+            "console.log('[wasm-entry] set_modifiers ids={} took {:.1}ms')",
+            dx_n, dx_dt
+        ));
+    }
     Ok(())
 }
 

@@ -1,4 +1,5 @@
 mod debug;
+pub mod drag_sprite;
 mod fills;
 pub mod filters;
 mod fonts;
@@ -372,6 +373,17 @@ pub(crate) struct RenderState {
     /// Cleared at the beginning of a render pass; set to true after we clear Cache the first
     /// time we are about to blit a tile into Cache for this pass.
     pub cache_cleared_this_render: bool,
+    /// One-shot flag consumed by `start_render_loop`. When set, the Cache
+    /// surface is NOT wiped for the upcoming pass — its current content
+    /// (typically a first-pass preview) stays visible while new tiles
+    /// overwrite it in place. Used by the progressive two-pass rebuild
+    /// after a zoom ends.
+    pub preserve_cache_this_render: bool,
+    // ---- Drag-perf diagnostic counters (read-only instrumentation) ----
+    // Cumulative `remove_cached_tile` calls since last PAF. Reset at end
+    // of each `process_animation_frame`. Tells us how aggressively tiles
+    // are being invalidated between PAF ticks.
+    pub dx_inval_since_paf: u32,
     /// True iff the current tile had shapes assigned to it when we
     /// started rendering it. Lets us distinguish a genuinely empty
     /// tile (skip composite, just clear) from a tile whose walker
@@ -379,15 +391,51 @@ pub(crate) struct RenderState {
     /// (must composite to present the work). Reset when current_tile
     /// changes.
     pub current_tile_had_shapes: bool,
-    /// During interactive transforms we keep `Target` between rAFs. Seed the
-    /// interactive backdrop exactly once per gesture (first rAF) so we don't
-    /// repeatedly overwrite tiles that have already been updated.
-    pub interactive_target_seeded: bool,
-    /// GPU crops from `Backbuffer` keyed by shape id. Filled on full-frame completion; during
-    /// drag, entries for the moved top-level selection are ensured here
+    /// Dormant. GPU crops from `Backbuffer` keyed by shape id, populated
+    /// after full-quality renders by `rebuild_backbuffer_crop_cache`. The
+    /// active drag-sprite path uses the persistent atlas as backdrop
+    /// instead and doesn't consult this cache; the field stays as a
+    /// scaffolding hook for re-enabling Alex's caching layer.
     pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+    /// Diagnostic: count of `mark_touched` calls since the last
+    /// `rebuild_touched_tiles` drain. High counts during drag indicate
+    /// CLJS is firing many shape mutations per pointer move.
+    pub dx_touch_calls: u32,
+    /// Pre-drag tile coverage for each shape that has a modifier
+    /// applied during the current gesture. Snapshotted on the first
+    /// `rebuild_modifier_tiles` per shape, invalidated at gesture end
+    /// (`clean_modifiers`). Without this, the shape's pre-drag atlas
+    /// region is never cleared because the per-rAF tile-index updates
+    /// during drag overwrite the original position before drop ever
+    /// gets a chance to invalidate it.
+    pub dx_pre_drag_tiles: HashMap<Uuid, Vec<tiles::Tile>>,
+    /// Every tile invalidated during the current interactive_transform
+    /// gesture. We skip clearing the atlas region on invalidation
+    /// during drag (to avoid disappearing-tile flicker), but tiles
+    /// that move outside the reduced interest area before they
+    /// re-render leave stale atlas content. At gesture end we drain
+    /// this set and force-clear all those atlas regions.
+    pub dx_drag_dirty_tiles: HashSet<tiles::Tile>,
+    /// Cumulative tile-eviction counter. Bumped by every
+    /// `remove_cached_tile` call. Survives across PAFs (unlike
+    /// `dx_inval_since_paf`), so the drag-sprite path can compare
+    /// "current seq" to "seq at capture time" to detect an unexpected
+    /// eviction mid-gesture.
+    pub tile_eviction_seq: u32,
+    /// Drag-sprite optimization state for the current gesture. See
+    /// `render/drag_sprite.rs`.
+    pub drag_sprite_state: drag_sprite::DragSpriteState,
+    /// Active during `capture_drag_backdrop`: the tile-render walker
+    /// consults this set at both root-level and child-recursion to
+    /// skip the dragged subtree, leaving the atlas with "scene minus
+    /// shape" pixels. `None` outside the brief backdrop-capture call.
+    pub drag_capture_exclude: Option<HashSet<Uuid>>,
 }
 
+/// Dormant scaffolding. Kept alongside `should_use_cached_top_level_during_interactive`
+/// and `rebuild_backbuffer_crop_cache` for the alternative cached-crop drag
+/// path. The active drag-sprite path doesn't consult these fields.
+#[allow(dead_code)]
 pub struct InteractiveDragCrop {
     pub src_doc_bounds: Rect,
     pub src_selrect: Rect,
@@ -420,6 +468,12 @@ impl RenderState {
     ///   because other transforms would require resampling and can diverge from the live render.
     /// - **Other cached nodes**: if the moving bounds overlap this cached crop, invalidate it so
     ///   we don't show stale content while something moves over/inside it.
+    ///
+    /// Currently dormant: kept as data-structure scaffolding alongside the
+    /// drag-sprite path, which uses the persistent atlas as backdrop and
+    /// doesn't consult this cache. Re-enable by re-adding the call site at
+    /// the top of the tile walker if the drag-sprite path is removed.
+    #[allow(dead_code)]
     fn should_use_cached_top_level_during_interactive(
         &mut self,
         node_id: Uuid,
@@ -532,9 +586,16 @@ impl RenderState {
             preview_mode: false,
             export_context: None,
             cache_cleared_this_render: false,
+            preserve_cache_this_render: false,
+            dx_inval_since_paf: 0,
             current_tile_had_shapes: false,
-            interactive_target_seeded: false,
             backbuffer_crop_cache: HashMap::default(),
+            dx_touch_calls: 0,
+            dx_pre_drag_tiles: HashMap::new(),
+            dx_drag_dirty_tiles: HashSet::new(),
+            tile_eviction_seq: 0,
+            drag_sprite_state: drag_sprite::DragSpriteState::default(),
+            drag_capture_exclude: None,
         })
     }
 
@@ -592,7 +653,7 @@ impl RenderState {
     /// Must be called BEFORE any save_layer for the shape's own opacity/blend,
     /// so that the backdrop blur is independent of the shape's visual properties.
     fn render_background_blur(&mut self, shape: &Shape, target_surface: SurfaceId) {
-        if self.options.is_fast_mode() {
+        if self.options.should_skip_effects() {
             return;
         }
         if matches!(shape.shape_type, Type::Text(_)) || matches!(shape.shape_type, Type::SVGRaw(_))
@@ -844,17 +905,8 @@ impl RenderState {
     }
 
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) -> Result<()> {
-        // During interactive transforms we render tiles directly into Target; updating the cache
-        // (snapshot -> atlas blit -> tiles.add) can force GPU stalls. Defer cache rebuild until
-        // the interaction ends.
-        if self.options.is_interactive_transform() {
-            let tile_rect = self.get_current_aligned_tile_bounds()?;
-            self.surfaces
-                .draw_current_tile_direct_target_only(&tile_rect, self.background_color);
-            return Ok(());
-        }
-
         let fast_mode = self.options.is_fast_mode();
+        let skip_atlas = self.options.is_defer_effects();
         // Decide *now* (at the first real cache blit) whether we need to clear Cache.
         // This avoids clearing Cache on renders that don't actually paint tiles (e.g. hover/UI),
         // while still preventing stale pixels from surviving across full-quality renders.
@@ -875,6 +927,7 @@ impl RenderState {
             &current_tile,
             &tile_rect,
             fast_mode,
+            skip_atlas,
             self.render_area,
         );
 
@@ -1009,13 +1062,10 @@ impl RenderState {
                 s.canvas().save();
             });
         }
-        let fast_mode = self.options.is_fast_mode();
-        // Skip anti-aliasing entirely during fast_mode (interactive
-        // gestures + pan/zoom). AA edge sampling is per-pixel and adds
-        // up across many shapes; reverts to full quality on commit.
-        let antialias = !fast_mode
-            && shape.should_use_antialias(self.get_scale(), self.options.antialias_threshold);
-        let skip_effects = fast_mode;
+
+        let antialias =
+            shape.should_use_antialias(self.get_scale(), self.options.antialias_threshold);
+        let skip_effects = self.options.should_skip_effects();
 
         let has_nested_fills = self
             .nested_fills
@@ -1616,6 +1666,7 @@ impl RenderState {
         }
     }
 
+    #[allow(dead_code)]
     fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
         self.backbuffer_crop_cache.clear();
 
@@ -1903,6 +1954,14 @@ impl RenderState {
         self.stats.clear();
 
         let _start = performance::begin_timed_log!("start_render_loop");
+
+        // Phase 3: drag-sprite fast path. When the sprite is captured
+        // and validity checks pass, this composites atlas-backdrop +
+        // sprite at the modifier position and skips the slow tile walk.
+        if self.drag_sprite_try_render_frame(tree) {
+            return Ok(());
+        }
+
         let scale = self.get_scale();
 
         self.tile_viewbox.update(self.viewbox, scale);
@@ -1911,28 +1970,49 @@ impl RenderState {
         performance::begin_measure!("render");
         performance::begin_measure!("start_render_loop");
 
+        // When preserve_cache_this_render is set, pretend the Cache surface
+        // has already been cleared for this pass. The first-tile clear guards
+        // in apply_render_to_final_canvas keep their pass-1 content intact so
+        // pass-2 tiles overwrite in place (no flicker between passes).
+        self.cache_cleared_this_render = self.preserve_cache_this_render;
+        self.preserve_cache_this_render = false;
+        self.reset_canvas();
+
         // Compute and set document-space bounds (1 unit == 1 doc px @ 100% zoom)
         // to clamp atlas updates. This prevents zoom-out tiles from forcing atlas
         // growth far beyond real content.
         let doc_bounds = self.compute_document_bounds(base_object, tree);
         self.surfaces.set_atlas_doc_bounds(doc_bounds);
 
-        self.cache_cleared_this_render = false;
-        if self.options.is_interactive_transform() {
-            // Keep `Target` as the previous frame and overwrite only the tiles
-            // that changed. This avoids clearing + redrawing an atlas backdrop
-            // every rAF during drag (a common source of GPU work/stalls).
+        // During an interactive shape transform (drag/resize/rotate) the
+        // Target is repainted tile-by-tile. If only a subset of the
+        // invalidated tiles finishes in this rAF the remaining area
+        // would either show stale content from the previous frame or,
+        // on buffer swaps, show blank pixels — either way the user
+        // perceives tiles appearing sequentially. Paint the persistent
+        // 1:1 atlas as a stable backdrop so every flush presents a
+        // coherent picture: unchanged tiles come from the atlas and
+        // invalidated tiles are overwritten on top as they finish.
+        //
+        // The same applies to the post-zoom pass 1 (`defer_effects`):
+        // tiles at the new scale are still being rebuilt, so paint the
+        // atlas as a scaled backdrop until they land. Unlike the
+        // interactive-transform case we do NOT clear Target first —
+        // during early-load gestures the atlas may only cover part of
+        // the viewport and clearing would flash bg-colored rectangles
+        // where pass-1 tiles haven't landed yet. Target already holds
+        // whatever `render_from_cache` drew during the gesture (or
+        // direct tile renders from a prior rAF), which is a strictly
+        // better backdrop than the raw background color.
+        if self.options.is_interactive_transform() && self.surfaces.has_atlas() {
+            self.surfaces.draw_atlas_to_target(
+                self.viewbox,
+                self.options.dpr(),
+                self.background_color,
+            );
+        } else if self.options.is_defer_effects() && self.surfaces.has_atlas() {
             self.surfaces
-                .reset_interactive_transform(self.background_color);
-            if !self.interactive_target_seeded {
-                // Seed from the last presented frame; this is stable even when
-                // fast_mode skips cache updates and regardless of atlas coverage.
-                self.surfaces.seed_target_from_backbuffer();
-                self.interactive_target_seeded = true;
-            }
-        } else {
-            self.reset_canvas();
-            self.interactive_target_seeded = false;
+                .draw_atlas_over_target(self.viewbox, self.options.dpr());
         }
 
         let surface_ids = SurfaceId::Strokes as u32
@@ -2050,6 +2130,11 @@ impl RenderState {
         timestamp: i32,
     ) -> Result<()> {
         performance::begin_measure!("process_animation_frame");
+        let dx_t0 = crate::get_now!();
+        let dx_pending_in = self.pending_tiles.list.len();
+        let dx_inval_at_start = self.dx_inval_since_paf;
+        let dx_interactive = self.options.is_interactive_transform();
+        let dx_was_in_progress = self.render_in_progress;
         if self.render_in_progress {
             if tree.len() != 0 {
                 self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
@@ -2071,18 +2156,57 @@ impl RenderState {
             if self.render_in_progress {
                 self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
+            } else if self.options.is_defer_effects() {
+                // Pass 1 just finished — tiles are on screen without
+                // blur/shadow. Immediately launch pass 2 to upgrade them
+                // in place. The tile texture cache is invalidated so
+                // every tile re-renders; the Cache surface is preserved
+                // so pass-1 content stays visible until each pass-2
+                // tile overwrites it.
+                self.options.set_defer_effects(false);
+                self.surfaces.invalidate_tile_cache();
+                self.preserve_cache_this_render = true;
+                self.start_render_loop(base_object, tree, timestamp, false)?;
             } else {
-                // A full-quality frame is now complete. Refresh Backbuffer and regenerate
-                // the per-shape crop cache so interactive drags can reuse pixels.
-                if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
-                    self.surfaces.copy_target_to_backbuffer();
-                    self.rebuild_backbuffer_crop_cache(tree);
-                }
+                // A full-quality frame is now complete.
+                //
+                // Backbuffer-population call is intentionally omitted: the
+                // active drag path uses the persistent atlas as backdrop
+                // and doesn't read Backbuffer, so copying Target →
+                // Backbuffer on every full render would be a wasted
+                // viewport-sized GPU blit (very visible during pan, where
+                // full-quality renders fire continuously). Re-add
+                // `self.surfaces.copy_target_to_backbuffer()` here if any
+                // consumer is brought back.
                 wapi::notify_tiles_render_complete!();
                 performance::end_measure!("render");
             }
         }
         performance::end_measure!("process_animation_frame");
+
+        // Per-PAF diagnostic. Emit only on slow PAFs (> 16ms breaks 60fps
+        // budget) or large invalidation bursts. Per-rAF logging with
+        // DevTools console open costs more than the work it measures.
+        let dx_pending_out = self.pending_tiles.list.len();
+        let dx_inval_in_paf = self.dx_inval_since_paf;
+        let dx_dt = crate::get_now!() - dx_t0;
+        if dx_dt > 16.0 || dx_inval_in_paf > 50 {
+            crate::run_script!(format!(
+                "console.log('[paf] dt={:.1}ms interactive={} render_in_progress={} pending_in={} pending_out={} inval_in_paf={}')",
+                dx_dt,
+                dx_interactive,
+                dx_was_in_progress,
+                dx_pending_in,
+                dx_pending_out,
+                dx_inval_in_paf
+            ));
+        }
+        // Clear the per-PAF invalidation counter for the next tick.
+        // Note: invalidations that arrive AFTER this reset (e.g., from
+        // a `set_modifiers` call between PAFs) accumulate against the
+        // next PAF — exactly what we want to measure.
+        let _ = dx_inval_at_start; // (silence unused warning)
+        self.dx_inval_since_paf = 0;
         Ok(())
     }
 
@@ -2273,8 +2397,9 @@ impl RenderState {
             paint.set_blend_mode(element.blend_mode().into());
             paint.set_alpha_f(element.opacity());
 
-            // Skip frame-level blur in fast mode (pan/zoom).
-            if !self.options.is_fast_mode() {
+            // Skip frame-level blur in fast mode (pan/zoom) or during the
+            // post-gesture first rebuild pass.
+            if !self.options.should_skip_effects() {
                 if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
                     let scale = self.get_scale();
                     let sigma = radius_to_sigma(frame_blur.value * scale);
@@ -2878,29 +3003,6 @@ impl RenderState {
             target_surface = SurfaceId::Export;
         }
 
-        // During interactive transforms we compute the union of the current bounds of all
-        // modified shapes (doc-space @ 100% zoom, scale=1.0). This is used as a cheap overlap
-        // guard to decide when cached top-level crops are unsafe to reuse (something is moving
-        // over/inside them), without doing expensive ancestor walks per node.
-        let moved_bounds =
-            if self.options.is_interactive_transform() && !tree.modifier_ids().is_empty() {
-                let mut acc: Option<Rect> = None;
-                for id in tree.modifier_ids().iter() {
-                    let Some(s) = tree.get(id) else { continue };
-                    let r = self.get_cached_extrect(s, tree, 1.0);
-                    acc = Some(match acc {
-                        None => r,
-                        Some(mut prev) => {
-                            prev.join(r);
-                            prev
-                        }
-                    });
-                }
-                acc
-            } else {
-                None
-            };
-
         while let Some(node_render_state) = self.pending_nodes.pop() {
             let node_id = node_render_state.id;
             let visited_children = node_render_state.visited_children;
@@ -2971,64 +3073,6 @@ impl RenderState {
                 }
             }
 
-            // Interactive drag cache: if this node is cacheable during interactive transform,
-            // draw it directly from Backbuffer crop on the current tile surface and skip
-            // traversing/rendering the subtree.
-            if self.options.is_interactive_transform() {
-                let use_cached = self.should_use_cached_top_level_during_interactive(
-                    node_id,
-                    tree,
-                    &tree.modifier_ids(),
-                    moved_bounds,
-                );
-                if use_cached {
-                    if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
-                        let crop_image = &crop.image;
-                        let crop_src_selrect = crop.src_selrect;
-                        let crop_src_doc_bounds = crop.src_doc_bounds;
-
-                        let cur_selrect = tree.get(&node_id).map(|s| s.selrect());
-                        let (dx, dy) = match cur_selrect {
-                            Some(cur) => (
-                                cur.left - crop_src_selrect.left,
-                                cur.top - crop_src_selrect.top,
-                            ),
-                            None => (0.0, 0.0),
-                        };
-
-                        let dst_doc_rect = Rect::new(
-                            crop_src_doc_bounds.left + dx,
-                            crop_src_doc_bounds.top + dy,
-                            crop_src_doc_bounds.right + dx,
-                            crop_src_doc_bounds.bottom + dy,
-                        );
-                        let scale = self.get_scale();
-                        let translation = self
-                            .surfaces
-                            .get_render_context_translation(self.render_area, scale);
-                        let dst_tile_rect = skia::Rect::from_xywh(
-                            (dst_doc_rect.left + translation.0) * scale,
-                            (dst_doc_rect.top + translation.1) * scale,
-                            dst_doc_rect.width() * scale,
-                            dst_doc_rect.height() * scale,
-                        );
-
-                        // let canvas = self.surfaces.canvas_and_mark_dirty(target_surface);
-                        let canvas = self.surfaces.canvas(target_surface);
-                        canvas.save();
-                        canvas.reset_matrix();
-                        canvas.draw_image_rect(
-                            crop_image,
-                            None,
-                            dst_tile_rect,
-                            &skia::Paint::default(),
-                        );
-                        canvas.restore();
-                    }
-                    continue;
-                }
-            }
-
             let can_flatten = element.can_flatten() && !self.focus_mode.should_focus(&element.id);
 
             // Skip render_shape_enter/exit for flattened containers
@@ -3042,7 +3086,7 @@ impl RenderState {
                 // the layer blur (which would make it more diffused than without clipping)
                 let shadow_before_layer = !node_render_state.is_root()
                     && self.focus_mode.is_active()
-                    && !self.options.is_fast_mode()
+                    && !self.options.should_skip_effects()
                     && !matches!(element.shape_type, Type::Text(_))
                     && Self::frame_clip_layer_blur(element).is_some()
                     && element.drop_shadows_visible().next().is_some();
@@ -3078,8 +3122,9 @@ impl RenderState {
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
 
-                // Skip expensive drop shadow rendering in fast mode (during pan/zoom).
-                let skip_shadows = self.options.is_fast_mode();
+                // Skip expensive drop shadow rendering in fast mode (during
+                // pan/zoom) or during the post-gesture first rebuild pass.
+                let skip_shadows = self.options.should_skip_effects();
 
                 // Skip shadow block when already rendered before the layer (frame_clip_layer_blur)
                 let shadows_already_rendered = Self::frame_clip_layer_blur(element).is_some();
@@ -3175,6 +3220,16 @@ impl RenderState {
                 let children_ids = sort_z_index(tree, element, children_ids);
 
                 for child_id in children_ids.iter() {
+                    // During drag-sprite backdrop capture, skip the
+                    // dragged subtree so the atlas receives "scene
+                    // minus shape" pixels.
+                    if self
+                        .drag_capture_exclude
+                        .as_ref()
+                        .is_some_and(|s| s.contains(child_id))
+                    {
+                        continue;
+                    }
                     self.pending_nodes.push(NodeRenderState {
                         id: *child_id,
                         visited_children: false,
@@ -3218,17 +3273,12 @@ impl RenderState {
             if let Some(current_tile) = self.current_tile {
                 if self.surfaces.has_cached_tile_surface(current_tile) {
                     performance::begin_measure!("render_shape_tree::cached");
-                    // During interactive transforms, `Target` is preserved and seeded once
-                    // from Backbuffer. Cached tiles are therefore already visible and
-                    // re-blitting them costs extra GPU work.
                     let tile_rect = self.get_current_tile_bounds()?;
-                    if !self.options.is_interactive_transform() {
-                        self.surfaces.draw_cached_tile_surface(
-                            current_tile,
-                            tile_rect,
-                            self.background_color,
-                        );
-                    }
+                    self.surfaces.draw_cached_tile_surface(
+                        current_tile,
+                        tile_rect,
+                        self.background_color,
+                    );
 
                     // Also draw the cached tile to the Cache surface so
                     // render_from_cache (used during pan) has the full scene.
@@ -3266,19 +3316,18 @@ impl RenderState {
                     }
                     performance::end_measure!("render_shape_tree::uncached");
                     let tile_rect = self.get_current_tile_bounds()?;
-                    // Composite if the walker did work in this PAF (`!is_empty`) OR
-                    // the tile has unfinished work from a previous PAF
-                    // (`current_tile_had_shapes` was set when we populated pending_nodes
-                    // for this tile).
+                    // Composite if the walker did work in this PAF
+                    // (`!is_empty`) OR the tile has unfinished work from
+                    // a previous PAF (`current_tile_had_shapes` was set
+                    // when we populated pending_nodes for this tile).
+                    // The explicit clear is reserved for tiles that
+                    // genuinely have no shapes assigned to them —
+                    // without this distinction, chunked-render
+                    // resumption was painting completed tiles back to
+                    // background, producing the disappearing-tile
+                    // flicker during drag.
                     if !is_empty || self.current_tile_had_shapes {
-                        if self.options.is_interactive_transform() {
-                            // During drag, avoid snapshot-based caching. Draw Current directly
-                            // into Target (and Cache) to reduce stalls.
-                            self.surfaces
-                                .draw_current_tile_direct(&tile_rect, self.background_color);
-                        } else {
-                            self.apply_render_to_final_canvas(tile_rect)?;
-                        }
+                        self.apply_render_to_final_canvas(tile_rect)?;
 
                         if self.options.is_debug_visible() {
                             debug::render_workspace_current_tile(
@@ -3294,7 +3343,6 @@ impl RenderState {
                             paint.set_color(self.background_color);
                             s.canvas().draw_rect(tile_rect, &paint);
                         });
-                        // Keep Cache surface coherent for render_from_cache.
                         if !self.options.is_fast_mode() {
                             if !self.cache_cleared_this_render {
                                 self.surfaces.clear_cache(self.background_color);
@@ -3339,28 +3387,26 @@ impl RenderState {
                             })
                         });
 
-                        // We only need first level shapes, in the same order as the parent node.
-                        //
-                        // During interactive transforms we may invalidate only the modified shapes
-                        // (to avoid massive ancestor eviction). However, we still composite full
-                        // tiles (we clear the tile rect before drawing Current), so we must render
-                        // all root shapes that can contribute to this tile; otherwise, unchanged
-                        // siblings inside the same tile would disappear.
+                        // We only need first level shapes, in the same order as the parent node
                         let mut valid_ids = Vec::with_capacity(ids.len());
-                        if self.options.is_interactive_transform() || tile_has_bg_blur {
-                            valid_ids.extend(root_ids.iter().copied());
-                        } else {
-                            for root_id in root_ids.iter() {
-                                if ids.contains(root_id) {
-                                    valid_ids.push(*root_id);
-                                }
+                        for root_id in root_ids.iter() {
+                            // During drag-sprite backdrop capture, skip
+                            // root-level shapes in the excluded subtree.
+                            if self
+                                .drag_capture_exclude
+                                .as_ref()
+                                .is_some_and(|s| s.contains(root_id))
+                            {
+                                continue;
+                            }
+                            if tile_has_bg_blur || ids.contains(root_id) {
+                                valid_ids.push(*root_id);
                             }
                         }
 
                         if !valid_ids.is_empty() {
                             self.current_tile_had_shapes = true;
                         }
-
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
                                 id,
@@ -3550,8 +3596,37 @@ impl RenderState {
     }
 
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
+        self.dx_inval_since_paf += 1;
+        self.drag_sprite_notify_eviction();
+        // Diagnostic: log every eviction that fires while a sprite is
+        // captured. These are the ones that trip the eviction-seq
+        // mismatch and disable the drag-sprite fast path. The tile
+        // coords plus surrounding context tell us which call site is
+        // sneaking in mid-gesture.
+        if matches!(
+            self.drag_sprite_state,
+            drag_sprite::DragSpriteState::Captured(_)
+        ) {
+            crate::run_script!(format!(
+                "console.log('[evict_during_sprite] tile=({},{}) seq={}')",
+                tile.x(),
+                tile.y(),
+                self.tile_eviction_seq
+            ));
+        }
         self.surfaces
             .remove_cached_tile_surface(&mut self.gpu_state, tile);
+    }
+
+    /// No-op shim: kept so main.rs::set_modifiers_end still compiles.
+    /// Atlas clearing is now done unconditionally in
+    /// `remove_cached_tile_surface`, the original behavior. The
+    /// interactive-transform-aware atlas-keep optimization caused
+    /// ghost-rect artifacts on heavy files; reverting to the simple
+    /// model.
+    pub fn flush_drag_atlas_cleanup(&mut self) {
+        let _ = self.dx_drag_dirty_tiles.drain();
+        let _ = self.dx_pre_drag_tiles.drain();
     }
 
     /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.
@@ -3641,6 +3716,26 @@ impl RenderState {
         let mut all_tiles = HashSet::<tiles::Tile>::new();
 
         let ids = std::mem::take(&mut self.touched_ids);
+        let dx_n_shapes = ids.len();
+        let dx_n_touch_calls = std::mem::take(&mut self.dx_touch_calls);
+
+        // Diagnostic: log when this fires with non-empty touched_ids
+        // while a sprite is captured. These touches sneak in between
+        // capture and the first frame check, tripping the eviction-seq
+        // mismatch and disabling the fast path.
+        if dx_n_shapes > 0
+            && matches!(
+                self.drag_sprite_state,
+                drag_sprite::DragSpriteState::Captured(_)
+            )
+        {
+            let sample: Vec<String> = ids.iter().take(3).map(|u| u.to_string()).collect();
+            crate::run_script!(format!(
+                "console.log('[touched_during_sprite] n_shapes={} sample_ids={}')",
+                dx_n_shapes,
+                sample.join(",")
+            ));
+        }
 
         for shape_id in ids.iter() {
             if let Some(shape) = tree.get(shape_id) {
@@ -3650,9 +3745,17 @@ impl RenderState {
             }
         }
 
+        let dx_n_tiles = all_tiles.len();
         // Update the changed tiles
         for tile in all_tiles {
             self.remove_cached_tile(tile);
+        }
+
+        if dx_n_tiles > 20 || dx_n_touch_calls > 20 {
+            crate::run_script!(format!(
+                "console.log('[touched] mark_calls={} unique_shapes={} tiles_invalidated={}')",
+                dx_n_touch_calls, dx_n_shapes, dx_n_tiles
+            ));
         }
 
         performance::end_measure!("rebuild_touched_tiles");
@@ -3696,16 +3799,38 @@ impl RenderState {
         tree: ShapesPoolMutRef<'_>,
         ids: Vec<Uuid>,
     ) -> Result<()> {
-        // During interactive transform, skip ancestor invalidation: walking up to the
-        // parent frame evicts every tile the frame covers, including dense tiles with
-        // many siblings. Ancestor extrect caches are already invalidated by
-        // `ShapesPool::set_modifiers`; the tile index is reconciled post-gesture by
-        // the committing code path (rebuild_touched_tiles).
-        if self.options.is_interactive_transform() {
+        // During interactive transform, skip ancestor invalidation: walking
+        // up to the parent frame evicts every tile the frame covers,
+        // including dense tiles with hundreds of siblings. The anti-flicker
+        // guard then forces all of them to re-render in a single frame.
+        // Ancestor extrect caches are already invalidated by
+        // `ShapesPool::set_modifiers`; the tile index is reconciled
+        // post-gesture by the committing code path (rebuild_touched_tiles).
+        let interactive = self.options.is_interactive_transform();
+        let inval_before = self.dx_inval_since_paf;
+
+        let processed_count = if interactive {
             self.update_tiles_shapes(&ids, tree)?;
+            ids.len()
         } else {
             let ancestors = all_with_ancestors(&ids, tree, false);
+            let n = ancestors.len();
             self.update_tiles_shapes(&ancestors, tree)?;
+            n
+        };
+        let inval_added = self.dx_inval_since_paf - inval_before;
+        // Only log when something unusual happens — per-rAF logging itself
+        // costs 0.5-2ms with DevTools console open, polluting the very
+        // measurement we care about. Spike threshold catches accidental
+        // ancestor-walk (interactive=false) or many tiles invalidated.
+        if !interactive || inval_added > 8 {
+            crate::run_script!(format!(
+                "console.log('[rebuild] interactive={} input_ids={} processed={} tiles_invalidated={}')",
+                interactive,
+                ids.len(),
+                processed_count,
+                inval_added
+            ));
         }
         Ok(())
     }
@@ -3728,6 +3853,7 @@ impl RenderState {
 
     pub fn mark_touched(&mut self, uuid: Uuid) {
         self.touched_ids.insert(uuid);
+        self.dx_touch_calls += 1;
     }
 
     #[allow(dead_code)]

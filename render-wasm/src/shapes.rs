@@ -1015,6 +1015,13 @@ impl Shape {
     }
 
     pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        // Extrect is a pure function of shape geometry (selrect, transform,
+        // path, strokes, shadows, blur, children) — it does not depend on
+        // `scale`. The parameter is threaded through for downstream callers
+        // that need it (e.g. visibility checks that multiply by scale), but
+        // the cache key must NOT include scale: different callers request
+        // the same extrect at different scales (render at viewbox.zoom*dpr,
+        // compute_document_bounds at 1.0) and should share cache entries.
         if let Some(cached_extrect) = *self.extrect_cache.borrow() {
             return cached_extrect;
         }

@@ -259,15 +259,27 @@ pub fn get_fill_shader(fill: &Fill, bounding_box: &Rect) -> Option<skia::Shader>
 }
 
 pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
-    let mut combined_shader: Option<skia::Shader> = None;
     let mut fills_paint = skia::Paint::default();
 
     if fills.is_empty() {
-        combined_shader = Some(skia::shaders::color(skia::Color::TRANSPARENT));
-        fills_paint.set_shader(combined_shader);
+        fills_paint.set_color(skia::Color::TRANSPARENT);
         return fills_paint;
     }
 
+    // Fast path: a single solid color fill is the overwhelmingly common
+    // case. Setting the paint's color directly uses Skia's optimized
+    // solid-fill GPU path (uniform color, no shader). The general
+    // shader path below builds a `shaders::color` shader and runs the
+    // fragment-shader pipeline for every pixel — that costs ~10 ms for
+    // a 595x435 rect at 2x DPR (≈1M pixels) when the rect is dragged.
+    if fills.len() == 1 {
+        if let Fill::Solid(SolidColor(color)) = &fills[0] {
+            fills_paint.set_color(*color);
+            return fills_paint;
+        }
+    }
+
+    let mut combined_shader: Option<skia::Shader> = None;
     for fill in fills {
         let shader = get_fill_shader(fill, &bounding_box);
 
@@ -287,7 +299,7 @@ pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
         }
     }
 
-    fills_paint.set_shader(combined_shader.clone());
+    fills_paint.set_shader(combined_shader);
     fills_paint
 }
 
