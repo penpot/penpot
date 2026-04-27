@@ -49,14 +49,16 @@
   (get map:token-attr->token-attr-plugin k k))
 
 (defn token-attr-plugin->token-attr
-  "Resolve a plugin-side token attribute reference to the internal keyword.
+  "Resolve a plugin-side token attribute reference to its canonical
+  internal keyword.
 
-  Accepts either a Clojure keyword (the canonical internal form) or a
-  string (the natural shape that arrives from a JS plugin call such as
-  `shape.applyToken(token, [\"fill\"])`). Converts strings to keywords
-  before consulting the alias map so abbreviations like `\"r1\"` resolve
-  to `:border-radius-top-left` and direct names like `\"fill\"` pass
-  through unchanged."
+  Accepts either a Clojure keyword (the canonical form, e.g. `:r1`,
+  `:fill`) or a string (the natural shape that arrives from a JS plugin
+  call such as `shape.applyToken(token, [\"fill\"])`). Converts strings
+  to keywords first, then maps verbose plugin-side aliases (e.g.
+  `:border-radius-top-left`) to their internal short form (e.g. `:r1`).
+  Inputs that are already in canonical form (`:r1`, `:fill`, `\"fill\"`,
+  …) pass through unchanged."
   [k]
   (let [k (cond-> k (string? k) keyword)]
     (get map:token-attr-plugin->token-attr k k)))

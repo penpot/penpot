@@ -19,9 +19,9 @@
 ;;
 ;; 1. `token-attr-plugin->token-attr` only consulted its alias map when
 ;;    the input was already a keyword — string inputs like "fill" or
-;;    "r1" fell through to the identity branch unchanged, so the
-;;    downstream `cto/token-attr?` predicate (which checks against a set
-;;    of keywords) returned false.
+;;    "border-radius-top-left" fell through to the identity branch
+;;    unchanged, so the downstream `cto/token-attr?` predicate (which
+;;    checks against a set of keywords) returned false.
 ;; 2. The `applyToken` / `applyToShapes` / `applyToSelected` schemas used
 ;;    plain `[:set ...]`, which does not have a `:decode/json`
 ;;    transformer for the JS array → Clojure set coercion. Penpot's
@@ -35,28 +35,32 @@
 ;; the schema-level fix is covered by the existing plugin integration
 ;; suite that exercises `applyToken` end-to-end.
 
-(t/deftest token-attr-plugin->token-attr-passes-known-keyword-through
+(t/deftest token-attr-plugin->token-attr-passes-canonical-form-through
+  ;; Both already-canonical short names and unaliased names pass through
+  ;; unchanged.
   (t/is (= :fill (ptok/token-attr-plugin->token-attr :fill)))
-  (t/is (= :stroke-color (ptok/token-attr-plugin->token-attr :stroke-color))))
+  (t/is (= :stroke-color (ptok/token-attr-plugin->token-attr :stroke-color)))
+  (t/is (= :r1 (ptok/token-attr-plugin->token-attr :r1)))
+  (t/is (= :p2 (ptok/token-attr-plugin->token-attr :p2))))
 
-(t/deftest token-attr-plugin->token-attr-resolves-keyword-aliases
-  ;; The :r1..:r4, :p1..:p4 and :m1..:m4 aliases are kept short so plugin
-  ;; authors can target a single corner without remembering the full
-  ;; internal name.
-  (t/is (= :border-radius-top-left (ptok/token-attr-plugin->token-attr :r1)))
-  (t/is (= :border-radius-top-right (ptok/token-attr-plugin->token-attr :r2)))
-  (t/is (= :border-radius-bottom-right (ptok/token-attr-plugin->token-attr :r3)))
-  (t/is (= :border-radius-bottom-left (ptok/token-attr-plugin->token-attr :r4)))
-  (t/is (= :padding-top-left (ptok/token-attr-plugin->token-attr :p1)))
-  (t/is (= :margin-bottom-right (ptok/token-attr-plugin->token-attr :m3))))
+(t/deftest token-attr-plugin->token-attr-resolves-verbose-plugin-aliases
+  ;; Plugin-side verbose names (e.g. `:border-radius-top-left`) map to
+  ;; their canonical short internal form (`:r1`) so plugin authors can
+  ;; spell the corner explicitly without the engine having to know both.
+  (t/is (= :r1 (ptok/token-attr-plugin->token-attr :border-radius-top-left)))
+  (t/is (= :r2 (ptok/token-attr-plugin->token-attr :border-radius-top-right)))
+  (t/is (= :r3 (ptok/token-attr-plugin->token-attr :border-radius-bottom-right)))
+  (t/is (= :r4 (ptok/token-attr-plugin->token-attr :border-radius-bottom-left)))
+  (t/is (= :p1 (ptok/token-attr-plugin->token-attr :padding-top-left)))
+  (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom-right))))
 
 (t/deftest token-attr-plugin->token-attr-coerces-string-input
   ;; This is the actual regression — JS plugin calls supply strings.
   (t/is (= :fill (ptok/token-attr-plugin->token-attr "fill")))
   (t/is (= :stroke-color (ptok/token-attr-plugin->token-attr "stroke-color")))
-  ;; Aliases work via the string path too.
-  (t/is (= :border-radius-top-left (ptok/token-attr-plugin->token-attr "r1")))
-  (t/is (= :margin-bottom-right (ptok/token-attr-plugin->token-attr "m3"))))
+  ;; Verbose plugin aliases work via the string path too.
+  (t/is (= :r1 (ptok/token-attr-plugin->token-attr "border-radius-top-left")))
+  (t/is (= :m3 (ptok/token-attr-plugin->token-attr "margin-bottom-right"))))
 
 (t/deftest token-attr?-accepts-keyword-input
   (t/is (true? (boolean (ptok/token-attr? :fill))))
