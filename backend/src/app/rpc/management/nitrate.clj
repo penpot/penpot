@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.types.organization :refer [schema:team-with-organization]]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.config :as cf]
@@ -117,22 +118,13 @@
 
 ;; ---- API: notify-team-change
 
-(def ^:private schema:notify-team-change
-  [:map
-   [:id ::sm/uuid]
-   [:organization-id ::sm/uuid]
-   [:organization-name ::sm/text]])
-
-
-
-
 (sv/defmethod ::notify-team-change
   "Notify to Penpot a team change from nitrate"
   {::doc/added "2.14"
-   ::sm/params schema:notify-team-change
+   ::sm/params schema:team-with-organization
    ::rpc/auth false}
-  [cfg {:keys [id organization-id organization-name]}]
-  (notifications/notify-team-change cfg id nil organization-id organization-name nil)
+  [cfg team]
+  (notifications/notify-team-change cfg (select-keys team [:id :is-your-penpot :organization]) nil)
   nil)
 
 ;; ---- API: notify-user-added-to-organization
@@ -142,8 +134,6 @@
    [:profile-id ::sm/uuid]
    [:organization-id ::sm/uuid]
    [:role ::sm/text]])
-
-
 
 (sv/defmethod ::notify-user-added-to-organization
   "Notify to Penpot that an user has joined an org from nitrate"
@@ -271,7 +261,7 @@ RETURNING id, name;")
 
            ;; Notify users
            (doseq [team updated-teams]
-             (notifications/notify-team-change cfg (:id team) (:name team) nil organization-name "dashboard.org-deleted"))))))))
+             (notifications/notify-team-change cfg {:id (:id team) :name (:name team) :organization {:name organization-name}} "dashboard.org-deleted"))))))))
 
 ;; ---- API: get-profile-by-email
 
@@ -370,6 +360,7 @@ RETURNING id, name;")
                 [:email ::sm/email]
                 [:id ::sm/uuid]
                 [:name ::sm/text]
+                [:initials [:maybe :string]]
                 [:logo ::sm/uri]]}
   [cfg params]
   (db/tx-run! cfg ti/create-org-invitation params)

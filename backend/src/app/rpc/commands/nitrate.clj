@@ -249,22 +249,21 @@
   (nitrate/call cfg :remove-team-from-org {:team-id team-id :organization-id organization-id})
 
   ;; Notify connected users
-  (notifications/notify-team-change cfg team-id nil nil organization-name "dashboard.team-no-longer-belong-org")
+  (notifications/notify-team-change cfg {:id team-id :organization {:name organization-name}} "dashboard.team-no-longer-belong-org")
   nil)
 
 
-(def ^:private schema:add-team-to-org
+(def ^:private schema:add-team-to-organization
   [:map
    [:team-id ::sm/uuid]
-   [:organization-id ::sm/uuid]
-   [:organization-name ::sm/text]])
+   [:organization-id ::sm/uuid]])
 
-(sv/defmethod ::add-team-to-org
+(sv/defmethod ::add-team-to-organization
   {::rpc/auth true
    ::doc/added "2.17"
-   ::sm/params schema:add-team-to-org
+   ::sm/params schema:add-team-to-organization
    ::db/transaction true}
-  [cfg {:keys [::rpc/profile-id  team-id organization-id organization-name]}]
+  [cfg {:keys [::rpc/profile-id  team-id organization-id]}]
 
   (assert-is-owner cfg profile-id team-id)
   (assert-not-default-team cfg team-id)
@@ -277,8 +276,8 @@
       (teams/initialize-user-in-nitrate-org cfg member-id organization-id)))
 
   ;; Api call to nitrate
-  (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})
+  (let [team (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})]
 
-  ;; Notify connected users
-  (notifications/notify-team-change cfg team-id nil organization-id organization-name "dashboard.team-belong-org")
+    ;; Notify connected users
+    (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
   nil)

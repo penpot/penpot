@@ -30,21 +30,18 @@
    java.nio.file.Path
    java.time.Duration
    java.util.Collection
-   java.util.Optional
    java.util.concurrent.atomic.AtomicLong
+   java.util.Optional
    org.reactivestreams.Subscriber
    software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
-   software.amazon.awssdk.core.ResponseBytes
    software.amazon.awssdk.core.async.AsyncRequestBody
    software.amazon.awssdk.core.async.AsyncResponseTransformer
    software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody
    software.amazon.awssdk.core.client.config.ClientAsyncConfiguration
+   software.amazon.awssdk.core.ResponseBytes
    software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
    software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup
    software.amazon.awssdk.regions.Region
-   software.amazon.awssdk.services.s3.S3AsyncClient
-   software.amazon.awssdk.services.s3.S3AsyncClientBuilder
-   software.amazon.awssdk.services.s3.S3Configuration
    software.amazon.awssdk.services.s3.model.Delete
    software.amazon.awssdk.services.s3.model.DeleteObjectRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
@@ -54,9 +51,12 @@
    software.amazon.awssdk.services.s3.model.ObjectIdentifier
    software.amazon.awssdk.services.s3.model.PutObjectRequest
    software.amazon.awssdk.services.s3.model.S3Error
-   software.amazon.awssdk.services.s3.presigner.S3Presigner
    software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
-   software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest))
+   software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest
+   software.amazon.awssdk.services.s3.presigner.S3Presigner
+   software.amazon.awssdk.services.s3.S3AsyncClient
+   software.amazon.awssdk.services.s3.S3AsyncClientBuilder
+   software.amazon.awssdk.services.s3.S3Configuration))
 
 (def ^:private max-retries
   "A maximum number of retries on internal operations"

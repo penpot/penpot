@@ -91,6 +91,7 @@
     [:map
      [:id ::sm/uuid]
      [:name :string]
+     [:initials [:maybe :string]]
      [:logo ::sm/uri]]]
    [:profile
     [:map
@@ -211,8 +212,8 @@
                             :invited-by (:fullname profile)
                             :user-name (:fullname member)
                             :organization-name (:name organization)
-                            :org-logo (:logo organization)
-                            :org-initials (d/get-initials (:name organization))
+                            :organization-logo (:logo organization)
+                            :organization-initials (:initials organization)
                             :token itoken
                             :extra-data ptoken}))
               (let [team (if (contains? cf/flags :nitrate)
@@ -231,11 +232,11 @@
           itoken)))))
 
 (defn create-org-invitation
-  [cfg {:keys [::rpc/profile-id id name logo] :as params}]
+  [cfg {:keys [::rpc/profile-id id name initials logo] :as params}]
   (let [profile  (db/get-by-id cfg :profile profile-id)]
     (create-invitation cfg
                        (assoc params
-                              :organization {:id id :name name :logo logo}
+                              :organization {:id id :name name :initials initials :logo logo}
                               :profile profile
                               :role :editor))))
 
