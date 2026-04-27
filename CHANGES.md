@@ -6,8 +6,6 @@
 
 ### :rocket: Epics and highlights
 
-- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
-
 ### :sparkles: New features & Enhancements
 
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
