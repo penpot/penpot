@@ -41,4 +41,16 @@ tmux select-window -t penpot:3
 tmux send-keys -t penpot 'cd penpot/backend' enter C-l
 tmux send-keys -t penpot './scripts/start-dev' enter
 
+if echo "$PENPOT_FLAGS" | grep -q "enable-mcp"; then
+    pushd ~/penpot/mcp/
+    ./scripts/setup;
+    pnpm run build;
+    popd
+
+    tmux new-window -t penpot:4 -n 'mcp server'
+    tmux select-window -t penpot:4
+    tmux send-keys -t penpot 'cd penpot/mcp' enter C-l
+    tmux send-keys -t penpot 'PENPOT_MCP_SERVER_HOST=0.0.0.0 PENPOT_MCP_REMOTE_MODE=true pnpm run start' enter
+fi
+
 tmux -2 attach-session -t penpot
