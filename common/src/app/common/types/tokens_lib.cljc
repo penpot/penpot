@@ -1575,6 +1575,13 @@ Will return a value that matches this schema:
      ["type" :string]]]))
 
 (def ^:private schema:dtcg-node
+  ;; Per the DTCG Community Group Final Report (W3C, 2025-10-28):
+  ;;   "The presence of a $value property definitively identifies an object as a token."
+  ;;   "A token's type can be specified by the optional $type property [...]
+  ;;    Furthermore, the $type property on a group applies to all tokens nested
+  ;;    within that group."
+  ;; So $value is the only required property; $type may be inherited from a
+  ;; parent group and is therefore optional on the token itself.
   [:schema {:registry
             {::simple-value
              [:or :string :int :double ::sm/boolean]
@@ -1587,7 +1594,7 @@ Will return a value that matches this schema:
                                 [:ref ::simple-value]
                                 [:vector ::simple-value]]]]}}
    [:map
-    ["$type" :string]
+    ["$type" {:optional true} :string]
     ["$value" [:ref ::value]]]])
 
 (def ^:private dtcg-node?
@@ -1726,33 +1733,51 @@ Will return a value that matches this schema:
 
 (defn- flatten-nested-tokens-json
   "Convert a tokens tree in the decoded json fragment into a flat map,
-   being the keys the token paths after joining the keys with '.'."
-  [decoded-json-tokens parent-path]
-  (reduce-kv
-   (fn [tokens k v]
-     (let [child-path (if (empty? parent-path)
-                        (name k)
-                        (str parent-path "." k))]
-       (if (and (map? v)
-                (not (contains? v "$type")))
-         (merge tokens (flatten-nested-tokens-json v child-path))
-         (let [token-type (cto/dtcg-token-type->token-type (get v "$type"))]
-           (if token-type
-             (assoc tokens child-path (make-token
-                                       :name child-path
-                                       :type token-type
-                                       :value
-                                       (let [token-value (get v "$value")]
-                                         (case token-type
-                                           :font-family (convert-dtcg-font-family token-value)
-                                           :typography (convert-dtcg-typography-composite token-value)
-                                           :shadow (convert-dtcg-shadow-composite token-value)
-                                           token-value))
-                                       :description (get v "$description")))
-             ;; Discard unknown type tokens
-             tokens)))))
-   {}
-   decoded-json-tokens))
+   being the keys the token paths after joining the keys with '.'.
+
+   Per the DTCG spec, a node is a token iff it carries a `$value`
+   property; every other map is a group. A group may declare a `$type`
+   that is inherited by every nested token that does not declare its
+   own `$type`, so this walker propagates the nearest enclosing group
+   `$type` down through the recursion."
+  ([decoded-json-tokens parent-path]
+   (flatten-nested-tokens-json decoded-json-tokens parent-path nil))
+  ([decoded-json-tokens parent-path inherited-type]
+   (reduce-kv
+    (fn [tokens k v]
+      (let [child-path (if (empty? parent-path)
+                         (name k)
+                         (str parent-path "." k))]
+        (if (and (map? v)
+                 (not (contains? v "$value")))
+          ;; Group: recurse, letting the group's `$type` (if any) replace
+          ;; the inherited type for descendants that don't declare their
+          ;; own `$type`.
+          (merge tokens
+                 (flatten-nested-tokens-json
+                  v
+                  child-path
+                  (or (get v "$type") inherited-type)))
+          ;; Token: resolve the type from the token's own `$type`,
+          ;; falling back to the inherited group `$type`.
+          (let [type-key   (or (get v "$type") inherited-type)
+                token-type (cto/dtcg-token-type->token-type type-key)]
+            (if token-type
+              (assoc tokens child-path (make-token
+                                        :name child-path
+                                        :type token-type
+                                        :value
+                                        (let [token-value (get v "$value")]
+                                          (case token-type
+                                            :font-family (convert-dtcg-font-family token-value)
+                                            :typography (convert-dtcg-typography-composite token-value)
+                                            :shadow (convert-dtcg-shadow-composite token-value)
+                                            token-value))
+                                        :description (get v "$description")))
+              ;; Discard unknown / un-typeable tokens
+              tokens)))))
+    {}
+    decoded-json-tokens)))
 
 (defn- parse-single-set-dtcg-json
   "Parse a decoded json file with a single set of tokens in DTCG format into a TokensLib."
