@@ -104,7 +104,7 @@
            "• Generate semantic HTML/CSS from real layouts."]
           [:p {:class (stl/css :feature-content)}
            "• Translate tokens and styles into code variables."]
-          [:p {:class (stl/css :feature-content)j}
+          [:p {:class (stl/css :feature-content)}
            "• Export only assets in use."]
           [:p {:class (stl/css :feature-content)}
            "• Validate design-code consistency."]
