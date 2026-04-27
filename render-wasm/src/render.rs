@@ -334,6 +334,13 @@ pub(crate) struct RenderState {
     /// Cleared at the beginning of a render pass; set to true after we clear Cache the first
     /// time we are about to blit a tile into Cache for this pass.
     pub cache_cleared_this_render: bool,
+    /// True iff the current tile had shapes assigned to it when we
+    /// started rendering it. Lets us distinguish a genuinely empty
+    /// tile (skip composite, just clear) from a tile whose walker
+    /// finished its work in a previous PAF and is now being resumed
+    /// (must composite to present the work). Reset when current_tile
+    /// changes.
+    pub current_tile_had_shapes: bool,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
@@ -407,6 +414,7 @@ impl RenderState {
             preview_mode: false,
             export_context: None,
             cache_cleared_this_render: false,
+            current_tile_had_shapes: false,
         })
     }
 
@@ -624,6 +632,10 @@ impl RenderState {
 
     pub fn set_viewport_interest_area_threshold(&mut self, value: i32) {
         self.options.set_viewport_interest_area_threshold(value);
+        // The TileViewbox stores its own copy of `interest` (set at
+        // construction). Without propagating, options change wouldn't
+        // affect pending_tiles generation.
+        self.tile_viewbox.set_interest(value);
     }
 
     pub fn set_node_batch_threshold(&mut self, value: i32) {
@@ -867,7 +879,7 @@ impl RenderState {
 
         let antialias =
             shape.should_use_antialias(self.get_scale(), self.options.antialias_threshold);
-        let fast_mode = self.options.is_fast_mode();
+        let skip_effects = self.options.is_fast_mode();
         let has_nested_fills = self
             .nested_fills
             .last()
@@ -995,7 +1007,7 @@ impl RenderState {
         // Remove background blur from the shape so it doesn't get processed
         // as a layer blur. The actual rendering is done before the save_layer
         // in render_background_blur() so it's independent of shape opacity.
-        if !fast_mode
+        if !skip_effects
             && apply_to_current_surface
             && fills_surface_id == SurfaceId::Fills
             && !matches!(shape.shape_type, Type::Text(_))
@@ -1021,14 +1033,14 @@ impl RenderState {
         } else if shape_has_blur {
             shape.to_mut().set_blur(None);
         }
-        if fast_mode {
+        if skip_effects {
             shape.to_mut().set_blur(None);
         }
 
         // For non-text, non-SVG shapes in the normal rendering path, apply blur
         // via a single save_layer on each render surface
         // Clip correctness is preserved
-        let blur_sigma_for_layers: Option<f32> = if !fast_mode
+        let blur_sigma_for_layers: Option<f32> = if !skip_effects
             && apply_to_current_surface
             && fills_surface_id == SurfaceId::Fills
             && !matches!(shape.shape_type, Type::Text(_))
@@ -1107,7 +1119,7 @@ impl RenderState {
                         )
                     })
                     .unzip();
-                if fast_mode {
+                if skip_effects {
                     // Fast path: render fills and strokes only (skip shadows/blur).
                     text::render(
                         Some(self),
@@ -1396,7 +1408,7 @@ impl RenderState {
                         antialias,
                         outset,
                     )?;
-                    if !fast_mode {
+                    if !skip_effects {
                         for stroke in &visible_strokes {
                             shadows::render_stroke_inner_shadows(
                                 self,
@@ -1409,7 +1421,7 @@ impl RenderState {
                     }
                 }
 
-                if !fast_mode {
+                if !skip_effects {
                     shadows::render_fill_inner_shadows(
                         self,
                         shape,
@@ -2030,7 +2042,7 @@ impl RenderState {
             paint.set_blend_mode(element.blend_mode().into());
             paint.set_alpha_f(element.opacity());
 
-            // Skip frame-level blur in fast mode (pan/zoom)
+            // Skip frame-level blur in fast mode (pan/zoom).
             if !self.options.is_fast_mode() {
                 if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
                     let scale = self.get_scale();
@@ -2753,7 +2765,7 @@ impl RenderState {
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
 
-                // Skip expensive drop shadow rendering in fast mode (during pan/zoom)
+                // Skip expensive drop shadow rendering in fast mode (during pan/zoom).
                 let skip_shadows = self.options.is_fast_mode();
 
                 // Skip shadow block when already rendered before the layer (frame_clip_layer_blur)
@@ -2936,7 +2948,17 @@ impl RenderState {
                     }
                     performance::end_measure!("render_shape_tree::uncached");
                     let tile_rect = self.get_current_tile_bounds()?;
-                    if !is_empty {
+                    // Composite if the walker did work in this PAF
+                    // (`!is_empty`) OR the tile has unfinished work from
+                    // a previous PAF (`current_tile_had_shapes` was set
+                    // when we populated pending_nodes for this tile).
+                    // The explicit clear is reserved for tiles that
+                    // genuinely have no shapes assigned to them —
+                    // without this distinction, chunked-render
+                    // resumption was painting completed tiles back to
+                    // background, producing the disappearing-tile
+                    // flicker during drag.
+                    if !is_empty || self.current_tile_had_shapes {
                         self.apply_render_to_final_canvas(tile_rect)?;
 
                         if self.options.is_debug_visible() {
@@ -2953,7 +2975,6 @@ impl RenderState {
                             paint.set_color(self.background_color);
                             s.canvas().draw_rect(tile_rect, &paint);
                         });
-                        // Keep Cache surface coherent for render_from_cache.
                         if !self.options.is_fast_mode() {
                             if !self.cache_cleared_this_render {
                                 self.surfaces.clear_cache(self.background_color);
@@ -2978,6 +2999,11 @@ impl RenderState {
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
                 self.update_render_context(next_tile);
+                // Reset for the new tile. We'll flip it to true if the
+                // tile has shapes, so a later "is_empty=true" reflects
+                // a resumed-from-yield case rather than a genuinely
+                // empty tile.
+                self.current_tile_had_shapes = false;
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
@@ -3001,6 +3027,9 @@ impl RenderState {
                             }
                         }
 
+                        if !valid_ids.is_empty() {
+                            self.current_tile_had_shapes = true;
+                        }
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
                                 id,
@@ -3336,8 +3365,19 @@ impl RenderState {
         tree: ShapesPoolMutRef<'_>,
         ids: Vec<Uuid>,
     ) -> Result<()> {
-        let ancestors = all_with_ancestors(&ids, tree, false);
-        self.update_tiles_shapes(&ancestors, tree)?;
+        // During interactive transform, skip ancestor invalidation: walking
+        // up to the parent frame evicts every tile the frame covers,
+        // including dense tiles with hundreds of siblings. The anti-flicker
+        // guard then forces all of them to re-render in a single frame.
+        // Ancestor extrect caches are already invalidated by
+        // `ShapesPool::set_modifiers`; the tile index is reconciled
+        // post-gesture by the committing code path (rebuild_touched_tiles).
+        if self.options.is_interactive_transform() {
+            self.update_tiles_shapes(&ids, tree)?;
+        } else {
+            let ancestors = all_with_ancestors(&ids, tree, false);
+            self.update_tiles_shapes(&ancestors, tree)?;
+        }
         Ok(())
     }
 

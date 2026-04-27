@@ -399,10 +399,12 @@ impl Surfaces {
 
     /// Draw the persistent atlas onto the target using the current viewbox transform.
     /// Intended for fast pan/zoom-out previews (avoids per-tile composition).
+    /// Clears Target to `background` first so atlas-uncovered regions don't
+    /// show stale content when the atlas only partially covers the viewport.
     pub fn draw_atlas_to_target(&mut self, viewbox: Viewbox, dpr: f32, background: skia::Color) {
         if !self.has_atlas() {
             return;
-        };
+        }
 
         let canvas = self.target.canvas();
         canvas.save();
@@ -413,11 +415,10 @@ impl Surfaces {
             None,
             true,
         );
+        canvas.clear(background);
 
         let s = viewbox.zoom * dpr;
         let atlas_scale = self.atlas_scale.max(0.01);
-
-        canvas.clear(background);
         canvas.translate((
             (self.atlas_origin.x + viewbox.pan_x) * s,
             (self.atlas_origin.y + viewbox.pan_y) * s,
