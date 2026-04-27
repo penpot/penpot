@@ -19,6 +19,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
+   [app.email.blacklist :as email.blacklist]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
@@ -90,6 +91,12 @@
 
   (let [email  (profile/clean-email email)
         member (profile/get-profile-by-email conn email)]
+
+    (when (and (email.blacklist/enabled? cfg)
+               (email.blacklist/contains? cfg email))
+      (ex/raise :type :restriction
+                :code :email-domain-is-not-allowed
+                :hint "email domain is in the blacklist"))
 
     ;; When we have email verification disabled and invitation user is
     ;; already present in the database, we proceed to add it to the
