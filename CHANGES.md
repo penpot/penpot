@@ -6,10 +6,9 @@
 
 ### :rocket: Epics and highlights
 
-- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
-
 ### :sparkles: New features & Enhancements
 
+- Add `Alt+click` on a layer's disclosure arrow to recursively expand the entire subtree rooted at that layer in the Layers sidebar; symmetric with the existing `Shift+click` collapse-all gesture, and removes the O(siblings × depth) click cost of unfolding a deep subtree one level at a time [Github #7736](https://github.com/penpot/penpot/issues/7736)
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
 - Add "Clear artboard guides" option to right-click context menu for frames (by @eureka0928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
 - Add loader feedback while importing and exporting files [Github #9020](https://github.com/penpot/penpot/issues/9020)
@@ -48,10 +47,14 @@
 - Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
 - Add squircle corner option for rectangles (by @jack-stormentswe) [Github #6771](https://github.com/penpot/penpot/issues/6771)
+- Preserve vector content when pasting from external tools such as Inkscape: recognise SVG sent as text/plain (with optional XML declaration and HTML comments), skip the raster preview when an SVG sibling is on the clipboard, and ignore empty SVG blobs that some tools advertise alongside the real payload, so pasted graphics arrive editable without spurious "SVG is invalid" warnings [Github #546](https://github.com/penpot/penpot/issues/546)
 
+- Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
+- Adds a **Pixel grid color** picker in the viewport settings, next to the existing canvas color control [Github #7750](https://github.com/penpot/penpot/issues/7750)
 ### :bug: Bugs fixed
 
 - Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
+- Fix plugin API `library.connectLibrary()` returning a non-Promise (or throwing synchronously) when the plugin lacks `library:write` permission — the method now always returns a `Promise` and rejects with a structured error message, matching the contract used by every other Promise-returning plugin method (`restore`, `remove`, `pin`, `saveVersion`, `findVersions`, …)
 - Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
 - Fix `login-with-ldap` silently dropping its error message on the `ldap-not-initialized` restriction (typo `:hide` → `:hint`); the message `"ldap auth provider is not initialized"` now actually surfaces in logs and error responses instead of being discarded into an unread key
 - Fix `PENPOT_OIDC_USER_INFO_SOURCE` flag being silently ignored (`userinfo` / `token`) in the OIDC callback, causing "incomplete user info" failures during registration [Github #9108](https://github.com/penpot/penpot/issues/9108)
@@ -98,7 +101,6 @@
 
 ### :sparkles: New features & Enhancements
 
-- Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 
 ### :bug: Bugs fixed
@@ -120,6 +122,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
 - Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
 
