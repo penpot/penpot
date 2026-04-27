@@ -340,6 +340,27 @@ pub(crate) struct RenderState {
     /// overwrite it in place. Used by the progressive two-pass rebuild
     /// after a zoom ends.
     pub preserve_cache_this_render: bool,
+    // ---- Drag-perf diagnostic counters (read-only instrumentation) ----
+    // Cumulative `remove_cached_tile` calls since last PAF. Reset at end
+    // of each `process_animation_frame`. Tells us how aggressively tiles
+    // are being invalidated between PAF ticks.
+    pub dx_inval_since_paf: u32,
+    /// `viewport_interest_area_threshold` value to restore at gesture
+    /// end. While dragging we drop interest to 1 (visible + 1 ring) to
+    /// keep the queue small without making the dragged shape disappear
+    /// when crossing tile boundaries.
+    pub dx_saved_interest_area: Option<i32>,
+    /// True iff the current tile had shapes assigned to it when we
+    /// started rendering it. Lets us distinguish a genuinely empty
+    /// tile (skip composite, just clear) from a tile whose walker
+    /// finished its work in a previous PAF and is now being resumed
+    /// (must composite to present the work). Reset when current_tile
+    /// changes.
+    pub current_tile_had_shapes: bool,
+    /// Diagnostic: count of `mark_touched` calls since the last
+    /// `rebuild_touched_tiles` drain. High counts during drag indicate
+    /// CLJS is firing many shape mutations per pointer move.
+    pub dx_touch_calls: u32,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
@@ -414,6 +435,10 @@ impl RenderState {
             export_context: None,
             cache_cleared_this_render: false,
             preserve_cache_this_render: false,
+            dx_inval_since_paf: 0,
+            dx_saved_interest_area: None,
+            current_tile_had_shapes: false,
+            dx_touch_calls: 0,
         })
     }
 
@@ -631,6 +656,10 @@ impl RenderState {
 
     pub fn set_viewport_interest_area_threshold(&mut self, value: i32) {
         self.options.set_viewport_interest_area_threshold(value);
+        // The TileViewbox stores its own copy of `interest` (set at
+        // construction). Without propagating, options change wouldn't
+        // affect pending_tiles generation.
+        self.tile_viewbox.set_interest(value);
     }
 
     pub fn set_node_batch_threshold(&mut self, value: i32) {
@@ -1837,6 +1866,11 @@ impl RenderState {
         timestamp: i32,
     ) -> Result<()> {
         performance::begin_measure!("process_animation_frame");
+        let dx_t0 = crate::get_now!();
+        let dx_pending_in = self.pending_tiles.list.len();
+        let dx_inval_at_start = self.dx_inval_since_paf;
+        let dx_interactive = self.options.is_interactive_transform();
+        let dx_was_in_progress = self.render_in_progress;
         if self.render_in_progress {
             if tree.len() != 0 {
                 self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
@@ -1879,6 +1913,30 @@ impl RenderState {
             }
         }
         performance::end_measure!("process_animation_frame");
+
+        // Per-PAF diagnostic. Emit only on slow PAFs (> 16ms breaks 60fps
+        // budget) or large invalidation bursts. Per-rAF logging with
+        // DevTools console open costs more than the work it measures.
+        let dx_pending_out = self.pending_tiles.list.len();
+        let dx_inval_in_paf = self.dx_inval_since_paf;
+        let dx_dt = crate::get_now!() - dx_t0;
+        if dx_dt > 16.0 || dx_inval_in_paf > 50 {
+            crate::run_script!(format!(
+                "console.log('[paf] dt={:.1}ms interactive={} render_in_progress={} pending_in={} pending_out={} inval_in_paf={}')",
+                dx_dt,
+                dx_interactive,
+                dx_was_in_progress,
+                dx_pending_in,
+                dx_pending_out,
+                dx_inval_in_paf
+            ));
+        }
+        // Clear the per-PAF invalidation counter for the next tick.
+        // Note: invalidations that arrive AFTER this reset (e.g., from
+        // a `set_modifiers` call between PAFs) accumulate against the
+        // next PAF — exactly what we want to measure.
+        let _ = dx_inval_at_start; // (silence unused warning)
+        self.dx_inval_since_paf = 0;
         Ok(())
     }
 
@@ -2011,17 +2069,13 @@ impl RenderState {
             return false;
         }
 
-        // During interactive shape transforms we must complete every
-        // visible tile in a single rAF so the user never sees tiles
-        // popping in sequentially. Only yield once all visible work is
-        // done and we are processing the interest-area pre-render.
-        if self.options.is_interactive_transform() {
-            if let Some(tile) = self.current_tile {
-                if self.tile_viewbox.is_visible(&tile) {
-                    return false;
-                }
-            }
-        }
+        // The previous version forced every visible tile to complete in
+        // a single rAF during interactive_transform to avoid sequential
+        // tile pop-in. With dense scenes that produced 700–1500 ms PAFs
+        // because all dirty tiles got rendered synchronously. Yielding
+        // back to the rAF budget makes drag responsive at the cost of
+        // tiles appearing one-by-one — acceptable during a gesture, the
+        // user is focused on the cursor, not the periphery.
 
         true
     }
@@ -2977,7 +3031,17 @@ impl RenderState {
                     }
                     performance::end_measure!("render_shape_tree::uncached");
                     let tile_rect = self.get_current_tile_bounds()?;
-                    if !is_empty {
+                    // Composite if the walker did work in this PAF
+                    // (`!is_empty`) OR the tile has unfinished work from
+                    // a previous PAF (`current_tile_had_shapes` was set
+                    // when we populated pending_nodes for this tile).
+                    // The explicit clear is reserved for tiles that
+                    // genuinely have no shapes assigned to them —
+                    // without this distinction, chunked-render
+                    // resumption was painting completed tiles back to
+                    // background, producing the disappearing-tile
+                    // flicker during drag.
+                    if !is_empty || self.current_tile_had_shapes {
                         self.apply_render_to_final_canvas(tile_rect)?;
 
                         if self.options.is_debug_visible() {
@@ -2994,7 +3058,6 @@ impl RenderState {
                             paint.set_color(self.background_color);
                             s.canvas().draw_rect(tile_rect, &paint);
                         });
-                        // Keep Cache surface coherent for render_from_cache.
                         if !self.options.is_fast_mode() {
                             if !self.cache_cleared_this_render {
                                 self.surfaces.clear_cache(self.background_color);
@@ -3019,6 +3082,11 @@ impl RenderState {
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
                 self.update_render_context(next_tile);
+                // Reset for the new tile. We'll flip it to true if the
+                // tile has shapes, so a later "is_empty=true" reflects
+                // a resumed-from-yield case rather than a genuinely
+                // empty tile.
+                self.current_tile_had_shapes = false;
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
@@ -3042,6 +3110,9 @@ impl RenderState {
                             }
                         }
 
+                        if !valid_ids.is_empty() {
+                            self.current_tile_had_shapes = true;
+                        }
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
                                 id,
@@ -3231,8 +3302,10 @@ impl RenderState {
     }
 
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
+        self.dx_inval_since_paf += 1;
+        let keep_atlas = self.options.is_interactive_transform();
         self.surfaces
-            .remove_cached_tile_surface(&mut self.gpu_state, tile);
+            .remove_cached_tile_surface(&mut self.gpu_state, tile, keep_atlas);
     }
 
     /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.
@@ -3322,6 +3395,8 @@ impl RenderState {
         let mut all_tiles = HashSet::<tiles::Tile>::new();
 
         let ids = std::mem::take(&mut self.touched_ids);
+        let dx_n_shapes = ids.len();
+        let dx_n_touch_calls = std::mem::take(&mut self.dx_touch_calls);
 
         for shape_id in ids.iter() {
             if let Some(shape) = tree.get(shape_id) {
@@ -3331,9 +3406,17 @@ impl RenderState {
             }
         }
 
+        let dx_n_tiles = all_tiles.len();
         // Update the changed tiles
         for tile in all_tiles {
             self.remove_cached_tile(tile);
+        }
+
+        if dx_n_tiles > 20 || dx_n_touch_calls > 20 {
+            crate::run_script!(format!(
+                "console.log('[touched] mark_calls={} unique_shapes={} tiles_invalidated={}')",
+                dx_n_touch_calls, dx_n_shapes, dx_n_tiles
+            ));
         }
 
         performance::end_measure!("rebuild_touched_tiles");
@@ -3384,11 +3467,30 @@ impl RenderState {
         // Ancestor extrect caches are already invalidated by
         // `ShapesPool::set_modifiers`; the tile index is reconciled
         // post-gesture by the committing code path (rebuild_touched_tiles).
-        if self.options.is_interactive_transform() {
+        let interactive = self.options.is_interactive_transform();
+        let inval_before = self.dx_inval_since_paf;
+        let processed_count = if interactive {
             self.update_tiles_shapes(&ids, tree)?;
+            ids.len()
         } else {
             let ancestors = all_with_ancestors(&ids, tree, false);
+            let n = ancestors.len();
             self.update_tiles_shapes(&ancestors, tree)?;
+            n
+        };
+        let inval_added = self.dx_inval_since_paf - inval_before;
+        // Only log when something unusual happens — per-rAF logging itself
+        // costs 0.5-2ms with DevTools console open, polluting the very
+        // measurement we care about. Spike threshold catches accidental
+        // ancestor-walk (interactive=false) or many tiles invalidated.
+        if !interactive || inval_added > 8 {
+            crate::run_script!(format!(
+                "console.log('[rebuild] interactive={} input_ids={} processed={} tiles_invalidated={}')",
+                interactive,
+                ids.len(),
+                processed_count,
+                inval_added
+            ));
         }
         Ok(())
     }
@@ -3411,6 +3513,7 @@ impl RenderState {
 
     pub fn mark_touched(&mut self, uuid: Uuid) {
         self.touched_ids.insert(uuid);
+        self.dx_touch_calls += 1;
     }
 
     #[allow(dead_code)]

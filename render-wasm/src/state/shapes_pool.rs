@@ -320,6 +320,25 @@ impl ShapesPoolImpl {
         self.modifiers.len()
     }
 
+    /// UUIDs of all shapes that currently have a transform modifier.
+    /// Used by the throttled drag path so per-rAF tile invalidation can
+    /// be done once with the current modifier set instead of once per
+    /// pointer move.
+    pub fn modifier_ids(&self) -> Vec<Uuid> {
+        if self.modifiers.is_empty() {
+            return Vec::new();
+        }
+        let mut idx_to_uuid: HashMap<usize, Uuid> =
+            HashMap::with_capacity(self.uuid_to_idx.len());
+        for (uuid, idx) in self.uuid_to_idx.iter() {
+            idx_to_uuid.insert(*idx, *uuid);
+        }
+        self.modifiers
+            .keys()
+            .filter_map(|idx| idx_to_uuid.get(idx).copied())
+            .collect()
+    }
+
     pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl {
         let Some(shape) = self.get(id) else {
             panic!("Subtree not found");

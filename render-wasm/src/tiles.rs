@@ -86,6 +86,10 @@ impl TileViewbox {
         self.center = get_tile_center_for_viewbox(viewbox, scale);
     }
 
+    pub fn set_interest(&mut self, interest: i32) {
+        self.interest = interest;
+    }
+
     pub fn is_visible(&self, tile: &Tile) -> bool {
         // TO CHECK self.interest_rect.contains(tile)
         self.visible_rect.contains(tile)

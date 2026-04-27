@@ -223,12 +223,31 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render(_: i32) -> Result<()> {
+    let dx_t = crate::get_now!();
     with_state_mut!(state, {
         state.rebuild_touched_tiles();
+        // Drain the throttled modifier-tile invalidation accumulated
+        // since the previous rAF. set_modifiers skips this work during
+        // interactive_transform; we do it once here, with the current
+        // modifier set, so the cost is paid once per rAF rather than
+        // once per pointer move.
+        if state.render_state.options.is_interactive_transform() {
+            let ids = state.shapes.modifier_ids();
+            if !ids.is_empty() {
+                state.rebuild_modifier_tiles(ids)?;
+            }
+        }
         state
             .start_render_loop(performance::get_time())
             .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
     });
+    let dx_dt = crate::get_now!() - dx_t;
+    if dx_dt > 16.0 {
+        crate::run_script!(format!(
+            "console.log('[wasm-entry] render took {:.1}ms')",
+            dx_dt
+        ));
+    }
     Ok(())
 }
 
@@ -343,7 +362,15 @@ pub extern "C" fn render_loading_overlay() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn process_animation_frame(timestamp: i32) -> Result<()> {
+    let dx_t = crate::get_now!();
     let result = with_state_mut!(state, { state.process_animation_frame(timestamp) });
+    let dx_dt = crate::get_now!() - dx_t;
+    if dx_dt > 16.0 {
+        crate::run_script!(format!(
+            "console.log('[wasm-entry] process_animation_frame took {:.1}ms')",
+            dx_dt
+        ));
+    }
 
     if let Err(err) = result {
         eprintln!("process_animation_frame error: {}", err);
@@ -461,9 +488,18 @@ pub extern "C" fn set_view_end() -> Result<()> {
 pub extern "C" fn set_modifiers_start() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_modifiers_start");
-        let opts = &mut state.render_state.options;
-        opts.set_fast_mode(true);
-        opts.set_interactive_transform(true);
+        state.render_state.options.set_fast_mode(true);
+        state.render_state.options.set_interactive_transform(true);
+        // Drop interest-area pre-rendering to a minimum (1 ring of tiles
+        // beyond visible) for the duration of the gesture. The default
+        // (3) puts ~81 tiles in the queue and made every PAF expensive;
+        // 0 caused the dragged shape to disappear at tile boundaries
+        // because the next-row tile wasn't pre-rendered. 1 keeps the
+        // immediate neighbor tiles pre-rendered so the shape stays
+        // visible when crossing a boundary, without inflating the queue.
+        let prev = state.render_state.options.viewport_interest_area_threshold;
+        state.render_state.dx_saved_interest_area = Some(prev);
+        state.render_state.set_viewport_interest_area_threshold(1);
         performance::end_measure!("set_modifiers_start");
     });
     Ok(())
@@ -478,9 +514,13 @@ pub extern "C" fn set_modifiers_start() -> Result<()> {
 pub extern "C" fn set_modifiers_end() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_modifiers_end");
-        let opts = &mut state.render_state.options;
-        opts.set_fast_mode(false);
-        opts.set_interactive_transform(false);
+        state.render_state.options.set_fast_mode(false);
+        state.render_state.options.set_interactive_transform(false);
+        // Restore interest-area pre-rendering for normal post-drag
+        // behavior (smooth pan, etc.).
+        if let Some(prev) = state.render_state.dx_saved_interest_area.take() {
+            state.render_state.set_viewport_interest_area_threshold(prev);
+        }
         state.render_state.cancel_animation_frame();
         performance::end_measure!("set_modifiers_end");
     });
@@ -979,10 +1019,26 @@ pub extern "C" fn set_modifiers() -> Result<()> {
         ids.push(entry.id);
     }
 
+    let dx_t = crate::get_now!();
+    let dx_n = ids.len();
     with_state_mut!(state, {
         state.set_modifiers(modifiers);
-        state.rebuild_modifier_tiles(ids)?;
+        // Throttle: skip per-pointer-move tile invalidation. The render
+        // entry (`render`) drains the current modifier set once per rAF
+        // and calls rebuild_modifier_tiles then. With ~3 pointer moves
+        // per rAF, this cuts tile invalidations by 3× and removes the
+        // PAF backlog.
+        if !state.render_state.options.is_interactive_transform() {
+            state.rebuild_modifier_tiles(ids)?;
+        }
     });
+    let dx_dt = crate::get_now!() - dx_t;
+    if dx_dt > 16.0 {
+        crate::run_script!(format!(
+            "console.log('[wasm-entry] set_modifiers ids={} took {:.1}ms')",
+            dx_n, dx_dt
+        ));
+    }
     Ok(())
 }
 

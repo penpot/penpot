@@ -928,14 +928,32 @@ impl Surfaces {
         self.tiles.has(tile)
     }
 
-    pub fn remove_cached_tile_surface(&mut self, gpu_state: &mut GpuState, tile: Tile) {
-        // Mark tile as invalid
-        // Old content stays visible until new tile overwrites it atomically,
-        // preventing flickering during tile re-renders.
+    pub fn remove_cached_tile_surface(
+        &mut self,
+        gpu_state: &mut GpuState,
+        tile: Tile,
+        keep_atlas: bool,
+    ) {
+        // Mark tile as invalid. Old content stays visible until new
+        // tile overwrites it atomically, preventing flickering during
+        // tile re-renders.
         self.tiles.remove(tile);
-        // Also clear the corresponding region in the persistent atlas to avoid
-        // leaving stale pixels when shapes move/delete.
-        let _ = self.clear_tile_in_atlas(gpu_state, tile);
+        // Atlas eviction policy:
+        //  - During interactive transform (`keep_atlas=true`):
+        //    `draw_atlas_to_target` clears Target then blits the atlas
+        //    on top. Clearing the atlas region here would make that
+        //    region appear as background until re-render completes —
+        //    the disappearing-tile flicker. Keep the old atlas content
+        //    so the shape shows briefly at its prior position (the
+        //    walker overwrites it when the tile re-renders).
+        //  - Outside interactive transform (`keep_atlas=false`): clear
+        //    the atlas region. Otherwise stale content (e.g. a shape's
+        //    silhouette at its pre-drag position) lingers in the atlas
+        //    until the tile re-renders — and if the shape moved away,
+        //    nothing forces a re-render of the *old* tile region.
+        if !keep_atlas {
+            let _ = self.clear_tile_in_atlas(gpu_state, tile);
+        }
     }
 
     pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
