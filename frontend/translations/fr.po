@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-04-16 18:09+0000\n"
+"PO-Revision-Date: 2026-04-28 15:09+0000\n"
 "Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -5945,7 +5945,7 @@ msgstr "Activer/Désactiver le flou"
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
 msgid "workspace.options.canvas-background"
-msgstr "Couleur de fond du canvas"
+msgstr "Couleur de fond du canevas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
 msgid "workspace.options.clip-content"
@@ -8651,3 +8651,7 @@ msgstr "Outils de débogage"
 #: src/app/main/ui/static.cljs:315
 msgid "errors.webgl-context-lost.desc-message"
 msgstr "WebGL ne fonctionne plus. Rechargez la page pour le réinitialiser"
+
+#: src/app/main/ui/static.cljs:314
+msgid "errors.webgl-context-lost.main-message"
+msgstr "Oups ! Le contexte du canevas a été perdu"
