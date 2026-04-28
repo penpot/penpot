@@ -25,7 +25,6 @@
    [rumext.v2 :as mf]))
 
 (mf/defc plan-card*
-  {::mf/props :obj}
   [{:keys [card-title
            card-title-icon
            price-value price-period

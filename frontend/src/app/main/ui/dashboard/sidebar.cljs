@@ -967,8 +967,7 @@
       [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]]))
 
 (mf/defc help-learning-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-close on-click]}]
   (let [handle-click-url
         (mf/use-fn
@@ -1012,8 +1011,7 @@
         (tr "labels.give-feedback")])]))
 
 (mf/defc community-contributions-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-close]}]
   (let [handle-click-url
         (mf/use-fn
@@ -1043,8 +1041,7 @@
       (tr "labels.community")]]))
 
 (mf/defc about-penpot-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-close]}]
   (let [version cf/version
         show-release-notes
@@ -1276,8 +1273,7 @@
          nil))]))
 
 (mf/defc sidebar*
-  {::mf/props :obj
-   ::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo]}
   [{:keys [team profile] :as props}]
   [:nav {:class (stl/css :dashboard-sidebar) :data-testid "dashboard-sidebar"}
    [:> sidebar-content* props]

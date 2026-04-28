@@ -29,7 +29,6 @@
 
 (mf/defc assets-libraries*
   {::mf/wrap [mf/memo]
-   ::mf/props :obj
    ::mf/private true}
   [{:keys [filters]}]
   (let [file-id   (mf/use-ctx ctx/current-file-id)
