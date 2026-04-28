@@ -3561,6 +3561,16 @@ msgstr "Are you sure you want to delete this page?"
 msgid "modals.delete-page.title"
 msgstr "Delete page"
 
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs, src/app/main/ui/workspace/sidebar/assets/colors.cljs, src/app/main/ui/workspace/sidebar/assets/typographies.cljs
+msgid "modals.delete-asset-group.title"
+msgstr "Delete group"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs, src/app/main/ui/workspace/sidebar/assets/colors.cljs, src/app/main/ui/workspace/sidebar/assets/typographies.cljs
+msgid "modals.delete-asset-group.message"
+msgid_plural "modals.delete-asset-group.message"
+msgstr[0] "Are you sure you want to delete this asset?"
+msgstr[1] "Are you sure you want to delete these %s assets?"
+
 #: src/app/main/ui/dashboard/project_menu.cljs:73
 msgid "modals.delete-project-confirm.accept"
 msgstr "Delete project"
@@ -5732,6 +5742,10 @@ msgstr "Text Transform"
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:70
 msgid "workspace.assets.ungroup"
 msgstr "Ungroup"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs
+msgid "workspace.assets.delete-group"
+msgstr "Delete group"
 
 #: src/app/main/ui/workspace/colorpicker.cljs:428, src/app/main/ui/workspace/colorpicker.cljs:441
 msgid "workspace.colorpicker.color-tokens"

@@ -23,7 +23,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc asset-group-title*
-  [{:keys [file-id section path is-group-open on-rename on-ungroup on-group-combine-variants is-can-combine on-add]}]
+  [{:keys [file-id section path is-group-open on-rename on-ungroup on-delete-group on-group-combine-variants is-can-combine on-add]}]
   (when-not (empty? path)
     (let [[other-path last-path truncated] (cpn/compact-path path 35 true)
           menu-state     (mf/use-state cmm/initial-context-menu-state)
@@ -69,6 +69,12 @@
                             {:name    (tr "workspace.assets.ungroup")
                              :id      "assets-ungroup-group"
                              :handler  #(on-ungroup path)}]
+                     on-delete-group
+                     (conj
+                      {:name    (tr "workspace.assets.delete-group")
+                       :id      "assets-delete-group"
+                       :handler #(on-delete-group path)})
+
                      is-can-combine
                      (conj
                       {:name    (tr "workspace.shape.menu.combine-as-variants")
