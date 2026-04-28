@@ -13,7 +13,17 @@ Center](https://help.penpot.app/).
 - [Prerequisites](#prerequisites)
 - [Reporting Bugs](#reporting-bugs)
 - [Pull Requests](#pull-requests)
+  - [Workflow](#workflow)
+  - [Title format](#title-format)
+  - [Description](#description)
+  - [Branch naming](#branch-naming)
+  - [Review process](#review-process)
+  - [What we won't accept](#what-we-wont-accept)
+  - [Good first issues](#good-first-issues)
 - [Commit Guidelines](#commit-guidelines)
+  - [Commit types](#commit-types)
+  - [Rules](#rules)
+  - [Examples](#examples)
 - [Formatting and Linting](#formatting-and-linting)
 - [Changelog](#changelog)
 - [Code of Conduct](#code-of-conduct)
@@ -52,14 +62,97 @@ Advisories](https://github.com/penpot/penpot/security/advisories)
 
 1. **Read the DCO** — see [Developer's Certificate of Origin](#developers-certificate-of-origin-dco)
    below. All code patches must include a `Signed-off-by` line.
-2. **Discuss before building** — open a question/discussion issue before
-   starting work on a new feature or significant change. No PR will be
-   accepted without prior discussion, whether it is a new feature, a planned
-   one, or a quick win.
+2. **Discuss before building** — open a [GitHub
+   Issue](https://github.com/penpot/penpot/issues) or start a [GitHub
+   Discussion](https://github.com/penpot/penpot/discussions) before starting
+   work on a new feature or significant change. For planned features on the
+   roadmap, reference the corresponding Taiga story. No PR will be accepted
+   without prior discussion, whether it is a new feature, a planned one, or a
+   quick win.
 3. **Bug fixes** — you may submit a PR directly, but we still recommend
    filing an issue first so we can track it independently of your fix.
 4. **Format and lint** — run the checks described in
    [Formatting and Linting](#formatting-and-linting) before submitting.
+
+### Title format
+
+Pull request titles **must** follow the same convention as commit subjects:
+
+```
+:emoji: <subject>
+```
+
+- Use the **imperative mood** (e.g. "Fix", not "Fixed").
+- Capitalize the first letter of the subject.
+- Do not end the subject with a period.
+- Keep the subject to **70 characters** or fewer.
+- Use one of the [commit type emojis](#commit-types) listed below.
+
+When a PR contains multiple unrelated commits, choose the emoji that
+best represents the dominant change.
+
+**Examples:**
+
+```
+:bug: Fix unexpected error on launching modal
+:sparkles: Enable new modal for profile
+:zap: Improve performance of dashboard navigation
+```
+
+> **Note:** When a PR is squash-merged, the PR title becomes the
+> commit message on the main branch. Getting the title right matters.
+
+### Description
+
+Every pull request should include a description that helps reviewers
+understand the change quickly:
+
+1. **What and why** — describe the change and its motivation.
+2. **Link related issues** — use `Closes #1234` or reference a Taiga
+   story (e.g. `Taiga #5678`).
+3. **Screenshots or recordings** — required for any UI-visible change.
+4. **Testing notes** — how did you verify the change? Any edge cases?
+5. **Breaking changes** — call out anything that affects existing users
+   or requires migration steps.
+
+### Branch naming
+
+Use a descriptive branch name that reflects the type and scope of the
+change:
+
+```
+<type>/<short-description>
+```
+
+Types: `fix`, `feat`, `refactor`, `docs`, `chore`, `perf`.
+
+Optionally include the issue number:
+
+```
+fix/9122-email-blacklisting
+feat/export-webp
+refactor/layout-sizing
+```
+
+### Review process
+
+- Maintainers review PRs when time permits. Please be patient.
+- Address review feedback by **pushing new commits** — do not
+  force-push during review, as it breaks comment threads.
+- PRs require at least **one approval** before merge.
+- We use **squash-merge** by default. The PR title becomes the final
+  commit message, so follow the [title format](#title-format) above.
+
+### What we won't accept
+
+To save time on both sides, please avoid submitting PRs that:
+
+- Introduce new dependencies without prior discussion.
+- Change the build system or CI configuration without maintainer
+  approval.
+- Mix unrelated changes in a single PR — keep PRs focused on one
+  concern.
+- Skip the [discussion step](#workflow) for non-bug-fix changes.
 
 ### Good first issues
 

@@ -360,6 +360,7 @@ RETURNING id, name;")
                 [:email ::sm/email]
                 [:id ::sm/uuid]
                 [:name ::sm/text]
+                [:initials [:maybe :string]]
                 [:logo ::sm/uri]]}
   [cfg params]
   (db/tx-run! cfg ti/create-org-invitation params)
