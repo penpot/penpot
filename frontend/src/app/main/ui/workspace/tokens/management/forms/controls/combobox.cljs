@@ -38,10 +38,6 @@
         (and (string? token-name)
              (re-matches  cto/token-name-validation-regex token-name))
 
-        valid-token-ref?
-        (or (str/blank? value)
-            (re-matches cto/token-ref-validation-regex value))
-
         token
         {:value value
          :name (if (or (not valid-token-name?) (str/blank? token-name))
@@ -53,21 +49,18 @@
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
 
-    (if-not valid-token-ref?
-      (rx/of {:error {:error/fn #(str (tr "workspace.tokens.invalid-value" %))
-                      :error/value value}})
-      (->> (if (contains? cf/flags :tokenscript)
-             (rx/of (ts/resolve-tokens tokens))
-             (sd/resolve-tokens-interactive tokens))
-           (rx/mapcat
-            (fn [resolved-tokens]
-              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                    resolved-value (if (contains? cf/flags :tokenscript)
-                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                     resolved-value)]
-                (if resolved-value
-                  (rx/of {:value resolved-value})
-                  (rx/of {:error (first errors)})))))))))
+    (->> (if (contains? cf/flags :tokenscript)
+           (rx/of (ts/resolve-tokens tokens))
+           (sd/resolve-tokens-interactive tokens))
+         (rx/mapcat
+          (fn [resolved-tokens]
+            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                  resolved-value (if (contains? cf/flags :tokenscript)
+                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                   resolved-value)]
+              (if resolved-value
+                (rx/of {:value resolved-value})
+                (rx/of {:error (first errors)}))))))))
 
 (mf/defc value-combobox*
   [{:keys [name tokens token token-type empty-to-end ref] :rest props}]
