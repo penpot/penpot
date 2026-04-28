@@ -97,17 +97,22 @@
 
 (defn data-uri->blob
   [data-uri]
-  (let [[mtype b64-data] (str/split data-uri ";base64," 2)
-        mtype   (subs mtype (inc (str/index-of mtype ":")))
-        decoded (.atob js/window b64-data)
-        size    (.-length ^js decoded)
-        content (js/Uint8Array. size)]
-
-    (loop [i 0]
-      (when (< i size)
-        (aset content i (.charCodeAt ^js decoded i))
-        (recur (inc i))))
-
+  (let [[meta data] (str/split data-uri "," 2)
+        mtype-end   (or (str/index-of meta ";") (count meta))
+        mtype       (subs meta (inc (str/index-of meta ":")) mtype-end)
+        base64?     (str/includes? meta ";base64")
+        content     (if base64?
+                      (let [decoded (.atob js/window data)
+                            size    (.-length ^js decoded)
+                            bytes   (js/Uint8Array. size)]
+                        (loop [i 0]
+                          (when (< i size)
+                            (aset bytes i (.charCodeAt ^js decoded i))
+                            (recur (inc i))))
+                        bytes)
+                      ;; Data URIs can be plain/URL-encoded (e.g. ;utf8,<svg...>).
+                      ;; Encode into UTF-8 bytes before creating the Blob.
+                      (.encode (js/TextEncoder.) (js/decodeURIComponent data)))]
     (create-blob content mtype)))
 
 (defn get-current-selected-text
