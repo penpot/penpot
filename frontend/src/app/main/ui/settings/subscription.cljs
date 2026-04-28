@@ -343,14 +343,14 @@
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
-         (tr "subscription.settings.sucess.dialog.title" subscription-name)]
+         (tr "subscription.settings.success.dialog.title" subscription-name)]
         (when (not= subscription-name "professional")
           [:p {:class (stl/css :modal-text-large)}
            (tr "subscription.settings.success.dialog.thanks" subscription-name)])
         [:p {:class (stl/css :modal-text-large)}
          (tr "subscription.settings.success.dialog.description")]
         [:p {:class (stl/css :modal-text-large)}
-         (tr "subscription.settings.sucess.dialog.footer")]
+         (tr "subscription.settings.success.dialog.footer")]
 
         [:div {:class (stl/css :success-action-buttons)}
          [:input
@@ -381,7 +381,7 @@
         [:p {:class (stl/css :modal-text-large)}
          (tr "subscription.settings.success.dialog.description")]
         [:p {:class (stl/css :modal-text-large)}
-         (tr "subscription.settings.sucess.dialog.footer")]
+         (tr "subscription.settings.success.dialog.footer")]
 
         [:div {:class (stl/css :success-action-buttons)}
          [:input
