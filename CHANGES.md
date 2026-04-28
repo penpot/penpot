@@ -9,6 +9,7 @@
 ### :sparkles: New features & Enhancements
 
 - Show a read-only W × H size badge below the bounding box of the current selection so dimensions are visible directly on the canvas (initial implementation: always-on badge, single visual variant, no live-resize integration; remaining spec items follow in subsequent PRs) [Github #9205](https://github.com/penpot/penpot/issues/9205)
+- Add "Delete group" option to the assets panel context menu for components, colors and typographies (by @FairyPigDev) [Github #9141](https://github.com/penpot/penpot/issues/9141)
 - Add `Alt+click` on a layer's disclosure arrow to recursively expand the entire subtree rooted at that layer in the Layers sidebar; symmetric with the existing `Shift+click` collapse-all gesture, and removes the O(siblings × depth) click cost of unfolding a deep subtree one level at a time [Github #7736](https://github.com/penpot/penpot/issues/7736)
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
 - Add "Clear artboard guides" option to right-click context menu for frames (by @eureka0928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
