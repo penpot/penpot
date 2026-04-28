@@ -9074,3 +9074,6 @@ msgstr "Activo hasta el %s"
 
 msgid "subscription.settings.more-information"
 msgstr "Más información"
+
+msgid "subscription.settings.activate-by-code"
+msgstr "Introducir código de activación"

@@ -74,9 +74,8 @@
   (let [profile (db/get cfg :profile {:id profile-id})]
     (try
       (let [result (nitrate/call cfg :redeem-activation-code
-                                 {::rpc/profile-id profile-id
-                                  :request-params  {:code      activation-code
-                                                    :penpot-id (str profile-id)
+                                 {:request-params  {:code      activation-code
+                                                    :penpot-id profile-id
                                                     :email     (:email profile)}})]
         (when-not result
           (ex/raise :type :validation

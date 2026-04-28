@@ -9346,3 +9346,6 @@ msgstr "Contact sales"
 
 msgid "nitrate.subscription.active-until"
 msgstr "Active until %s"
+
+msgid "subscription.settings.activate-by-code"
+msgstr "Enter activation code"

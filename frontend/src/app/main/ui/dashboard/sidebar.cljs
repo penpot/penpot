@@ -40,8 +40,6 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.nitrate.nitrate-activation-success-modal]
-   [app.main.ui.nitrate.nitrate-code-activation-modal]
    [app.main.ui.nitrate.nitrate-form]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]

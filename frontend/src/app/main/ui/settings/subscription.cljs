@@ -87,7 +87,7 @@
    (when show-activation-by-code
      [:button {:class (stl/css :cta-button :activate-by-code)
                :on-click #(st/emit! (modal/show {:type :nitrate-code-activation}))}
-      "Enter activation code"])])
+      (tr "subscription.settings.activate-by-code")])])
 
 (defn- make-management-form-schema [min-editors]
   [:map {:title "SeatsForm"}

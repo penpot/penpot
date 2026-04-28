@@ -16,6 +16,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.nitrate.nitrate-code-activation-modal]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
