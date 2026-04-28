@@ -224,6 +224,17 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 #[wasm_error]
 pub extern "C" fn render(_: i32) -> Result<()> {
     with_state_mut!(state, {
+        // Drag-sprite fast path: when a sprite has been captured, the per-rAF
+        // render bypasses rebuild_modifier_tiles + the entire tile walker.
+        // It just blits Backbuffer (scene-minus-shape) + the captured shape
+        // image at the modifier-transformed position + UI overlay.
+        if state
+            .render_state
+            .try_render_drag_sprite_frame(&state.shapes)
+        {
+            return Ok(());
+        }
+
         state.rebuild_touched_tiles();
         // Drain the throttled modifier-tile invalidation accumulated
         // since the previous rAF. set_modifiers skips this work during
@@ -481,6 +492,21 @@ pub extern "C" fn set_modifiers_start() -> Result<()> {
 pub extern "C" fn set_modifiers_end() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_modifiers_end");
+        // If the drag-sprite fast path was active, the tile cache wasn't
+        // updated for the dragged shape's new position — tile renders were
+        // bypassed in favour of image blits. Mark the shape touched so the
+        // next render's rebuild_touched_tiles invalidates BOTH old (from
+        // the cache mapping) and new (from shape.extrect) tiles, leaving
+        // the cache in a consistent state for subsequent pan/zoom.
+        if let Some(sprite) = state.render_state.drag_sprite.as_ref() {
+            let shape_id = sprite.shape_id;
+            state.render_state.mark_touched(shape_id);
+        }
+        // Drop the drag-sprite state so the next full render rebuilds tiles
+        // with the shape at its committed position.
+        state.render_state.drag_sprite = None;
+        state.render_state.render_exclude.clear();
+        state.render_state.render_skip_paint.clear();
         state.render_state.options.set_fast_mode(false);
         state.render_state.options.set_interactive_transform(false);
         state.render_state.cancel_animation_frame();
@@ -986,6 +1012,20 @@ pub extern "C" fn set_modifiers() -> Result<()> {
     }
 
     with_state_mut!(state, {
+        // Drag-sprite Phase 3: on the FIRST set_modifiers of an interactive
+        // single-shape gesture (before applying the modifier), capture the
+        // scene-minus-shape backdrop into Backbuffer + the dragged shape
+        // into a standalone image. Subsequent rAFs use the fast path that
+        // bypasses the tile walker entirely.
+        if state.render_state.options.is_interactive_transform()
+            && state.render_state.drag_sprite.is_none()
+            && ids.len() == 1
+        {
+            let ts = performance::get_time();
+            let _ = state
+                .render_state
+                .capture_drag_sprite(&ids[0], &state.shapes, ts);
+        }
         state.set_modifiers(modifiers);
         // TO CHECK
         if !state.render_state.options.is_interactive_transform() {

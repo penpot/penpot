@@ -289,6 +289,78 @@ fn sort_z_index(tree: ShapesPoolRef, element: &Shape, children_ids: Vec<Uuid>) -
     }
 }
 
+/// Partition the scene relative to `dragged_id` for the drag-sprite Phase C
+/// (above-overlay) capture.
+///
+/// Returns `(exclude, skip_paint, has_above)`:
+/// - `exclude`: shapes whose entire subtree must NOT render — the dragged
+///   shape itself plus every sibling that sits BELOW it at any ancestor
+///   level. Excluding their subtrees stops the walker from descending.
+/// - `skip_paint`: dragged-shape ancestors. The walker still walks INTO them
+///   (otherwise it can't reach above-siblings nested inside) but skips their
+///   own fill/stroke paint, so frame backgrounds aren't double-painted on
+///   top of the captured shape sprite each frame.
+/// - `has_above`: `true` iff any ancestor level has at least one sibling
+///   above the path to the dragged shape. When `false`, no overlay capture
+///   is needed (the sprite naturally sits on top).
+///
+/// Z-order convention: in the renderer's `children_ids(false)` order,
+/// index 0 is the TOP-MOST sibling and the last index is the bottom-most.
+/// So siblings at indices `0..idx` are above and `idx+1..` are below.
+fn collect_drag_z_partition(
+    tree: ShapesPoolRef,
+    dragged_id: &Uuid,
+) -> (HashSet<Uuid>, HashSet<Uuid>, bool) {
+    let mut exclude: HashSet<Uuid> = HashSet::new();
+    let mut skip_paint: HashSet<Uuid> = HashSet::new();
+    let mut has_above = false;
+
+    // Exclude the dragged shape's entire subtree — the captured sprite image
+    // already contains it and we don't want it re-rendered into the overlay.
+    if let Some(shape) = tree.get(dragged_id) {
+        for id in shape.all_children_iter(tree, true, true) {
+            exclude.insert(id);
+        }
+    }
+
+    let mut current = *dragged_id;
+    loop {
+        let Some(parent_id) = tree.get(&current).and_then(|s| s.parent_id) else {
+            break;
+        };
+        // Root (`Uuid::nil()`) has no fills of its own and is the top of the
+        // walker. Treating it as `skip_paint` is harmless but unnecessary;
+        // real ancestors with fills (frames) need to be in `skip_paint`.
+        if !parent_id.is_nil() {
+            skip_paint.insert(parent_id);
+        }
+        let Some(parent) = tree.get(&parent_id) else {
+            break;
+        };
+        let children = sort_z_index(tree, parent, parent.children_ids(false));
+        if let Some(idx) = children.iter().position(|id| id == &current) {
+            if idx > 0 {
+                has_above = true;
+            }
+            // Indices `idx + 1..` are below the current node — exclude their
+            // entire subtrees from the above-overlay.
+            for below_id in &children[idx + 1..] {
+                if let Some(below) = tree.get(below_id) {
+                    for id in below.all_children_iter(tree, true, true) {
+                        exclude.insert(id);
+                    }
+                }
+            }
+        }
+        if parent_id.is_nil() {
+            break;
+        }
+        current = parent_id;
+    }
+
+    (exclude, skip_paint, has_above)
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
@@ -345,6 +417,56 @@ pub(crate) struct RenderState {
     /// interactive backdrop exactly once per gesture (first rAF) so we don't
     /// repeatedly overwrite tiles that have already been updated.
     pub interactive_target_seeded: bool,
+    /// When non-empty, the shape walker skips any node whose UUID is in this
+    /// set (and therefore its descendants). Used by the drag-sprite capture
+    /// to render scene-minus-dragged into Backbuffer (Phase A — exclude =
+    /// {dragged subtree}) and the above-only overlay (Phase C — exclude =
+    /// {dragged subtree} ∪ below-siblings-at-each-ancestor-level). Empty
+    /// outside the brief capture window.
+    pub render_exclude: HashSet<Uuid>,
+    /// When non-empty, the walker walks INTO these nodes (so it can reach
+    /// their above-children) but skips painting the node's own fills/strokes/
+    /// effects. Used by the drag-sprite Phase C capture so dragged-shape
+    /// ancestors (e.g. frame backgrounds) don't get re-painted on top of
+    /// the captured shape image each frame. Empty outside the capture window.
+    pub render_skip_paint: HashSet<Uuid>,
+    /// Drag-sprite state. When `Some`, the per-rAF render path bypasses the
+    /// tile walker entirely: it blits Backbuffer (which holds scene-minus-
+    /// shape) and draws only the dragged shape at the modifier-transformed
+    /// position. Set on the first `set_modifiers` of an interactive gesture
+    /// after capture succeeds; cleared on `set_modifiers_end`.
+    pub drag_sprite: Option<DragSprite>,
+}
+
+/// Snapshot of the dragged shape at gesture start.
+///
+/// `surfaces.backbuffer` holds scene-minus-dragged pixels (the static
+/// backdrop). `image` holds the dragged shape rasterised on its own.
+/// `above_image` holds the shapes that render ABOVE the dragged one in
+/// z-order, on a transparent canvas — re-blitting it each frame restores
+/// correct stacking after the dragged sprite is drawn.
+///
+/// Per-rAF render path:
+///   1. seed Target ← Backbuffer (scene-minus-dragged)
+///   2. draw `image` at the modifier-transformed position
+///   3. draw `above_image` on top (above-shapes; transparent elsewhere)
+///   4. UI overlay → flush
+#[derive(Clone)]
+pub struct DragSprite {
+    /// Shape being dragged.
+    pub shape_id: Uuid,
+    /// Render scale at capture time. Mismatch with current scale (zoom
+    /// changed mid-drag) invalidates the captured image.
+    pub captured_at_scale: f32,
+    /// Dragged shape rasterised standalone, ready for fast blit each rAF.
+    pub image: skia::Image,
+    /// Pre-drag extrect (post-margin offset) in document space. The per-rAF
+    /// blit uses `modifier.map_rect(base_doc_rect)` to position the sprite.
+    pub base_doc_rect: skia::Rect,
+    /// Above-shapes captured into a viewport-sized image. `None` when no
+    /// shape renders above the dragged one (e.g. dragged is top of stack
+    /// at every ancestor level), letting the per-rAF path skip the blit.
+    pub above_image: Option<skia::Image>,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
@@ -420,6 +542,9 @@ impl RenderState {
             cache_cleared_this_render: false,
             current_tile_had_shapes: false,
             interactive_target_seeded: false,
+            render_exclude: HashSet::new(),
+            render_skip_paint: HashSet::new(),
+            drag_sprite: None,
         })
     }
 
@@ -1757,9 +1882,8 @@ impl RenderState {
 
         let _tile_start = performance::begin_timed_log!("tile_cache_update");
         performance::begin_measure!("tile_cache");
-        let only_visible = self.options.is_interactive_transform();
         self.pending_tiles
-            .update(&self.tile_viewbox, &self.surfaces, only_visible);
+            .update(&self.tile_viewbox, &self.surfaces);
         performance::end_measure!("tile_cache");
         performance::end_timed_log!("tile_cache_update", _tile_start);
 
@@ -1879,6 +2003,442 @@ impl RenderState {
         }
         self.flush_and_submit();
         Ok(())
+    }
+
+    /// Per-rAF fast-path render for an active drag-sprite gesture.
+    ///
+    /// 1. Seed Target from Backbuffer (scene-minus-shape backdrop).
+    /// 2. Compute the dragged shape's current doc-space rect by reading
+    ///    the modifier-applied extrect from `tree.get(shape_id)`.
+    /// 3. Blit the captured image at that position on Target.
+    /// 4. Run UI overlay (selection handles, snap guides).
+    /// 5. Flush.
+    ///
+    /// Returns `true` if the fast path ran, `false` if preconditions
+    /// weren't met (no sprite, scale changed, shape missing).
+    pub fn try_render_drag_sprite_frame(&mut self, tree: ShapesPoolRef) -> bool {
+        let sprite = match self.drag_sprite.as_ref() {
+            Some(s) => s.clone(),
+            None => return false,
+        };
+
+        // Validity: scale must match capture (zoom changed → fall back).
+        if (sprite.captured_at_scale - self.get_scale()).abs() > 1e-5 {
+            crate::run_script!(format!(
+                "console.log('[drag_sprite] disabled: scale changed (captured {} vs current {})')",
+                sprite.captured_at_scale,
+                self.get_scale()
+            ));
+            self.drag_sprite = None;
+            return false;
+        }
+
+        // Look up live shape (modifier-applied) to get current position.
+        let Some(shape) = tree.get(&sprite.shape_id) else {
+            self.drag_sprite = None;
+            return false;
+        };
+        let current_extrect = shape.extrect(tree, sprite.captured_at_scale);
+
+        // Validity: modifier must be pure translation. Rotation and scale
+        // change the shape's AABB dimensions, and blitting the captured
+        // image into a different-sized rect would stretch / skew it. We
+        // detect non-translation by comparing extrect dimensions to the
+        // captured ones — translation preserves them, rotate/scale don't.
+        //
+        // On mismatch we skip THIS frame (slow path runs) but keep the
+        // sprite armed: many drags pass through brief non-translation
+        // states (snap correction, layout reflow at boundaries) and recover
+        // to pure translation seconds later. Permanently disabling would
+        // require the user to release + re-grab to resume the fast path.
+        // Epsilon is generous (5 doc units) to absorb sub-pixel snap noise.
+        let eps = 5.0;
+        if (current_extrect.width() - sprite.base_doc_rect.width()).abs() > eps
+            || (current_extrect.height() - sprite.base_doc_rect.height()).abs() > eps
+        {
+            return false;
+        }
+
+        performance::begin_measure!("drag_sprite_render_frame");
+
+        // The image was captured into a surface that's `extrect + margin
+        // band on every side`. The shape itself lives in the centre, with
+        // margin space around it for strokes/shadows that extend past the
+        // geometric bounds. Per rAF, expand the modifier-applied extrect
+        // by the same margin amount so the image's content (shape +
+        // surrounding effects) lands at the right doc-space position.
+        let margins = self.surfaces.margins;
+        let margins_doc_x = margins.width as f32 / sprite.captured_at_scale;
+        let margins_doc_y = margins.height as f32 / sprite.captured_at_scale;
+        let dst_doc_rect = skia::Rect::from_ltrb(
+            current_extrect.left - margins_doc_x,
+            current_extrect.top - margins_doc_y,
+            current_extrect.right + margins_doc_x,
+            current_extrect.bottom + margins_doc_y,
+        );
+
+        // 1. Seed Target from Backbuffer (scene-minus-shape backdrop).
+        self.surfaces.seed_target_from_backbuffer();
+
+        // 2. Map doc-space rect to target pixel coords.
+        //    Standard viewbox transform: target_px = (doc + pan) * (zoom * dpr).
+        let s = self.viewbox.zoom * self.options.dpr();
+        let dst = skia::Rect::from_xywh(
+            (dst_doc_rect.left + self.viewbox.pan_x) * s,
+            (dst_doc_rect.top + self.viewbox.pan_y) * s,
+            dst_doc_rect.width() * s,
+            dst_doc_rect.height() * s,
+        );
+
+        // 3. Blit the captured shape image.
+        let canvas = self.surfaces.canvas(SurfaceId::Target);
+        canvas.save();
+        canvas.reset_matrix();
+        canvas.draw_image_rect(&sprite.image, None, dst, &skia::Paint::default());
+        canvas.restore();
+
+        // 3b. Restore z-order: blit the above-overlay (shapes that render
+        //     after the dragged shape in document order) over the sprite.
+        //     The image is the viewport plus a margin band on every side
+        //     (so content along the edges isn't clipped at capture time).
+        //     We crop the margin band with a source rect when blitting so
+        //     the viewport's top-left in the image lines up with Target's
+        //     pixel (0, 0). `None` when the dragged shape is on top of the
+        //     stack everywhere — nothing to restore in that case.
+        if let Some(above_image) = sprite.above_image.as_ref() {
+            let margins = self.surfaces.margins;
+            let canvas = self.surfaces.canvas(SurfaceId::Target);
+            let target_size = canvas.base_layer_size();
+            let target_w = target_size.width as f32;
+            let target_h = target_size.height as f32;
+            let src = skia::Rect::from_xywh(
+                margins.width as f32,
+                margins.height as f32,
+                target_w,
+                target_h,
+            );
+            let dst = skia::Rect::from_xywh(0.0, 0.0, target_w, target_h);
+            canvas.save();
+            canvas.reset_matrix();
+            canvas.draw_image_rect(
+                above_image,
+                Some((&src, skia::canvas::SrcRectConstraint::Fast)),
+                dst,
+                &skia::Paint::default(),
+            );
+            canvas.restore();
+        }
+
+        // 4. UI overlay (selection handles, snap guides) over the sprite.
+        ui::render(self, tree);
+
+        // 5. Flush to canvas.
+        self.flush_and_submit();
+
+        performance::end_measure!("drag_sprite_render_frame");
+        true
+    }
+
+    /// Drag-sprite capture: render the scene WITHOUT the given shape into
+    /// Backbuffer, AND rasterise the shape itself into a standalone image.
+    /// Called on the first `set_modifiers` of an interactive gesture once
+    /// the dragged shape's id is known.
+    ///
+    /// On success, sets `self.drag_sprite`, after which the per-rAF render
+    /// path bypasses the tile walker entirely. On failure (shape missing,
+    /// render error) leaves `drag_sprite` as `None` and the gesture falls
+    /// back to Alex's tile-based interactive path.
+    ///
+    /// Cost: one synchronous full render + one shape rasterisation. Paid
+    /// once per gesture.
+    pub fn capture_drag_sprite(
+        &mut self,
+        shape_id: &Uuid,
+        tree: ShapesPoolRef,
+        timestamp: i32,
+    ) -> Result<()> {
+        performance::begin_measure!("capture_drag_sprite");
+        let dx_t = crate::get_now!();
+        let scale = self.get_scale();
+
+        // Look up the shape and its pre-drag extrect up-front; bail early
+        // if anything is wrong so we don't half-set state.
+        let Some(shape) = tree.get(shape_id) else {
+            performance::end_measure!("capture_drag_sprite");
+            return Err(crate::error::Error::CriticalError(format!(
+                "drag_sprite: shape {} not found",
+                shape_id
+            )));
+        };
+        let base_doc_rect = shape.extrect(tree, scale);
+        if base_doc_rect.is_empty() {
+            performance::end_measure!("capture_drag_sprite");
+            return Err(crate::error::Error::CriticalError(
+                "drag_sprite: empty extrect".to_string(),
+            ));
+        }
+
+        // Temporarily exit interactive_transform so the normal tile pipeline
+        // runs (Alex's interactive path skips per-tile work in ways that
+        // would corrupt the capture).
+        let was_interactive = self.options.is_interactive_transform();
+        self.options.set_interactive_transform(false);
+
+        // --- Phase A: scene-minus-shape into Backbuffer ---
+        // Optimization: only re-render the tiles the dragged shape's bbox
+        // intersects. Other tiles already have correct scene-minus-shape
+        // content (the shape doesn't appear there anyway). This avoids a
+        // full-viewport re-render and keeps the upfront cost proportional
+        // to the dragged shape's size, not the scene's complexity.
+        self.render_exclude.clear();
+        self.render_exclude.insert(*shape_id);
+        let shape_tiles: Vec<tiles::Tile> = self
+            .tiles
+            .get_tiles_of(*shape_id)
+            .map(|s| s.iter().copied().collect())
+            .unwrap_or_default();
+        for tile in &shape_tiles {
+            self.surfaces
+                .remove_cached_tile_surface(&mut self.gpu_state, *tile);
+        }
+        self.cache_cleared_this_render = false;
+        let backdrop_result = self.start_render_loop(None, tree, timestamp, true);
+        if backdrop_result.is_ok() {
+            self.surfaces.copy_target_to_backbuffer();
+        }
+        self.render_exclude.clear();
+
+        // --- Phase C: shapes ABOVE the dragged shape, into a viewport-sized
+        //               image. Re-blitted on top of the sprite each frame so
+        //               above-siblings keep their correct stacking. ---
+        // We walk the tree directly (not via start_render_loop) so the tile
+        // cache built by Phase A stays untouched: this pass renders into
+        // Export sized to the workspace viewport, snapshots the result, and
+        // never writes to the per-tile cache.
+        let above_image_result: Result<Option<skia::Image>> = (|| {
+            let (exclude_set, skip_paint_set, has_above) = collect_drag_z_partition(tree, shape_id);
+            // No siblings render above the dragged shape at any ancestor
+            // level — the captured sprite is correctly on top, no overlay
+            // needed.
+            if !has_above {
+                return Ok(None);
+            }
+
+            let target_surface = SurfaceId::Export;
+            let saved_focus_mode = self.focus_mode.clone();
+            let saved_export_context = self.export_context;
+            let saved_render_area = self.render_area;
+            let saved_render_area_with_margins = self.render_area_with_margins;
+            let saved_current_tile = self.current_tile;
+            let saved_pending_nodes = std::mem::take(&mut self.pending_nodes);
+            let saved_nested_fills = std::mem::take(&mut self.nested_fills);
+            let saved_nested_blurs = std::mem::take(&mut self.nested_blurs);
+            let saved_nested_shadows = std::mem::take(&mut self.nested_shadows);
+            let saved_ignore_nested_blurs = self.ignore_nested_blurs;
+            let saved_preview_mode = self.preview_mode;
+
+            self.focus_mode.clear();
+            self.surfaces
+                .canvas(target_surface)
+                .clear(skia::Color::TRANSPARENT);
+
+            // Size Export to the workspace viewport plus the standard margin
+            // band on every side. `update_render_context(viewport_rect, ..)`
+            // uses translation `-viewport_rect.left + margins/scale`, so the
+            // viewport's top-left maps to canvas pixel (margins, margins).
+            // Without the margin band, content along the viewport's right /
+            // bottom edge would render past the surface and be clipped. The
+            // per-rAF blit later strips the margin band back off.
+            let viewport_rect = self.viewbox.area;
+            let margins = self.surfaces.margins;
+            let margins_doc_x = margins.width as f32 / scale;
+            let margins_doc_y = margins.height as f32 / scale;
+            let expanded_viewport = skia::Rect::from_ltrb(
+                viewport_rect.left - margins_doc_x,
+                viewport_rect.top - margins_doc_y,
+                viewport_rect.right + margins_doc_x,
+                viewport_rect.bottom + margins_doc_y,
+            );
+            self.export_context = Some((viewport_rect, scale));
+            self.surfaces
+                .resize_export_surface(scale, expanded_viewport);
+            self.render_area = viewport_rect;
+            self.render_area_with_margins = viewport_rect;
+            self.surfaces.update_render_context(viewport_rect, scale);
+
+            self.render_exclude = exclude_set;
+            self.render_skip_paint = skip_paint_set;
+
+            // Push root shapes (filtered by exclude — below-shapes whose
+            // ancestor sits at root level are pruned here so we don't even
+            // descend into them).
+            let root_children: Vec<Uuid> = tree
+                .get(&Uuid::nil())
+                .map(|root| root.children_ids(false))
+                .unwrap_or_default();
+            for child_id in root_children.iter() {
+                if self.render_exclude.contains(child_id) {
+                    continue;
+                }
+                self.pending_nodes.push(NodeRenderState {
+                    id: *child_id,
+                    visited_children: false,
+                    clip_bounds: None,
+                    visited_mask: false,
+                    mask: false,
+                    flattened: false,
+                });
+            }
+            let render_result =
+                self.render_shape_tree_partial_uncached(tree, timestamp, false, true);
+
+            self.export_context = None;
+            self.surfaces
+                .flush_and_submit(&mut self.gpu_state, target_surface);
+            let above_image = self.surfaces.snapshot(target_surface);
+
+            // Restore.
+            self.render_exclude.clear();
+            self.render_skip_paint.clear();
+            self.focus_mode = saved_focus_mode;
+            self.export_context = saved_export_context;
+            self.render_area = saved_render_area;
+            self.render_area_with_margins = saved_render_area_with_margins;
+            self.current_tile = saved_current_tile;
+            self.pending_nodes = saved_pending_nodes;
+            self.nested_fills = saved_nested_fills;
+            self.nested_blurs = saved_nested_blurs;
+            self.nested_shadows = saved_nested_shadows;
+            self.ignore_nested_blurs = saved_ignore_nested_blurs;
+            self.preview_mode = saved_preview_mode;
+
+            let workspace_scale = self.get_scale();
+            if let Some(tile) = self.current_tile {
+                self.update_render_context(tile);
+            } else if !self.render_area.is_empty() {
+                self.surfaces
+                    .update_render_context(self.render_area, workspace_scale);
+            }
+
+            render_result?;
+            Ok(Some(above_image))
+        })();
+
+        // --- Phase B: rasterise the dragged shape into Export, snapshot. ---
+        // Mirrors `render_shape_pixels` save/restore but returns the Image.
+        let image_result: Result<skia::Image> = (|| {
+            let target_surface = SurfaceId::Export;
+            let saved_focus_mode = self.focus_mode.clone();
+            let saved_export_context = self.export_context;
+            let saved_render_area = self.render_area;
+            let saved_render_area_with_margins = self.render_area_with_margins;
+            let saved_current_tile = self.current_tile;
+            let saved_pending_nodes = std::mem::take(&mut self.pending_nodes);
+            let saved_nested_fills = std::mem::take(&mut self.nested_fills);
+            let saved_nested_blurs = std::mem::take(&mut self.nested_blurs);
+            let saved_nested_shadows = std::mem::take(&mut self.nested_shadows);
+            let saved_ignore_nested_blurs = self.ignore_nested_blurs;
+            let saved_preview_mode = self.preview_mode;
+
+            self.focus_mode.clear();
+            self.surfaces
+                .canvas(target_surface)
+                .clear(skia::Color::TRANSPARENT);
+
+            // Size the Export surface to extrect PLUS one margin band on
+            // every side, so strokes / drop shadows / blur that extend
+            // past the shape's geometric bounds aren't clipped at the
+            // surface edge. With `update_render_context(base_doc_rect, ..)`
+            // the translation is `-base_doc_rect.left + margins/scale`, so
+            // the shape draws at canvas pixel (margins, margins) and has
+            // a margin band of buffer space on all four sides.
+            let margins = self.surfaces.margins;
+            let margins_doc_x = margins.width as f32 / scale;
+            let margins_doc_y = margins.height as f32 / scale;
+            let expanded_doc_rect = skia::Rect::from_ltrb(
+                base_doc_rect.left - margins_doc_x,
+                base_doc_rect.top - margins_doc_y,
+                base_doc_rect.right + margins_doc_x,
+                base_doc_rect.bottom + margins_doc_y,
+            );
+            self.export_context = Some((base_doc_rect, scale));
+            self.surfaces
+                .resize_export_surface(scale, expanded_doc_rect);
+            self.render_area = base_doc_rect;
+            self.render_area_with_margins = base_doc_rect;
+            self.surfaces.update_render_context(base_doc_rect, scale);
+
+            self.pending_nodes.push(NodeRenderState {
+                id: *shape_id,
+                visited_children: false,
+                clip_bounds: None,
+                visited_mask: false,
+                mask: false,
+                flattened: false,
+            });
+            let render_result =
+                self.render_shape_tree_partial_uncached(tree, timestamp, false, true);
+
+            self.export_context = None;
+            self.surfaces
+                .flush_and_submit(&mut self.gpu_state, target_surface);
+            let image = self.surfaces.snapshot(target_surface);
+
+            // Restore.
+            self.focus_mode = saved_focus_mode;
+            self.export_context = saved_export_context;
+            self.render_area = saved_render_area;
+            self.render_area_with_margins = saved_render_area_with_margins;
+            self.current_tile = saved_current_tile;
+            self.pending_nodes = saved_pending_nodes;
+            self.nested_fills = saved_nested_fills;
+            self.nested_blurs = saved_nested_blurs;
+            self.nested_shadows = saved_nested_shadows;
+            self.ignore_nested_blurs = saved_ignore_nested_blurs;
+            self.preview_mode = saved_preview_mode;
+
+            // Workspace render context — same logic as render_shape_pixels.
+            let workspace_scale = self.get_scale();
+            if let Some(tile) = self.current_tile {
+                self.update_render_context(tile);
+            } else if !self.render_area.is_empty() {
+                self.surfaces
+                    .update_render_context(self.render_area, workspace_scale);
+            }
+
+            render_result?;
+            Ok(image)
+        })();
+
+        if let (Ok(_), Ok(image)) = (&backdrop_result, &image_result) {
+            // `above_image` is `Ok(None)` when the dragged shape sits at the
+            // top of the stack (no above-siblings) and `Ok(Some(_))` after a
+            // successful capture. On Phase C error we still publish the
+            // sprite (degrades to "always on top" rather than disabling the
+            // fast path entirely).
+            let above_image = above_image_result.ok().flatten();
+            self.drag_sprite = Some(DragSprite {
+                shape_id: *shape_id,
+                captured_at_scale: scale,
+                image: image.clone(),
+                base_doc_rect,
+                above_image,
+            });
+        }
+
+        self.options.set_interactive_transform(was_interactive);
+
+        let dx_dt = crate::get_now!() - dx_t;
+        crate::run_script!(format!(
+            "console.log('[drag_sprite] captured shape={} scale={:.2} ok={} took={:.1}ms')",
+            shape_id,
+            scale,
+            self.drag_sprite.is_some(),
+            dx_dt
+        ));
+        performance::end_measure!("capture_drag_sprite");
+
+        backdrop_result.and(image_result.map(|_| ()))
     }
 
     pub fn render_shape_pixels(
@@ -2133,7 +2693,9 @@ impl RenderState {
         }
 
         //In clipped content strokes are drawn over the contained elements
-        if element.clip() {
+        // (skipped for nodes in `render_skip_paint` — see Phase C of the
+        // drag-sprite capture: ancestor frames are walked but not painted).
+        if element.clip() && !self.render_skip_paint.contains(&element.id) {
             let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);
             element_strokes.to_mut().clear_fills();
             element_strokes.to_mut().clear_shadows();
@@ -2774,7 +3336,15 @@ impl RenderState {
                 self.render_shape_enter(element, mask, target_surface);
             }
 
-            if !node_render_state.is_root() && self.focus_mode.is_active() {
+            // Drag-sprite Phase C: ancestors of the dragged shape walk into
+            // their children so above-siblings nested inside a frame can be
+            // reached, but we skip painting their own fills/strokes/effects
+            // — the captured backdrop already contains them, and re-painting
+            // here would double-render frame backgrounds on top of the
+            // sprite each frame.
+            let skip_paint_for_node = self.render_skip_paint.contains(&node_id);
+
+            if !skip_paint_for_node && !node_render_state.is_root() && self.focus_mode.is_active() {
                 let translation = self
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
@@ -2823,7 +3393,7 @@ impl RenderState {
                 self.surfaces
                     .canvas(SurfaceId::DropShadows)
                     .clear(skia::Color::TRANSPARENT);
-            } else if visited_children {
+            } else if !skip_paint_for_node && visited_children {
                 self.apply_drawing_to_render_canvas(Some(element), target_surface);
             }
 
@@ -2876,6 +3446,12 @@ impl RenderState {
                 let children_ids = sort_z_index(tree, element, children_ids);
 
                 for child_id in children_ids.iter() {
+                    // Drag-sprite capture: skip excluded subtrees (the
+                    // dragged shape itself, and on the Phase C above-only
+                    // pass, every below-sibling at each ancestor level).
+                    if self.render_exclude.contains(child_id) {
+                        continue;
+                    }
                     self.pending_nodes.push(NodeRenderState {
                         id: *child_id,
                         visited_children: false,
@@ -3049,9 +3625,17 @@ impl RenderState {
                         // siblings inside the same tile would disappear.
                         let mut valid_ids = Vec::with_capacity(ids.len());
                         if self.options.is_interactive_transform() || tile_has_bg_blur {
-                            valid_ids.extend(root_ids.iter().copied());
+                            valid_ids.extend(
+                                root_ids
+                                    .iter()
+                                    .copied()
+                                    .filter(|id| !self.render_exclude.contains(id)),
+                            );
                         } else {
                             for root_id in root_ids.iter() {
+                                if self.render_exclude.contains(root_id) {
+                                    continue;
+                                }
                                 if ids.contains(root_id) {
                                     valid_ids.push(*root_id);
                                 }
