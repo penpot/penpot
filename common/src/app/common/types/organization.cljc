@@ -8,18 +8,21 @@
   (:require
    [app.common.schema :as sm]))
 
+(def schema:organization
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:slug ::sm/text]
+   [:owner-id ::sm/uuid]
+   [:avatar-bg-url ::sm/uri]
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]])
+
+
 (def schema:team-with-organization
   [:map
    [:id ::sm/uuid]
    [:is-your-penpot :boolean]
-   [:organization
-    [:map
-     [:id ::sm/uuid]
-     [:name ::sm/text]
-     [:slug ::sm/text]
-     [:owner-id ::sm/uuid]
-     [:avatar-bg-url ::sm/uri]
-     [:logo-id {:optional true} [:maybe ::sm/uuid]]]]])
+   [:organization schema:organization]])
 
 (def organization->team-keys
   "Mapping from organization field keys to their corresponding :organization-* team keys."
