@@ -50,7 +50,7 @@ if echo "$PENPOT_FLAGS" | grep -q "enable-mcp"; then
     tmux new-window -t penpot:4 -n 'mcp server'
     tmux select-window -t penpot:4
     tmux send-keys -t penpot 'cd penpot/mcp' enter C-l
-    tmux send-keys -t penpot 'PENPOT_MCP_SERVER_HOST=0.0.0.0 PENPOT_MCP_REMOTE_MODE=true pnpm run start' enter
+    tmux send-keys -t penpot './scripts/start-mcp-devenv' enter
 fi
 
 tmux -2 attach-session -t penpot

@@ -11,6 +11,8 @@ import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
 import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
 import { ExportShapeTool } from "./tools/ExportShapeTool";
 import { ImportImageTool } from "./tools/ImportImageTool";
+import { EvalCljsExpressionTool } from "./tools/EvalCljsExpressionTool";
+import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 
@@ -152,6 +154,16 @@ export class PenpotMcpServer {
     }
 
     /**
+     * Indicates whether the server is running in a Penpot development environment.
+     *
+     * When enabled (by setting the environment variable PENPOT_MCP_DEVENV to "true"),
+     * additional developer tools such as ClojureScript expression evaluation are exposed.
+     */
+    public isDevEnv(): boolean {
+        return process.env.PENPOT_MCP_DEVENV === "true";
+    }
+
+    /**
      * Retrieves the high-level overview instructions explaining core Penpot usage.
      */
     public getHighLevelOverviewInstructions(): string {
@@ -176,6 +188,9 @@ export class PenpotMcpServer {
         ];
         if (this.isFileSystemAccessEnabled()) {
             toolInstances.push(new ImportImageTool(this));
+        }
+        if (this.isDevEnv()) {
+            toolInstances.push(new EvalCljsExpressionTool(this, new NreplClient()));
         }
 
         return toolInstances.map((instance) => {
@@ -341,6 +356,7 @@ export class PenpotMcpServer {
             this.app.listen(this.port, this.host, async () => {
                 this.logger.info(`Multi-user mode: ${this.isMultiUserMode()}`);
                 this.logger.info(`Remote mode: ${this.isRemoteMode()}`);
+                this.logger.info(`DevEnv mode: ${this.isDevEnv()}`);
                 this.logger.info(`Modern Streamable HTTP endpoint: http://${this.host}:${this.port}/mcp`);
                 this.logger.info(`Legacy SSE endpoint: http://${this.host}:${this.port}/sse`);
                 this.logger.info(`WebSocket server URL: ws://${this.host}:${this.webSocketPort}`);
