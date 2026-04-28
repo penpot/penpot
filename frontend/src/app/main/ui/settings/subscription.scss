@@ -194,6 +194,13 @@
   margin-block-start: var(--sp-xl);
 }
 
+.inline-error {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-error);
+  margin-block: var(--sp-s) 0;
+}
+
 .modal-overlay {
   @extend %modal-overlay-base;
 }

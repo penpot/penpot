@@ -4,12 +4,12 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
+   [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -39,7 +39,8 @@
            code-action
            editors
            recommended
-           show-button-cta]}]
+           show-button-cta
+           inline-error]}]
 
   (let [has-trial? (and cta-link-trial cta-text-trial)
         has-cta-with-icon? (and cta-link-with-icon cta-text-with-icon)
@@ -100,7 +101,9 @@
                              #(st/emit! (modal/show {:type :nitrate-code-activation})))}
         (if (= code-action :activate)
           (tr "subscription.settings.activate-by-code")
-          (tr "nitrate.subscription.settings.renew-with-code"))])]))
+          (tr "nitrate.subscription.settings.renew-with-code"))])
+     (when inline-error
+       [:p {:class (stl/css :inline-error)} inline-error])]))
 
 (defn- get-subscription-name [subscription-type subscribe-to-trial?]
   (if subscribe-to-trial?
@@ -399,6 +402,30 @@
             (= params-subscription "subscribed-to-penpot-enterprise")
             (= params-subscription "subscribed-to-penpot-nitrate"))
 
+        nitrate-toast-message
+        (condp = params-subscription
+          dnt/nitrate-checkout-finish-error-token (tr "subscription.error.nitrate.checkout-finish-failed")
+          dnt/nitrate-checkout-cancelled-token    (tr "subscription.error.nitrate.checkout-cancelled")
+          nil)
+
+        nitrate-toast-level
+        (cond
+          (= params-subscription dnt/nitrate-checkout-cancelled-token) :info
+          (some? nitrate-toast-message)                                :error)
+
+        show-nitrate-start-error?
+        (= params-subscription dnt/nitrate-checkout-error-token)
+
+        nitrate-start-error*
+        (mf/use-state false)
+
+        nitrate-start-error?
+        (deref nitrate-start-error*)
+
+        nitrate-start-error-message
+        (when nitrate-start-error?
+          (tr "subscription.error.nitrate.checkout-failed"))
+
         success-modal-is-trial?
         (-> route :params :query :trial)
 
@@ -485,10 +512,26 @@
     (mf/with-effect [authenticated?
                      show-subscription-success-modal?
                      show-trial-subscription-modal?
+                     show-nitrate-start-error?
                      success-modal-is-trial?
+                     nitrate-toast-message
+                     nitrate-toast-level
                      subscription]
       (when ^boolean authenticated?
+        (when ^boolean show-nitrate-start-error?
+          (reset! nitrate-start-error* true))
         (cond
+          (some? nitrate-toast-message)
+          (st/emit!
+           (ntf/show {:content nitrate-toast-message
+                      :type :toast
+                      :level nitrate-toast-level
+                      :timeout 7000})
+           (rt/nav :settings-subscription {} {::rt/replace true}))
+
+          ^boolean show-nitrate-start-error?
+          (st/emit! (rt/nav :settings-subscription {} {::rt/replace true}))
+
           ^boolean show-trial-subscription-modal?
 
           (st/emit!
@@ -676,7 +719,8 @@
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :code-action :activate
-                         :show-button-cta (not nitrate-license)}])]]]))
+                         :show-button-cta (not nitrate-license)
+                         :inline-error nitrate-start-error-message}])]]]))
 
 
 (def ^:private schema:nitrate-form
@@ -703,13 +747,8 @@
         (mf/use-fn
          (mf/deps form)
          (fn []
-           (let [subscription (-> @form :clean-data :subscription name)
-                 return-url   (dm/str
-                               (rt/get-current-href)
-                               "?"
-                               (u/map->query-string
-                                {:subscription "subscribed-to-penpot-nitrate"}))]
-             (dnt/go-to-buy-nitrate-license subscription return-url))))]
+           (let [subscription (-> @form :clean-data :subscription name)]
+             (dnt/go-to-buy-nitrate-license subscription (rt/get-current-href)))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
