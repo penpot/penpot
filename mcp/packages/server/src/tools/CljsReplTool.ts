@@ -7,53 +7,54 @@ import { PenpotMcpServer } from "../PenpotMcpServer";
 import { NreplClient } from "../NreplClient";
 
 /**
- * Arguments for the EvalCljsExpressionTool.
+ * Arguments for the CljsReplTool.
  */
-export class EvalCljsExpressionArgs {
+export class CljsReplArgs {
     static schema = {
-        expression: z.string().min(1, "Expression cannot be empty"),
+        code: z.string().min(1, "Code cannot be empty"),
     };
 
     /**
-     * The ClojureScript expression to evaluate in the frontend runtime.
+     * The ClojureScript code to evaluate in the frontend runtime.
      */
-    expression!: string;
+    code!: string;
 }
 
 /**
- * Tool for evaluating ClojureScript expressions in the Penpot frontend runtime.
+ * A ClojureScript REPL for the Penpot frontend runtime.
  *
- * This tool connects to the shadow-cljs nREPL server and evaluates the given
- * ClojureScript expression in the context of the running browser application,
- * providing direct access to the frontend application state and APIs.
+ * This tool provides a persistent REPL session connected to the shadow-cljs nREPL server.
+ * Definitions, requires, and other state are preserved across calls, enabling iterative
+ * exploration and manipulation of the running Penpot application.
  */
-export class EvalCljsExpressionTool extends Tool<EvalCljsExpressionArgs> {
+export class CljsReplTool extends Tool<CljsReplArgs> {
     private readonly nreplClient: NreplClient;
 
     /**
-     * Creates a new EvalCljsExpressionTool instance.
+     * Creates a new CljsReplTool instance.
      *
      * @param mcpServer - the MCP server instance
      * @param nreplClient - the nREPL client for communicating with shadow-cljs
      */
     constructor(mcpServer: PenpotMcpServer, nreplClient: NreplClient) {
-        super(mcpServer, EvalCljsExpressionArgs.schema);
+        super(mcpServer, CljsReplArgs.schema);
         this.nreplClient = nreplClient;
     }
 
     public getToolName(): string {
-        return "eval_cljs_expression";
+        return "cljs_repl";
     }
 
     public getToolDescription(): string {
         return (
-            "Evaluates a ClojureScript expression in the Penpot frontend runtime via the shadow-cljs nREPL server. " +
-            "The expression is evaluated in the browser context, providing access to the application state and ClojureScript APIs."
+            "Persistent ClojureScript REPL in the Penpot frontend runtime (via shadow-cljs nREPL). " +
+            "Definitions, requires, and state are preserved across calls — use it to build up helpers incrementally. " +
+            "Multiple top-level expressions per call are supported; each produces a result line."
         );
     }
 
-    protected async executeCore(args: EvalCljsExpressionArgs): Promise<ToolResponse> {
-        const result = await this.nreplClient.evalCljs(args.expression);
+    protected async executeCore(args: CljsReplArgs): Promise<ToolResponse> {
+        const result = await this.nreplClient.evalCljs(args.code);
 
         const parts: string[] = [];
         if (result.values.length > 0) {

@@ -16,7 +16,7 @@ declare module "nrepl-client" {
         send(message: Record<string, unknown>, callback: (err: Error | null, result: NreplMessage[]) => void): void;
 
         /**
-         * Clones the current session.
+         * Clones the current session, creating a new session that inherits the current state.
          */
         clone(callback: (err: Error | null, result: NreplMessage[]) => void): void;
 
@@ -29,6 +29,7 @@ declare module "nrepl-client" {
     interface NreplMessage {
         id?: string;
         session?: string;
+        "new-session"?: string;
         ns?: string;
         value?: string;
         out?: string;
@@ -48,4 +49,5 @@ declare module "nrepl-client" {
     function connect(options: ConnectOptions): NreplConnection;
 
     export default { connect };
+    export type { NreplConnection, NreplMessage, ConnectOptions };
 }
