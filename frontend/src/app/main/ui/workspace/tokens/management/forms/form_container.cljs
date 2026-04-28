@@ -55,8 +55,9 @@
                                 (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")}))
 
         font-weight-props (if (contains? cf/flags :token-combobox)
-                            (mf/spread-props props {:input-component token.controls/value-combobox*})
-                            props)
+                            (mf/spread-props props {:input-component token.controls/value-combobox*
+                                                    :input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})
+                            (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")}))
 
         border-radius-props (if (contains? cf/flags :token-combobox)
                               (mf/spread-props props {:input-component token.controls/value-combobox*})
