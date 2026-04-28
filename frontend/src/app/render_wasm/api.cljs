@@ -32,6 +32,7 @@
    [app.render-wasm.api.texts :as t]
    [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.deserializers :as dr]
+   [app.render-wasm.gesture :as wasm-gesture]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.mem.heap32 :as mem.h32]
@@ -1578,6 +1579,57 @@
     (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
     (set-objects base-objects on-render on-shapes-ready force-sync)))
 
+(defn- run-resource-callbacks!
+  [entries]
+  (if (seq entries)
+    (p/create
+     (fn [resolve _reject]
+       (->> (rx/from (vals (d/index-by :key :callback entries)))
+            (rx/merge-map (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+            (rx/reduce conj [])
+            (rx/subs! (fn [_] (resolve nil))
+                      (fn [_cause] (resolve nil))
+                      (fn [] (resolve nil))))))
+    (p/resolved nil)))
+
+(defn- replay-font-resources!
+  [fonts]
+  (let [pending (into [] (f/store-fonts fonts))]
+    (run-resource-callbacks! pending)))
+
+(defn- derive-font-resources
+  [base-objects payload-fonts]
+  (let [object-fonts
+        (->> (vals base-objects)
+             (filter cfh/text-shape?)
+             (mapcat (fn [shape]
+                       (let [content (ensure-text-content (:content shape))
+                             direct-fonts (f/get-content-fonts content)
+                             ;; `true` would call `write-shape-text`, which requires
+                             ;; an active current shape in WASM and can panic during
+                             ;; reload pre-processing. We only need fallback font
+                             ;; discovery here, so use side-effect free mode.
+                             fallback-fonts (fonts-from-text-content content false)]
+                         (concat direct-fonts fallback-fonts))))
+             (into #{}))]
+    (into [] (set (concat payload-fonts object-fonts)))))
+
+(defn- replay-image-resources!
+  [image-resources]
+  (let [pending
+        (into []
+              (keep (fn [{:keys [shape-id image-id thumbnail?]}]
+                      (when (and (uuid? image-id) (or (nil? shape-id) (uuid? shape-id)))
+                        (fetch-image (or shape-id uuid/zero) image-id (boolean thumbnail?)))))
+              image-resources)]
+    (run-resource-callbacks! pending)))
+
+(defn- wait-next-frame!
+  []
+  (p/create
+   (fn [resolve _reject]
+     (js/requestAnimationFrame (fn [] (resolve nil))))))
+
 (def ^:private default-context-options
   #js {:antialias false
        :depth true
@@ -1661,89 +1713,161 @@
 
 (defn init-canvas-context
   [canvas]
-  (let [gl      (unchecked-get wasm/internal-module "GL")
-        flags   (debug-flags)
-        context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
-        context (.getContext ^js canvas context-id default-context-options)
-        context-init? (not (nil? context))
-        browser (sr/translate-browser cf/browser)]
-    (when-not (nil? context)
-      (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
-        (.makeContextCurrent ^js gl handle)
-        (set! wasm/gl-context-handle handle)
-        (set! wasm/gl-context context)
+  (if-not (wasm/module-ready?)
+    false
+    (let [gl      (unchecked-get wasm/internal-module "GL")
+          flags   (debug-flags)
+          context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
+          context (.getContext ^js canvas context-id default-context-options)
+          context-init? (not (nil? context))
+          browser (sr/translate-browser cf/browser)]
+      (when-not (nil? context)
+        (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
+          (.makeContextCurrent ^js gl handle)
+          (set! wasm/gl-context-handle handle)
+          (set! wasm/gl-context context)
 
-        ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
-        (.getExtension context "WEBGL_debug_renderer_info")
+          ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
+          (.getExtension context "WEBGL_debug_renderer_info")
 
-        ;; Initialize Wasm Render Engine
-        (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-        (h/call wasm/internal-module "_set_render_options" flags dpr)
-        (when-let [t (wasm-aa-threshold-from-route-params)]
-          (h/call wasm/internal-module "_set_antialias_threshold" t))
-        (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
-          (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
-        (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
-          (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
-        (when-let [t (wasm-node-batch-threshold-from-route-params)]
-          (h/call wasm/internal-module "_set_node_batch_threshold" t))
-        (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
-          (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
-        (when-let [max-tex (webgl/max-texture-size context)]
-          (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
+          ;; Initialize Wasm Render Engine
+          (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
+          (h/call wasm/internal-module "_set_render_options" flags dpr)
+          (when-let [t (wasm-aa-threshold-from-route-params)]
+            (h/call wasm/internal-module "_set_antialias_threshold" t))
+          (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
+            (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
+          (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
+            (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
+          (when-let [t (wasm-node-batch-threshold-from-route-params)]
+            (h/call wasm/internal-module "_set_node_batch_threshold" t))
+          (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
+            (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
+          (when-let [max-tex (webgl/max-texture-size context)]
+            (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
 
-        ;; Set browser and canvas size only after initialization
-        (h/call wasm/internal-module "_set_browser" browser)
-        (set-canvas-size canvas)
+          ;; Set browser and canvas size only after initialization
+          (h/call wasm/internal-module "_set_browser" browser)
+          (set-canvas-size canvas)
 
-        ;; Add event listeners for WebGL context lost
-        (set! wasm/canvas canvas)
-        (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
-        (set! wasm/context-initialized? true)))
+          ;; Add event listeners for WebGL context lost
+          (set! wasm/canvas canvas)
+          (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
+          (reset! wasm/context-lost? false)
+          (set! wasm/context-initialized? true)))
 
-    context-init?))
+      context-init?)))
 
 (defn clear-canvas
-  []
-  (when wasm/context-initialized?
-    (try
-      (set! wasm/context-initialized? false)
+  ([]
+   (clear-canvas {:lose-browser-context? true}))
+  ([lose-browser-context?]
+   (try
+     (set! wasm/context-initialized? false)
 
-      ;; Cancel any pending animation frame to prevent race conditions
-      (when wasm/internal-frame-id
-        (js/cancelAnimationFrame wasm/internal-frame-id)
-        (set! wasm/internal-frame-id nil))
+     ;; Cancel any pending animation frame to prevent race conditions.
+     (when wasm/internal-frame-id
+       (js/cancelAnimationFrame wasm/internal-frame-id))
 
-      ;; Reset render flags to prevent new renders from being scheduled
-      (reset! pending-render false)
-      (reset! shapes-loading? false)
-      (reset! deferred-render? false)
+     ;; Reset render flags to prevent new renders from being scheduled.
+     (reset! pending-render false)
+     (reset! shapes-loading? false)
+     (reset! deferred-render? false)
 
-      (h/call wasm/internal-module "_clean_up")
+     ;; Remove listener before losing/deleting context.
+     (when wasm/canvas
+       (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost))
 
-      ;; Remove event listener for WebGL context lost
-      (when wasm/canvas
-        (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
-        (set! wasm/canvas nil))
+     (when (wasm/module-ready?)
+       (h/call wasm/internal-module "_clean_up"))
 
-      ;; Ensure the WebGL context is properly disposed so browsers do not keep
-      ;; accumulating active contexts between page switches.
-      (when-let [gl (unchecked-get wasm/internal-module "GL")]
-        (when-let [handle wasm/gl-context-handle]
-          (try
-            ;; Ask the browser to release resources explicitly if available.
-            (when-let [ctx wasm/gl-context]
-              (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
-                (.loseContext ^js lose-ext)))
-            (.deleteContext ^js gl handle)
-            (finally
-              (set! wasm/gl-context-handle nil)
-              (set! wasm/gl-context nil)))))
+     ;; Ensure the WebGL context is properly disposed so browsers do not keep
+     ;; accumulating active contexts between page switches.
+     (when-let [gl (unchecked-get wasm/internal-module "GL")]
+       (when-let [handle wasm/gl-context-handle]
+         (try
+           ;; For hard teardown we can explicitly lose browser context.
+           ;; For reload->reinit flows we skip this because immediate context
+           ;; recreation may fail on some browsers/GPUs while context is lost.
+           (when lose-browser-context?
+             (when-let [ctx wasm/gl-context]
+               (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
+                 (.loseContext ^js lose-ext))))
+           (.deleteContext ^js gl handle)
+           (catch :default dispose-error
+             (.error js/console dispose-error)))))
 
-      ;; If this calls panics we don't want to crash. This happens sometimes
-      ;; with hot-reload in develop
-      (catch :default error
-        (.error js/console error)))))
+     (wasm-gesture/reset-after-wasm-reload!)
+     (wasm/reset-context-state!)
+     true
+
+     ;; If this panics we don't want to crash. This happens sometimes with
+     ;; hot-reload in development.
+     (catch :default error
+       (.error js/console error)
+       (wasm-gesture/reset-after-wasm-reload!)
+       (wasm/reset-context-state!)
+       false))))
+
+(defn reload-renderer!
+  [{:keys [canvas
+           base-objects
+           zoom
+           vbox
+           fonts
+           image-resources
+           background
+           background-opacity
+           on-render
+           on-shapes-ready
+           force-sync]
+    :or {fonts []
+         image-resources []
+         background-opacity 1
+         force-sync false}
+    :as payload}]
+  (ug/dispatch! (ug/event "penpot:wasm:reload-start"))
+  (let [fonts (derive-font-resources base-objects fonts)]
+    (-> (p/resolved nil)
+        ;; Keep teardown strict (`_clean_up` + deleteContext) but do not
+        ;; force `loseContext` because we immediately create a new context.
+        (p/then (fn [_]
+                  (let [was-cleared? (clear-canvas {:lose-browser-context? false})]
+                    (when-not was-cleared?
+                      (ex/raise :type :wasm-error
+                                :code :wasm-reload-context-failure
+                                :hint "WASM renderer cleanup failed")))))
+        ;; Give browser a frame to settle context deletion before init.
+        (p/then (fn [_] (wait-next-frame!)))
+        (p/then (fn [_]
+                  (let [context-ready? (init-canvas-context canvas)]
+                    (when-not context-ready?
+                      (ex/raise :type :wasm-error
+                                :code :wasm-reload-context-failure
+                                :hint "WASM renderer could not create a new WebGL context"))
+                    ;; Gesture bookkeeping (`modifiers.cljs`) uses compare-and-set on an atom
+                    ;; that survives WASM teardown; reset so it matches fresh `_init` state.
+                    (wasm-gesture/reset-after-wasm-reload!))))
+        ;; Ensure render surfaces are blank before replay to avoid overpainting.
+        (p/then (fn [_] (h/call wasm/internal-module "_reset_canvas")))
+        (p/then (fn [_] (replay-font-resources! fonts)))
+        (p/then (fn [_] (replay-image-resources! image-resources)))
+        (p/then
+         (fn []
+           (initialize-viewport base-objects zoom vbox
+                                :background background
+                                :background-opacity background-opacity
+                                :on-render on-render
+                                :on-shapes-ready on-shapes-ready
+                                :force-sync force-sync)
+           (request-render "reload-renderer")
+           (ug/dispatch! (ug/event "penpot:wasm:reload-complete"))
+           payload))
+        (p/catch
+         (fn [cause]
+           (ug/dispatch! (ug/event "penpot:wasm:reload-failed"))
+           (clear-canvas)
+           (p/rejected cause))))))
 
 (defn show-grid
   [id]
