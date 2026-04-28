@@ -235,7 +235,6 @@
            :zoom zoom}])]]]))
 
 (mf/defc comments-sidebar*
-  {::mf/props :obj}
   [{:keys [profiles frame page]}]
   (let [profile     (mf/deref refs/profile)
         local       (mf/deref refs/comments-local)

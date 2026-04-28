@@ -372,8 +372,7 @@
     (st/emit! (dtm/update-member-role params))))
 
 (mf/defc team-member*
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+  {::mf/wrap [mf/memo]}
   [{:keys [team member total-members profile]}]
 
   (let [member-id     (:id member)
@@ -501,8 +500,7 @@
                            :on-leave on-leave'}]]]))
 
 (mf/defc team-members*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [team profile]}]
   (let [members (get team :members)
 
@@ -541,7 +539,6 @@
           :total-members total-members}])]]))
 
 (mf/defc team-members-page*
-  {::mf/props :obj}
   [{:keys [team profile]}]
   (mf/with-effect [team]
     (dom/set-html-title
@@ -570,7 +567,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc invitation-role-selector*
-  {::mf/props :obj}
   [{:keys [can-invite role status on-change]}]
   (let [show?   (mf/use-state false)
         label   (cond
@@ -616,8 +612,7 @@
         (tr "labels.viewer")]]]]))
 
 (mf/defc invitation-actions*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [invitation team-id]}]
   (let [email    (:email invitation)
         copied*  (mf/use-state false)
@@ -671,8 +666,7 @@
 
 (mf/defc invitation-row*
   {::mf/wrap [mf/memo]
-   ::mf/private true
-   ::mf/props :obj}
+   ::mf/private true}
   [{:keys [invitation can-invite team-id selected on-select-change]}]
 
   (let [expired? (:expired invitation)
@@ -738,8 +732,7 @@
           :team-id team-id}])]]))
 
 (mf/defc empty-invitation-table*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [can-invite team]}]
   (let
    [route                (mf/deref refs/route)
@@ -879,8 +872,7 @@
          (tr accept-key)]]]]]))
 
 (mf/defc invitation-section*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [team]}]
   (let [permissions (get team :permissions)
         invitations (mf/use-state (get team :invitations))
@@ -1064,7 +1056,6 @@
             :on-select-change on-select-change}])])]))
 
 (mf/defc team-invitations-page*
-  {::mf/props :obj}
   [{:keys [team profile]}]
 
   (mf/with-effect [team]
@@ -1218,7 +1209,6 @@
                     (tr "modals.create-webhook.submit-label"))}]]]]]]))
 
 (mf/defc webhooks-hero*
-  {::mf/props :obj}
   []
   [:div {:class (stl/css :webhooks-hero-container)}
    [:h2 {:class (stl/css :hero-title)}
@@ -1230,8 +1220,7 @@
     (tr "dashboard.webhooks.create")]])
 
 (mf/defc webhook-actions*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-edit on-delete can-edit]}]
   (let [show?   (mf/use-state false)
         on-show (mf/use-fn #(reset! show? true))
@@ -1254,7 +1243,6 @@
 
 (mf/defc webhook-item*
   {::mf/wrap [mf/memo]
-   ::mf/props :obj
    ::mf/private true}
   [{:keys [webhook permissions]}]
   (let [error-code (:error-code webhook)
@@ -1320,8 +1308,7 @@
         :can-edit can-edit}]]]))
 
 (mf/defc webhooks-list*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [webhooks permissions]}]
   [:div {:class (stl/css :table-rows :webhook-table)}
    (for [webhook webhooks]
@@ -1331,7 +1318,6 @@
        :permissions permissions}])])
 
 (mf/defc webhooks-page*
-  {::mf/props :obj}
   [{:keys [team]}]
   (let [webhooks (:webhooks team)]
 
@@ -1363,7 +1349,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc team-settings-page*
-  {::mf/props :obj}
   [{:keys [team]}]
   (let [nitrate?    (contains? cfg/flags :nitrate)
         finput      (mf/use-ref)
