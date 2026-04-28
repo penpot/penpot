@@ -467,6 +467,11 @@
   [path-editing? drawing-path? text-editing? grid-editing?]
   (hooks/use-shortcuts ::workspace wsc/shortcuts)
 
+  (mf/with-effect []
+    (.addEventListener js/window "keydown" wsc/on-display-guides-keydown)
+    (fn []
+      (.removeEventListener js/window "keydown" wsc/on-display-guides-keydown)))
+
   (mf/with-effect [path-editing? drawing-path? grid-editing?]
     (cond
       grid-editing?
