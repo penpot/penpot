@@ -3,6 +3,7 @@
    [cljs.test :as t]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.copy-as-svg-test]
+   [frontend-tests.data.nitrate-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
@@ -49,6 +50,7 @@
   (t/run-tests
    'frontend-tests.basic-shapes-test
    'frontend-tests.copy-as-svg-test
+   'frontend-tests.data.nitrate-test
    'frontend-tests.data.repo-test
    'frontend-tests.errors-test
    'frontend-tests.main-errors-test
