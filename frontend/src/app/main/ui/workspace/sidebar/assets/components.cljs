@@ -17,6 +17,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
    [app.main.refs :as refs]
@@ -191,7 +192,7 @@
 
 (mf/defc components-group*
   [{:keys [file-id prefix groups open-groups is-force-open renaming is-listing-thumbs selected on-asset-click
-           on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
+           on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-delete-group on-context-menu
            selected-full is-local count-variants on-group-combine-variants]}]
 
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
@@ -246,6 +247,7 @@
        :is-can-combine can-combine?
        :on-rename on-rename-group
        :on-ungroup on-ungroup
+       :on-delete-group on-delete-group
        :on-group-combine-variants on-group-combine-variants}]
 
      (when group-open?
@@ -303,6 +305,7 @@
                                    :cancel-rename cancel-rename
                                    :on-rename-group on-rename-group
                                    :on-ungroup on-ungroup
+                                   :on-delete-group on-delete-group
                                    :on-context-menu on-context-menu
                                    :on-group-combine-variants on-group-combine-variants
                                    :selected-full selected-full
@@ -493,6 +496,60 @@
                         (map #(dwv/rename-comp-or-variant-and-main (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
+        ;; Issue #9141. Delete every component under a group path in a
+        ;; single undo transaction, after user confirmation. Variants
+        ;; are handled via their variant container (matching the
+        ;; per-item delete dispatch in file_library.cljs); sibling
+        ;; variants sharing a container are deduplicated so we delete
+        ;; each container only once.
+        on-delete-group
+        (mf/use-fn
+         (mf/deps components on-clear-selection)
+         (fn [path]
+           (let [group-components
+                 (->> components
+                      (filter #(cpn/inside-path? (:path %) path)))
+
+                 {variants true non-variants false}
+                 (group-by (comp boolean ctc/is-variant?) group-components)
+
+                 ;; One delete-shapes per variant container, not per
+                 ;; sibling variant within that container.
+                 variant-containers
+                 (->> variants
+                      (group-by :variant-id)
+                      (map (fn [[_ comps]] (first comps))))
+
+                 ;; Hoisted so the start/commit pair is bound to the
+                 ;; same symbol regardless of how `do-delete` is
+                 ;; invoked by the confirm modal. Review suggestion
+                 ;; on PR #9151.
+                 undo-id (js/Symbol)
+
+                 do-delete
+                 (fn []
+                   (on-clear-selection)
+                   (st/emit! (dwu/start-undo-transaction undo-id))
+                   (run! st/emit!
+                         (map (fn [component]
+                                (dwsh/delete-shapes (:main-instance-page component)
+                                                    #{(:variant-id component)}))
+                              variant-containers))
+                   (run! st/emit!
+                         (map (fn [component]
+                                (dwl/delete-component {:id (:id component)}))
+                              non-variants))
+                   (st/emit! (dwu/commit-undo-transaction undo-id)))]
+             (when (seq group-components)
+               (st/emit!
+                (modal/show
+                 {:type :confirm
+                  :title (tr "modals.delete-asset-group.title")
+                  :message (tr "modals.delete-asset-group.message"
+                               (i18n/c (count group-components)))
+                  :accept-label (tr "labels.delete")
+                  :on-accept do-delete}))))))
+
         on-group-combine-variants
         (mf/use-fn
          (mf/deps components on-clear-selection)
@@ -602,6 +659,7 @@
                                :on-rename-group on-rename-group
                                :on-group on-group
                                :on-ungroup on-ungroup
+                               :on-delete-group on-delete-group
                                :on-group-combine-variants on-group-combine-variants
                                :on-context-menu on-context-menu
                                :selected-full selected-full

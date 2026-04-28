@@ -32,7 +32,6 @@
              st/state))
 
 (mf/defc search-page*
-  {::mf/props :obj}
   [{:keys [team search-term]}]
   (let [search-term (d/nilv search-term "")
 

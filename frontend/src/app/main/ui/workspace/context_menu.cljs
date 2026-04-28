@@ -55,8 +55,7 @@
   (dom/stop-propagation event))
 
 (mf/defc menu-entry*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave
            on-unmount children is-selected icon disabled value]}]
   (let [submenu-ref (mf/use-ref nil)
@@ -143,14 +142,12 @@
           children])])))
 
 (mf/defc menu-separator*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   []
   [:li {:class (stl/css :separator)}])
 
 (mf/defc context-menu-edit*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes]}]
   (let [multiple?         (> (count shapes) 1)
 
@@ -252,8 +249,7 @@
      [:> menu-separator* {}]]))
 
 (mf/defc context-menu-layer-position*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes]}]
   (let [do-bring-forward  (mf/use-fn #(st/emit! (dw/vertical-order-selected :up)))
         do-bring-to-front (mf/use-fn #(st/emit! (dw/vertical-order-selected :top)))
@@ -299,8 +295,7 @@
      [:> menu-separator* {}]]))
 
 (mf/defc context-menu-flip*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   []
   (let [do-flip-vertical #(st/emit! (dw/flip-vertical-selected))
         do-flip-horizontal #(st/emit! (dw/flip-horizontal-selected))]
@@ -315,8 +310,7 @@
      [:> menu-separator* {}]]))
 
 (mf/defc context-menu-thumbnail*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes]}]
   (let [single?    (= (count shapes) 1)
         has-frame? (some cfh/frame-shape? shapes)
@@ -332,8 +326,7 @@
        [:> menu-separator* {}]])))
 
 (mf/defc context-menu-rename*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes]}]
   (let [do-rename #(st/emit! (dw/start-rename-selected))]
     (when (= (count shapes) 1)
@@ -344,8 +337,7 @@
                         :on-click do-rename}]])))
 
 (mf/defc context-menu-group*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes]}]
   (let [multiple?       (> (count shapes) 1)
         single?         (= (count shapes) 1)
@@ -398,8 +390,7 @@
         [:> menu-separator* {}]])]))
 
 (mf/defc context-focus-mode-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   []
   (let [focus (mf/deref refs/workspace-focus-selected)
         do-toggle-focus-mode #(st/emit! (dw/toggle-focus-mode))]
@@ -411,8 +402,7 @@
                      :on-click do-toggle-focus-mode}]))
 
 (mf/defc context-menu-path*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes objects disable-flatten disable-booleans]}]
   (let [multiple?            (> (count shapes) 1)
         single?              (= (count shapes) 1)
@@ -489,8 +479,7 @@
                             :on-click do-transform-to-path}]])])]))
 
 (mf/defc context-menu-layer-options*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes]}]
   (let [ids (mapv :id shapes)
         do-show-shape #(st/emit! (dw/update-shape-flags ids {:hidden false}))
@@ -515,8 +504,7 @@
                         :on-click do-lock-shape}])]))
 
 (mf/defc context-menu-prototype*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes]}]
   (let [flows           (mf/deref refs/workspace-page-flows)
         options-mode    (mf/deref refs/options-mode-global)
@@ -537,8 +525,7 @@
                          :on-click do-add-flow}]))))
 
 (mf/defc context-menu-layout*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes]}]
   (let [single?      (= (count shapes) 1)
         objects      (deref refs/workspace-page-objects)
@@ -667,8 +654,7 @@
                         :on-click do-remove-guides}]])))
 
 (mf/defc context-menu-delete*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   []
   (let [do-delete #(st/emit! (dw/delete-selected))]
     [:*
@@ -711,8 +697,7 @@
        [:> context-menu-delete* props]])))
 
 (mf/defc page-item-context-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [mdata]}]
   (let [page (:page mdata)
         deletable? (:deletable? mdata)
@@ -739,7 +724,6 @@
                       :on-click do-duplicate}]]))
 
 (mf/defc viewport-context-menu*
-  {::mf/props :obj}
   []
   (let [focus      (mf/deref refs/workspace-focus-selected)
         read-only? (mf/use-ctx ctx/workspace-read-only?)
@@ -762,8 +746,7 @@
                         :on-click do-toggle-focus-mode}])]))
 
 (mf/defc grid-track-context-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [mdata]}]
   (let [{:keys [type index grid-id]} mdata
         do-delete-track
@@ -812,8 +795,7 @@
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.delete-shapes") :on-click do-delete-track-shapes}]])))
 
 (mf/defc grid-cells-context-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [mdata]}]
   (let [{:keys [grid cells]} mdata
 

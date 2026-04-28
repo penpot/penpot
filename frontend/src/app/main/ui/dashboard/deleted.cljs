@@ -54,8 +54,7 @@
                 :on-accept accept-fn}))))
 
 (mf/defc header*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   []
   [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
    [:div#dashboard-deleted-title {:class (stl/css :dashboard-title)}

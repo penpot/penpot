@@ -418,9 +418,10 @@
         (cond-> #js {:pointerEvents "all"}
           render-wasm?
           (obj/merge!
-           #js {"--editor-container-width" (dm/str width "px")
-                "--editor-container-height" (dm/str height "px")
-                "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")})
+           #js {"--editor-container-width" "auto"
+                "--editor-container-height" "auto"
+                "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")
+                :display "flex"})
 
           (not render-wasm?)
           (obj/merge!
