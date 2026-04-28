@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-04-28 15:09+0000\n"
+"PO-Revision-Date: 2026-04-29 17:10+0000\n"
 "Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -2060,7 +2060,7 @@ msgstr ""
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
 msgid "inspect.layer-info"
-msgstr "Info sur la couche"
+msgstr "Infos sur le calque"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:137
 msgid "inspect.multiple-selected"
@@ -4920,8 +4920,8 @@ msgstr[1] "Il y a actuellement %s personnes dans vos équipe qui peuvent être 
 #: src/app/main/ui/settings/subscription.cljs:230
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
-"Attention : changer vers un abonnement plus bas signifie moins de stockage "
-"et des sauvegardes et des version d'historique plus courtes."
+"Attention : en passant à un abonnement inférieur, le stockage est moins "
+"important et les sauvegardes et les version d'historique sont plus courtes."
 
 #: src/app/main/ui/settings/subscription.cljs:211
 msgid "subscription.settings.management.dialog.editors"
@@ -7356,7 +7356,7 @@ msgstr "Copier en CSS"
 
 #: src/app/main/ui/workspace/context_menu.cljs:220
 msgid "workspace.shape.menu.copy-css-nested"
-msgstr "Copier en CSS (couches imbriquées)"
+msgstr "Copier en CSS (calques imbriqués)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:203
 msgid "workspace.shape.menu.copy-link"
@@ -8655,3 +8655,203 @@ msgstr "WebGL ne fonctionne plus. Rechargez la page pour le réinitialiser"
 #: src/app/main/ui/static.cljs:314
 msgid "errors.webgl-context-lost.main-message"
 msgstr "Oups ! Le contexte du canevas a été perdu"
+
+#: src/app/main/ui/dashboard/subscription.cljs:196
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"Il y a %s éditeurs dans les équipes dont vous êtes propriétaire alors que "
+"votre abonnement Professionnel permet d'en avoir jusqu'à 8."
+
+#: src/app/main/ui/dashboard/subscription.cljs:184
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"Seuls les nouveaux éditeurs dans les équipes dont vous êtes propriétaire "
+"sont pris en compte pour la facturation future. Un forfait de 175 $/mois "
+"s'applique toujours au-delà de 25 éditeurs."
+
+#: src/app/main/ui/settings/subscription.cljs:298
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Ajouter les détails de paiement"
+
+#: src/app/main/ui/settings/subscription.cljs:285
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Ajoutez vos détails de paiement dès maintenant pour que votre abonnement ne "
+"soit pas interrompu après la période d'essai et pour continuer à soutenir "
+"notre projet Open Source. Vous n'allez pas être facturé pour le moment."
+
+#: src/app/main/ui/settings/subscription.cljs:293
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Ignorer pour le moment et commencer l'essai"
+
+#: src/app/main/ui/settings/subscription.cljs:203
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Aidez-nous à nous développer et à faciliter votre essai"
+
+#: src/app/main/ui/settings/subscription.cljs:263
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"Vous pouvez réduire votre nombre actuel d'éditeurs. Dans les paramètres de "
+"l'équipe, modifiez le rôle (d'éditeur/admin en spectateur) des personnes qui "
+"ne modifient pas vraiment des fichiers."
+
+#: src/app/main/ui/settings/subscription.cljs:266
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr ""
+"Conseil : vous pouvez augmenter le nombre de vos utilisateurs dès maintenant "
+"pour anticiper les invitations. Au-delà de 25 éditeurs dans vos équipes, un "
+"forfait de 175 $/mois vous sera facturé."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:58
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"Si vous souhaitez augmenter cette limite, [mettez votre abonnement à "
+"niveau|target:self](%s)"
+
+#: src/app/main/ui/viewer/header.cljs:187
+msgid "viewer.header.edit-in-workspace"
+msgstr "Modifier dans l'espace de travail"
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "Outils de débogage"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
+msgid "workspace.layout-item.fit-content-horizontal"
+msgstr "Adapter le contenu (horizontalement)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
+msgid "workspace.layout-item.fit-content-vertical"
+msgstr "Adapter le contenu (verticalement)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:567
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"Ce composant comporte des variantes en conflit. Assurez-vous que chaque "
+"variante possède une collection de valeurs de propriétés unique."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:267
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr ""
+"Ces variantes possèdent des propriétés et des valeurs identiques. Ajustez "
+"les valeurs afin de pouvoir les extraire."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:557
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"Ce composant comporte des variantes dont le nom n'est pas valide. Assurez-"
+"vous que chaque variante respecte la structure appropriée."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:91
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"Si vous modifiez l'un de ces éléments (par exemple, en renommant ou en "
+"regroupant un calque), la connexion est rompue. Si vous annulez la "
+"modification, la connexion est rétablie."
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:129
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Taille de police ou {alias}"
+
+#: src/app/main/data/workspace/tokens/application.cljs:325
+msgid "workspace.tokens.font-variant-not-found"
+msgstr ""
+"Erreur lors de la définition de la graisse/du style de la police. Ce style "
+"de police n'existe pas dans la police active"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr ""
+"Valeur de token non valide : vous ne pouvez référencer qu'un token de "
+"famille de polices"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:153
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Interlettrage ou {alias}"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+#, unused
+msgid "workspace.tokens.no-remap-needed"
+msgstr ""
+"Ce token n'est pas utilisé actuellement dans votre conception. Aucun "
+"remappage n'est donc nécessaire."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
+msgid "workspace.tokens.not-remap"
+msgstr "Ne pas remapper"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:178
+msgid "workspace.tokens.reference-composite"
+msgstr "Entrer un alias de typographie pour un token"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:204
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Entrer un alias d'ombre pour un token"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:99
+msgid "workspace.tokens.remap"
+msgstr "Remapper des tokens"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "Remapper tous les tokens qui utilisent «  %s  » dans « %s » ?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
+msgid "workspace.tokens.remap-warning-effects"
+msgstr ""
+"Tous les calques et les références utilisant l'ancien nom du token vont être "
+"modifiés."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
+#, unused
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "Remappage des références du token..."
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+#, unused
+msgid "workspace.tokens.warning-name-change"
+msgstr "Si vous renommez ce token, toute référence à son ancien nom sera rompue"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:261
+msgid "labels.switch"
+msgstr "Changer"
+
+#: src/app/main/ui/dashboard/subscription.cljs:84
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Passez à un forfait supérieur !"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
+msgid "workspace.layout-item.fix-height"
+msgstr "Corriger la hauteur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
+msgid "workspace.layout-item.fix-width"
+msgstr "Corriger la largeur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:570
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Chercher les variantes en conflit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr "Vers le bas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "À l'intérieur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "À l'extérieur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:265
+msgid "workspace.options.more-token-colors"
+msgstr "Plus de tokens de couleur"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Valeur de graisse de la police non valide : utilisez des valeurs numériques "
+"(100 à 950) ou des noms standard (thin, light, regular, bold, etc.) "
+"éventuellement suivi de la mention « Italic »"
