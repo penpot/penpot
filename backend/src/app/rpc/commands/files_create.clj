@@ -14,6 +14,7 @@
    [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -112,22 +113,37 @@
                         ::quotes/profile-id profile-id
                         ::quotes/project-id project-id})
 
-    ;; FIXME: IMPORTANT: this code can have race conditions, because
-    ;; we have no locks for updating team so, creating two files
-    ;; concurrently can lead to lost team features updating
+    ;; Two concurrent `create-file` calls against the same team would
+    ;; both read `team.features` here without holding any lock, then
+    ;; each compute features ∪ team.features and write back, with the
+    ;; second commit silently clobbering the first's appended feature
+    ;; (#9197 lost-update race). We do a cheap unlocked check first
+    ;; against the already-read `team` row so the common case of
+    ;; "team already has all my features" still avoids the lock; only
+    ;; when an actual write looks necessary do we acquire
+    ;; `SELECT ... FOR UPDATE` on the team row inside this RPC's
+    ;; existing transaction (`::db/transaction true` on the defmethod)
+    ;; and re-derive the diff against the locked, committed value.
+    ;; The lock is released on transaction commit / rollback, so a
+    ;; second waiter sees our merged features when it reads.
     (when-let [features (-> features
                             (set/difference (:features team))
                             (set/difference cfeat/no-team-inheritable-features)
                             (not-empty))]
-      (let [features (-> features
-                         (set/union (:features team))
-                         (set/difference cfeat/no-team-inheritable-features)
-                         (into-array))]
+      (let [locked-team-features (-> (db/get-by-id conn :team team-id ::sql/for-update true)
+                                     (:features))]
+        (when-let [features (-> features
+                                (set/difference locked-team-features)
+                                (not-empty))]
+          (let [features (-> features
+                             (set/union locked-team-features)
+                             (set/difference cfeat/no-team-inheritable-features)
+                             (into-array))]
 
-        (db/update! conn :team
-                    {:features features}
-                    {:id (:id team)}
-                    {::db/return-keys false})))
+            (db/update! conn :team
+                        {:features features}
+                        {:id team-id}
+                        {::db/return-keys false})))))
 
     (-> (create-file cfg params)
         (vary-meta assoc ::audit/props {:team-id team-id}))))
