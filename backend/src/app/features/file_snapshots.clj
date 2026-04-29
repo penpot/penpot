@@ -112,8 +112,9 @@
                   THEN (c.deleted_at IS NULL OR c.deleted_at >= ?::timestamptz)
               END"))
 
-(defn- get-snapshot
-  "Get snapshot with decoded data"
+(defn get-snapshot-data
+  "Get a fully decoded snapshot for read-only preview or restoration.
+  Returns the snapshot map with decoded :data field."
   [cfg file-id snapshot-id]
   (let [now (ct/now)]
     (->> (db/get-with-sql cfg [sql:get-snapshot file-id snapshot-id now]
@@ -326,7 +327,7 @@
         (sto/resolve cfg {::db/reuse-conn true})
 
         snapshot
-        (get-snapshot cfg file-id snapshot-id)]
+        (get-snapshot-data cfg file-id snapshot-id)]
 
     (when-not snapshot
       (ex/raise :type :not-found

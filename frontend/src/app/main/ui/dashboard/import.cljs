@@ -192,8 +192,7 @@
             (swap! state update-entry-status message))))))
 
 (mf/defc import-entry*
-  {::mf/props :obj
-   ::mf/memo true
+  {::mf/memo true
    ::mf/private true}
   [{:keys [entries entry edition can-be-deleted importing? on-edit on-change on-delete]}]
   (let [status          (:status entry)
@@ -295,7 +294,9 @@
 
        import-error?
        [:div {:class (stl/css :error-message)}
-        (tr "labels.error")]
+        (if (some? (:error entry))
+          (tr (:error entry))
+          (tr "labels.error"))]
 
        (and (not import-success?) (some? progress))
        [:div {:class (stl/css :progress-message)} (parse-progress-message progress)])
@@ -491,7 +492,12 @@
           [:ul {:class (stl/css :import-error-list)}
            (for [entry entries]
              (when (contains? #{:import-error :analyze-error} (:status entry))
-               [:li {:class (stl/css :import-error-list-enry)} (:name entry)]))]
+               [:li {:class (stl/css :import-error-list-enry)
+                     :key (dm/str (or (:file-id entry) (:uri entry) (:name entry)))}
+                [:div (:name entry)]
+                (when-let [err (:error entry)]
+                  [:div {:class (stl/css :import-error-detail)}
+                   (tr err)])]))]
           [:div (tr "dashboard.import.import-error.message2")]]
 
          (for [entry entries]

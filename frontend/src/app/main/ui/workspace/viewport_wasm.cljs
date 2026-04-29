@@ -98,6 +98,7 @@
         {:keys [options-mode
                 tooltip
                 show-distances?
+                preview-id
                 picking-color?]}
         wglobal
 
@@ -369,7 +370,7 @@
                       :else
                       (show-unavailable)))))]
           (reset! canvas-init? false)
-          (->> wasm.api/module
+          (->> @wasm.api/module
                (p/fmap (fn [ready?]
                          (when ready?
                            (try-init 3)))))
@@ -377,6 +378,7 @@
             (vreset! unmounted? true)
             (when-let [timeout-id @timeout-id-ref]
               (js/clearTimeout timeout-id))
+            (wasm.api/end-page-transition!)
             (wasm.api/clear-canvas)))))
 
     (mf/with-effect [show-text-editor? workspace-editor-state edition]
@@ -456,22 +458,28 @@
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
     [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
-     (when (:can-edit permissions)
-       (if read-only?
-         [:> view-only-bar* {}]
-         [:*
-          (when-not hide-ui?
-            [:> top-toolbar* {:layout layout}])
 
-          (when (and ^boolean path-editing?
-                     ^boolean single-select?)
-            [:> path-edition-bar* {:shape editing-shape
-                                   :edit-path-state edit-path-state
-                                   :layout layout}])
+     (cond
+       (some? preview-id)
+       nil
 
-          (when (and ^boolean grid-editing?
-                     ^boolean single-select?)
-            [:> grid-edition-bar* {:shape editing-shape}])]))
+       (and read-only? (:can-edit permissions))
+       [:> view-only-bar* {}]
+
+       :else
+       [:*
+        (when-not hide-ui?
+          [:> top-toolbar* {:layout layout}])
+
+        (when (and ^boolean path-editing?
+                   ^boolean single-select?)
+          [:> path-edition-bar* {:shape editing-shape
+                                 :edit-path-state edit-path-state
+                                 :layout layout}])
+
+        (when (and ^boolean grid-editing?
+                   ^boolean single-select?)
+          [:> grid-edition-bar* {:shape editing-shape}])])
 
      [:div {:class (stl/css :viewport-overlays)}
       (when show-comments?

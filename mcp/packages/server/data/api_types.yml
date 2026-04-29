@@ -26,6 +26,7 @@ Penpot:
             props?: { [key: string]: unknown },
         ): symbol;
         off(listenerId: symbol): void;
+        version: string;
         root: Shape | null;
         currentFile: File | null;
         currentPage: Page | null;
@@ -72,7 +73,7 @@ Penpot:
         generateFontFaces(shapes: Shape[]): Promise<string>;
         openViewer(): void;
         createPage(): Page;
-        openPage(page: Page, newWindow?: boolean): void;
+        openPage(page: string | Page, newWindow?: boolean): void;
         alignHorizontal(
             shapes: Shape[],
             direction: "center" | "left" | "right",
@@ -162,6 +163,12 @@ Penpot:
         ```
         penpot.closePlugin();
         ```
+      version: |-
+        ```
+        readonly version: string
+        ```
+
+        Returns the current penpot version.
       root: |-
         ```
         readonly root: Shape | null
@@ -725,19 +732,19 @@ Penpot:
         Returns Page
       openPage: |-
         ```
-        openPage(page: Page, newWindow?: boolean): void
+        openPage(page: string | Page, newWindow?: boolean): void
         ```
 
         Changes the current open page to given page. Requires `content:read` permission.
 
         Parameters
 
-        * page: Page
+        * page: string | Page
 
-          the page to open
+          the page to open (a Page object or a page UUID string)
         * newWindow: boolean
 
-          if true opens the page in a new window
+          if true opens the page in a new window, defaults to false
 
         Returns void
 
@@ -4785,6 +4792,7 @@ Context:
 
     ```
     interface Context {
+        version: string;
         root: Shape | null;
         currentFile: File | null;
         currentPage: Page | null;
@@ -4837,7 +4845,7 @@ Context:
         removeListener(listenerId: symbol): void;
         openViewer(): void;
         createPage(): Page;
-        openPage(page: Page, newWindow?: boolean): void;
+        openPage(page: string | Page, newWindow?: boolean): void;
         alignHorizontal(
             shapes: Shape[],
             direction: "center" | "left" | "right",
@@ -4854,6 +4862,12 @@ Context:
     ```
   members:
     Properties:
+      version: |-
+        ```
+        readonly version: string
+        ```
+
+        Returns the current penpot version.
       root: |-
         ```
         readonly root: Shape | null
@@ -5392,19 +5406,19 @@ Context:
         Returns Page
       openPage: |-
         ```
-        openPage(page: Page, newWindow?: boolean): void
+        openPage(page: string | Page, newWindow?: boolean): void
         ```
 
         Changes the current open page to given page. Requires `content:read` permission.
 
         Parameters
 
-        * page: Page
+        * page: string | Page
 
-          the page to open
+          the page to open (a Page object or a page UUID string)
         * newWindow: boolean
 
-          if true opens the page in a new window
+          if true opens the page in a new window, defaults to false
 
         Returns void
 
@@ -6845,7 +6859,7 @@ Export:
 
     ```
     interface Export {
-        type: "svg" | "png" | "jpeg" | "pdf";
+        type: "svg" | "png" | "jpeg" | "webp" | "pdf";
         scale?: number;
         suffix?: string;
         skipChildren?: boolean;
@@ -6857,10 +6871,10 @@ Export:
     Properties:
       type: |-
         ```
-        type: "svg" | "png" | "jpeg" | "pdf"
+        type: "svg" | "png" | "jpeg" | "webp" | "pdf"
         ```
 
-        Type of the file to export. Can be one of the following values: png, jpeg, svg, pdf
+        Type of the file to export. Can be one of the following values: png, jpeg, webp, svg, pdf
       scale: |-
         ```
         scale?: number
@@ -7249,6 +7263,7 @@ Flags:
     ```
     interface Flags {
         naturalChildOrdering: boolean;
+        throwValidationErrors: boolean;
     }
     ```
 
@@ -7263,6 +7278,14 @@ Flags:
         If `true` the .children property will be always sorted in the z-index ordering.
         Also, appendChild method will be append the children in the top-most position.
         The insertchild method is changed acordingly to respect this ordering.
+        Defaults to false
+      throwValidationErrors: |-
+        ```
+        throwValidationErrors: boolean
+        ```
+
+        If `true` the validation errors will throw an exception instead of displaying an
+        error in the debugger console.
         Defaults to false
 FlexLayout:
   overview: |-

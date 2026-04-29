@@ -30,7 +30,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options typography-entry]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options* typography-entry]]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -429,10 +429,12 @@
               (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
                 (dom/focus! (txu/get-text-editor-content)))))))
 
-        common-props
-        (mf/props {:values    values
-                   :on-change on-change
-                   :on-blur   on-text-blur})]
+        common-props (mf/props
+                      {:ids         ids
+                       :values      values
+                       :on-change   on-change
+                       :show-recent true
+                       :on-blur     on-text-blur})]
 
     (hooks/use-stream
      expand-stream
@@ -496,15 +498,11 @@
                              :icon       i/detach}]]
 
           :else
-          [:> text-options  #js {:ids       ids
-                                 :values    values
-                                 :on-change on-change
-                                 :show-recent true
-                                 :on-blur   on-text-blur}])
+          [:> text-options* common-props])
 
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options* common-props]
-         [:> grow-options* (mf/spread-props common-props {:ids ids})]
+         [:> grow-options* common-props]
          [:> icon-button* {:variant     "ghost"
                            :aria-label  (tr "labels.options")
                            :data-testid "text-align-options-button"

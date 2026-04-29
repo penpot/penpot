@@ -278,7 +278,6 @@
                           :zoom zoom}])]])
 
 (mf/defc viewer-content*
-  {::mf/props :obj}
   [{:keys [data page-id share-id section index interactions-mode share]}]
   (let [{:keys [file users project permissions]} data
         allowed (or

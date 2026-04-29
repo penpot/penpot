@@ -17,11 +17,11 @@
    java.util.List
    linked.map.LinkedMap
    linked.set.LinkedSet
+   org.fressian.handlers.ReadHandler
+   org.fressian.handlers.WriteHandler
    org.fressian.Reader
    org.fressian.StreamingWriter
-   org.fressian.Writer
-   org.fressian.handlers.ReadHandler
-   org.fressian.handlers.WriteHandler))
+   org.fressian.Writer))
 
 (set! *warn-on-reflection* true)
 

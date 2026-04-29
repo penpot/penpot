@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.email.blacklist :as email.blacklist]
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
@@ -101,6 +102,46 @@
         (let [edata (-> out :error ex-data)]
           (t/is (= :validation (:type edata)))
           (t/is (= :member-is-muted (:code edata))))))))
+
+(t/deftest create-team-invitations-blacklisted-domain
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile1 (th/create-profile* 1 {:is-active true})
+          team     (th/create-team* 1 {:profile-id (:id profile1)})
+          data     {::th/type :create-team-invitations
+                    ::rpc/profile-id (:id profile1)
+                    :team-id (:id team)
+                    :role :editor}]
+
+      ;; invite from a directly blacklisted domain should fail
+      (with-redefs [email.blacklist/enabled?  (constantly true)
+                    email.blacklist/contains? (fn [_ email]
+                                                (clojure.string/ends-with? email "@blacklisted.com"))]
+        (let [out (th/command! (assoc data :emails ["user@blacklisted.com"]))]
+          (t/is (not (th/success? out)))
+          (t/is (= 0 (:call-count @mock)))
+          (let [edata (-> out :error ex-data)]
+            (t/is (= :restriction (:type edata)))
+            (t/is (= :email-domain-is-not-allowed (:code edata))))))
+
+      ;; invite from a subdomain of a blacklisted domain should also fail
+      (th/reset-mock! mock)
+      (with-redefs [email.blacklist/enabled?  (constantly true)
+                    email.blacklist/contains? (fn [_ email]
+                                                (clojure.string/ends-with? email "@sub.blacklisted.com"))]
+        (let [out (th/command! (assoc data :emails ["user@sub.blacklisted.com"]))]
+          (t/is (not (th/success? out)))
+          (t/is (= 0 (:call-count @mock)))
+          (let [edata (-> out :error ex-data)]
+            (t/is (= :restriction (:type edata)))
+            (t/is (= :email-domain-is-not-allowed (:code edata))))))
+
+      ;; invite from a non-blacklisted domain should succeed
+      (th/reset-mock! mock)
+      (with-redefs [email.blacklist/enabled?  (constantly true)
+                    email.blacklist/contains? (constantly false)]
+        (let [out (th/command! (assoc data :emails ["user@allowed.com"]))]
+          (t/is (th/success? out))
+          (t/is (= 1 (:call-count @mock))))))))
 
 (t/deftest create-team-invitations-with-request-access
   (with-mocks [mock {:target 'app.email/send! :return nil}]

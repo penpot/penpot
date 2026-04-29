@@ -5,6 +5,12 @@ const fs = require("fs");
 const path = require("path");
 
 const root = path.resolve(__dirname, "..");
+const pkg = require(path.join(root, "package.json"));
+
+function pnpmVersion() {
+  const match = (pkg.packageManager || "").match(/^pnpm@([^+]+)/);
+  return match ? match[1] : "latest";
+}
 
 function run(command) {
   execSync(command, { cwd: root, stdio: "inherit" });
@@ -19,13 +25,7 @@ if (fs.existsSync(distLock)) {
 }
 
 try {
-  run("corepack pnpm run bootstrap");
+  run(`npx -y pnpm@${pnpmVersion()} run bootstrap`);
 } catch (error) {
-  if (error.code === "ENOENT") {
-    console.error(
-      "corepack is required but was not found. It ships with Node.js >= 16."
-    );
-    process.exit(1);
-  }
   process.exit(error.status ?? 1);
 }

@@ -627,6 +627,7 @@
   (if (empty? fills)
     (h/call wasm/internal-module "_clear_shape_fills")
     (let [fills  (types.fills/coerce fills)
+          image-ids (types.fills/get-image-ids fills)
           offset (mem/alloc->offset-32 (types.fills/get-byte-size fills))
           heap   (mem/get-heap-u32)]
 
@@ -648,7 +649,7 @@
                 (when (zero? cached-image?)
                   (fetch-image shape-id id thumbnail?))))
 
-            (types.fills/get-image-ids fills)))))
+            image-ids))))
 
 (defn set-shape-strokes
   [shape-id strokes thumbnail?]
@@ -676,7 +677,8 @@
                 (some? gradient)
                 (do
                   (types.fills.impl/write-gradient-fill offset dview opacity gradient)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill"))
+                  (h/call wasm/internal-module "_add_shape_stroke_fill")
+                  nil)
 
                 (some? image)
                 (let [image-id      (get image :id)
@@ -693,7 +695,9 @@
                 (some? color)
                 (do
                   (types.fills.impl/write-solid-fill offset dview opacity color)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill"))))))
+                  (h/call wasm/internal-module "_add_shape_stroke_fill")
+                  nil)))))
+
         strokes))
 
 (defn set-shape-svg-attrs
@@ -1073,16 +1077,18 @@
 
 (defn intersect-position-in-shape
   [id position]
-  (let [buffer (uuid/get-u32 id)
-        result
-        (h/call wasm/internal-module "_intersect_position_in_shape"
-                (aget buffer 0)
-                (aget buffer 1)
-                (aget buffer 2)
-                (aget buffer 3)
-                (:x position)
-                (:y position))]
-    (= result 1)))
+  (if (and wasm/context-initialized? (not @wasm/context-lost?))
+    (let [buffer (uuid/get-u32 id)
+          result
+          (h/call wasm/internal-module "_intersect_position_in_shape"
+                  (aget buffer 0)
+                  (aget buffer 1)
+                  (aget buffer 2)
+                  (aget buffer 3)
+                  (:x position)
+                  (:y position))]
+      (= result 1))
+    false))
 
 (def render-finish
   (letfn [(do-render []
@@ -1303,16 +1309,17 @@
                        (when (or (seq pending-thumbnails) (seq pending-full))
                          (->> (rx/concat
                                (->> (rx/from (vals pending-thumbnails))
-                                    (rx/merge-map (fn [callback] (callback)))
+                                    (rx/merge-map
+                                     (fn [callback]
+                                       (if (fn? callback) (callback) (rx/empty))))
                                     (rx/reduce conj []))
                                (->> (rx/from (vals pending-full))
-                                    (rx/mapcat (fn [callback] (callback)))
+                                    (rx/mapcat
+                                     (fn [callback]
+                                       (if (fn? callback) (callback) (rx/empty))))
                                     (rx/reduce conj [])))
                               (rx/subs!
                                (fn [_]
-                                 ;; Fonts are now loaded — recompute text
-                                 ;; layouts so Skia uses the real metrics
-                                 ;; instead of fallback-font estimates.
                                  (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
                                    (when (seq text-ids)
                                      (update-text-layouts text-ids)))

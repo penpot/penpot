@@ -27,7 +27,6 @@
              st/state))
 
 (mf/defc libraries-page*
-  {::mf/props :obj}
   [{:keys [team default-project]}]
   (let [files
         (mf/deref refs/shared-files)

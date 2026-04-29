@@ -118,9 +118,10 @@
           :is-highlighted false}]))))
 
 (mf/defc nitrate-sidebar*
-  {::mf/props :obj}
   [{:keys [profile teams]}]
   (let [nitrate? (dnt/is-valid-license? profile)
+        nitrate-license (:subscription profile)
+        subscription-type (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
         orgs (mf/with-memo [teams]
                (let [orgs (->> teams
                                vals
@@ -134,8 +135,11 @@
 
         handle-click
         (mf/use-fn
+         (mf/deps nitrate-license subscription-type)
          (fn []
-           (st/emit! (dnt/show-nitrate-popup :nitrate-form))))
+           (if (= subscription-type "unlimited")
+             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         handle-go-to-cc
         (mf/use-fn dnt/go-to-nitrate-cc-create-org)]

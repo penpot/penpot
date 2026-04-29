@@ -1216,6 +1216,27 @@ msgstr "Type to search results"
 msgid "dashboard.unpublish-shared"
 msgstr "Unpublish Library"
 
+msgid "dashboard.webgl-switch.title"
+msgstr "WebGL rendering"
+
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
+
+msgid "dashboard.webgl-switch.description"
+msgstr "WebGL rendering can improve performance, but it is in beta and may be less stable. Some visual differences may appear between the canvas, exports (SVG/PDF), and view mode."
+
+msgid "dashboard.webgl-switch.status"
+msgstr "Status"
+
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Enabled"
+
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Disabled"
+
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Give feedback"
+
 #:src/app/main/ui/workspace/tokens/import_from_library.cljs
 msgid "modals.import-library-tokens.title"
 msgstr "Import tokens from library?"
@@ -3049,6 +3070,9 @@ msgstr "Resend invitation"
 msgid "labels.restore"
 msgstr "Restore"
 
+msgid "labels.exit"
+msgstr "Exit"
+
 #: src/app/main/ui/components/progress.cljs:80, src/app/main/ui/static.cljs:299, src/app/main/ui/static.cljs:308, src/app/main/ui/static.cljs:419
 msgid "labels.retry"
 msgstr "Retry"
@@ -3536,6 +3560,16 @@ msgstr "Are you sure you want to delete this page?"
 #: src/app/main/ui/workspace/context_menu.cljs:674, src/app/main/ui/workspace/sidebar/sitemap.cljs:94
 msgid "modals.delete-page.title"
 msgstr "Delete page"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs, src/app/main/ui/workspace/sidebar/assets/colors.cljs, src/app/main/ui/workspace/sidebar/assets/typographies.cljs
+msgid "modals.delete-asset-group.title"
+msgstr "Delete group"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs, src/app/main/ui/workspace/sidebar/assets/colors.cljs, src/app/main/ui/workspace/sidebar/assets/typographies.cljs
+msgid "modals.delete-asset-group.message"
+msgid_plural "modals.delete-asset-group.message"
+msgstr[0] "Are you sure you want to delete this asset?"
+msgstr[1] "Are you sure you want to delete these %s assets?"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:73
 msgid "modals.delete-project-confirm.accept"
@@ -5709,6 +5743,10 @@ msgstr "Text Transform"
 msgid "workspace.assets.ungroup"
 msgstr "Ungroup"
 
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs
+msgid "workspace.assets.delete-group"
+msgstr "Delete group"
+
 #: src/app/main/ui/workspace/colorpicker.cljs:428, src/app/main/ui/workspace/colorpicker.cljs:441
 msgid "workspace.colorpicker.color-tokens"
 msgstr "Color tokens"
@@ -5991,6 +6029,12 @@ msgstr "Switch to light theme"
 #: src/app/main/ui/workspace/main_menu.cljs:315
 msgid "workspace.header.menu.toggle-system-theme"
 msgstr "Switch to system theme"
+
+msgid "workspace.header.menu.enable-webgl"
+msgstr "Enable WebGL rendering (beta)"
+
+msgid "workspace.header.menu.disable-webgl"
+msgstr "Disable WebGL rendering (beta)"
 
 #: src/app/main/ui/workspace/main_menu.cljs:492
 msgid "workspace.header.menu.undo"
@@ -7651,6 +7695,14 @@ msgstr ""
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "Start file downloads."
 
+#: src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.permissions.clipboard-read"
+msgstr "Read the contents of your clipboard."
+
+#: src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.permissions.clipboard-write"
+msgstr "Read and write to your clipboard."
+
 #: src/app/main/ui/workspace/plugins.cljs:287
 msgid "workspace.plugins.permissions.allow-localstorage"
 msgstr "Store data in the browser."
@@ -9072,6 +9124,9 @@ msgstr "Autosaved %s"
 msgid "workspace.versions.button.pin"
 msgstr "Pin version"
 
+msgid "workspace.versions.button.preview"
+msgstr "Preview version"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:273
 msgid "workspace.versions.button.restore"
 msgstr "Restore version"
@@ -9115,6 +9170,12 @@ msgstr "This version is locked by %s and cannot be modified"
 #, unused
 msgid "workspace.versions.locked-by-you"
 msgstr "This version is locked by you"
+
+msgid "workspace.versions.preview-banner-title"
+msgstr "Previewing version: %s"
+
+msgid "workspace.versions.preview.unnamed"
+msgstr "Unnamed version"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:83
 msgid "workspace.versions.restore-warning"
@@ -9183,6 +9244,12 @@ msgstr "Projects and files will remain available to team members, but the organi
 
 msgid "modals.remove-team-org.accept"
 msgstr "Remove from organization"
+
+msgid "webgl.toast.webgl-render-enabled"
+msgstr "WebGL rendering enabled"
+
+msgid "webgl.toast.webgl-render-disabled"
+msgstr "WebGL rendering disabled"
 
 #, unused
 msgid "workspace.viewport.click-to-close-path"
