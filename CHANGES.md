@@ -50,10 +50,12 @@
 - Preserve vector content when pasting from external tools such as Inkscape: recognise SVG sent as text/plain (with optional XML declaration and HTML comments), skip the raster preview when an SVG sibling is on the clipboard, and ignore empty SVG blobs that some tools advertise alongside the real payload, so pasted graphics arrive editable without spurious "SVG is invalid" warnings [Github #546](https://github.com/penpot/penpot/issues/546)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
 - Adds a **Pixel grid color** picker in the viewport settings, next to the existing canvas color control [Github #7750](https://github.com/penpot/penpot/issues/7750)
+- Show specific invitation-link error messages instead of a single generic "Invite invalid" page: distinguish expired invitations, email-mismatch (signed in with the wrong account) and corrupted/invalid tokens, each with an actionable recovery hint [Github #9220](https://github.com/penpot/penpot/issues/9220)
 
 ### :bug: Bugs fixed
 
 - Fix blend-mode dropdown leaving the canvas rendered with the last hover-preview blend mode when dismissed without selecting an option; the WASM render is now reverted to the saved blend mode on pointer-leave (by @edwin-rivera-dev) [Github #XXXX](https://github.com/penpot/penpot/issues/XXXX)
+- Suppress the browser context menu when right-clicking empty space in the workspace sidebars while preserving it on text inputs so paste/select-all still work [Github #5127](https://github.com/penpot/penpot/issues/5127)
 - Fix release notes modal appearing behind the dashboard sidebar [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
 - Fix imported stroke-only SVG paths losing their rounded join when authoring tools (e.g. Figma → Heroicons) split a continuous polyline into adjacent `M…L M…L` subpaths sharing an endpoint; on import these are now folded back into one chain so `stroke-linejoin` renders the elbow correctly in both editor and exports [Github #5283](https://github.com/penpot/penpot/issues/5283)
