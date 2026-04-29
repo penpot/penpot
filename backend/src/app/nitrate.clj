@@ -55,7 +55,7 @@
           result)))))
 
 
-(defn- with-validate [handler uri schema]
+(defn- with-validate [handler uri schema & {:keys [throw-on-error?]}]
   (fn []
     (let [response (handler)
           status (:status response)]
@@ -73,7 +73,11 @@
                      :uri uri
                      :status status
                      :body (:body response)))
-          nil)
+          (if throw-on-error?
+            (ex/raise :type :nitrate-http-error
+                      :status status
+                      :hint (str "nitrate HTTP " status " at " uri))
+            nil))
         (= status 204) ;; 204 doesn't return any body
         nil
         :else ;; For success status codes, validate the response
@@ -89,11 +93,11 @@
               nil)))))))
 
 (defn- request-to-nitrate
-  [cfg method uri schema {:keys [::rpc/profile-id request-params] :as params}]
+  [cfg method uri schema {:keys [::rpc/profile-id request-params throw-on-error?] :as params}]
   (let [shared-key     (-> cfg ::setup/shared-keys :nitrate)
         full-http-call (-> (request-builder cfg method uri shared-key profile-id request-params)
                            (with-retries 3)
-                           (with-validate uri schema))]
+                           (with-validate uri schema :throw-on-error? throw-on-error?))]
     (full-http-call)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -241,6 +245,16 @@
                              "/summary")
                         schema:org-summary params)))
 
+(defn- get-owned-orgs-api
+  [cfg {:keys [profile-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/users/"
+                             profile-id
+                             "/owned-organizations")
+                        [:vector schema:org-summary]
+                        params)))
 
 (defn- set-team-org-api
   [cfg {:keys [organization-id team-id is-default] :as params}]
@@ -330,6 +344,18 @@
                              "/api/connectivity")
                         schema:connectivity params)))
 
+(def ^:private schema:redeem-result
+  [:map
+   [:cancel-at [:maybe schema:timestamp]]])
+
+(defn- redeem-activation-code-api
+  [cfg params]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :post
+                        (str baseuri "/api/activation-codes/redeem")
+                        schema:redeem-result
+                        (assoc params :throw-on-error? true))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -342,13 +368,15 @@
      :get-org-membership           (partial get-org-membership-api cfg)
      :get-org-membership-by-team   (partial get-org-membership-by-team-api cfg)
      :get-org-summary              (partial get-org-summary-api cfg)
+     :get-owned-orgs               (partial get-owned-orgs-api cfg)
      :add-profile-to-org           (partial add-profile-to-org-api cfg)
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
      :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)
      :get-subscription             (partial get-subscription-api cfg)
-     :connectivity                 (partial get-connectivity-api cfg)}))
+     :connectivity                 (partial get-connectivity-api cfg)
+     :redeem-activation-code       (partial redeem-activation-code-api cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILS

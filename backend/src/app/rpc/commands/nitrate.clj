@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.db :as db]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -56,6 +57,41 @@
   [cfg _params]
   (nitrate/call cfg :connectivity {}))
 
+(def ^:private schema:redeem-activation-code-params
+  [:map {:title "RedeemActivationCodeParams"}
+   [:activation-code ::sm/text]])
+
+(def ^:private schema:redeem-activation-code-result
+  [:map {:title "RedeemActivationCodeResult"}
+   [:cancel-at [:maybe ct/schema:inst]]])
+
+(sv/defmethod ::redeem-nitrate-activation-code
+  {::rpc/auth true
+   ::doc/added "2.14"
+   ::sm/params schema:redeem-activation-code-params
+   ::sm/result schema:redeem-activation-code-result}
+  [cfg {:keys [::rpc/profile-id activation-code]}]
+  (let [profile (db/get cfg :profile {:id profile-id})]
+    (try
+      (let [result (nitrate/call cfg :redeem-activation-code
+                                 {:request-params  {:code      activation-code
+                                                    :penpot-id profile-id
+                                                    :email     (:email profile)}})]
+        (when-not result
+          (ex/raise :type :validation
+                    :code :invalid-activation-code
+                    :hint "The activation code is invalid, expired or fully redeemed"))
+        result)
+      (catch Exception cause
+        (let [{:keys [type status]} (ex-data cause)]
+          (if (= type :nitrate-http-error)
+            (ex/raise :type :validation
+                      :code (case status
+                              410 :expired-activation-code
+                              :invalid-activation-code)
+                      :cause cause)
+            (throw cause)))))))
+
 (def ^:private sql:prefix-team-name-and-unset-default
   "UPDATE team
       SET name = ? || name,
@@ -74,7 +110,7 @@
       AND t.id = ANY(?)
       AND t.deleted_at IS NULL")
 
-(def ^:private sql:get-team-files-count
+(def sql:get-team-files-count
   "SELECT count(*) AS total
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
