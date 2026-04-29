@@ -25,7 +25,6 @@
    [rumext.v2 :as mf]))
 
 (mf/defc plan-card*
-  {::mf/props :obj}
   [{:keys [card-title
            card-title-icon
            price-value price-period
@@ -468,8 +467,11 @@
 
         open-contact-sales-modal
         (mf/use-fn
-         (fn [subscription-type]
-           (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type}))))]
+         (mf/deps nitrate-license)
+         (fn [current-subscription subscription-type]
+           (if (= current-subscription "unlimited")
+             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
+             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type})))))]
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
@@ -623,7 +625,7 @@
                                     (tr "subscription.settings.unlimited.autosave-benefit"),
                                     (tr "subscription.settings.unlimited.bill")]
                          :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
-                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate?) #(open-contact-sales-modal "Unlimited") #(open-subscription-modal "unlimited" subscription))
+                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate?) #(open-contact-sales-modal subscription-type "Unlimited") #(open-subscription-modal "unlimited" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :recommended (= subscription-type "professional")
@@ -655,7 +657,7 @@
                                     "Acceso exclusivo al Control Center"
                                     "Lorem ipsum"]
                          :cta-text (if nitrate-license (tr "subscription.settings.subscribe") "Try 14 days for free")
-                         :cta-link #(open-subscription-modal "nitrate" subscription)
+                         :cta-link (if (= subscription-type "unlimited") #(open-contact-sales-modal subscription-type "Nitrate") #(open-subscription-modal "nitrate" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :show-button-cta (not nitrate-license)}])]]]))
@@ -668,7 +670,7 @@
 (mf/defc subscribe-nitrate-dialog
   {::mf/register modal/components
    ::mf/register-as :nitrate-dialog}
-  [{:keys [nitrate-license] :as connectivity}]
+  [{:keys [nitrate-license show-contact-sales-option] :as connectivity}]
   ;; TODO add translations for this texts when we have the definitive ones
   (let [online? (:licenses connectivity)
         initial (mf/with-memo []
@@ -701,7 +703,7 @@
       [:div {:class (stl/css :modal-title :subscription-title)}
        "Subcribe to the Business Nitrate plan"]
 
-      (if online?
+      (if (and online? (not show-contact-sales-option))
         [:div {:class (stl/css :modal-content)}
 
 

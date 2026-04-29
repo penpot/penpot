@@ -470,8 +470,13 @@
   min-width: deprecated.$s-192;
 }
 
+// Each submenu is positioned via its bottom edge; the visual top lands
+// at `inset-block-end + submenu_height`. Help & Learning (3 items,
+// taller) needs the same inset as Community (2 items, shorter) so that
+// its top edge sits one row above Community — aligning with the
+// "Help & Learning" trigger row in the parent menu.
 .sub-menu.help-learning {
-  inset-block-end: deprecated.$s-72;
+  inset-block-end: deprecated.$s-120;
 }
 
 .sub-menu.community {
@@ -647,6 +652,10 @@
   gap: var(--sp-s);
   height: 100%;
   width: 100%;
+}
+
+.current-org-no-options {
+  gap: 0;
 }
 
 .current-org .arrow-icon {
