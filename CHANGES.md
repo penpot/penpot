@@ -54,6 +54,7 @@
 ### :bug: Bugs fixed
 
 - Fix blend-mode dropdown leaving the canvas rendered with the last hover-preview blend mode when dismissed without selecting an option; the WASM render is now reverted to the saved blend mode on pointer-leave (by @edwin-rivera-dev) [Github #XXXX](https://github.com/penpot/penpot/issues/XXXX)
+- Fix release notes modal appearing behind the dashboard sidebar [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
 - Fix imported stroke-only SVG paths losing their rounded join when authoring tools (e.g. Figma → Heroicons) split a continuous polyline into adjacent `M…L M…L` subpaths sharing an endpoint; on import these are now folded back into one chain so `stroke-linejoin` renders the elbow correctly in both editor and exports [Github #5283](https://github.com/penpot/penpot/issues/5283)
 - Fix plugin API `library.connectLibrary()` returning a non-Promise (or throwing synchronously) when the plugin lacks `library:write` permission — the method now always returns a `Promise` and rejects with a structured error message, matching the contract used by every other Promise-returning plugin method (`restore`, `remove`, `pin`, `saveVersion`, `findVersions`, …)
