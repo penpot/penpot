@@ -68,8 +68,15 @@
 
 (mf/defc verify-token*
   [{:keys [route]}]
-  (let [token     (get-in route [:query-params :token])
-        bad-token (mf/use-state false)]
+  (let [token            (get-in route [:query-params :token])
+        ;; Holds the specific failure reason when the token fails, or
+        ;; nil while still loading / on success. Any non-nil keyword is
+        ;; truthy, so this single state replaces the previous pair of
+        ;; (bad-token? + bad-token-reason) hooks. Reasons:
+        ;;   :token-expired   -> JWT past its :exp
+        ;;   :email-mismatch  -> invitation email != logged-in email
+        ;;   :invalid-token   -> corrupted / unknown / fallback
+        bad-token-reason (mf/use-state nil)]
 
     (mf/with-effect []
       (dom/set-html-title (tr "title.default"))
@@ -78,7 +85,7 @@
             (fn [tdata]
               (handle-token tdata))
             (fn [cause]
-              (let [{:keys [type code team-id] :as error} (ex-data cause)]
+              (let [{:keys [type code team-id reason] :as error} (ex-data cause)]
                 (cond
                   (= :invalid-token-already-member code)
                   (st/emit!
@@ -91,8 +98,12 @@
 
                   (or (= :validation type)
                       (= :invalid-token code)
-                      (= :token-expired (:reason error)))
-                  (reset! bad-token true)
+                      (= :token-expired reason))
+                  (reset! bad-token-reason
+                          (cond
+                            (= :token-expired reason)  :token-expired
+                            (= :email-mismatch reason) :email-mismatch
+                            :else                      :invalid-token))
 
                   (= :email-already-exists code)
                   (let [msg (tr "errors.email-already-exists")]
@@ -109,8 +120,8 @@
                     (ts/schedule 100 #(st/emit! (ntf/error msg)))
                     (st/emit! (rt/nav :auth-login)))))))))
 
-    (if @bad-token
-      [:> static/invalid-token {}]
+    (if @bad-token-reason
+      [:> static/invalid-token {:reason @bad-token-reason}]
       [:> loader*  {:title (tr "labels.loading")
                     :overlay true}])))
 
