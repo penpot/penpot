@@ -54,6 +54,7 @@
 
 ### :bug: Bugs fixed
 
+- Suppress the browser context menu when right-clicking empty space in the workspace sidebars while preserving it on text inputs so paste/select-all still work [Github #5127](https://github.com/penpot/penpot/issues/5127)
 - Fix release notes modal appearing behind the dashboard sidebar [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
 - Fix imported stroke-only SVG paths losing their rounded join when authoring tools (e.g. Figma → Heroicons) split a continuous polyline into adjacent `M…L M…L` subpaths sharing an endpoint; on import these are now folded back into one chain so `stroke-linejoin` renders the elbow correctly in both editor and exports [Github #5283](https://github.com/penpot/penpot/issues/5283)

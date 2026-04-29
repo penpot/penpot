@@ -122,6 +122,14 @@
              (fn? (.-preventDefault event)))
     (.preventDefault event)))
 
+(defn prevent-default-context-menu
+  [^js event]
+  (let [target (some-> event .-target)
+        tag    (some-> target .-tagName .toLowerCase)]
+    (when-not (or (#{"input" "textarea"} tag)
+                  (some-> target .-isContentEditable))
+      (.preventDefault event))))
+
 (defn get-target
   "Extract the target from event instance."
   [^js event]
