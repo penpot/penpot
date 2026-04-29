@@ -122,7 +122,8 @@
 (defn commit
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
-           file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?]}]
+           file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?
+           translation?]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -148,7 +149,8 @@
                    :undo-group undo-group
                    :tags tags
                    :stack-undo? stack-undo?
-                   :ignore-wasm? ignore-wasm?}]
+                   :ignore-wasm? ignore-wasm?
+                   :translation? translation?}]
 
     (ptk/reify ::commit
       cljs.core/IDeref
@@ -186,7 +188,8 @@
    - undo-group: if some consecutive changes (or even transactions) share the same
                  undo-group, they will be undone or redone in a single step
    "
-  [{:keys [redo-changes undo-changes save-undo? undo-group tags stack-undo? file-id]
+  [{:keys [redo-changes undo-changes save-undo? undo-group tags stack-undo? file-id
+           translation?]
     :or {save-undo? true
          stack-undo? false
          undo-group (uuid/next)
@@ -216,4 +219,5 @@
                      (assoc :file-vern (resolve-file-vern state file-id))
                      (assoc :undo-changes uchg)
                      (assoc :redo-changes rchg)
+                     (assoc :translation? translation?)
                      (commit))))))))
