@@ -219,8 +219,7 @@
                       :fixed? fixed?}]))
 
 (mf/defc flows-menu*
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+  {::mf/wrap [mf/memo]}
   [{:keys [page index]}]
   (let [flows            (not-empty (:flows page))
         frames           (:frames page)
@@ -268,7 +267,6 @@
               [:span {:class (stl/css :icon)} deprecated-icon/tick])])]]])))
 
 (mf/defc interactions-menu*
-  {::mf/props :obj}
   [{:keys [interactions-mode]}]
   (let [show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
