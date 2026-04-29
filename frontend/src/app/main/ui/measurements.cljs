@@ -43,14 +43,14 @@
 (def distance-pill-height 16)
 (def distance-line-stroke 1)
 
-(def selection-badge-bg-color "var(--color-accent-tertiary)")
-(def selection-badge-text-color "var(--app-black)")
-(def selection-badge-font-size 12)
-(def selection-badge-height 16)
-(def selection-badge-padding-x 6)
-(def selection-badge-vertical-gap 8)
-(def selection-badge-border-radius 2)
-(def selection-badge-char-width 6.5)
+(def ^:private ^:const selection-badge-bg-color "var(--color-accent-tertiary)")
+(def ^:private ^:const selection-badge-text-color "var(--app-black)")
+(def ^:private ^:const selection-badge-font-size 12)
+(def ^:private ^:const selection-badge-height 16)
+(def ^:private ^:const selection-badge-padding-x 6)
+(def ^:private ^:const selection-badge-vertical-gap 8)
+(def ^:private ^:const selection-badge-border-radius 2)
+(def ^:private ^:const selection-badge-char-width 6.5)
 
 
 ;; ------------------------------------------------
@@ -188,7 +188,7 @@
                      :stroke hover-color
                      :stroke-width selection-rect-width}}]]))
 
-(mf/defc selection-size-badge
+(mf/defc selection-size-badge*
   [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         size-label   (dm/str (fmt/format-number width) " x " (fmt/format-number height))
@@ -284,6 +284,7 @@
                              :bounds bounds
                              :zoom zoom}]
        [:& size-display {:selrect selected-selrect :zoom zoom}]
+       [:> selection-size-badge* {:selrect selected-selrect :zoom zoom}]
 
        (if (or (not hover-shape) (not hover-selected-shape?))
          (when (and frame (not= uuid/zero (:id frame)))
@@ -299,4 +300,3 @@
           [:& selection-rect {:type :hover :selrect hover-selrect :zoom zoom}]
           [:& size-display {:selrect hover-selrect :zoom zoom}]
           [:& distance-display {:from hover-selrect :to selected-selrect :zoom zoom :bounds bounds-selrect}]])])))
-
