@@ -81,12 +81,7 @@
   }
 
   &.lightness {
-    background: linear-gradient(
-      var(--gradient-direction),
-      #000 0%,
-      var(--lightness-grad-mid) 50%,
-      #fff 100%
-    );
+    background: linear-gradient(var(--gradient-direction), #000 0%, var(--lightness-grad-mid) 50%, #fff 100%);
   }
 
   .handler {
