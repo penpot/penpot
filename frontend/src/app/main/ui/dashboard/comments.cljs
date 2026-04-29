@@ -25,7 +25,6 @@
   (deprecated-icon/icon-xref :comments (stl/css :comments-icon)))
 
 (mf/defc comments-icon*
-  {::mf/props :obj}
   [{:keys [profile on-show-comments]}]
 
   (let [threads-map (mf/deref refs/comment-threads)

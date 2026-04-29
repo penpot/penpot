@@ -370,7 +370,7 @@
                       :else
                       (show-unavailable)))))]
           (reset! canvas-init? false)
-          (->> wasm.api/module
+          (->> @wasm.api/module
                (p/fmap (fn [ready?]
                          (when ready?
                            (try-init 3)))))
@@ -378,6 +378,7 @@
             (vreset! unmounted? true)
             (when-let [timeout-id @timeout-id-ref]
               (js/clearTimeout timeout-id))
+            (wasm.api/end-page-transition!)
             (wasm.api/clear-canvas)))))
 
     (mf/with-effect [show-text-editor? workspace-editor-state edition]
