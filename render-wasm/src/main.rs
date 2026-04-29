@@ -306,15 +306,6 @@ pub extern "C" fn set_preview_mode(enabled: bool) -> Result<()> {
     Ok(())
 }
 
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn render_preview() -> Result<()> {
-    with_state_mut!(state, {
-        state.render_preview(performance::get_time());
-    });
-    Ok(())
-}
-
 /// Enter bulk-loading mode. While active, `state.loading` is `true`.
 #[no_mangle]
 #[wasm_error]

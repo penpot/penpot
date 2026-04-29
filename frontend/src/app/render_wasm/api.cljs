@@ -317,46 +317,23 @@
               (aget buffer 3))
       (set! wasm/internal-frame-id nil))))
 
-(defn render-preview!
-  "Render a lightweight preview without tile caching.
-   Used during progressive loading for fast feedback."
-  []
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
-    (h/call wasm/internal-module "_render_preview")))
-
-
-(defonce pending-render (atom false))
 (defonce shapes-loading? (atom false))
 (defonce deferred-render? (atom false))
 
-(defn- register-deferred-render!
-  []
-  (reset! deferred-render? true))
-
 (defn request-render
   [_requester]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?) (not @wasm/disable-request-render?))
+  (when (and wasm/context-initialized?
+             (not @wasm/context-lost?)
+             (not @wasm/disable-request-render?))
     (if @shapes-loading?
-      (register-deferred-render!)
-      (when-not @pending-render
-        (reset! pending-render true)
-        (let [frame-id
-              (js/requestAnimationFrame
-               (fn [ts]
-                 (reset! pending-render false)
-                 (set! wasm/internal-frame-id nil)
-                 (render ts)))]
-          (set! wasm/internal-frame-id frame-id))))))
+      (reset! deferred-render? true)
+      (wasm/request-frame render))))
 
 (defn- begin-shapes-loading!
   []
   (reset! shapes-loading? true)
-  (let [frame-id wasm/internal-frame-id
-        was-pending @pending-render]
-    (when frame-id
-      (js/cancelAnimationFrame frame-id)
-      (set! wasm/internal-frame-id nil))
-    (reset! pending-render false)
+  (let [was-pending (wasm/frame-requested?)]
+    (wasm/cancel-frame)
     (reset! deferred-render? was-pending)))
 
 (defn- end-shapes-loading!
@@ -1708,12 +1685,9 @@
       (set! wasm/context-initialized? false)
 
       ;; Cancel any pending animation frame to prevent race conditions
-      (when wasm/internal-frame-id
-        (js/cancelAnimationFrame wasm/internal-frame-id)
-        (set! wasm/internal-frame-id nil))
+      (wasm/cancel-frame)
 
       ;; Reset render flags to prevent new renders from being scheduled
-      (reset! pending-render false)
       (reset! shapes-loading? false)
       (reset! deferred-render? false)
 

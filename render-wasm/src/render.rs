@@ -1864,33 +1864,7 @@ impl RenderState {
 
         performance::end_measure!("render_from_cache");
         performance::end_timed_log!("render_from_cache", _start);
-    }
 
-    /// Render a preview of the shapes during loading.
-    /// This rebuilds tiles for touched shapes and renders synchronously.
-    pub fn render_preview(&mut self, tree: ShapesPoolRef, timestamp: i32) -> Result<()> {
-        let _start = performance::begin_timed_log!("render_preview");
-        performance::begin_measure!("render_preview");
-
-        // Enable fast_mode during preview to skip expensive effects (blur, shadows).
-        // Restore the previous state afterward so the final render is full quality.
-        let current_fast_mode = self.options.is_fast_mode();
-        self.options.set_fast_mode(true);
-
-        // Skip tile rebuilding during preview - we'll do it at the end
-        // Just rebuild tiles for touched shapes and render synchronously
-        self.rebuild_touched_tiles(tree);
-
-        // Use the sync render path
-        self.start_render_loop(None, tree, timestamp, true)?;
-
-        self.options.set_fast_mode(current_fast_mode);
-
-        performance::end_measure!("render_preview");
-        performance::end_timed_log!("render_preview", _start);
-
-        Ok(())
-    }
 
     pub fn start_render_loop(
         &mut self,

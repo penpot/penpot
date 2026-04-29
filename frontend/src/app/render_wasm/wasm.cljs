@@ -10,6 +10,36 @@
 (defonce internal-frame-id nil)
 (defonce internal-module #js {})
 
+;; Is a frame requested?
+(defn frame-requested?
+  "Returns true if a frame was requested"
+  []
+  (not (nil? internal-frame-id)))
+
+;; Cancels a frame
+(defn cancel-frame
+  "Cancels the current requested frame"
+  []
+  (when-not (nil? internal-frame-id)
+    (js/cancelAnimationFrame internal-frame-id)
+    (set! internal-frame-id nil)
+    true)
+  false)
+
+(defn create-frame-delegate
+  "Creates a new frame delegate"
+  [f]
+  (fn frame-delegate [timestamp]
+    (let [frame-id internal-frame-id]
+      (set! internal-frame-id nil)
+      (f timestamp frame-id))))
+
+;; Requests a frame
+(defn request-frame
+  "Requests a new frame"
+  [f]
+  (set! internal-frame-id (js/requestAnimationFrame (create-frame-delegate f))))
+
 ;; Reference to the HTML canvas element.
 (defonce canvas nil)
 ;; Snapshot of the current canvas suitable for `<img src=...>` overlays.
@@ -28,7 +58,6 @@
 
 ;; When we're rendering in a sync way we want to stop the asynchrous `request-render`
 (defonce disable-request-render? (atom false))
-
 
 (defonce serializers
   #js {:blur-type shared/RawBlurType
