@@ -29,7 +29,7 @@
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -501,38 +501,12 @@
                                 file-id))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
-        ;; Issue #9141. Delete every color under a group path in a
-        ;; single undo transaction, after user confirmation.
         on-delete-group
-        (mf/use-fn
-         (mf/deps colors on-clear-selection)
-         (fn [path]
-           (let [group-colors
-                 (->> colors
-                      (filter #(str/starts-with? (:path %) path)))
-
-                 ;; Hoisted so the start/commit pair is bound to the
-                 ;; same symbol regardless of how `do-delete` is
-                 ;; invoked by the confirm modal. Review suggestion
-                 ;; on PR #9151.
-                 undo-id (js/Symbol)
-
-                 do-delete
-                 (fn []
-                   (on-clear-selection)
-                   (st/emit! (dwu/start-undo-transaction undo-id))
-                   (run! st/emit!
-                         (map #(dwl/delete-color {:id (:id %)}) group-colors))
-                   (st/emit! (dwu/commit-undo-transaction undo-id)))]
-             (when (seq group-colors)
-               (st/emit!
-                (modal/show
-                 {:type :confirm
-                  :title (tr "modals.delete-asset-group.title")
-                  :message (tr "modals.delete-asset-group.message"
-                               (i18n/c (count group-colors)))
-                  :accept-label (tr "labels.delete")
-                  :on-accept do-delete}))))))
+        (mf/with-memo [colors on-clear-selection]
+          (cmm/make-delete-asset-group-fn
+           {:assets colors
+            :on-clear-selection on-clear-selection
+            :delete-events #(map (fn [c] (dwl/delete-color {:id (:id c)})) %)}))
 
         on-asset-click
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
