@@ -38,7 +38,7 @@
           shape-name)
 
         default-value
-        (mf/with-memo [variant-id variant-error variant-properties]
+        (mf/with-memo [variant-id variant-error variant-properties shape-name]
           (if variant-id
             (or variant-error (ctv/properties-map->formula variant-properties))
             shape-name))
@@ -101,10 +101,16 @@
                  (not ^boolean edition?))
         (start-edit)))
 
-    (mf/with-effect [edition?]
+    ;; Force-refresh the input's DOM value on every entry into edit
+    ;; mode. The `:default-value` prop seeds an uncontrolled input only
+    ;; on first mount, so without this effect a second rename would
+    ;; reopen the input with the original (stale) name — silently
+    ;; overwriting the user's previous rename on confirm.
+    (mf/with-effect [edition? default-value]
       (when edition?
-        (some-> (mf/ref-val ref) dom/select-text!)
-        nil))
+        (when-let [node (mf/ref-val ref)]
+          (dom/set-value! node (d/nilv default-value ""))
+          (dom/select-text! node))))
 
     (if ^boolean edition?
       [:input

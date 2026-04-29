@@ -52,6 +52,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix layers-panel rename input opening with the type-based default (e.g. "Ellipse") instead of the user's saved name when re-entering edit mode on a previously renamed layer; the silent revert could overwrite the saved name on confirm. The `default-value` `mf/with-memo` was missing `shape-name` from its dependency list, so once the memo cached the original default it never refreshed. Adds `shape-name` to the deps and force-syncs the input's DOM value on every entry into edit mode [Github #9230](https://github.com/penpot/penpot/issues/9230)
 - Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
 - Fix plugin API `library.connectLibrary()` returning a non-Promise (or throwing synchronously) when the plugin lacks `library:write` permission — the method now always returns a `Promise` and rejects with a structured error message, matching the contract used by every other Promise-returning plugin method (`restore`, `remove`, `pin`, `saveVersion`, `findVersions`, …)
 - Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
