@@ -25,9 +25,8 @@
   grid-auto-rows: auto;
   gap: var(--sp-s);
   width: $sz-500;
-  margin-block-start: var(--sp-xxxl);
+  margin-block: var(--sp-xxxl) $sz-120; /* FIXME: this should be a proper token */
   padding-block-start: var(--sp-xxxl);
-  margin-block-end: $sz-120; /* FIXME: this should be a proper token */
   border-block-start: $b-1 solid var(--color-background-quaternary);
   color: var(--color-foreground-primary);
 }
