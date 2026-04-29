@@ -340,12 +340,26 @@
       :svg-viewbox vbox
       :svg-defs defs})))
 
+(defn- stroke-only-svg-path?
+  "Returns true when the SVG element renders only a stroke (fill=none).
+  Stroke-only paths can have their consecutive touching subpaths safely
+  merged into a continuous polyline so that `stroke-linejoin` applies at
+  shared endpoints, without affecting any fill-rule semantics."
+  [attrs]
+  (let [attr-fill  (some-> (:fill attrs) str/trim)
+        style-fill (some-> (get-in attrs [:style :fill]) str/trim)]
+    (= "none" (or attr-fill style-fill))))
+
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
-    (let [transform (csvg/parse-transform (:transform attrs))
-          content   (cond-> (path/from-string (:d attrs))
-                      (some? transform)
-                      (path.segm/transform-content transform))
+    (let [transform    (csvg/parse-transform (:transform attrs))
+          stroke-only? (stroke-only-svg-path? attrs)
+          content      (cond-> (path/from-string (:d attrs))
+                         stroke-only?
+                         (path/merge-touching-subpaths)
+
+                         (some? transform)
+                         (path.segm/transform-content transform))
 
           selrect    (path.segm/content->selrect content)
           points     (grc/rect->points selrect)
