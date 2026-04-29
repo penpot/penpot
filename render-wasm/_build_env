@@ -31,8 +31,8 @@ export EM_MALLOC="dlmalloc"
 
 export EMCC_CFLAGS="--no-entry \
     --js-library src/js/wapi.js \
-    -sASSERTIONS=1 \
-    -sALLOW_TABLE_GROWTH=1 \
+    -sMALLOC=$EM_MALLOC \
+    -sALLOW_TABLE_GROWTH=0 \
     -sALLOW_MEMORY_GROWTH=1 \
     -sINITIAL_HEAP=$EM_INITIAL_HEAP \
     -sMEMORY_GROWTH_GEOMETRIC_STEP=$EM_MEMORY_GROWTH_GEOMETRIC_STEP \
@@ -50,13 +50,13 @@ export CARGO_PARAMS="${@:2}";
 
 if [ "$BUILD_MODE" = "release" ]; then
     export CARGO_PARAMS="--release $CARGO_PARAMS"
-    export EMCC_CFLAGS="-Os $EMCC_CFLAGS"
+    export EMCC_CFLAGS="-O3 -sASSERTIONS=0 $EMCC_CFLAGS"
 else
     # TODO: Extra parameters that could be good to look into:
     #        -gseparate-dwarf
     #        -gsplit-dwarf
     #        -gsource-map
-    export EMCC_CFLAGS="-g $EMCC_CFLAGS -sVERBOSE=1 -sMALLOC=$EM_MALLOC"
+    export EMCC_CFLAGS="-g -sASSERTIONS=1 -sVERBOSE=1 $EMCC_CFLAGS"
 fi
 
 function clean {
