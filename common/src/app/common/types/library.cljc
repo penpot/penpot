@@ -68,18 +68,27 @@
 ;; library data here instead of only colors
 (defn sync-colors
   "Look for usage of any color of the given library inside the shape,
-  and, in this case, copy the library color into the shape."
+  and, in this case, copy the library color into the shape.
+
+  When the library color has `:lock-alpha? false`, the shape's existing
+  opacity is preserved instead of being overwritten by the library
+  color's opacity. This lets users control alpha independently from hue
+  on a per-shape basis (see issue #3085)."
   [shape library-id library-colors]
   (letfn [(sync-color [shape position shape-color set-fn _ detach-fn]
             (if (= (:ref-file shape-color) library-id)
               (let [library-color (get library-colors (:ref-id shape-color))]
                 (if (some? library-color)
-                  (set-fn shape
-                          position
-                          (:color library-color)
-                          (:opacity library-color)
-                          (:gradient library-color)
-                          (:image library-color))
+                  (let [lock-alpha? (get library-color :lock-alpha? true)
+                        opacity     (if lock-alpha?
+                                      (:opacity library-color)
+                                      (:opacity shape-color))]
+                    (set-fn shape
+                            position
+                            (:color library-color)
+                            opacity
+                            (:gradient library-color)
+                            (:image library-color)))
                   (detach-fn shape position)))
               shape))]
 

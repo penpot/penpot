@@ -719,11 +719,16 @@
 
 (defn apply-color-from-assets
   [file-id color stroke?]
-  (let [color (clr/check-library-color color)]
+  (let [color       (clr/check-library-color color)
+        lock-alpha? (get color :lock-alpha? true)]
     (ptk/reify ::apply-color-from-asserts
       ptk/WatchEvent
       (watch [_ _ _]
-        (let [color (clr/library-color->color color file-id)]
+        ;; When the style is alpha-unlocked (#3085), drop :opacity from
+        ;; the converted color so transform-fill does not overwrite the
+        ;; shape's existing :fill-opacity.
+        (let [color (cond-> (clr/library-color->color color file-id)
+                      (not lock-alpha?) (dissoc :opacity))]
           (rx/of (apply-color-from-palette color stroke?)
                  (add-recent-color color)))))))
 

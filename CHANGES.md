@@ -93,7 +93,7 @@
 - Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
 - Fix colorpicker layout so the eyedropper button is visible again [Taiga #14057](https://tree.taiga.io/project/penpot/issue/14057)
-
+- Allow alpha to be independent from hue in color styles [Github #3085](https://github.com/penpot/penpot/issue/3085)
 
 ## 2.16.0 (Unreleased)
 
