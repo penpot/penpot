@@ -101,16 +101,10 @@
                  (not ^boolean edition?))
         (start-edit)))
 
-    ;; Force-refresh the input's DOM value on every entry into edit
-    ;; mode. The `:default-value` prop seeds an uncontrolled input only
-    ;; on first mount, so without this effect a second rename would
-    ;; reopen the input with the original (stale) name — silently
-    ;; overwriting the user's previous rename on confirm.
-    (mf/with-effect [edition? default-value]
+    (mf/with-effect [edition?]
       (when edition?
-        (when-let [node (mf/ref-val ref)]
-          (dom/set-value! node (d/nilv default-value ""))
-          (dom/select-text! node))))
+        (some-> (mf/ref-val ref) dom/select-text!)
+        nil))
 
     (if ^boolean edition?
       [:input
