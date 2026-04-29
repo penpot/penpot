@@ -69,10 +69,10 @@
 (mf/defc verify-token*
   [{:keys [route]}]
   (let [token            (get-in route [:query-params :token])
-        bad-token        (mf/use-state false)
-        ;; When the token failed, we keep the specific reason so the
-        ;; static page can show an actionable message instead of the
-        ;; generic "this invitation is invalid" copy. Reasons:
+        ;; Holds the specific failure reason when the token fails, or
+        ;; nil while still loading / on success. Any non-nil keyword is
+        ;; truthy, so this single state replaces the previous pair of
+        ;; (bad-token? + bad-token-reason) hooks. Reasons:
         ;;   :token-expired   -> JWT past its :exp
         ;;   :email-mismatch  -> invitation email != logged-in email
         ;;   :invalid-token   -> corrupted / unknown / fallback
@@ -99,13 +99,11 @@
                   (or (= :validation type)
                       (= :invalid-token code)
                       (= :token-expired reason))
-                  (do
-                    (reset! bad-token-reason
-                            (cond
-                              (= :token-expired reason)  :token-expired
-                              (= :email-mismatch reason) :email-mismatch
-                              :else                      :invalid-token))
-                    (reset! bad-token true))
+                  (reset! bad-token-reason
+                          (cond
+                            (= :token-expired reason)  :token-expired
+                            (= :email-mismatch reason) :email-mismatch
+                            :else                      :invalid-token))
 
                   (= :email-already-exists code)
                   (let [msg (tr "errors.email-already-exists")]
@@ -122,7 +120,7 @@
                     (ts/schedule 100 #(st/emit! (ntf/error msg)))
                     (st/emit! (rt/nav :auth-login)))))))))
 
-    (if @bad-token
+    (if @bad-token-reason
       [:> static/invalid-token {:reason @bad-token-reason}]
       [:> loader*  {:title (tr "labels.loading")
                     :overlay true}])))

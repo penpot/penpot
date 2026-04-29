@@ -71,17 +71,22 @@
   ;; Map the specific failure reason to actionable copy. Falls back to
   ;; the generic invitation-invalid message when the reason is missing
   ;; or unknown so the UX never regresses for unhandled cases.
-  (let [main-key (case reason
-                   :email-mismatch "errors.invite-email-mismatch"
-                   :token-expired  "errors.invite-expired"
-                   "errors.invite-invalid")
-        desc-key (case reason
-                   :email-mismatch "errors.invite-email-mismatch.info"
-                   :token-expired  "errors.invite-expired.info"
-                   "errors.invite-invalid.info")]
-    [:> error-container* {}
-     [:div {:class (stl/css :main-message)} (tr main-key)]
-     [:div {:class (stl/css :desc-message)} (tr desc-key)]]))
+  ;;
+  ;; The branches use `tr` with literal keys (instead of `(tr key-var)`)
+  ;; so the i18n usage scanner can statically track every key.
+  [:> error-container* {}
+   (case reason
+     :email-mismatch
+     [:*
+      [:div {:class (stl/css :main-message)} (tr "errors.invite-email-mismatch")]]
+
+     :token-expired
+     [:*
+      [:div {:class (stl/css :main-message)} (tr "errors.invite-expired")]]
+
+     [:*
+      [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
+      [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])])
 
 (mf/defc login-modal*
   {::mf/private true}
