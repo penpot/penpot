@@ -1,6 +1,5 @@
 # CHANGELOG
 
-
 ## 2.15.0 (Unreleased)
 
 ### :sparkles: New features & Enhancements
@@ -11,6 +10,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix MCP integrations URL copy action to match the URL displayed in settings [Github #9238](https://github.com/penpot/penpot/issues/9238)
 - Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 - Fix keep-alive interval leak in PluginBridge (by @opcode81) [Github #9435](https://github.com/penpot/penpot/pull/9435)
