@@ -1545,6 +1545,22 @@ msgstr "Invite invalid"
 msgid "errors.invite-invalid.info"
 msgstr "This invite might be canceled or may be expired."
 
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-expired"
+msgstr "This invitation has expired"
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-expired.info"
+msgstr "Ask the team owner to send you a new invitation."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-email-mismatch"
+msgstr "This invitation is for a different email"
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-email-mismatch.info"
+msgstr "Log out and sign in with the invited account, or ask the team owner for a new invitation."
+
 #: src/app/main/ui/auth/login.cljs:89
 msgid "errors.ldap-disabled"
 msgstr "LDAP authentication is disabled."
