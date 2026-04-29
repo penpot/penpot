@@ -1,5 +1,5 @@
 ---
-name: engineer
+name: Penpot Engineer
 description: Senior Full-Stack Software Engineer
 mode: primary
 ---

@@ -241,6 +241,16 @@
                              "/summary")
                         schema:org-summary params)))
 
+(defn- get-owned-orgs-api
+  [cfg {:keys [profile-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/users/"
+                             profile-id
+                             "/owned-organizations")
+                        [:vector schema:org-summary]
+                        params)))
 
 (defn- set-team-org-api
   [cfg {:keys [organization-id team-id is-default] :as params}]
@@ -342,6 +352,7 @@
      :get-org-membership           (partial get-org-membership-api cfg)
      :get-org-membership-by-team   (partial get-org-membership-by-team-api cfg)
      :get-org-summary              (partial get-org-summary-api cfg)
+     :get-owned-orgs               (partial get-owned-orgs-api cfg)
      :add-profile-to-org           (partial add-profile-to-org-api cfg)
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
      :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)

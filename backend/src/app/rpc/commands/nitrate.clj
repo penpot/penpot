@@ -74,7 +74,7 @@
       AND t.id = ANY(?)
       AND t.deleted_at IS NULL")
 
-(def ^:private sql:get-team-files-count
+(def sql:get-team-files-count
   "SELECT count(*) AS total
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
