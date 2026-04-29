@@ -32,9 +32,9 @@
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
    [frontend-tests.util-object-test]
-   [frontend-tests.util-webapi-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
+   [frontend-tests.util-webapi-test]
    [frontend-tests.worker-snap-test]))
 
 (enable-console-print!)
@@ -78,7 +78,7 @@
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.util-object-test
-   'frontend-tests.util-webapi-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
+   'frontend-tests.util-webapi-test
    'frontend-tests.worker-snap-test))
