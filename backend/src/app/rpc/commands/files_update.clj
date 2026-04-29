@@ -47,6 +47,34 @@
 (declare ^:private take-snapshot?)
 (declare ^:private invalidate-caches!)
 
+;; In-memory marker of MCP sessions that have already received their
+;; one-shot "MCP connected" snapshot. Keyed by `[file-id session-id]`
+;; so a single MCP session that touches multiple files snapshots each
+;; one once, and a session that disconnects + reconnects gets a fresh
+;; marker the next time around (the disconnected session-id is gone
+;; from the set on next process restart; explicit cleanup happens via
+;; `clear-mcp-snapshot-marker!`).
+(defonce ^:private mcp-snapshotted-sessions (atom #{}))
+
+(defn- mcp-session-key
+  [file-id session-id]
+  [file-id session-id])
+
+(defn- mark-mcp-snapshotted!
+  [file-id session-id]
+  (swap! mcp-snapshotted-sessions conj (mcp-session-key file-id session-id)))
+
+(defn- mcp-snapshotted?
+  [file-id session-id]
+  (contains? @mcp-snapshotted-sessions (mcp-session-key file-id session-id)))
+
+(defn clear-mcp-snapshot-marker!
+  "Public hook so the MCP plugin bridge can reset a session's marker on
+  disconnect, allowing the next reconnection from the same session-id
+  to take a fresh snapshot."
+  [file-id session-id]
+  (swap! mcp-snapshotted-sessions disj (mcp-session-key file-id session-id)))
+
 ;; PUBLIC API; intended to be used outside of this module
 (declare update-file!)
 (declare update-file-data!)
@@ -69,6 +97,11 @@
               [:changes [:vector cpc/schema:change]]
               [:hint-origin {:optional true} :keyword]
               [:hint-events {:optional true} [:vector [:string {:max 250}]]]]]]
+   ;; True when the change originates from an MCP agent. Used to mark
+   ;; a one-shot "MCP connected" snapshot per session so users can
+   ;; restore the file to the state just before the agent touched it
+   ;; (see issue #9219).
+   [:from-mcp {:optional true} ::sm/boolean]
    [:skip-validate {:optional true} ::sm/boolean]])
 
 (def ^:private
@@ -210,10 +243,31 @@
 
   Only intended for internal use on this module."
   [{:keys [::db/conn ::timestamp] :as cfg}
-   {:keys [profile-id file team features changes session-id skip-validate] :as params}]
+   {:keys [profile-id file team features changes session-id skip-validate from-mcp] :as params}]
 
   (binding [pmap/*tracked* (pmap/create-tracked)
             pmap/*load-fn* (partial fdata/load-pointer cfg (:id file))]
+
+    ;; #9219: take a one-shot "MCP connected" snapshot the first time
+    ;; an MCP-tagged update arrives for a given (file, session) pair,
+    ;; *before* applying any changes. This guarantees the user has a
+    ;; restore point reflecting the file as it was just before the
+    ;; agent touched it.
+    (when (and from-mcp
+               (not (mcp-snapshotted? (:id file) session-id)))
+      (let [decoded-file (-> file
+                             fmg/migrate-file
+                             (fdata/resolve-file-data cfg)
+                             (fdata/decode-file-data cfg))
+            label        (str "MCP connected: " (ct/format-inst timestamp))
+            deleted-at   (ct/plus timestamp (ldel/get-deletion-delay team))]
+        (fsnap/create! cfg decoded-file
+                       {:label label
+                        :created-by "system"
+                        :deleted-at deleted-at
+                        :profile-id profile-id
+                        :session-id session-id})
+        (mark-mcp-snapshotted! (:id file) session-id)))
 
     (let [file (assoc file :features
                       (-> features

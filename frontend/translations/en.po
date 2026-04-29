@@ -9112,6 +9112,14 @@ msgstr "%s autosave versions"
 msgid "workspace.versions.autosaved.version"
 msgstr "Autosaved %s"
 
+#: src/app/main/ui/workspace/sidebar/versions.cljs
+msgid "workspace.versions.mcp-connected"
+msgstr "MCP connected"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs
+msgid "workspace.versions.mcp-connected.info"
+msgstr "Snapshot taken when an MCP agent connected to this file."
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:278
 msgid "workspace.versions.button.pin"
 msgstr "Pin version"
