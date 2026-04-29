@@ -18,6 +18,8 @@ use std::collections::HashMap;
 
 #[allow(unused_imports)]
 use crate::error::{Error, Result};
+use crate::render::QueueFrame;
+
 use macros::wasm_error;
 use math::{Bounds, Matrix};
 use mem::SerializableResult;
@@ -123,12 +125,6 @@ pub extern "C" fn set_browser(browser: u8) -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn clean_up() -> Result<()> {
-    with_state_mut!(state, {
-        // Cancel the current animation frame if it exists so
-        // it won't try to render without context
-        let render_state = state.render_state_mut();
-        render_state.cancel_animation_frame();
-    });
     unsafe { STATE = None }
     mem::free_bytes()?;
     Ok(())
@@ -222,7 +218,7 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn render(_: i32) -> Result<()> {
+pub extern "C" fn render(_: i32) -> Result<QueueFrame> {
     with_state_mut!(state, {
         state.rebuild_touched_tiles();
         // Drain the throttled modifier-tile invalidation accumulated
@@ -236,11 +232,10 @@ pub extern "C" fn render(_: i32) -> Result<()> {
                 state.rebuild_modifier_tiles(ids)?;
             }
         }
-        state
-            .start_render_loop(performance::get_time())
-            .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
+        return state
+                .start_render_loop(performance::get_time())
+                .map_err(|_| Error::RecoverableError("Error rendering".to_string()));
     });
-    Ok(())
 }
 
 #[no_mangle]
@@ -344,16 +339,6 @@ pub extern "C" fn render_loading_overlay() -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn process_animation_frame(timestamp: i32) -> Result<()> {
-    let result = with_state_mut!(state, { state.process_animation_frame(timestamp) });
-    if let Err(err) = result {
-        eprintln!("process_animation_frame error: {}", err);
-    }
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
 pub extern "C" fn reset_canvas() -> Result<()> {
     with_state_mut!(state, {
         state.render_state_mut().reset_canvas();
@@ -411,7 +396,6 @@ pub extern "C" fn set_view_end() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_view_end");
         state.render_state.options.set_fast_mode(false);
-        state.render_state.cancel_animation_frame();
 
         let scale = state.render_state.get_scale();
         state
@@ -471,7 +455,6 @@ pub extern "C" fn set_modifiers_end() -> Result<()> {
         performance::begin_measure!("set_modifiers_end");
         state.render_state.options.set_fast_mode(false);
         state.render_state.options.set_interactive_transform(false);
-        state.render_state.cancel_animation_frame();
         performance::end_measure!("set_modifiers_end");
     });
     Ok(())

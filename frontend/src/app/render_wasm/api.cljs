@@ -268,11 +268,20 @@
 (declare request-render)
 (declare set-shape-vertical-align fonts-from-text-content)
 
-;; This should never be called from the outside.
+;; Performs a render
 (defn- render
+  ([]
+   (render (js/performance.now)))
+  ([timestamp]
+   (let [queue-frame (h/call wasm/internal-module "_render" timestamp)]
+     (when (= queue-frame 1)
+       (request-render "queue-frame")))))
+
+;; This should never be called from the outside.
+(defn- on-render
   [timestamp]
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
-    (h/call wasm/internal-module "_render" timestamp)
+    (render timestamp)
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
     (try
@@ -297,14 +306,12 @@
       (catch :default e
         (js/console.error "text-editor overlay/update failed:" e)))
 
-    (set! wasm/internal-frame-id nil)
     (ug/dispatch! (ug/event "penpot:wasm:render"))))
 
 (defn render-sync
   []
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
-    (h/call wasm/internal-module "_render_sync")
-    (set! wasm/internal-frame-id nil)))
+    (h/call wasm/internal-module "_render_sync")))
 
 (defn render-sync-shape
   [id]
@@ -314,8 +321,7 @@
               (aget buffer 0)
               (aget buffer 1)
               (aget buffer 2)
-              (aget buffer 3))
-      (set! wasm/internal-frame-id nil))))
+              (aget buffer 3)))))
 
 (defonce shapes-loading? (atom false))
 (defonce deferred-render? (atom false))
@@ -327,7 +333,7 @@
              (not @wasm/disable-request-render?))
     (if @shapes-loading?
       (reset! deferred-render? true)
-      (wasm/request-frame render))))
+      (wasm/request-frame))))
 
 (defn- begin-shapes-loading!
   []
@@ -1081,7 +1087,7 @@
               ;; completes in the first frame.  For zoom, interest-
               ;; area tiles (~3 tile margin) don't block the main
               ;; thread.
-              (h/call wasm/internal-module "_render" 0)))]
+              (render)))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box
@@ -1965,6 +1971,7 @@
              (p/fmap
               (fn [default]
                 (set! wasm/internal-module default)
+                (wasm/set-frame-function on-render)
                 true))
              (p/merr
               (fn [cause]

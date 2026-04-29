@@ -8,7 +8,13 @@
   (:require ["./api/shared.js" :as shared]))
 
 (defonce internal-frame-id nil)
+(defonce internal-frame-fn nil)
+
+(defonce internal-stats #js {:requests 0 :cancelled 0 :queued 0 :frames 0})
+
 (defonce internal-module #js {})
+
+(unchecked-set js/globalThis "internalStats" internal-stats)
 
 ;; Is a frame requested?
 (defn frame-requested?
@@ -20,25 +26,33 @@
 (defn cancel-frame
   "Cancels the current requested frame"
   []
-  (when-not (nil? internal-frame-id)
+  (when (frame-requested?)
+    (unchecked-set internal-stats "cancelled" (inc (unchecked-get internal-stats "cancelled")))
     (js/cancelAnimationFrame internal-frame-id)
     (set! internal-frame-id nil)
     true)
   false)
 
-(defn create-frame-delegate
-  "Creates a new frame delegate"
+(defn- on-frame
+  "The frame function"
+  [timestamp]
+  (let [frame-id internal-frame-id]
+    (set! internal-frame-id nil)
+    (unchecked-set internal-stats "frames" (inc (unchecked-get internal-stats "frames")))
+    (internal-frame-fn timestamp frame-id)))
+
+(defn set-frame-function
   [f]
-  (fn frame-delegate [timestamp]
-    (let [frame-id internal-frame-id]
-      (set! internal-frame-id nil)
-      (f timestamp frame-id))))
+  (set! internal-frame-fn f))
 
 ;; Requests a frame
 (defn request-frame
   "Requests a new frame"
-  [f]
-  (set! internal-frame-id (js/requestAnimationFrame (create-frame-delegate f))))
+  []
+  (unchecked-set internal-stats "requests" (inc (unchecked-get internal-stats "requests")))
+  (when-not (frame-requested?)
+    (unchecked-set internal-stats "queued" (inc (unchecked-get internal-stats "queued")))
+    (set! internal-frame-id (js/requestAnimationFrame on-frame))))
 
 ;; Reference to the HTML canvas element.
 (defonce canvas nil)

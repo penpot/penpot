@@ -7,12 +7,10 @@ pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
 
 use crate::error::{Error, Result};
-use crate::render::RenderState;
-use crate::shapes::Shape;
+use crate::render::{RenderState, QueueFrame};
+use crate::shapes::{Shape, modifiers::grid_layout::grid_cell_data};
 use crate::tiles;
 use crate::uuid::Uuid;
-
-use crate::shapes::modifiers::grid_layout::grid_cell_data;
 
 /// This struct holds the state of the Rust application between JS calls.
 ///
@@ -93,12 +91,12 @@ impl State {
         self.render_state.render_from_cache(&self.shapes);
     }
 
-    pub fn render_sync(&mut self, timestamp: i32) -> Result<()> {
+    pub fn render_sync(&mut self, timestamp: i32) -> Result<QueueFrame> {
         self.render_state
             .start_render_loop(None, &self.shapes, timestamp, true)
     }
 
-    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<()> {
+    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<QueueFrame> {
         self.render_state
             .start_render_loop(Some(id), &self.shapes, timestamp, true)
     }
@@ -113,7 +111,7 @@ impl State {
             .render_shape_pixels(id, &self.shapes, scale, timestamp)
     }
 
-    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<()> {
+    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<QueueFrame> {
         // If zoom changed (e.g. interrupted zoom render followed by pan), the
         // tile index may be stale for the new viewport position. Rebuild the
         // index so shapes are mapped to the correct tiles. We use
@@ -126,11 +124,6 @@ impl State {
 
         self.render_state
             .start_render_loop(None, &self.shapes, timestamp, false)
-    }
-
-    pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<()> {
-        self.render_state
-            .process_animation_frame(None, &self.shapes, timestamp)
     }
 
     pub fn clear_focus_mode(&mut self) {

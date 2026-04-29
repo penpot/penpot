@@ -39,6 +39,12 @@ pub use images::*;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
+#[repr(u8)]
+pub enum QueueFrame {
+    Yes = 1,
+    No = 0,
+}
+
 #[derive(Debug)]
 pub struct NodeRenderState {
     pub id: Uuid,
@@ -336,8 +342,6 @@ pub(crate) struct RenderState {
     pub cached_viewbox: Viewbox,
     pub images: ImageStore,
     pub background_color: skia::Color,
-    // Identifier of the current requestAnimationFrame call, if any.
-    pub render_request_id: Option<i32>,
     // Indicates whether the rendering process has pending frames.
     pub render_in_progress: bool,
     // Stack of nodes pending to be rendered.
@@ -508,7 +512,6 @@ impl RenderState {
             cached_viewbox: Viewbox::new(0., 0.),
             images: ImageStore::new(gpu_state.context.clone()),
             background_color: skia::Color::TRANSPARENT,
-            render_request_id: None,
             render_in_progress: false,
             pending_nodes: vec![],
             current_tile: None,
@@ -1608,14 +1611,6 @@ impl RenderState {
         self.surfaces.update_render_context(self.render_area, scale);
     }
 
-    pub fn cancel_animation_frame(&mut self) {
-        if self.render_in_progress {
-            if let Some(frame_id) = self.render_request_id {
-                wapi::cancel_animation_frame!(frame_id);
-            }
-        }
-    }
-
     fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
         self.backbuffer_crop_cache.clear();
 
@@ -1864,7 +1859,7 @@ impl RenderState {
 
         performance::end_measure!("render_from_cache");
         performance::end_timed_log!("render_from_cache", _start);
-
+    }
 
     pub fn start_render_loop(
         &mut self,
@@ -1872,7 +1867,7 @@ impl RenderState {
         tree: ShapesPoolRef,
         timestamp: i32,
         sync_render: bool,
-    ) -> Result<()> {
+    ) -> Result<QueueFrame> {
         #[cfg(feature = "stats")]
         self.stats.clear();
 
@@ -1965,10 +1960,11 @@ impl RenderState {
 
         self.apply_drawing_to_render_canvas(None, SurfaceId::Current);
 
+        let mut result = QueueFrame::No;
         if sync_render {
             self.render_shape_tree_sync(base_object, tree, timestamp)?;
         } else {
-            self.process_animation_frame(base_object, tree, timestamp)?;
+            result = self.render_loop_step(base_object, tree, timestamp)?;
             // Update cached_viewbox after visible tiles render
             // synchronously so that render_from_cache uses the correct
             // zoom ratio even if interest-area tiles are still rendering
@@ -1983,7 +1979,7 @@ impl RenderState {
 
         performance::end_measure!("start_render_loop");
         performance::end_timed_log!("start_render_loop", _start);
-        Ok(())
+        Ok(result)
     }
 
     fn compute_document_bounds(
@@ -2017,12 +2013,12 @@ impl RenderState {
         acc
     }
 
-    pub fn process_animation_frame(
+    pub fn render_loop_step(
         &mut self,
         base_object: Option<&Uuid>,
         tree: ShapesPoolRef,
         timestamp: i32,
-    ) -> Result<()> {
+    ) -> Result<QueueFrame> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
             if tree.len() != 0 {
@@ -2043,8 +2039,7 @@ impl RenderState {
             }
 
             if self.render_in_progress {
-                self.cancel_animation_frame();
-                self.render_request_id = Some(wapi::request_animation_frame!());
+                return Ok(QueueFrame::Yes);
             } else {
                 // A full-quality frame is now complete. Refresh Backbuffer and regenerate
                 // the per-shape crop cache so interactive drags can reuse pixels.
@@ -2057,7 +2052,7 @@ impl RenderState {
             }
         }
         performance::end_measure!("process_animation_frame");
-        Ok(())
+        Ok(QueueFrame::No)
     }
 
     pub fn render_shape_tree_sync(
@@ -2065,12 +2060,12 @@ impl RenderState {
         base_object: Option<&Uuid>,
         tree: ShapesPoolRef,
         timestamp: i32,
-    ) -> Result<()> {
+    ) -> Result<QueueFrame> {
         if tree.len() != 0 {
             self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
         }
         self.flush_and_submit();
-        Ok(())
+        Ok(QueueFrame::No)
     }
 
     pub fn render_shape_pixels(
