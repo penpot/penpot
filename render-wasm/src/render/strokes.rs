@@ -231,8 +231,8 @@ fn draw_stroke_on_path(
     if let Some(pt) = path_transform {
         canvas.concat(pt);
     }
-    let skia_path = path.to_skia_path(svg_attrs);
 
+    let skia_path = path.to_skia_path(svg_attrs);
     match stroke.render_kind(is_open) {
         StrokeKind::Inner => {
             draw_inner_stroke_path(canvas, &skia_path, &draw_paint, blur, antialias);
