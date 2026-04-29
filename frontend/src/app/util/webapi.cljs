@@ -102,7 +102,7 @@
         mtype       (subs meta (inc (str/index-of meta ":")) mtype-end)
         base64?     (str/includes? meta ";base64")
         content     (if base64?
-                      (let [decoded (.atob js/window data)
+                      (let [decoded (.atob js/globalThis data)
                             size    (.-length ^js decoded)
                             bytes   (js/Uint8Array. size)]
                         (loop [i 0]
@@ -112,7 +112,7 @@
                         bytes)
                       ;; Data URIs can be plain/URL-encoded (e.g. ;utf8,<svg...>).
                       ;; Encode into UTF-8 bytes before creating the Blob.
-                      (.encode (js/TextEncoder.) (js/decodeURIComponent data)))]
+                      (.encode (js/TextEncoder.) (.decodeURIComponent js/globalThis data)))]
     (create-blob content mtype)))
 
 (defn get-current-selected-text
