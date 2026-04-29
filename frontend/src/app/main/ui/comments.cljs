@@ -562,8 +562,7 @@
             [:div {:class (stl/css :comments-mentions-email)} email]]))])))
 
 (mf/defc mentions-button*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   []
   (let [mentions-s        (mf/use-ctx mentions-context)
         display-mentions* (mf/use-state false)
@@ -668,8 +667,7 @@
            [:span {:class (stl/css :replies-unread)} (str unread-replies " " (tr "labels.replies.new"))]))])]])
 
 (mf/defc comment-form-buttons*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-submit on-cancel is-disabled]}]
   (let [handle-cancel
         (mf/use-fn
@@ -705,8 +703,7 @@
   (> (count content) 750))
 
 (mf/defc comment-reply-form*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-submit]}]
   (let [content       (mf/use-state "")
 

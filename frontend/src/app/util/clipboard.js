@@ -24,6 +24,13 @@ const exclusiveTypes = [
   "text/plain"
 ];
 
+const svgTextPattern =
+  /^(\s*<\?xml[^?]*\?>\s*)?(\s*<!--[\s\S]*?-->\s*)*<svg[\s>]/i;
+
+function hasSvgItem(items) {
+  return items.some((item) => item?.type === "image/svg+xml");
+}
+
 /**
  * @typedef {Object} ClipboardSettings
  * @property {Function} [decodeTransit]
@@ -59,7 +66,7 @@ function parseText(text, options) {
     }
   }
 
-  if (/^<svg[\s>]/i.test(text)) {
+  if (svgTextPattern.test(text)) {
     return new Blob([text], { type: "image/svg+xml" });
   } else {
     return new Blob([text], { type: "text/plain" });
@@ -207,11 +214,17 @@ export async function fromDataTransfer(dataTransfer, options) {
       }),
   );
   return items
-    .filter((item) => !!item)
-    .reduce((filtered, item) => {
+    .filter((item) => !!item && item.size > 0)
+    .reduce((filtered, item, _index, all) => {
       if (
         exclusiveTypes.includes(item.type) &&
         filtered.find((filteredItem) => exclusiveTypes.includes(filteredItem.type))
+      ) {
+        return filtered;
+      }
+      if (
+        item.type !== "image/svg+xml" && item.type.startsWith("image/") &&
+        hasSvgItem(all)
       ) {
         return filtered;
       }

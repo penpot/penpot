@@ -48,7 +48,6 @@
 
 (mf/defc header*
   {::mf/wrap [mf/memo]
-   ::mf/props :obj
    ::mf/private true}
   [{:keys [can-edit]}]
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
@@ -62,8 +61,7 @@
         (tr "dashboard.new-project")])]))
 
 (mf/defc team-hero*
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+  {::mf/wrap [mf/memo]}
   [{:keys [team on-close]}]
   (let [on-nav-members-click (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
 
@@ -102,8 +100,7 @@
       close-icon]]))
 
 (mf/defc project-item*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [project is-first team files can-edit]}]
   (let [project-id (get project :id)
         team-id    (get team :id)
@@ -313,7 +310,6 @@
   (l/derived :recent-files st/state))
 
 (mf/defc projects-section*
-  {::mf/props :obj}
   [{:keys [team projects profile]}]
 
   (let [team-id         (get team :id)

@@ -11,10 +11,10 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as-alias db]
-   [app.email :as email]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
    [clojure.test :as t]
@@ -74,24 +74,32 @@
 (t/deftest notify-team-change-publishes-event
   (let [team-id          (uuid/random)
         organization-id  (uuid/random)
+        organization     {:id organization-id
+                          :name "Acme Inc"
+                          :slug "acme-inc"
+                          :owner-id (uuid/random)
+                          :avatar-bg-url "http://example.com/avatar.svg"}
         calls            (atom [])
         out              (with-redefs [mbus/pub! (fn [_cfg & {:keys [topic message]}]
                                                    (swap! calls conj {:topic topic
                                                                       :message message}))]
                            (management-command-with-nitrate! {::th/type :notify-team-change
                                                               :id team-id
-                                                              :organization-id organization-id
-                                                              :organization-name "Acme Inc"}))]
+                                                              :is-your-penpot false
+                                                              :organization organization}))]
     (t/is (th/success? out))
     (t/is (= 1 (count @calls)))
     (t/is (= uuid/zero (-> @calls first :topic)))
-    (t/is (= {:type :team-org-change
-              :team-id team-id
-              :team-name nil
-              :organization-id organization-id
-              :organization-name "Acme Inc"
-              :notification nil}
-             (-> @calls first :message)))))
+    (let [msg (-> @calls first :message)]
+      (t/is (= :team-org-change (:type msg)))
+      (t/is (= nil (:notification msg)))
+      (t/is (= team-id (-> msg :team :id)))
+      (t/is (= false (-> msg :team :is-your-penpot)))
+      (t/is (= (:id organization) (-> msg :team :organization :id)))
+      (t/is (= (:name organization) (-> msg :team :organization :name)))
+      (t/is (= (:slug organization) (-> msg :team :organization :slug)))
+      (t/is (= (:owner-id organization) (-> msg :team :organization :owner-id)))
+      (t/is (= (:avatar-bg-url organization) (str (-> msg :team :organization :avatar-bg-url)))))))
 
 (t/deftest notify-user-added-to-organization-creates-default-org-team
   (let [profile      (th/create-profile* 1 {:is-active true})
@@ -157,32 +165,158 @@
     (t/is (= #{(:id team1) (:id team2)}
              (->> out :result :teams (map :id) set)))))
 
-(t/deftest notify-org-deletion-prefixes-teams-and-notifies
-  (let [profile        (th/create-profile* 1 {:is-active true})
-        extra-team     (th/create-team* 1 {:profile-id (:id profile)})
-        default-team   (th/db-get :team {:id (:default-team-id profile)})
-        teams          [(:id default-team) (:id extra-team)]
-        organization-name       "Acme / Design"
-        expected-start (str "[" (d/sanitize-string organization-name) "] ")
-        calls          (atom [])
-        out            (with-redefs [mbus/pub! (fn [_cfg & {:keys [topic message]}]
-                                                 (swap! calls conj {:topic topic
-                                                                    :message message}))]
-                         (management-command-with-nitrate! {::th/type :notify-org-deletion
-                                                            ::rpc/profile-id (:id profile)
-                                                            :teams teams
-                                                            :organization-name organization-name}))
-        updated        (map #(th/db-get :team {:id %} {::db/remove-deleted false}) teams)]
+(t/deftest notify-organization-deletion-prefixes-teams-and-publishes-org-deleted-event
+  (let [profile           (th/create-profile* 1 {:is-active true})
+        ;; One team will have files -> it will be kept and renamed.
+        team-with-files   (th/db-get :team {:id (:default-team-id profile)})
+        project           (th/create-project* 1 {:profile-id (:id profile)
+                                                 :team-id (:id team-with-files)})
+        _                 (th/create-file* 1 {:profile-id (:id profile)
+                                              :project-id (:id project)})
+
+        ;; One team will be empty -> it will be soft-deleted.
+        empty-team        (th/create-team* 1 {:profile-id (:id profile)})
+
+        organization-id   (uuid/random)
+        organization-name "Acme / Design"
+        expected-start    (str "[" (d/sanitize-string organization-name) "] ")
+        org-summary       {:id organization-id
+                           :name organization-name
+                           :teams [{:id (:id team-with-files)}
+                                   {:id (:id empty-team)}]}
+        calls             (atom [])
+        submitted         (atom [])
+        out               (with-redefs [nitrate/call (fn [_cfg method params]
+                                                       (t/is (= :get-org-summary method))
+                                                       (t/is (= {:organization-id organization-id} params))
+                                                       org-summary)
+                                        wrk/submit! (fn [task]
+                                                      (swap! submitted conj task)
+                                                      nil)
+                                        mbus/pub! (fn [_cfg & {:keys [topic message]}]
+                                                    (swap! calls conj {:topic topic
+                                                                       :message message}))]
+                            (management-command-with-nitrate! {::th/type :notify-organization-deletion
+                                                               ::rpc/profile-id (:id profile)
+                                                               :organization-id organization-id}))
+        updated-with-files (th/db-get :team {:id (:id team-with-files)} {::db/remove-deleted false})
+        updated-empty      (th/db-get :team {:id (:id empty-team)} {::db/remove-deleted false})]
     (t/is (th/success? out))
+    (t/is (nil? (:result out)))
+
+    ;; Team with files is kept, unset as default, and renamed with org prefix.
+    (t/is (false? (:is-default updated-with-files)))
+    (t/is (str/starts-with? (:name updated-with-files) expected-start))
+    (t/is (nil? (:deleted-at updated-with-files)))
+
+    ;; Empty team is soft-deleted and a delete task is submitted.
+    (t/is (some? (:deleted-at updated-empty)))
+    (t/is (= 1 (count @submitted)))
+
+    ;; A single organization-deleted event is published.
+    (t/is (= 1 (count @calls)))
+    (let [{:keys [topic message]} (first @calls)]
+      (t/is (= uuid/zero topic))
+      (t/is (= :organization-deleted (:type message)))
+      (t/is (= organization-name (:organization-name message)))
+      (t/is (= #{(:id team-with-files) (:id empty-team)}
+               (set (:teams message))))
+      (t/is (= #{(:id empty-team)}
+               (set (:deleted-teams message)))))))
+
+(t/deftest notify-user-organizations-deletion-renames-or-deletes-teams-and-publishes-per-org-events
+  (let [profile            (th/create-profile* 1 {:is-active true})
+        ;; org-1: one team with files, one empty
+        org-1-team-files   (th/db-get :team {:id (:default-team-id profile)})
+        org-1-proj         (th/create-project* 1 {:profile-id (:id profile)
+                                                  :team-id (:id org-1-team-files)})
+        _                  (th/create-file* 1 {:profile-id (:id profile)
+                                               :project-id (:id org-1-proj)})
+        org-1-team-empty   (th/create-team* 1 {:profile-id (:id profile)})
+
+        ;; org-2: one team with files, one empty
+        org-2-team-files   (th/create-team* 2 {:profile-id (:id profile)})
+        org-2-proj         (th/create-project* 2 {:profile-id (:id profile)
+                                                  :team-id (:id org-2-team-files)})
+        _                  (th/create-file* 2 {:profile-id (:id profile)
+                                               :project-id (:id org-2-proj)})
+        org-2-team-empty   (th/create-team* 3 {:profile-id (:id profile)})
+
+        org-1-id           (uuid/random)
+        org-2-id           (uuid/random)
+        org-1-name         "Org One / Design"
+        org-2-name         "Org Two"
+        org-1-prefix       (str "[" (d/sanitize-string org-1-name) "] ")
+        org-2-prefix       (str "[" (d/sanitize-string org-2-name) "] ")
+        owned-orgs         [{:id org-1-id
+                             :name org-1-name
+                             :teams [{:id (:id org-1-team-files)}
+                                     {:id (:id org-1-team-empty)}]}
+                            {:id org-2-id
+                             :name org-2-name
+                             :teams [{:id (:id org-2-team-files)}
+                                     {:id (:id org-2-team-empty)}]}]
+        calls              (atom [])
+        submitted          (atom [])
+        out                (with-redefs [nitrate/call (fn [_cfg method params]
+                                                        (case method
+                                                          :get-owned-orgs
+                                                          (do
+                                                            (t/is (= {:profile-id (:id profile)} params))
+                                                            owned-orgs)
+                                                          nil))
+                                         wrk/submit! (fn [task]
+                                                       (swap! submitted conj task)
+                                                       nil)
+                                         mbus/pub! (fn [_cfg & {:keys [topic message]}]
+                                                     (swap! calls conj {:topic topic
+                                                                        :message message}))]
+                             (management-command-with-nitrate! {::th/type :notify-user-organizations-deletion
+                                                                ::rpc/profile-id (:id profile)
+                                                                :profile-id (:id profile)}))
+        org-1-updated-files (th/db-get :team {:id (:id org-1-team-files)} {::db/remove-deleted false})
+        org-1-updated-empty (th/db-get :team {:id (:id org-1-team-empty)} {::db/remove-deleted false})
+        org-2-updated-files (th/db-get :team {:id (:id org-2-team-files)} {::db/remove-deleted false})
+        org-2-updated-empty (th/db-get :team {:id (:id org-2-team-empty)} {::db/remove-deleted false})
+        msgs               (->> @calls (map :message) vec)
+        org-msg            (fn [org-name]
+                             (first (filter #(= org-name (:organization-name %)) msgs)))]
+    (t/is (th/success? out))
+    (t/is (nil? (:result out)))
+
+    ;; org-1: team with files renamed; empty team deleted
+    (t/is (false? (:is-default org-1-updated-files)))
+    (t/is (str/starts-with? (:name org-1-updated-files) org-1-prefix))
+    (t/is (nil? (:deleted-at org-1-updated-files)))
+    (t/is (some? (:deleted-at org-1-updated-empty)))
+
+    ;; org-2: team with files renamed; empty team deleted
+    (t/is (false? (:is-default org-2-updated-files)))
+    (t/is (str/starts-with? (:name org-2-updated-files) org-2-prefix))
+    (t/is (nil? (:deleted-at org-2-updated-files)))
+    (t/is (some? (:deleted-at org-2-updated-empty)))
+
+    ;; two delete tasks (one per empty team)
+    (t/is (= 2 (count @submitted)))
+
+    ;; one organization-deleted event per org
     (t/is (= 2 (count @calls)))
-    (doseq [team updated]
-      (t/is (false? (:is-default team)))
-      (t/is (str/starts-with? (:name team) expected-start)))
-    (doseq [call @calls]
-      (t/is (= uuid/zero (:topic call)))
-      (t/is (= :team-org-change (-> call :message :type)))
-      (t/is (= organization-name (-> call :message :organization-name)))
-      (t/is (= "dashboard.org-deleted" (-> call :message :notification))))))
+    (t/is (every? #(= uuid/zero (:topic %)) @calls))
+    (t/is (= #{:organization-deleted}
+             (set (map (comp :type :message) @calls))))
+
+    (let [m1 (org-msg org-1-name)
+          m2 (org-msg org-2-name)]
+      (t/is (some? m1))
+      (t/is (some? m2))
+      (t/is (= #{(:id org-1-team-files) (:id org-1-team-empty)}
+               (set (:teams m1))))
+      (t/is (= #{(:id org-1-team-empty)}
+               (set (:deleted-teams m1))))
+      (t/is (= #{(:id org-2-team-files) (:id org-2-team-empty)}
+               (set (:teams m2))))
+      (t/is (= #{(:id org-2-team-empty)}
+               (set (:deleted-teams m2)))))))
 
 (t/deftest get-profile-by-email-success-and-not-found
   (let [profile (th/create-profile* 1 {:is-active true

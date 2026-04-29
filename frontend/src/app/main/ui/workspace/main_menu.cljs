@@ -18,6 +18,7 @@
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as scd]
@@ -226,8 +227,10 @@
 (mf/defc preferences-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [layout profile toggle-flag on-close toggle-theme]}]
-  (let [show-nudge-options
+  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render]}]
+  (let [renderer (or (-> profile :props :renderer) :svg)
+
+        show-nudge-options
         (mf/use-fn
          #(modal/show! {:type :nudge-option}))]
 
@@ -321,7 +324,17 @@
          "light" (tr "workspace.header.menu.toggle-system-theme")
          "system" (tr "workspace.header.menu.toggle-dark-theme")
          (tr "workspace.header.menu.toggle-light-theme"))]
-      [:> shortcuts* {:id :toggle-theme}]]]))
+      [:> shortcuts* {:id :toggle-theme}]]
+     (when (contains? cf/flags :render-switch)
+       [:> dropdown-menu-item* {:on-click    toggle-render
+                                :class       (stl/css :base-menu-item :submenu-item)
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (toggle-render event)))}
+        [:span {:class (stl/css :item-name)}
+         (if (= renderer :wasm)
+           (tr "workspace.header.menu.disable-webgl")
+           (tr "workspace.header.menu.enable-webgl"))]])]))
 
 (mf/defc view-menu*
   {::mf/private true
@@ -782,13 +795,14 @@
         mcp      (mf/deref refs/mcp)
         tokens   (mf/deref refs/access-tokens)
 
-        expired? (some->> tokens
-                          (some #(when (= (:type %) "mcp") %))
-                          :expires-at
-                          (> (ct/now)))
+        expires-at (some->> tokens
+                            (some #(when (= (:type %) "mcp") %))
+                            :expires-at)
+        expired?   (and (some? expires-at) (> (ct/now) expires-at))
 
-        mcp-enabled?    (true? (-> profile :props :mcp-enabled))
-        mcp-connected?  (= "connected" (get mcp :connection-status))
+        mcp-enabled?   (true? (-> profile :props :mcp-enabled))
+        mcp-connection (get mcp :connection-status)
+        mcp-connected? (= mcp-connection "connected")
 
         show-enabled?   (and mcp-enabled? (false? expired?))
 
@@ -829,7 +843,7 @@
                                              :pos-6 plugins?)
                         :on-close on-close}
 
-     (when show-enabled?
+     (when (and show-enabled? (not expired?))
        [:> dropdown-menu-item* {:id          "mcp-menu-toggle-mcp-plugin"
                                 :class       (stl/css :base-menu-item :submenu-item)
                                 :on-click    on-toggle-mcp-plugin
@@ -918,6 +932,18 @@
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (du/toggle-theme))))
+
+        toggle-render
+        (mf/use-fn
+         (mf/deps profile)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [renderer (or (-> profile :props :renderer) :svg)
+                 next-renderer (if (= renderer :wasm) :svg :wasm)]
+             (st/emit! (du/update-profile-props {:renderer next-renderer})
+                       (ntf/success (tr (if (= next-renderer :wasm)
+                                          "webgl.toast.webgl-render-enabled"
+                                          "webgl.toast.webgl-render-disabled")))))))
 
         open-plugins-manager
         (mf/use-fn
@@ -1019,10 +1045,10 @@
 
       (when (contains? cf/flags :mcp)
         (let [tokens   (mf/deref refs/access-tokens)
-              expired? (some->> tokens
-                                (some #(when (= (:type %) "mcp") %))
-                                :expires-at
-                                (> (ct/now)))
+              expires-at (some->> tokens
+                                  (some #(when (= (:type %) "mcp") %))
+                                  :expires-at)
+              expired?   (and (some? expires-at) (> (ct/now) expires-at))
 
               mcp-enabled?   (true? (-> profile :props :mcp-enabled))
               mcp-connection (get mcp :connection-status)
@@ -1098,6 +1124,7 @@
                               :profile profile
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
+                              :toggle-render toggle-render
                               :on-close close-sub-menu}]
 
        :plugins

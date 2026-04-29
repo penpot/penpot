@@ -41,7 +41,6 @@
 (def TimeoutError rxjs/TimeoutError)
 
 (mf/defc error-container*
-  {::mf/props :obj}
   [{:keys [children]}]
   (let [profile-id  (:profile-id @st/state)
         on-nav-root (mf/use-fn #(st/emit! (rt/nav-root)))]
@@ -186,7 +185,6 @@
           [:& recovery-sent-page {:email @user-email}]])]]]))
 
 (mf/defc request-dialog*
-  {::mf/props :obj}
   [{:keys [title content button-text on-button-click cancel-text on-close]}]
   (let [on-click (or on-button-click on-close)]
     [:div {:class (stl/css :overlay)}
@@ -532,7 +530,6 @@
    children])
 
 (mf/defc exception-page*
-  {::mf/props :obj}
   [{:keys [data route] :as props}]
 
   (let [type        (:type data)

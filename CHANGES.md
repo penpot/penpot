@@ -6,10 +6,10 @@
 
 ### :rocket: Epics and highlights
 
-- Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
-
 ### :sparkles: New features & Enhancements
 
+- Add "Delete group" option to the assets panel context menu for components, colors and typographies (by @FairyPigDev) [Github #9141](https://github.com/penpot/penpot/issues/9141)
+- Add `Alt+click` on a layer's disclosure arrow to recursively expand the entire subtree rooted at that layer in the Layers sidebar; symmetric with the existing `Shift+click` collapse-all gesture, and removes the O(siblings × depth) click cost of unfolding a deep subtree one level at a time [Github #7736](https://github.com/penpot/penpot/issues/7736)
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
 - Add "Clear artboard guides" option to right-click context menu for frames (by @eureka0928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
 - Add loader feedback while importing and exporting files [Github #9020](https://github.com/penpot/penpot/issues/9020)
@@ -46,10 +46,16 @@
 - Add a search bar to filter colors in the color palette toolbar (by @eureka0928) [Github #7653](https://github.com/penpot/penpot/issues/7653)
 - Allow customising the OIDC login button label (by @wdeveloper16) [Github #7027](https://github.com/penpot/penpot/issues/7027)
 - Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
+- Preserve vector content when pasting from external tools such as Inkscape: recognise SVG sent as text/plain (with optional XML declaration and HTML comments), skip the raster preview when an SVG sibling is on the clipboard, and ignore empty SVG blobs that some tools advertise alongside the real payload, so pasted graphics arrive editable without spurious "SVG is invalid" warnings [Github #546](https://github.com/penpot/penpot/issues/546)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
+- Adds a **Pixel grid color** picker in the viewport settings, next to the existing canvas color control [Github #7750](https://github.com/penpot/penpot/issues/7750)
 
 ### :bug: Bugs fixed
 
+- Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
+- Fix plugin API `library.connectLibrary()` returning a non-Promise (or throwing synchronously) when the plugin lacks `library:write` permission — the method now always returns a `Promise` and rejects with a structured error message, matching the contract used by every other Promise-returning plugin method (`restore`, `remove`, `pin`, `saveVersion`, `findVersions`, …)
+- Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
+- Fix `login-with-ldap` silently dropping its error message on the `ldap-not-initialized` restriction (typo `:hide` → `:hint`); the message `"ldap auth provider is not initialized"` now actually surfaces in logs and error responses instead of being discarded into an unread key
 - Fix `PENPOT_OIDC_USER_INFO_SOURCE` flag being silently ignored (`userinfo` / `token`) in the OIDC callback, causing "incomplete user info" failures during registration [Github #9108](https://github.com/penpot/penpot/issues/9108)
 - Fix `get-view-only-bundle` crashing when a share-link viewer encounters a team member whose email lacks `@` (NullPointerException in `obfuscate-email`) or whose domain has no `.` (previously produced a dangling-dot `****@****.`); now the viewer-side obfuscation is nil-safe and omits the trailing dot when the domain has no TLD
 - Remove `corepack` from the MCP local launcher so it runs on Node.js 25+, where corepack is no longer bundled [Github #8877](https://github.com/penpot/penpot/issues/8877)
@@ -94,7 +100,6 @@
 
 ### :sparkles: New features & Enhancements
 
-- Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 
 ### :bug: Bugs fixed
@@ -109,12 +114,14 @@
 - Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
 - Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
 - Fix color dropdown option update [Taiga #14035](https://tree.taiga.io/project/penpot/issue/14035)
+- Fix themes modal height [Taiga #14046](https://tree.taiga.io/project/penpot/issue/14046)
 
 
 ## 2.15.0 (Unreleased)
 
 ### :sparkles: New features & Enhancements
 
+- Access Tokens look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112)
 - Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
 
@@ -160,6 +167,7 @@
 - Fix wrong `mapcat` call in `collect-main-shapes`
 - Fix stale accumulator in `get-children-in-instance` recursion
 - Fix typo `:podition` in swap-shapes grid cell
+- Fix multiple selection on shapes with token applied to stroke color
 
 
 ## 2.14.2
