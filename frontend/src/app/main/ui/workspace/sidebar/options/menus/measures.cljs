@@ -606,6 +606,7 @@
           (if token-numeric-inputs
             [:> numeric-input-wrapper*
              {:on-change on-rotation-change
+              :data-testid "rotation"
               :on-detach on-detach-token
               :icon i/rotation
               :min -359
