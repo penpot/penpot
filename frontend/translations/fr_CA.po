@@ -5025,11 +5025,11 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "Merci d'avoir choisi le forfait Penpot %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Profite bien de ton forfait!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "Tu es %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:526

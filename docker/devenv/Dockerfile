@@ -184,7 +184,8 @@ FROM base AS setup-utils
 ENV CLJKONDO_VERSION=2026.04.15 \
     BABASHKA_VERSION=1.12.208 \
     CLJFMT_VERSION=0.16.4 \
-    PIXI_VERSION=0.67.2
+    PIXI_VERSION=0.67.2 \
+    GITHUB_CLI_VERSION=2.91.0
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -267,6 +268,28 @@ RUN set -ex; \
     tar -xf /tmp/cljfmt.tar.gz; \
     rm -rf /tmp/cljfmt.tar.gz;
 
+
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/cli/cli/releases/download/v${GITHUB_CLI_VERSION}/gh_${GITHUB_CLI_VERSION}_linux_arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/cli/cli/releases/download/v${GITHUB_CLI_VERSION}/gh_${GITHUB_CLI_VERSION}_linux_amd64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    cd /tmp; \
+    curl -LfsSo /tmp/gh.tar.gz ${BINARY_URL}; \
+    mkdir /opt/gh; \
+    cd /opt/gh; \
+    tar -xf /tmp/gh.tar.gz; \
+    rm -rf /tmp/gh.tar.gz;
+
 # Install minio client
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -310,7 +333,6 @@ RUN set -ex; \
       nginx \
       fd-find \
       bat \
-      gh \
       \
       fontconfig \
       woff-tools \
@@ -399,13 +421,14 @@ ENV LANG='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
     CARGO_HOME="/opt/cargo" \
     RUSTUP_HOME="/opt/rustup" \
-    PATH="/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
+    PATH="/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
 COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
 COPY --from=setup-utils /opt/utils /opt/utils
+COPY --from=setup-utils /opt/gh /opt/gh
 COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk

@@ -192,8 +192,7 @@
             (swap! state update-entry-status message))))))
 
 (mf/defc import-entry*
-  {::mf/props :obj
-   ::mf/memo true
+  {::mf/memo true
    ::mf/private true}
   [{:keys [entries entry edition can-be-deleted importing? on-edit on-change on-delete]}]
   (let [status          (:status entry)
