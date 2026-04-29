@@ -42,6 +42,7 @@
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.debug :as dbg]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -183,6 +184,7 @@
               :data-testid "left-sidebar"
               :data-width (str width)
               :class aside-class
+              :on-context-menu dom/prevent-default-context-menu
               :style {:--left-sidebar-width (dm/str width "px")}}
 
       [:> left-header* {:file file
@@ -329,6 +331,7 @@
         :id "right-sidebar-aside"
         :data-testid "right-sidebar"
         :data-size (str width)
+        :on-context-menu dom/prevent-default-context-menu
         :style {:--right-sidebar-width (if can-be-expanded?
                                          (dm/str width "px")
                                          (dm/str right-sidebar-default-width "px"))}}
