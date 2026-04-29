@@ -9077,3 +9077,21 @@ msgstr "Más información"
 
 msgid "subscription.settings.activate-by-code"
 msgstr "Introducir código de activación"
+
+msgid "subscription.current-plan.title"
+msgstr "Tu suscripción"
+
+msgid "subscription.current-plan.professional"
+msgstr "Professional"
+
+msgid "subscription.current-plan.unlimited"
+msgstr "Unlimited"
+
+msgid "subscription.current-plan.nitrate"
+msgstr "Nitrate"
+
+msgid "subscription.current-plan.nitrate-trial"
+msgstr "Nitrate (Prueba)"
+
+msgid "subscription.current-plan.enterprise"
+msgstr "Enterprise"

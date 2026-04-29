@@ -251,3 +251,24 @@
 .nitrate-bottom-button {
   width: fit-content;
 }
+
+.nitrate-current-plan {
+  border-radius: var(--sp-s);
+  margin: 0 var(--sp-m) var(--sp-m) var(--sp-m);
+  background: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-quaternary);
+  padding: var(--sp-m) var(--sp-l);
+}
+
+.nitrate-current-plan-label {
+  @include t.use-typography("body-small");
+
+  padding-block-end: var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.nitrate-current-plan-text {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+}
