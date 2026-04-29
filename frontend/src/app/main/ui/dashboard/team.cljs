@@ -1065,7 +1065,7 @@
            (tr "dashboard.your-penpot")
            (:name team)))))
 
-  (mf/with-effect [team]
+  (mf/with-effect [(:id team) (:members team)]
     (st/emit! (dtm/fetch-invitations)))
 
   [:*

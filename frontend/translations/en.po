@@ -1545,6 +1545,14 @@ msgstr "Invite invalid"
 msgid "errors.invite-invalid.info"
 msgstr "This invite might be canceled or may be expired."
 
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-expired"
+msgstr "This invitation has expired. Ask the team owner to send you a new one."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-email-mismatch"
+msgstr "This invitation is for a different email. Log out and sign in with the invited account, or ask the team owner for a new invitation."
+
 #: src/app/main/ui/auth/login.cljs:89
 msgid "errors.ldap-disabled"
 msgstr "LDAP authentication is disabled."
@@ -5319,11 +5327,11 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "Thank your for chosing the Penpot %s plan!"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Enjoy your plan!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "You are %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:526
@@ -7351,6 +7359,14 @@ msgstr "Size"
 msgid "workspace.options.size-presets"
 msgstr "Size presets"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.search-size-preset"
+msgstr "Search size preset"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.no-size-preset-results"
+msgstr "No matching size preset"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:469
 msgid "workspace.options.size.lock"
 msgstr "Lock ratio"
@@ -9252,3 +9268,100 @@ msgstr "Are you sure you want to delete this team that is part of %s org?"
 
 msgid "plugins.validation.message"
 msgstr "Field %s is invalid: %s"
+
+msgid "nitrate.code-activation.title"
+msgstr "Activate Nitrate"
+
+msgid "nitrate.code-activation.input-label"
+msgstr "Enter your activation code"
+
+msgid "nitrate.code-activation.submit"
+msgstr "Activate"
+
+msgid "nitrate.code-activation.footer"
+msgstr "Need a code? Contact us:"
+
+msgid "nitrate.code-activation.placeholder"
+msgstr "Paste your activation code here"
+
+
+msgid "nitrate.activation-success.title"
+msgstr "You are Business Nitrate!"
+
+msgid "nitrate.activation-success.active-until"
+msgstr "Your plan is active until %s."
+
+msgid "nitrate.activation-success.manage-info"
+msgstr "You can manage your subscription anytime from the Subscription page in your account settings."
+
+msgid "nitrate.activation-success.enjoy"
+msgstr "Enjoy your plan!"
+
+msgid "nitrate.activation-success.create-org"
+msgstr "Create organization"
+
+msgid "nitrate.form.title"
+msgstr "Unlock Nitrate Features"
+
+msgid "nitrate.form.billing-monthly"
+msgstr "Price Tag Monthly"
+
+msgid "nitrate.form.billing-yearly"
+msgstr "Price Tag Yearly (Discount)"
+
+msgid "nitrate.form.upgrade"
+msgstr "Upgrade to Nitrate"
+
+msgid "nitrate.form.try-free"
+msgstr "Try it free for 14 days"
+
+msgid "nitrate.form.cancel-anytime"
+msgstr "Cancel anytime before your next billing cycle."
+
+msgid "nitrate.form.have-code"
+msgstr "Have an activation code?"
+
+msgid "nitrate.form.enter-code"
+msgstr "Enter activation code"
+
+msgid "nitrate.form.see-plan"
+msgstr "See my current plan"
+
+msgid "nitrate.form.contact-upgrade"
+msgstr "Contact us to upgrade to Nitrate:"
+
+msgid "nitrate.form.contact-trial"
+msgstr "Contact us to try Nitrate for 14 days:"
+
+msgid "nitrate.activation-code.invalid-error"
+msgstr "Invalid code."
+
+msgid "nitrate.activation-code.expired-error"
+msgstr "This code has expired."
+
+msgid "nitrate.contact-sales.title"
+msgstr "Switch to %s plan?"
+
+msgid "nitrate.contact-sales.downgrade-title"
+msgstr "When you downgrade:"
+
+msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgstr "Your organization will be deleted."
+
+msgid "nitrate.contact-sales.downgrade-teams-available"
+msgstr "The teams, projects and files will no longer be part of any organization but they will remain available."
+
+msgid "nitrate.contact-sales.downgrade-storage-limited"
+msgstr "Your total storage, auto-version history, and file recovery period will be limited."
+
+msgid "nitrate.contact-sales.downgrade-contact-info"
+msgstr "To switch to this plan, please contact our sales team. We'll help you update your subscription and ensure everything is set up correctly."
+
+msgid "nitrate.contact-sales.button"
+msgstr "Contact sales"
+
+msgid "nitrate.subscription.active-until"
+msgstr "Active until %s"
+
+msgid "subscription.settings.activate-by-code"
+msgstr "Enter activation code"

@@ -5002,11 +5002,11 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "Penpot %s planını seçtiğiniz için teşekkür ederiz!"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Planınızın tadını çıkarın!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "%s oldunuz!"
 
 #: src/app/main/ui/settings/subscription.cljs:526

@@ -84,6 +84,19 @@
   (-> (subpath/close-subpaths content)
       (impl/from-plain)))
 
+(defn merge-touching-subpaths
+  "Given a content, fold consecutive subpaths whose endpoints coincide
+  into a single continuous subpath, returning a PathData instance.
+
+  Conservative counterpart of `close-subpaths`: only adjacent subpaths
+  are merged and none are reversed, so fill rules and stroke-dasharray
+  semantics are preserved. Used at SVG-import time on stroke-only paths
+  to recover the `stroke-linejoin` rendering when authoring tools split
+  a continuous polyline into adjacent `M..L M..L` subpaths."
+  [content]
+  (-> (subpath/merge-touching-subpaths content)
+      (impl/from-plain)))
+
 (defn apply-content-modifiers
   "Apply delta modifiers over the path content"
   [content modifiers]
