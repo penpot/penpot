@@ -497,7 +497,7 @@
 
 (def ^:private schema:create-team
   [:map {:title "create-team"}
-   [:name [:string {:max 250}]]
+   [:name types.team/schema:team-name]
    [:features {:optional true} ::cfeat/features]
    [:id {:optional true} ::sm/uuid]])
 
@@ -591,7 +591,7 @@
 
 (def ^:private schema:update-team
   [:map {:title "update-team"}
-   [:name [:string {:max 250}]]
+   [:name types.team/schema:team-name]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::update-team

@@ -35,7 +35,9 @@
 
 ### :bug: Bugs fixed
 
+- Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
 
 
 ## 2.14.4
