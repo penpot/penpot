@@ -93,12 +93,30 @@
 ;; FIXME: the impl looks strange: objects is passed by parameters but
 ;; then the rest of the file is looked up directly from state.... (?)
 (defn locate-component
+  "Resolve to the OUTERMOST enclosing component instance — i.e. walk up to
+   `instance-root?` (or the closest equivalent for main components). Use
+   for plugin getters that semantically refer to the component root, like
+   `:componentRoot` and the legacy `:componentRefShape` lookups."
   [objects shape]
   (let [state           (deref st/state)
         file            (dsh/lookup-file state)
         libraries       (dsh/lookup-libraries state)
         root            (ctn/get-instance-root objects shape)]
     [root (ctf/resolve-component root file libraries {:include-deleted? true})]))
+
+(defn locate-immediate-component
+  "Resolve to the IMMEDIATE enclosing component instance — the nearest
+   `instance-head?` ancestor, not the top-of-tree `instance-root?`. Use
+   for plugin getters that promise to return the component the shape is
+   directly an instance of, e.g. `Shape.component()`. Without this, a
+   shape inside a nested copy resolves to the outer wrapper's component
+   rather than its own (#9183)."
+  [objects shape]
+  (let [state     (deref st/state)
+        file      (dsh/lookup-file state)
+        libraries (dsh/lookup-libraries state)
+        head      (ctn/get-head-shape objects shape {:allow-main? true})]
+    [head (ctf/resolve-component head file libraries {:include-deleted? true})]))
 
 (defn proxy->file
   [proxy]

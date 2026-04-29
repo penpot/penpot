@@ -1186,8 +1186,13 @@
              (let [objects (u/locate-objects file-id page-id)
                    shape (u/locate-shape file-id page-id id)]
                (when (ctn/in-any-component? objects shape)
-                 (let [[root component] (u/locate-component objects shape)]
-                   (lib-component-proxy plugin-id (:component-file root) (:id component))))))
+                 ;; #9183: resolve to the IMMEDIATE component, not the
+                 ;; outermost — for nested instances `.component()` should
+                 ;; return the inner instance's component, not the
+                 ;; wrapping outer component.
+                 (let [[head component] (u/locate-immediate-component objects shape)]
+                   (when (and head component)
+                     (lib-component-proxy plugin-id (:component-file head) (:id component)))))))
 
            :detach
            (fn []
