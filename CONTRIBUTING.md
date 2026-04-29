@@ -63,12 +63,11 @@ Advisories](https://github.com/penpot/penpot/security/advisories)
 1. **Read the DCO** — see [Developer's Certificate of Origin](#developers-certificate-of-origin-dco)
    below. All code patches must include a `Signed-off-by` line.
 2. **Discuss before building** — open a [GitHub
-   Issue](https://github.com/penpot/penpot/issues) or start a [GitHub
-   Discussion](https://github.com/penpot/penpot/discussions) before starting
-   work on a new feature or significant change. For planned features on the
-   roadmap, reference the corresponding Taiga story. No PR will be accepted
-   without prior discussion, whether it is a new feature, a planned one, or a
-   quick win.
+   Issue](https://github.com/penpot/penpot/issues) before starting work on
+   a new feature or significant change. For planned features on the roadmap,
+   reference the corresponding Taiga story. Do not expect your contribution
+   to be accepted if you submit it without prior discussion — this applies
+   to new features, planned features, and quick wins alike.
 3. **Bug fixes** — you may submit a PR directly, but we still recommend
    filing an issue first so we can track it independently of your fix.
 4. **Format and lint** — run the checks described in
@@ -136,7 +135,11 @@ refactor/layout-sizing
 
 ### Review process
 
-- Maintainers review PRs when time permits. Please be patient.
+- We are a small team and maintainers juggle reviews alongside other
+  tasks. Please do not expect your code to be reviewed instantly.
+- Reviews are handled in dedicated blocks of time, usually in the order
+  PRs arrive. It may take a few days to get a first review, especially
+  when urgent tasks come up.
 - Address review feedback by **pushing new commits** — do not
   force-push during review, as it breaks comment threads.
 - PRs require at least **one approval** before merge.
