@@ -11,10 +11,13 @@
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.nitrate.nitrate-code-activation-modal]
+   [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:nitrate-form
@@ -37,7 +40,12 @@
         (mf/use-fn
          (mf/deps form)
          (fn []
-           (dnt/go-to-buy-nitrate-license (-> @form :clean-data :subscription name))))]
+           (dnt/go-to-buy-nitrate-license (-> @form :clean-data :subscription name))))
+
+        on-activate-click
+        (mf/use-fn
+         (fn []
+           (st/emit! (modal/show {:type :nitrate-code-activation}))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :subscription-success)}
@@ -51,7 +59,7 @@
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
-         "Unlock Nitrate Features"]
+         (tr "nitrate.form.title")]
 
         [:p {:class (stl/css :modal-text-large)}
          "Prow scuttle parrel provost."]
@@ -64,8 +72,8 @@
            [:p {:class (stl/css :modal-text-large)}
 
             [:& fm/radio-buttons
-             {:options [{:label "Price Tag Montly" :value "monthly"}
-                        {:label "Price Tag Yearly (Discount)" :value "yearly"}]
+             {:options [{:label (tr "nitrate.form.billing-monthly") :value "monthly"}
+                        {:label (tr "nitrate.form.billing-yearly") :value "yearly"}]
               :name :subscription
               :class (stl/css :radio-btns)}]]
 
@@ -75,23 +83,34 @@
                           :on-click on-click
                           :class (stl/css :modal-button)}
               (if (:subscription profile)
-                "UPGRADE TO NITRATE"
-                "Try it free for 14 days")]
+                (tr "nitrate.form.upgrade")
+                (tr "nitrate.form.try-free"))]
              [:div {:class (stl/css :modal-text-small :modal-info)}
-              "Cancel anytime before your next billing cycle."]]]
+              (tr "nitrate.form.cancel-anytime")]]]
 
+           [:p {:class (stl/css :modal-text-medium)}
+            (tr "nitrate.form.have-code") " " [:a {:class (stl/css :link)
+                                                   :on-click on-activate-click}
+                                               (tr "nitrate.form.enter-code")]]
 
            [:p {:class (stl/css :modal-text-medium)}
             [:a {:class (stl/css :link) :href dnt/go-to-subscription-url}
-             "See my current plan"]]]
+             (tr "nitrate.form.see-plan")]]]
 
           [:div {:class (stl/css :contact)}
            [:p {:class (stl/css :modal-text-large)}
             (if (:subscription profile)
-              "Contact us to upgrade to Nitrate:"
-              "Contact us to try Nitrate for 14 days:")]
+              (tr "nitrate.form.contact-upgrade")
+              (tr "nitrate.form.contact-trial"))]
            [:p {:class (stl/css :modal-text-large)}
             [:a {:class (stl/css :link) :href "mailto:sales@penpot.app"}
-             "sales@penpot.app"]]])]]]]))
+             "sales@penpot.app"]]
+           [:div  {:class (stl/css :activation-code)}
+            [:p {:class (stl/css :modal-text-large)}
+             (tr "nitrate.form.have-code")]
+            [:p {:class (stl/css :modal-text-large)}
+             [:a {:class (stl/css :link)
+                  :on-click on-activate-click}
+              (tr "nitrate.form.enter-code")]]]])]]]]))
 
 

@@ -21,6 +21,7 @@
    [frontend-tests.main-errors-test]
    [frontend-tests.plugins.context-shapes-test]
    [frontend-tests.plugins.parser-test]
+   [frontend-tests.plugins.tokens-test]
    [frontend-tests.svg-fills-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
@@ -65,6 +66,7 @@
    'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.plugins.context-shapes-test
    'frontend-tests.plugins.parser-test
+   'frontend-tests.plugins.tokens-test
    'frontend-tests.svg-fills-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
