@@ -190,6 +190,7 @@
                       (= member-email (:email profile)))
           (ex/raise :type :validation
                     :code :invalid-token
+                    :reason :email-mismatch
                     :hint "logged-in user does not matches the invitation"))
 
         (when (:is-member membership)
