@@ -4318,11 +4318,11 @@ msgid "subscription.settings.subscribe"
 msgstr "订阅"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "享受您的计划！"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "你是 %s！"
 
 #: src/app/main/ui/settings/subscription.cljs:526

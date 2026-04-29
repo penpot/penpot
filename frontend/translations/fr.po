@@ -5010,11 +5010,11 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "Merci d'avoir choisi l'abonnement Penpot %s !"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Profitez bien de votre abonnement !"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "Vous êtes %s !"
 
 #: src/app/main/ui/settings/subscription.cljs:526
