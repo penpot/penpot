@@ -161,6 +161,59 @@ If an exception is raised or an error occurs when code is reloaded, just use
 <code class="language-bash">(repl/refresh-all)</code> to finish loading the code correctly and then use
 <code class="language-bash">(restart)</code> again.
 
+
+### MCP Server
+
+To set up the MCP server local development environment it's needed some additional steps.
+
+### Activate the MCP features variables
+
+Create or modify the file `frontend/resources/public/js/config.js` and add (or modify) the `penpotFlags` to add the following:
+
+```javascript
+var penpotFlags = "enable-mcp enable-access-tokens"
+```
+
+This will enable the MCP in the workspace and in the user settings profile.
+
+### Start the DEVENV
+
+Start as usual the development environment
+
+```
+./manage.sh start-devenv
+```
+
+Once the TMUX is showing, create a new tmux tab (Ctrl+b c). And in the new tab run:
+
+```bash
+cd mcp
+pnpm run bootstrap:multi-user
+```
+
+This will start the MCP server and the multi-user plugin that will be loaded automaticaly by Penpot.
+
+There is a NGINX proxy that makes a proxy-pass from outside the docker container so you don't need to remember the ports it's using.
+
+### Configure the MCP in your tool
+
+You can use the instructions in [/mcp/#remote-mcp-in-5-steps](/mcp/#remote-mcp-in-5-steps) to setup the server.
+
+Warning: by default Cursor won't support HTTPS with a self-signed certificate. In order to work around this issue please use the port `3450` that uses an standard `http` protocol
+
+An example of your cursor configuration can be:
+
+```javascript
+{
+    "mcpServers": {
+        "penpot-devenv": {
+            "url": "http://localhost:3450/mcp/stream?userToken=TOKEN",
+            "type": "http"
+        }
+    }
+}
+```
+
 ## Email
 
 To test email sending, the devenv includes [MailCatcher](https://mailcatcher.me/),
