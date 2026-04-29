@@ -49,6 +49,7 @@
 - Preserve vector content when pasting from external tools such as Inkscape: recognise SVG sent as text/plain (with optional XML declaration and HTML comments), skip the raster preview when an SVG sibling is on the clipboard, and ignore empty SVG blobs that some tools advertise alongside the real payload, so pasted graphics arrive editable without spurious "SVG is invalid" warnings [Github #546](https://github.com/penpot/penpot/issues/546)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
 - Adds a **Pixel grid color** picker in the viewport settings, next to the existing canvas color control [Github #7750](https://github.com/penpot/penpot/issues/7750)
+- Add HEX, HSB and HSL support to the third color tab via an inline model switcher: relabel the existing HSVA tab as HSBA (the math was already HSB-equivalent), add an HSB ↔ HSL pill toggle that updates input labels, slider gradients and round-trip values without changing how colors are stored, and persist the chosen model across sessions [Github #9133](https://github.com/penpot/penpot/issues/9133)
 
 ### :bug: Bugs fixed
 
