@@ -134,7 +134,7 @@
   {::mf/wrap-props false}
   [{:keys [file-id prefix groups open-groups force-open? file local? selected local-data
            editing-id renaming-id on-asset-click handle-change on-rename-group
-           on-ungroup on-context-menu selected-full is-read-only]}]
+           on-ungroup on-delete-group on-context-menu selected-full is-read-only]}]
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
                          (get open-groups prefix true))
@@ -185,6 +185,7 @@
                                  :is-group-open group-open?
                                  :on-rename on-rename-group
                                  :on-ungroup on-ungroup
+                                 :on-delete-group on-delete-group
                                  :on-add (when (and local? (not is-read-only))
                                            add-typography-to-group)}]
 
@@ -238,6 +239,7 @@
                                     :handle-change handle-change
                                     :on-rename-group on-rename-group
                                     :on-ungroup on-ungroup
+                                    :on-delete-group on-delete-group
                                     :on-context-menu on-context-menu
                                     :selected-full selected-full
                                     :is-read-only is-read-only}]))])]))
@@ -352,6 +354,39 @@
                                 (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
+        ;; Issue #9141. Delete every typography under a group path in a
+        ;; single undo transaction, after user confirmation.
+        on-delete-group
+        (mf/use-fn
+         (mf/deps typographies file-id on-clear-selection)
+         (fn [path]
+           (let [group-typographies
+                 (->> typographies
+                      (filter #(str/starts-with? (:path %) path)))
+
+                 ;; Hoisted so the start/commit pair is bound to the
+                 ;; same symbol regardless of how `do-delete` is
+                 ;; invoked by the confirm modal. Review suggestion
+                 ;; on PR #9151.
+                 undo-id (js/Symbol)
+
+                 do-delete
+                 (fn []
+                   (on-clear-selection)
+                   (st/emit! (dwu/start-undo-transaction undo-id))
+                   (run! st/emit!
+                         (map #(dwl/delete-typography (:id %)) group-typographies))
+                   (st/emit! (dwu/commit-undo-transaction undo-id)))]
+             (when (seq group-typographies)
+               (st/emit!
+                (modal/show
+                 {:type :confirm
+                  :title (tr "modals.delete-asset-group.title")
+                  :message (tr "modals.delete-asset-group.message"
+                               (i18n/c (count group-typographies)))
+                  :accept-label (tr "labels.delete")
+                  :on-accept do-delete}))))))
+
         on-context-menu
         (mf/use-fn
          (mf/deps selected on-clear-selection read-only?)
@@ -441,6 +476,7 @@
                                :handle-change handle-change
                                :on-rename-group on-rename-group
                                :on-ungroup on-ungroup
+                               :on-delete-group on-delete-group
                                :on-context-menu on-context-menu
                                :selected-full selected-full
                                :is-read-only read-only?}]

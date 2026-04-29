@@ -64,8 +64,7 @@
        :on-finish-import on-finish}))))
 
 (mf/defc title*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-click is-collapsed]}]
   (let [on-key-down
         (mf/use-fn
@@ -171,7 +170,6 @@
          [:div {:class (stl/css :template-link-text)} (tr "dashboard.libraries-and-templates.explore")]]]]]]))
 
 (mf/defc templates-section*
-  {::mf/props :obj}
   [{:keys [default-project-id profile project-id team-id]}]
   (let [templates   (mf/deref builtin-templates)
         templates   (mf/with-memo [templates]
