@@ -1284,7 +1284,7 @@
                         (update :files conj id)
                         (update :projects conj project-id))))
 
-                {:files #{} :projectes #{}}
+                {:files #{} :projects #{}}
                 (db/plan conn [sql:resolve-editable-files team-id
                                (db/create-array conn "uuid" ids)]))]
 
