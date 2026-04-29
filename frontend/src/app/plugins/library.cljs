@@ -16,7 +16,6 @@
    [app.common.types.file :as ctf]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
-   [app.main.data.event :as ev]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
@@ -27,6 +26,7 @@
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.shape :as shape]
+   [app.plugins.system-events :as se]
    [app.plugins.text :as text]
    [app.plugins.tokens :as tokens]
    [app.plugins.utils :as u]
@@ -164,7 +164,8 @@
         (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dwl/delete-color {:id id}))))
+        (st/emit! (-> (dwl/delete-color {:id id})
+                      (se/add-event plugin-id)))))
 
     :clone
     (fn []
@@ -176,7 +177,8 @@
         (let [color-id (uuid/next)
               color (-> (u/locate-library-color file-id id)
                         (assoc :id color-id))]
-          (st/emit! (dwl/add-color color {:rename? false}))
+          (st/emit! (-> (dwl/add-color color {:rename? false})
+                        (se/add-event plugin-id)))
           (lib-color-proxy plugin-id id color-id))))
 
     :asFill
@@ -309,7 +311,8 @@
          :else
          (let [typo (u/proxy->library-typography self)
                value (dm/str (d/nilv (:path typo) "") " / " value)]
-           (st/emit! (dwl/rename-typography file-id id value)))))}
+           (st/emit! (-> (dwl/rename-typography file-id id value)
+                         (se/add-event plugin-id))))))}
 
     :path
     {:this true
@@ -488,7 +491,8 @@
         (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (dwl/delete-typography {:id id}))))
+        (st/emit! (-> (dwl/delete-typography {:id id})
+                      (se/add-event plugin-id)))))
 
     :clone
     (fn []
@@ -500,7 +504,8 @@
         (let [typo-id (uuid/next)
               typo (-> (u/locate-library-typography file-id id)
                        (assoc :id typo-id))]
-          (st/emit! (dwl/add-typography typo false))
+          (st/emit! (-> (dwl/add-typography typo false)
+                        (se/add-event plugin-id)))
           (lib-typography-proxy plugin-id id typo-id))))
 
     :applyToText
@@ -662,13 +667,13 @@
     :addVariant
     (fn []
       (st/emit!
-       (ev/event {::ev/name "add-new-variant" ::ev/origin "plugin:add-variant"})
+       (se/event plugin-id "add-new-variant")
        (dwv/add-new-variant id)))
 
     :addProperty
     (fn []
       (st/emit!
-       (ev/event {::ev/name "add-new-property" ::ev/origin "plugin:add-property"})
+       (se/event plugin-id "add-new-property")
        (dwv/add-new-property id {:property-value "Value 1"})))
 
     :removeProperty
@@ -676,7 +681,7 @@
       (if (not (nat-int? pos))
         (u/not-valid plugin-id :pos pos)
         (st/emit!
-         (ev/event {::ev/name "remove-property" ::ev/origin "plugin:remove-property"})
+         (se/event plugin-id "remove-property")
          (dwv/remove-property id pos))))
 
     :renameProperty
@@ -759,7 +764,8 @@
 
         :else
         (let [id-ref (atom nil)]
-          (st/emit! (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin"}))
+          (st/emit! (-> (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin"})
+                        (se/add-event plugin-id)))
           (shape/shape-proxy plugin-id @id-ref))))
 
     :getPluginData
@@ -885,7 +891,7 @@
         (when (and component
                    (not (ctk/is-variant? component)))
           (st/emit!
-           (ev/event {::ev/name "transform-in-variant"  ::ev/origin "plugin:transform-in-variant"})
+           (se/event plugin-id "transform-in-variant")
            (dwv/transform-in-variant (:main-instance-id component))))))
 
     :addVariant
@@ -894,7 +900,7 @@
         (when (and component
                    (ctk/is-variant? component))
           (st/emit!
-           (ev/event {::ev/name "add-new-variant" ::ev/origin "plugin:add-variant-from-component"})
+           (se/event plugin-id "add-new-variant")
            (dwv/add-new-variant (:main-instance-id component))))))
 
     :setVariantProperty
@@ -908,7 +914,7 @@
 
         :else
         (st/emit!
-         (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "plugin:edit-property-value"})
+         (se/event plugin-id "variant-edit-property-value")
          (dwv/update-property-value id pos value))))))
 
 (defn library-proxy? [p]
@@ -974,7 +980,8 @@
 
         :else
         (let [color-id (uuid/next)]
-          (st/emit! (dwl/add-color {:id color-id :name "Color" :color "#000000" :opacity 1} {:rename? false}))
+          (st/emit! (-> (dwl/add-color {:id color-id :name "Color" :color "#000000" :opacity 1} {:rename? false})
+                        (se/add-event plugin-id)))
           (lib-color-proxy plugin-id file-id color-id))))
 
     :createTypography
@@ -985,7 +992,8 @@
 
         :else
         (let [typography-id (uuid/next)]
-          (st/emit! (dwl/add-typography (ctt/make-typography {:id typography-id :name "Typography"}) false))
+          (st/emit! (-> (dwl/add-typography (ctt/make-typography {:id typography-id :name "Typography"}) false)
+                        (se/add-event plugin-id)))
           (lib-typography-proxy plugin-id file-id typography-id))))
 
     :createComponent
@@ -997,7 +1005,8 @@
         :else
         (let [id-ref (atom nil)
               ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dwl/add-component id-ref ids))
+          (st/emit! (-> (dwl/add-component id-ref ids)
+                        (se/add-event plugin-id)))
           (lib-component-proxy plugin-id file-id @id-ref))))
 
     ;; Plugin data
@@ -1127,4 +1136,5 @@
                     (rx/filter (ptk/type? ::dwl/attach-library-finished))
                     (rx/take 1)
                     (rx/subs! #(resolve (library-proxy plugin-id library-id)) reject))
-               (st/emit! (dwl/link-file-to-library file-id library-id))))))))))
+               (st/emit! (-> (dwl/link-file-to-library file-id library-id)
+                             (se/add-event plugin-id)))))))))))

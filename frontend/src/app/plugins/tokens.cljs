@@ -17,6 +17,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
+   [app.plugins.system-events :as se]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [clojure.datafy :refer [datafy]]
@@ -80,10 +81,11 @@
     (if (some #(not (token-attr? %)) attrs)
       (u/not-valid plugin-id :applyToSelected attrs)
       (st/emit!
-       (dwta/toggle-token {:token token
-                           :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
-                           :shape-ids shape-ids
-                           :expand-with-children false})))))
+       (-> (dwta/toggle-token {:token token
+                               :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
+                               :shape-ids shape-ids
+                               :expand-with-children false})
+           (se/add-event plugin-id))))))
 
 (defn- get-resolved-value
   [token tokens-tree]
@@ -123,7 +125,8 @@
                       (ctob/get-tokens set-id)))
      :set
      (fn [_ value]
-       (st/emit! (dwtl/update-token set-id id {:name value})))}
+       (st/emit! (-> (dwtl/update-token set-id id {:name value})
+                     (se/add-event plugin-id))))}
 
     :type
     {:this true
@@ -173,7 +176,8 @@
      :schema cfo/schema:token-description
      :set
      (fn [_ value]
-       (st/emit! (dwtl/update-token set-id id {:description value})))}
+       (st/emit! (-> (dwtl/update-token set-id id {:description value})
+                     (se/add-event :plugin-id))))}
 
     :duplicate
     (fn []
@@ -186,12 +190,14 @@
             token' (ctob/make-token (-> (datafy token)
                                         (dissoc :id
                                                 :modified-at)))]
-        (st/emit! (dwtl/create-token set-id token'))
+        (st/emit! (-> (dwtl/create-token set-id token')
+                      (se/add-event plugin-id)))
         (token-proxy plugin-id file-id set-id (:id token'))))
 
     :remove
     (fn []
-      (st/emit! (dwtl/delete-token set-id id)))
+      (st/emit! (-> (dwtl/delete-token set-id id)
+                    (se/add-event plugin-id))))
 
     :applyToShapes
     {:enumerable false
@@ -323,7 +329,8 @@
                  (get resolved-tokens (:name token))]
 
              (if resolved-value
-               (do (st/emit! (dwtl/create-token id token))
+               (do (st/emit! (-> (dwtl/create-token id token)
+                                 (se/add-event plugin-id)))
                    (token-proxy plugin-id file-id id (:id token)))
                (do (u/not-valid plugin-id :addToken (str errors))
                    nil))))}

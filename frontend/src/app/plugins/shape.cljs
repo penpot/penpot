@@ -53,6 +53,7 @@
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
+   [app.plugins.system-events :as se]
    [app.plugins.text :as text]
    [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr?]]
    [app.plugins.utils :as u]
@@ -785,9 +786,7 @@
                 (when (ctl/grid-layout-immediate-child-id? objects id)
                   (grid/layout-cell-proxy plugin-id file-id page-id id))))}
 
-
            ;; Interactions
-
 
            :interactions
            {:this true
@@ -962,12 +961,17 @@
 
                  :else
                  (let [child-id     (obj/get child "$id")
+                       child-shape (u/locate-shape file-id page-id child-id)
                        is-reversed? (ctl/flex-layout? shape)
                        index
                        (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
                          0
                          (count (:shapes shape)))]
-                   (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
+                   (st/emit!
+                    (dwsh/relocate-shapes #{child-id} id index)
+                    (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
+                              :type (:type child-shape)
+                              :parent-type (:type shape)))))))
 
            :insertChild
            (fn [index child]
@@ -987,12 +991,17 @@
 
                  :else
                  (let [child-id (obj/get child "$id")
+                       child-shape (u/locate-shape file-id page-id child-id)
                        is-reversed? (ctl/flex-layout? shape)
                        index
                        (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
                          (- (count (:shapes shape)) index)
                          index)]
-                   (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
+                   (st/emit!
+                    (dwsh/relocate-shapes #{child-id} id index)
+                    (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
+                              :type (:type child-shape)
+                              :parent-type (:type shape)))))))
 
            ;; Only for frames
            :addFlexLayout
@@ -1006,7 +1015,9 @@
                  (u/not-valid plugin-id :addFlexLayout "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (do (st/emit! (dwsl/create-layout-from-id id :flex :from-frame? true :calculate-params? false))
+                 (do (st/emit!
+                      (dwsl/create-layout-from-id id :flex :from-frame? true :calculate-params? false)
+                      (se/event plugin-id "create-layout" :layout "flex"))
                      (flex/flex-layout-proxy plugin-id file-id page-id id)))))
 
            :addGridLayout
@@ -1021,6 +1032,7 @@
 
                  :else
                  (do (st/emit! (dwsl/create-layout-from-id id :grid :from-frame? true :calculate-params? false))
+                     (se/event plugin-id "create-layout" :layout "grid")
                      (grid/grid-layout-proxy plugin-id file-id page-id id)))))
 
            ;; Make masks for groups
@@ -1035,7 +1047,9 @@
                  (u/not-valid plugin-id :makeMask "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (st/emit! (dwg/mask-group #{id})))))
+                 (st/emit!
+                  (dwg/mask-group #{id})
+                  (se/event plugin-id "create-shape" :type "mask")))))
 
            :removeMask
            (fn []
@@ -1224,7 +1238,9 @@
                                              (rx/map :body))))
                            (rx/mapcat #(.arrayBuffer %))
                            (rx/map #(js/Uint8Array. %))
+                           (rx/tap #(st/emit! (se/event plugin-id "export-shapes")))
                            (rx/subs! resolve reject))))))))
+
 
            ;; Interactions
            :addInteraction
@@ -1238,7 +1254,9 @@
 
                  :else
                  (let [index (-> (u/locate-shape file-id page-id id) (:interactions [])  count)]
-                   (st/emit! (dwi/add-interaction page-id id interaction))
+                   (st/emit!
+                    (dwi/add-interaction page-id id interaction)
+                    (se/event plugin-id "add-interaction"))
                    (interaction-proxy plugin-id file-id page-id id index)))))
 
            :removeInteraction
@@ -1248,7 +1266,9 @@
                (u/not-valid plugin-id :removeInteraction interaction)
 
                :else
-               (st/emit! (dwi/remove-interaction {:id id} (obj/get interaction "$index")))))
+               (st/emit!
+                (dwi/remove-interaction {:id id} (obj/get interaction "$index"))
+                (se/event plugin-id "remove-interaction"))))
 
            ;; Ruler guides
            :addRulerGuide
@@ -1275,11 +1295,12 @@
                        board-pos (get frame axis)
                        position  (+ board-pos value)]
                    (st/emit!
-                    (dwgu/update-guides
-                     {:id       id
-                      :axis     axis
-                      :position position
-                      :frame-id id}))
+                    (-> (dwgu/update-guides
+                         {:id       id
+                          :axis     axis
+                          :position position
+                          :frame-id id})
+                        (se/add-event plugin-id)))
                    (rg/ruler-guide-proxy plugin-id file-id page-id id)))))
 
            :removeRulerGuide
@@ -1293,7 +1314,8 @@
 
                :else
                (let [guide (u/proxy->ruler-guide value)]
-                 (st/emit! (dwgu/remove-guide guide)))))
+                 (st/emit! (-> (dwgu/remove-guide guide)
+                               (se/add-event plugin-id))))))
 
            :tokens
            {:this true
@@ -1320,10 +1342,11 @@
                     (if (some #(not (token-attr? %)) kw-attrs)
                       (u/not-valid plugin-id :applyToken attrs)
                       (st/emit!
-                       (dwta/toggle-token {:token token
-                                           :attrs kw-attrs
-                                           :shape-ids [id]
-                                           :expand-with-children false})))))}
+                       (-> (dwta/toggle-token {:token token
+                                               :attrs kw-attrs
+                                               :shape-ids [id]
+                                               :expand-with-children false})
+                           (se/add-event plugin-id))))))}
 
            :isVariantHead
            (fn []
@@ -1349,7 +1372,8 @@
                (let [shape     (u/locate-shape file-id page-id id)
                      component (u/locate-library-component file-id (:component-id shape))]
                  (when  (and component (ctk/is-variant? component))
-                   (st/emit! (dwv/variants-switch {:shapes [shape] :pos pos :val value}))))))
+                   (st/emit! (-> (dwv/variants-switch {:shapes [shape] :pos pos :val value})
+                                 (se/add-event plugin-id)))))))
 
            :combineAsVariants
            (fn [ids]
@@ -1371,9 +1395,10 @@
 
                  (if valid?
                    (let [variant-id (uuid/next)]
-                     (st/emit! (dwv/combine-as-variants
-                                ids
-                                {:trigger "plugin:combine-as-variants" :variant-id variant-id}))
+                     (st/emit! (-> (dwv/combine-as-variants
+                                    ids
+                                    {:trigger "plugin:combine-as-variants" :variant-id variant-id})
+                                   (se/add-event plugin-id)))
                      (shape-proxy plugin-id variant-id))
 
                    (u/not-valid plugin-id :ids "One of the components is not on the same page or is already a variant"))))))

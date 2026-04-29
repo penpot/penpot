@@ -135,3 +135,7 @@
       (= plugin-id mcp-plugin-id)
       (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
         (contains? permissions permission))))
+
+(defn get-plugin-data
+  [state plugin-id]
+  (get-in state [:profile :props :plugins :data plugin-id]))
