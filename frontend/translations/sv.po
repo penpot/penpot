@@ -4827,11 +4827,11 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "Tack för att du valt Penpot %s-abonnemanget!"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Lycka till med ditt abonnemang!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "Du är %!"
 
 #: src/app/main/ui/settings/subscription.cljs:526
