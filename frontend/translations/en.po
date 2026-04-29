@@ -1537,6 +1537,10 @@ msgstr "The recovery token is invalid."
 msgid "errors.invalid-text"
 msgstr "Invalid text"
 
+#: common/src/app/common/types/team.cljc:26
+msgid "errors.team-name-invalid-chars"
+msgstr "The team name can't contain any of the following characters:'.', ':' or '/'"
+
 #: src/app/main/ui/static.cljs:74
 msgid "errors.invite-invalid"
 msgstr "Invite invalid"
@@ -1544,6 +1548,14 @@ msgstr "Invite invalid"
 #: src/app/main/ui/static.cljs:75
 msgid "errors.invite-invalid.info"
 msgstr "This invite might be canceled or may be expired."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-expired"
+msgstr "This invitation has expired. Ask the team owner to send you a new one."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-email-mismatch"
+msgstr "This invitation is for a different email. Log out and sign in with the invited account, or ask the team owner for a new invitation."
 
 #: src/app/main/ui/auth/login.cljs:89
 msgid "errors.ldap-disabled"

@@ -225,6 +225,17 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 pub extern "C" fn render(_: i32) -> Result<()> {
     with_state_mut!(state, {
         state.rebuild_touched_tiles();
+        // Drain the throttled modifier-tile invalidation accumulated
+        // since the previous rAF. set_modifiers skips this work during
+        // interactive_transform; we do it once here, with the current
+        // modifier set, so the cost is paid once per rAF rather than
+        // once per pointer move.
+        if state.render_state.options.is_interactive_transform() {
+            let ids = state.shapes.modifier_ids();
+            if !ids.is_empty() {
+                state.rebuild_modifier_tiles(ids)?;
+            }
+        }
         state
             .start_render_loop(performance::get_time())
             .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
@@ -344,11 +355,9 @@ pub extern "C" fn render_loading_overlay() -> Result<()> {
 #[wasm_error]
 pub extern "C" fn process_animation_frame(timestamp: i32) -> Result<()> {
     let result = with_state_mut!(state, { state.process_animation_frame(timestamp) });
-
     if let Err(err) = result {
         eprintln!("process_animation_frame error: {}", err);
     }
-
     Ok(())
 }
 
@@ -453,9 +462,11 @@ pub extern "C" fn set_view_end() -> Result<()> {
 pub extern "C" fn set_modifiers_start() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_modifiers_start");
-        let opts = &mut state.render_state.options;
-        opts.set_fast_mode(true);
-        opts.set_interactive_transform(true);
+        state.render_state.options.set_fast_mode(true);
+        state.render_state.options.set_interactive_transform(true);
+        // Capture the last fully-rendered frame as a stable backdrop for the drag.
+        // This avoids relying on atlas/cache correctness during fast_mode.
+        state.render_state.surfaces.copy_target_to_backbuffer();
         performance::end_measure!("set_modifiers_start");
     });
     Ok(())
@@ -470,9 +481,8 @@ pub extern "C" fn set_modifiers_start() -> Result<()> {
 pub extern "C" fn set_modifiers_end() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_modifiers_end");
-        let opts = &mut state.render_state.options;
-        opts.set_fast_mode(false);
-        opts.set_interactive_transform(false);
+        state.render_state.options.set_fast_mode(false);
+        state.render_state.options.set_interactive_transform(false);
         state.render_state.cancel_animation_frame();
         performance::end_measure!("set_modifiers_end");
     });
@@ -945,7 +955,11 @@ pub extern "C" fn set_structure_modifiers() -> Result<()> {
 pub extern "C" fn clean_modifiers() -> Result<()> {
     with_state_mut!(state, {
         let prev_modifier_ids = state.shapes.clean_all();
-        if !prev_modifier_ids.is_empty() {
+        // Skip the tile-cache cleanup during interactive transform: the
+        // per-rAF `rebuild_modifier_tiles` in `render()` already evicts
+        // the same tiles for the active modifier set, so the eviction
+        // here is redundant and doubles the per-emission cost.
+        if !prev_modifier_ids.is_empty() && !state.render_state.options.is_interactive_transform() {
             state
                 .render_state
                 .update_tiles_shapes(&prev_modifier_ids, &mut state.shapes)?;
@@ -973,7 +987,10 @@ pub extern "C" fn set_modifiers() -> Result<()> {
 
     with_state_mut!(state, {
         state.set_modifiers(modifiers);
-        state.rebuild_modifier_tiles(ids)?;
+        // TO CHECK
+        if !state.render_state.options.is_interactive_transform() {
+            state.rebuild_modifier_tiles(ids)?;
+        }
     });
     Ok(())
 }
@@ -1032,6 +1049,13 @@ pub extern "C" fn render_shape_pixels(
         buf.extend_from_slice(&height.to_le_bytes());
         buf.extend_from_slice(&data);
         Ok(mem::write_bytes(buf))
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn render_stats() {
+    with_state!(state, {
+        state.render_state.print_stats();
     })
 }
 
