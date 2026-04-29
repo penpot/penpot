@@ -118,7 +118,6 @@
           :is-highlighted false}]))))
 
 (mf/defc nitrate-sidebar*
-  {::mf/props :obj}
   [{:keys [profile teams]}]
   (let [nitrate? (dnt/is-valid-license? profile)
         nitrate-license (:subscription profile)

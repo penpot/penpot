@@ -1291,6 +1291,27 @@ msgstr "Tu nombre"
 msgid "dashboard.your-penpot"
 msgstr "Tu Penpot"
 
+msgid "dashboard.webgl-switch.title"
+msgstr "Renderizado WebGL"
+
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
+
+msgid "dashboard.webgl-switch.description"
+msgstr "El renderizado WebGL puede mejorar el rendimiento, pero está en beta y puede ser menos estable. Pueden aparecer diferencias visuales entre el lienzo, las exportaciones (SVG/PDF) y el modo de vista."
+
+msgid "dashboard.webgl-switch.status"
+msgstr "Estado"
+
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Activado"
+
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Desactivado"
+
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Enviar comentarios"
+
 #: src/app/main/ui/alert.cljs:35
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -5233,11 +5254,11 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "¡Gracias por elegir el plan %s de Penpot!"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "¡Disfruta de tu plan!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "Eres %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:526
@@ -5905,6 +5926,13 @@ msgstr "Cambiar a tema claro"
 #: src/app/main/ui/workspace/main_menu.cljs:315
 msgid "workspace.header.menu.toggle-system-theme"
 msgstr "Cambiar a tema del sistema"
+
+msgid "workspace.header.menu.enable-webgl"
+msgstr "Activar renderizado WebGL (beta)"
+
+msgid "workspace.header.menu.disable-webgl"
+msgstr "Desactivar renderizado WebGL (beta)"
+
 
 #: src/app/main/ui/workspace/main_menu.cljs:492
 msgid "workspace.header.menu.undo"
@@ -8937,9 +8965,115 @@ msgstr "Los proyectos y archivos seguirán estando disponibles para los miembros
 msgid "modals.remove-team-org.accept"
 msgstr "Eliminar de la organización"
 
+msgid "webgl.toast.webgl-render-enabled"
+msgstr "Renderizado WebGL activado"
+
+msgid "webgl.toast.webgl-render-disabled"
+msgstr "Renderizado WebGL desactivado"
+
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
 
 msgid "modals.delete-org-team-confirm.message"
 msgstr "¿Estás seguro de que deseas eliminar este equipo que forma parte de la organización %s?"
+
+msgid "nitrate.code-activation.title"
+msgstr "Activar Nitrate"
+
+msgid "nitrate.code-activation.input-label"
+msgstr "Introduce tu código de activación"
+
+msgid "nitrate.code-activation.submit"
+msgstr "Activar"
+
+msgid "nitrate.code-activation.footer"
+msgstr "¿Necesitas un código? Contáctanos:"
+
+msgid "nitrate.code-activation.placeholder"
+msgstr "Pega aquí tu código de activación"
+
+
+msgid "nitrate.activation-success.title"
+msgstr "¡Ya eres Business Nitrate!"
+
+msgid "nitrate.activation-success.active-until"
+msgstr "Tu plan está activo hasta el %s."
+
+msgid "nitrate.activation-success.manage-info"
+msgstr "Puedes gestionar tu suscripción en cualquier momento desde la página de Suscripción en la configuración de tu cuenta."
+
+msgid "nitrate.activation-success.enjoy"
+msgstr "¡Disfruta de tu plan!"
+
+msgid "nitrate.activation-success.create-org"
+msgstr "Crear organización"
+
+msgid "nitrate.form.title"
+msgstr "Desbloquea las funciones de Nitrate"
+
+msgid "nitrate.form.billing-monthly"
+msgstr "Precio mensual"
+
+msgid "nitrate.form.billing-yearly"
+msgstr "Precio anual (descuento)"
+
+msgid "nitrate.form.upgrade"
+msgstr "Actualizar a Nitrate"
+
+msgid "nitrate.form.try-free"
+msgstr "Pruébalo gratis durante 14 días"
+
+msgid "nitrate.form.cancel-anytime"
+msgstr "Cancela en cualquier momento antes de tu próximo ciclo de facturación."
+
+msgid "nitrate.form.have-code"
+msgstr "¿Tienes un código de activación?"
+
+msgid "nitrate.form.enter-code"
+msgstr "Introducir código de activación"
+
+msgid "nitrate.form.see-plan"
+msgstr "Ver mi plan actual"
+
+msgid "nitrate.form.contact-upgrade"
+msgstr "Contáctanos para actualizar a Nitrate:"
+
+msgid "nitrate.form.contact-trial"
+msgstr "Contáctanos para probar Nitrate durante 14 días:"
+
+msgid "nitrate.activation-code.invalid-error"
+msgstr "Código inválido."
+
+msgid "nitrate.activation-code.expired-error"
+msgstr "Este código ha caducado."
+
+msgid "nitrate.contact-sales.title"
+msgstr "¿Cambiar al plan %s?"
+
+msgid "nitrate.contact-sales.downgrade-title"
+msgstr "Al bajar de plan:"
+
+msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgstr "Tu organización será eliminada."
+
+msgid "nitrate.contact-sales.downgrade-teams-available"
+msgstr "Los equipos, proyectos y archivos dejarán de pertenecer a la organización pero seguirán disponibles."
+
+msgid "nitrate.contact-sales.downgrade-storage-limited"
+msgstr "Tu almacenamiento total, el historial de versiones automático y el período de recuperación de archivos serán limitados."
+
+msgid "nitrate.contact-sales.downgrade-contact-info"
+msgstr "Para cambiar a este plan, contacta con nuestro equipo de ventas. Te ayudaremos a actualizar tu suscripción y a asegurarnos de que todo esté configurado correctamente."
+
+msgid "nitrate.contact-sales.button"
+msgstr "Contactar con ventas"
+
+msgid "nitrate.subscription.active-until"
+msgstr "Activo hasta el %s"
+
+msgid "subscription.settings.more-information"
+msgstr "Más información"
+
+msgid "subscription.settings.activate-by-code"
+msgstr "Introducir código de activación"

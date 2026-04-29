@@ -56,4 +56,4 @@ Apply these techniques when refining prompts:
 
 Refined Prompt: The improved, ready-to-use prompt. Print it for
 immediate use and save it to
-prompts/YYYY-MM-DD-<prompt-one-line-title>.md for future use.
+prompts/YYYY-MM-DD-N-<prompt-one-line-title>.md for future use.

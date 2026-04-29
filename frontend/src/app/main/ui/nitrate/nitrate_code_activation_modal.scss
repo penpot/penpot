@@ -1,0 +1,107 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+
+.close-btn {
+  @extend %modal-close-btn-base;
+}
+
+.modal-overlay {
+  @extend %modal-overlay-base;
+
+  z-index: var(--z-index-notifications);
+}
+
+.modal-dialog {
+  @extend %modal-container-base;
+
+  inline-size: $sz-480;
+  max-inline-size: $sz-480;
+  max-block-size: none;
+  max-height: none;
+  padding: var(--sp-xxxl);
+}
+
+.modal-title {
+  @include t.use-typography("title-large");
+
+  color: var(--modal-title-foreground-color);
+  margin-block-end: var(--sp-xxxl);
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  color: var(--color-foreground-secondary);
+}
+
+.accept-btn {
+  @extend %modal-accept-btn;
+
+  inline-size: 100%;
+}
+
+.code-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.code-label {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+}
+
+.code-textarea {
+  @include t.use-typography("body-medium");
+
+  block-size: $sz-200;
+  resize: vertical;
+  font-family: monospace;
+  word-break: break-all;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  border: $b-1 solid var(--input-border-color);
+  background-color: var(--input-background-color);
+  color: var(--color-foreground-primary);
+  outline: none;
+}
+
+.code-textarea:focus {
+  border-color: var(--color-accent-primary);
+}
+
+.invalid .code-textarea {
+  border-color: var(--input-border-color-error);
+}
+
+.invalid .code-textarea:focus {
+  border-color: var(--input-border-color-error);
+}
+
+.error-msg {
+  @include t.use-typography("body-small");
+
+  color: var(--element-foreground-error);
+}
+
+.footer-text {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  margin-block-start: var(--sp-xxxl);
+}
+
+.link {
+  color: var(--color-accent-primary);
+}

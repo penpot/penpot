@@ -667,6 +667,41 @@
           result (path.subpath/close-subpaths content)]
       (t/is (seq result)))))
 
+(t/deftest subpath-merge-touching-subpaths
+  (t/testing "adjacent subpaths sharing an endpoint collapse into one chain"
+    ;; Heroicons-style fragment: continuous polyline split as M-L M-L M-L
+    ;; with the second/third subpath starting at the first's endpoint.
+    (let [content [{:command :move-to :params {:x 0.0  :y 10.0}}
+                   {:command :line-to :params {:x 10.0 :y 10.0}}
+                   {:command :move-to :params {:x 10.0 :y 10.0}}
+                   {:command :line-to :params {:x 5.0  :y 0.0}}
+                   {:command :move-to :params {:x 10.0 :y 10.0}}
+                   {:command :line-to :params {:x 5.0  :y 20.0}}]
+          result  (path.subpath/merge-touching-subpaths content)
+          moves   (filter #(= :move-to (:command %)) result)]
+      ;; Subpaths 1+2 share (10,10) → merged. Subpath 3 also starts at (10,10),
+      ;; but the merged chain now ends at (5,0), so it does NOT match and
+      ;; is preserved as its own subpath. Two move-tos in the final result.
+      (t/is (= 2 (count moves)))
+      (t/is (= 5 (count result)))))
+  (t/testing "non-touching subpaths are left untouched"
+    (let [content [{:command :move-to :params {:x 0.0  :y 0.0}}
+                   {:command :line-to :params {:x 5.0  :y 0.0}}
+                   {:command :move-to :params {:x 50.0 :y 50.0}}
+                   {:command :line-to :params {:x 60.0 :y 60.0}}]
+          result  (path.subpath/merge-touching-subpaths content)]
+      (t/is (= content (vec result)))))
+  (t/testing "closed subpath is not absorbed into a neighbour"
+    (let [content [{:command :move-to   :params {:x 0.0 :y 0.0}}
+                   {:command :line-to   :params {:x 5.0 :y 0.0}}
+                   {:command :line-to   :params {:x 5.0 :y 5.0}}
+                   {:command :line-to   :params {:x 0.0 :y 0.0}}
+                   {:command :move-to   :params {:x 0.0 :y 0.0}}
+                   {:command :line-to   :params {:x 1.0 :y 1.0}}]
+          result  (path.subpath/merge-touching-subpaths content)
+          moves   (filter #(= :move-to (:command %)) result)]
+      (t/is (= 2 (count moves))))))
+
 (t/deftest subpath-reverse-content
   (let [result (path.subpath/reverse-content simple-open-content)]
     (t/is (= (count simple-open-content) (count result)))
@@ -1099,6 +1134,24 @@
         result  (path/close-subpaths content)]
     (t/is (path/content? result))
     (t/is (seq (vec result)))))
+
+(t/deftest path-merge-touching-subpaths
+  (t/testing "regression for #5283 — heroicons arrow path serialises as a single chain"
+    ;; SVG `d` originally split a continuous polyline by inserting a
+    ;; redundant moveto at the elbow. Importing it must collapse the
+    ;; first two subpaths so that stroke-linejoin renders the rounded tip.
+    (let [content (path/from-string
+                   (str "M350.5,1846 L365.5,1846"
+                        " M365.5,1846 L358.75,1839.25"
+                        " M365.5,1846 L358.75,1852.75"))
+          merged   (path/merge-touching-subpaths content)
+          rendered (str merged)]
+      (t/is (path/content? merged))
+      ;; First two subpaths fold into M ... L ... L ... ; third stays
+      ;; separate (its start point matches the original M, not the merged
+      ;; chain's tail), so exactly two M commands remain.
+      (t/is (= 2 (count (re-seq #"M" rendered))))
+      (t/is (= 3 (count (re-seq #"L" rendered)))))))
 
 (t/deftest path-move-content
   (let [content  (path/content sample-content-square)
