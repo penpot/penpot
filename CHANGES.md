@@ -54,6 +54,7 @@
 ### :bug: Bugs fixed
 
 - Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
+- Fix imported stroke-only SVG paths losing their rounded join when authoring tools (e.g. Figma → Heroicons) split a continuous polyline into adjacent `M…L M…L` subpaths sharing an endpoint; on import these are now folded back into one chain so `stroke-linejoin` renders the elbow correctly in both editor and exports [Github #5283](https://github.com/penpot/penpot/issues/5283)
 - Fix plugin API `library.connectLibrary()` returning a non-Promise (or throwing synchronously) when the plugin lacks `library:write` permission — the method now always returns a `Promise` and rejects with a structured error message, matching the contract used by every other Promise-returning plugin method (`restore`, `remove`, `pin`, `saveVersion`, `findVersions`, …)
 - Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
 - Fix `login-with-ldap` silently dropping its error message on the `ldap-not-initialized` restriction (typo `:hide` → `:hint`); the message `"ldap auth provider is not initialized"` now actually surfaces in logs and error responses instead of being discarded into an unread key
