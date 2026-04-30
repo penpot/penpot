@@ -100,10 +100,8 @@
         shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
-        ;; FIXME: WARN: this breaks react rule of hooks (hooks can't be under conditional)
-        active-frames
-        (when (cfh/root-frame? shape)
-          (mf/use-ctx ctx/active-frames))
+        all-active-frames (mf/use-ctx ctx/active-frames)
+        active-frames     (when (cfh/root-frame? shape) all-active-frames)
 
         thumbnail?
         (and (some? active-frames)
