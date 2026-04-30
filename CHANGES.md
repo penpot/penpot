@@ -8,6 +8,19 @@
 
 ### :sparkles: New features & Enhancements
 
+### :bug: Bugs fixed
+
+
+
+## 2.16.0 (Unreleased)
+
+### :boom: Breaking changes & Deprecations
+
+### :rocket: Epics and highlights
+
+### :sparkles: New features & Enhancements
+
+- Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 - Add "Delete group" option to the assets panel context menu for components, colors and typographies (by @FairyPigDev) [Github #9141](https://github.com/penpot/penpot/issues/9141)
 - Add `Alt+click` on a layer's disclosure arrow to recursively expand the entire subtree rooted at that layer in the Layers sidebar; symmetric with the existing `Shift+click` collapse-all gesture, and removes the O(siblings × depth) click cost of unfolding a deep subtree one level at a time [Github #7736](https://github.com/penpot/penpot/issues/7736)
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
@@ -58,6 +71,17 @@
 
 ### :bug: Bugs fixed
 
+- Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
+- Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
+- Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
+- Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
+- Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
+- Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
+- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
+- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
+- Fix color dropdown option update [Taiga #14035](https://tree.taiga.io/project/penpot/issue/14035)
+- Fix themes modal height [Taiga #14046](https://tree.taiga.io/project/penpot/issue/14046)
 - Fix layers-panel rename input opening with the type-based default (e.g. "Ellipse") instead of the user's saved name when re-entering edit mode on a previously renamed layer; the silent revert could overwrite the saved name on confirm. The `default-value` `mf/with-memo` was missing `shape-name` from its dependency list, so once the memo cached the original default it never refreshed. Adds `shape-name` to the deps and force-syncs the input's DOM value on every entry into edit mode [Github #9230](https://github.com/penpot/penpot/issues/9230)
 - Suppress the browser context menu when right-clicking empty space in the workspace sidebars while preserving it on text inputs so paste/select-all still work [Github #5127](https://github.com/penpot/penpot/issues/5127)
 - Fix release notes modal appearing behind the dashboard sidebar [Github #8296](https://github.com/penpot/penpot/issues/8296)
@@ -107,30 +131,6 @@
 - Fix internal error on layer prev/next sibling selection (by @jsdevninja) [Github #9003](https://github.com/penpot/penpot/issues/9003)
 - Fix tooltip appearing two times when nested elements [Github #9031](https://github.com/penpot/penpot/issues/9031)
 - Fix broken update library notification link in the UI [Github #9070](https://github.com/penpot/penpot/issues/9070)
-
-## 2.16.0 (Unreleased)
-
-### :boom: Breaking changes & Deprecations
-
-### :rocket: Epics and highlights
-
-### :sparkles: New features & Enhancements
-
-- Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
-
-### :bug: Bugs fixed
-
-- Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
-- Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
-- Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
-- Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
-- Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
-- Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
-- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
-- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
-- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
-- Fix color dropdown option update [Taiga #14035](https://tree.taiga.io/project/penpot/issue/14035)
-- Fix themes modal height [Taiga #14046](https://tree.taiga.io/project/penpot/issue/14046)
 
 
 ## 2.15.0 (Unreleased)
