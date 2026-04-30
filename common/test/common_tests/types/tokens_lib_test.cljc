@@ -1349,6 +1349,50 @@
          (t/is (some? (ctob/get-token-by-name lib "single_set" "color.red.100")))))))
 
 #?(:clj
+   (t/deftest parse-dtcg-group-type-inheritance
+     ;; Per DTCG spec: $type on a group is inherited by every nested token
+     ;; that does not declare its own $type. Tokens are identified by the
+     ;; presence of $value, not by the presence of $type.
+     (let [json {"colors" {"$type"  "color"
+                           "red"    {"$value" "#ff0000"}
+                           "blue"   {"$value" "#0000ff"
+                                     "$description" "Brand blue"}
+                           "danger" {"$type"  "color"
+                                     "$value" "#cc0000"}}
+                 "space"  {"$type" "dimension"
+                           "small" {"$value" "4px"}
+                           "large" {"$value" "16px"
+                                    "$type"  "dimension"}}}
+           lib  (ctob/parse-decoded-json json "set")]
+       (t/testing "group `$type` is inherited by tokens without their own `$type`"
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "colors.red")
+                                   {:name "colors.red"
+                                    :type :color
+                                    :value "#ff0000"
+                                    :description ""}))
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "colors.blue")
+                                   {:name "colors.blue"
+                                    :type :color
+                                    :value "#0000ff"
+                                    :description "Brand blue"}))
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "space.small")
+                                   {:name "space.small"
+                                    :type :dimension
+                                    :value "4px"
+                                    :description ""})))
+       (t/testing "token `$type` overrides the inherited group `$type`"
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "colors.danger")
+                                   {:name "colors.danger"
+                                    :type :color
+                                    :value "#cc0000"
+                                    :description ""}))
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "space.large")
+                                   {:name "space.large"
+                                    :type :dimension
+                                    :value "16px"
+                                    :description ""}))))))
+
+#?(:clj
    (t/deftest parse-multi-set-legacy-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-legacy-example.json")
                     (json/decode {:key-fn identity}))
