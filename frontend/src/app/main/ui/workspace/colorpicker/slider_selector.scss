@@ -72,6 +72,18 @@
     background: linear-gradient(var(--gradient-direction), #000 0%, #fff 100%);
   }
 
+  &.hsl-saturation {
+    background: linear-gradient(
+      var(--gradient-direction),
+      var(--hsl-saturation-grad-from) 0%,
+      var(--hsl-saturation-grad-to) 100%
+    );
+  }
+
+  &.lightness {
+    background: linear-gradient(var(--gradient-direction), #000 0%, var(--lightness-grad-mid) 50%, #fff 100%);
+  }
+
   .handler {
     position: absolute;
     left: 50%;
