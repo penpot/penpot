@@ -26,7 +26,7 @@
   [{:keys [value]}]
   (when (or (str/empty? value)
             (str/blank? value))
-    (tr "workspace.tokens.empty-input")))
+    (tr "errors.tokens.empty-input")))
 
 (def schema:token-value-generic
   [::sm/text {:error/fn token-value-empty-fn}])
@@ -34,7 +34,7 @@
 (def schema:token-value-numeric
   [:and
    [::sm/text {:error/fn token-value-empty-fn}]
-   [:fn {:error/fn #(tr "workspace.tokens.invalid-value" (:value %))}
+   [:fn {:error/fn #(tr "errors.tokens.invalid-value" (:value %))}
     (fn [value]
       (if (str/numeric? value)
         (let [n (d/parse-double value)]
@@ -44,7 +44,7 @@
 (def schema:token-value-percent
   [:and
    [::sm/text {:error/fn token-value-empty-fn}]
-   [:fn {:error/fn #(tr "workspace.tokens.value-with-percent" (:value %))}
+   [:fn {:error/fn #(tr "errors.tokens.value-with-percent" (:value %))}
     (fn [value]
       (if (d/percent? value)
         (let [v (d/parse-percent value)]
@@ -57,7 +57,7 @@
 (def schema:token-value-opacity
   [:and
    [::sm/text {:error/fn token-value-empty-fn}]
-   [:fn {:error/fn #(tr "workspace.tokens.opacity-range")}
+   [:fn {:error/fn #(tr "errors.tokens.opacity-range")}
     (fn [opacity]
       (if (str/numeric? opacity)
         (let [n (d/parse-percent opacity)]
@@ -71,7 +71,7 @@
 
 (def schema:token-value-font-weight
   [:or
-   [:fn {:error/fn #(tr "workspace.tokens.invalid-font-weight-token-value")}
+   [:fn {:error/fn #(tr "errors.tokens.invalid-font-weight-token-value")}
     cto/valid-font-weight-variant]
    ::sm/text])  ;; Leave references or formulas to be checked by the resolver
 
@@ -181,7 +181,7 @@
      [:value (make-token-value-schema token-type)]
      [:description {:optional true} schema:token-description]])
    [:fn {:error/field :value
-         :error/fn #(tr "workspace.tokens.self-reference")}
+         :error/fn #(tr "errors.tokens.self-reference")}
     (fn [{:keys [name value]}]
       (when (and name value)
         (not (cto/token-value-self-reference? name value))))]])
