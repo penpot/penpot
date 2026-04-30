@@ -160,8 +160,17 @@
   "All tokens related ephimeral state"
   (l/derived :workspace-tokens st/state))
 
+;; Live drag-gesture state. These are intentionally NOT in the Redux
+;; state tree — they are short-lived UI values updated on every gesture
+;; tick (drag/resize/rotate) and consumed by viewport overlays, the
+;; sidebar, and on-canvas widgets. Writing to atoms instead of dispatching
+;; ptk events skips the event-pipeline overhead and keeps temp state out
+;; of app state. See `app.main.data.workspace.modifiers` for the writers.
 (def workspace-selrect
-  (l/derived :workspace-selrect st/state))
+  (l/atom nil))
+
+(def workspace-wasm-modifiers
+  (l/atom nil))
 
 ;; WARNING: Don't use directly from components, this is a proxy to
 ;; improve performance of selected-shapes and
@@ -381,8 +390,9 @@
 (def workspace-wasm-editor-styles
   (l/derived :workspace-wasm-editor-styles st/state))
 
-(def workspace-wasm-modifiers
-  (l/derived :workspace-wasm-modifiers st/state))
+;; `workspace-wasm-modifiers` is defined alongside `workspace-selrect`
+;; near the top of this file as a plain atom (not derived from app
+;; state). Keep it in mind when grepping.
 
 (def ^:private workspace-modifiers-with-objects
   (l/derived

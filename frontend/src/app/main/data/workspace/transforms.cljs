@@ -135,11 +135,16 @@
 
 (defn finish-transform []
   (ptk/reify ::finish-transform
+    ptk/EffectEvent
+    (effect [_ _ _]
+      ;; Live drag-gesture state lives in dedicated atoms (see
+      ;; app.main.data.workspace.modifiers); reset them here so the
+      ;; viewport overlays and sidebar drop the in-flight values.
+      (dwm/clear-temp-state!))
+
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (update :workspace-local dissoc :transform :duplicate-move-started?)
-          (dissoc :workspace-selrect :workspace-wasm-modifiers)))))
+      (update state :workspace-local dissoc :transform :duplicate-move-started?))))
 
 ;; -- Resize --------------------------------------------------------
 

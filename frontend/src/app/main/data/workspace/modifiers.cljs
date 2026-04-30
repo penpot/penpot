@@ -30,6 +30,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
+   [app.main.refs :as refs]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.shape :as wasm.shape]
    [beicon.v2.core :as rx]
@@ -54,6 +55,52 @@
   []
   (when (compare-and-set! interactive-transform-active? true false)
     (wasm.api/set-modifiers-end)))
+
+;; ──────────────────────────────────────────────────────────────────────
+;; Live drag-gesture state.
+;;
+;; `set-wasm-modifiers` runs on every drag pointermove and writes:
+;;   1. WASM canvas state (synchronous, cheap)
+;;   2. Live drag values (selrect + per-shape transforms) consumed by
+;;      viewport overlays, the sidebar, and on-canvas widgets.
+;;
+;; Step 2 lives in dedicated atoms (refs/workspace-selrect,
+;; refs/workspace-wasm-modifiers) — NOT in Redux state. Atom writes are
+;; coalesced to one per animation frame so React subscribers reconcile
+;; at most once per frame regardless of pointermove arrival rate, and we
+;; skip the ptk event-pipeline overhead for these high-frequency updates.
+(defonce ^:private pending-temp-payload (atom nil))
+(defonce ^:private pending-temp-frame-id (volatile! nil))
+
+(defn- flush-pending-temp!
+  []
+  (vreset! pending-temp-frame-id nil)
+  (when-some [payload @pending-temp-payload]
+    (reset! pending-temp-payload nil)
+    (reset! refs/workspace-selrect (:selrect payload))
+    (reset! refs/workspace-wasm-modifiers (:modifiers payload))))
+
+(defn- schedule-temp-flush!
+  [selrect modifiers]
+  (reset! pending-temp-payload {:selrect selrect :modifiers modifiers})
+  (when (nil? @pending-temp-frame-id)
+    (vreset! pending-temp-frame-id
+             (js/requestAnimationFrame flush-pending-temp!))))
+
+(defn- cancel-pending-temp-flush!
+  []
+  (when-some [frame-id @pending-temp-frame-id]
+    (js/cancelAnimationFrame frame-id)
+    (vreset! pending-temp-frame-id nil))
+  (reset! pending-temp-payload nil))
+
+(defn clear-temp-state!
+  "Reset the live drag-gesture state. Cancels any rAF-queued write so it
+   cannot resurrect the values after they are cleared."
+  []
+  (cancel-pending-temp-flush!)
+  (reset! refs/workspace-selrect nil)
+  (reset! refs/workspace-wasm-modifiers nil))
 
 (def ^:private transform-attrs
   #{:selrect
@@ -296,6 +343,10 @@
     ptk/EffectEvent
     (effect [_ state _]
       (when (features/active-feature? state "render-wasm/v1")
+        ;; Drop any rAF-queued temp dispatch and reset the live drag-gesture
+        ;; state — its values are about to be replaced by the committed
+        ;; update.
+        (clear-temp-state!)
         ;; End interactive transform mode BEFORE cleaning modifiers so
         ;; the final full-quality render triggered by subsequent shape
         ;; updates is not still classified as "interactive" (which would
@@ -614,20 +665,6 @@
        (filter (fn [[_ {:keys [type]}]]
                  (= type :change-property)))))
 
-(defn set-temporary-selrect
-  [selrect]
-  (ptk/reify ::set-temporary-selrect
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-selrect selrect))))
-
-(defn set-temporary-modifiers
-  [modifiers]
-  (ptk/reify ::set-temporary-modifiers
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-wasm-modifiers modifiers))))
-
 (def ^:private xf:map-key (map key))
 
 #_:clj-kondo/ignore
@@ -666,8 +703,13 @@
             (wasm.api/set-modifiers modifiers)
             (let [ids     (into [] xf:map-key geometry-entries)
                   selrect (wasm.api/get-selection-rect ids)]
-              (rx/of (set-temporary-selrect selrect)
-                     (set-temporary-modifiers modifiers)))))))))
+              ;; Coalesce the Redux dispatch to one per animation frame so
+              ;; React subscribers (sidebar, viewport overlays, flex
+              ;; controls) reconcile at most once per frame regardless of
+              ;; pointermove arrival rate. The WASM canvas update above
+              ;; already happened synchronously.
+              (schedule-temp-flush! selrect modifiers)
+              (rx/empty))))))))
 
 (defn propagate-structure-modifiers
   [modif-tree objects]
