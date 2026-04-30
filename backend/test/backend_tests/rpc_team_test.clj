@@ -767,3 +767,82 @@
       (t/is (th/success? (th/command! data)))
       (t/is (= 1 (:call-count @mock))))))
 
+(t/deftest create-team-with-invalid-name
+  (let [profile (th/create-profile* 1 {:is-active true})]
+
+    ;; name with a dot should fail
+    (let [data {::th/type :create-team
+                ::rpc/profile-id (:id profile)
+                :name "foo.bar"}
+          out  (th/command! data)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; name with a colon should fail
+    (let [data {::th/type :create-team
+                ::rpc/profile-id (:id profile)
+                :name "foo:bar"}
+          out  (th/command! data)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; name with a slash should fail
+    (let [data {::th/type :create-team
+                ::rpc/profile-id (:id profile)
+                :name "foo/bar"}
+          out  (th/command! data)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; valid name should succeed
+    (let [data {::th/type :create-team
+                ::rpc/profile-id (:id profile)
+                :name "My Valid Team"}
+          out  (th/command! data)]
+      (t/is (th/success? out)))))
+
+(t/deftest update-team-with-invalid-name
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})]
+
+    ;; name with a dot should fail
+    (let [data {::th/type :update-team
+                ::rpc/profile-id (:id profile)
+                :id (:id team)
+                :name "foo.bar"}
+          out  (th/command! data)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; name with a colon should fail
+    (let [data {::th/type :update-team
+                ::rpc/profile-id (:id profile)
+                :id (:id team)
+                :name "foo:bar"}
+          out  (th/command! data)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; name with a slash should fail
+    (let [data {::th/type :update-team
+                ::rpc/profile-id (:id profile)
+                :id (:id team)
+                :name "foo/bar"}
+          out  (th/command! data)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; valid name should succeed
+    (let [data {::th/type :update-team
+                ::rpc/profile-id (:id profile)
+                :id (:id team)
+                :name "My Valid Team"}
+          out  (th/command! data)]
+      (t/is (th/success? out)))))
+
