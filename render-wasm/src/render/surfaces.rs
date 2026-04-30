@@ -493,6 +493,11 @@ impl Surfaces {
         }
     }
 
+    pub fn snapshot_rect(&mut self, id: SurfaceId, irect: skia::IRect) -> Option<skia::Image> {
+        let surface = self.get_mut(id);
+        surface.image_snapshot_with_bounds(irect)
+    }
+
     /// Returns a mutable reference to the canvas and automatically marks
     /// render surfaces as dirty when accessed. This tracks which surfaces
     /// have content for optimization purposes.
@@ -696,6 +701,11 @@ impl Surfaces {
             SurfaceId::Export => &self.export,
             SurfaceId::Atlas => &self.atlas,
         }
+    }
+
+    pub fn surface_size(&self, id: SurfaceId) -> (i32, i32) {
+        let s = self.get(id);
+        (s.width(), s.height())
     }
 
     /// Copy the current `Target` contents into the persistent `Backbuffer`.
