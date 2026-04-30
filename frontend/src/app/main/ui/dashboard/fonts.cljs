@@ -65,10 +65,9 @@
 (mf/defc font-variant-display-name*
   {::mf/private true}
   [{:keys [variant]}]
-  [:*
-   [:span (cm/font-weight->name (:font-weight variant))]
-   (when (not= "normal" (:font-style variant))
-     [:span " " (str/capital (:font-style variant))])])
+  [:span (cm/font-display-variant (:variant-name variant)
+                                  (:font-weight variant)
+                                  (:font-style variant))])
 
 (mf/defc uploaded-fonts*
   {::mf/private true}

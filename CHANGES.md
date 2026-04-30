@@ -8,6 +8,19 @@
 
 ### :sparkles: New features & Enhancements
 
+### :bug: Bugs fixed
+
+
+
+## 2.16.0 (Unreleased)
+
+### :boom: Breaking changes & Deprecations
+
+### :rocket: Epics and highlights
+
+### :sparkles: New features & Enhancements
+
+- Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 - Add "Delete group" option to the assets panel context menu for components, colors and typographies (by @FairyPigDev) [Github #9141](https://github.com/penpot/penpot/issues/9141)
 - Add `Alt+click` on a layer's disclosure arrow to recursively expand the entire subtree rooted at that layer in the Layers sidebar; symmetric with the existing `Shift+click` collapse-all gesture, and removes the O(siblings × depth) click cost of unfolding a deep subtree one level at a time [Github #7736](https://github.com/penpot/penpot/issues/7736)
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
@@ -50,6 +63,7 @@
 - Preserve vector content when pasting from external tools such as Inkscape: recognise SVG sent as text/plain (with optional XML declaration and HTML comments), skip the raster preview when an SVG sibling is on the clipboard, and ignore empty SVG blobs that some tools advertise alongside the real payload, so pasted graphics arrive editable without spurious "SVG is invalid" warnings [Github #546](https://github.com/penpot/penpot/issues/546)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
 - Adds a **Pixel grid color** picker in the viewport settings, next to the existing canvas color control [Github #7750](https://github.com/penpot/penpot/issues/7750)
+- Add HEX, HSB and HSL support to the third color tab via an inline model switcher: relabel the existing HSVA tab as HSBA (the math was already HSB-equivalent), add an HSB ↔ HSL pill toggle that updates input labels, slider gradients and round-trip values without changing how colors are stored, and persist the chosen model across sessions [Github #9133](https://github.com/penpot/penpot/issues/9133)
 - Show specific invitation-link error messages instead of a single generic "Invite invalid" page: distinguish expired invitations, email-mismatch (signed in with the wrong account) and corrupted/invalid tokens, each with an actionable recovery hint [Github #9220](https://github.com/penpot/penpot/issues/9220)
 - Show detailed messages on file import errors to help diagnose why a file could not be imported (by @jsdevninja) [Github #9004](https://github.com/penpot/penpot/issues/9004)
 - Add read-only preview mode for saved versions — click a version name to open a dedicated preview view (by @wdeveloper16) [Github #8976](https://github.com/penpot/penpot/issues/8976)
@@ -57,7 +71,18 @@
 
 ### :bug: Bugs fixed
 
-- Fix copy-to-clipboard helpers crashing the UI with `TypeError: Cannot read properties of undefined (reading 'writeText')` on insecure origins (plain HTTP / non-`localhost`). `app.util.clipboard/to-clipboard` and `to-clipboard-promise` no longer call into a missing `navigator.clipboard`; both helpers now always return a Promise and reject with a descriptive `Error` ("serve Penpot over HTTPS to enable copy-to-clipboard") when the asynchronous Clipboard API is unavailable, so callers can surface a clear status message instead of a fatal trace. `to-clipboard-multi` gains the same defensive branch and falls through `clipboard.write` → `writeText` → rejected-Promise consistently. Addresses [Github #6514](https://github.com/penpot/penpot/issues/6514) and the original crash reported in [Github #4478](https://github.com/penpot/penpot/issues/4478)
+- Fix copy-to-clipboard helpers crashing the UI with `TypeError: Cannot read properties of undefined (reading 'writeText')` on insecure origins (plain HTTP / non-`localhost`). `app.util.clipboard/to-clipboard` and `to-clipboard-promise` no longer call into a missing `navigator.clipboard`; both helpers now always return a Promise and reject with a descriptive `Error` ("serve Penpot over HTTPS to enable copy-to-clipboard") when the asynchronous Clipboard API is unavailable, so callers can surface a clear status message instead of a fatal trace. `to-clipboard-multi` gains the same defensive branch and falls through `clipboard.write` → `writeText` → rejected-Promise consistently. The symmetric paste path (`fromNavigator` / `app.util.clipboard/from-navigator`) gains the same nil-check so `navigator.clipboard.read()` no longer throws an opaque `TypeError: Cannot read properties of undefined (reading 'read')` on insecure origins; callers receive the same descriptive `Error` and the workspace surfaces the toast instead of crashing. Addresses [Github #6514](https://github.com/penpot/penpot/issues/6514) and the original crash reported in [Github #4478](https://github.com/penpot/penpot/issues/4478)
+- Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
+- Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
+- Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
+- Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
+- Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
+- Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
+- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
+- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
+- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
+- Fix color dropdown option update [Taiga #14035](https://tree.taiga.io/project/penpot/issue/14035)
+- Fix themes modal height [Taiga #14046](https://tree.taiga.io/project/penpot/issue/14046)
 - Fix layers-panel rename input opening with the type-based default (e.g. "Ellipse") instead of the user's saved name when re-entering edit mode on a previously renamed layer; the silent revert could overwrite the saved name on confirm. The `default-value` `mf/with-memo` was missing `shape-name` from its dependency list, so once the memo cached the original default it never refreshed. Adds `shape-name` to the deps and force-syncs the input's DOM value on every entry into edit mode [Github #9230](https://github.com/penpot/penpot/issues/9230)
 - Suppress the browser context menu when right-clicking empty space in the workspace sidebars while preserving it on text inputs so paste/select-all still work [Github #5127](https://github.com/penpot/penpot/issues/5127)
 - Fix release notes modal appearing behind the dashboard sidebar [Github #8296](https://github.com/penpot/penpot/issues/8296)
@@ -69,9 +94,11 @@
 - Fix Plugin API `shape.applyToken()` / `token.applyToShapes()` / `token.applyToSelected()` rejecting JS-array attribute lists like `["fill"]`: switched the inner schemas to `[::sm/set ...]` (which has the JS array → Clojure set decoder) and made `token-attr-plugin->token-attr` accept string inputs by coercing them to keywords before consulting the alias map [Github #9162](https://github.com/penpot/penpot/issues/9162)
 - Fix `PENPOT_OIDC_USER_INFO_SOURCE` flag being silently ignored (`userinfo` / `token`) in the OIDC callback, causing "incomplete user info" failures during registration [Github #9108](https://github.com/penpot/penpot/issues/9108)
 - Fix `get-view-only-bundle` crashing when a share-link viewer encounters a team member whose email lacks `@` (NullPointerException in `obfuscate-email`) or whose domain has no `.` (previously produced a dangling-dot `****@****.`); now the viewer-side obfuscation is nil-safe and omits the trailing dot when the domain has no TLD
+- Fix crash when pasting a component with variants from an external shared library into a file that uses that library (by @FairyPigDev) [Github #8144](https://github.com/penpot/penpot/issues/8144)
 - Remove `corepack` from the MCP local launcher so it runs on Node.js 25+, where corepack is no longer bundled [Github #8877](https://github.com/penpot/penpot/issues/8877)
 - Fix Copy as SVG: emit a single valid SVG document when multiple shapes are selected, and publish `image/svg+xml` to the clipboard so the paste target works in Inkscape and other SVG-native tools [Github #838](https://github.com/penpot/penpot/issues/838)
 - Reset profile submenu state when the account menu closes (by @eureka0928) [Github #8947](https://github.com/penpot/penpot/issues/8947)
+- Preserve OpenType variant name table for custom fonts in the dashboard [Github #8924](https://github.com/penpot/penpot/issues/8924)
 - Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
 - Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
@@ -105,30 +132,6 @@
 - Fix internal error on layer prev/next sibling selection (by @jsdevninja) [Github #9003](https://github.com/penpot/penpot/issues/9003)
 - Fix tooltip appearing two times when nested elements [Github #9031](https://github.com/penpot/penpot/issues/9031)
 - Fix broken update library notification link in the UI [Github #9070](https://github.com/penpot/penpot/issues/9070)
-
-## 2.16.0 (Unreleased)
-
-### :boom: Breaking changes & Deprecations
-
-### :rocket: Epics and highlights
-
-### :sparkles: New features & Enhancements
-
-- Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
-
-### :bug: Bugs fixed
-
-- Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
-- Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
-- Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
-- Fix title on shared button [Taiga #13730](https://tree.taiga.io/project/penpot/issue/13730)
-- Fix hover on layers [Taiga #13799](https://tree.taiga.io/project/penpot/issue/13799)
-- Fix highlight after name edition [Taiga #13783](https://tree.taiga.io/project/penpot/issue/13783)
-- Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
-- Fix dashboard navigation tabs overlap with projects content when scrolling [Taiga #13962](https://tree.taiga.io/project/penpot/issue/13962)
-- Fix text editor v1 focus [Taiga #13961](https://tree.taiga.io/project/penpot/issue/13961)
-- Fix color dropdown option update [Taiga #14035](https://tree.taiga.io/project/penpot/issue/14035)
-- Fix themes modal height [Taiga #14046](https://tree.taiga.io/project/penpot/issue/14046)
 
 
 ## 2.15.0 (Unreleased)
