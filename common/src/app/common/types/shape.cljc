@@ -205,6 +205,7 @@
    [:r2 {:optional true} ::sm/safe-number]
    [:r3 {:optional true} ::sm/safe-number]
    [:r4 {:optional true} ::sm/safe-number]
+   [:corner-smoothing {:optional true} :boolean]
    [:opacity {:optional true} ::sm/safe-number]
    [:grids {:optional true}
     [:vector {:gen/max 2} ctg/schema:grid]]

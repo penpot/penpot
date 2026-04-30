@@ -29,34 +29,77 @@
       :dashed (str/concat "" w+10 "," w+10)
       "")))
 
+;; Cubic-Bezier handle ratio used to approximate an iOS-style squircle
+;; corner (superellipse segment). Lower values produce a flatter edge
+;; approach with tighter mid-corner curvature, matching Figma's default
+;; corner-smoothing look.
+(def ^:private ^:const squircle-handle-ratio 0.3)
+
+(defn- squircle-path
+  "Builds a full rectangle path where each corner is replaced by a
+  cubic Bezier approximation of a squircle arc instead of a circular arc.
+  Each corner turns 90° and spans the relative offset (±r, ±r)."
+  [x y width height r1 r2 r3 r4]
+  (let [k   squircle-handle-ratio
+        ;; For each corner we go from an edge into its perpendicular
+        ;; edge over the span (dx, dy) where |dx| = |dy| = r. The two
+        ;; cubic handles extend along the incoming and outgoing edges
+        ;; respectively at fraction k * r.
+        top    (- width r1 r2)
+        right  (- height r2 r3)
+        bottom (- width r3 r4)
+        left   (- height r4 r1)
+        k1 (* r1 k) k2 (* r2 k) k3 (* r3 k) k4 (* r4 k)]
+    (dm/str
+     "M" (+ x r1) "," y " "
+     "h" top " "
+     "c" k2 ",0 " r2 "," (- r2 k2) " " r2 "," r2 " "
+     "v" right " "
+     "c0," k3 " " (- k3 r3) "," r3 " " (- r3) "," r3 " "
+     "h" (- bottom) " "
+     "c" (- k4) ",0 " (- r4) "," (- k4 r4) " " (- r4) "," (- r4) " "
+     "v" (- left) " "
+     "c0," (- k1) " " (- r1 k1) "," (- r1) " " r1 "," (- r1) " "
+     "z")))
+
 (defn get-border-props
   [shape]
-  (case (ctsr/radius-mode shape)
-    :radius-1
-    (let [radius (gsh/shape-corners-1 shape)]
-      #js {:rx radius :ry radius})
+  (let [smoothing? (:corner-smoothing shape)]
+    (case (ctsr/radius-mode shape)
+      :radius-1
+      (if smoothing?
+        (let [radius (gsh/shape-corners-1 shape)
+              x      (dm/get-prop shape :x)
+              y      (dm/get-prop shape :y)
+              width  (dm/get-prop shape :width)
+              height (dm/get-prop shape :height)]
+          #js {:d (squircle-path x y width height radius radius radius radius)})
+        (let [radius (gsh/shape-corners-1 shape)]
+          #js {:rx radius :ry radius}))
 
-    :radius-4
-    (let [[r1 r2 r3 r4] (gsh/shape-corners-4 shape)
-          x      (dm/get-prop shape :x)
-          y      (dm/get-prop shape :y)
-          width  (dm/get-prop shape :width)
-          height (dm/get-prop shape :height)
-          top    (- width r1 r2)
-          right  (- height r2 r3)
-          bottom (- width r3 r4)
-          left   (- height r4 r1)]
-      #js {:d (dm/str
-               "M" (+ x r1) "," y " "
-               "h" top " "
-               "a" r2 "," r2 " 0 0 1 " r2 "," r2 " "
-               "v" right " "
-               "a" r3 "," r3 " 0 0 1 " (- r3) "," r3 " "
-               "h" (- bottom) " "
-               "a" r4 "," r4 " 0 0 1 " (- r4) "," (- r4) " "
-               "v" (- left) " "
-               "a" r1 "," r1 " 0 0 1 " r1 "," (- r1) " "
-               "z")})))
+      :radius-4
+      (let [[r1 r2 r3 r4] (gsh/shape-corners-4 shape)
+            x      (dm/get-prop shape :x)
+            y      (dm/get-prop shape :y)
+            width  (dm/get-prop shape :width)
+            height (dm/get-prop shape :height)
+            top    (- width r1 r2)
+            right  (- height r2 r3)
+            bottom (- width r3 r4)
+            left   (- height r4 r1)]
+        (if smoothing?
+          #js {:d (squircle-path x y width height r1 r2 r3 r4)}
+          #js {:d (dm/str
+                   "M" (+ x r1) "," y " "
+                   "h" top " "
+                   "a" r2 "," r2 " 0 0 1 " r2 "," r2 " "
+                   "v" right " "
+                   "a" r3 "," r3 " 0 0 1 " (- r3) "," r3 " "
+                   "h" (- bottom) " "
+                   "a" r4 "," r4 " 0 0 1 " (- r4) "," (- r4) " "
+                   "v" (- left) " "
+                   "a" r1 "," r1 " 0 0 1 " r1 "," (- r1) " "
+                   "z")})))))
 
 (defn add-border-props!
   [props shape]

@@ -22,6 +22,16 @@
   [shape]
   (= (:r1 shape) (:r2 shape) (:r3 shape) (:r4 shape)))
 
+(defn- any-radius?
+  "True when the shape has at least one non-zero corner radius.
+  Used to show/hide advanced corner controls contextually."
+  [shape]
+  (let [pos? (fn [v] (and (number? v) (pos? v)))]
+    (boolean (or (pos? (:r1 shape))
+                 (pos? (:r2 shape))
+                 (pos? (:r3 shape))
+                 (pos? (:r4 shape))))))
+
 (defn- check-border-radius-menu-props
   [old-props new-props]
   (let [old-values (unchecked-get old-props "values")
@@ -43,7 +53,9 @@
          (identical? (get old-values :r3)
                      (get new-values :r3))
          (identical? (get old-values :r4)
-                     (get new-values :r4)))))
+                     (get new-values :r4))
+         (identical? (get old-values :corner-smoothing)
+                     (get new-values :corner-smoothing)))))
 
 (mf/defc border-radius-menu*
   {::mf/wrap [#(mf/memo' % check-border-radius-menu-props)]}
@@ -53,6 +65,11 @@
 
         all-values-equal? (all-equal? values)
         all-token-equal? (and (seq applied-tokens) (all-equal? applied-tokens))
+
+        ;; The corner-style toggle (Round / Squircle) is only
+        ;; meaningful when a corner radius is actually set. Hiding it
+        ;; otherwise keeps the sidebar clean and context-aware.
+        has-radius?       (any-radius? values)
 
         radius-expanded* (mf/use-state false)
         radius-expanded  (deref radius-expanded*)
@@ -125,6 +142,22 @@
          (mf/deps radius-expanded)
          (fn []
            (swap! radius-expanded* not)))
+
+        corner-smoothing? (boolean (:corner-smoothing values))
+
+        toggle-corner-smoothing
+        (mf/use-fn
+         (mf/deps ids corner-smoothing?)
+         (fn []
+           (let [next-value (not corner-smoothing?)]
+             (st/emit!
+              (dwsh/update-shapes ids
+                                  (fn [shape]
+                                    (if (ctsr/has-radius? shape)
+                                      (assoc shape :corner-smoothing next-value)
+                                      shape))
+                                  {:reg-objects? true
+                                   :attrs [:corner-smoothing]})))))
 
 
         on-all-radius-change
@@ -204,7 +237,16 @@
                           :aria-label (if radius-expanded
                                         (tr "workspace.options.radius.hide-all-corners")
                                         (tr "workspace.options.radius.show-single-corners"))
-                          :icon i/corner-radius}]]
+                          :icon i/corner-radius}]
+        (when has-radius?
+          [:> icon-button* {:class (stl/css-case :selected corner-smoothing?)
+                            :variant "ghost"
+                            :tooltip-placement "top-left"
+                            :on-click toggle-corner-smoothing
+                            :aria-label (if corner-smoothing?
+                                          "Disable corner smoothing"
+                                          "Enable corner smoothing (squircle)")
+                            :icon i/stroke-rounded}])]
 
        (when radius-expanded
          [:div {:class (stl/css :radius-4-token)}
@@ -345,4 +387,12 @@
                          :aria-label (if radius-expanded
                                        (tr "workspace.options.radius.hide-all-corners")
                                        (tr "workspace.options.radius.show-single-corners"))
-                         :icon i/corner-radius}]])))
+                         :icon i/corner-radius}]
+       (when has-radius?
+         [:> icon-button* {:class (stl/css-case :selected corner-smoothing?)
+                           :variant "ghost"
+                           :on-click toggle-corner-smoothing
+                           :aria-label (if corner-smoothing?
+                                         "Disable corner smoothing"
+                                         "Enable corner smoothing (squircle)")
+                           :icon i/stroke-rounded}])])))
