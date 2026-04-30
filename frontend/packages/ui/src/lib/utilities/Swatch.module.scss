@@ -1,0 +1,125 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_ds/_borders.scss" as *;
+@use "../_ds/_sizes.scss" as *;
+
+.swatch {
+  --border-color: var(--color-accent-primary-muted);
+  --border-radius: #{$br-4};
+  --border-color-active: var(--color-foreground-primary);
+  --border-color-active-inset: var(--color-background-primary);
+  --checkerboard-background: repeating-conic-gradient(lightgray 0% 25%, white 0% 50%);
+  --checkerboard-size: 0.5rem 0.5rem;
+
+  border: $b-1 solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+
+  &:focus-visible {
+    --border-color: var(--color-accent-primary);
+  }
+}
+
+.small {
+  inline-size: $sz-16;
+  block-size: $sz-16;
+}
+
+.medium {
+  --checkerboard-size: 1rem 1rem;
+
+  inline-size: $sz-24;
+  block-size: $sz-24;
+}
+
+.large {
+  --checkerboard-size: 2rem 2rem;
+
+  inline-size: $sz-48;
+  block-size: $sz-48;
+}
+
+.rounded {
+  --border-radius: #{$br-circle};
+}
+
+.active {
+  --border-color: var(--border-color-active);
+
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px var(--border-color-active-inset) inset;
+  }
+}
+
+.interactive {
+  cursor: pointer;
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  background: none;
+
+  &:hover {
+    --border-color: var(--color-accent-primary-muted);
+
+    border-width: $b-2;
+  }
+}
+
+.swatch-gradient {
+  block-size: 100%;
+  display: block;
+  background-size: cover, var(--checkerboard-size);
+  background-position: center, center;
+  background-repeat: no-repeat, repeat;
+}
+
+.swatch-image {
+  block-size: 100%;
+  display: block;
+  background-size: cover, var(--checkerboard-size);
+  background-position: center, center;
+  background-repeat: no-repeat, repeat;
+}
+
+.swatch-opacity {
+  block-size: 100%;
+  display: grid;
+  grid-template-columns: auto auto;
+}
+
+.swatch-opacity-side-transparency {
+  background-image:
+    linear-gradient(var(--solid-color-overlay), var(--solid-color-overlay)), var(--checkerboard-background);
+  background-size: cover, var(--checkerboard-size);
+  background-position: center, center;
+  background-repeat: no-repeat, repeat;
+  clip-path: inset(0 0 0 0 round 0 #{$br-4} #{$br-4} 0);
+}
+
+.swatch-opacity-side-solid-color {
+  background: var(--solid-color-overlay);
+  background-size: cover;
+}
+
+.swatch-solid-side,
+.swatch-opacity-side {
+  flex: 1;
+  display: block;
+}
+
+.swatch-error {
+  background: var(--color-background-primary);
+}

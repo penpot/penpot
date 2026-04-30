@@ -14,8 +14,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "jsx": "react-jsx",
-    "types": ["vite/client", "vitest"],
-    "baseUrl": "."
+    "types": ["vite/client", "vitest"]
   },
   "files": [],
   "include": [],

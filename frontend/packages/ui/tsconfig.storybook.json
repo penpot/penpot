@@ -1,7 +1,6 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "emitDecoratorMetadata": true,
     "outDir": "",
     "module": "esnext",
     "moduleResolution": "bundler"
