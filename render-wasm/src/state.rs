@@ -8,11 +8,9 @@ pub use text_editor::*;
 
 use crate::error::{Error, Result};
 use crate::render::RenderState;
-use crate::shapes::Shape;
+use crate::shapes::{modifiers::grid_layout::grid_cell_data, Shape};
 use crate::tiles;
 use crate::uuid::Uuid;
-
-use crate::shapes::modifiers::grid_layout::grid_cell_data;
 
 /// This struct holds the state of the Rust application between JS calls.
 ///
