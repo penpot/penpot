@@ -484,7 +484,10 @@
     :fn (mg/resource "app/migrations/sql/0148-add-variant-name-team-font-variant.sql")}
 
    {:name "0149-mod-file-library-rel-synced-at"
-    :fn (mg/resource "app/migrations/sql/0149-mod-file-library-rel-synced-at.sql")}])
+    :fn (mg/resource "app/migrations/sql/0149-mod-file-library-rel-synced-at.sql")}
+
+   {:name "0150-add-issuer-to-sso-provider"
+    :fn (mg/resource "app/migrations/sql/0150-add-issuer-to-sso-provider.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
