@@ -72,7 +72,7 @@
            "Now, you can invite members to your teams who only need to view and comment on files. Team members, stakeholders, developers… pick your case. Anyone who doesn't need to edit can participate confidently."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]
@@ -102,7 +102,7 @@
            "Some versions are saved automatically, serving as an invaluable emergency backup. Additionally, you can manually save versions, giving you full control over the timeline associated with a file. This way, you can always restore specific versions that you've intentionally saved."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]
@@ -131,7 +131,7 @@
 
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]
