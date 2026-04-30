@@ -14,6 +14,10 @@ import { ImportImageTool } from "./tools/ImportImageTool";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 
+function readEnv(primaryName: string, fallbackName: string, defaultValue: string): string {
+    return process.env[primaryName] ?? process.env[fallbackName] ?? defaultValue;
+}
+
 /**
  * Session context for request-scoped data.
  */
@@ -75,7 +79,7 @@ export class PenpotMcpServer {
 
     constructor(private isMultiUser: boolean = false) {
         // read port configuration from environment variables
-        this.host = process.env.PENPOT_MCP_SERVER_HOST ?? "localhost";
+        this.host = readEnv("PENPOT_MCP_SERVER_HOST", "PENPOT_MCP_SERVER_LISTEN_ADDRESS", "localhost");
         this.port = parseInt(process.env.PENPOT_MCP_SERVER_PORT ?? "4401", 10);
         this.webSocketPort = parseInt(process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402", 10);
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
