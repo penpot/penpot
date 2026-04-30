@@ -31,7 +31,9 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.worker :as wrk]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str])
+  (:import
+   clojure.lang.ExceptionInfo))
 
 (declare check-profile-existence!)
 (declare decode-row)
@@ -102,16 +104,20 @@
   ;; We need to return the anonymous profile object in two cases, when
   ;; no profile-id is in session, and when db call raises not found. In all other
   ;; cases we need to reraise the exception.
-  (try
-    (let [profile (-> (get-profile pool profile-id)
-                      (strip-private-attrs)
-                      (update :props filter-props))]
-      (if (contains? cf/flags :nitrate)
-        (nitrate/add-nitrate-licence-to-profile cfg profile)
-        profile))
+  (if (nil? profile-id)
+    {:id uuid/zero :fullname "Anonymous User"}
+    (try
+      (let [profile (-> (get-profile pool profile-id)
+                        (strip-private-attrs)
+                        (update :props filter-props))]
+        (if (contains? cf/flags :nitrate)
+          (nitrate/add-nitrate-licence-to-profile cfg profile)
+          profile))
 
-    (catch Throwable _
-      {:id uuid/zero :fullname "Anonymous User"})))
+      (catch ExceptionInfo cause
+        (if (= :not-found (:type (ex-data cause)))
+          {:id uuid/zero :fullname "Anonymous User"}
+          (throw cause))))))
 
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
