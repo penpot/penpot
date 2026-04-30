@@ -475,7 +475,10 @@
     :fn (mg/resource "app/migrations/sql/0147-mod-team-invitation-table.sql")}
 
    {:name "0147-add-upload-session-table"
-    :fn (mg/resource "app/migrations/sql/0147-add-upload-session-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0147-add-upload-session-table.sql")}
+
+   {:name "0148-add-variant-name-team-font-variant"
+    :fn (mg/resource "app/migrations/sql/0148-add-variant-name-team-font-variant.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
