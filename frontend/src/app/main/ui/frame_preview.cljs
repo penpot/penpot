@@ -37,7 +37,6 @@
         load-ref
         (mf/use-callback
          (fn [iframe-dom]
-           (.log js/console "load-ref" iframe-dom)
            (mf/set-ref-val! iframe-ref iframe-dom)
            (when (and iframe-dom @last-data*)
              (-> iframe-dom .-contentWindow .-document .open)
