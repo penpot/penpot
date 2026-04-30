@@ -86,6 +86,10 @@ impl TileViewbox {
         self.center = get_tile_center_for_viewbox(viewbox, scale);
     }
 
+    pub fn set_interest(&mut self, interest: i32) {
+        self.interest = interest;
+    }
+
     pub fn is_visible(&self, tile: &Tile) -> bool {
         // TO CHECK self.interest_rect.contains(tile)
         self.visible_rect.contains(tile)
@@ -261,11 +265,20 @@ impl PendingTiles {
         result
     }
 
-    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces) {
+    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces, only_visible: bool) {
         self.list.clear();
 
-        // Generate spiral for the interest area (viewport + margin)
-        let spiral = Self::generate_spiral(&tile_viewbox.interest_rect);
+        // During interactive transform, skip the interest-area ring
+        // entirely — the user is dragging, every rAF is on the critical
+        // path, and pre-rendering tiles outside the viewport is wasted
+        // work that just gets evicted on the next pointer move. The ring
+        // is repopulated naturally on gesture end / on idle rAFs.
+        let spiral_rect = if only_visible {
+            &tile_viewbox.visible_rect
+        } else {
+            &tile_viewbox.interest_rect
+        };
+        let spiral = Self::generate_spiral(spiral_rect);
 
         // Partition tiles into 4 priority groups (highest priority = processed last due to pop()):
         // 1. visible + cached (fastest - just blit from cache)

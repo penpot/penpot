@@ -204,6 +204,7 @@
 (def text-editor-blur text-editor/text-editor-blur)
 (def text-editor-set-cursor-from-offset text-editor/text-editor-set-cursor-from-offset)
 (def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
+(def text-editor-toggle-overtype-mode text-editor/text-editor-toggle-overtype-mode)
 (def text-editor-pointer-down text-editor/text-editor-pointer-down)
 (def text-editor-pointer-move text-editor/text-editor-pointer-move)
 (def text-editor-pointer-up text-editor/text-editor-pointer-up)

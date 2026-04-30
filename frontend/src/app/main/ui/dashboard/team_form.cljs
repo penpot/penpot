@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
+   [app.common.types.team :as ctt]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -24,7 +25,7 @@
 
 (def ^:private schema:team-form
   [:map {:title "TeamForm"}
-   [:name [::sm/text {:max 250}]]
+   [:name ctt/schema:team-name]
    [:organization-id {:optional true} [:maybe ::sm/uuid]]])
 
 (defn- on-create-success

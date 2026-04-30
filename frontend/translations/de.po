@@ -4822,11 +4822,11 @@ msgid "subscription.settings.subscribe"
 msgstr "Abonnieren"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Viel Spaß mit Ihrem Abonnement!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "Sie sind %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:558, src/app/main/ui/settings/subscription.cljs:574
