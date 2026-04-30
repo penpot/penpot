@@ -45,7 +45,7 @@
           [:p "To open a file you just have to double click it. You can also open a file in a new tab with right click."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -64,7 +64,7 @@
           [:p "Also, now you have an easy way to manage files and projects between teams."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -83,7 +83,7 @@
           [:p "If you write in arabic, hebrew or other RTL language text direction will be automatically detected in text layers."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -102,7 +102,7 @@
           [:p "This is why the standard blend modes and opacity level are now available for each element."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]])))

@@ -74,7 +74,7 @@
            "One extra detail: if you edit the path and change group segments, the token is moved to its new group (creating it if needed), and empty groups are automatically cleaned up."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -104,7 +104,7 @@
            "If you’ve been waiting to generate tokens, sync them, or manipulate them from your own tools, this is the missing piece. And yes, this one has been requested a lot."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -134,7 +134,7 @@
            "Remapping is always optional, because sometimes you don’t want to keep the current connections. When enabled, it affects all tokens in the file and also takes libraries into account, so main components can propagate changes to child components, and applied tokens update on the elements using them."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -168,7 +168,7 @@
 
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
