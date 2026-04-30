@@ -1226,38 +1226,43 @@
       AND t.id = ?
       AND f.id = ANY(?::uuid[])")
 
+(def ^:private sql:restore-files
+  "UPDATE file SET deleted_at = null, has_media_trimmed = false
+    WHERE id = ANY(?::uuid[])")
+
+(def ^:private sql:restore-file-media-objects
+  "UPDATE file_media_object SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
+
+(def ^:private sql:restore-file-changes
+  "UPDATE file_change SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
+
+(def ^:private sql:restore-file-data
+  "UPDATE file_data SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
+
+(def ^:private sql:restore-file-thumbnails
+  "UPDATE file_thumbnail SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
+
+(def ^:private sql:restore-file-tagged-object-thumbnails
+  "UPDATE file_tagged_object_thumbnail SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
+
+(defn- restore-files
+  [conn file-ids]
+  (let [file-ids (db/create-array conn "uuid" file-ids)]
+    (db/exec-one! conn [sql:restore-files file-ids])
+    (db/exec-one! conn [sql:restore-file-media-objects file-ids])
+    (db/exec-one! conn [sql:restore-file-changes file-ids])
+    (db/exec-one! conn [sql:restore-file-data file-ids])
+    (db/exec-one! conn [sql:restore-file-thumbnails file-ids])
+    (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])))
+
 (defn- restore-file
   [conn file-id]
-  (db/update! conn :file
-              {:deleted-at nil
-               :has-media-trimmed false}
-              {:id file-id}
-              {::db/return-keys false})
-
-  (db/update! conn :file-media-object
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
-
-  (db/update! conn :file-change
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
-
-  (db/update! conn :file-data
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
-
-  (db/update! conn :file-thumbnail
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
-
-  (db/update! conn :file-tagged-object-thumbnail
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false}))
+  (restore-files conn [file-id]))
 
 (def ^:private sql:restore-projects
   "UPDATE project SET deleted_at = null WHERE id = ANY(?::uuid[])")
@@ -1278,17 +1283,18 @@
         (reduce (fn [result {:keys [id project-id]}]
                   (let [index (-> result :files count)]
                     (events/tap :progress {:file-id id :index (inc index) :total total-files})
-                    (restore-file conn id)
-
                     (-> result
                         (update :files conj id)
                         (update :projects conj project-id))))
-
                 {:files #{} :projects #{}}
                 (db/plan conn [sql:resolve-editable-files team-id
                                (db/create-array conn "uuid" ids)]))]
 
-    (restore-projects conn projects)
+    (when (seq files)
+      (restore-files conn files))
+
+    (when (seq projects)
+      (restore-projects conn projects))
 
     files))
 
