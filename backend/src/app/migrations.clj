@@ -478,7 +478,10 @@
     :fn (mg/resource "app/migrations/sql/0147-add-upload-session-table.sql")}
 
    {:name "0148-add-variant-name-team-font-variant"
-    :fn (mg/resource "app/migrations/sql/0148-add-variant-name-team-font-variant.sql")}])
+    :fn (mg/resource "app/migrations/sql/0148-add-variant-name-team-font-variant.sql")}
+
+   {:name "0149-add-issuer-to-sso-provider"
+    :fn (mg/resource "app/migrations/sql/0149-add-issuer-to-sso-provider.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
