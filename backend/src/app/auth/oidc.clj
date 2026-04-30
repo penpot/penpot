@@ -27,6 +27,7 @@
    [app.rpc.commands.profile :as profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
+   [app.util.cache :as cache]
    [app.util.inet :as inet]
    [app.util.json :as json]
    [buddy.sign.jwk :as jwk]
@@ -694,15 +695,24 @@
     (db/pgarray? roles)
     (assoc :roles (db/decode-pgarray roles #{}))))
 
-;; TODO: add cache layer for avoid build an discover each time
+;; A short TTL avoids paying the OIDC discovery + JWKS fetch on every
+;; login; Caffeine will not store the entry when the load fn throws,
+;; so a transient failure at the provider's discovery endpoint does
+;; not poison the cache.
+(defonce ^:private provider-cache
+  (cache/create :expire "10m" :max-size 64))
+
+(defn- load-provider
+  [cfg id]
+  (when-let [params (some->> (db/get* cfg :sso-provider {:id id :is-enabled true})
+                             (decode-row))]
+    (case (:type params)
+      "oidc" (prepare-oidc-provider cfg params))))
 
 (defn get-provider
   [cfg id]
   (try
-    (when-let [params (some->> (db/get* cfg :sso-provider {:id id :is-enabled true})
-                               (decode-row))]
-      (case (:type params)
-        "oidc" (prepare-oidc-provider cfg params)))
+    (cache/get provider-cache id (partial load-provider cfg))
     (catch Throwable cause
       (l/err :hint "unable to configure custom SSO provider"
              :provider (str id)
