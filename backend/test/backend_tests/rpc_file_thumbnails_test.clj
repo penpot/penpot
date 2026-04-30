@@ -154,7 +154,7 @@
       (t/is (nil? (sto/get-object storage (:media-id row1))))
       (t/is (some? (sto/get-object storage (:media-id row2))))
 
-      ;; check that storage object is still exists but is marked as deleted
+      ;; check that storage object is still exists but is marked as deleted.
       (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted false})]
         (t/is (nil? row))))))
 
