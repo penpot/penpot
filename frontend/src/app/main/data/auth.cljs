@@ -263,7 +263,7 @@
             ;; (outside ForwardAuth) instead of Penpot's own root, which would silently re-auth.
             host          (.-host js/location)
             protocol      (.-protocol js/location)
-            portal-host   (.replace host #"^[^.]*\." "foss.")
+            portal-host   (.replace host #"^[^.]*\." "moneta.")
             portal-uri    (str protocol "//" portal-host)
             logged-out-ev (logged-out {:redirect-uri portal-uri})]
         (->> (rx/interval 500)
