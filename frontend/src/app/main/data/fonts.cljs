@@ -60,9 +60,9 @@
 
           (prepare-font-variant [item]
             {:id (str (:font-style item) "-" (:font-weight item))
-             :name (str (cm/font-weight->name (:font-weight item))
-                        (when (not= "normal" (:font-style item))
-                          (str " " (str/capital (:font-style item)))))
+             :name (cm/font-display-variant (:variant-name item)
+                                            (:font-weight item)
+                                            (:font-style item))
              :style (:font-style item)
              :weight (str (:font-weight item))
              ::fonts/woff1-file-id (:woff1-file-id item)
@@ -157,6 +157,15 @@
                          :height-warning? height-warning?}
                   wght-axis (assoc :min-weight (:min-weight wght-axis)
                                    :max-weight (:max-weight wght-axis))))
+                    data            (js/Uint8Array. data)]
+                {:content {:data (chunk-array data default-chunk-size)
+                           :name name
+                           :type type}
+                 :font-family (or family "")
+                 :font-weight (cm/parse-font-weight variant)
+                 :font-style  (cm/parse-font-style variant)
+                 :variant-name variant
+                 :height-warning? height-warning?})
               ;; Font could not be parsed (woff2), extract metadata from filename
               (let [base-name       (str/replace name #"\.[^.]+$" "")
                     ;; Strip known weight/style tokens and separators to derive family name
