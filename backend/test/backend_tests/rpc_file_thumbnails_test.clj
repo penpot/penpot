@@ -254,6 +254,32 @@
 
       (t/is (some? (sto/get-object storage (:media-id row2)))))))
 
+(t/deftest create-file-thumbnail-requires-edit-permissions
+  (let [owner  (th/create-profile* 1)
+        viewer (th/create-profile* 2)
+        file   (th/create-file* 1 {:profile-id (:id owner)
+                                   :project-id (:default-project-id owner)
+                                   :is-shared false
+                                   :revn 1})
+        _      (th/create-file-role* {:file-id (:id file)
+                                      :profile-id (:id viewer)
+                                      :role :viewer})
+        data   {::th/type :create-file-thumbnail
+                ::rpc/profile-id (:id viewer)
+                :file-id (:id file)
+                :revn 1
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+        out    (th/command! data)
+        error  (:error out)]
+
+    (t/is (nil? (:result out)))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :not-found))
+    (t/is (= 0 (count (th/db-query :file-thumbnail {:file-id (:id file)}))))))
+
 (t/deftest error-on-direct-storage-obj-deletion
   (let [storage (::sto/storage th/*system*)
         profile (th/create-profile* 1)
