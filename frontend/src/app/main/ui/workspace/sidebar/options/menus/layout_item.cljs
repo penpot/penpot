@@ -515,30 +515,46 @@
                      :id    "align-self-end"}]])
 
 
+;; In multi-select, `app.common.attrs/get-attrs-multi` aggregates each
+;; attribute across the selected shapes:
+;;   - identical across all shapes  → the shared value
+;;   - differs across shapes        → the `:multiple` keyword sentinel
+;;   - unset on every shape         → `nil`
+;; Numeric inputs render `--` for non-numeric values, so the schema
+;; just needs to accept all three shapes of the merged value.
+(def ^:private schema:numeric-or-multiple
+  [:maybe [:or :float :int [:= :multiple]]])
+
+(def ^:private schema:string-or-multiple
+  [:maybe [:or :string [:= :multiple]]])
+
 (def ^:private schema:layout-item-props-schema
   [:map
    [:layout-item-margin
     {:optional true}
-    [:map
-     [:m1 {:optional true} [:or :float :int]]
-     [:m2 {:optional true} [:or :float :int]]
-     [:m3 {:optional true} [:or :float :int]]
-     [:m4 {:optional true} [:or :float :int]]]]
+    [:maybe
+     [:or
+      [:= :multiple]
+      [:map
+       [:m1 {:optional true} schema:numeric-or-multiple]
+       [:m2 {:optional true} schema:numeric-or-multiple]
+       [:m3 {:optional true} schema:numeric-or-multiple]
+       [:m4 {:optional true} schema:numeric-or-multiple]]]]]
 
-   [:layout-item-margin-type {:optional true} :keyword]
+   [:layout-item-margin-type {:optional true} [:maybe :keyword]]
 
-   [:layout-item-h-sizing {:optional true} :keyword]
-   [:layout-item-v-sizing {:optional true} :keyword]
+   [:layout-item-h-sizing {:optional true} [:maybe :keyword]]
+   [:layout-item-v-sizing {:optional true} [:maybe :keyword]]
 
-   [:layout-item-min-w {:optional true} [:or :float :int]]
-   [:layout-item-max-w {:optional true} [:or :float :int]]
-   [:layout-item-min-h {:optional true} [:or :float :int]]
-   [:layout-item-max-h {:optional true} [:or :float :int]]])
+   [:layout-item-min-w {:optional true} schema:numeric-or-multiple]
+   [:layout-item-max-w {:optional true} schema:numeric-or-multiple]
+   [:layout-item-min-h {:optional true} schema:numeric-or-multiple]
+   [:layout-item-max-h {:optional true} schema:numeric-or-multiple]])
 
 (def ^:private schema:layout-size-constraints
   [:map
    [:values schema:layout-item-props-schema]
-   [:applied-tokens [:maybe [:map-of :keyword :string]]]
+   [:applied-tokens [:maybe [:map-of :keyword schema:string-or-multiple]]]
    [:ids [::sm/vec ::sm/uuid]]])
 
 (mf/defc layout-size-constraints*
