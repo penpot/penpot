@@ -51,6 +51,9 @@
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
 - Adds a **Pixel grid color** picker in the viewport settings, next to the existing canvas color control [Github #7750](https://github.com/penpot/penpot/issues/7750)
 - Show specific invitation-link error messages instead of a single generic "Invite invalid" page: distinguish expired invitations, email-mismatch (signed in with the wrong account) and corrupted/invalid tokens, each with an actionable recovery hint [Github #9220](https://github.com/penpot/penpot/issues/9220)
+- Show detailed messages on file import errors to help diagnose why a file could not be imported (by @jsdevninja) [Github #9004](https://github.com/penpot/penpot/issues/9004)
+- Add read-only preview mode for saved versions — click a version name to open a dedicated preview view (by @wdeveloper16) [Github #8976](https://github.com/penpot/penpot/issues/8976)
+- Add clipboard read/write permissions to the plugin system (by @wdeveloper16) [Github #9053](https://github.com/penpot/penpot/issues/9053)
 
 ### :bug: Bugs fixed
 
@@ -98,7 +101,10 @@
 - Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
 - Fix colorpicker layout so the eyedropper button is visible again [Taiga #14057](https://tree.taiga.io/project/penpot/issue/14057)
-
+- Fix restore-deleted-team-files failing due to a typo in the reduce accumulator (by @Dexterity104) [Github #9241](https://github.com/penpot/penpot/issues/9241)
+- Fix internal error on layer prev/next sibling selection (by @jsdevninja) [Github #9003](https://github.com/penpot/penpot/issues/9003)
+- Fix tooltip appearing two times when nested elements [Github #9031](https://github.com/penpot/penpot/issues/9031)
+- Fix broken update library notification link in the UI [Github #9070](https://github.com/penpot/penpot/issues/9070)
 
 ## 2.16.0 (Unreleased)
 
@@ -135,7 +141,9 @@
 
 ### :bug: Bugs fixed
 
+- Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
 
 
 ## 2.14.4

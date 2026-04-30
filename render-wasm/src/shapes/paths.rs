@@ -1,7 +1,6 @@
-use skia_safe::{self as skia, Matrix};
-
 use crate::math;
 use crate::shapes::svg_attrs::{FillRule, SvgAttrs};
+use skia_safe::{self as skia, Matrix};
 
 mod subpaths;
 
