@@ -1,5 +1,8 @@
 use crate::error::{Error, Result};
-use skia_safe::gpu::{self, gl::FramebufferInfo, gl::TextureInfo, DirectContext};
+use skia_safe::gpu::{
+    self, ganesh::context_options::Enable, gl::FramebufferInfo, gl::TextureInfo, ContextOptions,
+    DirectContext,
+};
 use skia_safe::{self as skia, ISize};
 
 #[derive(Debug, Clone)]
@@ -13,7 +16,16 @@ impl GpuState {
         let interface = gpu::gl::Interface::new_native().ok_or(Error::CriticalError(
             "Failed to create GL interface".to_string(),
         ))?;
-        let context = gpu::direct_contexts::make_gl(interface, None).ok_or(
+
+        // We tweak some options to enhance performance.
+        let mut context_options = ContextOptions::default();
+        // context_options.reduce_ops_task_splitting = Enable::Yes;
+        context_options.skip_gl_error_checks = Enable::Yes;
+        // context_options.runtime_program_cache_size = 1024;
+        // context_options.allow_multiple_glyph_cache_textures = Enable::Yes;
+        // context_options.allow_path_mask_caching = false;
+
+        let context = gpu::direct_contexts::make_gl(interface, Some(&context_options)).ok_or(
             Error::CriticalError("Failed to create GL context".to_string()),
         )?;
         let framebuffer_info = {

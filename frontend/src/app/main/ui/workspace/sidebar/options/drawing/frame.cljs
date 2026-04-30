@@ -13,8 +13,10 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.menus.measures :as measures]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -31,11 +33,35 @@
         selected-preset-name
         (deref selected-preset-name*)
 
-        on-open
-        (mf/use-fn (fn [] (reset! show* true)))
+        search-term*
+        (mf/use-state "")
+
+        search-term
+        (deref search-term*)
+
+        container-ref
+        (mf/use-ref nil)
+
+        on-toggle
+        (mf/use-fn
+         (fn []
+           (swap! show* not)
+           (reset! search-term* "")))
 
         on-close
-        (mf/use-fn (fn [] (reset! show* false)))
+        (mf/use-fn
+         (fn []
+           (reset! show* false)
+           (reset! search-term* "")))
+
+        on-search-change
+        (mf/use-fn
+         (fn [value _event]
+           (reset! search-term* value)))
+
+        filtered-presets
+        (mf/with-memo [search-term]
+          (measures/filter-size-presets search-term size-presets))
 
         on-preset-selected
         (mf/use-fn
@@ -48,7 +74,9 @@
                             (d/read-string))]
 
              (reset! selected-preset-name* name)
-             (st/emit! (dwd/set-default-size width height)))))
+             (st/emit! (dwd/set-default-size width height))
+             (reset! show* false)
+             (reset! search-term* ""))))
 
         orientation
         (when (:width drawing-state)
@@ -65,35 +93,49 @@
     [:div {:class (stl/css :presets)}
      [:div {:class (stl/css-case  :presets-wrapper true
                                   :opened show?)
-            :on-click on-open}
+            :ref container-ref
+            :on-click on-toggle}
       [:span {:class (stl/css :select-name)}
        (or selected-preset-name
            (tr "workspace.options.size-presets"))]
       [:span {:class (stl/css :collapsed-icon)} deprecated-icon/arrow]
       [:& dropdown {:show show?
-                    :on-close on-close}
-       [:ul {:class (stl/css :custom-select-dropdown)}
-        (for [preset size-presets]
-          (if-not (:width preset)
-            [:li {:key (:name preset)
-                  :class (stl/css-case :dropdown-element true
-                                       :disabled true)}
-             [:span {:class (stl/css :preset-name)} (:name preset)]]
+                    :on-close on-close
+                    :container container-ref}
+       [:div {:class (stl/css :custom-select-dropdown)
+              :on-click dom/stop-propagation}
+        [:div {:class (stl/css :preset-search)}
+         [:> search-bar* {:on-change on-search-change
+                          :value search-term
+                          :auto-focus true
+                          :placeholder (tr "workspace.options.search-size-preset")}]]
+        [:ul {:class (stl/css :preset-list)}
+         (if (empty? filtered-presets)
+           [:li {:class (stl/css-case :dropdown-element true
+                                      :disabled true)}
+            [:span {:class (stl/css :preset-name)}
+             (tr "workspace.options.no-size-preset-results")]]
+           (for [preset filtered-presets]
+             (if-not (:width preset)
+               [:li {:key (:name preset)
+                     :class (stl/css-case :dropdown-element true
+                                          :disabled true)}
+                [:span {:class (stl/css :preset-name)} (:name preset)]]
 
-            (let [preset-match (and (= (:width preset) (:width drawing-state))
-                                    (= (:height preset) (:height drawing-state)))]
-              [:li {:key (:name preset)
-                    :class (stl/css-case :dropdown-element true
-                                         :match preset-match)
-                    :data-width (str (:width preset))
-                    :data-height (str (:height preset))
-                    :data-name (:name preset)
-                    :on-click on-preset-selected}
-               [:div {:class (stl/css :name-wrapper)}
-                [:span {:class (stl/css :preset-name)} (:name preset)]
-                [:span {:class (stl/css :preset-size)} (:width preset) " x " (:height preset)]]
-               (when preset-match
-                 [:span {:class (stl/css :check-icon)} deprecated-icon/tick])])))]]]
+               (let [preset-match (and (= (:width preset) (:width drawing-state))
+                                       (= (:height preset) (:height drawing-state)))]
+                 [:li {:key (:name preset)
+                       :class (stl/css-case :dropdown-element true
+                                            :match preset-match)
+                       :data-width (str (:width preset))
+                       :data-height (str (:height preset))
+                       :data-name (:name preset)
+                       :on-click on-preset-selected}
+                  [:div {:class (stl/css :name-wrapper)}
+                   [:span {:class (stl/css :preset-name)} (:name preset)]
+                   [:span {:class (stl/css :preset-size)} (:width preset) " x " (:height preset)]]
+                  (when preset-match
+                    [:span {:class (stl/css :check-icon)} deprecated-icon/tick])]))))]]]]
 
      [:& radio-buttons {:selected (or (d/name orientation) "")
                         :on-change on-orientation-change

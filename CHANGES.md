@@ -44,16 +44,25 @@
 - Add delete and duplicate buttons to typography dialog (by @eureka0928) [Github #5270](https://github.com/penpot/penpot/issues/5270)
 - Edit ruler guide position by double-clicking the guide pill (by @eureka0928) [Github #2311](https://github.com/penpot/penpot/issues/2311)
 - Add a search bar to filter colors in the color palette toolbar (by @eureka0928) [Github #7653](https://github.com/penpot/penpot/issues/7653)
+- Add a search bar to filter board size presets (by @eureka0928) [Github #4658](https://github.com/penpot/penpot/issues/4658)
 - Allow customising the OIDC login button label (by @wdeveloper16) [Github #7027](https://github.com/penpot/penpot/issues/7027)
 - Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
 - Preserve vector content when pasting from external tools such as Inkscape: recognise SVG sent as text/plain (with optional XML declaration and HTML comments), skip the raster preview when an SVG sibling is on the clipboard, and ignore empty SVG blobs that some tools advertise alongside the real payload, so pasted graphics arrive editable without spurious "SVG is invalid" warnings [Github #546](https://github.com/penpot/penpot/issues/546)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
 - Adds a **Pixel grid color** picker in the viewport settings, next to the existing canvas color control [Github #7750](https://github.com/penpot/penpot/issues/7750)
 - Add HEX, HSB and HSL support to the third color tab via an inline model switcher: relabel the existing HSVA tab as HSBA (the math was already HSB-equivalent), add an HSB ↔ HSL pill toggle that updates input labels, slider gradients and round-trip values without changing how colors are stored, and persist the chosen model across sessions [Github #9133](https://github.com/penpot/penpot/issues/9133)
+- Show specific invitation-link error messages instead of a single generic "Invite invalid" page: distinguish expired invitations, email-mismatch (signed in with the wrong account) and corrupted/invalid tokens, each with an actionable recovery hint [Github #9220](https://github.com/penpot/penpot/issues/9220)
+- Show detailed messages on file import errors to help diagnose why a file could not be imported (by @jsdevninja) [Github #9004](https://github.com/penpot/penpot/issues/9004)
+- Add read-only preview mode for saved versions — click a version name to open a dedicated preview view (by @wdeveloper16) [Github #8976](https://github.com/penpot/penpot/issues/8976)
+- Add clipboard read/write permissions to the plugin system (by @wdeveloper16) [Github #9053](https://github.com/penpot/penpot/issues/9053)
 
 ### :bug: Bugs fixed
 
+- Fix layers-panel rename input opening with the type-based default (e.g. "Ellipse") instead of the user's saved name when re-entering edit mode on a previously renamed layer; the silent revert could overwrite the saved name on confirm. The `default-value` `mf/with-memo` was missing `shape-name` from its dependency list, so once the memo cached the original default it never refreshed. Adds `shape-name` to the deps and force-syncs the input's DOM value on every entry into edit mode [Github #9230](https://github.com/penpot/penpot/issues/9230)
+- Suppress the browser context menu when right-clicking empty space in the workspace sidebars while preserving it on text inputs so paste/select-all still work [Github #5127](https://github.com/penpot/penpot/issues/5127)
+- Fix release notes modal appearing behind the dashboard sidebar [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
+- Fix imported stroke-only SVG paths losing their rounded join when authoring tools (e.g. Figma → Heroicons) split a continuous polyline into adjacent `M…L M…L` subpaths sharing an endpoint; on import these are now folded back into one chain so `stroke-linejoin` renders the elbow correctly in both editor and exports [Github #5283](https://github.com/penpot/penpot/issues/5283)
 - Fix plugin API `library.connectLibrary()` returning a non-Promise (or throwing synchronously) when the plugin lacks `library:write` permission — the method now always returns a `Promise` and rejects with a structured error message, matching the contract used by every other Promise-returning plugin method (`restore`, `remove`, `pin`, `saveVersion`, `findVersions`, …)
 - Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
 - Fix `login-with-ldap` silently dropping its error message on the `ldap-not-initialized` restriction (typo `:hide` → `:hint`); the message `"ldap auth provider is not initialized"` now actually surfaces in logs and error responses instead of being discarded into an unread key
@@ -92,7 +101,10 @@
 - Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
 - Fix colorpicker layout so the eyedropper button is visible again [Taiga #14057](https://tree.taiga.io/project/penpot/issue/14057)
-
+- Fix restore-deleted-team-files failing due to a typo in the reduce accumulator (by @Dexterity104) [Github #9241](https://github.com/penpot/penpot/issues/9241)
+- Fix internal error on layer prev/next sibling selection (by @jsdevninja) [Github #9003](https://github.com/penpot/penpot/issues/9003)
+- Fix tooltip appearing two times when nested elements [Github #9031](https://github.com/penpot/penpot/issues/9031)
+- Fix broken update library notification link in the UI [Github #9070](https://github.com/penpot/penpot/issues/9070)
 
 ## 2.16.0 (Unreleased)
 
@@ -129,7 +141,9 @@
 
 ### :bug: Bugs fixed
 
+- Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
 
 
 ## 2.14.4

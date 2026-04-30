@@ -67,10 +67,26 @@
       [:span (tr "not-found.made-with-love")]]]))
 
 (mf/defc invalid-token
-  []
+  [{:keys [reason]}]
+  ;; Map the specific failure reason to actionable copy. Falls back to
+  ;; the generic invitation-invalid message when the reason is missing
+  ;; or unknown so the UX never regresses for unhandled cases.
+  ;;
+  ;; The branches use `tr` with literal keys (instead of `(tr key-var)`)
+  ;; so the i18n usage scanner can statically track every key.
   [:> error-container* {}
-   [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
-   [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])
+   (case reason
+     :email-mismatch
+     [:*
+      [:div {:class (stl/css :main-message)} (tr "errors.invite-email-mismatch")]]
+
+     :token-expired
+     [:*
+      [:div {:class (stl/css :main-message)} (tr "errors.invite-expired")]]
+
+     [:*
+      [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
+      [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])])
 
 (mf/defc login-modal*
   {::mf/private true}
