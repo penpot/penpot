@@ -352,10 +352,6 @@
                       :dnd-over-top (= (:over dprops) :top)
                       :dnd-over-bot (= (:over dprops) :bot))]
 
-    (when (= applied-token :multiple)
-      ;; (js/console.trace "color-row*")
-      (prn "color-row*" index color applied-token))
-
     (mf/with-effect [color prev-color disable-picker]
       (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))

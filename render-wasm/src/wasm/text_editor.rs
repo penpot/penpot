@@ -455,6 +455,15 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
     Ok(())
 }
 
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn text_editor_toggle_overtype_mode() -> Result<()> {
+    with_state_mut!(state, {
+        state.text_editor_state.toggle_overtype_mode();
+        Ok(())
+    })
+}
+
 // FIXME: Review if all the return Ok(()) should be Err instead.
 #[no_mangle]
 #[wasm_error]
@@ -491,9 +500,14 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
         }
 
         let cursor = state.text_editor_state.selection.focus;
-
-        if let Some(new_cursor) =
-            text_helpers::insert_text_with_newlines(text_content, &cursor, &text)
+        if !state.text_editor_state.is_overtype_mode {
+            if let Some(new_cursor) =
+                text_helpers::insert_text_with_newlines(text_content, &cursor, &text)
+            {
+                state.text_editor_state.selection.set_caret(new_cursor);
+            }
+        } else if let Some(new_cursor) =
+            text_helpers::replace_text_with_newlines(text_content, &cursor, &text)
         {
             state.text_editor_state.selection.set_caret(new_cursor);
         }
@@ -876,7 +890,7 @@ pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_update_blink(timestamp_ms: f64) {
+pub extern "C" fn text_editor_update_blink(timestamp_ms: f32) {
     with_state_mut!(state, {
         state.text_editor_state.update_blink(timestamp_ms);
     });

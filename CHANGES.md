@@ -50,7 +50,11 @@
 - Preserve vector content when pasting from external tools such as Inkscape: recognise SVG sent as text/plain (with optional XML declaration and HTML comments), skip the raster preview when an SVG sibling is on the clipboard, and ignore empty SVG blobs that some tools advertise alongside the real payload, so pasted graphics arrive editable without spurious "SVG is invalid" warnings [Github #546](https://github.com/penpot/penpot/issues/546)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts [Github #2457](https://github.com/penpot/penpot/issues/2457)
 - Adds a **Pixel grid color** picker in the viewport settings, next to the existing canvas color control [Github #7750](https://github.com/penpot/penpot/issues/7750)
+- Add HEX, HSB and HSL support to the third color tab via an inline model switcher: relabel the existing HSVA tab as HSBA (the math was already HSB-equivalent), add an HSB ↔ HSL pill toggle that updates input labels, slider gradients and round-trip values without changing how colors are stored, and persist the chosen model across sessions [Github #9133](https://github.com/penpot/penpot/issues/9133)
 - Show specific invitation-link error messages instead of a single generic "Invite invalid" page: distinguish expired invitations, email-mismatch (signed in with the wrong account) and corrupted/invalid tokens, each with an actionable recovery hint [Github #9220](https://github.com/penpot/penpot/issues/9220)
+- Show detailed messages on file import errors to help diagnose why a file could not be imported (by @jsdevninja) [Github #9004](https://github.com/penpot/penpot/issues/9004)
+- Add read-only preview mode for saved versions — click a version name to open a dedicated preview view (by @wdeveloper16) [Github #8976](https://github.com/penpot/penpot/issues/8976)
+- Add clipboard read/write permissions to the plugin system (by @wdeveloper16) [Github #9053](https://github.com/penpot/penpot/issues/9053)
 
 ### :bug: Bugs fixed
 
@@ -66,9 +70,11 @@
 - Fix Plugin API `shape.applyToken()` / `token.applyToShapes()` / `token.applyToSelected()` rejecting JS-array attribute lists like `["fill"]`: switched the inner schemas to `[::sm/set ...]` (which has the JS array → Clojure set decoder) and made `token-attr-plugin->token-attr` accept string inputs by coercing them to keywords before consulting the alias map [Github #9162](https://github.com/penpot/penpot/issues/9162)
 - Fix `PENPOT_OIDC_USER_INFO_SOURCE` flag being silently ignored (`userinfo` / `token`) in the OIDC callback, causing "incomplete user info" failures during registration [Github #9108](https://github.com/penpot/penpot/issues/9108)
 - Fix `get-view-only-bundle` crashing when a share-link viewer encounters a team member whose email lacks `@` (NullPointerException in `obfuscate-email`) or whose domain has no `.` (previously produced a dangling-dot `****@****.`); now the viewer-side obfuscation is nil-safe and omits the trailing dot when the domain has no TLD
+- Fix crash when pasting a component with variants from an external shared library into a file that uses that library (by @FairyPigDev) [Github #8144](https://github.com/penpot/penpot/issues/8144)
 - Remove `corepack` from the MCP local launcher so it runs on Node.js 25+, where corepack is no longer bundled [Github #8877](https://github.com/penpot/penpot/issues/8877)
 - Fix Copy as SVG: emit a single valid SVG document when multiple shapes are selected, and publish `image/svg+xml` to the clipboard so the paste target works in Inkscape and other SVG-native tools [Github #838](https://github.com/penpot/penpot/issues/838)
 - Reset profile submenu state when the account menu closes (by @eureka0928) [Github #8947](https://github.com/penpot/penpot/issues/8947)
+- Preserve OpenType variant name table for custom fonts in the dashboard [Github #8924](https://github.com/penpot/penpot/issues/8924)
 - Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
 - Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
@@ -98,7 +104,10 @@
 - Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
 - Fix colorpicker layout so the eyedropper button is visible again [Taiga #14057](https://tree.taiga.io/project/penpot/issue/14057)
-
+- Fix restore-deleted-team-files failing due to a typo in the reduce accumulator (by @Dexterity104) [Github #9241](https://github.com/penpot/penpot/issues/9241)
+- Fix internal error on layer prev/next sibling selection (by @jsdevninja) [Github #9003](https://github.com/penpot/penpot/issues/9003)
+- Fix tooltip appearing two times when nested elements [Github #9031](https://github.com/penpot/penpot/issues/9031)
+- Fix broken update library notification link in the UI [Github #9070](https://github.com/penpot/penpot/issues/9070)
 
 ## 2.16.0 (Unreleased)
 
@@ -135,7 +144,9 @@
 
 ### :bug: Bugs fixed
 
+- Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
 
 
 ## 2.14.4

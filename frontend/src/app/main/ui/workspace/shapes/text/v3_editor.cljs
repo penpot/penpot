@@ -189,6 +189,13 @@
                    (sync-wasm-text-editor-content!)
                    (wasm.api/request-render "text-delete-forward"))
 
+                 ;; Insert
+                 (= key "Insert")
+                 (do
+                   (dom/prevent-default event)
+                   (text-editor/text-editor-toggle-overtype-mode)
+                   (wasm.api/request-render "text-overtype-mode"))
+
                  ;; Arrow keys
                  (= key "ArrowLeft")
                  (do

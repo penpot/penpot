@@ -45,7 +45,7 @@
           [:p "And not only that, when creating Flex layouts, the spacing is predicted, helping you to maintain your design composition."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -64,7 +64,7 @@
           [:p "Now you can exclude elements from the Flex layout flow using absolute position."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -83,7 +83,7 @@
           [:p "This is another capability that brings Penpot Flex layout even closer to the power of CSS standards."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -102,7 +102,7 @@
           [:p "Activate the scale tool by pressing K and scale your elements, maintaining their visual aspect."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]])))
