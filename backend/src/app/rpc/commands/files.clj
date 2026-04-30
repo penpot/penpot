@@ -1260,10 +1260,6 @@
     (db/exec-one! conn [sql:restore-file-thumbnails file-ids])
     (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])))
 
-(defn- restore-file
-  [conn file-id]
-  (restore-files conn [file-id]))
-
 (def ^:private sql:restore-projects
   "UPDATE project SET deleted_at = null WHERE id = ANY(?::uuid[])")
 
