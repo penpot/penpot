@@ -7706,7 +7706,7 @@ msgid "workspace.tokens.color"
 msgstr "Couleur"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
-msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr ""
 "L'interlignage dépend de la taille de la police. Ajoutez une taille de "
 "police pour obtenir la valeur déduite."
@@ -7756,7 +7756,7 @@ msgid "workspace.tokens.edit-token"
 msgstr "Modifier le token"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
-msgid "workspace.tokens.empty-input"
+msgid "errors.tokens.empty-input"
 msgstr "La valeur du token doit être renseignée"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
@@ -7764,7 +7764,7 @@ msgid "workspace.tokens.enter-token-name"
 msgstr "Entrez le nom du token %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "Erreur d'importation : Impossible d'interpréter le fichier JSON."
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
@@ -7818,7 +7818,7 @@ msgid "workspace.tokens.import-button-prefix"
 msgstr "Importer %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "Erreur d'importation :"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:273
@@ -7877,19 +7877,19 @@ msgid "workspace.tokens.individual-tokens"
 msgstr "Utiliser des tokens individuels"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "Couleur non valide : %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "Erreur d'importation : données du token non valides dans le fichier JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
+msgid "errors.tokens.invalid-json-token-name"
 msgstr "Erreur lors de l'importation : nom du token non valide au format JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
+msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "« %s » n'est pas un nom de token valide.\n"
 "Les noms des tokens ne doivent pas comporter de lettres et de chiffres "
@@ -7897,25 +7897,25 @@ msgstr ""
 "« $ »."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
-msgid "workspace.tokens.invalid-text-case-token-value"
+msgid "errors.tokens.invalid-text-case-token-value"
 msgstr ""
 "Valeur du token non valide : seules les valeurs Aucune, Majuscules, "
 "Minuscules ou Première lettre en capitale sont acceptées"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
-msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgid "errors.tokens.invalid-text-decoration-token-value"
 msgstr ""
 "Valeur du token non valide : seules les valeurs none, underline et "
 "strike-through sont acceptées"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.invalid-token-value-typography"
+msgid "errors.tokens.invalid-token-value-typography"
 msgstr ""
 "Valeur non valide : elle doit faire référence à un token de typographie "
 "composite."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "Valeur du token non valide : %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -7951,7 +7951,7 @@ msgid "workspace.tokens.min-size"
 msgstr "Taille min."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "Références du token manquantes : "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
@@ -7991,7 +7991,7 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "Vous n'avez actuellement aucun thème."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:19
-msgid "workspace.tokens.no-token-files-found"
+msgid "errors.tokens.no-token-files-found"
 msgstr "Aucun token, collection ou thème n'ont été trouvés dans ce fichier."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
@@ -7999,11 +7999,11 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s collections actives"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
+msgid "errors.tokens.number-too-large"
 msgstr "Valeur du token non valide. La valeur est trop grande : %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
+msgid "errors.tokens.opacity-range"
 msgstr ""
 "L'opacité doit être comprise entre 0 % et 100 % ou entre 0 et 1 (ex : 50 % "
 "ou 0.5)."
@@ -8044,7 +8044,7 @@ msgid "workspace.tokens.select-set"
 msgstr "Sélectionner la collection."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "Le token s'auto-référence"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
@@ -8079,7 +8079,7 @@ msgid "workspace.tokens.size"
 msgstr "Taille"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
-msgid "workspace.tokens.stroke-width-range"
+msgid "errors.tokens.stroke-width-range"
 msgstr "La largueur du tracé doit être plus grand ou égal à 0."
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:41, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:169
@@ -8167,11 +8167,11 @@ msgid "workspace.tokens.value-not-valid"
 msgstr "La valeur n'est pas valide"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:69
-msgid "workspace.tokens.value-with-percent"
+msgid "errors.tokens.value-with-percent"
 msgstr "Valeur non valide : % n'est pas autorisé."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:65
-msgid "workspace.tokens.value-with-units"
+msgid "errors.tokens.value-with-units"
 msgstr "Valeur non valide : les unités ne sont pas autorisées."
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166

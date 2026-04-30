@@ -28,10 +28,22 @@
   [val]
   (* (/ val 255) 100))
 
-(mf/defc color-inputs* [{:keys [type color disable-opacity on-change]}]
+(mf/defc color-inputs* [{:keys [type color disable-opacity mode on-mode-change on-change]}]
   (let [{red :r green :g blue :b
          hue :h saturation :s value :v
          hex :hex alpha :alpha} color
+
+        ;; Sub-model selector for the HSB tab: users can toggle between
+        ;; HSB and HSL input display without leaving the tab. State is
+        ;; lifted to the colorpicker parent so the slider labels stay
+        ;; in sync with the inputs.
+        hsb-mode  (or mode :hsb)
+
+        ;; Compute HSL from current RGB (derived; not stored on the color map)
+        [_hsl-h hsl-s hsl-l]
+        (if (and red green blue)
+          (cc/rgb->hsl [red green blue])
+          [0 0 0])
 
         refs {:hex   (mf/use-ref nil)
               :r     (mf/use-ref nil)
@@ -40,6 +52,8 @@
               :h     (mf/use-ref nil)
               :s     (mf/use-ref nil)
               :v     (mf/use-ref nil)
+              :hsl-s (mf/use-ref nil)
+              :hsl-l (mf/use-ref nil)
               :alpha (mf/use-ref nil)}
 
         setup-hex-color
@@ -73,6 +87,7 @@
           (let [val (case property
                       :s (/ val 100)
                       :v (value->hsv-value val)
+                      (:hsl-s :hsl-l) (/ val 100)
                       :alpha (/ val 100)
                       val)]
             (cond
@@ -82,6 +97,18 @@
               (#{:r :g :b} property)
               (let [{:keys [r g b]} (merge color (hash-map property val))
                     hex (cc/rgb->hex [r g b])
+                    [h s v] (cc/hex->hsv hex)]
+                (on-change {:hex hex
+                            :h h :s s :v v
+                            :r r :g g :b b}))
+
+              ;; HSL changes: recompute RGB/HSV from the new HSL triple,
+              ;; reusing the current hue when only S or L changes.
+              (#{:hsl-s :hsl-l} property)
+              (let [new-s   (if (= property :hsl-s) val hsl-s)
+                    new-l   (if (= property :hsl-l) val hsl-l)
+                    [r g b] (cc/hsl->rgb [hue new-s new-l])
+                    hex     (cc/rgb->hex [r g b])
                     [h s v] (cc/hex->hsv hex)]
                 (on-change {:hex hex
                             :h h :s s :v v
@@ -126,10 +153,13 @@
 
     ;; Updates the inputs values when a property is changed in the parent
     (mf/use-effect
-     (mf/deps color type)
+     (mf/deps color type hsb-mode)
      (fn []
        (doseq [ref-key (keys refs)]
-         (let [property-val (get color ref-key)
+         (let [property-val (case ref-key
+                              :hsl-s hsl-s
+                              :hsl-l hsl-l
+                              (get color ref-key))
                property-ref (get refs ref-key)]
            (when (and property-val property-ref)
              (when-let [node (mf/ref-val property-ref)]
@@ -137,14 +167,32 @@
                      (case ref-key
                        (:s :alpha) (mth/precision (* property-val 100) 2)
                        :v   (mth/precision (hsv-value->value property-val) 2)
+                       (:hsl-s :hsl-l) (mth/precision (* property-val 100) 2)
                        property-val)]
                  (dom/set-value! node new-val))))))))
 
     [:div {:class (stl/css-case :color-values true
                                 :disable-opacity disable-opacity)}
 
+     ;; Inline HSB/HSL switcher — only shown on the HSB tab so that
+     ;; designers can pick whichever hue-based model matches their
+     ;; workflow (HSB matches Figma/Sketch/XD, HSL matches CSS).
+     (when (and (not= type :rgb) on-mode-change)
+       [:div {:class (stl/css :model-switcher)}
+        [:button {:type "button"
+                  :class (stl/css-case :model-pill true
+                                       :model-pill-active (= hsb-mode :hsb))
+                  :on-click #(on-mode-change :hsb)}
+         "HSB"]
+        [:button {:type "button"
+                  :class (stl/css-case :model-pill true
+                                       :model-pill-active (= hsb-mode :hsl))
+                  :on-click #(on-mode-change :hsl)}
+         "HSL"]])
+
      [:div {:class (stl/css :colors-row)}
-      (if (= type :rgb)
+      (cond
+        (= type :rgb)
         [:*
          [:div {:class (stl/css :input-wrapper)}
           [:label {:for "red-value" :class (stl/css :input-label)} "R"]
@@ -177,6 +225,42 @@
                    :on-change (on-change-property :b 255)
                    :on-key-down (on-key-down-property :b 255)}]]]
 
+        (= hsb-mode :hsl)
+        [:*
+         [:div {:class (stl/css :input-wrapper)}
+          [:label {:for "hue-value" :class (stl/css :input-label)} "H"]
+          [:input {:id "hue-value"
+                   :ref (:h refs)
+                   :type "number"
+                   :min 0
+                   :max 360
+                   :default-value hue
+                   :on-change (on-change-property :h 360)
+                   :on-key-down (on-key-down-property :h 360)}]]
+         [:div {:class (stl/css :input-wrapper)}
+          [:label {:for "hsl-saturation-value" :class (stl/css :input-label)} "S"]
+          [:input {:id "hsl-saturation-value"
+                   :ref (:hsl-s refs)
+                   :type "number"
+                   :min 0
+                   :max 100
+                   :step 1
+                   :default-value (mth/precision (* hsl-s 100) 2)
+                   :on-change (on-change-property :hsl-s 100)
+                   :on-key-down (on-key-down-property :hsl-s 100)}]]
+         [:div {:class (stl/css :input-wrapper)}
+          [:label {:for "lightness-value" :class (stl/css :input-label)} "L"]
+          [:input {:id "lightness-value"
+                   :ref (:hsl-l refs)
+                   :type "number"
+                   :min 0
+                   :max 100
+                   :step 1
+                   :default-value (mth/precision (* hsl-l 100) 2)
+                   :on-change (on-change-property :hsl-l 100)
+                   :on-key-down (on-key-down-property :hsl-l 100)}]]]
+
+        :else
         [:*
          [:div {:class (stl/css :input-wrapper)}
           [:label {:for "hue-value" :class (stl/css :input-label)} "H"]
@@ -200,8 +284,8 @@
                    :on-change (on-change-property :s 100)
                    :on-key-down (on-key-down-property :s 100)}]]
          [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "value-value" :class (stl/css :input-label)} "V"]
-          [:input {:id "value-value"
+          [:label {:for "brightness-value" :class (stl/css :input-label)} "B(V)"]
+          [:input {:id "brightness-value"
                    :ref (:v refs)
                    :type "number"
                    :min 0
