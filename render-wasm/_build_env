@@ -50,7 +50,7 @@ export CARGO_PARAMS="${@:2}";
 
 if [ "$BUILD_MODE" = "release" ]; then
     export CARGO_PARAMS="--release $CARGO_PARAMS"
-    export EMCC_CFLAGS="-O3 -sASSERTIONS=0 $EMCC_CFLAGS"
+    export EMCC_CFLAGS="-O3 -sASSERTIONS=0 --profiling $EMCC_CFLAGS"
 else
     # TODO: Extra parameters that could be good to look into:
     #        -gseparate-dwarf
@@ -80,6 +80,9 @@ function copy_artifacts {
 
     cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js $DEST/$BUILD_NAME.js;
     cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.wasm $DEST/$BUILD_NAME.wasm;
+    if [ -f target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.wasm.map ]; then
+        cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.wasm.map $DEST/$BUILD_NAME.wasm.map;
+    fi
 
     sed -i "s/render_wasm.wasm/$BUILD_NAME.wasm?version=$VERSION_TAG/g" $DEST/$BUILD_NAME.js;
 

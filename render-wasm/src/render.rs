@@ -40,7 +40,7 @@ pub use images::*;
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
 #[repr(u8)]
-pub enum QueueFrame {
+pub enum RenderQueueFrame {
     Yes = 1,
     No = 0,
 }
@@ -524,7 +524,7 @@ impl RenderState {
                 options.viewport_interest_area_threshold,
                 1.0,
             ),
-            pending_tiles: PendingTiles::new_empty(),
+            pending_tiles: PendingTiles::new(),
             nested_fills: vec![],
             nested_blurs: vec![],
             nested_shadows: vec![],
@@ -1867,7 +1867,7 @@ impl RenderState {
         tree: ShapesPoolRef,
         timestamp: i32,
         sync_render: bool,
-    ) -> Result<QueueFrame> {
+    ) -> Result<RenderQueueFrame> {
         #[cfg(feature = "stats")]
         self.stats.clear();
 
@@ -1960,7 +1960,7 @@ impl RenderState {
 
         self.apply_drawing_to_render_canvas(None, SurfaceId::Current);
 
-        let mut result = QueueFrame::No;
+        let mut result = RenderQueueFrame::No;
         if sync_render {
             self.render_shape_tree_sync(base_object, tree, timestamp)?;
         } else {
@@ -2018,7 +2018,7 @@ impl RenderState {
         base_object: Option<&Uuid>,
         tree: ShapesPoolRef,
         timestamp: i32,
-    ) -> Result<QueueFrame> {
+    ) -> Result<RenderQueueFrame> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
             if tree.len() != 0 {
@@ -2039,7 +2039,7 @@ impl RenderState {
             }
 
             if self.render_in_progress {
-                return Ok(QueueFrame::Yes);
+                return Ok(RenderQueueFrame::Yes);
             } else {
                 // A full-quality frame is now complete. Refresh Backbuffer and regenerate
                 // the per-shape crop cache so interactive drags can reuse pixels.
@@ -2052,7 +2052,7 @@ impl RenderState {
             }
         }
         performance::end_measure!("process_animation_frame");
-        Ok(QueueFrame::No)
+        Ok(RenderQueueFrame::No)
     }
 
     pub fn render_shape_tree_sync(
@@ -2060,12 +2060,12 @@ impl RenderState {
         base_object: Option<&Uuid>,
         tree: ShapesPoolRef,
         timestamp: i32,
-    ) -> Result<QueueFrame> {
+    ) -> Result<RenderQueueFrame> {
         if tree.len() != 0 {
             self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
         }
         self.flush_and_submit();
-        Ok(QueueFrame::No)
+        Ok(RenderQueueFrame::No)
     }
 
     pub fn render_shape_pixels(

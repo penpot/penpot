@@ -7,8 +7,8 @@ pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
 
 use crate::error::{Error, Result};
-use crate::render::{RenderState, QueueFrame};
-use crate::shapes::{Shape, modifiers::grid_layout::grid_cell_data};
+use crate::render::{RenderQueueFrame, RenderState};
+use crate::shapes::{modifiers::grid_layout::grid_cell_data, Shape};
 use crate::tiles;
 use crate::uuid::Uuid;
 
@@ -91,14 +91,14 @@ impl State {
         self.render_state.render_from_cache(&self.shapes);
     }
 
-    pub fn render_sync(&mut self, timestamp: i32) -> Result<QueueFrame> {
+    pub fn render_sync(&mut self) -> Result<RenderQueueFrame> {
         self.render_state
-            .start_render_loop(None, &self.shapes, timestamp, true)
+            .start_render_loop(None, &self.shapes, 0, true)
     }
 
-    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<QueueFrame> {
+    pub fn render_sync_shape(&mut self, id: &Uuid) -> Result<RenderQueueFrame> {
         self.render_state
-            .start_render_loop(Some(id), &self.shapes, timestamp, true)
+            .start_render_loop(Some(id), &self.shapes, 0, true)
     }
 
     pub fn render_shape_pixels(
@@ -111,7 +111,7 @@ impl State {
             .render_shape_pixels(id, &self.shapes, scale, timestamp)
     }
 
-    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<QueueFrame> {
+    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<RenderQueueFrame> {
         // If zoom changed (e.g. interrupted zoom render followed by pan), the
         // tile index may be stale for the new viewport position. Rebuild the
         // index so shapes are mapped to the correct tiles. We use

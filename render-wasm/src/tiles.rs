@@ -22,43 +22,95 @@ impl Tile {
 pub struct TileRect(pub i32, pub i32, pub i32, pub i32);
 
 impl TileRect {
+    pub fn empty() -> Self {
+        Self(0, 0, 0, 0)
+    }
+
+    #[inline]
     pub fn x1(&self) -> i32 {
         self.0
     }
 
+    #[inline]
     pub fn y1(&self) -> i32 {
         self.1
     }
 
+    #[inline]
     pub fn x2(&self) -> i32 {
         self.2
     }
 
+    #[inline]
     pub fn y2(&self) -> i32 {
         self.3
     }
 
+    #[inline]
+    pub fn left(&self) -> i32 {
+        self.0
+    }
+
+    #[inline]
+    pub fn top(&self) -> i32 {
+        self.1
+    }
+
+    #[inline]
+    pub fn right(&self) -> i32 {
+        self.2
+    }
+
+    #[inline]
+    pub fn bottom(&self) -> i32 {
+        self.3
+    }
+
+    #[inline]
+    pub fn x(&self) -> i32 {
+        self.0
+    }
+
+    #[inline]
+    pub fn y(&self) -> i32 {
+        self.1
+    }
+
+    #[inline]
     pub fn width(&self) -> i32 {
         self.x2() - self.x1()
     }
 
+    #[inline]
+    pub fn half_width(&self) -> i32 {
+        self.width() / 2
+    }
+
+    #[inline]
     pub fn height(&self) -> i32 {
         self.y2() - self.y1()
     }
 
-    pub fn center_x(&self) -> i32 {
-        self.x1() + self.width() / 2
+    #[inline]
+    pub fn half_height(&self) -> i32 {
+        self.height() / 2
     }
 
+    #[inline]
+    pub fn center_x(&self) -> i32 {
+        self.x() + self.half_width()
+    }
+
+    #[inline]
     pub fn center_y(&self) -> i32 {
-        self.y1() + self.height() / 2
+        self.y() + self.half_height()
     }
 
     pub fn contains(&self, tile: &Tile) -> bool {
-        tile.x() >= self.x1()
-            && tile.y() >= self.y1()
-            && tile.x() <= self.x2()
-            && tile.y() <= self.y2()
+        tile.x() >= self.left()
+            && tile.y() >= self.top()
+            && tile.x() <= self.right()
+            && tile.y() <= self.bottom()
     }
 }
 
@@ -195,43 +247,76 @@ impl TileHashMap {
 }
 
 const VIEWPORT_DEFAULT_CAPACITY: usize = 24 * 12;
+const VIEWPORT_SPIRAL_DEFAULT_CAPACITY: usize = 64;
 
 // This structure keeps the list of tiles that are in the pending list, the
 // ones that are going to be rendered.
 pub struct PendingTiles {
     pub list: Vec<Tile>,
+    pub spiral: Vec<Tile>,
+    pub spiral_rect: TileRect,
 }
 
 impl PendingTiles {
-    pub fn new_empty() -> Self {
+    pub fn new() -> Self {
         Self {
             list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+            spiral: Vec::with_capacity(VIEWPORT_SPIRAL_DEFAULT_CAPACITY),
+            spiral_rect: TileRect::empty(),
         }
     }
 
-    // Generate tiles ordered by distance to the center (closest processed first).
-    fn generate_spiral(rect: &TileRect) -> Vec<Tile> {
-        let cx = rect.center_x();
-        let cy = rect.center_y();
-
-        // TileRect is inclusive (x1..=x2, y1..=y2).
-        let mut tiles = Vec::new();
-        for x in rect.x1()..=rect.x2() {
-            for y in rect.y1()..=rect.y2() {
-                tiles.push(Tile(x, y));
-            }
+    // Generate tiles in spiral order from center
+    fn generate_spiral(columns: i32, rows: i32) -> Vec<Tile> {
+        let total = columns * rows;
+        if total <= 0 {
+            return Vec::new();
         }
 
-        // We pop() from the end, so keep nearest-to-center tiles at the end.
-        tiles.sort_unstable_by(|a, b| {
-            let da = (a.x() - cx).abs() + (a.y() - cy).abs();
-            let db = (b.x() - cx).abs() + (b.y() - cy).abs();
-            da.cmp(&db)
-                .then_with(|| a.x().cmp(&b.x()))
-                .then_with(|| a.y().cmp(&b.y()))
-        });
-        tiles.reverse();
-        tiles
+        let mut result = Vec::with_capacity(total as usize);
+        let mut cx = 0;
+        let mut cy = 0;
+
+        let ratio = (columns as f32 / rows as f32).ceil() as i32;
+
+        let mut direction_current = 0;
+        let mut direction_total_x = ratio;
+        let mut direction_total_y = 1;
+        let mut direction = 0;
+        let mut current = 0;
+
+        result.push(Tile(cx, cy));
+        while current < total {
+            match direction {
+                0 => cx += 1,
+                1 => cy += 1,
+                2 => cx -= 1,
+                3 => cy -= 1,
+                _ => unreachable!("Invalid direction"),
+            }
+
+            result.push(Tile(cx, cy));
+
+            direction_current += 1;
+            let direction_total = if direction % 2 == 0 {
+                direction_total_x
+            } else {
+                direction_total_y
+            };
+
+            if direction_current == direction_total {
+                if direction % 2 == 0 {
+                    direction_total_x += 1;
+                } else {
+                    direction_total_y += 1;
+                }
+                direction = (direction + 1) % 4;
+                direction_current = 0;
+            }
+            current += 1;
+        }
+        result.reverse();
+        result
     }
 
     pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces, only_visible: bool) {
@@ -247,7 +332,22 @@ impl PendingTiles {
         } else {
             &tile_viewbox.interest_rect
         };
-        let spiral = Self::generate_spiral(spiral_rect);
+
+        // If the spiral rect doesn't change we do not
+        // need to recalculate anything.
+        // if self.spiral_rect == *spiral_rect {
+        //     return;
+        // }
+
+        self.spiral_rect = *spiral_rect;
+
+        // We do not regenerate spiral if the spiral_rect
+        // doesn't change. The spiral_rect is based on the
+        // viewbox so, if the viewbox doesn't change
+        // the spiral should not change.
+        if self.spiral.len() != (spiral_rect.width() * spiral_rect.height()) as usize {
+            self.spiral = Self::generate_spiral(spiral_rect.width(), spiral_rect.height());
+        }
 
         // Partition tiles into 4 priority groups (highest priority = processed last due to pop()):
         // 1. visible + cached (fastest - just blit from cache)
@@ -259,7 +359,9 @@ impl PendingTiles {
         let mut interest_cached = Vec::new();
         let mut interest_uncached = Vec::new();
 
-        for tile in spiral {
+        let center_tile = Tile(spiral_rect.center_x(), spiral_rect.center_y());
+        for spiral_tile in self.spiral.iter() {
+            let tile = Tile(spiral_tile.0 + center_tile.0, spiral_tile.1 + center_tile.1);
             let is_visible = tile_viewbox.visible_rect.contains(&tile);
             let is_cached = surfaces.has_cached_tile_surface(tile);
 
