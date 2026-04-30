@@ -10,6 +10,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix plugin API `LibraryTypography.remove()` failing with a UUID assertion error [Github #8223](https://github.com/penpot/penpot/issues/8223)
+
 
 
 ## 2.16.0 (Unreleased)
