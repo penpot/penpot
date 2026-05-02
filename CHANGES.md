@@ -71,6 +71,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix file crash when switching the variant of a nested component subinstance [Github #9259](https://github.com/penpot/penpot/issues/9259)
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)

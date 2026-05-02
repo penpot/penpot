@@ -2119,7 +2119,14 @@
                             (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]
 
     (loop [attrs       updatable-attrs
-           roperations [{:type :set-touched :touched (:touched previous-shape)}]
+           ;; Preserve any :swap-slot-* groups from current-shape: they are structural
+           ;; metadata (set by generate-new-shape-for-swap when the destination is a
+           ;; subinstance head) that must survive the touched copy from previous-shape,
+           ;; otherwise the file fails referential integrity validation (#missing-slot).
+           roperations [{:type :set-touched
+                         :touched (into (or (:touched previous-shape) #{})
+                                        (filter ctk/swap-slot?)
+                                        (:touched current-shape))}]
            uoperations (list {:type :set-touched :touched (:touched current-shape)})]
       (if-let [attr (first attrs)]
         (let [sync-group
