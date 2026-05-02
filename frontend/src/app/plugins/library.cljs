@@ -852,6 +852,12 @@
       (let [component (u/locate-library-component file-id id)]
         (ctk/is-variant? component)))
 
+    :getVariants
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (when (ctk/is-variant? component)
+          (variant-proxy plugin-id file-id (:variant-id component)))))
+
     :variants
     {:enumerable false
      :get

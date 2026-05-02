@@ -1,5 +1,7 @@
 ## 1.5.0 (Unreleased)
 
+- **plugin-types**: Added `getVariants()` method to `LibraryComponent` interface [Github #9185](https://github.com/penpot/penpot/issues/9185)
+- **plugin-runtime**: Added `getVariants()` implementation to `LibraryComponentProxy` [Github #9185](https://github.com/penpot/penpot/issues/9185)
 - **plugins-runtime**: Added `version` field that returns the current version
 - **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
 - **plugin-types**: Fix penpot.openPage() to navigate in same tab by default

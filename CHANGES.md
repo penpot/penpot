@@ -60,6 +60,7 @@
 - Add a search bar to filter board size presets (by @eureka0928) [Github #4658](https://github.com/penpot/penpot/issues/4658)
 - Allow customising the OIDC login button label (by @wdeveloper16) [Github #7027](https://github.com/penpot/penpot/issues/7027)
 - Add page separators in Workspace [Taiga #13611](https://tree.taiga.io/project/penpot/us/13611?milestone=262806)
+- Add `getVariants()` method to plugin API `LibraryComponent` interface [Github #9185](https://github.com/penpot/penpot/issues/9185)
 - Preserve vector content when pasting SVG from external tools such as Inkscape (by @RenzoMXD) [Github #9182](https://github.com/penpot/penpot/pull/9182)
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts (by @RenzoMXD) [Github #9063](https://github.com/penpot/penpot/pull/9063)
 - Add pixel grid color picker in viewport settings (by @Yakehira) [Github #7750](https://github.com/penpot/penpot/issues/7750)

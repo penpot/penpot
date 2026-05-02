@@ -2677,6 +2677,13 @@ export interface LibraryComponent extends LibraryElement {
   isVariant(): boolean;
 
   /**
+   * Returns the Variants object for this component, if this component is a VariantComponent.
+   * The Variants object provides access to variant properties and values.
+   * @return The Variants object if this component is a VariantComponent, null otherwise
+   */
+  getVariants(): Variants | null;
+
+  /**
    * Creates a new Variant from this standard Component. It creates a VariantContainer, transform this Component into a VariantComponent, duplicates it, and creates a
    * set of properties based on the component name and path.
    * Similar to doing it with the contextual menu or the shortcut on the Penpot interface
