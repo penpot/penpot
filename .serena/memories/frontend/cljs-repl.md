@@ -49,6 +49,16 @@ Shape keys use kebab-case keywords (`:fill-color`, `:fill-opacity`, `:parent-id`
 The shape `:type` is a keyword like `:rect`, `:path`, `:text`, `:ellipse`, `:image`, `:bool`, `:svg-raw`, `:frame`, `:group`.
 Note `:rect` in CLJS corresponds to "rectangle" in the JS Plugin API, and `:frame` corresponds to "board".
 
+Component instance shapes additionally carry `:component-id` and `:component-file` directly, and `:component-root` flags the root of an instance. To navigate from a shape to its component, use `app.common.types.container/get-head-shape` (nearest head) or `get-instance-root` (outermost root) — these differ when instances are nested.
+
+### Helper utilities (`app.plugins.utils`)
+Despite living under `plugins/`, these are general-purpose lookup helpers usable from any CLJS:
+- `locate-shape` — find a shape by file-id, page-id, id
+- `locate-objects` — get the object tree for a page
+- `locate-component` — resolve the component for a shape (walks to **outermost** instance root, not nearest head — beware when instances are nested)
+- `locate-library-component` — direct lookup by file-id and component-id
+- `locate-file` — look up a file by id from state
+
 ## Notes
 - The `:main` build has multiple modules: shared, main, main-workspace, rasterizer, etc.
 - `app.main.store/state` is a potok store (wrapping an okulary atom) created via `defonce`
