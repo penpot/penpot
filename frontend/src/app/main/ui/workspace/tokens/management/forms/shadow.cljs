@@ -296,7 +296,7 @@
       [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]]]
 
     [:fn {:error/field [:value :reference]
-          :error/fn #(tr "workspace.tokens.self-reference")}
+          :error/fn #(tr "errors.tokens.self-reference")}
      (fn [{:keys [name value]}]
        (let [reference (get value :reference)]
          (if (and reference name)

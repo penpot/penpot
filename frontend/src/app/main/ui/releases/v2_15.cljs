@@ -74,7 +74,7 @@
            "You can run MCP in two ways. Remote MCP is hosted and simpler to set up. Local MCP runs on your machine and gives advanced teams extra control. Same vision, different operating model."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -115,7 +115,7 @@
            "This is where MCP becomes workflow infrastructure. Less manual glue work, fewer handoff gaps, and faster iterations between designers and developers."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -149,7 +149,7 @@
 "]]
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]

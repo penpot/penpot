@@ -547,8 +547,8 @@
 (defn- frame-same-size?
   [paste-obj frame-obj]
   (and
-   (= (:heigth (:selrect (first (vals paste-obj))))
-      (:heigth (:selrect frame-obj)))
+   (= (:height (:selrect (first (vals paste-obj))))
+      (:height (:selrect frame-obj)))
    (= (:width (:selrect (first (vals paste-obj))))
       (:width (:selrect frame-obj)))))
 
