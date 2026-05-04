@@ -2945,6 +2945,10 @@ msgstr "Old password"
 msgid "labels.only-yours"
 msgstr "Only yours"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698
+msgid "labels.open"
+msgstr "Open"
+
 #: src/app/main/ui/comments.cljs:911, src/app/main/ui/comments.cljs:976, src/app/main/ui/workspace/palette.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:906, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:213, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:402, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1031, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:316, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:345, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:146
 msgid "labels.options"
 msgstr "Options"
