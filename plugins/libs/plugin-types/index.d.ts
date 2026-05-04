@@ -142,7 +142,8 @@ export type Action =
   | ToggleOverlay
   | CloseOverlay
   | PreviousScreen
-  | OpenUrl;
+  | OpenUrl
+  | SwapShape;
 
 /**
  * Represents an active user in Penpot, extending the `User` interface.
@@ -2988,6 +2989,27 @@ export interface OpenUrl {
    * The URL to open when the action is executed
    */
   readonly url: string;
+}
+
+/**
+ * In prototype view mode, replaces the geometry of one layer with another.
+ */
+export interface SwapShape {
+  /**
+   * The action type.
+   */
+  readonly type: 'swap-shape';
+
+  /**
+   * Layer whose appearance will replace the swap target (`swapSource`).
+   */
+  readonly destination: Shape;
+
+  /**
+   * Layer to visually replace with `destination`. When omitted, the shape that
+   * owns the interaction is used.
+   */
+  readonly swapSource?: Shape;
 }
 
 /**

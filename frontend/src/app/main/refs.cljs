@@ -555,6 +555,9 @@
 (def viewer-overlays
   (l/derived :viewer-overlays st/state))
 
+(def viewer-shape-swaps
+  (l/derived :viewer-shape-swaps st/state))
+
 (def comment-threads
   (l/derived :comment-threads st/state))
 

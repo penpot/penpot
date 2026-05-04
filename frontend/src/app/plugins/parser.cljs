@@ -508,6 +508,12 @@
          {:action-type action-type
           :url (obj/get action "url")}
 
+         :swap-shape
+         (d/without-nils
+          {:action-type :swap
+           :destination (-> (obj/get action "destination") (obj/get "$id"))
+           :swap-source (-> (obj/get action "swapSource") (obj/get "$id"))})
+
          nil)))))
 
 (defn parse-interaction

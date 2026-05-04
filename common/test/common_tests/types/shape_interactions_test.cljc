@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
+   [app.common.schema :as sm]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
@@ -1078,3 +1079,16 @@
             [overlay-pos snap] (ctsi/calc-overlay-position frame-relative base-frame objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (gpt/point 18 22) overlay-pos))
         (t/is (= [:top :left] snap))))))
+
+(t/deftest swap-interaction
+  (let [dest (uuid/next)
+        alt  (uuid/next)
+        ix   {:event-type :click
+              :action-type :swap
+              :destination dest
+              :swap-source alt}]
+    (t/is (true? (sm/validate ctsi/schema:interaction ix)))
+    (t/is (ctsi/has-swap? ix))
+    (t/is (true? (ctsi/destination? ix))))
+  (let [minimal {:event-type :click :action-type :swap}]
+    (t/is (true? (sm/validate ctsi/schema:interaction minimal)))))

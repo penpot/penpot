@@ -144,6 +144,12 @@
     :open-url
     (st/emit! (dom/open-new-window (:url interaction)))
 
+    :swap
+    (let [source-id (or (:swap-source interaction) (:id shape))
+          dest-id   (:destination interaction)]
+      (when (and dest-id (not= source-id dest-id))
+        (st/emit! (dv/apply-shape-swap source-id dest-id))))
+
     nil))
 
 ;; Perform the opposite action of an interaction, if possible
@@ -488,7 +494,9 @@
             svg-raw-container
             (mf/with-memo [objects]
               (svg-raw-container-factory objects all-objects))]
-        (when (and shape (not (:hidden shape)))
+        (when (and shape
+                   (not (:hidden shape))
+                   (not (:viewer-swap-hidden shape)))
           (let [shape (if frame
                         (gsh/translate-to-frame shape frame)
                         shape)

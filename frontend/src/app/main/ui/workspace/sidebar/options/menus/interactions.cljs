@@ -59,6 +59,8 @@
                         (get destination :name (tr "workspace.options.interaction-self")))
     :prev-screen    (tr "workspace.options.interaction-prev-screen")
     :open-url       (tr "workspace.options.interaction-open-url")
+    :swap           (tr "workspace.options.interaction-swap-summary"
+                        (get destination :name (tr "workspace.options.interaction-none")))
     "--"))
 
 (defn- get-frames-options
@@ -75,6 +77,29 @@
   (map (fn [frame]
          {:value (str (:id frame))
           :label (:name frame)}) shared-frames))
+
+(defn- get-swap-source-options
+  [objects trigger-shape]
+  (into [{:value ""
+          :label (tr "workspace.options.interaction-swap-source-self")}]
+        (->> (vals objects)
+             (remove #(#{uuid/zero (:id trigger-shape)} (:id %)))
+             (sort-by #(str/lower (:name %)))
+             (mapv (fn [s]
+                     {:value (str (:id s))
+                      :label (:name s)})))))
+
+(defn- get-swap-replacement-options
+  [objects shape interaction default-opts]
+  (let [source-id (or (:swap-source interaction) (:id shape))
+        sorted    (->> (vals objects)
+                       (remove #(or (= (:id %) uuid/zero)
+                                    (= (:id %) source-id)))
+                       (sort-by #(str/lower (:name %)))
+                       (mapv (fn [s]
+                               {:value (str (:id s))
+                                :label (:name s)})))]
+    (d/concat-vec default-opts sorted)))
 
 (mf/defc prototype-pill*
   [{:keys [title description on-change is-editable
@@ -219,11 +244,34 @@
 
         change-destination
         (mf/use-fn
-         (mf/deps index update-interaction)
+         (mf/deps index update-interaction shape)
          (fn [event]
            (let [value event
-                 value (when (not= value "") (uuid/parse value))]
-             (update-interaction index #(ctsi/set-destination % value)))))
+                 value (when (not= value "") (uuid/parse value))
+                 ;; Cannot replace a layer with itself when that layer is the swap target.
+                 eff-src (fn [inter]
+                           (or (:swap-source inter) (:id shape)))]
+             (update-interaction index
+                                 (fn [inter]
+                                   (let [inter (ctsi/set-destination inter value)]
+                                     (if (and (= (:action-type inter) :swap)
+                                              (= (:destination inter) (eff-src inter)))
+                                       (dissoc inter :destination)
+                                       inter)))))))
+
+        change-swap-source
+        (mf/use-fn
+         (mf/deps index update-interaction shape)
+         (fn [event]
+           (let [v  (if (string? event) event (dom/get-value (dom/get-target event)))
+                 id (when-not (str/empty? v) (uuid/parse v))]
+             (update-interaction index
+                                 (fn [inter]
+                                   (let [inter (ctsi/set-swap-source inter id)]
+                                     (if (and (= (:destination inter)
+                                                 (or (:swap-source inter) (:id shape))))
+                                       (dissoc inter :destination)
+                                       inter)))))))
 
         change-position-relative-to
         (mf/use-fn
@@ -348,7 +396,8 @@
                              {:value :toggle-overlay :label (tr "workspace.options.interaction-toggle-overlay")}
                              {:value :close-overlay  :label (tr "workspace.options.interaction-close-overlay")}
                              {:value :prev-screen    :label (tr "workspace.options.interaction-prev-screen")}
-                             {:value :open-url       :label (tr "workspace.options.interaction-open-url")}]
+                             {:value :open-url       :label (tr "workspace.options.interaction-open-url")}
+                             {:value :swap           :label (tr "workspace.options.interaction-swap")}]
 
         frames-opts         (get-frames-options frames shape)
 
@@ -356,9 +405,15 @@
                                {:value "" :label (tr "workspace.options.interaction-self")}
                                {:value "" :label (tr "workspace.options.interaction-none")})]
         destination-options
-        (mf/with-memo [frames-opts default-opts]
-          (let [sorted-frames-opts (sort-by :label frames-opts)]
-            (d/concat-vec default-opts sorted-frames-opts)))
+        (mf/with-memo [frames-opts default-opts objects shape interaction]
+          (if (ctsi/has-swap? interaction)
+            (get-swap-replacement-options objects shape interaction default-opts)
+            (let [sorted-frames-opts (sort-by :label frames-opts)]
+              (d/concat-vec default-opts sorted-frames-opts))))
+
+        swap-source-options
+        (mf/with-memo [objects shape]
+          (get-swap-source-options objects shape))
 
         shape-parents-opts (get-shared-frames-options shape-parents)
 
@@ -441,12 +496,27 @@
                       :options action-type-options
                       :on-change change-action-type}]]]
 
-        ;; Destination
+        ;; Layer to replace (swap only)
+        (when (ctsi/has-swap? interaction)
+          [:div {:class (stl/css :interaction-row)}
+           [:div {:class (stl/css :interaction-row-label)}
+            [:div {:class (stl/css :interaction-row-name)}
+             (tr "workspace.options.interaction-swap-source")]]
+           [:div {:class (stl/css :interaction-row-select)}
+            [:& select {:default-value (if-let [sid (:swap-source interaction)]
+                                          (str sid)
+                                          "")
+                        :options swap-source-options
+                        :on-change change-swap-source}]]])
+
+        ;; Destination / replacement shape
         (when (ctsi/has-destination interaction)
           [:div {:class (stl/css :interaction-row)}
            [:div {:class (stl/css :interaction-row-label)}
             [:div {:class (stl/css :interaction-row-name)}
-             (tr "workspace.options.interaction-destination")]]
+             (if (ctsi/has-swap? interaction)
+               (tr "workspace.options.interaction-swap-with")
+               (tr "workspace.options.interaction-destination"))]]
            [:div {:class (stl/css :interaction-row-select)}
             [:& select {:default-value (str (:destination interaction))
                         :options destination-options

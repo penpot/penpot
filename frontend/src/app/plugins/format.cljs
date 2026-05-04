@@ -591,6 +591,14 @@
        #js {:type "open-url"
             :url (:url interaction)}
 
+       :swap
+       (obj/without-empty
+        #js {:type "swap-shape"
+             :destination (when (:destination interaction)
+                            (shape-proxy plugin file-id page-id (:destination interaction)))
+             :swapSource (when (:swap-source interaction)
+                           (shape-proxy plugin file-id page-id (:swap-source interaction)))})
+
        nil))))
 
 (defn axis->orientation

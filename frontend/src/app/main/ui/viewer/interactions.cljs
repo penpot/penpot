@@ -17,11 +17,13 @@
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.shapes :as shapes]
+   [app.main.ui.viewer.swap :as vsw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -96,9 +98,13 @@
         (mf/with-memo [not-fixed-ids page frame size delta]
           (calculate-objects not-fixed-ids))
 
+        swaps
+        (mf/deref refs/viewer-shape-swaps)
+
         all-objects
-        (mf/with-memo [objects-fixed objects-not-fixed]
-          (merge objects-fixed objects-not-fixed))
+        (mf/with-memo [objects-fixed objects-not-fixed swaps]
+          (-> (merge objects-fixed objects-not-fixed)
+              (vsw/apply-viewer-shape-swaps (or swaps {}))))
 
         wrapper-fixed
         (mf/with-memo [page frame size]

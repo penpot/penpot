@@ -6891,6 +6891,26 @@ msgid "workspace.options.interaction-open-url"
 msgstr "Open URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-swap"
+msgstr "Swap appearance"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-swap-summary"
+msgstr "Swap with: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-swap-source"
+msgstr "Layer to replace"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-swap-source-self"
+msgstr "This shape (trigger)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-swap-with"
+msgstr "Replace with"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 #, unused
 msgid "workspace.options.interaction-out"
 msgstr "Out"

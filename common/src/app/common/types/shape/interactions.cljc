@@ -41,7 +41,8 @@
     :toggle-overlay
     :close-overlay
     :prev-screen
-    :open-url})
+    :open-url
+    :swap})
 
 (def overlay-positioning-types
   #{:manual
@@ -122,6 +123,7 @@
    [:close-click-outside {:optional true} :boolean]
    [:background-overlay {:optional true} :boolean]
    [:position-relative-to {:optional true} [:maybe ::sm/uuid]]
+   [:swap-source {:optional true} [:maybe ::sm/uuid]]
    [:url {:optional true} :string]])
 
 (def schema:navigate-interaction
@@ -175,6 +177,13 @@
    [:event-type [::sm/one-of event-types]]
    [:url :string]])
 
+(def schema:swap-interaction
+  [:map {:title "SwapInteraction"}
+   [:action-type [:= :swap]]
+   [:event-type [::sm/one-of event-types]]
+   [:destination {:optional true} [:maybe ::sm/uuid]]
+   [:swap-source {:optional true} [:maybe ::sm/uuid]]])
+
 (def schema:interaction
   [:schema {:title "Interaction"
             :gen/gen (sg/one-of (sg/generator schema:navigate-interaction)
@@ -182,7 +191,8 @@
                                 (sg/generator schema:close-overlay-interaction)
                                 (sg/generator schema:toggle-overlay-interaction)
                                 (sg/generator schema:prev-scren-interaction)
-                                (sg/generator schema:open-url-interaction))}
+                                (sg/generator schema:open-url-interaction)
+                                (sg/generator schema:swap-interaction))}
    [:and
     schema:generic-interaction-attrs
     [:multi {:dispatch :action-type :title "InteractionAttrs"}
@@ -191,7 +201,8 @@
      [:toggle-overlay schema:toggle-overlay-interaction]
      [:close-overlay schema:close-overlay-interaction]
      [:prev-screen schema:prev-scren-interaction]
-     [:open-url schema:open-url-interaction]]]])
+     [:open-url schema:open-url-interaction]
+     [:swap schema:swap-interaction]]]])
 
 (def check-interaction
   (sm/check-fn schema:interaction))
@@ -272,7 +283,13 @@
             :open-url
             (assoc interaction
                    :action-type action-type
-                   :url (get interaction :url ""))))]
+                   :url (get interaction :url ""))
+
+            :swap
+            (assoc interaction
+                   :action-type action-type
+                   :destination (get interaction :destination)
+                   :swap-source (get interaction :swap-source)))]
 
     (cond-> new-interaction
       (not (allowed-animation? action-type
@@ -300,7 +317,7 @@
 
 (defn has-destination
   [interaction]
-  (#{:navigate :open-overlay :toggle-overlay :close-overlay}
+  (#{:navigate :open-overlay :toggle-overlay :close-overlay :swap}
    (:action-type interaction)))
 
 (defn destination?
@@ -352,6 +369,19 @@
           "expected compatible interaction map with url param")
 
   (assoc interaction :url url))
+
+(defn has-swap?
+  [interaction]
+  (= (:action-type interaction) :swap))
+
+(defn set-swap-source
+  [interaction swap-source-id]
+  (assert (check-interaction interaction))
+  (assert (has-swap? interaction))
+  (assert (or (nil? swap-source-id) (uuid? swap-source-id))
+          "expected uuid or nil for `swap-source`")
+
+  (assoc interaction :swap-source swap-source-id))
 
 (defn has-overlay-opts
   [interaction]
@@ -725,12 +755,18 @@
   [interactions ids-map objects]
   (when (some? interactions)
     (let [xform (comp (filter (fn [interaction]
-                                (let [destination (:destination interaction)]
-                                  (or (nil? destination)
-                                      (contains? ids-map destination)
-                                      (contains? objects destination)))))
+                                (let [destination (:destination interaction)
+                                      swap-src (:swap-source interaction)]
+                                  (and (or (nil? destination)
+                                           (contains? ids-map destination)
+                                           (contains? objects destination))
+                                       (or (nil? swap-src)
+                                           (contains? ids-map swap-src)
+                                           (contains? objects swap-src))))))
                       (map (fn [interaction]
-                             (d/update-when interaction :destination #(get ids-map % %)))))]
+                             (-> interaction
+                                 (d/update-when :destination #(get ids-map % %))
+                                 (d/update-when :swap-source #(get ids-map % %))))))]
       (into [] xform interactions))))
 
 (defn remove-interactions

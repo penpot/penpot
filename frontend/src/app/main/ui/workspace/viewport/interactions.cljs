@@ -43,6 +43,12 @@
   (st/emit! (dw/select-shape id))
   (st/emit! (dw/start-edit-interaction index)))
 
+(defn- interaction-path-origin
+  [objects {:keys [action-type swap-source] :as interaction} trigger-shape]
+  (if (and (= action-type :swap) (some? swap-source))
+    (get objects swap-source trigger-shape)
+    trigger-shape))
+
 (defn connect-to-shape
   "Calculate the best position to draw an interaction line
   between two shapes"
@@ -121,6 +127,10 @@
 
                      :open-url (dm/str "M1 -5 L 3 -7 L 7 -3 L 1 3 L -1 1"
                                        "M-1 5 L -3 7 L -7 3 L -1 -3 L 1 -1")
+
+                     ;; Two horizontal arrows — swap appearance
+                     :swap (dm/str "M -6 0 L 2 0 M 4 0 L 10 0 M 10 -3 L 6 0 L 10 3"
+                                   " M 6 -3 L 2 0 L 6 3")
 
                      nil)
         inv-zoom (/ 1 zoom)]
@@ -312,13 +322,14 @@
         (for [[index interaction] (d/enumerate (:interactions shape))]
           (let [dest-shape (when (ctsi/destination? interaction)
                              (get objects (:destination interaction)))
+                path-orig   (interaction-path-origin objects interaction shape)
                 selected? (contains? selected (:id shape))
                 level (calc-level index (:interactions shape))]
             (when-not selected?
               [:> interaction-path* {:key (dm/str "non-selected-" (:id shape) "-" index)
                                      :index index
                                      :level level
-                                     :orig-shape shape
+                                     :orig-shape path-orig
                                      :dest-shape dest-shape
                                      :selected selected
                                      :is-selected false
@@ -341,11 +352,12 @@
             (when-not (= index editing-interaction-index)
               (let [dest-shape (when (ctsi/destination? interaction)
                                  (get objects (:destination interaction)))
+                    path-orig   (interaction-path-origin objects interaction shape)
                     level (calc-level index (:interactions shape))]
                 [:g {:key (dm/str "interaction-path-" (:id shape) "-" index)}
                  [:> interaction-path* {:index index
                                         :level level
-                                        :orig-shape shape
+                                        :orig-shape path-orig
                                         :dest-shape dest-shape
                                         :selected selected
                                         :is-selected true

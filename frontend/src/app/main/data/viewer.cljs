@@ -394,7 +394,8 @@
     (update [_ state]
       (-> state
           (dissoc :viewer-animations)
-          (assoc  :viewer-overlays [])))
+          (assoc :viewer-overlays [])
+          (assoc :viewer-shape-swaps {})))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -411,7 +412,8 @@
     (update [_ state]
       (-> state
           (dissoc :viewer-animations)
-          (assoc  :viewer-overlays [])))
+          (assoc :viewer-overlays [])
+          (assoc :viewer-shape-swaps {})))
     ptk/WatchEvent
     (watch [_ state _]
       (let [params  (rt/get-params state)
@@ -506,7 +508,9 @@
   (ptk/reify ::go-to-frame-by-index
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :viewer-overlays []))
+      (-> state
+          (assoc :viewer-overlays [])
+          (assoc :viewer-shape-swaps {})))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -535,7 +539,8 @@
              frame   (get frames index)]
          (cond-> state
            :always
-           (assoc :viewer-overlays [])
+           (assoc :viewer-overlays []
+                  :viewer-shape-swaps {})
 
            (some? animation)
            (assoc-in [:viewer-animations (:id frame)]
@@ -576,7 +581,9 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :viewer-overlays []))
+      (-> state
+          (assoc :viewer-overlays [])
+          (assoc :viewer-shape-swaps {})))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -693,6 +700,20 @@
        (close-overlay* state
                        frame-id
                        animation)))))
+
+;; --- Swap (replace shape appearance in view mode)
+
+(defn apply-shape-swap
+  "Show `replacement-id` at the slot of `source-id` in the prototype viewer."
+  [source-id replacement-id]
+  (dm/assert! (uuid? source-id))
+  (dm/assert! (uuid? replacement-id))
+  (dm/assert! (not= source-id replacement-id))
+
+  (ptk/reify ::apply-shape-swap
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-shape-swaps source-id] replacement-id))))
 
 ;; --- Objects selection
 
