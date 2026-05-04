@@ -284,7 +284,23 @@
                  {:file-id file-id
                   :local? false
                   :name name
-                  :blobs [(js/Blob. #js [data] #js {:type mime-type})]
+                  :blobs [(js/Blob.
+                           #js [(cond
+                                  (instance? js/Uint8Array data)
+                                  data
+
+                                  (instance? js/ArrayBuffer data)
+                                  (js/Uint8Array. data)
+
+                                  (array? data)
+                                  (js/Uint8Array.from data)
+
+                                  (and (some? data) (= (type data) js/Object))
+                                  (js/Uint8Array.from (js/Object.values data))
+
+                                  :else
+                                  data)]
+                           #js {:type mime-type})]
                   :on-image identity
                   :on-svg identity})
                 (rx/take 1)
