@@ -15,8 +15,7 @@ mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use gpu_state::GpuState;
 
@@ -384,6 +383,15 @@ pub(crate) struct RenderState {
     /// interactive backdrop exactly once per gesture (first rAF) so we don't
     /// repeatedly overwrite tiles that have already been updated.
     pub interactive_target_seeded: bool,
+    /// GPU crops from `Backbuffer` keyed by shape id. Filled on full-frame completion; during
+    /// drag, entries for the moved top-level selection are ensured here
+    pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+}
+
+pub struct InteractiveDragCrop {
+    pub src_doc_bounds: Rect,
+    pub src_selrect: Rect,
+    pub image: skia::Image,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
@@ -403,6 +411,72 @@ pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISiz
 }
 
 impl RenderState {
+    /// Decide whether a top-level node can be served from `backbuffer_crop_cache` during an
+    /// interactive transform (drag/resize/rotate).
+    ///
+    /// We only reuse cached pixels when it is safe and visually correct:
+    /// - **Top-level only**: cache entries are built for direct children of the root.
+    /// - **Moved node**: only allow cache reuse for *pure translations* (no scale/rotate/skew),
+    ///   because other transforms would require resampling and can diverge from the live render.
+    /// - **Other cached nodes**: if the moving bounds overlap this cached crop, invalidate it so
+    ///   we don't show stale content while something moves over/inside it.
+    fn should_use_cached_top_level_during_interactive(
+        &mut self,
+        node_id: Uuid,
+        tree: ShapesPoolRef,
+        moved_ids: &[Uuid],
+        moved_bounds: Option<Rect>,
+    ) -> bool {
+        if !self.backbuffer_crop_cache.contains_key(&node_id) {
+            return false;
+        }
+        let Some(raw) = tree.get_raw(&node_id) else {
+            return false;
+        };
+        if raw.parent_id != Some(Uuid::nil()) {
+            return false;
+        }
+
+        // If this top-level shape itself is being moved, always allow using its cached pixels.
+        // BUT only for pure translations. For non-translation transforms (scale/rotate/skew),
+        // cached pixels won't match the live result (and may require resampling), so render live.
+        if moved_ids.contains(&node_id) {
+            let Some(m) = tree.get_modifier(&node_id) else {
+                return false;
+            };
+            return crate::math::is_move_only_matrix(m);
+        }
+
+        // Invalidate cached top-level pixels whenever the moving content overlaps
+        // the cached pixel area. Use `src_doc_bounds` because it's the exact bounds
+        // captured from the Backbuffer crop (more reliable than extents derived
+        // from layout/layout-less container heuristics).
+        if let Some(moved) = moved_bounds {
+            let intersects = self
+                .backbuffer_crop_cache
+                .get(&node_id)
+                .is_some_and(|crop| moved.intersects(crop.src_doc_bounds));
+
+            if intersects {
+                // Simplest "automatic invalidation": once something moves over this cached
+                // area, drop the cached crop so it won't be reused again until the next
+                // full-frame rebuild.
+                self.backbuffer_crop_cache.remove(&node_id);
+                return false;
+            }
+        }
+        true
+    }
+
+    fn is_recortable_for_drag_crop(&self, shape: &Shape) -> bool {
+        // "Recortable" (happy path): the shape is fully represented by the pixels
+        // already in Backbuffer and can be moved as a texture during drag.
+        shape.blur.is_none()
+            && shape.shadows.is_empty()
+            && (shape.opacity - 1.0).abs() <= 1e-4
+            && shape.blend_mode().0 == skia::BlendMode::SrcOver
+    }
+
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::try_new()?;
@@ -460,6 +534,7 @@ impl RenderState {
             cache_cleared_this_render: false,
             current_tile_had_shapes: false,
             interactive_target_seeded: false,
+            backbuffer_crop_cache: HashMap::default(),
         })
     }
 
@@ -1541,6 +1616,97 @@ impl RenderState {
         }
     }
 
+    fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
+        self.backbuffer_crop_cache.clear();
+
+        // Collect candidate shapes that are "recortable" and visible in the current viewport.
+        // This is intentionally conservative; we only cache shapes that do not overlap with
+        // ANY other candidate to guarantee the pixels under their bounds belong exclusively
+        // to that shape in Backbuffer.
+        let viewport = self.viewbox.area;
+        let mut candidates: Vec<(Uuid, Rect, Rect)> = Vec::new(); // (id, doc_bounds, selrect)
+
+        let root_ids: Vec<Uuid> = match tree.get(&Uuid::nil()) {
+            Some(root) => root.children_ids(false),
+            None => Vec::new(),
+        };
+
+        for shape_id in root_ids {
+            let Some(shape) = tree.get(&shape_id) else {
+                continue;
+            };
+            if shape.hidden {
+                continue;
+            }
+            if !self.is_recortable_for_drag_crop(shape) {
+                continue;
+            }
+
+            let doc_bounds = self.get_cached_extrect(shape, tree, 1.0);
+            if !doc_bounds.intersects(viewport) {
+                continue;
+            }
+
+            // Also require selrect to be visible; used for drag delta placement.
+            let selrect = shape.selrect();
+            if !selrect.intersects(viewport) {
+                continue;
+            }
+
+            candidates.push((shape.id, doc_bounds, selrect));
+        }
+
+        // Filter out any candidate that overlaps with any other candidate.
+        let mut non_overlapping: Vec<(Uuid, Rect, Rect)> = Vec::new();
+        'outer: for (i, (id, bounds, selrect)) in candidates.iter().enumerate() {
+            for (j, (_id2, bounds2, _sel2)) in candidates.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if bounds.intersects(*bounds2) {
+                    continue 'outer;
+                }
+            }
+            non_overlapping.push((*id, *bounds, *selrect));
+        }
+
+        // Snapshot from Backbuffer for each accepted shape.
+        let scale = self.get_scale();
+        let vb_left = self.viewbox.area.left;
+        let vb_top = self.viewbox.area.top;
+        for (id, doc_bounds, selrect) in non_overlapping {
+            let left = ((doc_bounds.left - vb_left) * scale).floor() as i32;
+            let top = ((doc_bounds.top - vb_top) * scale).floor() as i32;
+            let right = ((doc_bounds.right - vb_left) * scale).ceil() as i32;
+            let bottom = ((doc_bounds.bottom - vb_top) * scale).ceil() as i32;
+            if right <= left || bottom <= top {
+                continue;
+            }
+            let src_irect = skia::IRect::new(left, top, right, bottom);
+            let Some(image) = self
+                .surfaces
+                .snapshot_rect(SurfaceId::Backbuffer, src_irect)
+            else {
+                continue;
+            };
+
+            let src_doc_bounds = Rect::new(
+                src_irect.left as f32 / scale + vb_left,
+                src_irect.top as f32 / scale + vb_top,
+                src_irect.right as f32 / scale + vb_left,
+                src_irect.bottom as f32 / scale + vb_top,
+            );
+            self.backbuffer_crop_cache.insert(
+                id,
+                InteractiveDragCrop {
+                    src_doc_bounds,
+                    src_selrect: selrect,
+                    image,
+                },
+            );
+        }
+    }
+
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
         let _start = performance::begin_timed_log!("render_from_cache");
         performance::begin_measure!("render_from_cache");
@@ -1906,6 +2072,12 @@ impl RenderState {
                 self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
             } else {
+                // A full-quality frame is now complete. Refresh Backbuffer and regenerate
+                // the per-shape crop cache so interactive drags can reuse pixels.
+                if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
+                    self.surfaces.copy_target_to_backbuffer();
+                    self.rebuild_backbuffer_crop_cache(tree);
+                }
                 wapi::notify_tiles_render_complete!();
                 performance::end_measure!("render");
             }
@@ -2706,6 +2878,29 @@ impl RenderState {
             target_surface = SurfaceId::Export;
         }
 
+        // During interactive transforms we compute the union of the current bounds of all
+        // modified shapes (doc-space @ 100% zoom, scale=1.0). This is used as a cheap overlap
+        // guard to decide when cached top-level crops are unsafe to reuse (something is moving
+        // over/inside them), without doing expensive ancestor walks per node.
+        let moved_bounds =
+            if self.options.is_interactive_transform() && !tree.modifier_ids().is_empty() {
+                let mut acc: Option<Rect> = None;
+                for id in tree.modifier_ids().iter() {
+                    let Some(s) = tree.get(id) else { continue };
+                    let r = self.get_cached_extrect(s, tree, 1.0);
+                    acc = Some(match acc {
+                        None => r,
+                        Some(mut prev) => {
+                            prev.join(r);
+                            prev
+                        }
+                    });
+                }
+                acc
+            } else {
+                None
+            };
+
         while let Some(node_render_state) = self.pending_nodes.pop() {
             let node_id = node_render_state.id;
             let visited_children = node_render_state.visited_children;
@@ -2772,6 +2967,64 @@ impl RenderState {
                 }
 
                 if !is_visible {
+                    continue;
+                }
+            }
+
+            // Interactive drag cache: if this node is cacheable during interactive transform,
+            // draw it directly from Backbuffer crop on the current tile surface and skip
+            // traversing/rendering the subtree.
+            if self.options.is_interactive_transform() {
+                let use_cached = self.should_use_cached_top_level_during_interactive(
+                    node_id,
+                    tree,
+                    &tree.modifier_ids(),
+                    moved_bounds,
+                );
+                if use_cached {
+                    if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
+                        let crop_image = &crop.image;
+                        let crop_src_selrect = crop.src_selrect;
+                        let crop_src_doc_bounds = crop.src_doc_bounds;
+
+                        let cur_selrect = tree.get(&node_id).map(|s| s.selrect());
+                        let (dx, dy) = match cur_selrect {
+                            Some(cur) => (
+                                cur.left - crop_src_selrect.left,
+                                cur.top - crop_src_selrect.top,
+                            ),
+                            None => (0.0, 0.0),
+                        };
+
+                        let dst_doc_rect = Rect::new(
+                            crop_src_doc_bounds.left + dx,
+                            crop_src_doc_bounds.top + dy,
+                            crop_src_doc_bounds.right + dx,
+                            crop_src_doc_bounds.bottom + dy,
+                        );
+                        let scale = self.get_scale();
+                        let translation = self
+                            .surfaces
+                            .get_render_context_translation(self.render_area, scale);
+                        let dst_tile_rect = skia::Rect::from_xywh(
+                            (dst_doc_rect.left + translation.0) * scale,
+                            (dst_doc_rect.top + translation.1) * scale,
+                            dst_doc_rect.width() * scale,
+                            dst_doc_rect.height() * scale,
+                        );
+
+                        // let canvas = self.surfaces.canvas_and_mark_dirty(target_surface);
+                        let canvas = self.surfaces.canvas(target_surface);
+                        canvas.save();
+                        canvas.reset_matrix();
+                        canvas.draw_image_rect(
+                            crop_image,
+                            None,
+                            dst_tile_rect,
+                            &skia::Paint::default(),
+                        );
+                        canvas.restore();
+                    }
                     continue;
                 }
             }

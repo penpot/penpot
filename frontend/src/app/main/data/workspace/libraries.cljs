@@ -1382,8 +1382,14 @@
 
             check-changes
             (fn [[event old-data]]
-              (if (nil? old-data)
+              (cond
+                (nil? old-data)
                 (rx/empty)
+
+                (:translation? event)
+                (rx/empty)
+
+                :else
                 (let [{:keys [file-id changes save-undo? undo-group]} event
 
                       changed-components

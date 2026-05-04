@@ -29,11 +29,20 @@
 }
 
 // SIDEBAR CONTENT COMPONENT
+.sidebar-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 .sidebar-content {
   display: grid;
   grid-template-rows: auto auto auto auto 1fr;
   gap: var(--sp-xxl);
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   padding: 0;
   overflow: hidden auto;
 }
