@@ -131,6 +131,7 @@
 - Fix tooltip appearing two times when nested elements [Github #9031](https://github.com/penpot/penpot/issues/9031)
 - Fix broken update library notification link in the UI [Github #9070](https://github.com/penpot/penpot/issues/9070)
 - Fix plugin API `ShapeBase.component()` returning the outermost component instead of the immediate component in case of nested component instances [Github #9183](https://github.com/penpot/penpot/issues/9183)
+- Fix Storybook docs and canvas pages missing a scrollbar when content overflows the viewport (by @MilosM348) [Github #6049](https://github.com/penpot/penpot/issues/6049)
 
 ## 2.15.0 (Unreleased)
 
