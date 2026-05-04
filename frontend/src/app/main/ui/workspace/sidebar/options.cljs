@@ -46,12 +46,9 @@
 
 (mf/defc single-shape-options*
   {::mf/private true}
-  [{:keys [shape page-id file-id libraries] :rest props}]
+  [{:keys [shape page-id file-id libraries wasm-modifiers modifiers] :rest props}]
   (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
-
-        wasm-modifiers (mf/deref refs/workspace-wasm-modifiers)
-        modifiers  (mf/deref refs/workspace-modifiers)
 
         shape
         (if (features/active-feature? @st/state "render-wasm/v1")
@@ -72,23 +69,44 @@
       :bool    [:> bool/options* {:shape shape :file-id file-id :page-id page-id}]
       nil)))
 
-(mf/defc shape-options*
+;; Throttled inner: re-renders at most every 100ms when its props change.
+;; The parent (shape-options*) feeds wasm-modifiers / modifiers as props so
+;; this throttle actually applies to drag-time modifier updates.
+(mf/defc shape-options-throttled*
   {::mf/wrap [#(mf/throttle % 100)]
    ::mf/private true}
-  [{:keys [shapes shapes-with-children selected page-id file-id libraries]}]
+  [{:keys [shapes shapes-with-children selected page-id file-id libraries
+           wasm-modifiers modifiers]}]
   (if (= 1 (count selected))
     [:> single-shape-options*
      {:page-id page-id
       :file-id file-id
       :libraries libraries
       :shape (first shapes)
-      :shapes-with-children shapes-with-children}]
+      :shapes-with-children shapes-with-children
+      :wasm-modifiers wasm-modifiers
+      :modifiers modifiers}]
     [:> multiple/options*
      {:shapes-with-children shapes-with-children
       :shapes shapes
       :page-id page-id
       :file-id file-id
       :libraries libraries}]))
+
+(mf/defc shape-options*
+  {::mf/private true}
+  [{:keys [shapes shapes-with-children selected page-id file-id libraries]}]
+  (let [wasm-modifiers (mf/deref refs/workspace-wasm-modifiers)
+        modifiers      (mf/deref refs/workspace-modifiers)]
+    [:> shape-options-throttled*
+     {:shapes shapes
+      :shapes-with-children shapes-with-children
+      :selected selected
+      :page-id page-id
+      :file-id file-id
+      :libraries libraries
+      :wasm-modifiers wasm-modifiers
+      :modifiers modifiers}]))
 
 (mf/defc specialized-panel*
   {::mf/private true}

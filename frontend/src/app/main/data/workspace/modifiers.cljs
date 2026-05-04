@@ -30,6 +30,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
+   [app.main.streams :as ms]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.shape :as wasm.shape]
    [beicon.v2.core :as rx]
@@ -614,19 +615,27 @@
        (filter (fn [[_ {:keys [type]}]]
                  (= type :change-property)))))
 
+;; The live preview state for a drag / resize / rotate gesture lives in
+;; behavior-subjects in `app.main.streams` (`wasm-modifiers` and
+;; `workspace-selrect`). These were previously the Redux keys
+;; `:workspace-wasm-modifiers` / `:workspace-selrect`, but at one
+;; React commit per pointermove they were the dominant per-event cost
+;; during a drag. Reads now go through RAF-coalesced atoms in
+;; `app.main.refs`, which update at most once per animation frame.
+
 (defn set-temporary-selrect
   [selrect]
   (ptk/reify ::set-temporary-selrect
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-selrect selrect))))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (rx/push! ms/workspace-selrect selrect))))
 
 (defn set-temporary-modifiers
   [modifiers]
   (ptk/reify ::set-temporary-modifiers
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-wasm-modifiers modifiers))))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (rx/push! ms/wasm-modifiers modifiers))))
 
 (def ^:private xf:map-key (map key))
 
@@ -658,15 +667,40 @@
             objects         (dsh/lookup-page-objects state)
             snap-pixel?
             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
+        ;; --- DRAG PERF INSTRUMENTATION (remove after investigation) ---
+        ;; Spans appear in DevTools Performance > Timings track as `swm:*`.
+        ;; `props=N`/`geom=N` count tags are logged once per call so you can
+        ;; correlate per-event work to subtree size.
+        (js/performance.mark "swm:total:start")
+        (js/console.timeStamp (str "swm props=" (count wasm-props)))
+        (js/performance.mark "swm:set-props:start")
         (set-wasm-props! objects prev-wasm-props wasm-props)
-        (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
-        (let [geometry-entries (parse-geometry-modifiers modif-tree)
-              modifiers        (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
-          (wasm.api/set-modifiers modifiers)
-          (let [ids     (into [] xf:map-key geometry-entries)
-                selrect (wasm.api/get-selection-rect ids)]
-            (rx/of (set-temporary-selrect selrect)
-                   (set-temporary-modifiers modifiers))))))))
+        (js/performance.measure "swm:set-props" "swm:set-props:start")
+        (js/performance.clearMarks "swm:set-props:start")
+        (let [structure-entries (parse-structure-modifiers modif-tree)]
+          (js/performance.mark "swm:struct-mods:start")
+          (wasm.api/set-structure-modifiers structure-entries)
+          (js/performance.measure "swm:struct-mods" "swm:struct-mods:start")
+          (js/performance.clearMarks "swm:struct-mods:start")
+          (let [geometry-entries (parse-geometry-modifiers modif-tree)
+                _                (js/console.timeStamp (str "swm geom=" (count geometry-entries)))
+                _                (js/performance.mark "swm:propagate:start")
+                modifiers        (wasm.api/propagate-modifiers geometry-entries snap-pixel?)
+                _                (js/performance.measure "swm:propagate" "swm:propagate:start")
+                _                (js/performance.clearMarks "swm:propagate:start")]
+            (js/performance.mark "swm:set-mods:start")
+            (wasm.api/set-modifiers modifiers)
+            (js/performance.measure "swm:set-mods" "swm:set-mods:start")
+            (js/performance.clearMarks "swm:set-mods:start")
+            (let [ids     (into [] xf:map-key geometry-entries)
+                  _       (js/performance.mark "swm:selrect:start")
+                  selrect (wasm.api/get-selection-rect ids)
+                  _       (js/performance.measure "swm:selrect" "swm:selrect:start")
+                  _       (js/performance.clearMarks "swm:selrect:start")]
+              (js/performance.measure "swm:total" "swm:total:start")
+              (js/performance.clearMarks "swm:total:start")
+              (rx/of (set-temporary-selrect selrect)
+                     (set-temporary-modifiers modifiers)))))))))
 
 (defn propagate-structure-modifiers
   [modif-tree objects]

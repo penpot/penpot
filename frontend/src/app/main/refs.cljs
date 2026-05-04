@@ -17,7 +17,40 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.store :as st]
+   [app.main.streams :as ms]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]))
+
+(defn- raf-coalesced-atom
+  "Returns a CLJS atom mirroring the latest value pushed to source-stream,
+   but updated at most once per animation frame for non-nil pushes.
+   Components that `mf/deref` the atom re-render aligned to RAF instead
+   of per push, which matters for streams that fire at pointer-event
+   rate (drag / resize / rotate live preview).
+
+   nil pushes apply synchronously and cancel any pending RAF: a
+   `finish-transform` clear must take effect in the same reducer pass
+   that commits the new shape state, otherwise the previous modifier
+   would double-apply to the already-committed shapes for one frame."
+  [source-stream]
+  (let [a          (atom nil)
+        latest     (volatile! nil)
+        raf-id     (volatile! nil)
+        flush!     (fn []
+                     (vreset! raf-id nil)
+                     (reset! a @latest))]
+    (rx/sub! source-stream
+             (fn [v]
+               (vreset! latest v)
+               (if (nil? v)
+                 (do
+                   (when-some [id @raf-id]
+                     (js/cancelAnimationFrame id)
+                     (vreset! raf-id nil))
+                   (reset! a nil))
+                 (when (nil? @raf-id)
+                   (vreset! raf-id (js/requestAnimationFrame flush!))))))
+    a))
 
 ;; ---- Global refs
 
@@ -160,8 +193,14 @@
   "All tokens related ephimeral state"
   (l/derived :workspace-tokens st/state))
 
+;; Live drag-gesture state. These are intentionally NOT in the Redux
+;; state tree — they are short-lived UI values updated on every gesture
+;; tick (drag/resize/rotate) and consumed by viewport overlays, the
+;; sidebar, and on-canvas widgets. Writing to atoms instead of dispatching
+;; ptk events skips the event-pipeline overhead and keeps temp state out
+;; of app state. See `app.main.data.workspace.modifiers` for the writers.
 (def workspace-selrect
-  (l/derived :workspace-selrect st/state))
+  (raf-coalesced-atom ms/workspace-selrect))
 
 ;; WARNING: Don't use directly from components, this is a proxy to
 ;; improve performance of selected-shapes and
@@ -382,7 +421,7 @@
   (l/derived :workspace-wasm-editor-styles st/state))
 
 (def workspace-wasm-modifiers
-  (l/derived :workspace-wasm-modifiers st/state))
+  (raf-coalesced-atom ms/wasm-modifiers))
 
 (def ^:private workspace-modifiers-with-objects
   (l/derived

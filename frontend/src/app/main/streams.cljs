@@ -22,6 +22,21 @@
   (or ^boolean (kbd/keyboard-event? event)
       ^boolean (mse/mouse-event? event)))
 
+;; --- Live preview streams (drag / resize / rotate)
+;;
+;; Carry the in-flight modifier tree and selrect during an interactive
+;; transform. Replaces the previous Redux keys
+;; `:workspace-wasm-modifiers` and `:workspace-selrect`, which churned
+;; React state on every pointermove. Writes happen from
+;; `app.main.data.workspace.modifiers/set-temporary-*`; reads happen
+;; via the RAF-coalesced atoms in `app.main.refs`.
+
+(defonce wasm-modifiers
+  (rx/behavior-subject nil))
+
+(defonce workspace-selrect
+  (rx/behavior-subject nil))
+
 ;; --- Derived streams
 
 (defonce ^:private pointer
