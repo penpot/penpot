@@ -705,7 +705,16 @@
                            (rx/map #(array pos %)))))))]
          (if (empty? shapes)
            (rx/of (finish-transform))
-           (let [move-stream
+           (let [;; `shapes`/`objects`/`libraries` are stable for the
+                 ;; whole gesture, so the children-derived subtree
+                 ;; walks inside `find-valid-parent-and-frame-ids` only
+                 ;; need to happen once per gesture instead of per
+                 ;; pointer-move. Build the context here and thread it
+                 ;; into each call.
+                 parent-validation-ctx
+                 (ctn/make-parent-validation-context objects shapes libraries)
+
+                 move-stream
                  (->> position
                       ;; We ask for the snap position but we continue even if the result is not available
                       (rx/with-latest-from snap-delta)
@@ -720,7 +729,7 @@
                          (let [position         (gpt/add from-position move-vector)
                                exclude-frames   (if mod? exclude-frames exclude-frames-siblings)
                                target-frame     (ctst/top-nested-frame objects position exclude-frames)
-                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes false libraries)
+                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes false libraries parent-validation-ctx)
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)
                                drop-index       (when flex-layout? (gslf/get-drop-index target-frame objects position))
