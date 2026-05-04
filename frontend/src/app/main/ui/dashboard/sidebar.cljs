@@ -384,10 +384,7 @@
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (let [params (if (and (contains? cf/flags :nitrate) (:organization-id team))
-                          {:organization-id (:organization-id team)}
-                          {})]
-             (st/emit! (modal/show :team-form params)))))
+           (st/emit! (dtm/check-and-create-team (:id team)))))
 
         on-team-click
         (mf/use-fn

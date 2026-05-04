@@ -9396,3 +9396,12 @@ msgstr "Nitrate Trial"
 
 msgid "subscription.current-plan.enterprise"
 msgstr "Enterprise"
+
+msgid "dashboard.no-permission-create-team.message"
+msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the owner."
+
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr "You don't have permission to add teams to any of your organizations."
+
+msgid "dashboard.select-org-modal.permission-info"
+msgstr "Here you find all your organizations where you are allowed to create or add teams."
