@@ -17,7 +17,7 @@
 //! render rebuild the affected tiles with the shape at its committed
 //! position.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use skia_safe::{self as skia, Rect};
 
@@ -71,6 +71,80 @@ pub struct DragSprite {
     pub above_image: Option<skia::Image>,
 }
 
+/// Find the unique "primary" shape in the modifier set: the one whose
+/// ancestors are NOT also in the set. For a layout-container drag
+/// `propagate-modifiers` expands the user's single-shape modifier into
+/// transforms-per-descendant; this picks the topmost one back out so
+/// the sprite path can capture the parent (whose subtree contains all
+/// the propagated children).
+///
+/// Returns `None` when the set has no unique root (multi-shape drag of
+/// unrelated shapes), in which case the fast path is disabled.
+///
+/// Currently dormant — pairs with the layout-drag atlas-sample
+/// shortcut that hasn't landed cleanly yet.
+#[allow(dead_code)]
+fn find_primary_shape(ids: &[Uuid], tree: ShapesPoolRef) -> Option<Uuid> {
+    let id_set: HashSet<Uuid> = ids.iter().copied().collect();
+    let mut roots: Vec<Uuid> = Vec::new();
+    for &id in ids {
+        // Walk ancestors; if any is in the set, `id` isn't a root.
+        let mut cur = tree.get(&id).and_then(|s| s.parent_id);
+        let mut has_ancestor_in_set = false;
+        while let Some(pid) = cur {
+            if id_set.contains(&pid) {
+                has_ancestor_in_set = true;
+                break;
+            }
+            cur = tree.get(&pid).and_then(|s| s.parent_id);
+        }
+        if !has_ancestor_in_set {
+            roots.push(id);
+            if roots.len() > 1 {
+                return None;
+            }
+        }
+    }
+    if roots.len() == 1 {
+        Some(roots[0])
+    } else {
+        None
+    }
+}
+
+/// True iff every matrix in `modifiers` is a pure translation AND they
+/// all share the same `(tx, ty)` (within `eps`). This is the safety
+/// invariant for the layout-container drag path: a layout that's just
+/// being dragged emits the same translation for the parent and every
+/// auto-laid-out descendant. If any descendant differs, the layout has
+/// reflowed (e.g. a flex item resized) and the captured sprite would
+/// no longer represent the live state.
+///
+/// Currently dormant — pairs with `find_primary_shape`.
+#[allow(dead_code)]
+fn all_modifiers_uniform_translation<'a, I>(modifiers: I) -> bool
+where
+    I: IntoIterator<Item = &'a skia::Matrix>,
+{
+    let eps = 1e-3_f32;
+    let mut first: Option<(f32, f32)> = None;
+    for m in modifiers {
+        if !is_translation_only(m) {
+            return false;
+        }
+        let (tx, ty) = (m.translate_x(), m.translate_y());
+        match first {
+            None => first = Some((tx, ty)),
+            Some((fx, fy)) => {
+                if (tx - fx).abs() > eps || (ty - fy).abs() > eps {
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}
+
 /// Returns true iff the matrix is a pure translation (within a small
 /// epsilon to absorb floating-point noise from modifier composition).
 /// Drag-sprite's per-rAF blit assumes the captured pixels are still
@@ -122,6 +196,7 @@ impl RenderState {
     pub fn drag_sprite_try_capture(
         &mut self,
         ids: &[Uuid],
+        _modifiers: &HashMap<Uuid, skia::Matrix>,
         tree: ShapesPoolRef,
         timestamp: i32,
     ) -> Result<()> {
@@ -129,7 +204,11 @@ impl RenderState {
             return Ok(());
         }
         if ids.len() != 1 {
-            // Multi-shape drag: out of Phase 3 scope.
+            // Multi-shape drag (incl. layout containers whose
+            // `propagate-modifiers` expanded into per-descendant
+            // transforms): no fast path — slow tile walker runs for the
+            // gesture. Layout-aware drag-sprite optimization is a known
+            // open problem.
             self.drag_sprite_state = DragSpriteState::Disabled;
             return Ok(());
         }

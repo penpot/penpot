@@ -403,6 +403,108 @@ impl Surfaces {
         self.atlas_size.width > 0 && self.atlas_size.height > 0
     }
 
+    /// True iff the atlas (a) exists, (b) has the same scale as the
+    /// workspace render scale (no resampling on the sprite), and (c)
+    /// fully contains `doc_rect`. Strict because the layout-drag
+    /// atlas-sample path is gated on this and any miss should bail to
+    /// the slow path with no fallback — partial coverage / scale
+    /// mismatch caused too many regressions.
+    ///
+    /// Currently dormant — pairs with the layout-drag atlas-sample
+    /// shortcut that hasn't landed cleanly yet.
+    #[allow(dead_code)]
+    pub fn atlas_covers_doc_rect_strict(
+        &self,
+        doc_rect: skia::Rect,
+        workspace_scale: f32,
+    ) -> bool {
+        if !self.has_atlas() {
+            return false;
+        }
+        if (self.atlas_scale - workspace_scale).abs() > 1e-3 {
+            return false;
+        }
+        let atlas_scale = self.atlas_scale.max(0.01);
+        let left = self.atlas_origin.x;
+        let top = self.atlas_origin.y;
+        let right = left + (self.atlas_size.width as f32) / atlas_scale;
+        let bottom = top + (self.atlas_size.height as f32) / atlas_scale;
+        let eps = 1e-3_f32;
+        doc_rect.left >= left - eps
+            && doc_rect.top >= top - eps
+            && doc_rect.right <= right + eps
+            && doc_rect.bottom <= bottom + eps
+    }
+
+    /// Doc-space rect covered by the atlas, or `None` when the atlas
+    /// is empty.
+    ///
+    /// Currently dormant — pairs with the layout-drag atlas-sample
+    /// shortcut that hasn't landed cleanly yet.
+    #[allow(dead_code)]
+    pub fn atlas_doc_extents(&self) -> Option<skia::Rect> {
+        if !self.has_atlas() {
+            return None;
+        }
+        let atlas_scale = self.atlas_scale.max(0.01);
+        let left = self.atlas_origin.x;
+        let top = self.atlas_origin.y;
+        let right = left + (self.atlas_size.width as f32) / atlas_scale;
+        let bottom = top + (self.atlas_size.height as f32) / atlas_scale;
+        Some(skia::Rect::from_ltrb(left, top, right, bottom))
+    }
+
+    /// True iff the atlas exists at a usable scale for sampling at the
+    /// given `workspace_scale`. We accept some downscale (atlas may be
+    /// reduced when document bounds exceed the texture cap) since a
+    /// slightly resampled drag preview is still much better than the
+    /// alternative — re-rendering the dragged subtree, which freezes
+    /// the UI on layouts with many components.
+    ///
+    /// Currently dormant — pairs with the layout-drag atlas-sample
+    /// shortcut that hasn't landed cleanly yet.
+    #[allow(dead_code)]
+    pub fn atlas_supports_sample(&self, workspace_scale: f32) -> bool {
+        if !self.has_atlas() {
+            return false;
+        }
+        // Allow up to 2× upscale (atlas_scale ≥ 0.5 × workspace_scale).
+        // Below that the sprite gets visibly soft; better to fall back.
+        self.atlas_scale + 1e-4 >= workspace_scale * 0.5
+    }
+
+    /// Snapshot the atlas region covering `doc_rect` as a standalone
+    /// `skia::Image`. Used by the drag-sprite atlas-sample shortcut
+    /// (multi-id / layout drag path) to obtain a sprite without
+    /// re-rendering the dragged subtree. Returns `None` when the atlas
+    /// is empty or the region snapshot fails. Caller should pre-validate
+    /// coverage with `atlas_covers_doc_rect_strict`.
+    ///
+    /// Currently dormant — pairs with the layout-drag atlas-sample
+    /// shortcut that hasn't landed cleanly yet.
+    #[allow(dead_code)]
+    pub fn snapshot_atlas_doc_rect(&mut self, doc_rect: skia::Rect) -> Option<skia::Image> {
+        if !self.has_atlas() {
+            return None;
+        }
+        let atlas_scale = self.atlas_scale.max(0.01);
+        let x = ((doc_rect.left - self.atlas_origin.x) * atlas_scale).floor() as i32;
+        let y = ((doc_rect.top - self.atlas_origin.y) * atlas_scale).floor() as i32;
+        let w = ((doc_rect.width() * atlas_scale).ceil() as i32).max(1);
+        let h = ((doc_rect.height() * atlas_scale).ceil() as i32).max(1);
+        // Clamp to atlas extents so the snapshot stays in-bounds even
+        // if the caller's `atlas_covers_doc_rect_at_scale` rounded down
+        // by a sub-pixel.
+        let aw = self.atlas_size.width;
+        let ah = self.atlas_size.height;
+        let x = x.clamp(0, aw.saturating_sub(1));
+        let y = y.clamp(0, ah.saturating_sub(1));
+        let w = w.min(aw - x).max(1);
+        let h = h.min(ah - y).max(1);
+        let irect = skia::IRect::from_xywh(x, y, w, h);
+        self.atlas.image_snapshot_with_bounds(irect)
+    }
+
     /// Draw the persistent atlas onto the target using the current viewbox transform.
     /// Intended for fast pan/zoom-out previews (avoids per-tile composition).
     /// Clears Target to `background` first so atlas-uncovered regions don't

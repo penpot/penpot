@@ -1049,7 +1049,7 @@ pub extern "C" fn set_modifiers() -> Result<()> {
             let ts = performance::get_time();
             state
                 .render_state
-                .drag_sprite_try_capture(&ids, &state.shapes, ts)?;
+                .drag_sprite_try_capture(&ids, &modifiers, &state.shapes, ts)?;
         }
         state.set_modifiers(modifiers);
         // Throttle: skip per-pointer-move tile invalidation. The render
