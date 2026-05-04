@@ -22,6 +22,8 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.notifications :as ntf]
+   [app.main.data.render-wasm :as drw]
    [app.main.data.workspace.texts-v3 :as texts]
    [app.main.refs :as refs]
    [app.main.router :as rt]
@@ -47,6 +49,7 @@
    [app.util.functions :as fns]
    [app.util.globals :as ug]
    [app.util.modules :as mod]
+   [app.util.i18n :refer [tr]]
    [app.util.text.content :as tc]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -1707,9 +1710,12 @@
   [event]
   (dom/prevent-default event)
   (reset! wasm/context-lost? true)
-  (ex/raise :type :wasm-error
-            :code :webgl-context-lost
-            :hint "WASM Error: WebGL context lost"))
+  (st/async-emit!
+   (ntf/show {:content (tr "errors.webgl-context-lost.toast")
+              :type :toast
+              :level :error
+              :timeout 5000}))
+  (st/emit! (drw/context-lost)))
 
 (defn init-canvas-context
   [canvas]

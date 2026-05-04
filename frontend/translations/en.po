@@ -1715,6 +1715,10 @@ msgstr "WebGL has stopped working. Please reload the page to reset it"
 msgid "errors.webgl-context-lost.main-message"
 msgstr "Oops! The canvas context was lost"
 
+#: src/app/render_wasm/api.cljs
+msgid "errors.webgl-context-lost.toast"
+msgstr "WebGL context was lost"
+
 #: src/app/main/ui/dashboard/team.cljs:1051
 msgid "errors.webhooks.connection"
 msgstr "Connection error, URL not reacheable"
