@@ -751,14 +751,47 @@
             snap-pixel?
             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
-            transforms
-            (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
-
             ;; Pure-translation gesture: every shape's modifier only
             ;; contains `:move` operations (no resize/rotate/scale and
-            ;; no structural mutation)
+            ;; no structural mutation). Computed early so it can gate
+            ;; the WASM `propagate-modifiers` call below — for pure
+            ;; translation, propagation is a no-op (each shape's final
+            ;; transform IS its modifier translation matrix), and the
+            ;; WASM round-trip itself was the dominant on-drop cost
+            ;; for layouts with many component children (~37–100ms+
+            ;; per drop including boundary thrash).
             translation?
             (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))
+
+            transforms
+            (if translation?
+              ;; Pure-translation fast path: skip the WASM propagate
+              ;; round-trip. WASM would have (a) propagated the
+              ;; translation from each input id down to every
+              ;; descendant and (b) optionally snapped to whole pixels.
+              ;; We mirror both here in CLJS — walking the descendants
+              ;; via `objects` is cheaper than the WASM boundary thrash
+              ;; for layout-sized subtrees, and the transform per
+              ;; descendant is just the same translation matrix.
+              ;;
+              ;; Without this propagation step the commit would only
+              ;; touch the dragged primaries (the keys of
+              ;; `geometry-entries`) and descendant shapes would snap
+              ;; back to their pre-drag positions on drop.
+              (let [maybe-round (if snap-pixel?
+                                  (fn [m]
+                                    (gmt/matrix (.-a m) (.-b m) (.-c m) (.-d m)
+                                                (Math/round (.-e m))
+                                                (Math/round (.-f m))))
+                                  identity)]
+                (reduce
+                 (fn [acc [id data]]
+                   (let [t (maybe-round (:transform data))
+                         subtree-ids (cfh/get-children-ids-with-self objects id)]
+                     (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
+                 {}
+                 geometry-entries))
+              (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?)))
 
             ignore-tree
             (calculate-ignore-tree-wasm transforms objects)
