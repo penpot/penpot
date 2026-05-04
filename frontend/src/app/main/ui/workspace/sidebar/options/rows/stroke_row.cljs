@@ -205,8 +205,6 @@
      (when (some? on-reorder)
        [:> reorder-handler* {:ref dref}])
 
-     (prn "stroke-row*" applied-tokens)
-
      ;; Stroke Color
      ;; FIXME: memorize stroke color
      [:div {:class (stl/css :stroke-color-actions)}
