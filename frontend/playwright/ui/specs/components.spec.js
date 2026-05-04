@@ -24,7 +24,9 @@ test("BUG 13267 - Component instance is not synced with parent for geometry chan
 
   // Select the main component
   await workspacePage.clickLeafLayer("A Component", {}, 1);
-  const rotationInput = workspacePage.rightSidebar.getByTestId("rotation");
+  const rotationInput = workspacePage.rightSidebar.getByRole("textbox", {
+    name: "Rotation",
+  });
   await rotationInput.fill("45");
   await rotationInput.press("Enter");
 
