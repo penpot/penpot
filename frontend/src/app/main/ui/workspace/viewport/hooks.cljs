@@ -223,6 +223,7 @@
                 (->> move-stream
                      (rx/tap #(reset! last-point-ref %))
                      ;; When transforming shapes we stop querying the worker
+                     (rx/filter (fn [_] (nil? (mf/ref-val transform-ref))))
                      (rx/merge-map query-point)))
 
                (rx/share)))
