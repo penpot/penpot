@@ -164,6 +164,17 @@
          grid-layout?    (ctl/grid-layout? parent)
          parent?         (or (cfh/group-like-shape? parent) (cfh/frame-shape? parent))
 
+         ;; Pure-translation modifiers (the typical pointer-drag case)
+         ;; don't change the parent's internal geometry, so children's
+         ;; flex/grid positions relative to the parent are invariant —
+         ;; `set-children-modifiers` already has an `only-move?` fast
+         ;; path that just splats the same translation onto each child.
+         ;; Skipping the flex/grid reflow here removes a per-pointer-
+         ;; move `calc-layout-data` walk over every child in every
+         ;; flex/grid ancestor of the dragged shape; that was the
+         ;; bottleneck for layouts with many component children.
+         only-move?      (ctm/only-move? modifiers)
+
          transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))
 
          children-modifiers
@@ -181,10 +192,10 @@
        (and has-modifiers? parent? (not root?))
        (set-children-modifiers children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints)
 
-       flex-layout?
+       (and flex-layout? (not only-move?))
        (set-flex-layout-modifiers children-layout objects bounds parent transformed-parent-bounds)
 
-       grid-layout?
+       (and grid-layout? (not only-move?))
        (set-grid-layout-modifiers objects bounds parent transformed-parent-bounds)))))
 
 (defn propagate-modifiers-constraints
