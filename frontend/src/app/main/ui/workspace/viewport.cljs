@@ -501,7 +501,7 @@
            :modifiers modifiers}])
 
        (when show-measures?
-         [:& msr/measurement
+         [:> msr/measurement*
           {:bounds vbox
            :selected-shapes selected-shapes
            :frame selected-frame
@@ -510,7 +510,7 @@
 
        ;; Show distances during movement with ALT
        (when (and (= transform :move) @alt? (seq selected-shapes))
-         [:& msr/measurement
+         [:> msr/measurement*
           {:bounds vbox
            :selected-shapes selected-shapes
            :frame selected-frame
@@ -522,7 +522,7 @@
              duplicated-info (get-in @(deref state-var) [:workspace-local :duplicated])]
          (when (and (= transform :move) @alt? duplicated-info)
            [:g.duplicated-distance
-            [:& msr/distance-display
+            [:> msr/distance-display*
              {:from (get duplicated-info :selrect-original)
               :to (get duplicated-info :selrect-duplicated)
               :zoom zoom
