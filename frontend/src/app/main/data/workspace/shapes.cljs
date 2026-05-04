@@ -73,9 +73,16 @@
               (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
               (map :id))
 
+             ;; `xf-update-layout` runs `update-fn` + attr diff for
+             ;; every id just to decide whether to dispatch
+             ;; `:layout/update`. `update-layout-attr?` is `#{:hidden}`,
+             ;; so a pure-translation commit can never trigger it —
+             ;; skip the N×diff walk on drop-of-layout-drag (the hot
+             ;; on-drop path for layouts with many children).
              update-layout-ids
-             (->> (into [] xf-update-layout ids)
-                  (not-empty))
+             (when-not translation?
+               (->> (into [] xf-update-layout ids)
+                    (not-empty)))
 
              changes
              (-> (pcb/empty-changes it page-id)
@@ -88,7 +95,8 @@
                                               :changed-sub-attr changed-sub-attr
                                               :ignore-tree ignore-tree
                                               :ignore-touched ignore-touched
-                                              :with-objects? with-objects?})
+                                              :with-objects? with-objects?
+                                              :translation? translation?})
                  (cond-> undo-group
                    (pcb/set-undo-group undo-group))
                  (pcb/set-translation? translation?))
