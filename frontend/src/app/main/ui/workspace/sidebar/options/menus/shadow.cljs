@@ -44,16 +44,12 @@
        (filterv (fn [[idx _]] (not= idx index)))
        (mapv second)))
 
-(def ^:private xf:add-index
-  (map-indexed (fn [index shadow]
-                 (assoc shadow ::index index))))
-
 (mf/defc shadow-menu*
   [{:keys [ids type values] :as props}]
   (let [shadows        (mf/with-memo [values]
                          (if (= :multiple values)
                            values
-                           (not-empty (into [] xf:add-index values))))
+                           (not-empty (into [] d/xf:add-index values))))
 
         ids-ref        (h/use-update-ref ids)
 
@@ -161,7 +157,7 @@
          (some? shadows)
          [:> h/sortable-container* {}
           [:div {:class (stl/css :shadow-content)}
-           (for [{:keys [::index id] :as shadow} shadows]
+           (for [{:keys [::d/index id] :as shadow} shadows]
              [:> shadow-row*
               {:key (dm/str index)
                :index index

@@ -41,13 +41,17 @@
                        :y1 (:start-y gradient)
                        :x2 (:end-x gradient)
                        :y2 (:end-y gradient)
-                       :gradientTransform (dm/str transform)}]
+                       :gradientTransform (dm/str transform)}
+
+        stops
+        (mf/with-memo [gradient]
+          (into [] d/xf:add-index (sort-by :offset (:stops gradient))))]
 
     (when ^boolean metadata?
       (add-metadata! props gradient))
 
     [:> :linearGradient props
-     (for [[index {:keys [offset color opacity]}] (d/enumerate (sort-by :offset (:stops gradient)))]
+     (for [{:keys [::d/index offset color opacity]} stops]
        [:stop {:key (dm/str id "-stop-" index)
                :offset (d/nilv offset 0)
                :stop-color color
@@ -103,13 +107,17 @@
                            :cx start-x
                            :cy start-y
                            :r (gpt/length gradient-vec)
-                           :gradientTransform transform}]
+                           :gradientTransform transform}
+
+        stops
+        (mf/with-memo [gradient]
+          (into [] d/xf:add-index (:stops gradient)))]
 
     (when ^boolean metadata?
       (add-metadata! props gradient))
 
     [:> :radialGradient props
-     (for [[index {:keys [offset color opacity]}] (d/enumerate (:stops gradient))]
+     (for [{:keys [::d/index offset color opacity]} stops]
        [:stop {:key (dm/str id "-stop-" index)
                :offset (d/nilv offset 0)
                :stop-color color

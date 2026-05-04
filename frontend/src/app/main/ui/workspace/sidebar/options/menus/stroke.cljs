@@ -54,6 +54,9 @@
         strokes         (:strokes values)
         has-strokes?    (or (= :multiple strokes) (some? (seq strokes)))
 
+        strokes
+        (mf/with-memo [strokes]
+          (into [] d/xf:add-index strokes))
 
         on-color-change
         (mf/use-fn
@@ -206,7 +209,7 @@
                              :icon i/remove}]]
           (seq strokes)
           [:> h/sortable-container* {}
-           (for [[index value] (d/enumerate (:strokes values []))]
+           (for [{:keys [::d/index] :as value} strokes]
              [:> stroke-row* {:key (dm/str "stroke-" index)
                               :stroke value
                               :title (tr "workspace.options.stroke-color")
