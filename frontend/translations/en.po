@@ -9379,6 +9379,9 @@ msgstr "Professional"
 msgid "subscription.current-plan.unlimited"
 msgstr "Unlimited"
 
+msgid "subscription.current-plan.unlimited-trial"
+msgstr "Unlimited Trial"
+
 msgid "subscription.current-plan.nitrate"
 msgstr "Nitrate"
 

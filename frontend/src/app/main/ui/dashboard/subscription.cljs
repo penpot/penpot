@@ -173,16 +173,20 @@
 
 (mf/defc nitrate-current-plan*
   [{:keys [profile]}]
-  (let [subscription      (:subscription profile)
-        subscription-type (get-subscription-type subscription)
-        subscription-is-trial (= "trialing" (:status subscription))]
+  (let [nitrate?              (dnt/is-valid-license? profile)
+        nitrate-license       (:subscription profile)
+        subscription          (-> profile :props :subscription)
+        subscription-type     (if nitrate? (:type nitrate-license) (get-subscription-type subscription))
+        subscription-is-trial (= "trialing" (:status (if nitrate? nitrate-license subscription)))]
     [:div {:class (stl/css :nitrate-current-plan)}
      [:div {:class (stl/css :nitrate-current-plan-label)}
       (tr "subscription.current-plan.title")]
      [:div {:class (stl/css :nitrate-current-plan-text)}
       (case subscription-type
         "professional" (tr "subscription.current-plan.professional")
-        "unlimited" (tr "subscription.current-plan.unlimited")
+        "unlimited" (if subscription-is-trial
+                      (tr "subscription.current-plan.unlimited-trial")
+                      (tr "subscription.current-plan.unlimited"))
         "nitrate" (if subscription-is-trial
                     (tr "subscription.current-plan.nitrate-trial")
                     (tr "subscription.current-plan.nitrate"))
