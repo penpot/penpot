@@ -83,6 +83,10 @@
          href   (dm/str "/control-center/licenses/start?" (u/map->query-string params))]
      (st/emit! (rt/nav-raw :href href)))))
 
+(defn fetch-connectivity
+  []
+  (rp/cmd! ::get-nitrate-connectivity {}))
+
 (defn is-valid-license?
   [profile]
   (and (contains? cf/flags :nitrate)

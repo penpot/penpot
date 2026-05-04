@@ -9288,7 +9288,6 @@ msgstr "Need a code? Contact us:"
 msgid "nitrate.code-activation.placeholder"
 msgstr "Paste your activation code here"
 
-
 msgid "nitrate.activation-success.title"
 msgstr "You are Business Nitrate!"
 
@@ -9366,6 +9365,12 @@ msgstr "Contact sales"
 
 msgid "nitrate.subscription.active-until"
 msgstr "Active until %s"
+
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Cancel subscription"
+
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Renew with activation code"
 
 msgid "subscription.settings.activate-by-code"
 msgstr "Enter activation code"

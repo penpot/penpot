@@ -9072,6 +9072,12 @@ msgstr "Contactar con ventas"
 msgid "nitrate.subscription.active-until"
 msgstr "Activo hasta el %s"
 
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Cancelar subscripción"
+
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Renovar con código de activación"
+
 msgid "subscription.settings.more-information"
 msgstr "Más información"
 

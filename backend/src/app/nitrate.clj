@@ -171,6 +171,7 @@
                      "day"
                      "week"
                      "year"]]
+   [:manual :boolean]
    [:quantity :int]
    [:description [:maybe ::sm/text]]
    [:created-at schema:timestamp]

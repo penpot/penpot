@@ -22,6 +22,7 @@
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr c]]
+   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -37,7 +38,7 @@
            cta-link-trial
            cta-text-with-icon
            cta-link-with-icon
-           show-activation-by-code
+           code-action
            editors
            recommended
            show-button-cta]}]
@@ -82,12 +83,19 @@
                  :size "s"}]])
    (when (and cta-link cta-text (not show-button-cta))
      [:button {:class (stl/css-case :cta-button true
-                                    :bottom-link (not (and cta-link-trial cta-text-trial)))
+                                    :bottom-link (not (or (and cta-link-trial cta-text-trial) code-action)))
                :on-click cta-link} cta-text])
-   (when show-activation-by-code
-     [:button {:class (stl/css :cta-button :activate-by-code)
-               :on-click #(st/emit! (modal/show {:type :nitrate-code-activation}))}
-      (tr "subscription.settings.activate-by-code")])])
+   (when code-action
+     [:button {:class (stl/css-case :cta-button true
+                                    :activate-by-code (= code-action :activate)
+                                    :renew-by-code (= code-action :renovate)
+                                    :bottom-link (= code-action :renovate))
+               ;; TODO add renovation modal
+               :on-click (when (= code-action :activate)
+                           #(st/emit! (modal/show {:type :nitrate-code-activation})))}
+      (if (= code-action :activate)
+        (tr "subscription.settings.activate-by-code")
+        (tr "nitrate.subscription.settings.renew-with-code"))])])
 
 (defn- make-management-form-schema [min-editors]
   [:map {:title "SeatsForm"}
@@ -446,10 +454,26 @@
          (fn [current-subscription subscription-type]
            (if (= current-subscription "unlimited")
              (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
-             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type})))))]
+             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type})))))
+
+        open-cancel-contact-sales-modal
+        (mf/use-fn
+         (fn []
+           (st/emit! (modal/show :nitrate-cancel-contact-sales-dialog {:email (:email profile)}))))
+
+        connectivity*
+        (mf/use-state nil)
+
+        connectivity
+        (deref connectivity*)]
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
+
+    (mf/with-effect [nitrate?]
+      (when nitrate?
+        (->> (dnt/fetch-connectivity)
+             (rx/subs! #(reset! connectivity* %)))))
 
     (mf/with-effect [authenticated?
                      show-subscription-success-modal?
@@ -503,10 +527,15 @@
                          :benefits ["Loren ipsum",
                                     "Loren ipsum",
                                     "Loren ipsum"]
-                         :cta-text-with-icon "Control Center"
-                         :cta-link-with-icon dnt/go-to-nitrate-cc
-                         :cta-text (tr "subscription.settings.manage-your-subscription")
-                         :cta-link dnt/go-to-nitrate-billing}]
+                         :cta-text-with-icon (when (:licenses connectivity) "Control Center")
+                         :cta-link-with-icon (when (:licenses connectivity) dnt/go-to-nitrate-cc)
+                         :cta-text (if (:licenses connectivity)
+                                     (tr "subscription.settings.manage-your-subscription")
+                                     (tr "nitrate.subscription.settings.manual-cancel"))
+                         :cta-link (if (:licenses connectivity)
+                                     dnt/go-to-nitrate-billing
+                                     open-cancel-contact-sales-modal)
+                         :code-action (when (and (not (:licenses connectivity)) (:manual nitrate-license)) :renovate)}]
          (case subscription-type
            "professional"
            [:> plan-card* {:card-title (tr "subscription.settings.professional")
@@ -635,7 +664,7 @@
                          :cta-link (if (= subscription-type "unlimited") #(open-contact-sales-modal subscription-type "Nitrate") #(open-subscription-modal "nitrate" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
-                         :show-activation-by-code true
+                         :code-action :activate
                          :show-button-cta (not nitrate-license)}])]]]))
 
 
@@ -761,3 +790,40 @@ We’ll help you update your subscription and ensure everything is set up correc
                      :type "button"
                      :on-click #(dom/open-new-window "mailto:sales@penpot.app?subject=Switch%20to%20the%20Unlimited%20plan")} "Contact sales"]]]]]))
 
+(mf/defc nitrate-cancel-contact-sales-dialog
+  {::mf/register modal/components
+   ::mf/register-as :nitrate-cancel-contact-sales-dialog}
+  [{:keys [email]}]
+  (let [encoded-email
+        (js/encodeURIComponent email)
+
+        mailto-url
+        (dm/str "mailto:sales@penpot.net"
+                "?subject=Request%20to%20Cancel%20Nitrate%20Subscription"
+                "&body=Hello%2C%0A%0A"
+                "I%20would%20like%20to%20cancel%20my%20Enterprise%20subscription.%0A"
+                "Account%20email%3A%20" encoded-email ".%0A%0AThank%20you.")
+
+        handle-close-dialog
+        (mf/use-fn
+         (fn []
+           (modal/hide!)))]
+
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog)}
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
+       [:> icon* {:icon-id "close"
+                  :size "m"}]]
+      [:div {:class (stl/css :modal-title :subscription-title)}
+       "Cancel subscription"]
+
+      [:div {:class (stl/css :modal-content)}
+       [:div {:class (stl/css :modal-text-medium)}
+        "To cancel your Nitrate subscription, please contact us at:"]
+       [:a {:class (stl/css :cta-link) :href "mailto:sales@penpot.net"}
+        "sales@penpot.net"]
+       [:div {:class (stl/css :action-buttons)}
+        [:> button* {:class (stl/css :button-full-width)
+                     :variant "primary"
+                     :type "button"
+                     :on-click #(dom/open-new-window mailto-url)} "Contact us"]]]]]))
