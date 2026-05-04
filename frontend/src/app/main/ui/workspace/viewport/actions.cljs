@@ -360,16 +360,14 @@
 
          (rx/push! move-stream pt)
          (reset! last-position raw-pt)
-         (st/emit! (mse/->PointerEvent :delta delta
-                                       (kbd/ctrl? event)
-                                       (kbd/shift? event)
-                                       (kbd/alt? event)
-                                       (kbd/meta? event)))
+         ;; Single store emit per move: viewport `pt` + `movement` (old :delta `pt`) avoids
+         ;; doubling Potok + `st/stream` work on every pointermove.
          (st/emit! (mse/->PointerEvent :viewport pt
                                        (kbd/ctrl? event)
                                        (kbd/shift? event)
                                        (kbd/alt? event)
-                                       (kbd/meta? event))))))))
+                                       (kbd/meta? event)
+                                       delta)))))))
 
 (defn- schedule-zoom!
   "Accumulate a compound zoom scale and a cursor point into `state`, scheduling

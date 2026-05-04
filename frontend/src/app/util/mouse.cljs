@@ -9,7 +9,10 @@
    [beicon.v2.core :as rx]))
 
 (defrecord MouseEvent [type ctrl shift alt meta])
-(defrecord PointerEvent [source pt ctrl shift alt meta])
+;; `movement` — optional delta (client/window space) for the same tick as `pt`.
+;; Used so viewport `pointermove` can emit once (`source` :viewport) while pan/zoom
+;; still observe displacement without a second Potok emit.
+(defrecord PointerEvent [source pt ctrl shift alt meta movement])
 (defrecord ScrollEvent [point])
 (defrecord BlurEvent [])
 
@@ -52,6 +55,10 @@
 (defn get-pointer-position
   [^PointerEvent ev]
   (.-pt ev))
+
+(defn get-pointer-movement
+  [^PointerEvent ev]
+  (.-movement ev))
 
 (defn get-pointer-ctrl-mod
   [^PointerEvent ev]
