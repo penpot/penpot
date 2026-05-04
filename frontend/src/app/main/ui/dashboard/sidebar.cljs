@@ -32,6 +32,7 @@
    [app.main.ui.dashboard.subscription :refer [dashboard-cta*
                                                get-subscription-type
                                                menu-team-icon*
+                                               nitrate-current-plan*
                                                nitrate-sidebar*
                                                show-subscription-dashboard-banner?
                                                subscription-sidebar*]]
@@ -1323,11 +1324,14 @@
 
     [:*
      (if (contains? cf/flags :nitrate)
-       [:> nitrate-sidebar* {:profile profile :teams teams}]
+       [:*
+        [:> nitrate-sidebar* {:profile profile :teams teams}]
+        [:> nitrate-current-plan* {:profile profile}]]
        (when (contains? cf/flags :subscriptions)
          (if (show-subscription-dashboard-banner? profile)
            [:> dashboard-cta* {:profile profile}]
            [:> subscription-sidebar* {:profile profile}])))
+
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)
