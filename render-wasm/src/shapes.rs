@@ -1363,6 +1363,41 @@ impl Shape {
     }
 
     fn transform_selrect(&mut self, transform: &Matrix) {
+        // Translation-only fast path. The general code rebuilds bounds
+        // by transforming all four corners (`bounds.transform`), then
+        // re-derives self.transform from those bounds. For pure
+        // translation, selrect just shifts and self.transform doesn't
+        // change shape (only its translation component). Doing this
+        // cheaply per-shape during a layout drag matters because
+        // `Shape::apply_transform` is called once per modified shape
+        // per pointer-move (N+1 times for layouts with N children).
+        let eps = 1e-4_f32;
+        let is_translation_only = (transform.scale_x() - 1.0).abs() < eps
+            && (transform.scale_y() - 1.0).abs() < eps
+            && transform.skew_x().abs() < eps
+            && transform.skew_y().abs() < eps
+            && transform.persp_x().abs() < eps
+            && transform.persp_y().abs() < eps;
+
+        if is_translation_only {
+            let tx = transform.translate_x();
+            let ty = transform.translate_y();
+            // For pure translation, only `selrect` shifts — `self.transform`
+            // represents the shape's rotation/scale *around its center*,
+            // which translation leaves untouched. The general path
+            // confirms this: it derives `self.transform` from
+            // `bounds.transform_matrix()` after a translate, which still
+            // yields the original rotation matrix (translation lives in
+            // bounds position, not in `transform_matrix`).
+            self.selrect = math::Rect::from_xywh(
+                self.selrect.left + tx,
+                self.selrect.top + ty,
+                self.selrect.width(),
+                self.selrect.height(),
+            );
+            return;
+        }
+
         let mut center = self.selrect.center();
         center = transform.map_point(center);
 

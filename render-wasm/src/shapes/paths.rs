@@ -236,6 +236,46 @@ impl Path {
     }
 
     pub fn transform(&mut self, mtx: &Matrix) {
+        // Translation-only fast path. During interactive translation
+        // drags the layout's children all receive the same pure-
+        // translation modifier, and `Path::transform` is called once
+        // per child per pointer-move. The general path walks every
+        // segment doing `mtx.map_point(...)` (a 2x3 matrix multiply
+        // per control point) plus a Skia `make_transform` (full path
+        // walk in C++). For pure translation that work reduces to
+        // simple x+=tx, y+=ty additions plus Skia's much cheaper
+        // `with_offset` op. Saves a meaningful slice of per-rAF cost
+        // on path-heavy layouts (icons, vector illustrations, etc).
+        let eps = 1e-4_f32;
+        let is_translation_only = (mtx.scale_x() - 1.0).abs() < eps
+            && (mtx.scale_y() - 1.0).abs() < eps
+            && mtx.skew_x().abs() < eps
+            && mtx.skew_y().abs() < eps
+            && mtx.persp_x().abs() < eps
+            && mtx.persp_y().abs() < eps;
+
+        if is_translation_only {
+            let tx = mtx.translate_x();
+            let ty = mtx.translate_y();
+            self.segments.iter_mut().for_each(|s| match s {
+                Segment::MoveTo(p) | Segment::LineTo(p) => {
+                    p.0 += tx;
+                    p.1 += ty;
+                }
+                Segment::CurveTo((c1, c2, p)) => {
+                    c1.0 += tx;
+                    c1.1 += ty;
+                    c2.0 += tx;
+                    c2.1 += ty;
+                    p.0 += tx;
+                    p.1 += ty;
+                }
+                _ => {}
+            });
+            self.skia_path = self.skia_path.with_offset((tx, ty));
+            return;
+        }
+
         self.segments.iter_mut().for_each(|s| match s {
             Segment::MoveTo(p) => {
                 let np = mtx.map_point(skia::Point::new(p.0, p.1));
