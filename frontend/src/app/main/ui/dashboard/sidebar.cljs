@@ -1057,11 +1057,12 @@
         (reset! overflow* (> scroll-height client-height))))
 
     [:*
-     [:div {:ref container}
+     [:div {:class (stl/css :sidebar-content-wrapper)}
       (when nitrate?
         [:div {:class (stl/css :orgs-container)}
          [:> sidebar-org-switch* {:team team :profile profile}]])
-      [:div {:class (stl/css-case :sidebar-content true :sidebar-content-nitrate nitrate?)}
+      [:div {:ref container
+             :class (stl/css-case :sidebar-content true :sidebar-content-nitrate nitrate?)}
        [:> sidebar-team-switch* {:team team :profile profile}]
 
        [:> sidebar-search* {:search-term search-term
