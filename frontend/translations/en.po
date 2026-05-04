@@ -8960,6 +8960,10 @@ msgstr "Duplicate Tokens Group"
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Your tokens will automatically be renamed to %s.(suffix).(tokenName)"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/colorpicker/color_tokens.cljs
+msgid "workspace.tokens.search-by-token"
+msgstr "Search by token name"
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Assets"

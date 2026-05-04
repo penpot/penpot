@@ -411,6 +411,7 @@
 
         detach-token
         (mf/use-fn
+         (mf/deps ids)
          (fn [token-name]
            (st/emit! (dwta/unapply-token {:token-name  token-name
                                           :attributes  #{:typography}
@@ -445,7 +446,7 @@
 
     (mf/with-effect [applied-token-name dropdown-options]
       (reset! selected-token-id*
-              (when (and (not= :multiple applied-token-name)applied-token-name)
+              (when (and (not= :multiple applied-token-name) applied-token-name)
                 (:id (get-option-by-name dropdown-options applied-token-name)))))
 
     (mf/with-effect [token-dropdown-open?]
@@ -479,7 +480,7 @@
         (cond
           (and token-typography-row-enabled? (= :multiple current-token-name) (= typography-id :multiple))
           [:div "Texts have multiple typography assets and typography tokens applied"]
-          
+
           (and token-typography-row-enabled? (= :multiple current-token-name))
           [:div "token-multiple"]
 
@@ -529,4 +530,5 @@
                                          :options      (resolve-delay dropdown-options)
                                          :selected     selected-token-id
                                          :align        "right"
+                                         :placeholder  (tr "workspace.tokens.search-by-token")
                                          :ref          set-option-ref}])]))
