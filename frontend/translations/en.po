@@ -1157,7 +1157,10 @@ msgid "dashboard.select-org-modal.accept"
 msgstr "ADD TO ORGANIZATION"
 
 msgid "dashboard.change-org-modal.title"
-msgstr "CHANGE TEAM'S ORGANIZATION"
+msgstr "Change team's organization"
+
+msgid "dashboard.change-org-modal.text"
+msgstr "Projects and files will remain available to team members. The team will get the configuration from the new organization."
 
 msgid "dashboard.change-org-modal.choose"
 msgstr "Move to:"
@@ -5287,6 +5290,9 @@ msgstr "editor per month"
 #: src/app/main/ui/settings/subscription.cljs:569
 msgid "subscription.settings.price-organization-month"
 msgstr "organization per month"
+
+msgid "subscription.settings.organization-member-month"
+msgstr "org member per month"
 
 #: src/app/main/ui/dashboard/subscription.cljs:140, src/app/main/ui/settings/subscription.cljs:102, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:538
 msgid "subscription.settings.professional"

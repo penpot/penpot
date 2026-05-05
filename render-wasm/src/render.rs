@@ -26,7 +26,7 @@ use crate::error::{Error, Result};
 use crate::performance;
 use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
-    Stroke, StrokeKind, Type,
+    Stroke, StrokeKind, TextContent, Type,
 };
 use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
@@ -1229,12 +1229,23 @@ impl RenderState {
                 }
             }
 
-            Type::Text(text_content) => {
+            Type::Text(stored_text_content) => {
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });
 
-                let text_content = text_content.new_bounds(shape.selrect());
+                // Skip the paragraph-cloning `new_bounds` when shape size is unchanged.
+                let selrect = shape.selrect();
+                let stored_bounds = stored_text_content.bounds();
+                let bounds_match = (stored_bounds.width() - selrect.width()).abs() < 0.01
+                    && (stored_bounds.height() - selrect.height()).abs() < 0.01;
+                let rebound_text_content = if bounds_match {
+                    None
+                } else {
+                    Some(stored_text_content.new_bounds(selrect))
+                };
+                let text_content: &TextContent =
+                    rebound_text_content.as_ref().unwrap_or(stored_text_content);
                 let count_inner_strokes = shape.count_visible_inner_strokes();
                 // Erode the main text fill by 1px when there are inner strokes, to avoid a visible seam at the glyph edge.
                 let text_fill_inset = (count_inner_strokes > 0).then(|| 1.0 / self.get_scale());
@@ -1248,7 +1259,7 @@ impl RenderState {
                     .rev()
                     .map(|stroke| {
                         text::stroke_paragraph_builder_group_from_text(
-                            &text_content,
+                            text_content,
                             stroke,
                             &shape.selrect(),
                             None,
@@ -1324,7 +1335,7 @@ impl RenderState {
                         .rev()
                         .map(|stroke| {
                             text::stroke_paragraph_builder_group_from_text(
-                                &text_content,
+                                text_content,
                                 stroke,
                                 &shape.selrect(),
                                 Some(true),
@@ -1357,7 +1368,7 @@ impl RenderState {
                                 &parent_shadows,
                                 &blur_filter,
                                 &stroke_kinds,
-                                &text_content,
+                                text_content,
                             )?;
                         }
                     } else {
@@ -1401,7 +1412,7 @@ impl RenderState {
                             &drop_shadows,
                             &blur_filter,
                             &stroke_kinds,
-                            &text_content,
+                            text_content,
                         )?;
 
                         // 4. Stroke fills
@@ -1453,7 +1464,7 @@ impl RenderState {
                             &inner_shadows,
                             &blur_filter,
                             &stroke_kinds,
-                            &text_content,
+                            text_content,
                         )?;
 
                         // 6. Fill Inner shadows
