@@ -494,12 +494,12 @@
 
     :addTheme
     {:enumerable false
-     :schema (fn [attrs]
-               [:tuple (-> (sm/schema (cfo/make-token-theme-schema
-                                       (u/locate-tokens-lib file-id)
-                                       (or (obj/get attrs "group") "")
-                                       (or (obj/get attrs "name") "")
-                                       nil))
+     :schema (fn [args]
+               [:tuple (-> (cfo/make-token-theme-schema
+                            (u/locate-tokens-lib file-id)
+                            (get (first args) :group "")
+                            (get (first args) :name "")
+                            nil)
                            (sm/dissoc-key :id))]) ;; We don't allow plugins to set the id
      :fn (fn [attrs]
            (let [theme (ctob/make-token-theme attrs)]

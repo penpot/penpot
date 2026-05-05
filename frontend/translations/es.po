@@ -1644,6 +1644,10 @@ msgstr ""
 msgid "errors.token-theme-already-exists"
 msgstr "Ya existe un theme con este nombre"
 
+#: src/app/common/files/tokens.cljc:298
+msgid "errors.token-theme-not-existing-sets"
+msgstr "El tema referencia sets que no existen: %s"
+
 #: src/app/main/data/media.cljs:73
 msgid "errors.unexpected-error"
 msgstr "Ha ocurrido un error inesperado."

@@ -1160,24 +1160,25 @@ Will return a value that matches this schema:
     (if-let [theme (get-theme this id)]
       (let [group       (:group theme)
             name        (:name theme)
-            theme'      (-> (make-token-theme (f theme))
-                            (assoc :modified-at (ct/now)))
-            group'      (:group theme')
-            name'       (:name theme')
-            same-group? (= group group')
-            same-name?  (= name name')
-            same-path?  (and same-group? same-name?)]
-        (TokensLib. sets
-                    (if same-path?
-                      (update themes group' assoc name' theme')
-                      (-> themes
-                          (d/oassoc-in-before [group name] [group' name'] theme')
-                          (d/dissoc-in [group name])))
-                    (if same-path?
-                      active-themes
-                      (disj active-themes (join-theme-path group name)))))
+            theme'      (make-token-theme (f theme))]
+        (if (= theme theme')
+          this
+          (let [theme'      (assoc theme' :modified-at (ct/now))
+                group'      (:group theme')
+                name'       (:name theme')
+                same-group? (= group group')
+                same-name?  (= name name')
+                same-path?  (and same-group? same-name?)]
+            (TokensLib. sets
+                        (if same-path?
+                          (update themes group' assoc name' theme')
+                          (-> themes
+                              (d/oassoc-in-before [group name] [group' name'] theme')
+                              (d/dissoc-in [group name])))
+                        (if same-path?
+                          active-themes
+                          (disj active-themes (join-theme-path group name)))))))
       this))
-
 
   (delete-theme [this id]
     (let [theme (get-theme this id)
@@ -2183,6 +2184,18 @@ Will return a value that matches this schema:
             tokens-lib
             (get-sets tokens-lib))))
 
+(defn update-all-themes
+  "Walk through all themes in the library and apply the given function to them.
+   The function receives the library and the theme as arguments,
+   and should return the updated theme."
+  [tokens-lib update-fn]
+  (reduce (fn [lib theme]
+            (update-theme lib
+                          (get-id theme)
+                          #(update-fn lib %)))
+          tokens-lib
+          (get-themes tokens-lib)))
+
 (defn fix-duplicate-token-set-ids
   "Given an instance of TokensLib fixes it internal sets data sturcture
   for ensure each set has unique id;
@@ -2232,6 +2245,19 @@ Will return a value that matches this schema:
          (if-let [match (token-name-path-exists? name lib (:id set) (get-id token))]
            (rename token (generate-name name match))
            token))))))
+
+(defn fix-missing-sets-in-themes
+  [tokens-lib]
+  (let [existing-set-names (into #{} (map get-name) (get-sets tokens-lib))
+        fix-theme-sets
+        (fn [_ theme]
+          (let [current-sets (:sets theme)
+                valid-sets   (clojure.set/intersection current-sets existing-set-names)]
+            (if-not (= valid-sets current-sets)
+              (assoc theme :sets valid-sets)
+              theme)))]
+
+    (update-all-themes tokens-lib fix-theme-sets)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SERIALIZATION (FRESIAN)
@@ -2350,7 +2376,8 @@ Will return a value that matches this schema:
            (migrate-to-v1-3)
            (migrate-to-v1-4)
            (map->tokens-lib)
-           (fix-conflicting-token-names)))))
+           (fix-conflicting-token-names)
+           (fix-missing-sets-in-themes)))))
 
 #?(:clj
    (defn- read-tokens-lib-v1-2
@@ -2366,7 +2393,8 @@ Will return a value that matches this schema:
            (migrate-to-v1-3)
            (migrate-to-v1-4)
            (map->tokens-lib)
-           (fix-conflicting-token-names)))))
+           (fix-conflicting-token-names)
+           (fix-missing-sets-in-themes)))))
 
 #?(:clj
    (defn- read-tokens-lib-v1-3
@@ -2382,7 +2410,8 @@ Will return a value that matches this schema:
             :active-themes active-themes}
            (migrate-to-v1-4)
            (map->tokens-lib)
-           (fix-conflicting-token-names)))))
+           (fix-conflicting-token-names)
+           (fix-missing-sets-in-themes)))))
 
 #?(:clj
    (defn- read-tokens-lib-v1-4
@@ -2396,7 +2425,8 @@ Will return a value that matches this schema:
             :themes themes
             :active-themes active-themes}
            (map->tokens-lib)
-           (fix-conflicting-token-names)))))
+           (fix-conflicting-token-names)
+           (fix-missing-sets-in-themes)))))
 
 #?(:clj
    (defn- write-tokens-lib
