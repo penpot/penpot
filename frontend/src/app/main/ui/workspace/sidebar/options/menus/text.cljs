@@ -417,6 +417,13 @@
                                           :attributes  #{:typography}
                                           :shape-ids   ids}))))
 
+        handle-detach-all-tokens
+        (mf/use-fn
+         (mf/deps ids)
+         (fn []
+           (st/emit! (dwta/unapply-multiple-tokens {:attributes  #{:typography}
+                                                    :shape-ids   ids}))))
+
         expand-stream
         (mf/with-memo []
           (->> st/stream (rx/filter (ptk/type? :expand-text-more-options))))
@@ -479,10 +486,19 @@
        [:div {:class (stl/css :element-content)}
         (cond
           (and token-typography-row-enabled? (= :multiple current-token-name) (= typography-id :multiple))
-          [:div "Texts have multiple typography assets and typography tokens applied"]
+          [:div {:class (stl/css :multiple-typography)}
+           [:span {:class (stl/css :multiple-text)}
+            (tr "workspace.libraries.text.mixed-tokens-and-assets")]]
 
           (and token-typography-row-enabled? (= :multiple current-token-name))
-          [:div "token-multiple"]
+          [:div {:class (stl/css :multiple-typography)}
+           [:span {:class (stl/css :multiple-text)}
+            (tr "workspace.libraries.text.mixed-tokens")]
+           [:> icon-button* {:variant    "ghost"
+                             :aria-label (tr "workspace.libraries.text.multiple-token-tooltip")
+                             :tooltip-placement "top-left"
+                             :on-click   handle-detach-all-tokens
+                             :icon       i/detach}]]
 
           (and token-typography-row-enabled? current-token-name)
           [:> token-typography-row* {:token-name    current-token-name
@@ -491,10 +507,12 @@
 
           (= typography-id :multiple)
           [:div {:class (stl/css :multiple-typography)}
-           [:span {:class (stl/css :multiple-text)} (tr "workspace.libraries.text.multiple-typography")]
+           [:span {:class (stl/css :multiple-text)}
+            (tr "workspace.libraries.text.mixed-typography")]
            [:> icon-button* {:variant    "ghost"
-                             :aria-label (tr "workspace.libraries.text.multiple-typography-tooltip")
+                             :aria-label (tr "workspace.libraries.text.multiple-assets-tooltip")
                              :on-click   handle-detach-typography
+                             :tooltip-placement "top-left"
                              :icon       i/detach}]]
 
           typography

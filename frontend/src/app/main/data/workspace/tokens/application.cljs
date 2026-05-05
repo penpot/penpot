@@ -777,6 +777,19 @@
           (fn [shape]
             (update shape :applied-tokens remove-token))))))))
 
+(defn unapply-multiple-tokens
+  "Removes `attributes` for `shape-ids` without knowing the token, used when a token is deleted."
+  [{:keys [attributes shape-ids] :as _props}]
+
+  (ptk/reify ::unapply-multiple-tokens
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (dwsh/update-shapes
+        shape-ids
+        (fn [shape]
+          (update shape :applied-tokens #(when % (apply dissoc % attributes)))))))))
+
 
 (defn toggle-token
   [{:keys [token attrs shape-ids expand-with-children]}]

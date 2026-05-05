@@ -2015,6 +2015,10 @@ msgstr "Typography"
 msgid "inspect.attributes.typography.font-family"
 msgstr "Font Family"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:308
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Mixed Font Families"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:326, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:332
 msgid "inspect.attributes.typography.font-size"
 msgstr "Font Size"
@@ -6347,9 +6351,33 @@ msgstr "Connect library"
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Multiple typographies"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-typography"
+msgstr "Mixed assets"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-tokens"
+msgstr "Mixed tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-tokens-and-assets"
+msgstr "Mixed assets and tokens"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Unlink all typographies"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-assets-tooltip"
+msgstr "Unlink all assets"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-token-tooltip"
+msgstr "Detach all tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-token-and-asset-tooltip"
+msgstr "Detach all tokens & unlink all typographies"
 
 #: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:130
 msgid "workspace.libraries.typography"
