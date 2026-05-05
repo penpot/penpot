@@ -1679,6 +1679,10 @@ msgstr "Cannot complete drop, a set with same name already exists at path."
 msgid "errors.token-theme-already-exists"
 msgstr "Theme Option with the same name exists"
 
+#: src/app/common/files/tokens.cljc:298
+msgid "errors.token-theme-not-existing-sets"
+msgstr "The theme refers to some not existing sets: %s"
+
 #: src/app/main/data/media.cljs:73
 msgid "errors.unexpected-error"
 msgstr "An unexpected error occurred."

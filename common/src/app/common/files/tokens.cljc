@@ -287,12 +287,18 @@
 
 (defn make-token-theme-schema
   [tokens-lib group name theme-id]
-  (sm/merge
-   ctob/schema:token-theme-attrs
-   [:map
-    [:group (make-token-theme-group-schema tokens-lib name theme-id)] ;; TODO how to keep error-fn from here?
-    [:name (make-token-theme-name-schema tokens-lib group theme-id)]
-    [:description {:optional true} schema:token-theme-description]]))
+  [:and
+   (sm/merge
+    ctob/schema:token-theme-attrs
+    [:map
+     [:group (make-token-theme-group-schema tokens-lib name theme-id)] ;; TODO how to keep error-fn from here?
+     [:name (make-token-theme-name-schema tokens-lib group theme-id)]
+     [:description {:optional true} schema:token-theme-description]])
+   [:fn {:error/field :sets
+         :error/fn #(tr "errors.token-theme-not-existing-sets" (str/join ", " (:sets (:value %))))}
+    (fn [{:keys [sets]}]
+      (or (nil? tokens-lib)
+          (every? #(ctob/get-set-by-name tokens-lib %) sets)))]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
