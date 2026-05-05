@@ -31,8 +31,8 @@
   (:import
    clojure.lang.XMLHandler
    java.io.InputStream
-   javax.xml.parsers.SAXParserFactory
    javax.xml.XMLConstants
+   javax.xml.parsers.SAXParserFactory
    org.apache.commons.io.IOUtils
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation))

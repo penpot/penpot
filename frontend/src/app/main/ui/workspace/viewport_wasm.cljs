@@ -82,7 +82,7 @@
   [{:keys [selected wglobal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
-        
+
         {:keys [edit-path
                 panning
                 selrect
