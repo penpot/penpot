@@ -658,10 +658,6 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [prev-cell-data (volatile! nil)
-             ;; Cache the resolved valid parent while hovering the same raw target frame.
-             ;; `find-valid-parent-and-frame-ids` may walk many ancestors for variants/components,
-             ;; and the result is stable during the gesture (objects/libraries are constant here).
-             find-valid-for-raw-cache (volatile! {:raw nil :pair nil})
              page-id   (:current-page-id state)
              libraries (dsh/lookup-libraries state)
              objects   (dsh/lookup-page-objects state page-id)
@@ -708,7 +704,21 @@
                            (rx/map #(array pos %)))))))]
          (if (empty? shapes)
            (rx/of (finish-transform))
-           (let [move-stream
+           ;; Per-gesture caches: `shapes`/`objects`/`libraries` are
+           ;; stable for the gesture, so build once and thread through.
+           (let [parent-validation-cache
+                 (ctn/parent-validation-cache objects shapes libraries)
+
+                 subtree-ids-by-id
+                 (into {}
+                       (map (fn [id]
+                              [id (cfh/get-children-ids-with-self objects id)]))
+                       ids)
+
+                 selection-rect-cache
+                 (volatile! nil)
+
+                 move-stream
                  (->> position
                       ;; We ask for the snap position but we continue even if the result is not available
                       (rx/with-latest-from snap-delta)
@@ -722,14 +732,8 @@
                        (fn [[move-vector mod?]]
                          (let [position         (gpt/add from-position move-vector)
                                exclude-frames   (if mod? exclude-frames exclude-frames-siblings)
-                               raw-target       (ctst/top-nested-frame objects position exclude-frames)
-                               cache            @find-valid-for-raw-cache
-                               [target-frame _]
-                               (if (= raw-target (:raw cache))
-                                 (:pair cache)
-                                 (let [pair (ctn/find-valid-parent-and-frame-ids raw-target objects shapes false libraries)]
-                                   (vreset! find-valid-for-raw-cache {:raw raw-target :pair pair})
-                                   pair))
+                               target-frame     (ctst/top-nested-frame objects position exclude-frames)
+                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes false libraries parent-validation-cache)
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)
                                drop-index       (when flex-layout? (gslf/get-drop-index target-frame objects position))
@@ -782,7 +786,10 @@
                        (rx/sample 16)
                        (rx/map
                         (fn [[modifiers snap-ignore-axis]]
-                          (dwm/set-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
+                          (dwm/set-wasm-modifiers modifiers
+                                                  :snap-ignore-axis snap-ignore-axis
+                                                  :subtree-ids-by-id subtree-ids-by-id
+                                                  :selection-rect-cache selection-rect-cache))))
 
                   (->> move-stream
                        (rx/with-latest-from ms/mouse-position-alt)
@@ -807,7 +814,8 @@
                              (dwu/start-undo-transaction undo-id)
                              (dwm/apply-wasm-modifiers modifiers
                                                        :snap-ignore-axis snap-ignore-axis
-                                                       :undo-transation? false)
+                                                       :undo-transation? false
+                                                       :subtree-ids-by-id subtree-ids-by-id)
                              (move-shapes-to-frame ids target-frame drop-index drop-cell)
                              (finish-transform)
                              (dwu/commit-undo-transaction undo-id))))))))
