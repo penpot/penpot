@@ -31,6 +31,7 @@ project_name: "penpot"
 languages:
 - clojure
 - typescript
+- rust
 
 # the encoding used by text files in the project
 # For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings
@@ -127,3 +128,14 @@ ignored_memory_patterns: []
 # The full set of modes to be activated is base_modes (from global config) + default_modes + added_modes.
 # See https://oraios.github.io/serena/02-usage/050_configuration.html#modes
 added_modes:
+
+# list of additional workspace folder paths for cross-package reference support (e.g. in monorepos).
+# Paths can be absolute or relative to the project root.
+# Each folder is registered as an LSP workspace folder, enabling language servers to discover
+# symbols and references across package boundaries.
+# Currently supported for: TypeScript.
+# Example:
+#   additional_workspace_folders:
+#     - ../sibling-package
+#     - ../shared-lib
+additional_workspace_folders: []
