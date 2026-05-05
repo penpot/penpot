@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.config :as cf]
    [app.main.data.auth :as da]
@@ -104,7 +105,7 @@
 
                (do
                  (when-let [explain (get edata :explain)]
-                   (println explain))
+                   (log/error :hint "register error" :explain explain))
                  (st/emit! (ntf/error (tr "errors.generic"))))))))
 
         on-success

@@ -128,7 +128,6 @@
            (let [version (:main cf/version)]
              (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes"
                                               :version version}))
-             (println version)
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
                (st/emit! (modal/show {:type :release-notes
