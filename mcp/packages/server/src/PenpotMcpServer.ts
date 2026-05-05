@@ -12,6 +12,7 @@ import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
 import { ExportShapeTool } from "./tools/ExportShapeTool";
 import { ImportImageTool } from "./tools/ImportImageTool";
 import { CljsReplTool } from "./tools/CljsReplTool";
+import { ImportPenpotFileTool } from "./tools/ImportPenpotFileTool";
 import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
@@ -190,7 +191,9 @@ export class PenpotMcpServer {
             toolInstances.push(new ImportImageTool(this));
         }
         if (this.isDevEnv()) {
-            toolInstances.push(new CljsReplTool(this, new NreplClient()));
+            const nreplClient = new NreplClient();
+            toolInstances.push(new CljsReplTool(this, nreplClient));
+            toolInstances.push(new ImportPenpotFileTool(this, nreplClient));
         }
 
         return toolInstances.map((instance) => {
