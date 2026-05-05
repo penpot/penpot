@@ -3,13 +3,17 @@ import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, ["enable-feature-token-input"]);
 });
 
 test("BUG 13305 - Fix resize board to fit content", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockGetFile("workspace/get-file-13305.json");
-  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-13305.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-13305.json",
+  );
 
   await workspacePage.goToWorkspace({
     fileId: "9666e946-78e8-8111-8007-8fe5f0f454bf",
@@ -17,12 +21,42 @@ test("BUG 13305 - Fix resize board to fit content", async ({ page }) => {
   });
 
   await workspacePage.clickLeafLayer("Board");
-  await workspacePage.rightSidebar.getByRole("button", { name: "Resize board to fit content" }).click();
+  await workspacePage.rightSidebar
+    .getByRole("button", { name: "Resize board to fit content" })
+    .click();
 
-  await expect(workspacePage.rightSidebar.getByTitle("Width").getByRole("textbox")).toHaveValue("630");
-  await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("630");
-  await expect(workspacePage.rightSidebar.getByTitle("X axis").getByRole("textbox")).toHaveValue("110");
-  await expect(workspacePage.rightSidebar.getByTitle("Y axis").getByRole("textbox")).toHaveValue("110");
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  // Width
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+    exact: true,
+  });
+  await expect(widthInput).toHaveValue("630");
+
+  // Height
+  const heightInput = measuresSection.getByRole("textbox", {
+    name: "Height",
+    exact: true,
+  });
+  await expect(heightInput).toHaveValue("630");
+
+  // X Position (using "X axis" title)
+  const xPosInput = measuresSection.getByRole("textbox", {
+    name: "X axis",
+    exact: true,
+  });
+  await expect(xPosInput).toHaveValue("110");
+
+  // Y Position (using "Y axis" title)
+  const yPosInput = measuresSection.getByRole("textbox", {
+    name: "Y axis",
+    exact: true,
+  });
+  await expect(yPosInput).toHaveValue("110");
 });
 
 test("BUG 13382 - Fix problem with flex layout", async ({ page }) => {
@@ -35,7 +69,10 @@ test("BUG 13382 - Fix problem with flex layout", async ({ page }) => {
     "workspace/get-file-13382-fragment.json",
   );
 
-  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
 
   await workspacePage.goToWorkspace({
     fileId: "52c4e771-3853-8190-8007-9506c70e8100",
@@ -47,13 +84,26 @@ test("BUG 13382 - Fix problem with flex layout", async ({ page }) => {
   await workspacePage.clickToggableLayer("C");
   await workspacePage.clickLeafLayer("R2");
 
-  const heightText = workspacePage.rightSidebar.getByTitle("Height").getByPlaceholder('--');
-  await heightText.fill("200");
-  await heightText.press("Enter");
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  const heightInput = measuresSection.getByRole("textbox", {
+    name: "Height",
+    exact: true,
+  });
+  await heightInput.fill("200");
+  await heightInput.press("Enter");
 
   await workspacePage.clickLeafLayer("B");
-  await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("340");
 
+  // Width
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+    exact: true,
+  });
+  await expect(widthInput).toHaveValue("393");
 });
 
 test("BUG 13468 - Fix problem with flex propagation", async ({ page }) => {
@@ -66,7 +116,10 @@ test("BUG 13468 - Fix problem with flex propagation", async ({ page }) => {
     "workspace/get-file-13468-fragment.json",
   );
 
-  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
 
   await workspacePage.goToWorkspace({
     fileId: "3a4d7ec7-c391-8146-8007-9a05c41da6b9",
@@ -76,10 +129,21 @@ test("BUG 13468 - Fix problem with flex propagation", async ({ page }) => {
   await workspacePage.clickToggableLayer("Parent");
   await workspacePage.clickToggableLayer("Container");
 
-  await workspacePage.sidebar.getByRole('button', { name: 'Show' }).click();
+  await workspacePage.sidebar.getByRole("button", { name: "Show" }).click();
 
   await workspacePage.clickLeafLayer("Container");
-  await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("76");
+
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  const heightInput = measuresSection.getByRole("textbox", {
+    name: "Height",
+    exact: true,
+  });
+
+  await expect(heightInput).toHaveValue("76");
 });
 
 test("BUG 13272 - Fix problem with snap to pixel", async ({ page }) => {
@@ -92,7 +156,10 @@ test("BUG 13272 - Fix problem with snap to pixel", async ({ page }) => {
     "workspace/get-file-13272-fragment.json",
   );
 
-  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
 
   await workspacePage.goToWorkspace({
     fileId: "3b9773cc-d4f1-81e1-8007-b3f8dcaba770",
@@ -102,15 +169,31 @@ test("BUG 13272 - Fix problem with snap to pixel", async ({ page }) => {
   await workspacePage.clickToggableLayer("Group");
   await workspacePage.clickLeafLayer("Group");
 
-  await workspacePage.page.locator('g:nth-child(11) > .cursor-resize-nesw-0').hover();
+  await workspacePage.page
+    .locator("g:nth-child(11) > .cursor-resize-nesw-0")
+    .hover();
   await workspacePage.page.mouse.down();
 
   await workspacePage.page.mouse.move(1200, 800);
   await workspacePage.page.mouse.up();
 
   await workspacePage.clickLeafLayer("Rectangle");
-  await expect(workspacePage.rightSidebar.getByTitle("Width").getByRole("textbox")).toHaveValue("197.5");
-  await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("128.28");
+
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  const heightInput = measuresSection.getByRole("textbox", {
+    name: "Height",
+    exact: true,
+  });
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+    exact: true,
+  });
+  await expect(widthInput).toHaveValue("197.5");
+  await expect(heightInput).toHaveValue("128.28");
 });
 
 test("BUG 13755 - Fix problem with text change modiifers", async ({ page }) => {
@@ -123,7 +206,10 @@ test("BUG 13755 - Fix problem with text change modiifers", async ({ page }) => {
     "workspace/get-file-13755-fragment.json",
   );
 
-  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
 
   await workspacePage.goToWorkspace({
     fileId: "7fd33337-c651-80ae-8007-c357213f876e",
@@ -133,9 +219,19 @@ test("BUG 13755 - Fix problem with text change modiifers", async ({ page }) => {
   await workspacePage.clickToggableLayer("Board");
   await workspacePage.clickLeafLayer("uno dos tres cuatro");
 
-  await workspacePage.page.keyboard.press('Enter');
-  await workspacePage.page.keyboard.type('test');
+  await workspacePage.page.keyboard.press("Enter");
+  await workspacePage.page.keyboard.type("test");
 
   await workspacePage.clickToggableLayer("Board");
-  await expect(workspacePage.rightSidebar.getByTitle("Width").getByRole("textbox")).toHaveValue("23");
+
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+    exact: true,
+  });
+  await expect(widthInput).toHaveValue("23");
 });

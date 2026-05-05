@@ -3,9 +3,12 @@ import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, ["enable-feature-token-input"]);
 });
 
-test("BUG 13267 - Component instance is not synced with parent for geometry changes", async ({ page }) => {
+test("BUG 13267 - Component instance is not synced with parent for geometry changes", async ({
+  page,
+}) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
   await workspacePage.mockGetFile("components/get-file-13267.json");
@@ -21,7 +24,9 @@ test("BUG 13267 - Component instance is not synced with parent for geometry chan
 
   // Select the main component
   await workspacePage.clickLeafLayer("A Component", {}, 1);
-  const rotationInput = workspacePage.rightSidebar.getByTestId("rotation").getByRole("textbox");
+  const rotationInput = workspacePage.rightSidebar.getByRole("textbox", {
+    name: "Rotation",
+  });
   await rotationInput.fill("45");
   await rotationInput.press("Enter");
 

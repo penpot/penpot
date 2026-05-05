@@ -880,7 +880,7 @@
 }
 
 .modal-select-org-content {
-  @include t.use-typography("body-medium");
+  @include t.use-typography("body-large");
 
   color: var(--color-foreground-secondary);
   overflow: auto;
@@ -893,6 +893,12 @@
   color: var(--color-foreground-primary);
   text-transform: uppercase;
   height: $sz-40;
+}
+
+.modal-select-org-text {
+  @include t.use-typography("body-large");
+
+  color: var(--color-foreground-secondary);
 }
 
 // ORGANIZATIONS SETTINGS
