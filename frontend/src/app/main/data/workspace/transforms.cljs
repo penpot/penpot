@@ -653,6 +653,10 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [prev-cell-data (volatile! nil)
+             ;; Cache the resolved valid parent while hovering the same raw target frame.
+             ;; `find-valid-parent-and-frame-ids` may walk many ancestors for variants/components,
+             ;; and the result is stable during the gesture (objects/libraries are constant here).
+             find-valid-for-raw-cache (volatile! {:raw nil :pair nil})
              page-id   (:current-page-id state)
              libraries (dsh/lookup-libraries state)
              objects   (dsh/lookup-page-objects state page-id)
@@ -713,15 +717,22 @@
                        (fn [[move-vector mod?]]
                          (let [position         (gpt/add from-position move-vector)
                                exclude-frames   (if mod? exclude-frames exclude-frames-siblings)
-                               target-frame     (ctst/top-nested-frame objects position exclude-frames)
-                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes false libraries)
+                               raw-target       (ctst/top-nested-frame objects position exclude-frames)
+                               cache            @find-valid-for-raw-cache
+                               [target-frame _]
+                               (if (= raw-target (:raw cache))
+                                 (:pair cache)
+                                 (let [pair (ctn/find-valid-parent-and-frame-ids raw-target objects shapes false libraries)]
+                                   (vreset! find-valid-for-raw-cache {:raw raw-target :pair pair})
+                                   pair))
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)
                                drop-index       (when flex-layout? (gslf/get-drop-index target-frame objects position))
                                cell-data        (when (and grid-layout? (not mod?)) (get-drop-cell target-frame objects position))]
                            (array move-vector target-frame drop-index cell-data))))
 
-                      (rx/take-until stopper))
+                      (rx/take-until stopper)
+                      (rx/share))
 
                  modifiers-stream
                  (->> move-stream
@@ -761,6 +772,9 @@
                  (rx/merge
                   (->> modifiers-stream
                        (rx/take-until duplicate-stopper)
+                       ;; Sample at a fixed cadence to keep preview smooth. Unlike a throttle,
+                       ;; this tends to avoid perceptible "jumps" while still capping WASM work.
+                       (rx/sample 16)
                        (rx/map
                         (fn [[modifiers snap-ignore-axis]]
                           (dwm/set-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
