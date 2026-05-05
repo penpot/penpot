@@ -1157,7 +1157,10 @@ msgid "dashboard.select-org-modal.accept"
 msgstr "ADD TO ORGANIZATION"
 
 msgid "dashboard.change-org-modal.title"
-msgstr "CHANGE TEAM'S ORGANIZATION"
+msgstr "Change team's organization"
+
+msgid "dashboard.change-org-modal.text"
+msgstr "Projects and files will remain available to team members. The team will get the configuration from the new organization."
 
 msgid "dashboard.change-org-modal.choose"
 msgstr "Move to:"
