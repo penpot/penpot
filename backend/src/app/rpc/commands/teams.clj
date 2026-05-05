@@ -515,8 +515,7 @@
   ;; Fail closed: if org permissions cannot be fetched, deny the operation.
   (when (and organization-id (contains? cf/flags :nitrate))
     (let [org-perms (nitrate/call cfg :get-org-permissions
-                                  {:organization-id organization-id
-                                   ::rpc/profile-id profile-id})]
+                                  {:organization-id organization-id})]
       (if (nil? org-perms)
         (ex/raise :type :validation
                   :code :not-allowed

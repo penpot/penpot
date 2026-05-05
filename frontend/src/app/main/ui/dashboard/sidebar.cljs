@@ -384,7 +384,9 @@
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (st/emit! (dtm/check-and-create-team (:id team)))))
+           (if (contains? cf/flags :nitrate)
+             (st/emit! (dtm/check-and-create-team (:id team)))
+             (st/emit! (modal/show :team-form {})))))
 
         on-team-click
         (mf/use-fn
