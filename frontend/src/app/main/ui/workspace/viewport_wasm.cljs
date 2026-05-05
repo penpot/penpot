@@ -254,6 +254,7 @@
 
         ;; True when we are opening a new file or switching to a new page
         page-transition?  (mf/deref wasm.api/page-transition?)
+        context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
 
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
@@ -555,8 +556,9 @@
                :style {:background-color background
                        :pointer-events "none"}}]
 
-     ;; Show the transition image when we are opening a new file or switching to a new page
-     (when (and page-transition? (some? transition-image-url))
+    ;; Show the transition image when switching pages or recovering from WebGL context loss.
+    (when (and (or page-transition? context-loss-overlay?)
+               (some? transition-image-url))
        (let [src transition-image-url]
          [:img {:data-testid "canvas-wasm-transition"
                 :src src
@@ -567,7 +569,7 @@
                         :height "100%"
                         :object-fit "cover"
                         :pointer-events "none"
-                        :filter "blur(4px)"}}]))
+                        :filter (when page-transition? "blur(4px)")}}]))
 
 
      [:svg.viewport-controls

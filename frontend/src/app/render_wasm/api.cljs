@@ -73,11 +73,15 @@
 ;; - `transition-tiles-handler*`: the currently installed DOM event handler for
 ;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
 (defonce page-transition? (atom false))
+(defonce context-loss-overlay? (atom false))
 (defonce transition-image-url* (atom nil))
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
+(defonce snapshot-tiles-handler* (atom nil))
+(defonce snapshot-capture-timeout-id* (atom nil))
 
 (def ^:private transition-blur-css "blur(4px)")
+(def ^:private snapshot-capture-debounce-ms 150)
 (defonce last-reload-payload* (atom nil))
 
 (defn- set-transition-blur!
@@ -118,9 +122,7 @@
     (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
   (reset! transition-tiles-handler* nil)
   (reset! transition-image-url* nil)
-  (clear-transition-blur!)
-  ;; Clear captured pixels so future transitions must explicitly capture again.
-  (set! wasm/canvas-snapshot-url nil))
+  (clear-transition-blur!))
 
 (defn- set-transition-tiles-complete-handler!
   "Installs a tiles-complete handler bound to the current transition epoch.
@@ -152,6 +154,16 @@
     (let [epoch (begin-page-transition!)]
       (set-transition-tiles-complete-handler! epoch end-page-transition!))))
 
+(defn- start-context-loss-overlay!
+  []
+  (reset! context-loss-overlay? true))
+
+(defn- end-context-loss-overlay!
+  []
+  (reset! context-loss-overlay? false)
+  (when-not @page-transition?
+    (reset! transition-image-url* nil)))
+
 (defn listen-tiles-render-complete-once!
   "Registers a one-shot listener for `penpot:wasm:tiles-complete`, dispatched from WASM
   when a full tile pass finishes."
@@ -161,6 +173,39 @@
                      (fn [_]
                        (f))
                      #js {:once true}))
+
+(defn- schedule-canvas-snapshot-capture!
+  "Debounced canvas snapshot refresh used to keep a recent fallback image for
+   context-loss recovery."
+  []
+  (when-not @snapshot-capture-timeout-id*
+    (reset! snapshot-capture-timeout-id*
+            (js/setTimeout
+             (fn []
+               (reset! snapshot-capture-timeout-id* nil)
+               (when (and wasm/context-initialized?
+                          (not @wasm/context-lost?)
+                          (some? wasm/canvas))
+                 (-> (webgl/capture-canvas-snapshot-url)
+                     (p/catch (fn [_] nil)))))
+             snapshot-capture-debounce-ms))))
+
+(defn- start-canvas-snapshot-listener!
+  []
+  (when-let [prev @snapshot-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (let [handler (fn [_] (schedule-canvas-snapshot-capture!))]
+    (reset! snapshot-tiles-handler* handler)
+    (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
+
+(defn- stop-canvas-snapshot-listener!
+  []
+  (when-let [prev @snapshot-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (reset! snapshot-tiles-handler* nil)
+  (when-let [timeout-id @snapshot-capture-timeout-id*]
+    (js/clearTimeout timeout-id))
+  (reset! snapshot-capture-timeout-id* nil))
 
 (defn text-editor-wasm?
   []
@@ -1725,6 +1770,18 @@
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
+  ;; Keep the last rendered pixels visible while context is lost/recovering.
+  (start-context-loss-overlay!)
+  (if-let [url wasm/canvas-snapshot-url]
+    (when (string? url)
+      (reset! transition-image-url* url))
+    (-> (capture-canvas-snapshot-url)
+        (p/then (fn [url]
+                  (when (and (string? url)
+                             @context-loss-overlay?)
+                    (reset! transition-image-url* url))
+                  url))
+        (p/catch (fn [_] nil))))
   (reset! wasm/context-lost? true)
   (st/async-emit!
    (ntf/show {:content (tr "webgl.webgl-context-lost.toast")
@@ -1741,12 +1798,14 @@
   (when-let [payload @last-reload-payload*]
     (-> (reload-renderer! (assoc payload :canvas (or (:canvas payload) wasm/canvas)))
         (p/then (fn [_]
+                  (listen-tiles-render-complete-once! end-context-loss-overlay!)
                   (st/async-emit!
                    (ntf/show {:content (tr "webgl.webgl-context-recovered.toast")
                               :type :toast
                               :level :success
                               :timeout 3000}))))
         (p/catch (fn [cause]
+                   (end-context-loss-overlay!)
                    (log/error :hint "wasm reload after context restore failed"
                               :cause cause)
                    nil)))))
@@ -1794,6 +1853,7 @@
           (set! wasm/canvas canvas)
           (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
           (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored)
+          (start-canvas-snapshot-listener!)
           (reset! wasm/context-lost? false)
           (set! wasm/context-initialized? true)))
 
@@ -1820,6 +1880,7 @@
      (when wasm/canvas
        (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
        (.removeEventListener wasm/canvas "webglcontextrestored" on-webgl-context-restored))
+    (stop-canvas-snapshot-listener!)
 
      (when (wasm/module-ready?)
        (free-gpu-resources)

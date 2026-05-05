@@ -9,6 +9,7 @@
   (:require
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions]]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions*]]
@@ -23,17 +24,22 @@
   []
   (let [on-close
         (mf/use-fn
-         #(st/emit! :interrupt
-                    (dw/set-options-mode :design)
-                    (dwc/set-workspace-read-only false)))]
+         (fn []
+           (st/emit! :interrupt
+                     (dw/set-options-mode :design)
+                     (dwc/set-workspace-read-only false))))
+        render-context-lost? (mf/deref refs/render-context-lost?)]
     [:div {:class (stl/css :viewport-actions)}
      [:div {:class (stl/css :viewport-actions-container)}
       [:div {:class (stl/css :viewport-actions-title)}
        [:> i18n/tr-html*
         {:tag-name "span"
-         :content (tr "workspace.top-bar.view-only")}]]
+         :content (tr (if render-context-lost?
+                        "workspace.top-bar.webgl-context-lost"
+                        "workspace.top-bar.view-only"))}]]
       [:button {:class (stl/css :done-btn)
-                :on-click on-close}
+                :on-click (when-not render-context-lost? on-close)
+                :disabled render-context-lost?}
        (tr "workspace.top-bar.read-only.done")]]]))
 
 (mf/defc path-edition-bar*

@@ -8701,6 +8701,9 @@ msgstr "Hecho"
 msgid "workspace.top-bar.view-only"
 msgstr "**Inspeccionando código** (View only)"
 
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Se perdió el contexto WebGL (Solo modo lectura)"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:333
 msgid "workspace.undo.empty"
 msgstr "Todavía no hay cambios en el histórico"
