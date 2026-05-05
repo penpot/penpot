@@ -5211,6 +5211,9 @@ msgstr "editor por mes"
 msgid "subscription.settings.price-organization-month"
 msgstr "organización por mes"
 
+msgid "subscription.settings.organization-member-month"
+msgstr "miembro organización por mes"
+
 #: src/app/main/ui/dashboard/subscription.cljs:140, src/app/main/ui/settings/subscription.cljs:102, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:538
 msgid "subscription.settings.professional"
 msgstr "Professional"

@@ -626,7 +626,7 @@
          [:> plan-card* {:card-title "Business Nitrate"
                          :card-title-icon i/character-n
                          :price-value "$25"
-                         :price-period "org member"
+                         :price-period (tr "subscription.settings.organization-member-month")
                          :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
                          :benefits ["Crea organizaciones y añade personas, que usarán Penpot con las reglas que configures."
                                     "Acceso exclusivo al Control Center"
