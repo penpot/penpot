@@ -415,6 +415,9 @@ pub extern "C" fn set_view_start() -> Result<()> {
         }
         performance::begin_measure!("set_view_start");
         state.render_state.options.set_fast_mode(true);
+        // If a previous two-pass rebuild was mid-flight, discard its
+        // intent — the new gesture supersedes it.
+        state.render_state.options.set_defer_effects(false);
         performance::end_measure!("set_view_start");
     });
     Ok(())
@@ -449,6 +452,11 @@ pub extern "C" fn set_view_end() -> Result<()> {
             // preview of the old content while new tiles render.
             state.render_state.rebuild_tile_index(&state.shapes);
             state.render_state.surfaces.invalidate_tile_cache();
+            // Start the progressive two-pass rebuild. Pass 1 renders
+            // tiles without blur/shadow for fast feedback; when it
+            // completes, process_animation_frame flips this off and
+            // kicks pass 2 which adds the effects back in place.
+            state.render_state.options.set_defer_effects(true);
         } else {
             // Pure pan at the same zoom level: tile contents have not
             // changed — only the viewport position moved. Update the
@@ -474,6 +482,18 @@ pub extern "C" fn set_modifiers_start() -> Result<()> {
         performance::begin_measure!("set_modifiers_start");
         state.render_state.options.set_fast_mode(true);
         state.render_state.options.set_interactive_transform(true);
+        // Force the next interactive-rAF to re-seed Target by blitting
+        // the persistent atlas as a backdrop. After that, Target is
+        // kept coherent tile-by-tile by the render walker for the rest
+        // of the gesture, so subsequent rAFs skip the full-viewport
+        // blit.
+        state.render_state.interactive_backdrop_drawn = false;
+        // Keep the default interest area during drag. Reducing it to 1
+        // caused ghost-shape artifacts: tiles invalidated mid-drag that
+        // moved outside the smaller interest area never re-rendered, so
+        // the atlas kept stale content. Default (3) keeps the queue
+        // larger but ensures everything that could be invalidated also
+        // gets re-rendered.
         performance::end_measure!("set_modifiers_start");
     });
     Ok(())
@@ -994,7 +1014,11 @@ pub extern "C" fn set_modifiers() -> Result<()> {
 
     with_state_mut!(state, {
         state.set_modifiers(modifiers);
-        // TO CHECK
+        // Throttle: skip per-pointer-move tile invalidation. The render
+        // entry (`render`) drains the current modifier set once per rAF
+        // and calls rebuild_modifier_tiles then. With ~3 pointer moves
+        // per rAF, this cuts tile invalidations by 3× and removes the
+        // PAF backlog.
         if !state.render_state.options.is_interactive_transform() {
             state.rebuild_modifier_tiles(ids)?;
         }

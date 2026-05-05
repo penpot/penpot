@@ -22,6 +22,11 @@ pub struct RenderOptions {
     /// keeps per-frame flushing enabled (unlike pan/zoom, where
     /// `render_from_cache` drives target presentation).
     interactive_transform: bool,
+    /// Active during the first rebuild pass after a zoom ends. Skips
+    /// blur/shadow (like `fast_mode`) but renders tiles normally rather
+    /// than using the atlas backdrop, so the user sees a fast full-fidelity
+    /// shape preview before effects come in on a second pass.
+    defer_effects: bool,
     /// Minimum on-screen size (CSS px at 1:1 zoom) above which vector antialiasing is enabled.
     pub antialias_threshold: f32,
     pub viewport_interest_area_threshold: i32,
@@ -38,6 +43,7 @@ impl Default for RenderOptions {
             dpr: 1.0,
             fast_mode: false,
             interactive_transform: false,
+            defer_effects: false,
             antialias_threshold: ANTIALIAS_THRESHOLD,
             viewport_interest_area_threshold: VIEWPORT_INTEREST_AREA_THRESHOLD,
             dpr_viewport_interest_area_threshold: VIEWPORT_INTEREST_AREA_THRESHOLD,
@@ -94,6 +100,23 @@ impl RenderOptions {
 
     pub fn set_interactive_transform(&mut self, enabled: bool) {
         self.interactive_transform = enabled;
+    }
+
+    pub fn is_defer_effects(&self) -> bool {
+        self.defer_effects
+    }
+
+    pub fn set_defer_effects(&mut self, enabled: bool) {
+        self.defer_effects = enabled;
+    }
+
+    /// True when expensive per-shape effects (blur, shadow) should be
+    /// skipped. Covers both the active viewport gesture (`fast_mode`)
+    /// and the post-gesture first rebuild pass (`defer_effects`).
+    /// Do NOT use this to gate atlas-backdrop / cache-presentation logic
+    /// — those must key off `is_fast_mode()` specifically.
+    pub fn should_skip_effects(&self) -> bool {
+        self.fast_mode || self.defer_effects
     }
 
     /// True only when the viewport is the one being moved (pan/zoom)
