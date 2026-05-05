@@ -259,11 +259,11 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile-id    (:profile-id state)
-            ;; Rewrite "foss-<app>.<domain>" → "foss.<domain>" so we land on the portal
-            ;; (outside ForwardAuth) instead of Penpot's own root, which would silently re-auth.
+            ;; Strip the first subdomain so we land on the portal (outside ForwardAuth)
+            ;; instead of Penpot's own root, which would silently re-auth.
             host          (.-host js/location)
             protocol      (.-protocol js/location)
-            portal-host   (.replace host #"^[^.]*\." "moneta.")
+            portal-host   (.replace host #"^[^.]+\.(?=[^.]*\.[^.]*\.)" "")
             portal-uri    (str protocol "//" portal-host)
             logged-out-ev (logged-out {:redirect-uri portal-uri})]
         (->> (rx/interval 500)
