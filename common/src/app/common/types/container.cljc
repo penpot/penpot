@@ -259,7 +259,7 @@
    (some? (find-component-main objects shape only-direct-child?))))
 
 (defn in-any-component?
-  "Check if the shape is part of any component (main or copy), wether it's
+  "Check if the shape is part of any component (main or copy), whether it's
    head or not."
   [objects shape]
   (or (ctk/in-component-copy? shape)

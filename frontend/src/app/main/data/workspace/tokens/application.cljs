@@ -732,7 +732,7 @@
 
 (defn apply-spacing-token-separated
   "Handles edge-case for spacing token when applying token via toggle button.
-  Splits out `shape-ids` into seperate default actions:
+  Splits out `shape-ids` into separate default actions:
   - Layouts take the `default` update function
   - Shapes inside layout will only take margin"
   [{:keys [token shapes attr]}]

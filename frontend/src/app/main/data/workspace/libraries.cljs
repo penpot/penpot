@@ -696,7 +696,7 @@
       (let [page-id          (:current-page-id state)
             file-id          (:current-file-id state)
 
-            ;; FIXME: revisit, innefficient access
+            ;; FIXME: revisit, inefficient access
             objects          (dsh/lookup-page-objects state page-id)
 
             libraries        (dsh/lookup-libraries state)
