@@ -65,6 +65,7 @@
   block-size: $sz-32;
   min-inline-size: 0;
   inline-size: 100%;
+  max-inline-size: 100%;
   padding: 0;
   margin-inline-end: 0;
   border: $b-1 solid var(--color-name-wrapper-boder-color);
