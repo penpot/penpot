@@ -30,6 +30,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
+   [app.main.streams :as ms]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.shape :as wasm.shape]
    [beicon.v2.core :as rx]
@@ -617,16 +618,16 @@
 (defn set-temporary-selrect
   [selrect]
   (ptk/reify ::set-temporary-selrect
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-selrect selrect))))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (rx/push! ms/workspace-selrect selrect))))
 
 (defn set-temporary-modifiers
   [modifiers]
   (ptk/reify ::set-temporary-modifiers
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-wasm-modifiers modifiers))))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (rx/push! ms/wasm-modifiers modifiers))))
 
 (def ^:private xf:map-key (map key))
 

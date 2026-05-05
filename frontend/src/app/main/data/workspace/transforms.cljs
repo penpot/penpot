@@ -138,9 +138,12 @@
   (ptk/reify ::finish-transform
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (update :workspace-local dissoc :transform :duplicate-move-started?)
-          (dissoc :workspace-selrect :workspace-wasm-modifiers)))))
+      (update state :workspace-local dissoc :transform :duplicate-move-started?))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (rx/push! ms/wasm-modifiers nil)
+      (rx/push! ms/workspace-selrect nil))))
 
 ;; -- Resize --------------------------------------------------------
 
