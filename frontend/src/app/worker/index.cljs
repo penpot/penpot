@@ -63,22 +63,34 @@
           (log/dbg :hint "page index updated" :id page-id :elapsed elapsed ::log/sync? true))))
     nil))
 
+(defn- run-query-snap
+  [index page-id frame-id axis ranges bounds]
+  (let [match-bounds?
+        (fn [[_ data]]
+          (some #(or (= :guide (:type %))
+                     (= :layout (:type %))
+                     (grc/contains-point? bounds (:pt %))) data))
+
+        xform
+        (comp (mapcat #(snap/query index page-id frame-id axis %))
+              (distinct)
+              (filter match-bounds?))]
+    (into [] xform ranges)))
+
 ;; FIXME: schema
 (defmethod impl/handler :index/query-snap
-  [{:keys [page-id frame-id axis ranges bounds] :as message}]
+  [{:keys [page-id frame-id axis ranges bounds]}]
   (if-let [index (get @state ::snap)]
-    (let [match-bounds?
-          (fn [[_ data]]
-            (some #(or (= :guide (:type %))
-                       (= :layout (:type %))
-                       (grc/contains-point? bounds (:pt %))) data))
-
-          xform
-          (comp (mapcat #(snap/query index page-id frame-id axis %))
-                (distinct)
-                (filter match-bounds?))]
-      (into [] xform ranges))
+    (run-query-snap index page-id frame-id axis ranges bounds)
     []))
+
+;; Single round-trip for X+Y snap used by `app.main.snap/closest-snap` (e.g. shape drag).
+(defmethod impl/handler :index/query-snap-xy
+  [{:keys [page-id frame-id bounds x-ranges y-ranges]}]
+  (if-let [index (get @state ::snap)]
+    {:x (run-query-snap index page-id frame-id :x x-ranges bounds)
+     :y (run-query-snap index page-id frame-id :y y-ranges bounds)}
+    {:x [] :y []}))
 
 ;; FIXME: schema
 
