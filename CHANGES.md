@@ -11,6 +11,7 @@
 ### :bug: Bugs fixed
 
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix false “text editing” warning when applying tokens [Github #6346](https://github.com/penpot/penpot/issues/9346)
 
 
 ## 2.14.4
