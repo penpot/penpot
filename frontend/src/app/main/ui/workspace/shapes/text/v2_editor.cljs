@@ -289,7 +289,9 @@
       :ref container-ref
       :data-testid "text-editor-container"
       :style {:width "var(--editor-container-width)"
-              :height "var(--editor-container-height)"}}
+              :height "var(--editor-container-height)"
+              :min-width "1px"
+              :min-height "1px"}}
      ;; We hide the editor when is blurred because otherwise the
      ;; selection won't let us see the underlying text. Use opacity
      ;; because display or visibility won't allow to recover focus

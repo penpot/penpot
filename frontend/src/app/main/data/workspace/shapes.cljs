@@ -50,7 +50,7 @@
   ([ids update-fn] (update-shapes ids update-fn nil))
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr]
+            ignore-touched undo-group with-objects? changed-sub-attr translation?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -90,7 +90,8 @@
                                               :ignore-touched ignore-touched
                                               :with-objects? with-objects?})
                  (cond-> undo-group
-                   (pcb/set-undo-group undo-group)))
+                   (pcb/set-undo-group undo-group))
+                 (pcb/set-translation? translation?))
 
              changes
              (add-undo-group changes state)]
