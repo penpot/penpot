@@ -181,7 +181,6 @@
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         mod-ref (mf/use-ref @mod?)
-        transform-ref (mf/use-ref nil)
         selected-ref (mf/use-ref selected)
         hover-disabled-ref (mf/use-ref hover-disabled?)
         focus-ref (mf/use-ref focus)
@@ -191,13 +190,15 @@
 
         query-point
         (mf/use-callback
-         (mf/deps page-id)
+         (mf/deps page-id transform)
          (fn [point]
            (let [zoom (mf/ref-val zoom-ref)
                  rect (grc/center->rect point (/ 5 zoom))]
 
-             (if (mf/ref-val hover-disabled-ref)
-               (rx/of nil)
+             (if (or (mf/ref-val hover-disabled-ref)
+                     (some? transform))
+               ;; No index query while dragging/transforming: snap already hits the worker.
+               (rx/of [])
                (->> (mw/ask-buffered!
                      {:cmd :index/query-selection
                       :page-id page-id
@@ -222,7 +223,6 @@
 
                 (->> move-stream
                      (rx/tap #(reset! last-point-ref %))
-                     ;; When transforming shapes we stop querying the worker
                      (rx/merge-map query-point)))
 
                (rx/share)))
@@ -231,10 +231,6 @@
         (->> over-shapes-stream (rx/debounce 50))]
 
     ;; Refresh the refs on a value change
-    (mf/use-effect
-     (mf/deps transform)
-     #(mf/set-ref-val! transform-ref transform))
-
     (mf/use-effect
      (mf/deps zoom)
      #(mf/set-ref-val! zoom-ref zoom))
