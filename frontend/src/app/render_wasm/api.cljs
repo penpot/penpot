@@ -48,8 +48,8 @@
    [app.util.dom :as dom]
    [app.util.functions :as fns]
    [app.util.globals :as ug]
-   [app.util.modules :as mod]
    [app.util.i18n :refer [tr]]
+   [app.util.modules :as mod]
    [app.util.text.content :as tc]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -78,6 +78,7 @@
 (defonce transition-tiles-handler* (atom nil))
 
 (def ^:private transition-blur-css "blur(4px)")
+(defonce last-reload-payload* (atom nil))
 
 (defn- set-transition-blur!
   []
@@ -271,6 +272,21 @@
 ;; forward declare helpers so render can call them
 (declare request-render)
 (declare set-shape-vertical-align fonts-from-text-content)
+(declare reload-renderer!)
+
+(defn set-last-reload-payload!
+  "Stores the latest payload needed to replay a renderer reload."
+  [payload]
+  (when (map? payload)
+    (reset! last-reload-payload* payload)))
+
+(defn free-gpu-resources
+  []
+  ;; check if the context has not been lost already or we will get warnings about
+  ;; removing objects from a non-current context
+  (when (and wasm/context-initialized?
+             (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_free_gpu_resources")))
 
 ;; This should never be called from the outside.
 (defn- render
@@ -1711,11 +1727,29 @@
   (dom/prevent-default event)
   (reset! wasm/context-lost? true)
   (st/async-emit!
-   (ntf/show {:content (tr "errors.webgl-context-lost.toast")
+   (ntf/show {:content (tr "webgl.webgl-context-lost.toast")
               :type :toast
               :level :error
               :timeout 5000}))
   (st/emit! (drw/context-lost)))
+
+(defn- on-webgl-context-restored
+  [event]
+  (dom/prevent-default event)
+  (reset! wasm/context-lost? false)
+  (st/emit! (drw/context-restored))
+  (when-let [payload @last-reload-payload*]
+    (-> (reload-renderer! (assoc payload :canvas (or (:canvas payload) wasm/canvas)))
+        (p/then (fn [_]
+                  (st/async-emit!
+                   (ntf/show {:content (tr "webgl.webgl-context-recovered.toast")
+                              :type :toast
+                              :level :success
+                              :timeout 3000}))))
+        (p/catch (fn [cause]
+                   (log/error :hint "wasm reload after context restore failed"
+                              :cause cause)
+                   nil)))))
 
 (defn init-canvas-context
   [canvas]
@@ -1759,6 +1793,7 @@
           ;; Add event listeners for WebGL context lost
           (set! wasm/canvas canvas)
           (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
+          (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored)
           (reset! wasm/context-lost? false)
           (set! wasm/context-initialized? true)))
 
@@ -1766,8 +1801,9 @@
 
 (defn clear-canvas
   ([]
-   (clear-canvas {:lose-browser-context? true}))
-  ([lose-browser-context?]
+   (clear-canvas {}))
+  ([{:keys [lose-browser-context?]
+     :or {lose-browser-context? true}}]
    (try
      (set! wasm/context-initialized? false)
 
@@ -1782,9 +1818,11 @@
 
      ;; Remove listener before losing/deleting context.
      (when wasm/canvas
-       (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost))
+       (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
+       (.removeEventListener wasm/canvas "webglcontextrestored" on-webgl-context-restored))
 
      (when (wasm/module-ready?)
+       (free-gpu-resources)
        (h/call wasm/internal-module "_clean_up"))
 
      ;; Ensure the WebGL context is properly disposed so browsers do not keep

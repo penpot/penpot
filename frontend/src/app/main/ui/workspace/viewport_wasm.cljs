@@ -444,22 +444,33 @@
 
     (mf/with-effect [@canvas-init? vern zoom vbox background]
       (when @canvas-init?
-        (if (not @initialized?)
-          (do
-            (mf/set-ref-val! last-vern-ref vern)
-            ;; Initial file open uses the same transition workflow as page switches,
-            ;; but with a solid background-color blurred placeholder.
-            (wasm.api/start-initial-load-transition! background)
-            ;; Keep the blurred previous-page preview (page switch) or
-            ;; blank canvas (first load) visible while shapes load.
-            ;; The loading overlay is suppressed because on-shapes-ready
-            ;; is set.
-            (wasm.api/initialize-viewport base-objects zoom vbox :background background)
-            (reset! initialized? true))
+        (let [canvas (mf/ref-val canvas-ref)]
+          (if (not @initialized?)
+            (do
+              (mf/set-ref-val! last-vern-ref vern)
+              ;; Initial file open uses the same transition workflow as page switches,
+              ;; but with a solid background-color blurred placeholder.
+              (wasm.api/start-initial-load-transition! background)
+              ;; Keep the blurred previous-page preview (page switch) or
+              ;; blank canvas (first load) visible while shapes load.
+              ;; The loading overlay is suppressed because on-shapes-ready
+              ;; is set.
+              (wasm.api/set-last-reload-payload! {:canvas canvas
+                                                  :base-objects base-objects
+                                                  :zoom zoom
+                                                  :vbox vbox
+                                                  :background background})
+              (wasm.api/initialize-viewport base-objects zoom vbox :background background)
+              (reset! initialized? true))
 
-          (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
-            (wasm.api/initialize-viewport base-objects zoom vbox :background background)
-            (mf/set-ref-val! last-vern-ref vern)))))
+            (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
+              (wasm.api/set-last-reload-payload! {:canvas canvas
+                                                  :base-objects base-objects
+                                                  :zoom zoom
+                                                  :vbox vbox
+                                                  :background background})
+              (wasm.api/initialize-viewport base-objects zoom vbox :background background)
+              (mf/set-ref-val! last-vern-ref vern))))))
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)

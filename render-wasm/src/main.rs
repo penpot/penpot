@@ -185,6 +185,7 @@ pub extern "C" fn clean_up() -> Result<()> {
             // it won't try to render without context.
             let render_state = get_render_state();
             render_state.cancel_animation_frame();
+            render_state.prepare_context_loss_cleanup();
         }
         STATE = None;
     }
@@ -1077,6 +1078,13 @@ pub extern "C" fn render_shape_pixels(
 #[no_mangle]
 pub extern "C" fn render_stats() {
     get_render_state().print_stats();
+}
+
+#[no_mangle]
+pub fn free_gpu_resources() {
+    with_state_mut!(state, {
+        state.render_state.free_gpu_resources();
+    })
 }
 
 fn main() {

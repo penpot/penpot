@@ -31,9 +31,7 @@
 
 (defn module-ready?
   []
-  (and internal-module
-       (fn? (unchecked-get internal-module "_init"))
-       (fn? (unchecked-get internal-module "_clean_up"))))
+  (and internal-module (fn? (unchecked-get internal-module "_init"))))
 
 (defn reset-context-state!
   []
