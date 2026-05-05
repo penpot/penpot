@@ -1424,11 +1424,14 @@ pub fn calculate_text_layout_data(
     let mut previous_line_height = text_content.normalized_line_height();
     let text_paragraphs = text_content.paragraphs();
 
-    // 1. Calculate paragraph heights
+    // 1. Build + layout each paragraph once, recording heights as we go.
     let mut paragraph_heights: Vec<f32> = Vec::new();
+    let mut built_groups: Vec<Vec<skia::textlayout::Paragraph>> =
+        Vec::with_capacity(paragraph_builder_groups.len());
     for paragraph_builder_group in paragraph_builder_groups.iter_mut() {
         let group_len = paragraph_builder_group.len();
         let mut paragraph_offset_y = previous_line_height;
+        let mut group_paragraphs: Vec<skia::textlayout::Paragraph> = Vec::with_capacity(group_len);
         for (builder_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
             let mut skia_paragraph = paragraph_builder.build();
             skia_paragraph.layout(text_width);
@@ -1442,11 +1445,13 @@ pub fn calculate_text_layout_data(
             if builder_index == 0 {
                 paragraph_heights.push(skia_paragraph.height());
             }
+            group_paragraphs.push(skia_paragraph);
         }
         previous_line_height = paragraph_offset_y;
+        built_groups.push(group_paragraphs);
     }
 
-    // 2. Calculate vertical offset and build paragraphs with positions
+    // 2. Position each built paragraph using the heights from step 1.
     let total_text_height: f32 = paragraph_heights.iter().sum();
     let vertical_offset = match shape.vertical_align() {
         VerticalAlign::Center => (selrect_height - total_text_height) / 2.0,
@@ -1455,12 +1460,9 @@ pub fn calculate_text_layout_data(
     };
     let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
     let mut y_accum = base_y + vertical_offset;
-    for (i, paragraph_builder_group) in paragraph_builder_groups.iter_mut().enumerate() {
+    for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
-        for paragraph_builder in paragraph_builder_group.iter_mut() {
-            let mut skia_paragraph = paragraph_builder.build();
-            skia_paragraph.layout(text_width);
-
+        for skia_paragraph in group_paragraphs.into_iter() {
             let spans = if let Some(text_para) = text_paragraphs.get(i) {
                 text_para.children().to_vec()
             } else {
