@@ -45,7 +45,7 @@
           [:p "Penpot brings a layout system like no other. As described by one of our beta testers: 'I love the fact that Penpot is following the CSS FlexBox, which is making UI Design a step closer to the logic and behavior behind how things will be actually built after design.'"]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -64,7 +64,7 @@
           [:p "Also, inspect mode provides a safer view-only mode and other improvements."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -83,7 +83,7 @@
           [:p "While we are still working on a plugin system, this is a great and simple way to create integrations with other services."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -102,7 +102,7 @@
           [:p "This release comes with improvements on color contrasts, alt texts, semantic labels, focusable items and keyboard navigation at login and dashboard, but more will come."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]])))

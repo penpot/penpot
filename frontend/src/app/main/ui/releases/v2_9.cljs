@@ -71,7 +71,7 @@
            "And there’s more progress on Tokens, including support for importing multiple token files via .zip, and smarter token visibility, only showing the relevant tokens for each layer type."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 2}]
@@ -102,7 +102,7 @@
 
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 2}]

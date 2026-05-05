@@ -114,3 +114,15 @@
     800 "Extra Bold"
     900 "Black"
     950 "Extra Black"))
+
+(defn font-display-variant
+  [variant-name weight style]
+  (cond
+    (and (string? variant-name) (not (str/blank? variant-name)))
+    (str/trim variant-name)
+
+    :else
+    (let [base (font-weight->name weight)
+          italic? (= "italic" style)]
+      (cond-> base
+        italic? (str " Italic")))))

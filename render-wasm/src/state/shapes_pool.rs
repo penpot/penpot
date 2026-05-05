@@ -140,6 +140,18 @@ impl ShapesPoolImpl {
         Some(&mut self.shapes[idx])
     }
 
+    /// Returns the current transform modifier matrix for the shape, if any.
+    pub fn get_modifier(&self, id: &Uuid) -> Option<&skia::Matrix> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        self.modifiers.get(&idx)
+    }
+
+    /// Get a shape by UUID without applying modifiers/structure/scale-content.
+    pub fn get_raw(&self, id: &Uuid) -> Option<&Shape> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        Some(&self.shapes[idx])
+    }
+
     /// Get a shape by UUID. Returns the modified shape if modifiers/structure
     /// are applied, otherwise returns the base shape.
     pub fn get(&self, id: &Uuid) -> Option<&Shape> {
@@ -307,6 +319,24 @@ impl ShapesPoolImpl {
         self.scale_content = HashMap::default();
 
         modified_uuids
+    }
+
+    /// UUIDs of all shapes that currently have a transform modifier.
+    /// Used by the throttled drag path so per-rAF tile invalidation can
+    /// be done once with the current modifier set instead of once per
+    /// pointer move.
+    pub fn modifier_ids(&self) -> Vec<Uuid> {
+        if self.modifiers.is_empty() {
+            return Vec::new();
+        }
+        let mut idx_to_uuid: HashMap<usize, Uuid> = HashMap::with_capacity(self.uuid_to_idx.len());
+        for (uuid, idx) in self.uuid_to_idx.iter() {
+            idx_to_uuid.insert(*idx, *uuid);
+        }
+        self.modifiers
+            .keys()
+            .filter_map(|idx| idx_to_uuid.get(idx).copied())
+            .collect()
     }
 
     pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl {

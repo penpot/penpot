@@ -38,7 +38,7 @@
           shape-name)
 
         default-value
-        (mf/with-memo [variant-id variant-error variant-properties]
+        (mf/with-memo [variant-id variant-error variant-properties shape-name]
           (if variant-id
             (or variant-error (ctv/properties-map->formula variant-properties))
             shape-name))

@@ -33,7 +33,7 @@
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
@@ -496,59 +496,32 @@
                         (map #(dwv/rename-comp-or-variant-and-main (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
-        ;; Issue #9141. Delete every component under a group path in a
-        ;; single undo transaction, after user confirmation. Variants
-        ;; are handled via their variant container (matching the
-        ;; per-item delete dispatch in file_library.cljs); sibling
-        ;; variants sharing a container are deduplicated so we delete
-        ;; each container only once.
         on-delete-group
-        (mf/use-fn
-         (mf/deps components on-clear-selection)
-         (fn [path]
-           (let [group-components
-                 (->> components
-                      (filter #(cpn/inside-path? (:path %) path)))
+        (mf/with-memo [components on-clear-selection]
+          (cmm/make-delete-asset-group-fn
+           {:assets components
+            :on-clear-selection on-clear-selection
+            :path-filter cpn/inside-path?
+            ;; Variants are handled via their variant container
+            ;; (matching the per-item delete dispatch in
+            ;; file_library.cljs); sibling variants sharing a
+            ;; container are deduplicated so we delete each container
+            ;; only once.
+            :delete-events
+            (fn [matching]
+              (let [{variants true non-variants false}
+                    (group-by (comp boolean ctc/is-variant?) matching)
 
-                 {variants true non-variants false}
-                 (group-by (comp boolean ctc/is-variant?) group-components)
-
-                 ;; One delete-shapes per variant container, not per
-                 ;; sibling variant within that container.
-                 variant-containers
-                 (->> variants
-                      (group-by :variant-id)
-                      (map (fn [[_ comps]] (first comps))))
-
-                 ;; Hoisted so the start/commit pair is bound to the
-                 ;; same symbol regardless of how `do-delete` is
-                 ;; invoked by the confirm modal. Review suggestion
-                 ;; on PR #9151.
-                 undo-id (js/Symbol)
-
-                 do-delete
-                 (fn []
-                   (on-clear-selection)
-                   (st/emit! (dwu/start-undo-transaction undo-id))
-                   (run! st/emit!
-                         (map (fn [component]
-                                (dwsh/delete-shapes (:main-instance-page component)
-                                                    #{(:variant-id component)}))
-                              variant-containers))
-                   (run! st/emit!
-                         (map (fn [component]
-                                (dwl/delete-component {:id (:id component)}))
-                              non-variants))
-                   (st/emit! (dwu/commit-undo-transaction undo-id)))]
-             (when (seq group-components)
-               (st/emit!
-                (modal/show
-                 {:type :confirm
-                  :title (tr "modals.delete-asset-group.title")
-                  :message (tr "modals.delete-asset-group.message"
-                               (i18n/c (count group-components)))
-                  :accept-label (tr "labels.delete")
-                  :on-accept do-delete}))))))
+                    variant-containers
+                    (->> variants
+                         (group-by :variant-id)
+                         (map (fn [[_ comps]] (first comps))))]
+                (concat
+                 (map #(dwsh/delete-shapes (:main-instance-page %)
+                                           #{(:variant-id %)})
+                      variant-containers)
+                 (map #(dwl/delete-component {:id (:id %)})
+                      non-variants))))}))
 
         on-group-combine-variants
         (mf/use-fn
