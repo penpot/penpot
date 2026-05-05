@@ -76,23 +76,26 @@
 
 (defn generate-update-shapes
   [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects?]}]
-  (let [changes   (reduce
-                   (fn [changes id]
-                     (let [opts {:attrs attrs
-                                 :ignore-geometry? (get ignore-tree id)
-                                 :ignore-touched ignore-touched
-                                 :with-objects? with-objects?}]
-                       (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
-                   (-> changes
-                       (pcb/with-objects objects))
-                   ids)
-        grid-ids (->> ids (filter (partial ctl/grid-layout? objects)))
-        changes (-> changes
-                    (pcb/update-shapes grid-ids ctl/assign-cell-positions {:with-objects? true})
-                    (pcb/reorder-grid-children ids)
-                    (cond->
-                     (not ignore-touched)
-                      (generate-unapply-tokens objects changed-sub-attr)))]
+  (let [changes
+        (->> ids
+             (reduce
+              (fn [changes id]
+                (let [opts {:attrs attrs
+                            :ignore-geometry? (get ignore-tree id)
+                            :ignore-touched ignore-touched
+                            :with-objects? with-objects?}]
+                  (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
+              (cond-> changes
+                (some? objects) (pcb/with-objects objects))))
+        grid-ids
+        (->> ids (filter (partial ctl/grid-layout? objects)))
+
+        changes
+        (-> changes
+            (pcb/update-shapes grid-ids ctl/assign-cell-positions {:with-objects? true})
+            (pcb/reorder-grid-children ids)
+            (cond-> (not ignore-touched)
+              (generate-unapply-tokens objects changed-sub-attr)))]
     changes))
 
 (defn- generate-update-shape-flags
