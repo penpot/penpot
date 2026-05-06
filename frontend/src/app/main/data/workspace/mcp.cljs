@@ -85,7 +85,7 @@
           (update state :mcp assoc :connected-tab id)
 
           (and (= "disconnected" (:connection-status data))
-               (= id (:connection-status mcp-state)))
+               (= id (:connected-tab mcp-state)))
           (update state :mcp dissoc :connected-tab)
 
           :else
