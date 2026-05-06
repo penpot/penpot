@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-16 08:35+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"PO-Revision-Date: 2026-02-20 03:09+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.16.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -409,7 +409,7 @@ msgstr "הוספת קובץ"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
-msgstr "הוספת ספריה משותפת"
+msgstr "הוספת ספרייה משותפת"
 
 #: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.change-email"
@@ -1898,7 +1898,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "ערכות עיצוב פעילות"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "העתקת קיצור CSS ללוח הגזירים"
 
@@ -4781,7 +4780,6 @@ msgid "subscription.settings.success.dialog.title"
 msgstr "התוכנית שלך היא %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:526
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "תמכת בנו עם התוכנית הזאת מאז: %s"
 
@@ -6444,19 +6442,19 @@ msgstr "אפשרויות מתקדמות"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:686, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:693
 msgid "workspace.options.layout-item.layout-item-max-h"
-msgstr "גובה מר.‏"
+msgstr "גובה מרבי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:624, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:631
 msgid "workspace.options.layout-item.layout-item-max-w"
-msgstr "רוחב מר.‏"
+msgstr "רוחב מרבי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:655, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:663
 msgid "workspace.options.layout-item.layout-item-min-h"
-msgstr "גובה מז.‏"
+msgstr "גובה מזערי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:591, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:600
 msgid "workspace.options.layout-item.layout-item-min-w"
-msgstr "רוחב מז.‏"
+msgstr "רוחב מזערי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
@@ -7831,7 +7829,6 @@ msgid "errors.tokens.opacity-range"
 msgstr "שקיפות צריכה להיות בין 0 ל־100% או 0 ו־1 (כלומר 50% או 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "ערך מקורי: %s"
 
@@ -7861,7 +7858,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "שגיאות הפניה: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:285, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:459, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:311, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:251, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:364, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:465, src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "ערך פתור: %s"
 
@@ -7977,7 +7973,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "רשימת ערכות עיצוב"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:275, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "תיאור"
 
@@ -8380,3 +8375,323 @@ msgstr "גרסאות שנשמרו אוטומטית תישמרנה למשך %s י
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:347
+msgid "dashboard.create-new-org"
+msgstr "יצירת ארגון חדש"
+
+#: src/app/main/ui/dashboard/deleted.cljs:262
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr "למחוק את כל המיזמים והקבצים שלך לצמיתות? זאת פעולה בלתי הפיכה."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:221
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr "למחוק את %s לצמיתות? זאת פעולה בלתי הפיכה."
+
+#: src/app/main/data/dashboard.cljs:778
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s קבצים נמחקו בהצלחה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:51, src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:261, src/app/main/ui/dashboard/deleted.cljs:263, src/app/main/ui/dashboard/file_menu.cljs:220, src/app/main/ui/dashboard/file_menu.cljs:222
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "מחיקה לצמיתות"
+
+#: src/app/main/ui/dashboard/deleted.cljs:85
+msgid "dashboard.delete-project-button"
+msgstr "מחיקת מיזם"
+
+#: src/app/main/ui/dashboard/deleted.cljs:52
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"למחוק את המיזם %s לצמיתות? הפעולה הזאת תמחק לצמיתות את כל הקבצים שבו. זאת "
+"פעולה בלתי הפיכה."
+
+#: src/app/main/data/dashboard.cljs:777, src/app/main/data/dashboard.cljs:811
+msgid "dashboard.delete-success-notification"
+msgstr "%s נמחק בהצלחה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:327
+msgid "dashboard.deleted.empty-state-description"
+msgstr "האשפה שלך ריקה. קבצים ומיזמים שנמחקו יופיעו כאן."
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "%s יימחק"
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "אירעה שגיאה במחיקת הקובץ %s."
+
+#: src/app/main/data/dashboard.cljs:781
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "אירעה שגיאה במחיקת הקבצים."
+
+#: src/app/main/data/dashboard.cljs:814
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "אירעה שגיאה במחיקת המיזם %s."
+
+#: src/app/main/data/dashboard.cljs:909, src/app/main/ui/dashboard/file_menu.cljs:201
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "אירעה שגיאה בשחזור הקובץ %s."
+
+#: src/app/main/data/dashboard.cljs:910
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "אירעה שגיאה בשחזור הקבצים."
+
+#: src/app/main/data/dashboard.cljs:942
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "אירעה שגיאה בשחזור המיזם %s עם הקבצים שלו."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:266
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "מחיקת קובץ"
+msgstr[1] "מחיקת קבצים"
+msgstr[2] "מחיקת קבצים"
+msgstr[3] "מחיקת קבצים"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:263
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "שחזור קובץ"
+msgstr[1] "שחזור קבצים"
+msgstr[2] "שחזור קבצים"
+msgstr[3] "שחזור קבצים"
+
+#: src/app/main/data/dashboard.cljs:722
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "קבצים נמחקים…"
+
+#: src/app/main/data/dashboard.cljs:843
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "קבצים משוחזרים…"
+
+#: src/app/main/data/dashboard.cljs:723
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "המחיקה איטית להחריד"
+
+#: src/app/main/data/dashboard.cljs:844
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "השחזור איטי להחריד"
+
+#: src/app/main/ui/dashboard/deleted.cljs:274
+msgid "dashboard.restore-all-confirmation.description"
+msgstr ""
+"הפעולה הזאת תשחזר את כל המיזמים והקבצים שלך. זאת פעולה שיכולה לארוך זמן מה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:273
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "שחזור כל המיזמים והקבצים"
+
+#: src/app/main/ui/dashboard/deleted.cljs:308
+msgid "dashboard.restore-all-deleted-button"
+msgstr "לשחזר הכול"
+
+#: src/app/main/data/dashboard.cljs:903
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s קבצים שוחזרו בהצלחה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:82
+msgid "dashboard.restore-project-button"
+msgstr "שחזור מיזם"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
+msgid "workspace.layout-item.fix-height"
+msgstr "גובה קבוע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
+msgid "workspace.layout-item.fix-width"
+msgstr "רוחב קבוע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
+msgid "workspace.layout-item.height-100"
+msgstr "גובה 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
+msgid "workspace.layout-item.width-100"
+msgstr "רוחב 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr "למטה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "פנימה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "שמאלה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "החוצה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "ימינה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
+msgid "workspace.options.interaction-animation-direction-up"
+msgstr "למעלה"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
+msgid "workspace.options.orientation.horizontal"
+msgstr "אופקי"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
+msgid "workspace.options.orientation.vertical"
+msgstr "אנכי"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:297
+msgid "workspace.sidebar.layers.filter"
+msgstr "מסנן"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:303
+msgid "workspace.tokens.missing-reference"
+msgstr "הפניה חסרה"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:87
+#, unused
+msgid "workspace.tokens.no-references-found"
+msgstr "לא נמצאו הפניות"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+#, unused
+msgid "workspace.tokens.no-remap-needed"
+msgstr "האסימון (token) הזה לא בשימוש בעיצוב שלך, לא צריך מיפוי מחדש."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
+msgid "workspace.tokens.not-remap"
+msgstr "לא למפות מחדש"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:99
+msgid "workspace.tokens.remap"
+msgstr "מיפוי אסימונים מחדש"
+
+#: src/app/main/ui/dashboard/deleted.cljs:41
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "הפעולה הזאת תשחזר את המיזם %s ואת כל הקבצים שבו."
+
+#: src/app/main/ui/dashboard/deleted.cljs:40
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "שחזור מיזם"
+
+#: src/app/main/data/dashboard.cljs:875, src/app/main/data/dashboard.cljs:902, src/app/main/data/dashboard.cljs:939, src/app/main/ui/dashboard/file_menu.cljs:198
+msgid "dashboard.restore-success-notification"
+msgstr "%s שוחזר בהצלחה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:298
+msgid "dashboard.trash-info-text-part1"
+msgstr "קבצים שנמחקו יישארו באשפה למשך"
+
+#: src/app/main/ui/dashboard/deleted.cljs:300
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s ימים. "
+
+#: src/app/main/ui/dashboard/deleted.cljs:301
+msgid "dashboard.trash-info-text-part3"
+msgstr "לאחר מכן, הם יימחקו לצמיתות."
+
+#: src/app/main/ui/dashboard/deleted.cljs:303
+msgid "dashboard.trash-info-text-part4"
+msgstr ""
+"אם התחרטת, אפשר לשחזר אותם או למחוק אותם לצמיתות מהתפריט של כל אחד מהקבצים."
+
+#: src/app/main/errors.cljs:105
+msgid "errors.unexpected-exception"
+msgstr "שגיאה מפתיעה: %s"
+
+#: src/app/main/ui/static.cljs:315
+msgid "errors.webgl-context-lost.desc-message"
+msgstr "WebGL הפסיק לעבוד. נא לרענן את העמוד כדי לאפס אותו"
+
+#: src/app/main/ui/static.cljs:314
+msgid "errors.webgl-context-lost.main-message"
+msgstr "אופס! הקשר לוח הציור אבד"
+
+#: src/app/main/ui/exports/files.cljs:124
+msgid "files-download-modal.title"
+msgstr "הורדת קבצים"
+
+#: src/app/main/ui/dashboard/deleted.cljs:215
+msgid "labels.deleted"
+msgstr "נמחקה"
+
+#: src/app/main/ui/dashboard/deleted.cljs:208
+msgid "labels.recent"
+msgstr "אחרונות"
+
+#: src/app/main/ui/static.cljs:318
+msgid "labels.reload-page"
+msgstr "ריענון העמוד"
+
+#: src/app/main/ui/viewer/header.cljs:187
+msgid "viewer.header.edit-in-workspace"
+msgstr "עריכה במרחב העבודה"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:434
+msgid "workspace.colorpicker.get-color"
+msgstr "משיכת צבע"
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "כלי ניפוי שגיאות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
+msgid "workspace.layout-grid.editor.margin.expand"
+msgstr "הצגת אפשרויות גבול מ־4 צדדים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
+msgid "workspace.layout-item.fit-content-horizontal"
+msgstr "התאמת תוכן (אופקית)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
+msgid "workspace.layout-item.fit-content-vertical"
+msgstr "התאמת תוכן (אנכית)"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "למפות את כל האסימונים שמשתמשים ב־`%s` ל־`%s`?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
+msgid "workspace.tokens.remap-warning-effects"
+msgstr ""
+"הפעולה הזאת תשנה את כל השכבות וההפניות שמשתמשות בשם הישן של האסימון (token)."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+msgid "workspace.tokens.remap-warning-time"
+msgstr "הפעולה הזאת עלולה לארוך זמן מה."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
+#, unused
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "הפניות האסימון (token) ממופות מחדש…"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:281
+msgid "workspace.tokens.shadow-token-blur-value-error"
+msgstr "ערך הטשטוש לא יכול להיות שלילי"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:287
+#, unused
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "ערך הפריסה לא יכול להיות שלילי"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+#, unused
+msgid "workspace.tokens.theme.disable"
+msgstr "כיבוי"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+#, unused
+msgid "workspace.tokens.theme.enable"
+msgstr "הפעלה"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+#, unused
+msgid "workspace.tokens.warning-name-change"
+msgstr "שינוי השם של האסימון (token) הזה יפגום בהפניות לשם הישן שלו"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "כלי ניפוי שגיאות"

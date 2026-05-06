@@ -491,60 +491,50 @@
   ([parent-id objects children]
    (find-valid-parent-and-frame-ids parent-id objects children false nil))
   ([parent-id objects children pasting? libraries]
-   (letfn [(get-frame [parent-id]
-             (if (cfh/frame-shape? objects parent-id) parent-id (get-in objects [parent-id :frame-id])))]
-     (let [parent (get objects parent-id)
-
-           ;; We need to check only the top shapes
-           children-ids (set (map :id children))
+   (letfn [(get-frame [pid]
+             (if (cfh/frame-shape? objects pid) pid (get-in objects [pid :frame-id])))]
+     ;; `descendants`, variant-id set, etc. depend only on the moved shapes, not on the
+     ;; candidate parent. Computing them once per drag (this fn is hot during move)
+     ;; avoids O(depth * subtree) work when walking invalid ancestors — common with
+     ;; variants and nested components.
+     (let [children-ids (into #{} (map :id) children)
            top-children (remove #(contains? children-ids (:parent-id %)) children)
-
-           ;; We can always move the children to the parent they already have.
-           ;; But if we are pasting, those are new items, so it is considered a change
-           no-changes?
-           (and (every? #(= parent-id (:parent-id %)) top-children)
-                (not pasting?))
-
-           ;; Are all the top-children a main-instance of a component?
-           all-main?
-           (every? ctk/main-instance? top-children)
-
-           ascendants (cfh/get-parents-with-self objects parent-id)
-           any-main-ascendant (some ctk/main-instance? ascendants)
-           any-variant-container-ascendant (some ctk/is-variant-container? ascendants)
-
-           get-variant-id (fn [shape]
-                            (when (:component-id shape)
-                              (->  (get-component-from-shape shape libraries)
-                                   :variant-id)))
-
+           all-main? (every? ctk/main-instance? top-children)
+           get-variant-id
+           (fn [shape]
+             (when (:component-id shape)
+               (-> (get-component-from-shape shape libraries)
+                   :variant-id)))
            descendants (mapcat #(cfh/get-children-with-self objects %) children-ids)
            any-variant-container-descendant (some ctk/is-variant-container? descendants)
-           descendants-variant-ids-set (->> descendants
-                                            (map get-variant-id)
-                                            set)
-           any-main-descendant
-           (some
-            (fn [shape]
-              (some ctk/main-instance? (cfh/get-children-with-self objects (:id shape))))
-            children)]
-
-       (if (or no-changes?
-               (and (not (invalid-structure-for-component? objects parent children pasting? libraries))
-                    ;; If we are moving (not pasting) into a main component, no descendant can be main
-                    (or pasting? (nil? any-main-descendant) (not (ctk/main-instance? parent)))
-                    ;; Don't allow variant-container inside variant container nor main
-                    (or (not any-variant-container-descendant)
-                        (and (not any-variant-container-ascendant) (not any-main-ascendant)))
-                    ;; If the parent is a variant-container, all the items should be main
-                    (or (not (ctk/is-variant-container? parent)) all-main?)
-                    ;; If we are pasting, the parent can't be a "brother" of any of the pasted items,
-                    ;; so not have the same variant-id of any descendant
-                    (or (not pasting?)
-                        (not (ctk/is-variant? parent))
-                        (not (contains? descendants-variant-ids-set (:variant-id parent))))))
-         [parent-id (get-frame parent-id)]
-         (recur (:parent-id parent) objects children pasting? libraries))))))
+           descendants-variant-ids-set (into #{} (map get-variant-id) descendants)
+           ;; Same as (some #(some ctk/main-instance? (cfh/get-children-with-self objects (:id %)))
+           ;;            children) but a single walk over `descendants`.
+           any-main-descendant (some ctk/main-instance? descendants)]
+       (loop [parent-id parent-id]
+         (let [parent (get objects parent-id)
+               no-changes?
+               (and (every? #(= parent-id (:parent-id %)) top-children)
+                    (not pasting?))
+               ascendants (cfh/get-parents-with-self objects parent-id)
+               any-main-ascendant (some ctk/main-instance? ascendants)
+               any-variant-container-ascendant (some ctk/is-variant-container? ascendants)]
+           (if (or no-changes?
+                   (and (not (invalid-structure-for-component? objects parent children pasting? libraries))
+                        ;; If we are moving (not pasting) into a main component, no descendant can be main
+                        (or pasting? (nil? any-main-descendant) (not (ctk/main-instance? parent)))
+                        ;; Don't allow variant-container inside variant container nor main
+                        (or (not any-variant-container-descendant)
+                            (and (not any-variant-container-ascendant) (not any-main-ascendant)))
+                        ;; If the parent is a variant-container, all the items should be main
+                        (or (not (ctk/is-variant-container? parent)) all-main?)
+                        ;; If we are pasting, the parent can't be a "brother" of any of the pasted items,
+                        ;; so not have the same variant-id of any descendant
+                        (or (not pasting?)
+                            (not (ctk/is-variant? parent))
+                            (not (contains? descendants-variant-ids-set (:variant-id parent))))))
+             [parent-id (get-frame parent-id)]
+             (recur (:parent-id parent)))))))))
 
 ;; --- SHAPE UPDATE
 
