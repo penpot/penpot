@@ -98,7 +98,8 @@
           (udw/trigger-bounding-box-cloaking shape-ids)
           (udw/increase-rotation shape-ids value nil
                                  {:page-id page-id
-                                  :ignore-touched true})))))))
+                                  :ignore-touched true
+                                  :no-wasm? true})))))))
 
 (defn update-stroke-width
   ([value shape-ids attributes] (update-stroke-width value shape-ids attributes nil))
@@ -254,7 +255,8 @@
            (->> (rx/from shape-ids)
                 (rx/map #(dwtr/update-position % (zipmap attributes (repeat value))
                                                {:ignore-touched true
-                                                :page-id page-id})))))))))
+                                                :page-id page-id
+                                                :no-wasm? true})))))))))
 
 (defn update-layout-gap
   [value shape-ids attributes page-id]
@@ -493,8 +495,8 @@
      (watch [_ _ _]
        (when (number? value)
          (rx/of
-          (when (:width attributes) (dwtr/update-dimensions shape-ids :width value {:ignore-touched true :page-id page-id}))
-          (when (:height attributes) (dwtr/update-dimensions shape-ids :height value {:ignore-touched true :page-id page-id}))))))))
+          (when (:width attributes) (dwtr/update-dimensions shape-ids :width value {:ignore-touched true :page-id page-id :no-wasm? true}))
+          (when (:height attributes) (dwtr/update-dimensions shape-ids :height value {:ignore-touched true :page-id page-id :no-wasm? true}))))))))
 
 (defn- attributes->actions
   [{:keys [value shape-ids attributes page-id]}]
