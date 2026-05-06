@@ -11,6 +11,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix MCP ReplServer binding to all interfaces (0.0.0.0) instead of localhost, allowing unauthenticated RCE
 - Fix incorrect invitation token handling on register process [Github #9380](https://github.com/penpot/penpot/pull/9380)
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
 - Fix false “text editing” warning when applying tokens [Github #6346](https://github.com/penpot/penpot/issues/9346)
