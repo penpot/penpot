@@ -927,7 +927,6 @@
         on-error
         (fn [form]
           (let [{:keys [type code] :as error} (ex-data form)]
-            (println form)
             (cond
               (and (= :validation type)
                    (= :profile-is-muted code))
@@ -989,7 +988,6 @@
                  new-direction (if (= current-field :status)
                                  (if (= current-direction :asc) :desc :asc)
                                  :asc)]
-             (println @invitations)
              (swap! sort-state assoc :field :status :direction new-direction)
              (swap! invitations #(let [sorted (sort-by (juxt :expired :email) %)]
                                    (if (= new-direction :desc)
