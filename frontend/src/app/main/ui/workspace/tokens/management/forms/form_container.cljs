@@ -40,10 +40,12 @@
         (if (contains? cf/flags :token-combobox)
           (mf/spread-props props {:token-type token-type
                                   :tokens-tree-in-selected-set tokens-tree-in-selected-set
+                                  :selected-token-set-id (mf/deref refs/selected-token-set-id)
                                   :token token
                                   :input-component token.controls/value-combobox*})
           (mf/spread-props props {:token-type token-type
                                   :tokens-tree-in-selected-set tokens-tree-in-selected-set
+                                  :selected-token-set-id (mf/deref refs/selected-token-set-id)
                                   :token token}))
         text-case-props (if (contains? cf/flags :token-combobox)
                           (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")
