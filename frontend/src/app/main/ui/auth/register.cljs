@@ -98,6 +98,9 @@
                [:restriction :email-has-complaints]
                (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
 
+               [:validation :email-already-exists]
+               (st/emit! (ntf/error (tr "errors.email-already-exists")))
+
                [:validation :email-as-password]
                (swap! form assoc-in [:errors :password]
                       {:message (tr "errors.email-as-password")})
