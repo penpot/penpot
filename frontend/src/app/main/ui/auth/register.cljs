@@ -81,6 +81,7 @@
         on-error
         (mf/use-fn
          (fn [cause]
+           (reset! submitted? false)
            (let [{:keys [type code] :as edata} (ex-data cause)]
              (condp = [type code]
                [:restriction :email-does-not-match-invitation]
