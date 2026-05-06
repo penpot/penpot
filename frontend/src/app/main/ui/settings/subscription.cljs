@@ -499,7 +499,7 @@
           ^boolean show-subscription-success-modal?
           (st/emit!
            (if (= params-subscription "subscribed-to-penpot-nitrate")
-             (modal/show :nitrate-activation-success)
+             (modal/show :nitrate-activation-success {})
              (modal/show :subscription-success
                          {:subscription-name (if (= params-subscription "subscribed-to-penpot-unlimited")
                                                (if (= success-modal-is-trial? "true")
