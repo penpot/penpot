@@ -17,7 +17,7 @@
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.code-block :refer [code-block]]
+   [app.main.ui.components.code-block :refer [code-block*]]
    [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -299,8 +299,8 @@
       (when-not collapsed-css?
         [:div {:class (stl/css :code-row-display)
                :style {:--code-height (dm/str (or style-size 400) "px")}}
-         [:& code-block {:type style-type
-                         :code style-code}]])
+         [:> code-block* {:type style-type
+                          :code style-code}]])
 
       [:div {:class (stl/css :resize-area)
              :on-pointer-down on-style-pointer-down
@@ -340,8 +340,8 @@
       (when-not collapsed-markup?
         [:div {:class (stl/css :code-row-display)
                :style {:--code-height (dm/str (or markup-size 400) "px")}}
-         [:& code-block {:type markup-type
-                         :code markup-code}]])
+         [:> code-block* {:type markup-type
+                          :code markup-code}]])
 
       [:div {:class (stl/css :resize-area)
              :on-pointer-down on-markup-pointer-down

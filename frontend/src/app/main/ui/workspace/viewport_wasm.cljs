@@ -78,6 +78,39 @@
   [selected objects modifiers]
   (apply-modifiers-to-objects objects (select-keys (into {} modifiers) selected)))
 
+(defn- apply-wasm-modifiers-to-ids
+  "Like `apply-modifiers-to-objects`, but only updates ids in `id-set`. During WASM
+  drag, `wasm-modifiers` can list every propagated descendant (large variants); SVG
+  outlines only need geometry for `selected` / hover / highlight — not the whole page."
+  [objects wasm-modifiers id-set]
+  (if (or (empty? wasm-modifiers) (empty? id-set))
+    objects
+    (reduce
+     (fn [objs pair]
+       (let [[id t] pair]
+         (if (and (contains? id-set id) (contains? objs id))
+           (update objs id gsh/apply-transform t)
+           objs)))
+     objects
+     wasm-modifiers)))
+
+(defn- outline-wasm-source-ids
+  "Superset of shape ids that `shape-outlines` may look up (all outline usages here)."
+  [base-objects selected highlighted edition hover-ids hover frame-hover]
+  (let [outlined-frame-id (->> hover-ids
+                               (filter #(cfh/frame-shape? (get base-objects %)))
+                               (remove selected)
+                               (last))
+        ids (-> #{}
+                (into (or selected #{}))
+                (into (or highlighted #{}))
+                (into (or hover-ids #{})))]
+    (cond-> ids
+      (uuid? (:id hover)) (conj (:id hover))
+      (uuid? frame-hover) (conj frame-hover)
+      (uuid? outlined-frame-id) (conj outlined-frame-id)
+      (uuid? edition) (disj edition))))
+
 (mf/defc viewport*
   [{:keys [selected wglobal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
@@ -129,10 +162,6 @@
                                (into [] (keep (d/getf objects-modified)))
                                (not-empty))
 
-        objects-for-outlines
-        (mf/with-memo [base-objects wasm-modifiers]
-          (apply-modifiers-to-objects base-objects wasm-modifiers))
-
         ;; STATE
         alt?                 (mf/use-state false)
         shift?               (mf/use-state false)
@@ -177,6 +206,18 @@
                                         (d/seek (partial cfh/root-frame? base-objects)))]
                                (when (some? parent-id)
                                  (get base-objects parent-id)))))
+
+        outline-wasm-ids
+        (mf/with-memo
+          [base-objects selected highlighted edition @hover-ids @hover @frame-hover]
+          (outline-wasm-source-ids base-objects selected highlighted edition @hover-ids @hover @frame-hover))
+
+        objects-for-outlines
+        (mf/with-memo
+          [base-objects wasm-modifiers outline-wasm-ids]
+          (if (seq wasm-modifiers)
+            (apply-wasm-modifiers-to-ids base-objects wasm-modifiers outline-wasm-ids)
+            base-objects))
 
         zoom              (d/check-num zoom 1)
 
@@ -613,7 +654,7 @@
            :zoom zoom}])
 
        (when show-measures?
-         [:& msr/measurement
+         [:> msr/measurement*
           {:bounds vbox
            :selected-shapes selected-shapes
            :frame selected-frame

@@ -13,7 +13,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.code-block :refer [code-block]]
+   [app.main.ui.components.code-block :refer [code-block*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -67,7 +67,7 @@
     [:> export-tab* {:is-disabled is-disabled
                      :on-export on-export}
      [:div {:class (stl/css :json-preview)}
-      [:> code-block {:code tokens-json :type "json"}]]]))
+      [:> code-block* {:code tokens-json :type "json"}]]]))
 
 (defn download-tokens-zip! [multi-file-entries]
   (let [writer (-> (zip/blob-writer {:mtype "application/zip"})

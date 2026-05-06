@@ -2948,6 +2948,10 @@ msgstr "Old password"
 msgid "labels.only-yours"
 msgstr "Only yours"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698
+msgid "labels.open"
+msgstr "Open"
+
 #: src/app/main/ui/comments.cljs:911, src/app/main/ui/comments.cljs:976, src/app/main/ui/workspace/palette.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:906, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:213, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:402, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1031, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:316, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:345, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:146
 msgid "labels.options"
 msgstr "Options"
@@ -9294,7 +9298,6 @@ msgstr "Need a code? Contact us:"
 msgid "nitrate.code-activation.placeholder"
 msgstr "Paste your activation code here"
 
-
 msgid "nitrate.activation-success.title"
 msgstr "You are Business Nitrate!"
 
@@ -9373,6 +9376,12 @@ msgstr "Contact sales"
 msgid "nitrate.subscription.active-until"
 msgstr "Active until %s"
 
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Cancel subscription"
+
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Renew with activation code"
+
 msgid "subscription.settings.activate-by-code"
 msgstr "Enter activation code"
 
@@ -9396,3 +9405,12 @@ msgstr "Nitrate Trial"
 
 msgid "subscription.current-plan.enterprise"
 msgstr "Enterprise"
+
+msgid "dashboard.no-permission-create-team.message"
+msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the owner."
+
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr "You don't have permission to add teams to any of your organizations."
+
+msgid "dashboard.select-org-modal.permission-info"
+msgstr "Here you find all your organizations where you are allowed to create or add teams."

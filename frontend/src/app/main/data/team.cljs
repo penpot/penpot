@@ -16,6 +16,7 @@
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.media :as di]
+   [app.main.data.modal :as modal]
    [app.main.data.profile :as dp]
    [app.main.features :as features]
    [app.main.repo :as rp]
@@ -50,7 +51,8 @@
                                                                      :organization-name
                                                                      :organization-slug
                                                                      :organization-owner-id
-                                                                     :organization-avatar-bg-url))]
+                                                                     :organization-avatar-bg-url
+                                                                     :organization-create-teams))]
                     (update state :teams assoc id team-updated)))
                 state
                 teams)))))
@@ -62,6 +64,30 @@
     (watch [_ _ _]
       (->> (rp/cmd! :get-teams)
            (rx/map teams-fetched)))))
+
+(defn check-and-create-team
+  "Fetches fresh team data from the server to ensure up-to-date org
+  permissions, then shows the team-form modal or a no-permission modal."
+  [team-id]
+  (ptk/reify ::check-and-create-team
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile-id (dm/get-in state [:profile :id])]
+        (->> (rp/cmd! :get-teams)
+             (rx/mapcat
+              (fn [teams]
+                (let [team        (d/seek #(= (:id %) team-id) teams)
+                      in-org?     (and (contains? cf/flags :nitrate) (:organization-id team))
+                      create-perm (:organization-create-teams team)
+                      is-owner?   (= profile-id (:organization-owner-id team))
+                      can-create? (or (not in-org?) (= create-perm "any") is-owner?)]
+                  (rx/of (teams-fetched teams)
+                         (if can-create?
+                           (modal/show :team-form (if in-org?
+                                                    {:organization-id   (:organization-id team)
+                                                     :organization-name (:organization-name team)}
+                                                    {}))
+                           (modal/show :no-permission-create-team {:organization-name (:organization-name team)})))))))))))
 
 ;; --- EVENT: fetch-members
 
@@ -598,5 +624,6 @@
    :avatar-bg-url   (:organization-avatar-bg-url team)
    :custom-photo    (:organization-custom-photo team)
    :name            (:organization-name team)
-   :default-team-id (:id team)})
+   :default-team-id (:id team)
+   :create-teams    (:organization-create-teams team)})
 
