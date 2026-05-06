@@ -383,15 +383,17 @@ pub(crate) struct RenderState {
     /// interactive backdrop exactly once per gesture (first rAF) so we don't
     /// repeatedly overwrite tiles that have already been updated.
     pub interactive_target_seeded: bool,
-    /// GPU crops from `Backbuffer` keyed by shape id. Filled on full-frame completion; during
-    /// drag, entries for the moved top-level selection are ensured here
+    /// Per-shape sub-rects into `backbuffer_snapshot`, keyed by shape id.
     pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+    /// Whole-`Backbuffer` snapshot taken at drag start; entries in
+    /// `backbuffer_crop_cache` reference sub-rects of this image.
+    pub backbuffer_snapshot: Option<skia::Image>,
 }
 
 pub struct InteractiveDragCrop {
     pub src_doc_bounds: Rect,
     pub src_selrect: Rect,
-    pub image: skia::Image,
+    pub src_pixel_rect: skia::Rect,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
@@ -535,6 +537,7 @@ impl RenderState {
             current_tile_had_shapes: false,
             interactive_target_seeded: false,
             backbuffer_crop_cache: HashMap::default(),
+            backbuffer_snapshot: None,
         })
     }
 
@@ -1627,7 +1630,17 @@ impl RenderState {
         }
     }
 
-    fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
+    /// Capture a stable backdrop for an interactive transform. Called once
+    /// per gesture from `set_modifiers_start`.
+    pub fn prepare_drag_backbuffer(&mut self, tree: ShapesPoolRef) {
+        // Drop the previous snapshot before overwriting Backbuffer so the
+        // copy doesn't trigger a copy-on-write fork to preserve it.
+        self.backbuffer_snapshot = None;
+        self.surfaces.copy_target_to_backbuffer();
+        self.rebuild_backbuffer_crop_cache(tree);
+    }
+
+    pub fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
         self.backbuffer_crop_cache.clear();
 
         // Collect candidate shapes that are "recortable" and visible in the current viewport.
@@ -1681,7 +1694,8 @@ impl RenderState {
             non_overlapping.push((*id, *bounds, *selrect));
         }
 
-        // Snapshot from Backbuffer for each accepted shape.
+        self.backbuffer_snapshot = Some(self.surfaces.snapshot(SurfaceId::Backbuffer));
+
         let scale = self.get_scale();
         let vb_left = self.viewbox.area.left;
         let vb_top = self.viewbox.area.top;
@@ -1693,26 +1707,24 @@ impl RenderState {
             if right <= left || bottom <= top {
                 continue;
             }
-            let src_irect = skia::IRect::new(left, top, right, bottom);
-            let Some(image) = self
-                .surfaces
-                .snapshot_rect(SurfaceId::Backbuffer, src_irect)
-            else {
-                continue;
-            };
-
+            let src_pixel_rect = skia::Rect::from_ltrb(
+                left as f32,
+                top as f32,
+                right as f32,
+                bottom as f32,
+            );
             let src_doc_bounds = Rect::new(
-                src_irect.left as f32 / scale + vb_left,
-                src_irect.top as f32 / scale + vb_top,
-                src_irect.right as f32 / scale + vb_left,
-                src_irect.bottom as f32 / scale + vb_top,
+                left as f32 / scale + vb_left,
+                top as f32 / scale + vb_top,
+                right as f32 / scale + vb_left,
+                bottom as f32 / scale + vb_top,
             );
             self.backbuffer_crop_cache.insert(
                 id,
                 InteractiveDragCrop {
                     src_doc_bounds,
                     src_selrect: selrect,
-                    image,
+                    src_pixel_rect,
                 },
             );
         }
@@ -2083,12 +2095,8 @@ impl RenderState {
                 self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
             } else {
-                // A full-quality frame is now complete. Refresh Backbuffer and regenerate
-                // the per-shape crop cache so interactive drags can reuse pixels.
-                if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
-                    self.surfaces.copy_target_to_backbuffer();
-                    self.rebuild_backbuffer_crop_cache(tree);
-                }
+                // Backbuffer rebuild is deferred to `set_modifiers_start`;
+                // running it here stalled pan.
                 wapi::notify_tiles_render_complete!();
                 performance::end_measure!("render");
             }
@@ -2993,10 +3001,13 @@ impl RenderState {
                     moved_bounds,
                 );
                 if use_cached {
-                    if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
-                        let crop_image = &crop.image;
+                    if let (Some(snapshot), Some(crop)) = (
+                        self.backbuffer_snapshot.as_ref(),
+                        self.backbuffer_crop_cache.get(&node_id),
+                    ) {
                         let crop_src_selrect = crop.src_selrect;
                         let crop_src_doc_bounds = crop.src_doc_bounds;
+                        let crop_src_pixel_rect = crop.src_pixel_rect;
 
                         let cur_selrect = tree.get(&node_id).map(|s| s.selrect());
                         let (dx, dy) = match cur_selrect {
@@ -3024,13 +3035,15 @@ impl RenderState {
                             dst_doc_rect.height() * scale,
                         );
 
-                        // let canvas = self.surfaces.canvas_and_mark_dirty(target_surface);
                         let canvas = self.surfaces.canvas(target_surface);
                         canvas.save();
                         canvas.reset_matrix();
                         canvas.draw_image_rect(
-                            crop_image,
-                            None,
+                            snapshot,
+                            Some((
+                                &crop_src_pixel_rect,
+                                skia::canvas::SrcRectConstraint::Fast,
+                            )),
                             dst_tile_rect,
                             &skia::Paint::default(),
                         );

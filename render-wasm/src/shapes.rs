@@ -1408,8 +1408,8 @@ impl Shape {
             }
         } else {
             self.invalidate_extrect();
-            self.invalidate_bounds();
         }
+        self.invalidate_bounds();
 
         if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
             if let Some(path) = shape_type.path_mut() {

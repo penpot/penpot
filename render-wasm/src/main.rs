@@ -462,6 +462,7 @@ pub extern "C" fn set_view_end() -> Result<()> {
 pub extern "C" fn set_modifiers_start() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_modifiers_start");
+        state.render_state.prepare_drag_backbuffer(&state.shapes);
         state.render_state.options.set_fast_mode(true);
         state.render_state.options.set_interactive_transform(true);
         performance::end_measure!("set_modifiers_start");
