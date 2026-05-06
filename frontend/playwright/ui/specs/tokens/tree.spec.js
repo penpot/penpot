@@ -32,8 +32,22 @@ test.describe("Tokens - node tree", () => {
     const { tokensSidebar } = await setupTokensFileRender(page);
 
     // Create multiple tokens in a group
-    await createToken(page, "Color", "dark.primary", "Value", "#000000");
-    await createToken(page, "Color", "dark.secondary", "Value", "#111111");
+    await createToken(
+      page,
+      "Color",
+      "dark.primary",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+    await createToken(
+      page,
+      "Color",
+      "dark.secondary",
+      "Value",
+      "textbox",
+      "#111111",
+    );
 
     // Verify that the node and child token are visible before deletion
     const darkNode = tokensSidebar.getByRole("button", {
@@ -88,8 +102,22 @@ test.describe("Tokens - node tree", () => {
     const { tokensSidebar } = await setupTokensFileRender(page);
 
     // Create multiple tokens in a group
-    await createToken(page, "Color", "dark.primary", "Value", "#000000");
-    await createToken(page, "Color", "dark.secondary", "Value", "#111111");
+    await createToken(
+      page,
+      "Color",
+      "dark.primary",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+    await createToken(
+      page,
+      "Color",
+      "dark.secondary",
+      "Value",
+      "textbox",
+      "#111111",
+    );
 
     // Verify that the node and child token are visible before deletion
     const darkNode = tokensSidebar.getByRole("button", {
