@@ -276,13 +276,68 @@
   (let [s (set values)]
     (if (= (count s) 1) (first s) "mixed")))
 
+(defn- error-path-segment->str
+  "Stringify one segment of a schema-explain path.
+
+  Keywords lose the leading colon, ints are kept verbatim (so tuple positions
+  read as ``\"applyToken.0\"`` rather than crashing through ``name``), and
+  anything else falls through ``str``."
+  [seg]
+  (cond
+    (keyword? seg) (name seg)
+    (string? seg)  seg
+    :else          (str seg)))
+
+(defn- error-path->label
+  "Render the dotted field path that the user sees in the error message.
+
+  Empty paths fall back to ``\"value\"`` so the formatted message never reads
+  ``\"Field  is invalid: …\"`` when the schema rejects the whole input."
+  [path]
+  (if (seq path)
+    (str/join "." (map error-path-segment->str path))
+    "value"))
+
+(defn collect-schema-error-leaves
+  "Walk the nested error map produced by ``csm/interpret-schema-problem`` and
+  emit a sequence of ``[field-path message]`` pairs, one per leaf.
+
+  Each leaf is the ``{:message <string>}`` map that the reducer assoc-ins under
+  the offending field path. Returning the *full* path (rather than just the
+  innermost key, as the prior implementation did) keeps the eventual user
+  message anchored to the property the plugin actually called — for example
+  ``applyToken.1`` instead of the unhelpful ``message``."
+  ([m] (collect-schema-error-leaves [] m))
+  ([path m]
+   (cond
+     (and (map? m)
+          (contains? m :message)
+          (== 1 (count m)))
+     [[path (:message m)]]
+
+     (map? m)
+     (mapcat (fn [[k v]] (collect-schema-error-leaves (conj path k) v)) m)
+
+     :else
+     [])))
+
 (defn error-messages
+  "Render an ``::sm/explain`` map into a list of human-readable plugin errors.
+
+  The previous implementation iterated entries of the inner ``{:message …}``
+  map and destructured each value, which silently produced a literal
+  ``\"Field message is invalid: \"`` string for any single-level schema failure
+  (issue #9290). The walker now collects every leaf with its full field path so
+  the formatted line names the offending property and the message body is the
+  schema's own explanation."
   [explain]
   (->> (:errors explain)
        (reduce csm/interpret-schema-problem {})
-       (mapcat (comp seq val))
-       (map (fn [[field {:keys [message]}]]
-              (tr "plugins.validation.message" (name field) message)))
+       (collect-schema-error-leaves)
+       (map (fn [[path message]]
+              (tr "plugins.validation.message"
+                  (error-path->label path)
+                  (or message ""))))
        (str/join ". ")))
 
 (defn handle-error
