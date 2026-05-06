@@ -21,6 +21,10 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(defn- render-context-lost?
+  [state]
+  (true? (get-in state [:render-state :lost])))
+
 (defn impl-update-zoom
   [{:keys [vbox] :as local} center zoom]
   (let [new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
@@ -43,9 +47,11 @@
 
      ptk/UpdateEvent
      (update [_ state]
-       (let [center (if (= center ::auto) @ms/mouse-position center)]
-         (update state :workspace-local
-                 #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200)))))))))
+      (if (render-context-lost? state)
+        state
+        (let [center (if (= center ::auto) @ms/mouse-position center)]
+          (update state :workspace-local
+                  #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200))))))))))
 
 (defn decrease-zoom
   ([]
@@ -56,9 +62,11 @@
 
      ptk/UpdateEvent
      (update [_ state]
-       (let [center (if (= center ::auto) @ms/mouse-position center)]
-         (update state :workspace-local
-                 #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01)))))))))
+      (if (render-context-lost? state)
+        state
+        (let [center (if (= center ::auto) @ms/mouse-position center)]
+          (update state :workspace-local
+                  #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01))))))))))
 
 (defn set-zoom
   ([scale]
@@ -69,68 +77,76 @@
 
      ptk/UpdateEvent
      (update [_ state]
-       (let [vp (dm/get-in state [:workspace-local :vbox])
-             x (+ (:x vp) (/ (:width vp) 2))
-             y (+ (:y vp) (/ (:height vp) 2))
-             center (d/nilv center (gpt/point x y))]
-         (update state :workspace-local
-                 #(impl-update-zoom % center (fn [z] (-> (* z scale)
-                                                         (max 0.01)
-                                                         (min 200))))))))))
+      (if (render-context-lost? state)
+        state
+        (let [vp (dm/get-in state [:workspace-local :vbox])
+              x (+ (:x vp) (/ (:width vp) 2))
+              y (+ (:y vp) (/ (:height vp) 2))
+              center (d/nilv center (gpt/point x y))]
+          (update state :workspace-local
+                  #(impl-update-zoom % center (fn [z] (-> (* z scale)
+                                                          (max 0.01)
+                                                          (min 200)))))))))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local
-              #(impl-update-zoom % nil 1)))))
+      (if (render-context-lost? state)
+        state
+        (update state :workspace-local
+                #(impl-update-zoom % nil 1))))))
 
 (def zoom-to-fit-all
   (ptk/reify ::zoom-to-fit-all
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects (dsh/lookup-page-objects state page-id)
-            shapes  (cfh/get-immediate-children objects)
-            srect   (gsh/shapes->rect shapes)]
-        (if (empty? shapes)
+      (if (render-context-lost? state)
           state
-          (update state :workspace-local
-                  (fn [{:keys [vport] :as local}]
-                    (let [srect (gal/adjust-to-viewport vport srect {:padding 160 :min-zoom 0.01})
-                          zoom  (/ (:width vport) (:width srect))]
-                      (-> local
-                          (assoc :zoom zoom)
-                          (assoc :zoom-inverse (/ 1 zoom))
-                          (update :vbox merge srect))))))))))
+          (let [page-id (:current-page-id state)
+                objects (dsh/lookup-page-objects state page-id)
+                shapes  (cfh/get-immediate-children objects)
+                srect   (gsh/shapes->rect shapes)]
+            (if (empty? shapes)
+              state
+              (update state :workspace-local
+                      (fn [{:keys [vport] :as local}]
+                        (let [srect (gal/adjust-to-viewport vport srect {:padding 160 :min-zoom 0.01})
+                              zoom  (/ (:width vport) (:width srect))]
+                          (-> local
+                              (assoc :zoom zoom)
+                              (assoc :zoom-inverse (/ 1 zoom))
+                              (update :vbox merge srect)))))))))))
 
 (def zoom-to-selected-shape
   (ptk/reify ::zoom-to-selected-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (dsh/lookup-selected state)]
-        (if (empty? selected)
+      (if (render-context-lost? state)
           state
-          (let [page-id (:current-page-id state)
-                objects (dsh/lookup-page-objects state page-id)
-                srect   (->> selected
-                             (map #(get objects %))
-                             (gsh/shapes->rect))]
-            (update state :workspace-local
-                    (fn [{:keys [vport] :as local}]
-                      (let [srect (gal/adjust-to-viewport vport srect {:padding 40 :min-zoom 0.01})
-                            zoom  (/ (:width vport) (:width srect))]
-                        (-> local
-                            (assoc :zoom zoom)
-                            (assoc :zoom-inverse (/ 1 zoom))
-                            (update :vbox merge srect)))))))))))
+          (let [selected (dsh/lookup-selected state)]
+            (if (empty? selected)
+              state
+              (let [page-id (:current-page-id state)
+                    objects (dsh/lookup-page-objects state page-id)
+                    srect   (->> selected
+                                 (map #(get objects %))
+                                 (gsh/shapes->rect))]
+                (update state :workspace-local
+                        (fn [{:keys [vport] :as local}]
+                          (let [srect (gal/adjust-to-viewport vport srect {:padding 40 :min-zoom 0.01})
+                                zoom  (/ (:width vport) (:width srect))]
+                            (-> local
+                                (assoc :zoom zoom)
+                                (assoc :zoom-inverse (/ 1 zoom))
+                                (update :vbox merge srect))))))))))))
 
 (defn fit-to-shapes
   [ids]
   (ptk/reify ::fit-to-shapes
     ptk/UpdateEvent
     (update [_ state]
-      (if (empty? ids)
+      (if (or (render-context-lost? state) (empty? ids))
         state
         (let [page-id (:current-page-id state)
               objects (dsh/lookup-page-objects state page-id)
@@ -155,7 +171,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (->> stream (rx/filter (ptk/type? ::finish-zooming)))]
-        (when-not (get-in state [:workspace-local :zooming])
+        (when (and (not (render-context-lost? state))
+                   (not (get-in state [:workspace-local :zooming])))
           (rx/concat
            (rx/of #(-> % (assoc-in [:workspace-local :zooming] true)))
            (->> stream

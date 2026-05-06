@@ -556,9 +556,9 @@
                :style {:background-color background
                        :pointer-events "none"}}]
 
-    ;; Show the transition image when switching pages or recovering from WebGL context loss.
-    (when (and (or page-transition? context-loss-overlay?)
-               (some? transition-image-url))
+     ;; Show the transition image when switching pages or recovering from WebGL context loss.
+     (when (and (or page-transition? context-loss-overlay?)
+                (some? transition-image-url))
        (let [src transition-image-url]
          [:img {:data-testid "canvas-wasm-transition"
                 :src src
@@ -569,7 +569,8 @@
                         :height "100%"
                         :object-fit "cover"
                         :pointer-events "none"
-                        :filter (when page-transition? "blur(4px)")}}]))
+                        ;; use (when page-transition? "blur(4px)") if we don't want the blur on context loss
+                        :filter "blur(4px)"}}]))
 
 
      [:svg.viewport-controls
