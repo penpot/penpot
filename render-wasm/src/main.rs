@@ -22,6 +22,7 @@ use crate::state::TextEditorState;
 use macros::wasm_error;
 use math::{Bounds, Matrix};
 use mem::SerializableResult;
+use render::gpu_state::GpuState;
 use shapes::{StructureEntry, StructureEntryType, TransformEntry};
 use skia_safe as skia;
 use state::State;
@@ -36,6 +37,16 @@ pub fn get_text_editor_state() -> &'static mut TextEditorState {
     unsafe {
         debug_assert!(!TEXT_EDITOR_STATE.is_null(), "Text Editor state is null");
         &mut *TEXT_EDITOR_STATE
+    }
+}
+
+static mut GPU_STATE: *mut GpuState = std::ptr::null_mut();
+
+#[inline(always)]
+pub fn get_gpu_state() -> &'static mut GpuState {
+    unsafe {
+        debug_assert!(!GPU_STATE.is_null(), "GPU State is null");
+        &mut *GPU_STATE
     }
 }
 
@@ -111,11 +122,21 @@ macro_rules! with_state_mut_current_shape {
     };
 }
 
+/// Initializes GPU.
+fn gpu_init() {
+    unsafe {
+        let gpu_state = GpuState::try_new()
+            .expect("Cannot initialize GPU State");
+        GPU_STATE = Box::into_raw(Box::new(gpu_state));
+    }
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
-    let state_box = Box::new(State::try_new(width, height)?);
+    gpu_init();
     unsafe {
+        let state_box = Box::new(State::try_new(width, height)?);
         STATE = Some(state_box);
         TEXT_EDITOR_STATE = Box::into_raw(Box::new(TextEditorState::new()));
     }

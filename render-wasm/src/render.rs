@@ -2,7 +2,7 @@ mod debug;
 mod fills;
 pub mod filters;
 mod fonts;
-mod gpu_state;
+pub mod gpu_state;
 pub mod grid_layout;
 mod images;
 mod options;
@@ -17,13 +17,11 @@ use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
-use gpu_state::GpuState;
-
 use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::error::{Error, Result};
-use crate::performance;
+use crate::{get_gpu_state, performance};
 use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
     Stroke, StrokeKind, TextContent, Type,
@@ -327,7 +325,6 @@ impl RenderStats {
 }
 
 pub(crate) struct RenderState {
-    gpu_state: GpuState,
     pub options: RenderOptions,
     stats: RenderStats,
     pub surfaces: Surfaces,
@@ -492,13 +489,11 @@ impl RenderState {
 
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
         // This needs to be done once per WebGL context.
-        let mut gpu_state = GpuState::try_new()?;
         let sampling_options =
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
 
         let fonts = FontStore::try_new()?;
         let surfaces = Surfaces::try_new(
-            &mut gpu_state,
             (width, height),
             sampling_options,
             tiles::get_tile_dimensions(),
@@ -511,15 +506,14 @@ impl RenderState {
         let tiles = tiles::TileHashMap::new();
         let options = RenderOptions::default();
 
-        Ok(RenderState {
-            gpu_state: gpu_state.clone(),
+        Ok(Self {
             options,
             stats: RenderStats::new(),
             surfaces,
             fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
-            images: ImageStore::new(gpu_state.context.clone()),
+            images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
             render_in_progress: false,
@@ -802,7 +796,7 @@ impl RenderState {
         let dpr_width = (width as f32 * self.options.dpr).floor() as i32;
         let dpr_height = (height as f32 * self.options.dpr).floor() as i32;
         self.surfaces
-            .resize(&mut self.gpu_state, dpr_width, dpr_height)?;
+            .resize(dpr_width, dpr_height)?;
         self.viewbox.set_wh(width as f32, height as f32);
         self.tile_viewbox.update(self.viewbox, self.get_scale());
 
@@ -811,7 +805,7 @@ impl RenderState {
 
     pub fn flush_and_submit(&mut self) {
         self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Target);
+            .flush_and_submit(SurfaceId::Target);
     }
 
     pub fn reset_canvas(&mut self) {
@@ -890,7 +884,6 @@ impl RenderState {
             .as_ref()
             .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
         self.surfaces.cache_current_tile_texture(
-            &mut self.gpu_state,
             &self.tile_viewbox,
             &current_tile,
             &tile_rect,
@@ -2204,12 +2197,12 @@ impl RenderState {
         self.export_context = None;
 
         self.surfaces
-            .flush_and_submit(&mut self.gpu_state, target_surface);
+            .flush_and_submit(target_surface);
 
         let image = self.surfaces.snapshot(target_surface);
         let data = image
             .encode(
-                &mut self.gpu_state.context,
+                Some(&mut get_gpu_state().context),
                 skia::EncodedImageFormat::PNG,
                 100,
             )
@@ -3591,7 +3584,7 @@ impl RenderState {
 
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
         self.surfaces
-            .remove_cached_tile_surface(&mut self.gpu_state, tile);
+            .remove_cached_tile_surface(tile);
     }
 
     /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.
@@ -3790,6 +3783,6 @@ impl RenderState {
 
 impl Drop for RenderState {
     fn drop(&mut self) {
-        self.gpu_state.context.free_gpu_resources();
+        get_gpu_state().context.free_gpu_resources();
     }
 }

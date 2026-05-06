@@ -2,6 +2,7 @@ use crate::math::Rect as MathRect;
 use crate::shapes::ImageFill;
 use crate::uuid::Uuid;
 
+use crate::get_gpu_state;
 use crate::error::Result;
 use skia_safe::gpu::{surfaces, Budgeted, DirectContext};
 use skia_safe::{self as skia, Codec, ISize};
@@ -143,10 +144,12 @@ fn decode_image(context: &mut Box<DirectContext>, raw_data: &[u8]) -> Option<Ima
 }
 
 impl ImageStore {
-    pub fn new(context: DirectContext) -> Self {
+    pub fn new() -> Self {
+        let gpu_state = get_gpu_state();
+        let context = &gpu_state.context;
         Self {
             images: HashMap::with_capacity(2048),
-            context: Box::new(context),
+            context: Box::new(context.clone()),
         }
     }
 
