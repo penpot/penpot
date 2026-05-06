@@ -1161,7 +1161,10 @@ msgid "dashboard.select-org-modal.accept"
 msgstr "AÑADIR A UNA ORGANIZACIÓN"
 
 msgid "dashboard.change-org-modal.title"
-msgstr "CAMBIAR EL EQUIPO DE ORGANIZACIÓN"
+msgstr "Cambiar el equipo de organización"
+
+msgid "dashboard.change-org-modal.text"
+msgstr "Los miembros del equipo seguirán teniendo acceso a los proyectos y ficheros. El equipo tendrá la configuración de la nueva organización."
 
 msgid "dashboard.change-org-modal.choose"
 msgstr "Mover a:"
@@ -5211,6 +5214,9 @@ msgstr "editor por mes"
 msgid "subscription.settings.price-organization-month"
 msgstr "organización por mes"
 
+msgid "subscription.settings.organization-member-month"
+msgstr "miembro organización por mes"
+
 #: src/app/main/ui/dashboard/subscription.cljs:140, src/app/main/ui/settings/subscription.cljs:102, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:538
 msgid "subscription.settings.professional"
 msgstr "Professional"
@@ -9077,3 +9083,24 @@ msgstr "Más información"
 
 msgid "subscription.settings.activate-by-code"
 msgstr "Introducir código de activación"
+
+msgid "subscription.current-plan.title"
+msgstr "Tu suscripción"
+
+msgid "subscription.current-plan.professional"
+msgstr "Professional"
+
+msgid "subscription.current-plan.unlimited"
+msgstr "Unlimited"
+
+msgid "subscription.current-plan.unlimited-trial"
+msgstr "Unlimited (Prueba)"
+
+msgid "subscription.current-plan.nitrate"
+msgstr "Nitrate"
+
+msgid "subscription.current-plan.nitrate-trial"
+msgstr "Nitrate (Prueba)"
+
+msgid "subscription.current-plan.enterprise"
+msgstr "Enterprise"

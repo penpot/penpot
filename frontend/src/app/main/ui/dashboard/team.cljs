@@ -810,7 +810,7 @@
 (mf/defc select-organization-modal
   {::mf/register modal/components
    ::mf/register-as :select-organization-modal}
-  [{:keys [organizations current-organization-id on-confirm title-key choose-key placeholder-key accept-key cancel-key]}]
+  [{:keys [organizations current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key]}]
   (let [valid-organizations (mf/with-memo [organizations]
                               (remove #(= (:id %) current-organization-id) organizations))
         options (mf/with-memo [valid-organizations]
@@ -844,12 +844,16 @@
        [:button {:class (stl/css :modal-close-btn)
                  :on-click modal/hide!} deprecated-icon/close]]
 
+      (when text-key
+        [:div {:class (stl/css :modal-content :modal-select-org-text)} (tr text-key)])
+
       [:div
        [:div {:class (stl/css :modal-select-org-content)}
         (tr choose-key)]
        [:> combobox* {:id "selected-id"
                       :class (stl/css :team-member)
                       :options options
+                      :select-only true
                       :default-selected (or (some-> (get-in @form [:data :selected-id]) str) "")
                       :placeholder (tr placeholder-key)
                       :on-change on-change}]]
@@ -1450,6 +1454,7 @@
                                                              :current-organization-id (:organization-id team)
                                                              :on-confirm on-add-team-to-org-confirm
                                                              :title-key "dashboard.change-org-modal.title"
+                                                             :text-key "dashboard.change-org-modal.text"
                                                              :choose-key "dashboard.change-org-modal.choose"
                                                              :placeholder-key "dashboard.change-org-modal.select"
                                                              :accept-key "dashboard.change-org-modal.accept"

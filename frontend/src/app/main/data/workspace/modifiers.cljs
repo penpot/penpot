@@ -659,15 +659,14 @@
             snap-pixel?
             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
         (set-wasm-props! objects prev-wasm-props wasm-props)
-        (let [structure-entries (parse-structure-modifiers modif-tree)]
-          (wasm.api/set-structure-modifiers structure-entries)
-          (let [geometry-entries (parse-geometry-modifiers modif-tree)
-                modifiers        (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
-            (wasm.api/set-modifiers modifiers)
-            (let [ids     (into [] xf:map-key geometry-entries)
-                  selrect (wasm.api/get-selection-rect ids)]
-              (rx/of (set-temporary-selrect selrect)
-                     (set-temporary-modifiers modifiers)))))))))
+        (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
+        (let [geometry-entries (parse-geometry-modifiers modif-tree)
+              modifiers        (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
+          (wasm.api/set-modifiers modifiers)
+          (let [ids     (into [] xf:map-key geometry-entries)
+                selrect (wasm.api/get-selection-rect ids)]
+            (rx/of (set-temporary-selrect selrect)
+                   (set-temporary-modifiers modifiers))))))))
 
 (defn propagate-structure-modifiers
   [modif-tree objects]
@@ -701,8 +700,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (wasm.api/clean-modifiers)
-      (let [structure-entries (parse-structure-modifiers modif-tree)]
-        (wasm.api/set-structure-modifiers structure-entries))
+      (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
 
       ;; Apply property changes (e.g. grow-type) to WASM shapes before
       ;; propagating geometry, so propagate_modifiers sees the updated state.
@@ -722,6 +720,12 @@
             transforms
             (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
 
+            ;; Pure-translation gesture: every shape's modifier only
+            ;; contains `:move` operations (no resize/rotate/scale and
+            ;; no structural mutation)
+            translation?
+            (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))
+
             ignore-tree
             (calculate-ignore-tree-wasm transforms objects)
 
@@ -729,6 +733,7 @@
             (-> params
                 (assoc :reg-objects? true)
                 (assoc :ignore-tree ignore-tree)
+                (assoc :translation? translation?)
                 ;; Attributes that can change in the transform. This
                 ;; way we don't have to check all the attributes
                 (assoc :attrs transform-attrs))

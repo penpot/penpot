@@ -160,8 +160,8 @@
            (rx/of #(-> % (assoc-in [:workspace-local :zooming] true)))
            (->> stream
                 (rx/filter mse/pointer-event?)
-                (rx/filter #(= :delta (:source %)))
-                (rx/map :pt)
+                (rx/filter #(some? (mse/get-pointer-movement %)))
+                (rx/map mse/get-pointer-movement)
                 (rx/take-until stopper)
                 (rx/map (fn [delta]
                           (let [scale (+ 1 (/ (:y delta) 100))] ;; this number may be adjusted after user testing
