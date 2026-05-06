@@ -177,7 +177,7 @@
                            (dw/increase-zoom)))))))
 
 (defn setup-hover-shapes
-  [page-id move-stream objects transform selected mod? hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures? read-only?]
+  [page-id move-stream objects selected mod? hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures? read-only?]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         mod-ref (mf/use-ref @mod?)
@@ -190,14 +190,12 @@
 
         query-point
         (mf/use-callback
-         (mf/deps page-id transform)
+         (mf/deps page-id)
          (fn [point]
            (let [zoom (mf/ref-val zoom-ref)
                  rect (grc/center->rect point (/ 5 zoom))]
 
-             (if (or (mf/ref-val hover-disabled-ref)
-                     (some? transform))
-               ;; No index query while dragging/transforming: snap already hits the worker.
+             (if (mf/ref-val hover-disabled-ref)
                (rx/of [])
                (->> (mw/ask-buffered!
                      {:cmd :index/query-selection
