@@ -41,10 +41,10 @@
              (when (seq code)
                (->> (rp/cmd! ::redeem-nitrate-activation-code {:activation-code code})
                     (rx/subs!
-                     (fn [result]
+                     (fn [_]
                        (modal/hide!)
                        (st/emit!
-                        (modal/show {:type :nitrate-activation-success :subscription result})
+                        (modal/show {:type :nitrate-activation-success})
                         (dprof/refresh-profile)))
                      (fn [error]
                        ;; TODO: "Already used" is not yet detectable (CC upserts on reuse).

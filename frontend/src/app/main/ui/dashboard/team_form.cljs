@@ -42,16 +42,19 @@
               (modal/hide))))
 
 (defn- on-error
-  [form _response]
-  (let [id  (get-in @form [:clean-data :id])]
-    (if id
-      (rx/of (ntf/error "Error on updating team."))
-      (rx/of (ntf/error "Error on creating team.")))))
+  [form organization-name response]
+  (let [id   (get-in @form [:clean-data :id])
+        code (-> response ex-data :code)]
+    (if (= code :not-allowed)
+      (rx/of (modal/show :no-permission-create-team {:organization-name organization-name}))
+      (if id
+        (rx/of (ntf/error "Error on updating team."))
+        (rx/of (ntf/error "Error on creating team."))))))
 
 (defn- on-create-submit
-  [form]
+  [form organization-name]
   (let [mdata  {:on-success (partial on-create-success form)
-                :on-error   (partial on-error form)}
+                :on-error   (partial on-error form organization-name)}
         data   (:clean-data @form)
         params (cond-> {:name (:name data)}
                  (:organization-id data) (assoc :organization-id (:organization-id data)))]
@@ -61,23 +64,23 @@
 (defn- on-update-submit
   [form]
   (let [mdata  {:on-success (partial on-update-success form)
-                :on-error   (partial on-error form)}
+                :on-error   (partial on-error form nil)}
         data   (:clean-data @form)
-        team   (select-keys data [:id :name])]  ;; Only send name and id for updates
+        team   (select-keys data [:id :name])]
     (st/emit! (dtm/update-team (with-meta team mdata))
               (modal/hide))))
 
 (defn- on-submit
-  [form _]
+  [organization-name form _]
   (let [data (:clean-data @form)]
     (if (:id data)
       (on-update-submit form)
-      (on-create-submit form))))
+      (on-create-submit form organization-name))))
 
 (mf/defc team-form-modal
   {::mf/register modal/components
    ::mf/register-as :team-form}
-  [{:keys [team organization-id] :as props}]
+  [{:keys [team organization-id organization-name] :as props}]
   (let [initial (mf/use-memo
                  (mf/deps team organization-id)
                  (fn []
@@ -89,18 +92,22 @@
                        organization-id (assoc :organization-id organization-id)))))
         form    (fm/use-form :schema schema:team-form
                              :initial initial)
+        on-submit* (mf/use-fn
+                    (mf/deps organization-name)
+                    (partial on-submit organization-name))
         handle-keydown
         (mf/use-fn
+         (mf/deps organization-name)
          (fn [e]
            (when (kbd/enter? e)
              (dom/prevent-default e)
              (dom/stop-propagation e)
-             (on-submit form e))))]
+             (on-submit organization-name form e))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
       [:& fm/form {:form form
-                   :on-submit on-submit
+                   :on-submit on-submit*
                    :class (stl/css :team-form)}
 
        [:div {:class (stl/css :modal-header)}
@@ -132,3 +139,31 @@
            :class (stl/css :accept-btn)}]]]]]]))
 
 
+(mf/defc no-permission-create-team-modal*
+  {::mf/register modal/components
+   ::mf/register-as :no-permission-create-team}
+  [{:keys [organization-name]}]
+  [:div {:class (stl/css :modal-overlay)}
+   [:div {:class (stl/css :modal-container)}
+    [:div {:class (stl/css :modal-header)}
+     [:h2 {:class (stl/css :modal-title)}
+      (tr "labels.create-team")]
+     [:button {:class (stl/css :modal-close-btn)
+               :on-click modal/hide!} deprecated-icon/close]]
+    [:div {:class (stl/css :modal-content)}
+     [:div (tr "dashboard.no-permission-create-team.message" organization-name)]]]])
+
+
+(mf/defc no-org-allows-create-team-modal*
+  {::mf/register modal/components
+   ::mf/register-as :no-org-allows-create-team}
+  [_props]
+  [:div {:class (stl/css :modal-overlay)}
+   [:div {:class (stl/css :modal-container)}
+    [:div {:class (stl/css :modal-header)}
+     [:h2 {:class (stl/css :modal-title)}
+      (tr "dashboard.select-org-modal.title")]
+     [:button {:class (stl/css :modal-close-btn)
+               :on-click modal/hide!} deprecated-icon/close]]
+    [:div {:class (stl/css :modal-content)}
+     [:div (tr "dashboard.no-org-allows-create-team.message")]]]])
