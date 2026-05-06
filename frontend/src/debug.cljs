@@ -135,6 +135,14 @@
       (wasm.mem/free)
       text)))
 
+(defn ^:export wasmRenderStats
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_render_stats"))]
+    (if (fn? f)
+      (wasm.h/call module "_render_stats")
+      (js/console.warn "[debug] render-wasm module not ready or missing _render_stats"))))
+
 (defn ^:export wasmAtlasConsole
   "Logs the current render-wasm atlas as an image in the JS console (if present)."
   []

@@ -960,6 +960,12 @@
       (dwt.wasm/render-thumbnail file-id page-id root-id)
       (dwt/update-thumbnail file-id page-id root-id tag "update-component-thumbnail-sync"))))
 
+(defn- render-component-thumbnail-event
+  [[component-id file-id]]
+  (let [file-id (or file-id (:current-file-id @st/state))]
+    (update-component-thumbnail-sync
+     @st/state component-id file-id "component")))
+
 (defn update-component-sync
   ([shape-id file-id] (update-component-sync shape-id file-id nil))
   ([shape-id file-id undo-group]
@@ -1358,15 +1364,14 @@
             (->> (rx/from-atom refs/workspace-data {:emit-current-value? true})
                  (rx/share))
 
+            ;; Pair every commit with the file data right before it
+            ;; (so deleted shapes still exist when we inspect the change).
             workspace-buffer-s
             (->> (rx/concat
                   (rx/take 1 workspace-data-s)
-                  (rx/take 1 workspace-data-s)
                   workspace-data-s)
-                 ;; Need to get the file data before the change, so deleted shapes
-                 ;; still exist, for example. We initialize the buffer with three
-                 ;; copies of the initial state
-                 (rx/buffer 3 1))
+                 (rx/buffer 2 1)
+                 (rx/map first))
 
             changes-s
             (->> stream
@@ -1376,9 +1381,15 @@
                  (rx/observe-on :async))
 
             check-changes
-            (fn [[event [old-data _mid_data _new-data]]]
-              (if (nil? old-data)
+            (fn [[event old-data]]
+              (cond
+                (nil? old-data)
                 (rx/empty)
+
+                (:translation? event)
+                (rx/empty)
+
+                :else
                 (let [{:keys [file-id changes save-undo? undo-group]} event
 
                       changed-components
@@ -1392,11 +1403,9 @@
                       (do (log/info :hint "detected component changes"
                                     :ids (map str changed-components)
                                     :undo-group undo-group)
-
                           (->> (rx/from changed-components)
                                (rx/map #(component-changed % (:id old-data) undo-group))))
-                      ;; even if save-undo? is false, we need to update the :modified-date of the component
-                      ;; (for example, for undos)
+                      ;; save-undo? false (undos): just bump :modified-at
                       (->> (rx/from changed-components)
                            (rx/map touch-component)))
 
@@ -1418,8 +1427,19 @@
           (->> (rx/merge
                 changes-s
 
-                ;; Persist thumbnails to the server in batches after user
-                ;; becomes inactive for 5 seconds.
+                ;; WASM only: render the thumbnail on every component
+                ;; change so single edits (fill, etc.) update instantly.
+                ;; Non-WASM persists on every render, so it stays on the
+                ;; debounced path below to avoid per-edit backend posts.
+                (if (features/active-feature? @st/state "render-wasm/v1")
+                  (->> changes-s
+                       (rx/filter (ptk/type? ::component-changed))
+                       (rx/map deref)
+                       (rx/map render-component-thumbnail-event))
+                  (rx/empty))
+
+                ;; Persist to the server in batches, 5s after the user
+                ;; goes idle.
                 (->> changes-s
                      (rx/filter (ptk/type? ::component-changed))
                      (rx/map deref)
@@ -1428,15 +1448,11 @@
                      (rx/map (fn [[component-id file-id]]
                                (update-component-thumbnail component-id file-id))))
 
-                ;; Immediately update the component thumbnail on undos,
-                ;; which emit touch-component instead of component-changed.
+                ;; Undo/redo emit touch-component instead.
                 (->> changes-s
                      (rx/filter (ptk/type? ::touch-component))
                      (rx/map deref)
-                     (rx/map (fn [[component-id file-id]]
-                               (let [file-id (or file-id (:current-file-id @st/state))]
-                                 (update-component-thumbnail-sync
-                                  @st/state component-id file-id "component"))))))
+                     (rx/map render-component-thumbnail-event)))
 
                (rx/take-until stopper-s)))))))
 

@@ -57,3 +57,38 @@
 
   (t/testing "leaves filename intact when it has no extension"
     (t/is (= (media/strip-image-extension "README") "README"))))
+
+(t/deftest test-font-display-variant
+  (t/testing "preserves the foundry-supplied variant string verbatim"
+    (t/is (= "Thin"          (media/font-display-variant "Thin" 100 "normal")))
+    (t/is (= "SemiBold"      (media/font-display-variant "SemiBold" 600 "normal")))
+    (t/is (= "Medium Oblique" (media/font-display-variant "Medium Oblique" 500 "italic")))
+    (t/is (= "Ultra"         (media/font-display-variant "Ultra" 900 "normal"))))
+
+  (t/testing "trims surrounding whitespace from upstream variant strings"
+    (t/is (= "Bold" (media/font-display-variant "  Bold  " 700 "normal"))))
+
+  (t/testing "ignores blank or nil variant strings"
+    (t/is (= "Hairline"        (media/font-display-variant nil 100 "normal")))
+    (t/is (= "Regular"         (media/font-display-variant ""  400 "normal")))
+    (t/is (= "Bold"            (media/font-display-variant "  " 700 "normal")))
+    (t/is (= "Bold Italic"     (media/font-display-variant nil 700 "italic"))))
+
+  (t/testing "fallback covers every supported numeric weight"
+    (t/is (= "Hairline"    (media/font-display-variant nil 100 "normal")))
+    (t/is (= "Extra Light" (media/font-display-variant nil 200 "normal")))
+    (t/is (= "Light"       (media/font-display-variant nil 300 "normal")))
+    (t/is (= "Regular"     (media/font-display-variant nil 400 "normal")))
+    (t/is (= "Medium"      (media/font-display-variant nil 500 "normal")))
+    (t/is (= "Semi Bold"   (media/font-display-variant nil 600 "normal")))
+    (t/is (= "Bold"        (media/font-display-variant nil 700 "normal")))
+    (t/is (= "Extra Bold"  (media/font-display-variant nil 800 "normal")))
+    (t/is (= "Black"       (media/font-display-variant nil 900 "normal")))
+    (t/is (= "Extra Black" (media/font-display-variant nil 950 "normal"))))
+
+  (t/testing "italic suffix only applied via the fallback path"
+    (t/is (= "Italic"           (media/font-display-variant "Italic" 400 "italic")))
+    (t/is (= "Regular Italic"   (media/font-display-variant nil 400 "italic"))))
+
+  (t/testing "stored variant survives even when its derived weight disagrees"
+    (t/is (= "Ultra" (media/font-display-variant "Ultra" 400 "normal")))))
