@@ -49,11 +49,9 @@
 
 (defn mask-factory
   [shape-wrapper]
-  (mf/fnc mask-shape
-    {::mf/wrap-props false}
-    [props]
-    (let [mask       (unchecked-get props "mask")
-          render-id  (mf/use-ctx muc/render-id)
+  (mf/fnc mask-shape*
+    [{:keys [mask]}]
+    (let [render-id  (mf/use-ctx muc/render-id)
 
           svg-text?  (and ^boolean (cfh/text-shape? mask)
                           ^boolean (some? (:position-data mask)))
