@@ -795,8 +795,7 @@ impl RenderState {
     pub fn resize(&mut self, width: i32, height: i32) -> Result<()> {
         let dpr_width = (width as f32 * self.options.dpr).floor() as i32;
         let dpr_height = (height as f32 * self.options.dpr).floor() as i32;
-        self.surfaces
-            .resize(dpr_width, dpr_height)?;
+        self.surfaces.resize(dpr_width, dpr_height)?;
         self.viewbox.set_wh(width as f32, height as f32);
         self.tile_viewbox.update(self.viewbox, self.get_scale());
 

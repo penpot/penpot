@@ -7,7 +7,7 @@ pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
 
 use crate::error::{Error, Result};
-use crate::shapes::Shape;
+use crate::shapes::{grid_layout::grid_cell_data, Shape};
 use crate::uuid::Uuid;
 use crate::{get_render_state, tiles};
 
