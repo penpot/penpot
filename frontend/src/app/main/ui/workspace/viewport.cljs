@@ -720,7 +720,7 @@
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
         (when (or show-grid-editor? hover-grid?)
-          [:& grid-layout/editor
+          [:> grid-layout/editor*
            {:zoom zoom
             :objects base-objects
             :modifiers modifiers
@@ -733,7 +733,7 @@
                      (empty? (:shapes frame))
                      (not= edition (:id frame))
                      (not= @hover-top-frame-id (:id frame)))
-            [:& grid-layout/editor
+            [:> grid-layout/editor*
              {:zoom zoom
               :key (dm/str "viewport-frame-" (:id frame))
               :objects base-objects

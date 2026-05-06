@@ -861,7 +861,7 @@
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
         (when show-grid-editor?
-          [:& grid-layout/editor
+          [:> grid-layout/editor*
            {:zoom zoom
             :objects objects-modified
             :shape (or (get objects-modified edition)
