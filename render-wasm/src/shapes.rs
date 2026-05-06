@@ -1411,16 +1411,10 @@ impl Shape {
             }
         }
 
-        let has_opaque_fill = self
-            .fills
-            .iter()
-            .any(|f| math::is_close_to(f.opacity(), 1.0));
-
         self.blur.is_none()
             && self.shadows.is_empty()
             && (self.opacity - 1.0).abs() <= 1e-4
             && self.blend_mode().0 == skia::BlendMode::SrcOver
-            && has_opaque_fill
     }
 
     /// Fill + visible strokes in **document space** for clipping interactive drag textures.
