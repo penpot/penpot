@@ -18,6 +18,7 @@ use std::collections::HashMap;
 
 #[allow(unused_imports)]
 use crate::error::{Error, Result};
+use crate::state::TextEditorState;
 use macros::wasm_error;
 use math::{Bounds, Matrix};
 use mem::SerializableResult;
@@ -28,6 +29,15 @@ use utils::uuid_from_u32_quartet;
 use uuid::Uuid;
 
 pub(crate) static mut STATE: Option<Box<State>> = None;
+pub(crate) static mut TEXT_EDITOR_STATE: *mut TextEditorState = std::ptr::null_mut();
+
+#[inline(always)]
+pub fn get_text_editor_state() -> &'static mut TextEditorState {
+    unsafe {
+        debug_assert!(!TEXT_EDITOR_STATE.is_null(), "Text Editor state is null");
+        &mut *TEXT_EDITOR_STATE
+    }
+}
 
 // FIXME: These with_state* macros should be using our CriticalError instead of expect.
 // But to do that, we need to not use them at domain-level (i.e. in business logic), just
@@ -107,6 +117,7 @@ pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
     let state_box = Box::new(State::try_new(width, height)?);
     unsafe {
         STATE = Some(state_box);
+        TEXT_EDITOR_STATE = Box::into_raw(Box::new(TextEditorState::new()));
     }
     Ok(())
 }

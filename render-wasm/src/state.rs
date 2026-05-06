@@ -21,7 +21,6 @@ use crate::shapes::modifiers::grid_layout::grid_cell_data;
 /// must not be shared between different Web Workers.
 pub(crate) struct State {
     pub render_state: RenderState,
-    pub text_editor_state: TextEditorState,
     pub current_id: Option<Uuid>,
     pub current_browser: u8,
     pub shapes: ShapesPool,
@@ -34,7 +33,7 @@ impl State {
     pub fn try_new(width: i32, height: i32) -> Result<Self> {
         Ok(State {
             render_state: RenderState::try_new(width, height)?,
-            text_editor_state: TextEditorState::new(),
+            // text_editor_state: TextEditorState::new(),
             current_id: None,
             current_browser: 0,
             shapes: ShapesPool::new(),
@@ -77,16 +76,6 @@ impl State {
 
     pub fn render_state(&self) -> &RenderState {
         &self.render_state
-    }
-
-    #[allow(dead_code)]
-    pub fn text_editor_state_mut(&mut self) -> &mut TextEditorState {
-        &mut self.text_editor_state
-    }
-
-    #[allow(dead_code)]
-    pub fn text_editor_state(&self) -> &TextEditorState {
-        &self.text_editor_state
     }
 
     pub fn render_from_cache(&mut self) {
