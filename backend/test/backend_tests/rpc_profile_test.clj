@@ -692,6 +692,156 @@
       (t/is (= :validation (:type edata)))
       (t/is (= :email-as-password (:code edata))))))
 
+(t/deftest prepare-register-rejects-active-profile-email
+  ;; SECURITY: `prepare-register` must reject any attempt to prepare a
+  ;; registration for an email that already belongs to an *active*
+  ;; profile, regardless of whether an invitation token is supplied.
+  ;; Active profiles must use the standard login flow.
+  (let [_victim (th/create-profile* 1 {:is-active true
+                                       :email "victim@corp.tld"})]
+
+    ;; Without invitation token.
+    (let [out (th/command! {::th/type :prepare-register-profile
+                            :fullname "Mallory"
+                            :email "victim@corp.tld"
+                            :password "Whatever1!"})]
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :validation (:type edata)))
+        (t/is (= :email-already-exists (:code edata)))))
+
+    ;; With invitation token (the GHSA-4937-35vc-hqjj exploit shape).
+    (let [itoken (tokens/generate th/*system*
+                                  {:iss :team-invitation
+                                   :exp (ct/in-future "48h")
+                                   :role :editor
+                                   :team-id uuid/zero
+                                   :member-email "victim@corp.tld"})
+          out    (th/command! {::th/type :prepare-register-profile
+                               :invitation-token itoken
+                               :fullname "Mallory"
+                               :email "victim@corp.tld"
+                               :password "Whatever1!"})]
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :validation (:type edata)))
+        (t/is (= :email-already-exists (:code edata)))))))
+
+(t/deftest prepare-register-must-not-leak-existing-profile-id
+  ;; Victim is a pre-existing profile that has not yet activated (e.g.
+  ;; freshly registered, has not clicked the email verification link).
+  ;; `prepare-register` allows the call (no active profile exists), but
+  ;; the issued JWE must NOT carry the existing profile's id.
+  (let [_victim (th/create-profile* 1 {:is-active false
+                                       :email "victim@corp.tld"})
+
+        ;; Attacker holds a cryptographically valid `:team-invitation` JWE
+        ;; for the victim's email. (In a real exploit this is obtained
+        ;; from `create-team-invitations` or `get-team-invitation-token`
+        ;; on a team the attacker owns.)
+        itoken (tokens/generate th/*system*
+                                {:iss :team-invitation
+                                 :exp (ct/in-future "48h")
+                                 :role :editor
+                                 :team-id uuid/zero
+                                 :member-email "victim@corp.tld"})
+
+        ;; Anonymous request — no ::rpc/profile-id.
+        data   {::th/type :prepare-register-profile
+                :invitation-token itoken
+                :fullname "Mallory"
+                :email "victim@corp.tld"
+                :password "Whatever1!"}
+
+        out    (th/command! data)]
+
+    ;; The current behaviour either returns a token or rejects the request;
+    ;; what MUST hold is that the issued prepared-register JWE does not
+    ;; carry the victim's profile id.
+    (t/is (th/success? out))
+
+    (let [token  (-> out :result :token)
+          claims (tokens/decode th/*system* token)]
+      (t/is (= :prepared-register (:iss claims)))
+      ;; This is the root-cause assertion: an anonymous prepare-register
+      ;; call must NEVER embed an existing profile's id.
+      (t/is (nil? (:profile-id claims))
+            "prepare-register must not embed existing profile id of an anonymous caller"))))
+
+(t/deftest register-profile-with-invitation-must-not-take-over-existing-account
+  (with-mocks [_mock {:target 'app.email/send! :return nil}]
+    (let [;; Victim profile exists but is not yet active (e.g. registered
+          ;; but has not clicked the verification link). This is the
+          ;; remaining attack surface after fix 1b: `prepare-register`
+          ;; will not reject this case, so the `register-profile` path
+          ;; must enforce the security invariants on its own.
+          victim   (th/create-profile* 1 {:is-active false
+                                          :email "victim@corp.tld"})
+
+          ;; Attacker mints a valid `:team-invitation` JWE for the victim's
+          ;; email. No member-id is included (matches what an attacker
+          ;; obtains via `create-team-invitations` against their own team
+          ;; before the victim has joined).
+          itoken   (tokens/generate th/*system*
+                                    {:iss :team-invitation
+                                     :exp (ct/in-future "48h")
+                                     :role :editor
+                                     :team-id uuid/zero
+                                     :member-email "victim@corp.tld"})
+
+          ;; Step 1 (anonymous): prepare-register-profile with the victim's
+          ;; email + the invitation token.
+          prep-out (th/command! {::th/type :prepare-register-profile
+                                 :invitation-token itoken
+                                 :fullname "Mallory"
+                                 :email "victim@corp.tld"
+                                 :password "Whatever1!"})
+
+          rtoken   (-> prep-out :result :token)
+
+          ;; Step 2 (anonymous): register-profile with the prepared token.
+          reg-out  (th/command! {::th/type :register-profile
+                                 :token rtoken})
+
+          result   (:result reg-out)
+          mdata    (meta result)]
+
+      ;; The first call may succeed; the issue is what the second call
+      ;; produces. We assert the security invariants on its result.
+      (t/is (th/success? prep-out))
+
+      ;; INVARIANT 1: register-profile must NOT install a session for the
+      ;; victim. `session/create-fn` is wired via
+      ;; `rph/with-transform`, which appends to
+      ;; `:app.rpc/response-transform-fns`. If that vector is non-empty
+      ;; for an anonymous register that targets an EXISTING profile, the
+      ;; server is about to mint an `auth-token` cookie bound to the
+      ;; victim — i.e. account takeover.
+      (t/is (empty? (:app.rpc/response-transform-fns mdata))
+            "register-profile must not create a session for an existing victim profile")
+
+      ;; INVARIANT 2: register-profile must NOT echo back an invitation
+      ;; token that authenticates as the victim. When the response
+      ;; contains both `:id` matching the victim and `:invitation-token`,
+      ;; the frontend treats the user as logged-in for that profile.
+      (when (and (map? result)
+                 (= (:id victim) (:id result)))
+        (t/is (not (contains? result :invitation-token))
+              "register-profile must not return an invitation-token bound to an existing victim profile"))
+
+      ;; INVARIANT 3: the server must NOT have taken the
+      ;; "accept-invitation" branch (which is the one that mints a
+      ;; session). For an existing victim profile, the operation
+      ;; should fall through to the harmless "repeated registry" path.
+      (t/is (not= "accept-invitation"
+                  (get-in mdata [:app.loggers.audit/context :action]))
+            "register-profile must not run the accept-invitation branch for an existing victim profile")
+      ;; The victim must remain inactive: nothing in this anonymous
+      ;; flow should have flipped `is-active` to true.
+      (let [reloaded (th/db-get :profile {:id (:id victim)})]
+        (t/is (false? (:is-active reloaded))
+              "register-profile must not activate the victim profile")))))
+
 (t/deftest email-change-request
   (with-mocks [mock {:target 'app.email/send! :return nil}]
     (let [profile (th/create-profile* 1)

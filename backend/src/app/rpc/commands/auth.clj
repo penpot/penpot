@@ -258,24 +258,44 @@
   (validate-register-attempt! cfg params)
 
   (let [email   (profile/clean-email email)
-        profile (profile/get-profile-by-email pool email)
-        props   (-> (audit/extract-utm-params params)
-                    (cond-> (:accept-newsletter-updates params)
-                      (assoc :newsletter-updates true)))
-        params  {:email email
-                 :fullname fullname
-                 :password (:password params)
-                 :invitation-token (:invitation-token params)
-                 :backend "penpot"
-                 :iss :prepared-register
-                 :profile-id (:id profile)
-                 :exp (ct/in-future {:days 7})
-                 :props props}
-        params (d/without-nils params)
-        token  (tokens/generate cfg params)]
+        profile (profile/get-profile-by-email pool email)]
 
-    (-> {:token token}
-        (with-meta {::audit/profile-id uuid/zero}))))
+    ;; SECURITY: refuse to issue a prepared-register token when an active
+    ;; profile already exists for this email.
+    ;;
+    ;; Active accounts must use the standard login flow; existing-but-
+    ;; not-yet-active profiles fall through to the duplicate-detection branch in
+    ;; `register-profile`, which never creates a session.
+    (when (and (some? profile)
+               (true? (:is-active profile)))
+      (ex/raise :type :validation
+                :code :email-already-exists
+                :hint "email already exists"))
+
+    (let [props  (-> (audit/extract-utm-params params)
+                     (cond-> (:accept-newsletter-updates params)
+                       (assoc :newsletter-updates true)))
+          ;; SECURITY: do NOT embed `:profile-id` of an existing
+          ;; profile into the prepared-register JWE. Doing so would
+          ;; let an anonymous caller, in possession of a valid
+          ;; team-invitation JWE, ask `register-profile` to load that
+          ;; profile by id and mint a session for it without password
+          ;; verification. `register-profile` independently re-detects
+          ;; duplicates by email and handles them in the
+          ;; "repeated-registry" branch.
+          params {:email email
+                  :fullname fullname
+                  :password (:password params)
+                  :invitation-token (:invitation-token params)
+                  :backend "penpot"
+                  :iss :prepared-register
+                  :exp (ct/in-future {:days 7})
+                  :props props}
+          params (d/without-nils params)
+          token  (tokens/generate cfg params)]
+
+      (-> {:token token}
+          (with-meta {::audit/profile-id uuid/zero})))))
 
 (def schema:prepare-register-profile
   [:map {:title "prepare-register-profile"}
@@ -414,23 +434,16 @@
                      (:accept-newsletter-updates params)
                      (update :props assoc :newsletter-updates true))
 
-        profile    (if-let [profile-id (:profile-id claims)]
-                     (profile/get-profile conn profile-id)
-                     ;; NOTE: we first try to match existing profile
-                     ;; by email, that in normal circumstances will
-                     ;; not return anything, but when a user tries to
-                     ;; reuse the same token multiple times, we need
-                     ;; to detect if the profile is already registered
-                     (or (profile/get-profile-by-email conn (:email claims))
-                         (let [is-active (or (boolean (:is-active claims))
-                                             (boolean (:email-verified claims))
-                                             (not (contains? cf/flags :email-verification)))
-                               params    (-> params
-                                             (assoc :is-active is-active)
-                                             (update :password auth/derive-password))
-                               profile   (->> (create-profile cfg params)
-                                              (create-profile-rels conn))]
-                           (vary-meta profile assoc :created true))))
+        profile    (or (profile/get-profile-by-email conn (:email claims))
+                       (let [is-active (or (boolean (:is-active claims))
+                                           (boolean (:email-verified claims))
+                                           (not (contains? cf/flags :email-verification)))
+                             params    (-> params
+                                           (assoc :is-active is-active)
+                                           (update :password auth/derive-password))
+                             profile   (->> (create-profile cfg params)
+                                            (create-profile-rels cfg))]
+                         (vary-meta profile assoc :created true)))
 
         created?   (-> profile meta :created true?)
 
@@ -465,8 +478,10 @@
       ;; comes from team-invitation process; in this case, regenerate
       ;; token and send back to the user a new invitation token (and
       ;; mark current session as logged). This happens only if the
-      ;; invitation email matches with the register email.
-      (and (some? invitation)
+      ;; invitation email matches with the register email AND the
+      ;; profile was just created in this same call.
+      (and created?
+           (some? invitation)
            (= (:email profile)
               (:member-email invitation)))
       (let [invitation (assoc invitation :member-id  (:id profile))
