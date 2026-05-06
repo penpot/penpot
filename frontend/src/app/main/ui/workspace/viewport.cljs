@@ -362,10 +362,8 @@
                                       :zoom zoom}])
 
       (when picking-color?
-        [:& pixel-overlay/pixel-overlay {:vport vport
-                                         :vbox vbox
-                                         :layout layout
-                                         :viewport-ref viewport-ref}])]
+        [:> pixel-overlay/pixel-overlay* {:vport vport
+                                          :viewport-ref viewport-ref}])]
 
      [:svg
       {:id "render"
@@ -461,7 +459,7 @@
                     (last))
                outlined-frame (get objects outlined-frame-id)]
            [:*
-            [:& outline/shape-outlines
+            [:> outline/shape-outlines*
              {:objects base-objects
               :hover #{outlined-frame-id}
               :zoom zoom
@@ -469,13 +467,13 @@
 
             (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline
-               [:& outline/shape-outlines
+               [:> outline/shape-outlines*
                 {:objects base-objects
                  :selected selected
                  :zoom zoom}]])]))
 
        (when show-outlines?
-         [:& outline/shape-outlines
+         [:> outline/shape-outlines*
           {:objects base-objects
            :selected selected
            :hover #{(:id @hover) @frame-hover}
@@ -615,7 +613,7 @@
            :focus focus}])
 
        (when show-snap-distance?
-         [:& snap-distances/snap-distances
+         [:> snap-distances/snap-distances*
           {:layout layout
            :zoom zoom
            :transform transform
