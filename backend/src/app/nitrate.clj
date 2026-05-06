@@ -360,7 +360,7 @@
                         [:map
                          [:organization-id ::sm/uuid]
                          [:owner-id ::sm/uuid]
-                         [:create-teams [:enum "any" "onlyMe"]]]
+                         [:permissions [:map-of :keyword :string]]]
                         params)))
 
 (defn- redeem-activation-code-api

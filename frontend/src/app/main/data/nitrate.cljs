@@ -198,7 +198,7 @@
                                                                :organization-id organization-id})))]
                   (rx/of (dt/teams-fetched teams)
                          (if (empty? orgs)
-                           (modal/show :no-org-allows-create-team {})
+                           (modal/show :no-permission-modal {:type :no-orgs-create})
                            (let [has-filtered? (< (count orgs) (count all-orgs))
                                  extra-props   (when has-filtered?
                                                  {:info-message-key "dashboard.select-org-modal.permission-info"})]
@@ -237,7 +237,7 @@
                                                                :organization-id organization-id})))]
                   (rx/of (dt/teams-fetched teams)
                          (if (empty? orgs)
-                           (modal/show :no-org-allows-create-team {})
+                           (modal/show :no-permission-modal {:type :no-orgs-change})
                            (let [has-filtered? (< (count orgs) (count all-orgs))
                                  extra-props   (when has-filtered?
                                                  {:info-message-key "dashboard.select-org-modal.permission-info"})]

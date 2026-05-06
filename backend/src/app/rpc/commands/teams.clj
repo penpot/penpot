@@ -25,6 +25,7 @@
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.nitrate-permissions :as nitrate-perms]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
@@ -520,12 +521,12 @@
         (ex/raise :type :validation
                   :code :not-allowed
                   :hint "Unable to verify organization permissions")
-        (let [create-perm (:create-teams org-perms)
-              is-owner?   (= profile-id (:owner-id org-perms))]
-          (when (and (= create-perm "onlyMe") (not is-owner?))
-            (ex/raise :type :validation
-                      :code :not-allowed
-                      :hint "You are not allowed to create teams in this organization"))))))
+        (when-not (nitrate-perms/allowed? :create-team
+                                          {:org-perms org-perms
+                                           :profile-id profile-id})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to create teams in this organization")))))
 
   (let [features (-> (cfeat/get-enabled-features cf/flags)
                      (set/difference cfeat/frontend-only-features)
@@ -773,19 +774,37 @@
 
 (defn delete-team
   "Mark a team for deletion"
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id] :as params}]
 
   (let [team  (get-team conn :profile-id profile-id :team-id team-id)
+        team  (if (contains? cf/flags :nitrate)
+                (nitrate/add-org-info-to-team cfg team params)
+                team)
         perms (get team :permissions)]
-
-    (when-not (:is-owner perms)
-      (ex/raise :type :validation
-                :code :only-owner-can-delete-team))
 
     (when (:is-default team)
       (ex/raise :type :validation
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
+
+    ;; Check delete permissions based on organization settings
+    (when (and (:organization-id team) (contains? cf/flags :nitrate))
+      (let [org-perms {:owner-id    (:organization-owner-id team)
+                       :permissions {:create-teams (:organization-create-teams team)
+                                     :delete-teams (:organization-delete-teams team)}}]
+        (when-not (nitrate-perms/allowed? :delete-team
+                                          {:org-perms  org-perms
+                                           :profile-id profile-id
+                                           :team-perms perms})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to delete teams in this organization"))))
+
+    ;; For non-org teams or when nitrate is disabled, only owners can delete
+    (when-not (:organization-id team)
+      (when-not (:is-owner perms)
+        (ex/raise :type :validation
+                  :code :only-owner-can-delete-team)))
 
     (let [delay (ldel/get-deletion-delay team)
           team  (db/update! conn :team
