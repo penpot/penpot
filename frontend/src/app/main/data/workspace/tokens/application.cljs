@@ -663,14 +663,11 @@
     ptk/WatchEvent
     (watch [_ state _]
       ;; We do not allow to apply tokens while text editor is open.
-      ;; The classic text editor sets :workspace-editor-state; the WASM text editor
-      ;; does not, so we also check :workspace-local :edition for text shapes.
       (let [edition       (get-in state [:workspace-local :edition])
             objects       (dsh/lookup-page-objects state)
             text-editing? (and (some? edition)
                                (= :text (:type (get objects edition))))]
-        (if (and (empty? (get state :workspace-editor-state))
-                 (some? token)
+        (if (and (some? token)
                  (not text-editing?))
           (let [attributes-to-remove
                 ;; Remove atomic typography tokens when applying composite and vice-versa
@@ -734,7 +731,7 @@
 
 (defn apply-spacing-token-separated
   "Handles edge-case for spacing token when applying token via toggle button.
-  Splits out `shape-ids` into seperate default actions:
+  Splits out `shape-ids` into separate default actions:
   - Layouts take the `default` update function
   - Shapes inside layout will only take margin"
   [{:keys [token shapes attr]}]
