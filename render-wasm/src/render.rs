@@ -525,7 +525,7 @@ impl RenderState {
             tiles,
             tile_viewbox: tiles::TileViewbox::new_with_interest(
                 viewbox,
-                options.viewport_interest_area_threshold,
+                options.dpr_viewport_interest_area_threshold,
                 1.0,
             ),
             pending_tiles: PendingTiles::new_empty(),
@@ -742,8 +742,11 @@ impl RenderState {
     }
 
     pub fn set_dpr(&mut self, dpr: f32) -> Result<()> {
-        if Some(dpr) != self.options.dpr {
-            self.options.dpr = Some(dpr);
+        // Only when this function returns true (it means the value
+        // was properly changed) the rest of the functions is called.
+        if self.options.set_dpr(dpr) {
+            self.tile_viewbox
+                .set_interest(self.options.dpr_viewport_interest_area_threshold);
             self.resize(
                 self.viewbox.width.floor() as i32,
                 self.viewbox.height.floor() as i32,
@@ -758,11 +761,15 @@ impl RenderState {
     }
 
     pub fn set_viewport_interest_area_threshold(&mut self, value: i32) {
-        self.options.set_viewport_interest_area_threshold(value);
-        // The TileViewbox stores its own copy of `interest` (set at
-        // construction). Without propagating, options change wouldn't
-        // affect pending_tiles generation.
-        self.tile_viewbox.set_interest(value);
+        // Only when this function returns true (it means the value
+        // was changed properly) the tile_viewbox.set_interest is called.
+        if self.options.set_viewport_interest_area_threshold(value) {
+            // The TileViewbox stores its own copy of `interest` (set at
+            // construction). Without propagating, options change wouldn't
+            // affect pending_tiles generation.
+            self.tile_viewbox
+                .set_interest(self.options.dpr_viewport_interest_area_threshold);
+        }
     }
 
     pub fn set_node_batch_threshold(&mut self, value: i32) {
@@ -786,8 +793,8 @@ impl RenderState {
     }
 
     pub fn resize(&mut self, width: i32, height: i32) -> Result<()> {
-        let dpr_width = (width as f32 * self.options.dpr()).floor() as i32;
-        let dpr_height = (height as f32 * self.options.dpr()).floor() as i32;
+        let dpr_width = (width as f32 * self.options.dpr).floor() as i32;
+        let dpr_height = (height as f32 * self.options.dpr).floor() as i32;
         self.surfaces
             .resize(&mut self.gpu_state, dpr_width, dpr_height)?;
         self.viewbox.set_wh(width as f32, height as f32);
@@ -1739,7 +1746,7 @@ impl RenderState {
         // and drawing from it avoids mixing a partially-updated Cache surface with missing tiles.
         if self.options.is_fast_mode() && self.render_in_progress && self.surfaces.has_atlas() {
             self.surfaces
-                .draw_atlas_to_target(self.viewbox, self.options.dpr(), bg_color);
+                .draw_atlas_to_target(self.viewbox, self.options.dpr, bg_color);
 
             if self.options.is_debug_visible() {
                 debug::render(self);
@@ -1759,15 +1766,15 @@ impl RenderState {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
 
-            let interest = self.options.viewport_interest_area_threshold;
+            let interest = self.options.dpr_viewport_interest_area_threshold;
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
                     self.cached_viewbox,
                     interest,
                     cached_scale,
                 );
-            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr();
-            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr();
+            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr;
+            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr;
             let translate_x = (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x;
             let translate_y = (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y;
 
@@ -1780,8 +1787,8 @@ impl RenderState {
                 let cache_h = cache_dim.height as f32;
 
                 // Viewport in target pixels.
-                let vw = (self.viewbox.width * self.options.dpr()).max(1.0);
-                let vh = (self.viewbox.height * self.options.dpr()).max(1.0);
+                let vw = (self.viewbox.width * self.options.dpr).max(1.0);
+                let vh = (self.viewbox.height * self.options.dpr).max(1.0);
 
                 // Inverse-map viewport corners into cache coordinates.
                 // target = (cache * navigate_zoom) translated by (translate_x, translate_y) (in cache coords).
@@ -1809,7 +1816,7 @@ impl RenderState {
                     if self.surfaces.has_atlas() {
                         self.surfaces.draw_atlas_to_target(
                             self.viewbox,
-                            self.options.dpr(),
+                            self.options.dpr,
                             bg_color,
                         );
 
@@ -1966,12 +1973,12 @@ impl RenderState {
         let viewbox_cache_size = get_cache_size(
             self.viewbox,
             scale,
-            self.options.viewport_interest_area_threshold,
+            self.options.dpr_viewport_interest_area_threshold,
         );
         let cached_viewbox_cache_size = get_cache_size(
             self.cached_viewbox,
             scale,
-            self.options.viewport_interest_area_threshold,
+            self.options.dpr_viewport_interest_area_threshold,
         );
         // Only resize cache if the new size is larger than the cached size
         // This avoids unnecessary surface recreations when the cache size decreases
@@ -1980,7 +1987,7 @@ impl RenderState {
         {
             self.surfaces.resize_cache(
                 viewbox_cache_size,
-                self.options.viewport_interest_area_threshold,
+                self.options.dpr_viewport_interest_area_threshold,
             )?;
         }
 
@@ -3750,11 +3757,11 @@ impl RenderState {
         if let Some((_, export_scale)) = self.export_context {
             return export_scale;
         }
-        self.viewbox.zoom() * self.options.dpr()
+        self.viewbox.zoom() * self.options.dpr
     }
 
     pub fn get_cached_scale(&self) -> f32 {
-        self.cached_viewbox.zoom() * self.options.dpr()
+        self.cached_viewbox.zoom() * self.options.dpr
     }
 
     pub fn zoom_changed(&self) -> bool {
