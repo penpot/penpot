@@ -67,6 +67,12 @@
     (some? undo-group)
     (assoc :undo-group undo-group)))
 
+(defn set-translation?
+  [changes translation?]
+  (cond-> changes
+    translation?
+    (assoc :translation? true)))
+
 (defn with-page
   [changes page]
   (vary-meta changes assoc
