@@ -280,7 +280,7 @@
   (sm/explainer schema:config))
 
 (defn read-config
-  "Reads the configuration from enviroment variables and decodes all
+  "Reads the configuration from environment variables and decodes all
   known values."
   [& {:keys [prefix default] :or {prefix "penpot"}}]
   (->> (read-env prefix)

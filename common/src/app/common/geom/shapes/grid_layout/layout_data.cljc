@@ -39,7 +39,7 @@
 ;;
 ;;   5. If any track still has an infinite growth limit set its growth limit to its base size.
 
-;; - Distribute extra space accross spaned tracks
+;; - Distribute extra space across spanned tracks
 ;; - Maximize tracks
 ;;
 ;; - Expand flexible tracks
@@ -55,7 +55,7 @@
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]))
 
-;; Setted in app.common.geom.shapes.common-layout
+;; Set in app.common.geom.shapes.common-layout
 ;; We do it this way because circular dependencies
 (def -child-min-width nil)
 
@@ -449,7 +449,7 @@
          column-tracks (set-auto-base-size column-tracks children shape-cells bounds objects :column)
          row-tracks    (set-auto-base-size row-tracks children shape-cells bounds objects :row)
 
-         ;; Adjust multi-spaned cells with no flex columns
+         ;; Adjust multi-spanned cells with no flex columns
          column-tracks (set-auto-multi-span parent column-tracks children-map shape-cells bounds objects :column)
          row-tracks (set-auto-multi-span parent row-tracks children-map shape-cells bounds objects :row)
 
