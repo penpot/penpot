@@ -18,13 +18,13 @@
 (defn- request-builder
   [cfg method uri shared-key profile-id]
   (fn []
-    (http/req! cfg {:method method
-                    :headers {"content-type" "application/json"
-                              "accept" "application/json"
-                              "x-shared-key" shared-key
-                              "x-profile-id" (str profile-id)}
-                    :uri uri
-                    :version :http1.1})))
+    (http/req cfg {:method method
+                   :headers {"content-type" "application/json"
+                             "accept" "application/json"
+                             "x-shared-key" shared-key
+                             "x-profile-id" (str profile-id)}
+                   :uri uri
+                   :version :http1.1})))
 
 
 (defn- with-retries

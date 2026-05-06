@@ -538,9 +538,10 @@
 
 (defn create-webhook
   [{:keys [uri mtype is-active] :as params}]
-  (dm/assert! (contains? valid-mtypes mtype))
-  (dm/assert! (boolean? is-active))
-  (dm/assert! (u/uri? uri))
+
+  (assert (contains? valid-mtypes mtype))
+  (assert (boolean? is-active))
+  (assert (u/uri? uri))
 
   (ptk/reify ::create-webhook
     ptk/WatchEvent

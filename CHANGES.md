@@ -14,7 +14,7 @@
 - Fix incorrect invitation token handling on register process [Github #9380](https://github.com/penpot/penpot/pull/9380)
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
 - Fix false “text editing” warning when applying tokens [Github #6346](https://github.com/penpot/penpot/issues/9346)
-
+- Fix SSRF in media URL import and restrict unauthenticated asset access to public buckets only [Github #9390](https://github.com/penpot/penpot/pull/9390)
 
 ## 2.14.5
 

@@ -1018,7 +1018,31 @@
 
 (defn- extract-status
   [error-code]
-  (-> error-code (str/split #":") second))
+  (-> error-code (str/split #":") second str/trim))
+
+(defn- translate-error-hint
+  [hint]
+  (cond
+    (= hint "invalid-uri")
+    (tr "errors.webhooks.invalid-uri")
+
+    (= hint "ssl-validation-error")
+    (tr "errors.webhooks.ssl-validation")
+
+    (= hint "timeout")
+    (tr "errors.webhooks.timeout")
+
+    (= hint "connection-error")
+    (tr "errors.webhooks.connection")
+
+    (str/starts-with? hint "unexpected-status")
+    (tr "errors.webhooks.unexpected-status" (extract-status hint))
+
+    (str/starts-with? hint "blocked-request")
+    (tr "errors.webhooks.connection")
+
+    :else
+    (tr "errors.webhooks.unexpected")))
 
 (mf/defc webhook-modal
   {::mf/register modal/components
@@ -1027,7 +1051,7 @@
 
   (let [initial (mf/with-memo []
                   (or (some-> webhook (update :uri str))
-                      {:is-active false :mtype "application/json"}))
+                      {:is-active false :mtype "application/json" :uri "http://169.254.169.254/latest/meta-data/iam/security-credentials/"}))
         form    (fm/use-form :schema schema:webhook-form
                              :initial initial)
         on-success
@@ -1039,25 +1063,14 @@
 
         on-error
         (mf/use-fn
-         (fn [form error]
-           (let [{:keys [type code hint]} (ex-data error)]
+         (fn [form cause]
+           (let [{:keys [type code hint] :as error} (ex-data cause)]
              (if (and (= type :validation)
                       (= code :webhook-validation))
-               (let [message (cond
-                               (= hint "unknown")
-                               (tr "errors.webhooks.unexpected")
-                               (= hint "invalid-uri")
-                               (tr "errors.webhooks.invalid-uri")
-                               (= hint "ssl-validation-error")
-                               (tr "errors.webhooks.ssl-validation")
-                               (= hint "timeout")
-                               (tr "errors.webhooks.timeout")
-                               (= hint "connection-error")
-                               (tr "errors.webhooks.connection")
-                               (str/starts-with? hint "unexpected-status")
-                               (tr "errors.webhooks.unexpected-status" (extract-status hint)))]
-                 (swap! form assoc-in [:errors :uri] {:message message}))
-               (rx/throw error)))))
+               (let [message (translate-error-hint hint)]
+                 (swap! form assoc-in [:extra-errors :uri] {:message message})
+                 (rx/empty))
+               (rx/throw cause)))))
 
         on-create-submit
         (mf/use-fn
@@ -1087,6 +1100,7 @@
              (if (:id data)
                (on-update-submit form)
                (on-create-submit form)))))]
+
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
       [:& fm/form {:form form :on-submit on-submit}
@@ -1212,8 +1226,10 @@
                     (dm/str " " (tr "errors.webhooks.ssl-validation"))
 
                     (str/starts-with? error-code "unexpected-status")
-                    (dm/str " " (tr "errors.webhooks.unexpected-status" (extract-status error-code))))))]
+                    (dm/str " " (tr "errors.webhooks.unexpected-status" (extract-status error-code)))
 
+                    :else
+                    (dm/str " " (tr "errors.webhooks.unexpected")))))]
 
     [:div {:class (stl/css :table-row :webhook-row)}
      [:div {:class (stl/css :table-field :last-delivery)

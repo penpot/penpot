@@ -304,10 +304,11 @@
     ::session/manager (ig/ref ::session/manager)}
 
    :app.http.assets/routes
-   {::http.assets/path  (cf/get :assets-path)
-    ::http.assets/cache-max-age (ct/duration {:hours 24})
-    ::http.assets/cache-max-agesignature-max-age (ct/duration {:hours 24 :minutes 5})
-    ::sto/storage  (ig/ref ::sto/storage)}
+   {::http.assets/path              (cf/get :assets-path)
+    ::http.assets/cache-max-age     (ct/duration {:hours 24})
+    ::http.assets/signature-max-age (ct/duration {:hours 24 :minutes 15})
+    ::sto/storage                   (ig/ref ::sto/storage)
+    ::session/manager               (ig/ref ::session/manager)}
 
    ::rpc/climit
    {::mtx/metrics        (ig/ref ::mtx/metrics)

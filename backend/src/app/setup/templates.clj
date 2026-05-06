@@ -57,9 +57,9 @@
 
       (if (fs/exists? path)
         (io/input-stream path)
-        (let [resp (http/req! cfg
-                              {:method :get :uri (:file-uri template)}
-                              {:response-type :input-stream :sync? true})]
+        (let [resp (http/req cfg
+                             {:method :get :uri (:file-uri template)}
+                             {:response-type :input-stream :sync? true})]
           (when-not (= 200 (:status resp))
             (ex/raise :type :internal
                       :code :unexpected-status-code
