@@ -386,6 +386,7 @@ pub(crate) struct RenderState {
     /// GPU crops from `Backbuffer` keyed by shape id. Filled on full-frame completion; during
     /// drag, entries for the moved top-level selection are ensured here
     pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+    pub last_full_render_drawn: HashSet<Uuid>,
 }
 
 pub struct InteractiveDragCrop {
@@ -542,6 +543,7 @@ impl RenderState {
             current_tile_had_shapes: false,
             interactive_target_seeded: false,
             backbuffer_crop_cache: HashMap::default(),
+            last_full_render_drawn: HashSet::default(),
         })
     }
 
@@ -1668,6 +1670,10 @@ impl RenderState {
                 continue;
             }
 
+            if !shape.all_text_descendants_drawn(tree, &self.last_full_render_drawn) {
+                continue;
+            }
+
             candidates.push((shape.id, doc_bounds, selrect));
         }
 
@@ -1953,6 +1959,7 @@ impl RenderState {
         } else {
             self.reset_canvas();
             self.interactive_target_seeded = false;
+            self.last_full_render_drawn.clear();
         }
 
         let surface_ids = SurfaceId::Strokes as u32
@@ -3153,6 +3160,10 @@ impl RenderState {
                     None,
                     target_surface,
                 )?;
+
+                if !self.options.is_interactive_transform() && !export {
+                    self.last_full_render_drawn.insert(node_id);
+                }
 
                 self.surfaces
                     .canvas(SurfaceId::DropShadows)

@@ -1386,6 +1386,28 @@ impl Shape {
         }
     }
 
+    pub fn all_text_descendants_drawn(
+        &self,
+        shapes_pool: ShapesPoolRef,
+        drawn: &HashSet<Uuid>,
+    ) -> bool {
+        for child_id in self.children_ids_iter(false) {
+            let Some(child) = shapes_pool.get(child_id) else {
+                continue;
+            };
+            if child.hidden {
+                continue;
+            }
+            if matches!(child.shape_type, Type::Text(_)) && !drawn.contains(child_id) {
+                return false;
+            }
+            if !child.all_text_descendants_drawn(shapes_pool, drawn) {
+                return false;
+            }
+        }
+        true
+    }
+
     /// Whether this shape may use the backbuffer crop fast path during interactive drag.
     ///
     /// Conservative: only effects and fills that match what we snapshot and clip in
