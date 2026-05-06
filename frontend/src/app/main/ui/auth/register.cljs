@@ -213,8 +213,8 @@
     [:div {:class (stl/css :account)}
      [:span {:class (stl/css :account-text)} (tr "auth.already-have-account") " "]
      [:> lk/link* {:action  #(st/emit! (rt/nav :auth-login params))
-                  :class (stl/css :account-link)
-                  :data-testid "login-here-link"}
+                   :class (stl/css :account-link)
+                   :data-testid "login-here-link"}
       (tr "auth.login-here")]]
 
     (when (contains? cf/flags :demo-users)
@@ -222,7 +222,7 @@
        [:hr {:class (stl/css :separator)}]
        [:div {:class (stl/css :demo-account)}
         [:> lk/link* {:action login/create-demo-profile
-                     :class (stl/css :demo-account-link)}
+                      :class (stl/css :demo-account-link)}
          (tr "auth.create-demo-account")]]])]])
 
 
@@ -356,5 +356,5 @@
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :go-back)}
      [:> lk/link* {:action  #(st/emit! (rt/nav :auth-register {}))
-                  :class (stl/css :go-back-link)}
+                   :class (stl/css :go-back-link)}
       (tr "labels.go-back")]]]])

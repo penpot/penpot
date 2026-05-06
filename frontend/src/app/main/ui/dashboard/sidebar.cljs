@@ -1073,15 +1073,15 @@
                                     :sidebar-nav-item true
                                     :current projects?)}
           [:> link* {:action go-projects
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-projects-with-key}
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-projects-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.projects")]]]
 
          [:li {:class (stl/css-case :current drafts?
                                     :sidebar-nav-item true)}
           [:> link* {:action go-drafts
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-drafts-with-key}
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-drafts-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
 
 
@@ -1092,16 +1092,16 @@
          [:li {:class (stl/css-case :sidebar-nav-item true
                                     :current fonts?)}
           [:> link* {:action go-fonts
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-fonts-with-key
-                    :data-testid "fonts"}
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-fonts-with-key
+                     :data-testid "fonts"}
            [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]
          [:li {:class (stl/css-case :current libs?
                                     :sidebar-nav-item true)}
           [:> link* {:action go-libs
-                    :data-testid "libs-link-sidebar"
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-libs-with-key}
+                     :data-testid "libs-link-sidebar"
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-libs-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
 

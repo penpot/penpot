@@ -66,7 +66,7 @@
          [:h3 {:class (stl/css :modal-msg)}
           [:span (:before link-message)]
           [:> lk/link* {:action (:on-click link-message)
-                       :class (stl/css :link)}
+                        :class (stl/css :link)}
            (:text link-message)]
           [:span (:after link-message)]])
        (when (and (string? scd-message) (not= scd-message ""))
