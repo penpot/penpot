@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.measurements
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -44,8 +45,6 @@
 (def distance-line-stroke 1)
 
 (def ^:private ^:const selection-badge-bg-color "var(--color-accent-tertiary)")
-(def ^:private ^:const selection-badge-text-color "var(--app-black)")
-(def ^:private ^:const selection-badge-font-size 12)
 (def ^:private ^:const selection-badge-height 16)
 (def ^:private ^:const selection-badge-padding-x 6)
 (def ^:private ^:const selection-badge-vertical-gap 8)
@@ -192,7 +191,6 @@
   [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         size-label   (dm/str (fmt/format-number width) " x " (fmt/format-number height))
-        font-size    (/ selection-badge-font-size zoom)
         badge-height (/ selection-badge-height zoom)
         padding-x    (/ selection-badge-padding-x zoom)
         gap          (/ selection-badge-vertical-gap zoom)
@@ -202,7 +200,7 @@
         center-x     (+ x (/ width 2))
         badge-x      (- center-x (/ badge-width 2))
         badge-y      (+ y height gap)
-        text-y       (+ badge-y (/ badge-height 2) (* font-size 0.35))]
+        text-y       (+ badge-y (/ badge-height 2))]
     [:g.selection-size-badge {:pointer-events "none"}
      [:rect {:x badge-x
              :y badge-y
@@ -211,12 +209,11 @@
              :rx radius
              :ry radius
              :style {:fill selection-badge-bg-color}}]
-     [:text {:x center-x
+     [:text {:class (stl/css :badge-text)
+             :x center-x
              :y text-y
              :text-anchor "middle"
-             :style {:fill selection-badge-text-color
-                     :font-size font-size
-                     :font-family "Work Sans"}}
+             :dominant-baseline "middle"}
       size-label]]))
 
 (mf/defc distance-display [{:keys [from to zoom bounds]}]
