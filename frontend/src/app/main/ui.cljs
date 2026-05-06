@@ -362,7 +362,7 @@
            :share share}])
 
        :frame-preview
-       [:& frame-preview/frame-preview]
+       [:> frame-preview/frame-preview*]
 
        nil)]))
 
