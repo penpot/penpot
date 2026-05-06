@@ -21,6 +21,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.guides :as dwg]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
@@ -633,6 +634,25 @@
         [:> menu-entry* {:title (tr "workspace.shape.menu.combine-as-variants")
                          :on-click do-combine-as-variants}]])]))
 
+(mf/defc context-menu-guides*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [shapes]}]
+  (let [frame-ids    (into #{} (comp (filter cfh/frame-shape?) d/xf:map-id) shapes)
+        guides       (mf/deref refs/workspace-page-guides)
+        has-guides?  (some #(contains? frame-ids (:frame-id %)) (vals guides))
+
+        do-remove-guides
+        (mf/use-fn
+         (mf/deps frame-ids)
+         #(st/emit! (dwg/remove-frame-guides frame-ids)))]
+
+    (when (and (seq frame-ids) has-guides?)
+      [:*
+       [:> menu-separator* {}]
+       [:> menu-entry* {:title (tr "workspace.shape.menu.clear-guides")
+                        :on-click do-remove-guides}]])))
+
 (mf/defc context-menu-delete*
   {::mf/private true}
   []
@@ -673,6 +693,7 @@
        (when is-not-variant-container?
          [:> context-menu-layout* props])
        [:> context-menu-component* props]
+       [:> context-menu-guides* props]
        [:> context-menu-delete* props]])))
 
 (mf/defc page-item-context-menu*
@@ -778,6 +799,7 @@
   [{:keys [mdata]}]
   (let [{:keys [grid cells]} mdata
 
+        grid-id (:id grid)
         single? (= (count cells) 1)
 
         can-merge?
@@ -785,17 +807,53 @@
          (mf/deps cells)
          #(ctl/valid-area-cells? cells))
 
+        can-copy-rows?
+        (mf/use-memo
+         (mf/deps grid cells)
+         #(dwsl/complete-rows? grid cells))
+
+        can-copy-columns?
+        (mf/use-memo
+         (mf/deps grid cells)
+         #(dwsl/complete-columns? grid cells))
+
+        grid-edition-ref
+        (mf/use-memo
+         (mf/deps grid-id)
+         #(refs/workspace-grid-edition-id grid-id))
+
+        grid-edition (mf/deref grid-edition-ref)
+        has-copied-tracks? (some? (:copied-tracks grid-edition))
+
         do-merge-cells
         (mf/use-fn
-         (mf/deps grid cells)
+         (mf/deps grid-id cells)
          (fn []
-           (st/emit! (dwsl/merge-cells (:id grid) (map :id cells)))))
+           (st/emit! (dwsl/merge-cells grid-id (map :id cells)))))
 
         do-create-board
         (mf/use-fn
-         (mf/deps grid cells)
+         (mf/deps grid-id cells)
          (fn []
-           (st/emit! (dwsl/create-cell-board (:id grid) (map :id cells)))))]
+           (st/emit! (dwsl/create-cell-board grid-id (map :id cells)))))
+
+        do-copy-rows
+        (mf/use-fn
+         (mf/deps grid-id)
+         (fn []
+           (st/emit! (dwsl/copy-grid-tracks grid-id :row))))
+
+        do-copy-columns
+        (mf/use-fn
+         (mf/deps grid-id)
+         (fn []
+           (st/emit! (dwsl/copy-grid-tracks grid-id :column))))
+
+        do-paste-tracks
+        (mf/use-fn
+         (mf/deps grid-id)
+         (fn []
+           (st/emit! (dwsl/paste-grid-tracks grid-id))))]
     [:*
      (when (not single?)
        [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.merge")
@@ -808,8 +866,64 @@
 
      [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.create-board")
                       :on-click do-create-board
-                      :disabled (and (not single?) (not can-merge?))}]]))
+                      :disabled (and (not single?) (not can-merge?))}]
 
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.copy-rows")
+                      :on-click do-copy-rows
+                      :disabled (not can-copy-rows?)}]
+
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.copy-columns")
+                      :on-click do-copy-columns
+                      :disabled (not can-copy-columns?)}]
+
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.paste-tracks")
+                      :on-click do-paste-tracks
+                      :disabled (not has-copied-tracks?)}]]))
+
+
+(def guide-color-presets
+  ["#ff3277" "#4dabf7" "#51cf66" "#fcc419" "#ff922b" "#cc5de8" "#ffffff" "#868e96"])
+
+(mf/defc guide-color-context-menu*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [mdata]}]
+  (let [{:keys [guide]} mdata
+        guide-id (:id guide)
+        current-color (or (:color guide) (first guide-color-presets))
+
+        do-set-color
+        (mf/use-fn
+         (mf/deps guide-id)
+         (fn [event]
+           (let [color (dom/get-data (dom/get-current-target event) "color")]
+             (st/emit! dw/hide-context-menu
+                       (dwg/update-guide-color guide-id color)))))
+
+        do-remove-guide
+        (mf/use-fn
+         (mf/deps guide)
+         (fn []
+           (st/emit! dw/hide-context-menu
+                     (dwg/remove-guide guide))))]
+
+    [:*
+     [:li {:class (stl/css :context-menu-item :guide-color-label)}
+      [:span {:class (stl/css :title)}
+       (tr "workspace.context-menu.guides.change-color")]]
+     [:li {:class (stl/css :guide-color-swatches)}
+      (for [color guide-color-presets]
+        [:span {:key color
+                :class (stl/css-case
+                        :guide-color-swatch true
+                        :selected (= color current-color))
+                :data-color color
+                :on-click do-set-color
+                :title color
+                :style {:background-color color}}])]
+     [:> menu-separator* {}]
+     [:> menu-entry* {:title (tr "workspace.context-menu.guides.remove")
+                      :on-click do-remove-guide}]]))
 
 ;; FIXME: optimize because it is rendered always
 
@@ -848,4 +962,5 @@
            :page       [:> page-item-context-menu* {:mdata mdata}]
            :grid-track [:> grid-track-context-menu* {:mdata mdata}]
            :grid-cells [:> grid-cells-context-menu* {:mdata mdata}]
+           :guide      [:> guide-color-context-menu* {:mdata mdata}]
            [:> viewport-context-menu* {:mdata mdata}]))]]]))

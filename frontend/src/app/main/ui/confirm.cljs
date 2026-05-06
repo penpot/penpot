@@ -30,10 +30,12 @@
            on-accept
            on-cancel
            hint
+           error-msg
            items
            cancel-label
            accept-label
-           accept-style] :as props}]
+           accept-style
+           hint-level] :as props}]
   (let [on-accept    (or on-accept identity)
         on-cancel    (or on-cancel identity)
         message      (or message (tr "ds.confirm-title"))
@@ -83,9 +85,12 @@
        (when (and (string? scd-message) (not= scd-message ""))
          [:h3 {:class (stl/css :modal-scd-msg)} scd-message])
        (when (string? hint)
-         [:> context-notification* {:level :info
+         [:> context-notification* {:level (or hint-level :info)
                                     :appearance :ghost}
           hint])
+       (when (string? error-msg)
+         [:> context-notification* {:level :error :class (stl/css :modal-error-msg)}
+          error-msg])
        (when (> (count items) 0)
          [:*
           [:p {:class (stl/css :modal-subtitle)}

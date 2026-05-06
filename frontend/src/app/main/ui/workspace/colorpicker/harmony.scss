@@ -15,7 +15,8 @@
 }
 
 .hue-wheel-wrapper {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   position: relative;
 }
 
@@ -25,7 +26,8 @@
 }
 
 .handler {
-  @extend .colorpicker-handler;
+  @extend %colorpicker-handler;
+
   height: deprecated.$s-16;
   width: deprecated.$s-16;
   border: deprecated.$s-2 solid var(--colorpicker-handlers-color);
@@ -37,7 +39,8 @@
 }
 
 .handlers-wrapper {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
+
   height: deprecated.$s-200;
   width: deprecated.$s-52;
   flex-grow: 1;

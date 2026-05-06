@@ -25,12 +25,14 @@
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link]]
+   [app.main.ui.components.org-avatar :refer [org-avatar*]]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.dashboard.subscription :refer [dashboard-cta*
                                                get-subscription-type
                                                menu-team-icon*
+                                               nitrate-current-plan*
                                                nitrate-sidebar*
                                                show-subscription-dashboard-banner?
                                                subscription-sidebar*]]
@@ -71,6 +73,12 @@
 
 (def ^:private menu-icon
   (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
+
+(def ^:private org-menu-icon
+  (deprecated-icon/icon-xref :menu (stl/css :org-menu-icon)))
+
+(def ^:private org-menu-icon-open
+  (deprecated-icon/icon-xref :menu (stl/css :org-menu-icon-open)))
 
 (def ^:private pin-icon
   (deprecated-icon/icon-xref :pin (stl/css :pin-icon)))
@@ -307,46 +315,47 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc)
+             (dnt/go-to-nitrate-cc-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         on-go-to-cc-click
         (mf/use-fn
-         (mf/deps organization)
+         (mf/deps organization profile)
          (fn []
-           (dnt/go-to-nitrate-cc organization)))
+           ;; Navigate to active org if user owns it, otherwise to last visited org
+           (if (and (:id organization)
+                    (= (:id profile) (:owner-id organization)))
+             (dnt/go-to-nitrate-cc organization)
+             (dnt/go-to-nitrate-cc))))
 
-        default-team-id (or (->> organizations
-                                 vals
-                                 (filter :is-default)
-                                 first
-                                 :id)
+        empty-org (d/seek #(nil? (:id %)) organizations)
+        default-team-id (or (:default-team-id empty-org)
                             (:default-team-id profile))
-        organizations (dissoc organizations default-team-id)]
+
+        organizations (filter :id organizations)
+
+        is-valid-license? (dnt/is-valid-license? profile)]
 
     [:> dropdown-menu* props
 
      [:> dropdown-menu-item* {:on-click    on-org-click
                               :data-value  default-team-id
                               :class       (stl/css :org-dropdown-item)}
-      [:span {:class (stl/css :nitrate-org-icon)}
+      [:span {:class (stl/css :org-icon)}
        [:> raw-svg* {:id penpot-logo-icon}]]
       "Penpot"
-      (when (= default-team-id (:id organization))
+      (when (= default-team-id (:default-team-id organization))
         tick-icon)]
 
-     (for [org-item (remove :is-default (vals organizations))]
+     (for [org-item organizations]
        [:> dropdown-menu-item* {:on-click    on-org-click
-                                :data-value  (:id org-item)
+                                :data-value  (:default-team-id org-item)
                                 :class       (stl/css :org-dropdown-item)
-                                :key         (str (:id org-item))}
-        ;; TODO org pictures
-        [:img {:src (cf/resolve-team-photo-url org-item)
-               :class (stl/css :team-picture)
-               :alt (:name org-item)}]
+                                :key         (str (:default-team-id org-item))}
+        [:> org-avatar* {:org org-item :size "xxl"}]
         [:span {:class (stl/css :team-text)
                 :title (:name org-item)} (:name org-item)]
-        (when (= (:id org-item) (:id organization))
+        (when (= (:default-team-id org-item) (:default-team-id organization))
           tick-icon)])
 
      [:hr {:role "separator" :class (stl/css :team-separator)}]
@@ -354,10 +363,11 @@
                               :class       (stl/css :org-dropdown-item :action)}
       [:span {:class (stl/css :icon-wrapper)} add-org-icon]
       [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-org")]]
-     [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
-                              :class       (stl/css :org-dropdown-item :action)}
-      [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
-      [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]]]))
+     (when is-valid-license?
+       [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
+                                :class       (stl/css :org-dropdown-item :action)}
+        [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
+        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]])]))
 
 (mf/defc teams-selector-dropdown*
   {::mf/private true}
@@ -371,7 +381,13 @@
 
         teams (dissoc teams default-team-id)
         on-create-team-click
-        (mf/use-fn #(st/emit! (modal/show :team-form {})))
+        (mf/use-fn
+         (mf/deps team)
+         (fn []
+           (let [params (if (and (contains? cf/flags :nitrate) (:organization-id team))
+                          {:organization-id (:organization-id team)}
+                          {})]
+             (st/emit! (modal/show :team-form params)))))
 
         on-team-click
         (mf/use-fn
@@ -383,12 +399,12 @@
 
     [:> dropdown-menu* props
      [:> dropdown-menu-item* {:on-click    on-team-click
-                              :data-value  (:default-team-id profile)
+                              :data-value  default-team-id
                               :class       (stl/css :team-dropdown-item)}
       [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
 
       [:span {:class (stl/css :team-text)} (tr "dashboard.your-penpot")]
-      (when (= (:default-team-id profile) (:id team))
+      (when (= default-team-id (:id team))
         tick-icon)]
 
      (for [team-item (remove :is-default (vals teams))]
@@ -438,18 +454,22 @@
                    (modal/hide))))
 
         on-error
-        (fn [{:keys [code] :as error}]
-          (condp = code
-            :no-enough-members-for-leave
-            (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
+        (fn [error]
+          (let [code (-> error ex-data :code)]
+            (condp = code
+              :only-owner-can-delete-team
+              (rx/of (ntf/error (tr "errors.team-leave.only-owner-can-delete")))
 
-            :member-does-not-exist
-            (rx/of (ntf/error (tr "errors.team-leave.member-does-not-exists")))
+              :no-enough-members-for-leave
+              (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
 
-            :owner-cant-leave-team
-            (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
+              :member-does-not-exist
+              (rx/of (ntf/error (tr "errors.team-leave.member-does-not-exists")))
 
-            (rx/throw error)))
+              :owner-cant-leave-team
+              (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
+
+              (rx/throw error))))
 
         leave-fn
         (mf/use-fn
@@ -505,14 +525,19 @@
 
         on-delete-clicked
         (mf/use-fn
-         (mf/deps delete-fn)
-         #(st/emit!
-           (modal/show
-            {:type :confirm
-             :title (tr "modals.delete-team-confirm.title")
-             :message (tr "modals.delete-team-confirm.message")
-             :accept-label (tr "modals.delete-team-confirm.accept")
-             :on-accept delete-fn})))]
+         (mf/deps team delete-fn)
+         (fn []
+           (let [is-org-team? (some? (:organization-id team))
+                 message (if is-org-team?
+                           (tr "modals.delete-org-team-confirm.message" (:organization-name team))
+                           (tr "modals.delete-team-confirm.message"))]
+             (st/emit!
+              (modal/show
+               {:type :confirm
+                :title (tr "modals.delete-team-confirm.title")
+                :message message
+                :accept-label (tr "modals.delete-team-confirm.accept")
+                :on-accept delete-fn})))))]
     [:> dropdown-menu* props
 
      [:> dropdown-menu-item* {:on-click    go-members
@@ -565,10 +590,108 @@
                                 :data-testid "delete-team"}
         (tr "dashboard.delete-team")])]))
 
+(mf/defc org-options-dropdown*
+  {::mf/private true}
+  [{:keys [organization profile teams] :rest props}]
+  (let [default-team-id       (mf/with-memo [teams]
+                                (->> teams
+                                     (filter :is-default)
+                                     first
+                                     :id))
+        non-default-teams     (mf/with-memo [teams]
+                                (remove :is-default teams))
+        owned-teams           (mf/with-memo [non-default-teams]
+                                (filter #(dm/get-in % [:permissions :is-owner]) non-default-teams))
+        not-owned-teams       (mf/with-memo [non-default-teams]
+                                (remove #(dm/get-in % [:permissions :is-owner]) non-default-teams))
+        teams-to-delete       (mf/with-memo [owned-teams]
+                                (filter #(= (count (:members %)) 1) owned-teams))
+        teams-to-transfer     (mf/with-memo [owned-teams]
+                                (filter #(> (count (:members %)) 1) owned-teams))
+        num-teams-to-leave    (+ (count teams-to-transfer) (count not-owned-teams))
+        num-teams-to-delete   (count teams-to-delete)
+        num-teams-to-transfer (count teams-to-transfer)
 
-(defn- team->org [team]
-  (assoc (dm/select-keys team [:id :organization-id :organization-slug])
-         :name (:organization-name team)))
+        on-error
+        (mf/use-fn
+         (fn [error]
+           (let [code (-> error ex-data :code)
+                 ;; Map error codes to their translation keys
+                 error-map {:not-valid-teams             "errors.org-leave.no-valid-teams"
+                            :org-owner-cannot-leave      "errors.org-leave.org-owner-cannot-leave"
+                            :only-owner-can-delete-team  "errors.team-leave.only-owner-can-delete"
+                            :no-enough-members-for-leave "errors.team-leave.insufficient-members"
+                            :member-does-not-exist       "errors.team-leave.member-does-not-exists"
+                            :owner-cant-leave-team       "errors.team-leave.owner-cant-leave"}]
+
+             (if-let [tr-key (get error-map code)]
+               (rx/of (dtm/fetch-teams)
+                      (modal/hide)
+                      (ntf/error (tr tr-key)))
+               (rx/throw error)))))
+
+        leave-fn
+        (mf/use-fn
+         (mf/deps on-error organization default-team-id not-owned-teams teams-to-delete)
+         (fn [{:keys [teams-to-transfer]}]
+           (let [teams-to-leave (cond->> not-owned-teams
+                                  :always
+                                  (map #(select-keys % [:id]))
+                                  (seq teams-to-transfer)
+                                  (concat teams-to-transfer))
+                 teams-to-delete (map :id teams-to-delete)]
+
+
+             (st/emit! (dnt/leave-org {:id (:id organization)
+                                       :name (:name organization)
+                                       :default-team-id default-team-id
+                                       :teams-to-delete teams-to-delete
+                                       :teams-to-leave teams-to-leave
+                                       :on-error on-error})))))
+
+        on-leave-clicked
+        (mf/use-fn
+         (mf/deps leave-fn profile organization teams-to-transfer num-teams-to-leave num-teams-to-delete num-teams-to-transfer)
+         (fn []
+           (cond
+             (and (pos? num-teams-to-delete)
+                  (zero? num-teams-to-transfer))
+             (st/emit! (modal/show
+                        {:type :confirm
+                         :title (tr "modals.before-leave-org.title" (:name organization))
+                         :message (tr "modals.before-leave-org.message")
+                         :accept-label (tr "modals.leave-org-confirm.accept")
+                         :on-accept leave-fn
+                         :error-msg (tr "modals.before-leave-org.warning")}))
+             (pos? num-teams-to-transfer)
+             (st/emit!
+              (modal/show
+               {:type :leave-and-reassign-org
+                :profile profile
+                :teams-to-transfer teams-to-transfer
+                :num-teams-to-delete num-teams-to-delete
+                :accept leave-fn}))
+
+             :else
+             (st/emit! (modal/show
+                        {:type :confirm
+                         :title (tr "modals.leave-org-confirm.title" (:name organization))
+                         :message (tr "modals.leave-org-confirm.message")
+                         :accept-label (tr "modals.leave-org-confirm.accept")
+                         :on-accept leave-fn})))))]
+    (mf/use-effect
+     (fn []
+       ;; We need all the team members of the owned teams
+       ;; TODO this will re-render once for each owned team, not very performance-wise
+       (do
+         (doseq [team owned-teams]
+           (st/emit! (dtm/fetch-members (:id team)))))))
+    [:> dropdown-menu* props
+
+     [:> dropdown-menu-item* {:on-click on-leave-clicked
+                              :class    (stl/css :team-options-item)}
+      (tr "dashboard.leave-org")]]))
+
 
 (mf/defc sidebar-org-switch*
   [{:keys [team profile]}]
@@ -579,20 +702,44 @@
                 (->> teams
                      vals
                      (filter :is-default)
-                     (map team->org)
+                     (map dtm/team->organization)
                      (d/index-by :id)))
 
-        no-orgs? (= (count orgs) 0)
+        show-dropdown? (or (dnt/is-valid-license? profile)
+                           (> (count orgs) 1))
 
-        current-org (team->org team)
+        current-org (dtm/team->organization team)
 
-        default-org? (= (:default-team-id profile) (:id current-org))
+        org-teams (mf/with-memo [teams current-org]
+                    (->> teams
+                         vals
+                         (filter #(= (:organization-id %) (:id current-org)))))
+
+        default-org? (nil? (:id current-org))
+
+        show-options? (and (not default-org?)
+                           (not= (:id profile) (:owner-id current-org)))
 
         show-orgs-menu*
         (mf/use-state false)
 
         show-orgs-menu?
         (deref show-orgs-menu*)
+
+        show-org-options-menu*
+        (mf/use-state false)
+
+        show-org-options-menu?
+        (deref show-org-options-menu*)
+
+        on-show-options-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! show-org-options-menu* not)))
+
+        close-org-options-menu
+        (mf/use-fn #(reset! show-org-options-menu* false))
 
         on-show-orgs-click
         (mf/use-fn
@@ -617,41 +764,35 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc)
+             (dnt/go-to-nitrate-cc-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
-    (if no-orgs?
-      [:div {:class (stl/css :nitrate-selected-org)}
-       [:span {:class (stl/css :nitrate-penpot-icon)}
-        [:> raw-svg* {:id penpot-logo-icon}]]
-       "Penpot"
-       [:> button* {:variant "ghost"
-                    :type "button"
-                    :class (stl/css :nitrate-create-org)
-                    :on-click on-create-org-click} (tr "dashboard.plus-create-new-org")]]
-
+    (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
+       [:div {:class (stl/css :org-switch-content)}
+        [:button {:class (stl/css-case :current-org true :current-org-no-options (not show-options?))
+                  :on-click on-show-orgs-click
+                  :on-key-down on-show-orgs-keydown
+                  :aria-expanded show-orgs-menu?
+                  :aria-haspopup "menu"}
+         [:div {:class (stl/css :team-name)}
+          (if default-org?
+            [:*
+             [:span {:class (stl/css :org-penpot-icon)}
+              [:> raw-svg* {:id penpot-logo-icon}]]
+             [:span {:class (stl/css :team-text)}
+              "Penpot"]]
+            [:*
+             [:> org-avatar* {:org current-org :size "xxxl"}]
+             [:span {:class (stl/css :team-text)}
+              (:name current-org)]])]
+         arrow-icon]
+        (when show-options?
+          [:> button* {:variant "ghost"
+                       :type "button"
+                       :class (stl/css :org-options-btn)
+                       :on-click on-show-options-click}
+           (if show-org-options-menu? org-menu-icon-open org-menu-icon)])]
 
-       [:button {:class (stl/css :current-org)
-                 :on-click on-show-orgs-click
-                 :on-key-down on-show-orgs-keydown
-                 :aria-expanded show-orgs-menu?
-                 :aria-haspopup "menu"}
-        [:div {:class (stl/css :team-name)}
-         (if default-org?
-           [:*
-            [:span {:class (stl/css :nitrate-penpot-icon)}
-             [:> raw-svg* {:id penpot-logo-icon}]]
-            [:span {:class (stl/css :team-text)}
-             "Penpot"]]
-           [:*
-            [:span {:class (stl/css :nitrate-penpot-icon)}
-             ;; TODO org pictures
-             [:img {:src (cf/resolve-team-photo-url current-org)
-                    :class (stl/css :team-picture)
-                    :alt (:name current-org)}]]
-            [:span {:class (stl/css :team-text)}
-             (:name current-org)]])]
-        arrow-icon]
 
        ;; Orgs Dropdown
        [:> organizations-selector-dropdown* {:show show-orgs-menu?
@@ -660,15 +801,31 @@
                                              :class (stl/css :dropdown :teams-dropdown)
                                              :organization current-org
                                              :profile profile
-                                             :organizations orgs}]])))
+                                             :organizations (vals orgs)}]
+       ;; Orgs options
+       [:> org-options-dropdown* {:show show-org-options-menu?
+                                  :on-close close-org-options-menu
+                                  :id "team-options"
+                                  :class (stl/css :dropdown :options-dropdown)
+                                  :organization current-org
+                                  :profile profile
+                                  :teams org-teams}]]
+      [:div {:class (stl/css :selected-org)}
+       [:span {:class (stl/css :org-penpot-icon)}
+        [:> raw-svg* {:id penpot-logo-icon}]]
+       "Penpot"
+       [:> button* {:variant "ghost"
+                    :type "button"
+                    :class (stl/css :create-org)
+                    :on-click on-create-org-click} (tr "dashboard.plus-create-new-org")]])))
 
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
   (let [nitrate?     (contains? cf/flags :nitrate)
-        org-id (when nitrate? (:organization-id team))
+        organization-id (when nitrate? (:organization-id team))
         teams (cond->> (mf/deref refs/teams)
                 nitrate?
-                (filter #(= (-> % val :organization-id) org-id))
+                (filter #(= (-> % val :organization-id) organization-id))
                 nitrate?
                 (into {}))
 
@@ -900,11 +1057,12 @@
         (reset! overflow* (> scroll-height client-height))))
 
     [:*
-     [:div {:ref container}
+     [:div {:class (stl/css :sidebar-content-wrapper)}
       (when nitrate?
-        [:div {:class (stl/css :nitrate-orgs-container)}
+        [:div {:class (stl/css :orgs-container)}
          [:> sidebar-org-switch* {:team team :profile profile}]])
-      [:div {:class (stl/css-case :sidebar-content true :sidebar-content-nitrate nitrate?)}
+      [:div {:ref container
+             :class (stl/css-case :sidebar-content true :sidebar-content-nitrate nitrate?)}
        [:> sidebar-team-switch* {:team team :profile profile}]
 
        [:> sidebar-search* {:search-term search-term
@@ -1161,13 +1319,20 @@
            (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
            (dom/open-new-window "https://penpot.app/pricing")))]
 
+    (mf/with-effect [show-profile-menu?]
+      (when-not show-profile-menu?
+        (reset! sub-menu* nil)))
+
     [:*
      (if (contains? cf/flags :nitrate)
-       [:> nitrate-sidebar* {:profile profile :teams teams}]
+       [:*
+        [:> nitrate-sidebar* {:profile profile :teams teams}]
+        [:> nitrate-current-plan* {:profile profile}]]
        (when (contains? cf/flags :subscriptions)
          (if (show-subscription-dashboard-banner? profile)
            [:> dashboard-cta* {:profile profile}]
            [:> subscription-sidebar* {:profile profile}])))
+
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)

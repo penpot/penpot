@@ -76,6 +76,7 @@
   gap: var(--sp-xs);
   align-items: center;
   padding: 0;
+
   &:hover {
     color: var(--color-accent-primary);
   }
@@ -142,7 +143,7 @@
 }
 
 .group-title-name {
-  @include textEllipsis;
+  @include text-ellipsis;
 
   flex-grow: 1;
 }
@@ -171,7 +172,7 @@
 }
 
 .theme-name-row {
-  @include textEllipsis;
+  @include text-ellipsis;
 
   flex-grow: 1;
 }

@@ -23,8 +23,9 @@
 }
 
 .mode-dropdown-wrapper {
-  @include deprecated.buttonStyle;
-  @extend .asset-element;
+  @include deprecated.button-style;
+  @extend %asset-element;
+
   background-color: var(--color-background-tertiary);
   display: flex;
   width: 100%;
@@ -45,18 +46,22 @@
 }
 
 .arrow-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   height: deprecated.$s-24;
   width: deprecated.$s-24;
+
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
+
     transform: rotate(90deg);
     stroke: var(--icon-foreground);
   }
 }
 
 .comment-mode-dropdown {
-  @extend .dropdown-wrapper;
+  @extend %dropdown-wrapper;
+
   top: deprecated.$s-92;
   left: deprecated.$s-12;
   max-width: deprecated.$s-256;
@@ -68,29 +73,38 @@
 }
 
 .dropdown-item {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
+
   justify-content: space-between;
+
   .icon {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
+
     height: deprecated.$s-24;
     width: deprecated.$s-24;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: transparent;
     }
   }
+
   .label {
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
   }
+
   &:hover {
     .icon svg {
       stroke: transparent;
     }
   }
+
   &.selected {
     .label {
       color: var(--menu-foreground-color);
     }
+
     .icon svg {
       stroke: var(--icon-foreground-hover);
     }

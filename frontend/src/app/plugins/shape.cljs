@@ -1186,8 +1186,8 @@
              (let [objects (u/locate-objects file-id page-id)
                    shape (u/locate-shape file-id page-id id)]
                (when (ctn/in-any-component? objects shape)
-                 (let [[root component] (u/locate-component objects shape)]
-                   (lib-component-proxy plugin-id (:component-file root) (:id component))))))
+                 (when-let [[head component] (u/locate-head-component objects shape)]
+                   (lib-component-proxy plugin-id (:component-file head) (:id component))))))
 
            :detach
            (fn []
@@ -1293,7 +1293,7 @@
                  (u/not-valid plugin-id :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (let [id        (uuid/next)
+                 (let [ruler-id  (uuid/next)
                        axis      (parser/orientation->axis orientation)
                        objects   (u/locate-objects file-id page-id)
                        frame     (get objects id)
@@ -1301,11 +1301,11 @@
                        position  (+ board-pos value)]
                    (st/emit!
                     (dwgu/update-guides
-                     {:id       id
+                     {:id       ruler-id
                       :axis     axis
                       :position position
                       :frame-id id}))
-                   (rg/ruler-guide-proxy plugin-id file-id page-id id)))))
+                   (rg/ruler-guide-proxy plugin-id file-id page-id ruler-id)))))
 
            :removeRulerGuide
            (fn [_ value]

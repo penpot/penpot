@@ -33,6 +33,10 @@
                                  :move-overlay-index])
              refs/workspace-local =))
 
+(def ^:private outgoing-link-color "var(--color-accent-tertiary)")
+(def ^:private incoming-link-color "var(--color-accent-quaternary)")
+(def ^:private neutral-link-color "var(--df-secondary)")
+
 (defn- on-pointer-down
   [event index {:keys [id] :as shape}]
   (dom/stop-propagation event)
@@ -139,7 +143,7 @@
 
 
 (mf/defc interaction-path*
-  [{:keys [index level orig-shape dest-shape dest-point is-selected action-type zoom]}]
+  [{:keys [index level orig-shape dest-shape dest-point selected is-selected action-type zoom]}]
   (let [[orig-pos orig-x orig-y dest-pos dest-x dest-y]
         (cond
           dest-shape
@@ -160,11 +164,17 @@
         path ["M" orig-x orig-y "C" (+ orig-x orig-dx) orig-y (+ dest-x dest-dx) dest-y dest-x dest-y]
         pdata (str/join " " path)
 
-        arrow-dir (if (= dest-pos :left) :right :left)]
+        arrow-dir (if (= dest-pos :left) :right :left)
+        incoming? (and (some? dest-shape)
+                       (contains? selected (:id dest-shape)))
+        stroke-color (cond
+                       is-selected outgoing-link-color
+                       incoming? incoming-link-color
+                       :else neutral-link-color)]
 
     (if-not is-selected
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
-       [:path {:stroke "var(--df-secondary)"
+       [:path {:stroke stroke-color
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
@@ -173,13 +183,13 @@
          [:> interaction-marker* {:index index
                                   :x dest-x
                                   :y dest-y
-                                  :stroke "var(--df-secondary)"
+                                  :stroke stroke-color
                                   :action-type action-type
                                   :arrow-dir arrow-dir
                                   :zoom zoom}])]
 
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
-       [:path {:stroke "var(--color-accent-tertiary)"
+       [:path {:stroke stroke-color
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
@@ -188,17 +198,17 @@
        (when dest-shape
          [:& outline {:zoom zoom
                       :shape dest-shape
-                      :color "var(--color-accent-tertiary)"}])
+                      :color stroke-color}])
 
        [:> interaction-marker* {:index index
                                 :x orig-x
                                 :y orig-y
-                                :stroke "var(--color-accent-tertiary)"
+                                :stroke stroke-color
                                 :zoom zoom}]
        [:> interaction-marker* {:index index
                                 :x dest-x
                                 :y dest-y
-                                :stroke "var(--color-accent-tertiary)"
+                                :stroke stroke-color
                                 :action-type action-type
                                 :arrow-dir arrow-dir
                                 :zoom zoom}]])))

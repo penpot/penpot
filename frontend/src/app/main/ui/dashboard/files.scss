@@ -20,6 +20,7 @@
   &.dashboard-projects {
     user-select: none;
   }
+
   &.dashboard-shared {
     width: calc(100vw - deprecated.$s-320);
     margin-right: deprecated.$s-52;
@@ -35,7 +36,8 @@
 }
 
 .menu-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
 }
 

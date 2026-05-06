@@ -30,6 +30,7 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.common :as soc]
    [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -335,15 +336,8 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr event]
-           (if (or (string? value) (number? value))
-             (on-change :simple attr value event)
-             (do
-               (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     (if (= :p1 attr)
-                                                 #{:p1 :p3}
-                                                 #{:p2 :p4})
-                                    :shape-ids ids}))))))
+           (let [on-change-fn #(on-change :simple attr % event)]
+             (soc/emit-value-or-token value on-change-fn ids attr))))
 
         on-detach-token
         (mf/use-fn
@@ -370,10 +364,10 @@
         (mf/use-fn (mf/deps on-focus) #(on-focus :p2))
 
         on-p1-change
-        (mf/use-fn (mf/deps on-change') #(on-change' % :p1))
+        (mf/use-fn (mf/deps on-change') #(on-change' % #{:p1 :p3}))
 
         on-p2-change
-        (mf/use-fn (mf/deps on-change') #(on-change' % :p2))]
+        (mf/use-fn (mf/deps on-change') #(on-change' % #{:p2 :p4}))]
 
     [:div {:class (stl/css :paddings-simple)}
      (if token-numeric-inputs
@@ -466,12 +460,8 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr event]
-           (if (or (string? value) (number? value))
-             (on-change :multiple attr value event)
-             (do
-               (st/emit! (dwta/toggle-token {:token (first value)
-                                             :attrs #{attr}
-                                             :shape-ids ids}))))))
+           (let [on-change-fn #(on-change :multiple attr % event)]
+             (soc/emit-value-or-token value on-change-fn ids #{attr}))))
 
         on-focus
         (mf/use-fn
@@ -648,7 +638,7 @@
           :value p4}]])]))
 
 (mf/defc padding-section*
-  [{:keys [type on-type-change on-change] :as props}]
+  [{:keys [type on-type-change] :as props}]
   (let [on-type-change'
         (mf/use-fn
          (mf/deps on-type-change)
@@ -656,9 +646,7 @@
            (let [type (-> (dom/get-current-target event)
                           (dom/get-data "type"))
                  type (if (= type "multiple") :simple :multiple)]
-             (on-type-change type))))
-
-        props (mf/spread-object props {:on-change on-change})]
+             (on-type-change type))))]
 
     (mf/with-effect []
       ;; on destroy component
@@ -719,15 +707,8 @@
         (mf/use-fn
          (mf/deps on-change wrap-type ids)
          (fn [value event attr]
-           (if (or (string? value) (number? value))
-             (on-change (= "nowrap" wrap-type) attr value event)
-             (do
-               (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     (if (= "nowrap" wrap-type)
-                                                 #{:row-gap :colum-gap}
-                                                 #{attr})
-                                    :shape-ids ids}))))))
+           (let [on-change-fn #(on-change (= "nowrap" wrap-type) attr % event)]
+             (soc/emit-value-or-token value on-change-fn ids #{attr}))))
 
         on-detach-token
         (mf/use-fn
@@ -1195,10 +1176,10 @@
          (fn [type prop val]
            (let [val (mth/finite val 0)]
              (cond
-               (and (= type :simple) (= prop :p1))
+               (and (= type :simple) (or (= prop :p1) (= prop #{:p1 :p3})))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
 
-               (and (= type :simple) (= prop :p2))
+               (and (= type :simple) (or (= prop :p2) (= prop #{:p2 :p4})))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
 
                (some? prop)

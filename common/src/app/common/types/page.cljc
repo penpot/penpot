@@ -34,7 +34,8 @@
    [:id ::sm/uuid]
    [:axis [::sm/one-of #{:x :y}]]
    [:position ::sm/safe-number]
-   [:frame-id {:optional true} [:maybe ::sm/uuid]]])
+   [:frame-id {:optional true} [:maybe ::sm/uuid]]
+   [:color {:optional true} [:maybe ctc/schema:hex-color]]])
 
 (def schema:guides
   [:map-of {:gen/max 2} ::sm/uuid schema:guide])
@@ -58,6 +59,10 @@
    [:guides {:optional true} schema:guides]
    [:plugin-data {:optional true} ctpg/schema:plugin-data]
    [:background {:optional true} ctc/schema:hex-color]
+   ;; Per-page pixel grid color. Falls back to a hardcoded default when
+   ;; unset so existing files render identically to before.
+   [:pixel-grid-color {:optional true} ctc/schema:hex-color]
+   [:pixel-grid-opacity {:optional true} ::sm/safe-number]
 
    [:comment-thread-positions {:optional true}
     [:map-of ::sm/uuid schema:comment-thread-position]]])

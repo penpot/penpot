@@ -9,10 +9,8 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.weak :refer [weak-key]]
-   [app.main.ui.ds.controls.shared.option :refer [option*]]
-   [app.main.ui.ds.controls.shared.token-option :refer [token-option*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.controls.shared.render-option :refer [render-option]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -20,16 +18,30 @@
   [:and :string
    [:fn {:error/message "invalid data: invalid icon"} #(contains? i/icon-list %)]])
 
+(def ^:private
+  xf:filter-blank-id
+  (filter #(str/blank? (get % :id))))
+
+(def ^:private
+  xf:filter-non-blank-id
+  (remove #(str/blank? (get % :id))))
+
 (def schema:option
   "A schema for the option data structure expected to receive on props
   for the `options-dropdown*` component."
   [:map
    [:id {:optional true} :string]
    [:resolved-value {:optional true}
-    [:or :int :string :float]]
+    [:maybe [:or :int :string :float]]]
    [:name {:optional true} :string]
+   [:value {:optional true} :keyword]
    [:icon {:optional true} schema:icon-list]
    [:label {:optional true} :string]
+   [:avatar {:optional true}
+    [:map
+     [:size {:optional true} :string]
+     [:organization {:optional true} :any]
+     [:render-fn {:optional true} fn?]]]
    [:aria-label {:optional true} :string]])
 
 (def ^:private schema:options-dropdown
@@ -43,66 +55,6 @@
    [:focused {:optional true} :any]
    [:empty-to-end {:optional true} [:maybe :boolean]]
    [:align {:optional true} [:maybe [:enum :left :right]]]])
-
-(def ^:private
-  xf:filter-blank-id
-  (filter #(str/blank? (get % :id))))
-
-(def ^:private
-  xf:filter-non-blank-id
-  (remove #(str/blank? (get % :id))))
-
-(defn- render-option
-  [option ref on-click selected focused]
-  (let [id   (get option :id)
-        name (get option :name)
-        type (get option :type)]
-
-    (mf/html
-     (case type
-       :group
-       [:li {:class (stl/css :group-option)
-             :role "presentation"
-             :key (weak-key option)}
-        [:> icon*
-         {:icon-id i/arrow-down
-          :size "m"
-          :class (stl/css :option-check)
-          :aria-hidden (when name true)}]
-        (d/name name)]
-
-       :separator
-       [:hr {:key (weak-key option) :class (stl/css :option-separator)}]
-
-       :empty
-       [:li {:key (weak-key option) :class (stl/css :option-empty) :role "presentation"}
-        (get option :label)]
-
-       ;; Token option
-       :token
-       [:> token-option* {:selected (= id selected)
-                          :key (weak-key option)
-                          :id id
-                          :name name
-                          :resolved (get option :resolved-value)
-                          :ref ref
-                          :role "option"
-                          :focused (= id focused)
-                          :on-click on-click}]
-
-       ;; Normal option
-       [:> option* {:selected (= id selected)
-                    :key (weak-key option)
-                    :id id
-                    :label (get option :label)
-                    :aria-label (get option :aria-label)
-                    :icon (get option :icon)
-                    :ref ref
-                    :role "option"
-                    :focused (= id focused)
-                    :dimmed (true? (:dimmed option))
-                    :on-click on-click}]))))
-
 
 (mf/defc options-dropdown*
   {::mf/schema schema:options-dropdown}

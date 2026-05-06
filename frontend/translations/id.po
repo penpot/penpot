@@ -3088,7 +3088,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Versi baru sudah tersedia, silakan muat ulang laman"
+msgstr "Versi baru sudah tersedia."
 
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
@@ -6620,7 +6620,7 @@ msgid "workspace.tokens.enter-token-name"
 msgstr "Masukkan nama token %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "Kesalahan Pengimporan: Tidak dapat mengurai JSON."
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:240
@@ -6642,7 +6642,7 @@ msgid "workspace.tokens.grouping-set-alert"
 msgstr "Pengelompokan Set Token belum didukung."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "Kesalahan Pengimporan:"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
@@ -6651,15 +6651,15 @@ msgid "workspace.tokens.import-tooltip"
 msgstr "Mengimpor berkas JSON akan menimpa semua token, set, dan tema Anda saat ini"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "Nilai warna tidak valid: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "Kesalahan pengimporan: Data token tidak valid dalam JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "Nilai token tidak valid: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -6691,7 +6691,7 @@ msgid "workspace.tokens.min-size"
 msgstr "Ukuran minimal"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "Referensi token hilang: "
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:135
@@ -6731,11 +6731,11 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s set aktif"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
+msgid "errors.tokens.number-too-large"
 msgstr "Nilai token tidak valid. Nilai terurai terlalu besar: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
+msgid "errors.tokens.opacity-range"
 msgstr "Opasitas harus antara 0 dan 100% atau 0 dan 1 (mis. 50% atau 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
@@ -6774,7 +6774,7 @@ msgid "workspace.tokens.select-set"
 msgstr "Pilih set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "Token memiliki referensi diri"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60

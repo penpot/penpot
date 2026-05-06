@@ -481,7 +481,6 @@
         (and (= (.-name ^js cause) "NotFoundError")
              (str/includes? message "removeChild")))))
 
-
 (defn- from-plugin?
   "Check if the error is marked as originating from plugin code. The
   plugin runtime tracks plugin errors in a WeakMap, which works even

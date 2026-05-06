@@ -340,12 +340,26 @@
       :svg-viewbox vbox
       :svg-defs defs})))
 
+(defn- stroke-only-svg-path?
+  "Returns true when the SVG element renders only a stroke (fill=none).
+  Stroke-only paths can have their consecutive touching subpaths safely
+  merged into a continuous polyline so that `stroke-linejoin` applies at
+  shared endpoints, without affecting any fill-rule semantics."
+  [attrs]
+  (let [attr-fill  (some-> (:fill attrs) str/trim)
+        style-fill (some-> (get-in attrs [:style :fill]) str/trim)]
+    (= "none" (or attr-fill style-fill))))
+
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
-    (let [transform (csvg/parse-transform (:transform attrs))
-          content   (cond-> (path/from-string (:d attrs))
-                      (some? transform)
-                      (path.segm/transform-content transform))
+    (let [transform    (csvg/parse-transform (:transform attrs))
+          stroke-only? (stroke-only-svg-path? attrs)
+          content      (cond-> (path/from-string (:d attrs))
+                         stroke-only?
+                         (path/merge-touching-subpaths)
+
+                         (some? transform)
+                         (path.segm/transform-content transform))
 
           selrect    (path.segm/content->selrect content)
           points     (grc/rect->points selrect)
@@ -663,6 +677,22 @@
          (remove is-style-fragment?)  ;; Filter style fragments and hex colors
          (filter #(contains? defs %)))))  ;; Only existing defs
 
+(defn resolve-element-name
+  "Pick the most user-meaningful name for an SVG element.
+
+  Inkscape (and editors following the same convention) write the
+  operator-given label to ``inkscape:label``/``sodipodi:label`` while
+  ``id`` holds an auto-generated technical id like ``path1234``.
+  Preferring the namespaced label keeps the layer/group/element names
+  the operator sees in their source editor across a paste/import
+  (#7869); the existing ``id`` and ``(tag->name tag)`` fallbacks keep
+  legacy SVGs that don't carry a label working unchanged."
+  [tag attrs]
+  (or (:inkscape:label attrs)
+      (:sodipodi:label attrs)
+      (:id attrs)
+      (tag->name tag)))
+
 (defn parse-svg-element
   [frame-id svg-data {:keys [tag attrs hidden] :as element} unames]
 
@@ -670,7 +700,7 @@
   ;; think we should handle this case early and avoid some code
   ;; execution
 
-  (let [name         (or (:id attrs) (tag->name tag))
+  (let [name         (resolve-element-name tag attrs)
         att-refs     (csvg/find-attr-references attrs)
         defs         (get svg-data :defs)
         valid-refs   (filter-valid-def-references att-refs defs)

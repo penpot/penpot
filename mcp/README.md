@@ -4,7 +4,7 @@
 
 Penpot integrates a LLM layer built on the Model Context Protocol
 (MCP) via Penpot's Plugin API to interact with a Penpot design
-file. Penpot's MCP server enables LLMs to perfom data queries,
+file. Penpot's MCP server enables LLMs to perform data queries,
 transformation and creation operations.
 
 Penpot's MCP Server is unlike any other you've seen. You get

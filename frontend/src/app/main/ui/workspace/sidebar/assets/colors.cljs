@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
@@ -28,7 +29,7 @@
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -61,10 +62,16 @@
         menu-state  (mf/use-state cmm/initial-context-menu-state)
         read-only?  (mf/use-ctx ctx/workspace-read-only?)
 
+        opacity      (:opacity color)
+        alpha-suffix (when (and (number? opacity) (< opacity 1))
+                       (dm/str " " (mth/round (* opacity 100)) "%"))
         default-name (cond
                        (:gradient color) (uc/gradient-type->string (dm/get-in color [:gradient :type]))
                        (:color color)    (:color color)
                        :else             (:value color))
+        display-name (if (and alpha-suffix (not (:gradient color)))
+                       (dm/str default-name alpha-suffix)
+                       default-name)
 
         rename-color
         (mf/use-fn
@@ -231,16 +238,16 @@
          :default-value (cpn/merge-path-item (:path color) (:name color))}]
 
        [:div {:title (if (= (:name color) default-name)
-                       default-name
-                       (dm/str (:name color) " (" default-name ")"))
+                       display-name
+                       (dm/str (:name color) " (" display-name ")"))
               :class (stl/css :name-block)
               :on-double-click rename-color-clicked}
 
         (if (= (:name color) default-name)
-          [:span  {:class (stl/css :default-name)} default-name]
+          [:span  {:class (stl/css :default-name)} display-name]
           [:*
            (:name color)
-           [:span  {:class (stl/css :default-name :default-name-with-color)} default-name]])])
+           [:span  {:class (stl/css :default-name :default-name-with-color)} display-name]])])
 
      (when local?
        [:> cmm/assets-context-menu*
@@ -273,7 +280,7 @@
 (mf/defc colors-group
   [{:keys [file-id prefix groups open-groups force-open? local? selected
            multi-colors? multi-assets? on-asset-click on-assets-delete
-           on-clear-selection on-group on-rename-group on-ungroup colors
+           on-clear-selection on-group on-rename-group on-ungroup on-delete-group colors
            selected-full]}]
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
@@ -318,7 +325,8 @@
                                  :path prefix
                                  :is-group-open group-open?
                                  :on-rename on-rename-group
-                                 :on-ungroup on-ungroup}]
+                                 :on-ungroup on-ungroup
+                                 :on-delete-group on-delete-group}]
      (when group-open?
        [:*
         (let [colors (get groups "" [])]
@@ -371,6 +379,7 @@
                               :on-group on-group
                               :on-rename-group on-rename-group
                               :on-ungroup on-ungroup
+                              :on-delete-group on-delete-group
                               :colors colors
                               :selected-full selected-full}]))])]))
 
@@ -492,6 +501,13 @@
                                 file-id))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
+        on-delete-group
+        (mf/with-memo [colors on-clear-selection]
+          (cmm/make-delete-asset-group-fn
+           {:assets colors
+            :on-clear-selection on-clear-selection
+            :delete-events #(map (fn [c] (dwl/delete-color {:id (:id c)})) %)}))
+
         on-asset-click
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
 
@@ -526,5 +542,6 @@
                         :on-group on-group
                         :on-rename-group on-rename-group
                         :on-ungroup on-ungroup
+                        :on-delete-group on-delete-group
                         :colors colors
                         :selected-full selected-full}]]]))

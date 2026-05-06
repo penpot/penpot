@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.tokens.import-export
   (:require
    [app.common.json :as json]
+   [app.common.logging :as l]
    [app.common.path-names :as cpn]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
@@ -15,7 +16,7 @@
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.store :as st]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -44,10 +45,20 @@
 
 (defn- show-unknown-types-warning [unknown-tokens]
   (let [type->tokens (group-by-value unknown-tokens)]
-    (ntf/show {:content (tr "workspace.tokens.unknown-token-type-message")
-               :detail (->> (for [[token-type tokens] type->tokens]
-                              (tr "workspace.tokens.unknown-token-type-section" token-type (count tokens)))
-                            (str/join "<br>"))
+    (l/wrn :hint "unsupported token types found during import"
+           :tokens (str/join ", " (map (fn [[path type]] (str path " (" type ")")) unknown-tokens)))
+    (ntf/show {:content (i18n/tr "workspace.tokens.unknown-token-type-message")
+               :detail (->> (for [[token-type token-paths] type->tokens]
+                              (str (i18n/tr "workspace.tokens.unknown-token-type-section"
+                                            token-type
+                                            (i18n/tr "labels.warning-count" (i18n/c (count token-paths))))
+                                   "<ul>"
+                                   (->> token-paths
+                                        (sort)
+                                        (map #(str "<li>" % "</li>"))
+                                        (str/join ""))
+                                   "</ul>"))
+                            (str/join ""))
                :type :toast
                :level :info})))
 

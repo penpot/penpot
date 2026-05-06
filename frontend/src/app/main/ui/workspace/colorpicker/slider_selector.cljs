@@ -53,7 +53,9 @@
                                               :slider-selector true
                                               :hue (= type :hue)
                                               :opacity (= type :opacity)
-                                              :value (= type :value)))
+                                              :value (= type :value)
+                                              :hsl-saturation (= type :hsl-saturation)
+                                              :lightness (= type :lightness)))
            :data-testid (when (= type :opacity) "slider-opacity")
            :on-pointer-down handle-start-drag
            :on-pointer-up handle-stop-drag

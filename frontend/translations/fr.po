@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-16 08:35+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2026-04-29 17:10+0000\n"
+"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.17.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -110,7 +110,7 @@ msgstr "Lien de récupération de mot de passe envoyé."
 
 #: src/app/main/ui/auth/verify_token.cljs:49
 msgid "auth.notifications.team-invitation-accepted"
-msgstr "Vous avez rejoint l’équipe avec succès"
+msgstr "Vous avez bien rejoint l’équipe"
 
 #: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
@@ -206,7 +206,7 @@ msgid "branding-illustrations-marketing-pieces"
 msgstr "...image de marque, illustrations, supports marketing, etc."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "Ce token n'existe pas ou a été supprimé."
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
@@ -230,8 +230,8 @@ msgstr "Tous les utilisateurs de Penpot"
 #: src/app/main/ui/viewer/share_link.cljs:204
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"Êtes-vous certain de vouloir supprimer ce lien ? Si oui, plus personne ne "
-"pourra y accéder"
+"Voulez -vous vraiment supprimer ce lien ? Si oui, plus personne ne pourra y "
+"accéder"
 
 #: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
 msgid "common.share-link.current-tag"
@@ -247,7 +247,7 @@ msgstr "Obtenir le lien"
 
 #: src/app/main/ui/viewer/share_link.cljs:142
 msgid "common.share-link.link-copied-success"
-msgstr "Lien copié avec succès"
+msgstr "Lien copié"
 
 #: src/app/main/ui/viewer/share_link.cljs:231
 msgid "common.share-link.manage-ops"
@@ -312,7 +312,7 @@ msgstr "Faites une équipe  !"
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.tutorial-hero.info"
-msgstr "Apprenez les bases de Penpot en s'amusant avec ce tutoriel pratique."
+msgstr "Apprenez les bases de Penpot en vous amusant avec ce tutoriel pratique."
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
@@ -357,11 +357,11 @@ msgstr "Générer un nouveau jeton"
 
 #: src/app/main/ui/settings/access_tokens.cljs:64
 msgid "dashboard.access-tokens.create.success"
-msgstr "Jeton d'accès créé avec succès."
+msgstr "Le jeton d'accès a bien été créé."
 
 #: src/app/main/ui/settings/access_tokens.cljs:286
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Pressez le bouton \"Générer un nouveau jeton\" pour en générer un."
+msgstr "Appuyez sur le bouton \"Générer un nouveau jeton\" pour en générer un."
 
 #: src/app/main/ui/settings/access_tokens.cljs:285
 msgid "dashboard.access-tokens.empty.no-access-tokens"
@@ -369,19 +369,19 @@ msgstr "Vous n'avez pas encore de jeton."
 
 #: src/app/main/ui/settings/access_tokens.cljs:135
 msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180 jours"
+msgstr "180 jours"
 
 #: src/app/main/ui/settings/access_tokens.cljs:132
 msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "30 jours"
+msgstr "30 jours"
 
 #: src/app/main/ui/settings/access_tokens.cljs:133
 msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "60 jours"
+msgstr "60 jours"
 
 #: src/app/main/ui/settings/access_tokens.cljs:134
 msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "90 jours"
+msgstr "90 jours"
 
 #: src/app/main/ui/settings/access_tokens.cljs:131
 msgid "dashboard.access-tokens.expiration-never"
@@ -389,11 +389,11 @@ msgstr "Jamais"
 
 #: src/app/main/ui/settings/access_tokens.cljs:268
 msgid "dashboard.access-tokens.expired-on"
-msgstr "A expiré le %s"
+msgstr "Est arrivé à expiration le %s"
 
 #: src/app/main/ui/settings/access_tokens.cljs:269
 msgid "dashboard.access-tokens.expires-on"
-msgstr "Expire le %s"
+msgstr "Arrive à expiration le %s"
 
 #: src/app/main/ui/settings/access_tokens.cljs:267
 msgid "dashboard.access-tokens.no-expiration"
@@ -412,7 +412,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/access_tokens.cljs:142
 msgid "dashboard.access-tokens.token-will-expire"
-msgstr "Le jeton expirera le %s"
+msgstr "Le jeton arrivera à expiration le %s"
 
 #: src/app/main/ui/settings/access_tokens.cljs:143
 msgid "dashboard.access-tokens.token-will-not-expire"
@@ -453,18 +453,18 @@ msgstr "Votre Penpot"
 #: src/app/main/ui/dashboard/deleted.cljs:262
 msgid "dashboard.delete-all-forever-confirmation.description"
 msgstr ""
-"Êtes-vous sûr de vouloir supprimer tous vos projets et fichiers effacés "
-"pour toujours ? Cette action est irréversible."
+"Voulez-vous vraiment supprimer définitivement tous vos projets et fichiers "
+"effacés ? Cette action est irréversible."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:221
 msgid "dashboard.delete-file-forever-confirmation.description"
 msgstr ""
-"Êtes-vous sûr de vouloir supprimer %s pour toujours ? Cette action est "
+"Voulez-vous vraiment supprimer définitivement %s ? Cette action est "
 "irréversible."
 
 #: src/app/main/data/dashboard.cljs:778
 msgid "dashboard.delete-files-success-notification"
-msgstr "%s fichiers ont été effacés avec succès."
+msgstr "%s fichiers ont bien été effacés."
 
 #: src/app/main/ui/dashboard/deleted.cljs:51, src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:261, src/app/main/ui/dashboard/deleted.cljs:263, src/app/main/ui/dashboard/file_menu.cljs:220, src/app/main/ui/dashboard/file_menu.cljs:222
 msgid "dashboard.delete-forever-confirmation.title"
@@ -477,13 +477,13 @@ msgstr "Supprimer le projet"
 #: src/app/main/ui/dashboard/deleted.cljs:52
 msgid "dashboard.delete-project-forever-confirmation.description"
 msgstr ""
-"Êtes-vous sûr de vouloir supprimer définitivement le projet %s ? Vous allez "
-"le supprimer définitivement avec tous les fichiers qu'il contient. Cette "
-"action est irréversible."
+"Voulez-vous vraiment supprimer définitivement le projet %s ? Vous allez le "
+"supprimer définitivement avec tous les fichiers qu'il contient. Cette action "
+"est irréversible."
 
 #: src/app/main/data/dashboard.cljs:777, src/app/main/data/dashboard.cljs:811
 msgid "dashboard.delete-success-notification"
-msgstr "%s a été supprimé avec succès."
+msgstr "%s a bien été supprimé."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:495
 msgid "dashboard.delete-team"
@@ -586,7 +586,7 @@ msgstr "Commencez à fabriquer des choses géniales"
 
 #, unused
 msgid "dashboard.errors.error-on-delete-file"
-msgstr "Il y a eu une erreur lors de la suppression du fichier %s."
+msgstr "Une erreur s'est produite lors de la suppression du fichier %s."
 
 #: src/app/main/data/dashboard.cljs:781
 msgid "dashboard.errors.error-on-delete-files"
@@ -718,10 +718,10 @@ msgstr ""
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Ne téléchargez que des polices que vous possédez ou dont la license vous "
+"Ne téléchargez que des polices que vous possédez ou dont la licence vous "
 "permet de les utiliser dans Penpot. Vous trouverez plus d'informations dans "
-"la section Propriété des Contenus des [conditions générales d'utilisation "
-"de Penpot](%s). Vous pouvez également vous renseigner sur les [licenses de "
+"la section Propriété des Contenus des [conditions générales d'utilisation de "
+"Penpot](%s). Vous pouvez également vous renseigner sur les [licences de "
 "polices](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:214
@@ -810,7 +810,7 @@ msgstr "Médias en cours de traitement"
 
 #: src/app/main/ui/dashboard/import.cljs:125
 msgid "dashboard.import.progress.process-page"
-msgstr "Traitement de la page : %s"
+msgstr "Traitement de la page : %s"
 
 #: src/app/main/ui/dashboard/import.cljs:131
 msgid "dashboard.import.progress.process-typographies"
@@ -822,7 +822,7 @@ msgstr "Envoi des données au serveur (%s/%s)"
 
 #: src/app/main/ui/dashboard/import.cljs:122
 msgid "dashboard.import.progress.upload-media"
-msgstr "Envoi du fichier : %s"
+msgstr "Envoi du fichier : %s"
 
 #: src/app/main/ui/dashboard/team.cljs:765
 msgid "dashboard.invitation-modal.delete"
@@ -938,7 +938,7 @@ msgstr "Les paramètres des notifications ont été mis à jour"
 
 #: src/app/main/ui/settings/password.cljs:38
 msgid "dashboard.notifications.password-saved"
-msgstr "Mot de passe enregistré avec succès !"
+msgstr "Mot de passe enregistré !"
 
 #: src/app/main/ui/dashboard/comments.cljs:45
 msgid "dashboard.notifications.view"
@@ -1049,7 +1049,7 @@ msgstr "Tout restaurer"
 
 #: src/app/main/data/dashboard.cljs:903
 msgid "dashboard.restore-files-success-notification"
-msgstr "%s fichiers ont été restaurés avec succès."
+msgstr "%s fichiers ont bien été restaurés."
 
 #: src/app/main/ui/dashboard/deleted.cljs:82
 msgid "dashboard.restore-project-button"
@@ -1065,7 +1065,7 @@ msgstr "Restaurer le projet"
 
 #: src/app/main/data/dashboard.cljs:875, src/app/main/data/dashboard.cljs:902, src/app/main/data/dashboard.cljs:939, src/app/main/ui/dashboard/file_menu.cljs:198
 msgid "dashboard.restore-success-notification"
-msgstr "%s a été restauré avec succès."
+msgstr "%s a bien été restauré."
 
 #: src/app/main/ui/settings/profile.cljs:78
 msgid "dashboard.save-settings"
@@ -1189,7 +1189,7 @@ msgstr "Votre projet a bien été dupliqué"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:166
 msgid "dashboard.success-move-file"
-msgstr "Votre fichier a été déplacé avec succès"
+msgstr "Votre fichier a bien été déplacé"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:131
 msgid "dashboard.success-move-files"
@@ -1229,7 +1229,7 @@ msgstr "Les fichiers supprimés resteront dans la corbeille pendant"
 
 #: src/app/main/ui/dashboard/deleted.cljs:300
 msgid "dashboard.trash-info-text-part2"
-msgstr " %s jours. "
+msgstr " %s jours. "
 
 #: src/app/main/ui/dashboard/deleted.cljs:301
 msgid "dashboard.trash-info-text-part3"
@@ -1247,7 +1247,7 @@ msgstr "Écrivez pour rechercher"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:319, src/app/main/ui/workspace/main_menu.cljs:642
 msgid "dashboard.unpublish-shared"
-msgstr "Retirer la Bibliothèque"
+msgstr "Supprimer la bibliothèque"
 
 #: src/app/main/ui/settings/options.cljs:74
 msgid "dashboard.update-settings"
@@ -1285,7 +1285,7 @@ msgstr "Créer un webhook"
 
 #: src/app/main/ui/dashboard/team.cljs:1031
 msgid "dashboard.webhooks.create.success"
-msgstr "Webhook créé avec succès."
+msgstr "Webhook créé."
 
 #: src/app/main/ui/dashboard/team.cljs:1136
 msgid "dashboard.webhooks.description"
@@ -1305,7 +1305,7 @@ msgstr "Aucun webhook créé jusqu’à présent."
 
 #, unused
 msgid "dashboard.webhooks.update.success"
-msgstr "Webhook mis à jour avec succès."
+msgstr "Webhook mis à jour."
 
 #: src/app/main/ui/settings.cljs:34
 msgid "dashboard.your-account-title"
@@ -1364,7 +1364,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Ouvrir la liste des tokens"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
+msgid "token-actions.detach-token"
 msgstr "Détacher le token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
@@ -1453,21 +1453,21 @@ msgstr "Domaine non autorisé"
 
 #: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:98, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/dashboard/team.cljs:627, src/app/main/ui/settings/change_email.cljs:37
 msgid "errors.email-has-permanent-bounces"
-msgstr "L'adresse e-mail « %s » a un taux de rebond trop élevé."
+msgstr "L'adresse e-mail « %s » a un taux de rebond trop élevé."
 
 #: src/app/main/ui/dashboard/team.cljs:196, src/app/main/ui/dashboard/team.cljs:858, src/app/main/ui/onboarding/team_choice.cljs:110
 msgid "errors.email-spam-or-permanent-bounces"
-msgstr "L'e-mail \"%s\" a été signalé comme spam ou a été rejeté."
+msgstr "L'e-mail « %s » a été signalé comme spam ou a été rejeté."
 
 #: src/app/main/errors.cljs:279
 msgid "errors.feature-mismatch"
 msgstr ""
-"Il semble que vous ouvrez un fichier qui a la fonctionnalité '%s' activée, "
+"Vous semblez ouvrir un fichier pour lequel la fonctionnalité « %s » activée, "
 "mais votre interface Penpot ne la prend pas en charge ou l'a désactivée."
 
 #: src/app/main/errors.cljs:283, src/app/main/errors.cljs:297
 msgid "errors.feature-not-supported"
-msgstr "La fonctionnalité '%s' n'est pas prise en charge."
+msgstr "La fonctionnalité « %s » n'est pas prise en charge."
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:296, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:240
 msgid "errors.field-max-length"
@@ -1491,7 +1491,7 @@ msgid "errors.file-feature-mismatch"
 msgstr ""
 "Il semble y avoir une incompatibilité entre les fonctionnalités actives et "
 "celles du fichier que tentez d'ouvrir. Vous devez activer les migrations "
-"pour '%s' avant de pouvoir ouvrir le fichier."
+"pour « %s » avant de pouvoir ouvrir le fichier."
 
 #: src/app/main/data/auth.cljs:347, src/app/main/ui/auth/login.cljs:104, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:199, src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:84
 msgid "errors.generic"
@@ -1538,7 +1538,7 @@ msgstr "Invitation non valide"
 
 #: src/app/main/ui/static.cljs:75
 msgid "errors.invite-invalid.info"
-msgstr "Cette invitation est peut-être été annulée ou a expiré."
+msgstr "Cette invitation a peut-être été annulée ou est arrivée à expiration."
 
 #: src/app/main/ui/auth/login.cljs:89
 msgid "errors.ldap-disabled"
@@ -1553,7 +1553,7 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs:187, src/app/main/ui/dashboard/team.cljs:849, src/app/main/ui/onboarding/team_choice.cljs:101
 msgid "errors.maximum-invitations-by-request-reached"
 msgstr ""
-"Le nombre maximum (%s) d'e-mails qui peuvent être invités dans une seule "
+"Le nombre maximal (%s) d'e-mails qui peuvent être invités dans une seule "
 "demande est atteint"
 
 #: src/app/main/data/workspace/media.cljs:190
@@ -1563,8 +1563,7 @@ msgstr "L’image est trop grande."
 #: src/app/main/data/media.cljs:70, src/app/main/data/workspace/media.cljs:193
 msgid "errors.media-type-mismatch"
 msgstr ""
-"Il semble que le contenu de l’image ne correspond pas à l’extension de "
-"fichier."
+"Le contenu de l’image semble ne pas correspondre à l’extension de fichier."
 
 #: src/app/main/data/media.cljs:67, src/app/main/data/workspace/media.cljs:178, src/app/main/data/workspace/media.cljs:181, src/app/main/data/workspace/media.cljs:184, src/app/main/data/workspace/media.cljs:187
 msgid "errors.media-type-not-allowed"
@@ -1622,7 +1621,7 @@ msgstr "Le fichier SVG n'est pas valide ou est mal formé"
 
 #: src/app/main/errors.cljs:270
 msgid "errors.team-feature-mismatch"
-msgstr "Fonctionnalité incompatible détectée '%s'"
+msgstr "Fonctionnalité incompatible détectée « %s »"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:373, src/app/main/ui/dashboard/team.cljs:393
 msgid "errors.team-leave.insufficient-members"
@@ -1632,17 +1631,17 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/sidebar.cljs:376, src/app/main/ui/dashboard/team.cljs:396
 msgid "errors.team-leave.member-does-not-exists"
-msgstr "Le membre que vous essayez d'assigner n'existe pas."
+msgstr "Le membre que vous essayez d'affecter n'existe pas."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:379, src/app/main/ui/dashboard/team.cljs:399
 msgid "errors.team-leave.owner-cant-leave"
 msgstr ""
-"Le propriétaire ne peut pas quitter l'équipe, vous devez réassigner le rôle "
+"Le propriétaire ne peut pas quitter l'équipe, vous devez réaffecter le rôle "
 "de propriétaire."
 
 #: src/app/main/ui/workspace/tokens/sets/helpers.cljs:26, src/app/main/ui/workspace/tokens/sets/helpers.cljs:45
 msgid "errors.token-set-already-exists"
-msgstr "Une collection avec le même nom existe déjà"
+msgstr "Il existe déjà une collection portant ce nom"
 
 #: src/app/main/data/tokens.cljs:
 #, unused
@@ -1652,12 +1651,12 @@ msgstr "Impossible de dupliquer une collection inconnue"
 #: src/app/main/data/workspace/tokens/library_edit.cljs:337
 msgid "errors.token-set-exists-on-drop"
 msgstr ""
-"Impossible de déposer, une collection avec le même nom existe déjà dans ce "
+"Impossible de déposer. Il existe déjà une collection portant ce nom à ce "
 "chemin."
 
 #: src/app/main/data/workspace/tokens/library_edit.cljs:125, src/app/main/data/workspace/tokens/library_edit.cljs:144
 msgid "errors.token-theme-already-exists"
-msgstr "Une option de thème avec le même nom existe déjà"
+msgstr "Il existe déjà une option de thème portant ce nom"
 
 #: src/app/main/data/media.cljs:73
 msgid "errors.unexpected-error"
@@ -2061,7 +2060,7 @@ msgstr ""
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
 msgid "inspect.layer-info"
-msgstr "Info sur la couche"
+msgstr "Infos sur le calque"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:137
 msgid "inspect.multiple-selected"
@@ -2412,7 +2411,7 @@ msgstr "Événement"
 
 #: src/app/main/ui/dashboard/team.cljs:668
 msgid "labels.expired-invitation"
-msgstr "Expirée"
+msgstr "Arrivée à expiration"
 
 #: src/app/main/ui/exports/assets.cljs:172, src/app/main/ui/workspace/tokens/sidebar.cljs:134
 msgid "labels.export"
@@ -2743,7 +2742,7 @@ msgstr "Supprimer"
 
 #: src/app/main/ui/dashboard/team.cljs:355
 msgid "labels.remove-member"
-msgstr "Retirer le membre"
+msgstr "Supprimer le membre"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:299, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/versions.cljs:192, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
@@ -3553,7 +3552,7 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 #, unused
 msgid "modals.remove-shared-confirm.message"
-msgstr "Retirer « %s » en tant que bibliothèque partagée"
+msgstr "Supprimer « %s » en tant que bibliothèque partagée"
 
 #: src/app/main/ui/workspace/nudge.cljs:52
 msgid "modals.small-nudge"
@@ -3568,14 +3567,14 @@ msgstr[1] "Dépublier"
 #: src/app/main/ui/delete_shared.cljs:50
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
-msgstr[0] "Vous êtes sûr de vouloir retirer cette bibliothèque ?"
-msgstr[1] "Vous êtes sûr de vouloir retirer ces bibliothèques ?"
+msgstr[0] "Voulez-vous vraiment supprimer cette bibliothèque ?"
+msgstr[1] "Voulez-vous vraiment supprimer ces bibliothèques ?"
 
 #: src/app/main/ui/delete_shared.cljs:45
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
-msgstr[0] "Retirer la bibliothèque"
-msgstr[1] "Retirer les bibliothèques"
+msgstr[0] "Supprimer la bibliothèque"
+msgstr[1] "Supprimer les bibliothèques"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 #, unused
@@ -3717,7 +3716,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Il y a une nouvelle version disponible. Rafraîchissez la page"
+msgstr "Il y a une nouvelle version disponible."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"
@@ -3739,7 +3738,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/options.cljs:27, src/app/main/ui/settings/profile.cljs:30
 msgid "notifications.profile-saved"
-msgstr "Profil enregistré avec succès !"
+msgstr "Profil enregistré !"
 
 #: src/app/main/ui/settings/change_email.cljs:46
 msgid "notifications.validation-email-sent"
@@ -4696,11 +4695,11 @@ msgstr "Activer/désactiver les calques"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:190
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Ajouter/supprimer flex layout"
+msgstr "Ajouter/supprimer la disposition flex"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:191
 msgid "shortcuts.toggle-layout-grid"
-msgstr "Ajouter / Retirer grid layout"
+msgstr "Ajouter/Supprimer la disposition en grille"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:192
 msgid "shortcuts.toggle-lock"
@@ -4921,8 +4920,8 @@ msgstr[1] "Il y a actuellement %s personnes dans vos équipe qui peuvent être 
 #: src/app/main/ui/settings/subscription.cljs:230
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
-"Attention : changer vers un abonnement plus bas signifie moins de stockage "
-"et des sauvegardes et des version d'historique plus courtes."
+"Attention : en passant à un abonnement inférieur, le stockage est moins "
+"important et les sauvegardes et les version d'historique sont plus courtes."
 
 #: src/app/main/ui/settings/subscription.cljs:211
 msgid "subscription.settings.management.dialog.editors"
@@ -5010,11 +5009,11 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "Merci d'avoir choisi l'abonnement Penpot %s !"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Profitez bien de votre abonnement !"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "Vous êtes %s !"
 
 #: src/app/main/ui/settings/subscription.cljs:526
@@ -5056,8 +5055,8 @@ msgstr "Mettre à niveau votre abonnement"
 #, markdown
 msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
 msgstr ""
-"Si vous souhaitez augmenter cette limite, écrivez-nous à l'adressse "
-"[%s](mailto)"
+"Si vous souhaitez augmenter cette limite, écrivez-nous à l'adresse [%s]"
+"(mailto)"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:59
 #, markdown
@@ -5946,7 +5945,7 @@ msgstr "Activer/Désactiver le flou"
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
 msgid "workspace.options.canvas-background"
-msgstr "Couleur de fond du canvas"
+msgstr "Couleur de fond du canevas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
 msgid "workspace.options.clip-content"
@@ -6424,7 +6423,7 @@ msgstr "Naviguer vers"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:52
 msgid "workspace.options.interaction-navigate-to-dest"
-msgstr "Naviguer vers : %s"
+msgstr "Accéder à : %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:57, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:357
 msgid "workspace.options.interaction-none"
@@ -6444,7 +6443,7 @@ msgstr "Ouvrir la superposition"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:54
 msgid "workspace.options.interaction-open-overlay-dest"
-msgstr "Ouvrir la superposition : %s"
+msgstr "Ouvrir la superposition : %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:61, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:351
 msgid "workspace.options.interaction-open-url"
@@ -6513,7 +6512,7 @@ msgstr "Activer/désactiver la superposition"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:56
 msgid "workspace.options.interaction-toggle-overlay-dest"
-msgstr "Activer/désactiver la superposition : %s"
+msgstr "Activer/désactiver la superposition : %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:415
 msgid "workspace.options.interaction-trigger"
@@ -7357,7 +7356,7 @@ msgstr "Copier en CSS"
 
 #: src/app/main/ui/workspace/context_menu.cljs:220
 msgid "workspace.shape.menu.copy-css-nested"
-msgstr "Copier en CSS (couches imbriquées)"
+msgstr "Copier en CSS (calques imbriqués)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:203
 msgid "workspace.shape.menu.copy-link"
@@ -7498,7 +7497,7 @@ msgstr "Chemin"
 
 #: src/app/main/ui/workspace/context_menu.cljs:549
 msgid "workspace.shape.menu.remove-flex"
-msgstr "Retirer flex layout"
+msgstr "Supprimer la disposition flex"
 
 #: src/app/main/ui/workspace/context_menu.cljs:552
 msgid "workspace.shape.menu.remove-grid"
@@ -7550,7 +7549,7 @@ msgstr "Afficher le composant principal"
 
 #: src/app/main/ui/workspace/context_menu.cljs:314
 msgid "workspace.shape.menu.thumbnail-remove"
-msgstr "Retirer la miniature"
+msgstr "Supprimer la miniature"
 
 #: src/app/main/ui/workspace/context_menu.cljs:316
 msgid "workspace.shape.menu.thumbnail-set"
@@ -7706,7 +7705,7 @@ msgid "workspace.tokens.color"
 msgstr "Couleur"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
-msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr ""
 "L'interlignage dépend de la taille de la police. Ajoutez une taille de "
 "police pour obtenir la valeur déduite."
@@ -7721,7 +7720,7 @@ msgstr "En créer un."
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:235
 msgid "workspace.tokens.create-token"
-msgstr "Créer un nouveau token %s"
+msgstr "Créer un token %s"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:353
 msgid "workspace.tokens.delete"
@@ -7753,10 +7752,10 @@ msgstr "Modifier les thèmes"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:234
 msgid "workspace.tokens.edit-token"
-msgstr "Modifier le token"
+msgstr "Modifier le token %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
-msgid "workspace.tokens.empty-input"
+msgid "errors.tokens.empty-input"
 msgstr "La valeur du token doit être renseignée"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
@@ -7764,7 +7763,7 @@ msgid "workspace.tokens.enter-token-name"
 msgstr "Entrez le nom du token %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "Erreur d'importation : Impossible d'interpréter le fichier JSON."
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
@@ -7818,7 +7817,7 @@ msgid "workspace.tokens.import-button-prefix"
 msgstr "Importer %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "Erreur d'importation :"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:273
@@ -7877,45 +7876,44 @@ msgid "workspace.tokens.individual-tokens"
 msgstr "Utiliser des tokens individuels"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "Couleur non valide : %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "Erreur d'importation : données du token non valides dans le fichier JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
+msgid "errors.tokens.invalid-json-token-name"
 msgstr "Erreur lors de l'importation : nom du token non valide au format JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
+msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "« %s » n'est pas un nom de token valide.\n"
-"Les noms des tokens ne doivent pas comporter de lettres et de chiffres "
-"séparés par des caractères « . » et ne doivent pas commencer par le symbole "
-"« $ »."
+"Les noms de token ne doivent pas comporter de lettres et de chiffres séparés "
+"par des caractères « . » et ne doivent pas commencer par le symbole « $ »."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
-msgid "workspace.tokens.invalid-text-case-token-value"
+msgid "errors.tokens.invalid-text-case-token-value"
 msgstr ""
 "Valeur du token non valide : seules les valeurs Aucune, Majuscules, "
 "Minuscules ou Première lettre en capitale sont acceptées"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
-msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgid "errors.tokens.invalid-text-decoration-token-value"
 msgstr ""
 "Valeur du token non valide : seules les valeurs none, underline et "
 "strike-through sont acceptées"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.invalid-token-value-typography"
+msgid "errors.tokens.invalid-token-value-typography"
 msgstr ""
 "Valeur non valide : elle doit faire référence à un token de typographie "
 "composite."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "Valeur du token non valide : %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -7951,7 +7949,7 @@ msgid "workspace.tokens.min-size"
 msgstr "Taille min."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "Références du token manquantes : "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
@@ -7991,7 +7989,7 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "Vous n'avez actuellement aucun thème."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:19
-msgid "workspace.tokens.no-token-files-found"
+msgid "errors.tokens.no-token-files-found"
 msgstr "Aucun token, collection ou thème n'ont été trouvés dans ce fichier."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
@@ -7999,11 +7997,11 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s collections actives"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
+msgid "errors.tokens.number-too-large"
 msgstr "Valeur du token non valide. La valeur est trop grande : %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
+msgid "errors.tokens.opacity-range"
 msgstr ""
 "L'opacité doit être comprise entre 0 % et 100 % ou entre 0 et 1 (ex : 50 % "
 "ou 0.5)."
@@ -8044,7 +8042,7 @@ msgid "workspace.tokens.select-set"
 msgstr "Sélectionner la collection."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "Le token s'auto-référence"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
@@ -8079,7 +8077,7 @@ msgid "workspace.tokens.size"
 msgstr "Taille"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
-msgid "workspace.tokens.stroke-width-range"
+msgid "errors.tokens.stroke-width-range"
 msgstr "La largueur du tracé doit être plus grand ou égal à 0."
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:41, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:169
@@ -8132,7 +8130,7 @@ msgstr ""
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
 #, unused
 msgid "workspace.tokens.token-not-resolved"
-msgstr "Impossible de trouver une référence de token ayant comme nom : %s"
+msgstr "Impossible de trouver une référence de token portant le nom : %s"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:267
 msgid "workspace.tokens.token-value"
@@ -8144,19 +8142,19 @@ msgstr "Entrez une valeur ou un alias avec {alias}"
 
 #: src/app/main/ui/workspace/tokens/management.cljs:67
 msgid "workspace.tokens.tokens-section-title"
-msgstr "TOKENS -  %s"
+msgstr "TOKENS –  %s"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:122
 msgid "workspace.tokens.tools"
 msgstr "Outils"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "L'importation a réussi. Certains tokens n'ont pas été inclus."
+msgstr "L'importation a réussi, mais certains tokens ont été ignorés car ils utilisent des valeurs $type non prises en charge. Développez les détails pour voir quels tokens ont été affectés."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Le type « %s » n'est pas pris en charge (%s)\n"
+msgstr "Le type « %s » n'est pas pris en charge (%s) :"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"
@@ -8167,11 +8165,11 @@ msgid "workspace.tokens.value-not-valid"
 msgstr "La valeur n'est pas valide"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:69
-msgid "workspace.tokens.value-with-percent"
+msgid "errors.tokens.value-with-percent"
 msgstr "Valeur non valide : % n'est pas autorisé."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:65
-msgid "workspace.tokens.value-with-units"
+msgid "errors.tokens.value-with-units"
 msgstr "Valeur non valide : les unités ne sont pas autorisées."
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
@@ -8498,8 +8496,362 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:431
 msgid "workspace.versions.warning.text"
-msgstr "Les versions auto-enregistrées seront gardées %s jours."
+msgstr "Les versions auto-enregistrées seront conservées %s jours."
 
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:347
+msgid "dashboard.create-new-org"
+msgstr "Créer une organisation"
+
+#: src/app/main/errors.cljs:105
+msgid "errors.unexpected-exception"
+msgstr "Erreur inattendue : %s"
+
+#: src/app/main/ui/static.cljs:318
+msgid "labels.reload-page"
+msgstr "Recharger la page"
+
+#: src/app/main/ui/settings/subscription.cljs:50
+msgid "subscription.settings.recommended"
+msgstr "Recommandé"
+
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "1 invitation sélectionnée"
+msgstr[1] "%s invitations sélectionnées"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
+msgid "workspace.layout-item.height-100"
+msgstr "Hauteur 100 %"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
+msgid "workspace.layout-item.width-100"
+msgstr "Largeur 100 %"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "Gauche"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "Droite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
+msgid "workspace.options.interaction-animation-direction-up"
+msgstr "Haut"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
+#, fuzzy
+msgid "workspace.options.orientation.horizontal"
+msgstr "Horizontal"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
+#, fuzzy
+msgid "workspace.options.orientation.vertical"
+msgstr "Vertical"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:232
+msgid "workspace.tokens.shadow-add-shadow"
+msgstr "Ajouter une ombre"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:109
+msgid "workspace.tokens.shadow-blur-range"
+msgstr "Le flou de l'ombre doit être supérieur ou égal à 0."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
+#, unused
+msgid "workspace.tokens.shadow-title"
+msgstr "Ombres"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:281
+msgid "workspace.tokens.shadow-token-blur-value-error"
+msgstr "La valeur de flou ne peut pas être négative"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:287
+#, unused
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "La valeur de la portée ne peut pas être négative"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:139, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:141
+#, fuzzy
+msgid "workspace.tokens.shadow-x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:150, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:152
+#, fuzzy
+msgid "workspace.tokens.shadow-y"
+msgstr "Y"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:105
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr ""
+"Type d'ombre non valide : seuls les types « innerShadow » ou « dropShadow » "
+"sont acceptés"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:117
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Valeur non valide : doit référencer un token d'ombre composite."
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:303
+msgid "workspace.tokens.missing-reference"
+msgstr "Référence manquante"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+msgid "workspace.tokens.remap-warning-time"
+msgstr "Cette action pourrait prendre un instant."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
+#, unused
+msgid "workspace.tokens.shadow-color"
+msgstr "Couleur"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:123
+msgid "workspace.tokens.shadow-remove-shadow"
+msgstr "Supprimer l'ombre"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:173, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:174, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:177
+msgid "workspace.tokens.shadow-spread"
+msgstr "Portée"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:113
+msgid "workspace.tokens.shadow-spread-range"
+msgstr "La portée de l'ombre doit être supérieure ou égale à 0."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:51
+#, unused
+msgid "workspace.tokens.theme-name-already-exists"
+msgstr "Il existe déjà un thème portant ce nom"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+#, unused
+msgid "workspace.tokens.theme.disable"
+msgstr "Désactiver"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+#, unused
+msgid "workspace.tokens.theme.enable"
+msgstr "Activer"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "Il existe déjà un token au chemin : %s"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "Le nom doit comporter au moins 1 caractère"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "Outils de débogage"
+
+#: src/app/main/ui/static.cljs:315
+msgid "errors.webgl-context-lost.desc-message"
+msgstr "WebGL ne fonctionne plus. Rechargez la page pour le réinitialiser"
+
+#: src/app/main/ui/static.cljs:314
+msgid "errors.webgl-context-lost.main-message"
+msgstr "Oups ! Le contexte du canevas a été perdu"
+
+#: src/app/main/ui/dashboard/subscription.cljs:196
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"Il y a %s éditeurs dans les équipes dont vous êtes propriétaire alors que "
+"votre abonnement Professionnel permet d'en avoir jusqu'à 8."
+
+#: src/app/main/ui/dashboard/subscription.cljs:184
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"Seuls les nouveaux éditeurs dans les équipes dont vous êtes propriétaire "
+"sont pris en compte pour la facturation future. Un forfait de 175 $/mois "
+"s'applique toujours au-delà de 25 éditeurs."
+
+#: src/app/main/ui/settings/subscription.cljs:298
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Ajouter les détails de paiement"
+
+#: src/app/main/ui/settings/subscription.cljs:285
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Ajoutez vos détails de paiement dès maintenant pour que votre abonnement ne "
+"soit pas interrompu après la période d'essai et pour continuer à soutenir "
+"notre projet Open Source. Vous n'allez pas être facturé pour le moment."
+
+#: src/app/main/ui/settings/subscription.cljs:293
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Ignorer pour le moment et commencer l'essai"
+
+#: src/app/main/ui/settings/subscription.cljs:203
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Aidez-nous à nous développer et à faciliter votre essai"
+
+#: src/app/main/ui/settings/subscription.cljs:263
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"Vous pouvez réduire votre nombre actuel d'éditeurs. Dans les paramètres de "
+"l'équipe, modifiez le rôle (d'éditeur/admin en spectateur) des personnes qui "
+"ne modifient pas vraiment des fichiers."
+
+#: src/app/main/ui/settings/subscription.cljs:266
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr ""
+"Conseil : vous pouvez augmenter le nombre de vos utilisateurs dès maintenant "
+"pour anticiper les invitations. Au-delà de 25 éditeurs dans vos équipes, un "
+"forfait de 175 $/mois vous sera facturé."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:58
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"Si vous souhaitez augmenter cette limite, [mettez votre abonnement à "
+"niveau|target:self](%s)"
+
+#: src/app/main/ui/viewer/header.cljs:187
+msgid "viewer.header.edit-in-workspace"
+msgstr "Modifier dans l'espace de travail"
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "Outils de débogage"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
+msgid "workspace.layout-item.fit-content-horizontal"
+msgstr "Adapter le contenu (horizontalement)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
+msgid "workspace.layout-item.fit-content-vertical"
+msgstr "Adapter le contenu (verticalement)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:567
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"Ce composant comporte des variantes en conflit. Assurez-vous que chaque "
+"variante possède une collection de valeurs de propriétés unique."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:267
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr ""
+"Ces variantes possèdent des propriétés et des valeurs identiques. Ajustez "
+"les valeurs afin de pouvoir les extraire."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:557
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"Ce composant comporte des variantes dont le nom n'est pas valide. Assurez-"
+"vous que chaque variante respecte la structure appropriée."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:91
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"Si vous modifiez l'un de ces éléments (par exemple, en renommant ou en "
+"regroupant un calque), la connexion est rompue. Si vous annulez la "
+"modification, la connexion est rétablie."
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:129
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Taille de police ou {alias}"
+
+#: src/app/main/data/workspace/tokens/application.cljs:325
+msgid "workspace.tokens.font-variant-not-found"
+msgstr ""
+"Erreur lors de la définition de la graisse/du style de la police. Ce style "
+"de police n'existe pas dans la police active"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr ""
+"Valeur de token non valide : vous ne pouvez référencer qu'un token de "
+"famille de polices"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:153
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Interlettrage ou {alias}"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+#, unused
+msgid "workspace.tokens.no-remap-needed"
+msgstr ""
+"Ce token n'est pas utilisé actuellement dans votre conception. Aucun "
+"remappage n'est donc nécessaire."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
+msgid "workspace.tokens.not-remap"
+msgstr "Ne pas remapper"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:178
+msgid "workspace.tokens.reference-composite"
+msgstr "Entrer un alias de typographie pour un token"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:204
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Entrer un alias d'ombre pour un token"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:99
+msgid "workspace.tokens.remap"
+msgstr "Remapper des tokens"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "Remapper tous les tokens qui utilisent «  %s  » dans « %s » ?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
+msgid "workspace.tokens.remap-warning-effects"
+msgstr ""
+"Tous les calques et les références utilisant l'ancien nom du token vont être "
+"modifiés."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
+#, unused
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "Remappage des références du token..."
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+#, unused
+msgid "workspace.tokens.warning-name-change"
+msgstr "Si vous renommez ce token, toute référence à son ancien nom sera rompue"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:261
+msgid "labels.switch"
+msgstr "Changer"
+
+#: src/app/main/ui/dashboard/subscription.cljs:84
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Passez à un forfait supérieur !"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
+msgid "workspace.layout-item.fix-height"
+msgstr "Corriger la hauteur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
+msgid "workspace.layout-item.fix-width"
+msgstr "Corriger la largeur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:570
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Chercher les variantes en conflit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr "Vers le bas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "À l'intérieur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "À l'extérieur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:265
+msgid "workspace.options.more-token-colors"
+msgstr "Plus de tokens de couleur"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Valeur de graisse de la police non valide : utilisez des valeurs numériques "
+"(100 à 950) ou des noms standard (thin, light, regular, bold, etc.) "
+"éventuellement suivi de la mention « Italic »"

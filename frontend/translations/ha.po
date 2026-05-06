@@ -2269,7 +2269,7 @@ msgstr "sabunta sashe a babbar taska"
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "akwai sabon yayi, fatan za a sabunta fage"
+msgstr "akwai sabon yayi."
 
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"

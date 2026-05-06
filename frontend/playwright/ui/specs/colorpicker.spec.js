@@ -85,14 +85,6 @@ test("Create a LINEAR gradient", async ({ page }) => {
     .last();
   await inputOpacity2.fill("40");
 
-  const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
-    "opacity-global-input",
-  );
-  await inputOpacityGlobal.fill("50");
-  await inputOpacityGlobal.press("Enter");
-  await expect(inputOpacityGlobal).toHaveValue("50");
-  await expect(inputOpacityGlobal).toBeVisible();
-
   await expect(
     workspacePage.page.getByText("Linear gradient")
   ).toBeVisible();
@@ -169,14 +161,6 @@ test("Create a RADIAL gradient", async ({ page }) => {
     .last();
   await inputOpacity2.fill("100");
 
-  const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
-    "opacity-global-input",
-  );
-  await inputOpacityGlobal.fill("50");
-  await inputOpacityGlobal.press("Enter");
-  await expect(inputOpacityGlobal).toHaveValue("50");
-  await expect(inputOpacityGlobal).toBeVisible();
-
   await expect(
     workspacePage.page.getByText("Radial gradient")
   ).toBeVisible();
@@ -212,7 +196,7 @@ test("Gradient stops limit", async ({ page }) => {
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/9900
-test("Bug 9900 - Color picker has no inputs for HSV values", async ({
+test("Bug 9900 - Color picker has no inputs for HSB values", async ({
   page,
 }) => {
   const workspacePage = new WasmWorkspacePage(page);
@@ -223,12 +207,12 @@ test("Bug 9900 - Color picker has no inputs for HSV values", async ({
   const swatch = workspacePage.page.getByRole("button", { name: "E8E9EA" });
   await swatch.click();
 
-  const HSVA = await workspacePage.page.getByLabel("HSVA");
-  await HSVA.click();
+  const HSBA = await workspacePage.page.getByLabel("HSBA");
+  await HSBA.click();
 
   await workspacePage.page.getByLabel("H", { exact: true }).isVisible();
   await workspacePage.page.getByLabel("S", { exact: true }).isVisible();
-  await workspacePage.page.getByLabel("V", { exact: true }).isVisible();
+  await workspacePage.page.getByLabel("B(V)", { exact: true }).isVisible();
 });
 
 test("Bug 10089 - Cannot change alpha", async ({ page }) => {

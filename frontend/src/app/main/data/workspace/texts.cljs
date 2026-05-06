@@ -905,50 +905,61 @@
   "A higher level version of dwl/add-typography, and has mainly two
   responsabilities: add the typography to the library and apply it to
   the currently selected text shapes (being aware of the open text
-  editors."
-  [file-id]
-  (ptk/reify ::add-typography
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [selected   (dsh/lookup-selected state)
-            objects    (dsh/lookup-page-objects state)
+  editors.
+  Optionally accepts a group-path to place the new typography inside
+  a specific group."
+  ([file-id] (add-typography file-id nil))
+  ([file-id group-path]
+   (ptk/reify ::add-typography
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [selected   (dsh/lookup-selected state)
+             objects    (dsh/lookup-page-objects state)
 
-            xform      (comp (keep (d/getf objects))
-                             (filter cfh/text-shape?))
-            shapes     (into [] xform selected)
-            shape      (first shapes)
+             xform      (comp (keep (d/getf objects))
+                              (filter cfh/text-shape?))
+             shapes     (into [] xform selected)
+             shape      (first shapes)
 
-            values     (current-text-values
-                        {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
-                         :shape shape
-                         :attrs txt/text-node-attrs})
+             values     (current-text-values
+                         {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
+                          :shape shape
+                          :attrs txt/text-node-attrs})
 
-            multiple? (or (> 1 (count shapes))
-                          (d/seek (partial = :multiple)
-                                  (vals values)))
+             multiple? (or (> 1 (count shapes))
+                           (d/seek (partial = :multiple)
+                                   (vals values)))
 
-            values    (-> (d/without-nils values)
-                          (select-keys
-                           (d/concat-vec txt/text-font-attrs
-                                         txt/text-spacing-attrs
-                                         txt/text-transform-attrs)))
+             values    (-> (d/without-nils values)
+                           (select-keys
+                            (d/concat-vec txt/text-font-attrs
+                                          txt/text-spacing-attrs
+                                          txt/text-transform-attrs)))
+             values    (cond-> values
+                         (number? (:line-height values))
+                         (update :line-height str)
 
-            typ-id    (uuid/next)
-            typ       (-> (if multiple?
-                            txt/default-typography
-                            (merge txt/default-typography values))
-                          (generate-typography-name)
-                          (assoc :id typ-id))]
+                         (number? (:letter-spacing values))
+                         (update :letter-spacing str))
 
-        (rx/concat
-         (rx/of (dwl/add-typography typ)
-                (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                       :asset-type "typography"}))
+             typ-id    (uuid/next)
+             typ       (-> (if multiple?
+                             txt/default-typography
+                             (merge txt/default-typography values))
+                           (generate-typography-name)
+                           (assoc :id typ-id)
+                           (cond-> (string? group-path)
+                             (update :name #(str group-path " / " %))))]
 
-         (when (not multiple?)
-           (rx/of (update-attrs (:id shape)
-                                {:typography-ref-id typ-id
-                                 :typography-ref-file file-id}))))))))
+         (rx/concat
+          (rx/of (dwl/add-typography typ)
+                 (ptk/event ::ev/event {::ev/name "add-asset-to-library"
+                                        :asset-type "typography"}))
+
+          (when (not multiple?)
+            (rx/of (update-attrs (:id shape)
+                                 {:typography-ref-id typ-id
+                                  :typography-ref-file file-id})))))))))
 
 ;; -- Text Editor v2
 
@@ -1095,16 +1106,15 @@
                                 content-has-text?
                                 has-prev-content?)
                      (dissoc :prev-content))
+
                    (cond-> (and (not new-shape?)
                                 prev-content-has-text?
                                 (not content-has-text?)
                                 (not finalize?))
                      (assoc :prev-content prev-content))
+
                    (cond-> (and update-name? (some? name))
-                     (assoc :name name))
-                   (cond-> (some? new-size)
-                     (gsh/transform-shape
-                      (ctm/change-size shape (:width new-size) (:height new-size))))))
+                     (assoc :name name))))
              {:save-undo? finalize-save-undo-first?
               :stack-undo? effective-stack-undo?
               :undo-group (when new-shape? id)})
@@ -1166,6 +1176,35 @@
                                        (cond-> (or (some? width) (some? height))
                                          (gsh/transform-shape (ctm/change-size shape width height))))))
                                {:undo-group (when new-shape? id)})))))))
+
+(defn replace-layer-names-in-shapes
+  [ids search replacement]
+  (ptk/reify ::replace-layer-names-in-shapes
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-group (uuid/next)]
+        (rx/of
+         (dwsh/update-shapes
+          ids
+          (fn [shape] (update shape :name txt/replace-all-case-insensitive search replacement))
+          {:attrs #{:name} :undo-group undo-group}))))))
+
+(defn replace-text-in-shapes
+  [ids search replacement]
+  (ptk/reify ::replace-text-in-shapes
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-group (uuid/next)]
+        (rx/of
+         (dwsh/update-shapes
+          ids
+          (fn [shape]
+            (if (and (= :text (:type shape)) (some? (:content shape)))
+              (let [new-content (txt/replace-text-in-content (:content shape) search replacement)
+                    new-name   (txt/generate-shape-name (txt/content->text new-content))]
+                (-> shape (assoc :content new-content) (assoc :name new-name)))
+              shape))
+          {:attrs #{:content :name} :undo-group undo-group}))))))
 
 ;; -- Text Editor v3
 

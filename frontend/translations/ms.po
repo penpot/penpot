@@ -2332,7 +2332,7 @@ msgstr "Kemas kini komponen dalam pustaka kongsi"
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Versi baharu tersedia, sila muat semula halaman"
+msgstr "Versi baharu tersedia."
 
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"

@@ -179,6 +179,7 @@
      [:> text-menu*
       {:ids ids
        :type type
+       :applied-tokens applied-tokens
        :values text-values}]
 
      [:> fill/fill-menu*

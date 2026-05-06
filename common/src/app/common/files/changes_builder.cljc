@@ -219,21 +219,33 @@
    (let [page (::page (meta changes))]
      (mod-page changes page options)))
 
-  ([changes page {:keys [name background]}]
+  ([changes page {:keys [name background pixel-grid-color pixel-grid-opacity]}]
    (let [change {:type :mod-page :id (:id page)}
          redo   (cond-> change
                   (some? name)
                   (assoc :name name)
 
                   (some? background)
-                  (assoc :background background))
+                  (assoc :background background)
+
+                  (some? pixel-grid-color)
+                  (assoc :pixel-grid-color pixel-grid-color)
+
+                  (some? pixel-grid-opacity)
+                  (assoc :pixel-grid-opacity pixel-grid-opacity))
 
          undo   (cond-> change
                   (some? name)
                   (assoc :name (:name page))
 
                   (some? background)
-                  (assoc :background (:background page)))]
+                  (assoc :background (:background page))
+
+                  (some? pixel-grid-color)
+                  (assoc :pixel-grid-color (:pixel-grid-color page))
+
+                  (some? pixel-grid-opacity)
+                  (assoc :pixel-grid-opacity (:pixel-grid-opacity page)))]
 
      (-> changes
          (update :redo-changes conj redo)

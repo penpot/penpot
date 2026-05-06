@@ -26,7 +26,8 @@
 }
 
 .cta-top-section {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
+
   display: grid;
   color: var(--color-foreground-secondary);
   grid-template-columns: 1fr auto;
@@ -43,13 +44,15 @@
 }
 
 .icon-dropdown {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   height: 100%;
   width: var(--sp-l);
 }
 
 .icon-dropdown svg {
-  @extend .button-icon-small;
+  @extend %button-icon-small;
+
   stroke: var(--icon-foreground);
   transform: rotate(90deg);
 }
@@ -67,7 +70,8 @@
 
 .cta-bottom-section .content {
   @include t.use-typography("body-medium");
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
+
   color: var(--color-foreground-secondary);
   display: inline-block;
   text-align: left;
@@ -88,11 +92,13 @@
 
 .cta-title {
   @include t.use-typography("body-small");
+
   margin-block-end: var(--sp-xs);
 }
 
 .highlighted .cta-title {
   @include t.use-typography("body-medium");
+
   margin-block-end: 0;
 }
 
@@ -102,17 +108,20 @@
 
 .highlighted .cta-text {
   @include t.use-typography("body-large");
+
   color: var(--color-foreground-primary);
 }
 
 .cta-bottom-section .content a {
   @include t.use-typography("body-medium");
+
   color: var(--color-accent-tertiary);
   margin-inline-start: var(--sp-xs);
 }
 
 .cta-link {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
+
   align-self: end;
   margin-inline-start: var(--sp-xs);
 }
@@ -127,17 +136,20 @@
 
 .team-label {
   @include t.use-typography("headline-small");
+
   color: var(--title-foreground-color);
 }
 
 .team-text {
   @include t.use-typography("title-medium");
+
   color: var(--color-foreground-primary);
 }
 
 .manage-subscription-link {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
   @include t.use-typography("body-medium");
+
   color: var(--color-accent-tertiary);
   display: flex;
   margin-block-start: -8px;
@@ -161,7 +173,8 @@
 }
 
 .menu-item {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
+
   cursor: pointer;
 
   &:hover {
@@ -197,6 +210,7 @@
 
 .cta-message {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-secondary);
   line-height: 1;
 
@@ -210,7 +224,7 @@
   display: flex;
   border-radius: var(--sp-s);
   flex-direction: column;
-  margin: var(--sp-m);
+  margin: var(--sp-m) var(--sp-m) 0;
   background: var(--color-background-quaternary);
   border: $b-1 solid var(--color-accent-primary-muted);
   padding: var(--sp-l);
@@ -218,11 +232,13 @@
 
 .nitrate-title {
   @include t.use-typography("body-large");
+
   color: var(--color-foreground-primary);
 }
 
 .nitrate-info {
   @include t.use-typography("body-medium");
+
   color: var(--color-foreground-secondary);
   margin-block: var(--sp-s) var(--sp-xxl);
 }
@@ -234,4 +250,25 @@
 
 .nitrate-bottom-button {
   width: fit-content;
+}
+
+.nitrate-current-plan {
+  border-radius: var(--sp-s);
+  margin: var(--sp-m);
+  background: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-quaternary);
+  padding: var(--sp-m) var(--sp-l);
+}
+
+.nitrate-current-plan-label {
+  @include t.use-typography("body-small");
+
+  padding-block-end: var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.nitrate-current-plan-text {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
 }

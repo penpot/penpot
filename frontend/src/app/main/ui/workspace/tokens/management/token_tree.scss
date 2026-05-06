@@ -12,7 +12,6 @@
   padding-block-end: var(--sp-s);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-s);
   padding-inline-start: calc(var(--node-spacing));
 
   & .node-parent {
@@ -50,6 +49,7 @@
       margin-block-end: var(--sp-s);
     }
   }
+
   & .token-pill {
     flex: 0 0 auto;
   }

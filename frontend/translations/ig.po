@@ -1935,7 +1935,7 @@ msgstr "Kagbuo"
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "A new version is available, please refresh the page"
+msgstr "A new version is available."
 
 #: src/app/main/ui/settings/delete_account.cljs:24
 msgid "notifications.profile-deletion-not-allowed"

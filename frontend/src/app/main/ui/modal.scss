@@ -11,5 +11,5 @@
 }
 
 .modal-wrapper {
-  @extend .new-scrollbar;
+  @extend %new-scrollbar;
 }

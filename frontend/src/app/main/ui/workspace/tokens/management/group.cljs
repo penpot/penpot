@@ -27,8 +27,11 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ref:unfolded-token-paths
-  (l/derived (l/key :unfolded-token-paths) refs/workspace-tokens))
+(def ref:folded-token-paths
+  (l/derived (l/key :folded-token-paths) refs/workspace-tokens))
+
+(def ref:unfolded-token-types
+  (l/derived (l/key :unfolded-token-types) refs/workspace-tokens))
 
 (defn token-section-icon
   [type]
@@ -72,8 +75,15 @@
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
 
-        unfolded-token-paths (mf/deref ref:unfolded-token-paths)
-        is-type-unfolded (contains? (set unfolded-token-paths) (name type))
+        folded-token-paths (mf/deref ref:folded-token-paths)
+        unfolded-token-types-state (mf/deref ref:unfolded-token-types)
+
+        current-file (mf/deref refs/file)
+
+        is-same-file-set? (and (= (:file-id unfolded-token-types-state) (:id current-file))
+                               (= (:set-id unfolded-token-types-state) selected-token-set-id))
+        is-type-unfolded (and is-same-file-set?
+                              (contains? (set (:types unfolded-token-types-state)) type))
 
         editing-ref  (mf/deref refs/workspace-editor-state)
         edition      (mf/deref refs/selected-edition)
@@ -117,7 +127,7 @@
          (mf/deps type expandable?)
          (fn []
            (when expandable?
-             (st/emit! (dwtl/toggle-token-path (name type))))))
+             (st/emit! (dwtl/toggle-token-type type)))))
 
         on-popover-open-click
         (mf/use-fn
@@ -152,6 +162,10 @@
                                         :level :warning
                                         :timeout 3000}))))))))]
 
+    (mf/use-effect
+     (fn []
+       (st/emit! (dwtl/restore-unfolded-token-types))))
+
     [:div {:class (stl/css :token-section-wrapper)
            :data-testid (dm/str "section-" (name type))}
      [:> layer-button* {:label title
@@ -172,13 +186,12 @@
      (when is-type-unfolded
        [:> token-tree* {:tokens tokens
                         :type type
-                        :id (dm/str "token-tree-" (name type))
-                        :tokens-lib tokens-lib
-                        :unfolded-token-paths unfolded-token-paths
+                        :folded-token-paths folded-token-paths
                         :selected-shapes selected-shapes
+                        :is-selected-inside-layout is-selected-inside-layout
                         :active-theme-tokens active-theme-tokens
                         :selected-token-set-id selected-token-set-id
-                        :is-selected-inside-layout is-selected-inside-layout
+                        :tokens-lib tokens-lib
                         :on-token-pill-click on-token-pill-click
                         :on-pill-context-menu on-pill-context-menu
                         :on-node-context-menu on-node-context-menu}])]))

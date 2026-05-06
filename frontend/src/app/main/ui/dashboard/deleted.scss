@@ -29,9 +29,10 @@
 
 .deleted-info {
   display: block;
-  height: fit-content;
   color: var(--color-foreground-secondary);
+
   @include t.use-typography("body-large");
+
   line-height: 0.8;
   height: var(--sp-xl);
 }
@@ -64,7 +65,6 @@
 .nav-option {
   color: var(--color-foreground-secondary);
   padding: 0.5rem;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,6 +101,7 @@
 
 .project-name {
   @include t.use-typography("body-large");
+
   width: fit-content;
   margin-inline-end: var(--sp-m);
   line-height: 0.8;
@@ -116,7 +117,8 @@
 
 .add-file-btn,
 .options-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: var(--sp-xxxl);
   width: var(--sp-xxxl);
   margin: 0 var(--sp-s);
@@ -131,6 +133,7 @@
 
 .add-icon,
 .menu-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
 }

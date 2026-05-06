@@ -177,7 +177,7 @@
                            (dw/increase-zoom)))))))
 
 (defn setup-hover-shapes
-  [page-id move-stream objects selected mod? hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures?]
+  [page-id move-stream objects selected mod? hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures? read-only?]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         mod-ref (mf/use-ref @mod?)
@@ -261,7 +261,7 @@
     (let [sorted-ids-cache (mf/use-ref {})]
       (hooks/use-stream
        over-shapes-stream
-       (mf/deps page-id objects show-measures?)
+       (mf/deps page-id objects show-measures? read-only?)
        (fn [ids]
          (let [selected   (mf/ref-val selected-ref)
                focus      (mf/ref-val focus-ref)
@@ -273,7 +273,7 @@
                  (let [sorted-ids
                        (into (d/ordered-set)
                              (comp (remove (partial cfh/hidden-parent? objects))
-                                   (remove #(dm/get-in objects [% :blocked]))
+                                   (remove #(and (not read-only?) (dm/get-in objects [% :blocked])))
                                    (remove (partial cfh/svg-raw-shape? objects)))
                              (ctt/sort-z-index objects ids {:bottom-frames? mod?}))]
                    (mf/set-ref-val! sorted-ids-cache (assoc cached-ids [mod? ids] sorted-ids))

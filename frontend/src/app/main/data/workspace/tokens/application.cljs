@@ -656,6 +656,7 @@
   this is useful for applying a single attribute from an attributes set
   while removing other applied tokens from this set."
   [{:keys [attributes attributes-to-remove token shape-ids on-update-shape]}]
+  (assert (ctob/token? token) "apply-token event requires a valid token")
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
@@ -667,9 +668,10 @@
             text-editing? (and (some? edition)
                                (= :text (:type (get objects edition))))]
         (if (and (empty? (get state :workspace-editor-state))
+                 (some? token)
                  (not text-editing?))
           (let [attributes-to-remove
-                ;; Remove atomic typography tokens when applying composite and vice-verca
+                ;; Remove atomic typography tokens when applying composite and vice-versa
                 (cond
                   (ctt/typography-token-keys (:type token)) (set/union attributes-to-remove ctt/typography-keys)
                   (ctt/typography-keys (:type token)) (set/union attributes-to-remove ctt/typography-token-keys)
@@ -696,7 +698,7 @@
                             shape-ids (d/nilv (keys shapes)  [])
                             any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 
-                            resolved-value (get-in resolved-tokens [(cfo/token-identifier token) :resolved-value])
+                            resolved-value (get-in resolved-tokens [(:name token) :resolved-value])
                             resolved-value (if (contains? cf/flags :tokenscript)
                                              (ts/tokenscript-symbols->penpot-unit resolved-value)
                                              resolved-value)
@@ -822,9 +824,50 @@
                            :shape-ids shape-ids
                            :on-update-shape on-update-shape}))))))))
 
-(defn apply-token-on-selected
+(defn apply-token-from-input
+  [{:keys [token attrs shape-ids expand-with-children]}]
+  (ptk/reify ::apply-token-from-input
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            shapes (into [] (keep (d/getf objects)) shape-ids)
+
+            shapes
+            (if expand-with-children
+              (into []
+                    (mapcat (fn [shape]
+                              (if (= (:type shape) :group)
+                                (keep objects (:shapes shape))
+                                [shape])))
+                    shapes)
+              shapes)
+
+            {:keys [attributes _ on-update-shape]}
+            (get token-properties (:type token))
+
+            on-update-shape
+            (if (seq attrs)
+              (or (get attr->shape-update (first attrs)) on-update-shape)
+              on-update-shape)]
+
+        (rx/of
+         (cond
+           (and (= (:type token) :spacing)
+                (nil? attrs))
+           (apply-spacing-token-separated {:token token
+                                           :attr attrs
+                                           :shapes shapes})
+
+           :else
+           (apply-token {:attributes (if (empty? attrs) attributes attrs)
+                         :token token
+                         :shape-ids shape-ids
+                         :on-update-shape on-update-shape})))))))
+
+
+(defn apply-token-on-color-selected
   [color-operations token]
-  (ptk/reify ::apply-token-on-selected
+  (ptk/reify ::apply-token-on-color-selected
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]

@@ -7,11 +7,12 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   display: flex;
   flex-direction: column;
 }
@@ -21,19 +22,20 @@
 }
 
 .modal-title {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   display: grid;
   grid-template-columns: 1fr;
   gap: deprecated.$s-16;
@@ -41,84 +43,120 @@
   min-height: 40px;
 }
 
+.status-message {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-title-foreground-color);
+  font-style: italic;
+}
+
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }
+
 .accept-btn {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
+
   &.danger {
-    @extend .modal-danger-btn;
+    @extend %modal-danger-btn;
   }
 }
 
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }
 
 .file-entry {
   display: flex;
+
   .file-name {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
+
     .file-icon {
-      @include deprecated.flexCenter;
+      @include deprecated.flex-center;
+
       height: deprecated.$s-24;
       width: deprecated.$s-16;
+
       svg {
-        @extend .button-icon;
+        @extend %button-icon;
+
         stroke: var(--icon-foreground);
       }
+
       &.icon-fill svg {
         fill: var(--icon-foreground);
       }
     }
+
     .file-name-edit {
-      @extend .input-element;
-      @include deprecated.bodySmallTypography;
+      @extend %input-element;
+      @include deprecated.body-small-typography;
+
       flex-grow: 1;
     }
+
     .file-name-label {
-      @include deprecated.bodySmallTypography;
+      @include deprecated.body-small-typography;
+
       display: flex;
       align-items: center;
       gap: deprecated.$s-12;
       flex-grow: 1;
+
       .icon {
-        @include deprecated.flexCenter;
+        @include deprecated.flex-center;
+
         height: deprecated.$s-16;
         width: deprecated.$s-16;
+
         svg {
-          @extend .button-icon-small;
+          @extend %button-icon-small;
+
           stroke: var(--icon-foreground);
         }
       }
     }
+
     .edit-entry-buttons {
-      @include deprecated.flexRow;
+      @include deprecated.flex-row;
+
       button {
-        @extend .button-tertiary;
+        @extend %button-tertiary;
+
         width: deprecated.$s-28;
         height: deprecated.$s-32;
+
         svg {
-          @extend .button-icon;
+          @extend %button-icon;
+
           stroke: var(--icon-foreground);
         }
       }
     }
   }
+
   .error-message,
   .progress-message {
     display: flex;
     align-items: center;
-    height: deprecated.$s-32;
+    min-height: deprecated.$s-32;
     color: var(--modal-text-foreground-color);
+  }
+
+  .error-message {
+    align-items: flex-start;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .linked-library {
@@ -126,14 +164,19 @@
     align-items: center;
     gap: deprecated.$s-12;
     color: var(--modal-text-foreground-color);
+
     .linked-library-tag {
-      @include deprecated.flexCenter;
+      @include deprecated.flex-center;
+
       height: deprecated.$s-24;
       width: deprecated.$s-24;
+
       svg {
-        @extend .button-icon;
+        @extend %button-icon;
+
         stroke: var(--icon-foreground);
       }
+
       &.error {
         svg {
           stroke: var(--element-foreground-error);
@@ -147,45 +190,57 @@
       color: var(--modal-text-foreground-color);
     }
   }
+
   &.warning {
     .file-name {
       color: var(--element-foreground-warning);
+
       .file-icon svg {
         stroke: var(--element-foreground-warning);
       }
+
       .file-icon.icon-fill svg {
         fill: var(--element-foreground-warning);
       }
     }
   }
+
   &.success {
     .file-name {
       color: var(--modal-text-foreground-color);
+
       .file-icon svg {
         stroke: var(--modal-text-foreground-color);
       }
+
       .file-icon.icon-fill svg {
         fill: var(--modal-text-foreground-color);
       }
     }
   }
+
   &.error {
     .file-name {
       color: var(--modal-text-foreground-color);
+
       .file-icon svg {
         stroke: var(--modal-text-foreground-color);
       }
+
       .file-icon.icon-fill svg {
         fill: var(--modal-text-foreground-color);
       }
     }
   }
+
   &.editable {
     .file-name {
       color: var(--modal-text-foreground-color);
+
       .file-icon svg {
         stroke: var(--modal-text-foreground-color);
       }
+
       .file-icon.icon-fill svg {
         fill: var(--modal-text-foreground-color);
       }
@@ -208,4 +263,13 @@
 
 .import-error-list-enry {
   padding: var(--sp-xs) 0;
+}
+
+.import-error-detail {
+  @include deprecated.body-small-typography;
+
+  margin-top: var(--sp-xs);
+  color: var(--modal-text-foreground-color);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

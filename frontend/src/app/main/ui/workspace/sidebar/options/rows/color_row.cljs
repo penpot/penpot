@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.types.color :as clr]
    [app.common.types.shape.attrs :refer [default-color]]
-   [app.common.types.token :as tk]
    [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
@@ -27,6 +26,7 @@
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -98,16 +98,16 @@
         token-name-ref (mf/use-ref nil)
         swatch-tooltip-content (cond
                                  not-active
-                                 (tr "ds.inputs.token-field.no-active-color.token-option")
+                                 (tr "not-active-token.no-name")
                                  has-errors
-                                 (tr "color-row.token-color-row.deleted-token")
+                                 (tr "options.deleted-token")
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
         name-tooltip-content (cond
                                not-active
-                               (tr "ds.inputs.token-field.no-active-color.token-option")
+                               (tr "not-active-token.no-name")
                                has-errors
-                               (tr "color-row.token-color-row.deleted-token")
+                               (tr "options.deleted-token")
                                :else
                                #(mf/html
                                  [:div
@@ -138,7 +138,7 @@
       [:div {:class (stl/css :token-actions)}
        [:> icon-button*
         {:variant "action"
-         :aria-label (tr "ds.inputs.token-field.detach-token")
+         :aria-label (tr "token-actions.detach-token")
          :on-click on-detach-token
          :icon i/detach}]
        [:> icon-button*
@@ -177,12 +177,9 @@
 
         active-tokens*    (mf/use-ctx ctx/active-tokens-by-type)
 
-        tokens            (mf/with-memo [active-tokens* origin]
-                            (let [origin (if (= :color-selection origin) :fill origin)]
-                              (delay
-                                (-> (deref active-tokens*)
-                                    (select-keys (get tk/tokens-by-input origin))
-                                    (not-empty)))))
+        tokens (mf/with-memo [active-tokens* origin]
+                 (csu/filter-tokens-for-input active-tokens* origin))
+
         on-focus'
         (mf/use-fn
          (mf/deps on-focus)
@@ -354,10 +351,6 @@
                       :hidden hidden
                       :dnd-over-top (= (:over dprops) :top)
                       :dnd-over-bot (= (:over dprops) :bot))]
-
-    (when (= applied-token :multiple)
-      ;; (js/console.trace "color-row*")
-      (prn "color-row*" index color applied-token))
 
     (mf/with-effect [color prev-color disable-picker]
       (when (and (not disable-picker) (not= prev-color color))

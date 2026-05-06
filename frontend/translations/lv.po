@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-16 08:35+0000\n"
-"Last-Translator: \"Ņikita K.\" <nikita.kozlovs@gmail.com>\n"
-"Language-Team: Latvian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
+"PO-Revision-Date: 2026-02-18 14:09+0000\n"
+"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
+"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
+"lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
-"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.16-dev\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 5.16.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -205,7 +205,7 @@ msgid "branding-illustrations-marketing-pieces"
 msgstr "... zīmolrades, ilustrācijām, mārketinga materiāliem utt."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "Šī tekstvienība nepastāv vai ir izdzēsta."
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
@@ -1211,7 +1211,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Atvērt tekstvienību sarakstu"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
+msgid "token-actions.detach-token"
 msgstr "Atdalīt tekstvienību"
 
 #: src/app/main/data/auth.cljs:339
@@ -3389,7 +3389,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Ir pieejama jauna versija, lūgums atsvaidzināt lapu"
+msgstr "Ir pieejama jauna versija."
 
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
@@ -4622,11 +4622,11 @@ msgstr ""
 "\"Abonements\"."
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Izbaudi savu plānu!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "Tu esi %s."
 
 #: src/app/main/ui/settings/subscription.cljs:526
@@ -6270,39 +6270,39 @@ msgstr "Papildu opcijas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:686, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:693
 msgid "workspace.options.layout-item.layout-item-max-h"
-msgstr "Maks.augstums"
+msgstr "Lielākais augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:624, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:631
 msgid "workspace.options.layout-item.layout-item-max-w"
-msgstr "Maks.platums"
+msgstr "Lielākais platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:655, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:663
 msgid "workspace.options.layout-item.layout-item-min-h"
-msgstr "Min.augstums"
+msgstr "Mazākais augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:591, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:600
 msgid "workspace.options.layout-item.layout-item-min-w"
-msgstr "Min.platums"
+msgstr "Mazākais platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
 msgid "workspace.options.layout-item.title.layout-item-max-h"
-msgstr "Maksimālais augstums"
+msgstr "Lielākais augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
 msgid "workspace.options.layout-item.title.layout-item-max-w"
-msgstr "Maksimālais platums"
+msgstr "Lielākais platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
 msgid "workspace.options.layout-item.title.layout-item-min-h"
-msgstr "Minimālais augstums"
+msgstr "Mazākais augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
 msgid "workspace.options.layout-item.title.layout-item-min-w"
-msgstr "Minimālais platums"
+msgstr "Mazākais platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -7378,7 +7378,7 @@ msgid "workspace.tokens.edit-themes"
 msgstr "Labot izskatus"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
-msgid "workspace.tokens.empty-input"
+msgid "errors.tokens.empty-input"
 msgstr "Tekstvienības vērtība nevar būt tukša"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
@@ -7386,7 +7386,7 @@ msgid "workspace.tokens.enter-token-name"
 msgstr "Jāievada %s tekstvienības nosaukums"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "Ievietošanas kļūda: nevarēja apstrādāt JSON."
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
@@ -7432,7 +7432,7 @@ msgid "workspace.tokens.grouping-set-alert"
 msgstr "Tekstvienību apkopošana vēl netiek nodrošināta."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "Ievietošanas kļūda:"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:241
@@ -7473,26 +7473,26 @@ msgstr ""
 "redzētu izmaiņas"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "Nederīga krāsas vērtība: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "Ievietošanas kļūda: JSON satur nederīgus tekstvienību datus."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
+msgid "errors.tokens.invalid-json-token-name"
 msgstr "Ievietošanas kļūda: nederīgs tekstvienības nosaukums JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
+msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" nav derīgs tekstvienības nosaukums.\n"
 "Tekstvienību nosaukumos var būt tikai burti un cipari, kas atdalīti ar "
 "rakstzīmi \".\", un tie nedrīkst sākties ar zīmi \"$\"."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "Nederīga tekstvienības vērtība: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -7524,7 +7524,7 @@ msgid "workspace.tokens.min-size"
 msgstr "Mazākais lielums"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "Trūkst tekstvienību atsauces: "
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:135
@@ -7564,11 +7564,11 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s spēkā esošas kopas"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
+msgid "errors.tokens.number-too-large"
 msgstr "Nederīga tekstvienības vērtība. Aprēķinātā vērtība ir pārāk liela: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
+msgid "errors.tokens.opacity-range"
 msgstr "Necaurspīdīgumam ir jābūt starp 0 un 100 % vai 0 un 1 (piem., 50% jeb 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
@@ -7607,7 +7607,7 @@ msgid "workspace.tokens.select-set"
 msgstr "Atlasīt kopu."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "Tekstvienībai ir atsauce uz sevi"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
@@ -7655,7 +7655,7 @@ msgid "workspace.tokens.size"
 msgstr "Izmērs"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
-msgid "workspace.tokens.stroke-width-range"
+msgid "errors.tokens.stroke-width-range"
 msgstr "Vilkuma platumam ir jābūt vienādam vai lielākam par 0."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
@@ -7720,16 +7720,16 @@ msgstr "TEKSTVIENĪBAS -  %s"
 msgid "workspace.tokens.tools"
 msgstr "Rīki"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Veids \"%s\" nav atbalstīts (%s)\n"
+msgstr "Veids \"%s\" nav atbalstīts (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:132
 msgid "workspace.tokens.value-not-valid"
 msgstr "Vērtība nav derīga"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:65
-msgid "workspace.tokens.value-with-units"
+msgid "errors.tokens.value-with-units"
 msgstr "Nederīga vērtība: mērvienības nav atļautas."
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166

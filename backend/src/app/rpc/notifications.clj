@@ -1,0 +1,44 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
+(ns app.rpc.notifications
+  (:require
+   [app.common.uuid :as uuid]
+   [app.msgbus :as mbus]))
+
+(defn notify-team-change
+  [cfg team notification]
+  (let [msgbus (::mbus/msgbus cfg)]
+    (mbus/pub! msgbus
+               ;;TODO There is a bug on dashboard with teams notifications.
+               ;;For now we send it to uuid/zero instead of team-id
+               :topic uuid/zero
+               :message {:type :team-org-change
+                         :team team
+                         :notification notification})))
+
+
+(defn notify-user-org-change
+  [cfg profile-id organization-id organization-name notification]
+  (let [msgbus (::mbus/msgbus cfg)]
+    (mbus/pub! msgbus
+               :topic profile-id
+               :message {:type :user-org-change
+                         :topic profile-id
+                         :organization-id organization-id
+                         :organization-name organization-name
+                         :notification notification})))
+
+
+(defn notify-organization-deletion
+  [cfg organization-name teams deleted-teams]
+  (let [msgbus (::mbus/msgbus cfg)]
+    (mbus/pub! msgbus
+               :topic uuid/zero
+               :message {:type :organization-deleted
+                         :organization-name organization-name
+                         :teams teams
+                         :deleted-teams deleted-teams})))

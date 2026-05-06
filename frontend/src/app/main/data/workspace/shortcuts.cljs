@@ -104,6 +104,11 @@
                           :subsections [:edit]
                           :fn (constantly nil)}
 
+   :paste-replace        {:tooltip (ds/meta (ds/shift "V"))
+                          :command (ds/c-mod "shift+v")
+                          :subsections [:edit]
+                          :fn #(emit-when-no-readonly (dw/paste-from-clipboard {:replace? true}))}
+
    :copy-props           {:tooltip (ds/meta (ds/alt "c"))
                           :command (ds/c-mod "alt+c")
                           :subsections [:edit]
@@ -145,6 +150,11 @@
                           :command "escape"
                           :subsections [:edit]
                           :fn #(st/emit! esc-pressed)}
+
+   :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
+                      :fn #(st/emit! (dw/open-layers-search :find))}
+   :find-and-replace {:tooltip (ds/meta "H") :command (ds/c-mod "h") :subsections [:edit]
+                      :fn #(st/emit! (dw/open-layers-search :find-and-replace))}
 
    ;; MODIFY LAYERS
 
@@ -504,17 +514,17 @@
                           :fn #(st/emit! (dw/decrease-zoom))}
 
    :reset-zoom           {:tooltip (ds/shift "0")
-                          :command "shift+0"
+                          :command ["shift+0" "shift+num0"]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/reset-zoom)}
 
    :fit-all              {:tooltip (ds/shift "1")
-                          :command "shift+1"
+                          :command ["shift+1" "shift+num1"]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/zoom-to-fit-all)}
 
    :zoom-selected        {:tooltip (ds/shift "2")
-                          :command ["shift+2" "@" "\""]
+                          :command ["shift+2" "shift+num2" "@" "\""]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}
 
@@ -616,7 +626,7 @@
             (range 10)
             (map (fn [n] [(keyword (str "opacity-" n))
                           {:tooltip (str n)
-                           :command (str n)
+                           :command [(str n) (str "num" n)]
                            :subsections [:modify-layers]
                            :fn #(emit-when-no-readonly (dwly/pressed-opacity n))}])))))
 

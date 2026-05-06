@@ -389,6 +389,17 @@
          (tr "workspace.header.menu.show-guides"))]
       [:> shortcuts* {:id :toggle-guides}]]
 
+     [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                              :on-click    toggle-flag
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (toggle-flag event)))
+                              :data-testid "lock-guides"
+                              :id          "file-menu-lock-guides"}
+      [:span {:class (stl/css :item-name)}
+       (if (contains? layout :lock-guides)
+         (tr "workspace.header.menu.unlock-guides")
+         (tr "workspace.header.menu.lock-guides"))]]
 
      (when-not ^boolean read-only?
        [:*
@@ -463,6 +474,12 @@
         (mf/use-fn
          #(st/emit! (dw/select-all)))
 
+        find
+        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find))))
+
+        find-and-replace
+        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find-and-replace))))
+
         undo
         (mf/use-fn
          #(st/emit! dwu/undo))
@@ -484,6 +501,20 @@
       [:span {:class (stl/css :item-name)}
        (tr "workspace.header.menu.select-all")]
       [:> shortcuts* {:id :select-all}]]
+
+     [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                              :on-click find
+                              :on-key-down (fn [event] (when (kbd/enter? event) (find event)))
+                              :id "file-menu-find"}
+      [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.find")]
+      [:> shortcuts* {:id :find}]]
+
+     [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                              :on-click find-and-replace
+                              :on-key-down (fn [event] (when (kbd/enter? event) (find-and-replace event)))
+                              :id "file-menu-find-and-replace"}
+      [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.find-and-replace")]
+      [:> shortcuts* {:id :find-and-replace}]]
 
      (when can-edit
        [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)

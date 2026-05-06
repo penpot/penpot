@@ -787,3 +787,135 @@
          (dch/commit-changes changes)
          (ptk/data-event :layout/update {:ids [layout-id]})
          (dwu/commit-undo-transaction undo-id))))))
+
+(defn complete-rows?
+  "Check if the selected cells cover complete row(s) — all columns must be included."
+  [grid cells]
+  (let [{:keys [first-column last-column]} (ctl/cells-coordinates cells)
+        num-columns (count (:layout-grid-columns grid))]
+    (and (= first-column 1)
+         (= last-column num-columns))))
+
+(defn complete-columns?
+  "Check if the selected cells cover complete column(s) — all rows must be included."
+  [grid cells]
+  (let [{:keys [first-row last-row]} (ctl/cells-coordinates cells)
+        num-rows (count (:layout-grid-rows grid))]
+    (and (= first-row 1)
+         (= last-row num-rows))))
+
+(defn copy-grid-tracks
+  "Store the selected track indices for later paste. Works for both
+   complete rows and complete columns."
+  [grid-id type]
+  (assert (#{:row :column} type))
+  (ptk/reify ::copy-grid-tracks
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects    (dsh/lookup-page-objects state)
+            grid       (get objects grid-id)
+            selected   (get-in state [:workspace-grid-edition grid-id :selected])
+            cells      (->> selected (map #(get-in grid [:layout-grid-cells %])))
+            {:keys [first-row last-row first-column last-column]} (ctl/cells-coordinates cells)
+            ;; Convert 1-indexed cell positions to 0-indexed track indices
+            track-indices (if (= type :row)
+                            (vec (range (dec first-row) last-row))
+                            (vec (range (dec first-column) last-column)))]
+        (assoc-in state [:workspace-grid-edition grid-id :copied-tracks]
+                  {:track-indices track-indices
+                   :type type
+                   :grid-id grid-id})))))
+
+(defn paste-grid-tracks
+  "Paste previously copied tracks at the end of the grid.
+   Each source track is duplicated and appended after the last
+   existing track. All operations are grouped in a single undo
+   transaction. Follows the same pattern as `duplicate-layout-track`."
+  [grid-id]
+  (ptk/reify ::paste-grid-tracks
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-id      (:current-file-id state)
+            page         (dsh/lookup-page state)
+            objects      (:objects page)
+            libraries    (dsh/lookup-libraries state)
+            library-data (dsh/lookup-file state file-id)
+            grid         (get objects grid-id)
+
+            copied        (get-in state [:workspace-grid-edition grid-id :copied-tracks])
+            track-indices (:track-indices copied)
+            type          (:type copied)
+            undo-id       (js/Symbol)]
+
+        (when (and (seq track-indices) (some? type))
+          (let [shapes-by-track-fn
+                (if (= type :row)
+                  ctl/shapes-by-row
+                  ctl/shapes-by-column)
+
+                ;; Collect shapes from all source tracks
+                all-shapes
+                (->> track-indices
+                     (mapcat #(shapes-by-track-fn grid % false))
+                     (set))
+
+                ;; Generate duplication changes for all shapes at once
+                changes
+                (-> (pcb/empty-changes it)
+                    (cll/generate-duplicate-changes objects page all-shapes (gpt/point 0 0) libraries library-data file-id)
+                    (cll/generate-duplicate-changes-update-indices objects all-shapes))
+
+                ;; Build ids-map: old-shape-id -> new-shape-id
+                ids-map
+                (->> changes
+                     :redo-changes
+                     (filter #(= (:type %) :add-obj))
+                     (filter #(all-shapes (:old-id %)))
+                     (map #(vector (:old-id %) (get-in % [:obj :id])))
+                     (into {}))
+
+                duplicate-at-fn
+                (if (= type :row)
+                  ctl/duplicate-row-at
+                  ctl/duplicate-column-at)
+
+                tracks-prop
+                (if (= type :row)
+                  :layout-grid-rows
+                  :layout-grid-columns)
+
+                ;; Sort source indices ascending — we'll append each
+                ;; copy at the end in order, preserving the original
+                ;; track ordering in the appended block.
+                sorted-indices (vec (sort track-indices))
+
+                changes
+                (-> changes
+                    (pcb/update-shapes
+                     [grid-id]
+                     (fn [shape objects]
+                       ;; Restore grid structure (duplication may have altered it)
+                       (let [shape (merge shape (select-keys grid [:layout-grid-cells :layout-grid-columns :layout-grid-rows]))]
+                         ;; Append each source track at the end.
+                         ;; Process in ascending order so the copies
+                         ;; appear in the same order as the originals.
+                         ;; Each insertion adds one track, so both the
+                         ;; target index and the source index (if it
+                         ;; comes after the target) shift by 1.
+                         (reduce
+                          (fn [s [offset src-idx]]
+                            (let [;; Source tracks don't shift because we
+                                  ;; append after them (target > source).
+                                  actual-src src-idx
+                                  ;; Append at the end (which grows by
+                                  ;; one with each iteration).
+                                  target-idx (+ (count (get grid tracks-prop)) offset)]
+                              (duplicate-at-fn s objects actual-src target-idx ids-map)))
+                          shape
+                          (map-indexed vector sorted-indices))))
+                     {:with-objects? true}))]
+
+            (rx/of (dwu/start-undo-transaction undo-id)
+                   (dch/commit-changes changes)
+                   (ptk/data-event :layout/update {:ids [grid-id]})
+                   (dwu/commit-undo-transaction undo-id))))))))

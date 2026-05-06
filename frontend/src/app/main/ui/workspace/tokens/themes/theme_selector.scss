@@ -11,6 +11,7 @@
   --custom-select-bg-color: var(--menu-background-color);
   --custom-select-icon-color: var(--color-foreground-secondary);
   --custom-select-text-color: var(--menu-foreground-color);
+
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -24,6 +25,7 @@
   border: deprecated.$s-1 solid var(--custom-select-border-color);
   color: var(--custom-select-text-color);
   cursor: pointer;
+
   &:hover {
     --custom-select-bg-color: var(--menu-background-color-hover);
     --custom-select-border-color: var(--menu-background-color);
@@ -41,7 +43,8 @@
 }
 
 .group {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
+
   display: block;
   padding: deprecated.$s-8;
   color: var(--color-foreground-secondary);
@@ -52,23 +55,26 @@
   --custom-select-border-color: var(--menu-border-color-disabled);
   --custom-select-icon-color: var(--menu-foreground-color-disabled);
   --custom-select-text-color: var(--menu-foreground-color-disabled);
+
   pointer-events: none;
   cursor: default;
 }
 
 .dropdown-button {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   color: var(--color-foreground-secondary);
 }
 
 .current-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   width: deprecated.$s-24;
   padding-right: deprecated.$s-4;
 }
 
 .custom-select-dropdown {
-  @extend .dropdown-wrapper;
+  @extend %dropdown-wrapper;
 }
 
 .separator {
@@ -88,7 +94,8 @@
 }
 
 .checked-element-button {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
+
   position: relative;
   display: flex;
   justify-content: space-between;
@@ -96,17 +103,20 @@
 }
 
 .checked-element {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
+
   &.is-selected {
     color: var(--menu-foreground-color);
   }
+
   &.disabled {
     display: none;
   }
 }
 
 .check-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   color: var(--icon-foreground-primary);
   visibility: hidden;
 }
@@ -121,12 +131,13 @@
 }
 
 .current-label {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 }
 
 .dropdown-portal {
   --menu-max-height: #{deprecated.$s-400};
-  @extend .new-scrollbar;
+
+  @extend %new-scrollbar;
 
   position: absolute;
 }

@@ -242,6 +242,16 @@ register with another method.
 PENPOT_FLAGS: [...] enable-oidc-registration
 ```
 
+__Since version 2.16.0__
+
+Allows customising the label shown on the OIDC login button (defaults to "OpenID").
+
+```bash
+# Frontend
+PENPOT_OIDC_NAME: <provider-name>
+```
+<br />
+
 #### Azure Active Directory using OpenID Connect
 
 Allows integrating with Azure Active Directory as authentication provider:

@@ -18,6 +18,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.nitrate.nitrate-activation-success-modal]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr c]]
@@ -28,6 +29,7 @@
   [{:keys [card-title
            card-title-icon
            price-value price-period
+           cancel-at
            benefits-title benefits
            cta-text
            cta-link
@@ -35,6 +37,7 @@
            cta-link-trial
            cta-text-with-icon
            cta-link-with-icon
+           show-activation-by-code
            editors
            recommended
            show-button-cta]}]
@@ -56,11 +59,22 @@
     (when (and price-value price-period)
       [:div {:class (stl/css :plan-price)}
        [:span {:class (stl/css :plan-price-value)} price-value]
-       [:span {:class (stl/css :plan-price-period)} " / " price-period]])]
+       [:span {:class (stl/css :plan-price-period)} " / " price-period]])
+    (when cancel-at
+      [:div {:class (stl/css :plan-cancel)}
+       [:span {:class (stl/css :plan-cancel-date)} cancel-at]])]
    (when benefits-title [:h5 {:class (stl/css :benefits-title)} benefits-title])
    [:ul {:class (stl/css :benefits-list)}
     (for [benefit  benefits]
       [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
+   (when (and cta-link cta-text show-button-cta)
+     [:> button* {:variant "primary"
+                  :type "button"
+                  :class (stl/css-case :bottom-button (not (and cta-link-trial cta-text-trial)))
+                  :on-click cta-link} cta-text])
+   (when (and cta-link-trial cta-text-trial)
+     [:button {:class (stl/css :cta-button :bottom-link)
+               :on-click cta-link-trial} cta-text-trial])
    (when (and cta-link-with-icon cta-text-with-icon)
      [:button {:class (stl/css :cta-button :more-info)
                :on-click cta-link-with-icon} cta-text-with-icon
@@ -70,14 +84,10 @@
      [:button {:class (stl/css-case :cta-button true
                                     :bottom-link (not (and cta-link-trial cta-text-trial)))
                :on-click cta-link} cta-text])
-   (when (and cta-link cta-text show-button-cta)
-     [:> button* {:variant "primary"
-                  :type "button"
-                  :class (stl/css-case :bottom-button (not (and cta-link-trial cta-text-trial)))
-                  :on-click cta-link} cta-text])
-   (when (and cta-link-trial cta-text-trial)
-     [:button {:class (stl/css :cta-button :bottom-link)
-               :on-click cta-link-trial} cta-text-trial])])
+   (when show-activation-by-code
+     [:button {:class (stl/css :cta-button :activate-by-code)
+               :on-click #(st/emit! (modal/show {:type :nitrate-code-activation}))}
+      (tr "subscription.settings.activate-by-code")])])
 
 (defn- make-management-form-schema [min-editors]
   [:map {:title "SeatsForm"}
@@ -339,14 +349,14 @@
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
-         (tr "subscription.settings.sucess.dialog.title" subscription-name)]
+         (tr "subscription.settings.success.dialog.title" subscription-name)]
         (when (not= subscription-name "professional")
           [:p {:class (stl/css :modal-text-large)}
            (tr "subscription.settings.success.dialog.thanks" subscription-name)])
         [:p {:class (stl/css :modal-text-large)}
          (tr "subscription.settings.success.dialog.description")]
         [:p {:class (stl/css :modal-text-large)}
-         (tr "subscription.settings.sucess.dialog.footer")]
+         (tr "subscription.settings.success.dialog.footer")]
 
         [:div {:class (stl/css :success-action-buttons)}
          [:input
@@ -354,37 +364,6 @@
            :type "button"
            :value (tr "labels.close")
            :on-click handle-close-dialog}]]]]]]))
-
-(mf/defc nitrate-success-dialog
-  {::mf/register modal/components
-   ::mf/register-as :nitrate-success}
-  []
-  ;; TODO add translations for this texts when we have the definitive ones
-  (let [profile (mf/deref refs/profile)]
-
-    [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-dialog :subscription-success)}
-      [:button {:class (stl/css :close-btn) :on-click modal/hide!}
-       [:> icon* {:icon-id "close"
-                  :size "m"}]]
-      [:div {:class (stl/css :modal-success-content)}
-       [:div {:class (stl/css :modal-start)}
-        [:> raw-svg* {:id (if (= "light" (:theme profile)) "logo-subscription-light" "logo-subscription")}]]
-
-       [:div {:class (stl/css :modal-end)}
-        [:div {:class (stl/css :modal-title)}
-         "You are Business Nitrate!"]
-        [:p {:class (stl/css :modal-text-large)}
-         (tr "subscription.settings.success.dialog.description")]
-        [:p {:class (stl/css :modal-text-large)}
-         (tr "subscription.settings.sucess.dialog.footer")]
-
-        [:div {:class (stl/css :success-action-buttons)}
-         [:input
-          {:class (stl/css :primary-button)
-           :type "button"
-           :value "CREATE ORGANIZATION"
-           :on-click dnt/go-to-nitrate-cc}]]]]]]))
 
 (mf/defc subscription-page*
   [{:keys [profile]}]
@@ -415,7 +394,7 @@
         (-> profile :props :subscription)
 
         subscription-type
-        (get-subscription-type subscription)
+        (if (and (contains? cf/flags :nitrate) nitrate?) (:type nitrate-license) (get-subscription-type subscription))
 
         subscription-is-trial?
         (= (:status subscription) "trialing")
@@ -449,17 +428,25 @@
 
         open-subscription-modal
         (mf/use-fn
-         (mf/deps subscription-editors)
+         (mf/deps subscription-editors nitrate-license)
          (fn [subscription-type current-subscription]
            (st/emit! (ev/event {::ev/name "open-subscription-modal"
                                 ::ev/origin "settings:in-app"}))
            (if (= subscription-type "nitrate")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog))
+             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license}))
              (st/emit!
               (modal/show :management-dialog
                           {:subscription-type subscription-type
                            :current-subscription current-subscription
-                           :editors subscription-editors :subscribe-to-trial (not (:type subscription))})))))]
+                           :editors subscription-editors :subscribe-to-trial (not (:type subscription))})))))
+
+        open-contact-sales-modal
+        (mf/use-fn
+         (mf/deps nitrate-license)
+         (fn [current-subscription subscription-type]
+           (if (= current-subscription "unlimited")
+             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
+             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type})))))]
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
@@ -488,7 +475,7 @@
           ^boolean show-subscription-success-modal?
           (st/emit!
            (if (= params-subscription "subscribed-to-penpot-nitrate")
-             (modal/show :nitrate-success {})
+             (modal/show :nitrate-activation-success {})
              (modal/show :subscription-success
                          {:subscription-name (if (= params-subscription "subscribed-to-penpot-unlimited")
                                                (if (= success-modal-is-trial? "true")
@@ -510,6 +497,8 @@
          ;; TODO add translations for this texts when we have the definitive ones
          [:> plan-card* {:card-title "Business Nitrate"
                          :card-title-icon i/character-b
+                         :cancel-at (when (:cancel-at nitrate-license)
+                                      (tr "nitrate.subscription.active-until" (ct/format-inst (:cancel-at nitrate-license) "d MMMM, yyyy")))
                          :benefits-title "Loren ipsum",
                          :benefits ["Loren ipsum",
                                     "Loren ipsum",
@@ -611,7 +600,7 @@
                                     (tr "subscription.settings.unlimited.autosave-benefit"),
                                     (tr "subscription.settings.unlimited.bill")]
                          :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
-                         :cta-link #(open-subscription-modal "unlimited" subscription)
+                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate?) #(open-contact-sales-modal subscription-type "Unlimited") #(open-subscription-modal "unlimited" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :recommended (= subscription-type "professional")
@@ -637,15 +626,17 @@
          [:> plan-card* {:card-title "Business Nitrate"
                          :card-title-icon i/character-n
                          :price-value "$25"
-                         :price-period "org member"
+                         :price-period (tr "subscription.settings.organization-member-month")
                          :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
                          :benefits ["Crea organizaciones y añade personas, que usarán Penpot con las reglas que configures."
                                     "Acceso exclusivo al Control Center"
                                     "Lorem ipsum"]
-                         :cta-text (tr "subscription.settings.subscribe")
-                         :cta-link #(open-subscription-modal "nitrate" subscription)
+                         :cta-text (if nitrate-license (tr "subscription.settings.subscribe") "Try 14 days for free")
+                         :cta-link (if (= subscription-type "unlimited") #(open-contact-sales-modal subscription-type "Nitrate") #(open-subscription-modal "nitrate" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
-                         :cta-link-with-icon go-to-pricing-page}])]]]))
+                         :cta-link-with-icon go-to-pricing-page
+                         :show-activation-by-code true
+                         :show-button-cta (not nitrate-license)}])]]]))
 
 
 (def ^:private schema:nitrate-form
@@ -655,7 +646,7 @@
 (mf/defc subscribe-nitrate-dialog
   {::mf/register modal/components
    ::mf/register-as :nitrate-dialog}
-  [connectivity]
+  [{:keys [nitrate-license show-contact-sales-option] :as connectivity}]
   ;; TODO add translations for this texts when we have the definitive ones
   (let [online? (:licenses connectivity)
         initial (mf/with-memo []
@@ -688,7 +679,7 @@
       [:div {:class (stl/css :modal-title :subscription-title)}
        "Subcribe to the Business Nitrate plan"]
 
-      (if online?
+      (if (and online? (not show-contact-sales-option))
         [:div {:class (stl/css :modal-content)}
 
 
@@ -723,16 +714,50 @@
                :on-click handle-close-dialog}]
 
              [:> fm/submit-button*
-              {:label "TRY 14 DAYS FOR FREE"
+              {:label (if nitrate-license (tr "subscription.settings.subscribe") "TRY 14 DAYS FOR FREE")
                :class (stl/css :primary-button)}]]]]]]
         [:div {:class (stl/css :modal-content :modal-contact-content)}
          [:div {:class (stl/css :modal-text)}
           "Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum"]
          [:div {:class (stl/css :modal-text)}
-          "Contact us to upgrade to Nitrate:"]
+          (if nitrate-license "Contact us to upgrade to Nitrate:" "Contact us to try Nitrate for 14 days:")]
          [:div {:class (stl/css :modal-text)}
-          [:a {:class (stl/css :link) :href "mailto:sales@penpot.app"}
+          [:a {:class (stl/css :cta-button) :href "mailto:sales@penpot.app"}
            "sales@penpot.app"]]])]]))
 
+(mf/defc nitrate-contact-sales-dialog
+  {::mf/register modal/components
+   ::mf/register-as :nitrate-contact-sales-dialog}
+  [{:keys [subscription-type]}]
+  (let [handle-close-dialog
+        (mf/use-fn
+         (fn []
+           (modal/hide!)))]
 
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog)}
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
+       [:> icon* {:icon-id "close"
+                  :size "m"}]]
+      [:div {:class (stl/css :modal-title :subscription-title)}
+       (str "Switch to " subscription-type " plan?")]
+
+      [:div {:class (stl/css :modal-content)}
+       [:div {:class (stl/css :modal-text-medium)}
+        "When you downgrade:"]
+       [:ul {:class (stl/css :downgrade-list)}
+        [:li {:class (stl/css :downgrade-item)} "Your organization will be deleted."]
+        [:li {:class (stl/css :downgrade-item)} "The teams, projects and files will no longer be part of any organization but they will remain available."]
+        [:li {:class (stl/css :downgrade-item)} "Your total storage, auto-version history, and file recovery period will be limited."]]
+
+       [:div {:class (stl/css :downgrade-warning)}
+        "To switch to this plan, please contact our sales team.
+We’ll help you update your subscription and ensure everything is set up correctly."]
+       [:div {:class (stl/css :action-buttons)}
+        [:> button* {:variant "secondary"
+                     :type "button"
+                     :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
+        [:> button* {:variant "primary"
+                     :type "button"
+                     :on-click #(dom/open-new-window "mailto:sales@penpot.app?subject=Switch%20to%20the%20Unlimited%20plan")} "Contact sales"]]]]]))
 

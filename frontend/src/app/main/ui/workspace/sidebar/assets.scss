@@ -8,8 +8,8 @@
 
 .assets-bar {
   display: grid;
-  height: 100%;
   grid-auto-rows: max-content;
+
   // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
   height: calc(100vh - deprecated.$s-92);
   scrollbar-gutter: stable;
@@ -18,8 +18,9 @@
 }
 
 .libraries-button {
-  @extend .button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @extend %button-secondary;
+  @include deprecated.uppercase-title-typography;
+
   gap: deprecated.$s-2;
   height: deprecated.$s-32;
   width: 100%;
@@ -40,8 +41,9 @@
 }
 
 .add-library-button {
-  @extend .button-primary;
-  @include deprecated.uppercaseTitleTipography;
+  @extend %button-primary;
+  @include deprecated.uppercase-title-typography;
+
   gap: deprecated.$s-2;
   height: deprecated.$s-32;
   width: 100%;
@@ -50,8 +52,9 @@
 }
 
 .section-button {
-  @include deprecated.flexCenter;
-  @include deprecated.buttonStyle;
+  @include deprecated.flex-center;
+  @include deprecated.button-style;
+
   height: deprecated.$s-32;
   width: deprecated.$s-32;
   margin: 0;
@@ -98,13 +101,14 @@
   }
 
   &.opened {
-    @extend .button-icon-selected;
+    @extend %button-icon-selected;
   }
 }
 
 .sections-container {
-  @include deprecated.menuShadow;
-  @include deprecated.flexColumn;
+  @include deprecated.menu-shadow;
+  @include deprecated.flex-column;
+
   position: absolute;
   top: deprecated.$s-84;
   left: deprecated.$s-12;
@@ -116,7 +120,8 @@
 }
 
 .section-item {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -126,7 +131,7 @@
 }
 
 .section-btn {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
 }
 
 .assets-header {

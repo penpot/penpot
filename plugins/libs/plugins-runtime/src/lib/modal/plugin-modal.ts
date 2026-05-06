@@ -52,6 +52,10 @@ export class PluginModalElement extends HTMLElement {
     const title = this.getAttribute('title');
     const iframeSrc = this.getAttribute('iframe-src');
     const allowDownloads = this.getAttribute('allow-downloads') || false;
+    const allowClipboardRead =
+      this.getAttribute('allow-clipboard-read') || false;
+    const allowClipboardWrite =
+      this.getAttribute('allow-clipboard-write') || false;
 
     if (!title || !iframeSrc) {
       throw new Error('title and iframe-src attributes are required');
@@ -66,11 +70,6 @@ export class PluginModalElement extends HTMLElement {
     this.wrapper.classList.add('wrapper');
     this.wrapper.style.maxInlineSize = '90vw';
     this.wrapper.style.maxBlockSize = '90vh';
-
-    // move modal to the top
-    this.#dragEvents = dragHandler(this.#inner, this.wrapper, () => {
-      this.calculateZIndex();
-    });
 
     const header = document.createElement('div');
     header.classList.add('header');
@@ -100,7 +99,12 @@ export class PluginModalElement extends HTMLElement {
 
     const iframe = document.createElement('iframe');
     iframe.src = iframeSrc;
-    iframe.allow = '';
+
+    const allowList: string[] = [];
+    if (allowClipboardRead) allowList.push('clipboard-read');
+    if (allowClipboardWrite) allowList.push('clipboard-write');
+    iframe.allow = allowList.join('; ');
+
     iframe.sandbox.add(
       'allow-scripts',
       'allow-forms',
@@ -123,6 +127,23 @@ export class PluginModalElement extends HTMLElement {
         }),
       );
     });
+
+    // move modal to the top
+    this.#dragEvents = dragHandler(
+      header,
+      this.wrapper,
+      () => {
+        this.calculateZIndex();
+      },
+      {
+        start: () => {
+          this.wrapper.classList.add('is-dragging');
+        },
+        end: () => {
+          this.wrapper.classList.remove('is-dragging');
+        },
+      },
+    );
 
     this.addEventListener('message', (e: Event) => {
       if (!iframe.contentWindow) {

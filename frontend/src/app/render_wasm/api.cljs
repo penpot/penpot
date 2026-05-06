@@ -656,47 +656,49 @@
   [shape-id strokes thumbnail?]
   (h/call wasm/internal-module "_clear_shape_strokes")
   (keep (fn [stroke]
-          (let [opacity   (or (:stroke-opacity stroke) 1.0)
-                color     (:stroke-color stroke)
-                gradient  (:stroke-color-gradient stroke)
-                image     (:stroke-image stroke)
-                width     (:stroke-width stroke)
-                align     (:stroke-alignment stroke)
-                style     (-> stroke :stroke-style sr/translate-stroke-style)
-                cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
-                cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
-                offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)
-                heap      (mem/get-heap-u8)
-                dview     (js/DataView. (.-buffer heap))]
-            (case align
-              :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
-              :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
-              (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end))
+          (when-not (:hidden stroke)
+            (let [opacity   (or (:stroke-opacity stroke) 1.0)
+                  color     (:stroke-color stroke)
+                  gradient  (:stroke-color-gradient stroke)
+                  image     (:stroke-image stroke)
+                  width     (:stroke-width stroke)
+                  align     (:stroke-alignment stroke)
+                  style     (-> stroke :stroke-style sr/translate-stroke-style)
+                  cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
+                  cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
+                  offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)
+                  heap      (mem/get-heap-u8)
+                  dview     (js/DataView. (.-buffer heap))]
+              (case align
+                :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
+                :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
+                (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end))
 
-            (cond
-              (some? gradient)
-              (do
-                (types.fills.impl/write-gradient-fill offset dview opacity gradient)
-                (h/call wasm/internal-module "_add_shape_stroke_fill")
-                nil)
+              (cond
+                (some? gradient)
+                (do
+                  (types.fills.impl/write-gradient-fill offset dview opacity gradient)
+                  (h/call wasm/internal-module "_add_shape_stroke_fill")
+                  nil)
 
-              (some? image)
-              (let [image-id      (get image :id)
-                    buffer        (uuid/get-u32 image-id)
-                    cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                          (aget buffer 0) (aget buffer 1)
-                                          (aget buffer 2) (aget buffer 3)
-                                          thumbnail?)]
-                (types.fills.impl/write-image-fill offset dview opacity image)
-                (h/call wasm/internal-module "_add_shape_stroke_fill")
-                (when (== cached-image? 0)
-                  (fetch-image shape-id image-id thumbnail?)))
+                (some? image)
+                (let [image-id      (get image :id)
+                      buffer        (uuid/get-u32 image-id)
+                      cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                            (aget buffer 0) (aget buffer 1)
+                                            (aget buffer 2) (aget buffer 3)
+                                            thumbnail?)]
+                  (types.fills.impl/write-image-fill offset dview opacity image)
+                  (h/call wasm/internal-module "_add_shape_stroke_fill")
+                  (when (== cached-image? 0)
+                    (fetch-image shape-id image-id thumbnail?)))
 
-              (some? color)
-              (do
-                (types.fills.impl/write-solid-fill offset dview opacity color)
-                (h/call wasm/internal-module "_add_shape_stroke_fill")
-                nil))))
+                (some? color)
+                (do
+                  (types.fills.impl/write-solid-fill offset dview opacity color)
+                  (h/call wasm/internal-module "_add_shape_stroke_fill")
+                  nil)))))
+
         strokes))
 
 (defn set-shape-svg-attrs

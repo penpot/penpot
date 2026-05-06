@@ -30,7 +30,7 @@
         copy   (ths/get-shape file :copy01)
 
         ;; ==== Action
-        file'     (tho/swap-component file copy :circle {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :circle {:new-shape-label :copy02 :keep-touched? true})
 
         copy'     (ths/get-shape file' :copy02)]
     ;; Both copies have the same id

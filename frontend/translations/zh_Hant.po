@@ -2770,10 +2770,6 @@ msgstr "要存取該項目，您可以詢問團隊老大。"
 msgid "notifications.by-code.maintenance"
 msgstr "中斷維護：我們將在5分鐘內進行短暫維護。"
 
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "有新版本可用，請重新整理頁面"
-
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "邀請已成功發送"

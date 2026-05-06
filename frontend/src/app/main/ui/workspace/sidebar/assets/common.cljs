@@ -174,7 +174,6 @@
      [:> title-bar*
       {:collapsable   (< 0 assets-count)
        :collapsed     (not is-open)
-       :all-clickable true
        :on-collapsed  on-collapsed
        :add-icon-gap  (= 0 assets-count)
        :title         title}
@@ -198,6 +197,39 @@
                 (add-group % group-name)))
          (run! st/emit!))
     (st/emit! (dwu/commit-undo-transaction undo-id))))
+
+(defn make-delete-asset-group-fn
+  "Build an `:on-delete-group` handler that filters `assets` by group
+  path, asks the user to confirm, and on accept emits every event
+  produced by `delete-events` inside one undo transaction.
+
+  Options:
+  - `:assets`             collection to filter.
+  - `:on-clear-selection` invoked before the deletes.
+  - `:delete-events`      `(fn [matching-assets] => seq-of-events)`.
+  - `:path-filter`        `(fn [asset-path group-path] => bool)` deciding
+                          which assets fall under the group. Defaults to
+                          `str/starts-with?`."
+  [{:keys [assets on-clear-selection delete-events path-filter]
+    :or {path-filter str/starts-with?}}]
+  (fn [path]
+    (let [matching (filter #(path-filter (:path %) path) assets)
+          undo-id  (js/Symbol)
+          do-delete
+          (fn []
+            (on-clear-selection)
+            (st/emit! (dwu/start-undo-transaction undo-id))
+            (run! st/emit! (delete-events matching))
+            (st/emit! (dwu/commit-undo-transaction undo-id)))]
+      (when (seq matching)
+        (st/emit!
+         (modal/show
+          {:type :confirm
+           :title (tr "modals.delete-asset-group.title")
+           :message (tr "modals.delete-asset-group.message"
+                        (c (count matching)))
+           :accept-label (tr "labels.delete")
+           :on-accept do-delete}))))))
 
 (defn on-drop-asset
   [event asset dragging* selected selected-full selected-paths rename]

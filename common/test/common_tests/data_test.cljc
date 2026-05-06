@@ -28,6 +28,14 @@
   (t/is (not (d/in-range? 5 -1)))
   (t/is (not (d/in-range? 0 0))))
 
+(t/deftest get-initials-test
+  (t/is (= "JD" (d/get-initials "John Doe")))
+  (t/is (= "A" (d/get-initials "acme")))
+  (t/is (= "AB" (d/get-initials "123 Alpha ## beta")))
+  (t/is (= "PD" (d/get-initials "  penpot   design  tool ")))
+  (t/is (= "" (d/get-initials nil)))
+  (t/is (= "" (d/get-initials "!!! ???"))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ordered Data Structures
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -276,6 +284,48 @@
   (t/is (= (d/nth-index-of "abc*def*ghi" "*" 2) 7))
   (t/is (= (d/nth-index-of "abc*def*ghi" "*" 3) nil)))
 
+(t/deftest natural-sort-by-test
+  (t/is (= (d/natural-sort-by identity ["10" "2" "1" "11" "3" "30"])
+           ["1" "2" "3" "10" "11" "30"]))
+  (t/is (= (d/natural-sort-by identity ["banana" "apple" "cherry"])
+           ["apple" "banana" "cherry"]))
+  (t/is (= (d/natural-sort-by identity ["size10" "size2" "size1" "size20" "size3"])
+           ["size1" "size2" "size3" "size10" "size20"]))
+  (t/is (= (d/natural-sort-by identity ["b1" "a2" "a10" "a1"])
+           ["a1" "a2" "a10" "b1"]))
+  (t/is (= (d/natural-sort-by identity []) []))
+  (t/is (= (d/natural-sort-by identity ["solo"]) ["solo"]))
+  (t/is (= (d/natural-sort-by identity ["b" "a" "a" "c"])
+           ["a" "a" "b" "c"]))
+  (t/is (= (d/natural-sort-by :name
+                              [{:name "big"} {:name "small"} {:name "medium"}])
+           [{:name "big"} {:name "medium"} {:name "small"}]))
+  (t/is (= (d/natural-sort-by :name
+                              [{:name "size10"} {:name "size2"} {:name "size1"}])
+           [{:name "size1"} {:name "size2"} {:name "size10"}]))
+  (t/is (= (d/natural-sort-by :name
+                              [{:name "border-radius-10"}
+                               {:name "border-radius-2"}
+                               {:name "border-radius-1"}])
+           [{:name "border-radius-1"}
+            {:name "border-radius-2"}
+            {:name "border-radius-10"}]))
+  (t/is (= (d/natural-sort-by :name
+                              [{:name "border-10-radius"}
+                               {:name "border-2-radius"}
+                               {:name "border-1-radius"}])
+           [{:name "border-1-radius"}
+            {:name "border-2-radius"}
+            {:name "border-10-radius"}]))
+  (t/is (= (d/natural-sort-by :name
+                              [{:name "border-10-radius"}
+                               {:name "border-2-extra"}
+                               {:name "border-2-radius"}
+                               {:name "border-1-radius"}])
+           [{:name "border-1-radius"}
+            {:name "border-2-extra"}
+            {:name "border-2-radius"}
+            {:name "border-10-radius"}])))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lazy / sequence helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

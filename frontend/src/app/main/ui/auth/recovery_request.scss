@@ -5,14 +5,15 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
-@use "./common.scss";
+@use "./common";
 
 .fields-row {
   margin-bottom: deprecated.$s-8;
 }
 
 .notification-text-email {
-  @include deprecated.medTitleTipography;
+  @include deprecated.med-title-typography;
+
   font-size: deprecated.$fs-20;
   color: var(--register-confirmation-color);
   margin-inline: deprecated.$s-36;

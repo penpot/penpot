@@ -16,8 +16,8 @@
    [rumext.v2 :as mf]))
 
 (defn- on-select-token-set-click [id]
-  (st/emit! (dwtl/clear-tokens-paths))
-  (st/emit! (dwtl/set-selected-token-set-id id)))
+  (st/emit! (dwtl/clear-tokens-paths)
+            (dwtl/set-selected-token-set-id id)))
 
 (defn- on-toggle-token-set-click [name]
   (st/emit! (dwtl/toggle-token-set name)))

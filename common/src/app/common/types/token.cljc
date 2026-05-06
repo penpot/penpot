@@ -136,6 +136,9 @@
 (def token-name-validation-regex
   #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$")
 
+(def token-node-name-validation-regex
+  #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$")
+
 (def schema:token-name
   "A token name can contains letters, numbers, underscores the character $ and dots, but
    not start with $ or end with a dot. The $ character does not have any special meaning,
@@ -152,6 +155,14 @@
   [:re {:title "TokenRef"
         :gen/gen sg/text}
    token-ref-validation-regex])
+
+(def schema:token-node-name
+  "A token node name can contains letters, numbers, underscores and the character $, but
+   not start with $ or a dot, or end with a dot. The $ character does not have any special meaning,
+   but dots separate token groups (e.g. color.primary.background)."
+  [:re {:title "TokenNodeName"
+        :gen/gen sg/text}
+   token-node-name-validation-regex])
 
 (def schema:token-type
   [::sm/one-of {:decode/json (fn [type]
@@ -521,31 +532,32 @@
 
 (def tokens-by-input
   "A map from input name to applicable token for that input."
-  {:width #{:sizing :dimensions}
-   :height #{:sizing :dimensions}
-   :max-width #{:sizing :dimensions}
-   :max-height #{:sizing :dimensions}
-   :min-width #{:sizing :dimensions}
-   :min-height #{:sizing :dimensions}
-   :x #{:dimensions}
-   :y #{:dimensions}
-   :rotation #{:number :rotation}
-   :border-radius #{:border-radius :dimensions}
-   :row-gap #{:spacing :dimensions}
-   :column-gap #{:spacing :dimensions}
-   :horizontal-padding #{:spacing :dimensions}
-   :vertical-padding #{:spacing :dimensions}
-   :sided-paddings #{:spacing :dimensions}
-   :horizontal-margin #{:spacing :dimensions}
-   :vertical-margin #{:spacing :dimensions}
-   :sided-margins #{:spacing :dimensions}
-   :line-height #{:line-height :number}
-   :opacity #{:opacity}
-   :stroke-width #{:stroke-width :dimensions}
-   :font-size #{:font-size}
-   :letter-spacing #{:letter-spacing}
-   :fill #{:color}
-   :stroke-color #{:color}})
+  {:width              [:sizing :dimensions]
+   :height             [:sizing :dimensions]
+   :max-width          [:sizing :dimensions]
+   :max-height         [:sizing :dimensions]
+   :min-width          [:sizing :dimensions]
+   :min-height         [:sizing :dimensions]
+   :x                  [:dimensions]
+   :y                  [:dimensions]
+   :rotation           [:rotation :number]
+   :border-radius      [:border-radius :dimensions]
+   :row-gap            [:spacing :dimensions]
+   :column-gap         [:spacing :dimensions]
+   :horizontal-padding [:spacing :dimensions]
+   :vertical-padding   [:spacing :dimensions]
+   :sided-paddings     [:spacing :dimensions]
+   :horizontal-margin  [:spacing :dimensions]
+   :vertical-margin    [:spacing :dimensions]
+   :sided-margins      [:spacing :dimensions]
+   :line-height        [:line-height :number]
+   :opacity            [:opacity]
+   :stroke-width       [:stroke-width :dimensions]
+   :font-size          [:font-size]
+   :letter-spacing     [:letter-spacing]
+   :fill               [:color]
+   :stroke-color       [:color]
+   :typography         [:typography]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS for tokens application

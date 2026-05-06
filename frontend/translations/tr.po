@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-16 08:35+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"PO-Revision-Date: 2026-02-17 10:10+0000\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.16\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -202,7 +202,7 @@ msgid "branding-illustrations-marketing-pieces"
 msgstr "...marka çalışması, çizimler, pazarlama materyalleri, vb."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "Bu token yok veya silindi."
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
@@ -1352,7 +1352,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Token listesini aç"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
+msgid "token-actions.detach-token"
 msgstr "Tokeni ayır"
 
 #: src/app/main/data/auth.cljs:339
@@ -2091,7 +2091,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Etkin temalar"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "CSS kısaltmasını panoya kopyala"
 
@@ -2934,7 +2933,7 @@ msgstr "Sürüm %s notları"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:271
 msgid "labels.view-only"
-msgstr "YALNIZCA GÖRÜNTÜLE"
+msgstr "Yalnızca görüntüle"
 
 #: src/app/main/ui/dashboard/team.cljs:131, src/app/main/ui/dashboard/team.cljs:314, src/app/main/ui/dashboard/team.cljs:567, src/app/main/ui/dashboard/team.cljs:603, src/app/main/ui/onboarding/team_choice.cljs:56
 msgid "labels.viewer"
@@ -3673,7 +3672,7 @@ msgstr "Bakım arası: 5 dakika içinde kısa bir bakım için kapalı olacağı
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "Yeni bir sürüm mevcut, lütfen sayfayı yenileyin"
+msgstr "Yeni bir sürüm mevcut."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"
@@ -5002,15 +5001,14 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "Penpot %s planını seçtiğiniz için teşekkür ederiz!"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Planınızın tadını çıkarın!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "%s oldunuz!"
 
 #: src/app/main/ui/settings/subscription.cljs:526
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Bu planla bizi şu zamandan beri destekliyorsunuz: %s"
 
@@ -7814,7 +7812,7 @@ msgid "workspace.tokens.color"
 msgstr "Renk"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
-msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr ""
 "Satır yüksekliği yazı tipi boyutuna bağlıdır. Çözülen değeri elde etmek "
 "için bir yazı tipi boyutu ekleyin."
@@ -7864,7 +7862,7 @@ msgid "workspace.tokens.edit-token"
 msgstr "%s tokenini düzenle"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
-msgid "workspace.tokens.empty-input"
+msgid "errors.tokens.empty-input"
 msgstr "Token değeri boş olamaz"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
@@ -7872,7 +7870,7 @@ msgid "workspace.tokens.enter-token-name"
 msgstr "%s token adını gir"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "İçe Aktarma Hatası: JSON ayrıştırılamadı."
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
@@ -7936,7 +7934,7 @@ msgid "workspace.tokens.import-button-prefix"
 msgstr "%s içe aktar"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "İçe Aktarma Hatası:"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:273
@@ -7993,61 +7991,61 @@ msgid "workspace.tokens.individual-tokens"
 msgstr "Bireysel tokenler kullan"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "Geçersiz renk değeri: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:93
-msgid "workspace.tokens.invalid-font-family-token-value"
+msgid "errors.tokens.invalid-font-family-token-value"
 msgstr "Geçersiz token değeri: yalnızca font-family tokenine referans verebilirsiniz"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:89
-msgid "workspace.tokens.invalid-font-weight-token-value"
+msgid "errors.tokens.invalid-font-weight-token-value"
 msgstr ""
 "Geçersiz yazı tipi kalınlığı değeri: sayısal değerler (100-950) veya "
 "standart adlar (ince, hafif, normal, kalın vb.) kullanın, isteğe bağlı "
 "olarak ardından 'İtalik' ekleyin"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "İçe Aktarma Hatası: JSON'da geçersiz token verisi."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
+msgid "errors.tokens.invalid-json-token-name"
 msgstr "İçe Aktarma Hatası: JSON'da geçersiz token adı."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
+msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" geçerli bir token adı değil.\n"
 "Token adları yalnızca . karakterleriyle ayrılan harfler ve rakamlar "
 "içermeli ve $ işaretiyle başlamamalıdır."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:105
-msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgid "errors.tokens.invalid-shadow-type-token-value"
 msgstr "Geçersiz gölge türü: yalnızca 'innerShadow' veya 'dropShadow' kabul edilir"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
-msgid "workspace.tokens.invalid-text-case-token-value"
+msgid "errors.tokens.invalid-text-case-token-value"
 msgstr ""
 "Geçersiz token değeri: yalnızca none, Uppercase, Lowercase veya Capitalize "
 "kabul edilir"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
-msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgid "errors.tokens.invalid-text-decoration-token-value"
 msgstr ""
 "Geçersiz token değeri: yalnızca none, underline ve strike-through kabul "
 "edilir"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:117
-msgid "workspace.tokens.invalid-token-value-shadow"
+msgid "errors.tokens.invalid-token-value-shadow"
 msgstr "Geçersiz değer: bileşik gölge tokenine referans vermelidir."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.invalid-token-value-typography"
+msgid "errors.tokens.invalid-token-value-typography"
 msgstr "Geçersiz değer: bileşik tipografi tokenine referans vermelidir."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "Geçersiz token değeri: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -8087,7 +8085,7 @@ msgid "workspace.tokens.min-size"
 msgstr "Asgari boyut"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "Eksik token referansları: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
@@ -8139,7 +8137,7 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "Şu anda hiç temanız yok."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:19
-msgid "workspace.tokens.no-token-files-found"
+msgid "errors.tokens.no-token-files-found"
 msgstr "Bu dosyada token, küme veya tema bulunamadı."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
@@ -8147,15 +8145,14 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s etkin küme"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
+msgid "errors.tokens.number-too-large"
 msgstr "Geçersiz token değeri. Çözülen değer çok büyük: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
+msgid "errors.tokens.opacity-range"
 msgstr "Opaklık 0 ile %100 veya 0 ile 1 arasında olmalıdır (örneğin %50 veya 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Orijinal değer: %s"
 
@@ -8190,7 +8187,6 @@ msgid "workspace.tokens.remapping-in-progress"
 msgstr "Token referansları yeniden eşleniyor..."
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:285, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:459, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:311, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:251, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:364, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:465, src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Çözülen değer: %s"
 
@@ -8203,7 +8199,7 @@ msgid "workspace.tokens.select-set"
 msgstr "Küme seç."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "Tokenin kendine referansı var"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
@@ -8244,7 +8240,7 @@ msgid "workspace.tokens.shadow-blur"
 msgstr "Bulanıklık"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:109
-msgid "workspace.tokens.shadow-blur-range"
+msgid "errors.tokens.shadow-blur-range"
 msgstr "Gölge bulanıklığı 0 veya 0'dan büyük olmalıdır."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
@@ -8265,7 +8261,7 @@ msgid "workspace.tokens.shadow-spread"
 msgstr "Yayılım"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:113
-msgid "workspace.tokens.shadow-spread-range"
+msgid "errors.tokens.shadow-spread-range"
 msgstr "Gölge yayılımı 0 veya 0'dan büyük olmalıdır."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
@@ -8295,7 +8291,7 @@ msgid "workspace.tokens.size"
 msgstr "Boyut"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
-msgid "workspace.tokens.stroke-width-range"
+msgid "errors.tokens.stroke-width-range"
 msgstr "Çerçeve genişliği 0'dan büyük veya 0 olmalıdır."
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:40, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
@@ -8337,7 +8333,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Tema listesi"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:275, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Açıklama"
 
@@ -8356,10 +8351,6 @@ msgstr "Yazı tipi ailesi veya virgülle (,) ayrılan yazı tipi listesi"
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:112, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:240
 msgid "workspace.tokens.token-name"
 msgstr "Ad"
-
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
-msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "Bu yolda zaten bir token var: %s"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
 msgid "workspace.tokens.token-name-length-validation-error"
@@ -8393,13 +8384,13 @@ msgstr "TOKENLER -  %s"
 msgid "workspace.tokens.tools"
 msgstr "Araçlar"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "İçe aktarma başarılı oldu. Bazı tokenler dahil edilmedi."
+msgstr "İçe aktarma başarılı oldu, ancak bazı tokenler desteklenmeyen $type değerleri kullandıkları için atlandı. Hangi tokenlerin etkilendiğini görmek için ayrıntıları genişletin."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "'%s' türü desteklenmiyor (%s)\n"
+msgstr "'%s' türü desteklenmiyor (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"
@@ -8410,11 +8401,11 @@ msgid "workspace.tokens.value-not-valid"
 msgstr "Değer geçerli değil"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:69
-msgid "workspace.tokens.value-with-percent"
+msgid "errors.tokens.value-with-percent"
 msgstr "Geçersiz değer: % izin verilmiyor."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:65
-msgid "workspace.tokens.value-with-units"
+msgid "errors.tokens.value-with-units"
 msgstr "Geçersiz değer: Birimlere izin verilmiyor."
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
@@ -8746,3 +8737,63 @@ msgstr "Otomatik kaydedilen sürümler %s gün boyunca saklanacaktır."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:347
+msgid "dashboard.create-new-org"
+msgstr "Yeni organizasyon oluştur"
+
+#: src/app/main/errors.cljs:105
+msgid "errors.unexpected-exception"
+msgstr "Beklenmeyen hata: %s"
+
+#: src/app/main/ui/static.cljs:315
+msgid "errors.webgl-context-lost.desc-message"
+msgstr ""
+"WebGL çalışmayı durdurdu. Sıfırlamak için lütfen sayfayı yeniden yükleyin"
+
+#: src/app/main/ui/static.cljs:314
+msgid "errors.webgl-context-lost.main-message"
+msgstr "Oops! Tuval içeriği kayboldu"
+
+#: src/app/main/ui/static.cljs:318
+msgid "labels.reload-page"
+msgstr "Sayfayı yeniden yükle"
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "Hata ayıklama araçları"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:303
+msgid "workspace.tokens.missing-reference"
+msgstr "Eksik referans"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
+msgid "workspace.tokens.not-remap"
+msgstr "Yeniden eşlenmesin"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:99
+msgid "workspace.tokens.remap"
+msgstr "Tokenleri yeniden eşle"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "`%s` kullanan tüm tokenler `%s` olarak yeniden eşlensin mi?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
+msgid "workspace.tokens.remap-warning-effects"
+msgstr ""
+"Bu, eski token adını kullanan tüm katmanları ve referansları değiştirecektir."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+msgid "workspace.tokens.remap-warning-time"
+msgstr "Bu işlem biraz zaman alabilir."
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+#, unused
+msgid "workspace.tokens.warning-name-change"
+msgstr ""
+"Bu tokenin adını değiştirmek, eski adına yapılan tüm referansları bozacaktır"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "Hata ayıklama araçları"

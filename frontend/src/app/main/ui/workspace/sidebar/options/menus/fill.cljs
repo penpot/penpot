@@ -52,16 +52,15 @@
   [n-props o-props]
   (and (identical? (unchecked-get n-props "ids")
                    (unchecked-get o-props "ids"))
+       (identical? (unchecked-get n-props "appliedTokens")
+                   (unchecked-get o-props "appliedTokens"))
        (let [o-vals  (unchecked-get o-props "values")
              n-vals  (unchecked-get n-props "values")
              o-fills (get o-vals :fills)
              n-fills (get n-vals :fills)
-             o-applied-tokens (get o-vals :applied-tokens)
-             n-applied-tokens (get n-vals :applied-tokens)
              o-hide  (get o-vals :hide-fill-on-export)
              n-hide  (get n-vals :hide-fill-on-export)]
          (and (identical? o-hide n-hide)
-              (identical? o-applied-tokens n-applied-tokens)
               (identical? o-fills n-fills)))))
 
 (mf/defc fill-menu*
@@ -174,10 +173,10 @@
          (mf/deps ids)
          (fn [_ token]
            (st/emit!
-            (dwta/toggle-token {:token token
-                                :attrs #{:fill}
-                                :shape-ids ids
-                                :expand-with-children true}))))
+            (dwta/apply-token-from-input {:token token
+                                          :attrs #{:fill}
+                                          :shape-ids ids
+                                          :expand-with-children true}))))
 
         on-detach-token
         (mf/use-fn
@@ -196,7 +195,7 @@
           (dom/remove-attribute! checkbox "indeterminate"))))
 
     [:section {:class (stl/css :fill-section)
-               :aria-label "Fill section"}
+               :aria-label (tr "workspace.options.fill.section")}
      [:div {:class (stl/css :fill-title)}
       [:> title-bar* {:collapsable  has-fills?
                       :collapsed    (not open?)

@@ -18,7 +18,8 @@
   [:map
    [:id {:optiona true} :string]
    [:ref some?]
-   [:resolved {:optional true} [:or :int :string :float]]
+   [:resolved {:optional true} [:maybe [:or :int :string :float :map]]]
+   [:value {:optional true} [:maybe [:or :int :string :float :map]]]
    [:name {:optional true} :string]
    [:on-click {:optional true} fn?]
    [:selected {:optional true} :boolean]
@@ -26,7 +27,7 @@
 
 (mf/defc token-option*
   {::mf/schema schema:token-option}
-  [{:keys [id name on-click selected ref focused resolved] :rest props}]
+  [{:keys [id name on-click selected ref focused resolved value] :rest props}]
   (let [internal-id (mf/use-id)
         id          (d/nilv id internal-id)
         element-ref (mf/use-ref nil)]
@@ -55,10 +56,14 @@
                    :trigger-ref element-ref
                    :id (dm/str id "-name")
                    :class (stl/css :option-text)}
-      ;; Add ellipsis
+
       [:span {:aria-labelledby (dm/str id "-name")
+              :class (stl/css :option-name)
               :ref element-ref}
        name]]
-     (when resolved
-       [:> :span {:class (stl/css :option-pill)}
-        resolved])]))
+     (when (and resolved (not (map? resolved)))
+       [:span {:class (stl/css :option-pill)}
+        resolved])
+     (when (and (nil? resolved) value)
+       [:span {:class (stl/css :option-pill)}
+        "--"])]))

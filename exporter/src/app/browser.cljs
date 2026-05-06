@@ -47,6 +47,19 @@
   [page ms]
   (.waitForTimeout ^js page ms))
 
+(defn wait-for-fonts
+  "Wait until the browser has finished loading all fonts"
+  ([page] (wait-for-fonts page nil))
+  ([page {:keys [timeout] :or {timeout 15000}}]
+   (-> (.waitForFunction ^js page
+                         "() => document.fonts && document.fonts.status === 'loaded'"
+                         nil
+                         #js {:timeout timeout})
+       (p/catch (fn [cause]
+                  (l/warn :hint "wait-for-fonts timed out; continuing anyway"
+                          :cause (ex-message cause))
+                  (p/resolved nil))))))
+
 (defn wait-for
   ([locator] (wait-for locator nil))
   ([locator {:keys [state timeout] :or {state "visible" timeout 10000}}]

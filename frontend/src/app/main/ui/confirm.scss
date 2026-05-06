@@ -7,21 +7,24 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
+
   &.transparent {
     background-color: transparent;
   }
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.headlineMediumTypography;
+  @include deprecated.headline-medium-typography;
+
   color: var(--modal-title-foreground-color);
 }
 
@@ -32,30 +35,37 @@
 }
 
 .modal-content {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
 }
 
 .modal-item-element {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 }
 
 .modal-component-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   color: var(--color-foreground-secondary);
 }
 
 .modal-component-name {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
+
   color: var(--color-foreground-secondary);
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
+
   color: var(--modal-text-foreground-color);
+}
+
+.modal-error-msg {
+  margin: var(--sp-xxl) 0;
 }

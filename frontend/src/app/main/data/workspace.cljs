@@ -483,12 +483,13 @@
                     (rx/filter dch/commit?)
                     (rx/map deref)
                     (rx/mapcat
-                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
+                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before]}]
                        (if (and save-undo? (seq undo-changes))
                          (let [entry {:undo-changes undo-changes
                                       :redo-changes redo-changes
                                       :undo-group undo-group
-                                      :tags tags}]
+                                      :tags tags
+                                      :selected-before selected-before}]
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
 
@@ -515,7 +516,8 @@
            :workspace-persistence
            :workspace-presence
            :workspace-tokens
-           :workspace-undo)
+           :workspace-undo
+           :workspace-versions)
           (update :workspace-global dissoc :read-only?)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
@@ -1206,6 +1208,16 @@
                 (-> params (assoc :kind :grid-cells
                                   :grid grid
                                   :cells cells))))))))
+(defn show-guide-context-menu
+  [{:keys [position guide] :as params}]
+  (dm/assert! (gpt/point? position))
+  (ptk/reify ::show-guide-context-menu
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (show-context-menu
+              (-> params (assoc :kind :guide
+                                :guide guide)))))))
+
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
     ptk/UpdateEvent
@@ -1247,6 +1259,24 @@
              changes (-> (pcb/empty-changes it)
                          (pcb/with-page page)
                          (pcb/mod-page {:background (:color color)}))]
+         (rx/of (dch/commit-changes changes)))))))
+
+(defn change-pixel-grid-color
+  "Update the pixel grid color (and optional alpha) for the given page.
+  Mirrors `change-canvas-color` — stored on the page so the choice
+  travels with the file and persists across sessions."
+  ([color]
+   (change-pixel-grid-color nil color))
+  ([page-id color]
+   (ptk/reify ::change-pixel-grid-color
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (dsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/mod-page {:pixel-grid-color (:color color)
+                                        :pixel-grid-opacity (:opacity color)}))]
          (rx/of (dch/commit-changes changes)))))))
 
 
@@ -1430,6 +1460,19 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-global :clipboard-style] style))))
+
+(defn open-layers-search
+  [mode]
+  (ptk/reify ::open-layers-search
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :layers-panel-search] mode))))
+
+(def clear-layers-search
+  (ptk/reify ::clear-layers-search
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :layers-panel-search))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

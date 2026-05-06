@@ -219,8 +219,9 @@ Now that everything is in place you need a <code class="language-js">manifest.js
 {
   "name": "Plugin name",
   "description": "Plugin description",
-  "code": "/plugin.js",
-  "icon": "/icon.png",
+  "version": 2,
+  "code": "plugin.js",
+  "icon": "icon.png",
   "permissions": [
     "content:read",
     "content:write",
@@ -233,6 +234,13 @@ Now that everything is in place you need a <code class="language-js">manifest.js
   ]
 }
 ```
+
+<p class="advice">
+Use <code class="language-js">"version": 2</code> when your
+<code class="language-js">code</code> and <code class="language-js">icon</code> values
+are relative paths. Version 2 resolves these assets from the manifest location.
+If omitted, Penpot treats the manifest as version 1.
+</p>
 
 ### Icon
 

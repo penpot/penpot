@@ -153,6 +153,18 @@
                   tokens)]
     (group-by :type tokens')))
 
+(defn rename-path
+  "Renames a node or token path segment with a new name.
+   If token is provided, it renames a token path, otherwise it renames a node path."
+  ([node new-name]
+   (rename-path node nil new-name))
+  ([node token new-name]
+   (let [element (if token (:name token) (:path node))
+         split-path (cpn/split-path element :separator ".")
+         updated-split-element-name (assoc split-path (:depth node) new-name)
+         new-element-path (cpn/join-path updated-split-element-name :separator "." :with-spaces? false)]
+     new-element-path)))
+
 ;; === Token Set
 
 (defprotocol ITokenSet
@@ -920,6 +932,7 @@ Will return a value that matches this schema:
 `:all`     All of the nested sets are active
 `:partial` Mixed active state of nested sets")
   (get-tokens-in-active-sets [_] "set of set names that are active in the the active themes")
+  (get-tokens-in-active-sets-force [_ force-set-id] "same as above but forcing a set to be active, even if it's not in the active themes")
   (get-all-tokens [_] "all tokens in the lib, as a sequence")
   (get-all-tokens-map [_] "all tokens in the lib, as a map name -> token")
   (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name"))
@@ -1317,6 +1330,21 @@ Will return a value that matches this schema:
                                    active-set-names)]
       tokens))
 
+  (get-tokens-in-active-sets-force [this force-set-id]
+    (let [theme-set-names  (get-active-themes-set-names this)
+          all-set-names    (get-set-names this)
+          force-set        (get-set this force-set-id)
+          active-set-names (cond-> (filter theme-set-names all-set-names)
+                             (some? force-set)
+                             (conj (get-name force-set)))
+
+          tokens           (reduce (fn [tokens set-name]
+                                     (let [set (get-set-by-name this set-name)]
+                                       (merge tokens (get-tokens- set))))
+                                   (d/ordered-map)
+                                   active-set-names)]
+      tokens))
+
   (get-all-tokens [this]
     (mapcat #(vals (get-tokens- %))
             (get-sets this)))
@@ -1492,6 +1520,30 @@ Will return a value that matches this schema:
       :else (-> (get path-target selector)
                 (seq)
                 (boolean)))))
+
+(defn update-tokens-group
+  "Updates the active tokens path when renaming a group node.
+   - Filters tokens whose path matches the current path prefix
+   - Replaces the token name with the new name
+   - Updates the :path value in the token object
+
+   active-tokens: map of token-name to token-object for all active tokens in the set
+   current-path: the path of the group being renamed, e.g. \"foo.bar\"
+   current-name: the current name of the group being renamed, e.g. \"bar\"
+   new-name: the new name for the group being renamed, e.g. \"baz\""
+
+  [active-tokens current-path current-name new-name]
+  (let [path-prefix (str/replace current-path current-name "")]
+    (mapv (fn [[token-path token-obj]]
+            (if (str/starts-with? token-path path-prefix)
+              (let [new-token-path (str/replace token-path current-name new-name)
+                    new-token-obj (-> token-obj
+                                      (assoc :name new-token-path)
+                                      (cond-> (:path token-obj)
+                                        (assoc :path (str/replace (:path token-obj) current-name new-name))))]
+                [new-token-path new-token-obj])
+              [token-path token-obj]))
+          active-tokens)))
 
 ;; === Import / Export from JSON format
 

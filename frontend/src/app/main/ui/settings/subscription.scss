@@ -20,12 +20,11 @@
 
 .dashboard-content {
   display: flex;
-  justify-content: center;
   flex-direction: column;
   max-inline-size: $sz-500;
   margin-block-end: var(--sp-xxxl);
   inline-size: px2rem(580);
-  margin: px2rem(92) auto px2rem(120) auto;
+  margin: px2rem(92) auto px2rem(120);
   justify-content: center;
 }
 
@@ -45,13 +44,14 @@
 
 .membership-date {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-secondary);
   margin-inline-start: var(--sp-s);
 }
 
 .subscription-member,
 .penpot-member {
-  @extend .button-icon;
+  @extend %button-icon;
 }
 
 .penpot-member {
@@ -64,12 +64,14 @@
 
 .title-section {
   @include t.use-typography("title-large");
+
   color: var(--color-foreground-primary);
   margin-block-end: var(--sp-xxl);
 }
 
 .plan-section-title {
   @include t.use-typography("headline-small");
+
   color: var(--color-foreground-primary);
 }
 
@@ -98,14 +100,15 @@
 }
 
 .plan-title-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--color-foreground-primary);
   block-size: var(--sp-xl);
   inline-size: var(--sp-xl);
   border-radius: 6px;
   border: 1.75px solid var(--color-foreground-primary);
   stroke-width: 2.25px;
-  padding: deprecated.$s-1;
+  padding: px2rem(3);
 
   svg {
     block-size: var(--sp-m);
@@ -116,11 +119,13 @@
 .plan-card-title,
 .plan-price-value {
   @include t.use-typography("title-medium");
+
   color: var(--color-foreground-primary);
 }
 
 .plan-editors {
   @include t.use-typography("body-medium");
+
   align-self: end;
   color: var(--color-foreground-primary);
   margin-block-end: 2px;
@@ -128,6 +133,21 @@
 
 .plan-price-period {
   @include t.use-typography("body-small");
+
+  color: var(--color-foreground-primary);
+}
+
+.plan-cancel {
+  align-items: center;
+  background-color: var(--color-background-secondary);
+  border-radius: var(--sp-xs);
+  display: flex;
+  padding-inline: var(--sp-s);
+}
+
+.plan-cancel-date {
+  @include t.use-typography("body-medium");
+
   color: var(--color-foreground-primary);
 }
 
@@ -138,6 +158,7 @@
 .benefits-title,
 .benefit {
   @include t.use-typography("body-medium");
+
   color: var(--color-foreground-secondary);
 }
 
@@ -147,7 +168,8 @@
 
 .cta-button {
   @include t.use-typography("body-medium");
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
+
   align-items: center;
   color: var(--color-accent-primary);
   display: flex;
@@ -156,7 +178,8 @@
 }
 
 .cta-button svg {
-  @extend .button-icon;
+  @extend %button-icon;
+
   block-size: var(--sp-l);
   inline-size: var(--sp-l);
   stroke: var(--color-accent-primary);
@@ -176,11 +199,12 @@
 }
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-dialog {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   max-block-size: initial;
   min-inline-size: px2rem(548);
 }
@@ -190,11 +214,12 @@
 }
 
 .close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-title {
   @include t.use-typography("title-large");
+
   margin-block-end: var(--sp-xxxl);
   color: var(--modal-title-foreground-color);
   display: flex;
@@ -240,7 +265,7 @@
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .success-action-buttons {
@@ -248,13 +273,15 @@
 }
 
 .primary-button {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
+
   min-block-size: $sz-32;
   block-size: auto;
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
+
   min-block-size: $sz-32;
   white-space: break-spaces;
   block-size: auto;
@@ -270,13 +297,14 @@
     block-size: auto;
   }
 
-  @media (max-inline-size: 992px) {
+  @media (width <= 992px) {
     display: none;
   }
 }
 
 .editors-text {
   @include t.use-typography("body-medium");
+
   margin: 0;
 }
 
@@ -287,6 +315,7 @@
 
 .editors-list {
   @include t.use-typography("body-medium");
+
   list-style-position: inside;
   list-style-type: none;
   margin-inline-start: var(--sp-xl);
@@ -296,11 +325,13 @@
 
 .input-field {
   --input-icon-padding: var(--sp-s);
+
   inline-size: px2rem(80);
 }
 
 .error-message {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-error);
   margin-block-start: var(--sp-s);
 }
@@ -319,6 +350,7 @@
 
 .unlimited-capped-warning {
   @include t.use-typography("body-small");
+
   background-color: var(--color-background-tertiary);
   border-radius: var(--sp-s);
   margin-block-start: $sz-40;
@@ -333,6 +365,7 @@
 .radio-btns {
   label {
     @include t.use-typography("body-large");
+
     padding: 0;
     display: flex;
     align-items: center;
@@ -347,4 +380,27 @@
 
 .modal-contact-content {
   gap: var(--sp-xl);
+}
+
+.downgrade-warning {
+  @include t.use-typography("body-medium");
+
+  background-color: var(--color-background-tertiary);
+  border-radius: var(--sp-s);
+  padding-block: var(--sp-s);
+  padding-inline: var(--sp-m);
+  margin-block: var(--sp-m) var(--sp-xxxl);
+}
+
+.downgrade-list {
+  list-style-position: outside;
+  list-style-type: disc;
+  margin-block: var(--sp-l) 0;
+  padding-inline-start: var(--sp-l);
+}
+
+.downgrade-item {
+  @include t.use-typography("body-medium");
+
+  margin-block-end: var(--sp-l);
 }

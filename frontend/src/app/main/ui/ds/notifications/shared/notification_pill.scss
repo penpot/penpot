@@ -22,10 +22,8 @@
   border: $b-1 solid var(--notification-border-color);
   border-radius: $br-8;
   padding: var(--notification-padding);
-
   display: flex;
   gap: var(--sp-s);
-
   color: var(--notification-fg-color);
 
   // Targets the potential links included by the creator in the children props.
@@ -100,20 +98,38 @@
 }
 
 .error-detail {
-  overflow: auto;
+  list-style: none;
+  padding-inline-start: var(--sp-xxl);
 }
 
-.error-detail-title {
-  display: flex;
-  align-items: center;
+.error-detail-summary {
+  list-style: none;
   cursor: pointer;
-}
+  position: relative;
 
-.expand-icon {
-  --icon-fill-color: var(--color-foreground-primary);
-  --icon-stroke-color: var(--color-foreground-primary);
+  &::marker {
+    display: none;
+  }
+
+  &::before {
+    content: "‣";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: -1.5rem;
+    inline-size: $sz-16;
+    text-box: trim-start cap alphabetic;
+    text-align: end;
+    font-size: 1lh;
+    line-height: 1;
+    font-weight: 700;
+    color: currentcolor;
+  }
 }
 
 .error-detail-content {
-  padding-left: var(--sp-xxxl);
+  padding-block-start: var(--sp-s);
+
+  & ul {
+    list-style: disc inside;
+  }
 }

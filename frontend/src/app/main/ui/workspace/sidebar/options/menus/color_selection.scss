@@ -21,26 +21,31 @@
 }
 
 .add-fill {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: deprecated.$s-32;
   width: deprecated.$s-28;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
 }
 
 .element-content {
   grid-column: span 8;
-  @include deprecated.flexColumn;
+
+  @include deprecated.flex-column;
+
   margin-bottom: deprecated.$s-8;
 }
 
 .selected-color-group {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 }
 
 .more-colors-btn {
-  @extend .button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @extend %button-secondary;
+  @include deprecated.uppercase-title-typography;
+
   height: deprecated.$s-32;
 }

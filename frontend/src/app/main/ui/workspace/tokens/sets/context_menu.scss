@@ -13,7 +13,8 @@
 }
 
 .context-list {
-  @include deprecated.menuShadow;
+  @include deprecated.menu-shadow;
+
   display: grid;
   width: deprecated.$s-240;
   padding: deprecated.$s-4;
@@ -26,6 +27,7 @@
 
 .context-menu-item {
   @include t.use-typography("body-small");
+
   color: var(--menu-foreground-color);
   display: flex;
   align-items: center;

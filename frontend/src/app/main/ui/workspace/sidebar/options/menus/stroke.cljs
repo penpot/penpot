@@ -12,6 +12,7 @@
    [app.common.types.stroke :as cts]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
@@ -155,6 +156,13 @@
               (st/emit! (udw/trigger-bounding-box-cloaking ids))
               (st/emit! (dc/change-stroke-attrs ids {:stroke-cap-start stroke-cap-end
                                                      :stroke-cap-end stroke-cap-start} index)))))
+        on-toggle-visibility
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [index]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                     (dwsh/update-shapes ids #(update-in % [:strokes index :hidden] not)))))
+
         on-add-stroke
         (fn [_]
           (st/emit! (udw/trigger-bounding-box-cloaking ids))
@@ -168,6 +176,7 @@
 
         on-blur (fn [_]
                   (reset! disable-drag false))
+
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
@@ -207,7 +216,7 @@
           (seq strokes)
           [:> h/sortable-container* {}
            (for [[index value] (d/enumerate (:strokes values []))]
-             [:> stroke-row* {:key (dm/str "stroke-" index)
+             [:> stroke-row* {:key (dm/str "stroke-" index "-" (hash applied-tokens))
                               :stroke value
                               :title (tr "workspace.options.stroke-color")
                               :index index
@@ -224,9 +233,10 @@
                               :on-stroke-cap-start-change on-stroke-cap-start-change
                               :on-stroke-cap-end-change on-stroke-cap-end-change
                               :on-stroke-cap-switch on-stroke-cap-switch
-                              :applied-tokens applied-tokens
+                              :applied-tokens (when (= 0 index) applied-tokens)
                               :on-detach-token on-detach-token
                               :on-remove on-remove
+                              :on-toggle-visibility on-toggle-visibility
                               :on-reorder handle-reorder
                               :disable-drag disable-drag
                               :on-focus on-focus

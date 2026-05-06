@@ -118,8 +118,9 @@
 
 (defn- duplicate-component
   "Clone the root shape of the component and all children. Generate new
-  ids from all of them."
-  [component new-component-id library-data force-id delta variant-id]
+  ids from all of them. Optionally set the component-file if the file where the
+  new component will reside is different than the origin one."
+  [component new-component-id new-component-file library-data force-id delta variant-id]
   (let [main-instance-page  (ctf/get-component-page library-data component)
         main-instance-shape (ctf/get-component-root library-data component)
         delta               (or delta (gpt/point (+ (:width main-instance-shape) 50) 0))
@@ -141,9 +142,17 @@
         update-new-shape
         (fn [new-shape _]
           (cond-> new-shape
-            ; Link the new main to the new component
+            ;; Link the new main to the new component, and re-root it
+            ;; to the destination file when duplicating across files.
+            ;; Only the outer main matches `(:id component)`, so
+            ;; nested main-instances are not touched here.
             (= (:component-id new-shape) (:id component))
             (assoc :component-id new-component-id)
+
+            (and (= (:component-id new-shape) (:id component))
+                 (some? new-component-file)
+                 (not= new-component-file (:component-file new-shape)))
+            (assoc :component-file new-component-file)
 
             ; If it is the instance root, add it the variant-id
             (and (ctk/instance-root? new-shape) (some? variant-id))
@@ -188,7 +197,7 @@
 
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
-  [changes library component-id new-component-id & {:keys [new-shape-id apply-changes-local-library? delta new-variant-id page-id]}]
+  [changes library component-id new-component-id & {:keys [new-component-file new-shape-id apply-changes-local-library? delta new-variant-id page-id]}]
   (let [component          (ctkl/get-component (:data library) component-id)
         new-name           (:name component)
 
@@ -197,7 +206,7 @@
         target-page-id     (or page-id (:id main-instance-page))
 
         [new-main-instance-shape new-main-instance-shapes]
-        (duplicate-component component new-component-id (:data library) new-shape-id delta new-variant-id)]
+        (duplicate-component component new-component-id new-component-file (:data library) new-shape-id delta new-variant-id)]
 
     [new-main-instance-shape
      (-> changes
@@ -333,7 +342,7 @@
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> promote to root")
                                            (assoc % :component-root true)))
 
-        :always
+        (some? (ctk/get-swap-slot shape))
         ; First level subinstances of a detached component can't have swap-slot
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> remove swap-slot")
                                            (ctk/remove-swap-slot %)))
@@ -364,7 +373,7 @@
                       (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
                         (cond-> changes
                           (some? (:shape-ref ref-shape))
-                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (advanced)")
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (advanced to " (:shape-ref ref-shape) ")"))
                                                                 (assoc % :shape-ref (:shape-ref ref-shape))))
 
                           ;; When advancing level, the normal touched groups (not swap slots) of the
@@ -374,16 +383,18 @@
                           (pcb/update-shapes
                            [(:id shape)]
                            #(do (log/trace :msg "       (merge touched)")
+                                (log/trace :msg (str "       (ref-shape: " (:id ref-shape) ")"))
+                                (log/trace :msg (str "       (ref touched: " (:touched ref-shape) ")"))
                                 (assoc % :touched
-                                       (clojure.set/union (:touched shape)
-                                                          (ctk/normal-touched-groups ref-shape)))))
+                                       (set/union (:touched shape)
+                                                  (ctk/normal-touched-groups ref-shape)))))
 
                           ;; Swap slot must also be copied if the current shape has not any,
                           ;; except if this is the first level subcopy.
                           (and (some? (ctk/get-swap-slot ref-shape))
                                (nil? (ctk/get-swap-slot shape))
                                (not= (:id shape) shape-id))
-                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg "       (got swap-slot)")
+                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (got swap-slot " (ctk/get-swap-slot ref-shape) ")"))
                                                                 (ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))
 
                           ;; If we can't get the ref-shape (e.g. it's in an external library not linked),
@@ -771,14 +782,6 @@
 ;;         is different than the one in the near component (Shape-2-2-1)
 ;;         but it's not touched.
 
-(defn- redirect-shaperef ;;Set the :shape-ref of a shape pointing to the :id of its remote-shape
-  ([container libraries shape]
-   (redirect-shaperef nil nil shape (ctf/find-remote-shape container libraries shape)))
-  ([_ _ shape remote-shape]
-   (if (some? (:shape-ref shape))
-     (assoc shape :shape-ref (:id remote-shape))
-     shape)))
-
 (defn generate-sync-shape-direct
   "Generate changes to synchronize one shape that is the root of a component
   instance, and all its children, from the given component."
@@ -790,17 +793,11 @@
         component  (ctkl/get-component library (:component-id shape-inst) true)]
     (if (and (ctk/in-component-copy? shape-inst)
              (or (ctf/direct-copy? shape-inst component container nil libraries) reset?)) ; In a normal sync, we don't want to sync remote mains, only direct/near
-      (let [redirect-shaperef (partial redirect-shaperef container libraries)
-
-            shape-main (when component
+      (let [shape-main (when component
                          (if reset?
                            ;; the reset is against the ref-shape, not against the original shape of the component
                            (ctf/find-ref-shape file container libraries shape-inst)
                            (ctf/get-ref-shape library component shape-inst)))
-
-            shape-inst (if reset?
-                         (redirect-shaperef shape-inst shape-main)
-                         shape-inst)
 
             initial-root?  (:component-root shape-inst)
 
@@ -819,8 +816,8 @@
                                                 root-inst
                                                 root-main
                                                 reset?
-                                                initial-root?
-                                                redirect-shaperef)
+                                                initial-root?)
+
           ;; If the component is not found, because the master component has been
           ;; deleted or the library unlinked, do nothing.
           changes))
@@ -844,7 +841,7 @@
             nil))))))
 
 (defn- generate-sync-shape-direct-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? redirect-shaperef]
+  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root?]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
@@ -890,9 +887,6 @@
 
           children-inst       (vec (ctn/get-direct-children container shape-inst))
           children-main       (vec (ctn/get-direct-children component-container shape-main))
-
-          children-inst (if reset?
-                          (map #(redirect-shaperef %) children-inst) children-inst)
 
           only-inst (fn [changes child-inst]
                       (shape-log :trace (:id child-inst) container
@@ -942,8 +936,7 @@
                                                        root-inst
                                                        root-main
                                                        reset?
-                                                       initial-root?
-                                                       redirect-shaperef))
+                                                       initial-root?))
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
@@ -1008,15 +1001,12 @@
   the values in the shape and all its children."
   [changes file libraries container shape-id]
   (shape-log :debug shape-id container :msg "Sync shape inverse" :shape (str shape-id))
-  (let [redirect-shaperef (partial redirect-shaperef container libraries)
-        shape-inst     (ctn/get-shape container shape-id)
+  (let [shape-inst     (ctn/get-shape container shape-id)
         library        (dm/get-in libraries [(:component-file shape-inst) :data])
         component      (ctkl/get-component library (:component-id shape-inst))
 
         shape-main     (when component
                          (ctf/find-remote-shape container libraries shape-inst))
-
-        shape-inst     (redirect-shaperef shape-inst shape-main)
 
         initial-root?  (:component-root shape-inst)
 
@@ -1038,12 +1028,11 @@
                                              shape-main
                                              root-inst
                                              root-main
-                                             initial-root?
-                                             redirect-shaperef)
+                                             initial-root?)
       changes)))
 
 (defn- generate-sync-shape-inverse-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root? redirect-shaperef]
+  [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root?]
   (shape-log :trace (:id shape-inst) container
              :msg "Sync shape inverse recursive"
              :shape (str (:name shape-inst))
@@ -1100,8 +1089,6 @@
           children-main   (mapv #(ctn/get-shape component-container %)
                                 (:shapes shape-main))
 
-          children-inst (map #(redirect-shaperef %) children-inst)
-
           only-inst (fn [changes child-inst]
                       (add-shape-to-main changes
                                          child-inst
@@ -1130,8 +1117,7 @@
                                                         child-main
                                                         root-inst
                                                         root-main
-                                                        initial-root?
-                                                        redirect-shaperef))
+                                                        initial-root?))
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
@@ -1773,6 +1759,23 @@
     (pcb/update-shapes changes [(:id dest-shape)] ctk/unhead-shape {:ignore-touched true})
     changes))
 
+(defn- check-swapped-main
+  [changes dest-shape origin-shape]
+  ;; Only for direct updates (from main to copy). Check if the main shape
+  ;; has been swapped. If so, the new component-id and component-file must
+  ;; be put into the copy.
+  (if (and (= (:shape-ref dest-shape) (:id origin-shape))
+           (ctk/instance-head? dest-shape)
+           (ctk/instance-head? origin-shape)
+           (or (not= (:component-id dest-shape) (:component-id origin-shape))
+               (not= (:component-file dest-shape) (:component-file origin-shape))))
+    (pcb/update-shapes changes [(:id dest-shape)]
+                       #(assoc %
+                               :component-id (:component-id origin-shape)
+                               :component-file (:component-file origin-shape))
+                       {:ignore-touched true})
+    changes))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1815,6 +1818,8 @@
             (add-update-attr-changes dest-shape container roperations uoperations)
             :always
             (check-detached-main dest-shape origin-shape)
+            :always
+            (check-swapped-main dest-shape origin-shape)
             :always
             (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))
 
@@ -2731,7 +2736,7 @@
             frames)))
 
 (defn- duplicate-variant
-  [changes library component base-pos parent page-id into-new-variant?]
+  [changes library component base-pos parent page-id into-new-variant? new-component-file]
   (let [component-page   (ctpl/get-page (:data library) (:main-instance-page component))
         objects          (:objects component-page)
         component-shape  (get objects (:main-instance-id component))
@@ -2745,7 +2750,8 @@
                                                        {:apply-changes-local-library? true
                                                         :delta delta
                                                         :new-variant-id (if into-new-variant? nil (:id parent))
-                                                        :page-id page-id})
+                                                        :page-id page-id
+                                                        :new-component-file new-component-file})
         value             (when into-new-variant?
                             (str ctv/value-prefix
                                  (-> (cfv/extract-properties-values (:data library) objects (:id parent))
@@ -2768,15 +2774,18 @@
 
 
 (defn generate-duplicate-component-change
-  [changes objects page main parent-id frame-id delta libraries library-data ids-map]
-  (let [main-id      (:id main)
-        component-id (:component-id main)
-        file-id      (:component-file main)
-        component    (ctf/get-component libraries file-id component-id)
-        pos          (as-> (gsh/move main delta) $
-                       (gpt/point (:x $) (:y $)))
+  [changes objects page main parent-id frame-id delta libraries library-data ids-map & {:keys [new-component-file]}]
+  (let [main-id        (:id main)
+        component-id   (:component-id main)
+        ;; Source library file id (where the component was originally
+        ;; defined). Renamed from `file-id` to make the contrast with
+        ;; `new-component-file` explicit when duplicating across files.
+        source-file-id (:component-file main)
+        component      (ctf/get-component libraries source-file-id component-id)
+        pos            (as-> (gsh/move main delta) $
+                         (gpt/point (:x $) (:y $)))
 
-        parent       (get objects parent-id)
+        parent         (get objects parent-id)
 
 
         ;; When we duplicate a variant alone, we will instanciate it
@@ -2803,25 +2812,27 @@
 
           (and (ctk/is-variant? main) in-variant-container?)
           (duplicate-variant changes
-                             (get libraries file-id)
+                             (get libraries source-file-id)
                              component
                              pos
                              parent
                              (:id page)
-                             false)
+                             false
+                             new-component-file)
 
           (ctk/is-variant-container? parent)
           (duplicate-variant changes
-                             (get libraries file-id)
+                             (get libraries source-file-id)
                              component
                              pos
                              parent
                              (:id page)
-                             true)
+                             true
+                             new-component-file)
           :else
           (generate-instantiate-component changes
                                           objects
-                                          file-id
+                                          source-file-id
                                           component-id
                                           pos
                                           page
@@ -2845,7 +2856,7 @@
      changes
 
      (ctf/is-main-of-known-component? obj libraries)
-     (generate-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data ids-map)
+     (generate-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data ids-map {:new-component-file file-id})
 
      :else
      (let [frame?      (cfh/frame-shape? obj)

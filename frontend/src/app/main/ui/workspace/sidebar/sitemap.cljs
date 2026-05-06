@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.page :as ctp]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
@@ -19,9 +20,8 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
@@ -51,8 +51,10 @@
   each object change)"
   [page-id]
   (l/derived (fn [fdata]
-               (-> (dsh/get-page fdata page-id)
-                   (dissoc :objects)))
+               (let [page (dsh/get-page fdata page-id)]
+                 (-> page
+                     (assoc :empty? (ctp/is-empty? page))
+                     (dissoc :objects))))
              refs/workspace-data
              =))
 
@@ -63,32 +65,35 @@
 (mf/defc page-item
   {::mf/wrap-props false}
   [{:keys [page index deletable? selected? editing? hovering? current-page-id]}]
-  (let [input-ref    (mf/use-ref)
-        id           (:id page)
-        delete-fn    (mf/use-fn (mf/deps id) #(st/emit! (dw/delete-page id)))
-        navigate-fn  (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dcm/go-to-workspace :page-id id)))
-        read-only?   (mf/use-ctx ctx/workspace-read-only?)
+  (let [input-ref     (mf/use-ref)
+        id            (:id page)
+        name          (:name page "")
+        is-separator? (and (= "---" (str/trim name)) (:empty? page))
+        delete-fn     (mf/use-fn (mf/deps id) #(st/emit! (dw/delete-page id)))
+        navigate-fn   (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dcm/go-to-workspace :page-id id)))
+        read-only?    (mf/use-ctx ctx/workspace-read-only?)
 
         on-click
         (mf/use-fn
-         (mf/deps id current-page-id)
+         (mf/deps id current-page-id is-separator?)
          (fn []
-           ;; WASM page transitions:
-           ;; - Capture the current page (A) once
-           ;; - Show a blurred snapshot while the target page (B/C/...) renders
-           ;; - If the user clicks again during the transition, keep showing the original (A) snapshot
-           (if (and (features/active-feature? @st/state "render-wasm/v1")
-                    (not= id current-page-id))
-             (do
-               (-> (wasm.api/apply-canvas-blur)
-                   (p/finally
-                     (fn []
-                       ;; NOTE: it seems we need two RAF so the blur is actually applied and visible
-                       ;;       in the canvas :(
-                       (timers/raf
-                        (fn []
-                          (timers/raf navigate-fn)))))))
-             (navigate-fn))))
+           (when-not is-separator?
+             ;; WASM page transitions:
+             ;; - Capture the current page (A) once
+             ;; - Show a blurred snapshot while the target page (B/C/...) renders
+             ;; - If the user clicks again during the transition, keep showing the original (A) snapshot
+             (if (and (features/active-feature? @st/state "render-wasm/v1")
+                      (not= id current-page-id))
+               (do
+                 (-> (wasm.api/apply-canvas-blur)
+                     (p/finally
+                       (fn []
+                         ;; NOTE: it seems we need two RAF so the blur is actually applied and visible
+                         ;;       in the canvas :(
+                         (timers/raf
+                          (fn []
+                            (timers/raf navigate-fn)))))))
+               (navigate-fn)))))
 
         on-delete
         (mf/use-fn
@@ -112,11 +117,14 @@
 
         on-blur
         (mf/use-fn
+         (mf/deps id is-separator?)
          (fn [event]
-           (let [name   (str/trim (dom/get-target-val event))]
-             (when-not (str/empty? name)
-               (st/emit! (dw/rename-page id name)))
-             (st/emit! (dw/stop-rename-page-item)))))
+           (let [new-name (str/trim (dom/get-target-val event))]
+             (if (str/empty? new-name)
+               (when is-separator?
+                 (st/emit! (dw/delete-page id)))
+               (st/emit! (dw/rename-page id new-name))))
+           (st/emit! (dw/stop-rename-page-item))))
 
         on-key-down
         (mf/use-fn
@@ -172,40 +180,49 @@
            (dom/select-text! edit-input))
          nil)))
 
-    [:li {:class (stl/css-case
-                  :page-element true
-                  :selected selected?
-                  :dnd-over-top (= (:over dprops) :top)
-                  :dnd-over-bot (= (:over dprops) :bot))
-          :ref dref}
-     [:div {:class (stl/css-case
-                    :element-list-body true
-                    :hover hovering?
-                    :selected selected?)
-            :data-testid (dm/str "page-" id)
-            :tab-index "0"
-            :on-click on-click
-            :on-double-click on-double-click
-            :on-context-menu on-context-menu}
-      [:div {:class (stl/css :page-icon)}
-       deprecated-icon/document]
-
-      (if editing?
-        [:*
-         [:input {:class  (stl/css :element-name)
-                  :type "text"
-                  :ref input-ref
-                  :on-blur on-blur
-                  :on-key-down on-key-down
-                  :auto-focus true
-                  :default-value (:name page "")}]]
-        [:*
-         [:span {:class (stl/css :page-name) :title (:name page) :data-testid "page-name"}
-          (:name page)]
-         [:div {:class  (stl/css :page-actions)}
-          (when (and deletable? (not read-only?))
-            [:button {:on-click on-delete}
-             deprecated-icon/delete])]])]]))
+    (let [selected? (and selected? (not is-separator?))]
+      [:li {:class (stl/css-case
+                    :page-element true
+                    :separator is-separator?
+                    :selected selected?
+                    :dnd-over-top (= (:over dprops) :top)
+                    :dnd-over-bot (= (:over dprops) :bot))
+            :ref dref}
+       [:div {:class (stl/css-case
+                      :element-list-body true
+                      :separator-body is-separator?
+                      :hover (and hovering? (not is-separator?))
+                      :selected selected?)
+              :data-testid (dm/str "page-" id)
+              :tab-index "0"
+              :on-click on-click
+              :on-double-click on-double-click
+              :on-context-menu on-context-menu}
+        (if (and is-separator? (not editing?))
+          [:div {:class (stl/css :page-separator)
+                 :data-testid "page-separator"}]
+          [:*
+           (when-not is-separator?
+             [:div {:class (stl/css :page-icon)}
+              [:> icon* {:icon-id i/document :size "s"}]])
+           (if editing?
+             [:input {:class        (stl/css :element-name)
+                      :type         "text"
+                      :ref          input-ref
+                      :on-blur      on-blur
+                      :on-key-down  on-key-down
+                      :auto-focus   true
+                      :default-value name}]
+             [:*
+              [:span {:class (stl/css :page-name) :title name :data-testid "page-name"}
+               name]
+              [:div {:class (stl/css :page-actions)}
+               (when (and deletable? (not read-only?))
+                 [:> icon-button* {:variant "ghost"
+                                   :aria-label (tr "modals.delete-page.title")
+                                   :on-click on-delete
+                                   :icon-size "s"
+                                   :icon i/delete}])]])])]])))
 
 ;; --- Page Item Wrapper
 
@@ -266,7 +283,6 @@
      [:> title-bar* {:collapsable   true
                      :collapsed     collapsed
                      :on-collapsed  on-toggle-collapsed
-                     :all-clickable true
                      :title         (tr "workspace.sidebar.sitemap")
                      :class         (stl/css :title-spacing-sitemap)}
 

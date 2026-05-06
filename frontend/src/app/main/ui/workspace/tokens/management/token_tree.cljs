@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.management.token-tree
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.path-names :as cpn]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
@@ -20,7 +21,7 @@
   [:map
    [:node :any]
    [:type :keyword]
-   [:unfolded-token-paths {:optional true} [:vector :string]]
+   [:folded-token-paths {:optional true} [:maybe [:vector :string]]]
    [:selected-shapes :any]
    [:is-selected-inside-layout {:optional true} :boolean]
    [:active-theme-tokens {:optional true} :any]
@@ -34,7 +35,7 @@
   {::mf/schema schema:folder-node}
   [{:keys [node
            type
-           unfolded-token-paths
+           folded-token-paths
            selected-shapes
            is-selected-inside-layout
            active-theme-tokens
@@ -44,12 +45,11 @@
            on-pill-context-menu
            on-node-context-menu]}]
   (let [full-path (str (name type) "." (:path node))
-        is-folder-expanded (contains? (set (or unfolded-token-paths [])) full-path)
+        is-folder-expanded (not (contains? (set (or folded-token-paths [])) full-path))
         swap-folder-expanded (mf/use-fn
-                              (mf/deps (:path node) type)
+                              (mf/deps full-path)
                               (fn []
-                                (let [path (str (name type)  "." (:path node))]
-                                  (st/emit! (dwtl/toggle-token-path path)))))
+                                (st/emit! (dwtl/toggle-token-path full-path))))
 
         node-context-menu-prep (mf/use-fn
                                 (mf/deps on-node-context-menu node)
@@ -65,18 +65,18 @@
                         :on-toggle-expand swap-folder-expanded
                         :on-context-menu node-context-menu-prep}]
      (when is-folder-expanded
-       (let [children-fn (:children-fn node)]
+       (let [children (:children node)]
          [:div {:class (stl/css :folder-children-wrapper)
                 :id (str "folder-children-" (:path node))}
-          (when children-fn
-            (let [children (children-fn)]
-              (for [child children]
+          (when (seq children)
+            (let [sorted-children (d/natural-sort-by :name children)]
+              (for [child sorted-children]
                 (if (not (:leaf child))
                   [:ul {:class (stl/css :node-parent)
                         :key (:path child)}
                    [:> folder-node* {:type type
                                      :node child
-                                     :unfolded-token-paths unfolded-token-paths
+                                     :folded-token-paths folded-token-paths
                                      :selected-shapes selected-shapes
                                      :is-selected-inside-layout is-selected-inside-layout
                                      :active-theme-tokens active-theme-tokens
@@ -100,12 +100,12 @@
   [:map
    [:tokens :any]
    [:type :keyword]
-   [:unfolded-token-paths {:optional true} [:vector :string]]
+   [:folded-token-paths {:optional true} [:maybe [:vector :string]]]
    [:selected-shapes :any]
    [:is-selected-inside-layout {:optional true} :boolean]
    [:active-theme-tokens {:optional true} :any]
-   [:selected-token-set-id {:optional true} :any]
    [:tokens-lib {:optional true} :any]
+   [:selected-token-set-id {:optional true} :any]
    [:on-token-pill-click {:optional true} fn?]
    [:on-pill-context-menu {:optional true} fn?]
    [:on-node-context-menu {:optional true} fn?]])
@@ -114,7 +114,7 @@
   {::mf/schema schema:token-tree}
   [{:keys [tokens
            type
-           unfolded-token-paths
+           folded-token-paths
            selected-shapes
            is-selected-inside-layout
            active-theme-tokens
@@ -127,7 +127,8 @@
         tree (mf/use-memo
               (mf/deps tokens)
               (fn []
-                (cpn/build-tree-root tokens separator)))
+                (->> (cpn/build-tree-root tokens separator)
+                     (d/natural-sort-by :name))))
         can-edit? (:can-edit (deref refs/permissions))
         on-node-context-menu (mf/use-fn
                               (mf/deps can-edit? on-node-context-menu)
@@ -151,7 +152,7 @@
                :key (:path node)}
           [:> folder-node* {:node node
                             :type type
-                            :unfolded-token-paths unfolded-token-paths
+                            :folded-token-paths folded-token-paths
                             :selected-shapes selected-shapes
                             :is-selected-inside-layout is-selected-inside-layout
                             :active-theme-tokens active-theme-tokens

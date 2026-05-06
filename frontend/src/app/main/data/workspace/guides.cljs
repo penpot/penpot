@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.guides
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
@@ -77,6 +78,36 @@
             guides (-> (select-keys guides ids) (vals))]
         (rx/from (mapv remove-guide guides))))))
 
+(defn remove-frame-guides
+  [frame-ids]
+
+  (assert (every? uuid? frame-ids) "expected a coll of uuids")
+
+  (ptk/reify ::remove-frame-guides
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [{:keys [guides]} (dsh/lookup-page state)
+            frame-ids-set    (set frame-ids)
+            guide-ids        (into #{}
+                                   (comp (filter #(contains? frame-ids-set (:frame-id %)))
+                                         d/xf:map-id)
+                                   (vals guides))]
+        (update-in state [:workspace-guides :hover]
+                   (fn [hover] (reduce disj (or hover #{}) guide-ids)))))
+
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [{:keys [guides] :as page} (dsh/lookup-page state)
+            frame-ids-set    (set frame-ids)
+            to-remove        (filter #(contains? frame-ids-set (:frame-id %)) (vals guides))
+            changes          (reduce
+                              (fn [acc {:keys [id]}]
+                                (pcb/set-guide acc id nil))
+                              (-> (pcb/empty-changes it)
+                                  (pcb/with-page page))
+                              to-remove)]
+        (rx/of (dwc/commit-changes changes))))))
+
 (defmethod ptk/resolve ::move-frame-guides
   [_ args]
   (dm/assert!
@@ -120,6 +151,23 @@
              (filter (comp frame-ids? :frame-id))
              (map build-move-event)
              (rx/from))))))
+
+(defn update-guide-color
+  [guide-id color]
+  (ptk/reify ::update-guide-color
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [{:keys [guides] :as page} (dsh/lookup-page state)
+            guide (get guides guide-id)]
+        (when (some? guide)
+          (let [updated-guide (if (some? color)
+                                (assoc guide :color color)
+                                (dissoc guide :color))
+                changes
+                (-> (pcb/empty-changes it)
+                    (pcb/with-page page)
+                    (pcb/set-guide guide-id updated-guide))]
+            (rx/of (dwc/commit-changes changes))))))))
 
 (defn set-hover-guide
   [id hover?]

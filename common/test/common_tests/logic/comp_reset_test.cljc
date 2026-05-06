@@ -350,3 +350,72 @@
     (t/is (= (:fill-opacity fill') 1))
     (t/is (= (:touched copy2-root') nil))
     (t/is (= (:touched copy2-child') nil))))
+
+(t/deftest test-reset-with-propagation-updates-copies
+  ;; When a nested copy inside a main component has an override and we
+  ;; reset it passing a propagate-fn, the reset must be propagated to
+  ;; all copies of that component so they reflect the canonical color.
+  (let [;; ==== Setup
+        file
+        (-> (thf/sample-file :file1)
+            ;; component1: main1-root / main1-child (fill "#aabbcc")
+            ;; component2: main2-root contains nested-head (instance of component1)
+            ;; copy2-root: copy of component2
+            (tho/add-nested-component-with-copy
+             :component1 :main1-root :main1-child
+             :component2 :main2-root :nested-head
+             :copy2-root
+             :main1-child-params {:fills (ths/sample-fills-color :fill-color "#aabbcc")}
+             :copy2-root-params {:children-labels [:copy2-nested-head]}))
+
+        propagate-fn (fn [f]
+                       (-> f
+                           (tho/propagate-component-changes :component1)
+                           (tho/propagate-component-changes :component2)))
+
+        ;; ==== Action – override the nested-head color, then reset it with propagation
+        file'
+        (-> file
+            (tho/update-bottom-color :nested-head "#fabada" :propagate-fn propagate-fn)
+            (tho/reset-overrides (ths/get-shape file :nested-head) :propagate-fn propagate-fn))
+
+        ;; ==== Get
+        copy2-bottom-color (tho/bottom-fill-color file' :copy2-root)]
+
+    ;; ==== Check
+    ;; After reset + propagation the copy should mirror the canonical color
+    (t/is (= copy2-bottom-color "#aabbcc"))))
+
+(t/deftest test-reset-without-propagation-does-not-update-copies
+  ;; This is the regression test for the misplaced-parenthesis bug: when
+  ;; propagate-fn is NOT passed to reset-overrides the copies of the component
+  ;; must still hold the overridden value because the component sync never ran.
+  (let [;; ==== Setup
+        file
+        (-> (thf/sample-file :file1)
+            (tho/add-nested-component-with-copy
+             :component1 :main1-root :main1-child
+             :component2 :main2-root :nested-head
+             :copy2-root
+             :main1-child-params {:fills (ths/sample-fills-color :fill-color "#aabbcc")}
+             :copy2-root-params {:children-labels [:copy2-nested-head]}))
+
+        propagate-fn (fn [f]
+                       (-> f
+                           (tho/propagate-component-changes :component1)
+                           (tho/propagate-component-changes :component2)))
+
+        ;; ==== Action – override the nested-head color, then reset WITHOUT propagation
+        file'
+        (-> file
+            (tho/update-bottom-color :nested-head "#fabada" :propagate-fn propagate-fn)
+            ;; Reset without propagate-fn: the component definition is updated but
+            ;; the change is never pushed to the copy.
+            (tho/reset-overrides (ths/get-shape file :nested-head)))
+
+        ;; ==== Get
+        copy2-bottom-color (tho/bottom-fill-color file' :copy2-root)]
+
+    ;; ==== Check
+    ;; Without propagation the copy still reflects the overridden color
+    (t/is (= copy2-bottom-color "#fabada"))))

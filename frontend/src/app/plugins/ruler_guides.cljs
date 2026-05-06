@@ -24,7 +24,7 @@
 
 (defn ruler-guide-proxy
   [plugin-id file-id page-id id]
-  (obj/reify {:name "RuleGuideProxy"}
+  (obj/reify {:name "RulerGuideProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file {:enumerable false :get (constantly file-id)}
     :$page {:enumerable false :get (constantly page-id)}
@@ -93,6 +93,22 @@
 
                  value)]
            (st/emit! (dwgu/update-guides (assoc guide :position position))))))}
+
+    :color
+    {:this true
+     :get
+     (fn [self]
+       (-> self u/proxy->ruler-guide :color))
+
+     :set
+     (fn [self value]
+       (cond
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :color "Plugin doesn't have 'content:write' permission")
+
+         :else
+         (let [guide (u/proxy->ruler-guide self)]
+           (st/emit! (dwgu/update-guides (assoc guide :color value))))))}
 
     :remove
     (fn []

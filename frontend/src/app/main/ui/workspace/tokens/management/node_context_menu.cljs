@@ -14,6 +14,7 @@
 
 (def ^:private schema:token-node-context-menu
   [:map
+   [:on-rename-node fn?]
    [:on-delete-node fn?]])
 
 (def ^:private tokens-node-menu-ref
@@ -26,7 +27,7 @@
 
 (mf/defc token-node-context-menu*
   {::mf/schema schema:token-node-context-menu}
-  [{:keys [on-delete-node]}]
+  [{:keys [on-rename-node on-duplicate-node on-delete-node]}]
   (let [mdata               (mf/deref tokens-node-menu-ref)
         is-open?            (boolean mdata)
         dropdown-ref        (mf/use-ref)
@@ -38,13 +39,29 @@
         left                (+ (get-in mdata [:position :x]) 5)
         container           (hooks/use-portal-container :popup)
 
-        delete-node          (mf/use-fn
-                              (mf/deps mdata)
-                              (fn []
-                                (let [node (get mdata :node)
-                                      type (get mdata :type)]
-                                  (when node
-                                    (on-delete-node node type)))))]
+        rename-node         (mf/use-fn
+                             (mf/deps mdata on-rename-node)
+                             (fn []
+                               (let [node (get mdata :node)
+                                     type (get mdata :type)]
+                                 (when node
+                                   (on-rename-node node type)))))
+
+        duplicate-node      (mf/use-fn
+                             (mf/deps mdata on-duplicate-node)
+                             (fn []
+                               (let [node (get mdata :node)
+                                     type (get mdata :type)]
+                                 (when node
+                                   (on-duplicate-node node type)))))
+
+        delete-node         (mf/use-fn
+                             (mf/deps mdata)
+                             (fn []
+                               (let [node (get mdata :node)
+                                     type (get mdata :type)]
+                                 (when node
+                                   (on-delete-node node type)))))]
 
     (mf/with-effect [is-open?]
       (when (and (not= 0 (mf/ref-val dropdown-direction-change*)) (= false is-open?))
@@ -77,6 +94,16 @@
                 :on-context-menu prevent-default}
           (when mdata
             [:ul {:class (stl/css :token-node-context-menu-list)}
+             [:li {:class (stl/css :token-node-context-menu-listitem)}
+              [:button {:class (stl/css :token-node-context-menu-action)
+                        :type "button"
+                        :on-click rename-node}
+               (tr "labels.rename")]]
+             [:li {:class (stl/css :token-node-context-menu-listitem)}
+              [:button {:class (stl/css :token-node-context-menu-action)
+                        :type "button"
+                        :on-click duplicate-node}
+               (tr "labels.duplicate")]]
              [:li {:class (stl/css :token-node-context-menu-listitem)}
               [:button {:class (stl/css :token-node-context-menu-action)
                         :type "button"

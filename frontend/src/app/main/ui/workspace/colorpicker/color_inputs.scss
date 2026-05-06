@@ -7,28 +7,66 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .color-values {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
+
   margin-top: deprecated.$s-8;
+
+  .model-switcher {
+    display: flex;
+    gap: deprecated.$s-4;
+    margin-bottom: deprecated.$s-8;
+    padding: deprecated.$s-2;
+    background-color: var(--color-background-tertiary);
+    border-radius: deprecated.$s-6;
+    align-self: flex-start;
+
+    .model-pill {
+      @include deprecated.body-small-typography;
+
+      padding: deprecated.$s-2 deprecated.$s-8;
+      border: none;
+      border-radius: deprecated.$s-4;
+      background: transparent;
+      color: var(--color-foreground-secondary);
+      cursor: pointer;
+
+      &:hover {
+        color: var(--color-foreground-primary);
+      }
+
+      &.model-pill-active {
+        background-color: var(--color-background-primary);
+        color: var(--color-accent-primary);
+      }
+    }
+  }
 
   &.disable-opacity {
     grid-template-columns: 3.5rem repeat(3, 1fr);
   }
+
   .colors-row {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
+
     .input-wrapper {
-      @extend .input-element;
-      @include deprecated.bodySmallTypography;
+      @extend %input-element;
+      @include deprecated.body-small-typography;
+
       width: deprecated.$s-84;
       display: flex;
       align-items: baseline;
     }
   }
+
   .hex-alpha-wrapper {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
+
     .input-wrapper {
-      @extend .input-element;
-      @include deprecated.bodySmallTypography;
+      @extend %input-element;
+      @include deprecated.body-small-typography;
+
       width: deprecated.$s-84;
+
       &.hex {
         width: deprecated.$s-172;
         display: flex;

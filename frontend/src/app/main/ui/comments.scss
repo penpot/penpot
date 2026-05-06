@@ -23,7 +23,8 @@
 }
 
 .error-text {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--color-foreground-error);
 }
 
@@ -39,11 +40,12 @@
 }
 
 .location-text {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 }
 
 .author {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   display: flex;
   align-items: center;
   gap: deprecated.$s-8;
@@ -54,12 +56,14 @@
 }
 
 .author-fullname {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
+
   color: var(--comment-title-color);
 }
 
 .author-timeago {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
+
   color: var(--comment-subtitle-color);
 }
 
@@ -112,11 +116,12 @@
 }
 
 .avatar-darken {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 0.5);
 }
 
 .cover {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -126,16 +131,17 @@
 }
 
 .item {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--color-foreground-primary);
-  word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
   white-space: pre-wrap;
 }
 
 .replies {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   display: flex;
   gap: deprecated.$s-8;
 }
@@ -143,6 +149,7 @@
 .replies-total {
   color: var(--color-foreground-secondary);
 }
+
 .replies-unread {
   color: var(--color-accent-primary);
 }
@@ -168,15 +175,18 @@
 
   --translate-x: 0%;
   --translate-y: 0%;
+
   transform: translate(var(--translate-x), var(--translate-y));
 
   &.left {
     --translate-x: -100%;
+
     flex-direction: row-reverse;
   }
 
   &.top {
     --translate-y: -100%;
+
     align-items: flex-end;
   }
 }
@@ -214,10 +224,13 @@
 
   --translate-x: 0%;
   --translate-y: 0%;
+
   transform: translate(var(--translate-x), var(--translate-y));
+
   &.left {
     --translate-x: -100%;
   }
+
   &.top {
     --translate-y: -100%;
   }
@@ -232,7 +245,8 @@
 }
 
 .floating-thread-header-left {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--color-foreground-primary);
 }
 
@@ -257,22 +271,25 @@
   display: flex;
   flex-direction: column;
   gap: deprecated.$s-8;
-  @include deprecated.bodySmallTypography;
+
+  @include deprecated.body-small-typography;
 }
 
 .checkbox-wrapper {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   width: deprecated.$s-16;
   height: deprecated.$s-24;
   margin-right: deprecated.$s-8;
 }
 
 .checkbox {
-  @extend .checkbox-icon;
+  @extend %checkbox-icon;
 }
 
 .dropdown-menu {
-  @extend .dropdown-wrapper;
+  @extend %dropdown-wrapper;
+
   position: absolute;
   width: fit-content;
   max-width: deprecated.$s-200;
@@ -282,7 +299,7 @@
 }
 
 .dropdown-menu-option {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
 }
 
 .form {
@@ -364,8 +381,8 @@
 }
 
 .comment-input {
-  @include deprecated.bodySmallTypography;
-  white-space: pre-line;
+  @include deprecated.body-small-typography;
+
   background: var(--input-background-color);
   border-radius: deprecated.$br-8;
   border: deprecated.$s-1 solid var(--input-border-color);
@@ -399,6 +416,12 @@
 
 .comment-mention {
   color: var(--color-accent-primary);
+}
+
+.comment-link {
+  color: var(--color-accent-primary);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .comments-mentions-empty {

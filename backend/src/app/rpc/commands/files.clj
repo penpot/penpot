@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
+   [app.common.files.stats :as cfs]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
@@ -606,6 +607,76 @@
   (get-file-summary cfg id))
 
 
+;; --- COMMAND QUERY: get-file-stats
+
+(def ^:private sql:file-stats-library-counts
+  "SELECT
+     (SELECT COUNT(*)
+        FROM file_library_rel AS flr
+        JOIN file AS fl ON (fl.id = flr.library_file_id)
+       WHERE flr.file_id = ?::uuid
+         AND (fl.deleted_at IS NULL OR fl.deleted_at > now())) AS library_count,
+     (SELECT COUNT(*)
+        FROM file_library_rel AS flr
+        JOIN file AS fl ON (fl.id = flr.file_id)
+       WHERE flr.library_file_id = ?::uuid
+         AND (fl.deleted_at IS NULL OR fl.deleted_at > now())) AS referenced_by_count")
+
+(defn- get-file-stats-library-counts
+  [conn file-id]
+  (let [row (db/exec-one! conn [sql:file-stats-library-counts file-id file-id])]
+    {:library-count       (or (:library-count row) 0)
+     :referenced-by-count (or (:referenced-by-count row) 0)}))
+
+(defn- get-file-stats
+  [{:keys [::db/conn] :as cfg} file-id]
+  (let [file    (bfc/get-file cfg file-id)
+        base    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+                  (cfs/calc-file-stats (:data file)))
+        lib-cnt (get-file-stats-library-counts conn file-id)]
+    (-> base
+        (merge lib-cnt)
+        (assoc :file-id    file-id
+               :revn       (:revn file)
+               :updated-at (:modified-at file)))))
+
+(def ^:private schema:shape-counts
+  [:map {:title "FileStatsShapeCounts"}
+   [:total [::sm/int {:min 0}]]
+   [:by-type [:map-of :keyword [::sm/int {:min 0}]]]])
+
+(def ^:private schema:get-file-stats-result
+  [:map {:title "FileStats"}
+   [:file-id ::sm/uuid]
+   [:page-count [::sm/int {:min 0}]]
+   [:shape-counts schema:shape-counts]
+   [:component-count [::sm/int {:min 0}]]
+   [:deleted-component-count [::sm/int {:min 0}]]
+   [:color-count [::sm/int {:min 0}]]
+   [:typography-count [::sm/int {:min 0}]]
+   [:library-count [::sm/int {:min 0}]]
+   [:referenced-by-count [::sm/int {:min 0}]]
+   [:revn [::sm/int {:min 0}]]
+   [:updated-at ::ct/inst]])
+
+(def ^:private schema:get-file-stats
+  [:map {:title "get-file-stats"}
+   [:id ::sm/uuid]])
+
+(sv/defmethod ::get-file-stats
+  "Return aggregate statistics for a single file: page count, shape
+   counts by type, component/color/typography counts, and inbound and
+   outbound library reference counts. Cheap alternative to `get-file`
+   when only metrics are needed."
+  {::doc/added "2.17"
+   ::sm/params schema:get-file-stats
+   ::sm/result schema:get-file-stats-result
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id]}]
+  (check-read-permissions! conn profile-id id)
+  (get-file-stats cfg id))
+
+
 ;; --- COMMAND QUERY: get-file-libraries
 
 (def ^:private schema:get-file-libraries
@@ -1155,38 +1226,39 @@
       AND t.id = ?
       AND f.id = ANY(?::uuid[])")
 
-(defn- restore-file
-  [conn file-id]
-  (db/update! conn :file
-              {:deleted-at nil
-               :has-media-trimmed false}
-              {:id file-id}
-              {::db/return-keys false})
+(def ^:private sql:restore-files
+  "UPDATE file SET deleted_at = null, has_media_trimmed = false
+    WHERE id = ANY(?::uuid[])")
 
-  (db/update! conn :file-media-object
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
+(def ^:private sql:restore-file-media-objects
+  "UPDATE file_media_object SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
 
-  (db/update! conn :file-change
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
+(def ^:private sql:restore-file-changes
+  "UPDATE file_change SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
 
-  (db/update! conn :file-data
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
+(def ^:private sql:restore-file-data
+  "UPDATE file_data SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
 
-  (db/update! conn :file-thumbnail
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
+(def ^:private sql:restore-file-thumbnails
+  "UPDATE file_thumbnail SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
 
-  (db/update! conn :file-tagged-object-thumbnail
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false}))
+(def ^:private sql:restore-file-tagged-object-thumbnails
+  "UPDATE file_tagged_object_thumbnail SET deleted_at = null
+    WHERE file_id = ANY(?::uuid[])")
+
+(defn- restore-files
+  [conn file-ids]
+  (let [file-ids (db/create-array conn "uuid" file-ids)]
+    (db/exec-one! conn [sql:restore-files file-ids])
+    (db/exec-one! conn [sql:restore-file-media-objects file-ids])
+    (db/exec-one! conn [sql:restore-file-changes file-ids])
+    (db/exec-one! conn [sql:restore-file-data file-ids])
+    (db/exec-one! conn [sql:restore-file-thumbnails file-ids])
+    (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])))
 
 (def ^:private sql:restore-projects
   "UPDATE project SET deleted_at = null WHERE id = ANY(?::uuid[])")
@@ -1207,17 +1279,18 @@
         (reduce (fn [result {:keys [id project-id]}]
                   (let [index (-> result :files count)]
                     (events/tap :progress {:file-id id :index (inc index) :total total-files})
-                    (restore-file conn id)
-
                     (-> result
                         (update :files conj id)
                         (update :projects conj project-id))))
-
-                {:files #{} :projectes #{}}
+                {:files #{} :projects #{}}
                 (db/plan conn [sql:resolve-editable-files team-id
                                (db/create-array conn "uuid" ids)]))]
 
-    (restore-projects conn projects)
+    (when (seq files)
+      (restore-files conn files))
+
+    (when (seq projects)
+      (restore-projects conn projects))
 
     files))
 

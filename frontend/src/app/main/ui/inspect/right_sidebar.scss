@@ -56,8 +56,9 @@
 }
 
 .layer-title {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.textEllipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.text-ellipsis;
+
   block-size: $sz-32;
   padding: var(--sp-s) 0;
   color: var(--color-foreground-primary);
@@ -69,8 +70,9 @@
 }
 
 .layer-subtitle {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.textEllipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.text-ellipsis;
+
   color: var(--assets-item-name-foreground-color-rest);
 }
 
@@ -97,6 +99,7 @@
 
 .inspect-tab-switcher-label {
   @include use-typography("body-medium");
+
   color: var(--color-foreground-primary);
   flex: 0 1 40%;
 }

@@ -588,7 +588,7 @@
                                     ::audit/tracked-at (ct/now)})
 
 
-                    (#'files/restore-file conn file-id))
+                    (#'files/restore-files conn [file-id]))
                   :restored))))
 
 (defn delete-project!
@@ -622,7 +622,7 @@
   (doseq [{:keys [id]} (db/query conn :file
                                  {:project-id project-id}
                                  {::sql/columns [:id]})]
-    (#'files/restore-file conn id))
+    (#'files/restore-files conn [id]))
 
   :restored)
 
@@ -905,5 +905,4 @@
                       (let [params (-> rel
                                        (assoc :id (uuid/next))
                                        (assoc :team-id (:id team)))]
-                        (db/insert! conn :team-profile-rel params
-                                    {::db/return-keys false}))))))))
+                        (teams/add-profile-to-team! cfg params {::db/return-keys false}))))))))

@@ -1113,7 +1113,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "打开token列表"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
+msgid "token-actions.detach-token"
 msgstr "分离token"
 
 #: src/app/main/data/auth.cljs:339
@@ -3140,10 +3140,6 @@ msgstr "要访问此项目，您可以询问团队拥有者。"
 msgid "notifications.by-code.maintenance"
 msgstr "维护中断：我们将在5分钟内进行短暂维护。"
 
-#: src/app/main/data/common.cljs:82
-msgid "notifications.by-code.upgrade-version"
-msgstr "有新版本可用，请刷新页面"
-
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "成功发送邀请"
@@ -4322,11 +4318,11 @@ msgid "subscription.settings.subscribe"
 msgstr "订阅"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "享受您的计划！"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "你是 %s！"
 
 #: src/app/main/ui/settings/subscription.cljs:526
@@ -6907,7 +6903,7 @@ msgid "workspace.tokens.edit-themes"
 msgstr "编辑主题"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "导入错误：不能解析 JSON。"
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
@@ -6944,7 +6940,7 @@ msgid "workspace.tokens.import-button-prefix"
 msgstr "导入 %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "导入错误："
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:273
@@ -6977,37 +6973,37 @@ msgid "workspace.tokens.inactive-set-description"
 msgstr "此设置未启用。请更改主题或启用此设置以在视口中查看更改"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "无效的颜色值：%s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:89
-msgid "workspace.tokens.invalid-font-weight-token-value"
+msgid "errors.tokens.invalid-font-weight-token-value"
 msgstr "字体粗细值无效：使用数值（100-950）或标准名称（细、亮、常规、粗体等），后跟可选的“斜体”"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "导入错误：JSON 中存在无效的令牌数据。"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
+msgid "errors.tokens.invalid-json-token-name"
 msgstr "导入错误；JSON中存在无效的令牌名。"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
+msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "“%s” 不是有效的 token 名称。\n"
 "token 名称只能包含字母和数字，并以 . 字符分隔，并且不能以 $ 符号开头。"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
-msgid "workspace.tokens.invalid-text-case-token-value"
+msgid "errors.tokens.invalid-text-case-token-value"
 msgstr "无效的token值：仅接受无、大写、小写或大写"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
-msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgid "errors.tokens.invalid-text-decoration-token-value"
 msgstr "无效的token值：仅接受无、下划线和删除线"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "无效的令牌值：%s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -7039,7 +7035,7 @@ msgid "workspace.tokens.min-size"
 msgstr "最小尺寸"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "缺少token引用： "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
@@ -7079,7 +7075,7 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "您目前没有主题。"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:19
-msgid "workspace.tokens.no-token-files-found"
+msgid "errors.tokens.no-token-files-found"
 msgstr "在此文件中未找到任何标记、集合或主题。"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
@@ -7122,7 +7118,7 @@ msgid "workspace.tokens.select-set"
 msgstr "选择集。"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "Token存在自我引用"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60

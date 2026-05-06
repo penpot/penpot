@@ -14,6 +14,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
@@ -21,6 +22,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.components.org-avatar :refer [org-avatar*]]
    [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.subscription :refer [members-cta*
                                                show-subscription-members-banner?
@@ -28,12 +30,15 @@
    [app.main.ui.dashboard.team-form]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
+   [app.util.forms :as uforms]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -43,6 +48,9 @@
 
 (def ^:private menu-icon
   (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
+
+(def ^:private org-menu-icon
+  (deprecated-icon/icon-xref :menu (stl/css :org-menu-icon)))
 
 (def ^:private warning-icon
   (deprecated-icon/icon-xref :msg-warning (stl/css :warning-icon)))
@@ -539,7 +547,7 @@
            (tr "dashboard.your-penpot")
            (:name team)))))
 
-  (mf/with-effect []
+  (mf/with-effect [team]
     (st/emit! (dtm/fetch-members)))
 
   [:*
@@ -606,7 +614,10 @@
 (mf/defc invitation-actions*
   {::mf/private true}
   [{:keys [invitation team-id]}]
-  (let [email   (:email invitation)
+  (let [email    (:email invitation)
+        copied*  (mf/use-state false)
+        copied?  (deref copied*)
+
         on-error
         (mf/use-fn
          (mf/deps email)
@@ -632,6 +643,8 @@
         on-copy-success
         (mf/use-fn
          (fn []
+           (reset! copied* true)
+           (tm/schedule 1000 #(reset! copied* false))
            (st/emit! (ntf/success (tr "notifications.invitation-link-copied"))
                      (modal/hide))))
 
@@ -649,7 +662,7 @@
     [:> icon-button* {:variant "ghost"
                       :aria-label (tr "labels.copy-invitation-link")
                       :on-click on-copy
-                      :icon "clipboard"}]))
+                      :icon (if copied? "tick" "clipboard")}]))
 
 (mf/defc invitation-row*
   {::mf/wrap [mf/memo]
@@ -784,6 +797,83 @@
        (if delete
          (tr "labels.continue")
          (tr "labels.resend"))]]]]])
+
+
+(def schema:organization-form [:map {:title "SelectOrgForm"}
+                               [:selected-id ::sm/uuid]])
+
+(mf/defc render-org-combobox-avatar*
+  [{:keys [avatar]}]
+  [:> org-avatar* {:org (:organization avatar)
+                   :size (:size avatar)}])
+
+(mf/defc select-organization-modal
+  {::mf/register modal/components
+   ::mf/register-as :select-organization-modal}
+  [{:keys [organizations current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key]}]
+  (let [valid-organizations (mf/with-memo [organizations]
+                              (remove #(= (:id %) current-organization-id) organizations))
+        options (mf/with-memo [valid-organizations]
+                  (mapv (fn [organization]
+                          {:id (str (:id organization))
+                           :label (:name organization)
+                           :avatar {:render-fn render-org-combobox-avatar*
+                                    :organization organization
+                                    :size "xl"}})
+                        valid-organizations))
+
+        form (fm/use-form :schema schema:organization-form :initial {})
+
+        on-change
+        (mf/use-fn
+         (mf/deps form)
+         (fn [id]
+           (uforms/on-input-change form :selected-id id)))
+
+        on-confirm'
+        (mf/use-fn
+         (mf/deps on-confirm form)
+         (fn []
+           (on-confirm (dm/get-in @form [:clean-data :selected-id]))))]
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-select-org-container :modal-container)}
+      [:div {:class (stl/css :modal-header)}
+       [:h2 {:class (stl/css :modal-select-org-title)}
+        (tr title-key)]
+
+       [:button {:class (stl/css :modal-close-btn)
+                 :on-click modal/hide!} deprecated-icon/close]]
+
+      (when text-key
+        [:div {:class (stl/css :modal-content :modal-select-org-text)} (tr text-key)])
+
+      [:div
+       [:div {:class (stl/css :modal-select-org-content)}
+        (tr choose-key)]
+       [:> combobox* {:id "selected-id"
+                      :class (stl/css :team-member)
+                      :options options
+                      :select-only true
+                      :default-selected (or (some-> (get-in @form [:data :selected-id]) str) "")
+                      :placeholder (tr placeholder-key)
+                      :on-change on-change}]]
+
+      [:div {:class (stl/css :modal-footer)}
+       [:div {:class (stl/css :action-buttons :modal-invitation-action-buttons)}
+
+        [:> button*
+         {:class (stl/css :cancel-button)
+          :variant "secondary"
+          :type "button"
+          :on-click modal/hide!}
+         (tr cancel-key)]
+        [:> button*
+         {:class (stl/css :accept-btn)
+          :variant "primary"
+          :type "button"
+          :disabled (not (:valid @form))
+          :on-click on-confirm'}
+         (tr accept-key)]]]]]))
 
 (mf/defc invitation-section*
   {::mf/private true}
@@ -979,7 +1069,7 @@
            (tr "dashboard.your-penpot")
            (:name team)))))
 
-  (mf/with-effect []
+  (mf/with-effect [(:id team) (:members team)]
     (st/emit! (dtm/fetch-invitations)))
 
   [:*
@@ -1264,7 +1354,8 @@
 
 (mf/defc team-settings-page*
   [{:keys [team]}]
-  (let [finput      (mf/use-ref)
+  (let [nitrate?    (contains? cfg/flags :nitrate)
+        finput      (mf/use-ref)
 
         members     (get team :members)
         stats       (get team :stats)
@@ -1275,12 +1366,99 @@
         can-edit    (or (:is-owner permissions)
                         (:is-admin permissions))
 
+        organizations (mf/deref refs/teams)
+        organizations (mf/with-memo [organizations]
+                        (->> (vals organizations)
+                             (filter :is-default)
+                             (filter :organization-id)
+                             (map dtm/team->organization)))
+
+        can-change-organization? (mf/with-memo [organizations]
+                                   (> (count organizations) 1))
+
+        can-add-to-organization? (mf/with-memo [organizations]
+                                   (and (pos? (count organizations))
+                                        (not (:is-default team))))
+
+        show-org-options-menu*
+        (mf/use-state false)
+
+        show-org-options-menu?
+        (deref show-org-options-menu*)
+
+        on-show-options-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! show-org-options-menu* not)))
+
+        close-org-options-menu
+        (mf/use-fn #(reset! show-org-options-menu* false))
+
         on-image-click
         (mf/use-fn #(dom/click (mf/ref-val finput)))
 
         on-file-selected
         (fn [file]
-          (st/emit! (dtm/update-team-photo file)))]
+          (st/emit! (dtm/update-team-photo file)))
+
+        remove-team-from-org-fn
+        (mf/use-fn
+         (mf/deps team)
+         (fn []
+           (st/emit! (dnt/remove-team-from-org {:team-id (:id team)
+                                                :organization-id (:organization-id team)
+                                                :organization-name (:organization-name team)}))))
+
+        on-remove-team-from-org
+        (mf/use-fn
+         (mf/deps team)
+         (fn []
+           (let [params {:type :confirm
+                         :title (tr "modals.remove-team-org.title")
+                         :message (tr "modals.remove-team-org.text" (:name team) (:organization-name team))
+                         :hint (tr "modals.remove-team-org.info")
+                         :hint-level :default
+                         :accept-label (tr "modals.remove-team-org.accept")
+                         :on-accept remove-team-from-org-fn
+                         :accept-style :danger}]
+             (st/emit! (modal/show params)))))
+
+        on-add-team-to-org-confirm
+        (mf/use-fn
+         (mf/deps team)
+         (fn [organization-id]
+           (let [organization (d/seek #(= organization-id (:id %)) organizations)]
+             (when organization
+               (st/emit! (dnt/add-team-to-org {:team-id (:id team)
+                                               :organization-id organization-id}))))))
+
+        on-add-team-to-org
+        (mf/use-fn
+         (mf/deps organizations on-add-team-to-org-confirm)
+         (fn []
+           (st/emit! (modal/show :select-organization-modal {:organizations organizations
+                                                             :current-organization-id (:organization-id team)
+                                                             :on-confirm on-add-team-to-org-confirm
+                                                             :title-key "dashboard.select-org-modal.title"
+                                                             :choose-key "dashboard.select-org-modal.choose"
+                                                             :placeholder-key "dashboard.select-org-modal.select"
+                                                             :accept-key "dashboard.select-org-modal.accept"
+                                                             :cancel-key "labels.cancel"}))))
+
+        on-change-team-org
+        (mf/use-fn
+         (mf/deps organizations on-add-team-to-org-confirm)
+         (fn []
+           (st/emit! (modal/show :select-organization-modal {:organizations organizations
+                                                             :current-organization-id (:organization-id team)
+                                                             :on-confirm on-add-team-to-org-confirm
+                                                             :title-key "dashboard.change-org-modal.title"
+                                                             :text-key "dashboard.change-org-modal.text"
+                                                             :choose-key "dashboard.change-org-modal.choose"
+                                                             :placeholder-key "dashboard.change-org-modal.select"
+                                                             :accept-key "dashboard.change-org-modal.accept"
+                                                             :cancel-key "labels.cancel"}))))]
 
     (mf/with-effect [team]
       (dom/set-html-title (tr "title.team-settings"
@@ -1313,6 +1491,44 @@
          (tr "dashboard.team-info")]
         [:div {:class (stl/css :block-text)}
          (:name team)]]
+
+       (when nitrate?
+         [:div {:class (stl/css :block)}
+          [:div {:class (stl/css :block-label)}
+           (tr "dashboard.team-organization")]
+          (if (:organization-id team)
+            [:div {:class (stl/css :block-content)}
+             [:div {:class (stl/css :org-block-content)}
+              [:> org-avatar* {:org (dtm/team->organization team) :size "xxxl"}]
+              [:span {:class (stl/css :block-text)}
+               (:organization-name team)]
+
+              (when (and (:is-owner permissions) (not (:is-default team)))
+                [:*
+                 [:> button* {:variant "ghost"
+                              :type "button"
+                              :class (stl/css-case :org-options-btn (not show-org-options-menu?) :org-options-btn-open show-org-options-menu?)
+                              :on-click on-show-options-click}
+                  org-menu-icon
+
+                  [:& dropdown {:show show-org-options-menu? :on-close close-org-options-menu :dropdown-id "org-options"}
+                   [:ul {:class (stl/css :org-dropdown)
+                         :role "listbox"}
+                    (when can-change-organization?
+                      [:li {:on-click on-change-team-org
+                            :class (stl/css :org-dropdown-item)}
+                       (tr "dashboard.team-organization.change")])
+                    [:li {:on-click on-remove-team-from-org
+                          :class (stl/css :org-dropdown-item)}
+                     (tr "dashboard.team-organization.remove")]]]]])]]
+            [:*
+             [:div {:class (stl/css :block-content)}
+              [:span {:class (stl/css :block-text)}
+               (tr "dashboard.team-organization.none")]]
+             (when can-add-to-organization?
+               [:div {:class (stl/css :block-content)}
+                [:span {:class (stl/css :block-text)}
+                 [:a {:on-click on-add-team-to-org} (tr "dashboard.team-organization.add")]]])])])
 
        [:div {:class (stl/css :block)}
         [:div {:class (stl/css :block-label)}

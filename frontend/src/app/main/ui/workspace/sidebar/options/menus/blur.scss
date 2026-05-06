@@ -21,7 +21,8 @@
 }
 
 .element-set-content {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
+
   margin-bottom: deprecated.$s-8;
 }
 
@@ -36,25 +37,32 @@
     flex-grow: 1;
     border-radius: deprecated.$br-8;
     background-color: var(--input-details-color);
+
     .show-more {
-      @extend .button-secondary;
+      @extend %button-secondary;
+
       height: deprecated.$s-32;
       width: deprecated.$s-28;
       border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
       box-sizing: border-box;
       border: deprecated.$s-1 solid var(--button-secondary-background-color-rest);
+
       svg {
-        @extend .button-icon;
+        @extend %button-icon;
       }
+
       &.selected {
         background-color: var(--button-radio-background-color-active);
+
         svg {
           stroke: var(--button-radio-foreground-color-active);
         }
       }
     }
+
     .label {
-      @include deprecated.bodySmallTypography;
+      @include deprecated.body-small-typography;
+
       flex-grow: 1;
       display: flex;
       align-items: center;
@@ -66,24 +74,30 @@
       box-sizing: border-box;
       border: deprecated.$s-1 solid var(--input-border-color);
     }
+
     .blur-type-select {
       flex-grow: 1;
       border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
     }
   }
+
   .actions {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
   }
 
   &.hidden {
     .blur-info {
-      @include deprecated.hiddenElement;
+      @include deprecated.hidden-element;
+
       .show-more {
-        @include deprecated.hiddenElement;
+        @include deprecated.hidden-element;
+
         border: deprecated.$s-1 solid var(--input-border-color-disabled);
       }
+
       .label {
-        @include deprecated.hiddenElement;
+        @include deprecated.hidden-element;
+
         border: deprecated.$s-1 solid var(--input-border-color-disabled);
       }
     }
@@ -91,9 +105,11 @@
 }
 
 .second-row {
-  @extend .input-element;
-  @include deprecated.bodySmallTypography;
+  @extend %input-element;
+  @include deprecated.body-small-typography;
+
   width: deprecated.$s-92;
+
   .label {
     padding-left: deprecated.$s-8;
     width: deprecated.$s-60;

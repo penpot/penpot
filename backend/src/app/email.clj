@@ -412,6 +412,21 @@
    :id ::invite-to-team
    :schema schema:invite-to-team))
 
+(def ^:private schema:invite-to-org
+  [:map
+   [:invited-by ::sm/text]
+   [:organization-name ::sm/text]
+   [:organization-initials [:maybe :string]]
+   [:organization-logo ::sm/uri]
+   [:user-name [:maybe ::sm/text]]
+   [:token ::sm/text]])
+
+(def invite-to-org
+  "Org member invitation email."
+  (template-factory
+   :id ::invite-to-org
+   :schema schema:invite-to-org))
+
 (def ^:private schema:join-team
   [:map
    [:invited-by ::sm/text]

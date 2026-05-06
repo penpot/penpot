@@ -38,30 +38,35 @@ $assets-button-width: deprecated.$s-28;
 
   &.editing {
     border: deprecated.$s-1 solid var(--input-border-color-focus);
+
     input.element-name {
-      @include deprecated.textEllipsis;
-      @include deprecated.bodySmallTypography;
-      @include deprecated.removeInputStyle;
+      @include deprecated.text-ellipsis;
+      @include deprecated.body-small-typography;
+      @include deprecated.remove-input-style;
+
       flex-grow: 1;
       margin: 0;
       color: var(--layer-row-foreground-color);
     }
   }
+
   &:hover {
     background-color: var(--assets-item-background-color-hover);
   }
 }
 
 .bullet-block {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   height: 100%;
   justify-content: flex-start;
   margin-inline-end: deprecated.$s-4;
 }
 
 .name-block {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.textEllipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.text-ellipsis;
+
   margin: 0;
   color: var(--assets-item-name-foreground-color);
 }
@@ -76,7 +81,8 @@ $assets-button-width: deprecated.$s-28;
 }
 
 .element-name {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
+
   color: var(--color-foreground-primary);
 }
 

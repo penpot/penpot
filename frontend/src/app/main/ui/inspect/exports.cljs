@@ -47,7 +47,7 @@
           (if (= :multiple type)
             (st/emit! (de/show-viewer-export-dialog {:shapes shapes
                                                      :exports @exports
-                                                     :filename filename
+                                                     :name filename
                                                      :page-id page-id
                                                      :file-id file-id
                                                      :share-id share-id}))

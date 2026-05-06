@@ -14,6 +14,7 @@
   height: deprecated.$s-32;
   width: 100%;
   min-height: deprecated.$s-32;
+
   --arrow-icon-color: var(--icon-foreground);
   --title-color: var(--title-foreground-color);
 }
@@ -32,12 +33,15 @@
 
 .title {
   @include t.use-typography("headline-small");
+
   color: var(--title-color);
 }
 
 .title-only {
   @include t.use-typography("headline-small");
+
   --title-bar-title-margin: #{deprecated.$s-8};
+
   color: var(--title-color);
   margin-inline-start: var(--title-bar-title-margin);
 }
@@ -63,7 +67,8 @@
 }
 
 .icon-text-btn {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
+
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -73,14 +78,5 @@
   &:hover {
     --arrow-icon-color: var(--icon-foreground-hover);
     --title-color: var(--title-foreground-color-hover);
-  }
-}
-
-.icon-btn {
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
-
-  &:hover {
-    --arrow-icon-color: var(--icon-foreground-hover);
   }
 }

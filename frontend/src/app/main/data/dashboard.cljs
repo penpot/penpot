@@ -13,6 +13,7 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.organization :as co]
    [app.common.types.project :refer [valid-project?]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -23,6 +24,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -685,16 +687,71 @@
              (modal/hide)))))
 
 (defn handle-change-team-org
-  [{:keys [team-id organization-id organization-name]}]
+  [{:keys [team notification]}]
   (ptk/reify ::handle-change-team-org
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [current-team-id (:current-team-id state)
+            organization (:organization team)]
+        (when (and (contains? cf/flags :nitrate)
+                   notification
+                   (= (:id team) current-team-id))
+          (rx/of (ntf/show {:content (tr notification (:name organization))
+                            :type :toast
+                            :level :info
+                            :timeout nil})))))
     ptk/UpdateEvent
     (update [_ state]
       (if (contains? cf/flags :nitrate)
-        (d/update-in-when state [:teams team-id] assoc
-                          :organization-id organization-id
-                          :organization-name organization-name)
+        (let [team-id      (:id team)
+              team-name    (:name team)
+              organization (:organization team)]
+          (d/update-in-when state [:teams team-id]
+                            (fn [team]
+                              (cond-> (co/apply-organization team organization)
+                                team-name (assoc :name team-name)))))
         state))))
 
+(defn- handle-user-org-change
+  [{:keys [organization-id organization-name notification]}]
+  (ptk/reify ::handle-user-org-change
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (and notification (contains? cf/flags :nitrate))
+        (let [team-id (:current-team-id state)
+              team    (dm/get-in state [:teams team-id])]
+          (rx/of (ntf/show {:content (tr notification organization-name)
+                            :type :toast
+                            :level :info
+                            :timeout nil})
+                 (dtm/fetch-teams)
+                 ;; When the user is currently on a team of the org
+                 (when (= organization-id (:organization-id team))
+                   (dcm/go-to-dashboard-recent {:team-id :default}))))))))
+
+
+(defn- handle-organization-deleted
+  [{:keys [organization-name teams deleted-teams]}]
+  (ptk/reify ::handle-organization-deleted
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (contains? cf/flags :nitrate)
+        (let [team-id        (:current-team-id state)
+              teams-set      (set teams)
+              notify?        (contains? teams-set team-id)
+              fetch?         (some (:teams state) teams)
+              go-to-default? (some #{team-id} deleted-teams)]
+          (rx/concat
+           (when go-to-default? ;; If the user is currently on one of the deleted teams
+             (rx/of (dcm/go-to-dashboard-recent {:team-id :default})))
+
+           (when notify? ;; If the user is currently on one of the org teams
+             (rx/of (ntf/show {:content (tr "dashboard.org-deleted" organization-name)
+                               :type :toast
+                               :level :info
+                               :timeout nil})))
+           (when fetch? ;; If the user belonged to the org
+             (rx/of (dtm/fetch-teams)))))))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
@@ -703,6 +760,8 @@
     :team-role-change       (handle-change-team-role msg)
     :team-membership-change (dcm/team-membership-change msg)
     :team-org-change        (handle-change-team-org msg)
+    :user-org-change        (handle-user-org-change msg)
+    :organization-deleted   (handle-organization-deleted msg)
     nil))
 
 

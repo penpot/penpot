@@ -42,6 +42,7 @@
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.debug :as dbg]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -183,6 +184,7 @@
               :data-testid "left-sidebar"
               :data-width (str width)
               :class aside-class
+              :on-context-menu dom/prevent-default-context-menu
               :style {:--left-sidebar-width (dm/str width "px")}}
 
       [:> left-header* {:file file
@@ -280,7 +282,7 @@
         [:> history-toolbox*]])]))
 
 (mf/defc right-sidebar*
-  [{:keys [layout section file page-id drawing-tool active-tokens] :as props}]
+  [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]
   (let [is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
@@ -329,6 +331,7 @@
         :id "right-sidebar-aside"
         :data-testid "right-sidebar"
         :data-size (str width)
+        :on-context-menu dom/prevent-default-context-menu
         :style {:--right-sidebar-width (if can-be-expanded?
                                          (dm/str width "px")
                                          (dm/str right-sidebar-default-width "px"))}}
@@ -340,7 +343,7 @@
                 :on-pointer-move on-pointer-move}])
 
        [:> right-header*
-        {:file file
+        {:file-id file-id
          :layout layout
          :page-id page-id}]
 
@@ -372,14 +375,26 @@
             (ctob/get-tokens-in-active-sets tokens-lib)
             {}))
 
+        selected-token-set-id
+        (mf/deref refs/selected-token-set-id)
+
+        active-tokens-force-set
+        (mf/with-memo [tokens-lib selected-token-set-id]
+          (if (and tokens-lib selected-token-set-id)
+            (ctob/get-tokens-in-active-sets-force tokens-lib selected-token-set-id)
+            {}))
+
         tokenscript? (contains? cf/flags :tokenscript)
 
-        tokenscript-resolved-active-tokens
-        (mf/with-memo [tokens-lib tokenscript?]
-          (when tokenscript? (ts/resolve-tokens active-tokens)))
-
         resolved-active-tokens
-        (sd/use-resolved-tokens* active-tokens)]
+        (sd/use-resolved-tokens* active-tokens)
+
+        tokenscript-resolved-active-tokens-force-set
+        (mf/with-memo [active-tokens-force-set tokenscript?]
+          (when tokenscript? (ts/resolve-tokens active-tokens-force-set)))
+
+        resolved-active-tokens-force-set
+        (sd/use-resolved-tokens* active-tokens-force-set)]
 
     [:*
      (if (:collapse-left-sidebar layout)
@@ -388,10 +403,10 @@
                           :file file
                           :page-id page-id
                           :tokens-lib tokens-lib
-                          :active-tokens active-tokens
-                          :resolved-active-tokens (if (contains? cf/flags :tokenscript)
-                                                    tokenscript-resolved-active-tokens
-                                                    resolved-active-tokens)}])
+                          :active-tokens active-tokens-force-set
+                          :resolved-active-tokens (if tokenscript?
+                                                    tokenscript-resolved-active-tokens-force-set
+                                                    resolved-active-tokens-force-set)}])
      [:> right-sidebar* {:section section
                          :selected selected
                          :drawing-tool drawing-tool

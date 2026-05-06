@@ -356,6 +356,32 @@
             [k (get attrs k v)]))))
 
 
+(defn content-has-text?
+  [content search]
+  (let [search-lower (str/lower search)]
+    (->> (node-seq is-text-node? content)
+         (some #(str/includes? (str/lower (:text %)) search-lower))
+         (boolean))))
+
+(defn replace-all-case-insensitive
+  [text search replacement]
+  (let [text-lower   (str/lower text)
+        search-lower (str/lower search)
+        search-len   (count search)]
+    (loop [result "" idx 0]
+      (let [found (str/index-of text-lower search-lower idx)]
+        (if (nil? found)
+          (str result (subs text idx))
+          (recur (str result (subs text idx found) replacement)
+                 (+ found search-len)))))))
+
+(defn replace-text-in-content
+  [content search replacement]
+  (transform-nodes
+   is-text-node?
+   (fn [node] (update node :text replace-all-case-insensitive search replacement))
+   content))
+
 (defn content->text
   "Given a root node of a text content extracts the texts with its associated styles"
   [content]

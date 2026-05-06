@@ -25,7 +25,16 @@ update_flags() {
   fi
 }
 
+update_oidc_name() {
+  if [ -n "$PENPOT_OIDC_NAME" ]; then
+    echo "$(sed \
+      -e "s|^//var penpotOIDCName = .*;|var penpotOIDCName = \"$PENPOT_OIDC_NAME\";|g" \
+      "$1")" > "$1"
+  fi
+}
+
 update_flags /var/www/app/js/config.js
+update_oidc_name /var/www/app/js/config.js
 
 #########################################
 ## Nginx Config

@@ -7,11 +7,18 @@
 (ns app.main.ui.components.color-bullet
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.math :as mth]
    [app.config :as cfg]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
+
+(defn- format-color-with-alpha
+  [color opacity]
+  (if (and (number? opacity) (< opacity 1))
+    (str color " " (mth/round (* opacity 100)) "%")
+    color))
 
 (defn- color-title
   [color-item]
@@ -19,12 +26,14 @@
         path-and-name (if path (str path " / " name) name)
         gradient (:gradient color-item)
         image (:image color-item)
-        color (:color color-item)]
+        opacity (:opacity color-item)
+        color (:color color-item)
+        color-str (when color (format-color-with-alpha color opacity))]
 
     (if (some? name)
       (cond
         (some? color)
-        (str/ffmt "% (%)" path-and-name color)
+        (str/ffmt "% (%)" path-and-name color-str)
 
         (some? gradient)
         (str/ffmt "% (%)" path-and-name (uc/gradient-type->string (:type gradient)))
@@ -37,7 +46,7 @@
 
       (cond
         (some? color)
-        color
+        color-str
 
         (some? gradient)
         (uc/gradient-type->string (:type gradient))

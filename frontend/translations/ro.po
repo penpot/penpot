@@ -208,7 +208,7 @@ msgid "branding-illustrations-marketing-pieces"
 msgstr "... mărci, ilustrații, piese de marketing, etc."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
+msgid "options.deleted-token"
 msgstr "Acest token nu există sau a fost șters."
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
@@ -1199,7 +1199,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Deschide lista de token-uri"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
+msgid "token-actions.detach-token"
 msgstr "Detașează tokenul"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
@@ -3446,7 +3446,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
-msgstr "O versiune nouă este valabilă, te rugăm să reîncarci pagina"
+msgstr "O versiune nouă este valabilă."
 
 #: src/app/main/ui/dashboard/team.cljs:825
 msgid "notifications.invitation-deleted"
@@ -4747,11 +4747,11 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "Mulțumim pentru că ai ales planul Penpot %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "Bucură-te de abonament!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "Ești %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:526
@@ -7492,7 +7492,7 @@ msgid "workspace.tokens.color"
 msgstr "Culoare"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
-msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr ""
 "Înălțimea liniei depinde de dimensiunea fontului. Adaugă o dimensiune "
 "pentru font pentru a primi valoarea rezultată."
@@ -7542,7 +7542,7 @@ msgid "workspace.tokens.edit-token"
 msgstr "Editează token %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
-msgid "workspace.tokens.empty-input"
+msgid "errors.tokens.empty-input"
 msgstr "Valoarea token-ului nu poate fi goală"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
@@ -7550,7 +7550,7 @@ msgid "workspace.tokens.enter-token-name"
 msgstr "Introdu numele token-ului %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "Eroare la import: Nu s-a putut interpreta JSON."
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
@@ -7610,7 +7610,7 @@ msgid "workspace.tokens.import-button-prefix"
 msgstr "Importă %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "Eroare import:"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:273
@@ -7667,49 +7667,49 @@ msgid "workspace.tokens.individual-tokens"
 msgstr "Folosește token-uri individuale"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "Valoare culoare invalidă: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:89
-msgid "workspace.tokens.invalid-font-weight-token-value"
+msgid "errors.tokens.invalid-font-weight-token-value"
 msgstr ""
 "Valoare greutate font invalidă: folosește valori numerice (100-950) sau "
 "nume standardizate (thin, light, regular, bold, etc.) opțional urmate de "
 "'italic'"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "Eroare import: Date token invalide în fișierul JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
+msgid "errors.tokens.invalid-json-token-name"
 msgstr "Eroare import: Nume token invalid în fișierul JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
+msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" nu este nu nume valid pentru token.\n"
 "Numele token-urilor trebuie să conțină doar litere și cifre separate de "
 "caracterul . și nu trebuie să înceapă cu un semn $."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
-msgid "workspace.tokens.invalid-text-case-token-value"
+msgid "errors.tokens.invalid-text-case-token-value"
 msgstr ""
 "Valoare token invalidă: doar none, Uppercase, Lowercase sau Capitalize sunt "
 "acceptate"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
-msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgid "errors.tokens.invalid-text-decoration-token-value"
 msgstr "Valoare token invalidă: doar none, underline și strike-trough sunt acceptate"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.invalid-token-value-typography"
+msgid "errors.tokens.invalid-token-value-typography"
 msgstr ""
 "Valoare invalidă: trebuie să facă referință la un token de tipografie "
 "compozită."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "Valoare token invalidă: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -7749,7 +7749,7 @@ msgid "workspace.tokens.min-size"
 msgstr "Dimensiune minimă"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "Referințe token lipsă: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
@@ -7789,7 +7789,7 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "În prezent nu ai teme."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:19
-msgid "workspace.tokens.no-token-files-found"
+msgid "errors.tokens.no-token-files-found"
 msgstr "Nu s-au găsit token-uri, seturi sau teme în acest fișier."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
@@ -7797,11 +7797,11 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s seturi active"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
+msgid "errors.tokens.number-too-large"
 msgstr "Valoare token invalidă. Valoarea rezultată este prea mare: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
+msgid "errors.tokens.opacity-range"
 msgstr "Opacitatea trebuie să fie între 0 și 100% sau 0 și 1 (ex: 50% sau 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
@@ -7844,7 +7844,7 @@ msgid "workspace.tokens.select-set"
 msgstr "Selectează setul."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "Token-ul își face referință singur"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
@@ -7881,7 +7881,7 @@ msgid "workspace.tokens.size"
 msgstr "Dimensiune"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
-msgid "workspace.tokens.stroke-width-range"
+msgid "errors.tokens.stroke-width-range"
 msgstr "Lățimea conturului trebuie să fie mai mare sau egală cu 0."
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:40, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
@@ -7956,13 +7956,13 @@ msgstr "TOKEN-URI-  %s"
 msgid "workspace.tokens.tools"
 msgstr "Unelte"
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:46
+#: src/app/main/data/workspace/tokens/import_export.cljs:50
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "Import cu succes. Unele token-uri nu au fost incluse."
+msgstr "Importul a fost realizat cu succes, dar unele token-uri au fost omise deoarece folosesc valori $type neacceptate. Extindeți detaliile pentru a vedea care token-uri au fost afectate."
 
-#: src/app/main/data/workspace/tokens/import_export.cljs:48
+#: src/app/main/data/workspace/tokens/import_export.cljs:52
 msgid "workspace.tokens.unknown-token-type-section"
-msgstr "Tipul '%s' nu este suportat (%s)\n"
+msgstr "Tipul '%s' nu este suportat (%s):"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"
@@ -7973,11 +7973,11 @@ msgid "workspace.tokens.value-not-valid"
 msgstr "Valoarea este invalidă"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:69
-msgid "workspace.tokens.value-with-percent"
+msgid "errors.tokens.value-with-percent"
 msgstr "Valoare invalidă: % nu este permis."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:65
-msgid "workspace.tokens.value-with-units"
+msgid "errors.tokens.value-with-units"
 msgstr "Valoare invalidă: Unitățile nu sunt permise."
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166

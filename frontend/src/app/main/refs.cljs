@@ -303,6 +303,9 @@
 (def workspace-page-flows
   (l/derived #(-> % :flows not-empty) workspace-page))
 
+(def workspace-page-guides
+  (l/derived :guides workspace-page))
+
 (defn workspace-page-object-by-id
   [page-id shape-id]
   (l/derived #(dsh/lookup-shape % page-id shape-id) st/state =))

@@ -25,6 +25,7 @@
 
 .flex-element-menu {
   @include sidebar.option-grid-structure;
+
   gap: var(--sp-xs);
 }
 
@@ -42,7 +43,8 @@
 
 .z-index-wrapper {
   @include use-typography("body-small");
-  @extend .input-element;
+  @extend %input-element;
+
   grid-column: 6 / span 3;
 }
 
@@ -71,18 +73,22 @@
     var(--grid-exception-input-width) /* first input block */
     var(--grid-exception-input-width) /* second input block */
     var(--sp-xxxl); /* action button */
+
   gap: var(--sp-xs);
 }
 
 .margin-mode {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   grid-column: 3;
   height: deprecated.$s-32;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
+
   &.selected {
-    @extend .button-icon-selected;
+    @extend %button-icon-selected;
   }
 }
 
@@ -90,14 +96,17 @@
   display: grid;
   gap: var(--sp-xs);
   grid-template-columns: subgrid;
+
   .vertical-margin,
   .horizontal-margin {
-    @extend .input-element;
+    @extend %input-element;
     @include use-typography("body-small");
   }
+
   .vertical-margin {
     grid-column: 1;
   }
+
   .horizontal-margin {
     grid-column: 2;
   }
@@ -121,7 +130,7 @@
 .bottom-margin,
 .left-margin,
 .right-margin {
-  @extend .input-element;
+  @extend %input-element;
   @include use-typography("body-small");
 }
 
@@ -155,6 +164,7 @@
     var(--grid-exception-input-width) /* first input block */
     var(--grid-exception-input-width) /* second input block */
     var(--sp-xxxl); /* action button */
+
   gap: var(--sp-xs);
 }
 
@@ -169,8 +179,9 @@
 .layout-item-min-h,
 .layout-item-max-w,
 .layout-item-max-h {
-  @extend .input-element;
+  @extend %input-element;
   @include use-typography("body-small");
+
   .icon-text {
     justify-content: flex-start;
     inline-size: px2rem(80);

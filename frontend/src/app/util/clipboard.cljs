@@ -88,3 +88,22 @@
   (let [clipboard (unchecked-get js/navigator "clipboard")
         data (create-clipboard-item mimetype promise)]
     (.write ^js clipboard #js [data])))
+
+(defn to-clipboard-multi
+  "Write multiple MIME representations as a single ClipboardItem.
+  `items` is a map of mime-type (string) -> string payload.
+  Falls back to `writeText` when the async Clipboard API is unavailable."
+  [items]
+  (let [clipboard (unchecked-get js/navigator "clipboard")]
+    (if (and clipboard (unchecked-get clipboard "write"))
+      (let [obj (reduce-kv
+                 (fn [acc mime payload]
+                   (let [blob (js/Blob. #js [payload] #js {:type mime})]
+                     (unchecked-set acc mime (js/Promise.resolve blob))
+                     acc))
+                 #js {} items)
+            item (js/ClipboardItem. obj)]
+        (.write ^js clipboard #js [item]))
+      (when-let [text (or (get items "text/plain")
+                          (first (vals items)))]
+        (.writeText ^js clipboard text)))))

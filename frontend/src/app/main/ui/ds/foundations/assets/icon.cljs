@@ -245,12 +245,19 @@
 (def ^:icon-id status-update "status-update")
 (def ^:icon-id status-wrong "status-wrong")
 (def ^:icon-id stroke-arrow "stroke-arrow")
+(def ^:icon-id stroke-center "stroke-center")
 (def ^:icon-id stroke-circle "stroke-circle")
+(def ^:icon-id stroke-dashed "stroke-dashed")
 (def ^:icon-id stroke-diamond "stroke-diamond")
+(def ^:icon-id stroke-dotted "stroke-dotted")
+(def ^:icon-id stroke-inside "stroke-inside")
+(def ^:icon-id stroke-mixed "stroke-mixed")
+(def ^:icon-id stroke-outside "stroke-outside")
 (def ^:icon-id stroke-rectangle "stroke-rectangle")
 (def ^:icon-id stroke-rounded "stroke-rounded")
 (def ^:icon-id stroke-size "stroke-size")
 (def ^:icon-id stroke-squared "stroke-squared")
+(def ^:icon-id stroke-solid "stroke-solid")
 (def ^:icon-id stroke-triangle "stroke-triangle")
 (def ^:icon-id svg "svg")
 (def ^:icon-id swatches "swatches")
@@ -315,22 +322,16 @@
 (mf/defc icon*
   {::mf/schema schema:icon}
   [{:keys [icon-id size class] :rest props}]
-  (let [props   (mf/spread-props props
-                                 {:class [class (stl/css :icon)]
-                                  :width icon-size-m
-                                  :height icon-size-m})
-
-        size-px (cond (= size "l") icon-size-l
+  (let [size-px (cond (= size "l") icon-size-l
                       (= size "s") icon-size-s
                       :else        icon-size-m)
 
-        offset  (if (or (= size "s") (= size "m"))
-                  (/ (- icon-size-m size-px) 2)
-                  0)]
+        props   (mf/spread-props props
+                                 {:class [class (stl/css :icon)]
+                                  :width size-px
+                                  :height size-px})]
 
     [:> :svg props
      [:use {:href (dm/str "#icon-" icon-id)
             :width size-px
-            :height size-px
-            :x offset
-            :y offset}]]))
+            :height size-px}]]))

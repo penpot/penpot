@@ -186,10 +186,10 @@
                         :is-demo false}
                        params)]
      (db/run! system
-              (fn [{:keys [::db/conn] :as cfg}]
+              (fn [cfg]
                 (->> params
                      (cmd.auth/create-profile cfg)
-                     (cmd.auth/create-profile-rels conn)))))))
+                     (cmd.auth/create-profile-rels cfg)))))))
 
 (defn create-project*
   ([i params] (create-project* *system* i params))
@@ -234,10 +234,10 @@
    (dm/with-open [conn (db/open system)]
      (let [id       (mk-uuid "team" i)
            features (cfeat/get-enabled-features cf/flags)]
-       (teams/create-team conn {:id id
-                                :profile-id profile-id
-                                :features features
-                                :name (str "team" i)})))))
+       (teams/create-team {::db/conn conn} {:id id
+                                            :profile-id profile-id
+                                            :features features
+                                            :name (str "team" i)})))))
 
 (defn create-file-media-object*
   ([params] (create-file-media-object* *system* params))
@@ -283,9 +283,10 @@
   ([params] (create-team-role* *system* params))
   ([system {:keys [team-id profile-id role] :or {role :owner}}]
    (dm/with-open [conn (db/open system)]
-     (#'teams/create-team-role conn {:team-id team-id
-                                     :profile-id profile-id
-                                     :role role}))))
+     (#'teams/create-team-role {::db/conn conn}
+                               {:team-id team-id
+                                :profile-id profile-id
+                                :role role}))))
 
 (defn create-project-role*
   ([params] (create-project-role* *system* params))
@@ -383,6 +384,31 @@
     (try-on! (method-fn (-> data
                             (dissoc ::type)
                             (assoc :app.rpc/request-at (ct/now)))))))
+
+(defn management-command!
+  ([data]
+   (management-command! data nil))
+  ([{:keys [::type] :as data} flags-to-add]
+   (let [flags (reduce conj cf/flags (or flags-to-add []))
+
+         resolve-management-methods
+         (requiring-resolve 'app.rpc/resolve-management-methods)
+
+         methods
+         (with-redefs [cf/flags flags]
+           (resolve-management-methods *system*))
+
+         [_ method-fn]
+         (get methods type)]
+
+     (when-not method-fn
+       (ex/raise :type :assertion
+                 :code :rpc-method-not-found
+                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
+
+     (try-on! (method-fn (-> data
+                             (dissoc ::type)
+                             (assoc :app.rpc/request-at (ct/now))))))))
 
 (defn run-task!
   ([name]
