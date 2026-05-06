@@ -80,6 +80,11 @@ http {
         charset utf-8;
 
         etag off;
+        proxy_hide_header X-Powered-By;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header X-Frame-Options SAMEORIGIN always;
 
         root /var/www/app/;
 
@@ -177,6 +182,10 @@ http {
             include /etc/nginx/overrides/location.d/*.conf;
 
             location ~* \.(js|css|jpg|png|svg|gif|ttf|woff|woff2|wasm|map)$ {
+                add_header X-Content-Type-Options "nosniff" always;
+                add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+                add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+                add_header X-Frame-Options SAMEORIGIN always;
                 add_header Cache-Control "public, max-age=604800" always; # 7 days
             }
 
@@ -184,6 +193,9 @@ http {
                 return 301 " /404";
             }
 
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+            add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
             add_header X-Frame-Options SAMEORIGIN always;
             add_header Cache-Control "no-store, no-cache, max-age=0" always;
             try_files $uri /index.html$is_args$args /index.html =404;
