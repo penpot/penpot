@@ -391,9 +391,6 @@ pub(crate) struct RenderState {
 pub struct InteractiveDragCrop {
     pub src_doc_bounds: Rect,
     pub src_selrect: Rect,
-    /// True if the captured crop bounds were fully inside the viewport at capture time.
-    /// Used to avoid serving partial/offscreen crops during interactive drag.
-    pub fits_viewport_at_capture: bool,
     pub image: skia::Image,
 }
 
@@ -447,30 +444,13 @@ impl RenderState {
             let Some(m) = tree.get_modifier(&node_id) else {
                 return false;
             };
-            // Only allow using the cached pixels for pure translations.
-            // For non-translation transforms (scale/rotate/skew), cached pixels won't match.
-            if !crate::math::is_move_only_matrix(m) {
-                return false;
-            }
-
-            let Some(crop) = self.backbuffer_crop_cache.get(&node_id) else {
-                return false;
-            };
-            if !crop.fits_viewport_at_capture {
-                return false;
-            }
-
-            // Additionally require this node to be safe to serve from a rectangular backbuffer
-            // crop while moving; otherwise it must be rendered live (e.g. text, overflow frames).
-            return tree
-                .get(&node_id)
-                .is_some_and(|s| s.is_safe_for_drag_crop_cache(tree));
+            return crate::math::is_move_only_matrix(m);
         }
 
-        // If the moving content overlaps this cached crop, do not use the cached pixels
-        // for this frame. We intentionally keep the cache entry: overlap is typically
-        // transient during drag, and once the moving content leaves the area the crop
-        // becomes valid again (stationary shape unchanged).
+        // Invalidate cached top-level pixels whenever the moving content overlaps
+        // the cached pixel area. Use `src_doc_bounds` because it's the exact bounds
+        // captured from the Backbuffer crop (more reliable than extents derived
+        // from layout/layout-less container heuristics).
         if let Some(moved) = moved_bounds {
             let intersects = self
                 .backbuffer_crop_cache
@@ -478,10 +458,23 @@ impl RenderState {
                 .is_some_and(|crop| moved.intersects(crop.src_doc_bounds));
 
             if intersects {
+                // Simplest "automatic invalidation": once something moves over this cached
+                // area, drop the cached crop so it won't be reused again until the next
+                // full-frame rebuild.
+                self.backbuffer_crop_cache.remove(&node_id);
                 return false;
             }
         }
         true
+    }
+
+    fn is_recortable_for_drag_crop(&self, shape: &Shape) -> bool {
+        // "Recortable" (happy path): the shape is fully represented by the pixels
+        // already in Backbuffer and can be moved as a texture during drag.
+        shape.blur.is_none()
+            && shape.shadows.is_empty()
+            && (shape.opacity - 1.0).abs() <= 1e-4
+            && shape.blend_mode().0 == skia::BlendMode::SrcOver
     }
 
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
@@ -1656,6 +1649,9 @@ impl RenderState {
             if shape.hidden {
                 continue;
             }
+            if !self.is_recortable_for_drag_crop(shape) {
+                continue;
+            }
 
             let doc_bounds = self.get_cached_extrect(shape, tree, 1.0);
             if !doc_bounds.intersects(viewport) {
@@ -1711,16 +1707,11 @@ impl RenderState {
                 src_irect.right as f32 / scale + vb_left,
                 src_irect.bottom as f32 / scale + vb_top,
             );
-            let fits_viewport_at_capture = doc_bounds.left >= viewport.left
-                && doc_bounds.top >= viewport.top
-                && doc_bounds.right <= viewport.right
-                && doc_bounds.bottom <= viewport.bottom;
             self.backbuffer_crop_cache.insert(
                 id,
                 InteractiveDragCrop {
                     src_doc_bounds,
                     src_selrect: selrect,
-                    fits_viewport_at_capture,
                     image,
                 },
             );
@@ -3033,31 +3024,16 @@ impl RenderState {
                             dst_doc_rect.height() * scale,
                         );
 
+                        // let canvas = self.surfaces.canvas_and_mark_dirty(target_surface);
                         let canvas = self.surfaces.canvas(target_surface);
                         canvas.save();
                         canvas.reset_matrix();
-                        // If the crop includes shadows/blur (extrect pixels outside the fill/stroke
-                        // silhouette), do NOT apply the silhouette clip or we'd cut those pixels.
-                        let should_clip_crop = element.shadows.is_empty() && element.blur.is_none();
-                        if should_clip_crop {
-                            if let Some(clip_path) = element.drag_crop_clip_path() {
-                                let mut doc_to_tile = Matrix::new_identity();
-                                // Map document-space coordinates into tile pixels.
-                                // Rendering surfaces apply: scale(scale) then translate(translation) in doc units.
-                                // Equivalent point mapping: (doc + translation) * scale.
-                                doc_to_tile.post_translate((translation.0, translation.1));
-                                doc_to_tile.post_scale((scale, scale), None);
-                                let clip_path = clip_path.make_transform(&doc_to_tile);
-                                canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
-                            }
-                        }
                         canvas.draw_image_rect(
                             crop_image,
                             None,
                             dst_tile_rect,
                             &skia::Paint::default(),
                         );
-
                         canvas.restore();
                     }
                     continue;
