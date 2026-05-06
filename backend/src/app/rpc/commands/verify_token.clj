@@ -72,6 +72,11 @@
                   {:is-active true}
                   {:id (:id profile)}))
 
+    ;; NOTE: `claims` is returned verbatim (besides :profile). When the
+    ;; verify-email JWE was minted by `register-profile` for a not-yet-
+    ;; active profile that came from an invitation flow, `:invitation-
+    ;; token` will be present here and the frontend will use it to
+    ;; complete the team-invitation flow after login.
     (-> claims
         (rph/with-transform (session/create-fn cfg profile))
         (rph/with-meta {::audit/name "verify-profile-email"
