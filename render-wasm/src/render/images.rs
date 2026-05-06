@@ -2,8 +2,8 @@ use crate::math::Rect as MathRect;
 use crate::shapes::ImageFill;
 use crate::uuid::Uuid;
 
-use crate::get_gpu_state;
 use crate::error::Result;
+use crate::get_gpu_state;
 use skia_safe::gpu::{surfaces, Budgeted, DirectContext};
 use skia_safe::{self as skia, Codec, ISize};
 use std::collections::HashMap;

@@ -1,7 +1,7 @@
 use crate::error::{Error, Result};
-use crate::{get_gpu_state, performance};
 use crate::shapes::Shape;
 use crate::view::Viewbox;
+use crate::{get_gpu_state, performance};
 
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
@@ -446,11 +446,7 @@ impl Surfaces {
         self.margins
     }
 
-    pub fn resize(
-        &mut self,
-        new_width: i32,
-        new_height: i32,
-    ) -> Result<()> {
+    pub fn resize(&mut self, new_width: i32, new_height: i32) -> Result<()> {
         let gpu_state = get_gpu_state();
 
         self.reset_from_target(gpu_state.create_target_surface(new_width, new_height)?)?;
