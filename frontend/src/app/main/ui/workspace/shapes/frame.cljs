@@ -17,7 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.shapes.frame :as frame]
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
    [app.main.ui.workspace.shapes.debug :as wsd]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as fdm]
@@ -44,8 +44,8 @@
                          (refs/children-objects shape-id))
             childs     (mf/deref childs-ref)]
 
-        [:& shape-container {:shape shape :ref ref}
-         [:& frame-shape {:shape shape :childs childs}]
+        [:> shape-container* {:shape shape :ref ref}
+         [:> frame-shape {:shape shape :childs childs}]
          (when *assert*
            [:> wsd/shape-debug* {:shape shape}])]))))
 
@@ -80,7 +80,7 @@
             modifiers  (mf/deref modifiers*)]
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
-        [:& frame-shape {:shape shape :ref node-ref}]))))
+        [:> frame-shape {:shape shape :ref node-ref}]))))
 
 (defn image-size
   [href]
@@ -185,7 +185,7 @@
             (d/close! task)))
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val content-ref) modifiers)
-        [:& shape-container {:shape shape}
+        [:> shape-container* {:shape shape}
          [:g.frame-container
           {:id (dm/str "frame-container-" frame-id)
            :key "frame-container"
@@ -227,7 +227,7 @@
             [:g.frame-content
              {:id (dm/str "frame-content-" frame-id)
               :ref container-ref}
-             [:& frame-shape {:shape shape :ref content-ref}]])]
+             [:> frame-shape {:shape shape :ref content-ref}]])]
 
          (when *assert*
            [:> wsd/shape-debug* {:shape shape}])]))))

@@ -9,7 +9,7 @@
    [app.common.data.macros :as dm]
    [app.main.refs :as refs]
    [app.main.ui.shapes.group :as group]
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
    [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
@@ -26,7 +26,7 @@
                        (refs/children-objects shape-id))
             childs   (mf/deref childs*)]
 
-        [:> shape-container {:shape shape}
+        [:> shape-container* {:shape shape}
          [:& group-shape
           {:shape shape
            :childs childs}]

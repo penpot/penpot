@@ -14,13 +14,10 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
-(mf/defc image-shape
-  {::mf/wrap-props false}
-  [props]
+(mf/defc image-shape*
+  [{:keys [shape]}]
 
-  (let [shape     (unchecked-get props "shape")
-
-        x         (dm/get-prop shape :x)
+  (let [x         (dm/get-prop shape :x)
         y         (dm/get-prop shape :y)
         w         (dm/get-prop shape :width)
         h         (dm/get-prop shape :height)

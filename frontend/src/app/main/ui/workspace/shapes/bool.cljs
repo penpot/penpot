@@ -9,7 +9,7 @@
    [app.common.data.macros :as dm]
    [app.main.refs :as refs]
    [app.main.ui.shapes.bool :as bool]
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
    [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
@@ -37,7 +37,7 @@
                          ^boolean child-sel?
                          (dissoc :content))]
 
-        [:> shape-container {:shape shape}
+        [:> shape-container* {:shape shape}
          [:& bool-shape {:shape shape
                          :childs childs}]
          (when *assert*

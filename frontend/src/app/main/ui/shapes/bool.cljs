@@ -16,12 +16,9 @@
 
 (defn bool-shape
   [shape-wrapper]
-  (mf/fnc bool-shape
-    {::mf/wrap-props false}
-    [props]
-    (let [shape       (unchecked-get props "shape")
-          child-objs  (unchecked-get props "childs")
-          child-objs  (h/use-equal-memo child-objs)
+  (mf/fnc bool-shape*
+    [{:keys [shape childs]}]
+    (let [child-objs  (h/use-equal-memo childs)
 
           metadata? (mf/use-ctx use/include-metadata-ctx)
           content   (mf/with-memo [shape child-objs]

@@ -12,12 +12,9 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
-(mf/defc circle-shape
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")
-
-        x     (dm/get-prop shape :x)
+(mf/defc circle-shape*
+  [{:keys [shape]}]
+  (let [x     (dm/get-prop shape :x)
         y     (dm/get-prop shape :y)
         w     (dm/get-prop shape :width)
         h     (dm/get-prop shape :height)
