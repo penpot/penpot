@@ -110,10 +110,10 @@
 
 (defn ^:export init
   [options]
-  ;; WORKAROUND: we set this really not usefull property for signal a
-  ;; sideffect and prevent GCC remove it. We need it because we need
+  ;; WORKAROUND: we set this really not useful property for signal a
+  ;; side effect and prevent GCC remove it. We need it because we need
   ;; to populate the Date prototype with transit related properties
-  ;; before SES hardning is applied on loading MCP plugin
+  ;; before SES hardening is applied on loading MCP plugin
   (unchecked-set js/globalThis "penpotStartDate"
                  (-> (ct/now)
                      (t/encode-str)
