@@ -98,7 +98,7 @@
      [:& recovery-form {:params params :on-success-callback on-success-callback}]
      [:hr {:class (stl/css :separator)}]
      [:div {:class (stl/css :go-back)}
-      [:& lk/link {:action go-back
+      [:> lk/link* {:action go-back
                    :class (stl/css :go-back-link)
                    :data-testid "go-back-link"}
        (tr "labels.go-back")]]]))
