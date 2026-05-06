@@ -887,6 +887,13 @@
   margin-block-end: var(--sp-s);
 }
 
+.modal-select-org-info {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  margin-block-end: var(--sp-xxxl);
+}
+
 .modal-select-org-title {
   @include t.use-typography("title-medium");
 
