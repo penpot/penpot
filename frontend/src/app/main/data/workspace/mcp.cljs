@@ -185,11 +185,11 @@
                     {:content (tr "notifications.mcp.active-in-another-tab")
                      :cancel {:label (tr "labels.dismiss")
                               :callback #(st/emit! (ntf/hide)
-                                                   (ev/event {::ev/name "confirm-mcp-tab-switch"
+                                                   (ev/event {::ev/name "dismiss-mcp-tab-switch"
                                                               ::ev/origin "workspace-notification"}))}
                      :accept {:label (tr "labels.switch")
                               :callback #(st/emit! (connect-mcp)
-                                                   (ev/event {::ev/name "dismiss-mcp-tab-switch"
+                                                   (ev/event {::ev/name "confirm-mcp-tab-switch"
                                                               ::ev/origin "workspace-notification"}))}})))
           (rx/of (ntf/hide)))))))
 
