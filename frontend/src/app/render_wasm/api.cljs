@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.math :as mth]
@@ -22,6 +23,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace.texts-v3 :as texts]
@@ -82,7 +84,6 @@
 
 (def ^:private transition-blur-css "blur(4px)")
 (def ^:private snapshot-capture-debounce-ms 150)
-(defonce last-reload-payload* (atom nil))
 
 (defn- set-transition-blur!
   []
@@ -319,11 +320,26 @@
 (declare set-shape-vertical-align fonts-from-text-content)
 (declare reload-renderer!)
 
-(defn set-last-reload-payload!
-  "Stores the latest payload needed to replay a renderer reload."
-  [payload]
-  (when (map? payload)
-    (reset! last-reload-payload* payload)))
+(defn- build-reload-payload
+  "Builds renderer reload payload from current application state.
+   Avoids keeping heavyweight object snapshots in memory."
+  []
+  (let [state      @st/state
+        file-id    (:current-file-id state)
+        page-id    (:current-page-id state)
+        page       (dsh/lookup-page state file-id page-id)
+        objects    (dsh/lookup-page-objects state file-id page-id)
+        focus      (:workspace-focus-selected state)
+        local      (:workspace-local state)
+        zoom       (:zoom local)
+        vbox       (:vbox local)
+        canvas     wasm/canvas
+        background (get page :background)]
+    {:canvas canvas
+     :base-objects (cpf/focus-objects objects focus)
+     :zoom zoom
+     :vbox vbox
+     :background background}))
 
 (defn free-gpu-resources
   []
@@ -1795,8 +1811,8 @@
   (dom/prevent-default event)
   (reset! wasm/context-lost? false)
   (st/emit! (drw/context-restored))
-  (when-let [payload @last-reload-payload*]
-    (-> (reload-renderer! (assoc payload :canvas (or (:canvas payload) wasm/canvas)))
+  (let [payload (build-reload-payload)]
+    (-> (reload-renderer! payload)
         (p/then (fn [_]
                   (listen-tiles-render-complete-once! end-context-loss-overlay!)
                   (st/async-emit!
@@ -1880,7 +1896,7 @@
      (when wasm/canvas
        (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
        (.removeEventListener wasm/canvas "webglcontextrestored" on-webgl-context-restored))
-    (stop-canvas-snapshot-listener!)
+     (stop-canvas-snapshot-listener!)
 
      (when (wasm/module-ready?)
        (free-gpu-resources)
