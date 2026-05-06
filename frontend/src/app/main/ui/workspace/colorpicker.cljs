@@ -82,6 +82,15 @@
           hsl-from (cc/hsv->hsl [h 0.0 v])
           hsl-to (cc/hsv->hsl [h 1.0 v])
 
+          ;; HSL-mode gradients. For S: fix current lightness, sweep
+          ;; saturation 0 → 1. For L: fix current saturation, sweep
+          ;; lightness 0 → 0.5 (pure hue) → 1. All computed at the
+          ;; current hue.
+          [_ cur-hsl-s cur-hsl-l] (cc/rgb->hsl rgb)
+          hsl-sat-from  [h 0.0 cur-hsl-l]
+          hsl-sat-to    [h 1.0 cur-hsl-l]
+          lightness-mid [h cur-hsl-s 0.5]
+
           format-hsl (fn [[h s l]]
                        (str/fmt "hsl(%s, %s, %s)"
                                 h
@@ -90,7 +99,10 @@
       (dom/set-css-property! node "--color" (str/join ", " rgb))
       (dom/set-css-property! node "--hue-rgb" (str/join ", " hue-rgb))
       (dom/set-css-property! node "--saturation-grad-from" (format-hsl hsl-from))
-      (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to)))))
+      (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to))
+      (dom/set-css-property! node "--hsl-saturation-grad-from" (format-hsl hsl-sat-from))
+      (dom/set-css-property! node "--hsl-saturation-grad-to" (format-hsl hsl-sat-to))
+      (dom/set-css-property! node "--lightness-grad-mid" (format-hsl lightness-mid)))))
 
 (mf/defc colorpicker*
   [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab applied-token]}]
@@ -128,10 +140,15 @@
         active-color-tab*      (hooks/use-persisted-state ::color-tab "ramp")
         active-color-tab       (deref active-color-tab*)
 
+        ;; Inline HSB/HSL toggle inside the HSBA tab — shared between
+        ;; the slider selector (for labels) and the numeric inputs.
+        hsb-mode*              (hooks/use-persisted-state ::hsb-mode :hsb)
+        hsb-mode               (deref hsb-mode*)
+
         drag?*                 (mf/use-state false)
         drag?                  (deref drag?*)
 
-        type                   (if (= active-color-tab "hsva") :hsv :rgb)
+        type                   (if (= active-color-tab "hsva") :hsb :rgb)
 
         fill-image-ref         (mf/use-ref nil)
 
@@ -351,7 +368,7 @@
            {:aria-label "Harmony"
             :icon i/rgba-complementary
             :id "harmony"}
-           {:aria-label "HSVA"
+           {:aria-label "HSBA"
             :icon i/hsva
             :id "hsva"}])
 
@@ -505,6 +522,7 @@
                   [:> hsva-selector*
                    {:color current-color
                     :disable-opacity disable-opacity
+                    :mode hsb-mode
                     :on-change handle-change-color
                     :on-start-drag on-start-drag
                     :on-finish-drag on-finish-drag}]))]]
@@ -512,6 +530,8 @@
             [:> color-inputs*
              {:type type
               :disable-opacity disable-opacity
+              :mode hsb-mode
+              :on-mode-change #(reset! hsb-mode* %)
               :color current-color
               :on-change handle-change-color}]
 

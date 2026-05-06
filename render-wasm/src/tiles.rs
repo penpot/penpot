@@ -86,6 +86,10 @@ impl TileViewbox {
         self.center = get_tile_center_for_viewbox(viewbox, scale);
     }
 
+    pub fn set_interest(&mut self, interest: i32) {
+        self.interest = interest;
+    }
+
     pub fn is_visible(&self, tile: &Tile) -> bool {
         // TO CHECK self.interest_rect.contains(tile)
         self.visible_rect.contains(tile)
@@ -205,67 +209,45 @@ impl PendingTiles {
         }
     }
 
-    // Generate tiles in spiral order from center
+    // Generate tiles ordered by distance to the center (closest processed first).
     fn generate_spiral(rect: &TileRect) -> Vec<Tile> {
-        let columns = rect.width();
-        let rows = rect.height();
-        let total = columns * rows;
+        let cx = rect.center_x();
+        let cy = rect.center_y();
 
-        if total <= 0 {
-            return Vec::new();
+        // TileRect is inclusive (x1..=x2, y1..=y2).
+        let mut tiles = Vec::new();
+        for x in rect.x1()..=rect.x2() {
+            for y in rect.y1()..=rect.y2() {
+                tiles.push(Tile(x, y));
+            }
         }
 
-        let mut result = Vec::with_capacity(total as usize);
-        let mut cx = rect.center_x();
-        let mut cy = rect.center_y();
-
-        let ratio = (columns as f32 / rows as f32).ceil() as i32;
-
-        let mut direction_current = 0;
-        let mut direction_total_x = ratio;
-        let mut direction_total_y = 1;
-        let mut direction = 0;
-        let mut current = 0;
-
-        result.push(Tile(cx, cy));
-        while current < total {
-            match direction {
-                0 => cx += 1,
-                1 => cy += 1,
-                2 => cx -= 1,
-                3 => cy -= 1,
-                _ => unreachable!("Invalid direction"),
-            }
-
-            result.push(Tile(cx, cy));
-
-            direction_current += 1;
-            let direction_total = if direction % 2 == 0 {
-                direction_total_x
-            } else {
-                direction_total_y
-            };
-
-            if direction_current == direction_total {
-                if direction % 2 == 0 {
-                    direction_total_x += 1;
-                } else {
-                    direction_total_y += 1;
-                }
-                direction = (direction + 1) % 4;
-                direction_current = 0;
-            }
-            current += 1;
-        }
-        result.reverse();
-        result
+        // We pop() from the end, so keep nearest-to-center tiles at the end.
+        tiles.sort_unstable_by(|a, b| {
+            let da = (a.x() - cx).abs() + (a.y() - cy).abs();
+            let db = (b.x() - cx).abs() + (b.y() - cy).abs();
+            da.cmp(&db)
+                .then_with(|| a.x().cmp(&b.x()))
+                .then_with(|| a.y().cmp(&b.y()))
+        });
+        tiles.reverse();
+        tiles
     }
 
-    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces) {
+    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces, only_visible: bool) {
         self.list.clear();
 
-        // Generate spiral for the interest area (viewport + margin)
-        let spiral = Self::generate_spiral(&tile_viewbox.interest_rect);
+        // During interactive transform, skip the interest-area ring
+        // entirely — the user is dragging, every rAF is on the critical
+        // path, and pre-rendering tiles outside the viewport is wasted
+        // work that just gets evicted on the next pointer move. The ring
+        // is repopulated naturally on gesture end / on idle rAFs.
+        let spiral_rect = if only_visible {
+            &tile_viewbox.visible_rect
+        } else {
+            &tile_viewbox.interest_rect
+        };
+        let spiral = Self::generate_spiral(spiral_rect);
 
         // Partition tiles into 4 priority groups (highest priority = processed last due to pop()):
         // 1. visible + cached (fastest - just blit from cache)

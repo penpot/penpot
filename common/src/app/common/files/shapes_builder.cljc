@@ -543,7 +543,7 @@
           (update :svg-attrs dissoc :fill)
           (assoc-in [:fills 0 :fill-color] (clr/parse color-style)))
 
-      ;; Only create an opacity if the color is setted. Othewise can create problems down the line
+      ;; Only create an opacity if the color is set. Otherwise can create problems down the line
       (and (or (clr/color-string? color-attr) (clr/color-string? color-style))
            (dm/get-in shape [:svg-attrs :fillOpacity]))
       (-> (update :svg-attrs dissoc :fillOpacity)
@@ -677,6 +677,22 @@
          (remove is-style-fragment?)  ;; Filter style fragments and hex colors
          (filter #(contains? defs %)))))  ;; Only existing defs
 
+(defn resolve-element-name
+  "Pick the most user-meaningful name for an SVG element.
+
+  Inkscape (and editors following the same convention) write the
+  operator-given label to ``inkscape:label``/``sodipodi:label`` while
+  ``id`` holds an auto-generated technical id like ``path1234``.
+  Preferring the namespaced label keeps the layer/group/element names
+  the operator sees in their source editor across a paste/import
+  (#7869); the existing ``id`` and ``(tag->name tag)`` fallbacks keep
+  legacy SVGs that don't carry a label working unchanged."
+  [tag attrs]
+  (or (:inkscape:label attrs)
+      (:sodipodi:label attrs)
+      (:id attrs)
+      (tag->name tag)))
+
 (defn parse-svg-element
   [frame-id svg-data {:keys [tag attrs hidden] :as element} unames]
 
@@ -684,7 +700,7 @@
   ;; think we should handle this case early and avoid some code
   ;; execution
 
-  (let [name         (or (:id attrs) (tag->name tag))
+  (let [name         (resolve-element-name tag attrs)
         att-refs     (csvg/find-attr-references attrs)
         defs         (get svg-data :defs)
         valid-refs   (filter-valid-def-references att-refs defs)

@@ -1386,8 +1386,14 @@ test.describe("Numeric Input and Token Integration Tests", () => {
       flags: ["enable-token-combobox", "enable-feature-token-input"],
     });
     // Create a token with a reference value in other set.
-    await createToken(page, "Dimensions", "reference-token", "Value", "{card.padding}");
-
+    await createToken(
+      page,
+      "Dimensions",
+      "reference-token",
+      "Value",
+      "combobox",
+      "{card.padding}",
+    );
 
     // Apply this token to a shape
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -1410,11 +1416,16 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     });
     await expect(measuresSection).toBeVisible();
 
-    await expect(measuresSection.getByRole('button', { name: 'reference-token' })).toBeVisible();
+    await expect(
+      measuresSection.getByRole("button", { name: "reference-token" }),
+    ).toBeVisible();
 
     // Deactivate token set where reference token exist to make token broken
-    await tokenThemesSetsSidebar.getByRole('button', { name: 'theme' }).getByRole('checkbox').click();
-    
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "theme" })
+      .getByRole("checkbox")
+      .click();
+
     // Check if token pill show broken reference state
     const brokenPill = measuresSection.getByRole("button", {
       name: "is not in any active set",

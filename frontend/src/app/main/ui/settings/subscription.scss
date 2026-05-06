@@ -404,3 +404,19 @@
 
   margin-block-end: var(--sp-l);
 }
+
+.cta-link {
+  @include t.use-typography("body-medium");
+
+  align-items: center;
+  color: var(--color-accent-primary);
+  display: flex;
+  margin-block-end: var(--sp-xxxl);
+  text-align: left;
+  text-decoration: underline;
+}
+
+.button-full-width {
+  justify-content: center;
+  inline-size: 100%;
+}

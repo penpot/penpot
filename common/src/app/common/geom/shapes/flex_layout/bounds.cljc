@@ -12,7 +12,7 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.types.shape.layout :as ctl]))
 
-;; Setted in app.common.geom.shapes.common-layout
+;; Set in app.common.geom.shapes.common-layout
 ;; We do it this way because circular dependencies
 (def -child-min-width nil)
 

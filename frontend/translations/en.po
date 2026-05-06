@@ -1157,7 +1157,10 @@ msgid "dashboard.select-org-modal.accept"
 msgstr "ADD TO ORGANIZATION"
 
 msgid "dashboard.change-org-modal.title"
-msgstr "CHANGE TEAM'S ORGANIZATION"
+msgstr "Change team's organization"
+
+msgid "dashboard.change-org-modal.text"
+msgstr "Projects and files will remain available to team members. The team will get the configuration from the new organization."
 
 msgid "dashboard.change-org-modal.choose"
 msgstr "Move to:"
@@ -1537,6 +1540,10 @@ msgstr "The recovery token is invalid."
 msgid "errors.invalid-text"
 msgstr "Invalid text"
 
+#: common/src/app/common/types/team.cljc:26
+msgid "errors.team-name-invalid-chars"
+msgstr "The team name can't contain any of the following characters:'.', ':' or '/'"
+
 #: src/app/main/ui/static.cljs:74
 msgid "errors.invite-invalid"
 msgstr "Invite invalid"
@@ -1544,6 +1551,14 @@ msgstr "Invite invalid"
 #: src/app/main/ui/static.cljs:75
 msgid "errors.invite-invalid.info"
 msgstr "This invite might be canceled or may be expired."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-expired"
+msgstr "This invitation has expired. Ask the team owner to send you a new one."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-email-mismatch"
+msgstr "This invitation is for a different email. Log out and sign in with the invited account, or ask the team owner for a new invitation."
 
 #: src/app/main/ui/auth/login.cljs:89
 msgid "errors.ldap-disabled"
@@ -2932,6 +2947,10 @@ msgstr "Old password"
 #, unused
 msgid "labels.only-yours"
 msgstr "Only yours"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698
+msgid "labels.open"
+msgstr "Open"
 
 #: src/app/main/ui/comments.cljs:911, src/app/main/ui/comments.cljs:976, src/app/main/ui/workspace/palette.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:906, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:213, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:402, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1031, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:316, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:345, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:146
 msgid "labels.options"
@@ -5275,6 +5294,9 @@ msgstr "editor per month"
 #: src/app/main/ui/settings/subscription.cljs:569
 msgid "subscription.settings.price-organization-month"
 msgstr "organization per month"
+
+msgid "subscription.settings.organization-member-month"
+msgstr "org member per month"
 
 #: src/app/main/ui/dashboard/subscription.cljs:140, src/app/main/ui/settings/subscription.cljs:102, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:538
 msgid "subscription.settings.professional"
@@ -8230,7 +8252,7 @@ msgid "workspace.tokens.color"
 msgstr "Color"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
-msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr "Line Height depends on Font Size. Add a Font Size to get the resolved value."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:57
@@ -8282,7 +8304,7 @@ msgid "workspace.tokens.edit-token"
 msgstr "Edit %s token"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
-msgid "workspace.tokens.empty-input"
+msgid "errors.tokens.empty-input"
 msgstr "Token value cannot be empty"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
@@ -8290,7 +8312,7 @@ msgid "workspace.tokens.enter-token-name"
 msgstr "Enter %s token name"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "Import Error: Could not parse JSON."
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
@@ -8354,7 +8376,7 @@ msgid "workspace.tokens.import-button-prefix"
 msgstr "Import %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "Import Error:"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:273
@@ -8405,58 +8427,58 @@ msgid "workspace.tokens.individual-tokens"
 msgstr "Use individual tokens"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "Invalid color value: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:93
-msgid "workspace.tokens.invalid-font-family-token-value"
+msgid "errors.tokens.invalid-font-family-token-value"
 msgstr "Invalid token value: you can only reference a font-family token"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:89
-msgid "workspace.tokens.invalid-font-weight-token-value"
+msgid "errors.tokens.invalid-font-weight-token-value"
 msgstr ""
 "Invalid font weight value: use numeric values (100-950) or standard names "
 "(thin, light, regular, bold, etc.) optionally followed by 'Italic'"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "Import Error: Invalid token data in JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
+msgid "errors.tokens.invalid-json-token-name"
 msgstr "Import Error: Invalid token name in JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
+msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" is not a valid token name.\n"
 "Token names should only contain letters and digits separated by . "
 "characters and must not start with a $ sign."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:105
-msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgid "errors.tokens.invalid-shadow-type-token-value"
 msgstr "Invalid shadow type: only 'innerShadow' or 'dropShadow' are accepted"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
-msgid "workspace.tokens.invalid-text-case-token-value"
+msgid "errors.tokens.invalid-text-case-token-value"
 msgstr ""
 "Invalid token value: only none, Uppercase, Lowercase or Capitalize are "
 "accepted"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
-msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgid "errors.tokens.invalid-text-decoration-token-value"
 msgstr "Invalid token value: only none, underline and strike-through are accepted"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:117
-msgid "workspace.tokens.invalid-token-value-shadow"
+msgid "errors.tokens.invalid-token-value-shadow"
 msgstr "Invalid value: must reference a composite shadow token."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.invalid-token-value-typography"
+msgid "errors.tokens.invalid-token-value-typography"
 msgstr "Invalid value: must reference a composite typography token."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "Invalid token value: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -8500,7 +8522,7 @@ msgid "workspace.tokens.missing-reference"
 msgstr "Missing reference"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "Missing token references: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
@@ -8550,7 +8572,7 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "You currently have no themes."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:19
-msgid "workspace.tokens.no-token-files-found"
+msgid "errors.tokens.no-token-files-found"
 msgstr "No tokens, sets, or themes were found in this file."
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
@@ -8562,11 +8584,11 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s active sets"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
+msgid "errors.tokens.number-too-large"
 msgstr "Invalid token value. The resolved value is too large: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
+msgid "errors.tokens.opacity-range"
 msgstr "Opacity must be between 0 and 100% or 0 and 1 (e.g. 50% or 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
@@ -8642,7 +8664,7 @@ msgid "workspace.tokens.select-set"
 msgstr "Select set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "Token has self reference"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
@@ -8679,7 +8701,7 @@ msgid "workspace.tokens.shadow-blur"
 msgstr "Blur"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:109
-msgid "workspace.tokens.shadow-blur-range"
+msgid "errors.tokens.shadow-blur-range"
 msgstr "Shadow blur must be greater than or equal to 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
@@ -8700,7 +8722,7 @@ msgid "workspace.tokens.shadow-spread"
 msgstr "Spread"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:113
-msgid "workspace.tokens.shadow-spread-range"
+msgid "errors.tokens.shadow-spread-range"
 msgstr "Shadow spread must be greater than or equal to 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
@@ -8730,7 +8752,7 @@ msgid "workspace.tokens.size"
 msgstr "Size"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
-msgid "workspace.tokens.stroke-width-range"
+msgid "errors.tokens.stroke-width-range"
 msgstr "Stroke width must be greater than or equal to 0."
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:40, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
@@ -8845,11 +8867,11 @@ msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:69
-msgid "workspace.tokens.value-with-percent"
+msgid "errors.tokens.value-with-percent"
 msgstr "Invalid value: % is not allowed."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:65
-msgid "workspace.tokens.value-with-units"
+msgid "errors.tokens.value-with-units"
 msgstr "Invalid value: Units are not allowed."
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
@@ -9276,7 +9298,6 @@ msgstr "Need a code? Contact us:"
 msgid "nitrate.code-activation.placeholder"
 msgstr "Paste your activation code here"
 
-
 msgid "nitrate.activation-success.title"
 msgstr "You are Business Nitrate!"
 
@@ -9355,5 +9376,41 @@ msgstr "Contact sales"
 msgid "nitrate.subscription.active-until"
 msgstr "Active until %s"
 
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Cancel subscription"
+
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Renew with activation code"
+
 msgid "subscription.settings.activate-by-code"
 msgstr "Enter activation code"
+
+msgid "subscription.current-plan.title"
+msgstr "Your subscription"
+
+msgid "subscription.current-plan.professional"
+msgstr "Professional"
+
+msgid "subscription.current-plan.unlimited"
+msgstr "Unlimited"
+
+msgid "subscription.current-plan.unlimited-trial"
+msgstr "Unlimited Trial"
+
+msgid "subscription.current-plan.nitrate"
+msgstr "Nitrate"
+
+msgid "subscription.current-plan.nitrate-trial"
+msgstr "Nitrate Trial"
+
+msgid "subscription.current-plan.enterprise"
+msgstr "Enterprise"
+
+msgid "dashboard.no-permission-create-team.message"
+msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the owner."
+
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr "You don't have permission to add teams to any of your organizations."
+
+msgid "dashboard.select-org-modal.permission-info"
+msgstr "Here you find all your organizations where you are allowed to create or add teams."

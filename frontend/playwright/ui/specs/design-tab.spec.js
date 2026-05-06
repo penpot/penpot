@@ -1,8 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
+const tokenInputFlag = "enable-feature-token-input";
+
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, [tokenInputFlag]);
 });
 
 const multipleConstraintsFileId = `03bff843-920f-81a1-8004-756365e1eb6a`;
@@ -71,7 +74,10 @@ test.describe("Shape attributes", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-feature-render-wasm"]);
+    await workspace.mockConfigFlags([
+      "enable-feature-render-wasm",
+      tokenInputFlag,
+    ]);
     await workspace.setupEmptyFile();
     await workspace.mockRPC(/get\-file\?/, "design/get-file-fills-limit.json");
 
@@ -95,7 +101,10 @@ test.describe("Shape attributes", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-feature-render-wasm"]);
+    await workspace.mockConfigFlags([
+      "enable-feature-render-wasm",
+      tokenInputFlag,
+    ]);
     await workspace.setupEmptyFile();
     await workspace.mockRPC(
       /get\-file\?/,
@@ -236,7 +245,7 @@ test.describe("Background blur", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-background-blur"]);
+    await workspace.mockConfigFlags(["enable-background-blur", tokenInputFlag]);
     await workspace.setupEmptyFile();
     await workspace.mockGetFile("render-wasm/get-file-background-blur.json");
 
@@ -260,7 +269,7 @@ test.describe("Background blur", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-background-blur"]);
+    await workspace.mockConfigFlags(["enable-background-blur", tokenInputFlag]);
     await workspace.setupEmptyFile();
     await workspace.mockGetFile("render-wasm/get-file-background-blur.json");
 
@@ -319,6 +328,7 @@ test("BUG 9543 - Layout padding inputs not showing 'mixed' when needed", async (
   page,
 }) => {
   const workspace = new WasmWorkspacePage(page);
+
   await workspace.setupEmptyFile();
   await workspace.mockRPC(/get\-file\?/, "design/get-file-9543.json");
   await workspace.mockRPC(
@@ -338,14 +348,18 @@ test("BUG 9543 - Layout padding inputs not showing 'mixed' when needed", async (
   });
 
   await toggle.click();
-  await workspace.page.getByLabel("Top padding").fill("10");
+  const topPaddingInput = workspace.page.getByRole("textbox", {
+    name: "Top padding",
+  });
+  await topPaddingInput.fill("10");
+  await topPaddingInput.press("Enter");
   await toggle.click();
 
-  await expect(workspace.page.getByLabel("Vertical padding")).toHaveValue("");
-  await expect(workspace.page.getByLabel("Vertical padding")).toHaveAttribute(
-    "placeholder",
-    "Mixed",
-  );
+  const verticalPaddingInput = await workspace.page.getByRole("textbox", {
+    name: "Vertical padding",
+  });
+  await expect(verticalPaddingInput).toHaveValue("");
+  await expect(verticalPaddingInput).toHaveAttribute("placeholder", "Mixed");
 });
 
 test("BUG 11177 - Font size input not showing 'mixed' when needed", async ({

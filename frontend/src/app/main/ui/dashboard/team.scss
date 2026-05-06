@@ -880,11 +880,18 @@
 }
 
 .modal-select-org-content {
-  @include t.use-typography("body-medium");
+  @include t.use-typography("body-large");
 
   color: var(--color-foreground-secondary);
   overflow: auto;
   margin-block-end: var(--sp-s);
+}
+
+.modal-select-org-info {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  margin-block-end: var(--sp-xxxl);
 }
 
 .modal-select-org-title {
@@ -893,6 +900,12 @@
   color: var(--color-foreground-primary);
   text-transform: uppercase;
   height: $sz-40;
+}
+
+.modal-select-org-text {
+  @include t.use-typography("body-large");
+
+  color: var(--color-foreground-secondary);
 }
 
 // ORGANIZATIONS SETTINGS

@@ -42,6 +42,7 @@
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.debug :as dbg]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -183,6 +184,7 @@
               :data-testid "left-sidebar"
               :data-width (str width)
               :class aside-class
+              :on-context-menu dom/prevent-default-context-menu
               :style {:--left-sidebar-width (dm/str width "px")}}
 
       [:> left-header* {:file file
@@ -329,6 +331,7 @@
         :id "right-sidebar-aside"
         :data-testid "right-sidebar"
         :data-size (str width)
+        :on-context-menu dom/prevent-default-context-menu
         :style {:--right-sidebar-width (if can-be-expanded?
                                          (dm/str width "px")
                                          (dm/str right-sidebar-default-width "px"))}}
@@ -386,6 +389,10 @@
         resolved-active-tokens
         (sd/use-resolved-tokens* active-tokens)
 
+        tokenscript-resolved-active-tokens
+        (mf/with-memo [active-tokens tokenscript?]
+          (when tokenscript? (ts/resolve-tokens active-tokens)))
+
         tokenscript-resolved-active-tokens-force-set
         (mf/with-memo [active-tokens-force-set tokenscript?]
           (when tokenscript? (ts/resolve-tokens active-tokens-force-set)))
@@ -412,4 +419,6 @@
                          :file-id file-id
                          :page-id page-id
                          :tokens-lib tokens-lib
-                         :active-tokens resolved-active-tokens}]]))
+                         :active-tokens (if tokenscript?
+                                          tokenscript-resolved-active-tokens
+                                          resolved-active-tokens)}]]))
