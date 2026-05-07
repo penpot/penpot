@@ -5084,6 +5084,15 @@ msgstr "Invita a personas mientras estás en el plan Unlimited"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
 
+msgid "subscription.error.nitrate.checkout-cancelled"
+msgstr "El pago no se completó. Inténtalo de nuevo cuando quieras."
+
+msgid "subscription.error.nitrate.checkout-failed"
+msgstr "No hemos podido iniciar el proceso de pago. Inténtalo de nuevo. Si el problema persiste, contáctanos: support@penpot.app."
+
+msgid "subscription.error.nitrate.checkout-finish-failed"
+msgstr "Estamos teniendo problemas para activar tu suscripción. Inténtalo de nuevo. Si el problema persiste, contáctanos: support@penpot.app."
+
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
 msgid "subscription.labels"
 msgstr "Suscripción"
