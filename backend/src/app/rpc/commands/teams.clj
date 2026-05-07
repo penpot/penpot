@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -25,7 +26,6 @@
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.nitrate-permissions :as nitrate-perms]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
@@ -787,21 +787,18 @@
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
 
-    ;; Check delete permissions based on organization settings
-    (when (and (:organization-id team) (contains? cf/flags :nitrate))
+    ;; Check delete permissions based on organization settings.
+    ;; For non-org teams or when nitrate is disabled, only owners can delete.
+    (if (and (:organization-id team) (contains? cf/flags :nitrate))
       (let [org-perms {:owner-id    (:organization-owner-id team)
-                       :permissions {:create-teams (:organization-create-teams team)
-                                     :delete-teams (:organization-delete-teams team)}}]
+                       :permissions (:organization-permissions team)}]
         (when-not (nitrate-perms/allowed? :delete-team
                                           {:org-perms  org-perms
                                            :profile-id profile-id
                                            :team-perms perms})
           (ex/raise :type :validation
                     :code :not-allowed
-                    :hint "You are not allowed to delete teams in this organization"))))
-
-    ;; For non-org teams or when nitrate is disabled, only owners can delete
-    (when-not (:organization-id team)
+                    :hint "You are not allowed to delete teams in this organization")))
       (when-not (:is-owner perms)
         (ex/raise :type :validation
                   :code :only-owner-can-delete-team)))

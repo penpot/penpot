@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.types.team :as ctt]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -53,8 +54,7 @@
                                                                      :organization-slug
                                                                      :organization-owner-id
                                                                      :organization-avatar-bg-url
-                                                                     :organization-create-teams
-                                                                     :organization-delete-teams))]
+                                                                     :organization-permissions))]
                     (update state :teams assoc id team-updated)))
                 state
                 teams)))))
@@ -80,9 +80,13 @@
               (fn [teams]
                 (let [team        (d/seek #(= (:id %) team-id) teams)
                       in-org?     (and (contains? cf/flags :nitrate) (:organization-id team))
-                      create-perm (:organization-create-teams team)
-                      is-owner?   (= profile-id (:organization-owner-id team))
-                      can-create? (or (not in-org?) (= create-perm "any") is-owner?)]
+                      can-create? (if in-org?
+                                    (nitrate-perms/allowed? :create-team
+                                                            {:org-perms {:owner-id    (:organization-owner-id team)
+                                                                         :permissions (:organization-permissions team)}
+                                                             :profile-id profile-id
+                                                             :team-perms (:permissions team)})
+                                    true)]
                   (rx/of (teams-fetched teams)
                          (if can-create?
                            (modal/show :team-form (if in-org?
@@ -105,11 +109,13 @@
               (fn [teams]
                 (let [team        (d/seek #(= (:id %) team-id) teams)
                       in-org?     (and (contains? cf/flags :nitrate) (:organization-id team))
-                      delete-perm (or (:organization-delete-teams team) "ownersAndAdmins")
-                      is-owner?   (= profile-id (:organization-owner-id team))
-                      can-delete? (or (not in-org?)
-                                      is-owner?
-                                      (= delete-perm "ownersAndAdmins"))
+                      can-delete? (if in-org?
+                                    (nitrate-perms/allowed? :delete-team
+                                                            {:org-perms {:owner-id    (:organization-owner-id team)
+                                                                         :permissions (:organization-permissions team)}
+                                                             :profile-id profile-id
+                                                             :team-perms (:permissions team)})
+                                    (boolean (dm/get-in team [:permissions :is-owner])))
                       message     (if in-org?
                                     (tr "modals.delete-org-team-confirm.message" (:organization-name team))
                                     (tr "modals.delete-team-confirm.message"))]
@@ -660,6 +666,5 @@
    :custom-photo    (:organization-custom-photo team)
    :name            (:organization-name team)
    :default-team-id (:id team)
-   :create-teams    (:organization-create-teams team)
-   :delete-teams    (:organization-delete-teams team)})
+   :permissions     (:organization-permissions team)})
 

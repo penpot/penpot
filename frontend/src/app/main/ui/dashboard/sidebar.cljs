@@ -579,13 +579,13 @@
                                 :class    (stl/css :team-options-item)}
         (tr "dashboard.leave-team")])
 
-     (let [is-owner? (get-in team [:permissions :is-owner])
-           has-admin-role? (get-in team [:permissions :is-admin])
+     (let [is-owner?    (get-in team [:permissions :is-owner])
+           is-admin?    (get-in team [:permissions :is-admin])
            is-org-team? (some? (:organization-id team))
-           in-org? (and (contains? cf/flags :nitrate) is-org-team?)
-           ;; Show delete option for: owners always, or admins in org teams
-           show-delete? (or is-owner?
-                            (and in-org? has-admin-role?))]
+           in-org?      (and (contains? cf/flags :nitrate) is-org-team?)
+           show-delete? (if in-org?
+                          (or is-owner? is-admin?)
+                          is-owner?)]
 
        (when show-delete?
          [:> dropdown-menu-item* {:on-click    on-delete-clicked
