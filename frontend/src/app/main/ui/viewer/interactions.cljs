@@ -56,23 +56,16 @@
         (concat fixed-children-ids parent-children-ids)]
     fixed-ids))
 
-(mf/defc viewport-svg
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [props]
-  (let [page      (unchecked-get props "page")
-        frame     (unchecked-get props "frame")
-        base      (unchecked-get props "base")
-        offset    (unchecked-get props "offset")
-        size      (unchecked-get props "size")
-        fixed?    (unchecked-get props "fixed?")
-        delta     (or (unchecked-get props "delta") (gpt/point 0 0))
+(mf/defc viewport-svg*
+  {::mf/wrap [mf/memo]}
+  [{:keys [page frame base offset size is-fixed delta]}]
+  (let [delta     (or delta (gpt/point 0 0))
         vbox      (:vbox size)
 
-        frame     (cond-> frame fixed? (assoc :fixed-scroll true))
+        frame     (cond-> frame is-fixed (assoc :fixed-scroll true))
 
         objects   (:objects page)
-        objects   (cond-> objects fixed? (assoc-in [(:id frame) :fixed-scroll] true))
+        objects   (cond-> objects is-fixed (assoc-in [(:id frame) :fixed-scroll] true))
 
         fixed-ids (get-fixed-ids objects)
 
@@ -123,7 +116,7 @@
 
     [:& (mf/provider shapes/base-frame-ctx) {:value base}
      [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
-      (if fixed?
+      (if is-fixed
         [:svg {:class (stl/css :fixed)
                :view-box vbox
                :width (:width size)
@@ -159,23 +152,16 @@
                 :fill "none"}
           [:& wrapper-not-fixed {:shape frame :view-box vbox}]]])]]))
 
-(mf/defc viewport
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [props]
+(mf/defc viewport*
+  {::mf/wrap [mf/memo]}
+  [{:keys [interactions-mode frame-offset size delta page frame base-frame is-fixed]}]
   (let [;; NOTE: with `use-equal-memo` hook we ensure that all values
         ;; conserves the reference identity for avoid unnecessary
         ;; dummy rerenders.
 
-        mode   (h/use-equal-memo (unchecked-get props "interactions-mode"))
-        offset (h/use-equal-memo (unchecked-get props "frame-offset"))
-        size   (h/use-equal-memo (unchecked-get props "size"))
-        delta  (unchecked-get props "delta")
-
-        page   (unchecked-get props "page")
-        frame  (unchecked-get props "frame")
-        base   (unchecked-get props "base-frame")
-        fixed? (unchecked-get props "fixed?")]
+        mode   (h/use-equal-memo interactions-mode)
+        offset (h/use-equal-memo frame-offset)
+        size   (h/use-equal-memo size)]
 
     (mf/with-effect [mode]
       (let [on-click
@@ -210,13 +196,13 @@
           (events/unlistenByKey key2)
           (events/unlistenByKey key3))))
 
-    [:& viewport-svg {:page page
-                      :frame frame
-                      :base base
-                      :offset offset
-                      :size size
-                      :delta delta
-                      :fixed? fixed?}]))
+    [:> viewport-svg* {:page page
+                       :frame frame
+                       :base base-frame
+                       :offset offset
+                       :size size
+                       :delta delta
+                       :is-fixed is-fixed}]))
 
 (mf/defc flows-menu*
   {::mf/wrap [mf/memo]}
