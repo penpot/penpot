@@ -588,7 +588,7 @@
                                     ::audit/tracked-at (ct/now)})
 
 
-                    (#'files/restore-file conn file-id))
+                    (#'files/restore-files conn [file-id]))
                   :restored))))
 
 (defn delete-project!
@@ -622,7 +622,7 @@
   (doseq [{:keys [id]} (db/query conn :file
                                  {:project-id project-id}
                                  {::sql/columns [:id]})]
-    (#'files/restore-file conn id))
+    (#'files/restore-files conn [id]))
 
   :restored)
 

@@ -17,6 +17,8 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.store :as st]
+   [app.main.streams :as ms]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -161,7 +163,9 @@
   (l/derived :workspace-tokens st/state))
 
 (def workspace-selrect
-  (l/derived :workspace-selrect st/state))
+  (let [a (atom nil)]
+    (rx/sub! ms/workspace-selrect #(reset! a %))
+    a))
 
 ;; WARNING: Don't use directly from components, this is a proxy to
 ;; improve performance of selected-shapes and
@@ -385,7 +389,9 @@
   (l/derived :workspace-wasm-editor-styles st/state))
 
 (def workspace-wasm-modifiers
-  (l/derived :workspace-wasm-modifiers st/state))
+  (let [a (atom nil)]
+    (rx/sub! ms/wasm-modifiers #(reset! a %))
+    a))
 
 (def ^:private workspace-modifiers-with-objects
   (l/derived

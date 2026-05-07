@@ -497,7 +497,7 @@
 
 (def ^:private schema:create-team
   [:map {:title "create-team"}
-   [:name [:string {:max 250}]]
+   [:name types.team/schema:team-name]
    [:features {:optional true} ::cfeat/features]
    [:id {:optional true} ::sm/uuid]
    [:organization-id {:optional true} ::sm/uuid]
@@ -506,10 +506,26 @@
 (sv/defmethod ::create-team
   {::doc/added "1.17"
    ::sm/params schema:create-team}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id organization-id] :as params}]
 
   (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
                       ::quotes/profile-id profile-id})
+
+  ;; When creating inside an org, verify the user has permission to do so.
+  ;; Fail closed: if org permissions cannot be fetched, deny the operation.
+  (when (and organization-id (contains? cf/flags :nitrate))
+    (let [org-perms (nitrate/call cfg :get-org-permissions
+                                  {:organization-id organization-id})]
+      (if (nil? org-perms)
+        (ex/raise :type :validation
+                  :code :not-allowed
+                  :hint "Unable to verify organization permissions")
+        (let [create-perm (:create-teams org-perms)
+              is-owner?   (= profile-id (:owner-id org-perms))]
+          (when (and (= create-perm "onlyMe") (not is-owner?))
+            (ex/raise :type :validation
+                      :code :not-allowed
+                      :hint "You are not allowed to create teams in this organization"))))))
 
   (let [features (-> (cfeat/get-enabled-features cf/flags)
                      (set/difference cfeat/frontend-only-features)
@@ -667,7 +683,7 @@
 
 (def ^:private schema:update-team
   [:map {:title "update-team"}
-   [:name [:string {:max 250}]]
+   [:name types.team/schema:team-name]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::update-team

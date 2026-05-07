@@ -173,6 +173,38 @@
     :hidden false}
    blur))
 
+(defn commit-fills!
+  [plugin-id ^js self value]
+  (let [shape (u/proxy->shape self)
+        id    (:id shape)
+        value (parser/parse-fills value)]
+    (cond
+      (not (sm/validate [:vector types.fills/schema:fill] value))
+      (u/not-valid plugin-id :fills value)
+
+      (cfh/text-shape? shape)
+      (st/emit! (dwt/update-attrs id {:fills value}))
+
+      (not (r/check-permission plugin-id "content:write"))
+      (u/not-valid plugin-id :fills "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))
+
+(defn commit-strokes!
+  [plugin-id ^js self value]
+  (let [id    (obj/get self "$id")
+        value (parser/parse-strokes value)]
+    (cond
+      (not (sm/validate [:vector cts/schema:stroke] value))
+      (u/not-valid plugin-id :strokes value)
+
+      (not (r/check-permission plugin-id "content:write"))
+      (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))
+
 (defn shape-proxy? [p]
   (obj/type-of? p "ShapeProxy"))
 
@@ -726,43 +758,19 @@
            ;; Strokes and fills
            :fills
            {:this true
-            :get #(if (cfh/text-shape? data)
-                    (-> % u/proxy->shape text-props :fills format/format-fills)
-                    (-> % u/proxy->shape :fills format/format-fills))
-            :set
-            (fn [self value]
-              (let [shape (u/proxy->shape self)
-                    id    (:id shape)
-                    value (parser/parse-fills value)]
-                (cond
-                  (not (sm/validate [:vector types.fills/schema:fill] value))
-                  (u/not-valid plugin-id :fills value)
-
-                  (cfh/text-shape? shape)
-                  (st/emit! (dwt/update-attrs id {:fills value}))
-
-                  (not (r/check-permission plugin-id "content:write"))
-                  (u/not-valid plugin-id :fills "Plugin doesn't have 'content:write' permission")
-
-                  :else
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))}
+            :get (fn [^js self]
+                   (let [fills (if (cfh/text-shape? data)
+                                 (-> self u/proxy->shape text-props :fills)
+                                 (-> self u/proxy->shape :fills))]
+                     (format/format-fills fills #(commit-fills! plugin-id self %))))
+            :set (fn [self value] (commit-fills! plugin-id self value))}
 
            :strokes
            {:this true
-            :get #(-> % u/proxy->shape :strokes format/format-strokes)
-            :set
-            (fn [self value]
-              (let [id (obj/get self "$id")
-                    value (parser/parse-strokes value)]
-                (cond
-                  (not (sm/validate [:vector cts/schema:stroke] value))
-                  (u/not-valid plugin-id :strokes value)
-
-                  (not (r/check-permission plugin-id "content:write"))
-                  (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
-
-                  :else
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))}
+            :get (fn [^js self]
+                   (format/format-strokes (-> self u/proxy->shape :strokes)
+                                          #(commit-strokes! plugin-id self %)))
+            :set (fn [self value] (commit-strokes! plugin-id self value))}
 
            :layoutChild
            {:this true
@@ -1186,8 +1194,8 @@
              (let [objects (u/locate-objects file-id page-id)
                    shape (u/locate-shape file-id page-id id)]
                (when (ctn/in-any-component? objects shape)
-                 (let [[root component] (u/locate-component objects shape)]
-                   (lib-component-proxy plugin-id (:component-file root) (:id component))))))
+                 (when-let [[head component] (u/locate-head-component objects shape)]
+                   (lib-component-proxy plugin-id (:component-file head) (:id component))))))
 
            :detach
            (fn []

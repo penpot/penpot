@@ -244,7 +244,7 @@
                           (remove cfh/frame-shape?)
                           (mapcat #(cfh/get-children-with-self objects (:id %))))
               fonts (ff/shapes->fonts shapes)]
-          [:& ff/fontfaces-style {:fonts fonts}])
+          [:> ff/fontfaces-style* {:fonts fonts}])
 
         (for [item shapes]
           [:& shape-wrapper {:shape item
@@ -481,7 +481,7 @@
              :style {:-webkit-print-color-adjust :exact}
              :fill "none"}
 
-       [:& ff/fontfaces-style {:fonts fonts}]
+       [:> ff/fontfaces-style* {:fonts fonts}]
        [:& shape-wrapper {:shape object}]]]]))
 
 (mf/defc objects-svg
@@ -520,7 +520,7 @@
              :xmlnsXlink "http://www.w3.org/1999/xlink"
              :style {:-webkit-print-color-adjust :exact}
              :fill "none"}
-       [:& ff/fontfaces-style {:fonts fonts}]
+       [:> ff/fontfaces-style* {:fonts fonts}]
        (for [shape shapes]
          [:& shape-wrapper {:key (dm/str (:id shape)) :shape shape}])]]]))
 

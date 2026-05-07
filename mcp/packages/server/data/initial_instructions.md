@@ -269,8 +269,9 @@ Using library components:
   * create a new instance of the component on the current page:
     `const instance: Shape = component.instance();`
     This returns a `Shape` (often a `Board` containing child elements).
-    After instantiation, modify the instance's properties as desired.
-  * get the reference to the main component shape:
+      - After instantiation, modify the instance's properties as desired.
+      - Get a reference to the component an instance was created from via `instance.component()`.
+  * get the reference to the main instance (shape that serves as the source for new instances):
     `const mainShape: Shape = component.mainInstance();`
 
 Adding a component to a library:
@@ -295,6 +296,7 @@ Variants are a system for grouping related component versions along named proper
   - `properties: string[]` (ordered list of property names); `addProperty(): void`, `renameProperty(pos, name)`, `currentValues(property)`
   - `variantComponents(): LibraryVariantComponent[]` 
 * `LibraryVariantComponent` (extends `LibraryComponent`): full library component with metadata, for which `isVariant()` returns true.
+  - `variants: Variants`
   - `variantProps: { [property: string]: string }` (this component's value for each property)
   - `variantError` (non-null if e.g. two variants share the same combination of property values)
   - `setVariantProperty(pos, value)`
@@ -313,6 +315,7 @@ Use `variantContainer.appendChild(mainInstance)` to move a component's main inst
 **Using Variants**:
 - `compInstance.switchVariant(pos, value)`: On a component instance, switches to the nearest variant that has the given value at property position `pos`, keeping all other property values the same.
 - To instantiate a specific variant, find the right `LibraryVariantComponent` by checking `variantProps`, then call `.instance()`.
+- Given a variant component instance, access the component it was instantiated from via `instance.component()` and the `Variants` instance via `instance.component().variants`.
 
 # Design Tokens
 

@@ -45,11 +45,15 @@
     (t/is (= :authentication-required (th/ex-code (:error out))))))
 
 (t/deftest get-penpot-version
-  (let [profile (th/create-profile* 1 {:is-active true})
-        out     (management-command-with-nitrate! {::th/type :get-penpot-version
-                                                   ::rpc/profile-id (:id profile)})]
+  (let [out     (management-command-with-nitrate! {::th/type :get-penpot-version})
+        version (-> out :result :version)]
     (t/is (th/success? out))
-    (t/is (= cf/version (-> out :result :version)))))
+    (t/is (= #{:full :branch :base :main :major :minor :patch :modifier :commit :commit-hash}
+             (set (keys version))))
+    (doseq [k [:full :branch :base :main :major :minor :patch :modifier :commit :commit-hash]]
+      (t/is (or (nil? (get version k))
+                (string? (get version k)))))
+    (t/is (= cf/version version))))
 
 (t/deftest get-teams-returns-only-owned-non-default-non-deleted
   (let [profile      (th/create-profile* 1 {:is-active true})
