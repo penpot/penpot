@@ -164,7 +164,8 @@
 
 (mf/defc invite-members-modal*
   {::mf/register modal/components
-   ::mf/register-as :invite-members}
+   ::mf/register-as :invite-members
+   ::mf/props :obj}
   [{:keys [team origin invite-email]}]
   (let [teams       (mf/deref refs/teams)
 

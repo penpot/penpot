@@ -64,9 +64,10 @@
     [:div {:class (stl/css :file-name-label)}
      (:name file)]]])
 
-(mf/defc export-dialog*
+(mf/defc export-dialog
   {::mf/register modal/components
-   ::mf/register-as ::fexp/export-files}
+   ::mf/register-as ::fexp/export-files
+   ::mf/props :obj}
   [{:keys [team-id files]}]
   (let [state*       (mf/use-state (partial initialize-state files))
         has-libs?    (some :has-libraries files)
