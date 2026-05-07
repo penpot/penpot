@@ -21,7 +21,7 @@
   [:map {:title "LeaveModalForm"}
    [:member-id ::sm/uuid]])
 
-(mf/defc leave-and-reassign-modal
+(mf/defc leave-and-reassign-modal*
   {::mf/register modal/components
    ::mf/register-as :leave-and-reassign}
   [{:keys [profile team accept]}]
@@ -56,9 +56,9 @@
          [:p {:class (stl/css :modal-msg)}
           (tr "modals.leave-and-reassign.forbidden")]
          [:*
-          [:& fm/form {:form form}
-           [:& fm/select {:name :member-id
-                          :options options}]]])]
+          [:> fm/form* {:form form}
+           [:> fm/select* {:name :member-id
+                           :options options}]]])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
@@ -76,6 +76,7 @@
           :value (tr "modals.leave-and-reassign.promote-and-leave")
           :on-click on-accept}]]]]]))
 
+(def leave-and-reassign-modal leave-and-reassign-modal*)
 
 
 (mf/defc ^:private team-member-select*
@@ -90,12 +91,12 @@
      (if (empty? filtered-members)
        [:p {:class (stl/css :modal-msg)}
         (tr "modals.leave-and-reassign.forbidden")]
-       [:& fm/select {:name field-name
-                      :select-class (stl/css :team-member)
-                      :dropdown-class (stl/css :team-member)
-                      :options options
-                      :form form
-                      :default default-member-id}])]))
+       [:> fm/select* {:name field-name
+                       :select-class (stl/css :team-member)
+                       :dropdown-class (stl/css :team-member)
+                       :options options
+                       :form form
+                       :default default-member-id}])]))
 
 (defn- make-leave-org-modal-form-schema [teams]
   (into
@@ -104,7 +105,7 @@
      [(keyword (str "member-id-" (:id team))) ::sm/text])))
 
 
-(mf/defc leave-and-reassign-org-modal
+(mf/defc leave-and-reassign-org-modal*
   {::mf/register modal/components
    ::mf/register-as :leave-and-reassign-org
    ::mf/wrap [mf/memo]}
@@ -161,7 +162,7 @@
            (tr "modals.leave-org-and-reassign.hint-delete")]
           [:p {:class (stl/css :modal-org-msg)}
            (tr "modals.leave-org-and-reassign.hint-promote")]])
-       [:& fm/form {:form form}
+       [:> fm/form* {:form form}
         [:div {:class (stl/css :teams-container)}
          (for [{:keys [team field-name default-member-id]} team-fields]
            ^{:key (:id team)}
@@ -182,3 +183,5 @@
           :disabled (not all-valid?)
           :value (tr "modals.leave-and-reassign.promote-and-leave")
           :on-click on-accept}]]]]]))
+
+(def leave-and-reassign-org-modal leave-and-reassign-org-modal*)

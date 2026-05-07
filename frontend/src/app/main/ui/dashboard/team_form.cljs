@@ -78,7 +78,7 @@
       (on-update-submit form)
       (on-create-submit form organization-name))))
 
-(mf/defc team-form-modal
+(mf/defc team-form-modal*
   {::mf/register modal/components
    ::mf/register-as :team-form}
   [{:keys [team organization-id organization-name] :as props}]
@@ -107,9 +107,9 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
-      [:& fm/form {:form form
-                   :on-submit on-submit*
-                   :class (stl/css :team-form)}
+      [:> fm/form* {:form form
+                    :on-submit on-submit*
+                    :class (stl/css :team-form)}
 
        [:div {:class (stl/css :modal-header)}
         (if team
@@ -122,14 +122,14 @@
                   :on-click modal/hide!} deprecated-icon/close]]
 
        [:div {:class (stl/css :modal-content)}
-        [:& fm/input {:type "text"
-                      :auto-focus? true
-                      :class (stl/css :group-name-input)
-                      :form form
-                      :name :name
-                      :placeholder "E.g. Design"
-                      :label (tr "labels.create-team.placeholder")
-                      :on-key-down handle-keydown}]]
+        [:> fm/input* {:type "text"
+                       :auto-focus? true
+                       :class (stl/css :group-name-input)
+                       :form form
+                       :name :name
+                       :placeholder "E.g. Design"
+                       :label (tr "labels.create-team.placeholder")
+                       :on-key-down handle-keydown}]]
 
        [:div {:class (stl/css :modal-footer)}
         [:div {:class (stl/css :action-buttons)}
@@ -138,6 +138,8 @@
                     (tr "labels.update-team")
                     (tr "labels.create-team"))
            :class (stl/css :accept-btn)}]]]]]]))
+
+(def team-form-modal team-form-modal*)
 
 
 (mf/defc no-permission-modal*

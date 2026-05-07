@@ -45,15 +45,15 @@
       (dom/set-html-title (tr "title.settings.notifications")))
 
     [:section {:class (stl/css :notifications-page)}
-     [:& fm/form {:class (stl/css :notifications-form)
-                  :on-submit on-submit
-                  :form form}
+     [:> fm/form* {:class (stl/css :notifications-form)
+                   :on-submit on-submit
+                   :form form}
       [:div {:class (stl/css :form-container)}
        [:h2 (tr "dashboard.settings.notifications.title")]
        [:h3 (tr "dashboard.settings.notifications.dashboard.title")]
        [:h4 (tr "dashboard.settings.notifications.dashboard-comments.title")]
        [:div {:class (stl/css :fields-row)}
-        [:& fm/radio-buttons
+        [:> fm/radio-buttons*
          {:options [{:label (tr "dashboard.settings.notifications.dashboard-comments.all") :value "all"}
                     {:label (tr "dashboard.settings.notifications.dashboard-comments.partial") :value "partial"}
                     {:label (tr "dashboard.settings.notifications.dashboard-comments.none") :value "none"}]
@@ -63,7 +63,7 @@
        [:h3 (tr "dashboard.settings.notifications.email.title")]
        [:h4 (tr "dashboard.settings.notifications.email-comments.title")]
        [:div {:class (stl/css :fields-row)}
-        [:& fm/radio-buttons
+        [:> fm/radio-buttons*
          {:options [{:label (tr "dashboard.settings.notifications.email-comments.all") :value "all"}
                     {:label (tr "dashboard.settings.notifications.email-comments.partial") :value "partial"}
                     {:label (tr "dashboard.settings.notifications.email-comments.none") :value "none"}]
@@ -72,7 +72,7 @@
 
        [:h4 (tr "dashboard.settings.notifications.email-invites.title")]
        [:div {:class (stl/css :fields-row)}
-        [:& fm/radio-buttons
+        [:> fm/radio-buttons*
          {:options [{:label (tr "dashboard.settings.notifications.email-invites.all") :value "all"}
                     ;; This type of notifications doesnt't exist yet
                     ;; {:label "Only invites and requests that my response" :value "partial"}

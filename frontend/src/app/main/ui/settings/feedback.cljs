@@ -93,29 +93,29 @@
                   (rx/subs! on-succes on-error)))))]
 
 
-    [:& fm/form {:class (stl/css :feedback-form)
-                 :on-submit on-submit
-                 :form form}
+    [:> fm/form* {:class (stl/css :feedback-form)
+                  :on-submit on-submit
+                  :form form}
 
      ;; --- Feedback section
      [:h2 {:class (stl/css :field-title :feedback-title)} (tr "feedback.title-contact-us")]
      [:p {:class (stl/css :field-text :feedback-title)} (tr "feedback.subtitle")]
 
      [:div {:class (stl/css :fields-row)}
-      [:& fm/input {:label (tr "feedback.subject")
-                    :name :subject
-                    :show-success? true}]]
+      [:> fm/input* {:label (tr "feedback.subject")
+                     :name :subject
+                     :show-success? true}]]
 
      [:div {:class (stl/css :fields-row)}
       [:label {:class (stl/css :field-label)} (tr "feedback.type")]
-      [:& fm/select {:label (tr "feedback.type")
-                     :name :type
-                     :options [{:label (tr "feedback.type.idea") :value "idea"}
-                               {:label (tr "feedback.type.issue") :value "issue"}
-                               {:label (tr "feedback.type.doubt") :value "doubt"}]}]]
+      [:> fm/select* {:label (tr "feedback.type")
+                      :name :type
+                      :options [{:label (tr "feedback.type.idea") :value "idea"}
+                                {:label (tr "feedback.type.issue") :value "issue"}
+                                {:label (tr "feedback.type.doubt") :value "doubt"}]}]]
 
      [:div {:class (stl/css :fields-row :description)}
-      [:& fm/textarea
+      [:> fm/textarea*
        {:class (stl/css :feedback-description)
         :label (tr "feedback.description")
         :name :content
@@ -124,10 +124,10 @@
 
      [:div {:class (stl/css :fields-row)}
       [:p {:class (stl/css :field-text)} (tr "feedback.penpot.link")]
-      [:& fm/input {:label ""
-                    :name :error-href
-                    :placeholder "https://penpot.app/"
-                    :show-success? true}]
+      [:> fm/input* {:label ""
+                     :name :error-href
+                     :placeholder "https://penpot.app/"
+                     :show-success? true}]
 
       (when report
         [:a {:class (stl/css :link :download-button) :on-click on-download}

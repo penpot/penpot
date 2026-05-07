@@ -66,7 +66,7 @@
             email-2 (:email-2 data)]
         (= email-1 email-2)))]])
 
-(mf/defc change-email-modal
+(mf/defc change-email-modal*
   {::mf/register modal/components
    ::mf/register-as :change-email}
   []
@@ -81,8 +81,8 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
-      [:& fm/form {:form form
-                   :on-submit on-submit}
+      [:> fm/form* {:form form
+                    :on-submit on-submit}
 
        [:div {:class (stl/css :modal-header)}
         [:h2 {:class (stl/css :modal-title)
@@ -92,23 +92,23 @@
                   :on-click modal/hide!} deprecated-icon/close]]
 
        [:div {:class (stl/css :modal-content)}
-        [:& context-notification
+        [:> context-notification
          {:level :info
           :content (tr "modals.change-email.info" (:email profile))}]
 
         [:div {:class (stl/css :fields-row)}
-         [:& fm/input {:type "email"
-                       :name :email-1
-                       :label (tr "modals.change-email.new-email")
-                       :trim true
-                       :show-success? true}]]
+         [:> fm/input* {:type "email"
+                        :name :email-1
+                        :label (tr "modals.change-email.new-email")
+                        :trim true
+                        :show-success? true}]]
 
         [:div {:class (stl/css :fields-row)}
-         [:& fm/input {:type "email"
-                       :name :email-2
-                       :label (tr "modals.change-email.confirm-email")
-                       :trim true
-                       :show-success? true}]]]
+         [:> fm/input* {:type "email"
+                        :name :email-2
+                        :label (tr "modals.change-email.confirm-email")
+                        :trim true
+                        :show-success? true}]]]
 
        [:div {:class (stl/css :modal-footer)}
         [:div {:class (stl/css :action-buttons)
@@ -116,5 +116,6 @@
          [:> fm/submit-button*
           {:label (tr "modals.change-email.submit")}]]]]]]))
 
+(def change-email-modal change-email-modal*)
 
 
