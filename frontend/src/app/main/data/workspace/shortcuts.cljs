@@ -6,12 +6,10 @@
 
 (ns app.main.data.workspace.shortcuts
   (:require
-   [app.common.data.macros :as dm]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.modal :as modal]
-   [app.main.data.plugins :as dpl]
    [app.main.data.preview :as dp]
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
@@ -32,7 +30,6 @@
    [app.main.store :as st]
    [app.main.ui.hooks.resize :as r]
    [app.util.dom :as dom]
-   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,17 +47,6 @@
         read-only? (deref refs/workspace-read-only?)]
     (when (and can-edit? (not read-only?))
       (run! st/emit! events))))
-
-(def esc-pressed
-  (ptk/reify ::esc-pressed
-    ptk/WatchEvent
-    (watch [_ state _]
-      (rx/of
-       :interrupt
-       (let [selection (dm/get-in state [:workspace-local :selected])]
-         (if (empty? selection)
-           (dpl/close-current-plugin)
-           (dw/deselect-all true)))))))
 
 ;; Shortcuts format https://github.com/ccampbell/mousetrap
 
@@ -149,7 +135,7 @@
    :escape               {:tooltip (ds/esc)
                           :command "escape"
                           :subsections [:edit]
-                          :fn #(st/emit! esc-pressed)}
+                          :fn #(st/emit! :interrupt (dw/deselect-all true))}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
                       :fn #(st/emit! (dw/open-layers-search :find))}
