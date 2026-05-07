@@ -99,11 +99,10 @@
 
         container         (hooks/use-portal-container)
 
-        raw-tokens-by-type (mf/use-ctx muc/active-tokens-by-type)
-
+        resolved-tokens-by-type (mf/use-ctx muc/active-tokens-by-type)
         filtered-tokens-by-type
-        (mf/with-memo [raw-tokens-by-type token-type]
-          (csu/filter-tokens-for-input raw-tokens-by-type token-type))
+        (mf/with-memo [resolved-tokens-by-type token-type]
+          (csu/filter-tokens-for-input resolved-tokens-by-type token-type))
 
         visible-options
         (mf/with-memo [filtered-tokens-by-type token]

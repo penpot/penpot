@@ -10,6 +10,7 @@ use crate::math::{self as math, bools, identitish, is_close_to, Bounds, Matrix, 
 use common::GetBounds;
 
 use crate::error::Result;
+use crate::shapes;
 use crate::shapes::{
     ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, TransformEntry,
     TransformEntrySource, Type,
@@ -173,6 +174,7 @@ fn propagate_transform(
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
     modifiers: &mut HashMap<Uuid, Matrix>,
+    reflown: &mut HashSet<Uuid>,
 ) -> Result<()> {
     let Some(shape) = state.shapes.get(&entry.id) else {
         return Ok(());
@@ -203,6 +205,15 @@ fn propagate_transform(
                         !is_close_to(shape_bounds_before.width(), shape_bounds_after.width());
                     if width_changed || text_content.needs_update_layout() {
                         text_content.update_layout(resized_selrect);
+                        entries.push_back(Modifier::reflow(shape.id, false));
+
+                        if let Some(parent_id) = shape.parent_id {
+                            for pid in
+                                shapes::all_with_ancestors(&[parent_id], shapes, false).iter()
+                            {
+                                reflown.remove(pid);
+                            }
+                        }
                     }
                     let height = text_content.size.height;
                     let resize_transform = math::resize_matrix(
@@ -402,6 +413,7 @@ pub fn propagate_modifiers(
                     &mut entries,
                     &mut bounds,
                     &mut modifiers,
+                    &mut reflown,
                 )?,
                 Modifier::Reflow(id, force_reflow) => {
                     if force_reflow {

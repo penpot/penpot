@@ -32,7 +32,7 @@
    [app.main.ui.viewer.interactions :as interactions]
    [app.main.ui.viewer.login]
    [app.main.ui.viewer.share-link]
-   [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
+   [app.main.ui.viewer.thumbnails :refer [thumbnails-panel*]]
    [app.util.dom :as dom]
    [app.util.dom.normalize-wheel :as nw]
    [app.util.globals :as globals]
@@ -555,11 +555,11 @@
                 :class (stl/css-case :thumbnails-close true
                                      :invisible (not (:show-thumbnails local false)))}]
 
-      [:& thumbnails-panel {:frames frames
-                            :show? (:show-thumbnails local false)
-                            :page page
-                            :index index
-                            :thumbnail-data (:thumbnails file)}]
+      [:> thumbnails-panel* {:frames frames
+                             :show (:show-thumbnails local false)
+                             :page page
+                             :index index
+                             :thumbnail-data (:thumbnails file)}]
 
       [:section#viewer-section {:ref viewer-section-ref
                                 :data-viewer-section true
