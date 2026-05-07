@@ -1805,6 +1805,12 @@
                     {})]
     (cfcp/sync-component-id-with-ref-shape data libraries)))
 
+
+(defmethod migrate-data "0021-dummy"
+  [data _]
+  data)
+
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1882,4 +1888,5 @@
          "0017-fix-layout-flex-dir"
          "0018-remove-unneeded-objects-from-components"
          "0019-fix-missing-swap-slots"
-         "0020-sync-component-id-with-near-main"]))
+         "0020-sync-component-id-with-near-main"
+         "0021-dummy"))

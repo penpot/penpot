@@ -12,6 +12,7 @@
    clojure.lang.Ratio
    java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
+   java.lang.reflect.Method
    java.time.Instant
    java.time.OffsetDateTime
    java.util.List
@@ -125,11 +126,33 @@
                  (write [_ w o]
                    (wfn name w o)))}])
 
+
+(defn- get-max-arity
+  [^Object f]
+  (let [^Class cls      (.getClass f)
+        methods         (.getDeclaredMethods cls)]
+    (->> methods
+         (filter #(= "invoke" (.getName ^Method %)))
+         (map #(.getParameterCount ^Method %))
+         (map long)
+         (reduce max 0))))
+
 (defn- adapt-read-handler
   [{:keys [name rfn]}]
-  [name (reify ReadHandler
-          (read [_ rdr _ _]
-            (rfn rdr)))])
+  (let [arity (get-max-arity rfn)]
+    (case (long arity)
+      3
+      (do
+        [name (reify ReadHandler
+                (read [_ rdr tag n]
+                  (prn "AAAAAAAA" tag rfn)
+                  (rfn rdr tag n)))])
+
+
+      1
+      [name (reify ReadHandler
+              (read [_ rdr _ _]
+                (rfn rdr)))])))
 
 (defn- merge-handlers
   [m1 m2]
@@ -294,12 +317,14 @@
  {:name "clj/set"
   :class clojure.lang.IPersistentSet
   :wfn write-list-like
-  :rfn (comp set read-object!)}
+  :rfn (fn [r]
+         (-> r read-object! set))}
 
  {:name "clj/vector"
   :class clojure.lang.IPersistentVector
   :wfn write-list-like
-  :rfn (comp vec read-object!)}
+  :rfn (fn [r]
+         (-> r read-object! vec))}
 
  {:name "clj/list"
   ;; :class clojure.lang.IPersistentList
@@ -309,12 +334,13 @@
  {:name "clj/seq"
   :class clojure.lang.ISeq
   :wfn write-list-like
-  :rfn (comp sequence read-object!)}
+  :rfn (fn [r] (-> r read-object! sequence))}
 
  {:name "linked/set"
   :class LinkedSet
   :wfn write-list-like
-  :rfn (comp #(into (d/ordered-set) %) read-object!)})
+  :rfn (fn [r]
+         (->> r read-object! (into (d/ordered-set))))})
 
 ;; --- PUBLIC API
 

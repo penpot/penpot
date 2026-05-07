@@ -639,7 +639,8 @@
     {:name "penpot/shape"
      :class Shape
      :wfn fres/write-map-like
-     :rfn (comp map->Shape fres/read-map-like)}))
+     :rfn (fn [r]
+            (-> r fres/read-map-like map->Shape))}))
 
 ;; --- SHAPE COPY/PASTE PROPS
 

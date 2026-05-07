@@ -27,7 +27,7 @@
     {:name "penpot/geom/rect"
      :class Rect
      :wfn fres/write-map-like
-     :rfn (comp map->Rect fres/read-map-like)}))
+     :rfn (fn [r] (-> r fres/read-map-like map->Rect))}))
 
 (t/add-handlers!
  {:id "rect"

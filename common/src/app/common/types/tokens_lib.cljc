@@ -947,13 +947,25 @@ Will return a value that matches this schema:
 (declare read-multi-set-dtcg)
 (declare export-dtcg-json)
 
-(deftype TokensLib [sets themes active-themes]
+(deftype TokensLib [sets themes active-themes metadata]
   ;; This is to convert the TokensLib to a plain map, for debugging or unit tests.
   cp/Datafiable
   (datafy [_]
     {:sets sets
      :themes themes
-     :active-themes active-themes})
+     :active-themes active-themes
+     :metadata metadata})
+
+  #?@(:cljs
+      [cljs.core/IWithMeta
+       (-with-meta [_o meta] (TokensLib. sets themes active-themes meta))
+       cljs.core/IMeta
+       (-meta [_o] metadata)]
+
+      :clj
+      [clojure.lang.IObj
+       (withMeta [_o meta] (TokensLib. sets themes active-themes meta))
+       (meta [_o] metadata)])
 
   #?@(:clj
       [c.json/JSONWriter
@@ -978,7 +990,8 @@ Will return a value that matches this schema:
     (let [path (get-set-prefixed-path token-set)]
       (TokensLib. (d/oassoc-in sets path token-set)
                   themes
-                  active-themes)))
+                  active-themes
+                  metadata)))
 
   (update-set [this id f]
     (assert (uuid? id) "expected uuid for `id`")
@@ -992,7 +1005,8 @@ Will return a value that matches this schema:
           (if (= name name')
             (TokensLib. (d/oassoc-in sets prefixed-full-path set')
                         themes
-                        active-themes)
+                        active-themes
+                        metadata)
             (TokensLib. (-> sets
                             (d/oassoc-in-before prefixed-full-path prefixed-full-path' set')
                             (d/dissoc-in prefixed-full-path))
@@ -1002,7 +1016,8 @@ Will return a value that matches this schema:
                              (update-set-name form name name')
                              form))
                          themes)
-                        active-themes)))
+                        active-themes
+                        metadata)))
         this)))
 
   (delete-set [this id]
@@ -1017,7 +1032,8 @@ Will return a value that matches this schema:
                        (disable-set form set-name)
                        form))
                    themes)
-                  active-themes)))
+                  active-themes
+                  metadata)))
 
   (move-set [_ from-path to-path before-path before-group?]
     (let [prefixed-from-path (set-full-path->set-prefixed-full-path from-path)
@@ -1059,8 +1075,9 @@ Will return a value that matches this schema:
                              (update-set-name form (get-name prev-set) (get-name set))
                              form))
                          themes))
-                      active-themes))
-        (TokensLib. sets themes active-themes))))
+                      active-themes
+                      metadata))
+        (TokensLib. sets themes active-themes metadata))))
 
   (move-set-group [this from-path to-path before-path before-group?]
     (let [prefixed-from-path (set-group-path->set-group-prefixed-path from-path)
@@ -1104,10 +1121,8 @@ Will return a value that matches this schema:
                                (update form :sets #(set (replace rename-sets-map %)))
                                form))
                            themes)))]
-          (TokensLib. sets'
-                      themes'
-                      active-themes))
-        (TokensLib. sets themes active-themes))))
+          (TokensLib. sets' themes' active-themes metadata))
+        (TokensLib. sets themes active-themes metadata))))
 
   (get-set-tree [_]
     sets)
@@ -1154,7 +1169,8 @@ Will return a value that matches this schema:
     (let [token-theme (check-token-theme token-theme)]
       (TokensLib. sets
                   (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme)
-                  active-themes)))
+                  active-themes
+                  metadata)))
 
   (update-theme [this id f]
     (if-let [theme (get-theme this id)]
@@ -1177,7 +1193,8 @@ Will return a value that matches this schema:
                               (d/dissoc-in [group name])))
                         (if same-path?
                           active-themes
-                          (disj active-themes (join-theme-path group name)))))))
+                          (disj active-themes (join-theme-path group name)))
+                        metadata))))
       this))
 
   (delete-theme [this id]
@@ -1186,7 +1203,8 @@ Will return a value that matches this schema:
       (if theme
         (TokensLib. sets
                     (d/dissoc-in themes [group name])
-                    (disj active-themes (join-theme-path group name)))
+                    (disj active-themes (join-theme-path group name))
+                    metadata)
         this)))
 
   (get-theme-tree [_]
@@ -1215,7 +1233,8 @@ Will return a value that matches this schema:
   (set-active-themes [_ active-themes]
     (TokensLib. sets
                 themes
-                active-themes))
+                active-themes
+                metadata))
 
   (activate-theme [this id]
     (if-let [theme (get-theme this id)]
@@ -1227,14 +1246,16 @@ Will return a value that matches this schema:
                                (conj (get-theme-path theme)))]
         (TokensLib. sets
                     themes
-                    active-themes'))
+                    active-themes'
+                    metadata))
       this))
 
   (deactivate-theme [this id]
     (if-let [theme (get-theme this id)]
       (TokensLib. sets
                   themes
-                  (disj active-themes (get-theme-path theme)))
+                  (disj active-themes (get-theme-path theme))
+                  metadata)
       this))
 
   (theme-active? [this id]
@@ -1297,7 +1318,8 @@ Will return a value that matches this schema:
       (TokensLib. sets
                   (d/oupdate-in themes [(:group theme) (:name theme)]
                                 #(toggle-set % set-name))
-                  active-themes)
+                  active-themes
+                  metadata)
       this))
 
   (get-active-themes-set-names [this]
@@ -1438,8 +1460,8 @@ Will return a value that matches this schema:
   "Make a new instance of TokensLib from a map, but skiping all
   validation; it is used for create new instances from trusted
   sources"
-  [& {:keys [sets themes active-themes]}]
-  (TokensLib. sets themes active-themes))
+  [& {:keys [sets themes active-themes metadata]}]
+  (TokensLib. sets themes active-themes metadata))
 
 (defn make-tokens-lib
   "Make a new instance of TokensLib from a map and validates the input"
@@ -1552,7 +1574,7 @@ Will return a value that matches this schema:
    current-path: the path of the group being renamed, e.g. \"foo.bar\"
    current-name: the current name of the group being renamed, e.g. \"bar\"
    new-name: the new name for the group being renamed, e.g. \"baz\"
-   
+
    Returns a sequence of [name token] for each renamed token."
 
   [active-tokens current-path current-name new-name]
@@ -2413,36 +2435,53 @@ Will return a value that matches this schema:
            (fix-conflicting-token-names)
            (fix-missing-sets-in-themes)))))
 
-#?(:clj
-   (defn- read-tokens-lib-v1-4
-     "Reads the tokens lib data structure and fix conflicting token names."
-     [r]
-     (let [sets          (fres/read-object! r)
-           themes        (fres/read-object! r)
-           active-themes (fres/read-object! r)]
+;; #?(:clj
+;;    (defn- read-tokens-lib-v1-4
+;;      "Reads the tokens lib data structure and fix conflicting token names."
+;;      [r]
+;;      (let [sets          (fres/read-object! r)
+;;            themes        (fres/read-object! r)
+;;            active-themes (fres/read-object! r)]
 
-       (-> {:sets sets
-            :themes themes
-            :active-themes active-themes}
-           (map->tokens-lib)
-           (fix-conflicting-token-names)
-           (fix-missing-sets-in-themes)))))
+;;        (-> {:sets sets
+;;             :themes themes
+;;             :active-themes active-themes}
+;;            (map->tokens-lib)
+;;            (fix-conflicting-token-names)
+;;            (fix-missing-sets-in-themes)))))
 
 #?(:clj
    (defn- write-tokens-lib
      [n w ^TokensLib o]
-     (fres/write-tag! w n 3)
+     (fres/write-tag! w n 4)
      (fres/write-object! w (.-sets o))
      (fres/write-object! w (.-themes o))
-     (fres/write-object! w (.-active-themes o))))
+     (fres/write-object! w (.-active-themes o))
+     (fres/write-object! w (.-metadata o))))
+
+#?(:clj
+   (defn- apply-internal-migration
+     "A helper for conditionally apply internal migrations to the tokens
+  data structure."
+     [instance migration-name migration-fn]
+     (let [migrations (-> instance meta :migrations)]
+       (if (contains? migrations migration-name)
+         instance
+         (-> instance
+             (migration-fn)
+             (vary-meta update :migrations (fnil conj #{}) migration-name))))))
 
 #?(:clj
    (defn- read-tokens-lib
-     [r]
+     [r _ n]
      (let [sets          (fres/read-object! r)
            themes        (fres/read-object! r)
-           active-themes (fres/read-object! r)]
-       (->TokensLib sets themes active-themes))))
+           active-themes (fres/read-object! r)
+           metadata      (when (= n 4)
+                           (fres/read-object! r))]
+       (-> (->TokensLib sets themes active-themes metadata)
+           (apply-internal-migration "conflicting-token-names" fix-conflicting-token-names)
+           (apply-internal-migration "fix-missing-sets-in-themes" fix-missing-sets-in-themes)))))
 
 #?(:clj
    (fres/add-handlers!
@@ -2487,11 +2526,8 @@ Will return a value that matches this schema:
     {:name "penpot/tokens-lib/v1.3"
      :rfn read-tokens-lib-v1-3}
 
-    {:name "penpot/tokens-lib/v1.4"
-     :rfn read-tokens-lib-v1-4}
-
     ;; CURRENT TOKENS LIB READER & WRITTER
-    {:name "penpot/tokens-lib/v1.5"
+    {:name "penpot/tokens-lib/v1.4"
      :class TokensLib
      :wfn write-tokens-lib
      :rfn read-tokens-lib}))
