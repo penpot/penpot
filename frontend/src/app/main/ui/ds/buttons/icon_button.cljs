@@ -30,7 +30,7 @@
 
 (mf/defc icon-button*
   {::mf/schema schema:icon-button
-   ::mf/memo true}
+   ::mf/wrap [mf/memo]}
   [{:keys [class icon icon-class icon-size variant aria-label children tooltip-placement tooltip-class type] :rest props}]
   (let [variant
         (d/nilv variant "primary")

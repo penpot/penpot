@@ -18,13 +18,11 @@
 
 (set! *warn-on-infer* false)
 
-(mf/defc tab-element
-  {::mf/wrap-props false}
+(mf/defc tab-element*
   [{:keys [children]}]
   children)
 
-(mf/defc tab-container
-  {::mf/wrap-props false}
+(mf/defc tab-container*
   [{:keys [children selected on-change-tab collapsable handle-collapse header-class content-class]}]
   (let [children  (-> (array/normalize-to-array children)
                       (array/without-nils))
