@@ -40,7 +40,7 @@
          content]
 
         inline?
-        [:& inline-notification
+        [:> inline-notification
          {:accept (:accept notification)
           :cancel (:cancel notification)
           :links (:links notification)
@@ -48,7 +48,7 @@
 
         ;; This should be substited with the actionable-notification* component
         actionable?
-        [:& context-notification
+        [:> context-notification
          {:level (or (:level notification) :info)
           :links (:links notification)
           :content (:content notification)}]

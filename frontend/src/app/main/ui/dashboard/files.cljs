@@ -79,7 +79,7 @@
         [:h1 (tr "labels.drafts")]]
 
        (if (and (:edition @local) can-edit)
-         [:& inline-edition
+         [:> inline-edition
           {:content (:name project)
            :on-end (fn [name]
                      (let [name (str/trim name)]

@@ -929,7 +929,7 @@
                           :aria-label (tr "labels.options")
                           :on-click on-toggle-options
                           :icon i/menu}])]
-     [:& dropdown {:show (= options uuid/zero)
+     [:> dropdown {:show (= options uuid/zero)
                    :on-close on-hide-options}
       [:ul {:class (stl/css :dropdown-menu)}
        [:li {:class (stl/css :dropdown-menu-option)
@@ -1003,7 +1003,7 @@
          [:span {:class (stl/css :text)}
           [:> comment-content* {:content (:content comment)}]])]]
 
-     [:& dropdown {:show (= options (:id comment))
+     [:> dropdown {:show (= options (:id comment))
                    :on-close on-hide-options}
       [:ul {:class (stl/css :dropdown-menu)}
        [:li {:class (stl/css :dropdown-menu-option)

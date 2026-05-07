@@ -140,7 +140,7 @@
                              :style {:-webkit-print-color-adjust :exact}
                              :fill "none"}
 
-                       [:& shape-wrapper {:shape shape}]])]
+                       [:> shape-wrapper {:shape shape}]])]
 
                    [:div {:class (stl/css :selection-name)}
                     (cond-> (:name shape) suffix (str suffix))]
@@ -153,7 +153,7 @@
                      [:div {:class (stl/css :selection-extension)}
                       (-> export :type d/name str/upper)])]]))]]]
 
-          [:& no-selection])]
+          [:> no-selection])]
 
        (when (> (count all-exports) 0)
          [:div {:class (stl/css :modal-footer)}
