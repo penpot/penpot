@@ -259,15 +259,21 @@ pub fn get_fill_shader(fill: &Fill, bounding_box: &Rect) -> Option<skia::Shader>
 }
 
 pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
-    let mut combined_shader: Option<skia::Shader> = None;
     let mut fills_paint = skia::Paint::default();
 
     if fills.is_empty() {
-        combined_shader = Some(skia::shaders::color(skia::Color::TRANSPARENT));
-        fills_paint.set_shader(combined_shader);
+        fills_paint.set_color(skia::Color::TRANSPARENT);
         return fills_paint;
     }
 
+    if fills.len() == 1 {
+        if let Fill::Solid(SolidColor(color)) = &fills[0] {
+            fills_paint.set_color(*color);
+            return fills_paint;
+        }
+    }
+
+    let mut combined_shader: Option<skia::Shader> = None;
     for fill in fills {
         let shader = get_fill_shader(fill, &bounding_box);
 
@@ -287,7 +293,7 @@ pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
         }
     }
 
-    fills_paint.set_shader(combined_shader.clone());
+    fills_paint.set_shader(combined_shader);
     fills_paint
 }
 

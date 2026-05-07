@@ -309,7 +309,7 @@
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
-    (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
+    (hooks/setup-hover-shapes page-id move-stream base-objects selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only?)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
@@ -501,7 +501,7 @@
            :modifiers modifiers}])
 
        (when show-measures?
-         [:& msr/measurement
+         [:> msr/measurement*
           {:bounds vbox
            :selected-shapes selected-shapes
            :frame selected-frame
@@ -510,7 +510,7 @@
 
        ;; Show distances during movement with ALT
        (when (and (= transform :move) @alt? (seq selected-shapes))
-         [:& msr/measurement
+         [:> msr/measurement*
           {:bounds vbox
            :selected-shapes selected-shapes
            :frame selected-frame
@@ -522,7 +522,7 @@
              duplicated-info (get-in @(deref state-var) [:workspace-local :duplicated])]
          (when (and (= transform :move) @alt? duplicated-info)
            [:g.duplicated-distance
-            [:& msr/distance-display
+            [:> msr/distance-display*
              {:from (get duplicated-info :selrect-original)
               :to (get duplicated-info :selrect-duplicated)
               :zoom zoom
@@ -653,34 +653,34 @@
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)
-         [:& wvd/debug-drop-zones {:selected-shapes selected-shapes
-                                   :objects base-objects
-                                   :hover-top-frame-id @hover-top-frame-id
-                                   :zoom zoom}])
+         [:> wvd/debug-drop-zones* {:selected-shapes selected-shapes
+                                    :objects base-objects
+                                    :hover-top-frame-id @hover-top-frame-id
+                                    :zoom zoom}])
 
        (when (dbg/enabled? :layout-content-bounds)
-         [:& wvd/debug-content-bounds {:selected-shapes selected-shapes
-                                       :objects base-objects
-                                       :hover-top-frame-id @hover-top-frame-id
-                                       :zoom zoom}])
+         [:> wvd/debug-content-bounds* {:selected-shapes selected-shapes
+                                        :objects base-objects
+                                        :hover-top-frame-id @hover-top-frame-id
+                                        :zoom zoom}])
 
        (when (dbg/enabled? :layout-lines)
-         [:& wvd/debug-layout-lines {:selected-shapes selected-shapes
-                                     :objects base-objects
-                                     :hover-top-frame-id @hover-top-frame-id
-                                     :zoom zoom}])
-
-       (when (dbg/enabled? :parent-bounds)
-         [:& wvd/debug-parent-bounds {:selected-shapes selected-shapes
+         [:> wvd/debug-layout-lines* {:selected-shapes selected-shapes
                                       :objects base-objects
                                       :hover-top-frame-id @hover-top-frame-id
                                       :zoom zoom}])
 
+       (when (dbg/enabled? :parent-bounds)
+         [:> wvd/debug-parent-bounds* {:selected-shapes selected-shapes
+                                       :objects base-objects
+                                       :hover-top-frame-id @hover-top-frame-id
+                                       :zoom zoom}])
+
        (when (dbg/enabled? :grid-layout)
-         [:& wvd/debug-grid-layout {:selected-shapes selected-shapes
-                                    :objects base-objects
-                                    :hover-top-frame-id @hover-top-frame-id
-                                    :zoom zoom}])
+         [:> wvd/debug-grid-layout* {:selected-shapes selected-shapes
+                                     :objects base-objects
+                                     :hover-top-frame-id @hover-top-frame-id
+                                     :zoom zoom}])
 
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}

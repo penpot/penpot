@@ -10,9 +10,12 @@
    [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
+   [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
@@ -83,23 +86,41 @@
 
         token-title (str/lower (:title token-properties))
 
-        tokens (mf/deref refs/workspace-all-tokens-map)
+        ;; All tokens in the lib, as a map name -> token, flattened
+        ;; including tokens in inactive sets.
+        tokens-tree (mf/deref refs/workspace-all-tokens-map)
 
+        ;; A map name -> token, tokens only in actual set.
         tokens-in-selected-set
         (mf/deref refs/workspace-all-tokens-in-selected-set)
 
+        ;; Make actual set tokens take precedence over tokens in other sets.
         tokens
-        (mf/with-memo [tokens tokens-in-selected-set token]
+        (mf/with-memo [tokens-tree tokens-in-selected-set token]
           ;; Ensure that the resolved value uses the currently editing token
           ;; even if the name has been overriden by a token with the same name
           ;; in another set below.
-          (cond-> (merge tokens tokens-in-selected-set)
+          (cond-> (merge tokens-tree tokens-in-selected-set)
             (and (:name token) (:value token))
             (assoc (:name token) token)))
 
+        tokenscript? (contains? cf/flags :tokenscript)
+
+        ;; A map name-> token with resolved-values, resolved with style dictionary
+        resolved-active-tokens
+        (sd/use-resolved-tokens* tokens-tree)
+
+        ;; A map name-> token with resolved-values, resolved with tokescript
+        tokenscript-resolved-active-tokens
+        (mf/with-memo [tokens-tree tokenscript?]
+          (when tokenscript? (ts/resolve-tokens tokens-tree)))
+
+        ;; A map which keys are token types and values are vectors of tokens of that type, with resolved values.
         active-tokens-by-type
-        (mf/with-memo [tokens]
-          (delay (ctob/group-by-type tokens)))
+        (mf/with-memo [resolved-active-tokens tokenscript-resolved-active-tokens tokenscript?]
+          (delay (ctob/group-by-type (if tokenscript?
+                                       tokenscript-resolved-active-tokens
+                                       resolved-active-tokens))))
 
         schema
         (mf/with-memo [tokens-tree-in-selected-set active-tab]

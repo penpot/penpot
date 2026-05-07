@@ -1840,7 +1840,7 @@
 
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
                 ;; and attrs (bold, font, etc) are in the same attr :content.
-                ;; If only one of them is touched, we want to adress this case and
+                ;; If only one of them is touched, we want to address this case and
                 ;; only update the untouched one
                 text-content-change?
                 (and omit-touched?
@@ -2163,7 +2163,7 @@
 
               ;; On texts, both text (the actual letters)
               ;; and attrs (bold, font, etc) are in the same attr :content.
-              ;; If only one of them is touched, we want to adress this case and
+              ;; If only one of them is touched, we want to address this case and
               ;; only update the untouched one
               text-change?
               (and (not skip-operations?)
