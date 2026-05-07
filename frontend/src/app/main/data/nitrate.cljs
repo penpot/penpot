@@ -189,7 +189,7 @@
                 (let [all-orgs (map dt/team->organization
                                     (filter #(and (:is-default %) (:organization-id %)) teams))
                       orgs     (filter (fn [org]
-                                         (let [perm    (:create-teams org)
+                                         (let [perm    (get-in org [:permissions :create-teams])
                                                is-own? (= profile-id (:owner-id org))]
                                            (or (= perm "any") is-own?))) all-orgs)
                       team     (first (filter #(= (:id %) team-id) teams))
@@ -198,7 +198,7 @@
                                                                :organization-id organization-id})))]
                   (rx/of (dt/teams-fetched teams)
                          (if (empty? orgs)
-                           (modal/show :no-org-allows-create-team {})
+                           (modal/show :no-permission-modal {:type :no-orgs-create})
                            (let [has-filtered? (< (count orgs) (count all-orgs))
                                  extra-props   (when has-filtered?
                                                  {:info-message-key "dashboard.select-org-modal.permission-info"})]
@@ -228,7 +228,7 @@
                 (let [all-orgs (map dt/team->organization
                                     (filter #(and (:is-default %) (:organization-id %)) teams))
                       orgs     (filter (fn [org]
-                                         (let [perm    (:create-teams org)
+                                         (let [perm    (get-in org [:permissions :create-teams])
                                                is-own? (= profile-id (:owner-id org))]
                                            (or (= perm "any") is-own?))) all-orgs)
                       team     (first (filter #(= (:id %) team-id) teams))
@@ -237,7 +237,7 @@
                                                                :organization-id organization-id})))]
                   (rx/of (dt/teams-fetched teams)
                          (if (empty? orgs)
-                           (modal/show :no-org-allows-create-team {})
+                           (modal/show :no-permission-modal {:type :no-orgs-change})
                            (let [has-filtered? (< (count orgs) (count all-orgs))
                                  extra-props   (when has-filtered?
                                                  {:info-message-key "dashboard.select-org-modal.permission-info"})]

@@ -1381,7 +1381,7 @@
         organizations (mf/with-memo [all-organizations profile-id]
                         (->> all-organizations
                              (filter (fn [org]
-                                       (let [perm      (:create-teams org)
+                                       (let [perm      (get-in org [:permissions :create-teams])
                                              is-owner? (= profile-id (:owner-id org))]
                                          (or (= perm "any") is-owner?))))))
 
