@@ -30,8 +30,13 @@ configured to 256 MB initial with geometric growth.
 ## Architecture
 
 **Global state** — a single `unsafe static mut State` accessed
-exclusively through `with_state!` / `with_state_mut!` macros. Never
-access it directly.
+exclusively through the `with_state!`, `with_state_mut!`,
+`with_current_shape!`, `with_current_shape_mut!`, and
+`with_state_mut_current_shape!` macros (defined at the top of
+`src/main.rs`). Never access the global directly. Use
+`with_current_shape_mut!` when modifying a shape — it calls
+`state.touch_current()` to mark the shape dirty for re-render;
+read-modify-writes that bypass it will silently skip invalidation.
 
 **Tile-based rendering** — only 512×512 tiles within the viewport
 (plus a pre-render buffer) are drawn each frame. Tiles outside the
@@ -48,11 +53,12 @@ parent/child relationships are tracked separately.
 
 | Path | Role |
 |------|------|
-| `src/lib.rs` | WASM exports — all functions callable from JS |
-| `src/state.rs` | Global `State` struct definition |
-| `src/render/` | Tile rendering pipeline, Skia surface management |
-| `src/shapes/` | Shape types and Skia draw logic per shape |
-| `src/wasm/` | JS interop helpers (memory, string encoding) |
+| `src/main.rs` | WASM entry points (`init`, `clean_up`, render driver) and the state-access macros |
+| `src/state.rs`, `src/state/` | Global `State` struct, `ShapesPool`, `TextEditorState` |
+| `src/wasm/` | `#[no_mangle] extern "C"` exports grouped by subsystem (shapes, text, layouts, paths, fills, ...) |
+| `src/render.rs`, `src/render/` | Render loop, tile cache, Skia surface management |
+| `src/shapes.rs`, `src/shapes/` | Shape types, layouts, modifiers, transforms, per-shape draw inputs |
+| `src/mem.rs` | WASM memory allocation (`write_bytes`, `free_bytes`) used by the FFI |
 
 ## Frontend Integration
 
@@ -60,3 +66,10 @@ The WASM module is loaded by `app.render-wasm.*` namespaces in the
 frontend. ClojureScript calls exported Rust functions to push shape
 data, then calls `render_frame`. Do not change export function
 signatures without updating the corresponding ClojureScript bridge.
+
+## Deeper Context
+
+For longer-form architecture, conventions, V3 text editor internals,
+and performance design lessons, see the `penpot-render-wasm` skill at
+`.opencode/skills/penpot-render-wasm/`. This `AGENTS.md` is the
+short-form module guide; the skill carries the depth.

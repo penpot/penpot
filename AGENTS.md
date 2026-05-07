@@ -32,6 +32,16 @@ precision while maintaining a strong focus on maintainability and performance.
 5. When searching code, prefer `ripgrep` (`rg`) over `grep` — it respects
    `.gitignore` by default.
 
+## Skills
+
+Project-shipped skills live under `.opencode/skills/`. Notable skills for
+domain-specific work:
+
+- `.opencode/skills/penpot-render-wasm/` — deeper architecture, conventions,
+  V3 text editor internals, and performance design lessons for the
+  Rust/WASM render layer and its CLJS bridge. Complements
+  `render-wasm/AGENTS.md`.
+
 ## Changelogs
 
 The project has two changelogs:
