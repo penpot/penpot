@@ -80,7 +80,7 @@
     (when is-open?
       (mf/portal
        (mf/html
-        [:& dropdown {:show is-open?
+        [:> dropdown {:show is-open?
                       :on-close #(st/emit! (dwtl/assign-token-node-context-menu nil))}
          [:div {:class (stl/css :token-node-context-menu)
                 :data-testid "tokens-context-menu-for-token-node"

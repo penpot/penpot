@@ -787,20 +787,20 @@
                         :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
                         :on-change on-search-term-change
                         :on-clear on-search-clear-click}]
-       [:& select {:default-value current-library-id
+       [:> select {:default-value current-library-id
                    :options libraries-options
                    :on-change on-library-change}]]
 
       [:div  {:class (stl/css :swap-library)}
        [:div {:class (stl/css :swap-library-title)}
         [:div {:class (stl/css :swap-library-name)} current-lib-name]
-        [:& radio-buttons {:selected (if (:listing-thumbs? filters) "grid" "list")
+        [:> radio-buttons {:selected (if (:listing-thumbs? filters) "grid" "list")
                            :on-change toggle-list-style
                            :name "swap-listing-style"}
-         [:& radio-button {:icon i/view-as-list
+         [:> radio-button {:icon i/view-as-list
                            :value "list"
                            :id "swap-opt-list"}]
-         [:& radio-button {:icon i/flex-grid
+         [:> radio-button {:icon i/flex-grid
                            :value "grid"
                            :id "swap-opt-grid"}]]]
 
@@ -902,7 +902,7 @@
                   :on-click on-menu-click}
          [:> icon* {:icon-id i/menu}]]
 
-        [:& dropdown {:show menu-open?
+        [:> dropdown {:show menu-open?
                       :on-close on-menu-close}
          [:ul {:class (stl/css-case :pill-actions-dropdown true
                                     :extended subtext)}

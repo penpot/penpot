@@ -79,7 +79,7 @@
         on-close
         (mf/use-fn #(st/emit! (dwtl/assign-token-set-context-menu nil)))]
 
-    [:& dropdown {:show (some? position)
+    [:> dropdown {:show (some? position)
                   :on-close on-close}
      [:div {:class (stl/css :token-set-context-menu)
             :data-testid "tokens-context-menu-for-set"

@@ -191,7 +191,7 @@
 
     [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]
-       [:& text-container {:key (dm/str "text-container-" id)
+       [:> text-container {:key (dm/str "text-container-" id)
                            :shape shape
                            :on-update handle-update-shape}])]))
 
@@ -223,7 +223,7 @@
 
     [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]
-       [:& text-container {:key (dm/str "text-container-" id)
+       [:> text-container {:key (dm/str "text-container-" id)
                            :shape shape
                            :on-update handle-update-shape}])]))
 
@@ -271,7 +271,7 @@
      (fn []
        #(st/emit! (dwt/remove-text-modifier (:id shape)))))
 
-    [:& text-container {:shape shape
+    [:> text-container {:shape shape
                         :on-update handle-update-shape}]))
 
 (defn check-props
@@ -334,7 +334,7 @@
 
     [:*
      (when editing-shape
-       [:& viewport-text-editing {:shape editing-shape}])
+       [:> viewport-text-editing {:shape editing-shape}])
 
-     [:& text-modifiers-renderer {:text-shapes text-shapes-modifiers}]
-     [:& text-changes-renderer {:text-shapes text-shapes-changes}]]))
+     [:> text-modifiers-renderer {:text-shapes text-shapes-modifiers}]
+     [:> text-changes-renderer {:text-shapes text-shapes-changes}]]))
