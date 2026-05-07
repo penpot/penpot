@@ -80,10 +80,9 @@
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
 (defonce snapshot-tiles-handler* (atom nil))
-(defonce snapshot-capture-timeout-id* (atom nil))
 
 (def ^:private transition-blur-css "blur(4px)")
-(def ^:private snapshot-capture-debounce-ms 150)
+(def ^:private snapshot-capture-debounce-ms 250)
 
 (defn- set-transition-blur!
   []
@@ -175,21 +174,15 @@
                        (f))
                      #js {:once true}))
 
-(defn- schedule-canvas-snapshot-capture!
-  "Debounced canvas snapshot refresh used to keep a recent fallback image for
-   context-loss recovery."
-  []
-  (when-not @snapshot-capture-timeout-id*
-    (reset! snapshot-capture-timeout-id*
-            (js/setTimeout
-             (fn []
-               (reset! snapshot-capture-timeout-id* nil)
-               (when (and wasm/context-initialized?
-                          (not @wasm/context-lost?)
-                          (some? wasm/canvas))
-                 (-> (webgl/capture-canvas-snapshot-url)
-                     (p/catch (fn [_] nil)))))
-             snapshot-capture-debounce-ms))))
+(defonce ^:private schedule-canvas-snapshot-capture!
+  (fns/debounce
+   (fn []
+     (when (and wasm/context-initialized?
+                (not @wasm/context-lost?)
+                (some? wasm/canvas))
+       (-> (webgl/capture-canvas-snapshot-url)
+           (p/catch (fn [_] nil)))))
+   snapshot-capture-debounce-ms))
 
 (defn- start-canvas-snapshot-listener!
   []
@@ -204,9 +197,8 @@
   (when-let [prev @snapshot-tiles-handler*]
     (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
   (reset! snapshot-tiles-handler* nil)
-  (when-let [timeout-id @snapshot-capture-timeout-id*]
-    (js/clearTimeout timeout-id))
-  (reset! snapshot-capture-timeout-id* nil))
+  (when-let [cancel (unchecked-get schedule-canvas-snapshot-capture! "cancel")]
+    (cancel)))
 
 (defn text-editor-wasm?
   []
@@ -1788,16 +1780,9 @@
   (dom/prevent-default event)
   ;; Keep the last rendered pixels visible while context is lost/recovering.
   (start-context-loss-overlay!)
-  (if-let [url wasm/canvas-snapshot-url]
+  (when-let [url wasm/canvas-snapshot-url]
     (when (string? url)
-      (reset! transition-image-url* url))
-    (-> (capture-canvas-snapshot-url)
-        (p/then (fn [url]
-                  (when (and (string? url)
-                             @context-loss-overlay?)
-                    (reset! transition-image-url* url))
-                  url))
-        (p/catch (fn [_] nil))))
+      (reset! transition-image-url* url)))
   (reset! wasm/context-lost? true)
   (st/async-emit!
    (ntf/show {:content (tr "webgl.webgl-context-lost.toast")
