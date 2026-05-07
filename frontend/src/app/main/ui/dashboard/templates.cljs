@@ -92,8 +92,7 @@
          [:span {:class (stl/css :title-icon)}
           arrow-icon]])]]))
 
-(mf/defc card-item
-  {::mf/wrap-props false}
+(mf/defc card-item*
   [{:keys [item index is-visible collapsed on-import]}]
   (let [id     (dm/str "card-container-" index)
         href   (u/join cf/public-uri (dm/str "images/thumbnails/template-" (:id item) ".jpg"))
@@ -135,8 +134,7 @@
           (:name item))]
        download-icon]]]))
 
-(mf/defc card-item-link
-  {::mf/wrap-props false}
+(mf/defc card-item-link*
   [{:keys [total is-visible collapsed section]}]
   (let [id (dm/str "card-container-" total)
 
@@ -271,7 +269,7 @@
             :ref content-ref}
 
       (for [index (range (count templates))]
-        [:& card-item
+        [:> card-item*
          {:on-import on-import-template
           :item (nth templates index)
           :index index
@@ -279,7 +277,7 @@
           :is-visible true
           :collapsed collapsed}])
 
-      [:& card-item-link
+      [:> card-item-link*
        {:is-visible true
         :collapsed collapsed
         :section section
