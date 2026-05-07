@@ -10,6 +10,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix hook-order violation in workspace `shape-wrapper` by removing conditional `use-ctx` calls when frame context changes [Github #9409](https://github.com/penpot/penpot/issues/9409)
+
 ## 2.16.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations

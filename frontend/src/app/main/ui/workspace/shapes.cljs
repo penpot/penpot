@@ -99,14 +99,12 @@
   (let [shape      (unchecked-get props "shape")
         shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
-
-        ;; FIXME: WARN: this breaks react rule of hooks (hooks can't be under conditional)
-        active-frames
-        (when (cfh/root-frame? shape)
-          (mf/use-ctx ctx/active-frames))
+        root-frame? (cfh/root-frame? shape)
+        active-frames (mf/use-ctx ctx/active-frames)
 
         thumbnail?
-        (and (some? active-frames)
+        (and root-frame?
+             (some? active-frames)
              (not (contains? active-frames shape-id)))
 
         props         #js {:shape shape :thumbnail? thumbnail?}
