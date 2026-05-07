@@ -37,7 +37,7 @@
 
 ;; --- Profile Form
 
-(mf/defc profile-form
+(mf/defc profile-form*
   {::mf/private true}
   []
   (let [profile (mf/deref refs/profile)
@@ -87,7 +87,7 @@
 
 ;; --- Profile Photo Form
 
-(mf/defc profile-photo-form
+(mf/defc profile-photo-form*
   {::mf/private true}
   []
   (let [input-ref  (mf/use-ref nil)
@@ -138,7 +138,7 @@
 
 ;; --- Profile Page
 
-(mf/defc profile-page
+(mf/defc profile-page*
   []
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.profile")))
@@ -146,6 +146,5 @@
   [:div {:class (stl/css :dashboard-settings)}
    [:div {:class (stl/css :form-container)}
     [:h2 (tr "labels.profile")]
-    [:& profile-photo-form]
-    [:& profile-form]]])
-
+    [:> profile-photo-form*]
+    [:> profile-form*]]])

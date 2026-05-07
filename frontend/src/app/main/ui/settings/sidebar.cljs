@@ -58,8 +58,7 @@
       (st/emit! (modal/show {:type :onboarding}))
       (st/emit! (modal/show {:type :release-notes :version version})))))
 
-(mf/defc sidebar-content
-  {::mf/props :obj}
+(mf/defc sidebar-content*
   [{:keys [profile section]}]
   (let [profile?       (= section :settings-profile)
         password?      (= section :settings-password)
@@ -136,12 +135,10 @@
           feedback-icon
           [:span {:class (stl/css :element-title)} (tr "labels.contact-us")]])]]]))
 
-(mf/defc sidebar
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+(mf/defc sidebar*
+  {::mf/wrap [mf/memo]}
   [{:keys [profile section]}]
   [:div {:class (stl/css :dashboard-sidebar :settings)}
-   [:& sidebar-content {:profile profile
-                        :section section}]
+   [:> sidebar-content* {:profile profile
+                         :section section}]
    [:> profile-section* {:profile profile}]])
-
