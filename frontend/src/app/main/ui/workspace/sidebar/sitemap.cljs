@@ -62,8 +62,7 @@
 
 ;; --- Page Item
 
-(mf/defc page-item
-  {::mf/wrap-props false}
+(mf/defc page-item*
   [{:keys [page index deletable? selected? editing? hovering? current-page-id]}]
   (let [input-ref     (mf/use-ref)
         id            (:id page)
@@ -226,18 +225,17 @@
 
 ;; --- Page Item Wrapper
 
-(mf/defc page-item-wrapper
-  {::mf/wrap-props false}
+(mf/defc page-item-wrapper*
   [{:keys [page-id index deletable? selected? editing? current-page-id]}]
   (let [page-ref (mf/with-memo [page-id]
                    (make-page-ref page-id))
         page     (mf/deref page-ref)]
-    [:& page-item {:page page
-                   :index index
-                   :current-page-id current-page-id
-                   :deletable? deletable?
-                   :selected? selected?
-                   :editing? editing?}]))
+    [:> page-item* {:page page
+                    :index index
+                    :current-page-id current-page-id
+                    :deletable? deletable?
+                    :selected? selected?
+                    :editing? editing?}]))
 
 ;; --- Pages List
 
@@ -251,7 +249,7 @@
     [:ul {:class (stl/css :page-list)}
      [:> hooks/sortable-container* {}
       (for [[index page-id] (d/enumerate pages)]
-        [:& page-item-wrapper
+        [:> page-item-wrapper*
          {:page-id page-id
           :index index
           :deletable? deletable?

@@ -37,8 +37,7 @@
              refs/workspace-global
              =))
 
-(mf/defc typography-item
-  {::mf/wrap-props false}
+(mf/defc typography-item*
   [{:keys [typography file-id local? handle-change selected editing-id renaming-id on-asset-click
            on-context-menu selected-full selected-paths move-typography rename?]}]
   (let [item-ref       (mf/use-ref)
@@ -128,8 +127,7 @@
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))
 
-(mf/defc typographies-group
-  {::mf/wrap-props false}
+(mf/defc typographies-group*
   [{:keys [file-id prefix groups open-groups force-open? file local? selected local-data
            editing-id renaming-id on-asset-click handle-change on-rename-group
            on-ungroup on-delete-group on-context-menu selected-full is-read-only]}]
@@ -204,43 +202,43 @@
                   (some? groups))
              [:div  {:class (stl/css :drop-space)}])
            (for [{:keys [id] :as typography} typographies]
-             [:& typography-item {:typography typography
-                                  :key (dm/str "typography-" id)
-                                  :file-id file-id
-                                  :local? local?
-                                  :handle-change handle-change
-                                  :selected selected
-                                  :editing-id editing-id
-                                  :renaming-id renaming-id
-                                  :rename? (= (:rename-typography local-data) id)
-                                  :on-asset-click on-asset-click
-                                  :on-context-menu on-context-menu
-                                  :selected-full selected-full
-                                  :selected-paths selected-paths
-                                  :move-typography move-typography}])])
+             [:> typography-item* {:typography typography
+                                   :key (dm/str "typography-" id)
+                                   :file-id file-id
+                                   :local? local?
+                                   :handle-change handle-change
+                                   :selected selected
+                                   :editing-id editing-id
+                                   :renaming-id renaming-id
+                                   :rename? (= (:rename-typography local-data) id)
+                                   :on-asset-click on-asset-click
+                                   :on-context-menu on-context-menu
+                                   :selected-full selected-full
+                                   :selected-paths selected-paths
+                                   :move-typography move-typography}])])
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)
-            [:& typographies-group {:file-id file-id
-                                    :prefix (cpn/merge-path-item prefix path-item)
-                                    :key (dm/str "group-" path-item)
-                                    :groups content
-                                    :open-groups open-groups
-                                    :force-open? force-open?
-                                    :file file
-                                    :local? local?
-                                    :selected selected
-                                    :editing-id editing-id
-                                    :renaming-id renaming-id
-                                    :local-data local-data
-                                    :on-asset-click on-asset-click
-                                    :handle-change handle-change
-                                    :on-rename-group on-rename-group
-                                    :on-ungroup on-ungroup
-                                    :on-delete-group on-delete-group
-                                    :on-context-menu on-context-menu
-                                    :selected-full selected-full
-                                    :is-read-only is-read-only}]))])]))
+            [:> typographies-group* {:file-id file-id
+                                     :prefix (cpn/merge-path-item prefix path-item)
+                                     :key (dm/str "group-" path-item)
+                                     :groups content
+                                     :open-groups open-groups
+                                     :force-open? force-open?
+                                     :file file
+                                     :local? local?
+                                     :selected selected
+                                     :editing-id editing-id
+                                     :renaming-id renaming-id
+                                     :local-data local-data
+                                     :on-asset-click on-asset-click
+                                     :handle-change handle-change
+                                     :on-rename-group on-rename-group
+                                     :on-ungroup on-ungroup
+                                     :on-delete-group on-delete-group
+                                     :on-context-menu on-context-menu
+                                     :selected-full selected-full
+                                     :is-read-only is-read-only}]))])]))
 
 (mf/defc typographies-section*
   [{:keys [file file-id typographies open-status-ref selected
@@ -432,26 +430,26 @@
                              :icon i/add}])])
 
       [:> cmm/asset-section-block* {:role :content}
-       [:& typographies-group {:file-id file-id
-                               :prefix ""
-                               :groups groups
-                               :open-groups open-groups
-                               :force-open? is-force-open
-                               :state state
-                               :file file
-                               :local? is-local
-                               :selected selected
-                               :editing-id editing-id
-                               :renaming-id renaming-id
-                               :local-data local-data
-                               :on-asset-click on-asset-click
-                               :handle-change handle-change
-                               :on-rename-group on-rename-group
-                               :on-ungroup on-ungroup
-                               :on-delete-group on-delete-group
-                               :on-context-menu on-context-menu
-                               :selected-full selected-full
-                               :is-read-only read-only?}]
+       [:> typographies-group* {:file-id file-id
+                                :prefix ""
+                                :groups groups
+                                :open-groups open-groups
+                                :force-open? is-force-open
+                                :state state
+                                :file file
+                                :local? is-local
+                                :selected selected
+                                :editing-id editing-id
+                                :renaming-id renaming-id
+                                :local-data local-data
+                                :on-asset-click on-asset-click
+                                :handle-change handle-change
+                                :on-rename-group on-rename-group
+                                :on-ungroup on-ungroup
+                                :on-delete-group on-delete-group
+                                :on-context-menu on-context-menu
+                                :selected-full selected-full
+                                :is-read-only read-only?}]
 
        (if is-local
          [:> cmm/assets-context-menu*
