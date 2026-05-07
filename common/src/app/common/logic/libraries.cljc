@@ -118,8 +118,9 @@
 
 (defn- duplicate-component
   "Clone the root shape of the component and all children. Generate new
-  ids from all of them."
-  [component new-component-id library-data force-id delta variant-id]
+  ids from all of them. Optionally set the component-file if the file where the
+  new component will reside is different than the origin one."
+  [component new-component-id new-component-file library-data force-id delta variant-id]
   (let [main-instance-page  (ctf/get-component-page library-data component)
         main-instance-shape (ctf/get-component-root library-data component)
         delta               (or delta (gpt/point (+ (:width main-instance-shape) 50) 0))
@@ -141,9 +142,17 @@
         update-new-shape
         (fn [new-shape _]
           (cond-> new-shape
-            ; Link the new main to the new component
+            ;; Link the new main to the new component, and re-root it
+            ;; to the destination file when duplicating across files.
+            ;; Only the outer main matches `(:id component)`, so
+            ;; nested main-instances are not touched here.
             (= (:component-id new-shape) (:id component))
             (assoc :component-id new-component-id)
+
+            (and (= (:component-id new-shape) (:id component))
+                 (some? new-component-file)
+                 (not= new-component-file (:component-file new-shape)))
+            (assoc :component-file new-component-file)
 
             ; If it is the instance root, add it the variant-id
             (and (ctk/instance-root? new-shape) (some? variant-id))
@@ -188,7 +197,7 @@
 
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
-  [changes library component-id new-component-id & {:keys [new-shape-id apply-changes-local-library? delta new-variant-id page-id]}]
+  [changes library component-id new-component-id & {:keys [new-component-file new-shape-id apply-changes-local-library? delta new-variant-id page-id]}]
   (let [component          (ctkl/get-component (:data library) component-id)
         new-name           (:name component)
 
@@ -197,7 +206,7 @@
         target-page-id     (or page-id (:id main-instance-page))
 
         [new-main-instance-shape new-main-instance-shapes]
-        (duplicate-component component new-component-id (:data library) new-shape-id delta new-variant-id)]
+        (duplicate-component component new-component-id new-component-file (:data library) new-shape-id delta new-variant-id)]
 
     [new-main-instance-shape
      (-> changes
@@ -1831,7 +1840,7 @@
 
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
                 ;; and attrs (bold, font, etc) are in the same attr :content.
-                ;; If only one of them is touched, we want to adress this case and
+                ;; If only one of them is touched, we want to address this case and
                 ;; only update the untouched one
                 text-content-change?
                 (and omit-touched?
@@ -2154,7 +2163,7 @@
 
               ;; On texts, both text (the actual letters)
               ;; and attrs (bold, font, etc) are in the same attr :content.
-              ;; If only one of them is touched, we want to adress this case and
+              ;; If only one of them is touched, we want to address this case and
               ;; only update the untouched one
               text-change?
               (and (not skip-operations?)
@@ -2727,7 +2736,7 @@
             frames)))
 
 (defn- duplicate-variant
-  [changes library component base-pos parent page-id into-new-variant?]
+  [changes library component base-pos parent page-id into-new-variant? new-component-file]
   (let [component-page   (ctpl/get-page (:data library) (:main-instance-page component))
         objects          (:objects component-page)
         component-shape  (get objects (:main-instance-id component))
@@ -2741,7 +2750,8 @@
                                                        {:apply-changes-local-library? true
                                                         :delta delta
                                                         :new-variant-id (if into-new-variant? nil (:id parent))
-                                                        :page-id page-id})
+                                                        :page-id page-id
+                                                        :new-component-file new-component-file})
         value             (when into-new-variant?
                             (str ctv/value-prefix
                                  (-> (cfv/extract-properties-values (:data library) objects (:id parent))
@@ -2764,15 +2774,18 @@
 
 
 (defn generate-duplicate-component-change
-  [changes objects page main parent-id frame-id delta libraries library-data ids-map]
-  (let [main-id      (:id main)
-        component-id (:component-id main)
-        file-id      (:component-file main)
-        component    (ctf/get-component libraries file-id component-id)
-        pos          (as-> (gsh/move main delta) $
-                       (gpt/point (:x $) (:y $)))
+  [changes objects page main parent-id frame-id delta libraries library-data ids-map & {:keys [new-component-file]}]
+  (let [main-id        (:id main)
+        component-id   (:component-id main)
+        ;; Source library file id (where the component was originally
+        ;; defined). Renamed from `file-id` to make the contrast with
+        ;; `new-component-file` explicit when duplicating across files.
+        source-file-id (:component-file main)
+        component      (ctf/get-component libraries source-file-id component-id)
+        pos            (as-> (gsh/move main delta) $
+                         (gpt/point (:x $) (:y $)))
 
-        parent       (get objects parent-id)
+        parent         (get objects parent-id)
 
 
         ;; When we duplicate a variant alone, we will instanciate it
@@ -2799,25 +2812,27 @@
 
           (and (ctk/is-variant? main) in-variant-container?)
           (duplicate-variant changes
-                             (get libraries file-id)
+                             (get libraries source-file-id)
                              component
                              pos
                              parent
                              (:id page)
-                             false)
+                             false
+                             new-component-file)
 
           (ctk/is-variant-container? parent)
           (duplicate-variant changes
-                             (get libraries file-id)
+                             (get libraries source-file-id)
                              component
                              pos
                              parent
                              (:id page)
-                             true)
+                             true
+                             new-component-file)
           :else
           (generate-instantiate-component changes
                                           objects
-                                          file-id
+                                          source-file-id
                                           component-id
                                           pos
                                           page
@@ -2841,7 +2856,7 @@
      changes
 
      (ctf/is-main-of-known-component? obj libraries)
-     (generate-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data ids-map)
+     (generate-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data ids-map {:new-component-file file-id})
 
      :else
      (let [frame?      (cfh/frame-shape? obj)

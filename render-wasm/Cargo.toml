@@ -40,3 +40,4 @@ uuid = { version = "1.11.0", features = ["v4", "js"] }
 opt-level = 3
 lto = "fat"
 strip = true
+codegen-units = 1
