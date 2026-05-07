@@ -488,7 +488,7 @@
                :on-drag-end handle-drag-end})))
 
 (mf/defc resize-track-handler*
-  [{:keys [shape index is-last drop track-before track-after snap-pixel?
+  [{:keys [shape index is-last drop track-before track-after is-snap-pixel
            on-set-modifiers on-clear-modifiers layout-data start-p type zoom]}]
   (let [{:keys [column-total-size column-total-gap row-total-size row-total-gap]} layout-data
 
@@ -499,7 +499,7 @@
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
-        (use-resize-track type shape index track-before track-after zoom snap-pixel? on-set-modifiers on-clear-modifiers)
+        (use-resize-track type shape index track-before track-after zoom is-snap-pixel on-set-modifiers on-clear-modifiers)
 
         [width height]
         (if (= type :column)
@@ -643,13 +643,13 @@
      "Z")))
 
 (mf/defc track-marker*
-  [{:keys [center value zoom shape index type track-before track-after snap-pixel?
+  [{:keys [center value zoom shape index type track-before track-after is-snap-pixel
            on-set-modifiers on-clear-modifiers]}]
   (let [text-x (:x center)
         text-y (:y center)
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
-        (use-resize-track type shape index track-before track-after zoom snap-pixel? on-set-modifiers on-clear-modifiers)]
+        (use-resize-track type shape index track-before track-after zoom is-snap-pixel on-set-modifiers on-clear-modifiers)]
 
     [:g {:on-pointer-down handle-pointer-down
          :on-lost-pointer-capture handle-lost-pointer-capture
@@ -672,7 +672,7 @@
 
 (mf/defc track*
   {::mf/wrap [mf/memo]}
-  [{:keys [shape zoom type index snap-pixel? track-data layout-data is-hovering drop
+  [{:keys [shape zoom type index is-snap-pixel track-data layout-data is-hovering drop
            on-start-reorder-track on-move-reorder-track on-end-reorder-track
            on-set-modifiers on-clear-modifiers]}]
   (let [track-input-ref (mf/use-ref)
@@ -847,7 +847,7 @@
        {:center marker-p
         :index index
         :shape shape
-        :snap-pixel? snap-pixel?
+        :is-snap-pixel is-snap-pixel
         :track-after track-data
         :track-before track-before
         :type type
@@ -860,7 +860,7 @@
       {:index index
        :layout-data layout-data
        :shape shape
-       :snap-pixel? snap-pixel?
+       :is-snap-pixel is-snap-pixel
        :drop drop
        :start-p start-p
        :track-after track-data
@@ -1071,7 +1071,7 @@
                           :type :column
                           :index idx
                           :layout-data layout-data
-                          :snap-pixel? snap-pixel?
+                          :is-snap-pixel snap-pixel?
                           :drop drop
                           :track-data column-data
                           :is-hovering (contains? hover-columns idx)
@@ -1092,7 +1092,7 @@
                [:> track-marker* {:center marker-p
                                    :index (count column-tracks)
                                    :shape shape
-                                   :snap-pixel? snap-pixel?
+                                   :is-snap-pixel snap-pixel?
                                    :track-before (last column-tracks)
                                    :type :column
                                    :value (dm/str (inc (count column-tracks)))
@@ -1107,7 +1107,7 @@
                    :drop drop
                    :shape shape
                    :layout-data layout-data
-                   :snap-pixel? snap-pixel?
+                   :is-snap-pixel snap-pixel?
                    :start-p end-p
                    :type :column
                    :track-before (last column-tracks)
@@ -1122,7 +1122,7 @@
                           :key (dm/str "row-track-" idx)
                           :layout-data layout-data
                           :shape shape
-                          :snap-pixel? snap-pixel?
+                          :is-snap-pixel snap-pixel?
                           :drop drop
                           :track-data row-data
                           :type :row
@@ -1144,7 +1144,7 @@
                 [:> track-marker* {:center marker-p
                                     :index (count row-tracks)
                                     :shape shape
-                                    :snap-pixel? snap-pixel?
+                                    :is-snap-pixel snap-pixel?
                                     :track-before (last row-tracks)
                                     :type :row
                                     :value (dm/str (inc (count row-tracks)))
@@ -1162,7 +1162,7 @@
                    :start-p end-p
                    :type :row
                    :track-before (last row-tracks)
-                   :snap-pixel? snap-pixel?
+                   :is-snap-pixel snap-pixel?
                    :zoom zoom
                    :on-set-modifiers handle-set-modifiers
                    :on-clear-modifiers handle-clear-modifiers}])]))])])))
