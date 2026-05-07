@@ -42,20 +42,15 @@
     (db/tx-run! cfg process-token params claims)))
 
 (defmethod process-token :change-email
-  [{:keys [::db/conn] :as cfg} _params {:keys [profile-id email] :as claims}]
-  (let [email (profile/clean-email email)]
-    (when (profile/get-profile-by-email conn email)
-      (ex/raise :type :validation
-                :code :email-already-exists))
-
-    (db/update! conn :profile
-                {:email email}
-                {:id profile-id})
-
-    (rph/with-meta claims
-      {::audit/name "update-profile-email"
-       ::audit/props {:email email}
-       ::audit/profile-id profile-id})))
+  [_cfg _params _claims]
+  ;; Belt-and-suspenders for the unconditional disable in
+  ;; rpc/commands/profile.clj. Even if a valid :change-email token already
+  ;; exists (minted via a previous deploy or a fork), the redeem path must
+  ;; refuse it — otherwise the same divergence vector is reachable here.
+  ;; The email is owned by the upstream IdP (Cognito via oauth2-proxy).
+  (ex/raise :type :restriction
+            :code :email-managed-by-external-idp
+            :hint "email is managed by the upstream identity provider and cannot be changed in Penpot"))
 
 (defmethod process-token :verify-email
   [{:keys [::db/conn] :as cfg} _ {:keys [profile-id] :as claims}]

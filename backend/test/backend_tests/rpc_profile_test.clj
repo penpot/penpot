@@ -692,60 +692,50 @@
       (t/is (= :validation (:type edata)))
       (t/is (= :email-as-password (:code edata))))))
 
-(t/deftest email-change-request
+(t/deftest email-change-request-is-disabled
+  ;; This Penpot fork runs exclusively behind oauth2-proxy / Cognito. The
+  ;; RPC is unconditionally refused — the email is owned by the upstream
+  ;; IdP and a local change would either lock the user out or pre-stage a
+  ;; profile takeover (see rpc/commands/profile.clj for the full rationale).
+  ;; Asserts the rejection AND that the profile row is not mutated, so a
+  ;; future regression that performs a partial DB write is caught.
   (with-mocks [mock {:target 'app.email/send! :return nil}]
     (let [profile (th/create-profile* 1)
-          pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
                    ::rpc/profile-id (:id profile)
-                   :email "user1@example.com"}]
+                   :email "attacker-target@example.com"}
+          out     (th/command! data)]
 
-      ;; without complaints
-      (let [out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:result out)))
-        (let [mock @mock]
-          (t/is (= 1 (:call-count mock)))
-          (t/is (true? (:called? mock)))))
-
-      ;; with complaints
-      (th/create-global-complaint-for pool {:type :complaint :email (:email data)})
-      (let [out   (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:result out)))
-
-        (let [edata (-> out :error ex-data)]
-          (t/is (= :restriction (:type edata)))
-          (t/is (= :email-has-complaints (:code edata))))
-
-        (t/is (= 1 (:call-count @mock))))
-
-      ;; with bounces
-      (th/create-global-complaint-for pool {:type :bounce :email (:email data)})
-      (let [out   (th/command! data)]
-        ;; (th/print-result! out)
-
-        (let [edata (-> out :error ex-data)]
-          (t/is (= :restriction (:type edata)))
-          (t/is (= :email-has-permanent-bounces (:code edata))))
-
-        (t/is (= 1 (:call-count @mock)))))))
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :restriction (:type edata)))
+        (t/is (= :email-managed-by-external-idp (:code edata))))
+      (t/is (false? (:called? @mock)))
+      (let [pool (:app.db/pool th/*system*)
+            row  (db/get-by-id pool :profile (:id profile))]
+        (t/is (= (:email profile) (:email row)))))))
 
 
-(t/deftest email-change-request-without-smtp
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
-    (with-redefs [app.config/flags #{}]
-      (let [profile (th/create-profile* 1)
-            pool    (:app.db/pool th/*system*)
-            data    {::th/type :request-email-change
-                     ::rpc/profile-id (:id profile)
-                     :email "user1@example.com"}
-            out     (th/command! data)]
+(t/deftest email-change-token-is-rejected
+  ;; Belt-and-suspenders for the request-side disable: a valid :change-email
+  ;; token (e.g. minted by a previous deploy or fork) must not redeem here
+  ;; either, or the same takeover vector is reachable via verify-token.
+  (let [profile (th/create-profile* 1)
+        token   (tokens/generate th/*system*
+                                 {:iss :change-email
+                                  :exp (ct/in-future "15m")
+                                  :profile-id (:id profile)
+                                  :email "attacker-target@example.com"})
+        data    {::th/type :verify-token :token token}
+        out     (th/command! data)]
 
-        ;; (th/print-result! out)
-        (t/is (false? (:called? @mock)))
-        (let [res (:result out)]
-          (t/is (= {:changed true} res)))))))
+    (t/is (not (th/success? out)))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :restriction (:type edata)))
+      (t/is (= :email-managed-by-external-idp (:code edata))))
+    (let [pool (:app.db/pool th/*system*)
+          row  (db/get-by-id pool :profile (:id profile))]
+      (t/is (= (:email profile) (:email row))))))
 
 
 (t/deftest request-profile-recovery

@@ -314,9 +314,16 @@
     (sto/put-object! storage params)))
 
 ;; --- MUTATION: Request Email Change
-
-(declare ^:private request-email-change!)
-(declare ^:private change-email-immediately!)
+;;
+;; Disabled in this Penpot fork. The deployment runs exclusively behind
+;; oauth2-proxy / Cognito (SSO); the user's email is the identity asserted by
+;; the upstream IdP via X-Auth-Request-Email and is also the lookup key in
+;; auth_request.clj. A local email change would diverge from the IdP value
+;; and either lock the user out of their own workspace or pre-stage a
+;; profile that hijacks the next victim's first sign-in.
+;;
+;; The complementary refusal lives in rpc/commands/verify_token.clj
+;; (process-token :change-email) so any pre-existing token cannot be redeemed.
 
 (def ^:private
   schema:request-email-change
@@ -326,81 +333,10 @@
 (sv/defmethod ::request-email-change
   {::doc/added "1.0"
    ::sm/params schema:request-email-change}
-  [cfg {:keys [::rpc/profile-id email] :as params}]
-  (db/tx-run! cfg
-              (fn [cfg]
-                (let [profile (db/get-by-id cfg :profile profile-id)
-                      params  (assoc params
-                                     :profile profile
-                                     :email (clean-email email))]
-                  (if (contains? cf/flags :smtp)
-                    (request-email-change! cfg params)
-                    (change-email-immediately! cfg params))))))
-
-(defn- change-email-immediately!
-  [{:keys [::db/conn]} {:keys [profile email] :as params}]
-  (when (not= email (:email profile))
-    (check-profile-existence! conn params))
-
-  (db/update! conn :profile
-              {:email email}
-              {:id (:id profile)})
-
-  {:changed true})
-
-(defn- request-email-change!
-  [{:keys [::db/conn] :as cfg} {:keys [profile email] :as params}]
-  (let [token   (tokens/generate cfg
-                                 {:iss :change-email
-                                  :exp (ct/in-future "15m")
-                                  :profile-id (:id profile)
-                                  :email email})
-        ptoken  (tokens/generate cfg
-                                 {:iss :profile-identity
-                                  :profile-id (:id profile)
-                                  :exp (ct/in-future {:days 30})})]
-
-    (when (not= email (:email profile))
-      (check-profile-existence! conn params))
-
-    (when-not (eml/allow-send-emails? conn profile)
-      (ex/raise :type :validation
-                :code :profile-is-muted
-                :hint "looks like the profile has reported repeatedly as spam or has permanent bounces."))
-
-    (when (eml/has-bounce-reports? conn email)
-      (ex/raise :type :restriction
-                :code :email-has-permanent-bounces
-                :email email
-                :hint "looks like the email has bounce reports"))
-
-    (when (eml/has-complaint-reports? conn email)
-      (ex/raise :type :restriction
-                :code :email-has-complaints
-                :email email
-                :hint "looks like the email has spam complaint reports"))
-
-    (when (eml/has-bounce-reports? conn (:email profile))
-      (ex/raise :type :restriction
-                :code :email-has-permanent-bounces
-                :email (:email profile)
-                :hint "looks like the email has bounce reports"))
-
-    (when (eml/has-complaint-reports? conn (:email profile))
-      (ex/raise :type :restriction
-                :code :email-has-complaints
-                :email (:email profile)
-                :hint "looks like the email has spam complaint reports"))
-
-    (eml/send! {::eml/conn conn
-                ::eml/factory eml/change-email
-                :public-uri (cf/get :public-uri)
-                :to (:email profile)
-                :name (:fullname profile)
-                :pending-email email
-                :token token
-                :extra-data ptoken})
-    nil))
+  [_cfg _params]
+  (ex/raise :type :restriction
+            :code :email-managed-by-external-idp
+            :hint "email is managed by the upstream identity provider and cannot be changed in Penpot"))
 
 ;; --- MUTATION: Update Profile Props
 

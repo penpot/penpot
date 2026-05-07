@@ -44,10 +44,6 @@
         form    (fm/use-form :schema schema:profile-form
                              :initial profile)
 
-        on-show-change-email
-        (mf/use-fn
-         #(modal/show! :change-email {}))
-
         on-show-delete-account
         (mf/use-fn
          #(modal/show! :delete-account {}))]
@@ -61,18 +57,16 @@
         :name :fullname
         :label (tr "dashboard.your-name")}]]
 
-     [:div {:class (stl/css :fields-row)
-            :on-click on-show-change-email}
+     ;; Email is owned by the upstream IdP (oauth2-proxy / Cognito) — this
+     ;; fork has no scenario where it can be edited locally. Backend
+     ;; refuses :request-email-change unconditionally
+     ;; (rpc/commands/profile.clj + verify_token.clj). Render read-only.
+     [:div {:class (stl/css :fields-row)}
       [:& fm/input
        {:type "email"
         :name :email
         :disabled true
-        :label (tr "dashboard.your-email")}]
-
-      [:div {:class (stl/css :options)}
-       [:div.change-email
-        [:a {:on-click on-show-change-email}
-         (tr "dashboard.change-email")]]]]
+        :label (tr "dashboard.your-email")}]]
 
      [:> fm/submit-button*
       {:label (tr "dashboard.save-settings")
