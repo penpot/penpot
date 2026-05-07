@@ -2375,9 +2375,7 @@ Will return a value that matches this schema:
            (migrate-to-v1-2)
            (migrate-to-v1-3)
            (migrate-to-v1-4)
-           (map->tokens-lib)
-           (fix-conflicting-token-names)
-           (fix-missing-sets-in-themes)))))
+           (map->tokens-lib)))))
 
 #?(:clj
    (defn- read-tokens-lib-v1-2
@@ -2392,9 +2390,7 @@ Will return a value that matches this schema:
             :active-themes active-themes}
            (migrate-to-v1-3)
            (migrate-to-v1-4)
-           (map->tokens-lib)
-           (fix-conflicting-token-names)
-           (fix-missing-sets-in-themes)))))
+           (map->tokens-lib)))))
 
 #?(:clj
    (defn- read-tokens-lib-v1-3
@@ -2409,24 +2405,7 @@ Will return a value that matches this schema:
             :themes themes
             :active-themes active-themes}
            (migrate-to-v1-4)
-           (map->tokens-lib)
-           (fix-conflicting-token-names)
-           (fix-missing-sets-in-themes)))))
-
-#?(:clj
-   (defn- read-tokens-lib-v1-4
-     "Reads the tokens lib data structure and fix conflicting token names."
-     [r]
-     (let [sets          (fres/read-object! r)
-           themes        (fres/read-object! r)
-           active-themes (fres/read-object! r)]
-
-       (-> {:sets sets
-            :themes themes
-            :active-themes active-themes}
-           (map->tokens-lib)
-           (fix-conflicting-token-names)
-           (fix-missing-sets-in-themes)))))
+           (map->tokens-lib)))))
 
 #?(:clj
    (defn- write-tokens-lib
@@ -2487,11 +2466,8 @@ Will return a value that matches this schema:
     {:name "penpot/tokens-lib/v1.3"
      :rfn read-tokens-lib-v1-3}
 
-    {:name "penpot/tokens-lib/v1.4"
-     :rfn read-tokens-lib-v1-4}
-
     ;; CURRENT TOKENS LIB READER & WRITTER
-    {:name "penpot/tokens-lib/v1.5"
+    {:name "penpot/tokens-lib/v1.4"
      :class TokensLib
      :wfn write-tokens-lib
      :rfn read-tokens-lib}))
