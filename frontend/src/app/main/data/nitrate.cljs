@@ -204,7 +204,7 @@
                                                  {:info-message-key "dashboard.select-org-modal.permission-info"})]
                              (modal/show :select-organization-modal
                                          (merge {:organizations           orgs
-                                                 :current-organization-id (:organization-id team)
+                                                 :current-organization-id (dm/get-in team [:organization :id])
                                                  :on-confirm              on-confirm
                                                  :title-key               "dashboard.select-org-modal.title"
                                                  :choose-key              "dashboard.select-org-modal.choose"
@@ -226,7 +226,7 @@
              (rx/mapcat
               (fn [teams]
                 (let [all-orgs (map dt/team->organization
-                                    (filter #(and (:is-default %) (:organization-id %)) teams))
+                                    (filter #(and (:is-default %) (:organization %)) teams))
                       orgs     (filter (fn [org]
                                          (let [perm    (get-in org [:permissions :create-teams])
                                                is-own? (= profile-id (:owner-id org))]
@@ -243,7 +243,7 @@
                                                  {:info-message-key "dashboard.select-org-modal.permission-info"})]
                              (modal/show :select-organization-modal
                                          (merge {:organizations           orgs
-                                                 :current-organization-id (:organization-id team)
+                                                 :current-organization-id (dm/get-in team [:organization :id])
                                                  :on-confirm              on-confirm
                                                  :title-key               "dashboard.change-org-modal.title"
                                                  :choose-key              "dashboard.change-org-modal.choose"

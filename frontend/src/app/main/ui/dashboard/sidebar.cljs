@@ -470,7 +470,7 @@
 
               :not-allowed
               (rx/of (modal/show :no-permission-modal {:type :delete-team
-                                                       :organization-name (:organization-name team)}))
+                                                       :organization-name (dm/get-in team [:organization :name])}))
 
               (rx/throw error))))
 
@@ -581,7 +581,8 @@
 
      (let [is-owner?    (get-in team [:permissions :is-owner])
            is-admin?    (get-in team [:permissions :is-admin])
-           is-org-team? (some? (:organization-id team))
+           organization (:organization team)
+           is-org-team? (some? organization)
            in-org?      (and (contains? cf/flags :nitrate) is-org-team?)
            show-delete? (if in-org?
                           (or is-owner? is-admin?)
@@ -825,10 +826,11 @@
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
   (let [nitrate?     (contains? cf/flags :nitrate)
-        organization-id (when nitrate? (:organization-id team))
+        org          (:organization team)
+        organization-id (when nitrate? (:id org))
         teams (cond->> (mf/deref refs/teams)
                 nitrate?
-                (filter #(= (-> % val :organization-id) organization-id))
+                (filter #(= (dm/get-in (val %) [:organization :id]) organization-id))
                 nitrate?
                 (into {}))
 
