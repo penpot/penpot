@@ -51,10 +51,10 @@
         ;; on the very next request. The backend rejects the change at the
         ;; RPC layer (rpc/commands/profile.clj + verify_token.clj) — this
         ;; is just the UX guard so the user doesn't see a button that
-        ;; would only fail. cf/mpass-signout-url is set by the runtime
-        ;; config injection in nginx-entrypoint.sh from MPASS_SIGNOUT_URL
-        ;; and is non-nil exactly when the deployment is in SSO mode.
-        sso-mode? (some? cf/mpass-signout-url)
+        ;; would only fail. cf/flags is hydrated by nginx-entrypoint.sh
+        ;; from PENPOT_FLAGS, the same env that flips the backend gate, so
+        ;; UI and backend stay aligned even if MPASS_SIGNOUT_URL is unset.
+        sso-mode? (contains? cf/flags :x-auth-request-headers)
 
         on-show-change-email
         (mf/use-fn

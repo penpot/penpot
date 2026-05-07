@@ -748,6 +748,56 @@
           (t/is (= {:changed true} res)))))))
 
 
+(t/deftest email-change-request-blocked-when-x-auth-request-headers-enabled
+  ;; Regression: in SSO mode (oauth2-proxy / Cognito) the email is owned by
+  ;; the upstream IdP. The RPC must refuse the change before any token is
+  ;; generated or any DB write happens — otherwise the local profile email
+  ;; diverges from X-Auth-Request-Email and the auth_request middleware
+  ;; resolves the next request to a different (or new) profile.
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (with-redefs [app.config/flags #{:x-auth-request-headers}]
+      (let [profile (th/create-profile* 1)
+            data    {::th/type :request-email-change
+                     ::rpc/profile-id (:id profile)
+                     :email "attacker-target@example.com"}
+            out     (th/command! data)]
+
+        (t/is (not (th/success? out)))
+        (let [edata (-> out :error ex-data)]
+          (t/is (= :restriction (:type edata)))
+          (t/is (= :email-managed-by-external-idp (:code edata))))
+        ;; No email sent, no fallthrough into change-email-immediately!
+        (t/is (false? (:called? @mock)))
+        ;; Profile email must remain unchanged.
+        (let [pool (:app.db/pool th/*system*)
+              row  (db/get-by-id pool :profile (:id profile))]
+          (t/is (= (:email profile) (:email row))))))))
+
+
+(t/deftest email-change-token-blocked-when-x-auth-request-headers-enabled
+  ;; Regression: belt-and-suspenders companion to the request-side gate.
+  ;; A :change-email token minted before the flag was flipped (e.g. issued
+  ;; under SMTP mode then SSO enabled) must not redeem under SSO either,
+  ;; or the same divergence vector is reachable via the verify-token RPC.
+  (let [profile (th/create-profile* 1)
+        token   (tokens/generate th/*system*
+                                 {:iss :change-email
+                                  :exp (ct/in-future "15m")
+                                  :profile-id (:id profile)
+                                  :email "attacker-target@example.com"})]
+    (with-redefs [app.config/flags #{:x-auth-request-headers}]
+      (let [data {::th/type :verify-token :token token}
+            out  (th/command! data)]
+
+        (t/is (not (th/success? out)))
+        (let [edata (-> out :error ex-data)]
+          (t/is (= :restriction (:type edata)))
+          (t/is (= :email-managed-by-external-idp (:code edata))))
+        (let [pool (:app.db/pool th/*system*)
+              row  (db/get-by-id pool :profile (:id profile))]
+          (t/is (= (:email profile) (:email row))))))))
+
+
 (t/deftest request-profile-recovery
   (with-mocks [mock {:target 'app.email/send! :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active false})
