@@ -21,9 +21,8 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc left-sidebar
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc left-sidebar*
+  {::mf/private true}
   []
   [:div {:class (stl/css :modal-left)}
    [:h2 {:class (stl/css :modal-subtitle)}
@@ -64,9 +63,8 @@
    [:role :keyword]
    [:emails {:optional true} [::sm/set ::sm/email]]])
 
-(mf/defc team-form
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc team-form*
+  {::mf/private true}
   [{:keys [go-to-team]}]
   (let [initial (mf/with-memo []
                   {:role "editor"})
@@ -230,8 +228,7 @@
                   :on-click on-skip}
          (tr "onboarding.choice.team-up.continue-without-a-team")]]]]]))
 
-(mf/defc onboarding-team-modal
-  {::mf/props :obj}
+(mf/defc onboarding-team-modal*
   [{:keys [go-to-team]}]
 
   [:div {:class (stl/css-case
@@ -241,7 +238,7 @@
     [:h1 {:class (stl/css :modal-title)}
      (tr "onboarding-v2.welcome.title")]
     [:div {:class (stl/css :modal-sections)}
-     [:& left-sidebar]
+     [:> left-sidebar*]
      [:div {:class (stl/css :separator)}]
-     [:& team-form {:go-to-team go-to-team}]]]])
+     [:> team-form* {:go-to-team go-to-team}]]]])
 
