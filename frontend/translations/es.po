@@ -9128,3 +9128,6 @@ msgstr "No tienes permiso para añadir equipos a ninguna de tus organizaciones."
 
 msgid "dashboard.select-org-modal.permission-info"
 msgstr "Aquí encontrarás todas las organizaciones en las que tienes permiso para crear o añadir equipos."
+
+msgid "dashboard.no-permission-delete-team.message"
+msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario."
