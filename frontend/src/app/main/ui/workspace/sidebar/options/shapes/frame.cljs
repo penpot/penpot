@@ -113,7 +113,7 @@
      (when is-variant?
        [:> component-variant-main* {:shapes shapes}])
 
-     [:& layout-container-menu
+     [:> layout-container-menu
       {:type shape-type
        :ids ids
        :applied-tokens applied-tokens
@@ -121,12 +121,12 @@
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-       [:& grid-cell/options
+       [:> grid-cell/options
         {:shape (first parents)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
      (when (or is-layout-child? is-layout-container?)
-       [:& layout-item-menu
+       [:> layout-item-menu
         {:ids ids
          :type shape-type
          :values layout-item-values

@@ -94,7 +94,7 @@
                          :values measure-values
                          :shapes shapes}]
 
-     [:& layout-container-menu
+     [:> layout-container-menu
       {:type type
        :ids [(:id shape)]
        :values layout-container-values
@@ -102,12 +102,12 @@
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-       [:& grid-cell/options
+       [:> grid-cell/options
         {:shape (first parents)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
      (when is-layout-child?
-       [:& layout-item-menu
+       [:> layout-item-menu
         {:ids ids
          :type type
          :values layout-item-values
