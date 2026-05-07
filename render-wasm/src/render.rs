@@ -394,6 +394,12 @@ pub struct InteractiveDragCrop {
     /// True if the captured crop bounds were fully inside the viewport at capture time.
     /// Used to avoid serving partial/offscreen crops during interactive drag.
     pub fits_viewport_at_capture: bool,
+    /// Viewbox origin (doc-space) at capture time.
+    pub capture_vb_left: f32,
+    pub capture_vb_top: f32,
+    /// Backbuffer pixel origin used for `snapshot_rect` (so we can do 1:1 blits).
+    pub capture_src_left: i32,
+    pub capture_src_top: i32,
     pub image: skia::Image,
 }
 
@@ -1728,6 +1734,10 @@ impl RenderState {
                     src_doc_bounds,
                     src_selrect: selrect,
                     fits_viewport_at_capture,
+                    capture_vb_left: vb_left,
+                    capture_vb_top: vb_top,
+                    capture_src_left: src_irect.left,
+                    capture_src_top: src_irect.top,
                     image,
                 },
             );
@@ -3012,7 +3022,6 @@ impl RenderState {
                     if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
                         let crop_image = &crop.image;
                         let crop_src_selrect = crop.src_selrect;
-                        let crop_src_doc_bounds = crop.src_doc_bounds;
 
                         let cur_selrect = tree.get(&node_id).map(|s| s.selrect());
                         let (dx, dy) = match cur_selrect {
@@ -3022,23 +3031,10 @@ impl RenderState {
                             ),
                             None => (0.0, 0.0),
                         };
-
-                        let dst_doc_rect = Rect::new(
-                            crop_src_doc_bounds.left + dx,
-                            crop_src_doc_bounds.top + dy,
-                            crop_src_doc_bounds.right + dx,
-                            crop_src_doc_bounds.bottom + dy,
-                        );
                         let scale = self.get_scale();
                         let translation = self
                             .surfaces
                             .get_render_context_translation(self.render_area, scale);
-                        let dst_tile_rect = skia::Rect::from_xywh(
-                            (dst_doc_rect.left + translation.0) * scale,
-                            (dst_doc_rect.top + translation.1) * scale,
-                            dst_doc_rect.width() * scale,
-                            dst_doc_rect.height() * scale,
-                        );
 
                         let canvas = self.surfaces.canvas(target_surface);
                         canvas.save();
@@ -3058,12 +3054,14 @@ impl RenderState {
                                 canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
                             }
                         }
-                        canvas.draw_image_rect(
-                            crop_image,
-                            None,
-                            dst_tile_rect,
-                            &skia::Paint::default(),
-                        );
+                        let doc_left =
+                            crop.capture_vb_left + (crop.capture_src_left as f32 / scale) + dx;
+                        let doc_top =
+                            crop.capture_vb_top + (crop.capture_src_top as f32 / scale) + dy;
+
+                        let x = (doc_left + translation.0) * scale;
+                        let y = (doc_top + translation.1) * scale;
+                        canvas.draw_image(crop_image, (x, y), Some(&skia::Paint::default()));
 
                         canvas.restore();
                     }
