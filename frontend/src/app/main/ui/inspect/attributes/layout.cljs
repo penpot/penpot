@@ -34,7 +34,7 @@
    :padding-block-start
    :padding-block-end])
 
-(mf/defc layout-block
+(mf/defc layout-block*
   [{:keys [objects shape]}]
   (for [property properties]
     (when-let [value (css/get-css-value objects shape property)]
@@ -49,7 +49,7 @@
           [:> copy-button* {:data (css/get-css-property objects shape property)}
            [:div {:class (stl/css :button-children)} value]]]]))))
 
-(mf/defc layout-panel
+(mf/defc layout-panel*
   [{:keys [objects shapes]}]
   (let [shapes (->> shapes (filter ctl/any-layout?))]
 
@@ -65,6 +65,8 @@
                             :class (stl/css :copy-btn-title)}])]
 
        (for [shape shapes]
-         [:& layout-block {:shape shape
-                           :objects objects
-                           :key (:id shape)}])])))
+         [:> layout-block* {:shape shape
+                            :objects objects
+                            :key (:id shape)}])])))
+
+(def layout-panel layout-panel*)

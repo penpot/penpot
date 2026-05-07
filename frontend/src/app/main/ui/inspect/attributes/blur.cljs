@@ -22,7 +22,7 @@
     :backdrop-filter
     :filter))
 
-(mf/defc blur-panel
+(mf/defc blur-panel*
   [{:keys [objects shapes]}]
   (let [shapes (->> shapes (filter has-blur?))]
     (when (seq shapes)
@@ -47,3 +47,5 @@
               [:> copy-button* {:data (css/get-css-property objects shape prop)}
                [:div {:class (stl/css :button-children)}
                 (css/get-css-value objects shape prop)]]]]))]])))
+
+(def blur-panel blur-panel*)

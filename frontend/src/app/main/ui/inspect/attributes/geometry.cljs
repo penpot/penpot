@@ -24,7 +24,7 @@
    :border-radius
    :transform])
 
-(mf/defc geometry-block
+(mf/defc geometry-block*
   [{:keys [objects shape]}]
   [:*
    (for [[idx property] (d/enumerate properties)]
@@ -39,7 +39,7 @@
             [:div {:class (stl/css :button-children)} value]]]])))])
 
 
-(mf/defc geometry-panel
+(mf/defc geometry-panel*
   [{:keys [objects shapes]}]
   [:div {:class (stl/css :attributes-block)}
    [:> inspect-title-bar*
@@ -52,6 +52,8 @@
                         :class (stl/css :copy-btn-title)}])]
 
    (for [shape shapes]
-     [:& geometry-block {:shape shape
-                         :objects objects
-                         :key (:id shape)}])])
+     [:> geometry-block* {:shape shape
+                          :objects objects
+                          :key (:id shape)}])])
+
+(def geometry-panel geometry-panel*)
