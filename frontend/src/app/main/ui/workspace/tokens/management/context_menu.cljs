@@ -338,7 +338,7 @@
         on-copy-name #(clipboard/to-clipboard (:name token))
         on-duplicate-token #(st/emit! (dwtl/duplicate-token (:id token)))]
     [{:title (tr "workspace.tokens.edit")
-      :no-selectable true
+      :no-selectable? true
       :action (fn [event]
                 (let [{:keys [key fields]} modal]
                   (dom/stop-propagation event)
@@ -351,13 +351,13 @@
                                              :selected-token-set-id selected-token-set-id
                                              :token token}))))}
      {:title (tr "workspace.tokens.duplicate")
-      :no-selectable true
+      :no-selectable? true
       :action on-duplicate-token}
      {:title (tr "workspace.tokens.copy-name")
-      :no-selectable true
+      :no-selectable? true
       :action on-copy-name}
      {:title (tr "workspace.tokens.delete")
-      :no-selectable true
+      :no-selectable? true
       :action #(on-delete-token token)}]))
 
 (defn- allowed-shape-attributes [shapes]
@@ -390,7 +390,7 @@
   (dom/stop-propagation event))
 
 (mf/defc menu-entry*
-  [{:keys [title value hint on-click selected? children submenu-offset no-selectable]}]
+  [{:keys [title value hint on-click selected? children submenu-offset no-selectable?]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
         parent-menu-dom-element-pos* (mf/use-state nil)
@@ -426,8 +426,8 @@
 
     [:li {:class (stl/css-case
                   :context-menu-item true
-                  :context-menu-item-selected (and (not no-selectable) selected?)
-                  :context-menu-item-unselected (and (not no-selectable) (not selected?))
+                  :context-menu-item-selected (and (not no-selectable?) selected?)
+                  :context-menu-item-unselected (and (not no-selectable?) (not selected?))
                   :context-menu-item-hint-wrapper hint?)
           :ref get-parent-menu-entry-position
           :data-value value
@@ -436,7 +436,7 @@
           :on-pointer-leave on-pointer-leave}
      (when hint
        [:span {:class (stl/css :context-menu-item-hint)} hint])
-     (when (not no-selectable)
+     (when (not no-selectable?)
        [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon-wrapper)}])
      [:span {:class (stl/css :item-text)}
       title]
@@ -466,20 +466,20 @@
                     (selection-actions context-data))
                   (default-actions context-data))
         entries (clean-separators entries)]
-    (for [[index {:keys [title action selected? hint submenu no-selectable] :as entry}] (d/enumerate entries)]
+    (for [[index {:keys [title action selected? hint submenu no-selectable?] :as entry}] (d/enumerate entries)]
       [:* {:key (dm/str title " " index)}
        (cond
          (= :separator entry) [:li {:class (stl/css :separator)}]
          submenu [:> menu-entry* {:title title
                                   :hint hint
-                                  :no-selectable true
+                                  :no-selectable? true
                                   :submenu-offset submenu-offset}
                   [:& menu-tree (assoc context-data :type submenu)]]
          :else [:> menu-entry*
                 {:title title
                  :on-click action
                  :hint hint
-                 :no-selectable no-selectable
+                 :no-selectable? no-selectable?
                  :selected? selected?}])])))
 
 (mf/defc token-context-menu-tree

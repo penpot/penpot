@@ -717,9 +717,10 @@
   [sets active-set-names]
   (filter #(contains? active-set-names (:set %)) sets))
 
-(mf/defc colorpicker-modal*
+(mf/defc colorpicker-modal
   {::mf/register modal/components
-   ::mf/register-as :colorpicker}
+   ::mf/register-as :colorpicker
+   ::mf/props :obj}
   [{:keys [x y data position
            disable-gradient
            disable-opacity
