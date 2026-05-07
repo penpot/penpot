@@ -49,6 +49,28 @@ export class PenpotMcpServer {
      */
     private static readonly SESSION_TIMEOUT_MINUTES = 60;
 
+    /**
+     * Returns a short, non-reversible fingerprint of a user token, suitable for
+     * correlating log lines without exposing the full credential.
+     *
+     * Penpot tokens are JWEs in compact serialization (RFC 7516 §7.1) with five
+     * dot-separated segments; we use the first 8 chars of the wrapped CEK
+     * (segment 1) as a stable per-token identifier. For malformed tokens (e.g.
+     * test stubs that aren't real JWEs), we fall back to the first 8 chars of
+     * the raw token.
+     *
+     * @param token - the token to fingerprint, or `undefined`
+     * @returns a short fingerprint, or `<none>` if no token was given
+     */
+    private static tokenFingerprint(token: string | undefined): string {
+        if (!token) {
+            return "<none>";
+        }
+        const segments = token.split(".");
+        const source = segments.length === 5 ? segments[1] : token;
+        return source.slice(0, 8);
+    }
+
     private readonly logger = createLogger("PenpotMcpServer");
     private readonly tools: ToolInfo[];
     public readonly configLoader: ConfigurationLoader;
@@ -222,12 +244,14 @@ export class PenpotMcpServer {
                 userToken = session.userToken;
                 session.lastActiveTime = Date.now();
                 this.logger.info(
-                    `Received request for existing session with id=${sessionId}; userToken=${session.userToken}`
+                    `Received request for existing session with id=${sessionId}; userTokenFp=${PenpotMcpServer.tokenFingerprint(session.userToken)}`
                 );
             } else {
                 // new session: create a fresh McpServer and transport
                 userToken = req.query.userToken as string | undefined;
-                this.logger.info(`Received new session request; userToken=${userToken}`);
+                this.logger.info(
+                    `Received new session request; userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}`
+                );
                 const { randomUUID } = await import("node:crypto");
                 const server = this.createMcpServer();
                 transport = new StreamableHTTPServerTransport({
@@ -235,13 +259,15 @@ export class PenpotMcpServer {
                     onsessioninitialized: (id) => {
                         this.streamableTransports[id] = new StreamableSession(transport, userToken, Date.now());
                         this.logger.info(
-                            `Session initialized with id=${id} for userToken=${userToken}; total sessions: ${Object.keys(this.streamableTransports).length}`
+                            `Session initialized with id=${id} for userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}; total sessions: ${Object.keys(this.streamableTransports).length}`
                         );
                     },
                 });
                 transport.onclose = () => {
                     if (transport.sessionId) {
-                        this.logger.info(`Closing session with id=${transport.sessionId} for userToken=${userToken}`);
+                        this.logger.info(
+                            `Closing session with id=${transport.sessionId} for userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}`
+                        );
                         delete this.streamableTransports[transport.sessionId];
                     }
                 };
