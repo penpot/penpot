@@ -147,9 +147,10 @@
    [:emails [::sm/set {:min 1} ::sm/email]]
    [:team-id ::sm/uuid]])
 
-(mf/defc invite-members-modal*
+(mf/defc invite-members-modal
   {::mf/register modal/components
-   ::mf/register-as :invite-members}
+   ::mf/register-as :invite-members
+   ::mf/props :obj}
   [{:keys [team origin invite-email]}]
   (let [members     (get team :members)
         perms       (get team :permissions)
@@ -1546,4 +1547,3 @@
 
        (when (contains? cfg/flags :subscriptions)
          [:> team* {:is-owner (:is-owner permissions) :team team}])]]]))
-
