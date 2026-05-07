@@ -237,7 +237,7 @@
        (.postMessage (.-port2 ch) nil)))))
 
 ;; Based on app.main.render/object-svg
-(mf/defc object-svg
+(mf/defc object-svg*
   {::mf/props :obj}
   [{:keys [shape] :as props}]
   (let [objects (mf/deref refs/workspace-page-objects)
@@ -261,7 +261,7 @@
 (defn get-static-markup
   [shape]
   (->
-   (mf/element object-svg #js {:shape shape})
+   (mf/element object-svg* #js {:shape shape})
    (rds/renderToStaticMarkup)))
 
 ;; forward declare helpers so render can call them
