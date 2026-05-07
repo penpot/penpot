@@ -415,6 +415,12 @@ In a high-availability (HA) scenario, managing the state outside of replicas is 
 - Valkey: Penpot only needs one Valkey instance to function correctly. Due to the nature of the data it manages, replication isn't even essential.
 - User media storage: This should not be configured with local storage but rather with centralized storage, such as Kubernetes PVC or S3.
 
+
+__Since version 2.15.0__
+
+Starting with version 2.15, we have introduced the MCP server. Due to architectural constraints, using the MCP server requires running only a single instance of Penpot.
+If the MCP server is not installed, then Penpot can scale normally and multiple application instances may be deployed without restrictions.
+
 ## Backend
 
 This section enumerates the backend only configuration variables.
