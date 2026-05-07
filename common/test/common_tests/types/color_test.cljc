@@ -164,3 +164,78 @@
                   {:color "#ffffff" :opacity 1.0 :offset 0.5}]
           result (colors/interpolate-gradient stops 1.0)]
       (t/is (= "#ffffff" (:color result))))))
+
+(t/deftest rgb-to-hsb
+  ;; Achromatic black: brightness 0
+  (let [[h s b] (colors/rgb->hsb [0 0 0])]
+    (t/is (= 0 h))
+    (t/is (= 0 s))
+    (t/is (mth/close? b 0.0)))
+  ;; Pure red: hue 0, full saturation, brightness 100
+  (let [[h s b] (colors/rgb->hsb [255 0 0])]
+    (t/is (mth/close? h 0.0))
+    (t/is (mth/close? s 1.0))
+    (t/is (mth/close? b 100.0)))
+  ;; Pure white: brightness 100
+  (let [[_ _ b] (colors/rgb->hsb [255 255 255])]
+    (t/is (mth/close? b 100.0)))
+  ;; Mid gray: brightness ~50.2
+  (let [[_ _ b] (colors/rgb->hsb [128 128 128])]
+    (t/is (mth/close? b (* (/ 128.0 255.0) 100.0)))))
+
+(t/deftest hsb-to-rgb
+  (t/is (= [0 0 0]       (colors/hsb->rgb [0 0 0])))
+  (t/is (= [255 255 255] (colors/hsb->rgb [0 0 100])))
+  ;; Pure red from HSB
+  (let [[r g b] (colors/hsb->rgb [0 1 100])]
+    (t/is (= 255 r))
+    (t/is (= 0 g))
+    (t/is (= 0 b))))
+
+(t/deftest hex-to-hsb
+  ;; Black
+  (let [[h s b] (colors/hex->hsb "#000000")]
+    (t/is (= 0 h))
+    (t/is (= 0 s))
+    (t/is (mth/close? b 0.0)))
+  ;; White: brightness 100
+  (let [[_ _ b] (colors/hex->hsb "#ffffff")]
+    (t/is (mth/close? b 100.0)))
+  ;; Red
+  (let [[h s b] (colors/hex->hsb "#ff0000")]
+    (t/is (mth/close? h 0.0))
+    (t/is (mth/close? s 1.0))
+    (t/is (mth/close? b 100.0))))
+
+(t/deftest hsb-to-hex
+  (t/is (= "#000000" (colors/hsb->hex [0 0 0])))
+  (t/is (= "#ffffff" (colors/hsb->hex [0 0 100]))))
+
+(t/deftest hsv-hsb-roundtrip
+  ;; HSV brightness is 0-255, HSB brightness is 0-100. Round-trip
+  ;; should reach the same triple within ±1 (integer rounding).
+  (let [orig    [210.0 0.5 128]
+        hsb     (colors/hsv->hsb orig)
+        result  (colors/hsb->hsv hsb)]
+    (t/is (mth/close? (nth orig 0) (nth result 0)))
+    (t/is (mth/close? (nth orig 1) (nth result 1)))
+    (t/is (< (mth/abs (- (nth orig 2) (nth result 2))) 2))))
+
+(t/deftest rgb-hsb-roundtrip
+  ;; RGB → HSB → RGB should land within ±1 per channel
+  (let [orig    [100 150 200]
+        hsb     (colors/rgb->hsb orig)
+        result  (colors/hsb->rgb hsb)]
+    (t/is (every? true? (map #(< (mth/abs (- %1 %2)) 2) orig result)))))
+
+(t/deftest hex-hsb-roundtrip
+  ;; HEX → HSB → HEX should preserve the color across the model swap
+  (let [orig   "#fabada"
+        hsb    (colors/hex->hsb orig)
+        result (colors/hsb->hex hsb)]
+    ;; Allow ±1 per channel after the round-trip due to integer rounding
+    (let [[r1 g1 b1] (colors/hex->rgb orig)
+          [r2 g2 b2] (colors/hex->rgb result)]
+      (t/is (< (mth/abs (- r1 r2)) 2))
+      (t/is (< (mth/abs (- g1 g2)) 2))
+      (t/is (< (mth/abs (- b1 b2)) 2)))))

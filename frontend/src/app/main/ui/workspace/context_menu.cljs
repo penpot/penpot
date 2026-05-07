@@ -226,8 +226,7 @@
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-svg")
                        :on-click handle-copy-svg}]
 
-      (when (and (some cfh/frame-shape? shapes)
-                 (contains? cf/flags :canary))
+      (when (some cfh/frame-shape? shapes)
         [:> menu-entry* {:title (tr "workspace.shape.menu.copy-as-image")
                          :disabled multiple?
                          :on-click handle-copy-as-image}])

@@ -19,7 +19,7 @@
     of the object. This function can be applied to the object returned by the
     `get-object` but also to the RPC return value (in case you don't provide
     the return value calculated key under `::key` metadata prop.
-  - `::reuse-key?` enables reusing the key calculated on first time; usefull
+  - `::reuse-key?` enables reusing the key calculated on first time; useful
     when the target object is not retrieved on the RPC (typical on retrieving
     dependent objects).
   "

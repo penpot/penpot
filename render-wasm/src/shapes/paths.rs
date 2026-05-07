@@ -236,6 +236,28 @@ impl Path {
     }
 
     pub fn transform(&mut self, mtx: &Matrix) {
+        if math::is_move_only_matrix(mtx) {
+            let tx = mtx.translate_x();
+            let ty = mtx.translate_y();
+            self.segments.iter_mut().for_each(|s| match s {
+                Segment::MoveTo(p) | Segment::LineTo(p) => {
+                    p.0 += tx;
+                    p.1 += ty;
+                }
+                Segment::CurveTo((c1, c2, p)) => {
+                    c1.0 += tx;
+                    c1.1 += ty;
+                    c2.0 += tx;
+                    c2.1 += ty;
+                    p.0 += tx;
+                    p.1 += ty;
+                }
+                _ => {}
+            });
+            self.skia_path = self.skia_path.with_offset((tx, ty));
+            return;
+        }
+
         self.segments.iter_mut().for_each(|s| match s {
             Segment::MoveTo(p) => {
                 let np = mtx.map_point(skia::Point::new(p.0, p.1));

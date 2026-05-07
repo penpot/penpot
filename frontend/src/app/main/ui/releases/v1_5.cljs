@@ -45,7 +45,7 @@
           [:p "The usability and performance of the paths tool has been improved too."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]]]]]]
@@ -64,7 +64,7 @@
           [:p "It is time to have all the libraries well organized and work more efficiently."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]]]]]]
@@ -83,7 +83,7 @@
           [:p "It's easier to specify by how much you want to change a value and work with measures and distances."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]]]]]])))
