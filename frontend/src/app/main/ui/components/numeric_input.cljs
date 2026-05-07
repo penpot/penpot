@@ -22,8 +22,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc numeric-input*
-  {::mf/wrap-props false
-   ::mf/forward-ref true}
+  {::mf/forward-ref true}
   [props external-ref]
   (let [value-str   (unchecked-get props "value")
         min-value   (unchecked-get props "min")
