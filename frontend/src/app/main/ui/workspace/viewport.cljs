@@ -633,14 +633,14 @@
           {:page-id page-id}])
 
        (when-not hide-ui?
-         [:& rulers/rulers
+         [:> rulers/rulers*
           {:zoom zoom
            :zoom-inverse zoom-inverse
            :vbox vbox
            :selected-shapes selected-shapes
            :offset-x offset-x
            :offset-y offset-y
-           :show-rulers? show-rulers?}])
+           :show-rulers show-rulers?}])
 
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*
