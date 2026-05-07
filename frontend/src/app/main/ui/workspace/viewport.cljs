@@ -450,8 +450,8 @@
            [:& editor-v2/text-editor {:shape editing-shape
                                       :canvas-ref canvas-ref
                                       :modifiers modifiers}]
-           [:& editor-v1/text-editor-svg {:shape editing-shape
-                                          :modifiers modifiers}]))
+           [:> editor-v1/text-editor-svg* {:shape editing-shape
+                                           :modifiers modifiers}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id
