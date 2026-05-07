@@ -7131,10 +7131,50 @@ msgstr "Minimum height"
 msgid "workspace.options.layout-item.title.layout-item-min-w"
 msgstr "Minimum width"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.align-content.center"
+msgstr "Align content center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.align-content.end"
+msgstr "Align content end"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.align-content.space-around"
+msgstr "Align content space-around"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.align-content.space-between"
+msgstr "Align content space-between"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.align-content.space-evenly"
+msgstr "Align content space-evenly"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.align-content.start"
+msgstr "Align content start"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.align-items.center"
+msgstr "Align items center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.align-items.end"
+msgstr "Align items end"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.align-items.start"
+msgstr "Align items start"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.bottom"
 msgstr "Bottom"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.column-gap"
+msgstr "Column gap"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -7161,6 +7201,54 @@ msgstr "Reverse row"
 msgid "workspace.options.layout.gap"
 msgstr "Gap"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-content.center"
+msgstr "Justify content center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-content.end"
+msgstr "Justify content end"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-content.space-around"
+msgstr "Justify content space-around"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-content.space-between"
+msgstr "Justify content space-between"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-content.space-evenly"
+msgstr "Justify content space-evenly"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-content.start"
+msgstr "Justify content start"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-items.center"
+msgstr "Justify items center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-items.end"
+msgstr "Justify items end"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-items.space-around"
+msgstr "Justify items space-around"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-items.space-between"
+msgstr "Justify items space-between"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-items.start"
+msgstr "Justify items start"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.justify-items.stretch"
+msgstr "Justify items stretch"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.left"
@@ -7180,6 +7268,10 @@ msgstr "All sides"
 #, unused
 msgid "workspace.options.layout.margin-simple"
 msgstr "Simple margin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "No wrap"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -7206,6 +7298,10 @@ msgstr "Simple padding"
 msgid "workspace.options.layout.right"
 msgstr "Right"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.row-gap"
+msgstr "Row gap"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.space-around"
@@ -7220,6 +7316,10 @@ msgstr "space between"
 #, unused
 msgid "workspace.options.layout.top"
 msgstr "Top"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.options.layout.wrap"
+msgstr "Wrap"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:241
 msgid "workspace.options.more-colors"
