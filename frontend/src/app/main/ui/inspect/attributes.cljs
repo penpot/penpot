@@ -11,7 +11,7 @@
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.inspect.annotation :refer [annotation]]
+   [app.main.ui.inspect.annotation :refer [annotation*]]
    [app.main.ui.inspect.attributes.blur :refer [blur-panel]]
    [app.main.ui.inspect.attributes.fill :refer [fill-panel*]]
    [app.main.ui.inspect.attributes.geometry :refer [geometry-panel]]
@@ -81,7 +81,7 @@
          :libraries libraries
          :file-id file-id}])
      (when annotation-content
-       [:& annotation {:content annotation-content}])
+       [:> annotation* {:content annotation-content}])
      [:& exports
       {:shapes shapes
        :type type
