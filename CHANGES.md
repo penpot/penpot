@@ -10,6 +10,8 @@
 
 ### :bug: Bugs fixed
 
+- Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
+
 ## 2.16.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
