@@ -389,6 +389,10 @@
         resolved-active-tokens
         (sd/use-resolved-tokens* active-tokens)
 
+        tokenscript-resolved-active-tokens
+        (mf/with-memo [active-tokens tokenscript?]
+          (when tokenscript? (ts/resolve-tokens active-tokens)))
+
         tokenscript-resolved-active-tokens-force-set
         (mf/with-memo [active-tokens-force-set tokenscript?]
           (when tokenscript? (ts/resolve-tokens active-tokens-force-set)))
@@ -415,4 +419,6 @@
                          :file-id file-id
                          :page-id page-id
                          :tokens-lib tokens-lib
-                         :active-tokens resolved-active-tokens}]]))
+                         :active-tokens (if tokenscript?
+                                          tokenscript-resolved-active-tokens
+                                          resolved-active-tokens)}]]))

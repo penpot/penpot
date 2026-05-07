@@ -171,6 +171,7 @@
                      "day"
                      "week"
                      "year"]]
+   [:manual :boolean]
    [:quantity :int]
    [:description [:maybe ::sm/text]]
    [:created-at schema:timestamp]
@@ -348,6 +349,20 @@
   [:map
    [:cancel-at [:maybe schema:timestamp]]])
 
+(defn- get-org-permissions-api
+  [cfg {:keys [organization-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/organizations/"
+                             organization-id
+                             "/permissions")
+                        [:map
+                         [:organization-id ::sm/uuid]
+                         [:owner-id ::sm/uuid]
+                         [:create-teams [:enum "any" "onlyMe"]]]
+                        params)))
+
 (defn- redeem-activation-code-api
   [cfg params]
   (let [baseuri (cf/get :nitrate-backend-uri)]
@@ -372,6 +387,7 @@
      :add-profile-to-org           (partial add-profile-to-org-api cfg)
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
      :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)
+     :get-org-permissions          (partial get-org-permissions-api cfg)
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)
      :get-subscription             (partial get-subscription-api cfg)

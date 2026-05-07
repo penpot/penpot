@@ -2673,9 +2673,11 @@ export interface LibraryComponent extends LibraryElement {
   mainInstance(): Shape;
 
   /**
-   * @return true when this component is a VariantComponent
+   * Checks whether this component is a variant component.
+   * If true, the component can be used as a `LibraryVariantComponent`,
+   * which provides additional attributes (e.g. `variants`) and methods.
    */
-  isVariant(): boolean;
+  isVariant(): this is LibraryVariantComponent;
 
   /**
    * Creates a new Variant from this standard Component. It creates a VariantContainer, transform this Component into a VariantComponent, duplicates it, and creates a
