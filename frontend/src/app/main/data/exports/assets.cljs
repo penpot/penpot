@@ -267,8 +267,7 @@
                           counts))
                       {:png 0, :jpeg 0, :webp 0, :pdf 0, :svg 0}
                       exports)]
-    (ptk/event
-     ::ev/event (merge types
-                       {::ev/name "export-shapes"
-                        ::ev/origin origin
-                        :num-shapes (count exports)}))))
+    (ev/event (merge types
+                     {::ev/name "export-shapes"
+                      ::ev/origin origin
+                      :num-shapes (count exports)}))))

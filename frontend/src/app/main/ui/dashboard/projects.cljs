@@ -31,7 +31,6 @@
    [app.util.storage :as storage]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private show-more-icon
@@ -344,8 +343,8 @@
         (mf/use-fn
          (fn []
            (reset! show-team-hero* false)
-           (st/emit! (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
-                                                 ::ev/origin "dashboard"}))))]
+           (st/emit! (ev/event {::ev/name "dont-show-team-up-hero"
+                                ::ev/origin "dashboard"}))))]
 
     (mf/with-effect [show-team-hero?]
       (swap! storage/global assoc ::show-team-hero show-team-hero?))

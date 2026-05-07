@@ -32,7 +32,6 @@
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -94,7 +93,7 @@
         (mf/use-fn
          (fn [ev]
            (dom/stop-propagation ev)
-           (st/emit! (ptk/data-event ::ev/event {::ev/name "navigate-to-library-file"}))))]
+           (st/emit! (ev/event {::ev/name "navigate-to-library-file"}))))]
 
     [:div {:class (stl/css-case
                    :library-title true

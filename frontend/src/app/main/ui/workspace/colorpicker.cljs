@@ -15,7 +15,7 @@
    [app.common.types.fills :as types.fills]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cfg]
-   [app.main.data.event :as-alias ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace.colors :as dc]
@@ -46,7 +46,6 @@
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
    [rumext.v2.util :as mfu]))
 
@@ -174,9 +173,9 @@
 
              (st/emit!
               (dc/update-colorpicker-color {:image image} true)
-              (ptk/data-event ::ev/event {::ev/name "toggle-image-aspect-ratio"
-                                          ::ev/origin "workspace:colorpicker"
-                                          :checked keep-aspect-ratio?})))))
+              (ev/event {::ev/name "toggle-image-aspect-ratio"
+                         ::ev/origin "workspace:colorpicker"
+                         :checked keep-aspect-ratio?})))))
 
         on-change-tab
         (mf/use-fn #(reset! active-color-tab* %))

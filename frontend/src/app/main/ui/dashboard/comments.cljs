@@ -18,7 +18,6 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private comments-icon-svg
@@ -81,8 +80,8 @@
      (mf/deps show?)
      (fn []
        (when show?
-         (st/emit! (ptk/event ::ev/event {::ev/name "open-comment-notifications"
-                                          ::ev/origin "dashboard"})))))
+         (st/emit! (ev/event {::ev/name "open-comment-notifications"
+                              ::ev/origin "dashboard"})))))
 
     [:div {:class (stl/css :dashboard-comments-section)}
      [:& dropdown {:show show? :on-close on-hide-comments :dropdown-id "dashboard-comments"}

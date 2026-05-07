@@ -426,8 +426,8 @@
                                           token))]
 
            (rx/of (dch/commit-changes changes)
-                  (ptk/data-event ::ev/event (-> {::ev/name "create-token" :type token-type}
-                                                 (merge (meta it))))))
+                  (ev/event (-> {::ev/name "create-token" :type token-type}
+                                (merge (meta it))))))
 
          (rx/of (create-token-with-set token)))))))
 
@@ -455,8 +455,8 @@
                                           id
                                           token'))]
          (rx/of (dch/commit-changes changes)
-                (ptk/data-event ::ev/event (-> {::ev/name "edit-token" :type token-type}
-                                               (merge (meta it))))))))))
+                (ev/event (-> {::ev/name "edit-token" :type token-type}
+                              (merge (meta it))))))))))
 
 (defn delete-token
   [set-id token-id]
@@ -477,8 +477,8 @@
                         (pcb/with-library-data data)
                         (pcb/set-token set-id token-id nil))]
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event ::ev/event (-> {::ev/name "delete-token" :type token-type}
-                                              (merge (meta it)))))))))
+               (ev/event (-> {::ev/name "delete-token" :type token-type}
+                             (merge (meta it)))))))))
 
 (defn bulk-delete-tokens
   [set-id token-ids]
@@ -494,7 +494,7 @@
                                 (pcb/with-library-data data))
                             token-ids)]
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event ::ev/event {::ev/name "delete-token-node"}))))))
+               (ev/event {::ev/name "delete-token-node"}))))))
 
 (defn duplicate-token
   [token-id]

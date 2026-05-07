@@ -897,8 +897,8 @@
 
         (rx/concat
          (rx/of (dwl/add-typography typ)
-                (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                       :asset-type "typography"}))
+                (ev/event {::ev/name "add-asset-to-library"
+                           :asset-type "typography"}))
 
          (when (not multiple?)
            (rx/of (update-attrs (:id shape)

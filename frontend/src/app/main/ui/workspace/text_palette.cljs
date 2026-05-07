@@ -19,7 +19,6 @@
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc typography-item
@@ -38,8 +37,7 @@
                          :typography-ref-id (:id typography)}
                         (dissoc typography :id :name))]
 
-             (st/emit! (ptk/event
-                        ::ev/event
+             (st/emit! (ev/event
                         {::ev/name "use-library-typography"
                          ::ev/origin "text-palette"
                          :external-library (not= file-id current-file-id)}))

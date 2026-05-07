@@ -960,7 +960,7 @@
                   (ptk/data-event :layout/update {:ids [frame-id]})
                   (dwu/commit-undo-transaction undo-id)
                   (when add-component-to-variant?
-                    (ptk/event ::ev/event {::ev/name "add-component-to-variant"})))))))))
+                    (ev/event {::ev/name "add-component-to-variant"})))))))))
 
 (defn- as-content [text]
   (let [paragraphs (->> (str/lines text)

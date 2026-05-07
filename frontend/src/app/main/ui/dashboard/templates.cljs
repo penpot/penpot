@@ -23,7 +23,6 @@
    [app.util.keyboard :as kbd]
    [app.util.storage :as storage]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
@@ -40,10 +39,10 @@
   (letfn [(on-finish []
             (st/emit!
              (dd/fetch-recent-files team-id)
-             (ptk/event ::ev/event {::ev/name "import-template-finish"
-                                    ::ev/origin "dashboard"
-                                    :template (:name template)
-                                    :section section})
+             (ev/event {::ev/name "import-template-finish"
+                        ::ev/origin "dashboard"
+                        :template (:name template)
+                        :section section})
 
              (when-not (some? project-id)
                (dcm/go-to-dashboard-recent
@@ -51,10 +50,10 @@
                 :project-id default-project-id))))]
 
     (st/emit!
-     (ptk/event ::ev/event {::ev/name "import-template-launch"
-                            ::ev/origin "dashboard"
-                            :template (:name template)
-                            :section section})
+     (ev/event {::ev/name "import-template-launch"
+                ::ev/origin "dashboard"
+                :template (:name template)
+                :section section})
 
      (modal/show
       {:type :import
@@ -145,9 +144,9 @@
         (mf/use-fn
          (mf/deps section)
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
-                                            ::ev/origin "dashboard"
-                                            :section section}))))
+           (st/emit! (ev/event {::ev/name "explore-libraries-click"
+                                ::ev/origin "dashboard"
+                                :section section}))))
 
         on-key-down
         (mf/use-fn

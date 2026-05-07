@@ -97,12 +97,12 @@
 
      ptk/WatchEvent
      (watch [it _ _]
-       (rx/of (ptk/data-event ::ev/event
-                              (merge {::ev/name "create-comment-thread"
-                                      ::ev/origin "workspace"
-                                      :id id
-                                      :content-size (count (:content comment))}
-                                     (meta it))))))))
+       (rx/of (ev/event
+               (merge {::ev/name "create-comment-thread"
+                       ::ev/origin "workspace"
+                       :id id
+                       :content-size (count (:content comment))}
+                      (meta it))))))))
 
 (def ^:private
   schema:create-thread-on-workspace
@@ -156,11 +156,11 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (ptk/data-event ::ev/event
-                             {::ev/name "create-comment-thread"
-                              ::ev/origin "viewer"
-                              :id id
-                              :content-size (count (:content comment))})))))
+      (rx/of (ev/event
+              {::ev/name "create-comment-thread"
+               ::ev/origin "viewer"
+               :id id
+               :content-size (count (:content comment))})))))
 
 (def ^:private
   schema:create-thread-on-viewer
@@ -224,8 +224,7 @@
       (let [share-id (-> state :viewer-local :share-id)]
         (rx/concat
          (when is-resolved
-           (rx/of (ptk/event
-                   ::ev/event
+           (rx/of (ev/event
                    (-> {::ev/name "resolve-comment-thread" :thread-id id}
                        (merge (meta it))))))
          (->> (rp/cmd! :update-comment-thread {:id id :is-resolved is-resolved :share-id share-id})
@@ -322,12 +321,12 @@
              (rx/catch #(rx/throw {:type :comment-error}))
              (rx/tap on-delete)
              (rx/ignore))
-        (rx/of (ptk/data-event ::ev/event
-                               (merge
-                                {::ev/name "delete-comment-thread"
-                                 ::ev/origin "workspace"
-                                 :id id}
-                                (meta it)))))))))
+        (rx/of (ev/event
+                (merge
+                 {::ev/name "delete-comment-thread"
+                  ::ev/origin "workspace"
+                  :id id}
+                 (meta it)))))))))
 
 (defn delete-comment-thread-on-viewer
   [{:keys [id] :as thread}]
@@ -350,10 +349,10 @@
          (->> (rp/cmd! :delete-comment-thread {:id id :share-id share-id})
               (rx/catch #(rx/throw {:type :comment-error}))
               (rx/ignore))
-         (rx/of (ptk/data-event ::ev/event
-                                {::ev/name "delete-comment-thread"
-                                 ::ev/origin "viewer"
-                                 :id id})))))))
+         (rx/of (ev/event
+                 {::ev/name "delete-comment-thread"
+                  ::ev/origin "viewer"
+                  :id id})))))))
 (defn delete-comment
   [{:keys [id thread-id] :as comment}]
   (dm/assert!

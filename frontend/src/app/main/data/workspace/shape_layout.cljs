@@ -305,11 +305,11 @@
                 (ptk/data-event :layout/update {:ids ids})
                 (dwu/commit-undo-transaction undo-id)
                 (when (or (:layout-align-content changes) (:layout-justify-content changes))
-                  (ptk/event ::ev/event
-                             {::ev/name "layout-change-alignment"}))
+                  (ev/event
+                   {::ev/name "layout-change-alignment"}))
                 (when (or (:layout-padding changes) (:layout-gap changes))
-                  (ptk/event ::ev/event
-                             {::ev/name "layout-change-margin"}))))))))
+                  (ev/event
+                   {::ev/name "layout-change-margin"}))))))))
 
 (defn add-layout-track
   ([ids type value]

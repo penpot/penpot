@@ -44,7 +44,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.functions :as f]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private clear-search-icon
@@ -869,8 +868,8 @@
                                (dom/get-data "url"))
                  eventname (-> (dom/get-current-target event)
                                (dom/get-data "eventname"))]
-             (st/emit! (ptk/event ::ev/event {::ev/name eventname
-                                              ::ev/origin "menu:in-app"}))
+             (st/emit! (ev/event {::ev/name eventname
+                                  ::ev/origin "menu:in-app"}))
              (dom/open-new-window url))))
 
         handle-feedback-click
@@ -914,8 +913,8 @@
                                (dom/get-data "url"))
                  eventname (-> (dom/get-current-target event)
                                (dom/get-data "eventname"))]
-             (st/emit! (ptk/event ::ev/event {::ev/name eventname
-                                              ::ev/origin "menu:in-app"}))
+             (st/emit! (ev/event {::ev/name eventname
+                                  ::ev/origin "menu:in-app"}))
              (dom/open-new-window url))))]
 
     [:> dropdown-menu* {:show true
@@ -942,7 +941,7 @@
         show-release-notes
         (mf/use-fn
          (fn [event]
-           (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version (:main version)}))
+           (st/emit! (ev/event {::ev/name "show-release-notes" :version (:main version)}))
            (if (and (kbd/alt? event) (kbd/mod? event))
              (st/emit! (modal/show {:type :onboarding}))
              (st/emit! (modal/show {:type :release-notes :version (:main version)})))))
@@ -954,8 +953,8 @@
                                (dom/get-data "url"))
                  eventname (-> (dom/get-current-target event)
                                (dom/get-data "eventname"))]
-             (st/emit! (ptk/event ::ev/event {::ev/name eventname
-                                              ::ev/origin "menu:in-app"}))
+             (st/emit! (ev/event {::ev/name eventname
+                                  ::ev/origin "menu:in-app"}))
              (dom/open-new-window url))))]
 
     [:> dropdown-menu* {:show true
@@ -1052,7 +1051,7 @@
         on-power-up-click
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
+           (st/emit! (ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     [:*

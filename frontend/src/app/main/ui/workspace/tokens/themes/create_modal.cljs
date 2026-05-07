@@ -33,7 +33,6 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; Form Component --------------------------------------------------------------
@@ -412,7 +411,7 @@
         on-save
         (mf/use-fn
          (fn [theme]
-           (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"})
+           (st/emit! (ev/event {::ev/name "create-tokens-theme"})
                      (dwtl/create-token-theme theme))))
         has-prev-view (has-prev-view (:prev-type state))]
 

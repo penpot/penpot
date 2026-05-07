@@ -66,7 +66,7 @@
         ;; Force persist before creating snapshot, otherwise we could loss changes
         (rx/concat
          (rx/of ::dwp/force-persist
-                (ptk/event ::ev/event {::ev/name "create-version"}))
+                (ev/event {::ev/name "create-version"}))
 
          (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
               (rx/filter #(or (nil? %) (= :saved %)))
@@ -88,8 +88,8 @@
       (let [file-id (:current-file-id state)]
         (rx/merge
          (rx/of (update-versions-state {:editing nil})
-                (ptk/event ::ev/event {::ev/name "rename-version"
-                                       :file-id file-id}))
+                (ev/event {::ev/name "rename-version"
+                           :file-id file-id}))
          (->> (rp/cmd! :update-file-snapshot {:id id :label label})
               (rx/map fetch-versions)))))))
 
@@ -173,7 +173,7 @@
                (rx/mapcat (fn [_]
                             (rx/of (update-versions-state {:editing id})
                                    (fetch-versions)
-                                   (ptk/event ::ev/event {::ev/name "pin-version"}))))))))))
+                                   (ev/event {::ev/name "pin-version"}))))))))))
 
 (defn lock-version
   [id]

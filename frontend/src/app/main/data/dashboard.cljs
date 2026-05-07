@@ -479,7 +479,7 @@
            (->> (rp/cmd! :get-file-summary {:id id})
                 (rx/map (fn [summary]
                           (when (-> summary :variants :count pos?)
-                            (ptk/event ::ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
+                            (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
 
 (defn set-file-thumbnail
   [file-id thumbnail-id]

@@ -41,7 +41,6 @@
    [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def menu-ref
@@ -676,7 +675,7 @@
                                :on-accept delete-fn}))
         do-duplicate #(st/emit!
                        (dw/duplicate-page id)
-                       (ptk/event ::ev/event {::ev/name "duplicate-page"}))
+                       (ev/event {::ev/name "duplicate-page"}))
         do-rename #(st/emit! (dw/start-rename-page-item id))]
 
     [:*
