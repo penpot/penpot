@@ -38,10 +38,6 @@
   margin-block-start: var(--sp-s);
 }
 
-.membership.first {
-  margin-block-start: var(--sp-l);
-}
-
 .membership-date {
   @include t.use-typography("body-small");
 
@@ -109,11 +105,11 @@
   border: 1.75px solid var(--color-foreground-primary);
   stroke-width: 2.25px;
   padding: px2rem(3);
+}
 
-  svg {
-    block-size: var(--sp-m);
-    inline-size: var(--sp-m);
-  }
+.plan-title-icon svg {
+  block-size: var(--sp-m);
+  inline-size: var(--sp-m);
 }
 
 .plan-card-title,
@@ -292,14 +288,14 @@
   justify-content: center;
   max-inline-size: $sz-224;
 
-  svg {
-    inline-size: 100%;
-    block-size: auto;
-  }
-
   @media (width <= 992px) {
     display: none;
   }
+}
+
+.modal-start svg {
+  inline-size: 100%;
+  block-size: auto;
 }
 
 .editors-text {
@@ -363,19 +359,19 @@
 }
 
 .radio-btns {
-  label {
-    @include t.use-typography("body-large");
-
-    padding: 0;
-    display: flex;
-    align-items: center;
-    color: var(--color-foreground-secondary);
-  }
-
   display: flex;
   flex-direction: column;
-  padding: 0 0 var(--sp-xl) 0;
+  padding-block-end: var(--sp-xl);
   gap: var(--sp-s);
+}
+
+.radio-btns label {
+  @include t.use-typography("body-large");
+
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: var(--color-foreground-secondary);
 }
 
 .modal-contact-content {
@@ -403,4 +399,20 @@
   @include t.use-typography("body-medium");
 
   margin-block-end: var(--sp-l);
+}
+
+.cta-link {
+  @include t.use-typography("body-medium");
+
+  align-items: center;
+  color: var(--color-accent-primary);
+  display: flex;
+  margin-block-end: var(--sp-xxxl);
+  text-align: left;
+  text-decoration: underline;
+}
+
+.button-full-width {
+  justify-content: center;
+  inline-size: 100%;
 }

@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.measurements :refer [size-display measurement]]
+   [app.main.ui.measurements :refer [size-display* measurement*]]
    [rumext.v2 :as mf]))
 
 ;; ------------------------------------------------
@@ -64,9 +64,9 @@
       [:g.selection-feedback {:pointer-events "none"}
        [:g.selected-shapes
         [:& selection-rect {:selrect selrect :zoom zoom}]
-        [:& size-display {:selrect selrect :zoom zoom}]]
+        [:> size-display* {:selrect selrect :zoom zoom}]]
 
-       [:& measurement {:bounds (assoc size :x 0 :y 0)
-                        :selected-shapes selected-shapes
-                        :hover-shape hover-shape
-                        :zoom zoom}]])))
+       [:> measurement* {:bounds (assoc size :x 0 :y 0)
+                         :selected-shapes selected-shapes
+                         :hover-shape hover-shape
+                         :zoom zoom}]])))

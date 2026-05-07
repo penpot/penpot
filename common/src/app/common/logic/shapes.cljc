@@ -75,7 +75,7 @@
     (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
-  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects?]}]
+  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects? translation?]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
@@ -83,16 +83,20 @@
                                  :ignore-touched ignore-touched
                                  :with-objects? with-objects?}]
                        (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
-                   (-> changes
-                       (pcb/with-objects objects))
+                   (cond-> changes
+                     (some? objects) (pcb/with-objects objects))
                    ids)
-        grid-ids (->> ids (filter (partial ctl/grid-layout? objects)))
-        changes (-> changes
-                    (pcb/update-shapes grid-ids ctl/assign-cell-positions {:with-objects? true})
-                    (pcb/reorder-grid-children ids)
-                    (cond->
-                     (not ignore-touched)
-                      (generate-unapply-tokens objects changed-sub-attr)))]
+        ;; Translation doesn't shift children between grid cells, so
+        ;; cell reassignment + child reorder are no-ops.
+        grid-ids (when-not translation?
+                   (->> ids (filter (partial ctl/grid-layout? objects))))
+        changes (cond-> changes
+                  (seq grid-ids)
+                  (-> (pcb/update-shapes grid-ids ctl/assign-cell-positions {:with-objects? true})
+                      (pcb/reorder-grid-children ids))
+
+                  (not ignore-touched)
+                  (generate-unapply-tokens objects changed-sub-attr))]
     changes))
 
 (defn- generate-update-shape-flags

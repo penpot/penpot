@@ -171,6 +171,27 @@
                                                  "UPGRADE TO NITRATE"
                                                  "Try 14 days for free")]]]))))
 
+(mf/defc nitrate-current-plan*
+  [{:keys [profile]}]
+  (let [nitrate?              (dnt/is-valid-license? profile)
+        nitrate-license       (:subscription profile)
+        subscription          (-> profile :props :subscription)
+        subscription-type     (if nitrate? (:type nitrate-license) (get-subscription-type subscription))
+        subscription-is-trial (= "trialing" (:status (if nitrate? nitrate-license subscription)))]
+    [:div {:class (stl/css :nitrate-current-plan)}
+     [:div {:class (stl/css :nitrate-current-plan-label)}
+      (tr "subscription.current-plan.title")]
+     [:div {:class (stl/css :nitrate-current-plan-text)}
+      (case subscription-type
+        "professional" (tr "subscription.current-plan.professional")
+        "unlimited" (if subscription-is-trial
+                      (tr "subscription.current-plan.unlimited-trial")
+                      (tr "subscription.current-plan.unlimited"))
+        "nitrate" (if subscription-is-trial
+                    (tr "subscription.current-plan.nitrate-trial")
+                    (tr "subscription.current-plan.nitrate"))
+        "enterprise" (tr "subscription.current-plan.enterprise"))]]))
+
 (mf/defc team*
   [{:keys [is-owner team]}]
   (let [subscription          (:subscription team)

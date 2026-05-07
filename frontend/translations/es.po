@@ -1161,7 +1161,10 @@ msgid "dashboard.select-org-modal.accept"
 msgstr "AÑADIR A UNA ORGANIZACIÓN"
 
 msgid "dashboard.change-org-modal.title"
-msgstr "CAMBIAR EL EQUIPO DE ORGANIZACIÓN"
+msgstr "Cambiar el equipo de organización"
+
+msgid "dashboard.change-org-modal.text"
+msgstr "Los miembros del equipo seguirán teniendo acceso a los proyectos y ficheros. El equipo tendrá la configuración de la nueva organización."
 
 msgid "dashboard.change-org-modal.choose"
 msgstr "Mover a:"
@@ -5211,6 +5214,9 @@ msgstr "editor por mes"
 msgid "subscription.settings.price-organization-month"
 msgstr "organización por mes"
 
+msgid "subscription.settings.organization-member-month"
+msgstr "miembro organización por mes"
+
 #: src/app/main/ui/dashboard/subscription.cljs:140, src/app/main/ui/settings/subscription.cljs:102, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:538
 msgid "subscription.settings.professional"
 msgstr "Professional"
@@ -9072,8 +9078,44 @@ msgstr "Contactar con ventas"
 msgid "nitrate.subscription.active-until"
 msgstr "Activo hasta el %s"
 
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Cancelar subscripción"
+
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Renovar con código de activación"
+
 msgid "subscription.settings.more-information"
 msgstr "Más información"
 
 msgid "subscription.settings.activate-by-code"
 msgstr "Introducir código de activación"
+
+msgid "subscription.current-plan.title"
+msgstr "Tu suscripción"
+
+msgid "subscription.current-plan.professional"
+msgstr "Professional"
+
+msgid "subscription.current-plan.unlimited"
+msgstr "Unlimited"
+
+msgid "subscription.current-plan.unlimited-trial"
+msgstr "Unlimited (Prueba)"
+
+msgid "subscription.current-plan.nitrate"
+msgstr "Nitrate"
+
+msgid "subscription.current-plan.nitrate-trial"
+msgstr "Nitrate (Prueba)"
+
+msgid "subscription.current-plan.enterprise"
+msgstr "Enterprise"
+
+msgid "dashboard.no-permission-create-team.message"
+msgstr "No tienes permiso para crear equipos en la organización %s. Si necesitas más información, contacta con el propietario."
+
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr "No tienes permiso para añadir equipos a ninguna de tus organizaciones."
+
+msgid "dashboard.select-org-modal.permission-info"
+msgstr "Aquí encontrarás todas las organizaciones en las que tienes permiso para crear o añadir equipos."
