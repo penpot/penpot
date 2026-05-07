@@ -199,6 +199,12 @@ pub struct TextContentLayout {
     cached_extrect: Cell<Option<CachedExtrect>>,
 }
 
+impl Default for TextContentLayout {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Clone for TextContentLayout {
     fn clone(&self) -> Self {
         Self {
