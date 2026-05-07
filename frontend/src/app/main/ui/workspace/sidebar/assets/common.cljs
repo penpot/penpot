@@ -356,7 +356,7 @@
     (if (and (some? thumbnail-uri)
              (or (contains? cf/flags :component-thumbnails)
                  wasm?))
-      [:& component-svg-thumbnail
+      [:> component-svg-thumbnail
        {:thumbnail-uri thumbnail-uri
         :class class
         :on-error on-error
@@ -364,7 +364,7 @@
         :objects (:objects container)
         :show-grids? true}]
 
-      [:& component-svg
+      [:> component-svg
        {:root-shape root-shape
         :class class
         :objects (:objects container)

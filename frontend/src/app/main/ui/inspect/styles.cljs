@@ -274,7 +274,7 @@
            [:> style-box* {:panel panel}
             [:div color-space]])])]
      [:div {:class (stl/css :exports-wrapper)}
-      [:& exports/exports
+      [:> exports/exports
        {:shapes shapes
         :type type
         :page-id page-id
