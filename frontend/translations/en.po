@@ -5166,6 +5166,15 @@ msgstr "Inviting people while on the Unlimited plan"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Power up"
 
+msgid "subscription.error.nitrate.checkout-cancelled"
+msgstr "Payment was not completed. Try again whenever you're ready."
+
+msgid "subscription.error.nitrate.checkout-failed"
+msgstr "We couldn't start the checkout. Please try again. If the problem persists, contact us: support@penpot.app."
+
+msgid "subscription.error.nitrate.checkout-finish-failed"
+msgstr "We’re having trouble activating your subscription. Please try again. If the problem persists, contact us: support@penpot.app."
+
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
 msgid "subscription.labels"
 msgstr "Subscription"
@@ -9414,3 +9423,6 @@ msgstr "You don't have permission to add teams to any of your organizations."
 
 msgid "dashboard.select-org-modal.permission-info"
 msgstr "Here you find all your organizations where you are allowed to create or add teams."
+
+msgid "dashboard.no-permission-delete-team.message"
+msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the owner."
