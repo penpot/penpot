@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.config :as cf]
    [app.db :as db]
    [app.nitrate :as nitrate]
@@ -313,12 +314,12 @@
         (ex/raise :type :validation
                   :code :not-allowed
                   :hint "Unable to verify organization permissions")
-        (let [create-perm (:create-teams org-perms)
-              is-owner?   (= profile-id (:owner-id org-perms))]
-          (when (and (= create-perm "onlyMe") (not is-owner?))
-            (ex/raise :type :validation
-                      :code :not-allowed
-                      :hint "You are not allowed to add teams in this organization"))))))
+        (when-not (nitrate-perms/allowed? :create-team
+                                          {:org-perms org-perms
+                                           :profile-id profile-id})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to add teams in this organization")))))
 
   (let [team-members (db/query cfg :team-profile-rel {:team-id team-id})]
     ;; Add teammates to the org if needed
