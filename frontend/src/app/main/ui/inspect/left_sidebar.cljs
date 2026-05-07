@@ -23,8 +23,8 @@
   #(-> (l/in [:viewer-local :collapsed id])
        (l/derived st/state)))
 
-(mf/defc layer-item
-  [{:keys [item selected objects  depth component-child? hide-toggle?] :as props}]
+(mf/defc layer-item*
+  [{:keys [item selected objects depth component-child? hide-toggle?]}]
   (let [id        (:id item)
         selected? (contains? selected id)
         item-ref  (mf/use-ref nil)
@@ -88,7 +88,7 @@
               :data-testid (dm/str "children-" id)}
         (for [[index id] (reverse (d/enumerate (:shapes item)))]
           (when-let [item (get objects id)]
-            [:& layer-item
+            [:> layer-item*
              {:item item
               :selected selected
               :index index
@@ -97,7 +97,7 @@
               :depth depth
               :component-child? component-tree?}]))])]))
 
-(mf/defc left-sidebar
+(mf/defc left-sidebar*
   [{:keys [frame page local]}]
   (let [selected (:selected local)
         objects  (:objects page)]
@@ -105,7 +105,7 @@
     [:aside {:class (stl/css :settings-bar-left)}
      [:div {:class (stl/css :settings-bar-inside)}
       [:div {:class (stl/css :element-list)}
-       [:& layer-item
+       [:> layer-item*
         {:item frame
          :selected selected
          :index 0
