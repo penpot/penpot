@@ -415,7 +415,7 @@
                :on-click on-type-change'}
       deprecated-icon/margin]]))
 
-(mf/defc element-behaviour-horizontal
+(mf/defc element-behaviour-horizontal*
   {::mf/props :obj
    ::mf/private true}
   [{:keys [^boolean is-auto ^boolean has-fill value on-change]}]
@@ -424,32 +424,32 @@
                  :one-element (and (not has-fill) (not is-auto))
                  :two-element (or has-fill is-auto)
                  :three-element (and has-fill is-auto))}
-   [:& radio-buttons
+   [:> radio-buttons
     {:selected  (d/name value)
      :decode-fn keyword
      :on-change on-change
      :name      "flex-behaviour-h"}
 
-    [:& radio-button
+    [:> radio-button
      {:value "fix"
       :icon  i/fixed-width
       :title "Fix width"
       :id    "behaviour-h-fix"}]
 
     (when has-fill
-      [:& radio-button
+      [:> radio-button
        {:value "fill"
         :icon  i/fill-content
         :title "Width 100%"
         :id    "behaviour-h-fill"}])
     (when is-auto
-      [:& radio-button
+      [:> radio-button
        {:value "auto"
         :icon  i/hug-content
         :title "Fit content (Horizontal)"
         :id    "behaviour-h-auto"}])]])
 
-(mf/defc element-behaviour-vertical
+(mf/defc element-behaviour-vertical*
   {::mf/props :obj
    ::mf/private true}
   [{:keys [^boolean is-auto ^boolean has-fill value on-change]}]
@@ -458,12 +458,12 @@
                  :one-element (and (not has-fill) (not is-auto))
                  :two-element (or has-fill is-auto)
                  :three-element (and has-fill is-auto))}
-   [:& radio-buttons
+   [:> radio-buttons
     {:selected  (d/name value)
      :decode-fn keyword
      :on-change on-change
      :name      "flex-behaviour-v"}
-    [:& radio-button
+    [:> radio-button
      {:value      "fix"
       :icon       i/fixed-width
       :icon-class (stl/css :rotated)
@@ -471,37 +471,37 @@
       :id         "behaviour-v-fix"}]
 
     (when has-fill
-      [:& radio-button
+      [:> radio-button
        {:value      "fill"
         :icon       i/fill-content
         :icon-class (stl/css :rotated)
         :title      "Height 100%"
         :id         "behaviour-v-fill"}])
     (when is-auto
-      [:& radio-button
+      [:> radio-button
        {:value      "auto"
         :icon       i/hug-content
         :icon-class (stl/css :rotated)
         :title      "Fit content (Vertical)"
         :id         "behaviour-v-auto"}])]])
 
-(mf/defc align-self-row
+(mf/defc align-self-row*
   {::mf/props :obj}
   [{:keys [^boolean is-col value on-change]}]
-  [:& radio-buttons {:selected (d/name value)
+  [:> radio-buttons {:selected (d/name value)
                      :decode-fn keyword
                      :on-change on-change
                      :name "flex-align-self"
                      :allow-empty true}
-   [:& radio-button {:value "start"
+   [:> radio-button {:value "start"
                      :icon  (get-layout-flex-icon :align-self :start is-col)
                      :title "Align self start"
                      :id     "align-self-start"}]
-   [:& radio-button {:value "center"
+   [:> radio-button {:value "center"
                      :icon  (get-layout-flex-icon :align-self :center is-col)
                      :title "Align self center"
                      :id    "align-self-center"}]
-   [:& radio-button {:value "end"
+   [:> radio-button {:value "end"
                      :icon  (get-layout-flex-icon :align-self :end is-col)
                      :title "Align self end"
                      :id    "align-self-end"}]])
@@ -715,7 +715,7 @@
              :value (get values :layout-item-max-h)
              :nillable true}]])])]))
 
-(mf/defc layout-item-menu
+(mf/defc layout-item-menu*
   {::mf/memo #{:ids :values :type :is-layout-child? :is-grid-parent :is-flex-parent? :is-grid-layout? :is-flex-layout? :applied-tokens}
    ::mf/props :obj}
   [{:keys [ids values
@@ -850,14 +850,14 @@
         (when (or is-layout-child? is-absolute?)
           [:div {:class (stl/css :position-row)}
            [:div {:class (stl/css :position-options)}
-            [:& radio-buttons {:selected (if is-absolute? "absolute" "static")
+            [:> radio-buttons {:selected (if is-absolute? "absolute" "static")
                                :decode-fn keyword
                                :on-change on-change-position
                                :name "layout-style"
                                :wide true}
-             [:& radio-button {:value "static"
+             [:> radio-button {:value "static"
                                :id :static-position}]
-             [:& radio-button {:value "absolute"
+             [:> radio-button {:value "absolute"
                                :id :absolute-position}]]]
 
            [:div {:class (stl/css :z-index-wrapper)
@@ -877,12 +877,12 @@
                         :behaviour-menu true
                         :wrap (and ^boolean is-layout-child?
                                    ^boolean is-layout-container?))}
-          [:& element-behaviour-horizontal
+          [:> element-behaviour-horizontal*
            {:is-auto is-layout-container?
             :has-fill is-layout-child?
             :value (:layout-item-h-sizing values)
             :on-change on-behaviour-h-change}]
-          [:& element-behaviour-vertical
+          [:> element-behaviour-vertical*
            {:is-auto is-layout-container?
             :has-fill is-layout-child?
             :value (:layout-item-v-sizing values)
@@ -890,9 +890,9 @@
 
         (when (and is-layout-child? is-flex-parent?)
           [:div {:class (stl/css :align-row)}
-           [:& align-self-row {:is-col is-col?
-                               :value align-self
-                               :on-change on-align-self-change}]])
+           [:> align-self-row* {:is-col is-col?
+                                :value align-self
+                                :on-change on-align-self-change}]])
 
         (when is-layout-child?
           [:> margin-section* {:value (:layout-item-margin values)
@@ -907,3 +907,5 @@
           [:> layout-size-constraints* {:ids ids
                                         :values values
                                         :applied-tokens applied-tokens}])])]))
+
+(def layout-item-menu layout-item-menu*)

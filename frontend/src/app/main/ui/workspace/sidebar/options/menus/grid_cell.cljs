@@ -36,7 +36,7 @@
                  :justify-self
                  :area-name])
 
-(mf/defc set-self-alignment
+(mf/defc set-self-alignment*
   [{:keys [is-col? alignment set-alignment] :as props}]
   (let [alignment (or alignment :auto)
         type (if is-col? "col" "row")
@@ -48,32 +48,32 @@
            (set-alignment (-> value keyword))))]
 
     [:div {:class (stl/css :self-align-menu)}
-     [:& radio-buttons {:selected (d/name alignment)
+     [:> radio-buttons {:selected (d/name alignment)
                         :on-change handle-set-alignment
                         :allow-empty true
                         :name (dm/str "flex-align-items-" type)}
-      [:& radio-button {:value "start"
+      [:> radio-button {:value "start"
                         :icon  (if is-col?
                                  i/align-self-row-left
                                  i/align-self-column-top)
                         :title "Align self start"
                         :id     (dm/str "align-self-start-" type)}]
 
-      [:& radio-button {:value "center"
+      [:> radio-button {:value "center"
                         :icon  (if is-col?
                                  i/align-self-row-center
                                  i/align-self-column-center)
                         :title "Align self center"
                         :id     (dm/str "align-self-center-" type)}]
 
-      [:& radio-button {:value "end"
+      [:> radio-button {:value "end"
                         :icon  (if is-col?
                                  i/align-self-row-right
                                  i/align-self-column-bottom)
                         :title "Align self end"
                         :id     (dm/str "align-self-end-" type)}]
 
-      [:& radio-button {:value "stretch"
+      [:> radio-button {:value "stretch"
                         :icon  (if is-col?
                                  i/align-self-row-stretch
                                  i/align-self-column-stretch)
@@ -81,7 +81,7 @@
                         :id     (dm/str "align-self-stretch-" type)}]]]))
 
 
-(mf/defc options
+(mf/defc options*
   {::mf/wrap [mf/memo]}
   [{:keys [shape cell cells] :as props}]
 
@@ -187,13 +187,13 @@
      (when open?
        [:div {:class (stl/css :grid-cell-menu-container)}
         [:div {:class (stl/css :cell-mode :row)}
-         [:& radio-buttons {:selected (d/name cell-mode)
+         [:> radio-buttons {:selected (d/name cell-mode)
                             :on-change set-cell-mode
                             :name "cell-mode"
                             :wide true}
-          [:& radio-button {:value "auto" :id :auto}]
-          [:& radio-button {:value "manual" :id :manual}]
-          [:& radio-button {:value "area"
+          [:> radio-button {:value "auto" :id :auto}]
+          [:> radio-button {:value "manual" :id :manual}]
+          [:> radio-button {:value "area"
                             :id :area
                             :disabled (not valid-area-cells?)}]]]
 
@@ -271,12 +271,12 @@
                :value row-end}]]]])
 
         [:div {:class (stl/css :row)}
-         [:& set-self-alignment {:is-col? false
-                                 :alignment align-self
-                                 :set-alignment set-alignment}]
-         [:& set-self-alignment {:is-col? true
-                                 :alignment justify-self
-                                 :set-alignment set-justify-self}]]
+         [:> set-self-alignment* {:is-col? false
+                                  :alignment align-self
+                                  :set-alignment set-alignment}]
+         [:> set-self-alignment* {:is-col? true
+                                  :alignment justify-self
+                                  :set-alignment set-justify-self}]]
 
         [:div {:class (stl/css :row)}
          [:button
@@ -284,3 +284,5 @@
            :alt    (tr "workspace.layout-grid.editor.options.edit-grid")
            :on-click toggle-edit-mode}
           (tr "workspace.layout-grid.editor.options.edit-grid")]]])]))
+
+(def options options*)

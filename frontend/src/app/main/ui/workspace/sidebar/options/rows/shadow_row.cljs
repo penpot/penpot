@@ -145,7 +145,7 @@
                           :aria-label "open more options"
                           :disabled hidden?
                           :on-click on-toggle-open}]
-        [:& select {:class (stl/css :shadow-basic-select)
+        [:> select {:class (stl/css :shadow-basic-select)
                     :default-value (d/name shadow-style)
                     :options type-options
                     :disabled hidden?

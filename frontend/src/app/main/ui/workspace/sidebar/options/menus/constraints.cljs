@@ -208,12 +208,12 @@
              [:span {:class (stl/css :resalted-area)}]]]]
           [:div {:class (stl/css :constraints-selects)}
            [:div {:class (stl/css :horizontal-select) :data-testid "constraint-h-select"}
-            [:& select
+            [:> select
              {:default-value (if (not= constraints-h :multiple) (d/nilv (d/name constraints-h) "scale") "")
               :options options-h
               :on-change on-constraint-h-select-changed}]]
            [:div {:class (stl/css :vertical-select) :data-testid "constraint-v-select"}
-            [:& select
+            [:> select
              {:default-value (if (not= constraints-v :multiple) (d/nilv (d/name constraints-v) "scale") "")
               :options options-v
               :on-change on-constraint-v-select-changed}]]
@@ -231,3 +231,5 @@
                         :id "fixed-on-scroll"
                         :checked (:fixed-scroll values)
                         :on-change on-fixed-scroll-clicked}]]])]])])))
+
+(def constraints-menu constraints-menu*)
