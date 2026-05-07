@@ -446,7 +446,6 @@ pub extern "C" fn set_view_end() -> Result<()> {
             // instead of re-drawing every visible tile from scratch.
             state.render_state.rebuild_tile_index(&state.shapes);
         }
-
         performance::end_measure!("set_view_end");
     });
     Ok(())
