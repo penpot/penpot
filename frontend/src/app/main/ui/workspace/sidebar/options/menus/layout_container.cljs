@@ -1233,7 +1233,20 @@
         (mf/use-fn #(swap! show-dropdown* not))
 
         on-hide-dropdown
-        (mf/use-fn #(reset! show-dropdown* false))]
+        (mf/use-fn #(reset! show-dropdown* false))
+
+        add-layout-dropdown
+        [:& dropdown {:show show-dropdown?
+                      :on-close on-hide-dropdown}
+         [:div {:class (stl/css :layout-options)}
+          [:button {:class (stl/css :layout-option)
+                    :data-type "flex"
+                    :on-click on-add-layout}
+           (tr "labels.flex-layout")]
+          [:button {:class (stl/css :layout-option)
+                    :data-type "grid"
+                    :on-click on-add-layout}
+           (tr "labels.grid-layout")]]]]
 
     [:div {:class (stl/css :element-set) :data-testid "inspect-layout"}
      [:div {:class (stl/css :element-title)}
@@ -1241,7 +1254,7 @@
        {:collapsable has-layout?
         :collapsed (not open?)
         :on-collapsed on-toggle-visibility
-        :title "Layout"
+        :title (tr "labels.layout")
         :class (stl/css-case :title-spacing-layout (not has-layout?))}
 
        (if (and (not multiple) (:layout values))
@@ -1251,17 +1264,7 @@
                             :on-click on-toggle-dropdown-visibility
                             :icon i/menu}]
 
-          [:& dropdown {:show show-dropdown?
-                        :on-close on-hide-dropdown}
-           [:div {:class (stl/css :layout-options)}
-            [:button {:class (stl/css :layout-option)
-                      :data-type "flex"
-                      :on-click on-add-layout}
-             "Flex layout"]
-            [:button {:class (stl/css :layout-option)
-                      :data-type "grid"
-                      :on-click on-add-layout}
-             "Grid layout"]]]
+          add-layout-dropdown
 
           (when has-layout?
             [:> icon-button* {:variant "ghost"
@@ -1275,17 +1278,7 @@
                             :on-click on-toggle-dropdown-visibility
                             :icon i/add}]
 
-          [:& dropdown {:show show-dropdown?
-                        :on-close on-hide-dropdown}
-           [:div {:class (stl/css :layout-options)}
-            [:button {:class (stl/css :layout-option)
-                      :data-type "flex"
-                      :on-click on-add-layout}
-             "Flex layout"]
-            [:button {:class (stl/css :layout-option)
-                      :data-type "grid"
-                      :on-click on-add-layout}
-             "Grid layout"]]]
+          add-layout-dropdown
 
           (when has-layout?
             [:> icon-button* {:variant "ghost"
