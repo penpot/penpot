@@ -96,7 +96,7 @@
 ;; COMPONENTS
 ;; ------------------------------------------------
 
-(mf/defc size-display [{:keys [selrect zoom]}]
+(mf/defc size-display* [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         size-label (dm/str (fmt/format-number width) " x " (fmt/format-number height))
 
@@ -123,7 +123,7 @@
                      :font-size (/ font-size zoom)}}
       size-label]]))
 
-(mf/defc distance-display-pill [{:keys [x y zoom distance bounds]}]
+(mf/defc distance-display-pill* [{:keys [x y zoom distance bounds]}]
   (let [distance-pill-width (/ distance-pill-width zoom)
         distance-pill-height (/ distance-pill-height zoom)
         font-size (/ font-size zoom)
@@ -167,7 +167,7 @@
                      :font-size font-size}}
       (fmt/format-pixels distance)]]))
 
-(mf/defc selection-rect [{:keys [selrect zoom]}]
+(mf/defc selection-rect* [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         selection-rect-width (/ selection-rect-width zoom)]
     [:g.selection-rect
@@ -179,7 +179,7 @@
                      :stroke hover-color
                      :stroke-width selection-rect-width}}]]))
 
-(mf/defc distance-display [{:keys [from to zoom bounds]}]
+(mf/defc distance-display* [{:keys [from to zoom bounds]}]
   (let [fixed-x (if (gsh/fully-contained? from to)
                   (+ (:x to) (/ (:width to) 2))
                   (+ (:x from) (/ (:width from) 2)))
@@ -211,14 +211,14 @@
              :style {:stroke distance-color
                      :stroke-width distance-line-stroke}}]
 
-           [:& distance-display-pill
+           [:> distance-display-pill*
             {:x center-x
              :y center-y
              :zoom zoom
              :distance distance
              :bounds bounds}]])))))
 
-(mf/defc selection-guides [{:keys [bounds selrect zoom]}]
+(mf/defc selection-guides* [{:keys [bounds selrect zoom]}]
   [:g.selection-guides
    (for [[idx [x1 y1 x2 y2]] (d/enumerate (calculate-guides bounds selrect))]
      [:line {:key (dm/str "guide-" idx)
@@ -230,7 +230,7 @@
                      :stroke-width (/ select-guide-width zoom)
                      :stroke-dasharray (/ select-guide-dasharray zoom)}}])])
 
-(mf/defc measurement
+(mf/defc measurement*
   [{:keys [bounds frame selected-shapes hover-shape zoom]}]
   (let [selected-ids          (into #{} (map :id) selected-shapes)
         selected-selrect      (gsh/shapes->rect selected-shapes)
@@ -240,23 +240,23 @@
 
     (when (seq selected-shapes)
       [:g.measurement-feedback {:pointer-events "none"}
-       [:& selection-guides {:selrect selected-selrect
-                             :bounds bounds
-                             :zoom zoom}]
-       [:& size-display {:selrect selected-selrect :zoom zoom}]
+       [:> selection-guides* {:selrect selected-selrect
+                              :bounds bounds
+                              :zoom zoom}]
+       [:> size-display* {:selrect selected-selrect :zoom zoom}]
 
        (if (or (not hover-shape) (not hover-selected-shape?))
          (when (and frame (not= uuid/zero (:id frame)))
            (let [frame-bb (-> (:points frame) (grc/points->rect))]
              [:g.hover-shapes
-              [:& selection-rect {:type :hover :selrect frame-bb :zoom zoom}]
-              [:& distance-display {:from frame-bb
-                                    :to selected-selrect
-                                    :zoom zoom
-                                    :bounds bounds-selrect}]]))
+              [:> selection-rect* {:type :hover :selrect frame-bb :zoom zoom}]
+              [:> distance-display* {:from frame-bb
+                                     :to selected-selrect
+                                     :zoom zoom
+                                     :bounds bounds-selrect}]]))
 
          [:g.hover-shapes
-          [:& selection-rect {:type :hover :selrect hover-selrect :zoom zoom}]
-          [:& size-display {:selrect hover-selrect :zoom zoom}]
-          [:& distance-display {:from hover-selrect :to selected-selrect :zoom zoom :bounds bounds-selrect}]])])))
+          [:> selection-rect* {:type :hover :selrect hover-selrect :zoom zoom}]
+          [:> size-display* {:selrect hover-selrect :zoom zoom}]
+          [:> distance-display* {:from hover-selrect :to selected-selrect :zoom zoom :bounds bounds-selrect}]])])))
 
