@@ -9,9 +9,8 @@
    [app.common.data :as d]
    [rumext.v2 :as mf]))
 
-(mf/defc frame-preview
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+(mf/defc frame-preview*
+  {::mf/wrap [mf/memo]}
   []
 
   (let [iframe-ref (mf/use-ref nil)
