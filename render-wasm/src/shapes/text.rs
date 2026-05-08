@@ -26,7 +26,6 @@ use crate::math::Point;
 use crate::shapes::{self, merge_fills, Shape, VerticalAlign};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
-use crate::STATE;
 
 // TODO: maybe move this to the wasm module?
 pub type ParagraphBuilderGroup = Vec<ParagraphBuilder>;

@@ -2,8 +2,7 @@ use crate::get_render_state;
 use crate::skia::textlayout::FontCollection;
 use crate::skia::Image;
 use crate::uuid::Uuid;
-use crate::with_state_mut;
-use crate::STATE;
+use crate::with_state;
 use std::collections::HashSet;
 
 pub fn uuid_from_u32_quartet(a: u32, b: u32, c: u32, d: u32) -> Uuid {
@@ -35,7 +34,7 @@ pub fn get_fallback_fonts() -> &'static HashSet<String> {
 }
 
 pub fn get_font_collection() -> &'static FontCollection {
-    with_state_mut!(state, { state.font_collection() })
+    with_state!(state, { state.font_collection() })
 }
 
 #[derive(Debug, Clone, Copy)]
