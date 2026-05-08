@@ -5177,7 +5177,7 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr "We couldn't start the checkout. Please try again. If the problem persists, contact us: support@penpot.app."
 
 msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr "We’re having trouble activating your subscription. Please try again. If the problem persists, contact us: support@penpot.app."
+msgstr "We couldn’t confirm your subscription. Please check your subscription status on the Subscription page. You may try again if needed."
 
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
 msgid "subscription.labels"
