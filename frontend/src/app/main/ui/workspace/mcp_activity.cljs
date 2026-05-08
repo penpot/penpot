@@ -35,6 +35,15 @@
     :failed (tr "workspace.mcp.activity.phase.failed")
     (dm/str phase)))
 
+(defn- safe-ts-label
+  [ts]
+  (if ts
+    (try
+      (ct/format-inst ts :localized-date-time)
+      (catch :default _
+        (tr "labels.na")))
+    (tr "labels.na")))
+
 (mf/defc mcp-activity-dialog
   {::mf/register modal/components
    ::mf/register-as :mcp-activity}
@@ -77,8 +86,9 @@
                    [:div {:class (stl/css :activity-meta)}
                     [:span {:class (phase-class (:phase row))}
                      (phase-label (:phase row))]
-                    [:span (ct/format-inst (:ts row) :localized-date-time)]
-                    [:span {:class (stl/css :activity-task)} (:task row)]]
+                    [:span (safe-ts-label (:ts row))]
+                    [:span {:class (stl/css :activity-task)}
+                     (or (:task row) "unknown-task")]]
                    (when (:error row)
                      [:div {:class (stl/css :activity-error)} (:error row)])
                    (when (:code-preview row)

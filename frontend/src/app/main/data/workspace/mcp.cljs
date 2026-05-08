@@ -32,10 +32,27 @@
 (def ^:private max-code-preview-chars 200)
 
 (defn- normalize-activity-phase [phase]
-  (cond
-    (keyword? phase) phase
-    (string? phase) (keyword phase)
-    :else :received))
+  (let [normalized (cond
+                     (keyword? phase) phase
+                     (string? phase) (keyword phase)
+                     :else :received)]
+    (if (contains? #{:received :completed :failed} normalized)
+      normalized
+      :received)))
+
+(defn- sanitize-activity-payload
+  [payload]
+  (let [{:keys [phase id task code error]} (or payload {})
+        task (if (string? task) task "unknown-task")
+        id (if (some? id) (str id) "unknown-id")
+        error (when (some? error) (str error))
+        code-preview (when (string? code)
+                       (dm/truncate code max-code-preview-chars))]
+    {:phase (normalize-activity-phase phase)
+     :id id
+     :task task
+     :error error
+     :code-preview code-preview}))
 
 (defn record-mcp-activity
   "Appends one MCP task lifecycle row for in-app inspection (remote MCP)."
@@ -43,13 +60,11 @@
   (ptk/reify ::record-mcp-activity
     ptk/UpdateEvent
     (update [_ state]
-      (let [{:keys [phase id task code error]} payload
-            phase-kw (normalize-activity-phase phase)
-            code-preview (when (string? code)
-                           (dm/truncate code max-code-preview-chars))
+      (let [{:keys [phase id task error code-preview]}
+            (sanitize-activity-payload payload)
             entry {:id id
                    :task task
-                   :phase phase-kw
+                   :phase phase
                    :ts (ct/now)
                    :code-preview code-preview
                    :error error}]
