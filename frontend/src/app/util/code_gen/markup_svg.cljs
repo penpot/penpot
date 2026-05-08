@@ -15,7 +15,7 @@
   [objects shape]
   (rds/renderToStaticMarkup
    (mf/element
-    render/object-svg
+    render/object-svg*
     #js {:objects objects
          :object-id (-> shape :id)})))
 
@@ -23,7 +23,7 @@
   [objects shapes]
   (rds/renderToStaticMarkup
    (mf/element
-    render/objects-svg
+    render/objects-svg*
     #js {:objects objects
          :object-ids (mapv :id shapes)})))
 
