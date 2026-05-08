@@ -8,6 +8,8 @@
 
 ### :sparkles: New features & Enhancements
 
+- Show a read-only W × H size badge below the bounding box of the current selection so dimensions are visible directly on the canvas (initial implementation: always-on badge, single visual variant, no live-resize integration; remaining spec items follow in subsequent PRs) [Github #9205](https://github.com/penpot/penpot/issues/9205)
+
 ### :bug: Bugs fixed
 
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers

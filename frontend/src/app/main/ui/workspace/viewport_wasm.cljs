@@ -653,6 +653,15 @@
           {:shape (get base-objects edition)
            :zoom zoom}])
 
+       (when (and (seq selected-shapes)
+                  (not transform)
+                  (not text-editing?)
+                  (not edition)
+                  (not page-transition?))
+         [:> msr/selection-size-badge*
+          {:selrect (gsh/shapes->rect selected-shapes)
+           :zoom zoom}])
+
        (when show-measures?
          [:> msr/measurement*
           {:bounds vbox
