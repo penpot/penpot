@@ -315,8 +315,8 @@
 (defn get-file
   "Get file, resolve all features and apply migrations.
 
-  Usefull when you have plan to apply massive or not cirurgical
-  operations on file, because it removes the ovehead of lazy fetching
+  Useful when you have plan to apply massive or not surgical
+  operations on file, because it removes the overhead of lazy fetching
   and decoding."
   [cfg file-id & {:as opts}]
   (db/run! cfg get-file* file-id opts))

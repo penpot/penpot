@@ -239,7 +239,7 @@
       [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]]]
 
     [:fn {:error/field [:value :reference]
-          :error/fn #(tr "workspace.tokens.self-reference")}
+          :error/fn #(tr "errors.tokens.self-reference")}
      (fn [{:keys [name value]}]
        (let [reference (get value :reference)]
          (if (and reference name)
@@ -247,7 +247,7 @@
            true)))]
 
     [:fn {:error/field [:value :line-height]
-          :error/fn #(tr "workspace.tokens.composite-line-height-needs-font-size")}
+          :error/fn #(tr "errors.tokens.composite-line-height-needs-font-size")}
      (fn [{:keys [value]}]
        (let [line-heigh (get value :line-height)
              font-size (get value :font-size)]

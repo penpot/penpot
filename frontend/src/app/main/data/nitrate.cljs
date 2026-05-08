@@ -13,6 +13,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (def ^:private nitrate-entry-active-key ::nitrate-entry-active)
@@ -74,14 +75,52 @@
   (let [href (dm/str "/control-center/licenses/billing?callback=" (js/encodeURIComponent go-to-subscription-url))]
     (st/emit! (rt/nav-raw :href href))))
 
+(def nitrate-checkout-error-token "nitrate-checkout-error")
+(def nitrate-checkout-finish-error-token "nitrate-checkout-finish-error")
+(def nitrate-checkout-cancelled-token "nitrate-checkout-cancelled")
+
+(defn- append-query-param
+  [url key value]
+  (let [assoc-q  (fn [u]
+                   (update u :query
+                           (fn [q]
+                             (-> (u/query-string->map (or q ""))
+                                 (assoc (name key) value)
+                                 u/map->query-string))))
+        parsed   (u/uri url)
+        fragment (:fragment parsed)]
+    (if (str/blank? fragment)
+      (str (assoc-q parsed))
+      (-> parsed
+          (assoc :fragment (str (assoc-q (u/parse fragment))))
+          str))))
+
+(defn build-nitrate-callback-urls
+  "Build the success/error/cancel callback URLs from a base URL by appending
+  a `subscription` query param identifying the outcome."
+  [base-url]
+  (let [build (fn [token]
+                (append-query-param base-url :subscription token))]
+    {:success-callback      (build "subscribed-to-penpot-nitrate")
+     :error-callback        (build nitrate-checkout-error-token)
+     :finish-error-callback (build nitrate-checkout-finish-error-token)
+     :cancel-callback       (build nitrate-checkout-cancelled-token)}))
+
 (defn go-to-buy-nitrate-license
-  ([subscription]
-   (go-to-buy-nitrate-license subscription nil))
-  ([subscription callback]
-   (let [params (cond-> {:subscription subscription}
-                  callback (assoc :callback callback))
-         href   (dm/str "/control-center/licenses/start?" (u/map->query-string params))]
-     (st/emit! (rt/nav-raw :href href)))))
+  [subscription base-url]
+  (let [{:keys [success-callback error-callback finish-error-callback cancel-callback]}
+        (build-nitrate-callback-urls base-url)
+        params {:subscription subscription
+                :callback success-callback
+                :error_callback error-callback
+                :finish_error_callback finish-error-callback
+                :cancel_callback cancel-callback}
+        href   (dm/str "/control-center/licenses/start?" (u/map->query-string params))]
+    (st/emit! (rt/nav-raw :href href))))
+
+(defn fetch-connectivity
+  []
+  (rp/cmd! ::get-nitrate-connectivity {}))
 
 (defn is-valid-license?
   [profile]
@@ -134,3 +173,81 @@
            (rx/mapcat
             (fn [_]
               (rx/of (modal/hide))))))))
+
+(defn show-add-team-to-org-modal
+  "Fetches fresh team/org data, then shows the add-to-org modal
+  restricted to orgs where the user has permission, or the no-permission
+  modal if none qualify."
+  [{:keys [team-id]}]
+  (ptk/reify ::show-add-team-to-org-modal
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile-id (dm/get-in state [:profile :id])]
+        (->> (rp/cmd! :get-teams)
+             (rx/mapcat
+              (fn [teams]
+                (let [all-orgs (map dt/team->organization
+                                    (filter #(and (:is-default %) (:organization-id %)) teams))
+                      orgs     (filter (fn [org]
+                                         (let [perm    (get-in org [:permissions :create-teams])
+                                               is-own? (= profile-id (:owner-id org))]
+                                           (or (= perm "any") is-own?))) all-orgs)
+                      team     (first (filter #(= (:id %) team-id) teams))
+                      on-confirm (fn [organization-id]
+                                   (st/emit! (add-team-to-org {:team-id team-id
+                                                               :organization-id organization-id})))]
+                  (rx/of (dt/teams-fetched teams)
+                         (if (empty? orgs)
+                           (modal/show :no-permission-modal {:type :no-orgs-create})
+                           (let [has-filtered? (< (count orgs) (count all-orgs))
+                                 extra-props   (when has-filtered?
+                                                 {:info-message-key "dashboard.select-org-modal.permission-info"})]
+                             (modal/show :select-organization-modal
+                                         (merge {:organizations           orgs
+                                                 :current-organization-id (:organization-id team)
+                                                 :on-confirm              on-confirm
+                                                 :title-key               "dashboard.select-org-modal.title"
+                                                 :choose-key              "dashboard.select-org-modal.choose"
+                                                 :placeholder-key         "dashboard.select-org-modal.select"
+                                                 :accept-key              "dashboard.select-org-modal.accept"
+                                                 :cancel-key              "labels.cancel"}
+                                                extra-props)))))))))))))
+
+(defn show-change-team-org-modal
+  "Fetches fresh team/org data, then shows the change-org modal
+  restricted to orgs where the user has permission, or the no-permission
+  modal if none qualify."
+  [{:keys [team-id]}]
+  (ptk/reify ::show-change-team-org-modal
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile-id (dm/get-in state [:profile :id])]
+        (->> (rp/cmd! :get-teams)
+             (rx/mapcat
+              (fn [teams]
+                (let [all-orgs (map dt/team->organization
+                                    (filter #(and (:is-default %) (:organization-id %)) teams))
+                      orgs     (filter (fn [org]
+                                         (let [perm    (get-in org [:permissions :create-teams])
+                                               is-own? (= profile-id (:owner-id org))]
+                                           (or (= perm "any") is-own?))) all-orgs)
+                      team     (first (filter #(= (:id %) team-id) teams))
+                      on-confirm (fn [organization-id]
+                                   (st/emit! (add-team-to-org {:team-id team-id
+                                                               :organization-id organization-id})))]
+                  (rx/of (dt/teams-fetched teams)
+                         (if (empty? orgs)
+                           (modal/show :no-permission-modal {:type :no-orgs-change})
+                           (let [has-filtered? (< (count orgs) (count all-orgs))
+                                 extra-props   (when has-filtered?
+                                                 {:info-message-key "dashboard.select-org-modal.permission-info"})]
+                             (modal/show :select-organization-modal
+                                         (merge {:organizations           orgs
+                                                 :current-organization-id (:organization-id team)
+                                                 :on-confirm              on-confirm
+                                                 :title-key               "dashboard.change-org-modal.title"
+                                                 :choose-key              "dashboard.change-org-modal.choose"
+                                                 :placeholder-key         "dashboard.change-org-modal.select"
+                                                 :accept-key              "dashboard.change-org-modal.accept"
+                                                 :cancel-key              "labels.cancel"}
+                                                extra-props)))))))))))))

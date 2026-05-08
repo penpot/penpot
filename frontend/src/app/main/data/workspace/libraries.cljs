@@ -696,7 +696,7 @@
       (let [page-id          (:current-page-id state)
             file-id          (:current-file-id state)
 
-            ;; FIXME: revisit, innefficient access
+            ;; FIXME: revisit, inefficient access
             objects          (dsh/lookup-page-objects state page-id)
 
             libraries        (dsh/lookup-libraries state)
@@ -1382,8 +1382,14 @@
 
             check-changes
             (fn [[event old-data]]
-              (if (nil? old-data)
+              (cond
+                (nil? old-data)
                 (rx/empty)
+
+                (:translation? event)
+                (rx/empty)
+
+                :else
                 (let [{:keys [file-id changes save-undo? undo-group]} event
 
                       changed-components

@@ -810,7 +810,7 @@
 (mf/defc select-organization-modal
   {::mf/register modal/components
    ::mf/register-as :select-organization-modal}
-  [{:keys [organizations current-organization-id on-confirm title-key choose-key placeholder-key accept-key cancel-key]}]
+  [{:keys [organizations current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key]}]
   (let [valid-organizations (mf/with-memo [organizations]
                               (remove #(= (:id %) current-organization-id) organizations))
         options (mf/with-memo [valid-organizations]
@@ -844,12 +844,19 @@
        [:button {:class (stl/css :modal-close-btn)
                  :on-click modal/hide!} deprecated-icon/close]]
 
+      (when text-key
+        [:div {:class (stl/css :modal-content :modal-select-org-text)} (tr text-key)])
+
       [:div
+       (when info-message-key
+         [:div {:class (stl/css :modal-select-org-info)}
+          (tr info-message-key)])
        [:div {:class (stl/css :modal-select-org-content)}
         (tr choose-key)]
        [:> combobox* {:id "selected-id"
                       :class (stl/css :team-member)
                       :options options
+                      :select-only true
                       :default-selected (or (some-> (get-in @form [:data :selected-id]) str) "")
                       :placeholder (tr placeholder-key)
                       :on-change on-change}]]
@@ -920,7 +927,6 @@
         on-error
         (fn [form]
           (let [{:keys [type code] :as error} (ex-data form)]
-            (println form)
             (cond
               (and (= :validation type)
                    (= :profile-is-muted code))
@@ -982,7 +988,6 @@
                  new-direction (if (= current-field :status)
                                  (if (= current-direction :asc) :desc :asc)
                                  :asc)]
-             (println @invitations)
              (swap! sort-state assoc :field :status :direction new-direction)
              (swap! invitations #(let [sorted (sort-by (juxt :expired :email) %)]
                                    (if (= new-direction :desc)
@@ -1362,18 +1367,29 @@
         can-edit    (or (:is-owner permissions)
                         (:is-admin permissions))
 
-        organizations (mf/deref refs/teams)
-        organizations (mf/with-memo [organizations]
-                        (->> (vals organizations)
-                             (filter :is-default)
-                             (filter :organization-id)
-                             (map dtm/team->organization)))
+        profile       (mf/deref refs/profile)
+        profile-id    (:id profile)
+
+        all-organizations (mf/deref refs/teams)
+        all-organizations (mf/with-memo [all-organizations]
+                            (->> (vals all-organizations)
+                                 (filter :is-default)
+                                 (filter :organization-id)
+                                 (map dtm/team->organization)))
+
+        ;; Filter to orgs where user is allowed to create/add teams
+        organizations (mf/with-memo [all-organizations profile-id]
+                        (->> all-organizations
+                             (filter (fn [org]
+                                       (let [perm      (get-in org [:permissions :create-teams])
+                                             is-owner? (= profile-id (:owner-id org))]
+                                         (or (= perm "any") is-owner?))))))
 
         can-change-organization? (mf/with-memo [organizations]
                                    (> (count organizations) 1))
 
-        can-add-to-organization? (mf/with-memo [organizations]
-                                   (and (pos? (count organizations))
+        can-add-to-organization? (mf/with-memo [organizations all-organizations]
+                                   (and (pos? (count all-organizations))
                                         (not (:is-default team))))
 
         show-org-options-menu*
@@ -1420,40 +1436,17 @@
                          :accept-style :danger}]
              (st/emit! (modal/show params)))))
 
-        on-add-team-to-org-confirm
-        (mf/use-fn
-         (mf/deps team)
-         (fn [organization-id]
-           (let [organization (d/seek #(= organization-id (:id %)) organizations)]
-             (when organization
-               (st/emit! (dnt/add-team-to-org {:team-id (:id team)
-                                               :organization-id organization-id}))))))
-
         on-add-team-to-org
         (mf/use-fn
-         (mf/deps organizations on-add-team-to-org-confirm)
+         (mf/deps team)
          (fn []
-           (st/emit! (modal/show :select-organization-modal {:organizations organizations
-                                                             :current-organization-id (:organization-id team)
-                                                             :on-confirm on-add-team-to-org-confirm
-                                                             :title-key "dashboard.select-org-modal.title"
-                                                             :choose-key "dashboard.select-org-modal.choose"
-                                                             :placeholder-key "dashboard.select-org-modal.select"
-                                                             :accept-key "dashboard.select-org-modal.accept"
-                                                             :cancel-key "labels.cancel"}))))
+           (st/emit! (dnt/show-add-team-to-org-modal {:team-id (:id team)}))))
 
         on-change-team-org
         (mf/use-fn
-         (mf/deps organizations on-add-team-to-org-confirm)
+         (mf/deps team)
          (fn []
-           (st/emit! (modal/show :select-organization-modal {:organizations organizations
-                                                             :current-organization-id (:organization-id team)
-                                                             :on-confirm on-add-team-to-org-confirm
-                                                             :title-key "dashboard.change-org-modal.title"
-                                                             :choose-key "dashboard.change-org-modal.choose"
-                                                             :placeholder-key "dashboard.change-org-modal.select"
-                                                             :accept-key "dashboard.change-org-modal.accept"
-                                                             :cancel-key "labels.cancel"}))))]
+           (st/emit! (dnt/show-change-team-org-modal {:team-id (:id team)}))))]
 
     (mf/with-effect [team]
       (dom/set-html-title (tr "title.team-settings"

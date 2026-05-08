@@ -236,7 +236,11 @@ fn initialize_tracks(
 
         let gap_main = if first { 0.0 } else { layout_axis.gap_main };
 
-        let next_main_size = current_track.main_size + child_main_size + gap_main;
+        let next_main_size = if current_track.shapes.is_empty() {
+            child_main_size
+        } else {
+            current_track.main_size + child_main_size + gap_main
+        };
         let main_space = layout_axis.main_space();
         let exceeds_main_space = next_main_size > main_space + TRACK_TOLERANCE;
 
@@ -329,9 +333,19 @@ fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut [TrackDat
         let current = left_space / to_resize_tracks.len() as f32;
         for i in (0..to_resize_tracks.len()).rev() {
             let track = &mut to_resize_tracks[i];
-            let delta =
-                f32::min(track.max_across_size, track.across_size + current) - track.across_size;
-            track.across_size += delta;
+
+            let delta = if math::is_close_to(track.across_size, MIN_SIZE) {
+                f32::min(track.max_across_size, track.across_size + current)
+            } else {
+                f32::min(track.max_across_size, track.across_size + current) - track.across_size
+            };
+
+            if math::is_close_to(track.across_size, MIN_SIZE) {
+                track.across_size = delta;
+            } else {
+                track.across_size += delta;
+            }
+
             left_space -= delta;
 
             if (track.across_size - track.max_across_size).abs() < MIN_SIZE {
@@ -686,7 +700,7 @@ pub fn reflow_flex_layout(
                         + (nshapes as f32 - 1.0) * layout_axis.gap_main
                 })
                 .reduce(f32::max)
-                .unwrap_or(0.01)
+                .unwrap_or(MIN_SIZE)
                 + layout_axis.padding_main_start
                 + layout_axis.padding_main_end
         } else {

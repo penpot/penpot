@@ -464,9 +464,6 @@ pub extern "C" fn set_modifiers_start() -> Result<()> {
         performance::begin_measure!("set_modifiers_start");
         state.render_state.options.set_fast_mode(true);
         state.render_state.options.set_interactive_transform(true);
-        // Capture the last fully-rendered frame as a stable backdrop for the drag.
-        // This avoids relying on atlas/cache correctness during fast_mode.
-        state.render_state.surfaces.copy_target_to_backbuffer();
         performance::end_measure!("set_modifiers_start");
     });
     Ok(())

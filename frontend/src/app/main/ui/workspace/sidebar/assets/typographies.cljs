@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.path-names :as cpn]
-   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -26,7 +25,7 @@
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
@@ -354,38 +353,12 @@
                                 (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
-        ;; Issue #9141. Delete every typography under a group path in a
-        ;; single undo transaction, after user confirmation.
         on-delete-group
-        (mf/use-fn
-         (mf/deps typographies file-id on-clear-selection)
-         (fn [path]
-           (let [group-typographies
-                 (->> typographies
-                      (filter #(str/starts-with? (:path %) path)))
-
-                 ;; Hoisted so the start/commit pair is bound to the
-                 ;; same symbol regardless of how `do-delete` is
-                 ;; invoked by the confirm modal. Review suggestion
-                 ;; on PR #9151.
-                 undo-id (js/Symbol)
-
-                 do-delete
-                 (fn []
-                   (on-clear-selection)
-                   (st/emit! (dwu/start-undo-transaction undo-id))
-                   (run! st/emit!
-                         (map #(dwl/delete-typography (:id %)) group-typographies))
-                   (st/emit! (dwu/commit-undo-transaction undo-id)))]
-             (when (seq group-typographies)
-               (st/emit!
-                (modal/show
-                 {:type :confirm
-                  :title (tr "modals.delete-asset-group.title")
-                  :message (tr "modals.delete-asset-group.message"
-                               (i18n/c (count group-typographies)))
-                  :accept-label (tr "labels.delete")
-                  :on-accept do-delete}))))))
+        (mf/with-memo [typographies on-clear-selection]
+          (cmm/make-delete-asset-group-fn
+           {:assets typographies
+            :on-clear-selection on-clear-selection
+            :delete-events #(map (fn [t] (dwl/delete-typography (:id t))) %)}))
 
         on-context-menu
         (mf/use-fn
@@ -495,8 +468,7 @@
                         :id      "assets-edit-typography"
                         :handler handle-edit-typography-clicked})
 
-                     (when (and (not (or multi-typographies? multi-assets?))
-                                (contains? cf/flags :canary))
+                     (when-not (or multi-typographies? multi-assets?)
                        {:name    (tr "workspace.assets.duplicate")
                         :id      "assets-duplicate-typography"
                         :handler handle-duplicate-typography})

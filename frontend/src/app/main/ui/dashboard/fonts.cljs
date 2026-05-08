@@ -65,10 +65,9 @@
 (mf/defc font-variant-display-name*
   {::mf/private true}
   [{:keys [variant]}]
-  [:*
-   [:span (cm/font-weight->name (:font-weight variant))]
-   (when (not= "normal" (:font-style variant))
-     [:span " " (str/capital (:font-style variant))])])
+  [:span (cm/font-display-variant (:variant-name variant)
+                                  (:font-weight variant)
+                                  (:font-style variant))])
 
 (mf/defc uploaded-fonts*
   {::mf/private true}
@@ -264,10 +263,9 @@
                   [{:name    (tr "labels.edit")
                     :id      "font-edit"
                     :handler on-edit}
-                   (when (contains? cf/flags :canary)
-                     {:name    (tr "labels.download-simple")
-                      :id      "font-download"
-                      :handler on-download})
+                   {:name    (tr "labels.download-simple")
+                    :id      "font-download"
+                    :handler on-download}
                    {:name    (tr "labels.delete")
                     :id      "font-delete"
                     :handler on-delete}])]
