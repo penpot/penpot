@@ -14,7 +14,6 @@
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.render-wasm :as drw]
    [app.main.data.workspace :as-alias dw]
    [app.main.router :as rt]
    [app.main.store :as st]
