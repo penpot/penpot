@@ -177,11 +177,14 @@
         nitrate-license       (:subscription profile)
         subscription          (-> profile :props :subscription)
         subscription-type     (if nitrate? (:type nitrate-license) (get-subscription-type subscription))
-        subscription-is-trial (= "trialing" (:status (if nitrate? nitrate-license subscription)))]
+        subscription-is-trial (= "trialing" (:status (if nitrate? nitrate-license subscription)))
+        go-to-subscription    (mf/use-fn #(st/emit! (rt/nav :settings-subscription)))]
     [:div {:class (stl/css :nitrate-current-plan)}
      [:div {:class (stl/css :nitrate-current-plan-label)}
       (tr "subscription.current-plan.title")]
-     [:div {:class (stl/css :nitrate-current-plan-text)}
+     [:button {:class (stl/css :nitrate-current-plan-text)
+               :type "button"
+               :on-click go-to-subscription}
       (case subscription-type
         "professional" (tr "subscription.current-plan.professional")
         "unlimited" (if subscription-is-trial
