@@ -62,8 +62,8 @@
        (when (some? links)
          (for [[index link] (d/enumerate links)]
            ;; TODO Review this component
-           [:& lb/link-button {:class (stl/css :link)
-                               :on-click (:callback link)
-                               :value (:label link)
-                               :key (dm/str "link-" index)}]))])]])
+           [:> lb/link-button* {:class (stl/css :link)
+                                :on-click (:callback link)
+                                :value (:label link)
+                                :key (dm/str "link-" index)}]))])]])
 
