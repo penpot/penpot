@@ -4,6 +4,7 @@ about: Create a report about the bugs you have found in the new render
 title: ''
 labels: new render
 assignees: claragvinola
+type: Bug
 
 ---
 

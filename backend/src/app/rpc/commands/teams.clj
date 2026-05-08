@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -506,10 +507,26 @@
 (sv/defmethod ::create-team
   {::doc/added "1.17"
    ::sm/params schema:create-team}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id organization-id] :as params}]
 
   (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
                       ::quotes/profile-id profile-id})
+
+  ;; When creating inside an org, verify the user has permission to do so.
+  ;; Fail closed: if org permissions cannot be fetched, deny the operation.
+  (when (and organization-id (contains? cf/flags :nitrate))
+    (let [org-perms (nitrate/call cfg :get-org-permissions
+                                  {:organization-id organization-id})]
+      (if (nil? org-perms)
+        (ex/raise :type :validation
+                  :code :not-allowed
+                  :hint "Unable to verify organization permissions")
+        (when-not (nitrate-perms/allowed? :create-team
+                                          {:org-perms org-perms
+                                           :profile-id profile-id})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to create teams in this organization")))))
 
   (let [features (-> (cfeat/get-enabled-features cf/flags)
                      (set/difference cfeat/frontend-only-features)
@@ -757,19 +774,34 @@
 
 (defn delete-team
   "Mark a team for deletion"
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id] :as params}]
 
   (let [team  (get-team conn :profile-id profile-id :team-id team-id)
+        team  (if (contains? cf/flags :nitrate)
+                (nitrate/add-org-info-to-team cfg team params)
+                team)
         perms (get team :permissions)]
-
-    (when-not (:is-owner perms)
-      (ex/raise :type :validation
-                :code :only-owner-can-delete-team))
 
     (when (:is-default team)
       (ex/raise :type :validation
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
+
+    ;; Check delete permissions based on organization settings.
+    ;; For non-org teams or when nitrate is disabled, only owners can delete.
+    (if (and (:organization-id team) (contains? cf/flags :nitrate))
+      (let [org-perms {:owner-id    (:organization-owner-id team)
+                       :permissions (:organization-permissions team)}]
+        (when-not (nitrate-perms/allowed? :delete-team
+                                          {:org-perms  org-perms
+                                           :profile-id profile-id
+                                           :team-perms perms})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to delete teams in this organization")))
+      (when-not (:is-owner perms)
+        (ex/raise :type :validation
+                  :code :only-owner-can-delete-team)))
 
     (let [delay (ldel/get-deletion-delay team)
           team  (db/update! conn :team

@@ -280,7 +280,7 @@
   [explain]
   (->> (:errors explain)
        (reduce csm/interpret-schema-problem {})
-       (mapcat (comp seq val))
+       #_(mapcat (comp seq val))     ;; FIXME: why is this for? it breaks the message
        (map (fn [[field {:keys [message]}]]
               (tr "plugins.validation.message" (name field) message)))
        (str/join ". ")))

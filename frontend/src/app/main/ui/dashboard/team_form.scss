@@ -5,6 +5,8 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as t;
 
 .modal-overlay {
   @extend %modal-overlay-base;
@@ -15,11 +17,11 @@
 }
 
 .modal-header {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.uppercase-title-typography;
+  @include t.use-typography("headline-large");
 
   color: var(--modal-title-foreground-color);
 }
@@ -29,33 +31,31 @@
 }
 
 .modal-content {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
+  color: var(--color-foreground-secondary);
+
+  @include t.use-typography("body-large");
 }
 
 .team-form {
-  min-width: deprecated.$s-400;
+  min-inline-size: px2rem(400);
 }
 
 .group-name-input {
   @extend %input-element-label;
-  @include deprecated.body-small-typography;
 
-  margin-bottom: deprecated.$s-8;
+  margin-block-end: var(--sp-s);
+}
 
-  label {
-    @include deprecated.flex-column;
-    @include deprecated.body-small-typography;
-
-    align-items: flex-start;
-    width: 100%;
-    border: none;
-    background-color: transparent;
-    height: 100%;
-
-    input {
-      @include deprecated.body-small-typography;
-    }
-  }
+.group-name-input label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  align-items: flex-start;
+  width: 100%;
+  border: none;
+  background-color: transparent;
+  height: 100%;
 }
 
 .action-buttons {
