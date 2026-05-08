@@ -42,6 +42,8 @@ export EMCC_CFLAGS="--no-entry \
     -sEXPORTED_RUNTIME_METHODS=GL,UTF8ToString,stringToUTF8,HEAPU8,HEAP32,HEAPU32,HEAPF32 \
     -sENVIRONMENT=web \
     -sMODULARIZE=1 \
+    -sDISABLE_EXCEPTION_CATCHING=1 \
+    -sFILESYSTEM=0 \
     -sEXPORT_ES6=1";
 
 export EM_CACHE="/tmp/emsdk_cache";
