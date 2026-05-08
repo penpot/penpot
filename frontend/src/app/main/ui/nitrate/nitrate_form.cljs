@@ -40,7 +40,8 @@
         (mf/use-fn
          (mf/deps form)
          (fn []
-           (dnt/go-to-buy-nitrate-license (-> @form :clean-data :subscription name))))
+           (let [subscription (-> @form :clean-data :subscription name)]
+             (dnt/go-to-buy-nitrate-license subscription dnt/go-to-subscription-url))))
 
         on-activate-click
         (mf/use-fn

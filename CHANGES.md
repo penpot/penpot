@@ -8,7 +8,11 @@
 
 ### :sparkles: New features & Enhancements
 
+- Show a read-only W × H size badge below the bounding box of the current selection so dimensions are visible directly on the canvas (initial implementation: always-on badge, single visual variant, no live-resize integration; remaining spec items follow in subsequent PRs) [Github #9205](https://github.com/penpot/penpot/issues/9205)
+
 ### :bug: Bugs fixed
+
+- Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 
 ## 2.16.0 (Unreleased)
 
@@ -62,6 +66,7 @@
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts (by @RenzoMXD) [Github #9063](https://github.com/penpot/penpot/pull/9063)
 - Add pixel grid color picker in viewport settings (by @Yakehira) [Github #7750](https://github.com/penpot/penpot/issues/7750)
 - Add HEX, HSB and HSL support to the color picker with a model switcher that persists across sessions (by @edwin-rivera-dev) [Github #9133](https://github.com/penpot/penpot/issues/9133)
+- Expose `variants` retrieval on `LibraryComponent` via `isVariant()` type guard in plugin API [Github #9185](https://github.com/penpot/penpot/issues/9185)
 - Show specific invitation-link error messages for expired, email-mismatch and invalid token cases [Github #9220](https://github.com/penpot/penpot/issues/9220)
 - Show detailed messages on file import errors to help diagnose why a file could not be imported (by @jsdevninja) [Github #9004](https://github.com/penpot/penpot/issues/9004)
 - Add read-only preview mode for saved versions — click a version name to open a dedicated preview view (by @wdeveloper16) [Github #8976](https://github.com/penpot/penpot/issues/8976)
@@ -70,6 +75,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix `Ctrl+'` "Show guides" shortcut on non-US keyboard layouts by matching the physical key location so it no longer collides with the snap-guides shortcut (by @RenzoMXD) [Github #8423](https://github.com/penpot/penpot/issues/8423)
+- Fix lost-update race on `team.features` during concurrent file creation: two simultaneous create-file requests on the same team could both read the same features snapshot, compute different unions, and have the second `UPDATE` silently overwrite the first; the write is now preceded by a `SELECT … FOR UPDATE` inside the same transaction so every update sees the latest committed state [Github #9197](https://github.com/penpot/penpot/issues/9197)
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
@@ -131,6 +138,9 @@
 - Fix tooltip appearing two times when nested elements [Github #9031](https://github.com/penpot/penpot/issues/9031)
 - Fix broken update library notification link in the UI [Github #9070](https://github.com/penpot/penpot/issues/9070)
 - Fix plugin API `ShapeBase.component()` returning the outermost component instead of the immediate component in case of nested component instances [Github #9183](https://github.com/penpot/penpot/issues/9183)
+- Fix missing `labels.open` translation that surfaced the raw key as the typography font open-button `aria-label`, breaking screen-reader output (by @MilosM348)
+- Fix plugin API `shape.fills` and `shape.strokes` arrays being read-only [Github #8357](https://github.com/penpot/penpot/issues/8357)
+
 
 ## 2.15.0 (Unreleased)
 
@@ -145,6 +155,16 @@
 - Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
 - Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
+- Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix false “text editing” warning when applying tokens [Github #6346](https://github.com/penpot/penpot/issues/9346)
+
+
+## 2.14.5
+
+### :bug: Bugs fixed
+
+- Fix incorrect invitation token handling on register process [Github #9380](https://github.com/penpot/penpot/pull/9380)
+
 
 ## 2.14.4
 
