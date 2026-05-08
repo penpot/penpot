@@ -6360,6 +6360,10 @@ msgstr "Toggle blur"
 msgid "workspace.options.canvas-background"
 msgstr "Canvas background"
 
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+msgid "workspace.options.pixel grid-color"
+msgstr "Pixel grid color"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
 msgid "workspace.options.clip-content"
 msgstr "Clip content"
