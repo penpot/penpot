@@ -148,10 +148,6 @@
     ;; Enable performance logs in devconsole (disabled by default)
     :perf-logs
 
-    ;; Used for designate features that will be available in the next
-    ;; release
-    :canary
-
     ;; Security layer middleware that filters request by fetch
     ;; metadata headers
     :sec-fetch-metadata-middleware

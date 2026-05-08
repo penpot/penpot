@@ -106,7 +106,14 @@ test.describe("Remapping a single token", () => {
       });
 
       // Create base shadow token
-      await createToken(page, "Shadow", "base-shadow", "Color", "#000000");
+      await createToken(
+        page,
+        "Shadow",
+        "base-shadow",
+        "Color",
+        "textbox",
+        "#000000",
+      );
 
       // Create derived shadow token that references base-shadow
       await createCompositeDerivedToken(
@@ -150,7 +157,14 @@ test.describe("Remapping a single token", () => {
       } = await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
       // Create base shadow token
-      await createToken(page, "Shadow", "primary-shadow", "Color", "#000000");
+      await createToken(
+        page,
+        "Shadow",
+        "primary-shadow",
+        "Color",
+        "textbox",
+        "#000000",
+      );
 
       // Create derived shadow token that references base
       await createCompositeDerivedToken(
@@ -257,7 +271,14 @@ test.describe("Remapping a single token", () => {
       const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
       // Create base typography token
-      await createToken(page, "Typography", "base-text", "Font size", "16");
+      await createToken(
+        page,
+        "Typography",
+        "base-text",
+        "Font size",
+        "textbox",
+        "16",
+      );
 
       // Create derived typography token
       await createCompositeDerivedToken(
@@ -301,7 +322,14 @@ test.describe("Remapping a single token", () => {
       const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
       // Create base typography token
-      await createToken(page, "Typography", "body-style", "Font size", "16");
+      await createToken(
+        page,
+        "Typography",
+        "body-style",
+        "Font size",
+        "textbox",
+        "16",
+      );
 
       // Create derived typography token
       await tokensTabPanel
@@ -536,7 +564,14 @@ test.describe("Remapping a single token", () => {
       });
 
       // Create base shadow token
-      await createToken(page, "Shadow", "base-shadow", "Color", "#000000");
+      await createToken(
+        page,
+        "Shadow",
+        "base-shadow",
+        "Color",
+        "textbox",
+        "#000000",
+      );
 
       // Create derived shadow token that references base-shadow
       await createCompositeDerivedToken(
@@ -575,7 +610,14 @@ test.describe("Remapping a single token", () => {
       });
 
       // Create base shadow token
-      await createToken(page, "Shadow", "base-shadow", "Color", "#000000");
+      await createToken(
+        page,
+        "Shadow",
+        "base-shadow",
+        "Color",
+        "textbox",
+        "#000000",
+      );
 
       // Create derived shadow token that references base-shadow
       await createCompositeDerivedToken(
@@ -615,8 +657,22 @@ test.describe("Remapping group of tokens", () => {
     const rightSidebar = workspacePage.rightSidebar;
 
     // Create multiple tokens in a group
-    await createToken(page, "Color", "light.primary", "Value", "#FFFFFF");
-    await createToken(page, "Color", "light.secondary", "Value", "#EEEEEE");
+    await createToken(
+      page,
+      "Color",
+      "light.primary",
+      "Value",
+      "textbox",
+      "#FFFFFF",
+    );
+    await createToken(
+      page,
+      "Color",
+      "light.secondary",
+      "Value",
+      "textbox",
+      "#EEEEEE",
+    );
 
     // Verify that the node and child token are visible before deletion
     const lightNode = tokensSidebar.getByRole("button", {
@@ -687,7 +743,9 @@ test.describe("Remapping group of tokens", () => {
     await expect(lighterNode).toBeVisible();
 
     // Verify that the applied token reference has been updated in the right sidebar for the selected shape
-    const fillSection = rightSidebar.getByRole("region", { name: "Fill section" });
+    const fillSection = rightSidebar.getByRole("region", {
+      name: "Fill section",
+    });
     await expect(fillSection).toBeVisible();
 
     const tokenReference = fillSection.getByLabel("lighter.primary", {
