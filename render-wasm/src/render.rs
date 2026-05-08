@@ -3270,6 +3270,23 @@ impl RenderState {
             .get_tiles_of(shape.id)
             .map_or(Vec::new(), |t| t.iter().copied().collect());
 
+        // Drag fast path: when the shape's tile footprint is identical to
+        // last frame, the tile *content* still changed (the shape moved
+        // within those tiles), so callers must still invalidate the tile
+        // cache for that set — but the index `remove_shape_at` +
+        // `add_shape_at` shuffle is pure churn.
+        if self.options.is_interactive_transform() {
+            let new_count = ((rex - rsx + 1) * (rey - rsy + 1)) as usize;
+            if old_tiles.len() == new_count
+                && old_tiles.iter().all(|t| {
+                    let (x, y) = (t.x(), t.y());
+                    x >= rsx && x <= rex && y >= rsy && y <= rey
+                })
+            {
+                return old_tiles.into_iter().collect();
+            }
+        }
+
         let mut result = HashSet::<tiles::Tile>::with_capacity(old_tiles.len());
 
         // First, remove the shape from all tiles where it was previously located

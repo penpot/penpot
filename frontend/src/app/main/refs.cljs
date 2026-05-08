@@ -388,9 +388,50 @@
 (def workspace-wasm-editor-styles
   (l/derived :workspace-wasm-editor-styles st/state))
 
+(def ^:private wasm-modifier-jitter-threshold-px
+  ;; Suppress drag-preview pushes whose translation delta is below half a
+  ;; pixel. The Skia renderer keeps running at full sample cadence; this
+  ;; only coarsens the JS-side outline geometry recompute that the memoed
+  ;; consumers in `viewport_wasm` derive from `wasm-modifiers`.
+  0.5)
+
+(defn- ^boolean wasm-modifiers-significant-change?
+  "Cheap predicate: did `new` move any shape by ≥ threshold pixels vs `prev`.
+   Only short-circuits for *pure-translation* matrices (drag); resize/rotate
+   matrices always pass through."
+  [prev new threshold]
+  (cond
+    (or (nil? prev) (nil? new)) true
+    (not= (count prev) (count new)) true
+    :else
+    (let [prev-map (into {} prev)]
+      (loop [pairs new]
+        (if-let [pair (first pairs)]
+          (let [id (nth pair 0)
+                ^js m-new (nth pair 1)
+                ^js m-prev (get prev-map id)]
+            (cond
+              (nil? m-prev) true
+              (or (not (== 1 (.-a m-new))) (not (== 0 (.-b m-new)))
+                  (not (== 0 (.-c m-new))) (not (== 1 (.-d m-new)))
+                  (not (== 1 (.-a m-prev))) (not (== 0 (.-b m-prev)))
+                  (not (== 0 (.-c m-prev))) (not (== 1 (.-d m-prev))))
+              true
+              (or (> (js/Math.abs (- (.-e m-new) (.-e m-prev))) threshold)
+                  (> (js/Math.abs (- (.-f m-new) (.-f m-prev))) threshold))
+              true
+              :else (recur (rest pairs))))
+          false)))))
+
 (def workspace-wasm-modifiers
-  (let [a (atom nil)]
-    (rx/sub! ms/wasm-modifiers #(reset! a %))
+  (let [a (atom nil)
+        last-emitted (volatile! nil)]
+    (rx/sub! ms/wasm-modifiers
+             (fn [val]
+               (when (wasm-modifiers-significant-change?
+                      @last-emitted val wasm-modifier-jitter-threshold-px)
+                 (vreset! last-emitted val)
+                 (reset! a val))))
     a))
 
 (def ^:private workspace-modifiers-with-objects

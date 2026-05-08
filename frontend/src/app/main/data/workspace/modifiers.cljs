@@ -46,6 +46,13 @@
 ;; `set-wasm-modifiers` calls fire in between.
 (defonce ^:private interactive-transform-active? (atom false))
 
+;; Holds the property changes (`extract-property-changes` output)
+;; applied during the in-flight gesture. Written per drag frame in
+;; `set-wasm-modifiers`, read at gesture-end (`clear-local-transform`)
+;; to revert. Kept out of Redux to avoid root-atom churn at drag
+;; cadence (~62.5 Hz) and the re-frame subscription scan that follows.
+(defonce ^:private gesture-wasm-props (volatile! nil))
+
 (defn- ensure-interactive-transform-start!
   []
   (when (compare-and-set! interactive-transform-active? false true)
@@ -303,12 +310,14 @@
         ;; skip shadows / blur).
         (ensure-interactive-transform-end!)
         (wasm.api/clean-modifiers)
-        (set-wasm-props! (dsh/lookup-page-objects state) (:wasm-props state) [])))
+        (let [last-wasm-props @gesture-wasm-props]
+          (vreset! gesture-wasm-props nil)
+          (set-wasm-props! (dsh/lookup-page-objects state) last-wasm-props []))))
 
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (dissoc :workspace-modifiers :wasm-props :prev-wasm-props)
+          (dissoc :workspace-modifiers)
           (dissoc :app.main.data.workspace.transforms/current-move-selected)))))
 
 (defn create-modif-tree
@@ -684,14 +693,6 @@
                  :or {ignore-constraints false ignore-snap-pixel false}
                  :as params}]
   (ptk/reify ::set-wasm-modifiers
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [property-changes
-            (extract-property-changes modif-tree)]
-        (-> state
-            (assoc :prev-wasm-props (:wasm-props state))
-            (assoc :wasm-props property-changes))))
-
     ptk/WatchEvent
     (watch [_ state _]
       ;; Entering an interactive transform (drag/resize/rotate). Flip
@@ -701,8 +702,9 @@
       ;; `clear-local-transform`.
       (ensure-interactive-transform-start!)
       (wasm.api/clean-modifiers)
-      (let [prev-wasm-props (:prev-wasm-props state)
-            wasm-props      (:wasm-props state)
+      (let [prev-wasm-props @gesture-wasm-props
+            wasm-props      (extract-property-changes modif-tree)
+            _               (vreset! gesture-wasm-props wasm-props)
             objects         (dsh/lookup-page-objects state)
             snap-pixel?
             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))

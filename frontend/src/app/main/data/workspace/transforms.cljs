@@ -743,31 +743,44 @@
                       (rx/take-until stopper)
                       (rx/share))
 
-                 modifiers-stream
+                 ;; Per-pointermove: combine inputs and cache the most-recent
+                 ;; non-nil grid cell. The tap fires per move so the cache stays
+                 ;; fresh regardless of where the WASM render branch samples.
+                 move-stream-with-cell-data
                  (->> move-stream
                       (rx/with-latest-from array/conj ms/mouse-position-shift)
                       (rx/tap
                        (fn [[_ _ _ cell-data _]]
                          (when (some? cell-data)
                            (vreset! prev-cell-data cell-data))))
+                      (rx/share))
 
-                      (rx/map
-                       (fn [[move-vector target-frame drop-index cell-data shift?]]
-                         (let [cell-data (or cell-data @prev-cell-data)
-                               x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
-                               [move-vector snap-ignore-axis]
-                               (cond
-                                 (and shift? x-disp?)
-                                 [(assoc move-vector :y 0) :y]
+                 ;; Heavy build (modifier tree construction). Pulled out as a
+                 ;; standalone fn so the WASM render branch can apply it post-
+                 ;; sample and the commit branch can apply it once on the final
+                 ;; event, rather than running it per pointermove via the shared
+                 ;; modifiers-stream below.
+                 build-modifier
+                 (fn [[move-vector target-frame drop-index cell-data shift?]]
+                   (let [cell-data (or cell-data @prev-cell-data)
+                         x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
+                         [move-vector snap-ignore-axis]
+                         (cond
+                           (and shift? x-disp?)
+                           [(assoc move-vector :y 0) :y]
 
-                                 shift?
-                                 [(assoc move-vector :x 0) :x]
+                           shift?
+                           [(assoc move-vector :x 0) :x]
 
-                                 :else
-                                 [move-vector nil])]
-                           [(-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
-                                (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data))
-                            snap-ignore-axis])))
+                           :else
+                           [move-vector nil])]
+                     [(-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
+                          (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data))
+                      snap-ignore-axis]))
+
+                 modifiers-stream
+                 (->> move-stream-with-cell-data
+                      (rx/map build-modifier)
                       (rx/share))]
 
              (if (features/active-feature? state "render-wasm/v1")
@@ -779,11 +792,14 @@
                                (rx/of true)
                                (rx/empty)))))]
                  (rx/merge
-                  (->> modifiers-stream
+                  ;; Sampled render path: `build-modifier` runs only for sampled
+                  ;; events (~62.5 Hz), not per pointermove. Modifier-tree
+                  ;; construction and frame-modifier propagation are skipped on
+                  ;; dropped frames.
+                  (->> move-stream-with-cell-data
                        (rx/take-until duplicate-stopper)
-                       ;; Sample at a fixed cadence to keep preview smooth. Unlike a throttle,
-                       ;; this tends to avoid perceptible "jumps" while still capping WASM work.
                        (rx/sample 16)
+                       (rx/map build-modifier)
                        (rx/map
                         (fn [[modifiers snap-ignore-axis]]
                           (dwm/set-wasm-modifiers modifiers
@@ -802,14 +818,18 @@
                                    (dws/duplicate-selected false true))
                             (rx/empty)))))
 
-                  ;; Last event will write the modifiers creating the changes
-                  (->> move-stream
+                  ;; Last event writes the modifiers creating the changes.
+                  ;; Build from the final move event directly so the commit
+                  ;; reflects the user's actual release position rather than
+                  ;; the latest sampled value (which can be ~16 ms stale).
+                  (->> move-stream-with-cell-data
                        (rx/last)
                        (rx/take-until duplicate-stopper)
-                       (rx/with-latest-from modifiers-stream)
                        (rx/mapcat
-                        (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
-                          (let [undo-id (js/Symbol)]
+                        (fn [args]
+                          (let [[_ target-frame drop-index drop-cell _] args
+                                [modifiers snap-ignore-axis] (build-modifier args)
+                                undo-id (js/Symbol)]
                             (rx/of
                              (dwu/start-undo-transaction undo-id)
                              (dwm/apply-wasm-modifiers modifiers
