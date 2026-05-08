@@ -123,15 +123,12 @@
         nitrate-license (:subscription profile)
         subscription-type (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
         orgs (mf/with-memo [teams]
-               (let [orgs (->> teams
-                               vals
-                               (group-by :organization-id)
-                               (map (fn [[_group entries]] (first entries)))
-                               vec
-                               (d/index-by :id))]
-                 orgs))
+               (->> teams
+                    vals
+                    (keep :organization)
+                    (d/index-by :id)))
 
-        no-orgs-created? (= (count orgs) 1)
+        no-orgs-created? (empty? orgs)
 
         handle-click
         (mf/use-fn

@@ -187,7 +187,7 @@
              (rx/mapcat
               (fn [teams]
                 (let [all-orgs (map dt/team->organization
-                                    (filter #(and (:is-default %) (:organization-id %)) teams))
+                                    (filter #(and (:is-default %) (:organization %)) teams))
                       orgs     (filter (fn [org]
                                          (let [perm    (get-in org [:permissions :create-teams])
                                                is-own? (= profile-id (:owner-id org))]

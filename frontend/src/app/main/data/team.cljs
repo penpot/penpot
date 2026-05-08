@@ -94,8 +94,7 @@
                                                     {:organization-id   (:id organization)
                                                      :organization-name (:name organization)}
                                                     {}))
-                           (modal/show :no-permission-modal {:type :create-team
-                                                             :organization-name (:name organization)})))))))))))
+                           (modal/show :no-permission-modal {:type :create-team})))))))))))
 
 (defn check-and-delete-team
   "Fetches fresh team data from the server to ensure up-to-date org
@@ -129,8 +128,7 @@
                              :message message
                              :accept-label (tr "modals.delete-team-confirm.accept")
                              :on-accept delete-fn})
-                           (modal/show :no-permission-modal {:type :delete-team
-                                                             :organization-name (:name org)})))))))))))
+                           (modal/show :no-permission-modal {:type :delete-team})))))))))))
 
 ;; --- EVENT: fetch-members
 

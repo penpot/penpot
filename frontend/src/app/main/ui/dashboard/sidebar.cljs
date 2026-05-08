@@ -469,8 +469,7 @@
               (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
 
               :not-allowed
-              (rx/of (modal/show :no-permission-modal {:type :delete-team
-                                                       :organization-name (dm/get-in team [:organization :name])}))
+              (rx/of (modal/show :no-permission-modal {:type :delete-team}))
 
               (rx/throw error))))
 
@@ -717,7 +716,7 @@
         org-teams (mf/with-memo [teams current-org]
                     (->> teams
                          vals
-                         (filter #(= (:organization-id %) (:id current-org)))))
+                         (filter #(= (get-in % [:organization :id]) (:id current-org)))))
 
         default-org? (nil? (:id current-org))
 
