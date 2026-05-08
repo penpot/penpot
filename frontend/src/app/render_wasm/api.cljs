@@ -1133,6 +1133,10 @@
 ;; Fire the deferred full render the moment the gesture ends. We watch the
 ;; store rather than coupling viewport.cljs to api.cljs (which would risk a
 ;; circular dep) — render-wasm already depends on app.main.store.
+;; FIXME(pan-end-debug): timestamp of the most recent gesture start, used
+;; only to measure gesture-start latency. Remove with rest of pan-end debug.
+(defonce ^:private _gesture-start-ts (atom nil))
+
 (defonce ^:private _gesture-end-watcher
   (add-watch st/state
              ::gesture-end-watcher
@@ -1145,6 +1149,12 @@
                      now-active? (or (:panning new-ws)
                                      (:zooming new-ws)
                                      (some? (:transform new-ws)))]
+                 (when (and (not was-active?) now-active?)
+                   ;; FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+                   (reset! _gesture-start-ts (js/performance.now))
+                   (js/console.log
+                    "[pan-end-debug] gesture STARTED -> ts="
+                    @_gesture-start-ts))
                  (when (and was-active? (not now-active?))
                    ;; FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
                    (js/console.log "[pan-end-debug] gesture ended -> flushing render")
@@ -1153,16 +1163,25 @@
 (defn set-view-box
   [zoom vbox]
   ;; FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
-  (js/console.log "[pan-end-debug] set-view-box CALLED (vbox:" (:x vbox) (:y vbox) ")")
-  (perf/begin-measure "set-view-box")
-  (h/call wasm/internal-module "_set_view_start")
-  (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (perf/end-measure "set-view-box")
-
-  (perf/begin-measure "render-from-cache")
-  (h/call wasm/internal-module "_render_from_cache" 0)
-  (render-finish)
-  (perf/end-measure "render-from-cache"))
+  (let [t0 (js/performance.now)
+        start-ts @_gesture-start-ts
+        delta-from-start (when start-ts (- t0 start-ts))]
+    (perf/begin-measure "set-view-box")
+    (h/call wasm/internal-module "_set_view_start")
+    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (perf/end-measure "set-view-box")
+    (let [t1 (js/performance.now)]
+      (perf/begin-measure "render-from-cache")
+      (h/call wasm/internal-module "_render_from_cache" 0)
+      (render-finish)
+      (perf/end-measure "render-from-cache")
+      (let [t2 (js/performance.now)]
+        (js/console.log
+         "[pan-end-debug] set-view-box CALLED"
+         "Δfromstart=" (if delta-from-start (str (.toFixed delta-from-start 1) "ms") "n/a")
+         "viewStart+set=" (str (.toFixed (- t1 t0) 2) "ms")
+         "renderFromCache=" (str (.toFixed (- t2 t1) 2) "ms")
+         "TOTAL=" (str (.toFixed (- t2 t0) 2) "ms"))))))
 
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the

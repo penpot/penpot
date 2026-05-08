@@ -428,8 +428,19 @@ pub extern "C" fn set_view_start() -> Result<()> {
         VIEW_INTERACTION_START = performance::get_time();
     }
     performance::begin_measure!("set_view_start");
-    get_render_state().options.set_fast_mode(true);
+    let render_state = get_render_state();
+    render_state.options.set_fast_mode(true);
+    // Cancel any in-flight async full-quality render from the previous
+    // gesture. Without this, an `_render 0` started at the previous
+    // gesture-end keeps eating rAFs and eventually runs
+    // `post_full_render_block` mid-gesture, blocking the main thread for
+    // tens to hundreds of ms — visible as a "freeze" right after the new
+    // gesture starts.  Symmetric with `set_view_end`, which already does
+    // this on the way out.
+    render_state.cancel_animation_frame();
     performance::end_measure!("set_view_start");
+    // FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+    println!("[pan-end-debug] set_view_start: cancelled in-flight render (if any)");
     Ok(())
 }
 

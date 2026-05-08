@@ -443,6 +443,14 @@
     (mf/use-fn
      (fn [event]
        (drag-debug-bump-move!)
+       ;; FIXME(pan-end-debug): log first 3 pointer-moves of any drag so we
+       ;; can distinguish "user paused" (no moves arriving) from "freeze
+       ;; in the chain" (moves arriving but set-view-box delayed).
+       (let [n (.-moveCount drag-debug-state)]
+         (when (<= n 3)
+           (js/console.log
+            "[drag-debug] pointer-move #" n
+            "@" (.-timeStamp event) "ms (timestamp)")))
        (let [raw-pt   (dom/get-client-position event)
              pt       (uwvv/point->viewport raw-pt)
 
