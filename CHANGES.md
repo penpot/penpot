@@ -11,6 +11,7 @@
 
 ### :bug: Bugs fixed
 
+- Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 - Fix keep-alive interval leak in PluginBridge (by @opcode81) [Github #9435](https://github.com/penpot/penpot/pull/9435)
 - Fix MCP "active in another tab" notification not clearing (by @Dexterity104) [Github #9321](https://github.com/penpot/penpot/pull/9321)
 - Fix swapped analytics event names on MCP tab-switch dialog (by @Dexterity104) [Github #9322](https://github.com/penpot/penpot/pull/9322)
