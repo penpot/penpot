@@ -8,7 +8,7 @@
   (:require
    [app.common.schema :as sm]))
 
-(def types #{:png :jpeg :webp :svg :pdf})
+(def types #{:png :jpeg :webp :svg :pdf :ansi :json})
 
 (def schema:export
   [:map {:title "ShapeExport"}

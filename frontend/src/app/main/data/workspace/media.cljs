@@ -27,8 +27,10 @@
    [app.main.data.uploads :as uploads]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.svg-upload :as svg]
+   [app.main.data.workspace.terminal :as dwt]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.worker :as mw]
    [app.util.http :as http]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -270,6 +272,46 @@
                       :on-image #(st/emit! (image-uploaded % position))
                       :on-svg   #(st/emit! (svg-uploaded % file-id position)))]
     (process-media-objects params)))
+
+(defn upload-terminal-screenshot-workspace
+  [{:keys [position blobs]}]
+  (ptk/reify ::upload-terminal-screenshot-workspace
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [x y]} position
+            blobs (or blobs [])
+            total (count blobs)
+            emit-shape
+            (fn [idx {:keys [text cols rows]}]
+              (let [shape (dwt/make-terminal-shape
+                           {:x (+ x (* idx 24))
+                            :y (+ y (* idx 24))
+                            :cols cols
+                            :rows rows
+                            :text text})]
+                (dwsh/create-and-add-shape :text (:x shape) (:y shape) shape {:skip-edition? true})))]
+        (rx/concat
+         (rx/of (ntf/show {:content (tr "media.loading")
+                           :type :toast
+                           :level :info
+                           :timeout nil
+                           :tag :media-loading}))
+         (->> (rx/from blobs)
+              (rx/map-indexed vector)
+              (rx/merge-map
+               (fn [[idx blob]]
+                 (->> (mw/ask! {:cmd :terminal-ocr
+                                :blob blob
+                                :cols dwt/default-cols
+                                :rows dwt/default-rows})
+                      (rx/map #(emit-shape idx %)))))
+              (rx/ignore)
+              (rx/catch #(handle-media-error % nil))
+              (rx/finalize
+               #(if (zero? total)
+                  (st/emit! (ntf/hide :tag :media-loading)
+                            (ntf/error (tr "errors.cannot-upload")))
+                  (st/emit! (ntf/hide :tag :media-loading))))))))))
 
 (defn upload-fill-image
   [file on-success]

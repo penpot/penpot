@@ -11,11 +11,12 @@
    [app.renderer.bitmap :as rb]
    [app.renderer.pdf :as rp]
    [app.renderer.svg :as rs]
+   [app.renderer.tui :as rt]
    [cljs.spec.alpha :as s]))
 
 (s/def ::name ::us/string)
 (s/def ::suffix ::us/string)
-(s/def ::type #{:png :jpeg :webp :pdf :svg})
+(s/def ::type #{:png :jpeg :webp :pdf :svg :ansi :json})
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::share-id ::us/uuid)
@@ -44,5 +45,6 @@
     :jpeg (rb/render params on-object)
     :webp (rb/render params on-object)
     :pdf  (rp/render params on-object)
-    :svg  (rs/render params on-object)))
+    :svg  (rs/render params on-object)
+    (:ansi :json) (rt/render params on-object)))
 

@@ -18,6 +18,8 @@
     :webp ".webp"
     :svg  ".svg"
     :pdf  ".pdf"
+    :ansi ".ansi"
+    :json ".json"
     :zip  ".zip"))
 
 (defn get
@@ -28,6 +30,8 @@
     :svg  "image/svg+xml"
     :jpeg "image/jpeg"
     :png  "image/png"
-    :webp "image/webp"))
+    :webp "image/webp"
+    :ansi "text/plain; charset=utf-8"
+    :json "application/json"))
 
 
