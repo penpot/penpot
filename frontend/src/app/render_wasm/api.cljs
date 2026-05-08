@@ -1091,26 +1091,69 @@
       (= result 1))
     false))
 
+(defn- gesture-active?
+  "True while the user is actively panning, zooming, or transforming. We
+  suppress the debounced full-quality render in this state because each
+  firing kicks off an async _render that ties up rAFs and the main thread,
+  delaying the next set-view-box and causing the debounce to expire again
+  mid-gesture (a feedback loop visible as multiple full renders during a
+  single continuous pan, especially on Firefox)."
+  []
+  (let [ws (:workspace-local @st/state)]
+    (or (:panning ws)
+        (:zooming ws)
+        (some? (:transform ws)))))
+
+(defn- do-render-finish! []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (perf/begin-measure "render-finish")
+    ;; FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+    (js/console.log "[pan-end-debug] render-finish FIRED")
+    (h/call wasm/internal-module "_set_view_end")
+    (perf/end-measure "render-finish")
+    ;; Use async _render: visible tiles render synchronously
+    ;; (no yield), interest-area tiles render progressively
+    ;; via rAF.  _set_view_end already rebuilt the tile
+    ;; index.  For pan, most tiles are cached so the render
+    ;; completes in the first frame.  For zoom, interest-
+    ;; area tiles (~3 tile margin) don't block the main
+    ;; thread.
+    (h/call wasm/internal-module "_render" 0)))
+
 (def render-finish
-  (letfn [(do-render []
-            ;; Check if context is still initialized before executing
-            ;; to prevent errors when navigating quickly
-            (when (and wasm/context-initialized? (not @wasm/context-lost?))
-              (perf/begin-measure "render-finish")
-              (h/call wasm/internal-module "_set_view_end")
-              (perf/end-measure "render-finish")
-              ;; Use async _render: visible tiles render synchronously
-              ;; (no yield), interest-area tiles render progressively
-              ;; via rAF.  _set_view_end already rebuilt the tile
-              ;; index.  For pan, most tiles are cached so the render
-              ;; completes in the first frame.  For zoom, interest-
-              ;; area tiles (~3 tile margin) don't block the main
-              ;; thread.
-              (h/call wasm/internal-module "_render" 0)))]
-    (fns/debounce do-render DEBOUNCE_DELAY_MS)))
+  (let [debounced (fns/debounce do-render-finish! DEBOUNCE_DELAY_MS)]
+    (fn []
+      ;; While a gesture is active, suppress the debounced fire.  The
+      ;; gesture-end watcher below will trigger do-render-finish! exactly
+      ;; once when the gesture ends, eliminating the mid-gesture feedback
+      ;; loop entirely.
+      (when-not (gesture-active?)
+        (debounced)))))
+
+;; Fire the deferred full render the moment the gesture ends. We watch the
+;; store rather than coupling viewport.cljs to api.cljs (which would risk a
+;; circular dep) — render-wasm already depends on app.main.store.
+(defonce ^:private _gesture-end-watcher
+  (add-watch st/state
+             ::gesture-end-watcher
+             (fn [_ _ old-state new-state]
+               (let [old-ws (:workspace-local old-state)
+                     new-ws (:workspace-local new-state)
+                     was-active? (or (:panning old-ws)
+                                     (:zooming old-ws)
+                                     (some? (:transform old-ws)))
+                     now-active? (or (:panning new-ws)
+                                     (:zooming new-ws)
+                                     (some? (:transform new-ws)))]
+                 (when (and was-active? (not now-active?))
+                   ;; FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+                   (js/console.log "[pan-end-debug] gesture ended -> flushing render")
+                   (do-render-finish!))))))
 
 (defn set-view-box
   [zoom vbox]
+  ;; FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+  (js/console.log "[pan-end-debug] set-view-box CALLED (vbox:" (:x vbox) (:y vbox) ")")
   (perf/begin-measure "set-view-box")
   (h/call wasm/internal-module "_set_view_start")
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))

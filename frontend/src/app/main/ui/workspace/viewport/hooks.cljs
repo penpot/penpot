@@ -58,7 +58,11 @@
                                    parent? (dom/get-parent-with-data target "dont-clear-path")]
                                (when (and drawing-path? (not parent?))
                                  (st/emit! (dwe/clear-edition-mode))))))
-        on-blur           (mf/use-fn #(st/emit! (mse/->BlurEvent)))]
+        on-blur           (mf/use-fn
+                           (fn []
+                             ;; FIXME(drag-debug): remove with rest of drag-debug
+                             (js/console.log "[drag-debug] window-blur -> BlurEvent")
+                             (st/emit! (mse/->BlurEvent))))]
 
     (mf/with-effect [drawing-tool drawing-path?]
       (let [key (events/listen js/window EventType.POINTERDOWN on-pointer-down)]

@@ -49,7 +49,11 @@
          (mf/set-ref-val! ref node)
          (reset! viewport-ref node)
          (when (some? node)
-           (events/listen node EventType.MOUSELEAVE (fn [] (st/emit! (mse/->BlurEvent)))))
+           (events/listen node EventType.MOUSELEAVE
+                          (fn []
+                            ;; FIXME(drag-debug): remove with rest of drag-debug
+                            (js/console.log "[drag-debug] viewport-mouseleave -> BlurEvent")
+                            (st/emit! (mse/->BlurEvent)))))
          (init-observer node on-change-bounds)))]))
 
 (defn point->viewport

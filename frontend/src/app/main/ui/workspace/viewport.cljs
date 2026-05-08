@@ -210,7 +210,9 @@
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
                                                    path-drawing? create-comment? space? panning z? read-only?)
 
-        on-pointer-up     (actions/on-pointer-up disable-paste-ref)
+        on-pointer-up         (actions/on-pointer-up disable-paste-ref)
+        on-pointer-cancel     (actions/on-pointer-cancel)
+        on-lost-pointer-capture (actions/on-lost-pointer-capture)
 
         on-pointer-enter  (actions/on-pointer-enter in-viewport-ref)
         on-pointer-leave  (actions/on-pointer-leave in-viewport-ref)
@@ -430,11 +432,13 @@
        :on-drag-over     on-drag-over
        :on-drag-end      on-drag-end
        :on-drop          on-drop
-       :on-pointer-down  on-pointer-down
-       :on-pointer-enter on-pointer-enter
-       :on-pointer-leave on-pointer-leave
-       :on-pointer-move  on-pointer-move
-       :on-pointer-up    on-pointer-up}
+       :on-pointer-down         on-pointer-down
+       :on-pointer-enter        on-pointer-enter
+       :on-pointer-leave        on-pointer-leave
+       :on-pointer-move         on-pointer-move
+       :on-pointer-up           on-pointer-up
+       :on-pointer-cancel       on-pointer-cancel
+       :on-lost-pointer-capture on-lost-pointer-capture}
 
       [:defs
        ;; This clip is so the handlers are not over the rulers

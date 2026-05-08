@@ -1689,6 +1689,14 @@ impl RenderState {
             non_overlapping.push((*id, *bounds, *selrect));
         }
 
+        // FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+        println!(
+            "[pan-end-debug] rebuild candidates={} non_overlapping={}",
+            candidates.len(),
+            non_overlapping.len()
+        );
+        let _start_snapshots = performance::get_time();
+
         // Snapshot from Backbuffer for each accepted shape.
         let scale = self.get_scale();
         let vb_left = self.viewbox.area.left;
@@ -1733,6 +1741,15 @@ impl RenderState {
                 },
             );
         }
+        // FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+        println!(
+            "[pan-end-debug] rebuild_crop_snapshots_total: {}ms",
+            performance::get_time() - _start_snapshots
+        );
+        println!(
+            "[pan-end-debug] rebuild cached={}",
+            self.backbuffer_crop_cache.len()
+        );
     }
 
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
@@ -2103,8 +2120,32 @@ impl RenderState {
                 // A full-quality frame is now complete. Refresh Backbuffer and regenerate
                 // the per-shape crop cache so interactive drags can reuse pixels.
                 if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
+                    // FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+                    println!("[pan-end-debug] post_full_render_block: enter");
+                    let _start_post_render = performance::get_time();
+
+                    let _start_copy = performance::get_time();
                     self.surfaces.copy_target_to_backbuffer();
+                    println!(
+                        "[pan-end-debug] copy_target_to_backbuffer: {}ms",
+                        performance::get_time() - _start_copy
+                    );
+
+                    let _start_rebuild = performance::get_time();
                     self.rebuild_backbuffer_crop_cache(tree);
+                    println!(
+                        "[pan-end-debug] rebuild_backbuffer_crop_cache: {}ms",
+                        performance::get_time() - _start_rebuild
+                    );
+                    println!(
+                        "[pan-end-debug] post_full_render_block: {}ms",
+                        performance::get_time() - _start_post_render
+                    );
+                } else {
+                    // FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+                    println!(
+                        "[pan-end-debug] post_full_render_block: SKIPPED (fast_mode or interactive_transform still active)"
+                    );
                 }
                 wapi::notify_tiles_render_complete!();
                 performance::end_measure!("render");

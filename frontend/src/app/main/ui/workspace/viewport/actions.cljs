@@ -39,6 +39,54 @@
 
 (def scale-per-pixel -0.0057)
 
+;; FIXME(drag-debug): temporary instrumentation to diagnose Firefox firing
+;; pointercancel/lostpointercapture mid-drag. Remove once fixed.
+(defonce ^:private drag-debug-state
+  #js {:downTs       0
+       :moveCount    0
+       :pointerId    nil
+       :captureNode  nil
+       :captureTag   nil
+       :captureClass nil})
+
+(defn- log-drag!
+  [phase event]
+  (let [state    drag-debug-state
+        target   (dom/get-target event)
+        captured (.-captureNode state)
+        cap-conn (when captured (.-isConnected captured))
+        cap-same (and captured (= captured target))]
+    (js/console.log
+     (str "[drag-debug] " phase)
+     #js {:pointerId        (.-pointerId event)
+          :pointerType      (.-pointerType event)
+          :button           (.-button event)
+          :buttons          (.-buttons event)
+          :isPrimary        (.-isPrimary event)
+          :tag              (some-> target .-tagName)
+          :class            (some-> target .-className)
+          :captureTag       (.-captureTag state)
+          :captureClass     (.-captureClass state)
+          :captureConnected cap-conn
+          :captureIsTarget  cap-same
+          :movesSinceDown   (.-moveCount state)
+          :timeFromDownMs   (when (pos? (.-downTs state))
+                              (- (.-timeStamp event) (.-downTs state)))})))
+
+(defn- drag-debug-record-down!
+  [event capture-node]
+  (let [state drag-debug-state]
+    (set! (.-downTs state) (.-timeStamp event))
+    (set! (.-moveCount state) 0)
+    (set! (.-pointerId state) (.-pointerId event))
+    (set! (.-captureNode state) capture-node)
+    (set! (.-captureTag state) (some-> capture-node .-tagName))
+    (set! (.-captureClass state) (some-> capture-node .-className))))
+
+(defn- drag-debug-bump-move! []
+  (set! (.-moveCount drag-debug-state)
+        (inc (.-moveCount drag-debug-state))))
+
 (defn on-pointer-down
   [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
    node-editing? grid-editing? drawing-path? create-comment? space? panning z? read-only?]
@@ -50,13 +98,14 @@
      ;; We need to handle editor related stuff here because
      ;; handling on editor dom node does not works properly.
      (let [target  (dom/get-target event)
-           editor  (txu/closest-text-editor-content target)]
+           editor  (txu/closest-text-editor-content target)
+           capture-node (or editor target)]
        ;; Capture mouse pointer to detect the movements even if cursor
        ;; leaves the viewport or the browser itself
        ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
-       (if editor
-         (.setPointerCapture editor (.-pointerId event))
-         (.setPointerCapture target (.-pointerId event))))
+       (.setPointerCapture capture-node (.-pointerId event))
+       (drag-debug-record-down! event capture-node)
+       (log-drag! "down" event))
 
      (when (or (dom/class? (dom/get-target event) "viewport-controls")
                (dom/class? (dom/get-target event) "viewport-selrect")
@@ -281,6 +330,7 @@
   [disable-paste-ref]
   (mf/use-callback
    (fn [event]
+     (log-drag! "up" event)
      (dom/stop-propagation event)
 
      (let [target (dom/get-target event)]
@@ -308,6 +358,40 @@
 
        (st/emit! (dw/finish-panning)
                  (dw/finish-zooming))))))
+
+(defn on-pointer-cancel
+  []
+  (mf/use-fn
+   (fn [event]
+     (log-drag! "cancel" event)
+     (dom/stop-propagation event)
+
+     (let [target (dom/get-target event)]
+       (.releasePointerCapture target (.-pointerId event)))
+
+     ;; `pointercancel` fires when the browser takes over the gesture
+     ;; (system swipe, stylus disconnect, touch cancelled). Emit `:interrupt`
+     ;; so any in-flight `drag-stopper` stream terminates instead of waiting
+     ;; for a `mouseup` that will never come, and clear pan/zoom state which
+     ;; isn't gated by drag-stopper.
+     (st/emit! :interrupt
+               (dw/finish-panning)
+               (dw/finish-zooming)))))
+
+(defn on-lost-pointer-capture
+  []
+  (mf/use-fn
+   (fn [event]
+     (log-drag! "lostcapture" event)
+     ;; Backstop: `lostpointercapture` fires whenever the captured pointer
+     ;; is released — after `pointerup`, after `pointercancel`, or when the
+     ;; browser releases capture unilaterally (capturing element removed,
+     ;; another element stealing capture, navigation). This is the W3C
+     ;; signal for "the gesture is definitively over", so it's the safest
+     ;; place to ensure no drag stream is left hanging.
+     (st/emit! :interrupt
+               (dw/finish-panning)
+               (dw/finish-zooming)))))
 
 (defn on-pointer-enter
   [in-viewport-ref]
@@ -358,6 +442,7 @@
   (let [last-position (mf/use-var nil)]
     (mf/use-fn
      (fn [event]
+       (drag-debug-bump-move!)
        (let [raw-pt   (dom/get-client-position event)
              pt       (uwvv/point->viewport raw-pt)
 

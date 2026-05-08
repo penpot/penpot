@@ -443,6 +443,9 @@ pub extern "C" fn set_view_start() -> Result<()> {
 pub extern "C" fn set_view_end() -> Result<()> {
     with_state_mut!(state, {
         performance::begin_measure!("set_view_end");
+        // FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+        let _start_set_view_end = performance::get_time();
+        println!("[pan-end-debug] set_view_end: enter");
         let render_state = get_render_state();
         render_state.options.set_fast_mode(false);
         render_state.cancel_animation_frame();
@@ -471,6 +474,11 @@ pub extern "C" fn set_view_end() -> Result<()> {
             render_state.rebuild_tile_index(&state.shapes);
         }
         performance::end_measure!("set_view_end");
+        // FIXME(pan-end-debug): remove with rest of pan-end debug instrumentation
+        println!(
+            "[pan-end-debug] set_view_end: {}ms",
+            performance::get_time() - _start_set_view_end
+        );
     });
     Ok(())
 }
