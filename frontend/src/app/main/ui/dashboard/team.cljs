@@ -1374,14 +1374,14 @@
         all-organizations (mf/with-memo [all-organizations]
                             (->> (vals all-organizations)
                                  (filter :is-default)
-                                 (filter :organization-id)
+                                 (filter :organization)
                                  (map dtm/team->organization)))
 
         ;; Filter to orgs where user is allowed to create/add teams
         organizations (mf/with-memo [all-organizations profile-id]
                         (->> all-organizations
                              (filter (fn [org]
-                                       (let [perm      (:create-teams org)
+                                       (let [perm      (get-in org [:permissions :create-teams])
                                              is-owner? (= profile-id (:owner-id org))]
                                          (or (= perm "any") is-owner?))))))
 
@@ -1419,8 +1419,8 @@
          (mf/deps team)
          (fn []
            (st/emit! (dnt/remove-team-from-org {:team-id (:id team)
-                                                :organization-id (:organization-id team)
-                                                :organization-name (:organization-name team)}))))
+                                                :organization-id (dm/get-in team [:organization :id])
+                                                :organization-name (dm/get-in team [:organization :name])}))))
 
         on-remove-team-from-org
         (mf/use-fn
@@ -1428,7 +1428,7 @@
          (fn []
            (let [params {:type :confirm
                          :title (tr "modals.remove-team-org.title")
-                         :message (tr "modals.remove-team-org.text" (:name team) (:organization-name team))
+                         :message (tr "modals.remove-team-org.text" (:name team) (dm/get-in team [:organization :name]))
                          :hint (tr "modals.remove-team-org.info")
                          :hint-level :default
                          :accept-label (tr "modals.remove-team-org.accept")
@@ -1484,39 +1484,40 @@
          [:div {:class (stl/css :block)}
           [:div {:class (stl/css :block-label)}
            (tr "dashboard.team-organization")]
-          (if (:organization-id team)
-            [:div {:class (stl/css :block-content)}
-             [:div {:class (stl/css :org-block-content)}
-              [:> org-avatar* {:org (dtm/team->organization team) :size "xxxl"}]
-              [:span {:class (stl/css :block-text)}
-               (:organization-name team)]
+          (let [organization (:organization team)]
+            (if organization
+              [:div {:class (stl/css :block-content)}
+               [:div {:class (stl/css :org-block-content)}
+                [:> org-avatar* {:org (dtm/team->organization team) :size "xxxl"}]
+                [:span {:class (stl/css :block-text)}
+                 (:name organization)]
 
-              (when (and (:is-owner permissions) (not (:is-default team)))
-                [:*
-                 [:> button* {:variant "ghost"
-                              :type "button"
-                              :class (stl/css-case :org-options-btn (not show-org-options-menu?) :org-options-btn-open show-org-options-menu?)
-                              :on-click on-show-options-click}
-                  org-menu-icon
+                (when (and (:is-owner permissions) (not (:is-default team)))
+                  [:*
+                   [:> button* {:variant "ghost"
+                                :type "button"
+                                :class (stl/css-case :org-options-btn (not show-org-options-menu?) :org-options-btn-open show-org-options-menu?)
+                                :on-click on-show-options-click}
+                    org-menu-icon
 
-                  [:& dropdown {:show show-org-options-menu? :on-close close-org-options-menu :dropdown-id "org-options"}
-                   [:ul {:class (stl/css :org-dropdown)
-                         :role "listbox"}
-                    (when can-change-organization?
-                      [:li {:on-click on-change-team-org
+                    [:& dropdown {:show show-org-options-menu? :on-close close-org-options-menu :dropdown-id "org-options"}
+                     [:ul {:class (stl/css :org-dropdown)
+                           :role "listbox"}
+                      (when can-change-organization?
+                        [:li {:on-click on-change-team-org
+                              :class (stl/css :org-dropdown-item)}
+                         (tr "dashboard.team-organization.change")])
+                      [:li {:on-click on-remove-team-from-org
                             :class (stl/css :org-dropdown-item)}
-                       (tr "dashboard.team-organization.change")])
-                    [:li {:on-click on-remove-team-from-org
-                          :class (stl/css :org-dropdown-item)}
-                     (tr "dashboard.team-organization.remove")]]]]])]]
-            [:*
-             [:div {:class (stl/css :block-content)}
-              [:span {:class (stl/css :block-text)}
-               (tr "dashboard.team-organization.none")]]
-             (when can-add-to-organization?
+                       (tr "dashboard.team-organization.remove")]]]]])]]
+              [:*
                [:div {:class (stl/css :block-content)}
                 [:span {:class (stl/css :block-text)}
-                 [:a {:on-click on-add-team-to-org} (tr "dashboard.team-organization.add")]]])])])
+                 (tr "dashboard.team-organization.none")]]
+               (when can-add-to-organization?
+                 [:div {:class (stl/css :block-content)}
+                  [:span {:class (stl/css :block-text)}
+                   [:a {:on-click on-add-team-to-org} (tr "dashboard.team-organization.add")]]])]))])
 
        [:div {:class (stl/css :block)}
         [:div {:class (stl/css :block-label)}
@@ -1549,4 +1550,3 @@
 
        (when (contains? cfg/flags :subscriptions)
          [:> team* {:is-owner (:is-owner permissions) :team team}])]]]))
-

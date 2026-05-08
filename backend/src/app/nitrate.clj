@@ -7,6 +7,7 @@
 (ns app.nitrate
   "Module that make calls to the external nitrate aplication"
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.logging :as l]
@@ -268,7 +269,7 @@
                                       organization-id
                                       "/add-team")
                                  cto/schema:team-with-organization params)
-        custom-photo (when-let [logo-id (get-in team [:organization :logo-id])]
+        custom-photo (when-let [logo-id (dm/get-in team [:organization :logo-id])]
                        (str (cf/get :public-uri) "/assets/by-id/" logo-id))]
     (cond-> team
       custom-photo
@@ -360,7 +361,7 @@
                         [:map
                          [:organization-id ::sm/uuid]
                          [:owner-id ::sm/uuid]
-                         [:create-teams [:enum "any" "onlyMe"]]]
+                         [:permissions [:map-of :keyword :string]]]
                         params)))
 
 (defn- redeem-activation-code-api

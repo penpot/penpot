@@ -8,7 +8,11 @@
 
 ### :sparkles: New features & Enhancements
 
+- Show a read-only W × H size badge below the bounding box of the current selection so dimensions are visible directly on the canvas (initial implementation: always-on badge, single visual variant, no live-resize integration; remaining spec items follow in subsequent PRs) [Github #9205](https://github.com/penpot/penpot/issues/9205)
+
 ### :bug: Bugs fixed
+
+- Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 
 ## 2.16.0 (Unreleased)
 
@@ -72,18 +76,7 @@
 ### :bug: Bugs fixed
 
 - Fix `Ctrl+'` "Show guides" shortcut on non-US keyboard layouts by matching the physical key location so it no longer collides with the snap-guides shortcut (by @RenzoMXD) [Github #8423](https://github.com/penpot/penpot/issues/8423)
-- Fix `Ctrl+'` "Show guides" shortcut on non-US keyboard layouts (e.g. German `Ctrl+Shift+#`) by matching the physical key location so it no longer collides with the snap-guides shortcut [Github #8423](https://github.com/penpot/penpot/issues/8423)
-- Fix layers-panel rename input opening with the type-based default (e.g. "Ellipse") instead of the user's saved name when re-entering edit mode on a previously renamed layer; the silent revert could overwrite the saved name on confirm. The `default-value` `mf/with-memo` was missing `shape-name` from its dependency list, so once the memo cached the original default it never refreshed. Adds `shape-name` to the deps and force-syncs the input's DOM value on every entry into edit mode [Github #9230](https://github.com/penpot/penpot/issues/9230)
-- Suppress the browser context menu when right-clicking empty space in the workspace sidebars while preserving it on text inputs so paste/select-all still work [Github #5127](https://github.com/penpot/penpot/issues/5127)
-- Fix release notes modal appearing behind the dashboard sidebar [Github #8296](https://github.com/penpot/penpot/issues/8296)
-- Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
-- Fix imported stroke-only SVG paths losing their rounded join when authoring tools (e.g. Figma → Heroicons) split a continuous polyline into adjacent `M…L M…L` subpaths sharing an endpoint; on import these are now folded back into one chain so `stroke-linejoin` renders the elbow correctly in both editor and exports [Github #5283](https://github.com/penpot/penpot/issues/5283)
-- Fix plugin API `library.connectLibrary()` returning a non-Promise (or throwing synchronously) when the plugin lacks `library:write` permission — the method now always returns a `Promise` and rejects with a structured error message, matching the contract used by every other Promise-returning plugin method (`restore`, `remove`, `pin`, `saveVersion`, `findVersions`, …)
-- Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
-- Fix `login-with-ldap` silently dropping its error message on the `ldap-not-initialized` restriction (typo `:hide` → `:hint`); the message `"ldap auth provider is not initialized"` now actually surfaces in logs and error responses instead of being discarded into an unread key
-- Fix Plugin API `shape.applyToken()` / `token.applyToShapes()` / `token.applyToSelected()` rejecting JS-array attribute lists like `["fill"]`: switched the inner schemas to `[::sm/set ...]` (which has the JS array → Clojure set decoder) and made `token-attr-plugin->token-attr` accept string inputs by coercing them to keywords before consulting the alias map [Github #9162](https://github.com/penpot/penpot/issues/9162)
-- Fix `PENPOT_OIDC_USER_INFO_SOURCE` flag being silently ignored (`userinfo` / `token`) in the OIDC callback, causing "incomplete user info" failures during registration [Github #9108](https://github.com/penpot/penpot/issues/9108)
-- Fix `get-view-only-bundle` crashing when a share-link viewer encounters a team member whose email lacks `@` (NullPointerException in `obfuscate-email`) or whose domain has no `.` (previously produced a dangling-dot `****@****.`); now the viewer-side obfuscation is nil-safe and omits the trailing dot when the domain has no TLD
+- Fix lost-update race on `team.features` during concurrent file creation: two simultaneous create-file requests on the same team could both read the same features snapshot, compute different unions, and have the second `UPDATE` silently overwrite the first; the write is now preceded by a `SELECT … FOR UPDATE` inside the same transaction so every update sees the latest committed state [Github #9197](https://github.com/penpot/penpot/issues/9197)
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)

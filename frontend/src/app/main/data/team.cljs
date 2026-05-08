@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.types.team :as ctt]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -22,6 +23,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.util.clipboard :as clipboard]
+   [app.util.i18n :refer [tr]]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [clojure.string :as str]
@@ -52,7 +54,7 @@
                                                                      :organization-slug
                                                                      :organization-owner-id
                                                                      :organization-avatar-bg-url
-                                                                     :organization-create-teams))]
+                                                                     :organization-permissions))]
                     (update state :teams assoc id team-updated)))
                 state
                 teams)))))
@@ -76,18 +78,57 @@
         (->> (rp/cmd! :get-teams)
              (rx/mapcat
               (fn [teams]
-                (let [team        (d/seek #(= (:id %) team-id) teams)
-                      in-org?     (and (contains? cf/flags :nitrate) (:organization-id team))
-                      create-perm (:organization-create-teams team)
-                      is-owner?   (= profile-id (:organization-owner-id team))
-                      can-create? (or (not in-org?) (= create-perm "any") is-owner?)]
+                (let [team         (d/seek #(= (:id %) team-id) teams)
+                      organization (:organization team)
+                      in-org?      (and (contains? cf/flags :nitrate) organization)
+                      can-create?  (if in-org?
+                                     (nitrate-perms/allowed? :create-team
+                                                             {:org-perms {:owner-id    (:owner-id organization)
+                                                                          :permissions (:permissions organization)}
+                                                              :profile-id profile-id
+                                                              :team-perms (:permissions team)})
+                                     true)]
                   (rx/of (teams-fetched teams)
                          (if can-create?
                            (modal/show :team-form (if in-org?
-                                                    {:organization-id   (:organization-id team)
-                                                     :organization-name (:organization-name team)}
+                                                    {:organization-id   (:id organization)
+                                                     :organization-name (:name organization)}
                                                     {}))
-                           (modal/show :no-permission-create-team {:organization-name (:organization-name team)})))))))))))
+                           (modal/show :no-permission-modal {:type :create-team})))))))))))
+
+(defn check-and-delete-team
+  "Fetches fresh team data from the server to ensure up-to-date org
+  permissions, then shows the confirmation modal or a no-permission modal."
+  [{:keys [team-id delete-fn]}]
+  (ptk/reify ::check-and-delete-team
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile-id (dm/get-in state [:profile :id])]
+        (->> (rp/cmd! :get-teams)
+             (rx/mapcat
+              (fn [teams]
+                (let [team        (d/seek #(= (:id %) team-id) teams)
+                      org         (:organization team)
+                      in-org?     (and (contains? cf/flags :nitrate) org)
+                      can-delete? (if in-org?
+                                    (nitrate-perms/allowed? :delete-team
+                                                            {:org-perms {:owner-id    (:owner-id org)
+                                                                         :permissions (:permissions org)}
+                                                             :profile-id profile-id
+                                                             :team-perms (:permissions team)})
+                                    (boolean (dm/get-in team [:permissions :is-owner])))
+                      message     (if in-org?
+                                    (tr "modals.delete-org-team-confirm.message" (:name org))
+                                    (tr "modals.delete-team-confirm.message"))]
+                  (rx/of (teams-fetched teams)
+                         (if can-delete?
+                           (modal/show
+                            {:type :confirm
+                             :title (tr "modals.delete-team-confirm.title")
+                             :message message
+                             :accept-label (tr "modals.delete-team-confirm.accept")
+                             :on-accept delete-fn})
+                           (modal/show :no-permission-modal {:type :delete-team})))))))))))
 
 ;; --- EVENT: fetch-members
 
@@ -618,12 +659,6 @@
 
 
 (defn team->organization [team]
-  {:id              (:organization-id team)
-   :slug            (:organization-slug team)
-   :owner-id        (:organization-owner-id team)
-   :avatar-bg-url   (:organization-avatar-bg-url team)
-   :custom-photo    (:organization-custom-photo team)
-   :name            (:organization-name team)
-   :default-team-id (:id team)
-   :create-teams    (:organization-create-teams team)})
+  (when-let [org (:organization team)]
+    (assoc org :default-team-id (:id team))))
 

@@ -468,6 +468,9 @@
               :owner-cant-leave-team
               (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
 
+              :not-allowed
+              (rx/of (modal/show :no-permission-modal {:type :delete-team}))
+
               (rx/throw error))))
 
         leave-fn
@@ -526,17 +529,9 @@
         (mf/use-fn
          (mf/deps team delete-fn)
          (fn []
-           (let [is-org-team? (some? (:organization-id team))
-                 message (if is-org-team?
-                           (tr "modals.delete-org-team-confirm.message" (:organization-name team))
-                           (tr "modals.delete-team-confirm.message"))]
-             (st/emit!
-              (modal/show
-               {:type :confirm
-                :title (tr "modals.delete-team-confirm.title")
-                :message message
-                :accept-label (tr "modals.delete-team-confirm.accept")
-                :on-accept delete-fn})))))]
+           ;; Fetch fresh team data to check current permission, then show appropriate modal
+           (st/emit! (dtm/check-and-delete-team {:team-id (:id team)
+                                                 :delete-fn delete-fn}))))]
     [:> dropdown-menu* props
 
      [:> dropdown-menu-item* {:on-click    go-members
@@ -583,11 +578,20 @@
                                 :class    (stl/css :team-options-item)}
         (tr "dashboard.leave-team")])
 
-     (when (get-in team [:permissions :is-owner])
-       [:> dropdown-menu-item* {:on-click    on-delete-clicked
-                                :class       (stl/css :team-options-item :warning)
-                                :data-testid "delete-team"}
-        (tr "dashboard.delete-team")])]))
+     (let [is-owner?    (get-in team [:permissions :is-owner])
+           is-admin?    (get-in team [:permissions :is-admin])
+           organization (:organization team)
+           is-org-team? (some? organization)
+           in-org?      (and (contains? cf/flags :nitrate) is-org-team?)
+           show-delete? (if in-org?
+                          (or is-owner? is-admin?)
+                          is-owner?)]
+
+       (when show-delete?
+         [:> dropdown-menu-item* {:on-click    on-delete-clicked
+                                  :class       (stl/css :team-options-item :warning)
+                                  :data-testid "delete-team"}
+          (tr "dashboard.delete-team")]))]))
 
 (mf/defc org-options-dropdown*
   {::mf/private true}
@@ -712,7 +716,7 @@
         org-teams (mf/with-memo [teams current-org]
                     (->> teams
                          vals
-                         (filter #(= (:organization-id %) (:id current-org)))))
+                         (filter #(= (dm/get-in % [:organization :id]) (:id current-org)))))
 
         default-org? (nil? (:id current-org))
 
@@ -821,10 +825,11 @@
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
   (let [nitrate?     (contains? cf/flags :nitrate)
-        organization-id (when nitrate? (:organization-id team))
+        org          (:organization team)
+        organization-id (when nitrate? (:id org))
         teams (cond->> (mf/deref refs/teams)
                 nitrate?
-                (filter #(= (-> % val :organization-id) organization-id))
+                (filter #(= (dm/get-in (val %) [:organization :id]) organization-id))
                 nitrate?
                 (into {}))
 
