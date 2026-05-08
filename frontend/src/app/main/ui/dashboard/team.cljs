@@ -1374,7 +1374,7 @@
         all-organizations (mf/with-memo [all-organizations]
                             (->> (vals all-organizations)
                                  (filter :is-default)
-                                 (filter :organization-id)
+                                 (filter :organization)
                                  (map dtm/team->organization)))
 
         ;; Filter to orgs where user is allowed to create/add teams
