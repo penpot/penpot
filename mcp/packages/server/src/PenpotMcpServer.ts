@@ -45,7 +45,7 @@ class ToolInfo {
 
 export class PenpotMcpServer {
     /**
-     * Timeout, in minutes, for idle Streamable HTTP sessions before they are automatically closed and removed.
+     * Timeout, in minutes, for idle sessions (Streamable HTTP and SSE) before they are automatically closed and removed.
      */
     private static readonly SESSION_TIMEOUT_MINUTES = 60;
 
@@ -65,7 +65,10 @@ export class PenpotMcpServer {
     private readonly sessionContext = new AsyncLocalStorage<SessionContext>();
 
     private readonly streamableTransports: Record<string, StreamableSession> = {};
-    private readonly sseTransports: Record<string, { transport: SSEServerTransport; userToken?: string }> = {};
+    private readonly sseTransports: Record<
+        string,
+        { transport: SSEServerTransport; userToken?: string; lastActiveTime: number }
+    > = {};
 
     public readonly host: string;
     public readonly port: number;
@@ -179,7 +182,7 @@ export class PenpotMcpServer {
     }
 
     /**
-     * Starts a periodic timer that closes and removes Streamable HTTP sessions that have been
+     * Starts a periodic timer that closes and removes Streamable HTTP and SSE sessions that have been
      * idle for longer than {@link SESSION_TIMEOUT_MINUTES}.
      */
     private startSessionTimeoutChecker(): void {
@@ -195,8 +198,18 @@ export class PenpotMcpServer {
                     removed++;
                 }
             }
+            for (const [id, session] of Object.entries(this.sseTransports)) {
+                if (now - session.lastActiveTime > timeoutMs) {
+                    this.logger.info(`Closing stale SSE session ${id}`);
+                    session.transport.close();
+                    delete this.sseTransports[id];
+                    removed++;
+                }
+            }
             this.logger.info(
-                `Removed ${removed} stale session(s); total sessions remaining: ${Object.keys(this.streamableTransports).length}`
+                `Removed ${removed} stale session(s); total sessions remaining: ${
+                    Object.keys(this.streamableTransports).length + Object.keys(this.sseTransports).length
+                }`
             );
         }, checkIntervalMs);
     }
@@ -262,7 +275,7 @@ export class PenpotMcpServer {
 
             await this.sessionContext.run({ userToken }, async () => {
                 const transport = new SSEServerTransport("/messages", res);
-                this.sseTransports[transport.sessionId] = { transport, userToken };
+                this.sseTransports[transport.sessionId] = { transport, userToken, lastActiveTime: Date.now() };
 
                 const server = this.createMcpServer();
                 await server.connect(transport);
@@ -281,6 +294,7 @@ export class PenpotMcpServer {
             const session = this.sseTransports[sessionId];
 
             if (session) {
+                session.lastActiveTime = Date.now();
                 await this.sessionContext.run({ userToken: session.userToken }, async () => {
                     await session.transport.handlePostMessage(req, res, req.body);
                 });
