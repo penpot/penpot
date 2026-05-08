@@ -1787,7 +1787,7 @@
   (st/async-emit!
    (ntf/show {:content (tr "webgl.webgl-context-lost.toast")
               :type :toast
-              :level :error
+              :level :warning
               :timeout 5000}))
   (st/emit! (drw/context-lost)))
 

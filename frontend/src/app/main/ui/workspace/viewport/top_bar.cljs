@@ -11,6 +11,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions]]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -37,10 +38,11 @@
          :content (tr (if render-context-lost?
                         "workspace.top-bar.webgl-context-lost"
                         "workspace.top-bar.view-only"))}]]
-      [:button {:class (stl/css :done-btn)
-                :on-click (when-not render-context-lost? on-close)
-                :disabled render-context-lost?}
-       (tr "workspace.top-bar.read-only.done")]]]))
+      (if render-context-lost?
+        [:> button* {:variant "primary" :on-click (fn [] (js/location.reload))}
+         (tr "workspace.top-bar.webgl-context-lost.reload")]
+        [:> button* {:on-click on-close}
+         (tr "workspace.top-bar.read-only.done")])]]))
 
 (mf/defc path-edition-bar*
   [{:keys [layout edit-path-state shape]}]

@@ -1082,9 +1082,7 @@ pub extern "C" fn render_stats() {
 
 #[no_mangle]
 pub fn free_gpu_resources() {
-    with_state_mut!(state, {
-        state.render_state.free_gpu_resources();
-    })
+    get_render_state().free_gpu_resources();
 }
 
 fn main() {
