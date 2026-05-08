@@ -12,6 +12,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix MCP SSE sessions leaking memory on zombie connections by adding inactivity timeout parity with Streamable HTTP sessions (by @bitloi) [Github #9432](https://github.com/penpot/penpot/issues/9432)
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 
 ## 2.16.0 (Unreleased)
