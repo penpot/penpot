@@ -19,7 +19,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc variants-help-modal
+(mf/defc variants-help-modal*
   {::mf/register modal/components
    ::mf/register-as :variants-help-modal}
   []

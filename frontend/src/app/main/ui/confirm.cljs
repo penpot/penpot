@@ -21,7 +21,7 @@
   (:import
    goog.events.EventType))
 
-(mf/defc confirm-dialog
+(mf/defc confirm-dialog*
   {::mf/register modal/components
    ::mf/register-as :confirm}
   [{:keys [message

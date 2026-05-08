@@ -27,7 +27,7 @@
     (dom/stop-propagation event)
     (modal/hide!)))
 
-(mf/defc nudge-modal
+(mf/defc nudge-modal*
   {::mf/register modal/components
    ::mf/register-as :nudge-option}
   []

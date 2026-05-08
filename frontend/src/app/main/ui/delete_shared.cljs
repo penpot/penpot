@@ -22,10 +22,9 @@
 
 (def ^:private noop (constantly nil))
 
-(mf/defc delete-shared-dialog
+(mf/defc delete-shared-dialog*
   {::mf/register modal/components
-   ::mf/register-as :delete-shared-libraries
-   ::mf/wrap-props false}
+   ::mf/register-as :delete-shared-libraries}
   [{:keys [ids on-accept on-cancel accept-style origin count-libraries]}]
   (let [references*  (mf/use-state nil)
         references   (deref references*)
