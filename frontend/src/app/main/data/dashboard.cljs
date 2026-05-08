@@ -726,7 +726,7 @@
                             :timeout nil})
                  (dtm/fetch-teams)
                  ;; When the user is currently on a team of the org
-                 (when (= organization-id (:organization-id team))
+                 (when (= organization-id (dm/get-in team [:organization :id]))
                    (dcm/go-to-dashboard-recent {:team-id :default}))))))))
 
 
