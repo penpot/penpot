@@ -1,0 +1,139 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/spacing.scss" as *;
+@use "ds/borders.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/z-index.scss" as *;
+
+.main-toolbar {
+  --toolbar-position-y: 28px;
+  --toolbar-offset-y: 0px;
+  --menu-border-color: var(--color-background-quaternary);
+  --menu-background-color: var(--color-background-primary);
+
+  cursor: initial;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+
+  // height: 56px;
+  padding: var(--sp-s) var(--sp-l);
+  border-radius: $br-8;
+  border: 2px solid var(--menu-border-color);
+  z-index: var(--z-index-panels);
+  background-color: var(--menu-background-color);
+  transition:
+    top 0.3s,
+    height 0.3s,
+    opacity 0.3s;
+  top: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
+}
+
+.main-toolbar-no-rulers {
+  --toolbar-position-y: 0px;
+  --toolbar-offset-y: 8px;
+}
+
+.main-toolbar-hidden {
+  --toolbar-offset-y: -4px;
+
+  height: 16px;
+  z-index: 1;
+  border-radius: 0 0 $br-8 $br-8;
+  border-block-start: 0;
+
+  .main-toolbar-options {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.main-toolbar-options {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  margin: 0;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.main-toolbar-option {
+  position: relative;
+
+  &.main-toolbar-option-plugins {
+    --separator-color: var(--color-background-quaternary);
+
+    margin-inline-start: var(--sp-l);
+    padding-inline-start: var(--sp-l);
+    border-inline-start: 1px solid var(--separator-color);
+  }
+}
+
+.main-toolbar-options-button {
+  --toolbar-option-button-background: transparent;
+
+  appearance: none;
+  border: none;
+  height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+  border-radius: $br-8;
+  margin: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--toolbar-option-button-background);
+
+  &:hover {
+    cursor: pointer;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &[aria-pressed="true"],
+  &[aria-pressed="true"],
+  &:focus-visible,
+  &:hover {
+    --toolbar-option-button-background: var(--color-background-quaternary);
+
+    & .main-toolbar-icon {
+      --stroke-color: var(--color-accent-primary);
+    }
+  }
+}
+
+.main-toolbar-icon {
+  --stroke-color: var(--color-foreground-secondary);
+
+  stroke: var(--stroke-color);
+  inline-size: 16px;
+  block-size: 16px;
+}
+
+.main-toolbar-group {
+  position: relative;
+}
+
+.main-toolbar-flyout {
+  position: absolute;
+  top: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: var(--sp-xxs);
+  padding: var(--sp-xxs) 0;
+  border-radius: $br-8;
+  border: 1px solid var(--menu-border-color);
+  background-color: var(--menu-background-color);
+  z-index: var(--z-index-panels);
+  display: flex;
+}
