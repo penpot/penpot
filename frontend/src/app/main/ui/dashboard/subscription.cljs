@@ -3,7 +3,6 @@
 (ns app.main.ui.dashboard.subscription
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.event :as ev]
@@ -122,13 +121,10 @@
   (let [nitrate? (dnt/is-valid-license? profile)
         nitrate-license (:subscription profile)
         subscription-type (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
-        orgs (mf/with-memo [teams]
-               (->> teams
-                    vals
-                    (keep :organization)
-                    (d/index-by :id)))
-
-        no-orgs-created? (empty? orgs)
+        no-orgs-created? (mf/with-memo [teams]
+                           (->> teams
+                                vals
+                                (not-any? :organization)))
 
         handle-click
         (mf/use-fn

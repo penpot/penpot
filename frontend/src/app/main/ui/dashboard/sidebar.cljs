@@ -716,7 +716,7 @@
         org-teams (mf/with-memo [teams current-org]
                     (->> teams
                          vals
-                         (filter #(= (get-in % [:organization :id]) (:id current-org)))))
+                         (filter #(= (dm/get-in % [:organization :id]) (:id current-org)))))
 
         default-org? (nil? (:id current-org))
 

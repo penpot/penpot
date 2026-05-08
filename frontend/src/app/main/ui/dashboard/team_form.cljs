@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.team-form
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.types.team :as ctt]
    [app.main.data.common :as dcm]
@@ -97,6 +98,7 @@
                     (partial on-submit form))
         handle-keydown
         (mf/use-fn
+         (mf/deps form)
          (fn [e]
            (when (kbd/enter? e)
              (dom/prevent-default e)
@@ -144,7 +146,7 @@
    ::mf/register-as :no-permission-modal}
   [{:keys [type]}]
   (let [team             (mf/deref refs/team)
-        organization-name (get-in team [:organization :name])
+        organization-name (dm/get-in team [:organization :name])
         [title message] (case type
                           :create-team [(tr "labels.create-team")
                                         (tr "dashboard.no-permission-create-team.message" organization-name)]

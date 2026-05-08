@@ -189,7 +189,7 @@
                 (let [all-orgs (map dt/team->organization
                                     (filter #(and (:is-default %) (:organization %)) teams))
                       orgs     (filter (fn [org]
-                                         (let [perm    (get-in org [:permissions :create-teams])
+                                         (let [perm    (dm/get-in org [:permissions :create-teams])
                                                is-own? (= profile-id (:owner-id org))]
                                            (or (= perm "any") is-own?))) all-orgs)
                       team     (first (filter #(= (:id %) team-id) teams))
