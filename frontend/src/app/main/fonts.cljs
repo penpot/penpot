@@ -151,7 +151,7 @@
   (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
        (rx/map :body)
        (rx/catch (fn [err]
-                   (.warn js/console "Cannot find the font" (obj/get err "message"))
+                   (log/wrn :hint "cannot find the font" :cause err)
                    (rx/empty)))))
 
 (defmethod load-font :google

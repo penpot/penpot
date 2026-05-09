@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.shortcuts
   (:require
+   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
@@ -40,6 +41,19 @@
   [flag]
   (-> (dw/toggle-layout-flag flag)
       (vary-meta assoc ::ev/origin "workspace-shortcuts")))
+
+(defn on-display-guides-keydown
+  [^js event]
+  (let [mod?   (if (cf/check-platform? :macos)
+                 (.-metaKey event)
+                 (.-ctrlKey event))
+        shift? (.-shiftKey event)
+        code   (.-code event)]
+    (when (and mod?
+               (or (and (not shift?) (= "Quote" code))
+                   (and shift?       (= "Backslash" code))))
+      (.preventDefault event)
+      (st/emit! (toggle-layout-flag :display-guides)))))
 
 (defn- emit-when-no-readonly
   [& events]

@@ -5095,7 +5095,7 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr "No hemos podido iniciar el proceso de pago. Inténtalo de nuevo. Si el problema persiste, contáctanos: support@penpot.app."
 
 msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr "Estamos teniendo problemas para activar tu suscripción. Inténtalo de nuevo. Si el problema persiste, contáctanos: support@penpot.app."
+msgstr "No hemos podido confirmar tu suscripción. Revisa el estado de tu suscripción en la página de Suscripciones. Puedes volver a intentarlo si lo necesitas."
 
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
 msgid "subscription.labels"
