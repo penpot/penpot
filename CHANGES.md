@@ -8,6 +8,8 @@
 
 ### :sparkles: New features & Enhancements
 
+- Show a read-only W × H size badge below the bounding box of the current selection so dimensions are visible directly on the canvas (initial implementation: always-on badge, single visual variant, no live-resize integration; remaining spec items follow in subsequent PRs) [Github #9205](https://github.com/penpot/penpot/issues/9205)
+
 ### :bug: Bugs fixed
 
 - Fix hook-order violation in workspace `shape-wrapper` by removing conditional `use-ctx` calls when frame context changes [Github #9409](https://github.com/penpot/penpot/issues/9409)
@@ -74,6 +76,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix `Ctrl+'` "Show guides" shortcut on non-US keyboard layouts by matching the physical key location so it no longer collides with the snap-guides shortcut (by @RenzoMXD) [Github #8423](https://github.com/penpot/penpot/issues/8423)
+- Fix lost-update race on `team.features` during concurrent file creation: two simultaneous create-file requests on the same team could both read the same features snapshot, compute different unions, and have the second `UPDATE` silently overwrite the first; the write is now preceded by a `SELECT … FOR UPDATE` inside the same transaction so every update sees the latest committed state [Github #9197](https://github.com/penpot/penpot/issues/9197)
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
