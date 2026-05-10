@@ -279,3 +279,10 @@
   [o]
   #?(:cljs (.-byteLength ^js o)
      :clj  (.capacity ^ByteBuffer o)))
+
+#?(:clj
+   (defn set-order
+     "Set the byte order on a ByteBuffer. Returns the buffer."
+     [^ByteBuffer buffer ^ByteOrder order]
+     (.order buffer order)
+     buffer))

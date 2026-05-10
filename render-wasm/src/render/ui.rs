@@ -11,7 +11,7 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     canvas.save();
 
     let viewbox = render_state.viewbox;
-    let zoom = viewbox.zoom * render_state.options.dpr();
+    let zoom = viewbox.zoom * render_state.options.dpr;
 
     canvas.scale((zoom, zoom));
 

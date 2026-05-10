@@ -29,14 +29,14 @@
 (defn- request-builder
   [cfg method uri shared-key profile-id request-params]
   (fn []
-    (http/req! cfg (cond-> {:method method
-                            :headers {"content-type" "application/json"
-                                      "accept" "application/json"
-                                      "x-shared-key" shared-key
-                                      "x-profile-id" (str profile-id)}
-                            :uri uri
-                            :version :http1.1}
-                     (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key))))))
+    (http/req cfg (cond-> {:method method
+                           :headers {"content-type" "application/json"
+                                     "accept" "application/json"
+                                     "x-shared-key" shared-key
+                                     "x-profile-id" (str profile-id)}
+                           :uri uri
+                           :version :http1.1}
+                    (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key))))))
 
 (defn- with-retries
   [handler max-retries]

@@ -18,6 +18,7 @@
    [app.config :as cf]
    [app.db :as-alias db]
    [app.http.client :as http]
+   [app.media.sanitize :as sanitize]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
    [buddy.core.bytes :as bb]
@@ -325,9 +326,11 @@
 
     (let [{:keys [body] :as response}
           (try
-            (http/req! client
-                       {:method :get :uri uri}
-                       {:response-type :input-stream})
+            (http/req-with-redirects
+             client
+             {:method :get :uri uri}
+             {:response-type :input-stream
+              :max-redirects 3})
             (catch java.net.ConnectException cause
               (ex/raise :type :validation
                         :code :unable-to-download-image
@@ -358,9 +361,11 @@
                   :code :mismatch-write-size
                   :hint "unexpected state: unable to write to file"))
 
-      {;; :size size
-       :path path
-       :mtype mtype})))
+      ;; Sanitize: strip trailing data after image EOF markers
+      (let [new-size (sanitize/truncate-after-eof path mtype)]
+        {:path  path
+         :mtype mtype
+         :size  new-size}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FONTS
