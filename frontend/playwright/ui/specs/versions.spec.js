@@ -87,6 +87,9 @@ test("Save and restore version", async ({ page }) => {
     "workspace/versions-restore-snapshot-1.json",
   );
 
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/versions-init-2.json");
+
+
   await page.getByRole("button", { name: "Open version menu" }).click();
   await page.getByRole("button", { name: "Restore" }).click();
   await page.getByRole("button", { name: "Restore" }).click();

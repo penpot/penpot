@@ -15,7 +15,11 @@
    [:slug ::sm/text]
    [:owner-id ::sm/uuid]
    [:avatar-bg-url ::sm/uri]
-   [:logo-id {:optional true} [:maybe ::sm/uuid]]])
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]
+   [:permissions {:optional true}
+    [:maybe [:map
+             [:create-teams {:optional true} [:maybe [:enum "any" "onlyMe"]]]
+             [:delete-teams {:optional true} [:maybe [:enum "ownersAndAdmins" "onlyOwners"]]]]]]])
 
 
 (def schema:team-with-organization
@@ -31,7 +35,8 @@
    [:custom-photo  :organization-custom-photo]
    [:slug          :organization-slug]
    [:avatar-bg-url :organization-avatar-bg-url]
-   [:owner-id      :organization-owner-id]])
+   [:owner-id      :organization-owner-id]
+   [:permissions   :organization-permissions]])
 
 (defn apply-organization
   "Updates a team map with organization fields sourced from org.

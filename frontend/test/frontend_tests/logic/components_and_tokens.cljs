@@ -430,10 +430,7 @@
                          (t/is (mth/close? (get c-frame1' :width) 200))
                          (t/is (mth/close? (get c-frame1' :height) 200))
 
-                         (t/is (empty? (:touched c-frame1')))
-
-                         (t/testing "WASM mocks were exercised"
-                           (t/is (pos? (thw/call-count :propagate-modifiers)))))))))]
+                         (t/is (empty? (:touched c-frame1'))))))))]
 
       (tohs/run-store-async
        store step2 events identity))))

@@ -67,6 +67,12 @@
     (some? undo-group)
     (assoc :undo-group undo-group)))
 
+(defn set-translation?
+  [changes translation?]
+  (cond-> changes
+    translation?
+    (assoc :translation? true)))
+
 (defn with-page
   [changes page]
   (vary-meta changes assoc
@@ -162,7 +168,7 @@
    (contains? (meta changes) ::file-data)
    "Call (with-file-data) before using this function"))
 
-(defn- lookup-objects
+(defn lookup-objects
   [changes]
   (let [data (::file-data (meta changes))]
     (dm/get-in data [:pages-index uuid/zero :objects])))

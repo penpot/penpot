@@ -13,6 +13,7 @@
 - Fix plugin API `LibraryTypography.remove()` failing with a UUID assertion error [Github #8223](https://github.com/penpot/penpot/issues/8223)
 
 
+- Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 
 ## 2.16.0 (Unreleased)
 
@@ -66,10 +67,12 @@
 - Add Shift+Numpad0/1/2 as aliases to Shift+0/1/2 for zoom shortcuts (by @RenzoMXD) [Github #9063](https://github.com/penpot/penpot/pull/9063)
 - Add pixel grid color picker in viewport settings (by @Yakehira) [Github #7750](https://github.com/penpot/penpot/issues/7750)
 - Add HEX, HSB and HSL support to the color picker with a model switcher that persists across sessions (by @edwin-rivera-dev) [Github #9133](https://github.com/penpot/penpot/issues/9133)
+- Expose `variants` retrieval on `LibraryComponent` via `isVariant()` type guard in plugin API [Github #9185](https://github.com/penpot/penpot/issues/9185)
 - Show specific invitation-link error messages for expired, email-mismatch and invalid token cases [Github #9220](https://github.com/penpot/penpot/issues/9220)
 - Show detailed messages on file import errors to help diagnose why a file could not be imported (by @jsdevninja) [Github #9004](https://github.com/penpot/penpot/issues/9004)
 - Add read-only preview mode for saved versions — click a version name to open a dedicated preview view (by @wdeveloper16) [Github #8976](https://github.com/penpot/penpot/issues/8976)
 - Add clipboard read/write permissions to the plugin system (by @wdeveloper16) [Github #9053](https://github.com/penpot/penpot/issues/9053)
+- Add new numeric inputs for token management on the right sidebar [Taiga #12109](https://tree.taiga.io/project/penpot/us/12109?milestone=513226)
 
 ### :bug: Bugs fixed
 
@@ -133,6 +136,9 @@
 - Fix internal error on layer prev/next sibling selection (by @jsdevninja) [Github #9003](https://github.com/penpot/penpot/issues/9003)
 - Fix tooltip appearing two times when nested elements [Github #9031](https://github.com/penpot/penpot/issues/9031)
 - Fix broken update library notification link in the UI [Github #9070](https://github.com/penpot/penpot/issues/9070)
+- Fix plugin API `ShapeBase.component()` returning the outermost component instead of the immediate component in case of nested component instances [Github #9183](https://github.com/penpot/penpot/issues/9183)
+- Fix missing `labels.open` translation that surfaced the raw key as the typography font open-button `aria-label`, breaking screen-reader output (by @MilosM348)
+- Fix plugin API `shape.fills` and `shape.strokes` arrays being read-only [Github #8357](https://github.com/penpot/penpot/issues/8357)
 
 
 ## 2.15.0 (Unreleased)
@@ -148,6 +154,15 @@
 - Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
 - Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
 - Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
+- Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
+- Fix false “text editing” warning when applying tokens [Github #6346](https://github.com/penpot/penpot/issues/9346)
+
+
+## 2.14.5
+
+### :bug: Bugs fixed
+
+- Fix incorrect invitation token handling on register process [Github #9380](https://github.com/penpot/penpot/pull/9380)
 
 
 ## 2.14.4
@@ -157,7 +172,6 @@
 - Fix email validation [Taiga #14006](https://tree.taiga.io/project/penpot/issue/14006)
 - Fix email blacklisting [Github #9122](https://github.com/penpot/penpot/pull/9122)
 - Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
-
 
 ## 2.14.3
 
@@ -188,7 +202,6 @@
 - Fix stale accumulator in `get-children-in-instance` recursion
 - Fix typo `:podition` in swap-shapes grid cell
 - Fix multiple selection on shapes with token applied to stroke color
-
 
 ## 2.14.2
 
