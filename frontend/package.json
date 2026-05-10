@@ -72,7 +72,7 @@
     "concurrently": "^9.2.1",
     "date-fns": "^4.1.0",
     "esbuild": "^0.28.0",
-    "eventsource-parser": "^3.0.6",
+    "eventsource-parser": "^3.0.8",
     "express": "^5.1.0",
     "fancy-log": "^2.0.0",
     "getopts": "^2.3.0",
