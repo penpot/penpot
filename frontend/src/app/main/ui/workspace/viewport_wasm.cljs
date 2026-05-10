@@ -257,7 +257,7 @@
 
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
-        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
         comp-inst-ref     (mf/use-ref false)
         on-drag-enter     (actions/on-drag-enter comp-inst-ref)
@@ -651,6 +651,15 @@
        (when show-text-editor?
          [:> text-edition-outline*
           {:shape (get base-objects edition)
+           :zoom zoom}])
+
+       (when (and (seq selected-shapes)
+                  (not transform)
+                  (not text-editing?)
+                  (not edition)
+                  (not page-transition?))
+         [:> msr/selection-size-badge*
+          {:selrect (gsh/shapes->rect selected-shapes)
            :zoom zoom}])
 
        (when show-measures?
