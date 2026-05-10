@@ -379,7 +379,7 @@
                :else
                (assoc object key value)))
            object))
-     changes)))
+     (without-nils changes))))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the
