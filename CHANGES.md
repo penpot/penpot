@@ -133,7 +133,6 @@
 
 ### :bug: Bugs fixed
 
-- Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
 - Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 - Fix keep-alive interval leak in PluginBridge (by @opcode81) [Github #9435](https://github.com/penpot/penpot/pull/9435)
@@ -149,7 +148,6 @@
 - Fix multiple selection on shapes with token applied to stroke color [Github #9110](https://github.com/penpot/penpot/pull/9110)
 - Fix onboarding modals appearing behind libraries and templates panel [Github #9178](https://github.com/penpot/penpot/pull/9178)
 
-
 ## 2.14.5
 
 ### :bug: Bugs fixed
@@ -164,6 +162,7 @@
 - Fix email validation [Taiga #14006](https://tree.taiga.io/project/penpot/issue/14006)
 - Fix email blacklisting [Github #9122](https://github.com/penpot/penpot/pull/9122)
 - Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
+
 
 ## 2.14.3
 
@@ -193,6 +192,7 @@
 - Fix stale accumulator in `get-children-in-instance` recursion
 - Fix typo `:podition` in swap-shapes grid cell
 - Fix multiple selection on shapes with token applied to stroke color
+
 
 ## 2.14.2
 
@@ -269,8 +269,6 @@
 - Fix boolean operators in menu for boards [Taiga #13174](https://tree.taiga.io/project/penpot/issue/13174)
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
-- Fix unable to finish the create account form using keyboard [Taiga #11333](https://tree.taiga.io/project/penpot/issue/11333)
-- Fix 45 rotated board titles rendered incorrectly [Taiga #13306](https://tree.taiga.io/project/penpot/issue/13306)
 - Fix cannot apply second token after creation while shape is selected [Taiga #13513](https://tree.taiga.io/project/penpot/issue/13513)
 - Fix error activating a set with invalid shadow token applied [Taiga #13528](https://tree.taiga.io/project/penpot/issue/13528)
 - Fix component "broken" after variant switch [Taiga #12984](https://tree.taiga.io/project/penpot/issue/12984)
@@ -304,8 +302,6 @@
 ## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
-
-- Add 'page' special shapeId to MCP export_shape tool for full-page snapshots [Github #8689](https://github.com/penpot/penpot/issues/8689)
 
 - Fix mask issues with component swap (by @dfelinto) [Github #7675](https://github.com/penpot/penpot/issues/7675)
 
