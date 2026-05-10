@@ -159,7 +159,7 @@
                    :method :post
                    :body body}]
           (try
-            (let [rsp (http/req! cfg req {:response-type :input-stream :sync? true})
+            (let [rsp (http/req cfg req {:response-type :input-stream :sync? true})
                   err (interpret-response rsp)]
               (report-delivery! whook req rsp err)
               (update-webhook! whook err))
@@ -190,4 +190,11 @@
     "invalid-uri"
 
     (instance? java.net.http.HttpConnectTimeoutException cause)
-    "timeout"))
+    "timeout"
+
+    :else
+    (let [data (ex-data cause)]
+      (if (and (= :validation (:type data))
+               (= :ssrf-blocked-target (:code data)))
+        (str "blocked-request:" (:hint data))
+        nil))))

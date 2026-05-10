@@ -30,7 +30,7 @@
                  :uri (cf/get :telemetry-uri)
                  :headers {"content-type" "application/json"}
                  :body (json/encode-str data)}
-        response (http/req! cfg request)]
+        response (http/req cfg request)]
     (when (> (:status response) 206)
       (ex/raise :type :internal
                 :code :invalid-response

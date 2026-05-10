@@ -20,6 +20,12 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
+(defn- extract-error-with-code
+  "Return the error if it has an error code generated from Penpot code"
+  [err]
+  (when (contains? (ex-data err) :error/code)
+    (wte/error-ex-info (:error/code (ex-data err)) (ex-message err) err)))
+
 (defn- extract-reference-errors
   "Extracts reference errors from errors produced by StyleDictionary."
   [err]
@@ -75,7 +81,8 @@
     {:tokens-lib (ctob/parse-decoded-json decoded-json file-name)
      :unknown-tokens (ctob/get-tokens-of-unknown-type decoded-json {})}
     (catch js/Error e
-      (let [err (or (extract-name-error e)
+      (let [err (or (extract-error-with-code e)
+                    (extract-name-error e)
                     (wte/error-ex-info :error.import/invalid-json-data decoded-json e))]
         (throw err)))))
 

@@ -68,7 +68,6 @@
   [auth-token resource]
   (->> (fsp/readFile (:path resource))
        (p/fmap (fn [buffer]
-                 (js/console.log buffer)
                  (new js/Blob #js [buffer] #js {:type (:mtype resource)})))
        (p/mcat (fn [blob]
                  (let [fdata  (new http/FormData)

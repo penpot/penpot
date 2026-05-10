@@ -100,6 +100,17 @@
         root            (ctn/get-instance-root objects shape)]
     [root (ctf/resolve-component root file libraries {:include-deleted? true})]))
 
+(defn locate-head-component
+  "Like locate-component but resolves via the nearest component head
+  instead of the outermost instance root."
+  [objects shape]
+  (let [state           (deref st/state)
+        file            (dsh/lookup-file state)
+        libraries       (dsh/lookup-libraries state)
+        head            (ctn/get-head-shape objects shape)]
+    (when head
+      [head (ctf/resolve-component head file libraries {:include-deleted? true})])))
+
 (defn proxy->file
   [proxy]
   (let [id (obj/get proxy "$id")]
@@ -269,7 +280,7 @@
   [explain]
   (->> (:errors explain)
        (reduce csm/interpret-schema-problem {})
-       (mapcat (comp seq val))
+       #_(mapcat (comp seq val))     ;; FIXME: why is this for? it breaks the message
        (map (fn [[field {:keys [message]}]]
               (tr "plugins.validation.message" (name field) message)))
        (str/join ". ")))
