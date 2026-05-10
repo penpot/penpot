@@ -254,7 +254,8 @@
 
 .nitrate-current-plan {
   border-radius: var(--sp-s);
-  margin: var(--sp-m);
+  margin-block: var(--sp-s) var(--sp-m);
+  margin-inline: var(--sp-m);
   background: var(--color-background-tertiary);
   border: $b-1 solid var(--color-background-quaternary);
   padding: var(--sp-m) var(--sp-l);
@@ -270,5 +271,9 @@
 .nitrate-current-plan-text {
   @include t.use-typography("body-medium");
 
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   color: var(--color-foreground-primary);
 }
