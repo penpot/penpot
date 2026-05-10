@@ -6,8 +6,6 @@
 
 (ns app.main.ui.workspace.tokens.management.forms.form-container
   (:require
-   [app.common.data :as d]
-   [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.management.forms.color :as color]
@@ -24,24 +22,29 @@
   (let [token-type
         (or (:type token) token-type)
 
-        tokens-in-selected-set
-        (mf/deref refs/workspace-all-tokens-in-selected-set)
-
-        token-path
-        (mf/with-memo [token]
-          (ctob/get-token-path token))
-
-        tokens-tree-in-selected-set
-        (mf/with-memo [token-path tokens-in-selected-set]
-          (-> (ctob/tokens-tree tokens-in-selected-set)
-              (d/dissoc-in token-path)))
         props
-        (mf/spread-props props {:token-type token-type
-                                :tokens-tree-in-selected-set tokens-tree-in-selected-set
-                                :token token})
-        text-case-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")})
-        text-decoration-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})
-        font-weight-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})
+        (if (contains? cf/flags :token-combobox)
+          (mf/spread-props props {:token-type token-type
+                                  :selected-token-set-id (mf/deref refs/selected-token-set-id)
+                                  :token token
+                                  :input-component token.controls/value-combobox*})
+          (mf/spread-props props {:token-type token-type
+                                  :selected-token-set-id (mf/deref refs/selected-token-set-id)
+                                  :token token}))
+        text-case-props (if (contains? cf/flags :token-combobox)
+                          (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")
+                                                  :input-component token.controls/value-combobox*})
+                          (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")}))
+        text-decoration-props (if (contains? cf/flags :token-combobox)
+                                (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")
+                                                        :input-component token.controls/value-combobox*})
+                                (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")}))
+
+        font-weight-props (if (contains? cf/flags :token-combobox)
+                            (mf/spread-props props {:input-component token.controls/value-combobox*
+                                                    :input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})
+                            (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")}))
+
         border-radius-props (if (contains? cf/flags :token-combobox)
                               (mf/spread-props props {:input-component token.controls/value-combobox*})
                               props)]

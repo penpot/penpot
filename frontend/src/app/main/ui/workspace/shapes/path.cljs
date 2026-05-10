@@ -55,4 +55,4 @@
                          :pointer-events (when editing? "none")}
      [:& path/path-shape {:shape shape}]
      (when *assert*
-       [:& wsd/shape-debug {:shape shape}])]))
+       [:> wsd/shape-debug* {:shape shape}])]))

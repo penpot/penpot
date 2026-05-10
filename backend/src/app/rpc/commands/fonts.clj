@@ -98,7 +98,8 @@
    [:font-id ::sm/uuid]
    [:font-family ::sm/text]
    [:font-weight [::sm/one-of {:format "number"} valid-weight]]
-   [:font-style [::sm/one-of {:format "string"} valid-style]]])
+   [:font-style [::sm/one-of {:format "string"} valid-style]]
+   [:variant-name {:optional true} [:maybe ::sm/text]]])
 
 ;; FIXME: IMPORTANT: refactor this, we should not hold a whole db
 ;; connection around the font creation
@@ -184,6 +185,7 @@
                          :font-family (:font-family params)
                          :font-weight (:font-weight params)
                          :font-style (:font-style params)
+                         :variant-name (:variant-name params)
                          :woff1-file-id (:id woff1)
                          :woff2-file-id (:id woff2)
                          :otf-file-id (:id otf)

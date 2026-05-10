@@ -92,7 +92,7 @@
            " up the design as code to take it from there."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -126,7 +126,7 @@
            " and adherence to other best practices."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -161,7 +161,7 @@
            "that will help you to better manage your design systems."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -193,7 +193,7 @@
 
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]

@@ -3,7 +3,6 @@
 (ns app.main.ui.dashboard.subscription
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.event :as ev]
@@ -122,16 +121,10 @@
   (let [nitrate? (dnt/is-valid-license? profile)
         nitrate-license (:subscription profile)
         subscription-type (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
-        orgs (mf/with-memo [teams]
-               (let [orgs (->> teams
-                               vals
-                               (group-by :organization-id)
-                               (map (fn [[_group entries]] (first entries)))
-                               vec
-                               (d/index-by :id))]
-                 orgs))
-
-        no-orgs-created? (= (count orgs) 1)
+        no-orgs-created? (mf/with-memo [teams]
+                           (->> teams
+                                vals
+                                (not-any? :organization)))
 
         handle-click
         (mf/use-fn
@@ -170,6 +163,30 @@
                        :on-click handle-click} (if (:subscription profile)
                                                  "UPGRADE TO NITRATE"
                                                  "Try 14 days for free")]]]))))
+
+(mf/defc nitrate-current-plan*
+  [{:keys [profile]}]
+  (let [nitrate?              (dnt/is-valid-license? profile)
+        nitrate-license       (:subscription profile)
+        subscription          (-> profile :props :subscription)
+        subscription-type     (if nitrate? (:type nitrate-license) (get-subscription-type subscription))
+        subscription-is-trial (= "trialing" (:status (if nitrate? nitrate-license subscription)))
+        go-to-subscription    (mf/use-fn #(st/emit! (rt/nav :settings-subscription)))]
+    [:div {:class (stl/css :nitrate-current-plan)}
+     [:div {:class (stl/css :nitrate-current-plan-label)}
+      (tr "subscription.current-plan.title")]
+     [:button {:class (stl/css :nitrate-current-plan-text)
+               :type "button"
+               :on-click go-to-subscription}
+      (case subscription-type
+        "professional" (tr "subscription.current-plan.professional")
+        "unlimited" (if subscription-is-trial
+                      (tr "subscription.current-plan.unlimited-trial")
+                      (tr "subscription.current-plan.unlimited"))
+        "nitrate" (if subscription-is-trial
+                    (tr "subscription.current-plan.nitrate-trial")
+                    (tr "subscription.current-plan.nitrate"))
+        "enterprise" (tr "subscription.current-plan.enterprise"))]]))
 
 (mf/defc team*
   [{:keys [is-owner team]}]

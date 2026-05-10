@@ -10,6 +10,7 @@ build = "build.rs"
 
 [features]
 default = []
+stats = []
 profile = ["profile-macros", "profile-raf"]
 profile-macros = []
 profile-raf = []
@@ -36,4 +37,7 @@ thiserror = "2.0.18"
 uuid = { version = "1.11.0", features = ["v4", "js"] }
 
 [profile.release]
-opt-level = "s"
+opt-level = 3
+lto = "fat"
+strip = true
+codegen-units = 1

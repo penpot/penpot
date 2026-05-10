@@ -11,6 +11,36 @@
 
   margin-top: deprecated.$s-8;
 
+  .model-switcher {
+    display: flex;
+    gap: deprecated.$s-4;
+    margin-bottom: deprecated.$s-8;
+    padding: deprecated.$s-2;
+    background-color: var(--color-background-tertiary);
+    border-radius: deprecated.$s-6;
+    align-self: flex-start;
+
+    .model-pill {
+      @include deprecated.body-small-typography;
+
+      padding: deprecated.$s-2 deprecated.$s-8;
+      border: none;
+      border-radius: deprecated.$s-4;
+      background: transparent;
+      color: var(--color-foreground-secondary);
+      cursor: pointer;
+
+      &:hover {
+        color: var(--color-foreground-primary);
+      }
+
+      &.model-pill-active {
+        background-color: var(--color-background-primary);
+        color: var(--color-accent-primary);
+      }
+    }
+  }
+
   &.disable-opacity {
     grid-template-columns: 3.5rem repeat(3, 1fr);
   }

@@ -1,7 +1,7 @@
 use macros::{wasm_error, ToJs};
 
+use crate::get_text_editor_state;
 use crate::math::{Matrix, Point, Rect};
-use crate::mem;
 use crate::render::text_editor as text_editor_render;
 use crate::render::SurfaceId;
 use crate::shapes::{Shape, TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
@@ -12,6 +12,7 @@ use crate::wasm::fills::RawFillData;
 use crate::wasm::text::{
     helpers as text_helpers, RawTextAlign, RawTextDecoration, RawTextDirection, RawTextTransform,
 };
+use crate::{get_render_state, mem};
 use crate::{with_state, with_state_mut, STATE};
 use skia_safe::Color;
 
@@ -33,12 +34,10 @@ pub enum CursorDirection {
 
 #[no_mangle]
 pub extern "C" fn text_editor_apply_theme(selection_color: u32, cursor_color: u32) {
-    with_state_mut!(state, {
-        // NOTE: In the future could be interesting to fill al this data from
-        // a structure pointer.
-        state.text_editor_state.theme.selection_color = Color::new(selection_color);
-        state.text_editor_state.theme.cursor_color = Color::new(cursor_color);
-    })
+    // NOTE: In the future could be interesting to fill al this data from
+    // a structure pointer.
+    get_text_editor_state().theme.selection_color = Color::new(selection_color);
+    get_text_editor_state().theme.cursor_color = Color::new(cursor_color);
 }
 
 #[no_mangle]
@@ -54,74 +53,66 @@ pub extern "C" fn text_editor_focus(a: u32, b: u32, c: u32, d: u32) -> bool {
             return false;
         }
 
-        state.text_editor_state.focus(shape_id);
+        get_text_editor_state().focus(shape_id);
         true
     })
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_blur() -> bool {
-    with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
-            return false;
-        }
-        state.text_editor_state.blur();
-        true
-    })
+    if !get_text_editor_state().has_focus {
+        return false;
+    }
+    get_text_editor_state().blur();
+    true
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_dispose() -> bool {
-    with_state_mut!(state, {
-        state.text_editor_state.dispose();
-        true
-    })
+    get_text_editor_state().dispose();
+    true
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_has_selection() -> bool {
-    with_state!(state, { state.text_editor_state.selection.is_selection() })
+    get_text_editor_state().selection.is_selection()
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_has_focus() -> bool {
-    with_state!(state, { state.text_editor_state.has_focus })
+    get_text_editor_state().has_focus
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_has_focus_with_id(a: u32, b: u32, c: u32, d: u32) -> bool {
-    with_state!(state, {
-        let shape_id = uuid_from_u32_quartet(a, b, c, d);
-        let Some(active_shape_id) = state.text_editor_state.active_shape_id else {
-            return false;
-        };
-        state.text_editor_state.has_focus && active_shape_id == shape_id
-    })
+    let shape_id = uuid_from_u32_quartet(a, b, c, d);
+    let Some(active_shape_id) = get_text_editor_state().active_shape_id else {
+        return false;
+    };
+    get_text_editor_state().has_focus && active_shape_id == shape_id
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_active_shape_id(buffer_ptr: *mut u32) {
-    with_state!(state, {
-        if let Some(shape_id) = state.text_editor_state.active_shape_id {
-            let (a, b, c, d) = uuid_to_u32_quartet(&shape_id);
-            unsafe {
-                *buffer_ptr = a;
-                *buffer_ptr.add(1) = b;
-                *buffer_ptr.add(2) = c;
-                *buffer_ptr.add(3) = d;
-            }
+    if let Some(shape_id) = get_text_editor_state().active_shape_id {
+        let (a, b, c, d) = uuid_to_u32_quartet(&shape_id);
+        unsafe {
+            *buffer_ptr = a;
+            *buffer_ptr.add(1) = b;
+            *buffer_ptr.add(2) = c;
+            *buffer_ptr.add(3) = d;
         }
-    })
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_select_all() -> bool {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return false;
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return false;
         };
 
@@ -132,18 +123,18 @@ pub extern "C" fn text_editor_select_all() -> bool {
         let Type::Text(text_content) = &shape.shape_type else {
             return false;
         };
-        state.text_editor_state.select_all(text_content)
+        get_text_editor_state().select_all(text_content)
     })
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
 
@@ -157,16 +148,14 @@ pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
 
         let point = Point::new(x, y);
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            state
-                .text_editor_state
-                .select_word_boundary(text_content, &position);
+            get_text_editor_state().select_word_boundary(text_content, &position);
         }
     })
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_poll_event() -> u8 {
-    with_state_mut!(state, { state.text_editor_state.poll_event() as u8 })
+    get_text_editor_state().poll_event() as u8
 }
 
 // ============================================================================
@@ -176,10 +165,10 @@ pub extern "C" fn text_editor_poll_event() -> u8 {
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
         let Some(shape) = state.shapes.get(&shape_id) else {
@@ -189,10 +178,10 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
             return;
         };
         let point = Point::new(x, y);
-        state.text_editor_state.start_pointer_selection();
+        get_text_editor_state().start_pointer_selection();
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            state.text_editor_state.set_caret_from_position(&position);
-            state.text_editor_state.update_styles(text_content);
+            get_text_editor_state().set_caret_from_position(&position);
+            get_text_editor_state().update_styles(text_content);
         }
     });
 }
@@ -200,12 +189,12 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
 
         let point = Point::new(x, y);
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
 
@@ -213,7 +202,7 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
             return;
         };
 
-        if !state.text_editor_state.is_pointer_selection_active {
+        if !get_text_editor_state().is_pointer_selection_active {
             return;
         }
 
@@ -222,13 +211,11 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
         };
 
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            state
-                .text_editor_state
-                .extend_selection_from_position(&position);
+            get_text_editor_state().extend_selection_from_position(&position);
             // We need this flag to prevent handling the click behavior
             // just after a pointerup event.
-            state.text_editor_state.is_click_event_skipped = true;
-            state.text_editor_state.update_styles(text_content);
+            get_text_editor_state().is_click_event_skipped = true;
+            get_text_editor_state().update_styles(text_content);
         }
     });
 }
@@ -236,29 +223,27 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
         let point = Point::new(x, y);
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
         let Some(shape) = state.shapes.get(&shape_id) else {
             return;
         };
-        if !state.text_editor_state.is_pointer_selection_active {
+        if !get_text_editor_state().is_pointer_selection_active {
             return;
         }
         let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            state
-                .text_editor_state
-                .extend_selection_from_position(&position);
-            state.text_editor_state.update_styles(text_content);
+            get_text_editor_state().extend_selection_from_position(&position);
+            get_text_editor_state().update_styles(text_content);
         }
-        state.text_editor_state.stop_pointer_selection();
+        get_text_editor_state().stop_pointer_selection();
     });
 }
 
@@ -267,17 +252,17 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
     with_state_mut!(state, {
         // We need this flag to prevent handling the click behavior
         // just after a pointerup event.
-        if state.text_editor_state.is_click_event_skipped {
-            state.text_editor_state.is_click_event_skipped = false;
+        if get_text_editor_state().is_click_event_skipped {
+            get_text_editor_state().is_click_event_skipped = false;
             return;
         }
 
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
 
         let point = Point::new(x, y);
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
 
@@ -290,7 +275,7 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
         };
 
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            state.text_editor_state.set_caret_from_position(&position);
+            get_text_editor_state().set_caret_from_position(&position);
         }
     });
 }
@@ -298,13 +283,13 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
 
-        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
+        let view_matrix: Matrix = get_render_state().viewbox.get_matrix();
         let point = Point::new(x, y);
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
         let Some(shape) = state.shapes.get(&shape_id) else {
@@ -317,7 +302,7 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
         if let Some(position) =
             text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
         {
-            state.text_editor_state.set_caret_from_position(&position);
+            get_text_editor_state().set_caret_from_position(&position);
         }
     });
 }
@@ -329,13 +314,10 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn text_editor_composition_start() -> Result<()> {
-    with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
-            return Ok(());
-        }
-        state.text_editor_state.composition.start();
-    });
-
+    if !get_text_editor_state().has_focus {
+        return Ok(());
+    }
+    get_text_editor_state().composition.start();
     Ok(())
 }
 
@@ -349,11 +331,11 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
     };
 
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return Ok(());
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return Ok(());
         };
 
@@ -365,35 +347,30 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
             return Ok(());
         };
 
-        state.text_editor_state.composition.update(&text);
+        get_text_editor_state().composition.update(&text);
 
-        let selection = state
-            .text_editor_state
+        let selection = get_text_editor_state()
             .composition
-            .get_selection(&state.text_editor_state.selection);
+            .get_selection(&get_text_editor_state().selection);
         text_helpers::delete_selection_range(text_content, &selection);
 
-        let cursor = state.text_editor_state.selection.focus;
+        let cursor = get_text_editor_state().selection.focus;
         if let Some(new_cursor) =
             text_helpers::insert_text_with_newlines(text_content, &cursor, &text)
         {
-            state.text_editor_state.selection.set_caret(new_cursor);
+            get_text_editor_state().selection.set_caret(new_cursor);
         }
 
         text_content.layout.paragraphs.clear();
         text_content.layout.paragraph_builders.clear();
 
-        state.text_editor_state.reset_blink();
-        state
-            .text_editor_state
-            .push_event(crate::state::TextEditorEvent::ContentChanged);
-        state
-            .text_editor_state
-            .push_event(crate::state::TextEditorEvent::NeedsLayout);
+        get_text_editor_state().reset_blink();
+        get_text_editor_state().push_event(crate::state::TextEditorEvent::ContentChanged);
+        get_text_editor_state().push_event(crate::state::TextEditorEvent::NeedsLayout);
 
-        state.render_state.mark_touched(shape_id);
+        get_render_state().mark_touched(shape_id);
 
-        state.text_editor_state.composition.end();
+        get_text_editor_state().composition.end();
     });
 
     crate::mem::free_bytes()?;
@@ -410,11 +387,11 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
     };
 
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return Ok(());
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return Ok(());
         };
 
@@ -426,32 +403,34 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
             return Ok(());
         };
 
-        state.text_editor_state.composition.update(&text);
+        get_text_editor_state().composition.update(&text);
 
-        let selection = state
-            .text_editor_state
+        let selection = get_text_editor_state()
             .composition
-            .get_selection(&state.text_editor_state.selection);
+            .get_selection(&get_text_editor_state().selection);
         text_helpers::delete_selection_range(text_content, &selection);
 
-        let cursor = state.text_editor_state.selection.focus;
+        let cursor = get_text_editor_state().selection.focus;
         text_helpers::insert_text_with_newlines(text_content, &cursor, &text);
 
         text_content.layout.paragraphs.clear();
         text_content.layout.paragraph_builders.clear();
 
-        state.text_editor_state.reset_blink();
-        state
-            .text_editor_state
-            .push_event(crate::state::TextEditorEvent::ContentChanged);
-        state
-            .text_editor_state
-            .push_event(crate::state::TextEditorEvent::NeedsLayout);
+        get_text_editor_state().reset_blink();
+        get_text_editor_state().push_event(crate::state::TextEditorEvent::ContentChanged);
+        get_text_editor_state().push_event(crate::state::TextEditorEvent::NeedsLayout);
 
-        state.render_state.mark_touched(shape_id);
+        get_render_state().mark_touched(shape_id);
     });
 
     crate::mem::free_bytes()?;
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn text_editor_toggle_overtype_mode() -> Result<()> {
+    get_text_editor_state().toggle_overtype_mode();
     Ok(())
 }
 
@@ -466,11 +445,11 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
     };
 
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return Ok(());
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return Ok(());
         };
 
@@ -482,34 +461,35 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
             return Ok(());
         };
 
-        let selection = state.text_editor_state.selection;
+        let selection = get_text_editor_state().selection;
 
         if selection.is_selection() {
             text_helpers::delete_selection_range(text_content, &selection);
             let start = selection.start();
-            state.text_editor_state.selection.set_caret(start);
+            get_text_editor_state().selection.set_caret(start);
         }
 
-        let cursor = state.text_editor_state.selection.focus;
-
-        if let Some(new_cursor) =
-            text_helpers::insert_text_with_newlines(text_content, &cursor, &text)
+        let cursor = get_text_editor_state().selection.focus;
+        if !get_text_editor_state().is_overtype_mode {
+            if let Some(new_cursor) =
+                text_helpers::insert_text_with_newlines(text_content, &cursor, &text)
+            {
+                get_text_editor_state().selection.set_caret(new_cursor);
+            }
+        } else if let Some(new_cursor) =
+            text_helpers::replace_text_with_newlines(text_content, &cursor, &text)
         {
-            state.text_editor_state.selection.set_caret(new_cursor);
+            get_text_editor_state().selection.set_caret(new_cursor);
         }
 
         text_content.layout.paragraphs.clear();
         text_content.layout.paragraph_builders.clear();
 
-        state.text_editor_state.reset_blink();
-        state
-            .text_editor_state
-            .push_event(TextEditorEvent::ContentChanged);
-        state
-            .text_editor_state
-            .push_event(TextEditorEvent::NeedsLayout);
+        get_text_editor_state().reset_blink();
+        get_text_editor_state().push_event(TextEditorEvent::ContentChanged);
+        get_text_editor_state().push_event(TextEditorEvent::NeedsLayout);
 
-        state.render_state.mark_touched(shape_id);
+        get_render_state().mark_touched(shape_id);
     });
 
     crate::mem::free_bytes()?;
@@ -519,11 +499,11 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
 #[no_mangle]
 pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
 
@@ -535,21 +515,19 @@ pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
             return;
         };
 
-        state
-            .text_editor_state
-            .delete_backward(text_content, word_boundary);
-        state.render_state.mark_touched(shape_id);
+        get_text_editor_state().delete_backward(text_content, word_boundary);
+        get_render_state().mark_touched(shape_id);
     });
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
 
@@ -561,21 +539,19 @@ pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
             return;
         };
 
-        state
-            .text_editor_state
-            .delete_forward(text_content, word_boundary);
-        state.render_state.mark_touched(shape_id);
+        get_text_editor_state().delete_forward(text_content, word_boundary);
+        get_render_state().mark_touched(shape_id);
     });
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_insert_paragraph() {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
 
@@ -587,8 +563,8 @@ pub extern "C" fn text_editor_insert_paragraph() {
             return;
         };
 
-        state.text_editor_state.insert_paragraph(text_content);
-        state.render_state.mark_touched(shape_id);
+        get_text_editor_state().insert_paragraph(text_content);
+        get_render_state().mark_touched(shape_id);
     });
 }
 
@@ -603,11 +579,11 @@ pub extern "C" fn text_editor_move_cursor(
     extend_selection: bool,
 ) {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return;
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
 
@@ -619,7 +595,7 @@ pub extern "C" fn text_editor_move_cursor(
             return;
         };
 
-        state.text_editor_state.move_cursor(
+        get_text_editor_state().move_cursor(
             text_content,
             direction,
             word_boundary,
@@ -635,11 +611,11 @@ pub extern "C" fn text_editor_move_cursor(
 #[no_mangle]
 pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus || !state.text_editor_state.cursor_visible {
+        if !get_text_editor_state().has_focus || !get_text_editor_state().cursor_visible {
             return std::ptr::null_mut();
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return std::ptr::null_mut();
         };
 
@@ -651,7 +627,7 @@ pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
             return std::ptr::null_mut();
         };
 
-        let cursor = &state.text_editor_state.selection.focus;
+        let cursor = &get_text_editor_state().selection.focus;
 
         if let Some(rect) = get_cursor_rect(text_content, cursor, shape) {
             let mut bytes = vec![0u8; 16];
@@ -669,11 +645,11 @@ pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
 #[no_mangle]
 pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return std::ptr::null_mut();
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return std::ptr::null_mut();
         };
 
@@ -685,7 +661,7 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
             return std::ptr::null_mut();
         };
 
-        let styles = &state.text_editor_state.current_styles;
+        let styles = &get_text_editor_state().current_styles;
 
         let vertical_align = match styles.vertical_align {
             VerticalAlign::Top => 0_u32,
@@ -837,15 +813,15 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
 #[no_mangle]
 pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
     with_state_mut!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return std::ptr::null_mut();
         }
 
-        if state.text_editor_state.selection.is_collapsed() {
+        if get_text_editor_state().selection.is_collapsed() {
             return std::ptr::null_mut();
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return std::ptr::null_mut();
         };
 
@@ -857,7 +833,7 @@ pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
             return std::ptr::null_mut();
         };
 
-        let selection = &state.text_editor_state.selection;
+        let selection = &get_text_editor_state().selection;
         let rects = get_selection_rects(text_content, selection, shape);
         if rects.is_empty() {
             return std::ptr::null_mut();
@@ -876,16 +852,14 @@ pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_update_blink(timestamp_ms: f64) {
-    with_state_mut!(state, {
-        state.text_editor_state.update_blink(timestamp_ms);
-    });
+pub extern "C" fn text_editor_update_blink(timestamp_ms: f32) {
+    get_text_editor_state().update_blink(timestamp_ms);
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_render_overlay() {
     with_state_mut!(state, {
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };
 
@@ -906,27 +880,27 @@ pub extern "C" fn text_editor_render_overlay() {
             return;
         };
 
-        let canvas = state.render_state.surfaces.canvas(SurfaceId::Target);
-        let viewbox = state.render_state.viewbox;
+        let canvas = get_render_state().surfaces.canvas(SurfaceId::Target);
+        let viewbox = get_render_state().viewbox;
         text_editor_render::render_overlay(
             canvas,
             &viewbox,
-            &state.render_state.options,
-            &state.text_editor_state,
+            &get_render_state().options,
+            get_text_editor_state(),
             shape,
         );
-        state.render_state.flush_and_submit();
+        get_render_state().flush_and_submit();
     });
 }
 
 #[no_mangle]
 pub extern "C" fn text_editor_export_content() -> *mut u8 {
     with_state!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return std::ptr::null_mut();
         }
 
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return std::ptr::null_mut();
         };
 
@@ -965,10 +939,10 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
 pub extern "C" fn text_editor_export_selection() -> *mut u8 {
     use std::ptr;
     with_state!(state, {
-        if !state.text_editor_state.has_focus {
+        if !get_text_editor_state().has_focus {
             return ptr::null_mut();
         }
-        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return ptr::null_mut();
         };
         let Some(shape) = state.shapes.get(&shape_id) else {
@@ -977,7 +951,7 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
         let Type::Text(text_content) = &shape.shape_type else {
             return ptr::null_mut();
         };
-        let selection = &state.text_editor_state.selection;
+        let selection = &get_text_editor_state().selection;
         let start = selection.start();
         let end = selection.end();
         let paragraphs = text_content.paragraphs();
@@ -1041,19 +1015,17 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
-    with_state!(state, {
-        if !state.text_editor_state.selection.is_selection() {
-            return false;
-        }
-        let sel = &state.text_editor_state.selection;
-        unsafe {
-            *buffer_ptr = sel.anchor.paragraph as u32;
-            *buffer_ptr.add(1) = sel.anchor.offset as u32;
-            *buffer_ptr.add(2) = sel.focus.paragraph as u32;
-            *buffer_ptr.add(3) = sel.focus.offset as u32;
-        }
-        true
-    })
+    if !get_text_editor_state().selection.is_selection() {
+        return false;
+    }
+    let sel = &get_text_editor_state().selection;
+    unsafe {
+        *buffer_ptr = sel.anchor.paragraph as u32;
+        *buffer_ptr.add(1) = sel.anchor.offset as u32;
+        *buffer_ptr.add(2) = sel.focus.paragraph as u32;
+        *buffer_ptr.add(3) = sel.focus.offset as u32;
+    }
+    true
 }
 
 // ============================================================================
