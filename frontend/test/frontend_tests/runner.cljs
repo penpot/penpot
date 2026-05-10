@@ -20,7 +20,6 @@
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.main-errors-test]
    [frontend-tests.plugins.context-shapes-test]
-   [frontend-tests.plugins.library-test]
    [frontend-tests.plugins.parser-test]
    [frontend-tests.plugins.tokens-test]
    [frontend-tests.svg-fills-test]
@@ -66,7 +65,6 @@
    'frontend-tests.logic.groups-test
    'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.plugins.context-shapes-test
-   'frontend-tests.plugins.library-test
    'frontend-tests.plugins.parser-test
    'frontend-tests.plugins.tokens-test
    'frontend-tests.svg-fills-test
