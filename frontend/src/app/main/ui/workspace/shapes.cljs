@@ -80,7 +80,7 @@
       (let [xform (comp
                    (remove cfh/frame-shape?)
                    (mapcat #(cfh/get-children-with-self objects (:id %))))]
-        [:& ff/fontfaces-style {:shapes (into [] xform shapes)}])
+        [:> ff/fontfaces-style* {:shapes (into [] xform shapes)}])
 
       [:g.frame-children
        (for [shape shapes]

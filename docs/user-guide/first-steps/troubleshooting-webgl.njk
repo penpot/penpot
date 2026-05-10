@@ -1,0 +1,107 @@
+---
+title: Troubleshooting WebGL
+order: 5
+desc: Diagnose and fix common WebGL issues in Penpot with browser, GPU, and system checks so you can open the workspace canvas correctly.
+---
+
+<h1 id="troubleshooting-webgl">Troubleshooting WebGL</h1>
+
+<div class="advice">
+  <h3>Availability note</h3>
+  <p>WebGL renderer is currently not available yet in Penpot production (<code>design.penpot.app</code>).</p>
+  <p>Right now, this renderer is available only in <strong>testing environments</strong>. It is planned for an upcoming release and should be available soon.</p>
+</div>
+
+<p class="main-paragraph">Penpot uses WebGL to render the design canvas. If WebGL is unavailable, Penpot cannot open the workspace canvas correctly.</p>
+
+<p>Sometimes WebGL appears enabled in your browser, but Penpot still cannot create a graphics context. This is usually related to browser settings, GPU acceleration, drivers, or temporary GPU overload.</p>
+
+<h2>Before changing anything</h2>
+<ol>
+  <li>Open <a href="https://get.webgl.org/" target="_blank">https://get.webgl.org</a>.</li>
+  <li>Check the result:
+    <ul>
+      <li>If you see a spinning cube, WebGL works at browser level.</li>
+      <li>If it fails (blank page, error message, or no animation), continue with browser and system checks below.</li>
+    </ul>
+  </li>
+</ol>
+
+<h2>Quick checks (2 minutes)</h2>
+<ol>
+  <li>Close graphics-heavy tabs/apps (video editors, 3D apps, many design tabs).</li>
+  <li>Reload Penpot.</li>
+  <li>Fully restart the browser.</li>
+  <li>If needed, restart your computer.</li>
+</ol>
+<p>Why this helps: GPU memory or context slots can be temporarily exhausted, even when your configuration is correct.</p>
+
+<h2>Chrome</h2>
+<ol>
+  <li>Open <code>chrome://settings/system</code>.</li>
+  <li>Turn on <strong>Use graphics acceleration when available</strong>.</li>
+  <li>Restart Chrome.</li>
+  <li>Open <code>chrome://gpu</code> and review WebGL-related warnings.</li>
+</ol>
+<figure>
+  <a href="/img/troubleshooting/troubleshooting-chrome.webp" target="_blank">
+    <img src="/img/troubleshooting/troubleshooting-chrome.webp" alt="Chrome system settings with graphics acceleration option" />
+  </a>
+</figure>
+<p>Why this helps: WebGL depends on hardware acceleration and a healthy GPU process.</p>
+
+<h2>Mozilla Firefox</h2>
+<ol>
+  <li>Open Firefox and check that zoom is set to <strong>100%</strong> from the top-right menu.</li>
+  <li>From that same menu, open Settings/Preferences.</li>
+  <li>In General settings, confirm Firefox is up to date and run <strong>Check for updates</strong> if needed.</li>
+  <li>Enable hardware acceleration in Firefox settings.</li>
+  <li>Restart Firefox.</li>
+  <li>Open <code>about:support</code> and review the Graphics/WebGL section.</li>
+</ol>
+<figure>
+  <a href="/img/troubleshooting/troubleshooting-firefox.webp" target="_blank">
+    <img src="/img/troubleshooting/troubleshooting-firefox.webp" alt="Firefox settings showing hardware acceleration configuration" />
+  </a>
+</figure>
+<p>Why this helps: outdated browser builds, disabled acceleration, or blocked GPU features can prevent context creation.</p>
+
+<h2>Safari</h2>
+<ol>
+  <li>Update Safari/macOS to the latest available version.</li>
+  <li>Restart Safari.</li>
+  <li>Re-test in <a href="https://get.webgl.org/" target="_blank">https://get.webgl.org</a>.</li>
+</ol>
+<p>Why this helps: Safari WebGL behavior is strongly tied to OS/browser version and graphics stack updates.</p>
+
+<h2>Settings</h2>
+<p>Some advanced browser configurations or experimental settings can interfere with WebGL. If you have modified these in the past, consider restoring default browser settings or testing in a fresh profile.</p>
+
+<h2>About zoom and trackpad settings</h2>
+<p>In some cases, changing browser zoom or trackpad settings is suggested as a workaround.</p>
+<p>In Penpot, these are <strong>not baseline requirements</strong> for WebGL. Treat them only as temporary diagnostics if support explicitly asks for them.</p>
+<p>If you temporarily changed one of these settings and Penpot starts working, you can usually revert it and test again.</p>
+
+<h2>GPU drivers and OS checks</h2>
+<ol>
+  <li>Install any pending OS updates.</li>
+  <li>Update GPU drivers (especially on Windows/Linux).</li>
+  <li>Disable graphics overlays/tools (recording overlays, GPU tuning utilities) and test again.</li>
+</ol>
+<p>Why this helps: outdated or conflicting graphics layers can break WebGL context creation.</p>
+
+<h2>Known edge case: Linux + Nvidia</h2>
+<p>Some Linux + Nvidia combinations can report WebGL as available but still fail at runtime in specific browser/driver combinations.</p>
+<p>In some cases, switching between proprietary and open-source drivers or updating the NVIDIA driver resolves the issue.</p>
+<p>If this is your setup, collect diagnostics and contact support.</p>
+
+<h2>If the issue persists</h2>
+<p>Please share:</p>
+<ul>
+  <li>Browser and version.</li>
+  <li>Operating system and version.</li>
+  <li>Result from <a href="https://get.webgl.org/" target="_blank">https://get.webgl.org</a>.</li>
+  <li>A screenshot of browser graphics diagnostics (<code>chrome://gpu</code> or <code>about:support</code>).</li>
+</ul>
+
+<p>Then contact us at <a href="mailto:support@penpot.app">support@penpot.app</a> or open a GitHub issue at <a href="https://github.com/penpot/penpot/issues" target="_blank">https://github.com/penpot/penpot/issues</a>.</p>

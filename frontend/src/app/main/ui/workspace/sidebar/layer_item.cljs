@@ -16,7 +16,6 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.refs :as refs]
@@ -441,20 +440,19 @@
         (mf/use-fn
          (mf/deps id objects)
          (fn [event]
-           (when (contains? cf/flags :canary)
-             (let [shift?    (kbd/shift? event)
-                   shape     (get objects id)
-                   parent    (get objects (:parent-id shape))
-                   siblings  (:shapes parent)
-                   pos       (d/index-of siblings id)]
-               (when (some? pos)
-                 (let [;; Layers render in reverse: Tab (visually down) = dec index,
-                       ;; Shift+Tab (visually up) = inc index
-                       target-id (if shift?
-                                   (get siblings (inc pos))
-                                   (get siblings (dec pos)))]
-                   (when (some? target-id)
-                     (st/emit! (dw/start-rename-shape target-id)))))))))]
+           (let [shift?    (kbd/shift? event)
+                 shape     (get objects id)
+                 parent    (get objects (:parent-id shape))
+                 siblings  (:shapes parent)
+                 pos       (d/index-of siblings id)]
+             (when (some? pos)
+               (let [;; Layers render in reverse: Tab (visually down) = dec index,
+                     ;; Shift+Tab (visually up) = inc index
+                     target-id (if shift?
+                                 (get siblings (inc pos))
+                                 (get siblings (dec pos)))]
+                 (when (some? target-id)
+                   (st/emit! (dw/start-rename-shape target-id))))))))]
 
     (mf/with-effect [is-selected selected]
       (let [single? (= (count selected) 1)

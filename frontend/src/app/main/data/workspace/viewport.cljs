@@ -177,12 +177,12 @@
            (rx/of #(-> % (assoc-in [:workspace-local :panning] true)))
            (->> stream
                 (rx/filter mse/pointer-event?)
-                (rx/filter #(= :delta (:source %)))
+                (rx/filter #(some? (mse/get-pointer-movement %)))
                 (rx/take-until stopper)
                 ;; Some events are executed in synchronous way like panning with backspace pressed
                 (rx/observe-on :af)
                 (rx/map (fn [event]
-                          (let [delta (dm/get-prop event :pt)]
+                          (let [delta (mse/get-pointer-movement event)]
                             (update-viewport-position {:x #(- % (/ (:x delta) zoom))
                                                        :y #(- % (/ (:y delta) zoom))})))))))))))
 

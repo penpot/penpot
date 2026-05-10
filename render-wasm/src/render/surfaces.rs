@@ -1,7 +1,7 @@
 use crate::error::{Error, Result};
-use crate::performance;
 use crate::shapes::Shape;
 use crate::view::Viewbox;
+use crate::{get_gpu_state, performance};
 
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
@@ -101,11 +101,12 @@ pub struct Surfaces {
 #[allow(dead_code)]
 impl Surfaces {
     pub fn try_new(
-        gpu_state: &mut GpuState,
         (width, height): (i32, i32),
         sampling_options: skia::SamplingOptions,
         tile_dims: skia::ISize,
     ) -> Result<Self> {
+        let gpu_state = get_gpu_state();
+
         let extra_tile_dims = skia::ISize::new(
             tile_dims.width * TILE_SIZE_MULTIPLIER,
             tile_dims.height * TILE_SIZE_MULTIPLIER,
@@ -140,7 +141,7 @@ impl Surfaces {
         atlas.canvas().clear(skia::Color::TRANSPARENT);
 
         let tiles = TileTextureCache::new();
-        Ok(Surfaces {
+        Ok(Self {
             target,
             filter,
             cache,
@@ -445,12 +446,9 @@ impl Surfaces {
         self.margins
     }
 
-    pub fn resize(
-        &mut self,
-        gpu_state: &mut GpuState,
-        new_width: i32,
-        new_height: i32,
-    ) -> Result<()> {
+    pub fn resize(&mut self, new_width: i32, new_height: i32) -> Result<()> {
+        let gpu_state = get_gpu_state();
+
         self.reset_from_target(gpu_state.create_target_surface(new_width, new_height)?)?;
         Ok(())
     }
@@ -491,6 +489,11 @@ impl Surfaces {
         } else {
             Ok(None)
         }
+    }
+
+    pub fn snapshot_rect(&mut self, id: SurfaceId, irect: skia::IRect) -> Option<skia::Image> {
+        let surface = self.get_mut(id);
+        surface.image_snapshot_with_bounds(irect)
     }
 
     /// Returns a mutable reference to the canvas and automatically marks
@@ -542,7 +545,8 @@ impl Surfaces {
         self.dirty_surfaces = 0;
     }
 
-    pub fn flush_and_submit(&mut self, gpu_state: &mut GpuState, id: SurfaceId) {
+    pub fn flush_and_submit(&mut self, id: SurfaceId) {
+        let gpu_state = get_gpu_state();
         let surface = self.get_mut(id);
         gpu_state.context.flush_and_submit_surface(surface, None);
     }
@@ -696,6 +700,11 @@ impl Surfaces {
             SurfaceId::Export => &self.export,
             SurfaceId::Atlas => &self.atlas,
         }
+    }
+
+    pub fn surface_size(&self, id: SurfaceId) -> (i32, i32) {
+        let s = self.get(id);
+        (s.width(), s.height())
     }
 
     /// Copy the current `Target` contents into the persistent `Backbuffer`.
@@ -936,13 +945,13 @@ impl Surfaces {
 
     pub fn cache_current_tile_texture(
         &mut self,
-        gpu_state: &mut GpuState,
         tile_viewbox: &TileViewbox,
         tile: &Tile,
         tile_rect: &skia::Rect,
         skip_cache_surface: bool,
         tile_doc_rect: skia::Rect,
     ) {
+        let gpu_state = get_gpu_state();
         let rect = IRect::from_xywh(
             self.margins.width,
             self.margins.height,
@@ -975,7 +984,8 @@ impl Surfaces {
         self.tiles.has(tile)
     }
 
-    pub fn remove_cached_tile_surface(&mut self, gpu_state: &mut GpuState, tile: Tile) {
+    pub fn remove_cached_tile_surface(&mut self, tile: Tile) {
+        let gpu_state = get_gpu_state();
         // Mark tile as invalid
         // Old content stays visible until new tile overwrites it atomically,
         // preventing flickering during tile re-renders.

@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
-   [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -261,8 +260,7 @@
                      {:name    (tr "workspace.assets.edit")
                       :id      "assets-edit-color"
                       :handler edit-color-clicked})
-                   (when (and (not (or multi-colors? multi-assets?))
-                              (contains? cf/flags :canary))
+                   (when-not (or multi-colors? multi-assets?)
                      {:name    (tr "workspace.assets.duplicate")
                       :id      "assets-duplicate-color"
                       :handler duplicate-color})
