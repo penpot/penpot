@@ -16,9 +16,10 @@
     "fmt": "./scripts/fmt"
   },
   "devDependencies": {
-    "@github/copilot": "^1.0.43",
-    "@types/node": "^25.6.0",
+    "@github/copilot": "^1.0.44",
+    "@types/node": "^25.6.2",
     "esbuild": "^0.28.0",
-    "opencode-ai": "^1.14.40"
+    "nrepl-client": "^0.3.0",
+    "opencode-ai": "^1.14.46"
   }
 }

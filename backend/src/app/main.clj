@@ -659,9 +659,8 @@
   [& _args]
   (try
     (let [p (promise)]
-      (when (contains? cf/flags :nrepl-server)
-        (l/inf :hint "start nrepl server" :port 6064)
-        (nrepl/start-server :bind "0.0.0.0" :port 6064))
+      (l/inf :hint "start nrepl server" :port 6064)
+      (nrepl/start-server :bind "0.0.0.0" :port 6064)
 
       (start)
       (deref p))
