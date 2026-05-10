@@ -52,12 +52,12 @@
                          trace
                          "```")))
 
-        resp (http/req! cfg
-                        {:uri (cf/get :error-report-webhook)
-                         :method :post
-                         :headers {"content-type" "application/json"}
-                         :body (json/encode-str {:text text})}
-                        {:sync? true})]
+        resp (http/req cfg
+                       {:uri (cf/get :error-report-webhook)
+                        :method :post
+                        :headers {"content-type" "application/json"}
+                        :body (json/encode-str {:text text})}
+                       {:sync? true})]
 
     (when (not= 200 (:status resp))
       (l/warn :hint "error on sending data"
