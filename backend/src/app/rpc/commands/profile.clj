@@ -110,8 +110,10 @@
         (nitrate/add-nitrate-licence-to-profile cfg profile)
         profile))
 
-    (catch Throwable _
-      {:id uuid/zero :fullname "Anonymous User"})))
+    (catch Throwable cause
+      (if (= :not-found (-> cause ex-data :type))
+        {:id uuid/zero :fullname "Anonymous User"}
+        (throw cause)))))
 
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
