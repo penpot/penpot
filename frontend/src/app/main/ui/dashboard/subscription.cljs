@@ -3,7 +3,6 @@
 (ns app.main.ui.dashboard.subscription
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.event :as ev]
@@ -18,7 +17,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [lambdaisland.uri :as u]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn get-subscription-type
@@ -122,16 +120,10 @@
   (let [nitrate? (dnt/is-valid-license? profile)
         nitrate-license (:subscription profile)
         subscription-type (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
-        orgs (mf/with-memo [teams]
-               (let [orgs (->> teams
-                               vals
-                               (group-by :organization-id)
-                               (map (fn [[_group entries]] (first entries)))
-                               vec
-                               (d/index-by :id))]
-                 orgs))
-
-        no-orgs-created? (= (count orgs) 1)
+        no-orgs-created? (mf/with-memo [teams]
+                           (->> teams
+                                vals
+                                (not-any? :organization)))
 
         handle-click
         (mf/use-fn
@@ -177,11 +169,14 @@
         nitrate-license       (:subscription profile)
         subscription          (-> profile :props :subscription)
         subscription-type     (if nitrate? (:type nitrate-license) (get-subscription-type subscription))
-        subscription-is-trial (= "trialing" (:status (if nitrate? nitrate-license subscription)))]
+        subscription-is-trial (= "trialing" (:status (if nitrate? nitrate-license subscription)))
+        go-to-subscription    (mf/use-fn #(st/emit! (rt/nav :settings-subscription)))]
     [:div {:class (stl/css :nitrate-current-plan)}
      [:div {:class (stl/css :nitrate-current-plan-label)}
       (tr "subscription.current-plan.title")]
-     [:div {:class (stl/css :nitrate-current-plan-text)}
+     [:button {:class (stl/css :nitrate-current-plan-text)
+               :type "button"
+               :on-click go-to-subscription}
       (case subscription-type
         "professional" (tr "subscription.current-plan.professional")
         "unlimited" (if subscription-is-trial
@@ -201,9 +196,9 @@
         go-to-manage-subscription
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
-                                            ::ev/origin "dashboard"
-                                            :section "team-settings"}))
+           (st/emit! (ev/event {::ev/name "open-subscription-management"
+                                ::ev/origin "dashboard"
+                                :section "team-settings"}))
            (let [href (-> (rt/get-current-href)
                           (rt/encode-url))
                  href (str "payments/subscriptions/show?returnUrl=" href)]

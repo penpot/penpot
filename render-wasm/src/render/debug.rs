@@ -1,7 +1,11 @@
 use super::{tiles, RenderState, SurfaceId};
-use crate::with_state_mut;
-use crate::STATE;
+
+#[cfg(target_arch = "wasm32")]
 use macros::wasm_error;
+
+#[cfg(target_arch = "wasm32")]
+use crate::get_render_state;
+
 use skia_safe::{self as skia, Rect};
 
 #[cfg(target_arch = "wasm32")]
@@ -227,9 +231,7 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
 #[wasm_error]
 #[cfg(target_arch = "wasm32")]
 pub extern "C" fn debug_cache_console() -> Result<()> {
-    with_state_mut!(state, {
-        console_debug_surface(state.render_state_mut(), SurfaceId::Cache);
-    });
+    console_debug_surface(get_render_state(), SurfaceId::Cache);
     Ok(())
 }
 
@@ -237,9 +239,7 @@ pub extern "C" fn debug_cache_console() -> Result<()> {
 #[wasm_error]
 #[cfg(target_arch = "wasm32")]
 pub extern "C" fn debug_cache_base64() -> Result<()> {
-    with_state_mut!(state, {
-        console_debug_surface_base64(state.render_state_mut(), SurfaceId::Cache);
-    });
+    console_debug_surface_base64(get_render_state(), SurfaceId::Cache);
     Ok(())
 }
 
@@ -247,9 +247,7 @@ pub extern "C" fn debug_cache_base64() -> Result<()> {
 #[wasm_error]
 #[cfg(target_arch = "wasm32")]
 pub extern "C" fn debug_atlas_console() -> Result<()> {
-    with_state_mut!(state, {
-        console_debug_surface(state.render_state_mut(), SurfaceId::Atlas);
-    });
+    console_debug_surface(get_render_state(), SurfaceId::Atlas);
     Ok(())
 }
 
@@ -257,8 +255,6 @@ pub extern "C" fn debug_atlas_console() -> Result<()> {
 #[wasm_error]
 #[cfg(target_arch = "wasm32")]
 pub extern "C" fn debug_atlas_base64() -> Result<()> {
-    with_state_mut!(state, {
-        console_debug_surface_base64(state.render_state_mut(), SurfaceId::Atlas);
-    });
+    console_debug_surface_base64(get_render_state(), SurfaceId::Atlas);
     Ok(())
 }

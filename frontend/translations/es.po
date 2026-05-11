@@ -1644,6 +1644,10 @@ msgstr ""
 msgid "errors.token-theme-already-exists"
 msgstr "Ya existe un theme con este nombre"
 
+#: src/app/common/files/tokens.cljc:298
+msgid "errors.token-theme-not-existing-sets"
+msgstr "El tema referencia sets que no existen: %s"
+
 #: src/app/main/data/media.cljs:73
 msgid "errors.unexpected-error"
 msgstr "Ha ocurrido un error inesperado."
@@ -5091,7 +5095,7 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr "No hemos podido iniciar el proceso de pago. Inténtalo de nuevo. Si el problema persiste, contáctanos: support@penpot.app."
 
 msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr "Estamos teniendo problemas para activar tu suscripción. Inténtalo de nuevo. Si el problema persiste, contáctanos: support@penpot.app."
+msgstr "No hemos podido confirmar tu suscripción. Revisa el estado de tu suscripción en la página de Suscripciones. Puedes volver a intentarlo si lo necesitas."
 
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
 msgid "subscription.labels"
@@ -6254,6 +6258,10 @@ msgstr "Mostrar/ocultar desenfoque"
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
 msgid "workspace.options.canvas-background"
 msgstr "Color de fondo"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+msgid "workspace.options.pixel grid-color"
+msgstr "Color de la rejilla de pixeles"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
 msgid "workspace.options.clip-content"
@@ -8244,12 +8252,20 @@ msgstr "Error al importar: Datos de token no válidos en JSON."
 msgid "errors.tokens.invalid-json-token-name"
 msgstr "Error al importar: Nombre de token no válido en JSON."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:32
+msgid "workspace.tokens.duplicated-json-token-name"
+msgstr "Error al importar: Nombre de token duplicado en JSON."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:28
 msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" no es un nombre de token válido.\n"
 "Los nombres de token solo pueden contener letras y dígitos separados por "
 "caracteres . y no pueden empezar con un signo $."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:33
+msgid "workspace.tokens.duplicated-json-token-name-detail"
+msgstr "Existe un token en la ruta '%s' o en un prefijo del mismo, en otro set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:105
 msgid "errors.tokens.invalid-shadow-type-token-value"
@@ -8706,6 +8722,12 @@ msgstr "Hecho"
 msgid "workspace.top-bar.view-only"
 msgstr "**Inspeccionando código** (View only)"
 
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Renderizado no disponible. Recarga la página para restaurar la edición."
+
+msgid "workspace.top-bar.webgl-context-lost.reload"
+msgstr "Recargar"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:333
 msgid "workspace.undo.empty"
 msgstr "Todavía no hay cambios en el histórico"
@@ -8947,6 +8969,14 @@ msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
 
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-lost.toast"
+msgstr "Se perdió el contexto WebGL"
+
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "Se recuperó el contexto WebGL"
+
 msgid "webgl.modals.webgl-unavailable.title"
 msgstr "Vaya, WebGL no está disponible"
 
@@ -9128,3 +9158,6 @@ msgstr "No tienes permiso para añadir equipos a ninguna de tus organizaciones."
 
 msgid "dashboard.select-org-modal.permission-info"
 msgstr "Aquí encontrarás todas las organizaciones en las que tienes permiso para crear o añadir equipos."
+
+msgid "dashboard.no-permission-delete-team.message"
+msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario."
