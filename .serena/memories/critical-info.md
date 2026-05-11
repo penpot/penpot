@@ -18,6 +18,7 @@ Memories:
   - connection between the JavaScript API and the ClojureScript code: `frontend/js-api-to-cljs-binding`.
   - executing ClojureScript code in the frontend: `frontend/cljs-repl`.
   - programmatically navigating to a file in the workspace: `frontend/navigation`.
+  - handling Clojure compiler errors, runtime patching and debug helpers: `frontend/handling-errors-and-debugging`.
 
 ## Detecting Crashes
 
