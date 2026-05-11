@@ -1723,6 +1723,8 @@ msgstr "WebGL has stopped working. Please reload the page to reset it"
 msgid "errors.webgl-context-lost.main-message"
 msgstr "Oops! The canvas context was lost"
 
+
+
 #: src/app/main/ui/dashboard/team.cljs:1051
 msgid "errors.webhooks.connection"
 msgstr "Connection error, URL not reacheable"
@@ -9002,9 +9004,19 @@ msgstr "Done"
 msgid "workspace.top-bar.view-only"
 msgstr "**Inspecting code** (View Only)"
 
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Rendering unavailable. Refresh to restore editing."
+
+msgid "workspace.top-bar.webgl-context-lost.reload"
+msgstr "Refresh"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:333
 msgid "workspace.undo.empty"
 msgstr "There are no history changes so far"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.by"
+msgstr "by %s"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:147
 msgid "workspace.undo.entry.delete"
@@ -9262,6 +9274,14 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:431
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
+
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-lost.toast"
+msgstr "WebGL context was lost"
+
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "WebGL context was recovered"
 
 msgid "webgl.modals.webgl-unavailable.title"
 msgstr "Oops! WebGL is not available"

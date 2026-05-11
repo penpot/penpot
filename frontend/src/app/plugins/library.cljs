@@ -491,7 +491,7 @@
         (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
 
         :else
-        (st/emit! (-> (dwl/delete-typography {:id id})
+        (st/emit! (-> (dwl/delete-typography id)
                       (se/add-event plugin-id)))))
 
     :clone
