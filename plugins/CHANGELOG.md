@@ -21,6 +21,7 @@
 - **plugin-types**: Added `fixedWhenScrolling` property for shapes
 - **plugin-runtime:** `addToken` now resolves references against all token sets, allowing references to tokens in inactive sets
 - **plugin-types:** `TokenCatalog.addSet` now accepts an optional `active` flag to create an already-active set (sets are inactive by default)
+- **plugin-types:** `TokenTheme.addSet` and `TokenTheme.removeSet` now accept a token set id (`string`) in addition to a `TokenSet`
 - **plugin-runtime:** A `fontFamilies` token's `resolvedValue` now returns the documented `string[]` (the resolved family list) instead of leaking the raw tokenscript list symbol
 
 ### 🩹 Fixes

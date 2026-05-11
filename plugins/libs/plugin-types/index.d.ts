@@ -5291,13 +5291,17 @@ export interface TokenTheme {
 
   /**
    * Adds a set to the list of the theme.
+   *
+   * @param tokenSet a `TokenSet` or the id of a token set.
    */
-  addSet(tokenSet: TokenSet): void;
+  addSet(tokenSet: TokenSet | string): void;
 
   /**
    * Removes a set from the list of the theme.
+   *
+   * @param tokenSet a `TokenSet` or the id of a token set.
    */
-  removeSet(tokenSet: TokenSet): void;
+  removeSet(tokenSet: TokenSet | string): void;
 
   /**
    * Adds to the catalog a new TokenTheme equal to this one but with a new id.
