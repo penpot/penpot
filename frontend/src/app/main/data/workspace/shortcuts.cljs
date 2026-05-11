@@ -30,8 +30,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks.resize :as r]
-   [app.util.dom :as dom]
-   [potok.v2.core :as ptk]))
+   [app.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
@@ -612,7 +611,7 @@
                            :subsections [:basics]
                            :fn #(when (features/active-feature? @st/state "plugins/runtime")
                                   (st/emit!
-                                   (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:shortcuts"})
+                                   (ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:shortcuts"})
                                    (modal/show :plugin-management {})))}})
 
 (def debug-shortcuts

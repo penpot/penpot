@@ -287,7 +287,7 @@ RUN set -ex; \
     curl -LfsSo /tmp/gh.tar.gz ${BINARY_URL}; \
     mkdir /opt/gh; \
     cd /opt/gh; \
-    tar -xf /tmp/gh.tar.gz; \
+    tar -xv --strip-components=1 -f /tmp/gh.tar.gz; \
     rm -rf /tmp/gh.tar.gz;
 
 # Install minio client

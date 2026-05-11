@@ -23,7 +23,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr c]]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc plan-card*
@@ -187,16 +186,16 @@
                                       add-payment-details? "&quantity="
                                       min-members "&returnUrl=" return-url)]
                (reset! form nil)
-               (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
-                                                :type "unlimited"
-                                                :quantity min-members})
+               (st/emit! (ev/event {::ev/name "create-trial-subscription"
+                                    :type "unlimited"
+                                    :quantity min-members})
                          (rt/nav-raw :href href))))))
 
         subscribe-to-enterprise
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
-                                            :type "enterprise"}))
+           (st/emit! (ev/event {::ev/name "create-trial-subscription"
+                                :type "enterprise"}))
            (let [return-url (-> (rt/get-current-href) (rt/encode-url))
                  href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" return-url)]
              (st/emit! (rt/nav-raw :href href)))))
@@ -216,7 +215,7 @@
         handle-close-dialog
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
+           (st/emit! (ev/event {::ev/name "close-subscription-modal"}))
            (modal/hide!)))
 
         on-submit
@@ -353,7 +352,7 @@
   (let [profile              (mf/deref refs/profile)
         handle-close-dialog  (mf/use-fn
                               (fn []
-                                (st/emit! (ptk/event ::ev/event {::ev/name "subscription-success"}))
+                                (st/emit! (ev/event {::ev/name "subscription-success"}))
                                 (modal/hide!)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -535,8 +534,8 @@
           ^boolean show-trial-subscription-modal?
 
           (st/emit!
-           (ptk/event ::ev/event {::ev/name "open-subscription-modal"
-                                  ::ev/origin "settings:from-pricing-page"})
+           (ev/event {::ev/name "open-subscription-modal"
+                      ::ev/origin "settings:from-pricing-page"})
            (modal/show :management-dialog
                        {:subscription-type (if (= params-subscription "subscription-to-penpot-unlimited")
                                              "unlimited"
