@@ -32,6 +32,7 @@
    [app.main.features :as features]
    [app.main.streams :as ms]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.gesture :as wasm-gesture]
    [app.render-wasm.shape :as wasm.shape]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -44,16 +45,17 @@
 ;; Paired with `set-modifiers-start` / `set-modifiers-end` so the
 ;; native side only toggles once per gesture, regardless of how many
 ;; `set-wasm-modifiers` calls fire in between.
-(defonce ^:private interactive-transform-active? (atom false))
+;; State lives in `app.render-wasm.gesture` so `reload-renderer!` can reset it after
+;; `_clean_up` without an api ↔ modifiers circular dependency.
 
 (defn- ensure-interactive-transform-start!
   []
-  (when (compare-and-set! interactive-transform-active? false true)
+  (when (wasm-gesture/try-begin-interactive-transform!)
     (wasm.api/set-modifiers-start)))
 
 (defn- ensure-interactive-transform-end!
   []
-  (when (compare-and-set! interactive-transform-active? true false)
+  (when (wasm-gesture/try-end-interactive-transform!)
     (wasm.api/set-modifiers-end)))
 
 (def ^:private transform-attrs
