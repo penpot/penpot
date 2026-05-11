@@ -1,0 +1,43 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+Copyright (c) KALEIDOS INC */ }
+
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as ToolToolbar from "./tool_toolbar.stories";
+
+<Meta title="Toolbars/Tools" />
+
+# Tool Toolbar
+
+The `tool-toolbar*` component is the primary drawing tools surface in workspace.
+It keeps high-frequency actions always visible and groups related tools in compact flyouts.
+
+## Variants
+
+**Default**, full toolbar with drawing actions and grouped flyouts.
+
+<Canvas of={ToolToolbar.Default} />
+
+## Technical notes
+
+### Grouped tools
+
+The toolbar groups related tools to reduce visual noise while preserving quick access:
+
+- `:shapes`: rectangle and ellipse
+- `:free-draw`: path and curve
+
+Each group displays a primary button and a flyout with tool alternatives.
+
+### Hover behavior
+
+Flyouts open and close with delayed hover timers to avoid accidental flicker when moving the pointer between trigger and menu.
+
+### Interaction / Behavior
+
+- Click on a tool to activate it immediately.
+- Hover grouped controls to reveal related tools.
+- Selected tool stays visually highlighted.
+- Toolbar can be collapsed/expanded with the handler control.

@@ -1,0 +1,2 @@
+# Ignore all markdown files from Storybook
+**/*.mdx
