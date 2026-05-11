@@ -10,8 +10,8 @@
 @use "ds/z-index.scss" as *;
 
 .main-toolbar {
-  --toolbar-position-y: 28px;
-  --toolbar-offset-y: 0px;
+  --toolbar-position-y: #{$sz-28};
+  --toolbar-offset-y: 0;
   --menu-border-color: var(--color-background-quaternary);
   --menu-background-color: var(--color-background-primary);
   --stroke-color: var(--color-foreground-secondary);
@@ -27,25 +27,26 @@
   flex-direction: column;
   padding: var(--sp-m);
   border-radius: $br-8;
-  border: 2px solid var(--menu-border-color);
+  border: #{$b-2} solid var(--menu-border-color);
   z-index: var(--z-index-panels);
   background-color: var(--menu-background-color);
   transition:
-    top 0.3s,
-    height 0.3s,
+    inset-block-start 0.3s,
+    block-size 0.3s,
     opacity 0.3s;
   inset-block-start: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
+  will-change: auto;
 }
 
 .main-toolbar-no-rulers {
-  --toolbar-position-y: 0px;
+  --toolbar-position-y: 0;
   --toolbar-offset-y: 8px;
 }
 
 .main-toolbar-hidden {
   --toolbar-offset-y: -4px;
 
-  height: 16px;
+  block-size: $sz-16;
   z-index: 1;
   border-radius: 0 0 $br-8 $br-8;
   border-block-start: 0;
@@ -74,7 +75,7 @@
 
     margin-inline-start: var(--sp-l);
     padding-inline-start: var(--sp-l);
-    border-inline-start: 1px solid var(--separator-color);
+    border-inline-start: #{$b-1} solid var(--separator-color);
   }
 }
 
@@ -83,11 +84,10 @@
 
   appearance: none;
   border: none;
-  height: 32px;
-  width: 32px;
+  block-size: $sz-32;
+  inline-size: $sz-32;
   flex-shrink: 0;
   border-radius: $br-8;
-  margin: 0 2px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -116,8 +116,8 @@
 
 .main-toolbar-icon {
   stroke: var(--stroke-color);
-  inline-size: 16px;
-  block-size: 16px;
+  inline-size: $sz-16;
+  block-size: $sz-16;
 }
 
 .main-toolbar-group {
@@ -135,7 +135,7 @@
   margin-block-start: var(--sp-xxs);
   padding: var(--sp-xxs) 0;
   border-radius: $br-8;
-  border: 1px solid var(--menu-border-color);
+  border: #{$b-1} solid var(--menu-border-color);
   background-color: var(--menu-background-color);
   z-index: var(--z-index-panels);
   display: flex;
@@ -157,8 +157,8 @@
   inset-inline-end: 5px;
   stroke: var(--stroke-color);
   fill: none;
-  inline-size: 6px;
-  block-size: 6px;
+  inline-size: $sz-6;
+  block-size: $sz-6;
 }
 
 .toolbar-handler {
@@ -177,7 +177,7 @@
 
 .toolbar-handler-indicator {
   block-size: 4px;
-  inline-size: 64px;
+  inline-size: $sz-64;
   padding: 0;
   border-radius: $br-4;
   background-color: var(--toolbar-hider-background-color);
