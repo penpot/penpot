@@ -103,19 +103,20 @@
         props         #js {:shape shape :thumbnail? thumbnail?}]
     (when (and (some? shape)
                (not ^boolean (:hidden shape)))
-      [:> wrapper-elem wrapper-props
-       (case shape-type
-         :path    [:> path/path-wrapper props]
-         :text    [:> text/text-wrapper props]
-         :group   [:> group-wrapper props]
-         :rect    [:> rect-wrapper props]
-         :image   [:> image-wrapper props]
-         :circle  [:> circle-wrapper props]
-         :svg-raw [:> svg-raw-wrapper props]
-         :bool    [:> bool-wrapper props]
-         :frame   [:> nested-frame-wrapper props]
+      (mf/html
+       [:> wrapper-elem wrapper-props
+        (case shape-type
+          :path    [:> path/path-wrapper props]
+          :text    [:> text/text-wrapper props]
+          :group   [:> group-wrapper props]
+          :rect    [:> rect-wrapper props]
+          :image   [:> image-wrapper props]
+          :circle  [:> circle-wrapper props]
+          :svg-raw [:> svg-raw-wrapper props]
+          :bool    [:> bool-wrapper props]
+          :frame   [:> nested-frame-wrapper props]
 
-         nil)])))
+          nil)]))))
 
 (mf/defc root-frame-shape-wrapper
   {::mf/wrap [#(mf/memo' % common/check-shape-props)]
