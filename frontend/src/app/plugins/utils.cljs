@@ -276,12 +276,31 @@
   (let [s (set values)]
     (if (= (count s) 1) (first s) "mixed")))
 
+(defn- collect-message-leaves
+  "Walk an error tree produced by `csm/interpret-schema-problem` and return a
+   sequence of `[field-keyword message-string]` pairs. The accumulator can be
+   either flat (`{:field {:message \"...\"}}`) when the failing schema is at
+   the top level, or nested (`{:field {:subfield {:message \"...\"}}}`) when
+   the failure happens deeper. Both shapes are flattened to the inner-most
+   field name so `error-messages` can render them uniformly."
+  ([m] (collect-message-leaves m []))
+  ([m path]
+   (cond
+     (and (map? m) (string? (:message m)))
+     [[(or (last path) :_) (:message m)]]
+
+     (map? m)
+     (mapcat (fn [[k v]] (collect-message-leaves v (conj path k))) m)
+
+     :else
+     nil)))
+
 (defn error-messages
   [explain]
   (->> (:errors explain)
        (reduce csm/interpret-schema-problem {})
-       #_(mapcat (comp seq val))     ;; FIXME: why is this for? it breaks the message
-       (map (fn [[field {:keys [message]}]]
+       (collect-message-leaves)
+       (map (fn [[field message]]
               (tr "plugins.validation.message" (name field) message)))
        (str/join ". ")))
 
