@@ -2,7 +2,7 @@ mod debug;
 mod fills;
 pub mod filters;
 mod fonts;
-mod gpu_state;
+pub mod gpu_state;
 pub mod grid_layout;
 mod images;
 mod options;
@@ -17,13 +17,10 @@ use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
-use gpu_state::GpuState;
-
 use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::error::{Error, Result};
-use crate::performance;
 use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
     Stroke, StrokeKind, TextContent, Type,
@@ -33,6 +30,7 @@ use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
+use crate::{get_gpu_state, performance};
 
 pub use fonts::*;
 pub use images::*;
@@ -327,7 +325,6 @@ impl RenderStats {
 }
 
 pub(crate) struct RenderState {
-    gpu_state: GpuState,
     pub options: RenderOptions,
     stats: RenderStats,
     pub surfaces: Surfaces,
@@ -394,6 +391,12 @@ pub struct InteractiveDragCrop {
     /// True if the captured crop bounds were fully inside the viewport at capture time.
     /// Used to avoid serving partial/offscreen crops during interactive drag.
     pub fits_viewport_at_capture: bool,
+    /// Viewbox origin (doc-space) at capture time.
+    pub capture_vb_left: f32,
+    pub capture_vb_top: f32,
+    /// Backbuffer pixel origin used for `snapshot_rect` (so we can do 1:1 blits).
+    pub capture_src_left: i32,
+    pub capture_src_top: i32,
     pub image: skia::Image,
 }
 
@@ -486,13 +489,11 @@ impl RenderState {
 
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
         // This needs to be done once per WebGL context.
-        let mut gpu_state = GpuState::try_new()?;
         let sampling_options =
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
 
         let fonts = FontStore::try_new()?;
         let surfaces = Surfaces::try_new(
-            &mut gpu_state,
             (width, height),
             sampling_options,
             tiles::get_tile_dimensions(),
@@ -505,15 +506,14 @@ impl RenderState {
         let tiles = tiles::TileHashMap::new();
         let options = RenderOptions::default();
 
-        Ok(RenderState {
-            gpu_state: gpu_state.clone(),
+        Ok(Self {
             options,
             stats: RenderStats::new(),
             surfaces,
             fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
-            images: ImageStore::new(gpu_state.context.clone()),
+            images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
             render_in_progress: false,
@@ -525,10 +525,10 @@ impl RenderState {
             tiles,
             tile_viewbox: tiles::TileViewbox::new_with_interest(
                 viewbox,
-                options.viewport_interest_area_threshold,
+                options.dpr_viewport_interest_area_threshold,
                 1.0,
             ),
-            pending_tiles: PendingTiles::new_empty(),
+            pending_tiles: PendingTiles::new(),
             nested_fills: vec![],
             nested_blurs: vec![],
             nested_shadows: vec![],
@@ -742,8 +742,11 @@ impl RenderState {
     }
 
     pub fn set_dpr(&mut self, dpr: f32) -> Result<()> {
-        if Some(dpr) != self.options.dpr {
-            self.options.dpr = Some(dpr);
+        // Only when this function returns true (it means the value
+        // was properly changed) the rest of the functions is called.
+        if self.options.set_dpr(dpr) {
+            self.tile_viewbox
+                .set_interest(self.options.dpr_viewport_interest_area_threshold);
             self.resize(
                 self.viewbox.width.floor() as i32,
                 self.viewbox.height.floor() as i32,
@@ -758,11 +761,15 @@ impl RenderState {
     }
 
     pub fn set_viewport_interest_area_threshold(&mut self, value: i32) {
-        self.options.set_viewport_interest_area_threshold(value);
-        // The TileViewbox stores its own copy of `interest` (set at
-        // construction). Without propagating, options change wouldn't
-        // affect pending_tiles generation.
-        self.tile_viewbox.set_interest(value);
+        // Only when this function returns true (it means the value
+        // was changed properly) the tile_viewbox.set_interest is called.
+        if self.options.set_viewport_interest_area_threshold(value) {
+            // The TileViewbox stores its own copy of `interest` (set at
+            // construction). Without propagating, options change wouldn't
+            // affect pending_tiles generation.
+            self.tile_viewbox
+                .set_interest(self.options.dpr_viewport_interest_area_threshold);
+        }
     }
 
     pub fn set_node_batch_threshold(&mut self, value: i32) {
@@ -786,10 +793,9 @@ impl RenderState {
     }
 
     pub fn resize(&mut self, width: i32, height: i32) -> Result<()> {
-        let dpr_width = (width as f32 * self.options.dpr()).floor() as i32;
-        let dpr_height = (height as f32 * self.options.dpr()).floor() as i32;
-        self.surfaces
-            .resize(&mut self.gpu_state, dpr_width, dpr_height)?;
+        let dpr_width = (width as f32 * self.options.dpr).floor() as i32;
+        let dpr_height = (height as f32 * self.options.dpr).floor() as i32;
+        self.surfaces.resize(dpr_width, dpr_height)?;
         self.viewbox.set_wh(width as f32, height as f32);
         self.tile_viewbox.update(self.viewbox, self.get_scale());
 
@@ -797,8 +803,7 @@ impl RenderState {
     }
 
     pub fn flush_and_submit(&mut self) {
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, SurfaceId::Target);
+        self.surfaces.flush_and_submit(SurfaceId::Target);
     }
 
     pub fn reset_canvas(&mut self) {
@@ -877,7 +882,6 @@ impl RenderState {
             .as_ref()
             .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
         self.surfaces.cache_current_tile_texture(
-            &mut self.gpu_state,
             &self.tile_viewbox,
             &current_tile,
             &tile_rect,
@@ -1721,6 +1725,10 @@ impl RenderState {
                     src_doc_bounds,
                     src_selrect: selrect,
                     fits_viewport_at_capture,
+                    capture_vb_left: vb_left,
+                    capture_vb_top: vb_top,
+                    capture_src_left: src_irect.left,
+                    capture_src_top: src_irect.top,
                     image,
                 },
             );
@@ -1739,7 +1747,7 @@ impl RenderState {
         // and drawing from it avoids mixing a partially-updated Cache surface with missing tiles.
         if self.options.is_fast_mode() && self.render_in_progress && self.surfaces.has_atlas() {
             self.surfaces
-                .draw_atlas_to_target(self.viewbox, self.options.dpr(), bg_color);
+                .draw_atlas_to_target(self.viewbox, self.options.dpr, bg_color);
 
             if self.options.is_debug_visible() {
                 debug::render(self);
@@ -1759,15 +1767,15 @@ impl RenderState {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
 
-            let interest = self.options.viewport_interest_area_threshold;
+            let interest = self.options.dpr_viewport_interest_area_threshold;
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
                     self.cached_viewbox,
                     interest,
                     cached_scale,
                 );
-            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr();
-            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr();
+            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr;
+            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr;
             let translate_x = (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x;
             let translate_y = (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y;
 
@@ -1780,8 +1788,8 @@ impl RenderState {
                 let cache_h = cache_dim.height as f32;
 
                 // Viewport in target pixels.
-                let vw = (self.viewbox.width * self.options.dpr()).max(1.0);
-                let vh = (self.viewbox.height * self.options.dpr()).max(1.0);
+                let vw = (self.viewbox.width * self.options.dpr).max(1.0);
+                let vh = (self.viewbox.height * self.options.dpr).max(1.0);
 
                 // Inverse-map viewport corners into cache coordinates.
                 // target = (cache * navigate_zoom) translated by (translate_x, translate_y) (in cache coords).
@@ -1809,7 +1817,7 @@ impl RenderState {
                     if self.surfaces.has_atlas() {
                         self.surfaces.draw_atlas_to_target(
                             self.viewbox,
-                            self.options.dpr(),
+                            self.options.dpr,
                             bg_color,
                         );
 
@@ -1966,12 +1974,12 @@ impl RenderState {
         let viewbox_cache_size = get_cache_size(
             self.viewbox,
             scale,
-            self.options.viewport_interest_area_threshold,
+            self.options.dpr_viewport_interest_area_threshold,
         );
         let cached_viewbox_cache_size = get_cache_size(
             self.cached_viewbox,
             scale,
-            self.options.viewport_interest_area_threshold,
+            self.options.dpr_viewport_interest_area_threshold,
         );
         // Only resize cache if the new size is larger than the cached size
         // This avoids unnecessary surface recreations when the cache size decreases
@@ -1980,7 +1988,7 @@ impl RenderState {
         {
             self.surfaces.resize_cache(
                 viewbox_cache_size,
-                self.options.viewport_interest_area_threshold,
+                self.options.dpr_viewport_interest_area_threshold,
             )?;
         }
 
@@ -2186,13 +2194,12 @@ impl RenderState {
         // Clear export context so get_scale() returns to workspace zoom.
         self.export_context = None;
 
-        self.surfaces
-            .flush_and_submit(&mut self.gpu_state, target_surface);
+        self.surfaces.flush_and_submit(target_surface);
 
         let image = self.surfaces.snapshot(target_surface);
         let data = image
             .encode(
-                &mut self.gpu_state.context,
+                Some(&mut get_gpu_state().context),
                 skia::EncodedImageFormat::PNG,
                 100,
             )
@@ -3005,7 +3012,6 @@ impl RenderState {
                     if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
                         let crop_image = &crop.image;
                         let crop_src_selrect = crop.src_selrect;
-                        let crop_src_doc_bounds = crop.src_doc_bounds;
 
                         let cur_selrect = tree.get(&node_id).map(|s| s.selrect());
                         let (dx, dy) = match cur_selrect {
@@ -3015,23 +3021,10 @@ impl RenderState {
                             ),
                             None => (0.0, 0.0),
                         };
-
-                        let dst_doc_rect = Rect::new(
-                            crop_src_doc_bounds.left + dx,
-                            crop_src_doc_bounds.top + dy,
-                            crop_src_doc_bounds.right + dx,
-                            crop_src_doc_bounds.bottom + dy,
-                        );
                         let scale = self.get_scale();
                         let translation = self
                             .surfaces
                             .get_render_context_translation(self.render_area, scale);
-                        let dst_tile_rect = skia::Rect::from_xywh(
-                            (dst_doc_rect.left + translation.0) * scale,
-                            (dst_doc_rect.top + translation.1) * scale,
-                            dst_doc_rect.width() * scale,
-                            dst_doc_rect.height() * scale,
-                        );
 
                         let canvas = self.surfaces.canvas(target_surface);
                         canvas.save();
@@ -3051,12 +3044,14 @@ impl RenderState {
                                 canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
                             }
                         }
-                        canvas.draw_image_rect(
-                            crop_image,
-                            None,
-                            dst_tile_rect,
-                            &skia::Paint::default(),
-                        );
+                        let doc_left =
+                            crop.capture_vb_left + (crop.capture_src_left as f32 / scale) + dx;
+                        let doc_top =
+                            crop.capture_vb_top + (crop.capture_src_top as f32 / scale) + dy;
+
+                        let x = (doc_left + translation.0) * scale;
+                        let y = (doc_top + translation.1) * scale;
+                        canvas.draw_image(crop_image, (x, y), Some(&skia::Paint::default()));
 
                         canvas.restore();
                     }
@@ -3585,8 +3580,7 @@ impl RenderState {
     }
 
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
-        self.surfaces
-            .remove_cached_tile_surface(&mut self.gpu_state, tile);
+        self.surfaces.remove_cached_tile_surface(tile);
     }
 
     /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.
@@ -3750,11 +3744,11 @@ impl RenderState {
         if let Some((_, export_scale)) = self.export_context {
             return export_scale;
         }
-        self.viewbox.zoom() * self.options.dpr()
+        self.viewbox.zoom() * self.options.dpr
     }
 
     pub fn get_cached_scale(&self) -> f32 {
-        self.cached_viewbox.zoom() * self.options.dpr()
+        self.cached_viewbox.zoom() * self.options.dpr
     }
 
     pub fn zoom_changed(&self) -> bool {
@@ -3781,10 +3775,17 @@ impl RenderState {
     pub fn print_stats(&self) {
         self.stats.print();
     }
-}
 
-impl Drop for RenderState {
-    fn drop(&mut self) {
-        self.gpu_state.context.free_gpu_resources();
+    pub fn prepare_context_loss_cleanup(&mut self) {
+        // Drop cached GPU-backed snapshots before dropping the render state.
+        self.backbuffer_crop_cache.clear();
+        self.surfaces.invalidate_tile_cache();
+        // Mark context as abandoned so resource destructors avoid issuing
+        // GL commands when the browser has already lost/restored the context.
+        get_gpu_state().context.abandon();
+    }
+
+    pub fn free_gpu_resources(&mut self) {
+        get_gpu_state().context.free_gpu_resources();
     }
 }

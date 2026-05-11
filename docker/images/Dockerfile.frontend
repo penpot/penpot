@@ -17,6 +17,7 @@ ARG BUNDLE_PATH="./bundle-frontend/"
 COPY $BUNDLE_PATH /var/www/app/
 COPY ./files/config.js /var/www/app/js/config.js
 COPY ./files/nginx.conf.template /tmp/nginx.conf.template
+COPY ./files/nginx-security-headers.conf /etc/nginx/nginx-security-headers.conf
 COPY ./files/nginx-resolvers.conf.template /tmp/resolvers.conf.template
 COPY ./files/nginx-mime.types /etc/nginx/mime.types
 COPY ./files/nginx-external-locations.conf /etc/nginx/overrides/location.d/external-locations.conf

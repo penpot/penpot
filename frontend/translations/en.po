@@ -1413,6 +1413,10 @@ msgstr "Your browser cannot do this operation"
 msgid "errors.clipboard-permission-denied"
 msgstr "Clipboard access denied. Please allow clipboard permissions in your browser to paste content"
 
+#: src/app/main/data/workspace/clipboard.cljs
+msgid "errors.clipboard-api-unavailable"
+msgstr "Clipboard API is unavailable. Serve Penpot over HTTPS to enable clipboard access"
+
 #: src/app/main/errors.cljs:235
 msgid "errors.comment-error"
 msgstr "There was an error with the comment"
@@ -1679,6 +1683,10 @@ msgstr "Cannot complete drop, a set with same name already exists at path."
 msgid "errors.token-theme-already-exists"
 msgstr "Theme Option with the same name exists"
 
+#: src/app/common/files/tokens.cljc:298
+msgid "errors.token-theme-not-existing-sets"
+msgstr "The theme refers to some not existing sets: %s"
+
 #: src/app/main/data/media.cljs:73
 msgid "errors.unexpected-error"
 msgstr "An unexpected error occurred."
@@ -1714,6 +1722,8 @@ msgstr "WebGL has stopped working. Please reload the page to reset it"
 #: src/app/main/ui/static.cljs:314
 msgid "errors.webgl-context-lost.main-message"
 msgstr "Oops! The canvas context was lost"
+
+
 
 #: src/app/main/ui/dashboard/team.cljs:1051
 msgid "errors.webhooks.connection"
@@ -5166,6 +5176,15 @@ msgstr "Inviting people while on the Unlimited plan"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Power up"
 
+msgid "subscription.error.nitrate.checkout-cancelled"
+msgstr "Payment was not completed. Try again whenever you're ready."
+
+msgid "subscription.error.nitrate.checkout-failed"
+msgstr "We couldn't start the checkout. Please try again. If the problem persists, contact us: support@penpot.app."
+
+msgid "subscription.error.nitrate.checkout-finish-failed"
+msgstr "We couldn’t confirm your subscription. Please check your subscription status on the Subscription page. You may try again if needed."
+
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
 msgid "subscription.labels"
 msgstr "Subscription"
@@ -6363,6 +6382,10 @@ msgstr "Toggle blur"
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
 msgid "workspace.options.canvas-background"
 msgstr "Canvas background"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+msgid "workspace.options.pixel grid-color"
+msgstr "Pixel grid color"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
 msgid "workspace.options.clip-content"
@@ -8448,12 +8471,20 @@ msgstr "Import Error: Invalid token data in JSON."
 msgid "errors.tokens.invalid-json-token-name"
 msgstr "Import Error: Invalid token name in JSON."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:32
+msgid "workspace.tokens.duplicated-json-token-name"
+msgstr "Import Error: Duplicated token name in JSON."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:28
 msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" is not a valid token name.\n"
 "Token names should only contain letters and digits separated by . "
 "characters and must not start with a $ sign."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:33
+msgid "workspace.tokens.duplicated-json-token-name-detail"
+msgstr "A token already exists at the path '%s' or at a prefix thereof, in another set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:105
 msgid "errors.tokens.invalid-shadow-type-token-value"
@@ -8973,9 +9004,19 @@ msgstr "Done"
 msgid "workspace.top-bar.view-only"
 msgstr "**Inspecting code** (View Only)"
 
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Rendering unavailable. Refresh to restore editing."
+
+msgid "workspace.top-bar.webgl-context-lost.reload"
+msgstr "Refresh"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:333
 msgid "workspace.undo.empty"
 msgstr "There are no history changes so far"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.by"
+msgstr "by %s"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:147
 msgid "workspace.undo.entry.delete"
@@ -9234,6 +9275,14 @@ msgstr ""
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
 
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-lost.toast"
+msgstr "WebGL context was lost"
+
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "WebGL context was recovered"
+
 msgid "webgl.modals.webgl-unavailable.title"
 msgstr "Oops! WebGL is not available"
 
@@ -9414,3 +9463,6 @@ msgstr "You don't have permission to add teams to any of your organizations."
 
 msgid "dashboard.select-org-modal.permission-info"
 msgstr "Here you find all your organizations where you are allowed to create or add teams."
+
+msgid "dashboard.no-permission-delete-team.message"
+msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the owner."
