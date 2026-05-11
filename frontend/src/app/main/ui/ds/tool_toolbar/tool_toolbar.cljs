@@ -4,13 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tool-toolbar.tool-toolbar
+(ns app.main.ui.ds.tool-toolbar.tool-toolbar
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.point :as gpt]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
@@ -33,10 +34,10 @@
 
                      selected        (get state :selected)
                      edition         (get state :edition)
-                     single?         (= (count selected) 1)
+                     is-single         (= (count selected) 1)
 
-                     path-editing?   (and single? (some? (get path-edit-state edition)))]
-                 (if path-editing? true visibility)))
+                     is-path-editing   (and is-single (some? (get path-edit-state edition)))]
+                 (if is-path-editing true visibility)))
              refs/workspace-local))
 
 (defn- tool-label
@@ -59,7 +60,7 @@
     drawtool
     (:default-tool group)))
 
-(defn- selected-group?
+(defn- is-selected-group
   [group drawtool]
   (contains? (:tools group) drawtool))
 
@@ -70,7 +71,7 @@
 
 (mf/defc tool-button*
   {::mf/wrap [mf/memo]}
-  [{:keys [selected title icon on-click aria-haspopup aria-expanded role data-tool]}]
+  [{:keys [selected variant title icon on-click aria-haspopup aria-expanded role data-tool]}]
   [:button {:type "button"
             :title title
             :aria-label title
@@ -83,7 +84,13 @@
             :data-tool data-tool}
    [:> icon* {:icon-id icon
               :aria-hidden true
-              :class (stl/css :main-toolbar-icon)}]])
+              :class (stl/css :main-toolbar-icon)}]
+   (when (= variant :has-flyout)
+     [:svg {:view-box "0 0 6 6"
+            :aria-hidden true
+            :class (stl/css :main-toolbar-flyout-indicator)}
+      [:path {:d "M4,2 L4,3.15 C4,3.62 3.62,4 3.15,4 L2,4"
+              :stroke-linecap "round"}]])])
 
 (def grouped-tools
   {:shapes {:default-tool :rect
@@ -105,12 +112,12 @@
   (let [default-tool   (active-group-tool group drawtool)
         default-icon  (:icon (get-in group [:tools default-tool]))
         subtools      (:tools group)
-        open*        (mf/use-state false)
+        open*         (mf/use-state false)
+        open          (deref open*)
         open-timer*   (mf/use-ref nil)
         close-timer*  (mf/use-ref nil)
-        open         (deref open*)
         menu-label   (group-menu-label group drawtool)
-        selected     (boolean (selected-group? group drawtool))
+        selected     (boolean (is-selected-group group drawtool))
 
         on-display-menu (mf/use-fn
                          (fn []
@@ -143,6 +150,7 @@
      [:div {:role "group"
             :aria-label menu-label}
       [:> tool-button* {:title (tool-label default-tool)
+                        :variant :has-flyout
                         :selected selected
                         :icon default-icon
                         :on-click on-select-tool
@@ -150,20 +158,20 @@
                         :aria-haspopup true
                         :aria-expanded open}]
 
-      (when open
-        [:ul {:role "menu"
-              :class (stl/css :main-toolbar-flyout)
-              :aria-label menu-label}
-         (for [[id {:keys [icon]}] subtools]
-           [:li {:key (name id)
-                 :role "none"}
-            [:> tool-button* {:title (tool-label id)
-                              :selected (= drawtool id)
-                              :icon icon
-                              :on-click on-select-tool
-                              :data-tool (name id)
-                              :role "menuitemradio"
-                              :aria-checked (= drawtool id)}]])])]]))
+      [:ul {:role "menu"
+            :class (stl/css-case :main-toolbar-flyout true
+                                 :flyout-open open)
+            :aria-label menu-label}
+       (for [[id {:keys [icon]}] subtools]
+         [:li {:key (name id)
+               :role "none"}
+          [:> tool-button* {:title (tool-label id)
+                            :selected (= drawtool id)
+                            :icon icon
+                            :on-click on-select-tool
+                            :data-tool (name id)
+                            :role "menuitemradio"
+                            :aria-checked (= drawtool id)}]])]]]))
 
 (mf/defc image-upload-tool
   {::mf/wrap [mf/memo]}
@@ -219,8 +227,8 @@
         toggle-debug-panel (mf/use-fn
                             (mf/deps layout)
                             (fn []
-                              (let [is-sidebar-closed? (contains? layout :collapse-left-sidebar)]
-                                (when is-sidebar-closed?
+                              (let [is-sidebar-closed (contains? layout :collapse-left-sidebar)]
+                                (when is-sidebar-closed
                                   (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
                                 (st/emit!
                                  (dw/remove-layout-flag :shortcuts)
@@ -238,7 +246,13 @@
 
                             ;; Delay so anything that launched :interrupt can finish
                             (ts/schedule 100
-                                         #(st/emit! (dw/select-for-drawing tool))))))]
+                                         #(st/emit! (dw/select-for-drawing tool))))))
+
+        toggle-toolbar
+        (mf/use-fn
+         (fn [event]
+           (dom/blur! (dom/get-target event))
+           (st/emit! (dwc/toggle-toolbar-visibility))))]
 
     [:div {:role "toolbar"
            :aria-label (tr "workspace.toolbar.label")
@@ -293,4 +307,9 @@
          [:> tool-button* {:title (tool-label :debug)
                            :selected (contains? layout :debug-panel)
                            :icon i/bug
-                           :on-click toggle-debug-panel}]])]]))
+                           :on-click toggle-debug-panel}]])]
+     [:button {:title (tr "workspace.toolbar.toggle-toolbar")
+               :aria-label (tr "workspace.toolbar.toggle-toolbar")
+               :class (stl/css :toolbar-handler)
+               :on-click toggle-toolbar}
+      [:div {:class (stl/css :toolbar-handler-indicator)}]]]))

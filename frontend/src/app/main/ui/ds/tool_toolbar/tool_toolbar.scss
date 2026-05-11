@@ -5,8 +5,8 @@
 // Copyright (c) KALEIDOS INC
 
 @use "ds/spacing.scss" as *;
+@use "ds/sizes.scss" as *;
 @use "ds/borders.scss" as *;
-@use "ds/mixins.scss" as *;
 @use "ds/z-index.scss" as *;
 
 .main-toolbar {
@@ -14,17 +14,18 @@
   --toolbar-offset-y: 0px;
   --menu-border-color: var(--color-background-quaternary);
   --menu-background-color: var(--color-background-primary);
+  --stroke-color: var(--color-foreground-secondary);
+  --toolbar-hider-background-color: var(--color-accent-default);
 
   cursor: initial;
+  box-sizing: border-box;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   flex-direction: column;
-
-  // height: 56px;
-  padding: var(--sp-s) var(--sp-l);
+  padding: var(--sp-m);
   border-radius: $br-8;
   border: 2px solid var(--menu-border-color);
   z-index: var(--z-index-panels);
@@ -91,6 +92,7 @@
   align-items: center;
   justify-content: center;
   background-color: var(--toolbar-option-button-background);
+  color: var(--stroke-color);
 
   &:hover {
     cursor: pointer;
@@ -101,20 +103,18 @@
   }
 
   &[aria-pressed="true"],
-  &[aria-pressed="true"],
   &:focus-visible,
   &:hover {
     --toolbar-option-button-background: var(--color-background-quaternary);
+    --stroke-color: var(--color-accent-primary);
 
-    & .main-toolbar-icon {
+    & .main-toolbar-flyout-indicator {
       --stroke-color: var(--color-accent-primary);
     }
   }
 }
 
 .main-toolbar-icon {
-  --stroke-color: var(--color-foreground-secondary);
-
   stroke: var(--stroke-color);
   inline-size: 16px;
   block-size: 16px;
@@ -125,8 +125,11 @@
 }
 
 .main-toolbar-flyout {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
   position: absolute;
-  top: 130%;
+  top: 140%;
   left: 50%;
   transform: translateX(-50%);
   margin-top: var(--sp-xxs);
@@ -136,4 +139,46 @@
   background-color: var(--menu-background-color);
   z-index: var(--z-index-panels);
   display: flex;
+  transition:
+    opacity 80ms ease-out,
+    visibility 80ms linear;
+
+  &.flyout-open {
+    opacity: 1;
+    transition-delay: 0s;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+.main-toolbar-flyout-indicator {
+  position: absolute;
+  inset-block-end: 5px;
+  inset-inline-end: 5px;
+  stroke: var(--stroke-color);
+  fill: none;
+  inline-size: 6px;
+  block-size: 6px;
+}
+
+.toolbar-handler {
+  block-size: $sz-12;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+}
+
+.toolbar-handler-indicator {
+  block-size: 4px;
+  inline-size: 64px;
+  padding: 0;
+  border-radius: $br-4;
+  background-color: var(--toolbar-hider-background-color);
 }
