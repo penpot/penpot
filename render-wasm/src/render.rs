@@ -395,10 +395,14 @@ pub struct InteractiveDragCrop {
     /// Viewbox origin (doc-space) at capture time.
     pub capture_vb_left: f32,
     pub capture_vb_top: f32,
-    /// Backbuffer pixel origin used for `snapshot_rect` (so we can do 1:1 blits).
+    /// Pixel origin (in target/snapshot space) for 1:1 blits during drag.
     pub capture_src_left: i32,
     pub capture_src_top: i32,
+    /// Shared raster image of the full Target taken at settle. All crops point at the same
+    /// image so Skia's texture cache uploads it once per interactive transform.
     pub image: skia::Image,
+    /// Sub-rect inside `image` belonging to this shape.
+    pub src_irect: skia::IRect,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
@@ -1691,31 +1695,68 @@ impl RenderState {
             non_overlapping.push((*id, *bounds, *selrect));
         }
 
-        // Snapshot from Backbuffer for each accepted shape.
+        // Two-pass build:
+        //   1. Compute each candidate's clamped target-pixel IRect and the union of all of
+        //      them.
+        //   2. Carve the union out of `target_snapshot` and pre-warm it as a non-FBO GPU
+        //      texture via `take_crop_atlas`. All crops then share that smaller atlas image,
+        //      so the first drag frame doesn't pay an upload of the full viewport and per-
+        //      shape `draw_image_rect`s sample from a compact, ready-to-go texture.
+        let (snap_w, snap_h) = match self.surfaces.target_snapshot() {
+            Some(img) => (img.width(), img.height()),
+            None => return,
+        };
+
         let scale = self.get_scale();
         let vb_left = self.viewbox.area.left;
         let vb_top = self.viewbox.area.top;
+
+        let mut valid: Vec<(Uuid, skia::IRect, Rect, Rect)> =
+            Vec::with_capacity(non_overlapping.len());
+        let mut union: Option<skia::IRect> = None;
         for (id, doc_bounds, selrect) in non_overlapping {
             let left = ((doc_bounds.left - vb_left) * scale).floor() as i32;
             let top = ((doc_bounds.top - vb_top) * scale).floor() as i32;
             let right = ((doc_bounds.right - vb_left) * scale).ceil() as i32;
             let bottom = ((doc_bounds.bottom - vb_top) * scale).ceil() as i32;
+            // Clamp to the snapshot's pixel bounds.
+            let left = left.max(0);
+            let top = top.max(0);
+            let right = right.min(snap_w);
+            let bottom = bottom.min(snap_h);
             if right <= left || bottom <= top {
                 continue;
             }
-            let src_irect = skia::IRect::new(left, top, right, bottom);
-            let Some(image) = self
-                .surfaces
-                .snapshot_rect(SurfaceId::Backbuffer, src_irect)
-            else {
-                continue;
-            };
+            let irect = skia::IRect::new(left, top, right, bottom);
+            union = Some(match union {
+                None => irect,
+                Some(u) => skia::IRect::join(&u, &irect),
+            });
+            valid.push((id, irect, doc_bounds, selrect));
+        }
 
+        let Some(union) = union else {
+            return;
+        };
+
+        self.surfaces.take_crop_atlas(union);
+        let Some(atlas) = self.surfaces.crop_atlas().cloned() else {
+            return;
+        };
+        let atlas_origin = self.surfaces.crop_atlas_origin();
+
+        for (id, target_irect, doc_bounds, selrect) in valid {
+            let local_irect = skia::IRect::new(
+                target_irect.left - atlas_origin.x,
+                target_irect.top - atlas_origin.y,
+                target_irect.right - atlas_origin.x,
+                target_irect.bottom - atlas_origin.y,
+            );
             let src_doc_bounds = Rect::new(
-                src_irect.left as f32 / scale + vb_left,
-                src_irect.top as f32 / scale + vb_top,
-                src_irect.right as f32 / scale + vb_left,
-                src_irect.bottom as f32 / scale + vb_top,
+                target_irect.left as f32 / scale + vb_left,
+                target_irect.top as f32 / scale + vb_top,
+                target_irect.right as f32 / scale + vb_left,
+                target_irect.bottom as f32 / scale + vb_top,
             );
             let fits_viewport_at_capture = doc_bounds.left >= viewport.left
                 && doc_bounds.top >= viewport.top
@@ -1729,9 +1770,10 @@ impl RenderState {
                     fits_viewport_at_capture,
                     capture_vb_left: vb_left,
                     capture_vb_top: vb_top,
-                    capture_src_left: src_irect.left,
-                    capture_src_top: src_irect.top,
-                    image,
+                    capture_src_left: target_irect.left,
+                    capture_src_top: target_irect.top,
+                    image: atlas.clone(),
+                    src_irect: local_irect,
                 },
             );
         }
@@ -2105,7 +2147,7 @@ impl RenderState {
                 // A full-quality frame is now complete. Refresh Backbuffer and regenerate
                 // the per-shape crop cache so interactive drags can reuse pixels.
                 if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
-                    self.surfaces.copy_target_to_backbuffer();
+                    self.surfaces.take_target_snapshot();
                     self.rebuild_backbuffer_crop_cache(tree);
                 }
                 wapi::notify_tiles_render_complete!();
@@ -3054,7 +3096,22 @@ impl RenderState {
 
                         let x = (doc_left + translation.0) * scale;
                         let y = (doc_top + translation.1) * scale;
-                        canvas.draw_image(crop_image, (x, y), Some(&skia::Paint::default()));
+                        // The shared raster image covers the whole Target; each crop draws
+                        // its own `src_irect` slice. Reusing the image identity across crops
+                        // lets Skia upload the bitmap to a GPU texture once per drag.
+                        let src_rect = skia::Rect::from_irect(crop.src_irect);
+                        let dst_rect = skia::Rect::from_xywh(
+                            x,
+                            y,
+                            crop.src_irect.width() as f32,
+                            crop.src_irect.height() as f32,
+                        );
+                        canvas.draw_image_rect(
+                            crop_image,
+                            Some((&src_rect, skia::canvas::SrcRectConstraint::Fast)),
+                            dst_rect,
+                            &skia::Paint::default(),
+                        );
 
                         canvas.restore();
                     }

@@ -69,7 +69,19 @@ pub struct Surfaces {
     // for drawing tiles.
     export: skia::Surface,
     // Persistent viewport-sized surface used to keep the last presented frame.
+    // Kept for API compatibility but no longer the live cache — see `target_snapshot`.
     backbuffer: skia::Surface,
+    // CPU-backed raster `Image` populated from `target` at full-render settle via
+    // `read_pixels`. Used to seed interactive frames. Lives in system memory, never in an FBO.
+    target_snapshot: Option<skia::Image>,
+    // Pre-warmed GPU texture image cropped to the union of cacheable shapes' bounds.
+    // Built from `target_snapshot` at settle and used as the shared source for per-shape
+    // drag crops, so the first drag frame doesn't pay a CPU→GPU upload. Created via
+    // `texture_from_image`, which produces a plain (non-FBO) texture.
+    crop_atlas: Option<skia::Image>,
+    // Top-left of `crop_atlas` in target-pixel space. Subtract from a shape's target-space
+    // IRect to get atlas-local coords for `draw_image_rect`.
+    crop_atlas_origin: skia::IPoint,
 
     tiles: TileTextureCache,
     // Persistent 1:1 document-space atlas that gets incrementally updated as tiles render.
@@ -155,6 +167,9 @@ impl Surfaces {
             debug,
             export,
             backbuffer,
+            target_snapshot: None,
+            crop_atlas: None,
+            crop_atlas_origin: skia::IPoint::new(0, 0),
             tiles,
             atlas,
             atlas_origin: skia::Point::new(0.0, 0.0),
@@ -707,23 +722,96 @@ impl Surfaces {
         (s.width(), s.height())
     }
 
-    /// Copy the current `Target` contents into the persistent `Backbuffer`.
-    /// This is a GPU→GPU copy via Skia (no ReadPixels).
-    pub fn copy_target_to_backbuffer(&mut self) {
-        let sampling_options = self.sampling_options;
-        self.target.clone().draw(
-            self.backbuffer.canvas(),
-            (0.0, 0.0),
-            sampling_options,
-            Some(&skia::Paint::default()),
-        );
+    /// Copy `Target` pixels into a CPU `Bitmap` and cache the result as a
+    /// raster `Image`. Replaces the old `Backbuffer` `skia::Surface` (which was
+    /// a GPU framebuffer) with system-memory storage so the cache never holds
+    /// a live FBO — on Firefox + NVIDIA the FBO is suspected of forcing extra
+    /// driver-state serialization between settle and the next interactive
+    /// frame. The trade-off is one GPU→CPU readback at settle; the raster
+    /// image is re-uploaded as a GPU texture on first draw and Skia caches the
+    /// upload for subsequent frames.
+    pub fn take_target_snapshot(&mut self) {
+        let w = self.target.width();
+        let h = self.target.height();
+        if w <= 0 || h <= 0 {
+            self.target_snapshot = None;
+            return;
+        }
+        let mut bitmap = skia::Bitmap::new();
+        bitmap.alloc_n32_pixels((w, h), false);
+        if !self.target.read_pixels_to_bitmap(&bitmap, (0, 0)) {
+            self.target_snapshot = None;
+            return;
+        }
+        bitmap.set_immutable();
+        self.target_snapshot = skia::images::raster_from_bitmap(&bitmap);
     }
 
-    /// Seed `Target` from `Backbuffer` (last presented frame).
+    /// Returns the cached `Target` snapshot taken at the previous settle, if any.
+    pub fn target_snapshot(&self) -> Option<&skia::Image> {
+        self.target_snapshot.as_ref()
+    }
+
+    /// Carve `src_irect` (target-pixel space) out of `target_snapshot` and upload it as a
+    /// non-FBO GPU texture image. Called at settle once the candidate union is known so the
+    /// first drag frame can blit from a ready GPU texture instead of paying an upload cost.
+    /// Falls back to the raster subset if the GPU upload isn't possible.
+    pub fn take_crop_atlas(&mut self, src_irect: skia::IRect) {
+        self.crop_atlas = None;
+        self.crop_atlas_origin = skia::IPoint::new(0, 0);
+        let Some(raster) = self.target_snapshot.as_ref() else {
+            return;
+        };
+        let bounds = skia::IRect::new(0, 0, raster.width(), raster.height());
+        let Some(clipped) = skia::IRect::intersect(&src_irect, &bounds) else {
+            return;
+        };
+        if clipped.is_empty() {
+            return;
+        }
+        let Some(subset) = raster.make_subset(
+            None,
+            &clipped,
+            skia::image::RequiredProperties::default(),
+        ) else {
+            return;
+        };
+        let warmed = self
+            .target
+            .direct_context()
+            .and_then(|mut ctx| {
+                skia::gpu::images::texture_from_image(
+                    &mut ctx,
+                    &subset,
+                    skia::gpu::Mipmapped::No,
+                    skia::gpu::Budgeted::Yes,
+                )
+            })
+            .unwrap_or(subset);
+        self.crop_atlas_origin = skia::IPoint::new(clipped.left, clipped.top);
+        self.crop_atlas = Some(warmed);
+    }
+
+    /// Returns the pre-warmed crop atlas image, if any.
+    pub fn crop_atlas(&self) -> Option<&skia::Image> {
+        self.crop_atlas.as_ref()
+    }
+
+    /// Returns the target-pixel origin of `crop_atlas`.
+    pub fn crop_atlas_origin(&self) -> skia::IPoint {
+        self.crop_atlas_origin
+    }
+
+    /// Seed `Target` with the previously-snapshotted frame (the equivalent of
+    /// the old `Backbuffer` blit, but driven by the cached `Image` so we don't
+    /// have to write into `Backbuffer` at settle time).
     pub fn seed_target_from_backbuffer(&mut self) {
+        let Some(image) = self.target_snapshot.clone() else {
+            return;
+        };
         let sampling_options = self.sampling_options;
-        self.backbuffer.clone().draw(
-            self.target.canvas(),
+        self.target.canvas().draw_image_with_sampling_options(
+            &image,
             (0.0, 0.0),
             sampling_options,
             Some(&skia::Paint::default()),
@@ -733,6 +821,9 @@ impl Surfaces {
     fn reset_from_target(&mut self, target: skia::Surface) -> Result<()> {
         let dim = (target.width(), target.height());
         self.target = target;
+        self.target_snapshot = None;
+        self.crop_atlas = None;
+        self.crop_atlas_origin = skia::IPoint::new(0, 0);
         self.filter = self
             .target
             .new_surface_with_dimensions(dim)
