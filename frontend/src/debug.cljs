@@ -165,6 +165,15 @@
         (js/console.warn "[debug] render-wasm module not ready or missing _debug_atlas_base64")
         ""))))
 
+(defn ^:export wasmSurfaceConsole
+  "Logs the current render-wasm cache surface as an image in the JS console."
+  [id]
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_surface_console"))]
+    (if (fn? f)
+      (wasm.h/call module "_debug_surface_console" id)
+      (js/console.warn "[debug] render-wasm module not ready or missing _debug_surface_console"))))
+
 (defn ^:export wasmCacheConsole
   "Logs the current render-wasm cache surface as an image in the JS console."
   []
