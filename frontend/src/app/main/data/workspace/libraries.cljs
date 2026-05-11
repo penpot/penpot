@@ -433,7 +433,7 @@
   ([id-ref ids]
    (ptk/reify ::add-component
      ptk/WatchEvent
-     (watch [_ state _]
+     (watch [it state _]
        (let [objects            (dsh/lookup-page-objects state)
              selected           (->> (d/nilv ids (dsh/lookup-selected state))
                                      (cfh/clean-loops objects))
@@ -442,7 +442,8 @@
              can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))]
 
          (when can-make-component
-           (rx/of (add-component2 id-ref selected))))))))
+           (rx/of (-> (add-component2 id-ref selected)
+                      (with-meta (meta it))))))))))
 
 (defn add-multiple-components
   "Add several new components to current file library, from the currently selected shapes."
@@ -644,11 +645,12 @@
          (when id-ref
            (reset! id-ref (:id new-shape)))
 
-         (rx/of (ptk/event ::ev/event
-                           {::ev/name "use-library-component"
-                            ::ev/origin origin
-                            :external-library (not= file-id current-file-id)
-                            :is-variant (ctk/is-variant? component)})
+         (rx/of (ev/event
+                 (-> {::ev/name "use-library-component"
+                      ::ev/origin origin
+                      :external-library (not= file-id current-file-id)
+                      :is-variant (ctk/is-variant? component)}
+                     (merge (meta it))))
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
@@ -1486,7 +1488,7 @@
                                     vals
                                     (some ctk/is-variant?))]
              (if has-variants?
-               (rx/of (ptk/event ::ev/event {::ev/name "set-file-variants-shared" ::ev/origin "workspace"}))
+               (rx/of (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "workspace"}))
                (rx/empty)))))))))
 
 ;; --- Link and unlink Files
@@ -1550,11 +1552,11 @@
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})
                 (rx/map (fn [library-usage]
-                          (ptk/event ::ev/event {::ev/name "attach-library-variants"
-                                                 :file-id file-id
-                                                 :library-id library-id
-                                                 :variants-count variants-count
-                                                 :library-used-in (:used-in library-usage)}))))))))))
+                          (ev/event {::ev/name "attach-library-variants"
+                                     :file-id file-id
+                                     :library-id library-id
+                                     :variants-count variants-count
+                                     :library-used-in (:used-in library-usage)}))))))))))
 
 (defn unlink-file-from-library
   [file-id library-id]

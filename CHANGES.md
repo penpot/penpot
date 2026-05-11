@@ -134,6 +134,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix MCP integrations URL copy action to match the URL displayed in settings [Github #9238](https://github.com/penpot/penpot/issues/9238)
 - Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 - Fix keep-alive interval leak in PluginBridge (by @opcode81) [Github #9435](https://github.com/penpot/penpot/pull/9435)
@@ -148,13 +149,13 @@
 - Fix layer hierarchy to match old and new SCSS [Github #9126](https://github.com/penpot/penpot/pull/9126)
 - Fix multiple selection on shapes with token applied to stroke color [Github #9110](https://github.com/penpot/penpot/pull/9110)
 - Fix onboarding modals appearing behind libraries and templates panel [Github #9178](https://github.com/penpot/penpot/pull/9178)
+- Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
 
 ## 2.14.5
 
 ### :bug: Bugs fixed
 
 - Fix incorrect invitation token handling on register process [Github #9380](https://github.com/penpot/penpot/pull/9380)
-
 
 ## 2.14.4
 

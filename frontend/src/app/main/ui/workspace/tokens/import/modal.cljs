@@ -27,7 +27,6 @@
    [app.util.zip :as uz]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- on-stream-imported
@@ -35,7 +34,7 @@
   (rx/sub!
    tokens-lib-stream
    (fn [lib]
-     (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens" :type type})
+     (st/emit! (ev/event {::ev/name "import-tokens" :type type})
                (dwtl/import-tokens-lib lib))
      (modal/hide!))
    (fn [err]

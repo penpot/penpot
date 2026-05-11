@@ -18,7 +18,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [lambdaisland.uri :as u]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn get-subscription-type
@@ -201,9 +200,9 @@
         go-to-manage-subscription
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
-                                            ::ev/origin "dashboard"
-                                            :section "team-settings"}))
+           (st/emit! (ev/event {::ev/name "open-subscription-management"
+                                ::ev/origin "dashboard"
+                                :section "team-settings"}))
            (let [href (-> (rt/get-current-href)
                           (rt/encode-url))
                  href (str "payments/subscriptions/show?returnUrl=" href)]

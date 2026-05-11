@@ -185,10 +185,10 @@
                           (rx/of (dp/refresh-profile)
                                  (fetch-members team-id)
                                  (fetch-teams)
-                                 (ptk/data-event ::ev/event
-                                                 {::ev/name "delete-team-member"
-                                                  :team-id team-id
-                                                  :member-id member-id})))))))))
+                                 (ev/event
+                                  {::ev/name "delete-team-member"
+                                   :team-id team-id
+                                   :member-id member-id})))))))))
 
 
 (defn- stats-fetched
@@ -249,9 +249,9 @@
              (rx/tap on-success)
              (rx/mapcat (fn [_]
                           (rx/of (fetch-teams)
-                                 (ptk/data-event ::ev/event
-                                                 {::ev/name "update-team-photo"
-                                                  :team-id team-id}))))
+                                 (ev/event
+                                  {::ev/name "update-team-photo"
+                                   :team-id team-id}))))
              (rx/catch on-error))))))
 
 
@@ -355,10 +355,10 @@
                 (rx/merge
                  (rx/of (team-leaved params)
                         (fetch-teams)
-                        (ptk/data-event ::ev/event
-                                        {::ev/name "leave-team"
-                                         :reassign-to reassign-to
-                                         :team-id team-id}))
+                        (ev/event
+                         {::ev/name "leave-team"
+                          :reassign-to reassign-to
+                          :team-id team-id}))
                  (on-success))))
              (rx/catch on-error))))))
 

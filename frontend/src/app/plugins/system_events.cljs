@@ -7,17 +7,34 @@
 (ns app.plugins.system-events
   (:require
    [app.main.data.event :as ev]
-   [app.main.store :as st]))
+   [app.main.store :as st]
+   [app.plugins.register :as r]))
 
 ;; Formats an event from the plugin system
 (defn event
   [plugin-id name & {:as props}]
-  (let [plugin-data (get-in @st/state [:profile :props :plugins :data plugin-id])]
+  (if (= plugin-id r/mcp-plugin-id)
     (-> props
         (assoc ::ev/name name)
-        (assoc ::ev/origin "plugin")
-        (assoc ::ev/context
-               {:plugin-name (:name plugin-data)
-                :plugin-url (:url plugin-data)})
-        (ev/event))))
+        (assoc ::ev/origin "mcp")
+        (ev/event))
 
+    (let [plugin-data (r/get-plugin-data @st/state plugin-id)]
+      (-> props
+          (assoc ::ev/name name)
+          (assoc ::ev/origin "plugin")
+          (assoc ::ev/context
+                 {:plugin-name (:name plugin-data)
+                  :plugin-url (:url plugin-data)})
+          (ev/event)))))
+
+(defn add-event
+  [event plugin-id]
+  (let [plugin-data (r/get-plugin-data @st/state plugin-id)]
+    (with-meta
+      event
+      (if (= plugin-id r/mcp-plugin-id)
+        {::ev/origin "mcp"}
+        {::ev/origin "plugin"
+         ::ev/context {:plugin-name (:name plugin-data)
+                       :plugin-url (:url plugin-data)}}))))
