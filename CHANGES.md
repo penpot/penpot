@@ -13,6 +13,7 @@
 
 ### :bug: Bugs fixed
 
+- Highlight the first matching font when searching the workspace font picker so the live preview reflects the search and pressing Enter commits it; previously `selected` stayed pinned to the originally-current font even when filtered out, leaving the list with no tick mark and Enter applying nothing [Github #3204](https://github.com/penpot/penpot/issues/3204)
 - Fix plugin API `LibraryTypography.remove()` failing with a UUID assertion error [Github #8223](https://github.com/penpot/penpot/issues/8223)
 - Fix MCP SSE sessions leaking memory on zombie connections by adding inactivity timeout parity with Streamable HTTP sessions (by @bitloi) [Github #9432](https://github.com/penpot/penpot/issues/9432)
 - Fix missing `labels.open` translation (by @MilosM348) [Github #9320](https://github.com/penpot/penpot/pull/9320)
