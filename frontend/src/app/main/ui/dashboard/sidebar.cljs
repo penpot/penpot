@@ -24,7 +24,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
-   [app.main.ui.components.link :refer [link]]
+   [app.main.ui.components.link :refer [link*]]
    [app.main.ui.components.org-avatar :refer [org-avatar*]]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -1077,16 +1077,16 @@
          [:li {:class (stl/css-case :recent-projects true
                                     :sidebar-nav-item true
                                     :current projects?)}
-          [:& link {:action go-projects
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-projects-with-key}
+          [:> link* {:action go-projects
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-projects-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.projects")]]]
 
          [:li {:class (stl/css-case :current drafts?
                                     :sidebar-nav-item true)}
-          [:& link {:action go-drafts
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-drafts-with-key}
+          [:> link* {:action go-drafts
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-drafts-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
 
 
@@ -1096,17 +1096,17 @@
         [:ul {:class (stl/css :sidebar-nav)}
          [:li {:class (stl/css-case :sidebar-nav-item true
                                     :current fonts?)}
-          [:& link {:action go-fonts
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-fonts-with-key
-                    :data-testid "fonts"}
+          [:> link* {:action go-fonts
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-fonts-with-key
+                     :data-testid "fonts"}
            [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]
          [:li {:class (stl/css-case :current libs?
                                     :sidebar-nav-item true)}
-          [:& link {:action go-libs
-                    :data-testid "libs-link-sidebar"
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-libs-with-key}
+          [:> link* {:action go-libs
+                     :data-testid "libs-link-sidebar"
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-libs-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
 
