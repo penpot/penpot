@@ -36,7 +36,6 @@
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def drag-data* (atom {:is-local false}))
@@ -376,8 +375,8 @@
            (let [params {:file-id file-id
                          :blobs (seq blobs)}]
              (st/emit! (dwm/upload-media-components params)
-                       (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                              :asset-type "components"})))))
+                       (ev/event {::ev/name "add-asset-to-library"
+                                  :asset-type "components"})))))
 
         on-duplicate
         (mf/use-fn
