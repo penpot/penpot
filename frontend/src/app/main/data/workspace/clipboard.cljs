@@ -303,13 +303,30 @@
   (and (instance? js/DOMException cause)
        (= (.-name cause) "NotAllowedError")))
 
+(defn- clipboard-unavailable-error?
+  "Check if the given error is a clipboard API unavailable error
+  (thrown when navigator.clipboard is undefined, e.g. on insecure
+   origins per the W3C Secure Contexts spec)."
+  [cause]
+  (and (instance? js/Error cause)
+       (str/starts-with? (.-message cause) "Clipboard API is unavailable.")))
+
 (defn- on-clipboard-permission-error
   [cause]
-  (if (clipboard-permission-error? cause)
+  (cond
+    (clipboard-permission-error? cause)
     (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
                       :type :toast
                       :level :warning
                       :timeout 5000}))
+
+    (clipboard-unavailable-error? cause)
+    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
+                      :type :toast
+                      :level :warning
+                      :timeout 5000}))
+
+    :else
     (rx/throw cause)))
 
 (defn paste-from-clipboard
@@ -507,6 +524,12 @@
                   (cond
                     (clipboard-permission-error? cause)
                     (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+                                      :type :toast
+                                      :level :warning
+                                      :timeout 5000}))
+
+                    (clipboard-unavailable-error? cause)
+                    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
                                       :type :toast
                                       :level :warning
                                       :timeout 5000}))
@@ -987,7 +1010,7 @@
                   (ptk/data-event :layout/update {:ids [frame-id]})
                   (dwu/commit-undo-transaction undo-id)
                   (when add-component-to-variant?
-                    (ptk/event ::ev/event {::ev/name "add-component-to-variant"})))))))))
+                    (ev/event {::ev/name "add-component-to-variant"})))))))))
 
 (defn- as-content [text]
   (let [paragraphs (->> (str/lines text)
