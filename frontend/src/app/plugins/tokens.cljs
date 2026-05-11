@@ -346,14 +346,15 @@
 (defn token-theme-proxy? [p]
   (obj/type-of? p "TokenThemeProxy"))
 
-(defn- resolve-token-set
+(defn- resolve-token-set-name
   [file-id set-arg]
-  (let [raw-id (cond
-                 (string? set-arg) set-arg
-                 (some? set-arg)   (obj/get set-arg "id"))
-        set-id (some-> raw-id uuid/parse*)]
-    (when set-id
-      (u/locate-token-set file-id set-id))))
+  (or (when (and (some? set-arg) (not (string? set-arg)))
+        (let [n (obj/get set-arg "name")]
+          (when (string? n) n)))
+      (when-let [id (cond
+                      (string? set-arg) (uuid/parse* set-arg)
+                      (some? set-arg)   (some-> (obj/get set-arg "id") uuid/parse*))]
+        (some-> (u/locate-token-set file-id id) ctob/get-name))))
 
 (defn token-theme-proxy
   [plugin-id file-id id]
@@ -438,18 +439,16 @@
     :addSet
     {:enumerable false
      :fn (fn [set-arg]
-           (let [token-set (resolve-token-set file-id set-arg)
-                 theme     (u/locate-token-theme file-id id)
-                 set-name  (:name token-set)]
+           (let [set-name (resolve-token-set-name file-id set-arg)
+                 theme    (u/locate-token-theme file-id id)]
              (when (and set-name theme)
                (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name))))))}
 
     :removeSet
     {:enumerable false
      :fn (fn [set-arg]
-           (let [token-set (resolve-token-set file-id set-arg)
-                 theme     (u/locate-token-theme file-id id)
-                 set-name  (:name token-set)]
+           (let [set-name (resolve-token-set-name file-id set-arg)
+                 theme    (u/locate-token-theme file-id id)]
              (when (and set-name theme)
                (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))}
 
