@@ -24,7 +24,6 @@
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private toolbar-hidden-ref
@@ -221,8 +220,8 @@
         display-plugins-manager (mf/use-fn
                                  (fn []
                                    (st/emit!
-                                    (ptk/data-event ::ev/event {::ev/name "open-plugins-manager"
-                                                                ::ev/origin "workspace:toolbar"})
+                                    (ev/event {::ev/name "open-plugins-manager"
+                                               ::ev/origin "workspace:toolbar"})
                                     (modal/show :plugin-management {}))))
         toggle-debug-panel (mf/use-fn
                             (mf/deps layout)
