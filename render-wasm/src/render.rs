@@ -21,6 +21,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::error::{Error, Result};
+use crate::math;
 use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
     Stroke, StrokeKind, TextContent, Type,
@@ -452,7 +453,8 @@ impl RenderState {
             };
             // Only allow using the cached pixels for pure translations.
             // For non-translation transforms (scale/rotate/skew), cached pixels won't match.
-            if !crate::math::is_move_only_matrix(m) {
+            // If the transform is the identity means a reflow, we need to redraw as well.
+            if math::identitish(m) || !math::is_move_only_matrix(m) {
                 return false;
             }
 
@@ -3008,6 +3010,7 @@ impl RenderState {
                     &tree.modifier_ids(),
                     moved_bounds,
                 );
+
                 if use_cached {
                     if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
                         let crop_image = &crop.image;
