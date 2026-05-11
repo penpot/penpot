@@ -9014,6 +9014,10 @@ msgstr "Refresh"
 msgid "workspace.undo.empty"
 msgstr "There are no history changes so far"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.by"
+msgstr "by %s"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:147
 msgid "workspace.undo.entry.delete"
 msgstr "Deleted %s"
