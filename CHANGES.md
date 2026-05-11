@@ -125,6 +125,7 @@
 - Fix `:heigth` typo in clipboard frame-same-size? (by @iot2edge) [Github #9250](https://github.com/penpot/penpot/pull/9250)
 - Fix Settings and Notifications "Update Settings" button enabled state when form has no changes (by @moorsecopers99) [Github #9090](https://github.com/penpot/penpot/issues/9090)
 - Fix library updates reappear after being applied and the file is reloaded [Taiga #14040](https://tree.taiga.io/project/penpot/issue/14040)
+- Fix dependency libraries remaining visible in UI after unlinking main library [Taiga #14020](https://tree.taiga.io/project/penpot/issue/14020)
 
 ## 2.15.0 (Unreleased)
 
