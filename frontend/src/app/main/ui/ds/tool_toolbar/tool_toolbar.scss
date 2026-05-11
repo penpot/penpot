@@ -20,7 +20,7 @@
   cursor: initial;
   box-sizing: border-box;
   position: absolute;
-  left: 50%;
+  inset-inline-start: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -34,7 +34,7 @@
     top 0.3s,
     height 0.3s,
     opacity 0.3s;
-  top: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
+  inset-block-start: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
 }
 
 .main-toolbar-no-rulers {
@@ -129,10 +129,10 @@
   visibility: hidden;
   pointer-events: none;
   position: absolute;
-  top: 140%;
-  left: 50%;
+  inset-block-start: 140%;
+  inset-inline-start: 50%;
   transform: translateX(-50%);
-  margin-top: var(--sp-xxs);
+  margin-block-start: var(--sp-xxs);
   padding: var(--sp-xxs) 0;
   border-radius: $br-8;
   border: 1px solid var(--menu-border-color);
