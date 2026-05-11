@@ -273,6 +273,7 @@
                        (assoc ::wrk/dedupe dedupe?)
                        (assoc ::wrk/label label)
                        (assoc ::wrk/params (-> event
+                                               (d/without-qualified)
                                                (dissoc :source)
                                                (dissoc :context)
                                                (dissoc :ip-addr)
