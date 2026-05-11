@@ -2,6 +2,7 @@
 
 EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh;
 
+export JAVA_OPTS="-Djava.net.preferIPv4Stack=true"
 export PATH="/home/penpot/.cargo/bin:/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 export CARGO_HOME="/home/penpot/.cargo"
 

@@ -150,6 +150,7 @@
 - Fix multiple selection on shapes with token applied to stroke color [Github #9110](https://github.com/penpot/penpot/pull/9110)
 - Fix onboarding modals appearing behind libraries and templates panel [Github #9178](https://github.com/penpot/penpot/pull/9178)
 - Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
+- Fix maximum call stack size exceeded in SSE read-stream [Github #9470](https://github.com/penpot/penpot/issues/9470)
 
 ## 2.14.5
 
