@@ -165,19 +165,14 @@
         audit-log? (contains? cf/flags :audit-log)
         enabled?   (and (not (db/read-only? pool))
                         (or audit-log? telemetry?))]
-    (if-not enabled?
-      (do
-        (l/warn :hint "audit: http handler disabled or db is read-only")
-        (rph/wrap nil))
+    (when enabled?
+      (try
+        (handle-events cfg params)
+        (catch Throwable cause
+          (l/error :hint "unexpected error on persisting audit events from frontend"
+                   :cause cause))))
 
-      (do
-        (try
-          (handle-events cfg params)
-          (catch Throwable cause
-            (l/error :hint "unexpected error on persisting audit events from frontend"
-                     :cause cause)))
-
-        (rph/wrap nil)))))
+    (rph/wrap nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GET-ENABLED-FLAGS

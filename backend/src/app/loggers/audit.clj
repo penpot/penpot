@@ -33,6 +33,9 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:private filter-auth-events
+  #{"login-with-oidc" "login-with-password" "register-profile" "update-profile"})
+
 (def ^:private safe-backend-context-keys
   #{:version
     :initiator
@@ -209,7 +212,8 @@
     (db/insert! cfg :audit-log params)))
 
 (def ^:private xf:filter-telemetry-props
-  "Transducer that keeps only map entries whose values are UUIDs."
+  "Transducer that keeps only map entries whose values are UUIDs,
+  booleans or numbers."
   (filter (fn [[k v]]
             (and (simple-keyword? k)
                  (or (uuid? v) (boolean? v) (number? v))))))
@@ -276,7 +280,7 @@
   event)
 
 (defn submit*
-  "A public API, lower-leve lhan submit, assumes all required fields are filled"
+  "A public API, lower-level than submit, assumes all required fields are filled"
   [cfg event]
   (try
     (let [event (check-event event)]
@@ -294,10 +298,7 @@
     (or (and (= source "frontend")
              (= type "identify"))
         (and (= source "backend")
-             (or (= name "login-with-oidc")
-                 (= name "login-with-password")
-                 (= name "register-profile")
-                 (= name "update-profile"))))
+             (filter-auth-events name)))
 
     (let [props' (into {} xf:filter-telemetry-props props)
           props' (-> props'

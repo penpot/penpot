@@ -285,8 +285,8 @@
   "Collect anonymous telemetry-mode audit events and ship them to the
   telemetry endpoint in a loop. Each iteration fetches one page of
   `batch-size` rows, encodes and sends them, then deletes the rows on
-  success. The loop stops as soon as a send fails, leaving remaining
-  rows intact for the next run."
+   success. The loop stops as soon as a send returns false, leaving
+   remaining rows intact for the next run."
   [{:keys [::db/conn] :as cfg}]
   (loop [counter 1]
     (when-let [rows (-> (db/exec! conn [sql:fetch-telemetry-events batch-size])
@@ -326,6 +326,8 @@
       (if enabled?
         (when send?
           (db/run! cfg gc-events)
+          ;; Randomize start time to avoid thundering herd when multiple
+          ;; instances restart at the same time.
           (px/sleep (rand-int 10000))
 
           (try
