@@ -12,6 +12,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix Plugin API `theme.addSet()` and `theme.removeSet()` always throwing "Field message is invalid" by accepting the set ID directly (string UUID, proxy, or `{id}` shape) instead of relying on a Symbol-keyed type tag that doesn't survive the plugin sandbox boundary [Github #9369](https://github.com/penpot/penpot/issues/9369)
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 
 ## 2.16.0 (Unreleased)

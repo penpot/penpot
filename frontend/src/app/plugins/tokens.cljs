@@ -346,6 +346,15 @@
 (defn token-theme-proxy? [p]
   (obj/type-of? p "TokenThemeProxy"))
 
+(defn- resolve-token-set
+  [file-id set-arg]
+  (let [raw-id (cond
+                 (string? set-arg) set-arg
+                 (some? set-arg)   (obj/get set-arg "id"))
+        set-id (some-> raw-id uuid/parse*)]
+    (when set-id
+      (u/locate-token-set file-id set-id))))
+
 (defn token-theme-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenThemeProxy"
@@ -428,27 +437,20 @@
 
     :addSet
     {:enumerable false
-     :schema [:tuple [:fn token-set-proxy?]]
-     :fn (fn [token-set]
-           ;; Resolve the set name before the theme lookup. The proxy's :name
-           ;; getter now falls back to `initial-name` when state hasn't
-           ;; propagated, so this is safe even for freshly created sets.
-           ;; Guard against nil to prevent `enable-set` from conj'ing nil
-           ;; into the theme's :sets — which would send `:sets #{nil}` to the
-           ;; backend and crash the workspace.
-           (let [set-name (obj/get token-set :name)
-                 theme    (u/locate-token-theme file-id id)]
-             (when (and (some? set-name) (some? theme))
+     :fn (fn [set-arg]
+           (let [token-set (resolve-token-set file-id set-arg)
+                 theme     (u/locate-token-theme file-id id)
+                 set-name  (:name token-set)]
+             (when (and set-name theme)
                (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name))))))}
 
     :removeSet
     {:enumerable false
-     :schema [:tuple [:fn token-set-proxy?]]
-     :fn (fn [token-set]
-           ;; Same nil guard as addSet — see comment above.
-           (let [set-name (obj/get token-set :name)
-                 theme    (u/locate-token-theme file-id id)]
-             (when (and (some? set-name) (some? theme))
+     :fn (fn [set-arg]
+           (let [token-set (resolve-token-set file-id set-arg)
+                 theme     (u/locate-token-theme file-id id)
+                 set-name  (:name token-set)]
+             (when (and set-name theme)
                (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))}
 
     :duplicate
