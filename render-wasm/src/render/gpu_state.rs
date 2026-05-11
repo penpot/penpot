@@ -41,7 +41,7 @@ impl GpuState {
             }
         };
 
-        Ok(GpuState {
+        Ok(Self {
             context,
             framebuffer_info,
         })
