@@ -178,9 +178,17 @@ pub extern "C" fn set_browser(browser: u8) -> Result<()> {
 pub extern "C" fn clean_up() -> Result<()> {
     // Cancel the current animation frame if it exists so
     // it won't try to render without context
-    let render_state = get_render_state();
-    render_state.cancel_animation_frame();
-    unsafe { STATE = None }
+    unsafe {
+        #[allow(static_mut_refs)]
+        if STATE.is_some() {
+            // Cancel the current animation frame if it exists so
+            // it won't try to render without context.
+            let render_state = get_render_state();
+            render_state.cancel_animation_frame();
+            render_state.prepare_context_loss_cleanup();
+        }
+        STATE = None;
+    }
     mem::free_bytes()?;
     Ok(())
 }
@@ -1070,6 +1078,11 @@ pub extern "C" fn render_shape_pixels(
 #[no_mangle]
 pub extern "C" fn render_stats() {
     get_render_state().print_stats();
+}
+
+#[no_mangle]
+pub fn free_gpu_resources() {
+    get_render_state().free_gpu_resources();
 }
 
 fn main() {

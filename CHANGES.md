@@ -13,12 +13,16 @@
 
 ### :bug: Bugs fixed
 
+- Fix plugin API `LibraryTypography.remove()` failing with a UUID assertion error [Github #8223](https://github.com/penpot/penpot/issues/8223)
+- Fix MCP SSE sessions leaking memory on zombie connections by adding inactivity timeout parity with Streamable HTTP sessions (by @bitloi) [Github #9432](https://github.com/penpot/penpot/issues/9432)
 - Fix missing `labels.open` translation (by @MilosM348) [Github #9320](https://github.com/penpot/penpot/pull/9320)
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
+- Expose Source Sans Pro semibold (weight 600) variants in the builtin fonts list, matching the bundled font assets and CSS @font-face declarations [Github #7378](https://github.com/penpot/penpot/issues/7378)
 - Fix plugin API `shape.fills` and `shape.strokes` arrays being read-only [Github #8357](https://github.com/penpot/penpot/issues/8357)
 - Fix `get-profile` masking transient DB errors as anonymous user (by @jack-stormentswe) [Github #9253](https://github.com/penpot/penpot/issues/9253)
 - Fix `Ctrl+'` "Show guides" shortcut on non-US keyboard layouts by matching the physical key location (by @RenzoMXD) [Github #8423](https://github.com/penpot/penpot/issues/8423)
 - Fix lost-update race on `team.features` during concurrent file creation (by @web-dev0521) [Github #9197](https://github.com/penpot/penpot/issues/9197)
+- Fix copy and paste actions crashing the workspace on insecure origins (plain HTTP / non-`localhost`) where the Clipboard API is unavailable (by @MilosM348) [Github #6514](https://github.com/penpot/penpot/issues/6514)
 
 
 ## 2.16.0 (Unreleased)
@@ -31,6 +35,8 @@
 
 - Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 - Add "Delete group" option to the assets panel context menu for components, colors and typographies (by @FairyPigDev) [Github #9141](https://github.com/penpot/penpot/issues/9141)
+- Add `Alt+click` on a layer's disclosure arrow to recursively expand the entire subtree rooted at that layer in the Layers sidebar; symmetric with the existing `Shift+click` collapse-all gesture, and removes the O(siblings × depth) click cost of unfolding a deep subtree one level at a time [Github #7736](https://github.com/penpot/penpot/issues/7736)
+- Show relative timestamp and short identifier for each entry in the workspace Actions history sidebar (by @FairyPigDev) [Github #7660](https://github.com/penpot/penpot/issues/7660)
 - Add `Alt+click` on a layer's disclosure arrow to recursively expand the entire subtree in the Layers sidebar (by @MilosM348) [Github #9179](https://github.com/penpot/penpot/pull/9179)
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
 - Add "Clear artboard guides" option to right-click context menu for frames (by @eureka0928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
@@ -171,6 +177,7 @@
 - Fix multiple selection on shapes with token applied to stroke color [Github #9110](https://github.com/penpot/penpot/pull/9110)
 - Fix onboarding modals appearing behind libraries and templates panel [Github #9178](https://github.com/penpot/penpot/pull/9178)
 - Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
+- Fix maximum call stack size exceeded in SSE read-stream [Github #9470](https://github.com/penpot/penpot/issues/9470)
 
 ## 2.14.5
 
