@@ -439,10 +439,10 @@
                     (doseq [file-id result]
                       (let [props (assoc props :id file-id)
                             event (-> (audit/event-from-rpc-params params)
-                                      (assoc ::audit/profile-id profile-id)
-                                      (assoc ::audit/name "create-file")
-                                      (assoc ::audit/props props))]
-                        (audit/submit! cfg event))))))
+                                      (assoc :profile-id profile-id)
+                                      (assoc :name "create-file")
+                                      (assoc :props props))]
+                        (audit/submit cfg event))))))
 
     result))
 

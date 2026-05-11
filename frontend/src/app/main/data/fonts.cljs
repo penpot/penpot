@@ -285,12 +285,12 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (rx/of (ptk/data-event ::ev/event {::ev/name "add-font"
-                                           :team-id team-id
-                                           :font-id (:id font)
-                                           :font-family (:font-family font)
-                                           :font-style (:font-style font)
-                                           :font-weight (:font-weight font)}))))))
+        (rx/of (ev/event {::ev/name "add-font"
+                          :team-id team-id
+                          :font-id (:id font)
+                          :font-family (:font-family font)
+                          :font-style (:font-style font)
+                          :font-weight (:font-weight font)}))))))
 
 (defn update-font
   [{:keys [id name] :as params}]
@@ -334,9 +334,9 @@
         (rx/concat
          (->> (rp/cmd! :delete-font {:id font-id :team-id team-id})
               (rx/ignore))
-         (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font"
-                                            :team-id team-id
-                                            :font-id font-id})))))))
+         (rx/of (ev/event {::ev/name "delete-font"
+                           :team-id team-id
+                           :font-id font-id})))))))
 
 (defn delete-font-variant
   [id]
@@ -355,9 +355,9 @@
         (rx/concat
          (->> (rp/cmd! :delete-font-variant {:id id :team-id team-id})
               (rx/ignore))
-         (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font-variant"
-                                            :id id
-                                            :team-id team-id})))))))
+         (rx/of (ev/event {::ev/name "delete-font-variant"
+                           :id id
+                           :team-id team-id})))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

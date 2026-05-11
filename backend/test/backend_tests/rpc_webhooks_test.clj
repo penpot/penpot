@@ -37,7 +37,7 @@
    (t/is (contains? result :mtype))))
 
 (t/deftest webhook-crud
-  (with-mocks [http-mock {:target 'app.http.client/req!
+  (with-mocks [http-mock {:target 'app.http.client/req
                           :return {:status 200}}]
 
     (let [prof    (th/create-profile* 1 {:is-active true})
@@ -151,7 +151,7 @@
             (t/is (= (:code error-data) :object-not-found))))))))
 
 (t/deftest webhooks-permissions-crud-viewer-only
-  (with-mocks [http-mock {:target 'app.http.client/req!
+  (with-mocks [http-mock {:target 'app.http.client/req
                           :return {:status 200}}]
     (let [owner       (th/create-profile* 1 {:is-active true})
           viewer      (th/create-profile* 2 {:is-active true})
@@ -214,7 +214,7 @@
       (th/reset-mock! http-mock))))
 
 (t/deftest webhooks-permissions-crud-viewer-owner
-  (with-mocks [http-mock {:target 'app.http.client/req!
+  (with-mocks [http-mock {:target 'app.http.client/req
                           :return {:status 200}}]
     (let [owner       (th/create-profile* 1 {:is-active true})
           viewer      (th/create-profile* 2 {:is-active true})
@@ -269,7 +269,7 @@
           (t/is (= (:code error-data) :object-not-found)))))))
 
 (t/deftest webhooks-quotes
-  (with-mocks [http-mock {:target 'app.http.client/req!
+  (with-mocks [http-mock {:target 'app.http.client/req
                           :return {:status 200}}]
 
     (let [prof    (th/create-profile* 1 {:is-active true})

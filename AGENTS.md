@@ -32,6 +32,17 @@ precision while maintaining a strong focus on maintainability and performance.
 5. When searching code, prefer `ripgrep` (`rg`) over `grep` — it respects
    `.gitignore` by default.
 
+## Changelogs
+
+The project has two changelogs:
+
+- **Main project changelog**: `CHANGES.md` (root of the repository). Tracks changes for the core Penpot application (backend, frontend, common, render-wasm, exporter, mcp).
+- **Plugins changelog**: `plugins/CHANGELOG.md`. Tracks changes for the plugins subproject only.
+
+When making changes, add a changelog entry to the appropriate file under the
+`## <version> (Unreleased)` section in the correct category
+(`:sparkles: New features & Enhancements` or `:bug: Bugs fixed`).
+
 ## GitHub Operations
 
 To obtain the list of repository members/collaborators:

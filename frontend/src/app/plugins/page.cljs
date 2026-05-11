@@ -28,6 +28,7 @@
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
    [app.plugins.shape :as shape]
+   [app.plugins.system-events :as se]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -283,7 +284,9 @@
 
         :else
         (let [flow-id (uuid/next)]
-          (st/emit! (dwi/add-flow flow-id id name (obj/get frame "$id")))
+          (st/emit!
+           (dwi/add-flow flow-id id name (obj/get frame "$id"))
+           (se/event plugin-id "add-flow"))
           (flow-proxy plugin-id file-id id flow-id))))
 
     :removeFlow
@@ -293,7 +296,9 @@
         (u/not-valid plugin-id :removeFlow-flow flow)
 
         :else
-        (st/emit! (dwi/remove-flow id (obj/get flow "$id")))))
+        (st/emit!
+         (dwi/remove-flow id (obj/get flow "$id"))
+         (se/event plugin-id "remove-flow"))))
 
     :addRulerGuide
     (fn [orientation value board]
@@ -316,12 +321,13 @@
           :else
           (let [ruler-id (uuid/next)]
             (st/emit!
-             (dwgu/update-guides
-              (d/without-nils
-               {:id       ruler-id
-                :axis     (parser/orientation->axis orientation)
-                :position value
-                :frame-id (when board (obj/get board "$id"))})))
+             (-> (dwgu/update-guides
+                  (d/without-nils
+                   {:id       ruler-id
+                    :axis     (parser/orientation->axis orientation)
+                    :position value
+                    :frame-id (when board (obj/get board "$id"))}))
+                 (se/add-event plugin-id)))
             (rg/ruler-guide-proxy plugin-id file-id id ruler-id)))))
 
     :removeRulerGuide
@@ -335,7 +341,8 @@
 
         :else
         (let [guide (u/proxy->ruler-guide value)]
-          (st/emit! (dwgu/remove-guide guide)))))
+          (st/emit! (-> (dwgu/remove-guide guide)
+                        (se/add-event plugin-id))))))
 
     :addCommentThread
     (fn [content position board]
@@ -364,15 +371,15 @@
             (js/Promise.
              (fn [resolve]
                (st/emit!
-                (dc/create-thread-on-workspace
-                 {:file-id file-id
-                  :page-id id
-                  :position (gpt/point position)
-                  :content content}
-
-                 (fn [data]
-                   (resolve (pc/comment-thread-proxy plugin-id file-id id data)))
-                 false))))))))
+                (-> (dc/create-thread-on-workspace
+                     {:file-id file-id
+                      :page-id id
+                      :position (gpt/point position)
+                      :content content}
+                     (fn [data]
+                       (resolve (pc/comment-thread-proxy plugin-id file-id id data)))
+                     false)
+                    (se/add-event plugin-id)))))))))
 
     :removeCommentThread
     (fn [thread]

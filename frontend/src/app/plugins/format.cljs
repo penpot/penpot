@@ -26,6 +26,97 @@
   (when (some? coll)
     (apply array (keep format-fn coll))))
 
+(defn- numeric-index?
+  [prop]
+  (and (string? prop) (boolean (re-matches #"\d+" prop))))
+
+(defn- normalize-exclusive-color-props!
+  [target prop]
+  (case prop
+    "fillColor"
+    (do
+      (js-delete target "fillColorGradient")
+      (js-delete target "fillImage"))
+
+    "fillColorGradient"
+    (do
+      (js-delete target "fillColor")
+      (js-delete target "fillImage"))
+
+    "fillImage"
+    (do
+      (js-delete target "fillColor")
+      (js-delete target "fillColorGradient"))
+
+    "strokeColor"
+    (js-delete target "strokeColorGradient")
+
+    "strokeColorGradient"
+    (js-delete target "strokeColor")
+
+    nil))
+
+(declare wrap-mutable-value)
+
+(defn- wrap-mutable-object
+  [^js js-obj commit!]
+  (doseq [prop (js/Object.keys js-obj)]
+    (obj/set! js-obj prop (wrap-mutable-value (obj/get js-obj prop) commit!)))
+  (js/Proxy. js-obj
+             #js {:set (fn [target prop value]
+                         (obj/set! target prop (wrap-mutable-value value commit!))
+                         (normalize-exclusive-color-props! target prop)
+                         (commit!)
+                         true)
+                  :deleteProperty (fn [target prop]
+                                    (js-delete target prop)
+                                    (commit!)
+                                    true)}))
+
+(defn- wrap-mutable-array
+  [^js js-arr commit!]
+  (doseq [index (range (.-length js-arr))]
+    (obj/set! js-arr index (wrap-mutable-value (obj/get js-arr index) commit!)))
+  (js/Proxy. js-arr
+             #js {:set (fn [target prop value]
+                         (if (or (numeric-index? prop) (= prop "length"))
+                           (do
+                             (if (numeric-index? prop)
+                               (obj/set! target prop (wrap-mutable-value value commit!))
+                               (obj/set! target prop value))
+                             (commit!)
+                             true)
+                           false))
+                  :deleteProperty (fn [target prop]
+                                    (if (numeric-index? prop)
+                                      (do
+                                        (js-delete target prop)
+                                        true)
+                                      false))}))
+
+(defn- wrap-mutable-value
+  [value commit!]
+  (cond
+    (obj/array? value)
+    (wrap-mutable-array value commit!)
+
+    (obj/plain-object? value)
+    (wrap-mutable-object value commit!)
+
+    :else
+    value))
+
+(defn wrap-mutable-element
+  [^js js-obj commit!]
+  (when (some? js-obj)
+    (wrap-mutable-value js-obj commit!)))
+
+(defn mutable-proxy-array
+  [coll format-fn commit-fn]
+  (let [raw-arr (format-array format-fn coll)
+        commit! (fn [] (commit-fn raw-arr))]
+    (wrap-mutable-array raw-arr commit!)))
+
 (defn format-mixed
   [value]
   (if (= value :multiple)
@@ -198,16 +289,17 @@
           :fillImage (format-image fill-image)})))
 
 (defn format-fills
-  [fills]
-  (cond
-    (= fills :multiple)
-    "mixed"
+  ([fills] (format-fills fills nil))
+  ([fills commit-fn]
+   (cond
+     (= fills :multiple) "mixed"
+     (= fills "mixed")   "mixed"
 
-    (= fills "mixed")
-    "mixed"
+     (and (some? fills) (fn? commit-fn))
+     (mutable-proxy-array fills format-fill commit-fn)
 
-    (some? fills)
-    (format-array format-fill fills)))
+     :else
+     (format-array format-fill fills))))
 
 ;; export interface Stroke {
 ;;   strokeColor?: string;
@@ -240,9 +332,11 @@
           :strokeColorGradient (format-gradient stroke-color-gradient)})))
 
 (defn format-strokes
-  [strokes]
-  (when (some? strokes)
-    (format-array format-stroke strokes)))
+  ([strokes] (format-strokes strokes nil))
+  ([strokes commit-fn]
+   (if (and (some? strokes) (fn? commit-fn))
+     (mutable-proxy-array strokes format-stroke commit-fn)
+     (format-array format-stroke strokes))))
 
 ;; export interface Blur {
 ;;   id?: string;

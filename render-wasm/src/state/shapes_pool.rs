@@ -140,6 +140,18 @@ impl ShapesPoolImpl {
         Some(&mut self.shapes[idx])
     }
 
+    /// Returns the current transform modifier matrix for the shape, if any.
+    pub fn get_modifier(&self, id: &Uuid) -> Option<&skia::Matrix> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        self.modifiers.get(&idx)
+    }
+
+    /// Get a shape by UUID without applying modifiers/structure/scale-content.
+    pub fn get_raw(&self, id: &Uuid) -> Option<&Shape> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        Some(&self.shapes[idx])
+    }
+
     /// Get a shape by UUID. Returns the modified shape if modifiers/structure
     /// are applied, otherwise returns the base shape.
     pub fn get(&self, id: &Uuid) -> Option<&Shape> {
@@ -378,5 +390,11 @@ impl ShapesPoolImpl {
                 .unwrap_or(default);
             !math::is_close_matrix(parent_modifier, child_modifier)
         })
+    }
+}
+
+impl Default for ShapesPoolImpl {
+    fn default() -> Self {
+        Self::new()
     }
 }

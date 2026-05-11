@@ -255,6 +255,12 @@ impl TextEditorStyles {
     }
 }
 
+impl Default for TextEditorStyles {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct TextEditorTheme {
     pub selection_color: Color,
     pub cursor_color: Color,
@@ -316,6 +322,12 @@ impl TextComposition {
         );
 
         TextSelection { anchor, focus }
+    }
+}
+
+impl Default for TextComposition {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -877,6 +889,12 @@ impl TextEditorState {
         self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
         true
+    }
+}
+
+impl Default for TextEditorState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
