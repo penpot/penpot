@@ -76,8 +76,7 @@
       (when send-event-info?
         (let [route  (dm/get-in match [:data :name])
               params (get match :query-params)]
-          (rx/of (ptk/event
-                  ::ev/event
+          (rx/of (ev/event
                   (assoc params
                          ::ev/name "navigate"
                          :route (name route)))))))

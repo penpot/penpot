@@ -332,10 +332,7 @@
       (conj opacity)))
 
 (defn hex->hsl [hex]
-  (try
-    (-> hex hex->rgb rgb->hsl)
-    (catch #?(:clj Throwable :cljs :default) _e
-      [0 0 0])))
+  (-> hex hex->rgb rgb->hsl))
 
 (defn hex->hsla
   [data opacity]
