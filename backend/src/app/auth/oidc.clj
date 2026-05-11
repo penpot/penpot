@@ -818,12 +818,12 @@
                 props   (audit/profile->props profile)
                 context (d/without-nils {:external-session-id (:external-session-id info)})]
 
-            (audit/submit! cfg {::audit/type "action"
-                                ::audit/name "login-with-oidc"
-                                ::audit/profile-id (:id profile)
-                                ::audit/ip-addr (inet/parse-request request)
-                                ::audit/props props
-                                ::audit/context context})
+            (audit/submit cfg {:type "action"
+                               :name "login-with-oidc"
+                               :profile-id (:id profile)
+                               :ip-addr (inet/parse-request request)
+                               :props props
+                               :context context})
 
             (->> (redirect-to-verify-token token)
                  (sxf request)))))
