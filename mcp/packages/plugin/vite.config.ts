@@ -8,8 +8,7 @@ const rootPkg = require("../../package.json");
 let SERVER_ADDRESS = process.env.PENPOT_MCP_SERVER_ADDRESS ?? "localhost";
 let WEBSOCKET_PORT = process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402";
 let WS_URI = process.env.WS_URI || `ws://${SERVER_ADDRESS}:${WEBSOCKET_PORT}`;
-let SERVER_HOST =
-    process.env.PENPOT_MCP_PLUGIN_SERVER_HOST ?? process.env.PENPOT_MCP_PLUGIN_SERVER_LISTEN_ADDRESS ?? "localhost";
+let SERVER_HOST = process.env.PENPOT_MCP_PLUGIN_SERVER_HOST ?? "localhost";
 let MCP_VERSION = JSON.stringify(rootPkg.version);
 
 console.log("PENPOT_MCP_WEBSOCKET_URL:", JSON.stringify(WS_URI));

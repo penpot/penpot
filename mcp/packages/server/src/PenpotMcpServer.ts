@@ -14,10 +14,6 @@ import { ImportImageTool } from "./tools/ImportImageTool";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 
-function readEnv(primaryName: string, fallbackName: string, defaultValue: string): string {
-    return process.env[primaryName] ?? process.env[fallbackName] ?? defaultValue;
-}
-
 /**
  * Session context for request-scoped data.
  */
@@ -49,9 +45,31 @@ class ToolInfo {
 
 export class PenpotMcpServer {
     /**
-     * Timeout, in minutes, for idle Streamable HTTP sessions before they are automatically closed and removed.
+     * Timeout, in minutes, for idle sessions (Streamable HTTP and SSE) before they are automatically closed and removed.
      */
     private static readonly SESSION_TIMEOUT_MINUTES = 60;
+
+    /**
+     * Returns a short, non-reversible fingerprint of a user token, suitable for
+     * correlating log lines without exposing the full credential.
+     *
+     * Penpot tokens are JWEs in compact serialization (RFC 7516 §7.1) with five
+     * dot-separated segments; we use the first 8 chars of the wrapped CEK
+     * (segment 1) as a stable per-token identifier. For malformed tokens (e.g.
+     * test stubs that aren't real JWEs), we fall back to the first 8 chars of
+     * the raw token.
+     *
+     * @param token - the token to fingerprint, or `undefined`
+     * @returns a short fingerprint, or `<none>` if no token was given
+     */
+    private static tokenFingerprint(token: string | undefined): string {
+        if (!token) {
+            return "<none>";
+        }
+        const segments = token.split(".");
+        const source = segments.length === 5 ? segments[1] : token;
+        return source.slice(0, 8);
+    }
 
     private readonly logger = createLogger("PenpotMcpServer");
     private readonly tools: ToolInfo[];
@@ -69,7 +87,10 @@ export class PenpotMcpServer {
     private readonly sessionContext = new AsyncLocalStorage<SessionContext>();
 
     private readonly streamableTransports: Record<string, StreamableSession> = {};
-    private readonly sseTransports: Record<string, { transport: SSEServerTransport; userToken?: string }> = {};
+    private readonly sseTransports: Record<
+        string,
+        { transport: SSEServerTransport; userToken?: string; lastActiveTime: number }
+    > = {};
 
     public readonly host: string;
     public readonly port: number;
@@ -79,7 +100,7 @@ export class PenpotMcpServer {
 
     constructor(private isMultiUser: boolean = false) {
         // read port configuration from environment variables
-        this.host = readEnv("PENPOT_MCP_SERVER_HOST", "PENPOT_MCP_SERVER_LISTEN_ADDRESS", "localhost");
+        this.host = process.env.PENPOT_MCP_SERVER_HOST ?? "localhost";
         this.port = parseInt(process.env.PENPOT_MCP_SERVER_PORT ?? "4401", 10);
         this.webSocketPort = parseInt(process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402", 10);
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
@@ -183,7 +204,7 @@ export class PenpotMcpServer {
     }
 
     /**
-     * Starts a periodic timer that closes and removes Streamable HTTP sessions that have been
+     * Starts a periodic timer that closes and removes Streamable HTTP and SSE sessions that have been
      * idle for longer than {@link SESSION_TIMEOUT_MINUTES}.
      */
     private startSessionTimeoutChecker(): void {
@@ -199,8 +220,18 @@ export class PenpotMcpServer {
                     removed++;
                 }
             }
+            for (const [id, session] of Object.entries(this.sseTransports)) {
+                if (now - session.lastActiveTime > timeoutMs) {
+                    this.logger.info(`Closing stale SSE session ${id}`);
+                    session.transport.close();
+                    delete this.sseTransports[id];
+                    removed++;
+                }
+            }
             this.logger.info(
-                `Removed ${removed} stale session(s); total sessions remaining: ${Object.keys(this.streamableTransports).length}`
+                `Removed ${removed} stale session(s); total sessions remaining: ${
+                    Object.keys(this.streamableTransports).length + Object.keys(this.sseTransports).length
+                }`
             );
         }, checkIntervalMs);
     }
@@ -226,12 +257,14 @@ export class PenpotMcpServer {
                 userToken = session.userToken;
                 session.lastActiveTime = Date.now();
                 this.logger.info(
-                    `Received request for existing session with id=${sessionId}; userToken=${session.userToken}`
+                    `Received request for existing session with id=${sessionId}; userTokenFp=${PenpotMcpServer.tokenFingerprint(session.userToken)}`
                 );
             } else {
                 // new session: create a fresh McpServer and transport
                 userToken = req.query.userToken as string | undefined;
-                this.logger.info(`Received new session request; userToken=${userToken}`);
+                this.logger.info(
+                    `Received new session request; userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}`
+                );
                 const { randomUUID } = await import("node:crypto");
                 const server = this.createMcpServer();
                 transport = new StreamableHTTPServerTransport({
@@ -239,13 +272,15 @@ export class PenpotMcpServer {
                     onsessioninitialized: (id) => {
                         this.streamableTransports[id] = new StreamableSession(transport, userToken, Date.now());
                         this.logger.info(
-                            `Session initialized with id=${id} for userToken=${userToken}; total sessions: ${Object.keys(this.streamableTransports).length}`
+                            `Session initialized with id=${id} for userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}; total sessions: ${Object.keys(this.streamableTransports).length}`
                         );
                     },
                 });
                 transport.onclose = () => {
                     if (transport.sessionId) {
-                        this.logger.info(`Closing session with id=${transport.sessionId} for userToken=${userToken}`);
+                        this.logger.info(
+                            `Closing session with id=${transport.sessionId} for userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}`
+                        );
                         delete this.streamableTransports[transport.sessionId];
                     }
                 };
@@ -266,7 +301,7 @@ export class PenpotMcpServer {
 
             await this.sessionContext.run({ userToken }, async () => {
                 const transport = new SSEServerTransport("/messages", res);
-                this.sseTransports[transport.sessionId] = { transport, userToken };
+                this.sseTransports[transport.sessionId] = { transport, userToken, lastActiveTime: Date.now() };
 
                 const server = this.createMcpServer();
                 await server.connect(transport);
@@ -285,6 +320,7 @@ export class PenpotMcpServer {
             const session = this.sseTransports[sessionId];
 
             if (session) {
+                session.lastActiveTime = Date.now();
                 await this.sessionContext.run({ userToken: session.userToken }, async () => {
                     await session.transport.handlePostMessage(req, res, req.body);
                 });

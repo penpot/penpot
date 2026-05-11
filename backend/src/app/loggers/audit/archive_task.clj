@@ -59,7 +59,7 @@
                  :method :post
                  :headers headers
                  :body body}
-        resp    (http/req cfg params)]
+        resp    (http/req cfg params {:skip-ssrf-check? true})]
 
     (if (= (:status resp) 204)
       true
