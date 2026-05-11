@@ -468,6 +468,9 @@
    {:name "0145-mod-audit-log-table"
     :fn (mg/resource "app/migrations/sql/0145-mod-audit-log-table.sql")}
 
+   {:name "0146-mod-audit-log-table"
+    :fn (mg/resource "app/migrations/sql/0146-mod-audit-log-table.sql")}
+
    {:name "0146-mod-access-token-table"
     :fn (mg/resource "app/migrations/sql/0146-mod-access-token-table.sql")}
 

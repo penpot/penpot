@@ -83,7 +83,7 @@
   [next]
   (with-redefs [app.config/flags (flags/parse flags/default default-flags)
                 app.config/config config
-                app.loggers.audit/submit! (constantly nil)
+                app.loggers.audit/submit (constantly nil)
                 app.auth/derive-password identity
                 app.auth/verify-password (fn [a b] {:valid (= a b)})
                 app.common.features/get-enabled-features (fn [& _] app.common.features/supported-features)]

@@ -8,7 +8,10 @@ Redis for messaging/caching.
 ## General Guidelines
 
 To ensure consistency across the Penpot JVM stack, all contributions must adhere
-to these criteria:
+to these criteria.
+
+IMPORTANT: all CLI commands should be executed under backend/
+subdirectory for make them work correctly.
 
 ### 1. Testing & Validation
 
@@ -21,7 +24,7 @@ to these criteria:
 
 ### 2. Code Quality & Formatting
 
-* **Linting:** All code must pass `clj-kondo` checks (run `pnpm run lint:clj`)
+* **Linting:** All code must pass linter checks (run `pnpm run lint:clj` or `pnpm run lint` on the repository root)
 * **Formatting:** All the code must pass the formatting check (run `pnpm run
   check-fmt`). Use `pnpm run fmt` to fix formatting issues. Avoid "dirty"
   diffs caused by unrelated whitespace changes.
