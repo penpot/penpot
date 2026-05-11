@@ -13,6 +13,7 @@ cp /root/.tmux.conf /home/penpot/.tmux.conf
 chown penpot:users /home/penpot
 rsync -ar --chown=penpot:users /opt/cargo/ /home/penpot/.cargo/
 
+export JAVA_OPTS="-Djava.net.preferIPv4Stack=true"
 export PATH="/home/penpot/.cargo/bin:$PATH"
 export CARGO_HOME="/home/penpot/.cargo"
 

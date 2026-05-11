@@ -392,3 +392,9 @@ impl ShapesPoolImpl {
         })
     }
 }
+
+impl Default for ShapesPoolImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
