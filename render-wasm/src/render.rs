@@ -381,7 +381,7 @@ pub(crate) struct RenderState {
     /// interactive backdrop exactly once per gesture (first rAF) so we don't
     /// repeatedly overwrite tiles that have already been updated.
     pub interactive_target_seeded: bool,
-    /// GPU crops from `Backbuffer` keyed by shape id. Filled on full-frame completion; during
+    /// GPU crops from `Backbuffer` or tile atlas keyed by shape id. Filled on full-frame completion; during
     /// drag, entries for the moved top-level selection are ensured here
     pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
 }
@@ -389,9 +389,6 @@ pub(crate) struct RenderState {
 pub struct InteractiveDragCrop {
     pub src_doc_bounds: Rect,
     pub src_selrect: Rect,
-    /// True if the captured crop bounds were fully inside the viewport at capture time.
-    /// Used to avoid serving partial/offscreen crops during interactive drag.
-    pub fits_viewport_at_capture: bool,
     /// Viewbox origin (doc-space) at capture time.
     pub capture_vb_left: f32,
     pub capture_vb_top: f32,
@@ -399,6 +396,49 @@ pub struct InteractiveDragCrop {
     pub capture_src_left: i32,
     pub capture_src_top: i32,
     pub image: skia::Image,
+}
+
+/// Chooses a window inside the full workspace-pixel crop `[0, out_w) × [0, out_h)` with each side
+/// at most `max_side_px` (**without scaling**): centered on the projection of
+/// `viewport_doc ∩ src_doc_bounds`, or on the full crop if that intersection is empty.
+/// `max_side_px` should match [`Surfaces::max_texture_dimension_px`] (same budget as the atlas).
+#[allow(clippy::too_many_arguments)]
+fn drag_crop_snapshot_window_px(
+    max_side_px: i32,
+    out_w: i32,
+    out_h: i32,
+    viewport_doc: Rect,
+    vb_left: f32,
+    vb_top: f32,
+    scale: f32,
+    src_left_px: i32,
+    src_top_px: i32,
+    src_doc_bounds: Rect,
+) -> (i32, i32, i32, i32) {
+    let cap = max_side_px.max(1);
+    if out_w <= cap && out_h <= cap {
+        return (0, 0, out_w, out_h);
+    }
+    let win_w = out_w.min(cap);
+    let win_h = out_h.min(cap);
+
+    let mut vis = viewport_doc;
+    let has_vis = vis.intersect(src_doc_bounds);
+    let (cx, cy) = if !has_vis || vis.is_empty() {
+        (out_w as f32 * 0.5, out_h as f32 * 0.5)
+    } else {
+        let lx0 = (vis.left - vb_left) * scale - src_left_px as f32;
+        let ly0 = (vis.top - vb_top) * scale - src_top_px as f32;
+        let lx1 = (vis.right - vb_left) * scale - src_left_px as f32;
+        let ly1 = (vis.bottom - vb_top) * scale - src_top_px as f32;
+        ((lx0 + lx1) * 0.5, (ly0 + ly1) * 0.5)
+    };
+
+    let mut ox = (cx - win_w as f32 * 0.5).round() as i32;
+    let mut oy = (cy - win_h as f32 * 0.5).round() as i32;
+    ox = ox.clamp(0, out_w - win_w);
+    oy = oy.clamp(0, out_h - win_h);
+    (ox, oy, win_w, win_h)
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
@@ -458,10 +498,7 @@ impl RenderState {
                 return false;
             }
 
-            let Some(crop) = self.backbuffer_crop_cache.get(&node_id) else {
-                return false;
-            };
-            if !crop.fits_viewport_at_capture {
+            if !self.backbuffer_crop_cache.contains_key(&node_id) {
                 return false;
             }
 
@@ -1666,10 +1703,12 @@ impl RenderState {
         self.backbuffer_crop_cache.clear();
 
         // Collect candidate shapes that are "recortable" and visible in the current viewport.
+
         // This is intentionally conservative; we only cache shapes that do not overlap with
         // ANY other candidate to guarantee the pixels under their bounds belong exclusively
         // to that shape in Backbuffer.
         let viewport = self.viewbox.area;
+        let scale = self.get_scale();
         let mut candidates: Vec<(Uuid, Rect, Rect)> = Vec::new(); // (id, doc_bounds, selrect)
 
         let root_ids: Vec<Uuid> = match tree.get(&Uuid::nil()) {
@@ -1713,10 +1752,21 @@ impl RenderState {
             non_overlapping.push((*id, *bounds, *selrect));
         }
 
-        // Snapshot from Backbuffer for each accepted shape.
-        let scale = self.get_scale();
         let vb_left = self.viewbox.area.left;
         let vb_top = self.viewbox.area.top;
+        let (bb_w, bb_h) = self.surfaces.surface_size(SurfaceId::Backbuffer);
+        let max_snap_px = self.surfaces.max_texture_dimension_px();
+
+        // Snapshot the atlas once for the whole pass so that all shapes sharing
+        // the tile/atlas fallback path reuse the same GPU image rather than each
+        // triggering a separate `image_snapshot` flush.
+        let atlas_snap = self.surfaces.atlas_snapshot_for_drag_crop();
+
+        // Scratch surface reused across all shapes that need the tile/atlas
+        // fallback — avoids one WebGL texture allocation per shape.
+        // Created lazily on first use and grown if a later shape needs more space.
+        let mut scratch_surface: Option<skia::Surface> = None;
+
         for (id, doc_bounds, selrect) in non_overlapping {
             let left = ((doc_bounds.left - vb_left) * scale).floor() as i32;
             let top = ((doc_bounds.top - vb_top) * scale).floor() as i32;
@@ -1726,12 +1776,6 @@ impl RenderState {
                 continue;
             }
             let src_irect = skia::IRect::new(left, top, right, bottom);
-            let Some(image) = self
-                .surfaces
-                .snapshot_rect(SurfaceId::Backbuffer, src_irect)
-            else {
-                continue;
-            };
 
             let src_doc_bounds = Rect::new(
                 src_irect.left as f32 / scale + vb_left,
@@ -1739,30 +1783,92 @@ impl RenderState {
                 src_irect.right as f32 / scale + vb_left,
                 src_irect.bottom as f32 / scale + vb_top,
             );
-            let fits_viewport_at_capture = doc_bounds.left >= viewport.left
-                && doc_bounds.top >= viewport.top
-                && doc_bounds.right <= viewport.right
-                && doc_bounds.bottom <= viewport.bottom;
 
-            // When the shape extends beyond the viewport to the left or top,
-            // `left`/`top` are negative. Skia clamps `makeImageSnapshot` to the
-            // surface bounds, so the returned image actually starts at pixel 0 —
-            // not at the negative coordinate. Store the clamped value so that
-            // `doc_left`/`doc_top` computed during the drag reflects the true
-            // image origin in the backbuffer.
-            let capture_src_left = left.max(0);
-            let capture_src_top = top.max(0);
+            let full_w = src_irect.width();
+            let full_h = src_irect.height();
+            let (win_ox, win_oy, win_w, win_h) = drag_crop_snapshot_window_px(
+                max_snap_px,
+                full_w,
+                full_h,
+                viewport,
+                vb_left,
+                vb_top,
+                scale,
+                src_irect.left,
+                src_irect.top,
+                src_doc_bounds,
+            );
+            let window_irect = skia::IRect::new(
+                src_irect.left + win_ox,
+                src_irect.top + win_oy,
+                src_irect.left + win_ox + win_w,
+                src_irect.top + win_oy + win_h,
+            );
+
+            let src_doc_window = Rect::new(
+                window_irect.left as f32 / scale + vb_left,
+                window_irect.top as f32 / scale + vb_top,
+                window_irect.right as f32 / scale + vb_left,
+                window_irect.bottom as f32 / scale + vb_top,
+            );
+
+            let in_backbuffer = window_irect.left >= 0
+                && window_irect.top >= 0
+                && window_irect.right <= bb_w
+                && window_irect.bottom <= bb_h;
+
+            let backbuffer_snap = if in_backbuffer {
+                self.surfaces
+                    .snapshot_rect(SurfaceId::Backbuffer, window_irect)
+            } else {
+                None
+            };
+
+            let image = if let Some(img) = backbuffer_snap {
+                img
+            } else {
+                // Ensure the scratch surface is large enough for this window.
+                // Grow (reallocate) only when necessary so that the common case
+                // of similarly-sized shapes pays zero extra allocation cost.
+                let needs_alloc = scratch_surface
+                    .as_ref()
+                    .is_none_or(|s| s.width() < win_w || s.height() < win_h);
+                if needs_alloc {
+                    scratch_surface = get_gpu_state()
+                        .create_surface_with_isize(
+                            "drag_crop_scratch".to_string(),
+                            skia::ISize::new(win_w, win_h),
+                        )
+                        .ok();
+                }
+                let Some(scratch) = scratch_surface.as_mut() else {
+                    continue;
+                };
+                let Some(img) = self.surfaces.try_snapshot_doc_rect_from_tiles_and_atlas(
+                    scratch,
+                    atlas_snap.as_ref(),
+                    src_doc_window,
+                    window_irect,
+                    win_w,
+                    win_h,
+                    vb_left,
+                    vb_top,
+                    scale,
+                ) else {
+                    continue;
+                };
+                img
+            };
 
             self.backbuffer_crop_cache.insert(
                 id,
                 InteractiveDragCrop {
-                    src_doc_bounds,
+                    src_doc_bounds: src_doc_window,
                     src_selrect: selrect,
-                    fits_viewport_at_capture,
                     capture_vb_left: vb_left,
                     capture_vb_top: vb_top,
-                    capture_src_left,
-                    capture_src_top,
+                    capture_src_left: window_irect.left,
+                    capture_src_top: window_irect.top,
                     image,
                 },
             );
@@ -3054,7 +3160,10 @@ impl RenderState {
 
                         let x = (doc_left + translation.0) * scale;
                         let y = (doc_top + translation.1) * scale;
-                        canvas.draw_image(crop_image, (x, y), Some(&skia::Paint::default()));
+                        let bw = crop_image.width() as f32;
+                        let bh = crop_image.height() as f32;
+                        let dst = skia::Rect::from_xywh(x, y, bw, bh);
+                        canvas.draw_image_rect(crop_image, None, dst, &skia::Paint::default());
 
                         canvas.restore();
                     }
