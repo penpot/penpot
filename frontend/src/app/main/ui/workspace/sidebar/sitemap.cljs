@@ -63,7 +63,7 @@
 ;; --- Page Item
 
 (mf/defc page-item*
-  [{:keys [page index deletable? selected? editing? hovering? current-page-id]}]
+  [{:keys [page index is-deletable is-selected is-editing is-hovering current-page-id]}]
   (let [input-ref     (mf/use-ref)
         id            (:id page)
         name          (:name page "")
@@ -149,7 +149,7 @@
          :data {:id id
                 :index index
                 :name (:name page)}
-         :draggable? (and (not read-only?) (not editing?)))
+         :draggable? (and (not read-only?) (not is-editing)))
 
         on-context-menu
         (mf/use-fn
@@ -162,49 +162,49 @@
                (st/emit! (dw/show-page-item-context-menu
                           {:position position
                            :page page
-                           :deletable? deletable?}))))))]
+                           :deletable? is-deletable}))))))]
 
     (mf/use-effect
-     (mf/deps selected?)
+     (mf/deps is-selected)
      (fn []
-       (when selected?
+       (when is-selected
          (let [node (mf/ref-val dref)]
            (dom/scroll-into-view-if-needed! node)))))
 
     (mf/use-layout-effect
-     (mf/deps editing?)
+     (mf/deps is-editing)
      (fn []
-       (when editing?
+       (when is-editing
          (let [edit-input (mf/ref-val input-ref)]
            (dom/select-text! edit-input))
          nil)))
 
-    (let [selected? (and selected? (not is-separator?))]
+    (let [is-selected (and is-selected (not is-separator?))]
       [:li {:class (stl/css-case
                     :page-element true
                     :separator is-separator?
-                    :selected selected?
+                    :selected is-selected
                     :dnd-over-top (= (:over dprops) :top)
                     :dnd-over-bot (= (:over dprops) :bot))
             :ref dref}
        [:div {:class (stl/css-case
                       :element-list-body true
                       :separator-body is-separator?
-                      :hover (and hovering? (not is-separator?))
-                      :selected selected?)
+                      :hover (and is-hovering (not is-separator?))
+                      :selected is-selected)
               :data-testid (dm/str "page-" id)
               :tab-index "0"
               :on-click on-click
               :on-double-click on-double-click
               :on-context-menu on-context-menu}
-        (if (and is-separator? (not editing?))
+        (if (and is-separator? (not is-editing))
           [:div {:class (stl/css :page-separator)
                  :data-testid "page-separator"}]
           [:*
            (when-not is-separator?
              [:div {:class (stl/css :page-icon)}
               [:> icon* {:icon-id i/document :size "s"}]])
-           (if editing?
+           (if is-editing
              [:input {:class        (stl/css :element-name)
                       :type         "text"
                       :ref          input-ref
@@ -216,7 +216,7 @@
               [:span {:class (stl/css :page-name) :title name :data-testid "page-name"}
                name]
               [:div {:class (stl/css :page-actions)}
-               (when (and deletable? (not read-only?))
+               (when (and is-deletable (not read-only?))
                  [:> icon-button* {:variant "ghost"
                                    :aria-label (tr "modals.delete-page.title")
                                    :on-click on-delete
@@ -226,16 +226,16 @@
 ;; --- Page Item Wrapper
 
 (mf/defc page-item-wrapper*
-  [{:keys [page-id index deletable? selected? editing? current-page-id]}]
+  [{:keys [page-id index is-deletable is-selected is-editing current-page-id]}]
   (let [page-ref (mf/with-memo [page-id]
                    (make-page-ref page-id))
         page     (mf/deref page-ref)]
     [:> page-item* {:page page
                     :index index
                     :current-page-id current-page-id
-                    :deletable? deletable?
-                    :selected? selected?
-                    :editing? editing?}]))
+                    :is-deletable is-deletable
+                    :is-selected is-selected
+                    :is-editing is-editing}]))
 
 ;; --- Pages List
 
@@ -243,7 +243,7 @@
   {::mf/private true}
   [{:keys [file]}]
   (let [pages           (:pages file)
-        deletable?      (> (count pages) 1)
+        is-deletable      (> (count pages) 1)
         editing-page-id (mf/deref refs/editing-page-item)
         current-page-id (mf/use-ctx ctx/current-page-id)]
     [:ul {:class (stl/css :page-list)}
@@ -252,9 +252,9 @@
         [:> page-item-wrapper*
          {:page-id page-id
           :index index
-          :deletable? deletable?
-          :editing? (= page-id editing-page-id)
-          :selected? (= page-id current-page-id)
+          :is-deletable is-deletable
+          :is-editing (= page-id editing-page-id)
+          :is-selected (= page-id current-page-id)
           :current-page-id current-page-id
           :key page-id}])]]))
 

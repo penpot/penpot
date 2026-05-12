@@ -38,8 +38,8 @@
              =))
 
 (mf/defc typography-item*
-  [{:keys [typography file-id local? handle-change selected editing-id renaming-id on-asset-click
-           on-context-menu selected-full selected-paths move-typography rename?]}]
+  [{:keys [typography file-id is-local handle-change selected editing-id renaming-id on-asset-click
+           on-context-menu selected-full selected-paths move-typography is-rename]}]
   (let [item-ref       (mf/use-ref)
         typography-id  (:id typography)
 
@@ -92,13 +92,13 @@
 
         on-asset-click
         (mf/use-fn
-         (mf/deps typography on-asset-click read-only? local?)
+         (mf/deps typography on-asset-click read-only? is-local)
          (fn [event]
            (when-not read-only?
              (st/emit! (ev/event
                         {::ev/name "use-library-typography"
                          ::ev/origin "sidebar"
-                         :external-library (not local?)}))
+                         :external-library (not is-local)}))
              (when-not (on-asset-click event (:id typography))
                (st/emit! (dwt/apply-typography typography file-id))))))]
 
@@ -114,21 +114,21 @@
      [:& typography-entry
       {:file-id file-id
        :typography typography
-       :local? local?
+       :local? is-local
        :selected? (contains? selected typography-id)
        :on-click on-asset-click
        :on-change handle-change
        :on-context-menu on-context-menu
        :editing? editing?
        :renaming? renaming?
-       :focus-name? rename?
+       :focus-name? is-rename
        :external-open* open*
        :is-asset? true}]
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))
 
 (mf/defc typographies-group*
-  [{:keys [file-id prefix groups open-groups force-open? file local? selected local-data
+  [{:keys [file-id prefix groups open-groups is-force-open file is-local selected local-data
            editing-id renaming-id on-asset-click handle-change on-rename-group
            on-ungroup on-delete-group on-context-menu selected-full is-read-only]}]
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
@@ -182,7 +182,7 @@
                                  :on-rename on-rename-group
                                  :on-ungroup on-ungroup
                                  :on-delete-group on-delete-group
-                                 :on-add (when (and local? (not is-read-only))
+                                 :on-add (when (and is-local (not is-read-only))
                                            add-typography-to-group)}]
 
      (when group-open?
@@ -205,12 +205,12 @@
              [:> typography-item* {:typography typography
                                    :key (dm/str "typography-" id)
                                    :file-id file-id
-                                   :local? local?
+                                   :is-local is-local
                                    :handle-change handle-change
                                    :selected selected
                                    :editing-id editing-id
                                    :renaming-id renaming-id
-                                   :rename? (= (:rename-typography local-data) id)
+                                   :is-rename (= (:rename-typography local-data) id)
                                    :on-asset-click on-asset-click
                                    :on-context-menu on-context-menu
                                    :selected-full selected-full
@@ -224,9 +224,9 @@
                                      :key (dm/str "group-" path-item)
                                      :groups content
                                      :open-groups open-groups
-                                     :force-open? force-open?
+                                     :is-force-open is-force-open
                                      :file file
-                                     :local? local?
+                                     :is-local is-local
                                      :selected selected
                                      :editing-id editing-id
                                      :renaming-id renaming-id
@@ -434,10 +434,10 @@
                                 :prefix ""
                                 :groups groups
                                 :open-groups open-groups
-                                :force-open? is-force-open
+                                :is-force-open is-force-open
                                 :state state
                                 :file file
-                                :local? is-local
+                                :is-local is-local
                                 :selected selected
                                 :editing-id editing-id
                                 :renaming-id renaming-id
