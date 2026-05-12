@@ -57,11 +57,55 @@
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
+   [app.util.dom :as dom]
    [app.util.text-editor :as ted]
    [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
+
+;; --- Ruler theme color resolution
+;;
+;; Theme classes (`.default` for dark, `.light` for light) live on
+;; `<body>`, so the CSS custom properties we care about only resolve
+;; against an element inside body. We read them with
+;; `getComputedStyle(document.body)` and normalize the returned hex.
+
+(def ^:private ruler-color-vars
+  {:bg     "--panel-background-color"
+   :border "--panel-border-color"
+   :label  "--layer-row-foreground-color"
+   :accent "--color-accent-tertiary"})
+
+(def ^:private ruler-color-fallbacks
+  {:bg     "#181818"
+   :border "#2e3434"
+   :label  "#8f9da3"
+   :accent "#00d1b8"})
+
+(defn- normalize-hex
+  "CSS may return `#rgb` (4 chars) or `#rrggbb` (7 chars). Expand short
+   form, trim whitespace, and reject anything else (rgba, hsl, empty)."
+  [raw]
+  (let [s (some-> raw str/trim)]
+    (cond
+      (and (string? s) (= 7 (count s)) (str/starts-with? s "#")) s
+      (and (string? s) (= 4 (count s)) (str/starts-with? s "#"))
+      (let [r (subs s 1 2) g (subs s 2 3) b (subs s 3 4)]
+        (str "#" r r g g b b))
+      :else nil)))
+
+(defn- resolve-ruler-color [k]
+  (or (normalize-hex (dom/get-css-variable (get ruler-color-vars k) js/document.body))
+      (get ruler-color-fallbacks k)))
+
+(defn- push-ruler-colors! []
+  (wasm.api/set-rulers-colors!
+   (resolve-ruler-color :bg)
+   (resolve-ruler-color :border)
+   (resolve-ruler-color :label)
+   (resolve-ruler-color :accent)))
 
 ;; --- Viewport
 
@@ -491,6 +535,41 @@
       (when (and @canvas-init? hover-grid?)
         (wasm.api/show-grid @hover-top-frame-id)))
 
+    ;; Rulers-wasm: push visibility / offsets / selection band into the
+    ;; render-wasm overlay (always active, no feature flag).
+    (let [ruler-selection (when (and show-rulers?
+                                     (d/not-empty? selected-shapes))
+                            (gsh/shapes->rect selected-shapes))]
+
+      (mf/with-effect [@canvas-init?]
+        (when @canvas-init?
+          (push-ruler-colors!)
+          (wasm.api/request-render "rulers-colors-init")
+          (let [obs (js/MutationObserver.
+                     (fn [_]
+                       (push-ruler-colors!)
+                       (wasm.api/request-render "rulers-colors-theme")))]
+            (.observe obs js/document.body
+                      #js {:attributes true :attributeFilter #js ["class"]})
+            (fn [] (.disconnect obs)))))
+
+      (mf/with-effect [@canvas-init? show-rulers?]
+        (when @canvas-init?
+          (wasm.api/set-rulers-visible! show-rulers?)
+          (wasm.api/request-render "rulers-visible")))
+
+      (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
+        (when (and @canvas-init? show-rulers?)
+          (wasm.api/set-rulers-offsets! offset-x offset-y)
+          (wasm.api/request-render "rulers-offsets")))
+
+      (mf/with-effect [@canvas-init? show-rulers?
+                       (some-> ruler-selection :x) (some-> ruler-selection :y)
+                       (some-> ruler-selection :width) (some-> ruler-selection :height)]
+        (when (and @canvas-init? show-rulers?)
+          (wasm.api/set-rulers-selection! ruler-selection)
+          (wasm.api/request-render "rulers-selection"))))
+
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
@@ -773,15 +852,6 @@
          [:& presence/active-cursors
           {:page-id page-id}])
 
-       (when-not hide-ui?
-         [:& rulers/rulers
-          {:zoom zoom
-           :zoom-inverse zoom-inverse
-           :vbox vbox
-           :selected-shapes selected-shapes
-           :offset-x offset-x
-           :offset-y offset-y
-           :show-rulers? show-rulers?}])
 
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*

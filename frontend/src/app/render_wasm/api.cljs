@@ -1999,6 +1999,33 @@
             (aget buffer 3)))
   (request-render "show-grid"))
 
+(defn set-rulers-visible!
+  [visible?]
+  (h/call wasm/internal-module "_set_rulers_visible" (if visible? 1 0)))
+
+(defn set-rulers-offsets!
+  [offset-x offset-y]
+  (h/call wasm/internal-module "_set_rulers_offsets"
+          (or offset-x 0) (or offset-y 0)))
+
+(defn set-rulers-selection!
+  [rect]
+  (if (some? rect)
+    (h/call wasm/internal-module "_set_rulers_selection" 1
+            (or (:x rect) 0) (or (:y rect) 0)
+            (or (:width rect) 0) (or (:height rect) 0))
+    (h/call wasm/internal-module "_set_rulers_selection" 0 0 0 0 0)))
+
+(defn set-rulers-colors!
+  "Push ruler chrome / accent colors as ARGB u32. Inputs are hex strings
+   (e.g. \"#181818\"); call once on theme change."
+  [bg-hex border-hex label-hex accent-hex]
+  (h/call wasm/internal-module "_set_rulers_colors"
+          (sr-clr/hex->u32argb bg-hex 1)
+          (sr-clr/hex->u32argb border-hex 1)
+          (sr-clr/hex->u32argb label-hex 1)
+          (sr-clr/hex->u32argb accent-hex 1)))
+
 (defn clear-grid
   []
   (h/call wasm/internal-module "_hide_grid")
