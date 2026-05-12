@@ -25,7 +25,6 @@
 - Fix copy and paste actions crashing the workspace on insecure origins (plain HTTP / non-`localhost`) where the Clipboard API is unavailable (by @MilosM348) [Github #6514](https://github.com/penpot/penpot/issues/6514)
 - Fix blend-mode dropdown leaving the canvas rendered with the last hover-preview blend mode when dismissed without selecting an option; the WASM render is now reverted to the saved blend mode on pointer-leave (by @edwin-rivera-dev) [Github #XXXX](https://github.com/penpot/penpot/issues/XXXX)
 
-
 ## 2.16.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
@@ -156,7 +155,7 @@
 
 ### :sparkles: New features & Enhancements
 
-- Add MCP server integration [Github #9174](https://github.com/penpot/penpot/issues/9174) 
+- Add MCP server integration [Github #9174](https://github.com/penpot/penpot/issues/9174)
 - Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
 - Improve team name validation [Github #9176](https://github.com/penpot/penpot/pull/9176)
 
