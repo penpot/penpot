@@ -217,6 +217,7 @@
         plugins-enabled (features/active-feature? @st/state "plugins/runtime")
         rulers-enabled       (mf/deref refs/rulers?)
         toolbar-hidden       (mf/deref toolbar-hidden-ref)
+        read-only?    (mf/use-ctx ctx/workspace-read-only?)
         display-plugins-manager (mf/use-fn
                                  (fn []
                                    (st/emit!
@@ -253,62 +254,64 @@
            (dom/blur! (dom/get-target event))
            (st/emit! (dwc/toggle-toolbar-visibility))))]
 
-    [:div {:role "toolbar"
-           :aria-label (tr "workspace.toolbar.label")
-           :tabindex "0"
-           :class (stl/css-case :main-toolbar true
-                                :main-toolbar-no-rulers (not rulers-enabled)
-                                :main-toolbar-hidden toolbar-hidden)}
-     [:ul {:class (stl/css :main-toolbar-options)}
-      [:li {:class (stl/css :main-toolbar-option)}
-       [:> tool-button* {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
-                         :selected (and (nil? selected-drawing-tool)
-                                        (not selected-edition))
-                         :icon i/move
-                         :on-click on-interrupt}]]
+    (when-not ^boolean read-only?
+      [:div {:role "toolbar"
+             :aria-label (tr "workspace.toolbar.label")
+             :tabindex "0"
+             :class (stl/css-case :main-toolbar true
+                                  :main-toolbar-no-rulers (not rulers-enabled)
+                                  :main-toolbar-hidden toolbar-hidden)}
+       [:ul {:class (stl/css :main-toolbar-options)
+             :data-testid "toolbar-options"}
+        [:li {:class (stl/css :main-toolbar-option)}
+         [:> tool-button* {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
+                           :selected (and (nil? selected-drawing-tool)
+                                          (not selected-edition))
+                           :icon i/move
+                           :on-click on-interrupt}]]
 
-      [:li {:class (stl/css :main-toolbar-option)}
-       [:> tool-button* {:title (tool-label :frame)
-                         :selected (= selected-drawing-tool :frame)
-                         :icon i/board
-                         :on-click on-select-tool
-                         :data-tool "frame"}]]
+        [:li {:class (stl/css :main-toolbar-option)}
+         [:> tool-button* {:title (tool-label :frame)
+                           :selected (= selected-drawing-tool :frame)
+                           :icon i/board
+                           :on-click on-select-tool
+                           :data-tool "frame"}]]
 
 
-      [:> grouped-tool-flyout* {:key :shapes
-                                :group (get grouped-tools :shapes)
-                                :drawtool selected-drawing-tool
-                                :on-select-tool on-select-tool}]
+        [:> grouped-tool-flyout* {:key :shapes
+                                  :group (get grouped-tools :shapes)
+                                  :drawtool selected-drawing-tool
+                                  :on-select-tool on-select-tool}]
 
-      [:li {:class (stl/css :main-toolbar-option)}
-       [:> tool-button* {:title (tool-label :text)
-                         :selected (= selected-drawing-tool :text)
-                         :icon i/text
-                         :on-click on-select-tool
-                         :data-tool "text"}]]
+        [:li {:class (stl/css :main-toolbar-option)}
+         [:> tool-button* {:title (tool-label :text)
+                           :selected (= selected-drawing-tool :text)
+                           :icon i/text
+                           :on-click on-select-tool
+                           :data-tool "text"}]]
 
-      [:> image-upload-tool]
+        [:> image-upload-tool]
 
-      [:> grouped-tool-flyout* {:key :free-draw
-                                :group (get grouped-tools :free-draw)
-                                :drawtool selected-drawing-tool
-                                :on-select-tool on-select-tool}]
+        [:> grouped-tool-flyout* {:key :free-draw
+                                  :group (get grouped-tools :free-draw)
+                                  :drawtool selected-drawing-tool
+                                  :on-select-tool on-select-tool}]
 
-      (when plugins-enabled
-        [:li {:class (stl/css :main-toolbar-option :main-toolbar-option-plugins)}
-         [:> tool-button* {:title (tool-label :plugins)
-                           :icon i/puzzle
-                           :on-click display-plugins-manager
-                           :data-tool "plugins"}]])
+        (when plugins-enabled
+          [:li {:class (stl/css :main-toolbar-option :main-toolbar-option-plugins)}
+           [:> tool-button* {:title (tool-label :plugins)
+                             :icon i/puzzle
+                             :on-click display-plugins-manager
+                             :data-tool "plugins"}]])
 
-      (when *assert*
-        [:li {:class (stl/css :main-toolbar-option :main-toolbar-option-debug)}
-         [:> tool-button* {:title (tool-label :debug)
-                           :selected (contains? layout :debug-panel)
-                           :icon i/bug
-                           :on-click toggle-debug-panel}]])]
-     [:button {:title (tr "workspace.toolbar.toggle-toolbar")
-               :aria-label (tr "workspace.toolbar.toggle-toolbar")
-               :class (stl/css :toolbar-handler)
-               :on-click toggle-toolbar}
-      [:div {:class (stl/css :toolbar-handler-indicator)}]]]))
+        (when *assert*
+          [:li {:class (stl/css :main-toolbar-option :main-toolbar-option-debug)}
+           [:> tool-button* {:title (tool-label :debug)
+                             :selected (contains? layout :debug-panel)
+                             :icon i/bug
+                             :on-click toggle-debug-panel}]])]
+       [:button {:title (tr "workspace.toolbar.toggle-toolbar")
+                 :aria-label (tr "workspace.toolbar.toggle-toolbar")
+                 :class (stl/css :toolbar-handler)
+                 :on-click toggle-toolbar}
+        [:div {:class (stl/css :toolbar-handler-indicator)}]]])))
