@@ -4,7 +4,7 @@
   {:local/root "../common"}
 
   org.clojure/clojure {:mvn/version "1.12.2"}
-  binaryage/devtools {:mvn/version "RELEASE"}
+  binaryage/devtools {:mvn/version "1.0.7"}
   metosin/reitit-core {:mvn/version "0.9.1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
 
@@ -31,25 +31,24 @@
 
   instaparse/instaparse {:mvn/version "1.5.0"}
   garden/garden {:git/url "https://github.com/noprompt/garden"
-                 :git/sha "05590ecb5f6fa670856f3d1ab400aa4961047480"}
-  }
+                 :git/sha "05590ecb5f6fa670856f3d1ab400aa4961047480"}}
 
  :aliases
  {:outdated
-  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
    :main-opts ["-m" "antq.core"]}
 
   :jvm-repl
   {:extra-deps
-   {com.bhauman/rebel-readline {:mvn/version "RELEASE"}}
+   {com.bhauman/rebel-readline {:mvn/version "0.1.7"}}
    :main-opts ["-m" "rebel-readline.main"]}
 
   :dev
   {:extra-paths ["dev"]
    :extra-deps
    {thheller/shadow-cljs {:mvn/version "3.2.2"}
-    com.bhauman/rebel-readline {:mvn/version "RELEASE"}
-    org.clojure/tools.namespace {:mvn/version "RELEASE"}
+    com.bhauman/rebel-readline {:mvn/version "0.1.7"}
+    org.clojure/tools.namespace {:mvn/version "1.5.0"}
     criterium/criterium {:mvn/version "0.4.6"}
     cider/cider-nrepl {:mvn/version "0.57.0"}}}
 
@@ -58,5 +57,4 @@
    :jvm-opts ["--sun-misc-unsafe-memory-access=allow"
               "-Dpenpot.wasm.profile-marks=true"
               "-XX:+UnlockExperimentalVMOptions"
-              "-XX:CompileCommand=blackhole,criterium.blackhole.Blackhole::consume"]}
-  }}
+              "-XX:CompileCommand=blackhole,criterium.blackhole.Blackhole::consume"]}}}
