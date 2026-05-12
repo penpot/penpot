@@ -81,24 +81,7 @@
 (defonce transition-tiles-handler* (atom nil))
 (defonce snapshot-tiles-handler* (atom nil))
 
-(def ^:private transition-blur-css "blur(4px)")
 (def ^:private snapshot-capture-debounce-ms 250)
-
-(defn- set-transition-blur!
-  []
-  (when-let [canvas ^js wasm/canvas]
-    (dom/set-style! canvas "filter" transition-blur-css))
-  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
-    (doseq [^js node (array-seq nodes)]
-      (dom/set-style! node "filter" transition-blur-css))))
-
-(defn- clear-transition-blur!
-  []
-  (when-let [canvas ^js wasm/canvas]
-    (dom/set-style! canvas "filter" ""))
-  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
-    (doseq [^js node (array-seq nodes)]
-      (dom/set-style! node "filter" ""))))
 
 (defn set-transition-image-from-background!
   "Sets `transition-image-url*` to a data URL representing a solid background color."
@@ -121,8 +104,7 @@
   (when-let [prev @transition-tiles-handler*]
     (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
   (reset! transition-tiles-handler* nil)
-  (reset! transition-image-url* nil)
-  (clear-transition-blur!))
+  (reset! transition-image-url* nil))
 
 (defn- set-transition-tiles-complete-handler!
   "Installs a tiles-complete handler bound to the current transition epoch.
@@ -2161,33 +2143,15 @@
   (let [already? @page-transition?
         epoch    (begin-page-transition!)]
     (set-transition-tiles-complete-handler! epoch end-page-transition!)
-    ;; Two-phase transition:
-    ;; - Apply CSS blur to the live canvas immediately (no async wait), so the user
-    ;;   sees the transition right away.
-    ;; - In parallel, capture a `blob:` snapshot URL; once ready, switch the overlay
-    ;;   to that fixed image (and guard with `epoch` to avoid stale async updates).
-    (set-transition-blur!)
     ;; Lock the snapshot for the whole transition: if the user clicks to another page
     ;; while the transition is active, keep showing the original page snapshot until
-    ;; the final target page finishes rendering.
-    (if already?
-      (p/resolved nil)
-      (do
-        ;; If we already have a snapshot URL, use it immediately.
-        (when-let [url wasm/canvas-snapshot-url]
-          (when (string? url)
-            (reset! transition-image-url* url)))
-
-        ;; Capture a fresh snapshot asynchronously and update the overlay as soon
-        ;; as it is ready (guarded by `epoch` to avoid stale async updates).
-        (-> (capture-canvas-snapshot-url)
-            (p/then (fn [url]
-                      (when (and (string? url)
-                                 @page-transition?
-                                 (= epoch @transition-epoch*))
-                        (reset! transition-image-url* url))
-                      url))
-            (p/catch (fn [_] nil)))))))
+    ;; the final target page finishes rendering. The caller (sitemap on-click) is
+    ;; responsible for ensuring `wasm/canvas-snapshot-url` was freshly captured
+    ;; before invoking us.
+    (when-not already?
+      (when-let [url wasm/canvas-snapshot-url]
+        (when (string? url)
+          (reset! transition-image-url* url))))))
 
 (defn render-shape-pixels
   [shape-id scale]
