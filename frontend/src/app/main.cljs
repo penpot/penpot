@@ -76,11 +76,8 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (rx/merge
-       (if (contains? cf/flags :audit-log)
-         (rx/of (ev/initialize))
-         (rx/empty))
-
-       (rx/of (dp/refresh-profile))
+       (rx/of (ev/initialize)
+              (dp/refresh-profile))
 
        ;; Watch for profile deletion events
        (->> stream

@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.tokens.management.forms.controls.color-input
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as color]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as cl]
@@ -171,8 +170,8 @@
         default-bullet-color
         (case (:theme profile)
           "light"
-          color/background-quaternary-light
-          color/background-quaternary)
+          cl/background-quaternary-light
+          cl/background-quaternary)
         hex
         (if valid-color
           (tinycolor/->hex-string (tinycolor/valid-color valid-color))
@@ -337,8 +336,8 @@
         default-bullet-color
         (case (:theme profile)
           "light"
-          color/background-quaternary-light
-          color/background-quaternary)
+          cl/background-quaternary-light
+          cl/background-quaternary)
 
         hex
         (if valid-color

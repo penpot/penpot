@@ -97,7 +97,7 @@
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
 
 (defn- audit-event->report
-  [{:keys [::audit/context ::audit/props ::audit/ip-addr] :as record}]
+  [{:keys [context props ip-addr] :as record}]
   (let [context
         (reduce-kv (fn [context k v]
                      (let [k' (keyword "frontend" (name k))]
@@ -117,14 +117,14 @@
 
     {:context (-> (into (sorted-map) context)
                   (pp/pprint-str :length 50))
-     :origin  (::audit/name record)
+     :origin  (:name record)
      :href    (get props :href)
      :hint    (get props :hint)
      :report  (get props :report)}))
 
 (defn- handle-audit-event
   "Convert the log record into a report object and persist it on the database"
-  [{:keys [::db/pool]} {:keys [::audit/id] :as event}]
+  [{:keys [::db/pool]} {:keys [id] :as event}]
   (try
     (let [uri    (cf/get :public-uri)
           report (-> event audit-event->report d/without-nils)]
@@ -189,11 +189,11 @@
                          (::l/id item)
                          (handle-log-record cfg item)
 
-                         (::audit/id item)
-                         (handle-audit-event cfg item)
-
                          (::rlimit/id item)
                          (handle-rlimit-event cfg item)
+
+                         (-> item meta ::audit/event)
+                         (handle-audit-event cfg item)
 
                          :else
                          (l/warn :hint "received unexpected item" :item item))
@@ -226,4 +226,3 @@
   [cfg event]
   (when-let [{:keys [::input]} (get cfg ::reporter)]
     (sp/put! input event)))
-
