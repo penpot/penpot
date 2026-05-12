@@ -150,14 +150,14 @@
 
 (defn- create-file-media-object
   [{:keys [::sto/storage ::db/conn] :as cfg}
-   {:keys [id file-id is-local name content from-url from-chunks]}]
+   {:keys [id file-id is-local name content from-url? from-chunks?]}]
 
   (let [tpoint (ct/tpoint)
         id     (or id (uuid/next))
         origin (cond
-                 (true? from-url)
+                 from-url?
                  "url"
-                 (true? from-chunks)
+                 from-chunks?
                  "chunks"
                  :else
                  "direct")]
@@ -228,7 +228,7 @@
   [cfg {:keys [url name] :as params}]
   (let [content (media/download-image cfg url)
         params  (-> params
-                    (assoc :from-url true)
+                    (assoc :from-url? true)
                     (assoc :content content)
                     (assoc :name (d/nilv name "unknown")))]
 
@@ -445,7 +445,7 @@
                                   (media/validate-media-size!))
                       mobj    (create-file-media-object cfg (assoc params
                                                                    :id id
-                                                                   :from-chunks true
+                                                                   :from-chunks? true
                                                                    :content content))]
 
                   (db/update! conn :file

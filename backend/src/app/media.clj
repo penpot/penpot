@@ -76,6 +76,20 @@
                                 max-size)))
     upload))
 
+(defn validate-font-size!
+  "Validates that the font file `upload` does not exceed the configured
+  `:font-max-file-size` limit.  Accepts the same map shape as
+  `validate-media-size!` — requires a `:size` key in bytes."
+  [upload]
+  (let [max-size (cf/get :font-max-file-size)]
+    (when (> (:size upload) max-size)
+      (ex/raise :type :restriction
+                :code :font-max-file-size-reached
+                :hint (str/ffmt "the uploaded font size % is greater than the maximum %"
+                                (:size upload)
+                                max-size)))
+    upload))
+
 (defmulti process :cmd)
 (defmulti process-error class)
 

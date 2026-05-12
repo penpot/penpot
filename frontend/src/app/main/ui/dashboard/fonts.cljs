@@ -14,7 +14,6 @@
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
@@ -110,7 +109,7 @@
         (mf/use-fn
          (fn [{:keys [id] :as item}]
            (swap! uploading* conj id)
-           (->> (rp/cmd! :create-font-variant item)
+           (->> (df/upload-font-variant item)
                 (rx/delay-at-least 2000)
                 (rx/subs! (fn [font]
                             (swap! fonts* dissoc id)
