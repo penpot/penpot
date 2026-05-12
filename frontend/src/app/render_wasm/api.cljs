@@ -2172,6 +2172,24 @@
     (mem/free)
     result))
 
+(defn get-shape-extrect
+  [shape-id]
+  (let [buffer (uuid/get-u32 shape-id)
+        offset (h/call wasm/internal-module "_get_shape_extrect"
+                       (aget buffer 0)
+                       (aget buffer 1)
+                       (aget buffer 2)
+                       (aget buffer 3))]
+    (when (and (number? offset) (pos? offset))
+      (let [heapf32 (mem/get-heap-f32)
+            base    (mem/->offset-32 offset)
+            x       (aget heapf32 base)
+            y       (aget heapf32 (+ base 1))
+            w       (aget heapf32 (+ base 2))
+            h       (aget heapf32 (+ base 3))]
+        (mem/free)
+        {:x x :y y :width w :height h}))))
+
 (defn init-wasm-module
   [module]
   (let [default-fn (unchecked-get module "default")
