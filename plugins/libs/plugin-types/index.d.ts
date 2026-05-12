@@ -3768,12 +3768,19 @@ export interface ShapeBase extends PluginData {
    * The design tokens applied to this shape.
    * It's a map property name -> token name.
    *
+   * Reading returns the currently applied tokens. Assigning to a property
+   * (e.g. `shape.tokens.fill = "colors.primary"`) looks up the named token
+   * across the file's active sets and applies it to the matching shape
+   * attribute. Assigning a name that does not resolve to an active token
+   * leaves the shape untouched and reports the failure via the plugin
+   * error channel.
+   *
    * NOTE that the tokens application is by name and not by id. If there exist
    * several tokens with the same name in different sets, the actual token applied
    * and the value set to the attributes will depend on which sets are active
    * (and will change if different sets or themes are activated later).
    */
-  readonly tokens: { [property in TokenProperty]: string };
+  tokens: { [property in TokenProperty]: string };
 
   /**
    * @return Returns true if the current shape is inside a component instance

@@ -276,13 +276,29 @@
   (let [s (set values)]
     (if (= (count s) 1) (first s) "mixed")))
 
+(defn- format-field
+  "Render a schema error field path as a human-readable string.
+
+  Field comes from `interpret-schema-problem`. For map schemas it's a
+  keyword/string; for tuple/vector schemas it's an integer index (or a
+  vector of indices). Plain `(name x)` blows up on numbers with
+  \"Doesn't support name: 0\", masking the underlying validation
+  error — see #9561."
+  [field]
+  (cond
+    (keyword? field) (name field)
+    (string? field) field
+    (number? field) (str field)
+    (vector? field) (str/join "." (map format-field field))
+    :else (str field)))
+
 (defn error-messages
   [explain]
   (->> (:errors explain)
        (reduce csm/interpret-schema-problem {})
        #_(mapcat (comp seq val))     ;; FIXME: why is this for? it breaks the message
        (map (fn [[field {:keys [message]}]]
-              (tr "plugins.validation.message" (name field) message)))
+              (tr "plugins.validation.message" (format-field field) message)))
        (str/join ". ")))
 
 (defn handle-error
