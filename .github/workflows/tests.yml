@@ -90,10 +90,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Restore .m2
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.m2
+          key: m2-common-${{ hashFiles('common/deps.edn') }}
+
       - name: Run tests
         working-directory: ./common
         run: |
           ./scripts/test
+
+      - name: Save .m2
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.m2
+          key: m2-common-${{ hashFiles('common/deps.edn') }}
 
   test-plugins:
     if: ${{ !github.event.pull_request.draft }}
@@ -156,6 +169,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Restore .m2
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.m2
+          key: m2-frontend-${{ hashFiles('frontend/deps.edn') }}
+
       - name: Unit Tests
         working-directory: ./frontend
         run: |
@@ -167,6 +186,13 @@ jobs:
           VITEST_BROWSER_TIMEOUT: 120000
         run: |
           ./scripts/test-components
+
+      - name: Save .m2
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.m2
+          key: m2-frontend-${{ hashFiles('frontend/deps.edn') }}
 
   test-render-wasm:
     if: ${{ !github.event.pull_request.draft }}
@@ -222,6 +248,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Restore .m2
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.m2
+          key: m2-backend-${{ hashFiles('backend/deps.edn') }}
+
       - name: Run tests
         working-directory: ./backend
         env:
@@ -232,6 +264,13 @@ jobs:
 
         run: |
           clojure -M:dev:test --reporter kaocha.report/documentation
+
+      - name: Save .m2
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.m2
+          key: m2-backend-${{ hashFiles('backend/deps.edn') }}
 
   test-library:
     if: ${{ !github.event.pull_request.draft }}
@@ -258,16 +297,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Restore .m2
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.m2
+          key: m2-integration-${{ hashFiles('frontend/deps.edn') }}
+
       - name: Build Bundle
         working-directory: ./frontend
         run: |
           ./scripts/build
 
       - name: Store Bundle Cache
-        uses: actions/cache@v5
+        uses: actions/cache/save@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
+
+      - name: Save .m2
+        uses: actions/cache/save@v5
+        if: always()
+        with:
+          path: ~/.m2
+          key: m2-integration-${{ hashFiles('frontend/deps.edn') }}
 
   test-integration-1:
     if: ${{ !github.event.pull_request.draft }}
@@ -283,8 +335,8 @@ jobs:
       - name: Restore Cache
         uses: actions/cache/restore@v5
         with:
-          key: "integration-bundle-${{ github.sha }}"
-          path: frontend/resources/public
+          key: mv-integration-${{ hashFiles('frontend/deps.edn') }}
+          path: ~/.m2
 
       - name: Run Tests
         working-directory: ./frontend
@@ -314,8 +366,8 @@ jobs:
       - name: Restore Cache
         uses: actions/cache/restore@v5
         with:
-          key: "integration-bundle-${{ github.sha }}"
-          path: frontend/resources/public
+          key: mv-integration-${{ hashFiles('frontend/deps.edn') }}
+          path: ~/.m2
 
       - name: Run Tests
         working-directory: ./frontend
@@ -345,8 +397,8 @@ jobs:
       - name: Restore Cache
         uses: actions/cache/restore@v5
         with:
-          key: "integration-bundle-${{ github.sha }}"
-          path: frontend/resources/public
+          key: mv-integration-${{ hashFiles('frontend/deps.edn') }}
+          path: ~/.m2
 
       - name: Run Tests
         working-directory: ./frontend
