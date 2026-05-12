@@ -23,10 +23,7 @@
 (mf/defc numeric-input*
   {::mf/forward-ref true}
   [{:keys [value min max step data-wrap on-change on-blur on-focus title default
-           select-on-focus class class-name]
-    disabled? :disabled
-    nillable? :nillable
-    integer? :integer
+           select-on-focus class class-name disabled nillable integer]
     :rest props} external-ref]
   (let [value-str   value
         min-value   min
@@ -38,7 +35,7 @@
         min-value   (d/parse-double min-value)
         max-value   (d/parse-double max-value)
         step-value  (d/parse-double step-value 1)
-        default     (d/parse-double default (when-not nillable? 0))
+        default     (d/parse-double default (when-not nillable 0))
 
         select-on-focus? (d/nilv select-on-focus true)
 
@@ -65,7 +62,7 @@
 
         parse-value
         (mf/use-fn
-         (mf/deps min-value max-value value nillable? default integer?)
+         (mf/deps min-value max-value value nillable default integer)
          (fn []
            (when-let [node (mf/ref-val ref)]
              (let [new-value (-> (dom/get-value node)
@@ -74,7 +71,7 @@
                (cond
                  (d/num? new-value)
                  (-> new-value
-                     (cond-> integer? mth/round)
+                     (cond-> integer mth/round)
                      (d/max (/ sm/min-safe-int 2))
                      (d/min (/ sm/max-safe-int 2))
                      (cond-> (d/num? min-value)
@@ -82,7 +79,7 @@
                      (cond-> (d/num? max-value)
                        (d/min max-value)))
 
-                 nillable?
+                 nillable
                  default
 
                  :else value)))))
@@ -150,7 +147,7 @@
                                  max-value
 
                                  :else new-value)
-                     new-value (if integer? (mth/round new-value) new-value)]
+                     new-value (if integer (mth/round new-value) new-value)]
 
                  (apply-value event new-value))))))
 
@@ -197,7 +194,7 @@
          (fn [event]
            (when (mf/ref-val dirty-ref)
              (let [new-value (or @last-value* default)]
-               (if (or nillable? new-value)
+               (if (or nillable new-value)
                  (apply-value event new-value)
                  (update-input new-value)))
              (when (fn? on-blur)
@@ -235,7 +232,7 @@
          (fn [event]
            (let [node      (mf/ref-val ref)
                  is-focused (and (some? node) (dom/active? node))]
-             (when-not (or disabled? is-focused (= :multiple value-str))
+             (when-not (or disabled is-focused (= :multiple value-str))
                (let [client-x  (.-clientX event)
                      start-val (or value default 0)]
                  (mf/set-ref-val! drag-state* :maybe-dragging)
