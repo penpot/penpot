@@ -53,15 +53,39 @@
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
    [app.main.ui.workspace.viewport.top-bar :refer [path-edition-bar* grid-edition-bar* view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
-   [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
+   [app.main.ui.workspace.viewport.viewport-ref :as vp-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
+   [app.util.color :as uc]
    [app.util.debug :as dbg]
+   [app.util.dom :as dom]
    [app.util.text-editor :as ted]
    [app.util.timers :as ts]
+   [app.util.webapi :as webapi]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
+
+;; --- Ruler theme color resolution
+
+(def ^:private ruler-color-vars
+  {:bg     "--panel-background-color"
+   :border "--panel-border-color"
+   :label  "--layer-row-foreground-color"
+   :accent "--color-accent-tertiary"})
+
+(defn- resolve-ruler-color [k]
+  (uc/parse-css-color (dom/get-css-variable (get ruler-color-vars k) js/document.body)))
+
+(defn- push-ruler-colors! []
+  (let [bg     (resolve-ruler-color :bg)
+        border (resolve-ruler-color :border)
+        label  (resolve-ruler-color :label)
+        accent (resolve-ruler-color :accent)]
+    (if (and bg border label accent)
+      (wasm.api/set-rulers-colors! bg border label accent)
+      (js/console.error "Failed to resolve ruler CSS colors"
+                        (pr-str {:bg bg :border border :label label :accent accent})))))
 
 ;; --- Viewport
 
@@ -127,7 +151,6 @@
                 vbox
                 vport
                 zoom
-                zoom-inverse
                 edition]}
         (mf/deref refs/workspace-local)
 
@@ -404,8 +427,7 @@
                                   false))]
                     (cond
                       init?
-                      (do
-                        (reset! canvas-init? true))
+                      (reset! canvas-init? true)
 
                       (pos? retries)
                       (vreset! timeout-id-ref
@@ -435,6 +457,19 @@
             (let [dimension (wasm.api/get-text-dimensions)]
               (st/emit! (dwt/resize-text-editor edition dimension))
               (wasm.api/request-render "content"))))))
+
+    (mf/with-effect [@canvas-init?]
+      (when @canvas-init?
+        (let [canvas (mf/ref-val canvas-ref)]
+          (webapi/on-dpr-change
+           (fn [new-dpr]
+             (let [css-w (.-clientWidth ^js canvas)
+                   css-h (.-clientHeight ^js canvas)]
+               (set! (.-width canvas) (* new-dpr css-w))
+               (set! (.-height canvas) (* new-dpr css-h))
+               (wasm.api/set-render-options! new-dpr)
+               (wasm.api/resize-viewbox css-w css-h)
+               (wasm.api/request-render "dpr-change")))))))
 
     (mf/with-effect [vport]
       (when (and @canvas-init? @initialized?)
@@ -492,6 +527,39 @@
       (when (and @canvas-init? hover-grid?)
         (wasm.api/show-grid @hover-top-frame-id)))
 
+    ;; Rulers-wasm: push visibility / offsets / selection band into the
+    ;; render-wasm overlay (always active, no feature flag).
+    (let [ruler-selection (when (and show-rulers?
+                                     (d/not-empty? selected-shapes))
+                            (gsh/shapes->rect selected-shapes))]
+
+      (mf/with-effect [@canvas-init?]
+        (when @canvas-init?
+          (push-ruler-colors!)
+          (let [obs (js/MutationObserver.
+                     (fn [_]
+                       (push-ruler-colors!)
+                       (wasm.api/request-render "rulers-colors-theme")))]
+            (.observe obs js/document.body
+                      #js {:attributes true :attributeFilter #js ["class"]})
+            (fn [] (.disconnect obs)))))
+
+      (mf/with-effect [@canvas-init? show-rulers?]
+        (when @canvas-init?
+          (wasm.api/set-rulers-visible! show-rulers?)
+          (wasm.api/request-render "rulers-visible")))
+
+      (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
+        (when (and @canvas-init? show-rulers?)
+          (wasm.api/set-rulers-offsets! offset-x offset-y)))
+
+      (mf/with-effect [@canvas-init? show-rulers?
+                       (some-> ruler-selection :x) (some-> ruler-selection :y)
+                       (some-> ruler-selection :width) (some-> ruler-selection :height)]
+        (when (and @canvas-init? show-rulers?)
+          (wasm.api/set-rulers-selection! ruler-selection)
+          (wasm.api/request-render "rulers-selection"))))
+
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
@@ -542,8 +610,8 @@
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
-               :width (* wasm.api/dpr (:width vport 0))
-               :height (* wasm.api/dpr (:height vport 0))
+               :width (* (wasm.api/get-dpr) (:width vport 0))
+               :height (* (wasm.api/get-dpr) (:height vport 0))
                :style {:background-color background
                        :pointer-events "none"}}]
 
@@ -773,16 +841,6 @@
        (when show-presence?
          [:& presence/active-cursors
           {:page-id page-id}])
-
-       (when-not hide-ui?
-         [:> rulers/rulers*
-          {:zoom zoom
-           :zoom-inverse zoom-inverse
-           :vbox vbox
-           :selected-shapes selected-shapes
-           :offset-x offset-x
-           :offset-y offset-y
-           :show-rulers show-rulers?}])
 
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*
