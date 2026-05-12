@@ -23,7 +23,6 @@
 - Fix `Ctrl+'` "Show guides" shortcut on non-US keyboard layouts by matching the physical key location (by @RenzoMXD) [Github #8423](https://github.com/penpot/penpot/issues/8423)
 - Fix lost-update race on `team.features` during concurrent file creation (by @web-dev0521) [Github #9197](https://github.com/penpot/penpot/issues/9197)
 - Fix copy and paste actions crashing the workspace on insecure origins (plain HTTP / non-`localhost`) where the Clipboard API is unavailable (by @MilosM348) [Github #6514](https://github.com/penpot/penpot/issues/6514)
-- Fix restoring a saved version from Preview mode leaves the user in view-only mode, preventing the user from performing operations [Taiga #14167](https://tree.taiga.io/project/penpot/issue/14167)
 
 ## 2.16.0 (Unreleased)
 
