@@ -59,6 +59,7 @@
 - Add new numeric inputs for token management on the right sidebar [Taiga #12109](https://tree.taiga.io/project/penpot/us/12109?milestone=513226)
 - Restore deleted team files in bulk instead of per file (by @Dexterity104) [Github #9248](https://github.com/penpot/penpot/pull/9248)
 - Preserve Inkscape labels when pasting SVGs (by @jeffrey701) [Github #9252](https://github.com/penpot/penpot/pull/9252)
+- Fix library updates reappear after being applied and the file is reloaded [Taiga #14040](https://tree.taiga.io/project/penpot/issue/14040)
 
 ### :bug: Bugs fixed
 
@@ -128,7 +129,7 @@
 
 ### :sparkles: New features & Enhancements
 
-- Add MCP server integration [Github #9174](https://github.com/penpot/penpot/issues/9174) 
+- Add MCP server integration [Github #9174](https://github.com/penpot/penpot/issues/9174)
 - Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
 - Improve team name validation [Github #9176](https://github.com/penpot/penpot/pull/9176)
 
@@ -166,7 +167,6 @@
 - Fix email blacklisting [Github #9122](https://github.com/penpot/penpot/pull/9122)
 - Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
 
-
 ## 2.14.3
 
 ### :sparkles: New features & Enhancements
@@ -195,7 +195,6 @@
 - Fix stale accumulator in `get-children-in-instance` recursion
 - Fix typo `:podition` in swap-shapes grid cell
 - Fix multiple selection on shapes with token applied to stroke color
-
 
 ## 2.14.2
 
