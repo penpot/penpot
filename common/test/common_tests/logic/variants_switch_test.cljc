@@ -7,6 +7,9 @@
 (ns common-tests.logic.variants-switch-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -2684,3 +2687,109 @@
     (t/is (= (:width rect02') 150))
     ;; The guard must not have suppressed :selrect — it should be consistent
     (t/is (= (get-in rect02' [:selrect :width]) 150))))
+
+
+(t/deftest test-switch-when-source-master-child-has-touched-geometry
+  ;; Regression: when the previous-shape's geometry has sub-pixel drift
+  ;; relative to its source master (a state produced by interactive transform
+  ;; modifiers, e.g. alt-drag duplicate of a variant whose children are
+  ;; component copies), the equal-geometry? guard in update-attrs-on-switch
+  ;; uses exact equality and fails. The :else branch then copies
+  ;; previous-shape's :selrect verbatim onto the freshly-instantiated target,
+  ;; leaving :y correct (the per-attr y skip catches that) but :selrect.y
+  ;; stale. The shape ends up internally inconsistent (:y disagrees with
+  ;; :selrect.y); the renderer reads :selrect, so the child appears at the
+  ;; source variant's position inside a parent that has resized to the
+  ;; target's dimensions — the visible "cut off" symptom.
+  (let [;; ==== Setup
+        ;; A self-contained Input/Button-like component, plus a variant
+        ;; container whose two variants each instance that component
+        ;; at different y positions. This mirrors the production setup
+        ;; where the dragged variant's children are themselves component
+        ;; copies (and thus carry :touched on geometry within the master).
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :btn-comp :btn-root :btn-rect)
+                    (thv/add-variant-with-copy
+                     :v01 :c01 :m01 :c02 :m02 :child1 :child2 :btn-comp))
+
+        ;; Position child1 at y=101 (in m01) and child2 at y=73 (in m02).
+        ;; Use gsh/absolute-move so :selrect/:points stay consistent with
+        ;; :y — a plain (assoc :y …) would leave them out of sync and
+        ;; produce a different (artificial) failure mode.
+        page    (thf/current-page file)
+        child1  (ths/get-shape file :child1)
+        child2  (ths/get-shape file :child2)
+        changes (-> (pcb/empty-changes nil (:id page))
+                    (cls/generate-update-shapes
+                     #{(:id child1)}
+                     #(gsh/absolute-move % (gpt/point (:x %) 101))
+                     (:objects page) {})
+                    (cls/generate-update-shapes
+                     #{(:id child2)}
+                     #(gsh/absolute-move % (gpt/point (:x %) 73))
+                     (:objects page) {}))
+        file    (thf/apply-changes file changes)
+        file    (thc/instantiate-component file :c01 :copy01)
+
+        ;; The copy carries an Input/Button instance (Frame1). Introduce
+        ;; sub-pixel drift in its :width and :selrect.width — the kind of
+        ;; floating-point error produced by the alt-drag modifier path in
+        ;; production. This drift is what defeats equal-geometry?'s
+        ;; exact-equality comparison and lets the bug surface.
+        page          (thf/current-page file)
+        copy01        (ths/get-shape file :copy01)
+        copy-btn-id   (->> (cfh/get-children-ids-with-self (:objects page) (:id copy01))
+                           (map #(get-in page [:objects %]))
+                           (filter #(= "Frame1" (:name %)))
+                           first :id)
+        drift         0.00001
+        changes       (cls/generate-update-shapes
+                       (pcb/empty-changes nil (:id page))
+                       #{copy-btn-id}
+                       (fn [shape]
+                         (let [w (+ (:width shape) drift)
+                               sr (:selrect shape)]
+                           (-> shape
+                               (assoc :width w)
+                               (assoc :selrect (-> sr
+                                                   (assoc :width w)
+                                                   (assoc :x2 (+ (:x1 sr) w)))))))
+                       (:objects page) {})
+        file          (thf/apply-changes file changes)
+        m02           (ths/get-shape file :m02)
+        child2        (ths/get-shape file :child2)
+
+        target-rel-y  (- (:y child2) (:y m02))
+
+        ;; ==== Action
+        file'         (tho/swap-component-in-shape file :copy01 :c02
+                                                   {:new-shape-label :copy02
+                                                    :keep-touched? true})
+
+        page'         (thf/current-page file')
+        copy02        (ths/get-shape file' :copy02)
+        post-btn      (->> (cfh/get-children-ids-with-self (:objects page') (:id copy02))
+                           (map #(get-in page' [:objects %]))
+                           (filter #(= "Frame1" (:name %)))
+                           first)
+        post-btn-rel-y (- (:y post-btn) (:y copy02))
+        post-btn-selrect-rel-y (- (get-in post-btn [:selrect :y])
+                                  (get-in copy02 [:selrect :y]))]
+
+    ;; The post-switch button must sit at the target master's relative y.
+    ;; Its :y field already does (the per-attr :y skip handles that
+    ;; correctly); the failure is on :selrect.
+    (t/is (= target-rel-y post-btn-rel-y)
+          (str "Child's :y should match target master layout (" target-rel-y ")"))
+
+    ;; The bug: :selrect.y is overwritten with the previous shape's value,
+    ;; not regenerated from the target master's layout. After fix, this
+    ;; assertion should pass.
+    (t/is (= target-rel-y post-btn-selrect-rel-y)
+          (str ":selrect.y should match target master layout (expected "
+               target-rel-y " got " post-btn-selrect-rel-y ")"))
+
+    ;; And :y must agree with :selrect.y — a shape whose :y disagrees with
+    ;; its :selrect.y is internally inconsistent and renders incorrectly.
+    (t/is (= post-btn-rel-y post-btn-selrect-rel-y)
+          ":y and :selrect.y must agree after switch")))

@@ -278,7 +278,7 @@ The Penpot MCP server can be configured using environment variables.
 | Environment Variable   | Description                                          | Default  |
 |------------------------|------------------------------------------------------|----------|
 | `PENPOT_MCP_LOG_LEVEL` | Log level: `trace`, `debug`, `info`, `warn`, `error` | `info`   |
-| `PENPOT_MCP_LOG_DIR`   | Directory for log files                              | `logs`   |
+| `PENPOT_MCP_LOG_DIR`   | Directory for log files; file logging is enabled iff this is set to a non-empty value | (unset)  |
 
 ### Plugin Server Configuration
 

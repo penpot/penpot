@@ -1383,7 +1383,7 @@
         (rx/concat
          (rx/of (dch/commit-changes changes))
          (when (nil? annotation)
-           (rx/of (ptk/data-event ::ev/event {::ev/name "delete-component-annotation"}))))))))
+           (rx/of (ev/event {::ev/name "delete-component-annotation"}))))))))
 
 (defn set-annotations-expanded
   [expanded]
@@ -1405,7 +1405,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (some? id)
-        (rx/of (ptk/data-event ::ev/event {::ev/name "create-component-annotation"}))))))
+        (rx/of (ev/event {::ev/name "create-component-annotation"}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Preview blend modes

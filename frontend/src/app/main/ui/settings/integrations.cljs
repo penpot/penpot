@@ -410,6 +410,8 @@
         profile (mf/deref refs/profile)
 
         mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
+        mcp-token    (:token mcp-key "")
+        mcp-url      (dm/str cf/mcp-server-url "?userToken=" mcp-token)
         mcp-enabled? (true? (-> profile :props :mcp-enabled))
 
         expires-at  (:expires-at mcp-key)
@@ -457,9 +459,10 @@
 
         on-copy-to-clipboard
         (mf/use-fn
+         (mf/deps mcp-url)
          (fn [event]
            (dom/prevent-default event)
-           (clipboard/to-clipboard cf/mcp-server-url)
+           (clipboard/to-clipboard mcp-url)
            (st/emit! (ntf/show {:level :info
                                 :type :toast
                                 :content (tr "integrations.notification.success.copied-link")
@@ -550,7 +553,7 @@
                   :class (stl/css :color-secondary)}
         (tr "integrations.mcp-server.mcp-keys.info")]
 
-       [:> input-copy* {:value (dm/str cf/mcp-server-url "?userToken=")
+       [:> input-copy* {:value mcp-url
                         :on-copy-to-clipboard on-copy-to-clipboard}]
 
        [:> text* {:as "div"
