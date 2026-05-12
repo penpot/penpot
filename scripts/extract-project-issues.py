@@ -51,22 +51,55 @@ def resolve_project_number(owner: str, project_ref: str) -> int:
     sys.exit(1)
 
 
-def fetch_pr_info(owner: str, repo: str, pr_number: int) -> dict | None:
-    """Fetch PR author and state. Returns None if the PR cannot be read."""
-    try:
-        output = run_gh([
-            "pr", "view", str(pr_number),
-            "--repo", f"{owner}/{repo}",
-            "--json", "author,state",
-        ])
-    except SystemExit:
-        # gh call failed (e.g. PR not found)
-        return None
+def fetch_prs_batch(
+    pr_list: list[tuple[str, str, int]],
+) -> dict[int, dict]:
+    """Fetch author and state for multiple PRs in a **single** GraphQL query.
 
+    Args:
+        pr_list: List of ``(owner, repo, number)`` tuples.
+
+    Returns:
+        Dict mapping PR number -> {author, state}.  PRs that don't exist or
+        can't be read are omitted.
+    """
+    if not pr_list:
+        return {}
+
+    # Deduplicate by number (assumes same repo)
+    seen: dict[int, tuple[str, str]] = {}
+    for owner, repo, number in pr_list:
+        if number not in seen:
+            seen[number] = (owner, repo)
+
+    # Build aliased query — one alias per PR
+    aliases: list[str] = []
+    alias_to_number: dict[str, int] = {}
+    for number, (owner, repo) in seen.items():
+        alias = f"pr_{number}"
+        aliases.append(
+            f'{alias}: repository(owner: "{owner}", name: "{repo}")'
+            f"{{ pullRequest(number: {number})"
+            f"{{ number state author{{ login }} }} }}"
+        )
+        alias_to_number[alias] = number
+
+    query = "query { " + " ".join(aliases) + " }"
+
+    output = run_gh(["api", "graphql", "-f", f"query={query}"])
     data = json.loads(output)
-    author = data.get("author", {}).get("login", "unknown")
-    state = data.get("state", "unknown")
-    return {"author": author, "state": state}
+    nodes = data.get("data", {})
+
+    result: dict[int, dict] = {}
+    for alias, number in alias_to_number.items():
+        pr_node = nodes.get(alias, {}).get("pullRequest")
+        if pr_node is None:
+            continue
+        result[number] = {
+            "author": pr_node.get("author", {}).get("login", "unknown"),
+            "state": pr_node.get("state", "unknown"),
+        }
+    return result
 
 
 def fetch_project_items(owner: str, project_number: int) -> list[dict]:
@@ -95,7 +128,10 @@ def collect_issues(args: argparse.Namespace) -> list[dict[str, Any]]:
     project_number = resolve_project_number(args.owner, args.project)
     items = fetch_project_items(args.owner, project_number)
 
+    # First pass: filter items and collect all linked PR URLs
     matched: list[dict[str, Any]] = []
+    all_pr_refs: list[tuple[str, str, int]] = []  # (owner, repo, number)
+
     for item in items:
         # Skip items that are themselves PullRequests
         content = item.get("content") or {}
@@ -111,35 +147,51 @@ def collect_issues(args: argparse.Namespace) -> list[dict[str, Any]]:
         if item.get("status") != args.status:
             continue
 
-        # Parse linked PRs — only include MERGED ones
-        linked_prs_raw = item.get("linked pull requests") or []
-        linked_prs: list[dict[str, Any]] = []
-        for pr_url in linked_prs_raw:
+        # Collect linked PR references (resolve URLs now, batch-lookup later)
+        pr_refs: list[tuple[str, str, int]] = []
+        for pr_url in (item.get("linked pull requests") or []):
             parsed = parse_pr_url(pr_url)
-            if not parsed:
-                continue
-            owner, repo, pr_number = parsed
-            info = fetch_pr_info(owner, repo, pr_number)
+            if parsed:
+                pr_refs.append(parsed)
+                all_pr_refs.append(parsed)
+
+        matched.append({
+            "content": content,
+            "labels": item.get("labels", []),
+            "assignees": item.get("assignees", []),
+            "pr_refs": pr_refs,
+            "pr_urls": item.get("linked pull requests") or [],
+        })
+
+    # Second pass: batch-resolve all linked PRs (author + state) in one call
+    pr_info_map = fetch_prs_batch(all_pr_refs)
+
+    # Third pass: build final issues with only MERGED PRs
+    issues: list[dict[str, Any]] = []
+    for item in matched:
+        content = item["content"]
+        linked_prs: list[dict[str, Any]] = []
+        for pr_url, (owner, repo, number) in zip(item["pr_urls"], item["pr_refs"]):
+            info = pr_info_map.get(number)
             if info is None or info["state"] != "MERGED":
                 continue
             linked_prs.append({
-                "number": pr_number,
+                "number": number,
                 "author": info["author"],
                 "url": pr_url,
             })
 
-        issue: dict[str, Any] = {
+        issues.append({
             "number": content.get("number"),
             "title": content.get("title"),
             "url": content.get("url"),
-            "labels": item.get("labels", []),
-            "assignees": item.get("assignees", []),
+            "labels": item["labels"],
+            "assignees": item["assignees"],
             "linked_prs": linked_prs,
-        }
-        matched.append(issue)
+        })
 
-    matched.sort(key=lambda x: x["number"])
-    return matched
+    issues.sort(key=lambda x: x["number"])
+    return issues
 
 
 def output_json(issues: list[dict[str, Any]], args: argparse.Namespace) -> None:
@@ -238,10 +290,6 @@ def main() -> None:
         output_markdown(issues, args)
     else:
         output_json(issues, args)
-
-
-if __name__ == "__main__":
-    main()
 
 
 if __name__ == "__main__":
