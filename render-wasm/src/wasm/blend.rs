@@ -2,7 +2,7 @@ use macros::ToJs;
 use skia_safe as skia;
 
 use crate::shapes::BlendMode;
-use crate::{with_current_shape_mut, STATE};
+use crate::with_current_shape_mut;
 
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[repr(u8)]
