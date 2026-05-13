@@ -319,6 +319,18 @@
   ([document ^js text]
    (.createTextNode document text)))
 
+(defn escape-html
+  "Escapes special HTML characters in a string so that it can be safely used
+  as innerHTML without risk of XSS."
+  [^js text]
+  (when (some? text)
+    (-> text
+        (str/replace "&" "&amp;")
+        (str/replace "<" "&lt;")
+        (str/replace ">" "&gt;")
+        (str/replace "\"" "&quot;")
+        (str/replace "'" "&#39;"))))
+
 (defn set-html!
   [^js el html]
   (when (some? el)

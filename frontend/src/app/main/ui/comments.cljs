@@ -81,7 +81,7 @@
   ([text]
    (-> (dom/create-element "span")
        (dom/set-data! "type" "text")
-       (dom/set-html! (if (empty? text) zero-width-space text)))))
+       (dom/set-html! (if (empty? text) zero-width-space (dom/escape-html text))))))
 
 (defn- create-mention-node
   "Creates a mention node"
@@ -313,7 +313,7 @@
                      after-span (create-text-node (dm/str " " suffix))
                      sel (wapi/get-selection)]
 
-                 (dom/set-html! span-node (if (empty? prefix) zero-width-space prefix))
+                 (dom/set-html! span-node (if (empty? prefix) zero-width-space (dom/escape-html prefix)))
                  (dom/insert-after! node span-node mention-span)
                  (dom/insert-after! node mention-span after-span)
                  (wapi/set-cursor-after! after-span)
@@ -330,7 +330,7 @@
                (let [node-text (dom/get-text span-node)
                      at-symbol (if (blank-content? node-text) "@" " @")]
 
-                 (dom/set-html! span-node (str/concat node-text at-symbol))
+                 (dom/set-html! span-node (str/concat (dom/escape-html node-text) at-symbol))
                  (wapi/set-cursor-after! span-node))))))
 
         handle-key-down
@@ -378,7 +378,7 @@
 
                      (when span-node
                        (let [txt (.-textContent span-node)]
-                         (dom/set-html! span-node (dm/str (subs txt 0 offset) "\n" zero-width-space (subs txt offset)))
+                         (dom/set-html! span-node (dm/str (dom/escape-html (subs txt 0 offset)) "\n" zero-width-space (dom/escape-html (subs txt offset))))
                          (wapi/set-cursor! span-node (inc offset))
                          (handle-input)))))
 
