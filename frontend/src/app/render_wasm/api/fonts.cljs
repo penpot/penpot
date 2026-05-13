@@ -129,7 +129,6 @@
           mem  (js/Uint8Array. (.-buffer heap) ptr size)]
 
       (.set mem (js/Uint8Array. font-array-buffer))
-      (st/emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
       (h/call wasm/internal-module "_store_font"
               (aget font-id-buffer 0)
               (aget font-id-buffer 1)
@@ -139,6 +138,9 @@
               (:style font-data)
               emoji?
               fallback?)
+      ;; Emit after the WASM store so any subscriber that re-touches text
+      ;; shapes and requests a render sees the font already available.
+      (st/emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
       true)))
 
 ;; Tracks fonts currently being fetched: {url -> fallback?}
