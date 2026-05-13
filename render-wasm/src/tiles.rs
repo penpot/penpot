@@ -21,47 +21,58 @@ impl Tile {
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct TileRect(pub i32, pub i32, pub i32, pub i32);
 
+#[allow(dead_code)]
 impl TileRect {
     pub fn empty() -> Self {
         Self(0, 0, 0, 0)
     }
 
-    #[inline]
+    #[inline(always)]
+    pub fn is_degenerate(&self) -> bool {
+        self.left() > self.right() || self.top() > self.bottom()
+    }
+
+    #[inline(always)]
+    pub fn len(&self) -> i32 {
+        (self.width() + 1) * (self.height() + 1)
+    }
+
+    #[inline(always)]
     pub fn x1(&self) -> i32 {
         self.0
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn y1(&self) -> i32 {
         self.1
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn x2(&self) -> i32 {
         self.2
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn y2(&self) -> i32 {
         self.3
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn left(&self) -> i32 {
         self.0
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn top(&self) -> i32 {
         self.1
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn right(&self) -> i32 {
         self.2
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn bottom(&self) -> i32 {
         self.3
     }
@@ -95,19 +106,19 @@ pub struct TileViewbox {
 }
 
 impl TileViewbox {
-    pub fn new_with_interest(viewbox: Viewbox, interest: i32, scale: f32) -> Self {
+    pub fn new_with_interest(viewbox: Viewbox, interest: i32) -> Self {
         Self {
-            visible_rect: get_tiles_for_viewbox(viewbox, scale),
-            interest_rect: get_tiles_for_viewbox_with_interest(viewbox, interest, scale),
+            visible_rect: get_tiles_for_viewbox(viewbox),
+            interest_rect: get_tiles_for_viewbox_with_interest(viewbox, interest),
             interest,
-            center: get_tile_center_for_viewbox(viewbox, scale),
+            center: get_tile_center_for_viewbox(viewbox),
         }
     }
 
-    pub fn update(&mut self, viewbox: Viewbox, scale: f32) {
-        self.visible_rect = get_tiles_for_viewbox(viewbox, scale);
-        self.interest_rect = get_tiles_for_viewbox_with_interest(viewbox, self.interest, scale);
-        self.center = get_tile_center_for_viewbox(viewbox, scale);
+    pub fn update(&mut self, viewbox: Viewbox) {
+        self.visible_rect = get_tiles_for_viewbox(viewbox);
+        self.interest_rect = get_tiles_for_viewbox_with_interest(viewbox, self.interest);
+        self.center = get_tile_center_for_viewbox(viewbox);
     }
 
     pub fn set_interest(&mut self, interest: i32) {
@@ -136,22 +147,18 @@ pub fn get_tiles_for_rect(rect: skia::Rect, tile_size: f32) -> TileRect {
     TileRect(sx, sy, ex, ey)
 }
 
-pub fn get_tiles_for_viewbox(viewbox: Viewbox, scale: f32) -> TileRect {
-    let tile_size = get_tile_size(scale);
+pub fn get_tiles_for_viewbox(viewbox: Viewbox) -> TileRect {
+    let tile_size = get_tile_size(viewbox.get_scale());
     get_tiles_for_rect(viewbox.area, tile_size)
 }
 
-pub fn get_tiles_for_viewbox_with_interest(
-    viewbox: Viewbox,
-    interest: i32,
-    scale: f32,
-) -> TileRect {
-    let TileRect(sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox, scale);
+pub fn get_tiles_for_viewbox_with_interest(viewbox: Viewbox, interest: i32) -> TileRect {
+    let TileRect(sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox);
     TileRect(sx - interest, sy - interest, ex + interest, ey + interest)
 }
 
-pub fn get_tile_center_for_viewbox(viewbox: Viewbox, scale: f32) -> Tile {
-    let TileRect(sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox, scale);
+pub fn get_tile_center_for_viewbox(viewbox: Viewbox) -> Tile {
+    let TileRect(sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox);
     Tile((ex - sx) / 2, (ey - sy) / 2)
 }
 
@@ -184,6 +191,13 @@ impl TileHashMap {
             grid: HashMap::new(),
             index: HashMap::new(),
         }
+    }
+
+    pub fn is_empty_at(&self, tile: Tile) -> bool {
+        if let Some(uuids) = self.grid.get(&tile) {
+            return uuids.is_empty();
+        }
+        true
     }
 
     pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&HashSet<Uuid>> {

@@ -370,7 +370,7 @@ pub(crate) struct RenderState {
     /// Cleared at the beginning of a render pass; set to true after we clear Cache the first
     /// time we are about to blit a tile into Cache for this pass.
     pub cache_cleared_this_render: bool,
-    /// True iff the current tile had shapes assigned to it when we
+    /// True if the current tile had shapes assigned to it when we
     /// started rendering it. Lets us distinguish a genuinely empty
     /// tile (skip composite, just clear) from a tile whose walker
     /// finished its work in a previous PAF and is now being resumed
@@ -441,10 +441,10 @@ fn drag_crop_snapshot_window_px(
     (ox, oy, win_w, win_h)
 }
 
-pub fn get_cache_size(viewbox: Viewbox, scale: f32, interest: i32) -> skia::ISize {
+pub fn get_cache_size(viewbox: Viewbox, interest: i32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
     let TileRect(isx, isy, iex, iey) =
-        tiles::get_tiles_for_viewbox_with_interest(viewbox, interest, scale);
+        tiles::get_tiles_for_viewbox_with_interest(viewbox, interest);
 
     let dx = if isx.signum() != iex.signum() { 1 } else { 0 };
     let dy = if isy.signum() != iey.signum() { 1 } else { 0 };
@@ -565,7 +565,6 @@ impl RenderState {
             tile_viewbox: tiles::TileViewbox::new_with_interest(
                 viewbox,
                 options.dpr_viewport_interest_area_threshold,
-                1.0,
             ),
             pending_tiles: PendingTiles::new(),
             nested_fills: vec![],
@@ -791,6 +790,8 @@ impl RenderState {
                 self.viewbox.height().floor() as i32,
             )?;
             self.fonts.set_scale_debug_font(dpr);
+            self.viewbox.set_dpr(dpr);
+            self.surfaces.set_dpr(dpr);
         }
         Ok(())
     }
@@ -836,7 +837,7 @@ impl RenderState {
         let dpr_height = (height as f32 * self.options.dpr).floor() as i32;
         self.surfaces.resize(dpr_width, dpr_height)?;
         self.viewbox.set_wh(width as f32, height as f32);
-        self.tile_viewbox.update(self.viewbox, self.get_scale());
+        self.tile_viewbox.update(self.viewbox);
 
         Ok(())
     }
@@ -1901,8 +1902,6 @@ impl RenderState {
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
         let _start = performance::begin_timed_log!("render_from_cache");
         performance::begin_measure!("render_from_cache");
-        let cached_scale = self.get_cached_scale();
-
         let bg_color = self.background_color;
 
         // During fast mode (pan/zoom), if a previous full-quality render still has pending tiles,
@@ -1910,7 +1909,7 @@ impl RenderState {
         // and drawing from it avoids mixing a partially-updated Cache surface with missing tiles.
         if self.options.is_fast_mode() && self.render_in_progress && self.surfaces.has_atlas() {
             self.surfaces
-                .draw_atlas_to_backbuffer(self.viewbox, self.options.dpr, bg_color);
+                .draw_atlas_to_backbuffer(self.viewbox, bg_color);
 
             self.present_frame(shapes);
             performance::end_measure!("render_from_cache");
@@ -1928,7 +1927,6 @@ impl RenderState {
                 tiles::get_tiles_for_viewbox_with_interest(
                     self.cached_viewbox,
                     interest,
-                    cached_scale,
                 );
             let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr;
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr;
@@ -1973,7 +1971,6 @@ impl RenderState {
                     if self.surfaces.has_atlas() {
                         self.surfaces.draw_atlas_to_backbuffer(
                             self.viewbox,
-                            self.options.dpr,
                             bg_color,
                         );
 
@@ -2008,18 +2005,15 @@ impl RenderState {
             // would be at wrong positions — skip them and let the full
             // render after set_view_end handle it.
             if !self.zoom_changed() {
-                let current_scale = self.get_scale();
-                let visible_rect = tiles::get_tiles_for_viewbox(self.viewbox, current_scale);
-                let vb_offset_x = self.viewbox.area.left * current_scale;
-                let vb_offset_y = self.viewbox.area.top * current_scale;
-
+                let visible_rect = tiles::get_tiles_for_viewbox(self.viewbox);
+                let offset = self.viewbox.get_offset();
                 for tx in visible_rect.x1()..=visible_rect.x2() {
                     for ty in visible_rect.y1()..=visible_rect.y2() {
                         let tile = tiles::Tile::from(tx, ty);
                         if self.surfaces.has_cached_tile_surface(tile) {
                             let tile_rect = skia::Rect::from_xywh(
-                                tx as f32 * tiles::TILE_SIZE - vb_offset_x,
-                                ty as f32 * tiles::TILE_SIZE - vb_offset_y,
+                                tx as f32 * tiles::TILE_SIZE - offset.x,
+                                ty as f32 * tiles::TILE_SIZE - offset.y,
                                 tiles::TILE_SIZE,
                                 tiles::TILE_SIZE,
                             );
@@ -2076,7 +2070,7 @@ impl RenderState {
         let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
 
-        self.tile_viewbox.update(self.viewbox, scale);
+        self.tile_viewbox.update(self.viewbox);
         self.focus_mode.reset();
 
         performance::begin_measure!("render");
@@ -2115,12 +2109,10 @@ impl RenderState {
 
         let viewbox_cache_size = get_cache_size(
             self.viewbox,
-            scale,
             self.options.dpr_viewport_interest_area_threshold,
         );
         let cached_viewbox_cache_size = get_cache_size(
             self.cached_viewbox,
-            scale,
             self.options.dpr_viewport_interest_area_threshold,
         );
         // Only resize cache if the new size is larger than the cached size
@@ -2222,6 +2214,9 @@ impl RenderState {
     ) -> Result<()> {
         performance::begin_measure!("process_animation_frame");
         self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
+
+        self.surfaces.draw_tile_atlas_to_backbuffer(&self.viewbox, &self.tile_viewbox);
+        self.flush_and_submit();
 
         if self.render_in_progress {
             // Partial frame: just flush GPU work. The display shows the last
@@ -3430,47 +3425,9 @@ impl RenderState {
 
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
-                if self.surfaces.has_cached_tile_surface(current_tile) {
-                    performance::begin_measure!("render_shape_tree::cached");
-                    // During interactive transforms, `Target` is preserved and seeded once
-                    // from Backbuffer. Cached tiles are therefore already visible and
-                    // re-blitting them costs extra GPU work.
-                    let tile_rect = self.get_current_tile_bounds()?;
-                    if !self.options.is_interactive_transform() {
-                        self.surfaces.draw_cached_tile_surface(
-                            current_tile,
-                            tile_rect,
-                            self.background_color,
-                        );
-                    }
-
-                    // Also draw the cached tile to the Cache surface so
-                    // render_from_cache (used during pan) has the full scene.
-                    // apply_render_to_final_canvas clears Cache on the first
-                    // uncached tile, but cached tiles must also be present.
-                    if !self.options.is_fast_mode() {
-                        if !self.cache_cleared_this_render {
-                            self.surfaces.clear_cache(self.background_color);
-                            self.cache_cleared_this_render = true;
-                        }
-                        let aligned_rect = self.get_aligned_tile_bounds(current_tile);
-                        self.surfaces.draw_cached_tile_to_cache(
-                            current_tile,
-                            &aligned_rect,
-                            self.background_color,
-                        );
-                    }
-                    performance::end_measure!("render_shape_tree::cached");
-
-                    if self.options.is_debug_visible() {
-                        debug::render_workspace_current_tile(
-                            self,
-                            "Cached".to_string(),
-                            current_tile,
-                            tile_rect,
-                        );
-                    }
-                } else {
+                // NOTA: Ahora no tenemos que cubrir el caso en el que el tile
+                // no está cacheado porque se hará todo desde el draw_atlas.
+                if !self.surfaces.has_cached_tile_surface(current_tile) {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) = self
                         .render_shape_tree_partial_uncached(tree, timestamp, allow_stop, false)?;
@@ -3509,6 +3466,10 @@ impl RenderState {
                     } else {
                         // Tile is uncached and has no shapes to render
                         self.apply_render_to_final_canvas(tile_rect)?;
+                    }
+                } else {
+                    if self.tiles.is_empty_at(current_tile) {
+                        self.surfaces.remove_cached_tile_surface(current_tile);
                     }
                 }
             }
@@ -3927,11 +3888,7 @@ impl RenderState {
         if let Some((_, export_scale)) = self.export_context {
             return export_scale;
         }
-        self.viewbox.zoom() * self.options.dpr
-    }
-
-    pub fn get_cached_scale(&self) -> f32 {
-        self.cached_viewbox.zoom() * self.options.dpr
+        self.viewbox.get_scale()
     }
 
     pub fn zoom_changed(&self) -> bool {

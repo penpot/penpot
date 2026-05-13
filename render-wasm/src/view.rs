@@ -1,5 +1,5 @@
-use std::ops::{Mul};
 use crate::math::{Matrix, Point, Rect, Size};
+use std::ops::Mul;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Viewbox {
@@ -22,6 +22,7 @@ impl Default for Viewbox {
     }
 }
 
+#[allow(dead_code)]
 impl Viewbox {
     pub fn new(width: f32, height: f32) -> Self {
         let size = Size::new(width, height);
@@ -49,11 +50,6 @@ impl Viewbox {
         self.size.height
     }
 
-    pub fn set_dpr(&mut self, dpr: f32) -> f32 {
-        self.dpr = dpr;
-        dpr
-    }
-
     pub fn set_all(&mut self, zoom: f32, pan_x: f32, pan_y: f32) {
         self.pan.set(pan_x, pan_y);
         self.zoom = zoom;
@@ -69,6 +65,18 @@ impl Viewbox {
         self.size.set(width, height);
         self.area
             .set_wh(self.size.width / self.zoom, self.size.height / self.zoom);
+    }
+
+    pub fn set_dpr(&mut self, dpr: f32) {
+        self.dpr = dpr;
+    }
+
+    pub fn get_scale(&self) -> f32 {
+        self.zoom * self.dpr
+    }
+
+    pub fn get_offset(&self) -> Point {
+        self.area.tl().mul(self.get_scale())
     }
 
     pub fn pan(&self) -> Point {
