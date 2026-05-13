@@ -36,7 +36,7 @@
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as export]
    [app.main.ui.shapes.frame :as frame]
-   [app.main.ui.shapes.grid-layout-viewer :refer [grid-layout-viewer]]
+   [app.main.ui.shapes.grid-layout-viewer :refer [grid-layout-viewer*]]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
@@ -338,7 +338,7 @@
              (map #(get objects %))
              (filter #(empty? (:shapes %))))]
     (for [grid empty-grids]
-      [:& grid-layout-viewer {:shape grid :objects objects}])))
+      [:> grid-layout-viewer* {:shape grid :objects objects}])))
 
 ;; Component for rendering a thumbnail of a single componenent. Mainly
 ;; used to render thumbnails on assets panel.

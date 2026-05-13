@@ -17,14 +17,10 @@
    [app.common.types.shape.layout :as ctl]
    [rumext.v2 :as mf]))
 
-(mf/defc grid-cell-area-label
-  {::mf/wrap-props false}
-  [props]
-
-  (let [cell-origin (unchecked-get props "origin")
-        cell-width  (unchecked-get props "width")
-        text        (unchecked-get props "text")
-
+(mf/defc grid-cell-area-label*
+  [{:keys [origin width text]}]
+  (let [cell-origin origin
+        cell-width  width
         area-width (* 10 (count text))
         area-height 25
         area-x (- (+ (:x cell-origin) cell-width) area-width)
@@ -50,14 +46,9 @@
                      :text-anchor "middle"}}
       text]]))
 
-(mf/defc grid-cell
-  {::mf/wrap-props false}
-  [props]
-  (let [shape       (unchecked-get props "shape")
-        cell        (unchecked-get props "cell")
-        layout-data (unchecked-get props "layout-data")
-
-        cell-bounds (gsg/cell-bounds layout-data cell)
+(mf/defc grid-cell*
+  [{:keys [shape cell layout-data]}]
+  (let [cell-bounds (gsg/cell-bounds layout-data cell)
         cell-origin (gpo/origin cell-bounds)
         cell-width  (gpo/width-points cell-bounds)
         cell-height (gpo/height-points cell-bounds)
@@ -76,16 +67,13 @@
                :fill "none"}}]
 
      (when (:area-name cell)
-       [:& grid-cell-area-label {:origin cell-origin
-                                 :width cell-width
-                                 :text (:area-name cell)}])]))
+       [:> grid-cell-area-label* {:origin cell-origin
+                                  :width cell-width
+                                  :text (:area-name cell)}])]))
 
-(mf/defc grid-layout-viewer
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")
-        objects (unchecked-get props "objects")
-        bounds (d/lazy-map (keys objects) #(gsh/shape->points (get objects %)))
+(mf/defc grid-layout-viewer*
+  [{:keys [shape objects]}]
+  (let [bounds (d/lazy-map (keys objects) #(gsh/shape->points (get objects %)))
         children
         (->> (cfh/get-immediate-children objects (:id shape))
              (remove :hidden)
@@ -95,7 +83,7 @@
 
     [:g.cells
      (for [cell (ctl/get-cells shape {:sort? true})]
-       [:& grid-cell {:key (dm/str "cell-" (:id cell))
-                      :shape shape
-                      :layout-data layout-data
-                      :cell cell}])]))
+       [:> grid-cell* {:key (dm/str "cell-" (:id cell))
+                       :shape shape
+                       :layout-data layout-data
+                       :cell cell}])]))
