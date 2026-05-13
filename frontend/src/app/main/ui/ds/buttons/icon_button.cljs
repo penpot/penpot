@@ -25,15 +25,19 @@
    [:aria-label :string]
    [:tooltip-placement {:optional true}
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]
+   ;; Indicates that the button has a flyout menu, and should display an indicator
+   [:flyout-indicator {:optional true} :boolean]
    [:variant {:optional true}
     [:maybe [:enum "primary" "secondary" "ghost" "destructive" "action"]]]])
 
 (mf/defc icon-button*
   {::mf/schema schema:icon-button
    ::mf/memo true}
-  [{:keys [class icon icon-class icon-size variant aria-label children tooltip-placement tooltip-class type] :rest props}]
+  [{:keys [class icon icon-class icon-size variant aria-label children tooltip-placement tooltip-class type flyout-indicator] :rest props}]
   (let [variant
         (d/nilv variant "primary")
+
+        flyout-indicator (d/nilv flyout-indicator false)
 
         button-ref (mf/use-ref nil)
 
@@ -62,4 +66,10 @@
                   :id tooltip-id}
      [:> :button props
       [:> icon* {:icon-id icon :aria-hidden true :class icon-class :size icon-size}]
+      (when flyout-indicator
+        [:svg {:view-box "0 0 6 6"
+               :aria-hidden true
+               :class (stl/css :flyout-indicator)}
+         [:path {:d "M4,2 L4,3.15 C4,3.62 3.62,4 3.15,4 L2,4"
+                 :stroke-linecap "round"}]])
       children]]))

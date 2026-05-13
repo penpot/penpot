@@ -49,3 +49,13 @@
   --button-width: #{$sz-24};
   --button-height: #{$sz-24};
 }
+
+.flyout-indicator {
+  position: absolute;
+  inset-block-end: 4px;
+  inset-inline-end: 4px;
+  stroke: var(--stroke-color);
+  fill: none;
+  inline-size: $sz-6;
+  block-size: $sz-6;
+}

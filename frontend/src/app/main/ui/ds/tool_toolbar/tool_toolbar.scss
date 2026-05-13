@@ -151,16 +151,6 @@
   }
 }
 
-.main-toolbar-flyout-indicator {
-  position: absolute;
-  inset-block-end: 5px;
-  inset-inline-end: 5px;
-  stroke: var(--stroke-color);
-  fill: none;
-  inline-size: $sz-6;
-  block-size: $sz-6;
-}
-
 .toolbar-handler {
   block-size: $sz-12;
   display: flex;
