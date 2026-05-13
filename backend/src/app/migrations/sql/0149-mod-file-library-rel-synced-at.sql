@@ -10,6 +10,10 @@ INSERT INTO file_library_sync (file_id, library_file_id, synced_at)
 SELECT file_id, library_file_id, synced_at
   FROM file_library_rel;
 
-ALTER TABLE file_library_rel
-  DROP COLUMN synced_at;
+-- DEPRECATED: the `synced_at` column on `file_library_rel` is deprecated
+-- and will be removed in a future migration. It's kept temporarily
+-- for backward compatibility while data is migrated to `file_library_sync`.
+COMMENT ON COLUMN file_library_rel.synced_at IS
+  'DEPRECATED: will be removed in a future migration; kept temporarily for backward compatibility';
+
 
