@@ -50,10 +50,8 @@
                      :entries entries
                      :on-finish-import on-finish-import})))))))
 
-(mf/defc import-form
-  {::mf/forward-ref true
-   ::mf/props :obj}
-
+(mf/defc import-form*
+  {::mf/forward-ref true}
   [{:keys [project-id on-finish-import]} external-ref]
   (let [on-file-selected (use-import-file project-id on-finish-import)]
     [:form.import-file {:aria-hidden "true"}

@@ -255,9 +255,8 @@
                     :on-click on-delete}
              deprecated-icon/close]]]))]]))
 
-(mf/defc installed-font-context-menu
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc installed-font-context-menu*
+  {::mf/private true}
   [{:keys [is-open on-close on-edit on-download on-delete]}]
   (let [options (mf/with-memo [on-edit on-download on-delete]
                   [{:name    (tr "labels.edit")
@@ -278,10 +277,9 @@
       :left -115
       :options options}]))
 
-(mf/defc installed-font
-  {::mf/props :obj
-   ::mf/private true
-   ::mf/memo true}
+(mf/defc installed-font*
+  {::mf/private true
+   ::mf/wrap [mf/memo]}
   [{:keys [font-id variants can-edit]}]
   (let [font        (first variants)
 
@@ -425,7 +423,7 @@
                   :on-click on-menu-open}
            deprecated-icon/menu]
 
-          [:& installed-font-context-menu
+          [:> installed-font-context-menu*
            {:on-close on-menu-close
             :is-open menu-open?
             :on-delete on-delete-font
@@ -460,10 +458,10 @@
         (for [[font-id variants] (->> (vals fonts)
                                       (filter matches?)
                                       (group-by :font-id))]
-          [:& installed-font {:key (dm/str font-id "-installed")
-                              :font-id font-id
-                              :can-edit can-edit
-                              :variants variants}])]
+          [:> installed-font* {:key (dm/str font-id "-installed")
+                               :font-id font-id
+                               :can-edit can-edit
+                               :variants variants}])]
 
        (nil? fonts)
        [:div {:class (stl/css :fonts-placeholder)}
