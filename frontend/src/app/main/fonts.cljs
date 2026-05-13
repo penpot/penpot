@@ -211,6 +211,11 @@
 ;; LOAD API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Emits the font-id of every font that finishes loading (browser side). Lets
+;; consumers (e.g. app.main.data.workspace.texts) react to font loads without
+;; this namespace having to depend on the store/potok/ui.
+(defonce font-loaded-stream (rx/subject))
+
 (defn ensure-loaded!
   ([font-id] (ensure-loaded! font-id nil))
   ([font-id variant-id]
@@ -240,6 +245,7 @@
          (let [on-load (fn [resolve]
                          (swap! loaded conj font-id)
                          (swap! loading dissoc font-id)
+                         (rx/push! font-loaded-stream font-id)
                          (resolve font-id))
 
                load-p (-> (p/create
