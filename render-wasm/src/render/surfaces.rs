@@ -396,6 +396,58 @@ impl Surfaces {
         Ok(())
     }
 
+    /// Clears a doc-space rect from the atlas **without** growing it.
+    ///
+    /// Unlike [`clear_doc_rect_in_atlas`], this method clips `doc_rect` to the
+    /// current atlas bounds and skips silently if there is no overlap. Use this
+    /// when evicting stale shape content (e.g. before a drag re-render) where
+    /// growing the atlas to accommodate an out-of-range rect would be wasteful.
+    pub fn clear_doc_rect_in_atlas_clipped(&mut self, doc_rect: skia::Rect) {
+        if !self.has_atlas() || doc_rect.is_empty() {
+            return;
+        }
+
+        let atlas_scale = self.atlas_scale.max(0.01);
+        let atlas_doc_right = self.atlas_origin.x + (self.atlas_size.width as f32) / atlas_scale;
+        let atlas_doc_bottom = self.atlas_origin.y + (self.atlas_size.height as f32) / atlas_scale;
+
+        // Intersect with current atlas bounds in doc space.
+        let mut clipped = doc_rect;
+        let atlas_bounds = skia::Rect::from_ltrb(
+            self.atlas_origin.x,
+            self.atlas_origin.y,
+            atlas_doc_right,
+            atlas_doc_bottom,
+        );
+        if !clipped.intersect(atlas_bounds) {
+            return;
+        }
+
+        // Apply atlas_doc_bounds clamping.
+        if let Some(bounds) = self.atlas_doc_bounds {
+            if !clipped.intersect(bounds) {
+                return;
+            }
+        }
+
+        if clipped.is_empty() {
+            return;
+        }
+
+        let dst = skia::Rect::from_xywh(
+            (clipped.left - self.atlas_origin.x) * atlas_scale,
+            (clipped.top - self.atlas_origin.y) * atlas_scale,
+            clipped.width() * atlas_scale,
+            clipped.height() * atlas_scale,
+        );
+
+        let canvas = self.atlas.canvas();
+        canvas.save();
+        canvas.clip_rect(dst, None, true);
+        canvas.clear(skia::Color::TRANSPARENT);
+        canvas.restore();
+    }
+
     pub fn clear_tiles(&mut self) {
         self.tiles.clear();
     }

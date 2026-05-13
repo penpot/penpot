@@ -63,6 +63,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix render-wasm atlas corruption when dragging large shapes after a zoom or pan change (stale multi-zoom-level pixels no longer appear at the old shape position).
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
@@ -124,6 +125,7 @@
 - Fix plugin parse-point returning plain map instead of Point record (by @FairyPigDev) [Github #9129](https://github.com/penpot/penpot/pull/9129)
 - Fix `:heigth` typo in clipboard frame-same-size? (by @iot2edge) [Github #9250](https://github.com/penpot/penpot/pull/9250)
 - Fix Settings and Notifications "Update Settings" button enabled state when form has no changes (by @moorsecopers99) [Github #9090](https://github.com/penpot/penpot/issues/9090)
+- Fix library updates reappear after being applied and the file is reloaded [Taiga #14040](https://tree.taiga.io/project/penpot/issue/14040)
 
 ## 2.15.0 (Unreleased)
 
