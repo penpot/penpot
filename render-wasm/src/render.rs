@@ -3507,6 +3507,25 @@ impl RenderState {
 
         let mut result = HashSet::<tiles::Tile>::with_capacity(old_tiles.len());
 
+        // When the shape has an active modifier (i.e. is being moved/resized),
+        // clear its OLD doc-space extent from the atlas using the raw
+        // (pre-modifier) shape.  The per-tile clearing done later via
+        // `clear_tile_in_atlas` only covers tiles tracked in `atlas_tile_doc_rects`
+        // at the current zoom level. However, the atlas may also contain stale
+        // pixels from previous zoom levels (tiles are larger / smaller in doc
+        // space at different zoom scales) that were never re-tracked after a zoom
+        // change.  Clearing the full raw extrect here removes all such residual
+        // content without growing the atlas.
+        //
+        // We intentionally skip this when there is NO modifier so that plain
+        // zoom / pan tile-index rebuilds do NOT invalidate valid atlas content.
+        if tree.get_modifier(&shape.id).is_some() {
+            if let Some(raw_shape) = tree.get_raw(&shape.id) {
+                let old_extrect = raw_shape.extrect(tree, 1.0);
+                self.surfaces.clear_doc_rect_in_atlas_clipped(old_extrect);
+            }
+        }
+
         // First, remove the shape from all tiles where it was previously located
         for tile in old_tiles {
             self.tiles.remove_shape_at(tile, shape.id);
