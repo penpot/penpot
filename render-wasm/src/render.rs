@@ -1721,6 +1721,16 @@ impl RenderState {
                 && doc_bounds.top >= viewport.top
                 && doc_bounds.right <= viewport.right
                 && doc_bounds.bottom <= viewport.bottom;
+
+            // When the shape extends beyond the viewport to the left or top,
+            // `left`/`top` are negative. Skia clamps `makeImageSnapshot` to the
+            // surface bounds, so the returned image actually starts at pixel 0 —
+            // not at the negative coordinate. Store the clamped value so that
+            // `doc_left`/`doc_top` computed during the drag reflects the true
+            // image origin in the backbuffer.
+            let capture_src_left = left.max(0);
+            let capture_src_top = top.max(0);
+
             self.backbuffer_crop_cache.insert(
                 id,
                 InteractiveDragCrop {
@@ -1729,8 +1739,8 @@ impl RenderState {
                     fits_viewport_at_capture,
                     capture_vb_left: vb_left,
                     capture_vb_top: vb_top,
-                    capture_src_left: src_irect.left,
-                    capture_src_top: src_irect.top,
+                    capture_src_left,
+                    capture_src_top,
                     image,
                 },
             );
