@@ -466,11 +466,11 @@ impl Surfaces {
         );
         canvas.clear(background);
 
-        let s = viewbox.zoom * self.dpr;
+        let s = viewbox.get_scale();
         let atlas_scale = self.atlas_scale.max(0.01);
         canvas.translate((
-            (self.atlas_origin.x + viewbox.pan_x) * s,
-            (self.atlas_origin.y + viewbox.pan_y) * s,
+            (self.atlas_origin.x + viewbox.pan.x) * s,
+            (self.atlas_origin.y + viewbox.pan.y) * s,
         ));
         canvas.scale((s / atlas_scale, s / atlas_scale));
 
