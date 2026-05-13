@@ -870,3 +870,73 @@
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
+(t/deftest test-set-swap-slot-copy-paste-two-levels-nested-head
+  ;; Test that when copy-pasting a sub-instance head that contains a deeper sub-instance
+  ;; head (with no swap-slot), the advance-shape step correctly sets a swap-slot on the
+  ;; inner head. Without the fix this causes a backend :referential-integrity / :missing-slot
+  ;; validation error.
+  (t/async
+    done
+    (let [;; ==== Setup
+          ;; {:main1-root} [:name Frame1]            # [Component :comp1]
+          ;;     :main1-child [:name Rect1]
+          ;;
+          ;; {:main2-root} [:name Frame2]            # [Component :comp2]
+          ;;     :nested-head1 [:name Frame1]        @--> [Component :comp1] :main1-root
+          ;;         <no-label> [:name Rect1]        ---> :main1-child
+          ;;
+          ;; {:main3-root} [:name Frame3]            # [Component :comp3]
+          ;;     :nested-head2 [:name Frame2]        @--> [Component :comp2] :main2-root
+          ;;         :nested-subhead2 [:name Frame1] @--> [Component :comp1] :main1-root
+          ;;             <no-label> [:name Rect1]    ---> :main1-child
+          ;;
+          ;; :copy3-root [:name Frame3]              #--> [Component :comp3] :main3-root
+          ;;     <copy-head2> [:name Frame2]         @--> [Component :comp2] :nested-head2  (no swap-slot)
+          ;;         <copy-subhead1> [:name Frame1]  @--> [Component :comp1] :nested-subhead2 (no swap-slot)
+          ;;             <no-label> [:name Rect1]    ---> <no-label>
+          file  (-> (cthf/sample-file :file1)
+                    (ctho/add-two-levels-nested-component-with-copy
+                     :comp1 :main1-root :main1-child
+                     :comp2 :main2-root :nested-head1
+                     :comp3 :main3-root :nested-head2 :nested-subhead2
+                     :copy3-root))
+          store (ths/setup-store file)
+
+          ;; ==== Action
+          page           (cthf/current-page file)
+          copy3-root     (cths/get-shape file :copy3-root)
+          ;; The copy of :nested-head2 inside copy3-root (sub-instance head of comp2, no swap-slot,
+          ;; nested 1 level deep — so level-delta=1 during copy-paste)
+          copy-head2-id  (first (:shapes copy3-root))
+          copy-head2     (get (:objects page) copy-head2-id)
+          features       #{"components/v2"}
+          version        46
+
+          pdata (thp/simulate-copy-shape #{copy-head2-id} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'               (ths/get-file-from-state new-state)
+               page'               (cthf/current-page file')
+               ;; Find the pasted copy-head2 at the page root (parent = uuid/zero)
+               pasted-head2'       (find-copied-shape copy-head2 page' uuid/zero)
+               ;; Its first child is the copy of :nested-subhead2 (sub-instance head of comp1)
+               pasted-subhead1-id' (some-> pasted-head2' :shapes first)
+               pasted-subhead1'    (get (:objects page') pasted-subhead1-id')]
+
+           ;; ==== Check
+           (t/is (some? pasted-head2'))
+           (t/is (some? pasted-subhead1'))
+
+           ;; The inner sub-instance head must have a swap-slot set because advance-shape
+           ;; changed its shape-ref (level-delta=1). The swap-slot records the pre-advance
+           ;; shape-ref so the backend can validate referential integrity.
+           (t/is (some? (ctk/get-swap-slot pasted-subhead1'))
+                 "Pasted inner sub-instance head must have a swap-slot after advance-shape")))))))
+
