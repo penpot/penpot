@@ -6259,6 +6259,10 @@ msgstr "Mostrar/ocultar desenfoque"
 msgid "workspace.options.canvas-background"
 msgstr "Color de fondo"
 
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+msgid "workspace.options.pixel grid-color"
+msgstr "Color de la rejilla de pixeles"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
 msgid "workspace.options.clip-content"
 msgstr "Truncar contenido"
@@ -8718,6 +8722,12 @@ msgstr "Hecho"
 msgid "workspace.top-bar.view-only"
 msgstr "**Inspeccionando código** (View only)"
 
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Renderizado no disponible. Recarga la página para restaurar la edición."
+
+msgid "workspace.top-bar.webgl-context-lost.reload"
+msgstr "Recargar"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:333
 msgid "workspace.undo.empty"
 msgstr "Todavía no hay cambios en el histórico"
@@ -8958,6 +8968,14 @@ msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%
 #: src/app/main/ui/workspace/sidebar/versions.cljs:431
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
+
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-lost.toast"
+msgstr "Se perdió el contexto WebGL"
+
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "Se recuperó el contexto WebGL"
 
 msgid "webgl.modals.webgl-unavailable.title"
 msgstr "Vaya, WebGL no está disponible"

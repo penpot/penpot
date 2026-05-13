@@ -10,8 +10,7 @@
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
-(mf/defc link
-  {::mf/wrap-props false}
+(mf/defc link*
   [{:keys [action class data-testid keyboard-action children]}]
   (let [keyboard-action (d/nilv keyboard-action action)]
     [:a {:on-click action

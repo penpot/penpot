@@ -20,6 +20,10 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(defn- render-context-lost?
+  [state]
+  (true? (get-in state [:render-state :lost])))
+
 (defn initialize-viewport
   [{:keys [width height] :as size}]
 
@@ -101,7 +105,9 @@
   (ptk/reify ::update-viewport-position-center
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local calculate-centered-viewbox position))))
+      (if (render-context-lost? state)
+        state
+        (update state :workspace-local calculate-centered-viewbox position)))))
 
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]
@@ -118,11 +124,13 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-local :vbox]
-                 (fn [vbox]
-                   (-> vbox
-                       (update :x x)
-                       (update :y y)))))))
+      (if (render-context-lost? state)
+        state
+        (update-in state [:workspace-local :vbox]
+                   (fn [vbox]
+                     (-> vbox
+                         (update :x x)
+                         (update :y y))))))))
 
 (defn update-viewport-size
   [resize-type {:keys [width height] :as size}]
@@ -172,7 +180,8 @@
     (watch [_ state stream]
       (let [stopper (->> stream (rx/filter (ptk/type? ::finish-panning)))
             zoom (get-in state [:workspace-local :zoom])]
-        (when-not (get-in state [:workspace-local :panning])
+        (when (and (not (render-context-lost? state))
+                   (not (get-in state [:workspace-local :panning])))
           (rx/concat
            (rx/of #(-> % (assoc-in [:workspace-local :panning] true)))
            (->> stream

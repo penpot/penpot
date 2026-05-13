@@ -16,7 +16,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc empty-project-placeholder*
@@ -27,9 +26,9 @@
         on-add-library
         (mf/use-fn
          (fn [_]
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
-                                            ::ev/origin "dashboard"
-                                            :section "empty-placeholder-projects"}))
+           (st/emit! (ev/event {::ev/name "explore-libraries-click"
+                                ::ev/origin "dashboard"
+                                :section "empty-placeholder-projects"}))
            (dom/open-new-window "https://penpot.app/penpothub/libraries-templates")))
 
         on-import

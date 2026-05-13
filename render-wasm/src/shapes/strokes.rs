@@ -293,6 +293,10 @@ impl Stroke {
             }
         }
 
+        if let Some(cap) = self.to_skia_linecap() {
+            paint.set_stroke_cap(cap);
+        }
+
         paint
     }
 
@@ -329,6 +333,19 @@ impl Stroke {
     pub fn cap_bounds_margin(&self) -> f32 {
         cap_margin_for_cap(self.cap_start, self.width)
             .max(cap_margin_for_cap(self.cap_end, self.width))
+    }
+
+    /// Returns a Skia `PaintCap` to apply natively on the stroke paint when
+    /// both ends share the same simple line cap (`Round/Round` or
+    /// `Square/Square`). Skia only emits cap geometry at sub-path endpoints,
+    /// so this is a no-op on closed paths and avoids the extra fill draw the
+    /// manual caps would otherwise require on open paths.
+    pub fn to_skia_linecap(&self) -> Option<skia::paint::Cap> {
+        match (self.cap_start, self.cap_end) {
+            (Some(StrokeCap::Round), Some(StrokeCap::Round)) => Some(skia::paint::Cap::Round),
+            (Some(StrokeCap::Square), Some(StrokeCap::Square)) => Some(skia::paint::Cap::Square),
+            _ => None,
+        }
     }
 }
 
