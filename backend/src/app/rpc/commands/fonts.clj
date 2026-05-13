@@ -13,6 +13,7 @@
    [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.font :as types.font]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -96,7 +97,7 @@
    [:map {:title "create-font-variant"}
     [:team-id    ::sm/uuid]
     [:font-id    ::sm/uuid]
-    [:font-family ::sm/text]
+    [:font-family types.font/schema:font-family]
     [:font-weight [::sm/one-of {:format "number"} valid-weight]]
     [:font-style  [::sm/one-of {:format "string"} valid-style]]
     [:data    {:optional true} [:map-of ::sm/text [:or ::sm/bytes [::sm/vec ::sm/bytes]]]]
@@ -273,7 +274,7 @@
   [:map {:title "update-font"}
    [:team-id ::sm/uuid]
    [:id ::sm/uuid]
-   [:name :string]])
+   [:name types.font/schema:font-family]])
 
 (sv/defmethod ::update-font
   {::doc/added "1.18"

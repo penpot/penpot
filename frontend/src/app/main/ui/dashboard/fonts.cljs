@@ -9,6 +9,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.media :as cm]
+   [app.common.schema :as sm]
+   [app.common.types.font :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.fonts :as df]
@@ -139,7 +141,8 @@
                             (dom/get-data "id")
                             (uuid/parse))
                  name   (dom/get-value target)]
-             (when-not (str/blank? name)
+             (when (and (not (str/blank? name))
+                        (sm/validate ctf/schema:font-family name))
                (swap! fonts* df/rename-and-regroup id name installed-fonts)))))
 
         on-change-name
@@ -317,7 +320,9 @@
          (fn [_]
            (reset! edition* false)
            (when-not (str/blank? font-family)
-             (st/emit! (df/update-font {:id font-id :name font-family})))))
+             (if (sm/validate ctf/schema:font-family font-family)
+               (st/emit! (df/update-font {:id font-id :name font-family}))
+               (st/emit! (ntf/error (tr "errors.font-family-invalid-chars")))))))
 
         on-key-down
         (mf/use-fn

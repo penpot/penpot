@@ -790,3 +790,100 @@
       (t/is (some? (:error out)))
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :media-type-not-allowed (-> out :error ex-data :code))))))
+
+;; --- Font family name validation / XSS prevention
+
+(t/deftest create-font-variant-with-invalid-family
+  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof    (th/create-profile* 1 {:is-active true})
+          team-id (:default-team-id prof)
+          font-id (uuid/custom 10 100)
+          data    (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))]
+
+      ;; name with < should fail
+      (let [params {::th/type :create-font-variant
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :font-id font-id
+                    :font-family "evil<script>alert(1)</script>"
+                    :font-weight 400 :font-style "normal"
+                    :data {"font/ttf" data}}
+            out    (th/command! params)]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+      ;; name with ' should fail
+      (let [params {::th/type :create-font-variant
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :font-id font-id
+                    :font-family "evil'name"
+                    :font-weight 400 :font-style "normal"
+                    :data {"font/ttf" data}}
+            out    (th/command! params)]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-type? (:error out) :validation)))
+
+      ;; name with } should fail
+      (let [params {::th/type :create-font-variant
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :font-id font-id
+                    :font-family "evil}name"
+                    :font-weight 400 :font-style "normal"
+                    :data {"font/ttf" data}}
+            out    (th/command! params)]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-type? (:error out) :validation)))
+
+      ;; valid name should succeed
+      (let [params {::th/type :create-font-variant
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :font-id (uuid/custom 10 101)
+                    :font-family "Source Sans Pro"
+                    :font-weight 400 :font-style "normal"
+                    :data {"font/ttf" data}}
+            out    (th/command! params)]
+        (t/is (th/success? out))))))
+
+(t/deftest update-font-with-invalid-family
+  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof    (th/create-profile* 1 {:is-active true})
+          team-id (:default-team-id prof)
+          font-id (uuid/custom 10 102)
+          data    (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))]
+
+      ;; Create a valid font first
+      (let [params {::th/type :create-font-variant
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :font-id font-id
+                    :font-family "ValidFont"
+                    :font-weight 400 :font-style "normal"
+                    :data {"font/ttf" data}}
+            out    (th/command! params)]
+        (t/is (th/success? out)))
+
+      ;; rename with < should fail
+      (let [params {::th/type :update-font
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :id font-id
+                    :name "evil<script>x</script>"}
+            out    (th/command! params)]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+      ;; rename with ' should fail
+      (let [params {::th/type :update-font
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :id font-id
+                    :name "evil'name"}
+            out    (th/command! params)]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-type? (:error out) :validation)))
+
+      ;; valid rename should succeed
+      (let [params {::th/type :update-font
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id :id font-id
+                    :name "Valid Font Name"}
+            out    (th/command! params)]
+        (t/is (th/success? out))))))

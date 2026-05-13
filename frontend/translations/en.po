@@ -1439,6 +1439,10 @@ msgstr "Invalid text"
 msgid "errors.team-name-invalid-chars"
 msgstr "The team name can't contain any of the following characters:'.', ':' or '/'"
 
+#: common/src/app/common/types/font.cljc
+msgid "errors.font-family-invalid-chars"
+msgstr "The font family name can only contain letters, numbers, spaces, hyphens, underscores, and dots."
+
 #: src/app/main/ui/static.cljs:74
 msgid "errors.invite-invalid"
 msgstr "Invite invalid"
