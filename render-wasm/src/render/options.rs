@@ -96,14 +96,6 @@ impl RenderOptions {
         self.interactive_transform = enabled;
     }
 
-    /// True only when the viewport is the one being moved (pan/zoom)
-    /// and the dedicated `render_from_cache` path owns Target
-    /// presentation. In this mode `process_animation_frame` must not
-    /// flush to avoid presenting stale tile positions.
-    pub fn is_viewport_interaction(&self) -> bool {
-        self.fast_mode && !self.interactive_transform
-    }
-
     pub fn is_text_editor_v3(&self) -> bool {
         self.flags & TEXT_EDITOR_V3 == TEXT_EDITOR_V3
     }
