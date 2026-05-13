@@ -169,13 +169,28 @@
               objects))
 
           (advance-shape [file libraries page level-delta objects shape]
-            (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
-                  container     (ctn/make-container page :page)
-                  new-touched   (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref)]
+            (let [new-shape-ref    (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
+                  container        (ctn/make-container page :page)
+                  new-touched      (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref)
+                  old-shape-ref    (:shape-ref shape)
+                  ref-changed?     (and (some? new-shape-ref) (not= new-shape-ref old-shape-ref))
+                  ;; If we advance the shape-ref of a subinstance head, the new
+                  ;; shape-ref will no longer match the parent component child
+                  ;; at the same position, so the shape becomes "swapped" with
+                  ;; respect to the enclosing instance. Preserve the original
+                  ;; shape-ref as swap-slot so that referential integrity holds
+                  ;; when the copy is pasted in a context where the parent's
+                  ;; near main is reachable.
+                  needs-swap-slot? (and ref-changed?
+                                        (ctc/subinstance-head? shape)
+                                        (nil? (ctc/get-swap-slot shape)))]
               (cond-> objects
-                (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
+                ref-changed?
                 (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
-                    (assoc-in [(:id shape) :touched] new-touched)))))
+                    (assoc-in [(:id shape) :touched] new-touched))
+
+                needs-swap-slot?
+                (update (:id shape) ctc/set-swap-slot old-shape-ref))))
 
           (on-copy-error [error]
             (js/console.error "clipboard blocked:" error)

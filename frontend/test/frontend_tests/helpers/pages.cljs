@@ -247,10 +247,21 @@
               objects))
 
           (advance-shape [file libraries page level-delta objects shape]
-            (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})]
+            (let [new-shape-ref    (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
+                  container        (ctn/make-container page :page)
+                  new-touched      (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref)
+                  old-shape-ref    (:shape-ref shape)
+                  ref-changed?     (and (some? new-shape-ref) (not= new-shape-ref old-shape-ref))
+                  needs-swap-slot? (and ref-changed?
+                                        (ctk/subinstance-head? shape)
+                                        (nil? (ctk/get-swap-slot shape)))]
               (cond-> objects
-                (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
-                (assoc-in [(:id shape) :shape-ref] new-shape-ref))))]
+                ref-changed?
+                (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
+                    (assoc-in [(:id shape) :touched] new-touched))
+
+                needs-swap-slot?
+                (update (:id shape) ctk/set-swap-slot old-shape-ref))))]
 
     (let [file-id  (:id file)
           frame-id (cfh/common-parent-frame objects selected)
