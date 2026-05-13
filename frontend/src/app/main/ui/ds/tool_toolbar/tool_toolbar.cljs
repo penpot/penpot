@@ -19,7 +19,8 @@
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :as file-uploader]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
@@ -70,26 +71,19 @@
 
 (mf/defc tool-button*
   {::mf/wrap [mf/memo]}
-  [{:keys [selected variant title icon on-click aria-haspopup aria-expanded role data-tool]}]
-  [:button {:type "button"
-            :title title
-            :aria-label title
-            :aria-haspopup aria-haspopup
-            :aria-expanded aria-expanded
-            :aria-pressed selected
-            :role role
-            :class (stl/css :main-toolbar-options-button)
-            :on-click on-click
-            :data-tool data-tool}
-   [:> icon* {:icon-id icon
-              :aria-hidden true
-              :class (stl/css :main-toolbar-icon)}]
-   (when (= variant :has-flyout)
-     [:svg {:view-box "0 0 6 6"
-            :aria-hidden true
-            :class (stl/css :main-toolbar-flyout-indicator)}
-      [:path {:d "M4,2 L4,3.15 C4,3.62 3.62,4 3.15,4 L2,4"
-              :stroke-linecap "round"}]])])
+  [{:keys [selected has-flyout title icon on-click aria-haspopup aria-expanded role data-tool]}]
+  [:> icon-button* {:variant "ghost"
+                    :title title
+                    :aria-haspopup aria-haspopup
+                    :aria-expanded aria-expanded
+                    :aria-pressed selected
+                    :role role
+                    :aria-label title
+                    :class (stl/css :main-toolbar-options-button)
+                    :on-click on-click
+                    :icon icon
+                    :flyout-indicator has-flyout
+                    :data-tool data-tool}])
 
 (def grouped-tools
   {:shapes {:default-tool :rect
@@ -158,11 +152,11 @@
      [:div {:role "group"
             :aria-label menu-label}
       [:> tool-button* {:title (tool-label default-tool)
-                        :variant :has-flyout
                         :selected selected
                         :icon default-icon
                         :on-click on-select-tool
                         :data-tool (name default-tool)
+                        :has-flyout true
                         :aria-haspopup true
                         :aria-expanded open}]
 
