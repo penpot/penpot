@@ -609,8 +609,8 @@
                                       :canvas-ref canvas-ref
                                       :ref text-editor-ref}]
 
-           :else [:& editor-v1/text-editor-svg {:shape editing-shape
-                                                :ref text-editor-ref}]))
+           :else [:> editor-v1/text-editor-svg* {:shape editing-shape
+                                                 :ref text-editor-ref}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id
