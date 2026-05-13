@@ -1558,6 +1558,27 @@
                                      :variants-count variants-count
                                      :library-used-in (:used-in library-usage)}))))))))))
 
+(defn cleanup-unlinked-libraries
+  "Remove libraries from state that are no longer linked to the given file.
+  This is used after unlinking a library to clean up transitive dependencies."
+  [file-id libraries]
+  (ptk/reify ::cleanup-unlinked-libraries
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [linked-ids (into #{} (map :id) libraries)]
+        (update state :files
+                (fn [files]
+                  (reduce-kv
+                   (fn [acc id file]
+                     (if (and (= (:library-of file) file-id)
+                              (not (contains? linked-ids id))
+                              (not= id file-id))
+                       (dissoc acc id)
+                       acc))
+                   files
+                   files)))))))
+
+
 (defn unlink-file-from-library
   [file-id library-id]
   (ptk/reify ::detach-library
@@ -1573,7 +1594,11 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:file-id file-id
-                    :library-id library-id}]
-        (->> (rp/cmd! :unlink-file-from-library params)
-             (rx/ignore))))))
+      ;; Unlink the library, then fetch the current list of linked libraries
+      ;; and remove any that are no longer linked (e.g., transitive dependencies)
+      (->> (rp/cmd! :unlink-file-from-library {:file-id file-id :library-id library-id})
+           (rx/mapcat (fn [_]
+                        (rp/cmd! :get-file-libraries {:file-id file-id})))
+           (rx/map (partial cleanup-unlinked-libraries file-id))))))
+
+
