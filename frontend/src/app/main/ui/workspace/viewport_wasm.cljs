@@ -600,9 +600,9 @@
        (when show-text-editor?
          (cond
            (features/active-feature? @st/state "text-editor-wasm/v1")
-           [:& editor-v3/text-editor {:shape editing-shape
-                                      :canvas-ref canvas-ref
-                                      :ref text-editor-ref}]
+           [:> editor-v3/text-editor* {:shape editing-shape
+                                       :canvas-ref canvas-ref
+                                       :ref text-editor-ref}]
 
            (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
