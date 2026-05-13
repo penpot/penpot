@@ -1,3 +1,4 @@
+use std::ops::{Mul};
 use skia_safe::Rect;
 
 use crate::math::{Matrix, Point};
@@ -9,6 +10,7 @@ pub(crate) struct Viewbox {
     pub width: f32,
     pub height: f32,
     pub zoom: f32,
+    pub dpr: f32,
     pub area: Rect,
 }
 
@@ -20,6 +22,7 @@ impl Default for Viewbox {
             width: 0.0,
             height: 0.0,
             zoom: 1.0,
+            dpr: 1.0,
             area: Rect::new_empty(),
         }
     }
@@ -53,6 +56,18 @@ impl Viewbox {
         self.height = height;
         self.area
             .set_wh(self.width / self.zoom, self.height / self.zoom);
+    }
+
+    pub fn set_dpr(&mut self, dpr:f32) {
+        self.dpr = dpr;
+    }
+
+    pub fn get_scale(&self) -> f32 {
+        self.zoom * self.dpr
+    }
+
+    pub fn get_offset(&self) -> Point {
+        self.area.tl().mul(self.get_scale())
     }
 
     pub fn pan(&self) -> Point {
