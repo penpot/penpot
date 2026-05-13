@@ -824,10 +824,10 @@
                :file-id (str file-id)
                :lib-id (str libr-id)
                ::l/sync? true)
-        (db/insert! conn :file-library-rel
-                    {:synced-at timestamp
-                     :file-id file-id
-                     :library-file-id libr-id})))))
+        (let [rel-params {:file-id file-id
+                          :library-file-id libr-id}]
+          (db/insert! conn :file-library-rel rel-params)
+          (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp)))))))
 
 (defn- import-storage-objects
   [{:keys [::bfc/input ::entries ::bfc/timestamp] :as cfg}]

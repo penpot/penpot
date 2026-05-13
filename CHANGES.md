@@ -123,12 +123,13 @@
 - Fix plugin parse-point returning plain map instead of Point record (by @FairyPigDev) [Github #9129](https://github.com/penpot/penpot/pull/9129)
 - Fix `:heigth` typo in clipboard frame-same-size? (by @iot2edge) [Github #9250](https://github.com/penpot/penpot/pull/9250)
 - Fix Settings and Notifications "Update Settings" button enabled state when form has no changes (by @moorsecopers99) [Github #9090](https://github.com/penpot/penpot/issues/9090)
+- Fix library updates reappear after being applied and the file is reloaded [Taiga #14040](https://tree.taiga.io/project/penpot/issue/14040)
 
 ## 2.15.0 (Unreleased)
 
 ### :sparkles: New features & Enhancements
 
-- Add MCP server integration [Github #9174](https://github.com/penpot/penpot/issues/9174) 
+- Add MCP server integration [Github #9174](https://github.com/penpot/penpot/issues/9174)
 - Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
 - Improve team name validation [Github #9176](https://github.com/penpot/penpot/pull/9176)
 
@@ -166,7 +167,6 @@
 - Fix email blacklisting [Github #9122](https://github.com/penpot/penpot/pull/9122)
 - Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
 
-
 ## 2.14.3
 
 ### :sparkles: New features & Enhancements
@@ -195,7 +195,6 @@
 - Fix stale accumulator in `get-children-in-instance` recursion
 - Fix typo `:podition` in swap-shapes grid cell
 - Fix multiple selection on shapes with token applied to stroke color
-
 
 ## 2.14.2
 
