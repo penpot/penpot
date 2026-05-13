@@ -108,15 +108,24 @@
 (mf/defc grouped-tool-flyout*
   {::mf/wrap [mf/memo]}
   [{:keys [group drawtool on-select-tool]}]
-  (let [default-tool   (active-group-tool group drawtool)
-        default-icon  (:icon (get-in group [:tools default-tool]))
-        subtools      (:tools group)
-        open*         (mf/use-state false)
-        open          (deref open*)
+  (let [default-tool*  (mf/use-state (active-group-tool group drawtool))
+        default-tool   (deref default-tool*)
+        default-icon   (:icon (get-in group [:tools default-tool]))
+        subtools       (:tools group)
+        open*          (mf/use-state false)
+        open           (deref open*)
         open-timer*   (mf/use-ref nil)
         close-timer*  (mf/use-ref nil)
         menu-label   (group-menu-label group drawtool)
         selected     (boolean (is-selected-group group drawtool))
+
+        select-tool (mf/use-fn
+                     (fn [event]
+                       (let [tool (-> (dom/get-current-target event)
+                                      (dom/get-data "tool")
+                                      (keyword))]
+                         (reset! default-tool* tool)
+                         (on-select-tool event))))
 
         on-display-menu (mf/use-fn
                          (fn []
@@ -167,7 +176,7 @@
           [:> tool-button* {:title (tool-label id)
                             :selected (= drawtool id)
                             :icon icon
-                            :on-click on-select-tool
+                            :on-click select-tool
                             :data-tool (name id)
                             :role "menuitemradio"
                             :aria-checked (= drawtool id)}]])]]]))
@@ -213,6 +222,9 @@
   {::mf/wrap [mf/memo]}
   [{:keys [layout]}]
   (let [selected-drawing-tool (mf/deref refs/selected-drawing-tool)
+        active-drawing-tool* (mf/use-state nil)
+        active-drawing-tool  (deref active-drawing-tool*)
+        current-drawing-tool  (or active-drawing-tool selected-drawing-tool)
         selected-edition (mf/deref refs/selected-edition)
         plugins-enabled (features/active-feature? @st/state "plugins/runtime")
         rulers-enabled       (mf/deref refs/rulers?)
@@ -242,7 +254,8 @@
                           (let [tool (-> (dom/get-current-target event)
                                          (dom/get-data "tool")
                                          (keyword))]
-                            (on-interrupt)
+                            (reset! active-drawing-tool* tool)
+                            (st/emit! :interrupt (dw/clear-edition-mode))
 
                             ;; Delay so anything that launched :interrupt can finish
                             (ts/schedule 100
@@ -265,14 +278,14 @@
              :data-testid "toolbar-options"}
         [:li {:class (stl/css :main-toolbar-option)}
          [:> tool-button* {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
-                           :selected (and (nil? selected-drawing-tool)
+                           :selected (and (nil? current-drawing-tool)
                                           (not selected-edition))
                            :icon i/move
                            :on-click on-interrupt}]]
 
         [:li {:class (stl/css :main-toolbar-option)}
          [:> tool-button* {:title (tool-label :frame)
-                           :selected (= selected-drawing-tool :frame)
+                           :selected (= current-drawing-tool :frame)
                            :icon i/board
                            :on-click on-select-tool
                            :data-tool "frame"}]]
@@ -280,12 +293,12 @@
 
         [:> grouped-tool-flyout* {:key :shapes
                                   :group (get grouped-tools :shapes)
-                                  :drawtool selected-drawing-tool
+                                  :drawtool current-drawing-tool
                                   :on-select-tool on-select-tool}]
 
         [:li {:class (stl/css :main-toolbar-option)}
          [:> tool-button* {:title (tool-label :text)
-                           :selected (= selected-drawing-tool :text)
+                           :selected (= current-drawing-tool :text)
                            :icon i/text
                            :on-click on-select-tool
                            :data-tool "text"}]]
@@ -294,7 +307,7 @@
 
         [:> grouped-tool-flyout* {:key :free-draw
                                   :group (get grouped-tools :free-draw)
-                                  :drawtool selected-drawing-tool
+                                  :drawtool current-drawing-tool
                                   :on-select-tool on-select-tool}]
 
         (when plugins-enabled
