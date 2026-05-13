@@ -16,6 +16,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -27,8 +28,38 @@
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
    [app.util.text.content :as content]
+   [app.util.timers :as ts]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
+
+;; How long a finished measurement stays pending before its mark is released.
+;; Measuring schedules a resize that makes the pipeline measure again, so the
+;; mark has to outlive the gap between two passes of that chain.
+(def ^:private measure-settle-window 150)
+
+;; Scheduled mark releases, keyed by shape id. A new measurement cancels the
+;; release its predecessor scheduled, so a chain reads as one settle.
+(defonce ^:private settle-timers (atom {}))
+
+(defn- hold-measure-mark!
+  "Marks `id` pending, taking over any hold its predecessor still has."
+  [id]
+  ;; Marked before releasing the previous hold, so the refcount never reaches
+  ;; zero and no waiter settles inside the handover.
+  (wrf/mark-pending! :text-measure [id])
+  (when-let [timer (get @settle-timers id)]
+    (d/close! timer)
+    (swap! settle-timers dissoc id)
+    (wrf/mark-done! :text-measure [id])))
+
+(defn- release-measure-mark!
+  "Releases `id` once no further measurement has started for `measure-settle-window`."
+  [id]
+  (let [timer (ts/schedule measure-settle-window
+                           (fn []
+                             (swap! settle-timers dissoc id)
+                             (wrf/mark-done! :text-measure [id])))]
+    (swap! settle-timers assoc id timer)))
 
 (defn fix-position
   [shape]
@@ -94,7 +125,10 @@
                                 (not migrate))
                        (st/emit! (dwt/resize-text id width height)))))
 
-                 (st/emit! (dwt/clean-text-modifier id))))))
+                 (st/emit! (dwt/clean-text-modifier id))))
+       ;; Swallowed so a text whose position data cannot be computed still
+       ;; settles and still reports its measurement as finished.
+       (p/catch (fn [_] nil))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]
@@ -183,11 +217,17 @@
         (mf/use-fn
          (fn [shape node]
            ;; Unique to indentify the pending state
-           (let [uid (uuid/next)]
-             (swap! pending-update* assoc uid (:id shape))
+           (let [uid (uuid/next)
+                 id  (:id shape)]
+             (swap! pending-update* assoc uid id)
+             ;; The measurement holds the pending mark for its own lifetime, so
+             ;; a reflow wait can never outlast the work it waits for.
+             (hold-measure-mark! id)
              (p/then
               (update-text-shape shape node)
-              #(swap! pending-update* dissoc uid)))))]
+              (fn [_]
+                (swap! pending-update* dissoc uid)
+                (release-measure-mark! id))))))]
 
     [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]

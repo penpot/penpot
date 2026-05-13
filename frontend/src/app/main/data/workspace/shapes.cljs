@@ -32,6 +32,13 @@
 ;; `(when-not translation? …)` guard in `update-shapes` below.
 (def ^:private update-layout-attr? #{:hidden})
 
+;; Text attrs whose change makes the DOM text pipeline re-measure the shape.
+(def ^:private text-reflow-attr? #{:content :grow-type})
+
+(defn- reflow-attr?
+  [attr]
+  (or (update-layout-attr? attr) (text-reflow-attr? attr)))
+
 (defn- add-undo-group
   [changes state]
   (let [undo            (:workspace-undo state)
@@ -177,25 +184,48 @@
                objects   (dsh/lookup-page-objects state page-id)
                ids       (into [] (filter some?) ids)
 
-               xf-update-layout
+               ;; Pairs of [shape changed-attrs] for the shapes whose change
+               ;; matters to a reflow, feeding both id sets below.
+               xf-reflow
                (comp
                 (map (d/getf objects))
-                (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
-                (map :id))
+                (keep (fn [shape]
+                        (let [changed (pcb/changed-attrs shape objects update-fn
+                                                         {:attrs attrs :with-objects? with-objects?})]
+                          (when (some reflow-attr? changed)
+                            [shape changed])))))
 
                ;; `changed-attrs` runs `update-fn` in full for every shape, which
                ;; can be expensive (e.g. `update-bool-shape` recalculates the whole
                ;; boolean path in WASM). Skip the pass entirely when we can prove it
                ;; cannot match: when the caller declares `attrs`, `changed-attrs`
-               ;; filters its result to that set, so if no layout attr is present
+               ;; filters its result to that set, so if no reflow attr is present
                ;; the check is always empty.
-               update-layout-ids
+               reflow-changes
                (when-not (or translation?
                              (not update-layout?)
                              (and (some? attrs)
-                                  (not (some update-layout-attr? attrs))))
-                 (->> (into [] xf-update-layout ids)
-                      (not-empty)))
+                                  (not (some reflow-attr? attrs))))
+                 (into [] xf-reflow ids))
+
+               update-layout-ids
+               (->> reflow-changes
+                    (into [] (comp (filter (fn [[_ changed]] (some update-layout-attr? changed)))
+                                   (map (comp :id first))))
+                    (not-empty))
+
+               ;; Text shapes the DOM pipeline has to re-measure, narrowed to what
+               ;; it actually measures: the active page, never the edited shape.
+               text-reflow-ids
+               (when (= page-id (get state :current-page-id))
+                 (let [edition (dm/get-in state [:workspace-local :edition])]
+                   (->> reflow-changes
+                        (into [] (comp (filter (fn [[shape changed]]
+                                                 (and (cfh/text-shape? shape)
+                                                      (some text-reflow-attr? changed))))
+                                       (map (comp :id first))
+                                       (remove #(= % edition))))
+                        (not-empty))))
 
                changes
                (-> (pcb/empty-changes it page-id)
@@ -218,6 +248,13 @@
                (add-undo-group changes state)]
 
            (rx/concat
+            ;; Announces the texts still to be re-measured, so a reflow wait
+            ;; covers the render that measures them. Goes before the commit,
+            ;; which is what triggers that render.
+            (if text-reflow-ids
+              (rx/of (ptk/data-event :text/reflow {:ids text-reflow-ids :page-id page-id}))
+              (rx/empty))
+
             (if (seq (:redo-changes changes))
               (let [changes (cond-> changes reg-objects? (pcb/resize-parents ids))]
                 (rx/of (dch/commit-changes changes)))
@@ -269,6 +306,10 @@
 
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id)
+                 ;; A new text has no geometry until the pipeline measures it,
+                 ;; so it raises the same signal an edit does.
+                 (when (cfh/text-shape? shape)
+                   (ptk/data-event :text/reflow {:ids [(:id shape)] :page-id page-id}))
                  (dch/commit-changes changes)
                  (when-not no-update-layout?
                    (ptk/data-event :layout/update {:ids [(:parent-id shape)]}))

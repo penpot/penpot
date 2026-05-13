@@ -17,6 +17,7 @@
    [app.common.types.modifiers :as ctm]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.render-wasm.api :as wasm.api]
@@ -152,6 +153,9 @@
 
        ptk/WatchEvent
        (watch [_ state stream]
+         ;; One mark per invocation, 1:1 with the conj in UpdateEvent above;
+         ;; the cleanup step below drains the whole batch.
+         (wrf/mark-pending! :text-resize [id])
          (if (= (::resize-wasm-text-debounce-event state) cur-event)
            (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
              (rx/concat
@@ -168,9 +172,16 @@
                (rx/of (with-meta
                         (resize-wasm-text-debounce-inner id)
                         {:undo-group undo-group :undo-id undo-id})))
-              (rx/of #(dissoc %
-                              ::resize-wasm-text-debounce-ids
-                              ::resize-wasm-text-debounce-event))))
+              ;; Cleanup, reached both after the commit and when the stopper
+              ;; cancels the debounce, so the batch always drains and stays
+              ;; pending until the resize is applied. The ids only live in the
+              ;; state, hence the side effect in the state function; potok
+              ;; applies it exactly once.
+              (rx/of (fn [state]
+                       (wrf/mark-done! :text-resize (::resize-wasm-text-debounce-ids state))
+                       (dissoc state
+                               ::resize-wasm-text-debounce-ids
+                               ::resize-wasm-text-debounce-event)))))
            (rx/empty)))))))
 
 (defn resize-wasm-text-debounce
@@ -190,18 +201,24 @@
                   (every?
                    (fn [font]
                      (let [font-data (wasm.fonts/make-font-data font)]
-                       (wasm.fonts/font-stored? font-data (:emoji? font-data))))))]
+                       (wasm.fonts/font-stored? font-data (:emoji? font-data))))))
 
-         (if fonts-loaded?
-           (let [pass-opts (when (or (some? undo-group) (some? undo-id))
-                             (cond-> {}
-                               (some? undo-group) (assoc :undo-group undo-group)
-                               (some? undo-id) (assoc :undo-id undo-id)))]
-             (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
+             resize-wasm-stream
+             (if fonts-loaded?
+               (let [pass-opts (when (or (some? undo-group) (some? undo-id))
+                                 (cond-> {}
+                                   (some? undo-group) (assoc :undo-group undo-group)
+                                   (some? undo-id) (assoc :undo-id undo-id)))]
+                 (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
 
-           ;; Fonts not loaded; retry after 20 msecs
-           (->> (rx/of (resize-wasm-text-debounce id opts))
-                (rx/delay 20))))))))
+               ;; Fonts not loaded; retry after 20 msecs
+               (->> (rx/of (resize-wasm-text-debounce id opts))
+                    (rx/delay 20)))]
+
+         ;; Holds the shape pending across the font-retry loop: the retried
+         ;; event marks itself before this one drains, so the refcount never
+         ;; dips to zero in between.
+         (wrf/with-pending :text-resize [id] resize-wasm-stream))))))
 
 (defn resize-wasm-text-all
   "Resize all text shapes (auto-width/auto-height) from a collection of ids."
@@ -214,9 +231,14 @@
                  (rx/map resize-wasm-text-debounce))]
         (if (::dwsh/update-shapes-buffer state)
           ;; If we're in the middle of a token propagation we wait until is finished to
-          ;; recalculate the text sizes
-          (->> stream
-               (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
-               (rx/take 1)
-               (rx/mapcat (constantly resize-stream)))
+          ;; recalculate the text sizes. The shapes stay pending for that whole wait,
+          ;; since the per-shape debounce only marks them once dispatched.
+          (wrf/with-pending
+            :text-resize ids
+            (->> stream
+                 (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
+                 (rx/take 1)
+                 ;; A commit that never lands still resizes.
+                 (rx/timeout wrf/stuck-timeout (rx/of :timeout))
+                 (rx/mapcat (constantly resize-stream))))
           resize-stream)))))
