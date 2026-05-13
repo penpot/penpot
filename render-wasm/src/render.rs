@@ -787,8 +787,8 @@ impl RenderState {
             self.tile_viewbox
                 .set_interest(self.options.dpr_viewport_interest_area_threshold);
             self.resize(
-                self.viewbox.width.floor() as i32,
-                self.viewbox.height.floor() as i32,
+                self.viewbox.width().floor() as i32,
+                self.viewbox.height().floor() as i32,
             )?;
             self.fonts.set_scale_debug_font(dpr);
         }
@@ -1944,8 +1944,8 @@ impl RenderState {
                 let cache_h = cache_dim.height as f32;
 
                 // Viewport in target pixels.
-                let vw = (self.viewbox.width * self.options.dpr).max(1.0);
-                let vh = (self.viewbox.height * self.options.dpr).max(1.0);
+                let vw = self.viewbox.dpr_width().max(1.0);
+                let vh = self.viewbox.dpr_height().max(1.0);
 
                 // Inverse-map viewport corners into cache coordinates.
                 // target = (cache * navigate_zoom) translated by (translate_x, translate_y) (in cache coords).
