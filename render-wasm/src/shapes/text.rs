@@ -333,13 +333,26 @@ pub fn calculate_normalized_line_height(
     normalized_line_height
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub struct TextContent {
     pub paragraphs: Vec<Paragraph>,
     pub bounds: Rect,
     pub grow_type: GrowType,
     pub size: TextContentSize,
     pub layout: TextContentLayout,
+    content_version: u64,
+    layout_version: u64,
+    layout_width: Option<f32>,
+}
+
+impl PartialEq for TextContent {
+    fn eq(&self, other: &Self) -> bool {
+        self.paragraphs == other.paragraphs
+            && self.bounds == other.bounds
+            && self.grow_type == other.grow_type
+            && self.size == other.size
+            && self.layout == other.layout
+    }
 }
 
 impl TextContent {
@@ -350,6 +363,9 @@ impl TextContent {
             grow_type,
             size: TextContentSize::default(),
             layout: TextContentLayout::new(),
+            content_version: 0,
+            layout_version: 0,
+            layout_width: None,
         }
     }
 
@@ -362,6 +378,9 @@ impl TextContent {
             grow_type,
             size: TextContentSize::new_with_size(bounds.width(), bounds.height()),
             layout: TextContentLayout::new(),
+            content_version: 0,
+            layout_version: 0,
+            layout_width: None,
         }
     }
 
@@ -385,6 +404,7 @@ impl TextContent {
 
     pub fn add_paragraph(&mut self, paragraph: Paragraph) {
         self.paragraphs.push(paragraph);
+        self.content_version = self.content_version.wrapping_add(1);
     }
 
     pub fn paragraphs(&self) -> &[Paragraph] {
@@ -392,6 +412,7 @@ impl TextContent {
     }
 
     pub fn paragraphs_mut(&mut self) -> &mut Vec<Paragraph> {
+        self.content_version = self.content_version.wrapping_add(1);
         &mut self.paragraphs
     }
 
@@ -408,7 +429,10 @@ impl TextContent {
     }
 
     pub fn set_grow_type(&mut self, grow_type: GrowType) {
-        self.grow_type = grow_type;
+        if self.grow_type != grow_type {
+            self.grow_type = grow_type;
+            self.content_version = self.content_version.wrapping_add(1);
+        }
     }
 
     /// Compute a tight text rect from laid-out Skia paragraphs using glyph
@@ -891,6 +915,15 @@ impl TextContent {
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+        if !self.layout.needs_update()
+            && self.layout_version == self.content_version
+            && self
+                .layout_width
+                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON)
+        {
+            return self.size;
+        }
+
         self.size.set_size(selrect.width(), selrect.height());
 
         match self.grow_type() {
@@ -914,6 +947,9 @@ impl TextContent {
             self.size.height = placeholder_height;
             self.size.max_width = placeholder_width;
         }
+
+        self.layout_version = self.content_version;
+        self.layout_width = Some(selrect.width());
 
         self.size
     }
@@ -1048,6 +1084,9 @@ impl Default for TextContent {
             grow_type: GrowType::Fixed,
             size: TextContentSize::default(),
             layout: TextContentLayout::new(),
+            content_version: 0,
+            layout_version: 0,
+            layout_width: None,
         }
     }
 }
