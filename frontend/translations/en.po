@@ -3520,6 +3520,18 @@ msgstr "By removing your account you’ll lose all your current projects and arc
 msgid "modals.delete-account.title"
 msgstr "Are you sure you want to delete your account?"
 
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.list-title"
+msgstr "Organizations that will be deleted"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.teams-count"
+msgstr "%s teams"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.members-count"
+msgstr "%s members"
+
 #: src/app/main/ui/comments.cljs:889
 msgid "modals.delete-comment-thread.accept"
 msgstr "Delete conversation"

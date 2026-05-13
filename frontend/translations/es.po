@@ -3423,6 +3423,18 @@ msgstr "Si borras tu cuenta perderás todos tus proyectos y archivos."
 msgid "modals.delete-account.title"
 msgstr "¿Seguro que quieres borrar tu cuenta?"
 
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.list-title"
+msgstr "Organizaciones que se eliminarán"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.teams-count"
+msgstr "%s equipos"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.members-count"
+msgstr "%s miembros"
+
 #: src/app/main/ui/comments.cljs:889
 msgid "modals.delete-comment-thread.accept"
 msgstr "Eliminar conversación"

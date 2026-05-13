@@ -544,6 +544,33 @@ LEFT JOIN profile AS p
     nil))
 
 
+;; API: delete-all-org-invitations
+
+(def ^:private sql:delete-all-org-invitations
+  "DELETE FROM team_invitation AS ti
+    WHERE ti.org_id = ?
+       OR ti.team_id = ANY(?);")
+
+(def ^:private schema:delete-all-org-invitations-params
+  [:map
+   [:organization-id ::sm/uuid]])
+
+(sv/defmethod ::delete-all-org-invitations
+  "Delete every pending invitation associated with an organization (org-level + team-level).
+   Called from Nitrate when an organization is about to be deleted, so users that click
+   their invitation token hit the existing invalid-token landing page."
+  {::doc/added "2.18"
+   ::sm/params schema:delete-all-org-invitations-params
+   ::rpc/auth false}
+  [cfg {:keys [organization-id]}]
+  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
+        team-ids    (->> (:teams org-summary)
+                         (map :id))]
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array (db/create-array conn "uuid" team-ids)]
+                     (db/exec! conn [sql:delete-all-org-invitations organization-id ids-array]))))
+    nil))
+
 
 ;; API: remove-from-org
 
