@@ -27,8 +27,17 @@
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
    [app.util.text.content :as content]
+   [potok.v2.core :as ptk]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
+
+;; Re-emit browser-side font loads as :font-loaded store events so consumers
+;; filtering with `font-loaded-event?` (app.main.data.workspace.texts) also
+;; wake up for fonts loaded through `fonts/ensure-loaded!`, not only for the
+;; ones loaded by the wasm font store.
+(set! fonts/on-loaded-font
+      (fn [font-id]
+        (st/emit! (ptk/data-event :font-loaded {:font-id font-id}))))
 
 (defn fix-position
   [shape]

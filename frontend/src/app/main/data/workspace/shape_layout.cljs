@@ -119,6 +119,11 @@
                                            :undo-group undo-group}))))
           (rx/empty))))))
 
+;; Signals that one or more :layout/update events have arrived and are
+;; still waiting. Read by the plugin API `app.plugins.api/waitForLayoutUpdate`
+;; to decide whether layout work is still in flight.
+(defonce layout-pending (atom false))
+
 (defn initialize-shape-layout
   []
   (ptk/reify ::initialize-shape-layout
@@ -129,18 +134,21 @@
              ;; FIXME: we don't need use types for simple signaling,
              ;; we can just use a keyword for it
              (rx/filter (ptk/type? :layout/update))
+             (rx/tap #(reset! layout-pending true))
              (rx/map deref)
              ;; We buffer the updates to the layout so if there are many changes at the same time
              ;; they are process together. It will get a better performance.
              (rx/buffer-time 100)
              (rx/filter #(d/not-empty? %))
+             (rx/tap #(reset! layout-pending false))
              (rx/mapcat
               (fn [data]
                 (->> (group-by :page-id data)
                      (map (fn [[page-id items]]
                             (let [ids (reduce #(into %1 (:ids %2)) #{} items)]
                               (update-layout-positions {:page-id page-id :ids ids})))))))
-             (rx/take-until stopper))))))
+             (rx/take-until stopper)
+             (rx/finalize #(reset! layout-pending false)))))))
 
 (defn finalize-shape-layout
   []

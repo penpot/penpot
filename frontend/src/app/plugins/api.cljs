@@ -27,7 +27,10 @@
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.modifiers :as dwmm]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
@@ -54,7 +57,8 @@
    [app.util.object :as obj]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
 
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
@@ -675,4 +679,67 @@
                             (se/add-event plugin-id)))
               (shape/shape-proxy plugin-id variant-id))
 
-            (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))))
+            (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))
+
+    :waitForLayoutUpdate
+    (fn [timeout]
+      (js/Promise.
+       (fn [resolve reject]
+         (let [work-pending?
+               (fn []
+                 ;; `layout-pending`: flex/grid updates buffered in the 100ms
+                 ;;   buffer-time window of `initialize-shape-layout`; cleared
+                 ;;   when the buffer flushes and `update-layout-positions` is
+                 ;;   dispatched.
+                 ;; `resize-pending`: wasm text resize debouncing or waiting
+                 ;;   for a font load; cleared once the final resize is
+                 ;;   dispatched.
+                 ;; `font-pending`: non-wasm font change waiting for the next
+                 ;;   `commit-position-data`; cleared when it fires.
+                 (boolean (or @dwsl/layout-pending
+                              @dwwt/resize-pending
+                              @dwt/font-pending)))
+
+               ;; Progress signals: events that mark the completion of one of
+               ;; the pending work kinds above (plus workspace finalization,
+               ;; which clears the flags via the stoppers of their listeners).
+               ;; They only trigger a re-check of the flags: several kinds of
+               ;; work can be pending at once and one kind can queue another
+               ;; (e.g. a text resize triggering a flex layout update), so we
+               ;; resolve only when no flag remains set.
+               progress-event?
+               (fn [event]
+                 (let [type (ptk/type event)]
+                   (or (= type ::dwsl/update-layout-positions)
+                       (= type ::dwmm/apply-wasm-modifiers)
+                       (= type ::dwt/commit-position-data)
+                       (= type :app.main.data.workspace/finalize))))]
+
+           (if-not (work-pending?)
+             ;; Fast path: nothing pending, resolve right away.
+             (resolve)
+             (->> (rx/merge
+                   ;; Optional deadline: if a timeout was requested, emit
+                   ;; :timeout after `timeout` ms so the promise rejects when
+                   ;; updates stall.
+                   (if timeout
+                     (->> (rx/of :timeout)
+                          (rx/delay timeout))
+                     (rx/empty))
+
+                   (->> st/stream
+                        (rx/filter progress-event?)
+                        ;; Defer the re-check so the flag-clearing handlers
+                        ;; (and any synchronous follow-up work they queue)
+                        ;; observe the event before we read the flags.
+                        (rx/observe-on :async)
+                        (rx/filter #(not (work-pending?)))
+                        (rx/map (constantly :ok))))
+
+                  (rx/take 1)
+                  (rx/subs!
+                   (fn [value]
+                     (if (= value :timeout)
+                       (reject (js/Error. "waitForLayoutUpdate timeout"))
+                       (resolve)))
+                   reject)))))))))
