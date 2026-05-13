@@ -26,6 +26,7 @@
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dwse]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
@@ -130,17 +131,25 @@
              ;; we can just use a keyword for it
              (rx/filter (ptk/type? :layout/update))
              (rx/map deref)
+             ;; Mark the affected shapes as pending reflow so the plugin API
+             ;; `waitForLayoutUpdate` can wait until the buffered updates flush.
+             (rx/tap #(wrf/mark-pending! :layout (:ids %)))
              ;; We buffer the updates to the layout so if there are many changes at the same time
              ;; they are process together. It will get a better performance.
              (rx/buffer-time 100)
              (rx/filter #(d/not-empty? %))
+             ;; Balance the per-event marks: decrement once per buffered event
+             ;; (multiplicity preserved via mapcat, no deduping).
+             (rx/tap #(wrf/mark-done! :layout (mapcat :ids %)))
              (rx/mapcat
               (fn [data]
                 (->> (group-by :page-id data)
                      (map (fn [[page-id items]]
                             (let [ids (reduce #(into %1 (:ids %2)) #{} items)]
                               (update-layout-positions {:page-id page-id :ids ids})))))))
-             (rx/take-until stopper))))))
+             (rx/take-until stopper)
+             ;; On workspace teardown clear everything still pending.
+             (rx/finalize wrf/reset-pending!))))))
 
 (defn finalize-shape-layout
   []

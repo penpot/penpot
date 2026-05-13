@@ -3,6 +3,8 @@
 ### 🚀 Features
 
 - **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.
+- **plugin-types**: Added `waitForLayoutUpdate` to wait until pending layout updates have finished
+- **plugin-types**: Added `waitForLayoutUpdate` to the `Shape` interface to wait until a single shape's pending layout updates have finished
 
 ### 🩹 Fixes
 
