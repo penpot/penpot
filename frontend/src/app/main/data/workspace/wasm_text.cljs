@@ -122,6 +122,8 @@
            :else
            (rx/empty)))))))
 
+(def resize-pending (atom false))
+
 ;; This event will debounce the resize events so, if there are many, they
 ;; are processed at the same time and not one-by-one. This will improve
 ;; performance because it's better to make only one layout calculation instead
@@ -147,8 +149,10 @@
               (rx/merge
                (->> stream
                     (rx/filter (ptk/type? ::resize-wasm-text-debounce-inner))
+                    (rx/tap #(reset! resize-pending true))
                     (rx/debounce debounce-resize-text-time)
                     (rx/take 1)
+                    (rx/tap #(reset! resize-pending false))
                     (rx/map (fn [evt]
                               (resize-wasm-text-debounce-commit
                                (some-> evt meta :undo-group)

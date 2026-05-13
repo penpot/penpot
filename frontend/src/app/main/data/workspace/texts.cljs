@@ -383,11 +383,13 @@
                         (update-content-range start end attrs))]
     (assoc shape :content new-content)))
 
+(defonce font-pending (atom nil))
+
 (defn update-text-range
   [id start end attrs]
   (ptk/reify ::update-text-range
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ state stream]
       (let [objects   (dsh/lookup-page-objects state)
             shape     (get objects id)
 
@@ -404,7 +406,13 @@
          (rx/of (dwsh/update-shapes shape-ids update-fn))
          (if (features/active-feature? state "render-wasm/v1")
            (dwwt/resize-wasm-text-debounce id)
-           (rx/empty)))))))
+           (when (contains? attrs :font-id)
+             (reset! font-pending true)
+             (->> stream
+                  (rx/filter (ptk/type? ::commit-position-data))
+                  (rx/take 1)
+                  (rx/tap #(reset! font-pending false))
+                  (rx/ignore)))))))))
 
 (defn update-root-attrs
   [{:keys [id attrs]}]
@@ -826,7 +834,7 @@
                       (not (features/active-feature? state "text-editor-wasm/v1")))
              (rx/of (v2-update-text-editor-styles id attrs)))
 
-           (when (features/active-feature? state "render-wasm/v1")
+           (if (features/active-feature? state "render-wasm/v1")
              (rx/concat
               ;; Apply style to selected spans and sync content
               (let [has-selection? (wasm.api/text-editor-has-selection?)]
@@ -840,12 +848,37 @@
                                   :update-name? true))))))))
               ;; Resize (with delay for font-id changes)
               (if (contains? attrs :font-id)
-                (->> stream
-                     (rx/filter (font-loaded-event? (:font-id attrs)))
-                     (rx/take 1)
-                     (rx/observe-on :async)
-                     (rx/map #(dwwt/resize-wasm-text id)))
-                (rx/of (dwwt/resize-wasm-text id)))))))))
+                (let [objects (dsh/lookup-page-objects state)
+                      shape   (get objects id)]
+                  (if (and (cfh/text-shape? shape)
+                           (not= :fixed (:grow-type shape)))
+                    ;; Auto-height/auto-width: set resize-pending immediately so
+                    ;; waitForLayoutUpdate detects pending work. Dispatch resize to
+                    ;; trigger font loading (set-shape-text-content → store-fonts),
+                    ;; then re-dispatch after font-loaded for correct final geometry.
+                    (do
+                      (reset! dwwt/resize-pending true)
+                      (rx/concat
+                       (rx/of (dwwt/resize-wasm-text id))
+                       (->> stream
+                            (rx/filter (font-loaded-event? (:font-id attrs)))
+                            (rx/take 1)
+                            ;; Timeout if the font-loaded event don't arrive eventualy
+                            (rx/timeout 10000 (rx/of :timeout))
+                            (rx/observe-on :async)
+                            (rx/tap #(reset! dwwt/resize-pending false))
+                            (rx/map #(dwwt/resize-wasm-text id)))))
+                    ;; Fixed: geometry doesn't change with font; no need to wait.
+                    (rx/of (dwwt/resize-wasm-text id))))
+                (rx/of (dwwt/resize-wasm-text id))))
+
+             (when (contains? attrs :font-id)
+               (reset! font-pending true)
+               (->> stream
+                    (rx/filter (ptk/type? ::commit-position-data))
+                    (rx/take 1)
+                    (rx/tap #(reset! font-pending false))
+                    (rx/ignore))))))))
 
     ptk/EffectEvent
     (effect [_ state _]

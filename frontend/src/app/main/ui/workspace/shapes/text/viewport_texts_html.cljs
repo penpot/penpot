@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.text.viewport-texts-html
   (:require
+   [potok.v2.core :as ptk]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -28,7 +29,12 @@
    [app.util.text-svg-position :as tsp]
    [app.util.text.content :as content]
    [promesa.core :as p]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.main.fonts :as f]))
+
+(set! f/on-loaded-font
+      (fn [font-id]
+        (st/emit! (ptk/data-event :loaded-font {:font-id font-id}))))
 
 (defn fix-position
   [shape]

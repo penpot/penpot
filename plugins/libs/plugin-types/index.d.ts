@@ -1317,6 +1317,14 @@ export interface Context {
    * @return The variant container created
    */
   createVariantFromComponents(shapes: Board[]): VariantContainer;
+
+  /**
+   * This method returns a promise that will be resolved when the layout
+   * has finished updating.
+   * @param timeout A timeout for the wait. If there is a timeout the promise will be rejected
+   * @return The promise to be resolved when the layout is updated
+   */
+  waitForLayoutUpdate(timeout?: number): Promise<void>;
 }
 
 /**

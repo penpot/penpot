@@ -7,6 +7,7 @@
 (ns app.plugins.api
   "RPC for plugins runtime."
   (:require
+   [app.main.data.workspace.texts :as dwt]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as cb]
@@ -27,7 +28,9 @@
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.modifiers :as dwmm]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
@@ -54,7 +57,8 @@
    [app.util.object :as obj]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
 
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
@@ -675,4 +679,66 @@
                             (se/add-event plugin-id)))
               (shape/shape-proxy plugin-id variant-id))
 
-            (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))))
+            (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))
+
+    :waitForLayoutUpdate
+    (fn [timeout]
+      (js/Promise.
+       (fn [resolve reject]
+         ;; Race all completion signals with rx/merge + rx/take 1: whichever
+         ;; stream emits first wins and the promise settles. The pending-flag
+         ;; checks are synchronous snapshots taken at call time, so each branch
+         ;; either subscribes to the relevant store event or contributes nothing
+         ;; (rx/empty). This avoids subscribing to events we will never need.
+         (->> (rx/merge
+               ;; Optional deadline: if a timeout was requested, emit :timeout
+               ;; after `timeout` ms so the promise rejects when updates stall.
+               (if timeout
+                 (->> (rx/of :timeout)
+                      (rx/delay timeout))
+                 (rx/empty))
+
+               ;; Flex/grid layout recalculation: `layout-pending` is set true
+               ;; before the 100ms buffer-time accumulation and cleared to false
+               ;; by `update-layout-positions` once positions are committed.
+               (if @dwsl/layout-pending
+                 (->> st/stream
+                      (rx/filter (ptk/type? ::dwsl/update-layout-positions))
+                      (rx/take 1))
+                 (rx/empty))
+
+               ;; Wasm text-resize path: `resize-pending` is set true before
+               ;; the 40ms debounce window and cleared by `apply-wasm-modifiers`
+               ;; once the final geometry is applied.
+               (if @dwwt/resize-pending
+                 (->> st/stream
+                      (rx/filter (ptk/type? ::dwmm/apply-wasm-modifiers))
+                      (rx/take 1))
+                 (rx/empty))
+
+               ;; Non-wasm font-change path: `font-pending` is set true when a
+               ;; font attribute changes and cleared by `commit-position-data`
+               ;; once CSS font measurement and layout commit are done.
+               (if @dwt/font-pending
+                 (->> st/stream
+                      (rx/filter (ptk/type? ::dwt/commit-position-data))
+                      (rx/take 1))
+                 (rx/empty))
+
+               ;; Fast path: nothing is pending, so emit :ok immediately and
+               ;; let rx/take 1 short-circuit the rest of the merge. This means
+               ;; the promise resolves in the same microtask with no waiting.
+               (if (and (not @dwwt/resize-pending)
+                        (not @dwsl/layout-pending)
+                        (not @dwt/font-pending))
+                 (rx/of :ok)
+                 (rx/empty)))
+
+              ;; Take only the first emission regardless of which branch fires.
+              (rx/take 1)
+              (rx/subs!
+               (fn [value]
+                 (if (= value :timeout)
+                   (reject (js/Error. "waitForLayoutUpdate timeout"))
+                   (resolve)))
+               reject)))))))

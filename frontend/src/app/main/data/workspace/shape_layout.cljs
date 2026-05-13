@@ -119,6 +119,8 @@
                                            :undo-group undo-group}))))
           (rx/empty))))))
 
+(defonce layout-pending (atom false))
+
 (defn initialize-shape-layout
   []
   (ptk/reify ::initialize-shape-layout
@@ -129,10 +131,12 @@
              ;; FIXME: we don't need use types for simple signaling,
              ;; we can just use a keyword for it
              (rx/filter (ptk/type? :layout/update))
+             (rx/tap #(reset! layout-pending true))
              (rx/map deref)
              ;; We buffer the updates to the layout so if there are many changes at the same time
              ;; they are process together. It will get a better performance.
              (rx/buffer-time 100)
+             (rx/tap #(reset! layout-pending false))
              (rx/filter #(d/not-empty? %))
              (rx/mapcat
               (fn [data]

@@ -211,6 +211,8 @@
 ;; LOAD API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def on-loaded-font nil)
+
 (defn ensure-loaded!
   ([font-id] (ensure-loaded! font-id nil))
   ([font-id variant-id]
@@ -240,6 +242,8 @@
          (let [on-load (fn [resolve]
                          (swap! loaded conj font-id)
                          (swap! loading dissoc font-id)
+                         (when (fn? on-loaded-font)
+                           (on-loaded-font font-id))
                          (resolve font-id))
 
                load-p (-> (p/create
