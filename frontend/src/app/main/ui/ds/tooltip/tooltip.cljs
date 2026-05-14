@@ -322,7 +322,7 @@
          (let [trigger-el (mf/ref-val trigger-ref)
                tooltip-el (mf/ref-val tooltip-ref)]
            (when (and trigger-el tooltip-el)
-             (js/requestAnimationFrame
+             (ts/raf
               (fn []
                 (let [origin-brect (dom/get-bounding-rect trigger-el)
                       tooltip-brect (dom/get-bounding-rect tooltip-el)
