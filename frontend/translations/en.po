@@ -9503,3 +9503,6 @@ msgstr "Here you find all your organizations where you are allowed to create or 
 
 msgid "dashboard.no-permission-delete-team.message"
 msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the owner."
+
+msgid "dashboard.no-permission-move-team.message"
+msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the owner."
