@@ -87,7 +87,8 @@
                                           %2))
                              (transient [])))
 
-                   (identical? (type x) js/Object)
+                   (and (identical? (type x) js/Object)
+                        (nil? (unchecked-get x (js/Symbol.for "penpot.reify:type"))))
                    (persistent!
                     (.reduce ^js/Array (js-keys x)
                              #(assoc! %1 (key-fn %2)
