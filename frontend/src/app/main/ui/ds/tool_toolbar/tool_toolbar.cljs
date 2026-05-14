@@ -49,6 +49,7 @@
     :circle (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
     :text (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
     :path (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+    :image (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
     :curve (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
     :plugins (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
     :debug "Debugging tool"
@@ -71,18 +72,19 @@
 
 (mf/defc tool-button*
   {::mf/wrap [mf/memo]}
-  [{:keys [selected has-flyout title icon on-click aria-haspopup aria-expanded role data-tool]}]
+  [{:keys [selected has-flyout has-tooltip title icon on-click aria-haspopup aria-expanded role data-tool]}]
   [:> icon-button* {:variant "ghost"
                     :aria-haspopup aria-haspopup
                     :aria-expanded aria-expanded
                     :aria-pressed selected
                     :role role
                     :aria-label title
-                    :tooltip-placement "top"
+                    :tooltip-placement "bottom"
                     :class (stl/css :main-toolbar-options-button)
                     :on-click on-click
                     :icon icon
                     :flyout-indicator has-flyout
+                    :has-tooltip has-tooltip
                     :data-tool data-tool}])
 
 (def grouped-tools
@@ -152,6 +154,7 @@
      [:div {:role "group"
             :aria-label menu-label}
       [:> tool-button* {:title (tool-label default-tool)
+                        :has-tooltip false
                         :selected selected
                         :icon default-icon
                         :on-click on-select-tool
