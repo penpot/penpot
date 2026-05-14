@@ -3,11 +3,13 @@
    [cljs.test :as t]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.copy-as-svg-test]
+   [frontend-tests.data.nitrate-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-media-test]
+   [frontend-tests.data.workspace-shortcuts-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.errors-test]
@@ -34,6 +36,7 @@
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
+   [frontend-tests.util-webapi-test]
    [frontend-tests.worker-snap-test]))
 
 (enable-console-print!)
@@ -48,6 +51,7 @@
   (t/run-tests
    'frontend-tests.basic-shapes-test
    'frontend-tests.copy-as-svg-test
+   'frontend-tests.data.nitrate-test
    'frontend-tests.data.repo-test
    'frontend-tests.errors-test
    'frontend-tests.main-errors-test
@@ -55,6 +59,7 @@
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.data.workspace-media-test
+   'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.helpers-shapes-test
@@ -79,4 +84,5 @@
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
+   'frontend-tests.util-webapi-test
    'frontend-tests.worker-snap-test))

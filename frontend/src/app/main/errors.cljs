@@ -221,9 +221,11 @@
   (when-let [cause (::instance error)]
     (ex/print-throwable cause)
     (let [code (get error :code)]
-      (if (or (= code :panic)
-              (= code :webgl-context-lost))
+      (cond
+        (= code :panic)
         (st/emit! (rt/assign-exception error))
+
+        :else
         (flash :type :handled :cause cause)))))
 
 ;; We receive a explicit authentication error; If the uri is for

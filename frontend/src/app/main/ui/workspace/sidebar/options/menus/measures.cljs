@@ -619,8 +619,7 @@
               :value (get values :rotation)}]
 
             [:div {:class (stl/css :rotation)
-                   :title (tr "workspace.options.rotation")
-                   :data-testid "rotation"}
+                   :title (tr "workspace.options.rotation")}
              [:span {:class (stl/css :icon)}  deprecated-icon/rotation]
              [:> deprecated-input/numeric-input*
               {:no-validate true

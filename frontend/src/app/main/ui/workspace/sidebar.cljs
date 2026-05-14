@@ -44,7 +44,6 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -147,7 +146,7 @@
          (fn [id]
            (st/emit! (dcm/go-to-workspace :layout (keyword id)))
            (when (= id "tokens")
-             (st/emit! (ptk/event ::ev/event {::ev/name "open-tokens-tab"})))))
+             (st/emit! (ev/event {::ev/name "open-tokens-tab"})))))
 
         tabs
         (mf/with-memo [mode-inspect? design-tokens?]
@@ -389,6 +388,10 @@
         resolved-active-tokens
         (sd/use-resolved-tokens* active-tokens)
 
+        tokenscript-resolved-active-tokens
+        (mf/with-memo [active-tokens tokenscript?]
+          (when tokenscript? (ts/resolve-tokens active-tokens)))
+
         tokenscript-resolved-active-tokens-force-set
         (mf/with-memo [active-tokens-force-set tokenscript?]
           (when tokenscript? (ts/resolve-tokens active-tokens-force-set)))
@@ -415,4 +418,6 @@
                          :file-id file-id
                          :page-id page-id
                          :tokens-lib tokens-lib
-                         :active-tokens resolved-active-tokens}]]))
+                         :active-tokens (if tokenscript?
+                                          tokenscript-resolved-active-tokens
+                                          resolved-active-tokens)}]]))

@@ -1,16 +1,17 @@
 ---
-name: New Render Bug Report
-about: Create a report about the bugs you have found in the new render
+name: Bug report
+about: Create a report to help us improve
 title: ''
-labels: new render
-assignees: claragvinola
+labels: ''
+assignees: ''
+type: Bug
 
 ---
 
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-**Steps to Reproduce**
+**To Reproduce**
 Steps to reproduce the behavior:
 1. Go to '...'
 2. Click on '....'
@@ -20,8 +21,8 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Screenshots or screen recordings**
-If applicable, add screenshots or screen recording to help illustrate your problem.
+**Screen recordings and screenshots**
+If possible, add screen recordings or screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
  - OS: [e.g. iOS]
