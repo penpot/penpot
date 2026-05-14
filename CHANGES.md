@@ -89,6 +89,7 @@
 - Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
 - Fix colorpicker layout so the eyedropper button is visible again [Taiga #14057](https://tree.taiga.io/project/penpot/issue/14057)
+- Fix CORS middleware reflecting the request `Origin` with `Access-Control-Allow-Credentials: true`, which allowed any cross-origin site to issue authenticated RPC calls to a Penpot instance running with `PENPOT_FLAGS=enable-cors`. The middleware now requires an explicit `PENPOT_ALLOWED_ORIGINS` allowlist, only echoes `Access-Control-Allow-Origin` for matching origins, drops `cookie` from `Access-Control-Allow-Headers` and `set-cookie` from `Access-Control-Expose-Headers`, always sets `Vary: Origin`, and fails closed (logs a warning and does not wire the middleware) when the allowlist is empty [Github #9659](https://github.com/penpot/penpot/issues/9659)
 
 
 ## 2.16.0 (Unreleased)
