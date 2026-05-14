@@ -22,6 +22,7 @@
    [app.util.globals :as ug]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [goog.events :as events]
    [rumext.v2 :as mf]))
@@ -96,7 +97,7 @@
             ;; Store latest color synchronously so the click handler always reads
             ;; the correct pixel even before the rAF fires (fixes race condition)
             (mf/set-ref-val! last-picked-color color)
-            (js/requestAnimationFrame
+            (timers/raf
              (fn []
                (st/emit! (dwc/pick-color color))))))))))
 
@@ -304,7 +305,7 @@
             ;; the correct pixel even before the rAF fires (fixes race condition)
             (mf/set-ref-val! last-picked-color color)
             ;; rAF throttles state updates to avoid an infinite React re-render loop
-            (js/requestAnimationFrame
+            (timers/raf
              (fn []
                (st/emit! (dwc/pick-color color))))))))))
 
