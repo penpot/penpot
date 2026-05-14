@@ -98,11 +98,11 @@
               :on-click #(on-click % index)}
      [:div {:class (stl/css-case :thumbnail-preview true
                                  :selected is-selected)}
-      [:& render/frame-svg {:frame (-> frame
-                                       (assoc :thumbnail (get thumbnail-data (dm/str page-id (:id frame))))
-                                       (assoc :children-bounds children-bounds))
-                            :objects objects
-                            :use-thumbnails true}]]
+      [:> render/frame-svg* {:frame (-> frame
+                                        (assoc :thumbnail (get thumbnail-data (dm/str page-id (:id frame))))
+                                        (assoc :children-bounds children-bounds))
+                             :objects objects
+                             :use-thumbnails true}]]
      [:div {:class (stl/css :thumbnail-info)
             :title (:name frame)}
       (:name frame)]]))

@@ -77,18 +77,18 @@
             frame    (some->> page :thumbnail-frame-id (get objects))
             background-color (:background page)
             element  (if frame
-                       (mf/element render/frame-svg #js
-                                                     {:objects objects
-                                                      :frame frame
-                                                      :use-thumbnails true
-                                                      :background-color background-color
-                                                      :aspect-ratio (/ 2 3)})
+                       (mf/element render/frame-svg* #js
+                                                      {:objects objects
+                                                       :frame frame
+                                                       :use-thumbnails true
+                                                       :background-color background-color
+                                                       :aspect-ratio (/ 2 3)})
 
-                       (mf/element render/page-svg #js
-                                                    {:data page
-                                                     :use-thumbnails true
-                                                     :embed true
-                                                     :aspect-ratio (/ 2 3)}))
+                       (mf/element render/page-svg* #js
+                                                     {:data page
+                                                      :use-thumbnails true
+                                                      :embed true
+                                                      :aspect-ratio (/ 2 3)}))
             data     (rds/renderToStaticMarkup element)]
         {:data data
          :fonts @fonts/loaded-hints
