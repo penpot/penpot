@@ -9194,3 +9194,6 @@ msgstr "Aquí encontrarás todas las organizaciones en las que tienes permiso pa
 
 msgid "dashboard.no-permission-delete-team.message"
 msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario."
+
+msgid "dashboard.no-permission-move-team.message"
+msgstr "No tienes permiso para mover equipos que son parte de la organización %s. Si necesitas más información, contacta con el propietario."
